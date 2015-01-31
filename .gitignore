@@ -1,0 +1,7 @@
+bin/
+build/
+lib/
+server/vsqlite++
+sqlite/
+*.*~
+*.*.user*

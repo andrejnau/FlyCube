@@ -1,0 +1,25 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion "21.1.2"
+
+    sourceSets.main {
+        jni.srcDirs 'src/main/source'
+    }
+
+    defaultConfig {
+        minSdkVersion 9
+        targetSdkVersion 21
+
+        ndk {
+           moduleName "libgles3jni"
+           cFlags "-std=c++11 \
+                   -Werror \
+                   -I${project.buildDir}/../../../../core_source/include \
+                   -I${project.buildDir}/../../../../3rdparty/glm"
+           ldLibs "log", "GLESv3", "EGL", "android"
+           stl "c++_shared"
+        }
+    }
+}
