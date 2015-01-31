@@ -8,8 +8,8 @@
 static TestScene renderer;
 
 #define PREIFX_CAT(arg1, arg2, arg3, arg4) arg1 ##_## arg2 ##_## arg3 ##_## arg4
-#define jni_declaration(metod_name, ret_type, ...)  \
-	extern "C" JNIEXPORT ret_type JNICALL PREIFX_CAT(Java, com_softmob_gles3jni, GLES3JNILib, metod_name)(__VA_ARGS__)
+#define jni_declaration(method_name, ret_type, ...)  \
+	extern "C" JNIEXPORT ret_type JNICALL PREIFX_CAT(Java, com_softmob_gles3jni, GLES3JNILib, method_name)(__VA_ARGS__)
 
 jni_declaration(init, void, JNIEnv* env, jobject obj)
 {

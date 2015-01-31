@@ -16,8 +16,10 @@ public:
     RenderItem();
     bool isInput() const;
     void setInput(bool);
+    int doGetTypeAngle(int);
 signals:
     void inputChanged(bool);
+    void drawSortType(int drawX, int drawY, int drawType);
 public slots:
     void doSendPoint(int, int);
     void doSendFuturePoint(int, int);
@@ -30,8 +32,11 @@ private:
     std::pair<float, float> pointToGL(int, int);
     void paintPolygon();
     void cleanScene();
+    void startTest();
 private:
     bool m_input;
+    std::vector<std::pair<int, int> > point_for_sort;
+    std::vector<int> sort_type;
     PrintPolygon &input_polygon;
     std::unique_ptr<QOpenGLContext> ctx;
 };

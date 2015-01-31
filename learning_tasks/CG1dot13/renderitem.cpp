@@ -64,7 +64,13 @@ void RenderItem::doSendPoint(int point_x, int point_y)
 	if (input_polygon.add_point(point))
 	{
 		setInput(false);
+		if (!point_for_sort.empty())
+			std::tie(point_x, point_y) = point_for_sort.front();
 	}
+	point_for_sort.push_back({ point_x, point_y });
+
+	if (!isInput())
+		startTest();
 }
 
 void RenderItem::doSendFuturePoint(int point_x, int point_y)
@@ -89,6 +95,46 @@ void RenderItem::cleanScene()
 {
 	SwapContext set_ctx(ctx.get(), window());
 	input_polygon.clear();
+	point_for_sort.clear();
+	sort_type.clear();
+}
+
+void RenderItem::startTest()
+{
+	int count = point_for_sort.size() - 1;
+	sort_type.resize(count);
+	float sum = 0.0f;
+	for (int i = 0; i < count; ++i)
+	{
+		glm::vec2 prev, cur, next;
+		std::tie(prev.x, prev.y) = point_for_sort[(i - 1 + count) % count];
+		std::tie(cur.x, cur.y) = point_for_sort[i];
+		std::tie(next.x, next.y) = point_for_sort[(i + 1) % count];
+
+		glm::vec2 va = cur - prev;
+		glm::vec2 vb = next - cur;
+		float res = va.x * vb.y - vb.x * va.y;
+		sum += res;
+		float res_is = dist(next, prev) - dist(cur, next) - dist(cur, prev);
+		if (fabs(res_is) < 1e-2f)
+		{
+			sort_type[i] = 0;
+		}
+		else if (res > 0.0f)
+		{
+			sort_type[i] = 1;
+		}
+		else
+		{
+			sort_type[i] = -1;
+		}
+	}
+	for (int i = 0; i < count; ++i)
+	{
+		if (sum < 0.0f)
+			sort_type[i] *= -1;
+		emit drawSortType(point_for_sort[i].first, point_for_sort[i].second, sort_type[i]);
+	}
 }
 
 void RenderItem::paint()
