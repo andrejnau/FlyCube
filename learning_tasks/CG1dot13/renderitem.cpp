@@ -33,9 +33,14 @@ bool RenderItem::isInput() const
 
 void RenderItem::setInput(bool val)
 {
+	if (m_input == val)
+		return;
+
 	m_input = val;
-	if (val)
+
+	if (m_input)
 		cleanScene();
+
 	emit inputChanged(val);
 }
 

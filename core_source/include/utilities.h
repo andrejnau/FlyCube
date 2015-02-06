@@ -150,18 +150,19 @@ private:
 
 #endif
 
-static std::stringstream getStream(const std::string &path)
+static std::vector<char> getStream(const std::string &path)
 {
 #if defined(ANDROID) || defined(__ANDROID__)
-	std::vector<char> v(AAssetFile::getInstance().read(path));
-	std::string str(v.begin(), v.end());
-	return std::stringstream(str);
+	return std::vector<char>(AAssetFile::getInstance().read(path));
 #else
-
 	std::ifstream is(path, std::ios::in);
-	std::stringstream buf;
-	buf << is.rdbuf();
-	return buf;
+    is.seekg(0,std::ios::end);
+    std::streampos length = is.tellg();
+    is.seekg(0,std::ios::beg);
+
+    std::vector<char> buffer(length);
+    is.read(buffer.data(), length);
+    return std::move(buffer);
 #endif
 }
 
@@ -172,8 +173,9 @@ static bool loadOBJ(const std::string &path,
 {
 	std::ios_base::sync_with_stdio(false);
 
+    std::vector<char> vec(std::move(getStream(path)));
 	std::stringstream buf, buf_split;
-	buf = std::move(getStream(path));
+    buf.rdbuf()->pubsetbuf(vec.data(), vec.size());
 
 	std::vector<GLuint> vertexIndices, uvIndices, normalIndices;
 	std::vector<glm::vec3> temp_vertices;
