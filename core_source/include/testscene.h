@@ -97,7 +97,7 @@ public:
 		std::vector<glm::vec2> uvs;
 		std::vector<glm::vec3> normals;
 		bool res = loadOBJ(m_path, vertices, uvs, normals);
-		ALOGV("status: %d", res);
+		MLOG(mlog::debug, "status: %d", res);
 		suzanneSize = vertices.size();
 
 		GLuint vboVertexS, vboNormalS;

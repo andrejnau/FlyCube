@@ -30,7 +30,7 @@ include_directories(../../core_source/include)
 qt5_wrap_ui(${PROJECT} ${UI_LIST})
 add_executable(${PROJECT} WIN32 ${HEADERS} ${SOURCES} ${UI_LIST})
 
-target_link_libraries(${PROJECT} gl_core)
+target_link_libraries(${PROJECT} gl_core mlogger)
 if (WIN32)
     target_link_libraries(${PROJECT} opengl32)
 else()

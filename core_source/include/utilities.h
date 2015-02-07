@@ -14,7 +14,7 @@ static bool checkGlError(const char* funcName)
 	GLenum err = glGetError();
 	if (err != GL_NO_ERROR)
 	{
-		ALOGE("GL error after %s(): 0x%08x\n", funcName, err);
+		DBG("GL error after %s(): 0x%08x\n", funcName, err);
 		return true;
 	}
 	return false;
@@ -45,7 +45,7 @@ static GLuint createShader(GLenum shaderType, const char* src)
 			if (infoLog)
 			{
 				glGetShaderInfoLog(shader, infoLogLen, NULL, infoLog);
-				ALOGE("Could not compile %s shader:\n%s\n",
+				DBG("Could not compile %s shader:\n%s\n",
 					shaderType == GL_VERTEX_SHADER ? "vertex" : "fragment",
 					infoLog);
 				delete[] infoLog;
@@ -86,7 +86,7 @@ static GLuint createProgram(const char* vtxSrc, const char* fragSrc)
 	glGetProgramiv(program, GL_LINK_STATUS, &linked);
 	if (linked == 0)
 	{
-		ALOGE("Could not link program");
+		DBG("Could not link program");
 		GLint infoLogLen = 0;
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLen);
 		if (infoLogLen)
@@ -95,7 +95,7 @@ static GLuint createProgram(const char* vtxSrc, const char* fragSrc)
 			if (infoLog)
 			{
 				glGetProgramInfoLog(program, infoLogLen, NULL, infoLog);
-				ALOGE("Could not link program:\n%s\n", infoLog);
+				DBG("Could not link program:\n%s\n", infoLog);
 				delete[] infoLog;
 			}
 		}
@@ -112,10 +112,12 @@ exit:
 static void printGlString(const char* name, GLenum s)
 {
 	const char* v = (const char*)glGetString(s);
-	ALOGV("GL %s: %s\n", name, v);
+	DBG("GL %s: %s\n", name, v);
 }
 
 #if defined(ANDROID) || defined(__ANDROID__)
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
 
 class AAssetFile
 {

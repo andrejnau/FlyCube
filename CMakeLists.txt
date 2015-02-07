@@ -38,6 +38,9 @@ add_library(gl_core ${HEADERS_gl_core} ${SOURCES_gl_core})
 
 #project
 add_definitions(-DPROJECT_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/core_source/res/")
+include_directories(common/mlogger/include)
+
+add_subdirectory(common)
 add_subdirectory(core_source)
 add_subdirectory(example)
 add_subdirectory(learning_tasks)

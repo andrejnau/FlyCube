@@ -1,9 +1,6 @@
 #include <jni.h>
+#include <platform.h>
 #include <testscene.h>
-
-#include <sys\types.h>
-#include <android\asset_manager.h>
-#include <android\asset_manager_jni.h>
 
 static TestScene renderer;
 
@@ -23,11 +20,11 @@ jni_declaration(init, void, JNIEnv* env, jobject obj)
     {
         if (!renderer.init())
         {
-            ALOGE("Initialize error");
+            MLOG(mlog::error, "Initialize error");
         }
     }
     else
-        ALOGE("Unsupported OpenGL ES version");
+        MLOG(mlog::error, "Unsupported OpenGL ES version");
 }
 
 jni_declaration(resize, void, JNIEnv* env, jobject obj, jint width, jint height)
@@ -42,6 +39,7 @@ jni_declaration(render, void, JNIEnv* env, jobject obj)
 
 jni_declaration(nativeSetAssetManager, void, JNIEnv* env, jobject obj, jobject assetManager)
 {
+    DBG("nativeSetAssetManager\n");
     AAssetManager* pAssetMgr = AAssetManager_fromJava(env, assetManager);
     AAssetFile::getInstance().setManager(pAssetMgr);
 }

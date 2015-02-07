@@ -26,6 +26,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 int main(void)
 {
+	//mlog::logger::get().set_filter(mlog::logger::get().severity() >= mlog::severity_level::info);
 	glfwSetErrorCallback(error_callback);
 
 	if (!glfwInit())
@@ -43,6 +44,11 @@ int main(void)
 	glfwMakeContextCurrent(window);
 
 	init_opengl();
+
+	printGlString("Version", GL_VERSION);
+	printGlString("Vendor", GL_VENDOR);
+	printGlString("Renderer", GL_RENDERER);
+	printGlString("Extensions", GL_EXTENSIONS);
 
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);

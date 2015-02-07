@@ -10,10 +10,8 @@ public:
 		return instance;
 	}
 protected:
-	SingleTon()
-	{
-	}
-	virtual ~SingleTon() { }
+	SingleTon() = default;
+	virtual ~SingleTon() = default;
 	SingleTon(const SingleTon&) = delete;
 	SingleTon& operator=(const SingleTon&) = delete;
 };

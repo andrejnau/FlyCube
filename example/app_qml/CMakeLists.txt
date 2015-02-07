@@ -31,6 +31,6 @@ include_directories(../../core_source/include)
 
 qt5_add_resources(QRC_LIST ${QRC_LIST})
 add_executable(${PROJECT} WIN32 ${HEADERS} ${SOURCES} ${QML_LIST} ${QRC_LIST})
-target_link_libraries(${PROJECT} gl_core ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT} gl_core ${OPENGL_LIBRARIES} mlogger)
 
 qt5_use_modules(${PROJECT} Qml Quick Widgets)

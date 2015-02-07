@@ -17,6 +17,7 @@ android {
            cFlags "-std=c++11 \
                    -Werror \
                    -I${project.buildDir}/../../../../core_source/include \
+                   -I${project.buildDir}/../../../../common/mlogger/include \
                    -I${project.buildDir}/../../../../3rdparty/glm"
            ldLibs "log", "GLESv3", "EGL", "android"
            stl "c++_shared"
