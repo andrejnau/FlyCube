@@ -12,8 +12,8 @@ else()
 endif()
 
 #glfw
-add_subdirectory(3rdparty/glfw-3.0.4)
-include_directories(3rdparty/glfw-3.0.4/include)
+add_subdirectory(3rdparty/glfw-3.1)
+include_directories(3rdparty/glfw-3.1/include)
 add_definitions("-DGLFW_INCLUDE_NONE")
 
 #glm

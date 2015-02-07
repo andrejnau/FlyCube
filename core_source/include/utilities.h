@@ -137,7 +137,7 @@ public:
 			AAsset_read(asset, &ret[0], len);
 			AAsset_close(asset);
 		};
-		return ret;
+		return std::move(ret);
 	}
 
 	void setManager(AAssetManager* pAssetMgr)
@@ -153,11 +153,11 @@ private:
 static std::vector<char> getStream(const std::string &path)
 {
 #if defined(ANDROID) || defined(__ANDROID__)
-	return std::vector<char>(AAssetFile::getInstance().read(path));
+	return AAssetFile::getInstance().read(path);
 #else
 	std::ifstream is(path, std::ios::in);
     is.seekg(0,std::ios::end);
-    std::streampos length = is.tellg();
+    size_t length = (size_t)is.tellg();
     is.seekg(0,std::ios::beg);
 
     std::vector<char> buffer(length);
@@ -173,9 +173,9 @@ static bool loadOBJ(const std::string &path,
 {
 	std::ios_base::sync_with_stdio(false);
 
-    std::vector<char> vec(std::move(getStream(path)));
+    std::vector<char> vec(getStream(path));
 	std::stringstream buf, buf_split;
-    buf.rdbuf()->pubsetbuf(vec.data(), vec.size());
+	std::copy(vec.begin(), vec.end(), std::ostreambuf_iterator<char>(buf));
 
 	std::vector<GLuint> vertexIndices, uvIndices, normalIndices;
 	std::vector<glm::vec3> temp_vertices;
