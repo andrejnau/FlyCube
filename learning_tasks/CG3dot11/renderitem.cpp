@@ -113,6 +113,8 @@ void RenderItem::finishBox()
     input_polygon.add_point(m_points.back());
 
     input_polygon.finish_box();
+
+    emit finishInput();
 }
 
 void RenderItem::paint()

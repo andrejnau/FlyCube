@@ -11,7 +11,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(Qt5Core    REQUIRED)
 find_package(Qt5Gui     REQUIRED)
 find_package(Qt5Widgets REQUIRED)
-find_package(OpenGL REQUIRED)
 
 if (NOT Qt5Core_FOUND)
 	message("Example ${target} skipped: Qt5 not found")
@@ -31,6 +30,6 @@ include_directories(../../core_source/include)
 
 qt5_add_resources(QRC_LIST ${QRC_LIST})
 add_executable(${PROJECT} WIN32 ${HEADERS} ${SOURCES} ${QML_LIST} ${QRC_LIST})
-target_link_libraries(${PROJECT} gl_core ${OPENGL_LIBRARIES} mlogger)
+target_link_libraries(${PROJECT} gl_core mlogger)
 
 qt5_use_modules(${PROJECT} Qml Quick Widgets)

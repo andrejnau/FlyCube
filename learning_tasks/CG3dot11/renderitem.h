@@ -18,6 +18,7 @@ public:
     bool isInput() const;
 signals:
     void inputChanged(bool);
+    void finishInput();
 public slots:
     void doSendPoint(int, int);
     void doSendFuturePoint(int, int);

@@ -18,52 +18,20 @@ Item {
 
         onInputChanged: {
             if (actionApp.input)
-                canvas.qmlFunctionClear()
-        }
-    }
-
-    Canvas {
-        id: canvas
-
-        width: parent.width
-        height: parent.height
-        property variant drawXArray: Array()
-        property variant drawYArray: Array()
-        property variant drawTypeArray: Array()
-
-        function qmlFunctionDraw(drawX, drawY, drawType) {
-            console.log("qmlFunctionDraw")
-            drawXArray.push(drawX)
-            drawYArray.push(drawY)
-            drawTypeArray.push(drawType)
-            canvas.requestPaint()
-        }
-
-        function qmlFunctionClear(drawX, drawY, drawType) {
-            console.log("qmlFunctionClear")
-            drawXArray = new Array()
-            drawYArray = new Array()
-            drawTypeArray = new Array()
-            canvas.requestPaint()
-        }
-
-        onPaint: {
-            console.log("onPaint", drawTypeArray.length)
-            var ctx = getContext("2d")
-            ctx.clearRect(0, 0, width, height)
-            for (var i = 0; i < drawTypeArray.length; ++i) {
-                console.log(drawXArray[i], drawYArray[i], drawTypeArray[i]);
-                ctx.moveTo(drawXArray[i], drawYArray[i])
-                ctx.fillStyle = "gray";
-                if (drawTypeArray[i] === 1)
-                    ctx.fillStyle = "green";
-                else if (drawTypeArray[i] === -1)
-                    ctx.fillStyle = "red";
-                ctx.beginPath();
-                ctx.arc(drawXArray[i], drawYArray[i], 15, 0,Math.PI*2,true);
-                ctx.fill();
-                ctx.restore();
+            {
+                label.visible = true;
+                label.text = "Select 3 points parallelepiped base"
             }
+            else
+            {
+                label.visible = false
+                label.text = ""
+            }
+        }
+
+        onFinishInput: {
+            label.visible = true
+            label.text = "Select the direction of the beam"
         }
     }
 
@@ -91,6 +59,30 @@ Item {
         }
     }
 
+    MouseArea {
+        id: mouse_area_beam
+        anchors.rightMargin: 0
+        anchors.bottomMargin: 0
+        anchors.leftMargin: 0
+        anchors.topMargin: 0
+        enabled: false
+        anchors.fill: parent
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+        hoverEnabled: true
+
+        onPositionChanged : {
+            console.log(mouseX)
+            console.log(mouseY)
+            actionApp.doSendFuturePoint(mouseX, mouseY)
+        }
+        onClicked: {
+            console.log(mouseX)
+            console.log(mouseY)
+            actionApp.doSendPoint(mouseX, mouseY)
+        }
+    }
+
     ToolButton {
         width: contentIcon.width
         height: contentIcon.height
@@ -101,5 +93,17 @@ Item {
         }
 
         onClicked: actionApp.input = true
+    }
+
+    Text {
+       id: label
+       color: "black"
+       visible: false
+       wrapMode: Text.WordWrap
+       anchors.topMargin: 20
+       anchors.leftMargin: 20
+       anchors.right: parent.right
+       anchors.top:  parent.top
+       anchors.margins: 20
     }
 }

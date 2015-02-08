@@ -8,8 +8,6 @@ set (SOURCES
 
 include_directories(../../core_source/include)
 
-find_package(OpenGL REQUIRED)
-
 if (MSVC)
     add_executable(${PROJECT} ${SOURCES})
     set_target_properties(${PROJECT} PROPERTIES
@@ -18,4 +16,4 @@ else()
     add_executable(${PROJECT} ${SOURCES})
 endif()
 
-target_link_libraries(${PROJECT} glfw ${GLFW_LIBRARIES} gl_core ${OPENGL_LIBRARIES} mlogger)
+target_link_libraries(${PROJECT} glfw ${GLFW_LIBRARIES} gl_core mlogger)
