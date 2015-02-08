@@ -5,6 +5,7 @@
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QOpenGLContext>
+#include <assert.h>
 
 #include <memory>
 
@@ -22,6 +23,7 @@ signals:
 public slots:
     void doSendPoint(int, int);
     void doSendFuturePoint(int, int);
+    void doButton();
     void setInput(bool);
 private slots:
     void sync();
@@ -33,9 +35,12 @@ private:
     void paintPolygon();
     void cleanScene();
     void finishBox();
+    void Birefringence();
 private:
+    bool m_inputRay;
     bool m_input;
     std::vector<glm::vec2> m_points;
+    std::vector<glm::vec2> m_box;
     PrintPolygon &input_polygon;
     std::unique_ptr<QOpenGLContext> ctx;
 };

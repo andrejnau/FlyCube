@@ -59,30 +59,6 @@ Item {
         }
     }
 
-    MouseArea {
-        id: mouse_area_beam
-        anchors.rightMargin: 0
-        anchors.bottomMargin: 0
-        anchors.leftMargin: 0
-        anchors.topMargin: 0
-        enabled: false
-        anchors.fill: parent
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-
-        hoverEnabled: true
-
-        onPositionChanged : {
-            console.log(mouseX)
-            console.log(mouseY)
-            actionApp.doSendFuturePoint(mouseX, mouseY)
-        }
-        onClicked: {
-            console.log(mouseX)
-            console.log(mouseY)
-            actionApp.doSendPoint(mouseX, mouseY)
-        }
-    }
-
     ToolButton {
         width: contentIcon.width
         height: contentIcon.height
@@ -92,7 +68,7 @@ Item {
             source: "icons/ic_note_add_black_18dp.png"
         }
 
-        onClicked: actionApp.input = true
+        onClicked: actionApp.doButton()
     }
 
     Text {

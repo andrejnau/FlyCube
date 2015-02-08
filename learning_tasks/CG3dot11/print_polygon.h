@@ -57,7 +57,7 @@ public:
 	{
 	}
 
-    void add_point(glm::vec2 val)
+	void add_point(glm::vec2 val)
 	{
 		f_input_line = false;
 
@@ -66,7 +66,7 @@ public:
 		{
 			vec.push_back(line(point[point.size() - 2], val));
 		}
-        init_vao_wireframe();
+		init_vao_wireframe();
 	}
 
 	void future_point(glm::vec2 val)
@@ -76,25 +76,36 @@ public:
 			input_line = line(point[point.size() - 1], val);
 			f_input_line = true;
 		}
-        init_vao_wireframe();
+		init_vao_wireframe();
 	}
 
-    void finish_box()
-    {
-        m_finish_box = true;
+	void finish_box()
+	{
+		m_finish_box = true;
 		if (!point.empty())
 			point.pop_back();
 		elements = { 0, 1, 2, 2, 3, 0 };
 		init_vao_box();
-    }
+		point.clear();
+		//vec.clear();
+	}
 
 	void clear()
 	{
 		point.clear();
 		vec.clear();
 		f_input_line = false;
-        init_vao_wireframe();
-        m_finish_box = false;
+		init_vao_wireframe();
+		m_finish_box = false;
+	}
+
+	void clear_point()
+	{
+		f_input_line = false;
+		point.clear();
+		if (!vec.empty())
+			vec.pop_back();
+		init_vao_wireframe();
 	}
 
 	bool init()
@@ -105,7 +116,7 @@ public:
 		mProgram = createProgram(VERTEX_SHADERP, FRAGMENT_SHADERP);
 
 		mProgramBox = createProgram(VERTEX_SHADERP, FRAGMENT_SHADERP_BOX);
-		
+
 		if (!mProgram || !mProgramBox)
 			return false;
 
@@ -126,9 +137,9 @@ public:
 		glGenBuffers(1, &vboElemcurBox);
 
 		return isInit = true;
-    }
+	}
 
-    void init_vao_wireframe()
+	void init_vao_wireframe()
 	{
 		glBindVertexArray(vaoObjectPoint);
 		glBindBuffer(GL_ARRAY_BUFFER, vboVertexPoint);
@@ -166,18 +177,21 @@ public:
 		glBindVertexArray(0);
 	}
 
-    void draw()
-    {
-        if (!m_finish_box)
-            draw_wireframe();
-        else
-            draw_polygon();
-    }
-
-    void draw_polygon()
-    {
-        glClearColor(0.9411f, 0.9411f, 0.9411f, 1.0f);
+	void draw()
+	{
+		glClearColor(0.9411f, 0.9411f, 0.9411f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		if (!m_finish_box)
+			draw_wireframe();
+		else
+		{
+			draw_wireframe();
+			draw_polygon();
+		}
+	}
+
+	void draw_polygon()
+	{
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glUseProgram(mProgramBox);
@@ -193,13 +207,11 @@ public:
 		glBindVertexArray(vaoObjectLine);
 		glDrawArrays(GL_LINES, 0, 2 * vec.size());
 		glBindVertexArray(0);
-    }
+	}
 
-    void draw_wireframe()
+	void draw_wireframe()
 	{
-		glClearColor(0.9411f, 0.9411f, 0.9411f, 1.0f);
 		glLineWidth(2);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(mProgram);
 		glUniformMatrix4fv(loc_u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
@@ -242,7 +254,7 @@ private:
 	bool isInput;
 	glm::mat4 Matrix;
 
-    bool m_finish_box = false;
+	bool m_finish_box = false;
 
 	std::vector<glm::vec2> point;
 	std::vector<line> vec;

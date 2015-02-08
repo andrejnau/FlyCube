@@ -16,7 +16,7 @@
 #endif
 #define MLOG_RUN(lvl, ...) __android_log_print(mlog::get_value(lvl), LOG_TAG, __VA_ARGS__);
 #else
-#define MLOG_RUN(lvl,  ...) printf(__VA_ARGS__); printf("\n");
+#define MLOG_RUN(lvl,  ...) printf(__VA_ARGS__); printf("\n"); fflush(stdout);
 #endif
 
 #define MLOG(lvl, ...) \
