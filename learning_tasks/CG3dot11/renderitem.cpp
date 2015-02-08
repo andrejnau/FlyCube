@@ -65,11 +65,11 @@ void RenderItem::doSendPoint(int point_x, int point_y)
 	std::tie(point.x, point.y) = pointToGL(point_x, point_y);
 	input_polygon.add_point(point);
 	m_points.push_back(point);
-    if (!m_inputRay && m_points.size() >= 3)
+	if (!m_inputRay && m_points.size() >= 3)
 	{
 		finishBox();
 	}
-    else if (m_inputRay && m_points.size() >= 2)
+	else if (m_inputRay && m_points.size() >= 2)
 	{
 		input_polygon.clear_point();
 		setInput(false);
@@ -88,9 +88,10 @@ void RenderItem::doSendFuturePoint(int point_x, int point_y)
 void RenderItem::doButton()
 {
 	cleanScene();
-    m_inputRay = false;
+	m_inputRay = false;
 	setInput(true);
 	emit inputChanged(m_input);
+	emit setLabel("Select 3 points parallelepiped base");
 }
 
 void RenderItem::handleWindowChanged(QQuickWindow *win)
@@ -127,8 +128,8 @@ void RenderItem::finishBox()
 	m_box = std::move(m_points);
 	m_points.clear();
 
-	emit finishInput();
-    m_inputRay = true;
+	emit setLabel("Select the direction of the ray");
+	m_inputRay = true;
 }
 
 std::tuple<float, float, float> getEquation(glm::vec2 a, glm::vec2 b)
@@ -140,7 +141,7 @@ std::tuple<float, float, float> getEquation(glm::vec2 a, glm::vec2 b)
 	return std::make_tuple(A, B, C);
 }
 
-bool beam_accessory(std::vector<std::pair<float, float> > v)
+bool Ray_accessory(std::vector<std::pair<float, float> > v)
 {
 	auto mdist = [](std::pair<float, float> &a, std::pair<float, float> &b) -> float
 	{
@@ -160,16 +161,12 @@ bool beam_accessory(std::vector<std::pair<float, float> > v)
 	return (fabs(ans) < 1e-6);
 }
 
-void RenderItem::Birefringence()
+std::pair<int, glm::vec2> RenderItem::cross_with_box(glm::vec2 c, glm::vec2 d)
 {
-	assert(m_box.size() == 5 && m_points.size() == 2);
-
-	glm::vec2 c = m_points[0];
-	glm::vec2 d = m_points[1];
-
 	std::vector<glm::vec2> mcross;
+	std::vector<int> mcross_id;
 
-	for (int i = 0; i < m_box.size() - 1; ++i)
+	for (int i = 0; i < (int)m_box.size() - 1; ++i)
 	{
 		glm::vec2 a = m_box[i];
 		glm::vec2 b = m_box[i + 1];
@@ -187,35 +184,116 @@ void RenderItem::Birefringence()
 
 		float ymin = std::min(a.y, b.y);
 		float ymax = std::max(a.y, b.y);
-		float eps = 1e-6;
+		float eps = 1e-6f;
 		if ((xcross > xmin || (fabs(xcross - xmin) < eps)) && (xcross < xmax || (fabs(xcross - xmax) < eps)) &&
 			(ycross > ymin || (fabs(ycross - ymin) < eps)) && (ycross < ymax || (fabs(ycross - ymax) < eps)))
 		{
 			mcross.push_back(glm::vec2(xcross, ycross));
+			mcross_id.push_back(i);
 		}
 	}
 	glm::vec2 point_cross;
+	int idWrite = -1;
 	float dist_to_cross = 1e9;
-	for (int i = 0; i < mcross.size(); ++i)
+	for (int i = 0; i < (int)mcross.size(); ++i)
 	{
-		if (beam_accessory
+		if (Ray_accessory
 			(
 		{
 			{ mcross[i].x, mcross[i].y },
-			{ m_points[0].x, m_points[0].y },
-			{ m_points[1].x, m_points[1].y }
+			{ c.x, c.y },
+			{ d.x, d.y }
 		}))
 		{
-			float d = dist(mcross[i], m_points[0]);
-			if (d < dist_to_cross)
+			float _d = dist(mcross[i], d);
+			if (_d < dist_to_cross)
 			{
-				dist_to_cross = d;
+				dist_to_cross = _d;
 				point_cross = mcross[i];
+				idWrite = mcross_id[i];
 			}
 		}
 	}
+	return{ idWrite, point_cross };
+}
 
-	DBG("%.3f %.3f", point_cross.x, point_cross.y);
+float getAngle(glm::vec2 a, glm::vec2 b)
+{
+	return acos((a.x*b.x + a.y*b.y) / sqrt(a.x*a.x + a.y*a.y) / sqrt(b.x*b.x + b.y*b.y));
+}
+
+glm::vec2 rotate(glm::vec2 point, float angle)
+{
+	glm::vec2 rotated_point;
+	rotated_point.x = point.x * cos(angle) - point.y * sin(angle);
+	rotated_point.y = point.x * sin(angle) + point.y * cos(angle);
+	float d = dist(point, rotated_point);
+	return rotated_point;
+}
+
+glm::vec2 calc_refraction(glm::vec2 ray_a, glm::vec2 ray_b, glm::vec2 normal, float n1, float n2)
+{
+	normal = 2.0f * glm::normalize(normal);
+
+	if (dist(ray_a, ray_b + normal) < dist(ray_a, ray_b - normal))
+		normal = -normal;
+
+	glm::vec2 vec_ray = ray_b - ray_a;
+	float alpha = getAngle(normal, vec_ray);
+	float sinAlpha = sin(alpha);
+
+	float sinBetta = sinAlpha * n1 / n2;
+
+	float betta = asin(sinBetta);
+	glm::vec2 veca = ray_b - ray_a;
+	glm::vec2 vecb = ray_b - normal;
+	if ((veca.x * vecb.y - veca.y * vecb.x) < 0.0f)
+		betta = -betta;
+
+	return ray_b + rotate(normal, betta);
+}
+
+void RenderItem::Birefringence()
+{
+	assert(m_box.size() == 5u && m_points.size() == 2u);
+
+	glm::vec2 c = m_points[0];
+	glm::vec2 d = m_points[1];
+	glm::vec2 vec_ray = d - c;
+
+	glm::vec2 point_cross;
+	int idWrite;
+	std::tie(idWrite, point_cross) = cross_with_box(c, d);
+
+	if (idWrite == -1)
+	{
+		std::vector<line> output;
+		output.push_back(std::make_pair(c, c + (d - c) * 10.0f));
+		input_polygon.set_ray(output);
+		return;
+	}
+
+	glm::vec2 normal;
+
+	std::tie(normal.x, normal.y, std::ignore) = getEquation(m_box[idWrite], m_box[idWrite + 1]);
+	glm::vec2 point_ref_res = calc_refraction(c, point_cross, normal, 1.0f, 1.33f);
+
+	glm::vec2 point_cross_out;
+	std::tie(idWrite, point_cross_out) = cross_with_box(point_cross, point_ref_res);
+	assert(idWrite != -1);
+
+	glm::vec2 normal_out;
+	std::tie(normal_out.x, normal_out.y, std::ignore) = getEquation(m_box[idWrite], m_box[idWrite + 1]);
+	glm::vec2 point_ref_res_end = calc_refraction(point_cross, point_cross_out, normal_out, 1.33f, 1.0f);
+
+	std::vector<line> output;
+	output.push_back(std::make_pair(c, point_cross));
+	output.push_back(std::make_pair(point_cross, point_cross_out));
+	if (!std::isnan(point_ref_res_end.x))
+		output.push_back(std::make_pair(point_cross_out, point_ref_res_end));
+	else
+		emit setLabel("Total internal reflection");
+	input_polygon.set_ray(output);
 }
 
 void RenderItem::paint()

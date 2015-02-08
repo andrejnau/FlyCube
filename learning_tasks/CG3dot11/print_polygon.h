@@ -81,6 +81,8 @@ public:
 
 	void finish_box()
 	{
+        vec_ray.clear();
+        init_vao_ray();
 		m_finish_box = true;
 		if (!point.empty())
 			point.pop_back();
@@ -94,6 +96,8 @@ public:
 	{
 		point.clear();
 		vec.clear();
+        vec_ray.clear();
+        init_vao_ray();
 		f_input_line = false;
 		init_vao_wireframe();
 		m_finish_box = false;
@@ -132,9 +136,22 @@ public:
 		glGenVertexArrays(1, &vaoObjectcurLine);
 		glGenBuffers(1, &vboVertexcurLine);
 
+
+        glGenVertexArrays(1, &vaoObjectRay);
+        glGenBuffers(1, &vboVertexRay);
+
 		glGenVertexArrays(1, &vaoObjectcurBox);
 		glGenBuffers(1, &vboVertexcurBox);
 		glGenBuffers(1, &vboElemcurBox);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glEnable(GL_LINE_SMOOTH);
+        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+
+        glEnable(GL_POLYGON_SMOOTH);
+        glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
 		return isInit = true;
 	}
@@ -186,14 +203,39 @@ public:
 		else
 		{
 			draw_wireframe();
+            draw_ray();
 			draw_polygon();
 		}
 	}
 
+    void set_ray(const std::vector<line> &vec)
+    {
+        vec_ray = vec;
+        init_vao_ray();
+    }
+
+    void init_vao_ray()
+    {
+        glBindVertexArray(vaoObjectRay);
+        glBindBuffer(GL_ARRAY_BUFFER, vboVertexRay);
+        glBufferData(GL_ARRAY_BUFFER, 2 * vec_ray.size() * sizeof(glm::vec2), vec_ray.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(POS_ATTRIB, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(POS_ATTRIB);
+        glBindVertexArray(0);
+    }
+
+    void draw_ray()
+    {
+        glUseProgram(mProgram);
+        glUniformMatrix4fv(loc_u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+
+        glBindVertexArray(vaoObjectRay);
+        glDrawArrays(GL_LINES, 0, 2 * vec_ray.size());
+        glBindVertexArray(0);
+    }
+
 	void draw_polygon()
 	{
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glUseProgram(mProgramBox);
 		glUniformMatrix4fv(loc_u_m4MVP_box, 1, GL_FALSE, glm::value_ptr(Matrix));
 
@@ -258,6 +300,7 @@ private:
 
 	std::vector<glm::vec2> point;
 	std::vector<line> vec;
+    std::vector<line> vec_ray;
 	std::vector<GLuint> elements;
 
 	int m_width;
@@ -281,6 +324,9 @@ private:
 	GLuint vaoObjectcurBox;
 	GLuint vboVertexcurBox;
 	GLuint vboElemcurBox;
+
+    GLuint vaoObjectRay;
+    GLuint vboVertexRay;
 
 	GLint loc_u_m4MVP;
 	GLint loc_u_m4MVP_box;

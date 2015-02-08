@@ -16,22 +16,14 @@ Item {
             running: true
         }
 
-        onInputChanged: {
-            if (actionApp.input)
-            {
-                label.visible = true;
-                label.text = "Select 3 points parallelepiped base"
-            }
-            else
-            {
-                label.visible = false
-                label.text = ""
-            }
+        onSetLabel : {
+            label.visible = true;
+            label.text = str;
         }
 
-        onFinishInput: {
-            label.visible = true
-            label.text = "Select the direction of the beam"
+        onInputChanged: {
+            if (!actionApp.input)
+                label.visible = false
         }
     }
 
@@ -72,14 +64,14 @@ Item {
     }
 
     Text {
-       id: label
-       color: "black"
-       visible: false
-       wrapMode: Text.WordWrap
-       anchors.topMargin: 20
-       anchors.leftMargin: 20
-       anchors.right: parent.right
-       anchors.top:  parent.top
-       anchors.margins: 20
+        id: label
+        color: "black"
+        visible: false
+        wrapMode: Text.WordWrap
+        anchors.topMargin: 20
+        anchors.leftMargin: 20
+        anchors.right: parent.right
+        anchors.top:  parent.top
+        anchors.margins: 20
     }
 }

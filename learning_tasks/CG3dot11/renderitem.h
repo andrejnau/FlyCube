@@ -5,6 +5,7 @@
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QOpenGLContext>
+#include <QString>
 #include <assert.h>
 
 #include <memory>
@@ -19,7 +20,7 @@ public:
     bool isInput() const;
 signals:
     void inputChanged(bool);
-    void finishInput();
+    void setLabel(QString str);
 public slots:
     void doSendPoint(int, int);
     void doSendFuturePoint(int, int);
@@ -36,6 +37,7 @@ private:
     void cleanScene();
     void finishBox();
     void Birefringence();
+    std::pair<int, glm::vec2> cross_with_box(glm::vec2, glm::vec2);
 private:
     bool m_inputRay;
     bool m_input;
