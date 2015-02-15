@@ -20,7 +20,7 @@ private:
 };
 
 RenderItem::RenderItem() : input_polygon(PrintPolygon::Instance()),
-    m_input(false), m_inputRay(false), m_val_n1("1.0"), m_val_n2("1.33")
+m_input(false), m_inputRay(false), m_val_n1("1.0"), m_val_n2("1.33")
 {
 	connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
 	ctx.reset(new QOpenGLContext(this));
@@ -34,47 +34,47 @@ bool RenderItem::isInput() const
 
 QString RenderItem::getN1() const
 {
-    return m_val_n1;
+	return m_val_n1;
 }
 
 QString RenderItem::getN2() const
 {
-    return m_val_n2;
+	return m_val_n2;
 }
 
 void RenderItem::setInput(bool val)
 {
-    if (m_input == val)
-        return;
+	if (m_input == val)
+		return;
 
-    m_input = val;
+	m_input = val;
 
 	emit inputChanged(val);
 }
 
 void RenderItem::setN1(QString arg)
 {
-    if (m_val_n1 == arg)
-        return;
+	if (m_val_n1 == arg)
+		return;
 
-    m_val_n1 = arg;
-    emit changedN1(arg);
+	m_val_n1 = arg;
+	emit changedN1(arg);
 }
 
 void RenderItem::setN2(QString arg)
 {
-    if (m_val_n2 == arg)
-        return;
+	if (m_val_n2 == arg)
+		return;
 
-    m_val_n2 = arg;
-    emit changedN2(arg);
+	m_val_n2 = arg;
+	emit changedN2(arg);
 }
 
 std::pair<float, float> RenderItem::pointToGL(int point_x, int point_y)
 {
-    int m_width = this->window()->width();
-    int m_height = this->window()->height();
-    float ratio = (float)m_height / (float)m_width;
+	int m_width = this->window()->width();
+	int m_height = this->window()->height();
+	float ratio = (float)m_height / (float)m_width;
 	float XPixelSize = 2.0f * (1.0f * point_x / m_width);
 	float YPixelSize = 2.0f * (1.0f * point_y / m_height);
 	float Xposition = XPixelSize - 1.0f;
@@ -260,7 +260,7 @@ glm::vec2 rotate(glm::vec2 point, float angle)
 	return rotated_point;
 }
 
-glm::vec2 calc_refraction(glm::vec2 ray_a, glm::vec2 ray_b, glm::vec2 normal, float n1, float n2)
+std::pair<glm::vec2, bool> calc_refraction(glm::vec2 ray_a, glm::vec2 ray_b, glm::vec2 normal, float n1, float n2)
 {
 	normal = 2.0f * glm::normalize(normal);
 
@@ -270,28 +270,34 @@ glm::vec2 calc_refraction(glm::vec2 ray_a, glm::vec2 ray_b, glm::vec2 normal, fl
 	glm::vec2 vec_ray = ray_b - ray_a;
 	float alpha = getAngle(normal, vec_ray);
 	float sinAlpha = sin(alpha);
-
 	float sinBetta = sinAlpha * n1 / n2;
-
 	float betta = asin(sinBetta);
-	glm::vec2 veca = ray_b - ray_a;
-	glm::vec2 vecb = ray_b - normal;
-	if ((veca.x * vecb.y - veca.y * vecb.x) < 0.0f)
-		betta = -betta;
 
-	return ray_b + rotate(normal, betta);
+	if (!std::isnan(betta))
+	{
+		glm::vec2 veca = ray_b - ray_a;
+		glm::vec2 vecb = ray_b - normal;
+		if ((veca.x * vecb.y - veca.y * vecb.x) < 0.0f)
+			betta = -betta;
+
+		return std::make_pair(ray_b + rotate(normal, betta), true);
+	}
+	else
+	{
+		glm::vec2 veca = ray_b - ray_a;
+		glm::vec2 vecb = ray_b + normal;
+		if ((veca.x * vecb.y - veca.y * vecb.x) < 0.0f)
+			alpha = -alpha;
+
+		return std::make_pair(ray_b + rotate(-normal, alpha), false);
+	}
 }
 
-void RenderItem::Birefringence()
+int RenderItem::iteration(int cnt, float n1, float n2, glm::vec2 c, glm::vec2 d, std::vector<line> & output, glm::vec2& out_a, glm::vec2& out_b)
 {
-	m_val_n1.replace(",", ".");
-	m_val_n1.replace(",", ".");
-    float n1 = m_val_n1.toDouble();
-    float n2 = m_val_n2.toDouble();
-	assert(m_box.size() == 5u && m_points.size() == 2u);
+	if (cnt == 0)
+		std::swap(n1, n2);
 
-	glm::vec2 c = m_points[0];
-	glm::vec2 d = m_points[1];
 	glm::vec2 vec_ray = d - c;
 
 	glm::vec2 point_cross;
@@ -300,32 +306,53 @@ void RenderItem::Birefringence()
 
 	if (idWrite == -1)
 	{
-		std::vector<line> output;
-		output.push_back(std::make_pair(c, c + (d - c) * 10.0f));
-		input_polygon.set_ray(output);
-		return;
+		out_a = c;
+		out_b = c + (d - c) * 10.0f;
+		return cnt = 1;
 	}
 
 	glm::vec2 normal;
-
 	std::tie(normal.x, normal.y, std::ignore) = getEquation(m_box[idWrite], m_box[idWrite + 1]);
-    glm::vec2 point_ref_res = calc_refraction(c, point_cross, normal, n1, n2);
+	auto ret = calc_refraction(c, point_cross, normal, n1, n2);
+	glm::vec2 point_ref_res = ret.first;
 
-	glm::vec2 point_cross_out;
-	std::tie(idWrite, point_cross_out) = cross_with_box(point_cross, point_ref_res);
-	assert(idWrite != -1);
+	if (ret.second == true)
+		++cnt;
 
-	glm::vec2 normal_out;
-	std::tie(normal_out.x, normal_out.y, std::ignore) = getEquation(m_box[idWrite], m_box[idWrite + 1]);
-    glm::vec2 point_ref_res_end = calc_refraction(point_cross, point_cross_out, normal_out, n2, n1);
-
-	std::vector<line> output;
 	output.push_back(std::make_pair(c, point_cross));
-	output.push_back(std::make_pair(point_cross, point_cross_out));
-	if (!std::isnan(point_ref_res_end.x))
-		output.push_back(std::make_pair(point_cross_out, point_ref_res_end));
-	else
-		emit setLabel("Total internal reflection");
+	out_a = point_cross;
+	out_b = point_ref_res;
+
+	if (ret.second == false && cnt != 0)
+		cnt = 1;
+	return cnt;
+}
+
+void RenderItem::Birefringence()
+{
+	m_val_n1.replace(",", ".");
+	m_val_n1.replace(",", ".");
+	float n1 = m_val_n1.toDouble();
+	float n2 = m_val_n2.toDouble();
+	assert(m_box.size() == 5u && m_points.size() == 2u);
+
+	glm::vec2 c = m_points[0];
+	glm::vec2 d = m_points[1];
+	std::vector<line> output;
+	glm::vec2 point_a, point_b;
+	int cnt = -1;
+	for (int i = 0; i < 10; ++i)
+	{
+		cnt = iteration(cnt, n1, n2, c, d, output, point_a, point_b);
+		c = point_a;
+		d = point_b;
+		if (cnt > 0)
+		{
+			output.push_back(std::make_pair(c, d));
+			break;
+		}
+	}
+
 	input_polygon.set_ray(output);
 }
 

@@ -45,6 +45,7 @@ private:
     void cleanScene();
     void finishBox();
     void Birefringence();
+	int iteration(int cnt, float n1, float n2, glm::vec2 c, glm::vec2 d, std::vector<line> & output, glm::vec2& out_a, glm::vec2& out_b);
     std::pair<int, glm::vec2> cross_with_box(glm::vec2, glm::vec2);
 private:
     bool m_inputRay;
