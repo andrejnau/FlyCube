@@ -16,7 +16,7 @@ Item {
             running: true
         }
 
-        onSetLabel : {
+        onSetLabel: {
             label.visible = true;
             label.text = str;
         }
@@ -48,6 +48,40 @@ Item {
             console.log(mouseX)
             console.log(mouseY)
             actionApp.doSendPoint(mouseX, mouseY)
+        }
+
+        TextField {
+            id: textFieldN1
+            width: 75
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.rightMargin: 10
+            anchors.bottomMargin: 35
+            text: actionApp.val_n1
+            onTextChanged: actionApp.val_n1 = text
+            placeholderText: qsTr("N1")
+            validator: DoubleValidator {
+                bottom: 0.01
+                top: 10
+                locale: "C"
+            }
+        }
+
+        TextField {
+            id: textFieldN2
+            width: 75
+            text: actionApp.val_n2
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.rightMargin: 10
+            anchors.bottomMargin: 10
+            onTextChanged: actionApp.val_n2 = text
+            placeholderText: qsTr("N2")
+            validator: DoubleValidator {
+                bottom: 0.01
+                top: 10
+                locale: "C"
+            }
         }
     }
 
