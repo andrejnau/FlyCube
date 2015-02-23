@@ -10,7 +10,7 @@
 
 using line = std::pair<glm::vec2, glm::vec2>;
 
-static float dist(glm::vec2 &a, glm::vec2 &b)
+static float dist(glm::vec2 a, glm::vec2 b)
 {
 	return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
