@@ -84,25 +84,28 @@ public:
 		loc_lightPosition = glGetUniformLocation(mProgram, "u_lightPosition");
 		loc_camera = glGetUniformLocation(mProgram, "u_camera");
 
-		glGenVertexArrays(1, &vaoSuzannet);
-		glBindVertexArray(vaoSuzannet);
+
 
 #if defined(ANDROID) || defined(__ANDROID__)
 		std::string m_path("suzanne.obj");
 #else
-		std::string m_path(PROJECT_RESOURCE_DIR "/obj-model/suzanne.obj");
+		std::string m_path(PROJECT_RESOURCE_DIR "/obj-model/cube.obj");
+		std::string m_path2(PROJECT_RESOURCE_DIR "/obj-model/rainbow_dash_all-in-one.obj");
 #endif
 
-		std::vector<glm::vec3> vertices;
-		std::vector<glm::vec2> uvs;
-		std::vector<glm::vec3> normals;
-		bool res = loadOBJ(m_path, vertices, uvs, normals);
-		MLOG(mlog::debug, "status: %d", res);
-		suzanneSize = vertices.size();
+		loadOBJ(m_path, verticesA, uvsA, normalsA);
+		loadOBJ(m_path2, verticesB, uvsB, normalsB);
 
-		GLuint vboVertexS, vboNormalS;
 		glGenBuffers(1, &vboVertexS);
 		glGenBuffers(1, &vboNormalS);
+		glGenVertexArrays(1, &vaoObject);
+		init_step();
+		return true;
+	}
+
+	void init_vao()
+	{
+		glBindVertexArray(vaoObject);
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboVertexS);
 		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
@@ -114,17 +117,56 @@ public:
 		glVertexAttribPointer(NORMAL_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 		glEnableVertexAttribArray(NORMAL_ATTRIB);
 		glBindVertexArray(0);
-
-		return true;
 	}
 
 	void destroy()
 	{
+	}
 
+	static float dist(glm::vec3 &a, glm::vec3 &b)
+	{
+		return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z));
+	}
+
+	void init_step()
+	{
+		vertices = verticesB;
+		normals = normalsB;
+
+		m_bind.resize(verticesB.size());
+		for (int i = 0; i < verticesB.size(); ++i)
+		{
+			auto & cur = verticesB[i];
+			int id = -1;
+			float mdist = 1e9;
+			for (int j = 0; j < verticesA.size(); ++j)
+			{
+				auto q = dist(cur, verticesA[j]);
+				if (q < mdist)
+				{
+					mdist = q;
+					id = j;
+				}
+			}
+			m_bind[i] = id;
+		}
+		init_vao();
+	}
+
+	void next_step(int cur, int all)
+	{
+		for (int i = 0; i < vertices.size(); ++i)
+		{
+			auto & A = verticesB[i];
+			auto & B = verticesA[m_bind[i]];
+			vertices[i] = A + ((B - A) / (1.0f * all)) * (1.0f * cur);
+		}
+		init_vao();
 	}
 
 	void draw_cube()
 	{
+
 		static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now(), end = std::chrono::system_clock::now();
 
 		end = std::chrono::system_clock::now();
@@ -133,7 +175,30 @@ public:
 
 		static float f = 0;
 		static float fl = 0;
-		fl += elapsed / 1000.0f;
+		//fl += elapsed / 1000.0f;
+		f += elapsed / 1000.0f;
+
+		static int id = 0, all = 1000;
+		static bool qq = false;
+
+		if (id == all)
+		{
+			qq = true;
+		}
+
+		if (qq)
+		{
+			id -= 2;
+		}
+
+		if (id < 0 && qq)
+		{
+			id = 0;
+			qq = 0;
+		}
+
+		next_step(id++, all);
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(mProgram);
 
@@ -153,10 +218,10 @@ public:
 			100.0f
 			);
 
-		glm::mat4 animX = glm::rotate(glm::mat4(1.0f), 0.0f, axis_x);
+		glm::mat4 animX = glm::rotate(glm::mat4(1.0f), 0.0f * float(1.0f * f / acos(-1.0)), axis_x);
 		glm::mat4 animY = glm::rotate(glm::mat4(1.0f), f, axis_y);
 
-		model = animX * animY * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.6f, 0.6f, 0.6f));
+		model = animX * animY * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f));
 
 		glm::mat4 Matrix = projection * view * model;
 		glm::mat4 MatrixPV = projection * view;
@@ -167,8 +232,8 @@ public:
 		glUniform3fv(loc_lightPosition, 1, glm::value_ptr(lightPosition));
 		glUniform3fv(loc_camera, 1, glm::value_ptr(camera));
 
-		glBindVertexArray(vaoSuzannet);
-		glDrawArrays(GL_TRIANGLES, 0, suzanneSize);
+		glBindVertexArray(vaoObject);
+		glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 		glBindVertexArray(0);
 	}
 
@@ -176,7 +241,7 @@ public:
 	{
 		static GLfloat bkColor[4];
 		glGetFloatv(GL_COLOR_CLEAR_VALUE, bkColor);
-	    //glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
+		//glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		draw_cube();
 	}
@@ -197,10 +262,22 @@ private:
 
 	GLuint mProgram;
 
-	GLuint vaoObject;
-	GLuint vaoSuzannet;
+	std::vector<int> m_bind;
 
-	size_t suzanneSize;
+	GLuint vaoObject;
+	std::vector<glm::vec3> vertices;
+	std::vector<glm::vec2> uvs;
+	std::vector<glm::vec3> normals;
+
+	std::vector<glm::vec3> verticesA;
+	std::vector<glm::vec2> uvsA;
+	std::vector<glm::vec3> normalsA;
+
+	std::vector<glm::vec3> verticesB;
+	std::vector<glm::vec2> uvsB;
+	std::vector<glm::vec3> normalsB;
+
+	GLuint vboVertexS, vboNormalS;
 
 	GLint loc_u_m4MVP;
 	GLint loc_u_m4VP;
