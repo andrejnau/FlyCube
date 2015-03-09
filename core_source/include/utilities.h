@@ -243,18 +243,26 @@ static bool loadOBJ(const std::string &path,
 			{
 				GLuint vertexIndex, uvIndex, normalIndex;
 
-				buf_split >> tmp;
-				vertexIndex = std::stoi(tmp);
+				if (!temp_vertices.empty())
+				{
+					buf_split >> tmp;
+					vertexIndex = std::stoi(tmp);
+					vertexIndices.push_back(vertexIndex);
+				}
 
-				buf_split >> tmp;
-				uvIndex = std::stoi(tmp);
+				if (!temp_uvs.empty())
+				{
+					buf_split >> tmp;
+					uvIndex = std::stoi(tmp);
+					uvIndices.push_back(uvIndex);
+				}
 
-				buf_split >> tmp;
-				normalIndex = std::stoi(tmp);
-
-				vertexIndices.push_back(vertexIndex);
-				uvIndices.push_back(uvIndex);
-				normalIndices.push_back(normalIndex);
+				if (!temp_normals.empty())
+				{
+					buf_split >> tmp;
+					normalIndex = std::stoi(tmp);
+					normalIndices.push_back(normalIndex);
+				}
 			}
 		}
 	}
@@ -263,10 +271,12 @@ static bool loadOBJ(const std::string &path,
 	normals.resize(vertexIndices.size());
 	for (size_t i = 0; i < vertexIndices.size(); ++i)
 	{
-		vertices[i] = temp_vertices[vertexIndices[i] - 1];
-		uvs[i] = temp_uvs[uvIndices[i] - 1];
-		normals[i] = temp_normals[normalIndices[i] - 1];
+		if (!temp_vertices.empty())
+			vertices[i] = temp_vertices[vertexIndices[i] - 1];
+		if (!temp_uvs.empty())
+			uvs[i] = temp_uvs[uvIndices[i] - 1];
+		if (!temp_normals.empty())
+			normals[i] = temp_normals[normalIndices[i] - 1];
 	}
-
 	return true;
 }
