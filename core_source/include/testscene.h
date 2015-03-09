@@ -2,6 +2,7 @@
 #include <platform.h>
 #include <utilities.h>
 #include <scenebase.h>
+#include <state.h>
 #include <math.h>
 #include <string>
 #include <vector>
@@ -84,21 +85,19 @@ public:
 		loc_lightPosition = glGetUniformLocation(mProgram, "u_lightPosition");
 		loc_camera = glGetUniformLocation(mProgram, "u_camera");
 
+		std::string m_pathA(PROJECT_RESOURCE_MODEL_DIR "sphere.obj");
+		std::string m_pathB(PROJECT_RESOURCE_MODEL_DIR "cube.obj");
 
-
-#if defined(ANDROID) || defined(__ANDROID__)
-		std::string m_path("suzanne.obj");
-#else
-		std::string m_path(PROJECT_RESOURCE_DIR "/obj-model/cube.obj");
-		std::string m_path2(PROJECT_RESOURCE_DIR "/obj-model/rainbow_dash_all-in-one.obj");
-#endif
-
-		loadOBJ(m_path, verticesA, uvsA, normalsA);
-		loadOBJ(m_path2, verticesB, uvsB, normalsB);
+		loadOBJ(m_pathA, verticesA, uvsA, normalsA);
+		loadOBJ(m_pathB, verticesB, uvsB, normalsB);
 
 		glGenBuffers(1, &vboVertexS);
 		glGenBuffers(1, &vboNormalS);
 		glGenVertexArrays(1, &vaoObject);
+
+		vertices = verticesA;
+		normals = normalsA;
+		init_vao();
 		init_step();
 		return true;
 	}
@@ -123,42 +122,38 @@ public:
 	{
 	}
 
-	static float dist(glm::vec3 &a, glm::vec3 &b)
+	static float dist(glm::vec3 a, glm::vec3 b)
 	{
 		return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z));
 	}
 
 	void init_step()
 	{
-		vertices = verticesB;
-		normals = normalsB;
-
-		m_bind.resize(verticesB.size());
-		for (int i = 0; i < verticesB.size(); ++i)
+		m_bind.resize(verticesA.size());
+		for (int i = 0; i < (int)verticesA.size(); ++i)
 		{
-			auto & cur = verticesB[i];
 			int id = -1;
-			float mdist = 1e9;
-			for (int j = 0; j < verticesA.size(); ++j)
+			float mx = 1e9;
+			for (int j = 0; j < (int)verticesB.size(); ++j)
 			{
-				auto q = dist(cur, verticesA[j]);
-				if (q < mdist)
+				float cur = dist(verticesA[i], verticesB[j]);
+				if (cur < mx)
 				{
-					mdist = q;
+					mx = cur;
 					id = j;
 				}
 			}
-			m_bind[i] = id;
+			m_bind[i] = id % verticesB.size();
 		}
 		init_vao();
 	}
 
 	void next_step(int cur, int all)
 	{
-		for (int i = 0; i < vertices.size(); ++i)
+		for (int i = 0; i < (int)m_bind.size(); ++i)
 		{
-			auto & A = verticesB[i];
-			auto & B = verticesA[m_bind[i]];
+			auto & A = verticesA[i];
+			auto & B = verticesB[m_bind[i]];
 			vertices[i] = A + ((B - A) / (1.0f * all)) * (1.0f * cur);
 		}
 		init_vao();
@@ -166,35 +161,27 @@ public:
 
 	void draw_cube()
 	{
-
 		static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now(), end = std::chrono::system_clock::now();
 
 		end = std::chrono::system_clock::now();
 		int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 		start = std::chrono::system_clock::now();
 
-		static float f = 0;
-		static float fl = 0;
-		//fl += elapsed / 1000.0f;
-		f += elapsed / 1000.0f;
+		static float angle = 0, angle_light = 0;
+		//angle += elapsed / 1000.0f;
+		angle += elapsed / 2500.0f;
 
-		static int id = 0, all = 1000;
-		static bool qq = false;
+		static int id = 0, all = 10000;
+		static bool isEnd = false;
 
 		if (id == all)
-		{
-			qq = true;
-		}
-
-		if (qq)
-		{
+			isEnd = true;
+		if (isEnd)
 			id -= 2;
-		}
-
-		if (id < 0 && qq)
+		if (id < 0 && isEnd)
 		{
 			id = 0;
-			qq = 0;
+			isEnd = false;
 		}
 
 		next_step(id++, all);
@@ -202,7 +189,7 @@ public:
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(mProgram);
 
-		glm::vec3 lightPosition(2.0f * sin(fl), 2.0f * sin(fl), 2.0f  * sin(fl));
+		glm::vec3 lightPosition(2.0f * sin(angle_light), 2.0f * sin(angle_light), 2.0f  * sin(angle_light));
 		glm::vec3 camera(0.0f, 0.0f, 2.0f);
 
 		glm::mat4 model = glm::mat4(1.0f);
@@ -218,10 +205,10 @@ public:
 			100.0f
 			);
 
-		glm::mat4 animX = glm::rotate(glm::mat4(1.0f), 0.0f * float(1.0f * f / acos(-1.0)), axis_x);
-		glm::mat4 animY = glm::rotate(glm::mat4(1.0f), f, axis_y);
+		glm::mat4 animX = glm::rotate(glm::mat4(1.0f), 0.0f * float(1.0f * angle / acos(-1.0)), axis_x);
+		glm::mat4 animY = glm::rotate(glm::mat4(1.0f), angle, axis_y);
 
-		model = animX * animY * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f));
+		model = animX * animY * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f));
 
 		glm::mat4 Matrix = projection * view * model;
 		glm::mat4 MatrixPV = projection * view;
@@ -239,10 +226,15 @@ public:
 
 	void draw()
 	{
-		static GLfloat bkColor[4];
-		glGetFloatv(GL_COLOR_CLEAR_VALUE, bkColor);
-		//glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
+		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		auto & state = CurState<bool>::Instance().state;
+		if (state["warframe"])
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		else
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 		draw_cube();
 	}
 

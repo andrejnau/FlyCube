@@ -25,6 +25,7 @@ include_directories(3rdparty/gl_core)
 
 #project
 add_definitions(-DPROJECT_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/core_source/res/")
+add_definitions(-DPROJECT_RESOURCE_MODEL_DIR="${CMAKE_CURRENT_SOURCE_DIR}/core_source/res/obj-model/")
 
 include_directories(common/mlogger/include)
 

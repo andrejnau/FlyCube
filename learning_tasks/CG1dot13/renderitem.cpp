@@ -108,16 +108,16 @@ void RenderItem::startTest()
 {
 	int count = point_for_sort.size() - 1;
 	sort_type.resize(count);
-	float sum = 0.0f;
+	double sum = 0.0f;
 	for (int i = 0; i < count; ++i)
 	{
-		glm::vec2 prev, cur, next;
+		glm::dvec2 prev, cur, next;
 		std::tie(prev.x, prev.y) = point_for_sort[(i - 1 + count) % count];
 		std::tie(cur.x, cur.y) = point_for_sort[i];
 		std::tie(next.x, next.y) = point_for_sort[(i + 1) % count];
 
-		glm::vec2 va = cur - prev;
-		glm::vec2 vb = next - cur;
+		glm::dvec2 va = cur - prev;
+		glm::dvec2 vb = next - cur;
 		float res = va.x * vb.y - vb.x * va.y;
 		sum += res;
 		float res_is = dist(next, prev) - dist(cur, next) - dist(cur, prev);

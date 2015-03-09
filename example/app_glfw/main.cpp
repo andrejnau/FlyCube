@@ -24,11 +24,19 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	renderer.resize(0, 0, width, height);
 }
 
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (key == GLFW_KEY_W && action == GLFW_PRESS)
+	{
+		auto & state = CurState<bool>::Instance().state;
+		state["warframe"] = !state["warframe"];
+	}
+}
+
 int main(void)
 {
 	//mlog::logger::get().set_filter(mlog::logger::get().severity() >= mlog::severity_level::info);
 	glfwSetErrorCallback(error_callback);
-
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
 
@@ -38,6 +46,8 @@ int main(void)
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
+
+	glfwSetKeyCallback(window, key_callback);
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
