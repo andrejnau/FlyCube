@@ -2,16 +2,5 @@
     <qresource prefix="/">
         <file>main.qml</file>
         <file>icons/ic_note_add_black_18dp.png</file>
-        <file>icons/ic_note_add_black_24dp.png</file>
-        <file>icons/ic_note_add_black_36dp.png</file>
-        <file>icons/ic_note_add_black_48dp.png</file>
-        <file>icons/ic_note_add_grey600_18dp.png</file>
-        <file>icons/ic_note_add_grey600_24dp.png</file>
-        <file>icons/ic_note_add_grey600_36dp.png</file>
-        <file>icons/ic_note_add_grey600_48dp.png</file>
-        <file>icons/ic_note_add_white_18dp.png</file>
-        <file>icons/ic_note_add_white_24dp.png</file>
-        <file>icons/ic_note_add_white_36dp.png</file>
-        <file>icons/ic_note_add_white_48dp.png</file>
     </qresource>
 </RCC>
