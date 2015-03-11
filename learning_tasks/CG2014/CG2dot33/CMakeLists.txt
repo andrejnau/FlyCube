@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8.12)
 
-set (PROJECT CG3dot11)
+set (PROJECT CG2dot33)
 project (${PROJECT})
 
 set(CMAKE_AUTOMOC ON)
@@ -26,7 +26,7 @@ file(GLOB QML_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 file(GLOB QRC_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "*.qrc")
 
-include_directories(../../core_source/include)
+include_directories(../../../core_source/include)
 
 qt5_add_resources(QRC_LIST ${QRC_LIST})
 add_executable(${PROJECT} WIN32 ${HEADERS} ${SOURCES} ${QML_LIST} ${QRC_LIST})
