@@ -69,7 +69,7 @@ public:
 	{
 	}
 
-	bool init()
+	virtual bool init()
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
@@ -85,21 +85,20 @@ public:
 		loc_lightPosition = glGetUniformLocation(mProgram, "u_lightPosition");
 		loc_camera = glGetUniformLocation(mProgram, "u_camera");
 
-		std::string m_pathA(PROJECT_RESOURCE_MODEL_DIR "sphere.obj");
-		std::string m_pathB(PROJECT_RESOURCE_MODEL_DIR "cube.obj");
+		std::string m_path(PROJECT_RESOURCE_MODEL_DIR "suzanne.obj");
 
-		loadOBJ(m_pathA, verticesA, uvsA, normalsA);
-		loadOBJ(m_pathB, verticesB, uvsB, normalsB);
+		loadOBJ(m_path, vertices, uvs, normals);
 
 		glGenBuffers(1, &vboVertexS);
 		glGenBuffers(1, &vboNormalS);
 		glGenVertexArrays(1, &vaoObject);
 
-		vertices = verticesA;
-		normals = normalsA;
 		init_vao();
-		init_step();
 		return true;
+	}
+
+	virtual void destroy()
+	{
 	}
 
 	void init_vao()
@@ -118,48 +117,7 @@ public:
 		glBindVertexArray(0);
 	}
 
-	void destroy()
-	{
-	}
-
-	static float dist(glm::vec3 a, glm::vec3 b)
-	{
-		return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z));
-	}
-
-	void init_step()
-	{
-		m_bind.resize(verticesA.size());
-		for (int i = 0; i < (int)verticesA.size(); ++i)
-		{
-			int id = -1;
-			float mx = 1e9;
-			for (int j = 0; j < (int)verticesB.size(); ++j)
-			{
-				float cur = dist(verticesA[i], verticesB[j]);
-				if (cur < mx)
-				{
-					mx = cur;
-					id = j;
-				}
-			}
-			m_bind[i] = id % verticesB.size();
-		}
-		init_vao();
-	}
-
-	void next_step(int cur, int all)
-	{
-		for (int i = 0; i < (int)m_bind.size(); ++i)
-		{
-			auto & A = verticesA[i];
-			auto & B = verticesB[m_bind[i]];
-			vertices[i] = A + ((B - A) / (1.0f * all)) * (1.0f * cur);
-		}
-		init_vao();
-	}
-
-	void draw_cube()
+	void draw_obj()
 	{
 		static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now(), end = std::chrono::system_clock::now();
 
@@ -170,21 +128,6 @@ public:
 		static float angle = 0, angle_light = 0;
 		//angle += elapsed / 1000.0f;
 		angle += elapsed / 2500.0f;
-
-		static int id = 0, all = 10000;
-		static bool isEnd = false;
-
-		if (id == all)
-			isEnd = true;
-		if (isEnd)
-			id -= 2;
-		if (id < 0 && isEnd)
-		{
-			id = 0;
-			isEnd = false;
-		}
-
-		next_step(id++, all);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(mProgram);
@@ -224,7 +167,7 @@ public:
 		glBindVertexArray(0);
 	}
 
-	void draw()
+	virtual void draw()
 	{
 		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -235,10 +178,10 @@ public:
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-		draw_cube();
+		draw_obj();
 	}
 
-	void resize(int x, int y, int width, int height)
+	virtual void resize(int x, int y, int width, int height)
 	{
 		glViewport(x, y, width, height);
 		m_width = width;
@@ -254,20 +197,10 @@ private:
 
 	GLuint mProgram;
 
-	std::vector<int> m_bind;
-
 	GLuint vaoObject;
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> uvs;
 	std::vector<glm::vec3> normals;
-
-	std::vector<glm::vec3> verticesA;
-	std::vector<glm::vec2> uvsA;
-	std::vector<glm::vec3> normalsA;
-
-	std::vector<glm::vec3> verticesB;
-	std::vector<glm::vec2> uvsB;
-	std::vector<glm::vec3> normalsB;
 
 	GLuint vboVertexS, vboNormalS;
 
