@@ -1,1 +1,2 @@
 add_subdirectory(CGMorphism)
+add_subdirectory(CGPhysical)
