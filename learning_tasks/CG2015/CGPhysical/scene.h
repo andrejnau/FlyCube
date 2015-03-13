@@ -47,6 +47,7 @@ public:
 
 		draw_in_depth();
 		draw_obj();
+		draw_shadow();
 	}
 
 	void draw_obj()
@@ -90,15 +91,20 @@ public:
 				0.5, 0.5, 0.5, 1.0
 				);
 
-			glm::mat4 view = glm::lookAt(
+
+			glm::mat4 viewLight = glm::lookAt(
 				lightPosition,
 				glm::vec3(0, 0, 0),
 				glm::vec3(0, 1, 0)
 				);
 
-			glm::mat4 Matrix = projection * view * model;
+			glm::mat4 viewCamera = glm::lookAt(
+				camera,
+				glm::vec3(0, 0, 0),
+				glm::vec3(0, 1, 0)
+				);
 
-			glm::mat4 depthBiasMVP = biasMatrix * Matrix;
+			glm::mat4 depthBiasMVP = biasMatrix * projection * viewLight * model;
 
 			glUniformMatrix4fv(shaderLight.loc_DepthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
 		}
@@ -145,7 +151,6 @@ public:
 		glm::mat4 Matrix = projection * view * model;
 
 		glUniformMatrix4fv(shaderShadow.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
-
 		glBindVertexArray(modelSuzanne.vaoObject);
 		glDrawArrays(GL_TRIANGLES, 0, modelSuzanne.vertices.size());
 		glBindVertexArray(0);
@@ -162,6 +167,43 @@ public:
 		// выполним рендер сцены с использованием шейдерной программы и камеры источника освещения
 		draw_obj_depth();
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	void draw_shadow()
+	{
+		glUseProgram(shaderShadowView.program);
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
+
+		glm::mat4 Matrix(1.0f);
+
+		glUniformMatrix4fv(shaderShadowView.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+
+		static GLfloat plane_vertices[] = {
+			-1.0, 1.0, 0.0,
+			-0.5, 1.0, 0.0,
+			-0.5, 0.5, 0.0,
+			-1.0, 0.5, 0.0
+		};
+
+		static GLfloat plane_texcoords[] = {
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			0.0, 0.0
+		};
+
+		static GLuint plane_elements[] = {
+			0, 1, 2,
+			2, 3, 0
+		};
+
+		glEnableVertexAttribArray(POS_ATTRIB);
+		glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, plane_vertices);
+
+		glEnableVertexAttribArray(TEXTURE_ATTRIB);
+		glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, 0, plane_texcoords);
+
+		glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
 	}
 
 	GLuint FBOCreateDepth(GLuint _depthTexture)
@@ -207,7 +249,7 @@ public:
 		// необходимо для использования depth-текстуры как shadow map
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 		// соаздем "пустую" текстуру под depth-данные
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
 		return texture;
 	}
 
@@ -242,4 +284,5 @@ private:
 	ModelPlane modelPlane;
 	ShaderShadow shaderShadow;
 	ShaderLight shaderLight;
+	ShaderShadowView shaderShadowView;
 };
