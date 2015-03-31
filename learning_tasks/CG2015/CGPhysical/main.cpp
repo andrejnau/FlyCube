@@ -69,12 +69,14 @@ int main(void)
 	glfwGetFramebufferSize(window, &width, &height);
 	framebuffer_size_callback(window, width, height);
 
+	glfwWindowHint(GLFW_SAMPLES, 4);
+
 	while (!glfwWindowShouldClose(window))
 	{
 		draw_scene();
 
 		glfwSwapBuffers(window);
-		glfwPollEvents();
+			glfwPollEvents();
 	}
 
 	exit(EXIT_SUCCESS);

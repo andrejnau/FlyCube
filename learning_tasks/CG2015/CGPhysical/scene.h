@@ -6,6 +6,8 @@
 #include <state.h>
 #include <ctime>
 #include <chrono>
+#include <memory>
+#include <SOIL.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -21,8 +23,14 @@ public:
 	virtual bool init()
 	{
 		glEnable(GL_DEPTH_TEST);
+
+		/*glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+		glFrontFace(GL_CW);*/
+
 		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 
+		c_textureID = loadCubemap();
 		return true;
 	}
 
@@ -43,20 +51,26 @@ public:
 		start = std::chrono::system_clock::now();
 
 		angle_light += elapsed / 1000.0f;
-		//angle += elapsed / 250.0f;
+		angle += elapsed / 2500.0f;
+		
+		//draw_in_depth();
 
-		draw_in_depth();
 		draw_obj();
-		draw_shadow();
+		//draw_shadow();
+
+		//draw_cubemap();
 	}
 
-	void draw_obj()
+	void draw_obj(bool depth = false)
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(shaderLight.program);
 
-		glm::vec3 lightPosition(sin(angle_light), cos(angle_light), 1.0f);
+		glm::vec3 lightPosition(cos(angle_light) * sin(angle_light), cos(angle_light), 3.0f);
 		glm::vec3 camera(0.0f, 0.0f, 2.0f);
+
+		if (depth)
+			camera = lightPosition;
 
 		glm::mat4 model = glm::mat4(1.0f);
 		glm::mat4 view = glm::lookAt(
@@ -74,7 +88,7 @@ public:
 		glm::mat4 animX = glm::rotate(glm::mat4(1.0f), 0.0f * float(1.0f * angle / acos(-1.0)), axis_x);
 		glm::mat4 animY = glm::rotate(glm::mat4(1.0f), angle, axis_y);
 
-		model = animX * animY * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f));
+		model = animX * animY * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.6f, 0.6f, 0.6f));
 
 		glm::mat4 Matrix = projection * view * model;
 
@@ -83,6 +97,7 @@ public:
 		glUniform3fv(shaderLight.loc_lightPosition, 1, glm::value_ptr(lightPosition));
 		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(camera));
 
+		/*if (!depth)
 		{
 			glm::mat4 biasMatrix(
 				0.5, 0.0, 0.0, 0.0,
@@ -92,68 +107,37 @@ public:
 				);
 
 
-			glm::mat4 viewLight = glm::lookAt(
+			glm::mat4 viewLight = glm::mat4(glm::mat3(glm::lookAt(
 				lightPosition,
 				glm::vec3(0, 0, 0),
 				glm::vec3(0, 1, 0)
-				);
+				)));
 
-			glm::mat4 viewCamera = glm::lookAt(
+			glm::mat4 viewCamera = glm::mat4(glm::mat3(glm::lookAt(
 				camera,
 				glm::vec3(0, 0, 0),
 				glm::vec3(0, 1, 0)
-				);
+				)));
 
 			glm::mat4 depthBiasMVP = biasMatrix * projection * viewLight * model;
 
 			glUniformMatrix4fv(shaderLight.loc_DepthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
-		}
+		}*/
 
-		glUniform1i(shaderLight.loc_isLight, 1);
+		glUniform1f(shaderLight.loc_isLight, 1.0f);
 
 		glBindVertexArray(modelSuzanne.vaoObject);
 		glDrawArrays(GL_TRIANGLES, 0, modelSuzanne.vertices.size());
 		glBindVertexArray(0);
 
-		glUniform1i(shaderLight.loc_isLight, 0);
-
-		glBindVertexArray(modelPlane.vaoObject);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelPlane.vboIndex);
-		glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-	}
-
-	void draw_obj_depth()
-	{
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glUseProgram(shaderShadow.program);
-
-		glm::vec3 lightPosition(sin(angle_light), cos(angle_light), 1.0f);
-
-		glm::mat4 model = glm::mat4(1.0f);
-		glm::mat4 view = glm::lookAt(
-			lightPosition,
-			glm::vec3(0, 0, 0),
-			glm::vec3(0, 1, 0)
-			);
-		glm::mat4 projection = glm::perspective(
-			45.0f,
-			(float)m_width / m_height,
-			0.1f,
-			100.0f
-			);
-
-		glm::mat4 animX = glm::rotate(glm::mat4(1.0f), 0.0f * float(1.0f * angle / acos(-1.0)), axis_x);
-		glm::mat4 animY = glm::rotate(glm::mat4(1.0f), angle, axis_y);
-
-		model = animX * animY * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f));
-
-		glm::mat4 Matrix = projection * view * model;
-
-		glUniformMatrix4fv(shaderShadow.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
-		glBindVertexArray(modelSuzanne.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelSuzanne.vertices.size());
-		glBindVertexArray(0);
+		/*if (!depth)
+		{
+			glUniform1f(shaderLight.loc_isLight, 0.0f);
+			glBindVertexArray(modelPlane.vaoObject);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelPlane.vboIndex);
+			glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}*/
 	}
 
 	void draw_in_depth()
@@ -165,8 +149,45 @@ public:
 		// очищаем буфер глубины перед его заполнением
 		glClear(GL_DEPTH_BUFFER_BIT);
 		// выполним рендер сцены с использованием шейдерной программы и камеры источника освещения
-		draw_obj_depth();
+		draw_obj(true);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	void draw_cubemap()
+	{
+		glDepthMask(GL_FALSE);
+		glUseProgram(shaderSimpleCubeMap.program);
+		glBindVertexArray(modelCube.vaoObject);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, c_textureID);
+
+		glm::vec3 camera(0.0f, 0.0f, 0.f);
+
+		glm::mat4 animX = glm::rotate(glm::mat4(1.0f),  float(1.0f * angle / acos(-1.0)), axis_x);
+		glm::mat4 animY = glm::rotate(glm::mat4(1.0f), angle, axis_y);
+		glm::mat4 animZ = glm::rotate(glm::mat4(1.0f), angle, axis_z);
+
+		glm::mat4 model = animX*animZ;// *glm::scale(glm::mat4(1.0f), glm::vec3(0.4f, 0.4f, 0.4f));;
+
+		glm::mat4 view = glm::mat4(1.0f);
+		view = glm::mat4(glm::mat3(glm::lookAt(
+			glm::vec3(0.0f, 0.0f, 20.0f),
+			glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(0.0f, 1.0f, 0.0f)
+			)));
+
+		glm::mat4 projection = glm::perspective(
+			45.0f,
+			(float)m_width / m_height,
+			0.1f,
+			100.0f
+			);
+
+		glm::mat4 Matrix = projection * view * model;
+		glUniformMatrix4fv(shaderSimpleCubeMap.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+
+		glDrawArrays(GL_TRIANGLES, 0, modelCube.vertices.size() / 3);
+		glBindVertexArray(0);
+		glDepthMask(GL_TRUE);
 	}
 
 	void draw_shadow()
@@ -247,10 +268,64 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		// необходимо для использования depth-текстуры как shadow map
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 		// соаздем "пустую" текстуру под depth-данные
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 		return texture;
+	}
+
+	std::unique_ptr<unsigned char[]> load_image(const std::string & m_path)
+	{
+		FILE * p_file = fopen(m_path.c_str(), "rb");
+		fseek(p_file, 0, SEEK_END);
+		int size = ftell(p_file);
+		std::unique_ptr<unsigned char[]> out_file(new unsigned char[size]);
+
+		fread(&out_file, 1, size, p_file);
+		return out_file;
+	}
+
+	GLuint loadCubemap()
+	{
+		GLuint textureID;
+		glGenTextures(1, &textureID);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+		/*std::vector <std::string> textures_faces = {
+			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_rt.tga",
+			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_lf.tga",
+			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_up.tga",
+			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_dn.tga",
+			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_bk.tga",
+			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_ft.tga"
+		};*/
+
+		std::vector <std::string> textures_faces = {
+		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_rt.bmp",
+		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_lf.bmp",
+		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_up.bmp",
+		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_dn.bmp",
+		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_bk.bmp",
+		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_ft.bmp"
+		};
+				
+		for (GLuint i = 0; i < textures_faces.size(); i++)
+		{			
+			int width, height, channels;
+			unsigned char * image = SOIL_load_image(textures_faces[i].c_str(), &width, &height, &channels, SOIL_LOAD_RGB);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+			SOIL_free_image_data(image);
+		}
+
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+		return textureID;
 	}
 
 	virtual void resize(int x, int y, int width, int height)
@@ -279,10 +354,13 @@ private:
 
 	GLuint depthTexture;
 	GLuint depthFBO;
+	GLuint c_textureID;
 
 	ModelSuzanne modelSuzanne;
+	ModelCubeSkybox modelCube;
 	ModelPlane modelPlane;
 	ShaderShadow shaderShadow;
 	ShaderLight shaderLight;
 	ShaderShadowView shaderShadowView;
+	ShaderSimpleCubeMap shaderSimpleCubeMap;
 };

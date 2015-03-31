@@ -16,6 +16,10 @@ add_subdirectory(3rdparty/glfw-3.1)
 include_directories(3rdparty/glfw-3.1/include)
 add_definitions("-DGLFW_INCLUDE_NONE")
 
+#Simple-OpenGL-Image-Library
+add_subdirectory(3rdparty/Simple-OpenGL-Image-Library-master)
+include_directories(3rdparty/Simple-OpenGL-Image-Library-master/src)
+
 #glm
 include_directories(3rdparty/glm)
 

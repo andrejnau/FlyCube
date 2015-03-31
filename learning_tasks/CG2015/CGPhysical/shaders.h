@@ -58,6 +58,7 @@ struct ShaderShadowView
 
 	std::string fragment = 
 		"#version 300 es\n"
+		"precision mediump float;\n"
 		"uniform sampler2D sampler;\n"
 		"in vec2 texCoordFS;\n"
 		"out vec4 outColor;\n"
@@ -97,6 +98,40 @@ struct ShaderSimple
 		"}\n";
 };
 
+struct ShaderSimpleCubeMap
+{
+	ShaderSimpleCubeMap()
+	{
+		program = createProgram(vertex.c_str(), fragment.c_str());
+		loc_MVP = glGetUniformLocation(program, "u_MVP");
+	}
+
+	GLuint program;
+	GLint loc_MVP;
+
+	std::string vertex =
+		"#version 300 es\n"
+		"precision mediump float;\n"
+		"layout(location = " STRV(POS_ATTRIB) ") in vec3 a_pos;\n"
+		"uniform mat4 u_MVP;\n"
+		"out vec3 texCoord;\n"
+		"void main() {\n"
+		"    gl_Position = u_MVP * vec4(a_pos, 1.0);\n"
+		"    texCoord = normalize(a_pos);\n"
+		"}\n";
+
+	std::string fragment =
+		"#version 300 es\n"
+		"precision mediump float;\n"
+		"uniform samplerCube cubemap;\n"
+		"in vec3 texCoord;\n"
+		"out vec4 outColor;\n"
+		"void main()\n"
+		"{\n"
+		"    outColor = texture(cubemap, texCoord);\n"
+		"}\n";
+};
+
 struct ShaderLight
 {
 	ShaderLight()
@@ -125,11 +160,11 @@ struct ShaderLight
 		"layout(location = " STRV(NORMAL_ATTRIB) ") in vec3 normal;\n"
 		"uniform mat4 u_m4MVP;\n"
 		"uniform mat4 u_m4DepthBiasMVP;\n"
-		"uniform int u_isLigth;\n"
+		"uniform float u_isLigth;\n"
 		"out vec3 modelViewVertex;\n"
 		"out vec3 modelViewNormal;\n"
 		"out vec4 ShadowCoord;\n"
-		"out int isLigth;\n"
+		"out float isLigth; \n"
 		"void main() {\n"
 		"    gl_Position = u_m4MVP * vec4(pos, 1.0);\n"
 		"    modelViewVertex = vec3(u_m4MVP * vec4(pos, 1.0));\n"
@@ -143,24 +178,24 @@ struct ShaderLight
 		"precision mediump float;\n"
 		"uniform vec3 u_lightPosition;\n"
 		"uniform vec3 u_camera;\n"
+		"uniform sampler2D gShadowMap;\n"
 		"out vec4 outColor;\n"
 		"in vec3 modelViewVertex;\n"
 		"in vec3 modelViewNormal;\n"
 		"in vec4 ShadowCoord;\n"
-		"in int isLigth;\n"
-		"uniform sampler2D gShadowMap;\n"
+		"in float isLigth;\n"		
 		"void main() {\n"
 		"    vec3 lightVector = normalize(-u_lightPosition - modelViewVertex);\n"
 		"    float diffuse = max(dot(modelViewNormal, lightVector), 0.1);\n"
 		"    float distance = length(u_lightPosition - modelViewVertex);\n"
 		"    diffuse = diffuse * (1.0 / (1.0 + (0.025 * distance * distance)));\n"
 		"    vec3 lookVector = normalize(u_camera - modelViewVertex);\n"
-		"    if (isLigth == 0)\n"
+		"    if (isLigth < 1.0)\n"
 		"        diffuse = 1.0;\n"
 		"    outColor.rgb = vec3(1.0, 0.0, 0.0) * diffuse;\n"
 		"    outColor.a = 1.0;\n"
 		"    float Depth = texture(gShadowMap, ShadowCoord.xy).z;\n"
-		"    if (isLigth == 0 && Depth != 1.0 && Depth < (ShadowCoord.z - 0.005))\n"
+		"    if (isLigth < 1.0 && Depth < 1.0 && Depth < ShadowCoord.z)\n"
 		"        Depth = 0.1;\n"
 		"    else\n"
 		"        Depth = 1.0;\n"
