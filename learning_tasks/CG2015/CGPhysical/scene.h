@@ -19,7 +19,18 @@ public:
 		: axis_x(1.0f, 0.0f, 0.0f)
 		, axis_y(0.0f, 1.0f, 0.0f)
 		, axis_z(0.0f, 0.0f, 1.0f)
-	{}
+		, modelOfFileBasis("newtan_balls/qb.obj")
+		, modelOfFileList(balls_count)
+	{
+		std::string pref = "newtan_balls/q";
+		std::string suff = ".obj";
+
+		for (int i = 0; i < (int)modelOfFileList.size(); ++i)
+		{
+			std::string file = pref + std::to_string(i + 1) + suff;
+			modelOfFileList[i].reset(file);
+		}
+	}
 
 	virtual bool init()
 	{
@@ -38,6 +49,15 @@ public:
 		m_camera.SetLookAt(glm::vec3(0, 0, 0));
 		m_camera.SetClipping(0.1, 100.0);
 		m_camera.SetFOV(45);
+
+	    glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glEnable(GL_LINE_SMOOTH);
+		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+
+		glEnable(GL_POLYGON_SMOOTH);
+		glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
 		return true;
 	}
@@ -58,14 +78,13 @@ public:
 		int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 		start = std::chrono::system_clock::now();
 
-		angle_light += elapsed / 1000.0f;
-		angle += elapsed / 2500.0f;
+		//angle_light += elapsed / 1000.0f;
+		angle_light = 9.2f;
+		//angle += elapsed / 2500.0f;
 
 		//draw_in_depth();
-
 		draw_obj();
 		//draw_shadow();
-
 		draw_cubemap();
 	}
 
@@ -116,17 +135,24 @@ public:
 
 		glUniform1f(shaderLight.loc_isLight, 1.0f);
 
-		glBindVertexArray(modelFullNewtonBalls.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelFullNewtonBalls.vertices.size());
-		glBindVertexArray(0);
+		for (auto &x : modelOfFileList)
+		{
+			glBindVertexArray(x.vaoObject);
+			glDrawArrays(GL_TRIANGLES, 0, x.vertices.size());
+			glBindVertexArray(0);
+		}
+
+		glBindVertexArray(modelOfFileBasis.vaoObject);
+		glDrawArrays(GL_TRIANGLES, 0, modelOfFileBasis.vertices.size());
+		glBindVertexArray(0);		
 
 		/*if (!depth)
 		{
-		glUniform1f(shaderLight.loc_isLight, 0.0f);
-		glBindVertexArray(modelPlane.vaoObject);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelPlane.vboIndex);
-		glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
+			glUniform1f(shaderLight.loc_isLight, 0.0f);
+			glBindVertexArray(modelPlane.vaoObject);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelPlane.vboIndex);
+			glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
 		}*/
 	}
 
@@ -340,17 +366,21 @@ private:
 	float angle = 0.0;
 	float angle_light = 0.0f;
 
+	int balls_count = 6;
+
 	GLuint depthTexture;
 	GLuint depthFBO;
 	GLuint c_textureID;
 
-	FullNewtonBalls modelFullNewtonBalls;
 	ModelCubeSkybox modelCube;
 	ModelPlane modelPlane;
 	ShaderShadow shaderShadow;
 	ShaderLight shaderLight;
 	ShaderShadowView shaderShadowView;
 	ShaderSimpleCubeMap shaderSimpleCubeMap;
+
+	std::vector<ModelOfFile> modelOfFileList;
+	ModelOfFile modelOfFileBasis;
 
 	Camera m_camera;
 };
