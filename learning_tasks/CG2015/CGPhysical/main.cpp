@@ -22,14 +22,18 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	if (action != GLFW_PRESS)
-		return;
+
 
 	if (key == GLFW_KEY_F && action == GLFW_PRESS)
 	{
 		auto & state = CurState<bool>::Instance().state;
 		state["warframe"] = !state["warframe"];
 	}
+
+	/*if (action != GLFW_PRESS)
+		return;*/
+
+	float eps = 0.1f;
 
 	switch (key) {
 	case GLFW_KEY_W:
@@ -49,6 +53,24 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		break;
 	case GLFW_KEY_E:
 		renderer->getCamera().Move(UP);
+		break;
+	case GLFW_KEY_L:
+		renderer->getCamera().angle_y += eps;
+		break;
+	case GLFW_KEY_J:
+		renderer->getCamera().angle_y -= eps;
+		break;
+	case GLFW_KEY_I:
+		renderer->getCamera().angle_x += eps;
+		break;
+	case GLFW_KEY_K:
+		renderer->getCamera().angle_x -= eps;
+		break;
+	case GLFW_KEY_O:
+		renderer->getCamera().angle_z += eps;
+		break;
+	case GLFW_KEY_U:
+		renderer->getCamera().angle_z -= eps;
 		break;
 	case GLFW_KEY_ESCAPE:
 		exit(0);
