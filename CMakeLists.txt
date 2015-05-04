@@ -23,6 +23,10 @@ include_directories(3rdparty/Simple-OpenGL-Image-Library-master/src)
 #glm
 include_directories(3rdparty/glm)
 
+#camera
+add_subdirectory(3rdparty/moderngl_camera-master)
+include_directories(3rdparty/moderngl_camera-master)
+
 #gl_core
 add_subdirectory(3rdparty/gl_core)
 include_directories(3rdparty/gl_core)

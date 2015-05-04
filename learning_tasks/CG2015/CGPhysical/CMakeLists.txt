@@ -21,4 +21,4 @@ else()
     add_executable(${PROJECT} ${SOURCES} ${HEADERS})
 endif()
 
-target_link_libraries(${PROJECT} glfw ${GLFW_LIBRARIES} gl_core mlogger SOIL)
+target_link_libraries(${PROJECT} glfw ${GLFW_LIBRARIES} gl_core mlogger SOIL modern_gl_camera)

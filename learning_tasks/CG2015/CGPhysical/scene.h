@@ -8,6 +8,7 @@
 #include <chrono>
 #include <memory>
 #include <SOIL.h>
+#include <camera.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -31,6 +32,13 @@ public:
 		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 
 		c_textureID = loadCubemap();
+
+		m_camera.SetMode(FREE);
+		m_camera.SetPosition(glm::vec3(0, 0, 1));
+		m_camera.SetLookAt(glm::vec3(0, 0, 0));
+		m_camera.SetClipping(0.1, 100.0);
+		m_camera.SetFOV(45);
+
 		return true;
 	}
 
@@ -52,11 +60,11 @@ public:
 
 		angle_light += elapsed / 1000.0f;
 		angle += elapsed / 2500.0f;
-		
-		draw_in_depth();
+
+		//draw_in_depth();
 
 		draw_obj();
-		draw_shadow();
+		//draw_shadow();
 
 		draw_cubemap();
 	}
@@ -72,23 +80,18 @@ public:
 		if (depth)
 			camera = lightPosition;
 
-		glm::mat4 model = glm::mat4(1.0f);
-		glm::mat4 view = glm::lookAt(
-			camera,
-			glm::vec3(0, 0, 0),
-			glm::vec3(0, 1, 0)
-			);
-		glm::mat4 projection = glm::perspective(
-			45.0f,
-			(float)m_width / m_height,
-			0.1f,
-			100.0f
-			);
+		m_camera.SetLookAt(glm::vec3(0, 0, 0));
+		m_camera.SetPosition(camera);
+		m_camera.Update();
+
+		glm::mat4 projection, view, model;
+
+		m_camera.GetMatricies(projection, view, model);
 
 		glm::mat4 animX = glm::rotate(glm::mat4(1.0f), 0.0f * float(1.0f * angle / acos(-1.0)), axis_x);
 		glm::mat4 animY = glm::rotate(glm::mat4(1.0f), angle, axis_y);
 
-		model = animX * animY * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.6f, 0.6f, 0.6f));
+		model = animX * animY * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f));
 
 		glm::mat4 Matrix = projection * view * model;
 
@@ -106,38 +109,25 @@ public:
 				0.5, 0.5, 0.5, 1.0
 				);
 
-
-			glm::mat4 viewLight = glm::mat4(glm::mat3(glm::lookAt(
-				lightPosition,
-				glm::vec3(0, 0, 0),
-				glm::vec3(0, 1, 0)
-				)));
-
-			glm::mat4 viewCamera = glm::mat4(glm::mat3(glm::lookAt(
-				camera,
-				glm::vec3(0, 0, 0),
-				glm::vec3(0, 1, 0)
-				)));
-
-			glm::mat4 depthBiasMVP = biasMatrix * projection * viewLight * model;
+			glm::mat4 depthBiasMVP = biasMatrix * projection * view * model;
 
 			glUniformMatrix4fv(shaderLight.loc_DepthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
 		}
 
 		glUniform1f(shaderLight.loc_isLight, 1.0f);
 
-		glBindVertexArray(modelSuzanne.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelSuzanne.vertices.size());
+		glBindVertexArray(modelFullNewtonBalls.vaoObject);
+		glDrawArrays(GL_TRIANGLES, 0, modelFullNewtonBalls.vertices.size());
 		glBindVertexArray(0);
 
-		if (!depth)
+		/*if (!depth)
 		{
-			glUniform1f(shaderLight.loc_isLight, 0.0f);
-			glBindVertexArray(modelPlane.vaoObject);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelPlane.vboIndex);
-			glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, 0);
-			glBindVertexArray(0);
-		}
+		glUniform1f(shaderLight.loc_isLight, 0.0f);
+		glBindVertexArray(modelPlane.vaoObject);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelPlane.vboIndex);
+		glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		}*/
 	}
 
 	void draw_in_depth()
@@ -162,11 +152,11 @@ public:
 
 		glm::vec3 camera(0.0f, 0.0f, 0.f);
 
-		glm::mat4 animX = glm::rotate(glm::mat4(1.0f),  float(1.0f * angle / acos(-1.0)), axis_x);
+		glm::mat4 animX = glm::rotate(glm::mat4(1.0f), float(1.0f * angle / acos(-1.0)), axis_x);
 		glm::mat4 animY = glm::rotate(glm::mat4(1.0f), angle, axis_y);
 		glm::mat4 animZ = glm::rotate(glm::mat4(1.0f), angle, axis_z);
 
-		glm::mat4 model = animX*animZ;// *glm::scale(glm::mat4(1.0f), glm::vec3(0.4f, 0.4f, 0.4f));;
+		glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(4.0f, 4.0f, 4.0f));
 
 		glm::mat4 view = glm::mat4(1.0f);
 		view = glm::mat4(glm::mat3(glm::lookAt(
@@ -292,26 +282,17 @@ public:
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
-		/*std::vector <std::string> textures_faces = {
-			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_rt.tga",
-			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_lf.tga",
-			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_up.tga",
-			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_dn.tga",
-			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_bk.tga",
-			PROJECT_RESOURCE_MODEL_DIR "/mp_vendetta/vendetta-cove_ft.tga"
-		};*/
-
 		std::vector <std::string> textures_faces = {
-		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_rt.bmp",
-		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_lf.bmp",
-		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_up.bmp",
-		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_dn.bmp",
-		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_bk.bmp",
-		PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_ft.bmp"
+			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_rt.bmp",
+			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_lf.bmp",
+			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_up.bmp",
+			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_dn.bmp",
+			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_bk.bmp",
+			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_ft.bmp"
 		};
-				
+
 		for (GLuint i = 0; i < textures_faces.size(); i++)
-		{			
+		{
 			int width, height, channels;
 			unsigned char * image = SOIL_load_image(textures_faces[i].c_str(), &width, &height, &channels, SOIL_LOAD_RGB);
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
@@ -333,6 +314,7 @@ public:
 		glViewport(x, y, width, height);
 		m_width = width;
 		m_height = height;
+		m_camera.SetViewport(x, y, width, height);
 
 		depthTexture = TextureCreateDepth(m_width, m_height);
 		depthFBO = FBOCreateDepth(depthTexture);
@@ -341,6 +323,12 @@ public:
 	virtual void destroy()
 	{
 	}
+
+	Camera & getCamera()
+	{
+		return m_camera;
+	}
+
 private:
 	glm::vec3 axis_x;
 	glm::vec3 axis_y;
@@ -356,11 +344,13 @@ private:
 	GLuint depthFBO;
 	GLuint c_textureID;
 
-	ModelSuzanne modelSuzanne;
+	FullNewtonBalls modelFullNewtonBalls;
 	ModelCubeSkybox modelCube;
 	ModelPlane modelPlane;
 	ShaderShadow shaderShadow;
 	ShaderLight shaderLight;
 	ShaderShadowView shaderShadowView;
 	ShaderSimpleCubeMap shaderSimpleCubeMap;
+
+	Camera m_camera;
 };
