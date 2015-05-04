@@ -53,12 +53,12 @@ public:
 		angle_light += elapsed / 1000.0f;
 		angle += elapsed / 2500.0f;
 		
-		//draw_in_depth();
+		draw_in_depth();
 
 		draw_obj();
-		//draw_shadow();
+		draw_shadow();
 
-		//draw_cubemap();
+		draw_cubemap();
 	}
 
 	void draw_obj(bool depth = false)
@@ -97,7 +97,7 @@ public:
 		glUniform3fv(shaderLight.loc_lightPosition, 1, glm::value_ptr(lightPosition));
 		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(camera));
 
-		/*if (!depth)
+		if (!depth)
 		{
 			glm::mat4 biasMatrix(
 				0.5, 0.0, 0.0, 0.0,
@@ -122,7 +122,7 @@ public:
 			glm::mat4 depthBiasMVP = biasMatrix * projection * viewLight * model;
 
 			glUniformMatrix4fv(shaderLight.loc_DepthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
-		}*/
+		}
 
 		glUniform1f(shaderLight.loc_isLight, 1.0f);
 
@@ -130,14 +130,14 @@ public:
 		glDrawArrays(GL_TRIANGLES, 0, modelSuzanne.vertices.size());
 		glBindVertexArray(0);
 
-		/*if (!depth)
+		if (!depth)
 		{
 			glUniform1f(shaderLight.loc_isLight, 0.0f);
 			glBindVertexArray(modelPlane.vaoObject);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelPlane.vboIndex);
 			glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
-		}*/
+		}
 	}
 
 	void draw_in_depth()
