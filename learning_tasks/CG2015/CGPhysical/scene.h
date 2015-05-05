@@ -1,5 +1,5 @@
 #pragma once
-
+#define GLM_FORCE_RADIANS
 #include <scenebase.h>
 #include "shaders.h"
 #include "geometry.h"
@@ -27,8 +27,10 @@ public:
 
 		for (int i = 0; i < (int)modelOfFileList.size(); ++i)
 		{
+
 			std::string file = pref + std::to_string(i + 1) + suff;
 			modelOfFileList[i].reset(file);
+			modelOfFileList[i].set_number(i);
 		}
 	}
 
@@ -50,7 +52,7 @@ public:
 		m_camera.SetClipping(0.1, 100.0);
 		m_camera.SetFOV(45);
 
-	    glEnable(GL_BLEND);
+		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glEnable(GL_LINE_SMOOTH);
@@ -59,6 +61,7 @@ public:
 		glEnable(GL_POLYGON_SMOOTH);
 		glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
+		modelOfFileList[0].move_ball(-2);
 		return true;
 	}
 
@@ -81,6 +84,49 @@ public:
 		//angle_light += elapsed / 1000.0f;
 		angle_light = 9.2f;
 		//angle += elapsed / 2500.0f;
+
+		for (int i = 0; i < modelOfFileList.size(); ++i)
+		{
+			for (int j = i + 1; j < modelOfFileList.size(); ++j)
+			{
+				glm::vec3 a = modelOfFileList[i].get_center();
+				glm::vec3 b = modelOfFileList[j].get_center();
+				double dist = glm::distance(a, b);
+				double mx = 2 * modelOfFileList[i].get_r();
+
+				if (dist - mx < -1e-5)
+				{
+					std::swap(modelOfFileList[i].speed, modelOfFileList[j].speed);
+				}
+			}
+		}
+
+		for (int i = 0; i < modelOfFileList.size() - 1; ++i)
+		{
+			glm::vec3 a = modelOfFileList[i].get_center();
+			glm::vec3 b = modelOfFileList[i + 1].get_center();
+			double dist = glm::distance(a, b);
+			double mx = 2 * modelOfFileList[i].get_r();
+
+			while (dist - mx < -1e-5)
+			{
+				modelOfFileList[i + 1].cur_angle += 1 / (dist - mx);
+				modelOfFileList[i + 1].move_to_angle(modelOfFileList[i + 1].cur_angle);
+
+				modelOfFileList[i].cur_angle += -1 / (dist - mx);
+				modelOfFileList[i].move_to_angle(modelOfFileList[i].cur_angle);
+
+				a = modelOfFileList[i].get_center();
+				b = modelOfFileList[i + 1].get_center();
+
+				dist = glm::distance(a, b);
+			}
+		}
+
+		for (int i = 0; i < modelOfFileList.size(); ++i)
+		{
+			modelOfFileList[i].update_physical(elapsed / 100000.0f);
+		}
 
 		//draw_in_depth();
 		draw_obj();
@@ -144,15 +190,15 @@ public:
 
 		glBindVertexArray(modelOfFileBasis.vaoObject);
 		glDrawArrays(GL_TRIANGLES, 0, modelOfFileBasis.vertices.size());
-		glBindVertexArray(0);		
+		glBindVertexArray(0);
 
 		/*if (!depth)
 		{
-			glUniform1f(shaderLight.loc_isLight, 0.0f);
-			glBindVertexArray(modelPlane.vaoObject);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelPlane.vboIndex);
-			glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, 0);
-			glBindVertexArray(0);
+		glUniform1f(shaderLight.loc_isLight, 0.0f);
+		glBindVertexArray(modelPlane.vaoObject);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelPlane.vboIndex);
+		glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
 		}*/
 	}
 
