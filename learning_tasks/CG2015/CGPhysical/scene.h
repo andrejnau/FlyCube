@@ -61,7 +61,9 @@ public:
 		glEnable(GL_POLYGON_SMOOTH);
 		glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
-		modelOfFileList[0].move_ball(-2);
+		modelOfFileList[0].move_ball(-1.8);
+		//modelOfFileList[1].move_ball(-1.8);
+
 		return true;
 	}
 
@@ -108,18 +110,20 @@ public:
 			double dist = glm::distance(a, b);
 			double mx = 2 * modelOfFileList[i].get_r();
 
-			while (dist - mx < -1e-5)
+			if (dist - mx < -1e-5)
 			{
-				modelOfFileList[i + 1].cur_angle += 1 / (dist - mx);
-				modelOfFileList[i + 1].move_to_angle(modelOfFileList[i + 1].cur_angle);
+				double eps = 1e-4;
 
-				modelOfFileList[i].cur_angle += -1 / (dist - mx);
+				modelOfFileList[i].angle_cur += -eps;
 				modelOfFileList[i].move_to_angle(modelOfFileList[i].cur_angle);
 
-				a = modelOfFileList[i].get_center();
-				b = modelOfFileList[i + 1].get_center();
+				modelOfFileList[i + 1].angle_cur += eps;
+				modelOfFileList[i + 1].move_to_angle(modelOfFileList[i + 1].cur_angle);			
 
-				dist = glm::distance(a, b);
+				//a = modelOfFileList[i].get_center();
+				//b = modelOfFileList[i + 1].get_center();
+
+				//dist = glm::distance(a, b);
 			}
 		}
 

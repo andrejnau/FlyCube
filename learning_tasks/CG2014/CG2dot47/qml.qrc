@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>icons/ic_note_add_black_18dp.png</file>
+    </qresource>
+</RCC>
