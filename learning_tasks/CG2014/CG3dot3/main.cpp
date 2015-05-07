@@ -32,7 +32,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	{
 		renderer->read_size();
 	}
-
 }
 
 static void error_callback(int error, const char* description)
