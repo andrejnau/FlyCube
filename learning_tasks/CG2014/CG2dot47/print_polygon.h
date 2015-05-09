@@ -45,7 +45,7 @@ static const char FRAGMENT_SHADERP[] =
 "    outColor = _color;\n"
 "}\n";
 
-class PrintPolygon : public SceneBase, public SingleTon < PrintPolygon >
+class PrintPolygon : public SceneBase
 {
 public:
 	PrintPolygon()

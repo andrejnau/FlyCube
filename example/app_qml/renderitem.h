@@ -19,6 +19,6 @@ public slots :
 private slots :
 	void handleWindowChanged(QQuickWindow *win);
 private:
-	TestScene &renderer;
-	std::unique_ptr<QOpenGLContext> ctx;
+	QOpenGLContext * backgroundContext;
+	std::unique_ptr<TestScene> renderer;
 };

@@ -1,21 +1,5 @@
-cmake_minimum_required (VERSION 2.8.12)
-
 set (PROJECT CG2dot47)
 project (${PROJECT})
-
-set(CMAKE_AUTOMOC ON)
-set(AUTOMOC_MOC_OPTIONS PROPERTIES FOLDER CMakeAutomocTargets)
-set_property(GLOBAL PROPERTY AUTOMOC_FOLDER CMakeAutomocTargets)
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-find_package(Qt5Core    REQUIRED)
-find_package(Qt5Gui     REQUIRED)
-find_package(Qt5Widgets REQUIRED)
-
-if (NOT Qt5Core_FOUND)
-	message("Example ${target} skipped: Qt5 not found")
-	return()
-endif()
 
 file(GLOB HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "*.h")

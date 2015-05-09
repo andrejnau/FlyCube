@@ -2,7 +2,6 @@
 
 #include <utilities.h>
 #include <vector>
-#include <utils/shaders.h>
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>

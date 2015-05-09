@@ -3,27 +3,23 @@
 class SwapContext
 {
 public:
-	SwapContext(QOpenGLContext *ctx, QSurface *surf)
+	SwapContext(QQuickWindow *_win)
+		: win(_win)
 	{
-		p_ctx = QOpenGLContext::currentContext();
-		p_surf = p_ctx->surface();
-		ctx->makeCurrent(surf);
+		win->openglContext()->shareContext()->makeCurrent(win);
 	}
 	~SwapContext()
 	{
-		p_ctx->makeCurrent(p_surf);
+		win->openglContext()->makeCurrent(win);
 	}
-
 private:
-	QOpenGLContext *p_ctx;
-	QSurface *p_surf;
+	QQuickWindow *win;
 };
 
-RenderItem::RenderItem() : input_polygon(PrintPolygon::Instance()), m_input(false)
+RenderItem::RenderItem()
+	: m_input(false)
 {
 	connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
-	ctx.reset(new QOpenGLContext(this));
-	ctx->create();
 }
 
 bool RenderItem::isInput() const
@@ -63,10 +59,10 @@ std::pair<float, float> RenderItem::pointToGL(int point_x, int point_y)
 
 void RenderItem::doSendPoint(int point_x, int point_y)
 {
-	SwapContext set_ctx(ctx.get(), window());
+	SwapContext set_ctx(window());
 	glm::vec2 point;
 	std::tie(point.x, point.y) = pointToGL(point_x, point_y);
-	if (input_polygon.add_point(point))
+	if (input_polygon->add_point(point))
 	{
 		setInput(false);
 		if (!point_for_sort.empty())
@@ -88,10 +84,10 @@ void RenderItem::doEndInput()
 
 void RenderItem::doSendFuturePoint(int point_x, int point_y)
 {
-	SwapContext set_ctx(ctx.get(), window());
+	SwapContext set_ctx(window());
 	glm::vec2 point;
 	std::tie(point.x, point.y) = pointToGL(point_x, point_y);
-	input_polygon.future_point(point);
+	input_polygon->future_point(point);
 }
 
 void RenderItem::handleWindowChanged(QQuickWindow *win)
@@ -106,8 +102,8 @@ void RenderItem::handleWindowChanged(QQuickWindow *win)
 
 void RenderItem::cleanScene()
 {
-	SwapContext set_ctx(ctx.get(), window());
-	input_polygon.clear();
+	SwapContext set_ctx(window());
+	input_polygon->clear();
 	point_for_sort.clear();
 	sort_type.clear();
 }
@@ -131,8 +127,8 @@ void RenderItem::startTest(bool f)
 		out_vec.push_back(point);
     }
 	glm::vec4 color(1.0f, 0.0f, 0.05f, 1.0f);
-	SwapContext set_ctx(ctx.get(), window());
-	input_polygon.set_based(out_vec, color);
+	SwapContext set_ctx(window());
+	input_polygon->set_based(out_vec, color);
 
 	std::vector<glm::vec2> out_Beziers;
 	double eps = 1e-4;
@@ -150,7 +146,7 @@ void RenderItem::startTest(bool f)
 	}
 
 	color = { 0.0f, 0.05f, 1.00f, 1.0f };
-	input_polygon.set_Beziers(out_Beziers, color);
+	input_polygon->set_Beziers(out_Beziers, color);
 }
 
 void RenderItem::paint()
@@ -160,25 +156,33 @@ void RenderItem::paint()
 
 void RenderItem::paintPolygon()
 {
-	SwapContext set_ctx(ctx.get(), window());
-	input_polygon.draw();
+	SwapContext set_ctx(window());
+	input_polygon->draw();
 }
 
 void RenderItem::sync()
 {
-	SwapContext set_ctx(ctx.get(), window());
-	static bool initSt = false;
-	if (!initSt)
+	if (!input_polygon)
+	{
+		backgroundContext = new QOpenGLContext(this);
+		backgroundContext->setFormat(window()->openglContext()->format());
+		backgroundContext->create();
+		window()->openglContext()->setShareContext(backgroundContext);
+	}
+
+	SwapContext ctx(window());
+	if (!input_polygon)
 	{
 		ogl_LoadFunctions();
+		input_polygon.reset(new PrintPolygon());
+		input_polygon->init();
 		connect(window(), SIGNAL(beforeRendering()), this, SLOT(paint()), Qt::DirectConnection);
-		initSt = input_polygon.init();
 	}
-	input_polygon.resize(0, 0, window()->width(), window()->height());
+	input_polygon->resize(0, 0, window()->width(), window()->height());
 }
 
 void RenderItem::cleanup()
 {
-	SwapContext set_ctx(ctx.get(), window());
-	input_polygon.destroy();
+	SwapContext set_ctx(window());
+	input_polygon->destroy();
 }

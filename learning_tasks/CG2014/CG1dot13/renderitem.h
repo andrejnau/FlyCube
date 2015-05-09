@@ -37,6 +37,6 @@ private:
     bool m_input;
     std::vector<std::pair<int, int> > point_for_sort;
     std::vector<int> sort_type;
-    PrintPolygon &input_polygon;
-    std::unique_ptr<QOpenGLContext> ctx;
+	std::unique_ptr<PrintPolygon> input_polygon;
+	QOpenGLContext *backgroundContext;
 };

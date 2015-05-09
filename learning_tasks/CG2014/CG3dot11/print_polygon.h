@@ -50,7 +50,7 @@ static const char FRAGMENT_SHADERP_BOX[] =
 "    outColor = vec4(0.75, 0.75, 0.75, 0.5);\n"
 "}\n";
 
-class PrintPolygon : public SceneBase, public SingleTon < PrintPolygon >
+class PrintPolygon : public SceneBase
 {
 public:
 	PrintPolygon()

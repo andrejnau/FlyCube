@@ -9,6 +9,13 @@
 #include <algorithm>
 #include <glm/glm.hpp>
 
+#define STR(s) #s
+#define STRV(s) STR(s)
+
+#define POS_ATTRIB 0
+#define NORMAL_ATTRIB 1
+#define TEXTURE_ATTRIB 2
+
 static bool checkGlError(const char* funcName)
 {
 	GLenum err = glGetError();

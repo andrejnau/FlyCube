@@ -52,8 +52,8 @@ private:
     bool m_input;
     std::vector<glm::vec2> m_points;
     std::vector<glm::vec2> m_box;
-    PrintPolygon &input_polygon;
-    std::unique_ptr<QOpenGLContext> ctx;
+    std::unique_ptr<PrintPolygon> input_polygon;
+	QOpenGLContext* backgroundContext;
     QString m_val_n1;
     QString m_val_n2;
 };

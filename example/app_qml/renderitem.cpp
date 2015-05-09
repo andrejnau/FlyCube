@@ -3,27 +3,22 @@
 class SwapContext
 {
 public:
-	SwapContext(QOpenGLContext *ctx, QSurface *surf)
+	SwapContext(QQuickWindow *_win)
+		: win(_win)
 	{
-		p_ctx = QOpenGLContext::currentContext();
-		p_surf = p_ctx->surface();
-		ctx->makeCurrent(surf);
+		win->openglContext()->shareContext()->makeCurrent(win);
 	}
 	~SwapContext()
 	{
-		p_ctx->makeCurrent(p_surf);
+		win->openglContext()->makeCurrent(win);
 	}
-
 private:
-	QOpenGLContext *p_ctx;
-	QSurface *p_surf;
+	QQuickWindow *win;
 };
 
-RenderItem::RenderItem() : renderer(TestScene::Instance())
+RenderItem::RenderItem()
 {
 	connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
-	ctx.reset(new QOpenGLContext(this));
-	ctx->create();
 }
 
 void RenderItem::handleWindowChanged(QQuickWindow *win)
@@ -38,26 +33,36 @@ void RenderItem::handleWindowChanged(QQuickWindow *win)
 
 void RenderItem::paint()
 {
-	SwapContext set_ctx(ctx.get(), window());
-	renderer.draw();
+	SwapContext ctx(window());
+	renderer->draw();
 }
 
 void RenderItem::sync()
 {
-	static bool initSt = false;
-	if (!initSt)
+	if (!renderer)
 	{
-		ogl_LoadFunctions();
-		connect(window(), SIGNAL(beforeRendering()), this, SLOT(paint()), Qt::DirectConnection);
-		SwapContext set_ctx(ctx.get(), window());
-		initSt = renderer.init();
+		backgroundContext = new QOpenGLContext(this);
+		backgroundContext->setFormat(window()->openglContext()->format());
+		backgroundContext->create();
+		window()->openglContext()->setShareContext(backgroundContext);
 	}
 
-	SwapContext set_ctx(ctx.get(), window());
-	renderer.resize(0, 0, window()->width(), window()->height());
+	SwapContext ctx(window());
+	if (!renderer)
+	{
+		ogl_LoadFunctions();
+		renderer.reset(new TestScene());
+		renderer->init();
+		connect(window(), SIGNAL(beforeRendering()), this, SLOT(paint()), Qt::DirectConnection);
+	}
+	renderer->resize(0, 0, window()->width(), window()->height());
 }
 
 void RenderItem::cleanup()
 {
-	renderer.destroy();
+	if (renderer)
+	{
+		renderer->destroy();
+		renderer.reset(nullptr);
+	}
 }

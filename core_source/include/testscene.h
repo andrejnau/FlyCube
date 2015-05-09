@@ -93,6 +93,8 @@ public:
 		glGenBuffers(1, &vboNormalS);
 		glGenVertexArrays(1, &vaoObject);
 
+		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
+
 		init_vao();
 		return true;
 	}
@@ -169,7 +171,6 @@ public:
 
 	virtual void draw()
 	{
-		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		auto & state = CurState<bool>::Instance().state;

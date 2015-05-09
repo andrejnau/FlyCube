@@ -3,28 +3,26 @@
 class SwapContext
 {
 public:
-	SwapContext(QOpenGLContext *ctx, QSurface *surf)
+	SwapContext(QQuickWindow *_win)
+		: win(_win)
 	{
-		p_ctx = QOpenGLContext::currentContext();
-		p_surf = p_ctx->surface();
-		ctx->makeCurrent(surf);
+		win->openglContext()->shareContext()->makeCurrent(win);
 	}
 	~SwapContext()
 	{
-		p_ctx->makeCurrent(p_surf);
+		win->openglContext()->makeCurrent(win);
 	}
-
 private:
-	QOpenGLContext *p_ctx;
-	QSurface *p_surf;
+	QQuickWindow *win;
 };
 
-RenderItem::RenderItem() : input_polygon(PrintPolygon::Instance()),
-m_input(false), m_inputRay(false), m_val_n1("1.0"), m_val_n2("1.33")
+RenderItem::RenderItem()
+	: m_input(false)
+	, m_inputRay(false)
+	, m_val_n1("1.0")
+	, m_val_n2("1.33")
 {
 	connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
-	ctx.reset(new QOpenGLContext(this));
-	ctx->create();
 }
 
 bool RenderItem::isInput() const
@@ -89,10 +87,10 @@ std::pair<float, float> RenderItem::pointToGL(int point_x, int point_y)
 
 void RenderItem::doSendPoint(int point_x, int point_y)
 {
-	SwapContext set_ctx(ctx.get(), window());
+	SwapContext set_ctx(window());
 	glm::vec2 point;
 	std::tie(point.x, point.y) = pointToGL(point_x, point_y);
-	input_polygon.add_point(point);
+	input_polygon->add_point(point);
 	m_points.push_back(point);
 	if (!m_inputRay && m_points.size() >= 3)
 	{
@@ -100,7 +98,7 @@ void RenderItem::doSendPoint(int point_x, int point_y)
 	}
 	else if (m_inputRay && m_points.size() >= 2)
 	{
-		input_polygon.clear_point();
+		input_polygon->clear_point();
 		setInput(false);
 		Birefringence();
 	}
@@ -108,10 +106,10 @@ void RenderItem::doSendPoint(int point_x, int point_y)
 
 void RenderItem::doSendFuturePoint(int point_x, int point_y)
 {
-	SwapContext set_ctx(ctx.get(), window());
+	SwapContext set_ctx(window());
 	glm::vec2 point;
 	std::tie(point.x, point.y) = pointToGL(point_x, point_y);
-	input_polygon.future_point(point);
+	input_polygon->future_point(point);
 }
 
 void RenderItem::doButton()
@@ -135,8 +133,8 @@ void RenderItem::handleWindowChanged(QQuickWindow *win)
 
 void RenderItem::cleanScene()
 {
-	SwapContext set_ctx(ctx.get(), window());
-	input_polygon.clear();
+	SwapContext set_ctx(window());
+	input_polygon->clear();
 	m_points.clear();
 }
 
@@ -147,12 +145,12 @@ void RenderItem::finishBox()
 	glm::vec2 a = m_points[0] - m_points[1];
 	glm::vec2 b = m_points[2] - m_points[1];
 	m_points.push_back(m_points[1] + (a + b));
-	input_polygon.add_point(m_points.back());
+	input_polygon->add_point(m_points.back());
 
 	m_points.push_back(m_points.front());
-	input_polygon.add_point(m_points.back());
+	input_polygon->add_point(m_points.back());
 
-	input_polygon.finish_box();
+	input_polygon->finish_box();
 
 	m_box = std::move(m_points);
 	m_points.clear();
@@ -353,7 +351,7 @@ void RenderItem::Birefringence()
 		}
 	}
 
-	input_polygon.set_ray(output);
+	input_polygon->set_ray(output);
 }
 
 void RenderItem::paint()
@@ -363,25 +361,33 @@ void RenderItem::paint()
 
 void RenderItem::paintPolygon()
 {
-	SwapContext set_ctx(ctx.get(), window());
-	input_polygon.draw();
+	SwapContext set_ctx(window());
+	input_polygon->draw();
 }
 
 void RenderItem::sync()
 {
-	SwapContext set_ctx(ctx.get(), window());
-	static bool initSt = false;
-	if (!initSt)
+	if (!input_polygon)
+	{
+		backgroundContext = new QOpenGLContext(this);
+		backgroundContext->setFormat(window()->openglContext()->format());
+		backgroundContext->create();
+		window()->openglContext()->setShareContext(backgroundContext);
+	}
+
+	SwapContext ctx(window());
+	if (!input_polygon)
 	{
 		ogl_LoadFunctions();
+		input_polygon.reset(new PrintPolygon());
+		input_polygon->init();
 		connect(window(), SIGNAL(beforeRendering()), this, SLOT(paint()), Qt::DirectConnection);
-		initSt = input_polygon.init();
 	}
-	input_polygon.resize(0, 0, window()->width(), window()->height());
+	input_polygon->resize(0, 0, window()->width(), window()->height());
 }
 
 void RenderItem::cleanup()
 {
-	SwapContext set_ctx(ctx.get(), window());
-	input_polygon.destroy();
+	SwapContext set_ctx(window());
+	input_polygon->destroy();
 }

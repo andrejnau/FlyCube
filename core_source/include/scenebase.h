@@ -1,7 +1,5 @@
 #pragma once
 
-#include <singleton.h>
-
 class SceneBase
 {
 public:
@@ -9,6 +7,4 @@ public:
 	virtual void draw() = 0;
 	virtual void destroy() = 0;
 	virtual void resize(int, int, int, int) = 0;
-protected:
-	SceneBase() {}
 };

@@ -2,7 +2,6 @@
 
 #include <platform.h>
 #include <string>
-#include <utils/shaders.h>
 #include <utilities.h>
 
 struct ShaderLine
