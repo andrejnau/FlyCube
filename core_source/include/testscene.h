@@ -85,7 +85,7 @@ public:
 		loc_lightPosition = glGetUniformLocation(mProgram, "u_lightPosition");
 		loc_camera = glGetUniformLocation(mProgram, "u_camera");
 
-		std::string m_path(PROJECT_RESOURCE_MODEL_DIR "suzanne.obj");
+		std::string m_path(PROJECT_RESOURCE_DIR "/model/suzanne.obj");
 
 		loadOBJ(m_path, vertices, uvs, normals);
 

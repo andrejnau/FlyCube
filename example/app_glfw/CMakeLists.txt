@@ -7,7 +7,7 @@ set (SOURCES
 include_directories(../../core_source/include)
 
 if (MSVC)
-    add_executable(${PROJECT} ${SOURCES})
+    add_executable(${PROJECT} WIN32 ${SOURCES})
     set_target_properties(${PROJECT} PROPERTIES
                         LINK_FLAGS "/ENTRY:mainCRTStartup")
 else()

@@ -85,8 +85,8 @@ public:
 		loc_lightPosition = glGetUniformLocation(mProgram, "u_lightPosition");
 		loc_camera = glGetUniformLocation(mProgram, "u_camera");
 
-		std::string m_pathA(PROJECT_RESOURCE_MODEL_DIR "sphere.obj");
-		std::string m_pathB(PROJECT_RESOURCE_MODEL_DIR "cube.obj");
+		std::string m_pathA(PROJECT_RESOURCE_DIR "/model/sphere.obj");
+		std::string m_pathB(PROJECT_RESOURCE_DIR "/model/cube.obj");
 
 		loadOBJ(m_pathA, verticesA, uvsA, normalsA);
 		loadOBJ(m_pathB, verticesB, uvsB, normalsB);

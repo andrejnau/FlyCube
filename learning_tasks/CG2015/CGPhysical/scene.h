@@ -19,10 +19,10 @@ public:
 		: axis_x(1.0f, 0.0f, 0.0f)
 		, axis_y(0.0f, 1.0f, 0.0f)
 		, axis_z(0.0f, 0.0f, 1.0f)
-		, modelOfFileBasis("newtan_balls/qb.obj")
+		, modelOfFileBasis("/model/newtan_balls/qb.obj")
 		, modelOfFileList(balls_count)
 	{
-		std::string pref = "newtan_balls/q";
+		std::string pref = "/model/newtan_balls/q";
 		std::string suff = ".obj";
 
 		for (int i = 0; i < (int)modelOfFileList.size(); ++i)
@@ -37,10 +37,6 @@ public:
 	virtual bool init()
 	{
 		glEnable(GL_DEPTH_TEST);
-
-		/*glEnable(GL_CULL_FACE);
-		glCullFace(GL_FRONT);
-		glFrontFace(GL_CW);*/
 
 		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 
@@ -62,7 +58,6 @@ public:
 		glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
 		modelOfFileList[0].move_ball(-1.8);
-		//modelOfFileList[1].move_ball(-1.8);
 
 		return true;
 	}
@@ -83,9 +78,7 @@ public:
 		int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 		start = std::chrono::system_clock::now();
 
-		//angle_light += elapsed / 1000.0f;
 		angle_light = 9.2f;
-		//angle += elapsed / 2500.0f;
 
 		for (int i = 0; i < modelOfFileList.size(); ++i)
 		{
@@ -118,12 +111,7 @@ public:
 				modelOfFileList[i].move_to_angle(modelOfFileList[i].cur_angle);
 
 				modelOfFileList[i + 1].angle_cur += eps;
-				modelOfFileList[i + 1].move_to_angle(modelOfFileList[i + 1].cur_angle);			
-
-				//a = modelOfFileList[i].get_center();
-				//b = modelOfFileList[i + 1].get_center();
-
-				//dist = glm::distance(a, b);
+				modelOfFileList[i + 1].move_to_angle(modelOfFileList[i + 1].cur_angle);
 			}
 		}
 
@@ -195,15 +183,6 @@ public:
 		glBindVertexArray(modelOfFileBasis.vaoObject);
 		glDrawArrays(GL_TRIANGLES, 0, modelOfFileBasis.vertices.size());
 		glBindVertexArray(0);
-
-		/*if (!depth)
-		{
-		glUniform1f(shaderLight.loc_isLight, 0.0f);
-		glBindVertexArray(modelPlane.vaoObject);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelPlane.vboIndex);
-		glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-		}*/
 	}
 
 	void draw_in_depth()
@@ -359,12 +338,12 @@ public:
 		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
 		std::vector <std::string> textures_faces = {
-			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_rt.bmp",
-			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_lf.bmp",
-			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_up.bmp",
-			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_dn.bmp",
-			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_bk.bmp",
-			PROJECT_RESOURCE_MODEL_DIR "/sk/txStormydays_ft.bmp"
+			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_rt.bmp",
+			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_lf.bmp",
+			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_up.bmp",
+			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_dn.bmp",
+			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_bk.bmp",
+			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_ft.bmp"
 		};
 
 		for (GLuint i = 0; i < textures_faces.size(); i++)
