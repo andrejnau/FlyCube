@@ -27,7 +27,6 @@ public:
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 
-		m_camera.SetMode(FREE);
 		m_camera.SetPosition(glm::vec3(0, 0, 1));
 		m_camera.SetLookAt(glm::vec3(0, 0, 0));
 		m_camera.SetClipping(0.1, 100.0);
@@ -39,18 +38,9 @@ public:
 
 		for (int i = 0; i < 10; ++i)
 		{
-			m_camera.Move(BACK);
+			m_camera.Move(CameraDirection::BACK);
 			m_camera.Update();
 		}
-
-		/*glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		glEnable(GL_LINE_SMOOTH);
-		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-
-		glEnable(GL_POLYGON_SMOOTH);
-		glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);*/
 
 		return true;
 	}

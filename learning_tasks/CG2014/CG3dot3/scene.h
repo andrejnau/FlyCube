@@ -12,7 +12,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-class tScenes : public SceneBase, public SingleTon < tScenes >
+class tScenes : public SceneBase
 {
 public:
 	tScenes()
@@ -247,5 +247,4 @@ private:
 	ShaderLine shaderLine;
 	ModelOfFile modelOfFile;
 	ModelOfFile modelOfFile2;
-
 };

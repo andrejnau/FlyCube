@@ -30,7 +30,6 @@ public:
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 
-		m_camera.SetMode(FREE);
 		m_camera.SetPosition(glm::vec3(0, 0, 1));
 		m_camera.SetLookAt(glm::vec3(0, 0, 0));
 		m_camera.SetClipping(0.1, 100.0);
@@ -42,7 +41,7 @@ public:
 
 		for (int i = 0; i < 42; ++i)
 		{
-			m_camera.Move(BACK);
+			m_camera.Move(CameraDirection::BACK);
 			m_camera.Update();
 		}
 

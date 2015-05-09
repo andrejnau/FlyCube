@@ -42,7 +42,6 @@ public:
 
 		c_textureID = loadCubemap();
 
-		m_camera.SetMode(FREE);
 		m_camera.SetPosition(glm::vec3(0, 0, 1));
 		m_camera.SetLookAt(glm::vec3(0, 0, 0));
 		m_camera.SetClipping(0.1, 100.0);

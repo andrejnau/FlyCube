@@ -32,22 +32,22 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 	switch (key) {
 	case GLFW_KEY_W:
-		renderer->getCamera().Move(FORWARD);
+		renderer->getCamera().Move(CameraDirection::FORWARD);
 		break;
 	case GLFW_KEY_A:
-		renderer->getCamera().Move(LEFT);
+		renderer->getCamera().Move(CameraDirection::LEFT);
 		break;
 	case GLFW_KEY_S:
-		renderer->getCamera().Move(BACK);
+		renderer->getCamera().Move(CameraDirection::BACK);
 		break;
 	case GLFW_KEY_D:
-		renderer->getCamera().Move(RIGHT);
+		renderer->getCamera().Move(CameraDirection::RIGHT);
 		break;
 	case GLFW_KEY_Q:
-		renderer->getCamera().Move(DOWN);
+		renderer->getCamera().Move(CameraDirection::DOWN);
 		break;
 	case GLFW_KEY_E:
-		renderer->getCamera().Move(UP);
+		renderer->getCamera().Move(CameraDirection::UP);
 		break;
 	case GLFW_KEY_L:
 		renderer->getCamera().angle_y += eps;

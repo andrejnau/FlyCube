@@ -1,8 +1,12 @@
 set (PROJECT appQtExample)
 project (${PROJECT})
 
-if (NOT Qt5Core_FOUND)
-	message("${PROJECT} skipped: Qt5 not found")
+if (Qt5Core_FOUND)
+    set(CMAKE_AUTOMOC ON)
+    set(AUTOMOC_MOC_OPTIONS PROPERTIES FOLDER CMakeAutomocTargets)
+    set_property(GLOBAL PROPERTY AUTOMOC_FOLDER CMakeAutomocTargets)
+else()
+    message("${PROJECT} skipped: Qt5 not found")
 	return()
 endif()
 
@@ -18,3 +22,5 @@ add_executable(${PROJECT} WIN32 ${HEADERS} ${SOURCES} ${UI_LIST})
 
 target_link_libraries(${PROJECT} gl_core mlogger)
 qt5_use_modules(${PROJECT} Core Gui Widgets)
+
+set_target_properties(${PROJECT} PROPERTIES FOLDER "example")

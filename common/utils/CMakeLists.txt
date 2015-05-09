@@ -9,3 +9,5 @@ add_custom_target(
     DEPENDS ${HEADERS}
     SOURCES ${HEADERS}
 )
+
+set_target_properties(${PROJECT} PROPERTIES FOLDER "common")

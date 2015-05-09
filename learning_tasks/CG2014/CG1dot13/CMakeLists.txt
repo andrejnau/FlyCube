@@ -1,8 +1,12 @@
 set (PROJECT CG1dot13)
 project (${PROJECT})
 
-if (NOT Qt5Core_FOUND)
-	message("${PROJECT} skipped: Qt5 not found")
+if (Qt5Core_FOUND)
+    set(CMAKE_AUTOMOC ON)
+    set(AUTOMOC_MOC_OPTIONS PROPERTIES FOLDER CMakeAutomocTargets)
+    set_property(GLOBAL PROPERTY AUTOMOC_FOLDER CMakeAutomocTargets)
+else()
+    message("${PROJECT} skipped: Qt5 not found")
 	return()
 endif()
 

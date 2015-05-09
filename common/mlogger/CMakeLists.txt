@@ -12,3 +12,5 @@ set (SOURCES
     src/mlogger.cpp)
 
 add_library(${PROJECT} ${HEADERS} ${SOURCES})
+
+set_target_properties(${PROJECT} PROPERTIES FOLDER "common")
