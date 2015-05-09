@@ -6,9 +6,9 @@ project (${PROJECT})
 include(cmake/defaults.cmake)
 
 #qt
-find_package(Qt5Core    REQUIRED)
-find_package(Qt5Gui     REQUIRED)
-find_package(Qt5Widgets REQUIRED)
+find_package(Qt5Core)
+find_package(Qt5Gui)
+find_package(Qt5Widgets)
 
 if (Qt5Core_FOUND)
     set(CMAKE_AUTOMOC ON)

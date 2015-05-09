@@ -1,6 +1,11 @@
 set (PROJECT CG1dot13)
 project (${PROJECT})
 
+if (NOT Qt5Core_FOUND)
+	message("${PROJECT} skipped: Qt5 not found")
+	return()
+endif()
+
 file(GLOB HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "*.h")
 file(GLOB SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
