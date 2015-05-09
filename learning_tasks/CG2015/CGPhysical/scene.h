@@ -19,10 +19,10 @@ public:
 		: axis_x(1.0f, 0.0f, 0.0f)
 		, axis_y(0.0f, 1.0f, 0.0f)
 		, axis_z(0.0f, 0.0f, 1.0f)
-		, modelOfFileBasis("/model/newtan_balls/qb.obj")
+		, modelOfFileBasis("model/newtan_balls/qb.obj")
 		, modelOfFileList(balls_count)
 	{
-		std::string pref = "/model/newtan_balls/q";
+		std::string pref = "model/newtan_balls/q";
 		std::string suff = ".obj";
 
 		for (int i = 0; i < (int)modelOfFileList.size(); ++i)
@@ -337,12 +337,12 @@ public:
 		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
 		std::vector <std::string> textures_faces = {
-			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_rt.bmp",
-			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_lf.bmp",
-			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_up.bmp",
-			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_dn.bmp",
-			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_bk.bmp",
-			PROJECT_RESOURCE_DIR "/cubemap/skycloud/txStormydays_ft.bmp"
+			PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_rt.bmp",
+			PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_lf.bmp",
+			PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_up.bmp",
+			PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_dn.bmp",
+			PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_bk.bmp",
+			PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_ft.bmp"
 		};
 
 		for (GLuint i = 0; i < textures_faces.size(); i++)

@@ -24,7 +24,7 @@ public:
 		: axis_x(1.0f, 0.0f, 0.0f)
 		, axis_y(0.0f, 1.0f, 0.0f)
 		, axis_z(0.0f, 0.0f, 1.0f)
-		, modelSuzanne("/model/suzanne.obj")
+		, modelSuzanne("model/suzanne.obj")
 	{
 	}
 
@@ -32,7 +32,7 @@ public:
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
-		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);		
+		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 		return true;
 	}
 
@@ -40,7 +40,7 @@ public:
 	{
 	}
 
-	void draw_obj()
+	virtual void draw()
 	{
 		static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now(), end = std::chrono::system_clock::now();
 
@@ -87,19 +87,6 @@ public:
 		glBindVertexArray(modelSuzanne.vaoObject);
 		glDrawArrays(GL_TRIANGLES, 0, modelSuzanne.vertices.size());
 		glBindVertexArray(0);
-	}
-
-	virtual void draw()
-	{
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		auto & state = CurState<bool>::Instance().state;
-		if (state["warframe"])
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		else
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-		draw_obj();
 	}
 
 	virtual void resize(int x, int y, int width, int height)

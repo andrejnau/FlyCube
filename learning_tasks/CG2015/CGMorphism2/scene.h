@@ -77,7 +77,7 @@ public:
 			modelOfMemoryL[i].init_vao();
 		}
 
-		modelOfFile.reset("/model/parallelepiped.obj");
+		modelOfFile.reset("model/parallelepiped.obj");
 		return true;
 	}
 

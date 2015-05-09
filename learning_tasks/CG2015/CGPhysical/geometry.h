@@ -167,7 +167,7 @@ struct ModelSuzanne
 {
 	ModelSuzanne()
 	{
-		std::string m_path(PROJECT_RESOURCE_DIR "/model/suzanne.obj");
+		std::string m_path(PROJECT_RESOURCE_DIR "model/suzanne.obj");
 		loadOBJ(m_path, vertices, uvs, normals);
 		gen_vao();
 		init_vao();
@@ -212,7 +212,7 @@ struct ModelCubeSkybox
 {
 	ModelCubeSkybox()
 	{
-		std::string m_path(PROJECT_RESOURCE_DIR "/model/cube.obj");
+		std::string m_path(PROJECT_RESOURCE_DIR "model/cube.obj");
 
 		vertices = {
 			-1.0f, 1.0f, -1.0f,

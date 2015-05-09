@@ -1,12 +1,14 @@
+#define PROJECT_RESOURCE_DIR ""
 #include <jni.h>
 #include <platform.h>
 #include <testscene.h>
-
-static TestScene renderer;
+#include <memory>
 
 #define PREIFX_CAT(arg1, arg2, arg3, arg4) arg1 ##_## arg2 ##_## arg3 ##_## arg4
 #define jni_declaration(method_name, ret_type, ...)  \
-	extern "C" JNIEXPORT ret_type JNICALL PREIFX_CAT(Java, com_softmob_gles3jni, GLES3JNILib, method_name)(__VA_ARGS__)
+    extern "C" JNIEXPORT ret_type JNICALL PREIFX_CAT(Java, com_softmob_gles3jni, GLES3JNILib, method_name)(__VA_ARGS__)
+
+std::unique_ptr<TestScene> renderer;
 
 jni_declaration(init, void, JNIEnv* env, jobject obj)
 {
@@ -16,25 +18,29 @@ jni_declaration(init, void, JNIEnv* env, jobject obj)
     printGlString("Extensions", GL_EXTENSIONS);
 
     const char* versionStr = (const char*)glGetString(GL_VERSION);
-    if (strstr(versionStr, "OpenGL ES 3."))
+    if (!strstr(versionStr, "OpenGL ES 3."))
     {
-        if (!renderer.init())
-        {
-            MLOG(mlog::error, "Initialize error");
-        }
-    }
-    else
         MLOG(mlog::error, "Unsupported OpenGL ES version");
+        return ;
+    }
+
+    if (!renderer)
+        renderer.reset(new TestScene());
+
+    if (renderer)
+        renderer->init();
 }
 
 jni_declaration(resize, void, JNIEnv* env, jobject obj, jint width, jint height)
 {
-    renderer.resize(0, 0, width, height);
+    if (renderer)
+        renderer->resize(0, 0, width, height);
 }
 
 jni_declaration(render, void, JNIEnv* env, jobject obj)
 {
-    renderer.draw();
+    if (renderer)
+        renderer->draw();
 }
 
 jni_declaration(nativeSetAssetManager, void, JNIEnv* env, jobject obj, jobject assetManager)
