@@ -121,7 +121,7 @@ void RenderItem::startTest(bool f)
 	int n = point_for_sort.size();
 	std::vector<glm::vec2> vec;
 	vec.push_back(glm::vec2(point_for_sort[0].first, point_for_sort[0].second));
-	for (int i = 0; i < point_for_sort.size(); ++i)
+	for (int i = 0; i < (int)point_for_sort.size(); ++i)
 	{
 		vec.push_back(glm::vec2(point_for_sort[i].first, point_for_sort[i].second));
 	}
@@ -130,7 +130,7 @@ void RenderItem::startTest(bool f)
 	std::vector<glm::vec2> out_vec;
 	for (int i = 2; i <= n; ++i)
 	{
-		for (float t = 0.0f; t <= 1.0f; t += 1e-1)
+		for (float t = 0.0f; t <= 1.0f; t += 1e-1f)
 		{
 			glm::vec2 point = get_p(vec, i, t);
 			std::tie(point.x, point.y) = pointToGL(point.x, point.y);

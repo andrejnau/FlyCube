@@ -48,9 +48,10 @@ set_target_properties(gl_core PROPERTIES FOLDER "3rdparty")
 #project
 add_definitions(-DPROJECT_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 
+include_directories(common/utils/include)
+include_directories(common/testscene/include)
 include_directories(common/mlogger/include)
 
 add_subdirectory(common)
-add_subdirectory(core_source)
 add_subdirectory(example)
 add_subdirectory(learning_tasks)

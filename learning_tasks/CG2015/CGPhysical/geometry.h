@@ -59,7 +59,7 @@ struct ModelOfFile
 	{
 		number = n;
 
-		float x = 0.0 + d * number - 2.5 * d;
+		float x = (float)(0.0f + d * number - 2.5 * d);
 		float y = 2.0f;
 		float z = 0.0f;
 
@@ -71,7 +71,7 @@ struct ModelOfFile
 		vertices = s_vertices;
 		center = s_center;
 
-		float x = 0.0 + d * number - 2.5 * d;
+		float x = (float)(0.0f + d * number - 2.5 * d);
 		float y = 0.0f;
 		float z = 0.0f;
 
@@ -114,7 +114,7 @@ struct ModelOfFile
 			return;
 		xx = true;
 
-		angle_cur = angle_start = angle;
+		angle_cur = angle;
 		move_to_angle(angle_cur);
 	}
 
@@ -123,40 +123,35 @@ struct ModelOfFile
 		return center;
 	}
 
-	double get_r()
+	float get_r()
 	{
-		return d / 2.0;
+		return d / 2.0f;
 	}
 
-	void update_physical(double dt)
+	void update_physical(float dt)
 	{
-		double df = -g * sin(angle_cur) * dt;
+		float df = -g * sin(angle_cur) * dt;
 		speed += df;
 		angle_cur += speed;
 
-		speed *= 0.998;
+		speed *= 0.998f;
 
 		move_to_angle(angle_cur);
 	}
 
 	glm::vec3 center, s_center;
 
-	double d = 0.956f;
+	float d = 0.956f;
 
-	double speed = 0.0;
-	double angle_start = 0.0;
-	double angle_cur = 0.0;
-	double l = 1.0;
+	float speed = 0.0;
+	float angle_cur = 0.0;
 
-	double cur_angle = 0.0;
-	double cur_potential = 0.0;
+	float cur_angle = 0.0;
+	float cur_potential = 0.0;
 
-	double weight = 1.0;
-	double g = 9.81;
-	double angle = 0.0;
+	float g = 9.81f;
+	float angle = 0.0;
 
-	double direction_x = 0.0;
-	double direction_y = 0.0;
 
 	GLuint vboVertex;
 	GLuint vboNormal;

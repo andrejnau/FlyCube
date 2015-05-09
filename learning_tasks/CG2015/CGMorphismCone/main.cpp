@@ -113,11 +113,6 @@ int main(void)
 
 	init_opengl();
 
-	/*printGlString("Version", GL_VERSION);
-	printGlString("Vendor", GL_VENDOR);
-	printGlString("Renderer", GL_RENDERER);
-	printGlString("Extensions", GL_EXTENSIONS);*/
-
 	renderer.reset(new tScenes());
 
 	renderer->init();

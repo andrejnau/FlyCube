@@ -1,4 +1,4 @@
-set (PROJECT core_source)
+set (PROJECT utils)
 project (${PROJECT})
 
 file(GLOB HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)

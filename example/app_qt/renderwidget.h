@@ -1,6 +1,8 @@
 #pragma once
-#include <getscene.h>
+
+#include <testscene.h>
 #include <QOpenGLWidget>
+#include <memory>
 
 class RenderWidget : public QOpenGLWidget
 {
@@ -15,5 +17,5 @@ protected:
 private slots:
 	void cleanup();
 private:
-    SceneBase &renderer;
+	std::unique_ptr<TestScene> renderer;
 };

@@ -57,7 +57,7 @@ public:
 		glEnable(GL_POLYGON_SMOOTH);
 		glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
-		modelOfFileList[0].move_ball(-1.8);
+		modelOfFileList[0].move_ball(-1.8f);
 
 		return true;
 	}
@@ -80,9 +80,9 @@ public:
 
 		angle_light = 9.2f;
 
-		for (int i = 0; i < modelOfFileList.size(); ++i)
+		for (int i = 0; i < (int)modelOfFileList.size(); ++i)
 		{
-			for (int j = i + 1; j < modelOfFileList.size(); ++j)
+			for (int j = i + 1; j < (int)modelOfFileList.size(); ++j)
 			{
 				glm::vec3 a = modelOfFileList[i].get_center();
 				glm::vec3 b = modelOfFileList[j].get_center();
@@ -96,16 +96,16 @@ public:
 			}
 		}
 
-		for (int i = 0; i < modelOfFileList.size() - 1; ++i)
+		for (int i = 0; i < (int)modelOfFileList.size() - 1; ++i)
 		{
 			glm::vec3 a = modelOfFileList[i].get_center();
 			glm::vec3 b = modelOfFileList[i + 1].get_center();
-			double dist = glm::distance(a, b);
-			double mx = 2 * modelOfFileList[i].get_r();
+			float dist = glm::distance(a, b);
+			float mx = 2 * modelOfFileList[i].get_r();
 
-			if (dist - mx < -1e-5)
+			if (dist - mx < -1e-5f)
 			{
-				double eps = 1e-4;
+				float eps = 1e-4f;
 
 				modelOfFileList[i].angle_cur += -eps;
 				modelOfFileList[i].move_to_angle(modelOfFileList[i].cur_angle);
@@ -115,7 +115,7 @@ public:
 			}
 		}
 
-		for (int i = 0; i < modelOfFileList.size(); ++i)
+		for (int i = 0; i < (int)modelOfFileList.size(); ++i)
 		{
 			modelOfFileList[i].update_physical(elapsed / 100000.0f);
 		}

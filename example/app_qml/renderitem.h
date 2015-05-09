@@ -1,6 +1,6 @@
 #pragma once
 
-#include <getscene.h>
+#include <testscene.h>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QOpenGLContext>

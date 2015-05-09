@@ -4,8 +4,6 @@ project (${PROJECT})
 set (SOURCES
     main.cpp)
 
-include_directories(../../core_source/include)
-
 if (MSVC)
     add_executable(${PROJECT} WIN32 ${SOURCES})
     set_target_properties(${PROJECT} PROPERTIES

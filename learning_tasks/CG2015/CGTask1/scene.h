@@ -62,10 +62,10 @@ public:
 		lenta_a = b;
 		lenta_b = c;
 
-		for (int i = 1; i < modelOfMemoryL.size(); ++i)
+		for (int i = 1; i < (int)modelOfMemoryL.size(); ++i)
 		{
 			auto vec = modelOfMemoryL[i - 1].vertices;
-			for (int j = 0; j < vec.size(); ++j)
+			for (int j = 0; j < (int)vec.size(); ++j)
 			{
 				glm::mat3 r = glm::mat3(glm::rotate(glm::mat4(1.0f), acos(-1.0f) / 2.0f, this->axis_z));
 				vec[j] = r * vec[j];
@@ -73,7 +73,7 @@ public:
 			modelOfMemoryL[i].vertices = vec;
 		}
 
-		for (int i = 0; i < modelOfMemoryL.size(); ++i)
+		for (int i = 0; i < (int)modelOfMemoryL.size(); ++i)
 		{
 			modelOfMemoryL[i].init_vao();
 		}
@@ -114,7 +114,7 @@ public:
 		for (int i = 0; i < 1000; ++i)
 #endif
 		{
-			float m_angle = i * acos(-1.0) / 2.0f;
+			float m_angle = i * acos(-1.0f) / 2.0f;
 			if (fabs(m_angle - angle) < eps)
 			{
 				cur_id = i % 4;
@@ -185,7 +185,7 @@ public:
 		glUniform4f(shaderLight.loc_color, 1.0f, 0.0f, 0.0f, 1.0f);
 
 #ifdef ONE_LOOP
-		for (int i = cur_id + 1; i < modelOfMemoryL.size(); ++i)
+		for (int i = cur_id + 1; i < (int)modelOfMemoryL.size(); ++i)
 #else
 		for (int i = 0; i < modelOfMemoryL.size(); ++i)
 #endif
@@ -230,9 +230,9 @@ private:
 	glm::vec3 lenta_a;
 	glm::vec3 lenta_b;
 
-	float r1 = 0.6;
-	float r2 = 1;
-	float h = 1;
+	float r1 = 0.6f;
+	float r2 = 1.0f;
+	float h = 1.0f;
 
 	int m_width;
 	int m_height;

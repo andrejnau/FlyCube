@@ -115,7 +115,7 @@ public:
 	{
 		std::vector<glm::vec3> out;
 		glm::vec2 cur = start_a;
-		float eps = 1e-3;
+		float eps = 1e-3f;
 		int step = 1000;
 		float dx = (end_a.x - start_a.x) / step;
 		float dy = (end_a.y - start_a.y) / step;
@@ -236,7 +236,7 @@ private:
 	int m_width;
 	int m_height;
 
-	float r = 0.025;
+	float r = 0.025f;
 	glm::vec2 light = glm::vec2(0.5, 0.0);
 	glm::vec2 start_a = glm::vec2(0, 0.6);
 	glm::vec2 end_a = glm::vec2(0.5, 0.5);

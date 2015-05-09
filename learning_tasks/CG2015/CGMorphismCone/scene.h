@@ -33,9 +33,9 @@ public:
 		m_camera.SetClipping(0.1, 100.0);
 		m_camera.SetFOV(45);
 
-		m_camera.angle_x = -0.8;
-		m_camera.angle_y = 0.2;
-		m_camera.angle_z = 1.0;
+		m_camera.angle_x = -0.8f;
+		m_camera.angle_y = 0.2f;
+		m_camera.angle_z = 1.0f;
 
 		for (int i = 0; i < 10; ++i)
 		{
@@ -150,9 +150,9 @@ private:
 	glm::vec3 axis_y;
 	glm::vec3 axis_z;
 
-	float r1 = 0.6;
-	float r2 = 1;
-	float h = 1;
+	float r1 = 0.6f;
+	float r2 = 1.0f;
+	float h = 1.0f;
 
 	int m_width;
 	int m_height;

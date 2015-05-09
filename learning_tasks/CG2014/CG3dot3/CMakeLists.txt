@@ -9,8 +9,6 @@ set (HEADERS
 set (SOURCES
     main.cpp)
 
-include_directories(../../../core_source/include)
-
 if (MSVC)
     add_executable(${PROJECT} ${SOURCES} ${HEADERS})
     set_target_properties(${PROJECT} PROPERTIES

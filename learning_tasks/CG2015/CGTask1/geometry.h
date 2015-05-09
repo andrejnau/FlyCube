@@ -79,7 +79,7 @@ struct ModelOfMemory
 	{
 		normals.clear();
 		normals.resize(vertices.size());
-		for (int i = 0; i < vertices.size();)
+		for (int i = 0; i < (int)vertices.size();)
 		{
 			glm::vec3 nq = glm::normalize(glm::cross(vertices[i + 1] - vertices[i], vertices[i + 2] - vertices[i]));
 			for (int j = 0; j < 3; ++j)

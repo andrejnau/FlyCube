@@ -1,17 +1,19 @@
 #include <GLFW/glfw3.h>
-#include <getscene.h>
+#include <memory>
+#include <testscene.h>
 
-SceneBase &renderer = GetScene::get(SceneType::TestScene);
+std::unique_ptr<TestScene> renderer;
 
 void draw_scene()
 {
-	renderer.draw();
+	renderer->draw();
 }
 
 void init_opengl(void)
 {
 	ogl_LoadFunctions();
-	renderer.init();
+	renderer.reset(new TestScene());
+	renderer->init();
 }
 
 static void error_callback(int error, const char* description)
@@ -21,7 +23,7 @@ static void error_callback(int error, const char* description)
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-	renderer.resize(0, 0, width, height);
+	renderer->resize(0, 0, width, height);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)

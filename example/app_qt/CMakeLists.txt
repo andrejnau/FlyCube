@@ -13,8 +13,6 @@ file(GLOB SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 file(GLOB UI_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "*.ui")
 
-include_directories(../../core_source/include)
-
 qt5_wrap_ui(${PROJECT} ${UI_LIST})
 add_executable(${PROJECT} WIN32 ${HEADERS} ${SOURCES} ${UI_LIST})
 

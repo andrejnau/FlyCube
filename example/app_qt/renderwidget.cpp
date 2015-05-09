@@ -1,7 +1,7 @@
 #include "renderwidget.h"
 
-RenderWidget::RenderWidget(QWidget *parent) :
-QOpenGLWidget(parent), renderer(GetScene::get(SceneType::TestScene))
+RenderWidget::RenderWidget(QWidget *parent)
+	: QOpenGLWidget(parent)
 {
 }
 
@@ -13,22 +13,26 @@ RenderWidget::~RenderWidget()
 void RenderWidget::initializeGL()
 {
 	ogl_LoadFunctions();
-	renderer.init();
+	if (!renderer)
+	{
+		renderer.reset(new TestScene());
+	}
+	renderer->init();
 	connect(this, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()), Qt::DirectConnection);
 }
 
 void RenderWidget::paintGL()
 {
-	renderer.draw();
+	renderer->draw();
 	update();
 }
 
 void RenderWidget::resizeGL(int nWidth, int nHeight)
 {
-	renderer.resize(0, 0, nWidth, nHeight);
+	renderer->resize(0, 0, nWidth, nHeight);
 }
 
 void RenderWidget::cleanup()
 {
-	renderer.destroy();
+	renderer->destroy();
 }

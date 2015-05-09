@@ -10,9 +10,11 @@ void draw_scene()
 	renderer->draw();
 }
 
-void init_opengl()
+
+void init_opengl(void)
 {
-	ogl_LoadFunctions();
+	renderer.reset(new tScenes());
+	renderer->init();
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -101,16 +103,14 @@ int main(void)
 
 	glfwMakeContextCurrent(window);
 
-	init_opengl();
+	ogl_LoadFunctions();
 
 	printGlString("Version", GL_VERSION);
 	printGlString("Vendor", GL_VENDOR);
 	printGlString("Renderer", GL_RENDERER);
 	printGlString("Extensions", GL_EXTENSIONS);
 
-	renderer.reset(new tScenes());
-
-	renderer->init();
+	init_opengl();
 
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
