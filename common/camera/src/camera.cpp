@@ -19,11 +19,11 @@ Camera::Camera()
 	camera_pitch = 0.0f;
 }
 
-Camera::~Camera() 
+Camera::~Camera()
 {
 }
 
-void Camera::Update() 
+void Camera::Update()
 {
 	camera_direction = glm::normalize(camera_look_at - camera_position);
 	//need to set the matrix state. this is only important because lighting doesn't work if this isn't done
@@ -72,34 +72,34 @@ void Camera::Update()
 	MVP = projection * view * model;
 }
 
-void Camera::SetClipping(double near_clip_distance, double far_clip_distance) 
+void Camera::SetClipping(double near_clip_distance, double far_clip_distance)
 {
 	near_clip = near_clip_distance;
 	far_clip = far_clip_distance;
 }
 
-void Camera::SetMode(CameraType cam_mode) 
+void Camera::SetMode(CameraType cam_mode)
 {
 	camera_mode = cam_mode;
 	camera_up = glm::vec3(0, 1, 0);
 }
 
-void Camera::SetPosition(glm::vec3 pos) 
+void Camera::SetPosition(glm::vec3 pos)
 {
 	camera_position = pos;
 }
 
-void Camera::SetLookAt(glm::vec3 pos) 
+void Camera::SetLookAt(glm::vec3 pos)
 {
 	camera_look_at = pos;
 }
 
-void Camera::SetFOV(double fov) 
+void Camera::SetFOV(double fov)
 {
 	field_of_view = fov;
 }
 
-void Camera::SetViewport(int loc_x, int loc_y, int width, int height) 
+void Camera::SetViewport(int loc_x, int loc_y, int width, int height)
 {
 	viewport_x = loc_x;
 	viewport_y = loc_y;
@@ -107,11 +107,11 @@ void Camera::SetViewport(int loc_x, int loc_y, int width, int height)
 	window_height = height;
 	aspect = double(width) / double(height);
 }
-void Camera::Move(CameraDirection dir) 
+void Camera::Move(CameraDirection dir)
 {
 	if (camera_mode == CameraType::FREE)
 	{
-		switch (dir) 
+		switch (dir)
 		{
 		case CameraDirection::UP:
 			camera_position_delta += camera_up * camera_scale;
@@ -135,12 +135,12 @@ void Camera::Move(CameraDirection dir)
 	}
 }
 
-CameraType Camera::GetMode() 
+CameraType Camera::GetMode()
 {
 	return camera_mode;
 }
 
-void Camera::GetViewport(int &loc_x, int &loc_y, int &width, int &height) 
+void Camera::GetViewport(int &loc_x, int &loc_y, int &width, int &height)
 {
 	loc_x = viewport_x;
 	loc_y = viewport_y;
@@ -148,7 +148,7 @@ void Camera::GetViewport(int &loc_x, int &loc_y, int &width, int &height)
 	height = window_height;
 }
 
-void Camera::GetMatricies(glm::mat4 &P, glm::mat4 &V, glm::mat4 &M) 
+void Camera::GetMatricies(glm::mat4 &P, glm::mat4 &V, glm::mat4 &M)
 {
 	P = projection;
 	V = view;

@@ -10,7 +10,7 @@
 
 #include <gl_core.h>
 
-enum class CameraType 
+enum class CameraType
 {
 	ORTHO, FREE
 };
@@ -20,7 +20,7 @@ enum class CameraDirection
 	UP, DOWN, LEFT, RIGHT, FORWARD, BACK
 };
 
-class Camera 
+class Camera
 {
 public:
 	Camera();
