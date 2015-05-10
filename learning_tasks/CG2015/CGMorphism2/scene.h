@@ -66,7 +66,7 @@ public:
 			auto vec = modelOfMemoryL[i - 1].vertices;
 			for (int j = 0; j < (int)vec.size(); ++j)
 			{
-				glm::mat3 r = glm::mat3(glm::rotate(glm::mat4(1.0f), acos(-1.0f) / 2.0f, this->axis_z));
+				glm::mat3 r = glm::mat3(glm::rotate(glm::mat4(1.0f), (float)acos(-1.0f) / 2.0f, this->axis_z));
 				vec[j] = r * vec[j];
 			}
 			modelOfMemoryL[i].vertices = vec;

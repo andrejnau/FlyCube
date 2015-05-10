@@ -121,7 +121,7 @@ struct ModelFrustum
 
 			glm::vec3 v = glm::normalize(cur_a - cur_b);
 
-			glm::mat3 anim = glm::mat3(glm::rotate(glm::mat4(1.0f), -acos(-1.0f) / 2.0f, axis_x));
+			glm::mat3 anim = glm::mat3(glm::rotate(glm::mat4(1.0f), (float)-acos(-1.0f) / 2.0f, axis_x));
 			v = anim * v;
 			
 			cur_a += v * dx;
