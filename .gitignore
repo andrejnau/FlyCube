@@ -3,5 +3,6 @@ build/
 lib/
 server/vsqlite++
 sqlite/
+.idea
 *.*~
 *.*.user*

@@ -1,5 +1,7 @@
 add_subdirectory(CG1dot13)
+add_subdirectory(CG1dot45)
 add_subdirectory(CG2dot33)
 add_subdirectory(CG2dot47)
 add_subdirectory(CG3dot3)
 add_subdirectory(CG3dot11)
+add_subdirectory(CG3dot45)
