@@ -87,7 +87,7 @@ int main(void)
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
 
-	GLFWwindow* window = glfwCreateWindow(700, 700, "Simple CGTask1", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(700, 700, "Simple CGMorphism2", nullptr, nullptr);
 	if (!window)
 	{
 		glfwTerminate();

@@ -1,5 +1,5 @@
 #include <GLFW/glfw3.h>
-#include "scene.h" 
+#include "scene.h"
 #include "state.h"
 #include <memory>
 
@@ -22,21 +22,11 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-
-
 	if (key == GLFW_KEY_F && action == GLFW_PRESS)
 	{
 		auto & state = CurState<bool>::Instance().state;
 		state["warframe"] = !state["warframe"];
 	}
-
-	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-	{
-		renderer->read_size();
-	}
-
-	/*if (action != GLFW_PRESS)
-		return;*/
 
 	float eps = 0.1f;
 
@@ -91,14 +81,13 @@ static void error_callback(int error, const char* description)
 	fprintf(stderr, "Error: %s\n", description);
 }
 
-
 int main(void)
 {
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
 
-	GLFWwindow* window = glfwCreateWindow(700, 700, "Simple CGMorphism3", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(700, 700, "Simple CGCoursework", nullptr, nullptr);
 	if (!window)
 	{
 		glfwTerminate();
