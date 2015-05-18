@@ -104,11 +104,12 @@ int main(void)
 
 	renderer.reset(new tScenes());
 
-	renderer->init();
+
 
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
 	framebuffer_size_callback(window, width, height);
+	renderer->init();
 
 	glfwWindowHint(GLFW_SAMPLES, 4);
 
