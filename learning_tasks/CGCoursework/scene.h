@@ -69,6 +69,8 @@ public:
 		start = std::chrono::system_clock::now();
 		float dt = std::min(0.001f, elapsed / 1500.0f);
 
+		angle += dt;
+
 		// установим активный FBO
 		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
 		// включаем вывод буфера глубины
@@ -129,19 +131,18 @@ public:
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(shaderLight.program);
 
-		glm::vec3 lightPosition(cos(9.2) * sin(9.2), cos(9.2), 3.0f);
+		glm::vec3 lightPosition(cos(9.2) * sin(angle), cos(angle), 1.0f);
+
 
 		if (depth)
 			camera = lightPosition;
 
 		m_camera.SetLookAt(look_at);
 		m_camera.SetPosition(camera);
-		m_camera.Update();
+		m_camera.Update();		
 
 		glm::mat4 projection, view, model;
-
-		m_camera.GetMatricies(projection, view, model);
-
+		m_camera.GetMatricies(projection, view, model);	
 		glm::mat4 Matrix = projection * view * model;
 
 		glUniformMatrix4fv(shaderLight.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
@@ -157,11 +158,11 @@ public:
 
 	void draw_fbo()
 	{
-		glm::vec3 lightPosition(cos(9.2) * sin(9.2), cos(9.2), 3.0f);
-
 		glUseProgram(shaderLightDepth.program);
-		glUniform3fv(shaderLight.loc_lightPosition, 1, glm::value_ptr(lightPosition));
-		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(camera));
+
+		glm::vec3 lightPosition(cos(9.2) * sin(angle), cos(angle), 1.0f);
+		glUniform3fv(shaderLightDepth.loc_lightPosition, 1, glm::value_ptr(lightPosition));
+		glUniform3fv(shaderLightDepth.loc_camera, 1, glm::value_ptr(camera));
 
 		glm::mat4 biasMatrix(
 			0.5, 0.0, 0.0, 0.0,
@@ -171,25 +172,32 @@ public:
 			);
 
 		glm::mat4 projection, view, model;
+		m_camera.GetMatricies(projection, view, model);			
+		glm::mat4 MVP = projection * view * model;
+
+		m_camera.SetLookAt(look_at);
+		m_camera.SetPosition(lightPosition);
+		m_camera.Update();
+
 		m_camera.GetMatricies(projection, view, model);
 
-		glm::mat4 MVP = projection * view * model;
 
 		glm::mat4 depthBiasMVP = biasMatrix * projection * view * model;
 
 		glUniformMatrix4fv(shaderLightDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(MVP));
 		glUniformMatrix4fv(shaderLightDepth.loc_DepthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
 		
-		glBindTexture(GL_TEXTURE_2D, depthTexture);
 
 		glUniform1f(shaderLightDepth.loc_isLight, 1.0f);
 
 		glUniform3f(shaderLightDepth.loc_u_color, 0.0f, 1.0f, 0.0);
 
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
+		
 		glEnableVertexAttribArray(POS_ATTRIB);
 		glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, modelPlane.vertices.data());
-		glEnableVertexAttribArray(TEXTURE_ATTRIB);
-		glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, 0, modelPlane.uvs.data());
+		glEnableVertexAttribArray(NORMAL_ATTRIB);
+		glVertexAttribPointer(NORMAL_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, modelPlane.normals.data());
 
 		glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, modelPlane.indexes.data());
 
@@ -267,7 +275,7 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		// необходимо для использования depth-текстуры как shadow map
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 		// соаздем "пустую" текстуру под depth-данные
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 		return texture;
@@ -333,6 +341,8 @@ private:
 
 	int m_width;
 	int m_height;
+
+	float angle = 0.0f;
 
 	glm::vec3 camera;
 	glm::vec3 look_at;

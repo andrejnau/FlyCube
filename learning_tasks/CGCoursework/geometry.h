@@ -197,11 +197,19 @@ struct ModelPlane
 	ModelPlane()
 	{
 		vertices = {
-			-10.0, -10.0f, 10.0,
-			10.0, -10.0f, 10.0,
-			10.0, -10.0f, -10.0,
-			-10.0, -10.0f, -10.0
+			-25.0, -5.0f, 250,
+			25.0, -5.0f, 25.0,
+			25.0, -5.0f, -25.0,
+			-25.0, -5.0f, -25.0
 		};
+
+		normals = {
+			0.0f, 1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f
+		};
+
 
 		indexes = {
 			0, 1, 2,
@@ -214,10 +222,10 @@ struct ModelPlane
 			1.0, 0.0,
 			0.0, 0.0
 		};
-
 	}
 
 	std::vector<GLfloat> vertices;
 	std::vector<GLuint> indexes;
 	std::vector<GLfloat> uvs;
+	std::vector<GLfloat> normals;
 };
