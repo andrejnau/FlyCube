@@ -45,9 +45,8 @@ public:
 
 		c_textureID = loadCubemap();
 
-		colorTexture = TextureCreate(m_width, m_height);
 		depthTexture = TextureCreateDepth(m_width, m_height);
-		colorFBO = FBOCreate(colorTexture, depthTexture);
+		depthFBO = FBOCreate(depthTexture);
 
 		look_at = glm::vec3(0.0, 0.0, 0.0);
 		return true;
@@ -70,28 +69,70 @@ public:
 		start = std::chrono::system_clock::now();
 		float dt = std::min(0.001f, elapsed / 1500.0f);
 
-		camera = glm::vec3(0.0f, 0.0f, 12.0f);
-		glBindTexture(GL_TEXTURE_2D, colorTexture);
-		glBindFramebuffer(GL_FRAMEBUFFER, colorFBO);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glEnable(GL_DEPTH_TEST);
+		// установим активный FBO
+		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+		// включаем вывод буфера глубины
 		glDepthMask(GL_TRUE);
+		// очищаем буфер глубины перед его заполнением
+		glClear(GL_DEPTH_BUFFER_BIT);
+		// выполним рендер сцены с использованием шейдерной программы и камеры источника освещения
 		draw_obj(true);
-		draw_cubemap(true);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		camera = glm::vec3(0.0f, 0.0f, 2.0f);
 		draw_obj();
 		draw_cubemap();
 		draw_fbo();
+		draw_shadow();
 	}
 
-	void draw_obj(bool is_fbo = false)
+	void draw_shadow()
+	{
+		glUseProgram(shaderShadowView.program);
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
+
+		glm::mat4 Matrix(1.0f);
+
+		glUniformMatrix4fv(shaderShadowView.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+
+		static GLfloat plane_vertices [] = {
+			-1.0, 1.0, 0.0,
+			-0.5, 1.0, 0.0,
+			-0.5, 0.5, 0.0,
+			-1.0, 0.5, 0.0
+		};
+
+		static GLfloat plane_texcoords [] = {
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			0.0, 0.0
+		};
+
+		static GLuint plane_elements [] = {
+			0, 1, 2,
+			2, 3, 0
+		};
+
+		glEnableVertexAttribArray(POS_ATTRIB);
+		glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, plane_vertices);
+
+		glEnableVertexAttribArray(TEXTURE_ATTRIB);
+		glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, 0, plane_texcoords);
+
+		glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
+	}
+
+
+	void draw_obj(bool depth = false)
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(shaderLight.program);
 
 		glm::vec3 lightPosition(cos(9.2) * sin(9.2), cos(9.2), 3.0f);
+
+		if (depth)
+			camera = lightPosition;
 
 		m_camera.SetLookAt(look_at);
 		m_camera.SetPosition(camera);
@@ -102,19 +143,6 @@ public:
 		m_camera.GetMatricies(projection, view, model);
 
 		glm::mat4 Matrix = projection * view * model;
-
-		if (is_fbo)
-		{
-			glm::mat4 mirror_matrix =
-			{
-				-1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 1.0f
-			};
-
-			Matrix = projection * view * mirror_matrix * model;
-		}
 
 		glUniformMatrix4fv(shaderLight.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
@@ -129,18 +157,34 @@ public:
 
 	void draw_fbo()
 	{
-		glUseProgram(shaderTexture.program);
+		glm::vec3 lightPosition(cos(9.2) * sin(9.2), cos(9.2), 3.0f);
 
-		m_camera.Update();
+		glUseProgram(shaderLightDepth.program);
+		glUniform3fv(shaderLight.loc_lightPosition, 1, glm::value_ptr(lightPosition));
+		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(camera));
+
+		glm::mat4 biasMatrix(
+			0.5, 0.0, 0.0, 0.0,
+			0.0, 0.5, 0.0, 0.0,
+			0.0, 0.0, 0.5, 0.0,
+			0.5, 0.5, 0.5, 1.0
+			);
+
 		glm::mat4 projection, view, model;
-
 		m_camera.GetMatricies(projection, view, model);
 
-		glm::mat4 Matrix = projection * view * model;
+		glm::mat4 MVP = projection * view * model;
 
-		glUniformMatrix4fv(shaderTexture.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+		glm::mat4 depthBiasMVP = biasMatrix * projection * view * model;
 
-		glBindTexture(GL_TEXTURE_2D, colorTexture);
+		glUniformMatrix4fv(shaderLightDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(MVP));
+		glUniformMatrix4fv(shaderLightDepth.loc_DepthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
+		
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
+
+		glUniform1f(shaderLightDepth.loc_isLight, 1.0f);
+
+		glUniform3f(shaderLightDepth.loc_u_color, 0.0f, 1.0f, 0.0);
 
 		glEnableVertexAttribArray(POS_ATTRIB);
 		glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, modelPlane.vertices.data());
@@ -152,7 +196,7 @@ public:
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	void draw_cubemap(bool is_fbo = false)
+	void draw_cubemap()
 	{
 		glDepthMask(GL_FALSE);
 		glUseProgram(shaderSimpleCubeMap.program);
@@ -169,20 +213,6 @@ public:
 		model = glm::scale(glm::mat4(1.0f), glm::vec3(40.0f, 40.0f, 40.0f)) * model;
 
 		glm::mat4 Matrix = projection * view * model;
-
-		if (is_fbo)
-		{
-			glm::mat4 mirror_matrix =
-			{
-				-1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 1.0f
-			};
-
-			Matrix = projection * view * mirror_matrix * model;
-		}
-
 		glUniformMatrix4fv(shaderSimpleCubeMap.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
 		glDrawArrays(GL_TRIANGLES, 0, modelCube.vertices.size() / 3);
@@ -190,13 +220,12 @@ public:
 		glDepthMask(GL_TRUE);
 	}
 
-	GLuint FBOCreate(GLuint _Texture, GLuint _Texture_depth)
+	GLuint FBOCreate(GLuint _Texture_depth)
 	{
 		GLuint FBO = 0;
 		GLenum fboStatus;
 		glGenFramebuffers(1, &FBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _Texture, 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _Texture_depth, 0);
 		if ((fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE)
 		{
@@ -308,8 +337,7 @@ private:
 	glm::vec3 camera;
 	glm::vec3 look_at;
 
-	GLuint colorTexture;
-	GLuint colorFBO;
+	GLuint depthFBO;
 	GLuint c_textureID;
 
 	GLuint depthTexture;
@@ -321,6 +349,7 @@ private:
 
 	ModelPlane modelPlane;
 	ShaderTexture shaderTexture;
-
+	ShaderLightDepth shaderLightDepth;
+	ShaderShadowView shaderShadowView;
 	Camera m_camera;
 };
