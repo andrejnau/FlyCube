@@ -149,6 +149,8 @@ struct ShaderLightDepth
 			{
 				float res = 0.0;
 
+				smcoord.z -= 0.005 * smcoord.w;
+
 				res += textureProjOffset(u_depthTexture, smcoord, ivec2(-1, -1));
 				res += textureProjOffset(u_depthTexture, smcoord, ivec2(0, -1));
 				res += textureProjOffset(u_depthTexture, smcoord, ivec2(1, -1));
@@ -160,9 +162,7 @@ struct ShaderLightDepth
 				res += textureProjOffset(u_depthTexture, smcoord, ivec2(1, 1));
 				res /= 9.0;
 
-				if (res < (smcoord.z - 0.005) / smcoord.w)
-					return 0.75;
-				return 1.0;
+				return res;
 			}
 
 			void main()

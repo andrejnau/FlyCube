@@ -141,7 +141,7 @@ public:
 		: axis_x(1.0f, 0.0f, 0.0f)
 		, axis_y(0.0f, 1.0f, 0.0f)
 		, axis_z(0.0f, 0.0f, 1.0f)
-		, modelOfFile("model/suzanne.obj")
+		, modelOfFile("model/character_n.obj")
 		, modelOfFileSphere("model/sphere.obj")
 	{
 	}
@@ -319,7 +319,7 @@ public:
 
 		m_camera.GetMatrix(projection, view, model);
 
-		model = glm::scale(glm::mat4(1.0f), glm::vec3(50.0f)) * model;
+		model = glm::scale(glm::mat4(1.0f), glm::vec3(40.0f)) * model;
 
 		glm::mat4 Matrix = projection * view * model;
 		glUniformMatrix4fv(shaderSimpleCubeMap.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
