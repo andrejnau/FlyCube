@@ -143,6 +143,7 @@ public:
 		, axis_z(0.0f, 0.0f, 1.0f)
 		, modelOfFile("model/character_n.obj")
 		, modelOfFileSphere("model/sphere.obj")
+		, modelOfFileAnnie("model/annie.obj")
 	{
 	}
 
@@ -183,7 +184,7 @@ public:
 		float dt = std::min(0.001f, elapsed / 1500.0f);
 		angle += dt;
 
-		lightPosition = glm::vec3(5.0f * cos(angle), 5.0f, 5.0f * sin(angle));
+		lightPosition = glm::vec3(10.0f * cos(angle), 10.0f, 10.0f * sin(angle));
 		light_camera.SetCameraPos(lightPosition);
 		light_camera.SetCameraTarget(-lightPosition);
 
@@ -273,6 +274,15 @@ public:
 		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
 		glBindVertexArray(0);
 
+		glm::mat4 model_annie = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.0f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
+
+		glUniformMatrix4fv(shaderLightDepth.loc_model, 1, GL_FALSE, glm::value_ptr(model_annie));
+		glBindVertexArray(modelOfFileAnnie.vaoObject);
+		glDrawArrays(GL_TRIANGLES, 0, modelOfFileAnnie.vertices.size());
+		glBindVertexArray(0);
+
+		glUniformMatrix4fv(shaderLightDepth.loc_model, 1, GL_FALSE, glm::value_ptr(model));
+
 		glUniform3f(shaderLightDepth.loc_objectColor, 0.0f, 0.0f, 1.0);
 		glUniform3f(shaderLightDepth.loc_lightColor, 1.0f, 1.0f, 1.0);
 
@@ -304,11 +314,18 @@ public:
 		light_camera.GetMatrix(projection, view, model);
 
 		glm::mat4 Matrix = projection * view * model;
-
 		glUniformMatrix4fv(shaderDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
 		glBindVertexArray(modelOfFile.vaoObject);
 		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
+		glBindVertexArray(0);
+
+		glm::mat4 model_annie = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.0f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
+		Matrix = projection * view * model_annie;
+		glUniformMatrix4fv(shaderDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+
+		glBindVertexArray(modelOfFileAnnie.vaoObject);
+		glDrawArrays(GL_TRIANGLES, 0, modelOfFileAnnie.vertices.size());
 		glBindVertexArray(0);
 	}
 
@@ -465,6 +482,7 @@ private:
 	ShaderSimpleCubeMap shaderSimpleCubeMap;
 	ModelCubeSkybox modelCube;
 	ModelOfFile modelOfFileSphere;
+	ModelOfFile modelOfFileAnnie;
 
 	ModelPlane modelPlane;
 	ShaderTexture shaderTexture;
