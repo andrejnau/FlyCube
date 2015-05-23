@@ -183,6 +183,10 @@ public:
 		float dt = std::min(0.001f, elapsed / 1500.0f);
 		angle += dt;
 
+		lightPosition = glm::vec3(5.0f * cos(angle), 5.0f, 5.0f * sin(angle));
+		light_camera.SetCameraPos(lightPosition);
+		light_camera.SetCameraTarget(-lightPosition);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 		glDepthMask(GL_TRUE);
