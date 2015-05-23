@@ -81,23 +81,43 @@ struct ShaderLightDepth
 		program = createProgram(vertex.c_str(), fragment.c_str());
 
 		loc_u_DepthBiasMVP = glGetUniformLocation(program, "u_DepthBiasMVP");
-		loc_lightPos = glGetUniformLocation(program, "lightPos");
 		loc_viewPos = glGetUniformLocation(program, "viewPos");
-		loc_lightColor = glGetUniformLocation(program, "lightColor");
-		loc_objectColor = glGetUniformLocation(program, "objectColor");
 
 		loc_model = glGetUniformLocation(program, "model");
 		loc_view = glGetUniformLocation(program, "view");
 		loc_projection = glGetUniformLocation(program, "projection");
+
+		loc_material.ambient = glGetUniformLocation(program, "material.ambient");
+		loc_material.diffuse = glGetUniformLocation(program, "material.diffuse");
+		loc_material.specular = glGetUniformLocation(program, "material.specular");
+		loc_material.shininess = glGetUniformLocation(program, "material.shininess");
+
+		loc_light.position = glGetUniformLocation(program, "light.position");
+		loc_light.ambient = glGetUniformLocation(program, "light.ambient");
+		loc_light.diffuse = glGetUniformLocation(program, "light.diffuse");
+		loc_light.specular = glGetUniformLocation(program, "light.specular");
 	}
+
+	struct LocMaterial
+	{
+		GLuint ambient;
+		GLuint diffuse;
+		GLuint specular;
+		GLuint shininess;
+	} loc_material;
+
+	struct LocLight
+	{
+		GLuint position;
+		GLuint ambient;
+		GLuint diffuse;
+		GLuint specular;
+	} loc_light;
 
 	GLuint program;
 
 	GLint loc_u_DepthBiasMVP;
-	GLint loc_lightPos;
 	GLint loc_viewPos;
-	GLint loc_lightColor;
-	GLint loc_objectColor;
 
 	GLint loc_model;
 	GLint loc_view;
@@ -134,12 +154,27 @@ struct ShaderLightDepth
 			precision highp float;
 			out vec4 out_Color;
 
-			uniform sampler2DShadow u_depthTexture;
+			struct Material
+			{
+				vec3 ambient;
+				vec3 diffuse;
+				vec3 specular;
+				float shininess;
+			};
 
-			uniform vec3 lightPos;
+			struct Light
+			{
+				vec3 position;
+				vec3 ambient;
+				vec3 diffuse;
+				vec3 specular;
+			};
+
+			uniform Material material;
+			uniform Light light;
+
+			uniform sampler2DShadow u_depthTexture;
 			uniform vec3 viewPos;
-			uniform vec3 lightColor;
-			uniform vec3 objectColor;
 
 			in vec3 q_pos;
 			in vec3 q_normal;
@@ -149,7 +184,7 @@ struct ShaderLightDepth
 			{
 				float res = 0.0;
 
-				smcoord.z -= 0.0005 * smcoord.w;
+				smcoord.z -= 0.0001 * smcoord.w;
 
 				res += textureProjOffset(u_depthTexture, smcoord, ivec2(-1, -1));
 				res += textureProjOffset(u_depthTexture, smcoord, ivec2(0, -1));
@@ -167,19 +202,24 @@ struct ShaderLightDepth
 
 			void main()
 			{
-				float ambientStrength = 0.1f;
-				vec3 ambient = ambientStrength * lightColor;
+				// Ambient
+				vec3 ambient = light.ambient * material.ambient;
 
+				// Diffuse
 				vec3 norm = normalize(q_normal);
-				vec3 lightDir = normalize(lightPos - q_pos);
+				vec3 lightDir = normalize(light.position - q_pos);
 				float diff = max(dot(norm, lightDir), 0.0);
-				vec3 diffuse = diff * lightColor;
+				vec3 diffuse = light.diffuse * (diff * material.diffuse);
 
-				vec3 result = (ambient + diffuse) * objectColor;
+				// Specular
+				vec3 viewDir = normalize(viewPos - q_pos);
+				vec3 reflectDir = reflect(-lightDir, norm);
+				float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+				vec3 specular = light.specular * (spec * material.specular);
 
-				float shadow  = GetShadowPCF(ShadowCoord);
-				out_Color.rgb = result * shadow;
-				out_Color.a = 1.0;
+				float shadow = GetShadowPCF(ShadowCoord);
+				vec3 result = (ambient + diffuse + specular) * shadow;
+				out_Color = vec4(result, 1.0);
 			}
 		)fs";
 };

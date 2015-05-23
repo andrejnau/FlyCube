@@ -262,13 +262,32 @@ public:
 		glUniformMatrix4fv(shaderLightDepth.loc_view, 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(shaderLightDepth.loc_projection, 1, GL_FALSE, glm::value_ptr(projection));
 		glUniformMatrix4fv(shaderLightDepth.loc_u_DepthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
-		glUniform3fv(shaderLightDepth.loc_lightPos, 1, glm::value_ptr(lightPosition));
 		glUniform3fv(shaderLightDepth.loc_viewPos, 1, glm::value_ptr(m_camera.GetCameraPos()));
 
 		glBindTexture(GL_TEXTURE_2D, depthTexture);
 
-		glUniform3f(shaderLightDepth.loc_objectColor, 1.0f, 0.0f, 0.0);
-		glUniform3f(shaderLightDepth.loc_lightColor, 1.0f, 1.0f, 1.0);
+		Material material;
+		Light light;
+
+		material.ambient = glm::vec3(0.1745, 0.0215, 0.0215);
+		material.diffuse = glm::vec3(0.61424, 0.07568, 0.07568);
+		material.specular = glm::vec3(0.727811, 0.633, 0.633);
+		material.shininess = 0.6f;
+
+		glUniform3fv(shaderLightDepth.loc_material.ambient, 1, glm::value_ptr(material.ambient));
+		glUniform3fv(shaderLightDepth.loc_material.diffuse, 1, glm::value_ptr(material.diffuse));
+		glUniform1f(shaderLightDepth.loc_material.shininess, material.shininess);
+		glUniform3fv(shaderLightDepth.loc_material.specular, 1, glm::value_ptr(material.specular));
+
+		light.position = lightPosition;
+		light.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		light.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+		light.specular = glm::vec3(0.0f, 0.0f, 0.0f);
+
+		glUniform3fv(shaderLightDepth.loc_light.position, 1, glm::value_ptr(light.position));
+		glUniform3fv(shaderLightDepth.loc_light.ambient, 1, glm::value_ptr(light.ambient));
+		glUniform3fv(shaderLightDepth.loc_light.diffuse, 1, glm::value_ptr(light.diffuse));
+		glUniform3fv(shaderLightDepth.loc_light.specular, 1, glm::value_ptr(light.specular));
 
 		glBindVertexArray(modelOfFile.vaoObject);
 		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
@@ -282,9 +301,15 @@ public:
 		glBindVertexArray(0);
 
 		glUniformMatrix4fv(shaderLightDepth.loc_model, 1, GL_FALSE, glm::value_ptr(model));
+		material.ambient = glm::vec3(0.0, 0.0, 1.0);
+		material.diffuse = glm::vec3(0.0, 0.0, 1.0);
+		material.specular = glm::vec3(0.0, 0.0, 0.0);
+		material.shininess = 1.0f;
 
-		glUniform3f(shaderLightDepth.loc_objectColor, 0.0f, 0.0f, 1.0);
-		glUniform3f(shaderLightDepth.loc_lightColor, 1.0f, 1.0f, 1.0);
+		glUniform3fv(shaderLightDepth.loc_material.ambient, 1, glm::value_ptr(material.ambient));
+		glUniform3fv(shaderLightDepth.loc_material.diffuse, 1, glm::value_ptr(material.diffuse));
+		glUniform1f(shaderLightDepth.loc_material.shininess, material.shininess);
+		glUniform3fv(shaderLightDepth.loc_material.specular, 1, glm::value_ptr(material.specular));
 
 		glEnableVertexAttribArray(POS_ATTRIB);
 		glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, modelPlane.vertices.data());
@@ -457,6 +482,22 @@ public:
 	{
 		return m_camera;
 	}
+private:
+	struct Material
+	{
+		glm::vec3 ambient;
+		glm::vec3 diffuse;
+		glm::vec3 specular;
+		float shininess;
+	};
+
+	struct Light
+	{
+		glm::vec3 position;
+		glm::vec3 ambient;
+		glm::vec3 diffuse;
+		glm::vec3 specular;
+	};
 
 private:
 	float eps = 1e-3f;
