@@ -269,9 +269,9 @@ public:
 		Material material;
 		Light light;
 
-		material.ambient = glm::vec3(0.1745, 0.0215, 0.0215);
-		material.diffuse = glm::vec3(0.61424, 0.07568, 0.07568);
-		material.specular = glm::vec3(0.727811, 0.633, 0.633);
+		material.ambient = glm::vec3(0.1745, 0.01175, 0.01175);
+		material.diffuse = glm::vec3(0.61424, 0.04136, 0.04136);
+		material.specular = glm::vec3(0.727811, 0.626959, 0.626959);
 		material.shininess = 0.6f;
 
 		glUniform3fv(shaderLightDepth.loc_material.ambient, 1, glm::value_ptr(material.ambient));
@@ -280,7 +280,7 @@ public:
 		glUniform3fv(shaderLightDepth.loc_material.specular, 1, glm::value_ptr(material.specular));
 
 		light.position = lightPosition;
-		light.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		light.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
 		light.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
 		light.specular = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -310,6 +310,9 @@ public:
 		glUniform3fv(shaderLightDepth.loc_material.diffuse, 1, glm::value_ptr(material.diffuse));
 		glUniform1f(shaderLightDepth.loc_material.shininess, material.shininess);
 		glUniform3fv(shaderLightDepth.loc_material.specular, 1, glm::value_ptr(material.specular));
+
+		light.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		glUniform3fv(shaderLightDepth.loc_light.ambient, 1, glm::value_ptr(light.ambient));
 
 		glEnableVertexAttribArray(POS_ATTRIB);
 		glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, modelPlane.vertices.data());
