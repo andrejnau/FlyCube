@@ -1,65 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include <platform.h>
 #include <string>
 #include <utilities.h>
-
-struct ShaderLight
-{
-	ShaderLight()
-	{
-		program = createProgram(vertex.c_str(), fragment.c_str());
-
-		loc_MVP = glGetUniformLocation(program, "u_m4MVP");
-		loc_lightPosition = glGetUniformLocation(program, "u_lightPosition");
-		loc_camera = glGetUniformLocation(program, "u_camera");
-		loc_color = glGetUniformLocation(program, "u_color");
-	}
-
-	GLuint program;
-
-	GLint loc_MVP;
-	GLint loc_lightPosition;
-	GLint loc_camera;
-	GLint loc_color;
-
-	std::string vertex =
-		"#version 300 es\n"
-		"precision mediump float;\n"
-		"layout(location = " STRV(POS_ATTRIB) ") in vec3 pos;\n"
-		"layout(location = " STRV(NORMAL_ATTRIB) ") in vec3 normal;\n"
-		"uniform mat4 u_m4MVP;\n"
-		"uniform mat4 u_m4DepthBiasMVP;\n"
-		"uniform vec4 u_color;\n"
-		"out vec4 _color;\n"
-		"out vec3 modelViewVertex;\n"
-		"out vec3 modelViewNormal;\n"
-		"void main() {\n"
-		"    gl_Position = u_m4MVP * vec4(pos, 1.0);\n"
-		"    modelViewVertex = vec3(u_m4MVP * vec4(pos, 1.0));\n"
-		"    modelViewNormal = normalize(vec3(u_m4MVP * vec4(normal, 0.0)));\n"
-		"    _color = u_color;\n"
-		"}\n";
-
-	std::string fragment =
-		"#version 300 es\n"
-		"precision mediump float;\n"
-		"uniform vec3 u_lightPosition;\n"
-		"uniform vec3 u_camera;\n"
-		"out vec4 outColor;\n"
-		"in vec4 _color;\n"
-		"in vec3 modelViewVertex;\n"
-		"in vec3 modelViewNormal;\n"
-		"void main() {\n"
-		"    vec3 lightVector = normalize(-u_lightPosition - modelViewVertex);\n"
-		"    float diffuse = max(dot(modelViewNormal, lightVector), 0.1);\n"
-		"    float distance = length(u_lightPosition - modelViewVertex);\n"
-		"    diffuse = diffuse * (1.0 / (1.0 + (0.00025 * distance ))) + 0.1;\n"
-		"    vec3 lookVector = normalize(u_camera - modelViewVertex);\n"
-		"    outColor.rgb = _color.rbg * diffuse;\n"
-		"    outColor.a = _color.a;\n"
-		"}\n";
-};
 
 struct ShaderSimpleCubeMap
 {
@@ -137,68 +80,151 @@ struct ShaderLightDepth
 	{
 		program = createProgram(vertex.c_str(), fragment.c_str());
 
-		loc_MVP = glGetUniformLocation(program, "u_m4MVP");
-		loc_DepthBiasMVP = glGetUniformLocation(program, "u_m4DepthBiasMVP");
-		loc_lightPosition = glGetUniformLocation(program, "u_lightPosition");
-		loc_camera = glGetUniformLocation(program, "u_camera");
-		loc_isLight = glGetUniformLocation(program, "u_isLigth");
-		loc_u_color = glGetUniformLocation(program, "u_color");
+		loc_u_DepthBiasMVP = glGetUniformLocation(program, "u_DepthBiasMVP");
+		loc_lightPos = glGetUniformLocation(program, "lightPos");
+		loc_viewPos = glGetUniformLocation(program, "viewPos");
+		loc_lightColor = glGetUniformLocation(program, "lightColor");
+		loc_objectColor = glGetUniformLocation(program, "objectColor");
+
+		loc_model = glGetUniformLocation(program, "model");
+		loc_view = glGetUniformLocation(program, "view");
+		loc_projection = glGetUniformLocation(program, "projection");
 	}
 
 	GLuint program;
 
-	GLint loc_u_color;
-	GLint loc_MVP;
-	GLint loc_DepthBiasMVP;
-	GLint loc_lightPosition;
-	GLint loc_camera;
-	GLint loc_isLight;
+	GLint loc_u_DepthBiasMVP;
+	GLint loc_lightPos;
+	GLint loc_viewPos;
+	GLint loc_lightColor;
+	GLint loc_objectColor;
+
+	GLint loc_model;
+	GLint loc_view;
+	GLint loc_projection;
 
 	std::string vertex =
-		"#version 300 es\n"
-		"precision mediump float;\n"
-		"layout(location = " STRV(POS_ATTRIB) ") in vec3 pos;\n"
-		"layout(location = " STRV(NORMAL_ATTRIB) ") in vec3 normal;\n"
-		"uniform mat4 u_m4MVP;\n"
-		"uniform mat4 u_m4DepthBiasMVP;\n"
-		"uniform float u_isLigth;\n"
-		"out vec3 modelViewVertex;\n"
-		"out vec3 modelViewNormal;\n"
-		"out vec4 ShadowCoord;\n"
-		"uniform vec3 u_color;\n"
-		"out vec3 color;\n"
-		"void main() {\n"
-		"    gl_Position = u_m4MVP * vec4(pos, 1.0);\n"
-		"    modelViewVertex = vec3(u_m4MVP * vec4(pos, 1.0));\n"
-		"    modelViewNormal = normalize(vec3(u_m4MVP * vec4(normal, 0.0)));\n"
-		"    ShadowCoord = u_m4DepthBiasMVP * vec4(pos, 1.0);\n"
-		"    color = u_color;\n"
-		"}\n";
+		R"vs(
+			#version 300 es
+			precision highp float;
+			layout(location = )vs" STRV(POS_ATTRIB) R"vs() in vec3 a_pos;
+			layout(location = )vs" STRV(NORMAL_ATTRIB) R"vs() in vec3 a_normal;
+
+			uniform mat4 model;
+			uniform mat4 view;
+			uniform mat4 projection;
+			uniform mat4 u_DepthBiasMVP;
+
+			out vec3 q_pos;
+			out vec3 q_normal;
+			out vec4 ShadowCoord;
+
+			void main()
+			{
+			    gl_Position = projection * view *  model * vec4(a_pos, 1.0);
+				q_pos = vec3(model * vec4(a_pos, 1.0f));
+				q_normal = mat3(transpose(inverse(model))) * a_normal;
+			    ShadowCoord = u_DepthBiasMVP * vec4(a_pos, 1.0);
+			}
+		)vs";
 
 	std::string fragment =
-		"#version 300 es\n"
-		"precision mediump float;\n"
-		"uniform vec3 u_lightPosition;\n"
-		"uniform vec3 u_camera;\n"
-		"uniform sampler2D gShadowMap;\n"
-		"out vec4 outColor;\n"
-		"in vec3 modelViewVertex;\n"
-		"in vec3 modelViewNormal;\n"
-		"in vec4 ShadowCoord;\n"
-		"in vec3 color;\n"
-		"void main() {\n"
-		"    vec3 lightVector = normalize(-u_lightPosition - modelViewVertex);\n"
-		"    float diffuse = max(dot(modelViewNormal, lightVector), 0.15);\n"
-		"    float distance = length(u_lightPosition - modelViewVertex);\n"
-		"    diffuse = diffuse * (1.0 / (1.0 + (0.000025 * distance)));\n"
-		"    vec3 lookVector = normalize(u_camera - modelViewVertex);\n"
-		"    outColor.rgb = color * diffuse;\n"
-		"    outColor.a = 1.0;\n"
-		"    float comp = (ShadowCoord.z / ShadowCoord.w) - 0.009;\n"
-		"    float depth = texture2DProj(gShadowMap, ShadowCoord).r;\n"
-		"    float shadowVal = depth <= comp ? 0.5 : 1.0;\n"
-		"	 outColor *= shadowVal;\n"
-		"}\n";
+		R"fs(
+			#version 300 es
+			precision highp float;
+			out vec4 out_Color;
+
+			uniform sampler2DShadow u_depthTexture;
+
+			uniform vec3 lightPos;
+			uniform vec3 viewPos;
+			uniform vec3 lightColor;
+			uniform vec3 objectColor;
+
+			in vec3 q_pos;
+			in vec3 q_normal;
+			in vec4 ShadowCoord;
+
+			float GetShadowPCF(in vec4 smcoord)
+			{
+				float res = 0.0;
+
+				res += textureProjOffset(u_depthTexture, smcoord, ivec2(-1, -1));
+				res += textureProjOffset(u_depthTexture, smcoord, ivec2(0, -1));
+				res += textureProjOffset(u_depthTexture, smcoord, ivec2(1, -1));
+				res += textureProjOffset(u_depthTexture, smcoord, ivec2(-1, 0));
+				res += textureProjOffset(u_depthTexture, smcoord, ivec2(0, 0));
+				res += textureProjOffset(u_depthTexture, smcoord, ivec2(1, 0));
+				res += textureProjOffset(u_depthTexture, smcoord, ivec2(-1, 1));
+				res += textureProjOffset(u_depthTexture, smcoord, ivec2(0, 1));
+				res += textureProjOffset(u_depthTexture, smcoord, ivec2(1, 1));
+				res /= 9.0;
+
+				if (res < (smcoord.z - 0.005) / smcoord.w)
+					return 0.75;
+				return 1.0;
+			}
+
+			void main()
+			{
+				float ambientStrength = 0.1f;
+				vec3 ambient = ambientStrength * lightColor;
+
+				vec3 norm = normalize(q_normal);
+				vec3 lightDir = normalize(lightPos - q_pos);
+				float diff = max(dot(norm, lightDir), 0.0);
+				vec3 diffuse = diff * lightColor;
+
+				vec3 result = (ambient + diffuse) * objectColor;
+
+				float shadow  = GetShadowPCF(ShadowCoord);
+				out_Color.rgb = result * shadow;
+				out_Color.a = 1.0;
+			}
+		)fs";
+};
+
+struct ShaderSimpleColor
+{
+	ShaderSimpleColor()
+	{
+		program = createProgram(vertex.c_str(), fragment.c_str());
+
+		loc_objectColor = glGetUniformLocation(program, "objectColor");
+		loc_uMVP = glGetUniformLocation(program, "u_MVP");
+	}
+
+	GLuint program;
+	GLint loc_objectColor;
+	GLint loc_uMVP;
+
+	std::string vertex =
+		R"vs(
+			#version 300 es
+			precision highp float;
+			layout(location = )vs" STRV(POS_ATTRIB) R"vs() in vec3 a_pos;
+
+			uniform mat4 u_MVP;
+
+			void main()
+			{
+			    gl_Position = u_MVP * vec4(a_pos, 1.0);
+			}
+		)vs";
+
+	std::string fragment =
+		R"fs(
+			#version 300 es
+			precision highp float;
+			out vec4 out_Color;
+
+			uniform vec3 objectColor;
+
+			void main()
+			{
+				out_Color = vec4(objectColor, 1.0);
+			}
+		)fs";
 };
 
 struct ShaderShadowView
@@ -231,6 +257,34 @@ struct ShaderShadowView
 		"in vec2 texCoordFS;\n"
 		"out vec4 outColor;\n"
 		"void main() {\n"
-		"    outColor = texture(sampler, texCoordFS);\n"
+		"    vec4 color = texture(sampler, texCoordFS);\n"
+		"    if (color.r + color.g + color.b < 3.0) color = vec4(0.0, 0.0, 0.0, 1.0);\n"
+		"    outColor = color;\n"
+		"}\n";
+};
+
+struct ShaderDepth
+{
+	ShaderDepth()
+	{
+		program = createProgram(vertex.c_str(), fragment.c_str());
+		loc_MVP = glGetUniformLocation(program, "u_m4MVP");
+	}
+
+	GLuint program;
+	GLint loc_MVP;
+
+	std::string vertex =
+		"#version 300 es\n"
+		"precision mediump float;\n"
+		"layout(location = " STRV(POS_ATTRIB) ") in vec3 pos;\n"
+		"uniform mat4 u_m4MVP;\n"
+		"void main() {\n"
+		"    gl_Position = u_m4MVP * vec4(pos, 1.0);\n"
+		"}\n";
+
+	std::string fragment =
+		"#version 300 es\n"
+		"void main() {\n"
 		"}\n";
 };

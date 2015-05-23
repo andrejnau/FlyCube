@@ -8,9 +8,131 @@
 #include <chrono>
 #include <memory>
 #include <SOIL.h>
-#include <camera.h>
 
 #include <glm/gtc/matrix_transform.hpp>
+
+enum Camera_Movement
+{
+	FORWARD,
+	BACKWARD,
+	LEFT,
+	RIGHT,
+	UP,
+	DOWN
+};
+
+class Camera
+{
+public:
+	glm::mat4 GetModelMatrix()
+	{
+		return glm::mat4(1.0f);
+	}
+
+	glm::mat4 GetViewMatrix()
+	{
+		return glm::lookAt(cameraPos, cameraTarget, cameraUp);
+	}
+
+	glm::mat4 GetProjectionMatrix()
+	{
+		return glm::perspective(fovy, aspect, zNear, zFar);
+	}
+
+	void GetMatrix(glm::mat4 & projectionMatrix, glm::mat4 & viewMatrix, glm::mat4 & modelMatrix)
+	{
+		projectionMatrix = GetProjectionMatrix();
+		viewMatrix = GetViewMatrix();
+		modelMatrix = GetModelMatrix();
+	}
+
+	glm::mat4 GetMVPMatrix()
+	{
+		return GetProjectionMatrix() * GetViewMatrix() * GetModelMatrix();
+	}
+
+	glm::vec3 GetCameraPos()
+	{
+		return cameraPos;
+	}
+
+	void SetCameraPos(glm::vec3 _cameraPos)
+	{
+		cameraPos = _cameraPos;
+	}
+
+	void SetCameraTarget(glm::vec3 _cameraTarget)
+	{
+		cameraTarget = _cameraTarget;
+	}
+
+	void SetClipping(float near_clip_distance, float far_clip_distance)
+	{
+		zNear = near_clip_distance;
+		zFar = far_clip_distance;
+	}
+
+	void SetViewport(int loc_x, int loc_y, int width, int height)
+	{
+		aspect = float(width) / float(height);
+	}
+
+	void ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool moved = true)
+	{
+		glm::vec3 cameraDirection = glm::normalize(cameraTarget - cameraPos);
+		glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::vec3 cameraRight = glm::normalize(glm::cross(cameraUp, cameraDirection));
+
+		GLfloat velocity = MovementSpeed * deltaTime;
+		if (direction == FORWARD)
+		{
+			cameraPos += cameraDirection * velocity;
+			if (moved)
+				cameraTarget += cameraDirection * velocity;
+		}
+		else if (direction == BACKWARD)
+		{
+			cameraPos -= cameraDirection * velocity;
+			if (moved)
+				cameraTarget -= cameraDirection * velocity;
+		}
+		else if (direction == LEFT)
+		{
+			cameraPos += cameraRight * velocity;
+			if (moved)
+				cameraTarget += cameraRight * velocity;
+		}
+		else if (direction == RIGHT)
+		{
+			cameraPos -= cameraRight * velocity;
+			if (moved)
+				cameraTarget -= cameraRight * velocity;
+		}
+		else if (direction == UP)
+		{
+			cameraPos += cameraUp * velocity;
+			if (moved)
+				cameraTarget += cameraUp * velocity;
+		}
+		else if (direction == DOWN)
+		{
+			cameraPos -= cameraUp * velocity;
+			if (moved)
+				cameraTarget -= cameraUp * velocity;
+		}
+	}
+private:
+	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 1.0f);
+	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+	GLfloat MovementSpeed = 3.0f;
+
+	float fovy = 45.0f;
+	float aspect = 1.0f;
+	float zNear = 0.5f;
+	float zFar = 100.0f;
+};
 
 class tScenes : public SceneBase, public SingleTon < tScenes >
 {
@@ -19,7 +141,8 @@ public:
 		: axis_x(1.0f, 0.0f, 0.0f)
 		, axis_y(0.0f, 1.0f, 0.0f)
 		, axis_z(0.0f, 0.0f, 1.0f)
-		, modelOfFile("model/character_n.obj")
+		, modelOfFile("model/suzanne.obj")
+		, modelOfFileSphere("model/sphere.obj")
 	{
 	}
 
@@ -28,27 +151,17 @@ public:
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 
-		m_camera.SetPosition(glm::vec3(0, 0, 1));
-		m_camera.SetLookAt(glm::vec3(0, 0, 0));
-		m_camera.SetClipping(0.1, 100.0);
-		m_camera.SetFOV(45);
-
-		m_camera.angle_x = 0.5;
-		m_camera.angle_y = -0.5;
-		m_camera.angle_z = 0.0;
-
-		for (int i = 0; i < 42; ++i)
-		{
-			m_camera.Move(CameraDirection::BACK);
-			m_camera.Update();
-		}
-
 		c_textureID = loadCubemap();
 
 		depthTexture = TextureCreateDepth(m_width, m_height);
 		depthFBO = FBOCreate(depthTexture);
 
-		look_at = glm::vec3(0.0, 0.0, 0.0);
+		lightPosition = glm::vec3(0.0f, 5.0f, 5.0f);
+		light_camera.SetCameraPos(lightPosition);
+
+		camera = glm::vec3(5.0f, 5.0f, 10.0f);
+		m_camera.SetCameraPos(camera);
+
 		return true;
 	}
 
@@ -68,24 +181,22 @@ public:
 		int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 		start = std::chrono::system_clock::now();
 		float dt = std::min(0.001f, elapsed / 1500.0f);
-
 		angle += dt;
 
-		// установим активный FBO
 		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
-		// включаем вывод буфера глубины
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 		glDepthMask(GL_TRUE);
-		// очищаем буфер глубины перед его заполнением
 		glClear(GL_DEPTH_BUFFER_BIT);
-		// выполним рендер сцены с использованием шейдерной программы и камеры источника освещения
-		draw_obj(true);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glCullFace(GL_FRONT);
+		draw_obj_depth();
 
-		camera = glm::vec3(0.0f, 0.0f, 2.0f);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glCullFace(GL_BACK);
 		draw_obj();
 		draw_cubemap();
-		draw_fbo();
-		draw_shadow();
+		//draw_shadow();
 	}
 
 	void draw_shadow()
@@ -97,21 +208,21 @@ public:
 
 		glUniformMatrix4fv(shaderShadowView.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
-		static GLfloat plane_vertices [] = {
+		static GLfloat plane_vertices[] = {
 			-1.0, 1.0, 0.0,
 			-0.5, 1.0, 0.0,
 			-0.5, 0.5, 0.0,
 			-1.0, 0.5, 0.0
 		};
 
-		static GLfloat plane_texcoords [] = {
+		static GLfloat plane_texcoords[] = {
 			0.0, 1.0,
 			1.0, 1.0,
 			1.0, 0.0,
 			0.0, 0.0
 		};
 
-		static GLuint plane_elements [] = {
+		static GLuint plane_elements[] = {
 			0, 1, 2,
 			2, 3, 0
 		};
@@ -125,44 +236,10 @@ public:
 		glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
 	}
 
-
-	void draw_obj(bool depth = false)
+	void draw_obj()
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glUseProgram(shaderLight.program);
-
-		glm::vec3 lightPosition(cos(9.2) * sin(angle), cos(angle), 1.0f);
-
-
-		if (depth)
-			camera = lightPosition;
-
-		m_camera.SetLookAt(look_at);
-		m_camera.SetPosition(camera);
-		m_camera.Update();		
-
-		glm::mat4 projection, view, model;
-		m_camera.GetMatricies(projection, view, model);	
-		glm::mat4 Matrix = projection * view * model;
-
-		glUniformMatrix4fv(shaderLight.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
-
-		glUniform3fv(shaderLight.loc_lightPosition, 1, glm::value_ptr(lightPosition));
-		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(camera));
-		glUniform4f(shaderLight.loc_color, 1.0f, 0.0f, 0.0f, 1.0f);
-
-		glBindVertexArray(modelOfFile.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
-		glBindVertexArray(0);
-	}
-
-	void draw_fbo()
-	{
 		glUseProgram(shaderLightDepth.program);
-
-		glm::vec3 lightPosition(cos(9.2) * sin(angle), cos(angle), 1.0f);
-		glUniform3fv(shaderLightDepth.loc_lightPosition, 1, glm::value_ptr(lightPosition));
-		glUniform3fv(shaderLightDepth.loc_camera, 1, glm::value_ptr(camera));
 
 		glm::mat4 biasMatrix(
 			0.5, 0.0, 0.0, 0.0,
@@ -172,36 +249,63 @@ public:
 			);
 
 		glm::mat4 projection, view, model;
-		m_camera.GetMatricies(projection, view, model);			
-		glm::mat4 MVP = projection * view * model;
+		m_camera.GetMatrix(projection, view, model);
 
-		m_camera.SetLookAt(look_at);
-		m_camera.SetPosition(lightPosition);
-		m_camera.Update();
+		glm::mat4 depthBiasMVP = biasMatrix * light_camera.GetMVPMatrix();
 
-		m_camera.GetMatricies(projection, view, model);
-
-
-		glm::mat4 depthBiasMVP = biasMatrix * projection * view * model;
-
-		glUniformMatrix4fv(shaderLightDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(MVP));
-		glUniformMatrix4fv(shaderLightDepth.loc_DepthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
-		
-
-		glUniform1f(shaderLightDepth.loc_isLight, 1.0f);
-
-		glUniform3f(shaderLightDepth.loc_u_color, 0.0f, 1.0f, 0.0);
+		glUniformMatrix4fv(shaderLightDepth.loc_model, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(shaderLightDepth.loc_view, 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(shaderLightDepth.loc_projection, 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(shaderLightDepth.loc_u_DepthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
+		glUniform3fv(shaderLightDepth.loc_lightPos, 1, glm::value_ptr(lightPosition));
+		glUniform3fv(shaderLightDepth.loc_viewPos, 1, glm::value_ptr(m_camera.GetCameraPos()));
 
 		glBindTexture(GL_TEXTURE_2D, depthTexture);
-		
+
+		glUniform3f(shaderLightDepth.loc_objectColor, 1.0f, 0.0f, 0.0);
+		glUniform3f(shaderLightDepth.loc_lightColor, 1.0f, 1.0f, 1.0);
+
+		glBindVertexArray(modelOfFile.vaoObject);
+		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
+		glBindVertexArray(0);
+
+		glUniform3f(shaderLightDepth.loc_objectColor, 0.0f, 0.0f, 1.0);
+		glUniform3f(shaderLightDepth.loc_lightColor, 1.0f, 1.0f, 1.0);
+
 		glEnableVertexAttribArray(POS_ATTRIB);
 		glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, modelPlane.vertices.data());
 		glEnableVertexAttribArray(NORMAL_ATTRIB);
 		glVertexAttribPointer(NORMAL_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, modelPlane.normals.data());
-
 		glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, modelPlane.indexes.data());
 
+		glUseProgram(shaderSimpleColor.program);
+		model = glm::translate(model, lightPosition) * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+		glUniformMatrix4fv(shaderSimpleColor.loc_uMVP, 1, GL_FALSE, glm::value_ptr(projection * view * model));
+		glUniform3f(shaderSimpleColor.loc_objectColor, 1.0f, 1.0f, 1.0);
+
+		glBindVertexArray(modelOfFileSphere.vaoObject);
+		glDrawArrays(GL_TRIANGLES, 0, modelOfFileSphere.vertices.size());
+		glBindVertexArray(0);
+
 		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	void draw_obj_depth()
+	{
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glUseProgram(shaderDepth.program);
+		glm::mat4 projection, view, model;
+
+		light_camera.GetMatrix(projection, view, model);
+
+		glm::mat4 Matrix = projection * view * model;
+
+		glUniformMatrix4fv(shaderDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+
+		glBindVertexArray(modelOfFile.vaoObject);
+		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
+		glBindVertexArray(0);
 	}
 
 	void draw_cubemap()
@@ -211,14 +315,11 @@ public:
 		glBindVertexArray(modelCube.vaoObject);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, c_textureID);
 
-		m_camera.SetLookAt(look_at);
-		m_camera.SetPosition(camera);
-		m_camera.Update();
-
 		glm::mat4 projection, view, model;
 
-		m_camera.GetMatricies(projection, view, model);
-		model = glm::scale(glm::mat4(1.0f), glm::vec3(40.0f, 40.0f, 40.0f)) * model;
+		m_camera.GetMatrix(projection, view, model);
+
+		model = glm::scale(glm::mat4(1.0f), glm::vec3(50.0f)) * model;
 
 		glm::mat4 Matrix = projection * view * model;
 		glUniformMatrix4fv(shaderSimpleCubeMap.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
@@ -241,7 +342,8 @@ public:
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			return -1;
 		}
-		// возвращаем FBO по-умолчанию
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		return FBO;
 	}
@@ -321,6 +423,9 @@ public:
 		m_width = width;
 		m_height = height;
 		m_camera.SetViewport(x, y, width, height);
+		light_camera.SetViewport(x, y, width, height);
+		depthTexture = TextureCreateDepth(m_width, m_height);
+		depthFBO = FBOCreate(depthTexture);
 	}
 
 	virtual void destroy()
@@ -335,6 +440,9 @@ public:
 private:
 	float eps = 1e-3f;
 
+	glm::vec3 lightPosition;
+	glm::vec3 camera;
+
 	glm::vec3 axis_x;
 	glm::vec3 axis_y;
 	glm::vec3 axis_z;
@@ -344,22 +452,22 @@ private:
 
 	float angle = 0.0f;
 
-	glm::vec3 camera;
-	glm::vec3 look_at;
-
 	GLuint depthFBO;
 	GLuint c_textureID;
 
 	GLuint depthTexture;
 
-	ShaderLight shaderLight;
 	ModelOfFile modelOfFile;
 	ShaderSimpleCubeMap shaderSimpleCubeMap;
 	ModelCubeSkybox modelCube;
+	ModelOfFile modelOfFileSphere;
 
 	ModelPlane modelPlane;
 	ShaderTexture shaderTexture;
 	ShaderLightDepth shaderLightDepth;
 	ShaderShadowView shaderShadowView;
+	ShaderDepth shaderDepth;
+	ShaderSimpleColor shaderSimpleColor;
 	Camera m_camera;
+	Camera light_camera;
 };
