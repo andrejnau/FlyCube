@@ -469,12 +469,19 @@ public:
 	virtual void resize(int x, int y, int width, int height)
 	{
 		glViewport(x, y, width, height);
+		if (width != m_width || height != m_height)
+		{
+			if (depthTexture != -1)
+				glDeleteTextures(1, &depthTexture);
+			if (depthFBO != -1)
+				glDeleteFramebuffers(1, &depthFBO);
+			depthTexture = TextureCreateDepth(width, height);
+			depthFBO = FBOCreate(depthTexture);
+		}
 		m_width = width;
 		m_height = height;
 		m_camera.SetViewport(x, y, width, height);
 		light_camera.SetViewport(x, y, width, height);
-		depthTexture = TextureCreateDepth(m_width, m_height);
-		depthFBO = FBOCreate(depthTexture);
 	}
 
 	virtual void destroy()
@@ -517,10 +524,10 @@ private:
 
 	float angle = 0.0f;
 
-	GLuint depthFBO;
+	GLuint depthFBO = -1;
 	GLuint c_textureID;
 
-	GLuint depthTexture;
+	GLuint depthTexture = -1;
 
 	ModelOfFile modelOfFile;
 	ShaderSimpleCubeMap shaderSimpleCubeMap;
