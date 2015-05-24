@@ -8,7 +8,7 @@
 #include <chrono>
 #include <memory>
 #include <SOIL.h>
-#include <camera.h>
+#include <simple_camera/camera.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -42,10 +42,7 @@ public:
 
 		c_textureID = loadCubemap();
 
-		m_camera.SetPosition(glm::vec3(0, 0, 1));
-		m_camera.SetLookAt(glm::vec3(0, 0, 0));
-		m_camera.SetClipping(0.1, 100.0);
-		m_camera.SetFOV(45);
+		m_camera.SetCameraPos(glm::vec3(0.0f, 0.0f, 2.0f));
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -119,30 +116,20 @@ public:
 			modelOfFileList[i].update_physical(elapsed / 100000.0f);
 		}
 
-		//draw_in_depth();
 		draw_obj();
-		//draw_shadow();
 		draw_cubemap();
 	}
 
-	void draw_obj(bool depth = false)
+	void draw_obj()
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(shaderLight.program);
 
 		glm::vec3 lightPosition(cos(angle_light) * sin(angle_light), cos(angle_light), 3.0f);
-		glm::vec3 camera(0.0f, 0.0f, 2.0f);
-
-		if (depth)
-			camera = lightPosition;
-
-		m_camera.SetLookAt(glm::vec3(0, 0, 0));
-		m_camera.SetPosition(camera);
-		m_camera.Update();
 
 		glm::mat4 projection, view, model;
 
-		m_camera.GetMatricies(projection, view, model);
+		m_camera.GetMatrix(projection, view, model);
 
 		glm::mat4 animX = glm::rotate(glm::mat4(1.0f), 0.0f * float(1.0f * angle / acos(-1.0)), axis_x);
 		glm::mat4 animY = glm::rotate(glm::mat4(1.0f), angle, axis_y);
@@ -154,21 +141,7 @@ public:
 		glUniformMatrix4fv(shaderLight.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
 		glUniform3fv(shaderLight.loc_lightPosition, 1, glm::value_ptr(lightPosition));
-		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(camera));
-
-		if (!depth)
-		{
-			glm::mat4 biasMatrix(
-				0.5, 0.0, 0.0, 0.0,
-				0.0, 0.5, 0.0, 0.0,
-				0.0, 0.0, 0.5, 0.0,
-				0.5, 0.5, 0.5, 1.0
-				);
-
-			glm::mat4 depthBiasMVP = biasMatrix * projection * view * model;
-
-			glUniformMatrix4fv(shaderLight.loc_DepthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
-		}
+		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(m_camera.GetCameraPos()));
 
 		glUniform1f(shaderLight.loc_isLight, 1.0f);
 
@@ -184,19 +157,6 @@ public:
 		glBindVertexArray(0);
 	}
 
-	void draw_in_depth()
-	{
-		// установим активный FBO
-		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
-		// включаем вывод буфера глубины
-		glDepthMask(GL_TRUE);
-		// очищаем буфер глубины перед его заполнением
-		glClear(GL_DEPTH_BUFFER_BIT);
-		// выполним рендер сцены с использованием шейдерной программы и камеры источника освещения
-		draw_obj(true);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-
 	void draw_cubemap()
 	{
 		glDepthMask(GL_FALSE);
@@ -204,27 +164,13 @@ public:
 		glBindVertexArray(modelCube.vaoObject);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, c_textureID);
 
-		glm::vec3 camera(0.0f, 0.0f, 0.f);
-
 		glm::mat4 animX = glm::rotate(glm::mat4(1.0f), float(1.0f * angle / acos(-1.0)), axis_x);
 		glm::mat4 animY = glm::rotate(glm::mat4(1.0f), angle, axis_y);
 		glm::mat4 animZ = glm::rotate(glm::mat4(1.0f), angle, axis_z);
 
-		glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(4.0f, 4.0f, 4.0f));
-
-		glm::mat4 view = glm::mat4(1.0f);
-		view = glm::mat4(glm::mat3(glm::lookAt(
-			glm::vec3(0.0f, 0.0f, 20.0f),
-			glm::vec3(0.0f, 0.0f, 0.0f),
-			glm::vec3(0.0f, 1.0f, 0.0f)
-			)));
-
-		glm::mat4 projection = glm::perspective(
-			45.0f,
-			(float)m_width / m_height,
-			0.1f,
-			100.0f
-			);
+		glm::mat4 projection, view, model;
+		m_camera.GetMatrix(projection, view, model);
+		model = model * glm::scale(glm::mat4(1.0f), glm::vec3(4.0f, 4.0f, 4.0f));
 
 		glm::mat4 Matrix = projection * view * model;
 		glUniformMatrix4fv(shaderSimpleCubeMap.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
@@ -232,90 +178,6 @@ public:
 		glDrawArrays(GL_TRIANGLES, 0, modelCube.vertices.size() / 3);
 		glBindVertexArray(0);
 		glDepthMask(GL_TRUE);
-	}
-
-	void draw_shadow()
-	{
-		glUseProgram(shaderShadowView.program);
-		glBindTexture(GL_TEXTURE_2D, depthTexture);
-
-		glm::mat4 Matrix(1.0f);
-
-		glUniformMatrix4fv(shaderShadowView.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
-
-		static GLfloat plane_vertices[] = {
-			-1.0, 1.0, 0.0,
-			-0.5, 1.0, 0.0,
-			-0.5, 0.5, 0.0,
-			-1.0, 0.5, 0.0
-		};
-
-		static GLfloat plane_texcoords[] = {
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			0.0, 0.0
-		};
-
-		static GLuint plane_elements[] = {
-			0, 1, 2,
-			2, 3, 0
-		};
-
-		glEnableVertexAttribArray(POS_ATTRIB);
-		glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, plane_vertices);
-
-		glEnableVertexAttribArray(TEXTURE_ATTRIB);
-		glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, 0, plane_texcoords);
-
-		glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
-	}
-
-	GLuint FBOCreateDepth(GLuint _depthTexture)
-	{
-		// Framebuffer Object (FBO) для рендера в него буфера глубины
-		GLuint depthFBO = 0;
-		// переменная для получения состояния FBO
-		GLenum fboStatus;
-		// создаем FBO для рендера глубины в текстуру
-		glGenFramebuffers(1, &depthFBO);
-		// делаем созданный FBO текущим
-		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
-		// отключаем вывод цвета в текущий FBO
-		glDrawBuffer(GL_NONE);
-		glReadBuffer(GL_NONE);
-		// указываем для текущего FBO текстуру, куда следует производить рендер глубины
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _depthTexture, 0);
-		// проверим текущий FBO на корректность
-		if ((fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE)
-		{
-			DBG("glCheckFramebufferStatus error 0x%X\n", fboStatus);
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			return -1;
-		}
-		// возвращаем FBO по-умолчанию
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		return depthFBO;
-	}
-
-	GLuint TextureCreateDepth(GLsizei width, GLsizei height)
-	{
-		GLuint texture;
-		// запросим у OpenGL свободный индекс текстуры
-		glGenTextures(1, &texture);
-		// сделаем текстуру активной
-		glBindTexture(GL_TEXTURE_2D, texture);
-		// установим параметры фильтрации текстуры - линейная фильтрация
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		// установим параметры "оборачиваниея" текстуры - отсутствие оборачивания
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		// необходимо для использования depth-текстуры как shadow map
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-		// соаздем "пустую" текстуру под depth-данные
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-		return texture;
 	}
 
 	std::unique_ptr<unsigned char[]> load_image(const std::string & m_path)
@@ -369,9 +231,6 @@ public:
 		m_width = width;
 		m_height = height;
 		m_camera.SetViewport(x, y, width, height);
-
-		depthTexture = TextureCreateDepth(m_width, m_height);
-		depthFBO = FBOCreateDepth(depthTexture);
 	}
 
 	virtual void destroy()

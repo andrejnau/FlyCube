@@ -8,7 +8,7 @@
 #include <chrono>
 #include <memory>
 #include <SOIL.h>
-#include <camera.h>
+#include <simple_camera/camera.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -27,20 +27,7 @@ public:
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 
-		m_camera.SetPosition(glm::vec3(0, 0, 1));
-		m_camera.SetLookAt(glm::vec3(0, 0, 0));
-		m_camera.SetClipping(0.1, 100.0);
-		m_camera.SetFOV(45);
-
-		m_camera.angle_x = -0.8f;
-		m_camera.angle_y = 0.2f;
-		m_camera.angle_z = 1.0f;
-
-		for (int i = 0; i < 10; ++i)
-		{
-			m_camera.Move(CameraDirection::BACK);
-			m_camera.Update();
-		}
+		m_camera.SetCameraPos(glm::vec3(0.0, 2.0, 5.0));
 
 		return true;
 	}
@@ -96,22 +83,17 @@ public:
 		glUseProgram(shaderLight.program);
 
 		glm::vec3 lightPosition(cos(9.2) * sin(9.2), cos(9.2), 3.0f);
-		glm::vec3 camera(0.0f, 0.0f, 2.0f);
-
-		m_camera.SetLookAt(glm::vec3(0, 0, 0));
-		m_camera.SetPosition(camera);
-		m_camera.Update();
 
 		glm::mat4 projection, view, model;
 
-		m_camera.GetMatricies(projection, view, model);
+		m_camera.GetMatrix(projection, view, model);
 
 		glm::mat4 Matrix = projection * view * model;
 
 		glUniformMatrix4fv(shaderLight.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
 		glUniform3fv(shaderLight.loc_lightPosition, 1, glm::value_ptr(lightPosition));
-		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(camera));				
+		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(m_camera.GetCameraPos()));
 
 		glBindVertexArray(modelFrustum.vaoObject);
 		glDrawArrays(GL_TRIANGLES, 0, modelFrustum.vertices.size());

@@ -8,9 +8,9 @@
 #include <chrono>
 #include <memory>
 #include <SOIL.h>
-#include <camera.h>
+#include <simple_camera/camera.h>
 
-#define ONE_LOOP
+//#define ONE_LOOP
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -30,20 +30,7 @@ public:
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
 
-		m_camera.SetPosition(glm::vec3(0, 0, 1));
-		m_camera.SetLookAt(glm::vec3(0, 0, 0));
-		m_camera.SetClipping(0.1, 100.0);
-		m_camera.SetFOV(45);
-
-		m_camera.angle_x = 0.5;
-		m_camera.angle_y = -0.5;
-		m_camera.angle_z = 0.0;
-
-		for (int i = 0; i < 42; ++i)
-		{
-			m_camera.Move(CameraDirection::BACK);
-			m_camera.Update();
-		}
+		m_camera.SetCameraPos(glm::vec3(0.0, 5, 10.0));
 
 		glm::vec3 a(-1.0f, 1.0f + eps, 1.0f);
 		glm::vec3 b(1.0f, 1.0f + eps, 1.0f);
@@ -157,15 +144,9 @@ public:
 		glUseProgram(shaderLight.program);
 
 		glm::vec3 lightPosition(cos(9.2) * sin(9.2), cos(9.2), 3.0f);
-		glm::vec3 camera(0.0f, 0.0f, 2.0f);
-
-		m_camera.SetLookAt(glm::vec3(0, 0, 0));
-		m_camera.SetPosition(camera);
-		m_camera.Update();
-
 		glm::mat4 projection, view, model;
 
-		m_camera.GetMatricies(projection, view, model);
+		m_camera.GetMatrix(projection, view, model);
 
 		model = model * glm::rotate(glm::mat4(1.0f), -angle, this->axis_z);
 
@@ -174,7 +155,7 @@ public:
 		glUniformMatrix4fv(shaderLight.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
 		glUniform3fv(shaderLight.loc_lightPosition, 1, glm::value_ptr(lightPosition));
-		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(camera));
+		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(m_camera.GetCameraPos()));
 		glUniform4f(shaderLight.loc_color, 0.5f, 0.5f, 0.5f, 1.0f);
 
 		glBindVertexArray(modelOfFile.vaoObject);
@@ -186,14 +167,14 @@ public:
 #ifdef ONE_LOOP
 		for (int i = cur_id + 1; i < (int)modelOfMemoryL.size(); ++i)
 #else
-		for (int i = 0; i < modelOfMemoryL.size(); ++i)
+		for (int i = 0; i < (int)modelOfMemoryL.size(); ++i)
 #endif
 		{
 			glBindVertexArray(modelOfMemoryL[i].vaoObject);
 			glDrawArrays(GL_TRIANGLES, 0, modelOfMemoryL[i].vertices.size());
 			glBindVertexArray(0);
 		}
-		m_camera.GetMatricies(projection, view, model);
+		m_camera.GetMatrix(projection, view, model);
 		Matrix = projection * view * model;
 		glUniformMatrix4fv(shaderLight.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 

@@ -8,7 +8,6 @@
 #include <chrono>
 #include <memory>
 #include <SOIL.h>
-#include <camera.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 

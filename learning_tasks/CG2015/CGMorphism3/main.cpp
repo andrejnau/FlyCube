@@ -22,60 +22,50 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-
-
 	if (key == GLFW_KEY_F && action == GLFW_PRESS)
 	{
 		auto & state = CurState<bool>::Instance().state;
 		state["warframe"] = !state["warframe"];
 	}
 
-	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+	float dt = 0.1f;
+	switch (key)
 	{
-		renderer->read_size();
-	}
-
-	/*if (action != GLFW_PRESS)
-		return;*/
-
-	float eps = 0.1f;
-
-	switch (key) {
 	case GLFW_KEY_W:
-		renderer->getCamera().Move(CameraDirection::FORWARD);
+		renderer->getCamera().ProcessKeyboard(FORWARD, dt);
 		break;
 	case GLFW_KEY_A:
-		renderer->getCamera().Move(CameraDirection::LEFT);
+		renderer->getCamera().ProcessKeyboard(LEFT, dt);
 		break;
 	case GLFW_KEY_S:
-		renderer->getCamera().Move(CameraDirection::BACK);
+		renderer->getCamera().ProcessKeyboard(BACKWARD, dt);
 		break;
 	case GLFW_KEY_D:
-		renderer->getCamera().Move(CameraDirection::RIGHT);
+		renderer->getCamera().ProcessKeyboard(RIGHT, dt);
 		break;
 	case GLFW_KEY_Q:
-		renderer->getCamera().Move(CameraDirection::DOWN);
+		renderer->getCamera().ProcessKeyboard(DOWN, dt);
 		break;
 	case GLFW_KEY_E:
-		renderer->getCamera().Move(CameraDirection::UP);
+		renderer->getCamera().ProcessKeyboard(UP, dt);
 		break;
 	case GLFW_KEY_L:
-		renderer->getCamera().angle_y += eps;
+		renderer->getCamera().ProcessKeyboard(RIGHT, dt, false);
 		break;
 	case GLFW_KEY_J:
-		renderer->getCamera().angle_y -= eps;
+		renderer->getCamera().ProcessKeyboard(LEFT, dt, false);
 		break;
 	case GLFW_KEY_I:
-		renderer->getCamera().angle_x += eps;
+		renderer->getCamera().ProcessKeyboard(FORWARD, dt, false);
 		break;
 	case GLFW_KEY_K:
-		renderer->getCamera().angle_x -= eps;
+		renderer->getCamera().ProcessKeyboard(BACKWARD, dt, false);
 		break;
 	case GLFW_KEY_O:
-		renderer->getCamera().angle_z += eps;
+		renderer->getCamera().ProcessKeyboard(UP, dt, false);
 		break;
 	case GLFW_KEY_U:
-		renderer->getCamera().angle_z -= eps;
+		renderer->getCamera().ProcessKeyboard(DOWN, dt, false);
 		break;
 	case GLFW_KEY_ESCAPE:
 		exit(0);
@@ -83,14 +73,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	default:
 		break;
 	}
-	renderer->getCamera().Update();
 }
 
 static void error_callback(int error, const char* description)
 {
 	fprintf(stderr, "Error: %s\n", description);
 }
-
 
 int main(void)
 {
