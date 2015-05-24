@@ -184,7 +184,7 @@ struct ShaderLightDepth
 			{
 				float res = 0.0;
 
-				smcoord.z -= 0.0001 * smcoord.w;
+				smcoord.z -= 0.0005 * smcoord.w;
 
 				res += textureProjOffset(u_depthTexture, smcoord, ivec2(-1, -1));
 				res += textureProjOffset(u_depthTexture, smcoord, ivec2(0, -1));

@@ -56,6 +56,7 @@ include_directories(common/utils/include)
 include_directories(common/testscene/include)
 include_directories(common/mlogger/include)
 include_directories(common/camera/include)
+include_directories(common/simple_camera/include)
 
 add_subdirectory(common)
 add_subdirectory(example)

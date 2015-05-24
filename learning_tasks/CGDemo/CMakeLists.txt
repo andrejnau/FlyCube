@@ -1,4 +1,4 @@
-set (PROJECT CGCoursework)
+set (PROJECT CGDemo)
 project (${PROJECT})
 
 set (HEADERS
@@ -17,4 +17,4 @@ else()
     add_executable(${PROJECT} ${SOURCES} ${HEADERS})
 endif()
 
-target_link_libraries(${PROJECT} glfw ${GLFW_LIBRARIES} gl_core mlogger SOIL simple_camera)
+target_link_libraries(${PROJECT} glfw ${GLFW_LIBRARIES} gl_core mlogger SOIL assimp simple_camera)

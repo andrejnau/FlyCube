@@ -11,128 +11,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-enum Camera_Movement
-{
-	FORWARD,
-	BACKWARD,
-	LEFT,
-	RIGHT,
-	UP,
-	DOWN
-};
-
-class Camera
-{
-public:
-	glm::mat4 GetModelMatrix()
-	{
-		return glm::mat4(1.0f);
-	}
-
-	glm::mat4 GetViewMatrix()
-	{
-		return glm::lookAt(cameraPos, cameraTarget, cameraUp);
-	}
-
-	glm::mat4 GetProjectionMatrix()
-	{
-		return glm::perspective(fovy, aspect, zNear, zFar);
-	}
-
-	void GetMatrix(glm::mat4 & projectionMatrix, glm::mat4 & viewMatrix, glm::mat4 & modelMatrix)
-	{
-		projectionMatrix = GetProjectionMatrix();
-		viewMatrix = GetViewMatrix();
-		modelMatrix = GetModelMatrix();
-	}
-
-	glm::mat4 GetMVPMatrix()
-	{
-		return GetProjectionMatrix() * GetViewMatrix() * GetModelMatrix();
-	}
-
-	glm::vec3 GetCameraPos()
-	{
-		return cameraPos;
-	}
-
-	void SetCameraPos(glm::vec3 _cameraPos)
-	{
-		cameraPos = _cameraPos;
-	}
-
-	void SetCameraTarget(glm::vec3 _cameraTarget)
-	{
-		cameraTarget = _cameraTarget;
-	}
-
-	void SetClipping(float near_clip_distance, float far_clip_distance)
-	{
-		zNear = near_clip_distance;
-		zFar = far_clip_distance;
-	}
-
-	void SetViewport(int loc_x, int loc_y, int width, int height)
-	{
-		aspect = float(width) / float(height);
-	}
-
-	void ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool moved = true)
-	{
-		glm::vec3 cameraDirection = glm::normalize(cameraTarget - cameraPos);
-		glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-		glm::vec3 cameraRight = glm::normalize(glm::cross(cameraUp, cameraDirection));
-
-		GLfloat velocity = MovementSpeed * deltaTime;
-		if (direction == FORWARD)
-		{
-			cameraPos += cameraDirection * velocity;
-			if (moved)
-				cameraTarget += cameraDirection * velocity;
-		}
-		else if (direction == BACKWARD)
-		{
-			cameraPos -= cameraDirection * velocity;
-			if (moved)
-				cameraTarget -= cameraDirection * velocity;
-		}
-		else if (direction == LEFT)
-		{
-			cameraPos += cameraRight * velocity;
-			if (moved)
-				cameraTarget += cameraRight * velocity;
-		}
-		else if (direction == RIGHT)
-		{
-			cameraPos -= cameraRight * velocity;
-			if (moved)
-				cameraTarget -= cameraRight * velocity;
-		}
-		else if (direction == UP)
-		{
-			cameraPos += cameraUp * velocity;
-			if (moved)
-				cameraTarget += cameraUp * velocity;
-		}
-		else if (direction == DOWN)
-		{
-			cameraPos -= cameraUp * velocity;
-			if (moved)
-				cameraTarget -= cameraUp * velocity;
-		}
-	}
-private:
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 1.0f);
-	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-	GLfloat MovementSpeed = 3.0f;
-
-	float fovy = 45.0f;
-	float aspect = 1.0f;
-	float zNear = 0.5f;
-	float zFar = 100.0f;
-};
+#include <simple_camera/camera.h>
 
 class tScenes : public SceneBase, public SingleTon < tScenes >
 {
@@ -293,7 +172,7 @@ public:
 		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
 		glBindVertexArray(0);
 
-		glm::mat4 model_annie = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.0f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
+		glm::mat4 model_annie = model * glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.0f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
 
 		glUniformMatrix4fv(shaderLightDepth.loc_model, 1, GL_FALSE, glm::value_ptr(model_annie));
 		glBindVertexArray(modelOfFileAnnie.vaoObject);
@@ -348,7 +227,7 @@ public:
 		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
 		glBindVertexArray(0);
 
-		glm::mat4 model_annie = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.0f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
+		glm::mat4 model_annie = model * glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.0f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
 		Matrix = projection * view * model_annie;
 		glUniformMatrix4fv(shaderDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
