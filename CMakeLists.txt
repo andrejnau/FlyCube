@@ -28,6 +28,17 @@ add_subdirectory(3rdparty/Simple-OpenGL-Image-Library-master)
 include_directories(3rdparty/Simple-OpenGL-Image-Library-master/src)
 set_target_properties(SOIL PROPERTIES FOLDER "3rdparty")
 
+#assimp
+set(ENABLE_BOOST_WORKAROUND ON)
+set(BUILD_STATIC_LIB OFF)
+set(BUILD_ASSIMP_SAMPLES OFF)
+set(BUILD_ASSIMP_TOOLS OFF)
+
+add_subdirectory(3rdparty/assimp-3.1.1/)
+include_directories( 3rdparty/assimp-3.1.1/code/BoostWorkaround)
+include_directories(3rdparty/assimp-3.1.1/include)
+set_target_properties(assimp PROPERTIES FOLDER "3rdparty")
+
 #glm
 include_directories(3rdparty/glm)
 
