@@ -126,6 +126,16 @@ private:
 			vertex.normal.y = mesh->mNormals[i].y;
 			vertex.normal.z = mesh->mNormals[i].z;
 
+			if (mesh->mTextureCoords[0])
+			{
+				// A vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
+				// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
+				vertex.texCoords.x = mesh->mTextureCoords[0][i].x;
+				vertex.texCoords.y = mesh->mTextureCoords[0][i].y;
+			}
+			else
+				vertex.texCoords = glm::vec2(0.0f, 0.0f);
+
 			retMeh.vertices.push_back(vertex);
 		}
 		// Now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.

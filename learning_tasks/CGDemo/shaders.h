@@ -57,6 +57,7 @@ struct ShaderLight
 			precision highp float;
 			layout(location = )vs" STRV(POS_ATTRIB) R"vs() in vec3 a_pos;
 			layout(location = )vs" STRV(NORMAL_ATTRIB) R"vs() in vec3 a_normal;
+			layout(location = )vs" STRV(TEXTURE_ATTRIB) R"vs() in vec2 a_texCoord;
 
 			uniform mat4 model;
 			uniform mat4 view;
@@ -64,12 +65,14 @@ struct ShaderLight
 
 			out vec3 q_pos;
 			out vec3 q_normal;
+			out vec2 q_texCoord;
 
 			void main()
 			{
 			    gl_Position = projection * view *  model * vec4(a_pos, 1.0);
 				q_pos = vec3(model * vec4(a_pos, 1.0f));
 				q_normal = mat3(transpose(inverse(model))) * a_normal;
+				q_texCoord = a_texCoord;
 			}
 		)vs";
 
@@ -102,6 +105,9 @@ struct ShaderLight
 
 			in vec3 q_pos;
 			in vec3 q_normal;
+			in vec2 q_texCoord;
+
+			uniform sampler2D texture_diffuse;
 
 			void main()
 			{
@@ -121,7 +127,7 @@ struct ShaderLight
 				vec3 specular = light.specular * (spec * material.specular);
 
 				vec3 result = (ambient + diffuse + specular);
-				out_Color = vec4(result, 1.0);
+				out_Color = vec4(texture(texture_diffuse, q_texCoord).rgb, 1.0);
 			}
 		)fs";
 };
