@@ -57,7 +57,7 @@ public:
 
 		light_camera.SetCameraPos(lightPosition);
 		light_camera.SetCameraTarget(-lightPosition);
-				
+
 		draw_obj();
 	}
 
@@ -97,14 +97,19 @@ public:
 		glUniform3fv(shaderLight.loc_light.diffuse, 1, glm::value_ptr(light.diffuse));
 		glUniform3fv(shaderLight.loc_light.specular, 1, glm::value_ptr(light.specular));
 
-		glBindVertexArray(modelOfFile.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
-		glBindVertexArray(0);		
+		for (Mesh & cur_mesh : modelOfFile.meshes)
+		{
+			glBindVertexArray(cur_mesh.VAO);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
+			glDrawElements(GL_TRIANGLES, cur_mesh.indices.size(), GL_UNSIGNED_INT, 0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			glBindVertexArray(0);
+		}
 	}
-		
+
 	virtual void resize(int x, int y, int width, int height)
 	{
-		glViewport(x, y, width, height);		
+		glViewport(x, y, width, height);
 		m_width = width;
 		m_height = height;
 		m_camera.SetViewport(x, y, width, height);
@@ -149,7 +154,7 @@ private:
 
 	float angle = 0.0f;
 
-	ModelOfFile modelOfFile;
+	Model modelOfFile;
 
 	ShaderLight shaderLight;
 	Camera m_camera;
