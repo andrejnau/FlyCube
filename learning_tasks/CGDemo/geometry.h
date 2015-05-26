@@ -12,6 +12,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <SOIL.h>
+
 struct Mesh
 {
 	struct Vertex
@@ -21,8 +23,16 @@ struct Mesh
 		glm::vec2 texCoords;
 	};
 
+	struct Texture
+	{
+		GLuint id;
+		std::string type;
+		aiString path;
+	};
+
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;
+	std::vector<Texture> textures;
 
 	GLuint VAO, VBO, EBO;
 
@@ -57,18 +67,25 @@ class Model
 {
 public:
 	Model(const std::string & file)
+		: m_path(PROJECT_RESOURCE_DIR + file)
+		, m_directory(splitFilename(m_path))
 	{
-		std::string m_path(PROJECT_RESOURCE_DIR + file);
-		loadModel(m_path);
+		loadModel();
 	}
 
+	std::string m_path;
+	std::string m_directory;
 	std::vector<Mesh> meshes;
 
 private:
-	void loadModel(const std::string &path)
+	std::string splitFilename(const std::string& str)
+	{
+		return str.substr(0, str.find_last_of("/"));
+	}
+	void loadModel()
 	{
 		Assimp::Importer import;
-		const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_OptimizeMeshes);
+		const aiScene* scene = import.ReadFile(m_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_OptimizeMeshes);
 
 		if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
@@ -95,7 +112,7 @@ private:
 
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene)
 	{
-		Mesh res;
+		Mesh retMeh;
 		// Walk through each of the mesh's vertices
 		for (GLuint i = 0; i < mesh->mNumVertices; ++i)
 		{
@@ -109,7 +126,7 @@ private:
 			vertex.normal.y = mesh->mNormals[i].y;
 			vertex.normal.z = mesh->mNormals[i].z;
 
-			res.vertices.push_back(vertex);
+			retMeh.vertices.push_back(vertex);
 		}
 		// Now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
 		for (GLuint i = 0; i < mesh->mNumFaces; ++i)
@@ -118,10 +135,59 @@ private:
 			// Retrieve all indices of the face and store them in the indices vector
 			for (GLuint j = 0; j < face.mNumIndices; ++j)
 			{
-				res.indices.push_back(face.mIndices[j]);
+				retMeh.indices.push_back(face.mIndices[j]);
 			}
 		}
-		res.setupMesh();
-		return res;
+
+		// Process materials
+		if (mesh->mMaterialIndex >= 0)
+		{
+			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+			loadMaterialTextures(retMeh, material, aiTextureType_DIFFUSE);
+			loadMaterialTextures(retMeh, material, aiTextureType_SPECULAR);
+		}
+
+		retMeh.setupMesh();
+		return retMeh;
+	}
+
+	void loadMaterialTextures(Mesh &retMeh, aiMaterial* mat, aiTextureType type)
+	{
+		for (GLuint i = 0; i < mat->GetTextureCount(type); i++)
+		{
+			aiString str;
+			mat->GetTexture(type, i, &str);
+			std::string filename = m_directory + "/" + str.C_Str();
+
+			Mesh::Texture texture;
+			texture.id = TextureFromFile(filename);
+			texture.type = type;
+			texture.path = filename;
+
+			retMeh.textures.push_back(texture);
+		}
+	}
+
+	GLint TextureFromFile(const std::string & filename)
+	{
+
+		int width, height;
+		unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+
+		GLuint textureID;
+		glGenTextures(1, &textureID);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		SOIL_free_image_data(image);
+
+		return textureID;
 	}
 };

@@ -20,7 +20,7 @@ public:
 		: axis_x(1.0f, 0.0f, 0.0f)
 		, axis_y(0.0f, 1.0f, 0.0f)
 		, axis_z(0.0f, 0.0f, 1.0f)
-		, modelOfFile("model/suzanne.obj")
+		, modelOfFile("model/nanosuit/nanosuit.obj")
 	{
 	}
 
