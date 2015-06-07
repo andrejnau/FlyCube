@@ -22,7 +22,7 @@ def gen():
     os.chdir(os.path.join(path, "build"))
     generate_out = "Unix Makefiles"
     if any(platform.win32_ver()):
-        generate_out = "Visual Studio 12 2013"
+        generate_out = "Visual Studio 14 2015"
     runCmd(['cmake', '..', '-G', generate_out])
     os.chdir(path)
 
