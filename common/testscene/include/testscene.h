@@ -45,11 +45,10 @@ public:
 		static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now(), end = std::chrono::system_clock::now();
 
 		end = std::chrono::system_clock::now();
-		int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 		start = std::chrono::system_clock::now();
-
 		static float angle = 0, angle_light = 0;
-		angle += elapsed / 2500.0f;
+		angle += elapsed / 5000000.0f;
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(shaderLight.program);
