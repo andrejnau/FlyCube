@@ -48,7 +48,7 @@ public:
 		glBindVertexArray(modelForTexture.vaoObject);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelForTexture.vboIndexe);
 
-		glDrawElements(GL_TRIANGLES, modelForTexture.indexes.size(), GL_UNSIGNED_INT, (void*)0);
+		glDrawElements(GL_TRIANGLES, (GLsizei)modelForTexture.indexes.size(), GL_UNSIGNED_INT, (void*)0);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);

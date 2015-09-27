@@ -102,7 +102,7 @@ public:
 			glBindVertexArray(cur_mesh.VAO);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
 			glBindTexture(GL_TEXTURE_2D, cur_mesh.textures[0].id);
-			glDrawElements(GL_TRIANGLES, cur_mesh.indices.size(), GL_UNSIGNED_INT, 0);
+			glDrawElements(GL_TRIANGLES, (GLsizei)cur_mesh.indices.size(), GL_UNSIGNED_INT, 0);
 			glBindTexture(GL_TEXTURE_2D, 0);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 			glBindVertexArray(0);

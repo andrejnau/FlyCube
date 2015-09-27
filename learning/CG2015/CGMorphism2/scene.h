@@ -159,7 +159,7 @@ public:
 		glUniform4f(shaderLight.loc_color, 0.5f, 0.5f, 0.5f, 1.0f);
 
 		glBindVertexArray(modelOfFile.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfFile.vertices.size());
 		glBindVertexArray(0);
 
 		glUniform4f(shaderLight.loc_color, 1.0f, 0.0f, 0.0f, 1.0f);
@@ -171,7 +171,7 @@ public:
 #endif
 		{
 			glBindVertexArray(modelOfMemoryL[i].vaoObject);
-			glDrawArrays(GL_TRIANGLES, 0, modelOfMemoryL[i].vertices.size());
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfMemoryL[i].vertices.size());
 			glBindVertexArray(0);
 		}
 		m_camera.GetMatrix(projection, view, model);
@@ -179,7 +179,7 @@ public:
 		glUniformMatrix4fv(shaderLight.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
 		glBindVertexArray(modelLenta.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelLenta.vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelLenta.vertices.size());
 		glBindVertexArray(0);
 	}
 

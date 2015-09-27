@@ -96,7 +96,7 @@ public:
 		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(m_camera.GetCameraPos()));
 
 		glBindVertexArray(modelFrustum.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelFrustum.vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelFrustum.vertices.size());
 		glBindVertexArray(0);
 	}
 	

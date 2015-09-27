@@ -169,14 +169,14 @@ public:
 		glUniform3fv(shaderLightDepth.loc_light.specular, 1, glm::value_ptr(light.specular));
 
 		glBindVertexArray(modelOfFile.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfFile.vertices.size());
 		glBindVertexArray(0);
 
 		glm::mat4 model_annie = model * glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.0f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
 
 		glUniformMatrix4fv(shaderLightDepth.loc_model, 1, GL_FALSE, glm::value_ptr(model_annie));
 		glBindVertexArray(modelOfFileAnnie.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelOfFileAnnie.vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfFileAnnie.vertices.size());
 		glBindVertexArray(0);
 
 		glUniformMatrix4fv(shaderLightDepth.loc_model, 1, GL_FALSE, glm::value_ptr(model));
@@ -197,7 +197,7 @@ public:
 		glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, modelPlane.vertices.data());
 		glEnableVertexAttribArray(NORMAL_ATTRIB);
 		glVertexAttribPointer(NORMAL_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, modelPlane.normals.data());
-		glDrawElements(GL_TRIANGLES, modelPlane.indexes.size(), GL_UNSIGNED_INT, modelPlane.indexes.data());
+		glDrawElements(GL_TRIANGLES, (GLsizei)modelPlane.indexes.size(), GL_UNSIGNED_INT, modelPlane.indexes.data());
 
 		glUseProgram(shaderSimpleColor.program);
 		model = glm::translate(model, lightPosition) * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
@@ -205,7 +205,7 @@ public:
 		glUniform3f(shaderSimpleColor.loc_objectColor, 1.0f, 1.0f, 1.0);
 
 		glBindVertexArray(modelOfFileSphere.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelOfFileSphere.vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfFileSphere.vertices.size());
 		glBindVertexArray(0);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -224,7 +224,7 @@ public:
 		glUniformMatrix4fv(shaderDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
 		glBindVertexArray(modelOfFile.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelOfFile.vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfFile.vertices.size());
 		glBindVertexArray(0);
 
 		glm::mat4 model_annie = model * glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.0f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
@@ -232,7 +232,7 @@ public:
 		glUniformMatrix4fv(shaderDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
 		glBindVertexArray(modelOfFileAnnie.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelOfFileAnnie.vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfFileAnnie.vertices.size());
 		glBindVertexArray(0);
 	}
 
@@ -252,7 +252,7 @@ public:
 		glm::mat4 Matrix = projection * view * model;
 		glUniformMatrix4fv(shaderSimpleCubeMap.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
-		glDrawArrays(GL_TRIANGLES, 0, modelCube.vertices.size() / 3);
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelCube.vertices.size() / 3);
 		glBindVertexArray(0);
 		glDepthMask(GL_TRUE);
 	}

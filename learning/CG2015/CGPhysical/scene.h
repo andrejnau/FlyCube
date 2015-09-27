@@ -148,12 +148,12 @@ public:
 		for (auto &x : modelOfFileList)
 		{
 			glBindVertexArray(x.vaoObject);
-			glDrawArrays(GL_TRIANGLES, 0, x.vertices.size());
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)x.vertices.size());
 			glBindVertexArray(0);
 		}
 
 		glBindVertexArray(modelOfFileBasis.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelOfFileBasis.vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfFileBasis.vertices.size());
 		glBindVertexArray(0);
 	}
 
@@ -175,7 +175,7 @@ public:
 		glm::mat4 Matrix = projection * view * model;
 		glUniformMatrix4fv(shaderSimpleCubeMap.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
-		glDrawArrays(GL_TRIANGLES, 0, modelCube.vertices.size() / 3);
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelCube.vertices.size() / 3);
 		glBindVertexArray(0);
 		glDepthMask(GL_TRUE);
 	}

@@ -84,7 +84,7 @@ public:
 		glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(camera));
 
 		glBindVertexArray(modelSuzanne.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelSuzanne.vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelSuzanne.vertices.size());
 		glBindVertexArray(0);
 	}
 

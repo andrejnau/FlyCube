@@ -220,7 +220,7 @@ public:
 		glUniform3fv(loc_camera, 1, glm::value_ptr(camera));
 
 		glBindVertexArray(vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertices.size());
 		glBindVertexArray(0);
 	}
 

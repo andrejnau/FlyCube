@@ -192,13 +192,13 @@ public:
 
 
 		glBindVertexArray(modelOfFile.vaoObject);
-		glDrawArrays(GL_LINES, 0, modelOfFile.vertices.size());
+		glDrawArrays(GL_LINES, 0, (GLsizei)modelOfFile.vertices.size());
 		glBindVertexArray(0);
 
 		glLineWidth(0);
 		glUniform4f(shaderLine.uloc_color, 1.0f, 1.0f, 0.0f, 1.0f);
 		glBindVertexArray(modelOfFile2.vaoObject);
-		glDrawArrays(GL_TRIANGLES, 0, modelOfFile2.vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfFile2.vertices.size());
 		glBindVertexArray(0);
 
 		glLineWidth(6);
@@ -206,13 +206,13 @@ public:
 		get_ligth(true);
 		glUniform4f(shaderLine.uloc_color, 1.0f, 0.0f, 0.0f, 1.0f);
 		glBindVertexArray(modelOfFile.vaoObject);
-		glDrawArrays(GL_LINE_LOOP, 0, modelOfFile.vertices.size());
+		glDrawArrays(GL_LINE_LOOP, 0, (GLsizei)modelOfFile.vertices.size());
 		glBindVertexArray(0);
 
 		get_ligth(false);
 		glUniform4f(shaderLine.uloc_color, 1.0f, 0.0f, 0.0f, 1.0f);
 		glBindVertexArray(modelOfFile.vaoObject);
-		glDrawArrays(GL_LINE_LOOP, 0, modelOfFile.vertices.size());
+		glDrawArrays(GL_LINE_LOOP, 0, (GLsizei)modelOfFile.vertices.size());
 		glBindVertexArray(0);
 	}
 
