@@ -31,6 +31,10 @@ int main(void)
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
 
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
 	GLFWwindow* window = glfwCreateWindow(700, 700, "Simple LoadTexture", nullptr, nullptr);
 	if (!window)
 	{
@@ -51,7 +55,7 @@ int main(void)
 	framebuffer_size_callback(window, width, height);
 	renderer->init();
 
-	glfwWindowHint(GLFW_SAMPLES, 4);
+	printGlString("GL_VERSION", GL_VERSION);
 
 	while (!glfwWindowShouldClose(window))
 	{

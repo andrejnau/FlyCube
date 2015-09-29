@@ -52,7 +52,7 @@ struct ShaderLayered
 
 	std::string geometry =
 		R"gs(
-			#version 400
+			#version 330
 			layout(triangles) in;
 			layout(triangle_strip, max_vertices = 96) out;
 			out vec3 fColor;
@@ -75,7 +75,7 @@ struct ShaderLayered
 	
 	std::string vertex =
 		R"vs(
-			#version 400
+			#version 330
  
 			layout (location = 0) in vec2 Position;
  
@@ -87,7 +87,7 @@ struct ShaderLayered
 
 	std::string fragment =
 		R"fs(
-			#version 400
+			#version 330
 
 			in vec3 fColor;
 			out vec4 outColor;

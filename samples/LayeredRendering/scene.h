@@ -30,7 +30,6 @@ public:
 		c_texture3d = initGLTexture3D(tex_width, tex_height, 32);
 
 		c_fbo = initLayeredFBO(c_texture3d);
-		LayeredDraw();
 		return true;
 	}
 
@@ -60,9 +59,10 @@ public:
 
 	virtual void draw()
 	{
-		static int slice = 1;
-		CopyToTexture2D(c_texture3d, slice , c_textureID);
+		LayeredDraw();
 
+		static int slice = 0;
+		CopyToTexture2D(c_texture3d, slice , c_textureID);
 		if (rand() % 100 == 42)
 			slice = (slice + 1) % 32;
 
