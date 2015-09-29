@@ -65,12 +65,14 @@ static GLuint createShader(GLenum shaderType, const char* src)
 	return shader;
 }
 
-static GLuint createProgram(const char* vtxSrc, const char* fragSrc)
+static GLuint createProgram(const char* vtxSrc, const char* fragSrc, const char* geomSrc = nullptr)
 {
 	GLuint vtxShader = 0;
 	GLuint fragShader = 0;
+	GLuint geomShader = 0;
 	GLuint program = 0;
 	GLint linked = 0;
+	GLint status = 0;
 
 	vtxShader = createShader(GL_VERTEX_SHADER, vtxSrc);
 	if (!vtxShader)
@@ -79,6 +81,13 @@ static GLuint createProgram(const char* vtxSrc, const char* fragSrc)
 	fragShader = createShader(GL_FRAGMENT_SHADER, fragSrc);
 	if (!fragShader)
 		goto exit;
+
+	if (geomSrc)
+	{
+		geomShader = createShader(GL_GEOMETRY_SHADER, geomSrc);
+		if (!geomShader)
+			goto exit;
+	}
 
 	program = glCreateProgram();
 	if (!program)
@@ -89,9 +98,12 @@ static GLuint createProgram(const char* vtxSrc, const char* fragSrc)
 	glAttachShader(program, vtxShader);
 	glAttachShader(program, fragShader);
 
+	if (geomShader)
+		glAttachShader(program, geomShader);
+
 	glLinkProgram(program);
 	glGetProgramiv(program, GL_LINK_STATUS, &linked);
-	if (linked == 0)
+	if (linked == GL_FALSE)
 	{
 		DBG("Could not link program");
 		GLint infoLogLen = 0;
@@ -110,9 +122,35 @@ static GLuint createProgram(const char* vtxSrc, const char* fragSrc)
 		program = 0;
 	}
 
+	glValidateProgram(program);
+
+
+	glGetProgramiv(program, GL_VALIDATE_STATUS, &status);
+
+	if (status == GL_FALSE)
+	{
+		DBG("Could not validate program");
+		GLint infoLogLen = 0;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLen);
+		if (infoLogLen)
+		{
+			GLchar* infoLog = new GLchar[infoLogLen];
+			if (infoLog)
+			{
+				glGetProgramInfoLog(program, infoLogLen, NULL, infoLog);
+				DBG("Could not validate program:\n%s\n", infoLog);
+				delete[] infoLog;
+			}
+		}
+		glDeleteProgram(program);
+		program = 0;
+	}
+
 exit:
 	glDeleteShader(vtxShader);
 	glDeleteShader(fragShader);
+	if (geomShader)
+		glDeleteShader(geomShader);
 	return program;
 }
 
