@@ -82,12 +82,14 @@ static GLuint createProgram(const char* vtxSrc, const char* fragSrc, const char*
 	if (!fragShader)
 		goto exit;
 
+#if !defined(__ANDROID__) && !defined(ANDROID)
 	if (geomSrc)
 	{
 		geomShader = createShader(GL_GEOMETRY_SHADER, geomSrc);
 		if (!geomShader)
 			goto exit;
 	}
+#endif
 
 	program = glCreateProgram();
 	if (!program)

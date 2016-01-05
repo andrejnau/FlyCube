@@ -37,7 +37,7 @@ jni_declaration(resize, void, JNIEnv* env, jobject obj, jint width, jint height)
         renderer->resize(0, 0, width, height);
 }
 
-jni_declaration(render, void, JNIEnv* env, jobject obj)
+jni_declaration(step, void, JNIEnv* env, jobject obj)
 {
     if (renderer)
         renderer->draw();
