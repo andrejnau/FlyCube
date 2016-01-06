@@ -11,7 +11,7 @@ struct ShaderShadow
         program = createProgram(vertex.c_str(), fragment.c_str());
 		loc_MVP = glGetUniformLocation(program, "u_MVP");
     }
-    
+
     GLuint program;
     GLint loc_MVP;
 
@@ -24,10 +24,10 @@ struct ShaderShadow
         "    gl_Position = u_MVP * vec4(a_pos, 1.0);\n"
         "}\n";
 
-    std::string fragment = 
+    std::string fragment =
 		"#version 300 es\n"
 		"precision mediump float;\n"
-		"void main()\n" 
+		"void main()\n"
 		"{\n"
 		"}\n";
 };
@@ -43,7 +43,7 @@ struct ShaderShadowView
 	GLuint program;
 	GLint loc_MVP;
 
-	std::string vertex = 
+	std::string vertex =
 		"#version 300 es\n"
 		"precision mediump float;\n"
 		"layout(location = " STRV(POS_ATTRIB) ") in vec3 pos;\n"
@@ -55,7 +55,7 @@ struct ShaderShadowView
 		"    gl_Position = u_m4MVP * vec4(pos, 1.0);\n"
 		"}\n";
 
-	std::string fragment = 
+	std::string fragment =
 		"#version 300 es\n"
 		"precision mediump float;\n"
 		"uniform sampler2D sampler;\n"
@@ -78,7 +78,7 @@ struct ShaderSimple
 	GLuint program;
 	GLint loc_MVP;
 
-	std::string vertex = 
+	std::string vertex =
 		"#version 300 es\n"
 		"precision mediump float;\n"
 		"layout(location = " STRV(POS_ATTRIB) ") in vec3 a_pos;\n"
@@ -87,7 +87,7 @@ struct ShaderSimple
 		"    gl_Position = u_MVP * vec4(a_pos, 1.0);\n"
 		"}\n";
 
-	std::string fragment = 
+	std::string fragment =
 		"#version 300 es\n"
 		"precision mediump float;\n"
 		"out vec4 outColor;\n"
@@ -136,20 +136,20 @@ struct ShaderLight
 	ShaderLight()
     {
         program = createProgram(vertex.c_str(), fragment.c_str());
-        
+
         loc_MVP = glGetUniformLocation(program, "u_m4MVP");
 		loc_DepthBiasMVP = glGetUniformLocation(program, "u_m4DepthBiasMVP");
 		loc_lightPosition = glGetUniformLocation(program, "u_lightPosition");
 		loc_camera = glGetUniformLocation(program, "u_camera");
 		loc_isLight = glGetUniformLocation(program, "u_isLigth");
     }
-    
+
     GLuint program;
 
     GLint loc_MVP;
     GLint loc_DepthBiasMVP;
     GLint loc_lightPosition;
-    GLint loc_camera;  
+    GLint loc_camera;
 	GLint loc_isLight;
 
 	std::string vertex =
@@ -182,7 +182,7 @@ struct ShaderLight
 		"in vec3 modelViewVertex;\n"
 		"in vec3 modelViewNormal;\n"
 		"in vec4 ShadowCoord;\n"
-		"in float isLigth;\n"		
+		"in float isLigth;\n"
 		"void main() {\n"
 		"    vec3 lightVector = normalize(-u_lightPosition - modelViewVertex);\n"
 		"    float diffuse = max(dot(modelViewNormal, lightVector), 0.1);\n"

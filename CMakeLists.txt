@@ -59,5 +59,4 @@ include_directories(common/simple_camera/include)
 
 add_subdirectory(common)
 add_subdirectory(example)
-add_subdirectory(learning)
 add_subdirectory(samples)

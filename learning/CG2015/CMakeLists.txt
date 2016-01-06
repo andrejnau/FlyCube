@@ -1,4 +1,0 @@
-add_subdirectory(CGPhysical)
-add_subdirectory(CGMorphism)
-add_subdirectory(CGMorphism2)
-add_subdirectory(CGMorphism3)

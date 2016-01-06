@@ -1,3 +1,0 @@
-add_subdirectory(CG2014)
-add_subdirectory(CG2015)
-add_subdirectory(CGCoursework)

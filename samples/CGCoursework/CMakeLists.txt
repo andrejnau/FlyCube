@@ -18,4 +18,4 @@ else()
 endif()
 
 target_link_libraries(${PROJECT} glfw ${GLFW_LIBRARIES} gl_core mlogger SOIL simple_camera)
-set_target_properties(${PROJECT} PROPERTIES FOLDER "learning")
+set_target_properties(${PROJECT} PROPERTIES FOLDER "samples")

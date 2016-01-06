@@ -1,5 +1,5 @@
 #include <GLFW/glfw3.h>
-#include "scene.h" 
+#include "scene.h"
 #include "state.h"
 #include <memory>
 
@@ -10,9 +10,11 @@ void draw_scene()
 	renderer->draw();
 }
 
-void init_opengl()
+
+void init_opengl(void)
 {
-	ogl_LoadFunctions();
+	renderer.reset(new tScenes());
+	renderer->init();
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -74,11 +76,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		break;
 	}
 }
-
 static void error_callback(int error, const char* description)
 {
 	fprintf(stderr, "Error: %s\n", description);
 }
+
 
 int main(void)
 {
@@ -86,7 +88,7 @@ int main(void)
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
 
-	GLFWwindow* window = glfwCreateWindow(700, 700, "Simple CGMorphism3", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(700, 700, "Simple CGPhysical", nullptr, nullptr);
 	if (!window)
 	{
 		glfwTerminate();
@@ -99,11 +101,14 @@ int main(void)
 
 	glfwMakeContextCurrent(window);
 
+	ogl_LoadFunctions();
+
+	printGlString("Version", GL_VERSION);
+	printGlString("Vendor", GL_VENDOR);
+	printGlString("Renderer", GL_RENDERER);
+	printGlString("Extensions", GL_EXTENSIONS);
+
 	init_opengl();
-
-	renderer.reset(new tScenes());
-
-	renderer->init();
 
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
