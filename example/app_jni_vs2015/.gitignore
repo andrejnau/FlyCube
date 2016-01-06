@@ -2,5 +2,6 @@
 /ARM
 /ipch
 /.vs
+/.workspace
 app_jni_vs2015.VC.opendb
 app_jni_vs2015.sdf
