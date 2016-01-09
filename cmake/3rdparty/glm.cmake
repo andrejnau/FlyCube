@@ -1,0 +1,1 @@
+include_directories(${PROJECT_ROOT}/3rdparty/glm)

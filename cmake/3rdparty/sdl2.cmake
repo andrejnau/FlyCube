@@ -1,0 +1,5 @@
+add_subdirectory(${PROJECT_ROOT}/3rdparty/SDL2-2.0.4)
+include_directories(${PROJECT_ROOT}/3rdparty/SDL2-2.0.4/include)
+set_target_properties("SDL2" PROPERTIES FOLDER "3rdparty")
+set_target_properties("SDL2-static" PROPERTIES FOLDER "3rdparty")
+set_target_properties("SDL2main" PROPERTIES FOLDER "3rdparty")

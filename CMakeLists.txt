@@ -3,46 +3,18 @@ cmake_minimum_required (VERSION 3.0)
 set (PROJECT FlyCube)
 project (${PROJECT})
 
+set(PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+
+#compiler settings
 include(cmake/defaults.cmake)
 
-#OpenGL
-find_package(OpenGL REQUIRED)
-
-#qt
-find_package(Qt5Core)
-find_package(Qt5Gui)
-find_package(Qt5Widgets)
-
-#glfw
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build the GLFW example programs")
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "Build the GLFW test programs")
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "Build the GLFW documentation")
-set(GLFW_INSTALL OFF CACHE BOOL "Generate installation target")
-add_subdirectory(3rdparty/glfw-3.1.1)
-set_target_properties(glfw PROPERTIES FOLDER "3rdparty")
-include_directories(3rdparty/glfw-3.1.1/include)
-add_definitions("-DGLFW_INCLUDE_NONE")
-
-#Simple-OpenGL-Image-Library
-add_subdirectory(3rdparty/Simple-OpenGL-Image-Library-master)
-include_directories(3rdparty/Simple-OpenGL-Image-Library-master/src)
-set_target_properties(SOIL PROPERTIES FOLDER "3rdparty")
-
-#assimp
-set(ASSIMP_ENABLE_BOOST_WORKAROUND ON CACHE BOOL "If a simple implementation of the used Boost functions is used. Slightly reduces functionality, but enables builds without Boost available.")
-set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "If the official samples are built as well (needs Glut).")
-set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL	"If the supplementary tools for Assimp are built in addition to the library.")
-set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "If the test suite for Assimp is built in addition to the library.")
-
-add_subdirectory(3rdparty/assimp-3.1.1/)
-include_directories(3rdparty/assimp-3.1.1/code/BoostWorkaround)
-include_directories(3rdparty/assimp-3.1.1/include)
-set_target_properties(assimp PROPERTIES FOLDER "3rdparty")
-set_target_properties(zlibstatic PROPERTIES FOLDER "3rdparty")
-set_target_properties(uninstall PROPERTIES FOLDER "3rdparty")
-
-#glm
-include_directories(3rdparty/glm)
+#init 3rdparty library
+include(cmake/3rdparty/opengl.cmake)
+include(cmake/3rdparty/qt.cmake)
+include(cmake/3rdparty/glfw.cmake)
+include(cmake/3rdparty/soil.cmake)
+include(cmake/3rdparty/assimp.cmake)
+include(cmake/3rdparty/glm.cmake)
 
 #gl_core
 add_subdirectory(3rdparty/gl_core)
