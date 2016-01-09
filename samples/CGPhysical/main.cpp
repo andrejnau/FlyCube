@@ -101,7 +101,7 @@ int main(void)
 
 	glfwMakeContextCurrent(window);
 
-	ogl_LoadFunctions();
+	gladLoadGL();
 
 	printGlString("Version", GL_VERSION);
 	printGlString("Vendor", GL_VENDOR);

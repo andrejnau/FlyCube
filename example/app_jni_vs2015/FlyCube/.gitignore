@@ -1,4 +1,5 @@
 /ARM
+/bin
 /.settings
 *.*.user*
 .classpath

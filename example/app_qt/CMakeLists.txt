@@ -20,7 +20,7 @@ file(GLOB UI_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 qt5_wrap_ui(${PROJECT} ${UI_LIST})
 add_executable(${PROJECT} WIN32 ${HEADERS} ${SOURCES} ${UI_LIST})
 
-target_link_libraries(${PROJECT} gl_core mlogger)
+target_link_libraries(${PROJECT} ${GLAD_LIBRARIES} mlogger)
 qt5_use_modules(${PROJECT} Core Gui Widgets)
 
 set_target_properties(${PROJECT} PROPERTIES FOLDER "example")

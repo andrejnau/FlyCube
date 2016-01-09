@@ -11,8 +11,6 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <simple_camera/camera.h>
-
 class tScenes : public SceneBase, public SingleTon < tScenes >
 {
 public:

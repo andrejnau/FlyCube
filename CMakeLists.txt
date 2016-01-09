@@ -15,11 +15,7 @@ include(cmake/3rdparty/glfw.cmake)
 include(cmake/3rdparty/soil.cmake)
 include(cmake/3rdparty/assimp.cmake)
 include(cmake/3rdparty/glm.cmake)
-
-#gl_core
-add_subdirectory(3rdparty/gl_core)
-include_directories(3rdparty/gl_core)
-set_target_properties(gl_core PROPERTIES FOLDER "3rdparty")
+include(cmake/3rdparty/glad.cmake)
 
 #project
 add_definitions(-DPROJECT_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources/")

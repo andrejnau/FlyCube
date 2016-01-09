@@ -1,8 +1,5 @@
-bin/
-build/
-lib/
-server/vsqlite++
-sqlite/
+/build
+/directx
 .idea
 *.*~
 *.*.user*

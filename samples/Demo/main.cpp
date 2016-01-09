@@ -12,7 +12,7 @@ void draw_scene()
 
 void init_opengl()
 {
-	ogl_LoadFunctions();
+	gladLoadGL();
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)

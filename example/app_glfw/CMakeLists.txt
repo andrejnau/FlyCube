@@ -12,6 +12,6 @@ else()
     add_executable(${PROJECT} ${SOURCES})
 endif()
 
-target_link_libraries(${PROJECT} glfw ${GLFW_LIBRARIES} gl_core mlogger)
+target_link_libraries(${PROJECT} glfw ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} mlogger)
 
 set_target_properties(${PROJECT} PROPERTIES FOLDER "example")
