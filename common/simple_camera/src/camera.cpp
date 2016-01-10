@@ -12,7 +12,7 @@ glm::mat4 Camera::GetModelMatrix()
 
 glm::mat4 Camera::GetViewMatrix()
 {
-	return glm::lookAt(cameraPos, cameraTarget, cameraUp);
+	return glm::lookAt(m_cameraPos, m_cameraTarget, m_cameraUp);
 }
 
 glm::mat4 Camera::GetProjectionMatrix()
@@ -34,17 +34,17 @@ glm::mat4 Camera::GetMVPMatrix()
 
 glm::vec3 Camera::GetCameraPos()
 {
-	return cameraPos;
+	return m_cameraPos;
 }
 
 void Camera::SetCameraPos(glm::vec3 _cameraPos)
 {
-	cameraPos = _cameraPos;
+	m_cameraPos = _cameraPos;
 }
 
 void Camera::SetCameraTarget(glm::vec3 _cameraTarget)
 {
-	cameraTarget = _cameraTarget;
+	m_cameraTarget = _cameraTarget;
 }
 
 void Camera::SetClipping(float near_clip_distance, float far_clip_distance)
@@ -60,7 +60,7 @@ void Camera::SetViewport(int loc_x, int loc_y, int width, int height)
 
 void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool moved)
 {
-	glm::vec3 cameraDirection = glm::normalize(cameraTarget - cameraPos);
+	glm::vec3 cameraDirection = glm::normalize(m_cameraTarget - m_cameraPos);
 	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 cameraRight = glm::normalize(glm::cross(cameraUp, cameraDirection));
 
@@ -70,8 +70,8 @@ void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool 
 	{
 		if (moved)
 		{
-			cameraPos += cameraDirection * velocity;
-			cameraTarget += cameraDirection * velocity;
+			m_cameraPos += cameraDirection * velocity;
+			m_cameraTarget += cameraDirection * velocity;
 		}
 		else
 		{
@@ -82,8 +82,8 @@ void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool 
 	{
 		if (moved)
 		{
-			cameraPos -= cameraDirection * velocity;
-			cameraTarget -= cameraDirection * velocity;
+			m_cameraPos -= cameraDirection * velocity;
+			m_cameraTarget -= cameraDirection * velocity;
 		}
 		else
 		{
@@ -94,9 +94,9 @@ void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool 
 	{
 		if (moved)
 		{
-			cameraPos += cameraRight * velocity;
+			m_cameraPos += cameraRight * velocity;
 			if (moved)
-				cameraTarget += cameraRight * velocity;
+				m_cameraTarget += cameraRight * velocity;
 		}
 		else
 		{
@@ -107,8 +107,8 @@ void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool 
 	{
 		if (moved)
 		{
-			cameraPos -= cameraRight * velocity;
-			cameraTarget -= cameraRight * velocity;
+			m_cameraPos -= cameraRight * velocity;
+			m_cameraTarget -= cameraRight * velocity;
 		}
 		else
 		{
@@ -119,8 +119,8 @@ void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool 
 	{
 		if (moved)
 		{
-			cameraPos += cameraUp * velocity;
-			cameraTarget += cameraUp * velocity;
+			m_cameraPos += cameraUp * velocity;
+			m_cameraTarget += cameraUp * velocity;
 		}
 		else
 		{
@@ -132,8 +132,8 @@ void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool 
 	{
 		if (moved)
 		{
-			cameraPos -= cameraUp * velocity;
-			cameraTarget -= cameraUp * velocity;
+			m_cameraPos -= cameraUp * velocity;
+			m_cameraTarget -= cameraUp * velocity;
 		}
 		else
 		{

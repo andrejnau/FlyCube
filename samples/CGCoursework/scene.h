@@ -268,7 +268,7 @@ public:
 		{
 			DBG("glCheckFramebufferStatus error 0x%X\n", fboStatus);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			return -1;
+			return 0;
 		}
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
@@ -350,9 +350,9 @@ public:
 		glViewport(x, y, width, height);
 		if (width != m_width || height != m_height)
 		{
-			if (depthTexture != -1)
+			if (depthTexture)
 				glDeleteTextures(1, &depthTexture);
-			if (depthFBO != -1)
+			if (depthFBO)
 				glDeleteFramebuffers(1, &depthFBO);
 			depthTexture = TextureCreateDepth(width, height);
 			depthFBO = FBOCreate(depthTexture);
@@ -403,10 +403,10 @@ private:
 
 	float angle = 0.0f;
 
-	GLuint depthFBO = -1;
+	GLuint depthFBO = 0;
 	GLuint c_textureID;
 
-	GLuint depthTexture = -1;
+	GLuint depthTexture = 0;
 
 	ModelOfFile modelOfFile;
 	ShaderSimpleCubeMap shaderSimpleCubeMap;

@@ -150,8 +150,6 @@ struct ModelOfFile
 	float cur_potential = 0.0;
 
 	float g = 9.81f;
-	float angle = 0.0;
-
 
 	GLuint vboVertex;
 	GLuint vboNormal;

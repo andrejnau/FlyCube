@@ -90,13 +90,13 @@ public:
 
 	GLuint initLayeredFBO(GLuint texture_ID)
 	{
-		GLuint c_fbo;
-		glGenFramebuffers(1, &c_fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, c_fbo);
+		GLuint fbo;
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_ID, 0);
 		assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		return c_fbo;
+		return fbo;
 	}
 
 	GLuint initGLTexture3D(int width, int height, int layerCount)

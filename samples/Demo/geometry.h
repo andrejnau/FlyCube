@@ -26,7 +26,7 @@ struct Mesh
 	struct Texture
 	{
 		GLuint id;
-		std::string type;
+		aiTextureType type;
 		aiString path;
 	};
 

@@ -44,9 +44,9 @@ public:
 
 	void ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool moved = true);
 private:
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 1.0f);
-	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 m_cameraPos = glm::vec3(0.0f, 0.0f, 1.0f);
+	glm::vec3 m_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 m_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLfloat MovementSpeed = 3.0f;
 

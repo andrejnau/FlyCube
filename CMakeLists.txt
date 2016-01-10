@@ -9,7 +9,6 @@ set(PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 include(cmake/defaults.cmake)
 
 #init 3rdparty library
-include(cmake/3rdparty/opengl.cmake)
 include(cmake/3rdparty/qt.cmake)
 include(cmake/3rdparty/glfw.cmake)
 include(cmake/3rdparty/soil.cmake)
