@@ -1,13 +1,22 @@
 set (PROJECT testscene)
 project (${PROJECT})
 
-file(GLOB HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
+set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-add_custom_target(
-    ${PROJECT}
-    ALL
-    DEPENDS ${HEADERS}
-    SOURCES ${HEADERS}
+set(headers
+    ${include_path}/geometry.h
+    ${include_path}/shaders.h
+    ${include_path}/testscene.h
 )
 
-set_target_properties(${PROJECT} PROPERTIES FOLDER "common")
+add_library(${PROJECT} INTERFACE)
+
+target_include_directories(${PROJECT}
+    INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_sources(${PROJECT}
+    INTERFACE
+        ${headers}
+)

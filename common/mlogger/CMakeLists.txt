@@ -1,16 +1,22 @@
 set (PROJECT mlogger)
 project (${PROJECT})
 
-include_directories(./include)
-include_directories(./src)
+set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(source_path "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-set (HEADERS
-    include/mlogger.h
-	include/mlogger_only.h)
+set(headers
+    ${include_path}/mlogger.h
+)
 
-set (SOURCES
-    src/mlogger.cpp)
+set(sources
+    ${source_path}/mlogger.cpp
+)
 
-add_library(${PROJECT} ${HEADERS} ${SOURCES})
+add_library(${PROJECT} ${headers} ${sources})
+
+target_include_directories(${PROJECT}
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 set_target_properties(${PROJECT} PROPERTIES FOLDER "common")

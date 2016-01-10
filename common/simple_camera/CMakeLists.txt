@@ -1,10 +1,24 @@
 set (PROJECT simple_camera)
 project (${PROJECT})
 
-set (HEADERS include/simple_camera/camera.h)
-set (SOURCES src/camera.cpp)
+set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT}")
+set(source_path "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-add_library(${PROJECT} ${HEADERS} ${SOURCES})
+set(headers
+    ${include_path}/camera.h
+)
+
+set(sources
+    ${source_path}/camera.cpp
+)
+
+add_library(${PROJECT} ${headers} ${sources})
+
 target_link_libraries(${PROJECT} glbinding)
+
+target_include_directories(${PROJECT}
+	PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 set_target_properties(${PROJECT} PROPERTIES FOLDER "common")

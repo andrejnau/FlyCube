@@ -1,13 +1,24 @@
 set (PROJECT utils)
 project (${PROJECT})
 
-file(GLOB HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
+set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-add_custom_target(
-    ${PROJECT}
-    ALL
-    DEPENDS ${HEADERS}
-    SOURCES ${HEADERS}
+set(headers
+    ${include_path}/platform.h
+    ${include_path}/scenebase.h
+    ${include_path}/singleton.h
+    ${include_path}/state.h
+    ${include_path}/utilities.h
 )
 
-set_target_properties(${PROJECT} PROPERTIES FOLDER "common")
+add_library(${PROJECT} INTERFACE)
+
+target_include_directories(${PROJECT}
+    INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_sources(${PROJECT}
+    INTERFACE
+        ${headers}
+)
