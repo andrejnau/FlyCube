@@ -50,7 +50,7 @@ public:
 		static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now(), end = std::chrono::system_clock::now();
 
 		end = std::chrono::system_clock::now();
-		int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 		start = std::chrono::system_clock::now();
 		float dt = std::min(0.001f, elapsed / 1500.0f);
 		angle += dt;
