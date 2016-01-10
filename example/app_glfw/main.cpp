@@ -11,7 +11,7 @@ void draw_scene()
 
 void init_opengl(void)
 {
-	gladLoadGL();
+	glbinding::Binding::initialize();
 	renderer.reset(new TestScene());
 	renderer->init();
 }

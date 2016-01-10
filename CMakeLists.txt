@@ -15,7 +15,7 @@ include(cmake/3rdparty/glfw.cmake)
 include(cmake/3rdparty/soil.cmake)
 include(cmake/3rdparty/assimp.cmake)
 include(cmake/3rdparty/glm.cmake)
-include(cmake/3rdparty/glad.cmake)
+include(cmake/3rdparty/glbinding.cmake)
 
 #project
 add_definitions(-DPROJECT_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources/")

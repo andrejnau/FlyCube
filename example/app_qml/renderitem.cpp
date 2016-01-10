@@ -50,7 +50,7 @@ void RenderItem::sync()
 	SwapContext ctx(window());
 	if (!renderer)
 	{
-		gladLoadGL();
+		glbinding::Binding::initialize();
 		renderer.reset(new TestScene());
 		renderer->init();
 		connect(window(), SIGNAL(beforeRendering()), this, SLOT(paint()), Qt::DirectConnection);

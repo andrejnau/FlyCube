@@ -10,9 +10,12 @@ void draw_scene()
 	renderer->draw();
 }
 
-void init_opengl()
+void init_scene(int width, int height)
 {
-	gladLoadGL();
+	glbinding::Binding::initialize();
+	renderer.reset(new tScenes());
+	renderer->resize(0, 0, width, height);
+	renderer->init();
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -42,14 +45,9 @@ int main(void)
 
 	glfwMakeContextCurrent(window);
 
-	init_opengl();
-
-	renderer.reset(new tScenes());
-
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
-	framebuffer_size_callback(window, width, height);
-	renderer->init();
+	init_scene(width, height);
 
 	glfwWindowHint(GLFW_SAMPLES, 4);
 

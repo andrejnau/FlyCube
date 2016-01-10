@@ -4,7 +4,10 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <glad/glad.h>
+#include <glbinding/gl/gl.h>
+#include <glbinding/Binding.h>
+
+using namespace gl;
 
 enum Camera_Movement
 {

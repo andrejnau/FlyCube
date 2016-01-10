@@ -105,7 +105,7 @@ static GLuint createProgram(const char* vtxSrc, const char* fragSrc, const char*
 
 	glLinkProgram(program);
 	glGetProgramiv(program, GL_LINK_STATUS, &linked);
-	if (linked == GL_FALSE)
+	if ((GLboolean)linked == GL_FALSE)
 	{
 		DBG("Could not link program");
 		GLint infoLogLen = 0;
@@ -129,7 +129,7 @@ static GLuint createProgram(const char* vtxSrc, const char* fragSrc, const char*
 
 	glGetProgramiv(program, GL_VALIDATE_STATUS, &status);
 
-	if (status == GL_FALSE)
+	if ((GLboolean)status == GL_FALSE)
 	{
 		DBG("Could not validate program");
 		GLint infoLogLen = 0;

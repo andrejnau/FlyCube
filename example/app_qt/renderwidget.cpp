@@ -12,7 +12,7 @@ RenderWidget::~RenderWidget()
 
 void RenderWidget::initializeGL()
 {
-	gladLoadGL();
+	glbinding::Binding::initialize();
 	if (!renderer)
 	{
 		renderer.reset(new TestScene());
