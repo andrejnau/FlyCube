@@ -1,5 +1,3 @@
 add_subdirectory(CGCoursework)
 add_subdirectory(CGPhysical)
 add_subdirectory(Demo)
-add_subdirectory(LayeredRendering)
-add_subdirectory(LoadTexture)

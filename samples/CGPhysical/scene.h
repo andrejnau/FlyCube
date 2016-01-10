@@ -74,8 +74,6 @@ public:
 		int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 		start = std::chrono::system_clock::now();
 
-		angle_light = 9.2f;
-
 		for (int i = 0; i < (int)modelOfFileList.size(); ++i)
 		{
 			for (int j = i + 1; j < (int)modelOfFileList.size(); ++j)
@@ -113,7 +111,7 @@ public:
 
 		for (int i = 0; i < (int)modelOfFileList.size(); ++i)
 		{
-			modelOfFileList[i].update_physical(elapsed / 100000.0f);
+			modelOfFileList[i].update_physical(elapsed / 1e8);
 		}
 
 		draw_obj();
@@ -251,7 +249,7 @@ private:
 	int m_height;
 
 	float angle = 0.0;
-	float angle_light = 0.0f;
+	float angle_light = 10.0f;
 
 	int balls_count = 6;
 
