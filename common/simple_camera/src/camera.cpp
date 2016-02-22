@@ -58,14 +58,14 @@ void Camera::SetViewport(int loc_x, int loc_y, int width, int height)
 	aspect = float(width) / float(height);
 }
 
-void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool moved)
+void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime, bool moved)
 {
 	glm::vec3 cameraDirection = glm::normalize(m_cameraTarget - m_cameraPos);
 	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 cameraRight = glm::normalize(glm::cross(cameraUp, cameraDirection));
 
-	GLfloat velocity = MovementSpeed * deltaTime;
-	GLfloat angle_eps = deltaTime;
+	float velocity = MovementSpeed * deltaTime;
+	float angle_eps = deltaTime;
 	if (direction == FORWARD)
 	{
 		if (moved)

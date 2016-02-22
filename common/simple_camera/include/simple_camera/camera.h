@@ -4,11 +4,6 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <glbinding/gl/gl.h>
-#include <glbinding/Binding.h>
-
-using namespace gl;
-
 enum Camera_Movement
 {
 	FORWARD,
@@ -42,13 +37,13 @@ public:
 
 	void SetViewport(int loc_x, int loc_y, int width, int height);
 
-	void ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime, bool moved = true);
+	void ProcessKeyboard(Camera_Movement direction, float deltaTime, bool moved = true);
 private:
 	glm::vec3 m_cameraPos = glm::vec3(0.0f, 0.0f, 1.0f);
 	glm::vec3 m_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 m_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-	GLfloat MovementSpeed = 3.0f;
+	float MovementSpeed = 3.0f;
 
 	float fovy = 45.0f;
 	float aspect = 1.0f;
