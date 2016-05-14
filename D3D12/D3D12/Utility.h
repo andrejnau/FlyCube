@@ -13,95 +13,57 @@
 
 #pragma once
 
-
-#pragma warning(disable:4201) // nonstandard extension used : nameless struct/union
-#pragma warning(disable:4328) // nonstandard extension used : class rvalue used as lvalue
-#pragma warning(disable:4324) // structure was padded due to __declspec(align())
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <windows.h>
-
-#include <d3d12.h>
-
-#pragma comment(lib, "d3d12.lib")
-#pragma comment(lib, "dxgi.lib")
-
-#define MY_IID_PPV_ARGS IID_PPV_ARGS
-
-#if _MSC_VER >= 1800
-#include <d3d11_2.h>
-#include <pix.h>
-#endif
-
-#include "d3dx12.h"
-
 #include <cstdint>
 #include <cstdio>
 #include <cstdarg>
-#include <vector>
-#include <memory>
-#include <string>
-#include <exception>
-
-#include <wrl.h>
-#include <ppltasks.h>
-
-#include "Utility.h"
-
-
 
 namespace Utility
 {
-	inline void Print(const char* msg) { printf(msg); }
-	inline void Print(const wchar_t* msg) { wprintf(msg); }
+    inline void Print(const char* msg) { printf(msg); }
+    inline void Print(const wchar_t* msg) { wprintf(msg); }
 
-	inline void Printf(const char* format, ...)
-	{
-		char buffer[256];
-		va_list ap;
-		va_start(ap, format);
-		vsprintf_s(buffer, 256, format, ap);
-		Print(buffer);
-	}
+    inline void Printf(const char* format, ...)
+    {
+        char buffer[256];
+        va_list ap;
+        va_start(ap, format);
+        vsprintf_s(buffer, 256, format, ap);
+        Print(buffer);
+    }
 
-	inline void Printf(const wchar_t* format, ...)
-	{
-		wchar_t buffer[256];
-		va_list ap;
-		va_start(ap, format);
-		vswprintf(buffer, 256, format, ap);
-		Print(buffer);
-	}
+    inline void Printf(const wchar_t* format, ...)
+    {
+        wchar_t buffer[256];
+        va_list ap;
+        va_start(ap, format);
+        vswprintf(buffer, 256, format, ap);
+        Print(buffer);
+    }
 
 #ifndef RELEASE
-	inline void PrintSubMessage(const char* format, ...)
-	{
-		Print("--> ");
-		char buffer[256];
-		va_list ap;
-		va_start(ap, format);
-		vsprintf_s(buffer, 256, format, ap);
-		Print(buffer);
-		Print("\n");
-	}
-	inline void PrintSubMessage(const wchar_t* format, ...)
-	{
-		Print("--> ");
-		wchar_t buffer[256];
-		va_list ap;
-		va_start(ap, format);
-		vswprintf(buffer, 256, format, ap);
-		Print(buffer);
-		Print("\n");
-	}
-	inline void PrintSubMessage(void)
-	{
-	}
+    inline void PrintSubMessage(const char* format, ...)
+    {
+        Print("--> ");
+        char buffer[256];
+        va_list ap;
+        va_start(ap, format);
+        vsprintf_s(buffer, 256, format, ap);
+        Print(buffer);
+        Print("\n");
+    }
+    inline void PrintSubMessage(const wchar_t* format, ...)
+    {
+        Print("--> ");
+        wchar_t buffer[256];
+        va_list ap;
+        va_start(ap, format);
+        vswprintf(buffer, 256, format, ap);
+        Print(buffer);
+        Print("\n");
+    }
+    inline void PrintSubMessage(void)
+    {
+    }
 #endif
 
 } // namespace Utility
