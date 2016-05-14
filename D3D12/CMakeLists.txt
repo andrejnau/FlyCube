@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 
-set (PROJECT DX12_CMAKE)
+set (PROJECT DX12)
 project (${PROJECT})
+
+#compiler settings
+include(../cmake/defaults.cmake)
 
 add_subdirectory(3rdparty/d3dx12)
 
@@ -24,7 +27,29 @@ set(sources
     ${source_path}/Win32Application.cpp
 )
 
-add_executable(${PROJECT} WIN32 ${headers} ${sources})
+set(pixel_shaders
+    ${source_path}/shaders/PixelShader.hlsl
+)
+
+set(vertex_shaders
+    ${source_path}/shaders/VertexShader.hlsl
+)
+
+set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_TYPE Pixel)
+set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
+set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_MODEL 5.0)
+
+set_property(SOURCE ${vertex_shaders} PROPERTY VS_SHADER_TYPE Vertex)
+set_property(SOURCE ${vertex_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
+set_property(SOURCE ${vertex_shaders} PROPERTY VS_SHADER_MODEL 5.0)
+
+set(resource_files ${pixel_shaders} ${vertex_shaders})
+
+source_group("Заголовочные файлы" FILES ${headers})
+source_group("Файлы исходного кода" FILES ${sources})
+source_group("Файлы ресурсов" FILES ${resource_files})
+
+add_executable(${PROJECT} WIN32 ${headers} ${sources} ${resource_files})
 
 add_definitions(-DASSETS_PATH=L"${CMAKE_CURRENT_SOURCE_DIR}/src/")
 
