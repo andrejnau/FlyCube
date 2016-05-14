@@ -550,8 +550,7 @@ void DXSample::OnInit()
         &depthOptimizedClearValue,
         IID_PPV_ARGS(&depthStencilBuffer)
         );
-    ASSERT_SUCCEEDED(device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsDescriptorHeap)));
-    dsDescriptorHeap->SetName(L"Depth/Stencil Resource Heap");
+    depthStencilBuffer->SetName(L"Depth/Stencil Resource Heap");
 
     device->CreateDepthStencilView(depthStencilBuffer, &depthStencilDesc, dsDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 }
