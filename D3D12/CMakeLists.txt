@@ -1,15 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
 
-set (PROJECT DX12)
-project (${PROJECT})
+set(target DX12)
 
-#compiler settings
-include(../cmake/defaults.cmake)
+include(${project_root}/cmake/3rdparty/assimp.cmake)
 
 add_subdirectory(3rdparty/d3dx12)
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(shaders_path "${CMAKE_CURRENT_SOURCE_DIR}/src/shaders")
 
 add_definitions(-D_UNICODE)
 
@@ -28,11 +27,11 @@ set(sources
 )
 
 set(pixel_shaders
-    ${source_path}/shaders/PixelShader.hlsl
+    ${shaders_path}/PixelShader.hlsl
 )
 
 set(vertex_shaders
-    ${source_path}/shaders/VertexShader.hlsl
+    ${shaders_path}/VertexShader.hlsl
 )
 
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_TYPE Pixel)
@@ -49,8 +48,8 @@ source_group("Заголовочные файлы" FILES ${headers})
 source_group("Файлы исходного кода" FILES ${sources})
 source_group("Файлы ресурсов" FILES ${resource_files})
 
-add_executable(${PROJECT} WIN32 ${headers} ${sources} ${resource_files})
+add_executable(${target} WIN32 ${headers} ${sources} ${resource_files})
 
 add_definitions(-DASSETS_PATH=L"${CMAKE_CURRENT_SOURCE_DIR}/src/")
 
-target_link_libraries(${PROJECT} d3dx12 d3dcompiler dxgi d3d12)
+target_link_libraries(${target} d3dx12 d3dcompiler dxgi d3d12)
