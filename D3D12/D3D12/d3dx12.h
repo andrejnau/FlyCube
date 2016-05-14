@@ -1,11 +1,11 @@
-﻿//////////////////////////////////////////////////////////////////////////////
 //
-//  © Корпорация Майкрософт. Все права защищены.
+// Copyright (c) Microsoft. All rights reserved.
+// This code is licensed under the MIT License (MIT).
+// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
+// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
+// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
+// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
 //
-//  Файл:       d3dx12.h
-//  Содержимое:    библиотека служебных программ D3DX12
-//
-//////////////////////////////////////////////////////////////////////////////
 
 #ifndef __D3DX12_H__
 #define __D3DX12_H__
@@ -386,6 +386,15 @@ struct CD3DX12_HEAP_DESC : public D3D12_HEAP_DESC
     bool IsCPUAccessible() const
     { return static_cast< const CD3DX12_HEAP_PROPERTIES* >( &Properties )->IsCPUAccessible(); }
 };
+inline bool operator==( const D3D12_HEAP_DESC& l, const D3D12_HEAP_DESC& r )
+{
+    return l.SizeInBytes == r.SizeInBytes &&
+        l.Properties == r.Properties && 
+        l.Alignment == r.Alignment &&
+        l.Flags == r.Flags;
+}
+inline bool operator!=( const D3D12_HEAP_DESC& l, const D3D12_HEAP_DESC& r )
+{ return !( l == r ); }
 
 //------------------------------------------------------------------------------------------------
 struct CD3DX12_CLEAR_VALUE : public D3D12_CLEAR_VALUE
@@ -408,7 +417,7 @@ struct CD3DX12_CLEAR_VALUE : public D3D12_CLEAR_VALUE
         UINT8 stencil )
     {
         Format = format;
-        /* Использовать memcpy для сохранения значений NAN */
+        /* Use memcpy to preserve NAN values */
         memcpy( &DepthStencil.Depth, &depth, sizeof( depth ) );
         DepthStencil.Stencil = stencil;
     }
@@ -536,7 +545,8 @@ struct CD3DX12_RESOURCE_BARRIER : public D3D12_RESOURCE_BARRIER
         UINT subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
         D3D12_RESOURCE_BARRIER_FLAGS flags = D3D12_RESOURCE_BARRIER_FLAG_NONE)
     {
-        CD3DX12_RESOURCE_BARRIER result = {};
+        CD3DX12_RESOURCE_BARRIER result;
+        ZeroMemory(&result, sizeof(result));
         D3D12_RESOURCE_BARRIER &barrier = result;
         result.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
         result.Flags = flags;
@@ -550,7 +560,8 @@ struct CD3DX12_RESOURCE_BARRIER : public D3D12_RESOURCE_BARRIER
         _In_ ID3D12Resource* pResourceBefore,
         _In_ ID3D12Resource* pResourceAfter)
     {
-        CD3DX12_RESOURCE_BARRIER result = {};
+        CD3DX12_RESOURCE_BARRIER result;
+        ZeroMemory(&result, sizeof(result));
         D3D12_RESOURCE_BARRIER &barrier = result;
         result.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
         barrier.Aliasing.pResourceBefore = pResourceBefore;
@@ -560,7 +571,8 @@ struct CD3DX12_RESOURCE_BARRIER : public D3D12_RESOURCE_BARRIER
     static inline CD3DX12_RESOURCE_BARRIER UAV(
         _In_ ID3D12Resource* pResource)
     {
-        CD3DX12_RESOURCE_BARRIER result = {};
+        CD3DX12_RESOURCE_BARRIER result;
+        ZeroMemory(&result, sizeof(result));
         D3D12_RESOURCE_BARRIER &barrier = result;
         result.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
         barrier.UAV.pResource = pResource;
@@ -710,7 +722,7 @@ struct CD3DX12_ROOT_DESCRIPTOR_TABLE : public D3D12_ROOT_DESCRIPTOR_TABLE
     
     inline void Init(
         UINT numDescriptorRanges,
-        _In_reads_(numDescriptorRanges) const D3D12_DESCRIPTOR_RANGE* _pDescriptorRanges)
+        _In_reads_opt_(numDescriptorRanges) const D3D12_DESCRIPTOR_RANGE* _pDescriptorRanges)
     {
         Init(*this, numDescriptorRanges, _pDescriptorRanges);
     }
@@ -1012,6 +1024,10 @@ struct CD3DX12_ROOT_SIGNATURE_DESC : public D3D12_ROOT_SIGNATURE_DESC
     {
         Init(numParameters, _pParameters, numStaticSamplers, _pStaticSamplers, flags);
     }
+    CD3DX12_ROOT_SIGNATURE_DESC(CD3DX12_DEFAULT)
+    {
+        Init(0, NULL, 0, NULL, D3D12_ROOT_SIGNATURE_FLAG_NONE);
+    }
     
     inline void Init(
         UINT numParameters,
@@ -1037,8 +1053,6 @@ struct CD3DX12_ROOT_SIGNATURE_DESC : public D3D12_ROOT_SIGNATURE_DESC
         desc.pStaticSamplers = _pStaticSamplers;
         desc.Flags = flags;
     }
-    
-    CD3DX12_ROOT_SIGNATURE_DESC(CD3DX12_DEFAULT) : CD3DX12_ROOT_SIGNATURE_DESC(0,NULL,0,NULL,D3D12_ROOT_SIGNATURE_FLAG_NONE) {}
 };
 
 //------------------------------------------------------------------------------------------------
@@ -1292,9 +1306,25 @@ struct CD3DX12_RESOURCE_DESC : public D3D12_RESOURCE_DESC
     { return D3D12CalcSubresource(MipSlice, ArraySlice, PlaneSlice, MipLevels, ArraySize()); }
     operator const D3D12_RESOURCE_DESC&() const { return *this; }
 };
+inline bool operator==( const D3D12_RESOURCE_DESC& l, const D3D12_RESOURCE_DESC& r )
+{
+    return l.Dimension == r.Dimension &&
+        l.Alignment == r.Alignment &&
+        l.Width == r.Width &&
+        l.Height == r.Height &&
+        l.DepthOrArraySize == r.DepthOrArraySize &&
+        l.MipLevels == r.MipLevels &&
+        l.Format == r.Format &&
+        l.SampleDesc.Count == r.SampleDesc.Count &&
+        l.SampleDesc.Quality == r.SampleDesc.Quality &&
+        l.Layout == r.Layout &&
+        l.Flags == r.Flags;
+}
+inline bool operator!=( const D3D12_RESOURCE_DESC& l, const D3D12_RESOURCE_DESC& r )
+{ return !( l == r ); }
 
 //------------------------------------------------------------------------------------------------
-// Порядный memcpy
+// Row-by-row memcpy
 inline void MemcpySubresource(
     _In_ const D3D12_MEMCPY_DEST* pDest,
     _In_ const D3D12_SUBRESOURCE_DATA* pSrc,
@@ -1316,7 +1346,7 @@ inline void MemcpySubresource(
 }
 
 //------------------------------------------------------------------------------------------------
-// Возвращает необходимый размер буфера для передачи данных
+// Returns required size of a buffer to be used for data upload
 inline UINT64 GetRequiredIntermediateSize(
     _In_ ID3D12Resource* pDestinationResource,
     _In_range_(0,D3D12_REQ_SUBRESOURCES) UINT FirstSubresource,
@@ -1334,7 +1364,7 @@ inline UINT64 GetRequiredIntermediateSize(
 }
 
 //------------------------------------------------------------------------------------------------
-// Все массивы должны быть заполнены, например с помощью вызова GetCopyableFootprints
+// All arrays must be populated (e.g. by calling GetCopyableFootprints)
 inline UINT64 UpdateSubresources(
     _In_ ID3D12GraphicsCommandList* pCmdList,
     _In_ ID3D12Resource* pDestinationResource,
@@ -1347,7 +1377,7 @@ inline UINT64 UpdateSubresources(
     _In_reads_(NumSubresources) const UINT64* pRowSizesInBytes,
     _In_reads_(NumSubresources) const D3D12_SUBRESOURCE_DATA* pSrcData)
 {
-    // Незначительная проверка
+    // Minor validation
     D3D12_RESOURCE_DESC IntermediateDesc = pIntermediate->GetDesc();
     D3D12_RESOURCE_DESC DestinationDesc = pDestinationResource->GetDesc();
     if (IntermediateDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER || 
@@ -1393,7 +1423,7 @@ inline UINT64 UpdateSubresources(
 }
 
 //------------------------------------------------------------------------------------------------
-// Реализация UpdateSubresources с выделением кучи
+// Heap-allocating UpdateSubresources implementation
 inline UINT64 UpdateSubresources( 
     _In_ ID3D12GraphicsCommandList* pCmdList,
     _In_ ID3D12Resource* pDestinationResource,
@@ -1430,7 +1460,7 @@ inline UINT64 UpdateSubresources(
 }
 
 //------------------------------------------------------------------------------------------------
-// Реализация UpdateSubresources с выделением стека
+// Stack-allocating UpdateSubresources implementation
 template <UINT MaxSubresources>
 inline UINT64 UpdateSubresources( 
     _In_ ID3D12GraphicsCommandList* pCmdList,
@@ -1462,10 +1492,10 @@ inline bool D3D12IsLayoutOpaque( D3D12_TEXTURE_LAYOUT Layout )
 //------------------------------------------------------------------------------------------------
 inline ID3D12CommandList * const * CommandListCast(ID3D12GraphicsCommandList * const * pp)
 {
-    // Это приведение используется для передачи строго типизированных указателей списка команд в
+    // This cast is useful for passing strongly typed command list pointers into
     // ExecuteCommandLists.
-    // Это приведение действительно до тех пор, пока соблюдается константность. API D3D12
-    // соблюдают константность в своих аргументах.
+    // This cast is valid as long as the const-ness is respected. D3D12 APIs do
+    // respect the const-ness of their arguments.
     return reinterpret_cast<ID3D12CommandList * const *>(pp);
 }
 
