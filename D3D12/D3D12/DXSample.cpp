@@ -514,7 +514,6 @@ void DXSample::OnUpdate()
 
 void DXSample::OnRender()
 {
-	DEBUGPRINT("OnRender");
 	UpdatePipeline(); // update the pipeline by sending commands to the commandqueue
 
 	// create an array of command lists (only one command list here)
