@@ -8,7 +8,7 @@
 #include <DXGI1_4.h>
 #include <Windows.h>
 
-#include "d3dx12.h"
+#include <d3dx12.h>
 #include <DirectXMath.h>
 
 #include "Win32Application.h"

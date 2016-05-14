@@ -1,0 +1,7 @@
+Debug
+x64
+/ipch
+/.vs
+/.workspace
+*.sdf
+*.opendb
