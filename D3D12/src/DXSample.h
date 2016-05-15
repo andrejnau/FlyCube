@@ -29,11 +29,28 @@ public:
 
 private:
 
-    UINT m_width;
-    UINT m_height;
-    float m_aspectRatio;
+    void CreateDevice();
+    void CreateCommandQueue();
+    void CreateSwapChain();
+    void CreateFence();
+    void CreateRT();
+    void CreateDepthStencil();
+    void CreateCommandAllocators();
+    void CreateCommandList();
+    void LoadVertex();
+    void LoadConstantBuffer();
+    void CreateRootSignature();
+    void CreatePSO();
+    void InitViewPort();
+    void WaitForPreviousFrame();
+    void PopulateCommandList();
 
-    // direct3d stuff
+private:
+
+    UINT m_width;
+
+    UINT m_height;
+
     static const int frameBufferCount = 3; // number of buffers we want, 2 for double buffering, 3 for tripple buffering
 
     ID3D12Device* device; // direct3d device
@@ -50,8 +67,8 @@ private:
 
     ID3D12GraphicsCommandList* commandList; // a command list we can record commands into, then execute them to render the frame
 
-    ID3D12Fence* fence[frameBufferCount];    // an object that is locked while our command list is being executed by the gpu. We need as many 
-                                             //as we have allocators (more if we want to know when the gpu is finished with an asset)
+    ID3D12Fence* fence[frameBufferCount]; // an object that is locked while our command list is being executed by the gpu. We need as many
+                                          //as we have allocators (more if we want to know when the gpu is finished with an asset)
 
     HANDLE fenceEvent; // a handle to an event when our fence is unlocked by the gpu
 
@@ -61,11 +78,7 @@ private:
 
     int rtvDescriptorSize; // size of the rtv descriptor on the device (all front and back buffers will be the same size)
 
-                           //void Update(); // update the game logic
-
-
     IDXGIFactory4* dxgiFactory;
-
 
     ID3D12PipelineState* pipelineStateObject; // pso containing a pipeline state
 
@@ -96,6 +109,7 @@ private:
     D3D12_INDEX_BUFFER_VIEW indexBufferView; // a structure holding information about the index buffer
 
     ID3D12Resource* depthStencilBuffer; // This is the memory for our depth buffer. it will also be used for a stencil buffer in a later tutorial
+
     ID3D12DescriptorHeap* dsDescriptorHeap; // This is a heap for our depth/stencil buffer descriptor
 
     // this is the structure of our constant buffer.
@@ -105,24 +119,11 @@ private:
     };
 
     ID3D12DescriptorHeap* mainDescriptorHeap[frameBufferCount]; // this heap will store the descripor to our constant buffer
+
     ID3D12Resource* constantBufferUploadHeap[frameBufferCount]; // this is the memory on the gpu where our constant buffer will be placed.
 
     ConstantBuffer cbColorMultiplierData; // this is the constant buffer data we will send to the gpu
                                           // (which will be placed in the resource we created above)
 
     UINT8* cbColorMultiplierGPUAddress[frameBufferCount]; // this is a pointer to the memory location we get when we map our constant buffer
-
-    void createDivice();
-    void createSwapChain();
-    void createCommandQueqe();
-    void createRT();
-    void createCommandAllocators();
-    void createCommandList();
-    void createFence();
-    void createRootSignature();
-    void createPSO();
-    void createVertexAndIndexBuffer();
-    void initViewPort();
-    void WaitForPreviousFrame();
-    void UpdatePipeline();
 };
