@@ -176,14 +176,44 @@ void DXSample::CreateCommandList()
     ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator[frameIndex], NULL, IID_PPV_ARGS(&commandList)));
 }
 
-void DXSample::LoadVertex()
+void DXSample::CreateVertex()
 {
     Vertex vList[] = {
-        // first quad (closer to camera, blue)
-        { -0.5f,  0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
-        { 0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
-        { -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
-        { 0.5f,  0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f }
+        // front face
+        { -0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
+        { 0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
+        { -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
+        { 0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+
+        // right side face
+        { 0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
+        { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
+        { 0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
+        { 0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+
+        // left side face
+        { -0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
+        { -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
+        { -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
+        { -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+
+        // back face
+        { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
+        { -0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
+        { 0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
+        { -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+
+        // top face
+        { -0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
+        { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
+        { 0.5f,  0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
+        { -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+
+        // bottom face
+        { 0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
+        { -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
+        { 0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
+        { -0.5f, -0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
     };
 
     int vBufferSize = sizeof(vList);
@@ -234,12 +264,34 @@ void DXSample::LoadVertex()
 
     // a quad (2 triangles)
     DWORD iList[] = {
-        // first quad (blue)
+        // ffront face
         0, 1, 2, // first triangle
         0, 3, 1, // second triangle
+
+                 // left face
+        4, 5, 6, // first triangle
+        4, 7, 5, // second triangle
+
+                 // right face
+        8, 9, 10, // first triangle
+        8, 11, 9, // second triangle
+
+                  // back face
+        12, 13, 14, // first triangle
+        12, 15, 13, // second triangle
+
+                    // top face
+        16, 17, 18, // first triangle
+        16, 19, 17, // second triangle
+
+                    // bottom face
+        20, 21, 22, // first triangle
+        20, 23, 21, // second triangle
     };
 
     int iBufferSize = sizeof(iList);
+
+    numCubeIndices = sizeof(iList) / sizeof(DWORD);
 
     // create default heap to hold index buffer
     device->CreateCommittedResource(
@@ -297,7 +349,7 @@ void DXSample::LoadVertex()
     indexBufferView.SizeInBytes = iBufferSize;
 }
 
-void DXSample::LoadConstantBuffer()
+void DXSample::CreateConstantBuffer()
 {
     // Create a constant buffer descriptor heap for each frame
     // this is the descriptor heap that will store our constant buffer descriptor
@@ -334,18 +386,55 @@ void DXSample::LoadConstantBuffer()
         cbvDesc.SizeInBytes = (sizeof(ConstantBuffer) + 255) & ~255;    // CB size is required to be 256-byte aligned.
         device->CreateConstantBufferView(&cbvDesc, mainDescriptorHeap[i]->GetCPUDescriptorHandleForHeapStart());
     }
+
+    // create the constant buffer resource heap
+    // We will update the constant buffer one or more times per frame, so we will use only an upload heap
+    // unlike previously we used an upload heap to upload the vertex and index data, and then copied over
+    // to a default heap. If you plan to use a resource for more than a couple frames, it is usually more
+    // efficient to copy to a default heap where it stays on the gpu. In this case, our constant buffer
+    // will be modified and uploaded at least once per frame, so we only use an upload heap
+
+    // first we will create a resource heap (upload heap) for each frame for the cubes constant buffers
+    // As you can see, we are allocating 64KB for each resource we create. Buffer resource heaps must be
+    // an alignment of 64KB. We are creating 3 resources, one for each frame. Each constant buffer is
+    // only a 4x4 matrix of floats in this tutorial. So with a float being 4 bytes, we have
+    // 16 floats in one constant buffer, and we will store 2 constant buffers in each
+    // heap, one for each cube, thats only 64x2 bits, or 128 bits we are using for each
+    // resource, and each resource must be at least 64KB (65536 bits)
+    for (int i = 0; i < frameBufferCount; ++i)
+    {
+        // create resource for cube 1
+        ASSERT_SUCCEEDED(device->CreateCommittedResource(
+            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), // this heap will be used to upload the constant buffer data
+            D3D12_HEAP_FLAG_NONE, // no flags
+            &CD3DX12_RESOURCE_DESC::Buffer(1024 * 64), // size of the resource heap. Must be a multiple of 64KB for single-textures and constant buffers
+            D3D12_RESOURCE_STATE_GENERIC_READ, // will be data that is read from so we keep it in the generic read state
+            nullptr, // we do not have use an optimized clear value for constant buffers
+            IID_PPV_ARGS(&constantBufferUploadHeaps[i])));
+        constantBufferUploadHeaps[i]->SetName(L"Constant Buffer Upload Resource Heap");
+    }
 }
 
 void DXSample::CreateRootSignature()
 {
-    // create root signature
+    // create a root descriptor, which explains where to find the data for this root parameter
+    D3D12_ROOT_DESCRIPTOR rootCBVDescriptor;
+    rootCBVDescriptor.RegisterSpace = 0;
+    rootCBVDescriptor.ShaderRegister = 0;
+
+    // create a root parameter and fill it out
+    D3D12_ROOT_PARAMETER rootParameters[2]; // only one parameter right now
+    rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+    rootParameters[0].Descriptor = rootCBVDescriptor; // this is the root descriptor for this root parameter
+    rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
+
 
     // create a descriptor range (descriptor table) and fill it out
     // this is a range of descriptors inside a descriptor heap
     D3D12_DESCRIPTOR_RANGE  descriptorTableRanges[1]; // only one range right now
     descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // this is a range of constant buffer views (descriptors)
     descriptorTableRanges[0].NumDescriptors = 1; // we only have one constant buffer, so the range is only 1
-    descriptorTableRanges[0].BaseShaderRegister = 0; // start index of the shader registers in the range
+    descriptorTableRanges[0].BaseShaderRegister = 1; // start index of the shader registers in the range
     descriptorTableRanges[0].RegisterSpace = 0; // space 0. can usually be zero
     descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // this appends the range to the end of the root signature descriptor tables
 
@@ -355,10 +444,10 @@ void DXSample::CreateRootSignature()
     descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
 
     // create a root parameter and fill it out
-    D3D12_ROOT_PARAMETER rootParameters[1]; // only one parameter right now
-    rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
-    rootParameters[0].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-    rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
+    rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
+    rootParameters[1].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
+    rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
+
 
     // Allow input layout and deny uneccessary access to certain pipeline stages.
     D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
@@ -376,7 +465,9 @@ void DXSample::CreateRootSignature()
         rootSignatureFlags);
 
     ID3DBlob* signature;
-    ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, nullptr));
+    ID3DBlob* errorBuff; // a buffer holding the error data if any
+    ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &errorBuff),
+        "%s", (char*)errorBuff->GetBufferPointer());
     ASSERT_SUCCEEDED(device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 }
 
@@ -481,7 +572,7 @@ void DXSample::CreatePSO()
     ASSERT_SUCCEEDED(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObject)));
 }
 
-void DXSample::InitViewPort()
+void DXSample::CreateViewPort()
 {
     // Fill out the Viewport
     viewport.TopLeftX = 0;
@@ -496,6 +587,43 @@ void DXSample::InitViewPort()
     scissorRect.top = 0;
     scissorRect.right = m_width;
     scissorRect.bottom = m_height;
+}
+
+void DXSample::CreateMatrix()
+{
+    // build projection and view matrix
+    XMMATRIX tmpMat = XMMatrixPerspectiveFovLH(45.0f*(3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1000.0f);
+    XMStoreFloat4x4(&cameraProjMat, tmpMat);
+
+    // set starting camera state
+    cameraPosition = XMFLOAT4(0.0f, 2.0f, -4.0f, 0.0f);
+    cameraTarget = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+    cameraUp = XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
+
+    // build view matrix
+    XMVECTOR cPos = XMLoadFloat4(&cameraPosition);
+    XMVECTOR cTarg = XMLoadFloat4(&cameraTarget);
+    XMVECTOR cUp = XMLoadFloat4(&cameraUp);
+    tmpMat = XMMatrixLookAtLH(cPos, cTarg, cUp);
+    XMStoreFloat4x4(&cameraViewMat, tmpMat);
+
+    // set starting cubes position
+    // first cube
+    cube1Position = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f); // set cube 1's position
+    XMVECTOR posVec = XMLoadFloat4(&cube1Position); // create xmvector for cube1's position
+
+    tmpMat = XMMatrixTranslationFromVector(posVec); // create translation matrix from cube1's position vector
+    XMStoreFloat4x4(&cube1RotMat, XMMatrixIdentity()); // initialize cube1's rotation matrix to identity matrix
+    XMStoreFloat4x4(&cube1WorldMat, tmpMat); // store cube1's world matrix
+
+                                             // second cube
+    cube2PositionOffset = XMFLOAT4(1.5f, 0.0f, 0.0f, 0.0f);
+    posVec = XMLoadFloat4(&cube2PositionOffset) + XMLoadFloat4(&cube1Position); // create xmvector for cube2's position
+                                                                                // we are rotating around cube1 here, so add cube2's position to cube1
+
+    tmpMat = XMMatrixTranslationFromVector(posVec); // create translation matrix from cube2's position offset vector
+    XMStoreFloat4x4(&cube2RotMat, XMMatrixIdentity()); // initialize cube2's rotation matrix to identity matrix
+    XMStoreFloat4x4(&cube2WorldMat, tmpMat); // store cube2's world matrix
 }
 
 void DXSample::WaitForPreviousFrame()
@@ -561,22 +689,39 @@ void DXSample::PopulateCommandList()
     // clear the depth/stencil buffer
     commandList->ClearDepthStencilView(dsDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-    // draw triangle
+    // set root signature
     commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
 
     // set constant buffer descriptor heap
     ID3D12DescriptorHeap* descriptorHeaps[] = { mainDescriptorHeap[frameIndex] };
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
     // set the root descriptor table 0 to the constant buffer descriptor heap
-    commandList->SetGraphicsRootDescriptorTable(0, mainDescriptorHeap[frameIndex]->GetGPUDescriptorHandleForHeapStart());
+    commandList->SetGraphicsRootDescriptorTable(1, mainDescriptorHeap[frameIndex]->GetGPUDescriptorHandleForHeapStart());
 
+    // draw triangle
     commandList->RSSetViewports(1, &viewport); // set the viewports
     commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // set the primitive topology
     commandList->IASetVertexBuffers(0, 1, &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
     commandList->IASetIndexBuffer(&indexBufferView);
-    commandList->DrawIndexedInstanced(6, 1, 0, 0, 0); // draw first quad
+
+    // first cube
+
+    // set cube1's constant buffer
+    commandList->SetGraphicsRootConstantBufferView(0, constantBufferUploadHeaps[frameIndex]->GetGPUVirtualAddress());
+
+    // draw first cube
+    commandList->DrawIndexedInstanced(numCubeIndices, 1, 0, 0, 0);
+
+    // second cube
+
+    // set cube2's constant buffer. You can see we are adding the size of ConstantBufferPerObject to the constant buffer
+    // resource heaps address. This is because cube1's constant buffer is stored at the beginning of the resource heap, while
+    // cube2's constant buffer data is stored after (256 bits from the start of the heap).
+    commandList->SetGraphicsRootConstantBufferView(0, constantBufferUploadHeaps[frameIndex]->GetGPUVirtualAddress() + ConstantBufferPerObjectAlignedSize);
+
+    // draw second cube
+    commandList->DrawIndexedInstanced(numCubeIndices, 1, 0, 0, 0);
 
     // transition the "frameIndex" render target from the render target state to the present state. If the debug layer is enabled, you will receive a
     // warning if present is called on the render target when it's not in the present state
@@ -596,11 +741,12 @@ void DXSample::OnInit()
 
     CreateCommandAllocators();
     CreateCommandList();
-    LoadVertex();
-    LoadConstantBuffer();
+    CreateVertex();
+    CreateConstantBuffer();
     CreateRootSignature();
     CreatePSO();
-    InitViewPort();
+    CreateViewPort();
+    CreateMatrix();
 }
 
 void DXSample::OnUpdate()
@@ -634,8 +780,76 @@ void DXSample::OnUpdate()
     ASSERT_SUCCEEDED(constantBufferUploadHeap[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&cbColorMultiplierGPUAddress[frameIndex])));
     // copy our ConstantBuffer instance to the mapped constant buffer resource
     memcpy(cbColorMultiplierGPUAddress[frameIndex], &cbColorMultiplierData, sizeof(cbColorMultiplierData));
-
     constantBufferUploadHeap[frameIndex]->Unmap(0, &readRange);
+
+
+    // update app logic, such as moving the camera or figuring out what objects are in view
+
+    // map the resource heap to get a gpu virtual address to the beginning of the heap
+    ASSERT_SUCCEEDED(constantBufferUploadHeaps[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&cbvGPUAddress[frameIndex])));
+
+    // create rotation matrices
+    XMMATRIX rotXMat = XMMatrixRotationX(0.0001f);
+    XMMATRIX rotYMat = XMMatrixRotationY(0.0002f);
+    XMMATRIX rotZMat = XMMatrixRotationZ(0.0003f);
+
+    // add rotation to cube1's rotation matrix and store it
+    XMMATRIX rotMat = XMLoadFloat4x4(&cube1RotMat) * rotXMat * rotYMat * rotZMat;
+    XMStoreFloat4x4(&cube1RotMat, rotMat);
+
+    // create translation matrix for cube 1 from cube 1's position vector
+    XMMATRIX translationMat = XMMatrixTranslationFromVector(XMLoadFloat4(&cube1Position));
+
+    // create cube1's world matrix by first rotating the cube, then positioning the rotated cube
+    XMMATRIX worldMat = rotMat * translationMat;
+
+    // store cube1's world matrix
+    XMStoreFloat4x4(&cube1WorldMat, worldMat);
+
+    // update constant buffer for cube1
+    // create the wvp matrix and store in constant buffer
+    XMMATRIX viewMat = XMLoadFloat4x4(&cameraViewMat); // load view matrix
+    XMMATRIX projMat = XMLoadFloat4x4(&cameraProjMat); // load projection matrix
+    XMMATRIX wvpMat = XMLoadFloat4x4(&cube1WorldMat) * viewMat * projMat; // create wvp matrix
+    XMMATRIX transposed = XMMatrixTranspose(wvpMat); // must transpose wvp matrix for the gpu
+    XMStoreFloat4x4(&cbPerObject.wvpMat, transposed); // store transposed wvp matrix in constant buffer
+
+   // copy our ConstantBuffer instance to the mapped constant buffer resource
+    memcpy(cbvGPUAddress[frameIndex], &cbPerObject, sizeof(cbPerObject));
+
+    // now do cube2's world matrix
+    // create rotation matrices for cube2
+    rotXMat = XMMatrixRotationX(0.0003f);
+    rotYMat = XMMatrixRotationY(0.0002f);
+    rotZMat = XMMatrixRotationZ(0.0001f);
+
+    // add rotation to cube2's rotation matrix and store it
+    rotMat = rotZMat * (XMLoadFloat4x4(&cube2RotMat) * (rotXMat * rotYMat));
+    XMStoreFloat4x4(&cube2RotMat, rotMat);
+
+    // create translation matrix for cube 2 to offset it from cube 1 (its position relative to cube1
+    XMMATRIX translationOffsetMat = XMMatrixTranslationFromVector(XMLoadFloat4(&cube2PositionOffset));
+
+    // we want cube 2 to be half the size of cube 1, so we scale it by .5 in all dimensions
+    XMMATRIX scaleMat = XMMatrixScaling(0.5f, 0.5f, 0.5f);
+
+    // reuse worldMat.
+    // first we scale cube2. scaling happens relative to point 0,0,0, so you will almost always want to scale first
+    // then we translate it.
+    // then we rotate it. rotation always rotates around point 0,0,0
+    // finally we move it to cube 1's position, which will cause it to rotate around cube 1
+    worldMat = scaleMat * translationOffsetMat * rotMat * translationMat;
+
+    wvpMat = XMLoadFloat4x4(&cube2WorldMat) * viewMat * projMat; // create wvp matrix
+    transposed = XMMatrixTranspose(wvpMat); // must transpose wvp matrix for the gpu
+    XMStoreFloat4x4(&cbPerObject.wvpMat, transposed); // store transposed wvp matrix in constant buffer
+
+    // copy our ConstantBuffer instance to the mapped constant buffer resource
+    memcpy(cbvGPUAddress[frameIndex] + ConstantBufferPerObjectAlignedSize, &cbPerObject, sizeof(cbPerObject));
+    constantBufferUploadHeaps[frameIndex]->Unmap(0, &readRange);
+
+    // store cube2's world matrix
+    XMStoreFloat4x4(&cube2WorldMat, worldMat);
 }
 
 void DXSample::OnRender()
@@ -684,7 +898,7 @@ void DXSample::OnDestroy()
         SAFE_RELEASE(renderTargets[i]);
         SAFE_RELEASE(commandAllocator[i]);
         SAFE_RELEASE(fence[i]);
-    };
+    }
 
     SAFE_RELEASE(pipelineStateObject);
     SAFE_RELEASE(rootSignature);
@@ -698,7 +912,12 @@ void DXSample::OnDestroy()
     {
         SAFE_RELEASE(mainDescriptorHeap[i]);
         SAFE_RELEASE(constantBufferUploadHeap[i]);
-    };
+    }
+
+    for (int i = 0; i < frameBufferCount; ++i)
+    {
+        SAFE_RELEASE(constantBufferUploadHeaps[i]);
+    }
 }
 
 UINT DXSample::GetWidth() const
