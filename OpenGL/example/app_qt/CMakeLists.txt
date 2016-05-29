@@ -7,7 +7,7 @@ if (Qt5Core_FOUND)
     set_property(GLOBAL PROPERTY AUTOMOC_FOLDER CMakeAutomocTargets)
 else()
     message("${PROJECT} skipped: Qt5 not found")
-	return()
+    return()
 endif()
 
 file(GLOB HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}

@@ -13,12 +13,12 @@ class RenderItem : public QQuickItem
 public:
     RenderItem();
 public slots :
-	void sync();
-	void cleanup();
+    void sync();
+    void cleanup();
     void paint();
 private slots :
-	void handleWindowChanged(QQuickWindow *win);
+    void handleWindowChanged(QQuickWindow *win);
 private:
-	QOpenGLContext * backgroundContext;
-	std::unique_ptr<TestScene> renderer;
+    QOpenGLContext * backgroundContext;
+    std::unique_ptr<TestScene> renderer;
 };

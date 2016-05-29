@@ -12,8 +12,8 @@ int main(int argc, char *argv[])
     format.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(format);
 
-	RenderWidget widget;
-	widget.resize(700, 700);
+    RenderWidget widget;
+    widget.resize(700, 700);
     widget.show();
 
     return app.exec();

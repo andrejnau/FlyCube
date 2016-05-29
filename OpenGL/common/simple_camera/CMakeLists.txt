@@ -17,7 +17,7 @@ add_library(${PROJECT} ${headers} ${sources})
 target_link_libraries(${PROJECT} glbinding)
 
 target_include_directories(${PROJECT}
-	PUBLIC
+    PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 

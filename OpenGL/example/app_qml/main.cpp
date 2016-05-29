@@ -7,13 +7,13 @@
 
 int main(int argc, char *argv[])
 {
-	QApplication app(argc, argv);
+    QApplication app(argc, argv);
 
-	qmlRegisterType<RenderItem>("OpenGLUnderQML", 1, 0, "Squircle");
-	QQuickView view;
-	view.setResizeMode(QQuickView::SizeRootObjectToView);
-	view.setSource(QUrl("qrc:///main.qml"));
-	view.show();
+    qmlRegisterType<RenderItem>("OpenGLUnderQML", 1, 0, "Squircle");
+    QQuickView view;
+    view.setResizeMode(QQuickView::SizeRootObjectToView);
+    view.setSource(QUrl("qrc:///main.qml"));
+    view.show();
 
-	return app.exec();
+    return app.exec();
 }
