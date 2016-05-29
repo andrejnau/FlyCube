@@ -30,6 +30,13 @@ struct Mesh
         aiString path;
     };
 
+    struct Material
+    {
+        glm::vec3 amb;
+        glm::vec3 dif;
+        glm::vec3 spec;
+    } material;
+
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
     std::vector<Texture> textures;
@@ -110,6 +117,11 @@ private:
         }
     }
 
+    glm::vec4 aiColor4DToVec4(const aiColor4D& x)
+    {
+        return glm::vec4(x.r, x.g, x.b, x.a);
+    }
+
     Mesh processMesh(aiMesh* mesh, const aiScene* scene)
     {
         Mesh retMeh;
@@ -155,6 +167,23 @@ private:
             aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
             loadMaterialTextures(retMeh, material, aiTextureType_DIFFUSE);
             loadMaterialTextures(retMeh, material, aiTextureType_SPECULAR);
+
+            aiColor4D amb;
+            aiColor4D dif;
+            aiColor4D spec;
+
+            if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &amb))
+            {
+                retMeh.material.amb = glm::vec3(aiColor4DToVec4(amb));
+            }
+            if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &dif))
+            {
+                retMeh.material.dif = glm::vec3(aiColor4DToVec4(dif));
+            }
+            if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &spec))
+            {
+                retMeh.material.dif = glm::vec3(aiColor4DToVec4(spec));
+            }
         }
 
         retMeh.setupMesh();

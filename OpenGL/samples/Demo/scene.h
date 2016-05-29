@@ -76,18 +76,7 @@ public:
         glUniformMatrix4fv(shaderLight.loc_projection, 1, GL_FALSE, glm::value_ptr(projection));
         glUniform3fv(shaderLight.loc_viewPos, 1, glm::value_ptr(m_camera.GetCameraPos()));
 
-        Material material;
         Light light;
-
-        material.ambient = glm::vec3(0.1745, 0.01175, 0.01175);
-        material.diffuse = glm::vec3(0.61424, 0.04136, 0.04136);
-        material.specular = glm::vec3(0.727811, 0.626959, 0.626959);
-        material.shininess = 0.6f;
-
-        glUniform3fv(shaderLight.loc_material.ambient, 1, glm::value_ptr(material.ambient));
-        glUniform3fv(shaderLight.loc_material.diffuse, 1, glm::value_ptr(material.diffuse));
-        glUniform1f(shaderLight.loc_material.shininess, material.shininess);
-        glUniform3fv(shaderLight.loc_material.specular, 1, glm::value_ptr(material.specular));
 
         light.position = lightPosition;
         light.ambient = glm::vec3(0.3f, 0.3f, 0.3f);
@@ -112,6 +101,17 @@ public:
                 glBindTexture(GL_TEXTURE_2D, cur_mesh.textures[i].id);
             }
             glActiveTexture(GL_TEXTURE0);
+
+            Material material;
+            material.ambient = cur_mesh.material.amb;
+            material.diffuse = cur_mesh.material.dif;
+            material.specular = cur_mesh.material.spec;
+            material.shininess = 96.078431;
+
+            glUniform3fv(shaderLight.loc_material.ambient, 1, glm::value_ptr(material.ambient));
+            glUniform3fv(shaderLight.loc_material.diffuse, 1, glm::value_ptr(material.diffuse));
+            glUniform3fv(shaderLight.loc_material.specular, 1, glm::value_ptr(material.specular));
+            glUniform1f(shaderLight.loc_material.shininess, material.shininess);
 
             glBindVertexArray(cur_mesh.VAO);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
