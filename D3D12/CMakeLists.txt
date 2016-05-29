@@ -15,6 +15,7 @@ add_definitions(-D_UNICODE)
 set(headers
     ${include_path}/DXSample.h
     ${include_path}/IDXSample.h
+    ${include_path}/Util.h
     ${include_path}/Utility.h
     ${include_path}/FileUtility.h
     ${include_path}/Win32Application.h
@@ -22,6 +23,7 @@ set(headers
 
 set(sources
     ${source_path}/DXSample.cpp
+    ${source_path}/Util.cpp
     ${source_path}/Main.cpp
     ${source_path}/Win32Application.cpp
 )

@@ -40,7 +40,7 @@ namespace Utility
         Print(buffer);
     }
 
-#ifndef RELEASE
+#ifndef NDEBUG
     inline void PrintSubMessage(const char* format, ...)
     {
         Print("--> ");
@@ -80,7 +80,7 @@ namespace Utility
 
 #define HALT( ... ) ERROR( __VA_ARGS__ ) __debugbreak();
 
-#ifdef RELEASE
+#ifdef NDEBUG
 
 #define ASSERT( isTrue, ... ) (void)(isTrue)
 #define WARN_ONCE_IF( isTrue, ... ) (void)(isTrue)

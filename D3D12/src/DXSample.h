@@ -1,16 +1,17 @@
 #pragma once
 
 #include "IDXSample.h"
+#include "Win32Application.h"
 
+#include <memory>
+#include <string>
+
+#include <d3dx12.h>
 #include <d3d12.h>
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
 #include <DXGI1_4.h>
-#include <Windows.h>
-
-#include <d3dx12.h>
-#include <DirectXMath.h>
-#include "Win32Application.h"
+#include <wincodec.h>
 
 using namespace DirectX;
 
@@ -44,6 +45,8 @@ private:
     void CreatePSO();
     void CreateViewPort();
     void CreateMatrix();
+    void CreateTexture();
+    void UploadAllResources();
     void WaitForPreviousFrame();
     void PopulateCommandList();
 
@@ -97,13 +100,12 @@ private:
 
     struct Vertex
     {
-        Vertex(float x, float y, float z, float r, float g, float b, float a) :
-            pos(x, y, z),
-            color(r, g, b, z)
+        Vertex(float x, float y, float z, float u, float v)
+            : pos(x, y, z)
+            , texCoord(u, v)
         {}
-
         XMFLOAT3 pos;
-        XMFLOAT4 color;
+        XMFLOAT2 texCoord;
     };
 
     ID3D12Resource* indexBuffer; // a default buffer in GPU memory that we will load index data for our triangle into
@@ -170,4 +172,21 @@ private:
     XMFLOAT4 cube2PositionOffset; // our second cube will rotate around the first cube, so this is the position offset from the first cube
 
     int numCubeIndices; // the number of indices to draw the cube
+
+    struct TexInfo
+    {
+        D3D12_RESOURCE_DESC resourceDescription;
+        std::unique_ptr<uint8_t[]> imageData;
+        UINT textureWidth;
+        UINT textureHeight;
+        int numBitsPerPixel;
+        int imageSize;
+        int bytesPerRow;
+    };
+
+    void LoadImageDataFromFile(std::wstring filename, TexInfo& texInfo);
+
+    ID3D12Resource* textureBuffer; // the resource heap containing our texture
+    ID3D12DescriptorHeap* mainDescriptorTextureHeap;
+    ID3D12Resource* textureBufferUploadHeap;
 };

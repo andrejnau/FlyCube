@@ -1,4 +1,5 @@
 #include "DXSample.h"
+#include "Util.h"
 #include "Utility.h"
 #include "FileUtility.h"
 
@@ -173,47 +174,47 @@ void DXSample::CreateCommandAllocators()
 void DXSample::CreateCommandList()
 {
     // create the command list with the first allocator
-    ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator[frameIndex], NULL, IID_PPV_ARGS(&commandList)));
+    ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator[frameIndex], nullptr, IID_PPV_ARGS(&commandList)));
 }
 
 void DXSample::CreateVertex()
 {
     Vertex vList[] = {
         // front face
-        { -0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
-        { 0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
-        { -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
-        { 0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+        { -0.5f,  0.5f, -0.5f, 0.0f, 0.0f },
+        { 0.5f, -0.5f, -0.5f, 1.0f, 1.0f },
+        { -0.5f, -0.5f, -0.5f, 0.0f, 1.0f },
+        { 0.5f,  0.5f, -0.5f, 1.0f, 0.0f },
 
         // right side face
-        { 0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
-        { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
-        { 0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
-        { 0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+        { 0.5f, -0.5f, -0.5f, 0.0f, 1.0f },
+        { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f },
+        { 0.5f, -0.5f,  0.5f, 1.0f, 1.0f },
+        { 0.5f,  0.5f, -0.5f, 0.0f, 0.0f },
 
         // left side face
-        { -0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
-        { -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
-        { -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
-        { -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+        { -0.5f,  0.5f,  0.5f, 0.0f, 0.0f },
+        { -0.5f, -0.5f, -0.5f, 1.0f, 1.0f },
+        { -0.5f, -0.5f,  0.5f, 0.0f, 1.0f },
+        { -0.5f,  0.5f, -0.5f, 1.0f, 0.0f },
 
         // back face
-        { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
-        { -0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
-        { 0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
-        { -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+        { 0.5f,  0.5f,  0.5f, 0.0f, 0.0f },
+        { -0.5f, -0.5f,  0.5f, 1.0f, 1.0f },
+        { 0.5f, -0.5f,  0.5f, 0.0f, 1.0f },
+        { -0.5f,  0.5f,  0.5f, 1.0f, 0.0f },
 
         // top face
-        { -0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
-        { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
-        { 0.5f,  0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
-        { -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+        { -0.5f,  0.5f, -0.5f, 0.0f, 1.0f },
+        { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f },
+        { 0.5f,  0.5f, -0.5f, 1.0f, 1.0f },
+        { -0.5f,  0.5f,  0.5f, 0.0f, 0.0f },
 
         // bottom face
-        { 0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
-        { -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 1.0f },
-        { 0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
-        { -0.5f, -0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+        { 0.5f, -0.5f,  0.5f, 0.0f, 0.0f },
+        { -0.5f, -0.5f, -0.5f, 1.0f, 1.0f },
+        { 0.5f, -0.5f, -0.5f, 0.0f, 1.0f },
+        { -0.5f, -0.5f,  0.5f, 1.0f, 0.0f },
     };
 
     int vBufferSize = sizeof(vList);
@@ -329,15 +330,6 @@ void DXSample::CreateVertex()
     // transition the vertex buffer data from copy destination state to vertex buffer state
     commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 
-    // Now we execute the command list to upload the initial assets (triangle data)
-    commandList->Close();
-    ID3D12CommandList* ppCommandLists[] = { commandList };
-    commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-    // increment the fence value now, otherwise the buffer might not be uploaded by the time we start drawing
-    fenceValue[frameIndex]++;
-    ASSERT_SUCCEEDED(commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]));
-
     // create a vertex buffer view for the triangle. We get the GPU memory address to the vertex pointer using the GetGPUVirtualAddress() method
     vertexBufferView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
     vertexBufferView.StrideInBytes = sizeof(Vertex);
@@ -423,15 +415,14 @@ void DXSample::CreateRootSignature()
     rootCBVDescriptor.ShaderRegister = 0;
 
     // create a root parameter and fill it out
-    D3D12_ROOT_PARAMETER rootParameters[2]; // only one parameter right now
+    D3D12_ROOT_PARAMETER rootParameters[3]; // only one parameter right now
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
     rootParameters[0].Descriptor = rootCBVDescriptor; // this is the root descriptor for this root parameter
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
 
-
     // create a descriptor range (descriptor table) and fill it out
     // this is a range of descriptors inside a descriptor heap
-    D3D12_DESCRIPTOR_RANGE  descriptorTableRanges[1]; // only one range right now
+    D3D12_DESCRIPTOR_RANGE descriptorTableRanges[1]; // only one range right now
     descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // this is a range of constant buffer views (descriptors)
     descriptorTableRanges[0].NumDescriptors = 1; // we only have one constant buffer, so the range is only 1
     descriptorTableRanges[0].BaseShaderRegister = 1; // start index of the shader registers in the range
@@ -446,22 +437,55 @@ void DXSample::CreateRootSignature()
     // create a root parameter and fill it out
     rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
     rootParameters[1].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-    rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
+    rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // our pixel shader will be the only shader accessing this parameter for now
 
+    // create a descriptor range (descriptor table) and fill it out
+    // this is a range of descriptors inside a descriptor heap
+    D3D12_DESCRIPTOR_RANGE descriptorTableRangesTexture[1];
+    descriptorTableRangesTexture[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // this is a range of shader resource views (descriptors)
+    descriptorTableRangesTexture[0].NumDescriptors = 1; // we only have one texture right now, so the range is only 1
+    descriptorTableRangesTexture[0].BaseShaderRegister = 0; // start index of the shader registers in the range
+    descriptorTableRangesTexture[0].RegisterSpace = 0; // space 0. can usually be zero
+    descriptorTableRangesTexture[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // this appends the range to the end of the root signature descriptor tables
 
-    // Allow input layout and deny uneccessary access to certain pipeline stages.
+    // create a descriptor table
+    D3D12_ROOT_DESCRIPTOR_TABLE descriptorTableTexture;
+    descriptorTableTexture.NumDescriptorRanges = _countof(descriptorTableRangesTexture); // we only have one range
+    descriptorTableTexture.pDescriptorRanges = &descriptorTableRangesTexture[0]; // the pointer to the beginning of our ranges array
+
+    // create a root parameter and fill it out
+    rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
+    rootParameters[2].DescriptorTable = descriptorTableTexture; // this is our descriptor table for this root parameter
+    rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // our pixel shader will be the only shader accessing this parameter for now
+
+    // create a static sampler
+    D3D12_STATIC_SAMPLER_DESC sampler = {};
+    sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+    sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    sampler.MipLODBias = 0;
+    sampler.MaxAnisotropy = 0;
+    sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+    sampler.MinLOD = 0.0f;
+    sampler.MaxLOD = D3D12_FLOAT32_MAX;
+    sampler.ShaderRegister = 0;
+    sampler.RegisterSpace = 0;
+    sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+    // we can deny shader stages here for better performance
     D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
         D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
         D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
         D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-        D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-        D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+        D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
     CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
     rootSignatureDesc.Init(_countof(rootParameters), // we have 1 root parameter
         rootParameters, // a pointer to the beginning of our root parameters array
-        0,
-        nullptr,
+        1,
+        &sampler,
         rootSignatureFlags);
 
     ID3DBlob* signature;
@@ -528,7 +552,7 @@ void DXSample::CreatePSO()
     D3D12_INPUT_ELEMENT_DESC inputLayout[] =
     {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
     };
 
     // fill out an input layout description structure
@@ -626,6 +650,191 @@ void DXSample::CreateMatrix()
     XMStoreFloat4x4(&cube2WorldMat, tmpMat); // store cube2's world matrix
 }
 
+void DXSample::CreateTexture()
+{
+    TexInfo texInfo;
+    LoadImageDataFromFile(GetAssetFullPath(L"../resources/texture.png"), texInfo);
+
+    // create a default heap where the upload heap will copy its contents into (contents being the texture)
+    ASSERT_SUCCEEDED(device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
+        D3D12_HEAP_FLAG_NONE, // no flags
+        &texInfo.resourceDescription, // the description of our texture
+        D3D12_RESOURCE_STATE_COPY_DEST, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
+        nullptr, // used for render targets and depth/stencil buffers
+        IID_PPV_ARGS(&textureBuffer)));
+    textureBuffer->SetName(L"Texture Buffer Resource Heap");
+
+    UINT64 textureUploadBufferSize;
+    // this function gets the size an upload buffer needs to be to upload a texture to the gpu.
+    // each row must be 256 byte aligned except for the last row, which can just be the size in bytes of the row
+    // eg. textureUploadBufferSize = ((((width * numBytesPerPixel) + 255) & ~255) * (height - 1)) + (width * numBytesPerPixel);
+    //textureUploadBufferSize = (((imageBytesPerRow + 255) & ~255) * (textureDesc.Height - 1)) + imageBytesPerRow;
+    device->GetCopyableFootprints(&texInfo.resourceDescription, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
+
+    // now we create an upload heap to upload our texture to the GPU
+    ASSERT_SUCCEEDED(device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), // upload heap
+        D3D12_HEAP_FLAG_NONE, // no flags
+        &CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize), // resource description for a buffer (storing the image data in this heap just to copy to the default heap)
+        D3D12_RESOURCE_STATE_GENERIC_READ, // We will copy the contents from this heap to the default heap above
+        nullptr,
+        IID_PPV_ARGS(&textureBufferUploadHeap)));
+    textureBufferUploadHeap->SetName(L"Texture Buffer Upload Resource Heap");
+
+    // store vertex buffer in upload heap
+    D3D12_SUBRESOURCE_DATA textureData = {};
+    textureData.pData = &texInfo.imageData[0]; // pointer to our image data
+    textureData.RowPitch = texInfo.bytesPerRow; // size of all our triangle vertex data
+    textureData.SlicePitch = texInfo.bytesPerRow * texInfo.textureHeight; // also the size of our triangle vertex data
+
+    // Now we copy the upload buffer contents to the default heap
+    UpdateSubresources(commandList, textureBuffer, textureBufferUploadHeap, 0, 0, 1, &textureData);
+
+    // transition the texture default heap to a pixel shader resource (we will be sampling from this heap in the pixel shader to get the color of pixels)
+    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(textureBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+
+    // create the descriptor heap that will store our srv
+    D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+    heapDesc.NumDescriptors = 1;
+    heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    ASSERT_SUCCEEDED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mainDescriptorTextureHeap)));
+
+    // now we create a shader resource view (descriptor that points to the texture and describes it)
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Format = texInfo.resourceDescription.Format;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+    device->CreateShaderResourceView(textureBuffer, &srvDesc, mainDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart());
+}
+
+void DXSample::UploadAllResources()
+{
+    // Now we execute the command list to upload the initial assets (triangle data)
+    commandList->Close();
+    ID3D12CommandList* ppCommandLists[] = { commandList };
+    commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+    // increment the fence value now, otherwise the buffer might not be uploaded by the time we start drawing
+    fenceValue[frameIndex]++;
+    ASSERT_SUCCEEDED(commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]));
+}
+
+void DXSample::LoadImageDataFromFile(std::wstring filename, TexInfo& texInfo)
+{
+    // we only need one instance of the imaging factory to create decoders and frames
+    static IWICImagingFactory *wicFactory = nullptr;
+    if (wicFactory == nullptr)
+    {
+        // Initialize the COM library
+        CoInitialize(nullptr);
+
+        // create the WIC factory
+        ASSERT_SUCCEEDED(CoCreateInstance(
+            CLSID_WICImagingFactory,
+            nullptr,
+            CLSCTX_INPROC_SERVER,
+            IID_PPV_ARGS(&wicFactory)
+            ));
+    }
+
+    // reset decoder, frame and converter since these will be different for each image we load
+    IWICBitmapDecoder *wicDecoder = nullptr;
+    IWICBitmapFrameDecode *wicFrame = nullptr;
+    IWICFormatConverter *wicConverter = nullptr;
+
+    bool imageConverted = false;
+
+    // load a decoder for the image
+    ASSERT_SUCCEEDED(wicFactory->CreateDecoderFromFilename(
+        filename.c_str(),                        // Image we want to load in
+        nullptr,                            // This is a vendor ID, we do not prefer a specific one so set to null
+        GENERIC_READ,                    // We want to read from this file
+        WICDecodeMetadataCacheOnLoad,    // We will cache the metadata right away, rather than when needed, which might be unknown
+        &wicDecoder                      // the wic decoder to be created
+        ));
+
+    // get image from decoder (this will decode the "frame")
+    ASSERT_SUCCEEDED(wicDecoder->GetFrame(0, &wicFrame));
+
+    // get wic pixel format of image
+    WICPixelFormatGUID pixelFormat;
+    ASSERT_SUCCEEDED(wicFrame->GetPixelFormat(&pixelFormat));
+
+    // get size of image
+    ASSERT_SUCCEEDED(wicFrame->GetSize(&texInfo.textureWidth, &texInfo.textureHeight));
+
+    // we are not handling sRGB types in this tutorial, so if you need that support, you'll have to figure
+    // out how to implement the support yourself
+
+    // convert wic pixel format to dxgi pixel format
+    DXGI_FORMAT dxgiFormat = GetDXGIFormatFromPixelFormat(pixelFormat);
+
+    // if the format of the image is not a supported dxgi format, try to convert it
+    if (dxgiFormat == DXGI_FORMAT_UNKNOWN)
+    {
+        // get a dxgi compatible wic format from the current image format
+        WICPixelFormatGUID convertToPixelFormat = GetTargetPixelFormat(pixelFormat);
+
+        // return if no dxgi compatible format was found
+        if (convertToPixelFormat == GUID_WICPixelFormatDontCare)
+            return ;
+
+        // set the dxgi format
+        dxgiFormat = GetDXGIFormatFromPixelFormat(convertToPixelFormat);
+
+        // create the format converter
+        ASSERT_SUCCEEDED(wicFactory->CreateFormatConverter(&wicConverter));
+
+        // make sure we can convert to the dxgi compatible format
+        BOOL canConvert = FALSE;
+        ASSERT_SUCCEEDED(wicConverter->CanConvert(pixelFormat, convertToPixelFormat, &canConvert));
+        if (!canConvert)
+            return ;
+
+        // do the conversion (wicConverter will contain the converted image)
+        ASSERT_SUCCEEDED(wicConverter->Initialize(wicFrame, convertToPixelFormat, WICBitmapDitherTypeErrorDiffusion, 0, 0, WICBitmapPaletteTypeCustom));
+
+        // this is so we know to get the image data from the wicConverter (otherwise we will get from wicFrame)
+        imageConverted = true;
+    }
+
+    texInfo.numBitsPerPixel = BitsPerPixel(dxgiFormat); // number of bits per pixel
+    texInfo.bytesPerRow = (texInfo.textureWidth * texInfo.numBitsPerPixel) / 8; // number of bytes in each row of the image data
+    texInfo.imageSize = texInfo.bytesPerRow * texInfo.textureHeight; // total image size in bytes
+
+    // allocate enough memory for the raw image data, and set imageData to point to that memory
+    texInfo.imageData.reset(new uint8_t[texInfo.imageSize]);
+
+    // copy (decoded) raw image data into the newly allocated memory (imageData)
+    if (imageConverted)
+    {
+        // if image format needed to be converted, the wic converter will contain the converted image
+        ASSERT_SUCCEEDED(wicConverter->CopyPixels(0, texInfo.bytesPerRow, texInfo.imageSize, texInfo.imageData.get()));
+    }
+    else
+    {
+        // no need to convert, just copy data from the wic frame
+        ASSERT_SUCCEEDED(wicFrame->CopyPixels(0, texInfo.bytesPerRow, texInfo.imageSize, texInfo.imageData.get()));
+    }
+
+    // now describe the texture with the information we have obtained from the image
+    texInfo.resourceDescription = {};
+    texInfo.resourceDescription.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    texInfo.resourceDescription.Alignment = 0; // may be 0, 4KB, 64KB, or 4MB. 0 will let runtime decide between 64KB and 4MB (4MB for multi-sampled textures)
+    texInfo.resourceDescription.Width = texInfo.textureWidth; // width of the texture
+    texInfo.resourceDescription.Height = texInfo.textureHeight; // height of the texture
+    texInfo.resourceDescription.DepthOrArraySize = 1; // if 3d image, depth of 3d image. Otherwise an array of 1D or 2D textures (we only have one image, so we set 1)
+    texInfo.resourceDescription.MipLevels = 1; // Number of mipmaps. We are not generating mipmaps for this texture, so we have only one level
+    texInfo.resourceDescription.Format = dxgiFormat; // This is the dxgi format of the image (format of the pixels)
+    texInfo.resourceDescription.SampleDesc.Count = 1; // This is the number of samples per pixel, we just want 1 sample
+    texInfo.resourceDescription.SampleDesc.Quality = 0; // The quality level of the samples. Higher is better quality, but worse performance
+    texInfo.resourceDescription.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // The arrangement of the pixels. Setting to unknown lets the driver choose the most efficient one
+    texInfo.resourceDescription.Flags = D3D12_RESOURCE_FLAG_NONE; // no flags
+}
+
 void DXSample::WaitForPreviousFrame()
 {
     // swap the current rtv buffer index so we draw on the correct buffer
@@ -698,6 +907,12 @@ void DXSample::PopulateCommandList()
     // set the root descriptor table 0 to the constant buffer descriptor heap
     commandList->SetGraphicsRootDescriptorTable(1, mainDescriptorHeap[frameIndex]->GetGPUDescriptorHandleForHeapStart());
 
+
+    ID3D12DescriptorHeap* descriptorHeaps2[] = { mainDescriptorTextureHeap };
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps2), descriptorHeaps2);
+    // set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
+    commandList->SetGraphicsRootDescriptorTable(2, mainDescriptorTextureHeap->GetGPUDescriptorHandleForHeapStart());
+
     // draw triangle
     commandList->RSSetViewports(1, &viewport); // set the viewports
     commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
@@ -747,6 +962,8 @@ void DXSample::OnInit()
     CreatePSO();
     CreateViewPort();
     CreateMatrix();
+    CreateTexture();
+    UploadAllResources();
 }
 
 void DXSample::OnUpdate()
@@ -884,8 +1101,8 @@ void DXSample::OnDestroy()
 
     // get swapchain out of full screen before exiting
     BOOL fs = false;
-    if (swapChain->GetFullscreenState(&fs, NULL))
-        swapChain->SetFullscreenState(false, NULL);
+    if (swapChain->GetFullscreenState(&fs, nullptr))
+        swapChain->SetFullscreenState(false, nullptr);
 
     SAFE_RELEASE(device);
     SAFE_RELEASE(swapChain);
