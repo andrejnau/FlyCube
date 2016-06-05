@@ -93,7 +93,7 @@ private:
     void loadModel()
     {
         Assimp::Importer import;
-        const aiScene* scene = import.ReadFile(m_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_OptimizeMeshes);
+        const aiScene* scene = import.ReadFile(m_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices);
 
         if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
         {
@@ -114,7 +114,7 @@ private:
 
         for (GLuint i = 0; i < node->mNumChildren; i++)
         {
-            this->processNode(node->mChildren[i], scene);
+            processNode(node->mChildren[i], scene);
         }
     }
 
@@ -131,18 +131,21 @@ private:
         {
             Mesh::Vertex vertex;
 
-            vertex.position.x = mesh->mVertices[i].x;
-            vertex.position.y = mesh->mVertices[i].y;
-            vertex.position.z = mesh->mVertices[i].z;
+            if (mesh->HasPositions())
+            {
+                vertex.position.x = mesh->mVertices[i].x;
+                vertex.position.y = mesh->mVertices[i].y;
+                vertex.position.z = mesh->mVertices[i].z;
+            }
 
-            if (mesh->mNormals)
+            if (mesh->HasNormals())
             {
                 vertex.normal.x = mesh->mNormals[i].x;
                 vertex.normal.y = mesh->mNormals[i].y;
                 vertex.normal.z = mesh->mNormals[i].z;
             }
 
-            if (mesh->mTextureCoords[0])
+            if (mesh->HasTextureCoords(0))
             {
                 // A vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
                 // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
@@ -177,19 +180,19 @@ private:
             aiColor4D spec;
             float shininess;
 
-            if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_SHININESS, &shininess))
+            if (material->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
             {
                 retMeh.material.shininess = shininess;
             }
-            if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &amb))
+            if (material->Get(AI_MATKEY_COLOR_AMBIENT, amb) == aiReturn_SUCCESS)
             {
                 retMeh.material.amb = glm::vec3(aiColor4DToVec4(amb));
             }
-            if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &dif))
+            if (material->Get(AI_MATKEY_COLOR_DIFFUSE, dif) == aiReturn_SUCCESS)
             {
                 retMeh.material.dif = glm::vec3(aiColor4DToVec4(dif));
             }
-            if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &spec))
+            if (material->Get(AI_MATKEY_COLOR_SPECULAR, spec) == aiReturn_SUCCESS)
             {
                 retMeh.material.spec = glm::vec3(aiColor4DToVec4(spec));
             }
