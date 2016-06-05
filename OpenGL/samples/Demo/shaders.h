@@ -114,19 +114,19 @@ struct ShaderLight
             void main()
             {
                 // Ambient
-                vec3 ambient = light.ambient * texture(texture_diffuse, q_texCoord).rgb;
+                vec3 ambient = light.ambient * material.ambient;
 
                 // Diffuse
                 vec3 norm = normalize(q_normal);
                 vec3 lightDir = normalize(light.position - q_pos);
                 float diff = max(dot(norm, lightDir), 0.0);
-                vec3 diffuse = light.diffuse * diff * texture(texture_diffuse, q_texCoord).rgb;
+                vec3 diffuse = light.diffuse * diff * material.diffuse * texture(texture_diffuse, q_texCoord).rgb;
 
                 // Specular
                 vec3 viewDir = normalize(viewPos - q_pos);
                 vec3 reflectDir = reflect(-lightDir, norm);
                 float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-                vec3 specular = light.specular * spec * texture(texture_specular, q_texCoord).rgb;
+                vec3 specular = light.specular * spec * material.specular * texture(texture_specular, q_texCoord).rgb;
 
                 vec3 result = (ambient + diffuse + specular);
                 out_Color = vec4(result, 1.0);

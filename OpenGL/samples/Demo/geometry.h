@@ -35,6 +35,7 @@ struct Mesh
         glm::vec3 amb;
         glm::vec3 dif;
         glm::vec3 spec;
+        float shininess;
     } material;
 
     std::vector<Vertex> vertices;
@@ -134,9 +135,12 @@ private:
             vertex.position.y = mesh->mVertices[i].y;
             vertex.position.z = mesh->mVertices[i].z;
 
-            vertex.normal.x = mesh->mNormals[i].x;
-            vertex.normal.y = mesh->mNormals[i].y;
-            vertex.normal.z = mesh->mNormals[i].z;
+            if (mesh->mNormals)
+            {
+                vertex.normal.x = mesh->mNormals[i].x;
+                vertex.normal.y = mesh->mNormals[i].y;
+                vertex.normal.z = mesh->mNormals[i].z;
+            }
 
             if (mesh->mTextureCoords[0])
             {
@@ -171,7 +175,12 @@ private:
             aiColor4D amb;
             aiColor4D dif;
             aiColor4D spec;
+            float shininess;
 
+            if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_SHININESS, &shininess))
+            {
+                retMeh.material.shininess = shininess;
+            }
             if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &amb))
             {
                 retMeh.material.amb = glm::vec3(aiColor4DToVec4(amb));
@@ -182,7 +191,7 @@ private:
             }
             if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &spec))
             {
-                retMeh.material.dif = glm::vec3(aiColor4DToVec4(spec));
+                retMeh.material.spec = glm::vec3(aiColor4DToVec4(spec));
             }
         }
 

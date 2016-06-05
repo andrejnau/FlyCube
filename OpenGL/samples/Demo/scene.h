@@ -103,10 +103,10 @@ public:
             glActiveTexture(GL_TEXTURE0);
 
             Material material;
-            material.ambient = cur_mesh.material.amb;
+            material.ambient = max(glm::vec3(0.3), cur_mesh.material.amb);
             material.diffuse = cur_mesh.material.dif;
             material.specular = cur_mesh.material.spec;
-            material.shininess = 96.078431;
+            material.shininess = cur_mesh.material.shininess;
 
             glUniform3fv(shaderLight.loc_material.ambient, 1, glm::value_ptr(material.ambient));
             glUniform3fv(shaderLight.loc_material.diffuse, 1, glm::value_ptr(material.diffuse));
