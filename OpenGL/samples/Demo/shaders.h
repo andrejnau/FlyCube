@@ -98,8 +98,17 @@ struct ShaderLight
                 vec3 specular;
             };
 
+            uniform sampler2D texture_normalMap;
+            uniform sampler2D texture_ambient;
             uniform sampler2D texture_diffuse;
             uniform sampler2D texture_specular;
+            uniform sampler2D texture_alpha;
+
+            uniform int enable_texture_normalMap;
+            uniform int enable_texture_ambient;
+            uniform int enable_texture_diffuse;
+            uniform int enable_texture_specular;
+            uniform int enable_texture_alpha;
 
             uniform Material material;
             uniform Light light;
@@ -110,26 +119,37 @@ struct ShaderLight
             in vec3 q_normal;
             in vec2 q_texCoord;
 
-
             void main()
             {
+                vec3 norm = normalize(q_normal);
+                if (enable_texture_normalMap != 0)
+                    norm = normalize(texture(texture_normalMap, q_texCoord).rgb * 2.0 - 1.0);
+
                 // Ambient
                 vec3 ambient = light.ambient * material.ambient;
+                if (enable_texture_ambient != 0)
+                    ambient *= texture(texture_ambient, q_texCoord).rgb;
 
                 // Diffuse
-                vec3 norm = normalize(q_normal);
                 vec3 lightDir = normalize(light.position - q_pos);
                 float diff = max(dot(norm, lightDir), 0.0);
-                vec3 diffuse = light.diffuse * diff * material.diffuse * texture(texture_diffuse, q_texCoord).rgb;
+                vec3 diffuse = light.diffuse * diff * material.diffuse;
+                if (enable_texture_diffuse != 0)
+                    diffuse *= texture(texture_diffuse, q_texCoord).rgb;
 
                 // Specular
                 vec3 viewDir = normalize(viewPos - q_pos);
                 vec3 reflectDir = reflect(-lightDir, norm);
                 float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-                vec3 specular = light.specular * spec * material.specular * texture(texture_specular, q_texCoord).rgb;
+                vec3 specular = light.specular * spec * material.specular;
+                if (enable_texture_specular != 0)
+                    specular *= texture(texture_specular, q_texCoord).rgb;
 
-                vec3 result = (ambient + diffuse + specular);
-                out_Color = vec4(result, 1.0);
+                vec4 result = vec4(ambient + diffuse + specular, 1.0);
+                if (enable_texture_alpha != 0)
+                    result.a = texture(texture_alpha, q_texCoord).a;
+
+                out_Color = result;
             }
         )fs";
 };

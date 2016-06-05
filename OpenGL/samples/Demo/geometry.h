@@ -36,6 +36,7 @@ struct Mesh
         glm::vec3 dif;
         glm::vec3 spec;
         float shininess;
+        aiString name;
     } material;
 
     std::vector<Vertex> vertices;
@@ -172,13 +173,17 @@ private:
         if (mesh->mMaterialIndex >= 0)
         {
             aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+            loadMaterialTextures(retMeh, material, aiTextureType_AMBIENT);
             loadMaterialTextures(retMeh, material, aiTextureType_DIFFUSE);
             loadMaterialTextures(retMeh, material, aiTextureType_SPECULAR);
+            loadMaterialTextures(retMeh, material, aiTextureType_HEIGHT);
+            loadMaterialTextures(retMeh, material, aiTextureType_OPACITY);
 
             aiColor4D amb;
             aiColor4D dif;
             aiColor4D spec;
             float shininess;
+            aiString name;
 
             if (material->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
             {
@@ -196,11 +201,17 @@ private:
             {
                 retMeh.material.spec = glm::vec3(aiColor4DToVec4(spec));
             }
+            if (material->Get(AI_MATKEY_NAME, name) == aiReturn_SUCCESS)
+            {
+                retMeh.material.name = name;
+            }
         }
 
         retMeh.setupMesh();
         return retMeh;
     }
+
+
 
     void loadMaterialTextures(Mesh &retMeh, aiMaterial* mat, aiTextureType type)
     {
@@ -223,12 +234,12 @@ private:
     {
 
         int width, height;
-        unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+        unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
 
         GLuint textureID;
         glGenTextures(1, &textureID);
         glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, (GLint)GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+        glTexImage2D(GL_TEXTURE_2D, 0, (GLint)GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
         glGenerateMipmap(GL_TEXTURE_2D);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_REPEAT);
