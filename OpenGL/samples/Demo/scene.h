@@ -73,7 +73,7 @@ public:
 
         Light light;
 
-        light.ambient = glm::vec3(0.3f, 0.3f, 0.3f);
+        light.ambient = glm::vec3(0.5f, 0.5f, 0.5f);
         light.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
         light.specular = glm::vec3(1.0f, 1.0f, 1.0f);
 
@@ -138,7 +138,7 @@ public:
             glActiveTexture(GL_TEXTURE0);
 
             Material material;
-            material.ambient = max(glm::vec3(0.3), cur_mesh.material.amb);
+            material.ambient = cur_mesh.material.amb;
             material.diffuse = cur_mesh.material.dif;
             material.specular = cur_mesh.material.spec;
             material.shininess = cur_mesh.material.shininess;
