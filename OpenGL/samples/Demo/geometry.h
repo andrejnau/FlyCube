@@ -21,6 +21,8 @@ struct Mesh
         glm::vec3 position;
         glm::vec3 normal;
         glm::vec2 texCoords;
+        glm::vec3 tangent;
+        glm::vec3 bitangent;
     };
 
     struct Texture
@@ -68,6 +70,12 @@ struct Mesh
         glEnableVertexAttribArray(TEXTURE_ATTRIB);
         glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, texCoords));
 
+        glEnableVertexAttribArray(TANGENT_ATTRIB);
+        glVertexAttribPointer(TANGENT_ATTRIB, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, tangent));
+
+        glEnableVertexAttribArray(BITANGENT_ATTRIB);
+        glVertexAttribPointer(BITANGENT_ATTRIB, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, bitangent));
+
         glBindVertexArray(0);
     }
 };
@@ -94,7 +102,7 @@ private:
     void loadModel()
     {
         Assimp::Importer import;
-        const aiScene* scene = import.ReadFile(m_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices);
+        const aiScene* scene = import.ReadFile(m_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace);
 
         if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
         {
@@ -144,6 +152,17 @@ private:
                 vertex.normal.x = mesh->mNormals[i].x;
                 vertex.normal.y = mesh->mNormals[i].y;
                 vertex.normal.z = mesh->mNormals[i].z;
+            }
+
+            if (mesh->HasTangentsAndBitangents())
+            {
+                vertex.tangent.x = mesh->mTangents[i].x;
+                vertex.tangent.y = mesh->mTangents[i].y;
+                vertex.tangent.z = mesh->mTangents[i].z;
+
+                vertex.bitangent.x = mesh->mBitangents[i].x;
+                vertex.bitangent.y = mesh->mBitangents[i].y;
+                vertex.bitangent.z = mesh->mBitangents[i].z;
             }
 
             if (mesh->HasTextureCoords(0))

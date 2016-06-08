@@ -29,10 +29,7 @@ public:
         glEnable(GL_DEPTH_TEST);
         glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
 
-        lightPosition = glm::vec3(5.0f, 5.0f, 5.0f);
-        light_camera.SetCameraPos(lightPosition);
-
-        m_camera.SetCameraPos(glm::vec3(10.0f, 5.0f, 10.0f));
+        m_camera.SetCameraPos(glm::vec3(10.0f, 5.0f, 7.0f));
 
         return true;
     }
@@ -55,9 +52,6 @@ public:
         float dt = std::min(0.001f, elapsed / 1500.0f);
         angle += dt;
 
-        light_camera.SetCameraPos(lightPosition);
-        light_camera.SetCameraTarget(-lightPosition);
-
         draw_obj();
     }
 
@@ -75,15 +69,14 @@ public:
         glUniformMatrix4fv(shaderLight.loc_view, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(shaderLight.loc_projection, 1, GL_FALSE, glm::value_ptr(projection));
         glUniform3fv(shaderLight.loc_viewPos, 1, glm::value_ptr(m_camera.GetCameraPos()));
+        glUniform3fv(shaderLight.loc_lightPos, 1, glm::value_ptr(m_camera.GetCameraPos()));
 
         Light light;
 
-        light.position = lightPosition;
         light.ambient = glm::vec3(0.3f, 0.3f, 0.3f);
         light.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
         light.specular = glm::vec3(1.0f, 1.0f, 1.0f);
 
-        glUniform3fv(shaderLight.loc_light.position, 1, glm::value_ptr(light.position));
         glUniform3fv(shaderLight.loc_light.ambient, 1, glm::value_ptr(light.ambient));
         glUniform3fv(shaderLight.loc_light.diffuse, 1, glm::value_ptr(light.diffuse));
         glUniform3fv(shaderLight.loc_light.specular, 1, glm::value_ptr(light.specular));
@@ -105,39 +98,39 @@ public:
                 glDisable(GL_BLEND);
             }
 
-            glUniform1i(glGetUniformLocation(shaderLight.program, "enable_texture_ambient"), 0);
-            glUniform1i(glGetUniformLocation(shaderLight.program, "enable_texture_diffuse"), 0);
-            glUniform1i(glGetUniformLocation(shaderLight.program, "enable_texture_specular"), 0);
-            glUniform1i(glGetUniformLocation(shaderLight.program, "enable_texture_normalMap"), 0);
-            glUniform1i(glGetUniformLocation(shaderLight.program, "enable_texture_alpha"), 0);
+            glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_ambient"), 0);
+            glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_diffuse"), 0);
+            glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_specular"), 0);
+            glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_normalMap"), 0);
+            glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_alpha"), 0);
 
             for (GLuint i = 0; i < cur_mesh.textures.size(); i++)
             {
                 glActiveTexture(GL_TEXTURE0 + i);
                 if (cur_mesh.textures[i].type == aiTextureType_AMBIENT)
                 {
-                    glUniform1i(glGetUniformLocation(shaderLight.program, "texture_ambient"), i);
-                    glUniform1i(glGetUniformLocation(shaderLight.program, "enable_texture_ambient"), 1);
+                    glUniform1i(glGetUniformLocation(shaderLight.program, "textures.ambient"), i);
+                    glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_ambient"), 1);
                 }
                 if (cur_mesh.textures[i].type == aiTextureType_DIFFUSE)
                 {
-                    glUniform1i(glGetUniformLocation(shaderLight.program, "texture_diffuse"), i);
-                    glUniform1i(glGetUniformLocation(shaderLight.program, "enable_texture_diffuse"), 1);
+                    glUniform1i(glGetUniformLocation(shaderLight.program, "textures.diffuse"), i);
+                    glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_diffuse"), 1);
                 }
                 else if (cur_mesh.textures[i].type == aiTextureType_SPECULAR)
                 {
-                    glUniform1i(glGetUniformLocation(shaderLight.program, "texture_specular"), i);
-                    glUniform1i(glGetUniformLocation(shaderLight.program, "enable_texture_specular"), 1);
+                    glUniform1i(glGetUniformLocation(shaderLight.program, "textures.specular"), i);
+                    glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_specular"), 1);
                 }
                 else if (cur_mesh.textures[i].type == aiTextureType_HEIGHT)
                 {
-                    glUniform1i(glGetUniformLocation(shaderLight.program, "texture_normalMap"), i);
-                    glUniform1i(glGetUniformLocation(shaderLight.program, "enable_texture_normalMap"), 1);
+                    glUniform1i(glGetUniformLocation(shaderLight.program, "textures.normalMap"), i);
+                    glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_normalMap"), 1);
                 }
                 else if (cur_mesh.textures[i].type == aiTextureType_OPACITY)
                 {
-                    glUniform1i(glGetUniformLocation(shaderLight.program, "texture_alpha"), i);
-                    glUniform1i(glGetUniformLocation(shaderLight.program, "enable_texture_alpha"), 1);
+                    glUniform1i(glGetUniformLocation(shaderLight.program, "textures.alpha"), i);
+                    glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_alpha"), 1);
                 }
 
                 glBindTexture(GL_TEXTURE_2D, cur_mesh.textures[i].id);
@@ -197,7 +190,6 @@ private:
 
     struct Light
     {
-        glm::vec3 position;
         glm::vec3 ambient;
         glm::vec3 diffuse;
         glm::vec3 specular;
@@ -205,8 +197,6 @@ private:
 
 private:
     float eps = 1e-3f;
-
-    glm::vec3 lightPosition;
 
     glm::vec3 axis_x;
     glm::vec3 axis_y;
@@ -221,5 +211,4 @@ private:
 
     ShaderLight shaderLight;
     Camera m_camera;
-    Camera light_camera;
 };

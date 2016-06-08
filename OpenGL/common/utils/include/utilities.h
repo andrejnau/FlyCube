@@ -15,6 +15,8 @@
 #define POS_ATTRIB 0
 #define NORMAL_ATTRIB 1
 #define TEXTURE_ATTRIB 2
+#define TANGENT_ATTRIB 3
+#define BITANGENT_ATTRIB 4
 
 static bool checkGlError(const char* funcName)
 {
