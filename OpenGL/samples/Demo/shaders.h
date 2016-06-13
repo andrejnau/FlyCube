@@ -87,11 +87,15 @@ struct ShaderLight
                 vs_out.LightPos = lightPos;
                 vs_out.ViewPos  = viewPos;
 
-                mat3 normalMatrix = transpose(inverse(mat3(model)));
+                mat3 normalMatrix = mat3(transpose(inverse(model)));
+                vec3 T = normalize(normalMatrix * tangent);
+                vec3 N = normalize(normalMatrix * normal);
+                T = normalize(T - dot(T, N) * N);
+                vec3 B = cross(T, N);
 
-                vs_out.Tangent = normalize(normalMatrix * tangent);
-                vs_out.Bitangent = normalize(normalMatrix * bitangent);
-                vs_out.Normal = normalize(normalMatrix * normal);
+                vs_out.Tangent = T;
+                vs_out.Bitangent = B;
+                vs_out.Normal = N;
             }
         )vs";
 
@@ -189,7 +193,11 @@ struct ShaderLight
 
                 vec4 result = vec4(ambient + diffuse + specular, 1.0);
                 if (textures.has_alpha != 0)
-                    result.a = texture(textures.alpha, fs_in.TexCoords).a;
+                {
+                    result.a = texture(textures.alpha, fs_in.TexCoords).r;
+                    if (result.a < 0.5)
+                        discard;
+                }
 
                 out_Color = result;
             }

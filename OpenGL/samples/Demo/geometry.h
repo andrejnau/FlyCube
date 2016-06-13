@@ -14,6 +14,7 @@
 
 #include <SOIL.h>
 
+
 struct Mesh
 {
     struct Vertex
@@ -34,10 +35,10 @@ struct Mesh
 
     struct Material
     {
-        glm::vec3 amb;
-        glm::vec3 dif;
-        glm::vec3 spec;
-        float shininess;
+        glm::vec3 amb = glm::vec3(0.0);
+        glm::vec3 dif = glm::vec3(1.0);
+        glm::vec3 spec = glm::vec3(1.0);
+        float shininess = 32.0;
         aiString name;
     } material;
 
@@ -198,6 +199,43 @@ private:
             loadMaterialTextures(retMeh, material, aiTextureType_HEIGHT);
             loadMaterialTextures(retMeh, material, aiTextureType_OPACITY);
 
+            std::vector<Mesh::Texture> add;
+
+            std::pair<std::string, aiTextureType> map_from[] = {
+                { "_diff", aiTextureType_DIFFUSE } };
+
+            std::pair<std::string, aiTextureType> map_to[] = {
+                { "_spec", aiTextureType_SPECULAR } };
+
+            for (auto &from_type : map_from)
+            {
+                for (auto &tex : retMeh.textures)
+                {
+                    if (from_type.second != tex.type)
+                        continue;
+
+                    for (auto &to_type : map_to)
+                    {
+                        std::string path = tex.path.C_Str();
+                        size_t loc = path.find(from_type.first);
+                        if (loc == std::string::npos)
+                            continue;
+
+                        path.replace(loc, from_type.first.size(), to_type.first);
+                        if (std::ifstream(path).good())
+                            continue;
+
+                        Mesh::Texture texture;
+                        texture.id = -1;
+                        texture.type = to_type.second;
+                        texture.path = path;
+                        TextureFromFile(texture);
+                        add.push_back(texture);
+                    }
+                }
+            }
+            retMeh.textures.insert(retMeh.textures.end(), add.begin(), add.end());
+
             aiColor4D amb;
             aiColor4D dif;
             aiColor4D spec;
@@ -218,7 +256,7 @@ private:
             }
             if (material->Get(AI_MATKEY_COLOR_SPECULAR, spec) == aiReturn_SUCCESS)
             {
-                retMeh.material.spec = glm::vec3(aiColor4DToVec4(spec));
+                retMeh.material.spec = max(glm::vec3(0.05f), glm::vec3(aiColor4DToVec4(spec)));
             }
             if (material->Get(AI_MATKEY_NAME, name) == aiReturn_SUCCESS)
             {
@@ -230,30 +268,26 @@ private:
         return retMeh;
     }
 
-
-
     void loadMaterialTextures(Mesh &retMeh, aiMaterial* mat, aiTextureType type)
     {
         for (GLuint i = 0; i < mat->GetTextureCount(type); i++)
         {
             aiString str;
             mat->GetTexture(type, i, &str);
-            std::string filename = m_directory + "/" + str.C_Str();
-
             Mesh::Texture texture;
-            texture.id = TextureFromFile(filename);
+            texture.id = -1;
             texture.type = type;
-            texture.path = filename;
-
+            texture.path = m_directory + "/" + str.C_Str();
+            TextureFromFile(texture);
             retMeh.textures.push_back(texture);
         }
     }
 
-    GLint TextureFromFile(const std::string & filename)
+    void TextureFromFile(Mesh::Texture &texture)
     {
 
         int width, height;
-        unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
+        unsigned char* image = SOIL_load_image(texture.path.C_Str(), &width, &height, 0, SOIL_LOAD_RGBA);
 
         GLuint textureID;
         glGenTextures(1, &textureID);
@@ -261,14 +295,24 @@ private:
         glTexImage2D(GL_TEXTURE_2D, 0, (GLint)GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
         glGenerateMipmap(GL_TEXTURE_2D);
 
+        if (texture.type == aiTextureType_OPACITY)
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_NEAREST);
+        }
+        else
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
+        }
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
+
         glBindTexture(GL_TEXTURE_2D, 0);
 
         SOIL_free_image_data(image);
 
-        return textureID;
+        texture.id = textureID;
     }
 };

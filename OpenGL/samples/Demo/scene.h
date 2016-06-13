@@ -20,7 +20,7 @@ public:
         : axis_x(1.0f, 0.0f, 0.0f)
         , axis_y(0.0f, 1.0f, 0.0f)
         , axis_z(0.0f, 0.0f, 1.0f)
-        , modelOfFile("model/Pony_cartoon/Pony_cartoon.obj")
+        , modelOfFile("model/sponza/sponza.obj")
     {
     }
 
@@ -28,9 +28,6 @@ public:
     {
         glEnable(GL_DEPTH_TEST);
         glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
-
-        m_camera.SetCameraPos(glm::vec3(10.0f, 5.0f, 7.0f));
-
         return true;
     }
 
@@ -72,10 +69,9 @@ public:
         glUniform3fv(shaderLight.loc_lightPos, 1, glm::value_ptr(m_camera.GetCameraPos()));
 
         Light light;
-
-        light.ambient = glm::vec3(0.5f, 0.5f, 0.5f);
-        light.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-        light.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+        light.ambient = 0.5f * glm::vec3(1.0f);
+        light.diffuse = 1.0f * glm::vec3(1.0f);
+        light.specular = 1.0f * glm::vec3(1.0f);
 
         glUniform3fv(shaderLight.loc_light.ambient, 1, glm::value_ptr(light.ambient));
         glUniform3fv(shaderLight.loc_light.diffuse, 1, glm::value_ptr(light.diffuse));
@@ -83,20 +79,10 @@ public:
 
         for (Mesh & cur_mesh : modelOfFile.meshes)
         {
-            if (std::string(cur_mesh.material.name.C_Str()) == "Windows_SG")
-            {
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_ONE, GL_ONE);
-            }
-            else if (std::string(cur_mesh.material.name.C_Str()) == "Ground_SG")
-            {
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            }
-            else
-            {
-                glDisable(GL_BLEND);
-            }
+            glDisable(GL_BLEND);
+
+            if (std::string(cur_mesh.material.name.C_Str()) == "16___Default")
+                continue;
 
             glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_ambient"), 0);
             glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_diffuse"), 0);
@@ -131,6 +117,10 @@ public:
                 {
                     glUniform1i(glGetUniformLocation(shaderLight.program, "textures.alpha"), i);
                     glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_alpha"), 1);
+
+                    glEnable(GL_BLEND);
+                    glBlendEquation(GL_FUNC_ADD);
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                 }
 
                 glBindTexture(GL_TEXTURE_2D, cur_mesh.textures[i].id);
