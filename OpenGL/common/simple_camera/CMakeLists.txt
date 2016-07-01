@@ -14,8 +14,6 @@ set(sources
 
 add_library(${PROJECT} ${headers} ${sources})
 
-target_link_libraries(${PROJECT} glbinding)
-
 target_include_directories(${PROJECT}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include

@@ -16,6 +16,7 @@ struct ShaderLight
         loc_model = glGetUniformLocation(program, "model");
         loc_view = glGetUniformLocation(program, "view");
         loc_projection = glGetUniformLocation(program, "projection");
+        loc_depthBiasMVP = glGetUniformLocation(program, "depthBiasMVP");
 
         loc_material.ambient = glGetUniformLocation(program, "material.ambient");
         loc_material.diffuse = glGetUniformLocation(program, "material.diffuse");
@@ -50,6 +51,7 @@ struct ShaderLight
     GLint loc_model;
     GLint loc_view;
     GLint loc_projection;
+    GLint loc_depthBiasMVP;
 
     std::string vertex =
         R"vs(
@@ -64,6 +66,7 @@ struct ShaderLight
             uniform mat4 model;
             uniform mat4 view;
             uniform mat4 projection;
+            uniform mat4 depthBiasMVP;
 
             uniform vec3 lightPos;
             uniform vec3 viewPos;
@@ -77,12 +80,13 @@ struct ShaderLight
                 vec3 Bitangent;
                 vec3 LightPos;
                 vec3 ViewPos;
+                vec4 ShadowCoord;
             } vs_out;
 
             void main()
             {
                 gl_Position = projection * view * model * vec4(position, 1.0f);
-                vs_out.FragPos = vec3(model * vec4(position, 1.0));
+                vs_out.FragPos = vec3(model * vec4(position, 1.0f));
                 vs_out.TexCoords = texCoords;
                 vs_out.LightPos = lightPos;
                 vs_out.ViewPos  = viewPos;
@@ -96,6 +100,8 @@ struct ShaderLight
                 vs_out.Tangent = T;
                 vs_out.Bitangent = B;
                 vs_out.Normal = N;
+
+                vs_out.ShadowCoord = depthBiasMVP * model * vec4(position, 1.0f);
             }
         )vs";
 
@@ -138,6 +144,9 @@ struct ShaderLight
                 int has_alpha;
             };
 
+            uniform sampler2DShadow depthTexture;
+            uniform int has_depthTexture;
+
             uniform Material material;
             uniform Light light;
             uniform Texture textures;
@@ -151,6 +160,7 @@ struct ShaderLight
                 vec3 Bitangent;
                 vec3 LightPos;
                 vec3 ViewPos;
+                vec4 ShadowCoord;
             } fs_in;
 
             vec3 CalcBumpedNormal()
@@ -163,6 +173,23 @@ struct ShaderLight
                 mat3 tbn = mat3(fs_in.Tangent, fs_in.Bitangent, fs_in.Normal); // TBN calculated in fragment shader
                 normal = normalize(tbn * normal);
                 return normal;
+            }
+
+            float GetShadowPCF(in vec4 smcoord)
+            {
+                float res = 0.0;
+                smcoord.z -= 0.0005 * smcoord.w;
+                res += textureProjOffset(depthTexture, smcoord, ivec2(-1, -1));
+                res += textureProjOffset(depthTexture, smcoord, ivec2(0, -1));
+                res += textureProjOffset(depthTexture, smcoord, ivec2(1, -1));
+                res += textureProjOffset(depthTexture, smcoord, ivec2(-1, 0));
+                res += textureProjOffset(depthTexture, smcoord, ivec2(0, 0));
+                res += textureProjOffset(depthTexture, smcoord, ivec2(1, 0));
+                res += textureProjOffset(depthTexture, smcoord, ivec2(-1, 1));
+                res += textureProjOffset(depthTexture, smcoord, ivec2(0, 1));
+                res += textureProjOffset(depthTexture, smcoord, ivec2(1, 1));
+                res /= 9.0;
+                return max(0.25, res);
             }
 
             void main()
@@ -191,7 +218,14 @@ struct ShaderLight
                 if (textures.has_specular != 0)
                     specular *= texture(textures.specular, fs_in.TexCoords).rgb;
 
-                vec4 result = vec4(ambient + diffuse + specular, 1.0);
+                float shadow  = 1.0;
+                if (has_depthTexture != 0)
+                {
+                    shadow = GetShadowPCF(fs_in.ShadowCoord);
+                }
+
+                vec4 result = vec4(ambient + diffuse * shadow + specular * shadow, 1.0);
+
                 if (textures.has_alpha != 0)
                 {
                     result.a = texture(textures.alpha, fs_in.TexCoords).r;
@@ -202,4 +236,108 @@ struct ShaderLight
                 out_Color = result;
             }
         )fs";
+};
+
+struct ShaderSimpleColor
+{
+    ShaderSimpleColor()
+    {
+        program = createProgram(vertex.c_str(), fragment.c_str());
+
+        loc_objectColor = glGetUniformLocation(program, "objectColor");
+        loc_uMVP = glGetUniformLocation(program, "u_MVP");
+    }
+
+    GLuint program;
+    GLint loc_objectColor;
+    GLint loc_uMVP;
+
+    std::string vertex =
+        R"vs(
+            #version 300 es
+            precision highp float;
+            layout(location = )vs" STRV(POS_ATTRIB) R"vs() in vec3 a_pos;
+
+                    uniform mat4 u_MVP;
+
+                    void main()
+            {
+                gl_Position = u_MVP * vec4(a_pos, 1.0);
+            }
+        )vs";
+
+    std::string fragment =
+        R"fs(
+            #version 300 es
+            precision highp float;
+            out vec4 out_Color;
+
+                    uniform vec3 objectColor;
+
+                    void main()
+            {
+                out_Color = vec4(objectColor, 1.0);
+            }
+        )fs";
+};
+
+struct ShaderShadowView
+{
+    ShaderShadowView()
+    {
+        program = createProgram(vertex.c_str(), fragment.c_str());
+        loc_MVP = glGetUniformLocation(program, "u_m4MVP");
+    }
+
+    GLuint program;
+    GLint loc_MVP;
+
+    std::string vertex =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "layout(location = " STRV(POS_ATTRIB) ") in vec3 pos;\n"
+        "layout(location = " STRV(TEXTURE_ATTRIB) ") in vec2 texCoord;\n"
+        "uniform mat4 u_m4MVP;\n"
+        "out vec2 texCoordFS;\n"
+        "void main() {\n"
+        "    texCoordFS = texCoord;\n"
+        "    gl_Position = u_m4MVP * vec4(pos, 1.0);\n"
+        "}\n";
+
+    std::string fragment =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "uniform sampler2D sampler;\n"
+        "in vec2 texCoordFS;\n"
+        "out vec4 outColor;\n"
+        "void main() {\n"
+        "    vec4 color = texture(sampler, texCoordFS);\n"
+        "    outColor = color;\n"
+        "}\n";
+};
+
+struct ShaderDepth
+{
+    ShaderDepth()
+    {
+        program = createProgram(vertex.c_str(), fragment.c_str());
+        loc_MVP = glGetUniformLocation(program, "u_m4MVP");
+    }
+
+    GLuint program;
+    GLint loc_MVP;
+
+    std::string vertex =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "layout(location = " STRV(POS_ATTRIB) ") in vec3 pos;\n"
+        "uniform mat4 u_m4MVP;\n"
+        "void main() {\n"
+        "    gl_Position = u_m4MVP * vec4(pos, 1.0);\n"
+        "}\n";
+
+    std::string fragment =
+        "#version 300 es\n"
+        "void main() {\n"
+        "}\n";
 };

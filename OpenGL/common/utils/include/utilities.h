@@ -126,9 +126,19 @@ static GLuint createProgram(const char* vtxSrc, const char* fragSrc, const char*
         program = 0;
     }
 
+exit:
+    glDeleteShader(vtxShader);
+    glDeleteShader(fragShader);
+    if (geomShader)
+        glDeleteShader(geomShader);
+    return program;
+}
+
+bool validateProgram(GLuint program)
+{
     glValidateProgram(program);
 
-
+    GLint status = 0;
     glGetProgramiv(program, GL_VALIDATE_STATUS, &status);
 
     if ((GLboolean)status == GL_FALSE)
@@ -146,16 +156,9 @@ static GLuint createProgram(const char* vtxSrc, const char* fragSrc, const char*
                 delete[] infoLog;
             }
         }
-        glDeleteProgram(program);
-        program = 0;
+        return false;
     }
-
-exit:
-    glDeleteShader(vtxShader);
-    glDeleteShader(fragShader);
-    if (geomShader)
-        glDeleteShader(geomShader);
-    return program;
+    return true;
 }
 
 static void printGlString(const char* name, GLenum s)

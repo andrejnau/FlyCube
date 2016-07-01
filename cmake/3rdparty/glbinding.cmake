@@ -1,12 +1,7 @@
-option(BUILD_SHARED_LIBS     "Build shared instead of static libraries."              OFF)
-option(OPTION_SELF_CONTAINED "Create a self-contained install with all dependencies." OFF)
+option(BUILD_SHARED_LIBS     "Build shared instead of static libraries."              ON)
 option(OPTION_BUILD_TESTS    "Build tests."                                           OFF)
-option(OPTION_BUILD_DOCS     "Build documentation."                                   OFF)
-option(OPTION_BUILD_EXAMPLES "Build examples."                                        OFF)
-option(OPTION_BUILD_TOOLS    "Build tools."                                           OFF)
-option(OPTION_EXTENSIVE_META "Provide extensive meta information for bidirectional conversion between String and OpenGL types" OFF)
 
-add_subdirectory(${project_root}/3rdparty/glbinding-master glbinding)
+add_subdirectory(${project_root}/3rdparty/glbinding-2.1.0 glbinding)
 
 set_target_properties(generate PROPERTIES FOLDER "3rdparty/glbinding")
 set_target_properties(glbinding PROPERTIES FOLDER "3rdparty/glbinding")
