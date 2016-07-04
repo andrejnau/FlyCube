@@ -357,12 +357,13 @@ void DXSample::CreatePSO()
 
     // The input layout is used by the Input Assembler so that it knows
     // how to read the vertex data bound to it.
-
     D3D12_INPUT_ELEMENT_DESC inputLayout[] =
     {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, position), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, normal), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(Mesh::Vertex, texCoords), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, tangent), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, bitangent), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
 
     // fill out an input layout description structure
@@ -753,10 +754,13 @@ void DXSample::OnUpdate()
     // map the resource heap to get a gpu virtual address to the beginning of the heap
     ASSERT_SUCCEEDED(constantBufferUploadHeaps[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&cbvGPUAddress[frameIndex])));
 
-    // update constant buffer for cube1
-    // create the wvp matrix and store in constant buffer
+    cbPerObject.model = XMMatrixTranspose(Matrix(XMMatrixRotationY(angle)));
+    cbPerObject.view = XMMatrixTranspose(cameraViewMat);
+    cbPerObject.projection = XMMatrixTranspose(cameraProjMat);
+    cbPerObject.lightPos = cbPerObject.viewPos = Vector3(cameraPosition);
+
     Matrix wvpMat = Matrix(XMMatrixRotationY(angle)) * cameraViewMat * cameraProjMat; // create wvp matrix
-    cbPerObject.wvpMat = XMMatrixTranspose(wvpMat); // must transpose wvp matrix for the gpu
+    cbPerObject.mvp = XMMatrixTranspose(wvpMat); // must transpose wvp matrix for the gpu
 
    // copy our ConstantBuffer instance to the mapped constant buffer resource
     memcpy(cbvGPUAddress[frameIndex] , &cbPerObject, sizeof(cbPerObject));

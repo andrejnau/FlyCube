@@ -115,7 +115,13 @@ private:
     // this is the structure of our constant buffer.
     struct ConstantBufferPerObject
     {
-        Matrix wvpMat;
+        Matrix model;
+        Matrix view;
+        Matrix projection;
+        Matrix mvp;
+
+        Vector3 lightPos;
+        Vector3 viewPos;
     };
 
     // Constant buffers must be 256-byte aligned which has to do with constant reads on the GPU.
