@@ -7,11 +7,6 @@
 #include <vector>
 #include <fstream>
 
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -20,15 +15,19 @@
 
 #include "Util.h"
 
+#include <SimpleMath.h>
+
+using namespace DirectX::SimpleMath;
+
 struct Mesh
 {
     struct Vertex
     {
-        glm::vec3 position;
-        glm::vec3 normal;
-        glm::vec2 texCoords;
-        glm::vec3 tangent;
-        glm::vec3 bitangent;
+        Vector3 position;
+        Vector3 normal;
+        Vector2 texCoords;
+        Vector3 tangent;
+        Vector3 bitangent;
     };
 
     struct Texture
@@ -40,9 +39,9 @@ struct Mesh
 
     struct Material
     {
-        glm::vec3 amb = glm::vec3(0.0);
-        glm::vec3 dif = glm::vec3(1.0);
-        glm::vec3 spec = glm::vec3(1.0);
+        Vector3 amb = Vector3(0.0, 0.0, 0.0);
+        Vector3 dif = Vector3(1.0, 1.0, 1.0);
+        Vector3 spec = Vector3(1.0, 1.0, 1.0);
         float shininess = 32.0;
         aiString name;
     } material;
@@ -118,9 +117,9 @@ private:
         }
     }
 
-    glm::vec4 aiColor4DToVec4(const aiColor4D& x)
+    Vector3 aiColor4DToVec3(const aiColor4D& x)
     {
-        return glm::vec4(x.r, x.g, x.b, x.a);
+        return Vector3(x.r, x.g, x.b);
     }
 
     Mesh processMesh(aiMesh* mesh, const aiScene* scene)
@@ -164,7 +163,7 @@ private:
                 vertex.texCoords.y = mesh->mTextureCoords[0][i].y;
             }
             else
-                vertex.texCoords = glm::vec2(0.0f, 0.0f);
+                vertex.texCoords = Vector2(0.0f, 0.0f);
 
             retMeh.vertices.push_back(vertex);
         }
@@ -238,15 +237,15 @@ private:
             }
             if (material->Get(AI_MATKEY_COLOR_AMBIENT, amb) == aiReturn_SUCCESS)
             {
-                retMeh.material.amb = glm::vec3(aiColor4DToVec4(amb));
+                retMeh.material.amb = Vector3(aiColor4DToVec3(amb));
             }
             if (material->Get(AI_MATKEY_COLOR_DIFFUSE, dif) == aiReturn_SUCCESS)
             {
-                retMeh.material.dif = glm::vec3(aiColor4DToVec4(dif));
+                retMeh.material.dif = Vector3(aiColor4DToVec3(dif));
             }
             if (material->Get(AI_MATKEY_COLOR_SPECULAR, spec) == aiReturn_SUCCESS)
             {
-                retMeh.material.spec = max(glm::vec3(0.05f), glm::vec3(aiColor4DToVec4(spec)));
+                retMeh.material.spec = Vector3(aiColor4DToVec3(spec));
             }
             if (material->Get(AI_MATKEY_NAME, name) == aiReturn_SUCCESS)
             {

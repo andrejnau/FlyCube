@@ -10,12 +10,14 @@
 #include <d3d12.h>
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
+#include <SimpleMath.h>
 #include <DXGI1_4.h>
 #include <wincodec.h>
 
 #include "Geometry.h"
 
 using namespace DirectX;
+using namespace DirectX::SimpleMath;
 
 class DXSample : public IDXSample
 {
@@ -111,21 +113,9 @@ private:
     ID3D12DescriptorHeap* dsDescriptorHeap; // This is a heap for our depth/stencil buffer descriptor
 
     // this is the structure of our constant buffer.
-    struct ConstantBuffer
-    {
-        XMFLOAT4 colorMultiplier;
-    };
-
-    ConstantBuffer cbColorMultiplierData; // this is the constant buffer data we will send to the gpu
-                                          // (which will be placed in the resource we created above)
-
-    UINT8* cbColorMultiplierGPUAddress[frameBufferCount]; // this is a pointer to the memory location we get when we map our constant buffer
-
-
-    // this is the structure of our constant buffer.
     struct ConstantBufferPerObject
     {
-        XMFLOAT4X4 wvpMat;
+        Matrix wvpMat;
     };
 
     // Constant buffers must be 256-byte aligned which has to do with constant reads on the GPU.
@@ -146,13 +136,13 @@ private:
 
     UINT8* cbvGPUAddress[frameBufferCount]; // this is a pointer to each of the constant buffer resource heaps
 
-    XMFLOAT4X4 cameraProjMat; // this will store our projection matrix
-    XMFLOAT4X4 cameraViewMat; // this will store our view matrix
-    XMFLOAT4X4 cubeWorldMat; // our first cubes world matrix (transformation matrix)
+    Matrix cameraProjMat; // this will store our projection matrix
+    Matrix cameraViewMat; // this will store our view matrix
+    Matrix cubeWorldMat; // our first cubes world matrix (transformation matrix)
 
-    XMFLOAT4 cameraPosition; // this is our cameras position vector
-    XMFLOAT4 cameraTarget; // a vector describing the point in space our camera is looking at
-    XMFLOAT4 cameraUp; // the worlds up vector
+    Vector4 cameraPosition; // this is our cameras position vector
+    Vector4 cameraTarget; // a vector describing the point in space our camera is looking at
+    Vector4 cameraUp; // the worlds up vector
 
     struct TexInfo
     {

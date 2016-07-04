@@ -5,7 +5,6 @@ set(target DX12)
 option(BUILD_SHARED_LIBS "Build package with shared libraries." OFF)
 include(${project_root}/cmake/3rdparty/soil.cmake)
 include(${project_root}/cmake/3rdparty/assimp.cmake)
-include(${project_root}/cmake/3rdparty/glm.cmake)
 
 add_definitions(-DPROJECT_RESOURCE_DIR="${project_root}/OpenGL/resources/")
 

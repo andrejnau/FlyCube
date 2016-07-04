@@ -426,20 +426,18 @@ void DXSample::CreateViewPort()
 void DXSample::CreateMatrix()
 {
     // build projection and view matrix
-    XMMATRIX tmpMat = XMMatrixPerspectiveFovLH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1000.0f);
-    XMStoreFloat4x4(&cameraProjMat, tmpMat);
+    cameraProjMat = XMMatrixPerspectiveFovLH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1000.0f);
 
     // set starting camera state
-    cameraPosition = XMFLOAT4(0.0f, 0.0f, 5.0f, 0.0f);
-    cameraTarget = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
-    cameraUp = XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
+    cameraPosition = Vector4(0.0f, 0.0f, 5.0f, 0.0f);
+    cameraTarget = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+    cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
 
     // build view matrix
-    XMVECTOR cPos = XMLoadFloat4(&cameraPosition);
-    XMVECTOR cTarg = XMLoadFloat4(&cameraTarget);
-    XMVECTOR cUp = XMLoadFloat4(&cameraUp);
-    tmpMat = XMMatrixLookAtLH(cPos, cTarg, cUp);
-    XMStoreFloat4x4(&cameraViewMat, tmpMat);
+    Vector4 cPos = XMLoadFloat4(&cameraPosition);
+    Vector4 cTarg = XMLoadFloat4(&cameraTarget);
+    Vector4 cUp = XMLoadFloat4(&cameraUp);
+    cameraViewMat = XMMatrixLookAtLH(cPos, cTarg, cUp);
 }
 
 void DXSample::CreateTexture()
@@ -757,11 +755,8 @@ void DXSample::OnUpdate()
 
     // update constant buffer for cube1
     // create the wvp matrix and store in constant buffer
-    XMMATRIX viewMat = XMLoadFloat4x4(&cameraViewMat); // load view matrix
-    XMMATRIX projMat = XMLoadFloat4x4(&cameraProjMat); // load projection matrix
-    XMMATRIX wvpMat = XMMatrixRotationY(angle) * viewMat * projMat; // create wvp matrix
-    XMMATRIX transposed = XMMatrixTranspose(wvpMat); // must transpose wvp matrix for the gpu
-    XMStoreFloat4x4(&cbPerObject.wvpMat, transposed); // store transposed wvp matrix in constant buffer
+    Matrix wvpMat = Matrix(XMMatrixRotationY(angle)) * cameraViewMat * cameraProjMat; // create wvp matrix
+    cbPerObject.wvpMat = XMMatrixTranspose(wvpMat); // must transpose wvp matrix for the gpu
 
    // copy our ConstantBuffer instance to the mapped constant buffer resource
     memcpy(cbvGPUAddress[frameIndex] , &cbPerObject, sizeof(cbPerObject));
