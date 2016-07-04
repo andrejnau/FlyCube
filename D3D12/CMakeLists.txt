@@ -2,7 +2,12 @@ cmake_minimum_required(VERSION 3.5)
 
 set(target DX12)
 
+option(BUILD_SHARED_LIBS "Build package with shared libraries." OFF)
+include(${project_root}/cmake/3rdparty/soil.cmake)
 include(${project_root}/cmake/3rdparty/assimp.cmake)
+include(${project_root}/cmake/3rdparty/glm.cmake)
+
+add_definitions(-DPROJECT_RESOURCE_DIR="${project_root}/OpenGL/resources/")
 
 add_subdirectory(3rdparty/d3dx12)
 
@@ -17,6 +22,7 @@ set(headers
     ${include_path}/IDXSample.h
     ${include_path}/Util.h
     ${include_path}/Utility.h
+    ${include_path}/Geometry.h
     ${include_path}/FileUtility.h
     ${include_path}/Win32Application.h
 )
@@ -54,4 +60,4 @@ add_executable(${target} WIN32 ${headers} ${sources} ${resource_files})
 
 add_definitions(-DASSETS_PATH=L"${CMAKE_CURRENT_SOURCE_DIR}/src/")
 
-target_link_libraries(${target} d3dx12 d3dcompiler dxgi d3d12)
+target_link_libraries(${target} d3dx12 d3dcompiler dxgi d3d12 assimp SOIL)

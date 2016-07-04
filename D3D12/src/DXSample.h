@@ -13,6 +13,8 @@
 #include <DXGI1_4.h>
 #include <wincodec.h>
 
+#include "Geometry.h"
+
 using namespace DirectX;
 
 class DXSample : public IDXSample
@@ -51,6 +53,8 @@ private:
     void PopulateCommandList();
 
 private:
+
+    Model m_modelOfFile;
 
     UINT m_width;
 
@@ -121,10 +125,6 @@ private:
     {
         XMFLOAT4 colorMultiplier;
     };
-
-    ID3D12DescriptorHeap* mainDescriptorHeap[frameBufferCount]; // this heap will store the descripor to our constant buffer
-
-    ID3D12Resource* constantBufferUploadHeap[frameBufferCount]; // this is the memory on the gpu where our constant buffer will be placed.
 
     ConstantBuffer cbColorMultiplierData; // this is the constant buffer data we will send to the gpu
                                           // (which will be placed in the resource we created above)
