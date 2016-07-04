@@ -1,15 +1,15 @@
-set (PROJECT mlogger)
+set (PROJECT gl_load)
 project (${PROJECT})
 
-set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(source_path "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(include_path "${CMAKE_CURRENT_SOURCE_DIR}")
+set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(headers
-    ${include_path}/mlogger.h
+    ${include_path}/gl_core_4_5.h
 )
 
 set(sources
-    ${source_path}/mlogger.cpp
+    ${source_path}/gl_core_4_5.c
 )
 
 add_library(${PROJECT} ${headers} ${sources})

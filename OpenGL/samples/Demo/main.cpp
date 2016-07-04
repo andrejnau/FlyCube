@@ -17,7 +17,7 @@ void draw_scene()
 
 void init_scene(int width, int height)
 {
-    glbinding::Binding::initialize();
+    ogl_LoadFunctions();
     renderer.reset(new tScenes());
     renderer->resize(0, 0, width, height);
     renderer->init();

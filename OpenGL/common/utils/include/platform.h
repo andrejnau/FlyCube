@@ -6,8 +6,6 @@
     #define LOG_TAG "FlyCube"
     #include <mlogger_only.h>
 #else
-    #include <glbinding/gl/gl.h>
-    #include <glbinding/Binding.h>
-    using namespace gl;
+    #include <gl_core_4_5.h>
     #include <mlogger.h>
 #endif
