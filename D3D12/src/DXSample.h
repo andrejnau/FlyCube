@@ -102,16 +102,6 @@ private:
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView; // a structure containing a pointer to the vertex data in gpu memory
                                                // the total size of the buffer, and the size of each element (vertex)
 
-    struct Vertex
-    {
-        Vertex(float x, float y, float z, float u, float v)
-            : pos(x, y, z)
-            , texCoord(u, v)
-        {}
-        XMFLOAT3 pos;
-        XMFLOAT2 texCoord;
-    };
-
     ID3D12Resource* indexBuffer; // a default buffer in GPU memory that we will load index data for our triangle into
 
     D3D12_INDEX_BUFFER_VIEW indexBufferView; // a structure holding information about the index buffer
@@ -158,20 +148,11 @@ private:
 
     XMFLOAT4X4 cameraProjMat; // this will store our projection matrix
     XMFLOAT4X4 cameraViewMat; // this will store our view matrix
+    XMFLOAT4X4 cubeWorldMat; // our first cubes world matrix (transformation matrix)
 
     XMFLOAT4 cameraPosition; // this is our cameras position vector
     XMFLOAT4 cameraTarget; // a vector describing the point in space our camera is looking at
     XMFLOAT4 cameraUp; // the worlds up vector
-
-    XMFLOAT4X4 cube1WorldMat; // our first cubes world matrix (transformation matrix)
-    XMFLOAT4X4 cube1RotMat; // this will keep track of our rotation for the first cube
-    XMFLOAT4 cube1Position; // our first cubes position in space
-
-    XMFLOAT4X4 cube2WorldMat; // our first cubes world matrix (transformation matrix)
-    XMFLOAT4X4 cube2RotMat; // this will keep track of our rotation for the second cube
-    XMFLOAT4 cube2PositionOffset; // our second cube will rotate around the first cube, so this is the position offset from the first cube
-
-    int numCubeIndices; // the number of indices to draw the cube
 
     struct TexInfo
     {
