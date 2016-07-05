@@ -11,8 +11,6 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <SOIL.h>
-
 #include "Util.h"
 
 #include <SimpleMath.h>
@@ -32,9 +30,9 @@ struct Mesh
 
     struct Texture
     {
-        uint32_t id;
+        uint32_t offset;
         aiTextureType type;
-        aiString path;
+        std::string path;
     };
 
     struct Material
@@ -205,20 +203,18 @@ private:
 
                     for (auto &to_type : map_to)
                     {
-                        std::string path = tex.path.C_Str();
+                        std::string path = tex.path;
                         size_t loc = path.find(from_type.first);
                         if (loc == std::string::npos)
                             continue;
 
                         path.replace(loc, from_type.first.size(), to_type.first);
-                        if (std::ifstream(path).good())
+                        if (!std::ifstream(path).good())
                             continue;
 
                         Mesh::Texture texture;
-                        texture.id = -1;
                         texture.type = to_type.second;
                         texture.path = path;
-                        TextureFromFile(texture);
                         add.push_back(texture);
                     }
                 }
@@ -263,20 +259,12 @@ private:
             aiString str;
             mat->GetTexture(type, i, &str);
             Mesh::Texture texture;
-            texture.id = -1;
             texture.type = type;
             texture.path = m_directory + "/" + str.C_Str();
-            TextureFromFile(texture);
+
+            if (!std::ifstream(texture.path).good())
+                continue;
             retMeh.textures.push_back(texture);
         }
-    }
-
-    void TextureFromFile(Mesh::Texture &texture)
-    {
-        return;
-        int width, height;
-        unsigned char* image = SOIL_load_image(texture.path.C_Str(), &width, &height, 0, SOIL_LOAD_RGBA);
-        SOIL_free_image_data(image);
-        texture.id = 0;
     }
 };

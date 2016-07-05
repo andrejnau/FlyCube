@@ -42,13 +42,13 @@ private:
     void CreateDepthStencil();
     void CreateCommandAllocators();
     void CreateCommandList();
-    void CreateVertex();
+    void CreateGeometry();
     void CreateConstantBuffer();
     void CreateRootSignature();
     void CreatePSO();
     void CreateViewPort();
     void CreateMatrix();
-    void CreateTexture();
+    void CreateTexture(const std::string & path, uint32_t offset);
     void UploadAllResources();
     void WaitForPreviousFrame();
     void PopulateCommandList();
@@ -97,15 +97,6 @@ private:
     D3D12_VIEWPORT viewport; // area that output from rasterizer will be stretched to.
 
     D3D12_RECT scissorRect; // the area to draw in. pixels outside that area will not be drawn onto
-
-    ID3D12Resource* vertexBuffer; // a default buffer in GPU memory that we will load vertex data for our triangle into
-
-    D3D12_VERTEX_BUFFER_VIEW vertexBufferView; // a structure containing a pointer to the vertex data in gpu memory
-                                               // the total size of the buffer, and the size of each element (vertex)
-
-    ID3D12Resource* indexBuffer; // a default buffer in GPU memory that we will load index data for our triangle into
-
-    D3D12_INDEX_BUFFER_VIEW indexBufferView; // a structure holding information about the index buffer
 
     ID3D12Resource* depthStencilBuffer; // This is the memory for our depth buffer. it will also be used for a stencil buffer in a later tutorial
 
@@ -160,7 +151,7 @@ private:
         int bytesPerRow;
     };
 
-    void LoadImageDataFromFile(std::wstring filename, TexInfo& texInfo);
+    void LoadImageDataFromFile(std::string filename, TexInfo& texInfo);
 
     ID3D12Resource* textureBuffer; // the resource heap containing our texture
     ID3D12DescriptorHeap* mainDescriptorTextureHeap;

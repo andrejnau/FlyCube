@@ -6,19 +6,11 @@
 #include <SOIL.h>
 
 #include <chrono>
-#include <codecvt>
-#include <string>
-
-std::string wstring_to_utf8(const std::wstring& str)
-{
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
-    return myconv.to_bytes(str);
-}
 
 DXSample::DXSample(UINT width, UINT height) :
     m_width(width),
     m_height(height),
-    m_modelOfFile("model/suzanne.fbx")
+    m_modelOfFile("model/nanosuit/nanosuit.obj")
 {}
 
 DXSample::~DXSample()
@@ -188,11 +180,30 @@ void DXSample::CreateCommandList()
     ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator[frameIndex], nullptr, IID_PPV_ARGS(&commandList)));
 }
 
-void DXSample::CreateVertex()
+void DXSample::CreateGeometry()
 {
+    uint32_t num_textures = 0;
     for (Mesh & cur_mesh : m_modelOfFile.meshes)
     {
         cur_mesh.setupMesh(CommandHelper(device, commandList));
+        num_textures += (uint32_t)cur_mesh.textures.size();
+    }
+
+    // create the descriptor heap that will store our srv
+    D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+    heapDesc.NumDescriptors = num_textures;
+    heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    ASSERT_SUCCEEDED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mainDescriptorTextureHeap)));
+
+    uint32_t id = 0;
+    for (Mesh & cur_mesh : m_modelOfFile.meshes)
+    {
+        for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
+        {
+            cur_mesh.textures[i].offset = id++;
+            CreateTexture(cur_mesh.textures[i].path, cur_mesh.textures[i].offset);
+        }
     }
 }
 
@@ -432,10 +443,10 @@ void DXSample::CreateMatrix()
     cameraViewMat = XMMatrixLookAtLH(cPos, cTarg, cUp);
 }
 
-void DXSample::CreateTexture()
+void DXSample::CreateTexture(const std::string &path, uint32_t offset)
 {
     TexInfo texInfo;
-    LoadImageDataFromFile(GetAssetFullPath(L"../resources/texture.png"), texInfo);
+    LoadImageDataFromFile(path, texInfo);
 
     // create a default heap where the upload heap will copy its contents into (contents being the texture)
     ASSERT_SUCCEEDED(device->CreateCommittedResource(
@@ -476,20 +487,17 @@ void DXSample::CreateTexture()
     // transition the texture default heap to a pixel shader resource (we will be sampling from this heap in the pixel shader to get the color of pixels)
     commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(textureBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
-    // create the descriptor heap that will store our srv
-    D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-    heapDesc.NumDescriptors = 1;
-    heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    ASSERT_SUCCEEDED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mainDescriptorTextureHeap)));
-
     // now we create a shader resource view (descriptor that points to the texture and describes it)
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srvDesc.Format = texInfo.resourceDescription.Format;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MipLevels = 1;
-    device->CreateShaderResourceView(textureBuffer, &srvDesc, mainDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart());
+
+    const UINT cbvSrvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    D3D12_CPU_DESCRIPTOR_HANDLE cbvSrvHeapStart = mainDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart();
+    CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(cbvSrvHeapStart, offset, cbvSrvDescriptorSize);
+    device->CreateShaderResourceView(textureBuffer, &srvDesc, cbvSrvHandle);
 }
 
 void DXSample::UploadAllResources()
@@ -504,9 +512,9 @@ void DXSample::UploadAllResources()
     ASSERT_SUCCEEDED(commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]));
 }
 
-void DXSample::LoadImageDataFromFile(std::wstring filename, TexInfo& texInfo)
+void DXSample::LoadImageDataFromFile(std::string filename, TexInfo& texInfo)
 {
-    unsigned char *image = SOIL_load_image(wstring_to_utf8(filename).c_str(), &texInfo.textureWidth, &texInfo.textureHeight, 0, SOIL_LOAD_RGBA);
+    unsigned char *image = SOIL_load_image(filename.c_str(), &texInfo.textureWidth, &texInfo.textureHeight, 0, SOIL_LOAD_RGBA);
 
     DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     texInfo.numBitsPerPixel = BitsPerPixel(dxgiFormat); // number of bits per pixel
@@ -598,11 +606,6 @@ void DXSample::PopulateCommandList()
     // set root signature
     commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
 
-    ID3D12DescriptorHeap* descriptorHeaps[] = { mainDescriptorTextureHeap };
-    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-    // set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
-    commandList->SetGraphicsRootDescriptorTable(1, mainDescriptorTextureHeap->GetGPUDescriptorHandleForHeapStart());
-
     // draw triangle
     commandList->RSSetViewports(1, &viewport); // set the viewports
     commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
@@ -610,10 +613,27 @@ void DXSample::PopulateCommandList()
 
     commandList->SetGraphicsRootConstantBufferView(0, constantBufferUploadHeaps[frameIndex]->GetGPUVirtualAddress());
 
+    ID3D12DescriptorHeap* descriptorHeaps[] = { mainDescriptorTextureHeap };
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
     for (Mesh & cur_mesh : m_modelOfFile.meshes)
     {
         commandList->IASetVertexBuffers(0, 1, &cur_mesh.vertexBufferView); // set the vertex buffer (using the vertex buffer view)
         commandList->IASetIndexBuffer(&cur_mesh.indexBufferView);
+
+        D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvHeapStart = mainDescriptorTextureHeap->GetGPUDescriptorHandleForHeapStart();
+        const UINT cbvSrvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+        for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
+        {
+            if (cur_mesh.textures[i].type == aiTextureType_DIFFUSE)
+            {
+                CD3DX12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle(cbvSrvHeapStart, cur_mesh.textures[i].offset, cbvSrvDescriptorSize);
+                commandList->SetGraphicsRootDescriptorTable(1, cbvSrvHandle);
+                break;
+            }
+        }
+
         commandList->DrawIndexedInstanced(cur_mesh.indices.size(), 1, 0, 0, 0);
     }
 
@@ -635,13 +655,12 @@ void DXSample::OnInit()
 
     CreateCommandAllocators();
     CreateCommandList();
-    CreateVertex();
+    CreateGeometry();
     CreateConstantBuffer();
     CreateRootSignature();
     CreatePSO();
     CreateViewPort();
     CreateMatrix();
-    CreateTexture();
     UploadAllResources();
 }
 
@@ -660,7 +679,7 @@ void DXSample::OnUpdate()
     // map the resource heap to get a gpu virtual address to the beginning of the heap
     ASSERT_SUCCEEDED(constantBufferUploadHeaps[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&cbvGPUAddress[frameIndex])));
 
-    Matrix model = XMMatrixRotationY(angle);
+    Matrix model = XMMatrixScaling(0.25f, 0.25f, 0.25f) * XMMatrixTranslation(0.0f, -2.0f, 0.0f) * XMMatrixRotationY(angle);
     cbPerObject.model = XMMatrixTranspose(model);
     cbPerObject.view = XMMatrixTranspose(cameraViewMat);
     cbPerObject.projection = XMMatrixTranspose(cameraProjMat);
@@ -723,8 +742,6 @@ void DXSample::OnDestroy()
 
     SAFE_RELEASE(pipelineStateObject);
     SAFE_RELEASE(rootSignature);
-    SAFE_RELEASE(vertexBuffer);
-    SAFE_RELEASE(indexBuffer);
 
     SAFE_RELEASE(depthStencilBuffer);
     SAFE_RELEASE(dsDescriptorHeap);

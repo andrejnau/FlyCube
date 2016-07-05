@@ -16,12 +16,12 @@ SamplerState g_sampler : register(s0);
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
     input.normal = normalize(input.normal);
+    input.texCoord = fmod(input.texCoord, 1.0);
 
     // Diffuse
     float3 lightDir = normalize(input.lightPos - input.fragPos);
     float diff = max(dot(lightDir, input.normal), 0.0);
-    float3 kd = float3(0.150257, 0.639282, 0.161245);
-    float3 diffuse = kd * diff;
+    float3 diffuse = g_texture.Sample(g_sampler, input.texCoord) * diff;
 
     // Specular
     float3 viewDir = normalize(input.viewPos - input.fragPos);
