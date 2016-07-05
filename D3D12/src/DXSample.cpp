@@ -672,7 +672,7 @@ void DXSample::OnUpdate()
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = std::chrono::system_clock::now();
     static float angle = 0, angle_light = 0;
-    angle += elapsed / 500000.0f;
+    angle += elapsed / 1e6f;
 
     CD3DX12_RANGE readRange(0, 0);    // We do not intend to read from this resource on the CPU. (End is less than or equal to begin)
 
