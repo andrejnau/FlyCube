@@ -45,8 +45,7 @@ VS_OUTPUT main(VS_INPUT input)
     output.lightPos = lightPos;
     output.viewPos = viewPos;
 
-    output.normal = mul(input.normal, (float3x3)model);
-    output.normal = normalize(output.normal);
+    output.normal = mul(input.normal, model);
     output.tangent = input.tangent;
     output.bitangent = input.bitangent;
     return output;

@@ -15,6 +15,8 @@ SamplerState g_sampler : register(s0);
 
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
+    input.normal = normalize(input.normal);
+
     // Diffuse
     float3 lightDir = normalize(input.lightPos - input.fragPos);
     float diff = max(dot(lightDir, input.normal), 0.0);
