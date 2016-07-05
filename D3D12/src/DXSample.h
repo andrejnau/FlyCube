@@ -12,7 +12,6 @@
 #include <DirectXMath.h>
 #include <SimpleMath.h>
 #include <DXGI1_4.h>
-#include <wincodec.h>
 
 #include "Geometry.h"
 
@@ -154,8 +153,8 @@ private:
     {
         D3D12_RESOURCE_DESC resourceDescription;
         std::unique_ptr<uint8_t[]> imageData;
-        UINT textureWidth;
-        UINT textureHeight;
+        int textureWidth;
+        int textureHeight;
         int numBitsPerPixel;
         int imageSize;
         int bytesPerRow;

@@ -3,7 +3,17 @@
 #include "Utility.h"
 #include "FileUtility.h"
 
+#include <SOIL.h>
+
 #include <chrono>
+#include <codecvt>
+#include <string>
+
+std::string wstring_to_utf8(const std::wstring& str)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
+    return myconv.to_bytes(str);
+}
 
 DXSample::DXSample(UINT width, UINT height) :
     m_width(width),
@@ -224,29 +234,10 @@ void DXSample::CreateRootSignature()
     rootCBVDescriptor.ShaderRegister = 0;
 
     // create a root parameter and fill it out
-    D3D12_ROOT_PARAMETER rootParameters[3]; // only one parameter right now
+    D3D12_ROOT_PARAMETER rootParameters[2]; // only one parameter right now
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
     rootParameters[0].Descriptor = rootCBVDescriptor; // this is the root descriptor for this root parameter
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
-
-    // create a descriptor range (descriptor table) and fill it out
-    // this is a range of descriptors inside a descriptor heap
-    D3D12_DESCRIPTOR_RANGE descriptorTableRanges[1]; // only one range right now
-    descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // this is a range of constant buffer views (descriptors)
-    descriptorTableRanges[0].NumDescriptors = 1; // we only have one constant buffer, so the range is only 1
-    descriptorTableRanges[0].BaseShaderRegister = 1; // start index of the shader registers in the range
-    descriptorTableRanges[0].RegisterSpace = 0; // space 0. can usually be zero
-    descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // this appends the range to the end of the root signature descriptor tables
-
-    // create a descriptor table
-    D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
-    descriptorTable.NumDescriptorRanges = _countof(descriptorTableRanges); // we only have one range
-    descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
-
-    // create a root parameter and fill it out
-    rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
-    rootParameters[1].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-    rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // our pixel shader will be the only shader accessing this parameter for now
 
     // create a descriptor range (descriptor table) and fill it out
     // this is a range of descriptors inside a descriptor heap
@@ -263,9 +254,9 @@ void DXSample::CreateRootSignature()
     descriptorTableTexture.pDescriptorRanges = &descriptorTableRangesTexture[0]; // the pointer to the beginning of our ranges array
 
     // create a root parameter and fill it out
-    rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
-    rootParameters[2].DescriptorTable = descriptorTableTexture; // this is our descriptor table for this root parameter
-    rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // our pixel shader will be the only shader accessing this parameter for now
+    rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
+    rootParameters[1].DescriptorTable = descriptorTableTexture; // this is our descriptor table for this root parameter
+    rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // our pixel shader will be the only shader accessing this parameter for now
 
     // create a static sampler
     D3D12_STATIC_SAMPLER_DESC sampler = {};
@@ -515,101 +506,16 @@ void DXSample::UploadAllResources()
 
 void DXSample::LoadImageDataFromFile(std::wstring filename, TexInfo& texInfo)
 {
-    // we only need one instance of the imaging factory to create decoders and frames
-    static IWICImagingFactory *wicFactory = nullptr;
-    if (wicFactory == nullptr)
-    {
-        // Initialize the COM library
-        CoInitialize(nullptr);
+    unsigned char *image = SOIL_load_image(wstring_to_utf8(filename).c_str(), &texInfo.textureWidth, &texInfo.textureHeight, 0, SOIL_LOAD_RGBA);
 
-        // create the WIC factory
-        ASSERT_SUCCEEDED(CoCreateInstance(
-            CLSID_WICImagingFactory,
-            nullptr,
-            CLSCTX_INPROC_SERVER,
-            IID_PPV_ARGS(&wicFactory)
-            ));
-    }
-
-    // reset decoder, frame and converter since these will be different for each image we load
-    IWICBitmapDecoder *wicDecoder = nullptr;
-    IWICBitmapFrameDecode *wicFrame = nullptr;
-    IWICFormatConverter *wicConverter = nullptr;
-
-    bool imageConverted = false;
-
-    // load a decoder for the image
-    ASSERT_SUCCEEDED(wicFactory->CreateDecoderFromFilename(
-        filename.c_str(),                        // Image we want to load in
-        nullptr,                            // This is a vendor ID, we do not prefer a specific one so set to null
-        GENERIC_READ,                    // We want to read from this file
-        WICDecodeMetadataCacheOnLoad,    // We will cache the metadata right away, rather than when needed, which might be unknown
-        &wicDecoder                      // the wic decoder to be created
-        ));
-
-    // get image from decoder (this will decode the "frame")
-    ASSERT_SUCCEEDED(wicDecoder->GetFrame(0, &wicFrame));
-
-    // get wic pixel format of image
-    WICPixelFormatGUID pixelFormat;
-    ASSERT_SUCCEEDED(wicFrame->GetPixelFormat(&pixelFormat));
-
-    // get size of image
-    ASSERT_SUCCEEDED(wicFrame->GetSize(&texInfo.textureWidth, &texInfo.textureHeight));
-
-    // we are not handling sRGB types in this tutorial, so if you need that support, you'll have to figure
-    // out how to implement the support yourself
-
-    // convert wic pixel format to dxgi pixel format
-    DXGI_FORMAT dxgiFormat = GetDXGIFormatFromPixelFormat(pixelFormat);
-
-    // if the format of the image is not a supported dxgi format, try to convert it
-    if (dxgiFormat == DXGI_FORMAT_UNKNOWN)
-    {
-        // get a dxgi compatible wic format from the current image format
-        WICPixelFormatGUID convertToPixelFormat = GetTargetPixelFormat(pixelFormat);
-
-        // return if no dxgi compatible format was found
-        if (convertToPixelFormat == GUID_WICPixelFormatDontCare)
-            return ;
-
-        // set the dxgi format
-        dxgiFormat = GetDXGIFormatFromPixelFormat(convertToPixelFormat);
-
-        // create the format converter
-        ASSERT_SUCCEEDED(wicFactory->CreateFormatConverter(&wicConverter));
-
-        // make sure we can convert to the dxgi compatible format
-        BOOL canConvert = FALSE;
-        ASSERT_SUCCEEDED(wicConverter->CanConvert(pixelFormat, convertToPixelFormat, &canConvert));
-        if (!canConvert)
-            return ;
-
-        // do the conversion (wicConverter will contain the converted image)
-        ASSERT_SUCCEEDED(wicConverter->Initialize(wicFrame, convertToPixelFormat, WICBitmapDitherTypeErrorDiffusion, 0, 0, WICBitmapPaletteTypeCustom));
-
-        // this is so we know to get the image data from the wicConverter (otherwise we will get from wicFrame)
-        imageConverted = true;
-    }
-
+    DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     texInfo.numBitsPerPixel = BitsPerPixel(dxgiFormat); // number of bits per pixel
     texInfo.bytesPerRow = (texInfo.textureWidth * texInfo.numBitsPerPixel) / 8; // number of bytes in each row of the image data
     texInfo.imageSize = texInfo.bytesPerRow * texInfo.textureHeight; // total image size in bytes
 
-    // allocate enough memory for the raw image data, and set imageData to point to that memory
     texInfo.imageData.reset(new uint8_t[texInfo.imageSize]);
-
-    // copy (decoded) raw image data into the newly allocated memory (imageData)
-    if (imageConverted)
-    {
-        // if image format needed to be converted, the wic converter will contain the converted image
-        ASSERT_SUCCEEDED(wicConverter->CopyPixels(0, texInfo.bytesPerRow, texInfo.imageSize, texInfo.imageData.get()));
-    }
-    else
-    {
-        // no need to convert, just copy data from the wic frame
-        ASSERT_SUCCEEDED(wicFrame->CopyPixels(0, texInfo.bytesPerRow, texInfo.imageSize, texInfo.imageData.get()));
-    }
+    memcpy(texInfo.imageData.get(), image, texInfo.imageSize);
+    SOIL_free_image_data(image);
 
     // now describe the texture with the information we have obtained from the image
     texInfo.resourceDescription = {};
@@ -692,10 +598,10 @@ void DXSample::PopulateCommandList()
     // set root signature
     commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
 
-    ID3D12DescriptorHeap* descriptorHeaps2[] = { mainDescriptorTextureHeap };
-    commandList->SetDescriptorHeaps(_countof(descriptorHeaps2), descriptorHeaps2);
+    ID3D12DescriptorHeap* descriptorHeaps[] = { mainDescriptorTextureHeap };
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
     // set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
-    commandList->SetGraphicsRootDescriptorTable(2, mainDescriptorTextureHeap->GetGPUDescriptorHandleForHeapStart());
+    commandList->SetGraphicsRootDescriptorTable(1, mainDescriptorTextureHeap->GetGPUDescriptorHandleForHeapStart());
 
     // draw triangle
     commandList->RSSetViewports(1, &viewport); // set the viewports
@@ -754,7 +660,8 @@ void DXSample::OnUpdate()
     // map the resource heap to get a gpu virtual address to the beginning of the heap
     ASSERT_SUCCEEDED(constantBufferUploadHeaps[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&cbvGPUAddress[frameIndex])));
 
-    cbPerObject.model = XMMatrixTranspose(Matrix(XMMatrixRotationY(angle)));
+    Matrix model = XMMatrixRotationY(angle);
+    cbPerObject.model = XMMatrixTranspose(model);
     cbPerObject.view = XMMatrixTranspose(cameraViewMat);
     cbPerObject.projection = XMMatrixTranspose(cameraProjMat);
     cbPerObject.lightPos = cbPerObject.viewPos = Vector3(cameraPosition);
