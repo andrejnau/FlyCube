@@ -8,7 +8,7 @@
 DXSample::DXSample(UINT width, UINT height) :
     m_width(width),
     m_height(height),
-    m_modelOfFile("model/suzanne.obj")
+    m_modelOfFile("model/suzanne.fbx")
 {}
 
 DXSample::~DXSample()
