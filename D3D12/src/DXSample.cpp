@@ -752,6 +752,31 @@ void DXSample::OnDestroy()
     }
 }
 
+void DXSample::OnSizeChanged(int width, int height)
+{
+    if ((width != m_width || height != m_height))
+    {
+        m_width = width;
+        m_height = height;
+
+        for (int i = 0; i < frameBufferCount; ++i)
+        {
+            SAFE_RELEASE(renderTargets[i]);
+            fenceValue[i] = 0;
+        }
+
+        DXGI_SWAP_CHAIN_DESC desc = {};
+        swapChain->GetDesc(&desc);
+        ASSERT_SUCCEEDED(swapChain->ResizeBuffers(frameBufferCount, width, height, desc.BufferDesc.Format, desc.Flags));
+        frameIndex = swapChain->GetCurrentBackBufferIndex();
+
+        CreateMatrix();
+        CreateRT();
+        CreateDepthStencil();
+        CreateViewPort();
+    }
+}
+
 UINT DXSample::GetWidth() const
 {
     return m_width;

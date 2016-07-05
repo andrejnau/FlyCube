@@ -101,6 +101,12 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
             break;
         }
 
+        case WM_SIZE:
+        {
+            if (pSample)
+                pSample->OnSizeChanged(LOWORD(lParam), HIWORD(lParam));
+        }
+
         case WM_DESTROY:
         {
             FreeConsole();

@@ -28,6 +28,7 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnDestroy() override;
+    virtual void OnSizeChanged(int width, int height) override;
 
     UINT GetWidth() const  override;
     UINT GetHeight() const  override;

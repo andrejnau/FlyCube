@@ -11,6 +11,7 @@ public:
     virtual void OnUpdate() = 0;
     virtual void OnRender() = 0;
     virtual void OnDestroy() = 0;
+    virtual void OnSizeChanged(int width, int height) = 0;
 
     virtual UINT GetWidth() const = 0;
     virtual UINT GetHeight() const = 0;
