@@ -632,6 +632,11 @@ void DXSample::PopulateCommandList()
                 commandList->SetGraphicsRootDescriptorTable(1, cbvSrvHandle);
                 break;
             }
+            else if (cur_mesh.textures[i].type == aiTextureType_HEIGHT)
+            {
+                CD3DX12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle(cbvSrvHeapStart, cur_mesh.textures[i].offset, cbvSrvDescriptorSize);
+                commandList->SetGraphicsRootDescriptorTable(1, cbvSrvHandle);
+            }
         }
 
         commandList->DrawIndexedInstanced(cur_mesh.indices.size(), 1, 0, 0, 0);
