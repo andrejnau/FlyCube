@@ -24,9 +24,9 @@ cbuffer ConstantBuffer : register(b0)
     float4x4 model;
     float4x4 view;
     float4x4 projection;
-    float4x4 mvp;
-    float3 lightPos;
-    float3 viewPos;
+    float4 lightPos;
+    float4 viewPos;
+    uint texture_enable;
 };
 
 VS_OUTPUT main(VS_INPUT input)

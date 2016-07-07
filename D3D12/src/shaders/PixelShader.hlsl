@@ -10,31 +10,48 @@ struct VS_OUTPUT
     float3 viewPos : POSITION_VIEW;
 };
 
-Texture2D g_texture : register(t0);
+cbuffer ConstantBuffer : register(b0)
+{
+    float4x4 model;
+    float4x4 view;
+    float4x4 projection;
+    float4 lightPos;
+    float4 viewPos;
+    uint texture_enable;
+};
+
+Texture2D diffuseMap : register(t0);
+Texture2D normalMap : register(t1);
+Texture2D specularMap : register(t2);
 SamplerState g_sampler : register(s0);
 
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
+    input.texCoord = fmod(input.texCoord, 1.0);
     input.normal = normalize(input.normal);
     input.tangent = normalize(input.tangent);
     input.bitangent = normalize(input.bitangent);
-    input.texCoord = fmod(input.texCoord, 1.0);
 
     float3x3 tbn = float3x3(input.tangent, input.bitangent, input.normal);
-    float3 normal = g_texture.Sample(g_sampler, input.texCoord).rgb;
+    float3 normal = normalMap.Sample(g_sampler, input.texCoord).rgb;
     normal = normalize(2.0 * normal - 1.0);
-    //input.normal = normalize(mul(tbn, normal));
+    input.normal = normalize(mul(tbn, normal));
 
     // Diffuse
     float3 lightDir = normalize(input.lightPos - input.fragPos);
     float diff = max(dot(lightDir, input.normal), 0.0);
-    float3 diffuse = g_texture.Sample(g_sampler, input.texCoord).rgb * diff;
+    float3 diffuse_base = float3(1.0, 1.0, 1.0);
+    if (texture_enable & (1 << 0))
+        diffuse_base = diffuseMap.Sample(g_sampler, input.texCoord).rgb;
+    float3 diffuse = diffuse_base * diff;
 
     // Specular
     float3 viewDir = normalize(input.viewPos - input.fragPos);
     float3 reflectDir = reflect(-lightDir, input.normal);
     float spec = pow(max(dot(input.normal, reflectDir), 0.0), 96.0);
-    float3 ks = float3(0.5, 0.5, 0.5);
-    float3 specular = ks * spec;
+    float3 specular_base = float3(0.5, 0.5, 0.5);
+    if (texture_enable & (1 << 2))
+        specular_base = specularMap.Sample(g_sampler, input.texCoord).rgb;
+    float3 specular = specular_base * spec;
     return float4(diffuse + specular, 1.0);
 }

@@ -48,6 +48,8 @@ struct Mesh
     std::vector<uint32_t> indices;
     std::vector<Texture> textures;
 
+    ID3D12DescriptorHeap* currentDescriptorTextureHeap;
+
     ID3D12Resource* vertexBuffer; // a default buffer in GPU memory that we will load vertex data for our triangle into
 
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView; // a structure containing a pointer to the vertex data in gpu memory
@@ -96,7 +98,7 @@ private:
     void loadModel()
     {
         Assimp::Importer import;
-        const aiScene* scene = import.ReadFile(m_path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace);
+        const aiScene* scene = import.ReadFile(m_path, aiProcess_ConvertToLeftHanded | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace);
         assert(scene && scene->mFlags != AI_SCENE_FLAGS_INCOMPLETE && scene->mRootNode);
         processNode(scene->mRootNode, scene);
     }

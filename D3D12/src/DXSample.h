@@ -109,10 +109,9 @@ private:
         Matrix model;
         Matrix view;
         Matrix projection;
-        Matrix mvp;
-
-        Vector3 lightPos;
-        Vector3 viewPos;
+        Vector4 lightPos;
+        Vector4 viewPos;
+        uint32_t texture_enable = 1;
     };
 
     // Constant buffers must be 256-byte aligned which has to do with constant reads on the GPU.
@@ -154,6 +153,7 @@ private:
 
     void LoadImageDataFromFile(std::string filename, TexInfo& texInfo);
 
+    const static uint32_t max_texture_slot = 10;
     ID3D12Resource* textureBuffer; // the resource heap containing our texture
     ID3D12DescriptorHeap* mainDescriptorTextureHeap;
     ID3D12Resource* textureBufferUploadHeap;

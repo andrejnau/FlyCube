@@ -196,6 +196,15 @@ void DXSample::CreateGeometry()
     heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     ASSERT_SUCCEEDED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mainDescriptorTextureHeap)));
 
+    for (size_t i = 0; i < m_modelOfFile.meshes.size(); ++i)
+    {
+        D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+        heapDesc.NumDescriptors = max_texture_slot;
+        heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+        heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        ASSERT_SUCCEEDED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_modelOfFile.meshes[i].currentDescriptorTextureHeap)));
+    }
+
     uint32_t id = 0;
     for (Mesh & cur_mesh : m_modelOfFile.meshes)
     {
@@ -248,13 +257,13 @@ void DXSample::CreateRootSignature()
     D3D12_ROOT_PARAMETER rootParameters[2]; // only one parameter right now
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
     rootParameters[0].Descriptor = rootCBVDescriptor; // this is the root descriptor for this root parameter
-    rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
+    rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 
     // create a descriptor range (descriptor table) and fill it out
     // this is a range of descriptors inside a descriptor heap
     D3D12_DESCRIPTOR_RANGE descriptorTableRangesTexture[1];
     descriptorTableRangesTexture[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // this is a range of shader resource views (descriptors)
-    descriptorTableRangesTexture[0].NumDescriptors = 1; // we only have one texture right now, so the range is only 1
+    descriptorTableRangesTexture[0].NumDescriptors = max_texture_slot; // we only have one texture right now, so the range is only 1
     descriptorTableRangesTexture[0].BaseShaderRegister = 0; // start index of the shader registers in the range
     descriptorTableRangesTexture[0].RegisterSpace = 0; // space 0. can usually be zero
     descriptorTableRangesTexture[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // this appends the range to the end of the root signature descriptor tables
@@ -432,7 +441,7 @@ void DXSample::CreateMatrix()
     cameraProjMat = XMMatrixPerspectiveFovLH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1000.0f);
 
     // set starting camera state
-    cameraPosition = Vector4(0.0f, 0.0f, 5.0f, 0.0f);
+    cameraPosition = Vector4(0.0f, 0.0f, -5.0f, 0.0f);
     cameraTarget = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
     cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
 
@@ -611,34 +620,57 @@ void DXSample::PopulateCommandList()
     commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // set the primitive topology
 
-    commandList->SetGraphicsRootConstantBufferView(0, constantBufferUploadHeaps[frameIndex]->GetGPUVirtualAddress());
-
-    ID3D12DescriptorHeap* descriptorHeaps[] = { mainDescriptorTextureHeap };
-    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
-    for (Mesh & cur_mesh : m_modelOfFile.meshes)
+    for (size_t mesh_id = 0; mesh_id < m_modelOfFile.meshes.size(); ++mesh_id)
     {
-        commandList->IASetVertexBuffers(0, 1, &cur_mesh.vertexBufferView); // set the vertex buffer (using the vertex buffer view)
+        Mesh & cur_mesh = m_modelOfFile.meshes[mesh_id];
+
+        commandList->IASetVertexBuffers(0, 1, &cur_mesh.vertexBufferView);
         commandList->IASetIndexBuffer(&cur_mesh.indexBufferView);
 
-        D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvHeapStart = mainDescriptorTextureHeap->GetGPUDescriptorHandleForHeapStart();
         const UINT cbvSrvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
+        uint32_t cur_texture_enable = 0;
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
-            if (cur_mesh.textures[i].type == aiTextureType_DIFFUSE)
+            uint32_t texture_slot = 0;
+            switch (cur_mesh.textures[i].type)
             {
-                CD3DX12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle(cbvSrvHeapStart, cur_mesh.textures[i].offset, cbvSrvDescriptorSize);
-                commandList->SetGraphicsRootDescriptorTable(1, cbvSrvHandle);
+            case aiTextureType_DIFFUSE:
+                texture_slot = 0;
                 break;
+            case aiTextureType_HEIGHT:
+                texture_slot = 1;
+                break;
+            case aiTextureType_SPECULAR:
+                texture_slot = 2;
+                break;
+            default:
+                continue;
             }
-            else if (cur_mesh.textures[i].type == aiTextureType_HEIGHT)
-            {
-                CD3DX12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle(cbvSrvHeapStart, cur_mesh.textures[i].offset, cbvSrvDescriptorSize);
-                commandList->SetGraphicsRootDescriptorTable(1, cbvSrvHandle);
-            }
+
+            CD3DX12_CPU_DESCRIPTOR_HANDLE srcTextureHandle(mainDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart(), cur_mesh.textures[i].offset, cbvSrvDescriptorSize);
+            CD3DX12_CPU_DESCRIPTOR_HANDLE dstTextureHandle(cur_mesh.currentDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart(), texture_slot, cbvSrvDescriptorSize);
+
+            device->CopyDescriptors(
+                1, &dstTextureHandle, nullptr,
+                1, &srcTextureHandle, nullptr,
+                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+            cur_texture_enable |= 1 << texture_slot;
         }
 
+        CD3DX12_RANGE readRange(0, 0);
+        ASSERT_SUCCEEDED(constantBufferUploadHeaps[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&cbvGPUAddress[frameIndex])));
+
+        cbPerObject.texture_enable = cur_texture_enable;
+        memcpy(cbvGPUAddress[frameIndex], &cbPerObject, sizeof(cbPerObject));
+
+        constantBufferUploadHeaps[frameIndex]->Unmap(0, &readRange);
+
+        commandList->SetGraphicsRootConstantBufferView(0, constantBufferUploadHeaps[frameIndex]->GetGPUVirtualAddress());
+
+        ID3D12DescriptorHeap *descriptorHeaps[] = { cur_mesh.currentDescriptorTextureHeap };
+        commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+        commandList->SetGraphicsRootDescriptorTable(1, cur_mesh.currentDescriptorTextureHeap->GetGPUDescriptorHandleForHeapStart());
         commandList->DrawIndexedInstanced(cur_mesh.indices.size(), 1, 0, 0, 0);
     }
 
@@ -688,10 +720,7 @@ void DXSample::OnUpdate()
     cbPerObject.model = XMMatrixTranspose(model);
     cbPerObject.view = XMMatrixTranspose(cameraViewMat);
     cbPerObject.projection = XMMatrixTranspose(cameraProjMat);
-    cbPerObject.lightPos = cbPerObject.viewPos = Vector3(cameraPosition);
-
-    Matrix wvpMat = Matrix(XMMatrixRotationY(angle)) * cameraViewMat * cameraProjMat; // create wvp matrix
-    cbPerObject.mvp = XMMatrixTranspose(wvpMat); // must transpose wvp matrix for the gpu
+    cbPerObject.lightPos = cbPerObject.viewPos = Vector4(cameraPosition);
 
    // copy our ConstantBuffer instance to the mapped constant buffer resource
     memcpy(cbvGPUAddress[frameIndex] , &cbPerObject, sizeof(cbPerObject));
