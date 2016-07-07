@@ -644,6 +644,8 @@ void DXSample::PopulateCommandList()
         commandList->IASetIndexBuffer(&cur_mesh.indexBufferView);
 
         const UINT cbvSrvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        static bool current_state = true;
+        static uint32_t frameId = 0;
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
             uint32_t texture_slot = 0;
@@ -660,6 +662,23 @@ void DXSample::PopulateCommandList()
                 break;
             case aiTextureType_SHININESS:
                 texture_slot = 3;
+                break;
+            case aiTextureType_AMBIENT:
+                texture_slot = 4;
+                if (++frameId % 2048 == 0)
+                    current_state = !current_state;
+
+                if (!current_state)
+                {
+                    CD3DX12_CPU_DESCRIPTOR_HANDLE srcTextureHandle(cur_mesh.currentDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart(), max_texture_slot - 1, cbvSrvDescriptorSize);
+                    CD3DX12_CPU_DESCRIPTOR_HANDLE dstTextureHandle(cur_mesh.currentDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart(), texture_slot, cbvSrvDescriptorSize);
+
+                    device->CopyDescriptors(
+                        1, &dstTextureHandle, nullptr,
+                        1, &srcTextureHandle, nullptr,
+                        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                    continue;
+                }
                 break;
             default:
                 continue;

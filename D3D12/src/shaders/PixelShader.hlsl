@@ -14,6 +14,8 @@ Texture2D diffuseMap : register(t0);
 Texture2D normalMap : register(t1);
 Texture2D specularMap : register(t2);
 Texture2D glossMap : register(t3);
+Texture2D ambientMap : register(t4);
+
 SamplerState g_sampler : register(s0);
 
 float4 main(VS_OUTPUT input) : SV_TARGET
@@ -26,6 +28,10 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float3 normal = normalMap.Sample(g_sampler, input.texCoord).rgb;
     normal = normalize(2.0 * normal - 1.0);
     input.normal = normalize(mul(normal, tbn));
+
+    // Ambient
+    float3 ambient = ambientMap.Sample(g_sampler, input.texCoord).rgb;
+
     // Diffuse
     float3 lightDir = normalize(input.lightPos - input.fragPos);
     float diff = max(dot(lightDir, input.normal), 0.0);
@@ -39,5 +45,6 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float spec = pow(max(dot(input.normal, reflectDir), 0.0), reflectivity * 4 * 96.0);
     float3 specular_base = specularMap.Sample(g_sampler, input.texCoord).rgb;
     float3 specular = specular_base * spec;
-    return float4(pow(abs(diffuse + specular), 1.0 / 1.15), 1.0);
+
+    return float4(pow(abs(ambient + diffuse + specular), 1.0 / 1.15), 1.0);
 }
