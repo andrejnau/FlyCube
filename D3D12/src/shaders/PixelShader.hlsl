@@ -51,5 +51,5 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     if (texture_enable & (1 << 2))
         specular_base = specularMap.Sample(g_sampler, input.texCoord).rgb;
     float3 specular = specular_base * spec;
-    return float4(pow(abs(diffuse + specular), 1.0 / 1.33), 1.0);
+    return float4(pow(abs(diffuse + specular), 1.0 / 1.15), 1.0);
 }
