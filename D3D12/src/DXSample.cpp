@@ -448,7 +448,7 @@ void DXSample::CreateMatrix()
     cameraProjMat = XMMatrixPerspectiveFovLH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1000.0f);
 
     // set starting camera state
-    cameraPosition = Vector4(0.0f, 0.0f, -255.0f, 0.0f);
+    cameraPosition = Vector4(0.0f, 50.0f, -255.0f, 0.0f);
     cameraTarget = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
     cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
 
@@ -630,6 +630,9 @@ void DXSample::PopulateCommandList()
     for (size_t mesh_id = 0; mesh_id < m_modelOfFile.meshes.size(); ++mesh_id)
     {
         Mesh & cur_mesh = m_modelOfFile.meshes[mesh_id];
+
+        if (cur_mesh.material.name.C_Str() == std::string("Ground_SG"))
+            continue;
 
         if (cur_mesh.material.name.C_Str() == std::string("Windows_SG"))
             commandList->SetPipelineState(pipelineStateObjectWithBlend);
