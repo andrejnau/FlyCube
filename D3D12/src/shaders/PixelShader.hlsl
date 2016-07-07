@@ -27,16 +27,14 @@ SamplerState g_sampler : register(s0);
 
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
-    input.texCoord = fmod(input.texCoord, 1.0);
-    input.normal = normalize(input.normal);
-    input.tangent = normalize(input.tangent);
-    input.bitangent = normalize(input.bitangent);
-
-    float3x3 tbn = float3x3(input.tangent, input.bitangent, input.normal);
+    float3 N = normalize(input.normal);
+    float3 T = normalize(input.tangent);
+    T = normalize(T - dot(T, N) * N);
+    float3 B = normalize(cross(T, N));
+    float3x3 tbn = float3x3(T, B, N);
     float3 normal = normalMap.Sample(g_sampler, input.texCoord).rgb;
     normal = normalize(2.0 * normal - 1.0);
-    input.normal = normalize(mul(tbn, normal));
-
+    input.normal = normalize(mul(normal, tbn));
     // Diffuse
     float3 lightDir = normalize(input.lightPos - input.fragPos);
     float diff = max(dot(lightDir, input.normal), 0.0);
@@ -48,10 +46,10 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     // Specular
     float3 viewDir = normalize(input.viewPos - input.fragPos);
     float3 reflectDir = reflect(-lightDir, input.normal);
-    float spec = pow(max(dot(input.normal, reflectDir), 0.0), 96.0);
+    float spec = pow(max(dot(input.normal, reflectDir), 0.0), 2048.0);
     float3 specular_base = float3(0.5, 0.5, 0.5);
     if (texture_enable & (1 << 2))
         specular_base = specularMap.Sample(g_sampler, input.texCoord).rgb;
     float3 specular = specular_base * spec;
-    return float4(diffuse + specular, 1.0);
+    return float4(pow(abs(diffuse + specular), 1.0 / 1.33), 1.0);
 }

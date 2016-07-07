@@ -10,7 +10,7 @@
 DXSample::DXSample(UINT width, UINT height) :
     m_width(width),
     m_height(height),
-    m_modelOfFile("model/nanosuit/nanosuit.obj")
+    m_modelOfFile("model/Pony_cartoon/Pony_cartoon.obj")
 {}
 
 DXSample::~DXSample()
@@ -441,7 +441,7 @@ void DXSample::CreateMatrix()
     cameraProjMat = XMMatrixPerspectiveFovLH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1000.0f);
 
     // set starting camera state
-    cameraPosition = Vector4(0.0f, 0.0f, -5.0f, 0.0f);
+    cameraPosition = Vector4(0.0f, 0.0f, -255.0f, 0.0f);
     cameraTarget = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
     cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
 
@@ -716,7 +716,7 @@ void DXSample::OnUpdate()
     // map the resource heap to get a gpu virtual address to the beginning of the heap
     ASSERT_SUCCEEDED(constantBufferUploadHeaps[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&cbvGPUAddress[frameIndex])));
 
-    Matrix model = XMMatrixScaling(0.25f, 0.25f, 0.25f) * XMMatrixTranslation(0.0f, -2.0f, 0.0f) * XMMatrixRotationY(angle);
+    Matrix model = XMMatrixScaling(0.2f, 0.2f, 0.2f) * XMMatrixTranslation(0.0f, -20.0f, 0.0f) * XMMatrixRotationY(angle);
     cbPerObject.model = XMMatrixTranspose(model);
     cbPerObject.view = XMMatrixTranspose(cameraViewMat);
     cbPerObject.projection = XMMatrixTranspose(cameraProjMat);
