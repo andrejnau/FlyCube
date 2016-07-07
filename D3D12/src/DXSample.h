@@ -112,7 +112,6 @@ private:
         Matrix projection;
         Vector4 lightPos;
         Vector4 viewPos;
-        uint32_t texture_enable = 1;
     };
 
     // Constant buffers must be 256-byte aligned which has to do with constant reads on the GPU.

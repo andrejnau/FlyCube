@@ -626,6 +626,7 @@ void DXSample::PopulateCommandList()
     commandList->RSSetViewports(1, &viewport); // set the viewports
     commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // set the primitive topology
+    commandList->SetGraphicsRootConstantBufferView(0, constantBufferUploadHeaps[frameIndex]->GetGPUVirtualAddress());
 
     for (size_t mesh_id = 0; mesh_id < m_modelOfFile.meshes.size(); ++mesh_id)
     {
@@ -643,7 +644,6 @@ void DXSample::PopulateCommandList()
         commandList->IASetIndexBuffer(&cur_mesh.indexBufferView);
 
         const UINT cbvSrvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        uint32_t cur_texture_enable = 0;
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
             uint32_t texture_slot = 0;
@@ -658,6 +658,9 @@ void DXSample::PopulateCommandList()
             case aiTextureType_SPECULAR:
                 texture_slot = 2;
                 break;
+            case aiTextureType_SHININESS:
+                texture_slot = 3;
+                break;
             default:
                 continue;
             }
@@ -669,19 +672,7 @@ void DXSample::PopulateCommandList()
                 1, &dstTextureHandle, nullptr,
                 1, &srcTextureHandle, nullptr,
                 D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-            cur_texture_enable |= 1 << texture_slot;
         }
-
-        CD3DX12_RANGE readRange(0, 0);
-        ASSERT_SUCCEEDED(constantBufferUploadHeaps[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&cbvGPUAddress[frameIndex])));
-
-        cbPerObject.texture_enable = cur_texture_enable;
-        memcpy(cbvGPUAddress[frameIndex], &cbPerObject, sizeof(cbPerObject));
-
-        constantBufferUploadHeaps[frameIndex]->Unmap(0, &readRange);
-
-        commandList->SetGraphicsRootConstantBufferView(0, constantBufferUploadHeaps[frameIndex]->GetGPUVirtualAddress());
 
         ID3D12DescriptorHeap *descriptorHeaps[] = { cur_mesh.currentDescriptorTextureHeap };
         commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -724,7 +715,7 @@ void DXSample::OnUpdate()
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = std::chrono::system_clock::now();
     static float angle = 0, angle_light = 0;
-    angle += elapsed / 1e6f;
+    angle += elapsed / 2e6f;
 
     CD3DX12_RANGE readRange(0, 0);    // We do not intend to read from this resource on the CPU. (End is less than or equal to begin)
 
