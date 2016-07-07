@@ -410,12 +410,19 @@ void DXSample::CreatePSO()
     psoDesc.SampleDesc = sampleDesc; // must be the same sample description as the swapchain and depth/stencil buffer
     psoDesc.SampleMask = UINT_MAX; // sample mask has to do with multi-sampling. 0xffffffff means point sampling is done
     psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT); // a default rasterizer state.
-    psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT); // a default blent state.
+    D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    psoDesc.BlendState = blendDesc; // a default blent state.
     psoDesc.NumRenderTargets = 1; // we are only binding one render target
     psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT); // a default depth stencil state
 
     // create the pso
     ASSERT_SUCCEEDED(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObject)));
+
+    blendDesc.RenderTarget[0].BlendEnable = true;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+    psoDesc.BlendState = blendDesc; // a default blent state.
+    ASSERT_SUCCEEDED(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObjectWithBlend)));
 }
 
 void DXSample::CreateViewPort()
@@ -623,6 +630,11 @@ void DXSample::PopulateCommandList()
     for (size_t mesh_id = 0; mesh_id < m_modelOfFile.meshes.size(); ++mesh_id)
     {
         Mesh & cur_mesh = m_modelOfFile.meshes[mesh_id];
+
+        if (cur_mesh.material.name.C_Str() == std::string("Windows_SG"))
+            commandList->SetPipelineState(pipelineStateObjectWithBlend);
+        else
+            commandList->SetPipelineState(pipelineStateObject);
 
         commandList->IASetVertexBuffers(0, 1, &cur_mesh.vertexBufferView);
         commandList->IASetIndexBuffer(&cur_mesh.indexBufferView);

@@ -92,6 +92,7 @@ private:
     IDXGIFactory4* dxgiFactory;
 
     ID3D12PipelineState* pipelineStateObject; // pso containing a pipeline state
+    ID3D12PipelineState* pipelineStateObjectWithBlend; // pso containing a pipeline state
 
     ID3D12RootSignature* rootSignature; // root signature defines data shaders will access
 
