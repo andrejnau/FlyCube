@@ -103,8 +103,11 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
 
         case WM_SIZE:
         {
-            if (pSample)
-                pSample->OnSizeChanged(LOWORD(lParam), HIWORD(lParam));
+            int width = LOWORD(lParam);
+            int height = HIWORD(lParam);
+            if (pSample && width > 0 && height > 0)
+                pSample->OnSizeChanged(width, height);
+            break;
         }
 
         case WM_DESTROY:
