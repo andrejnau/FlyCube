@@ -10,7 +10,7 @@
 DXSample::DXSample(UINT width, UINT height) :
     m_width(width),
     m_height(height),
-    m_modelOfFile("model/Pony_cartoon/Pony_cartoon.obj")
+    m_modelOfFile("model/export3dcoat/export3dcoat.obj")
 {}
 
 DXSample::~DXSample()
@@ -192,7 +192,7 @@ void DXSample::CreateGeometry()
     // create the descriptor heap that will store our srv
     D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
     heapDesc.NumDescriptors = num_textures;
-    heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     ASSERT_SUCCEEDED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mainDescriptorTextureHeap)));
 
@@ -445,10 +445,14 @@ void DXSample::CreateViewPort()
 void DXSample::CreateMatrix()
 {
     // build projection and view matrix
-    cameraProjMat = XMMatrixPerspectiveFovLH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1000.0f);
+    cameraProjMat = XMMatrixPerspectiveFovLH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 5000.0f);
 
     // set starting camera state
-    cameraPosition = Vector4(0.0f, 50.0f, -255.0f, 0.0f);
+    float z_width = (m_modelOfFile.boundBox.z_max - m_modelOfFile.boundBox.z_min);
+    float y_width = (m_modelOfFile.boundBox.y_max - m_modelOfFile.boundBox.y_min);
+    float x_width = (m_modelOfFile.boundBox.y_max - m_modelOfFile.boundBox.y_min);
+    float model_width = (z_width + y_width + x_width) / 3.0f;
+    cameraPosition = Vector4(0.0f, model_width * 0.25f, -model_width * 2.0f, 0.0f);
     cameraTarget = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
     cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
 
@@ -644,7 +648,6 @@ void DXSample::PopulateCommandList()
         commandList->IASetIndexBuffer(&cur_mesh.indexBufferView);
 
         const UINT cbvSrvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        static bool current_state = true;
         static uint32_t frameId = 0;
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
@@ -665,20 +668,6 @@ void DXSample::PopulateCommandList()
                 break;
             case aiTextureType_AMBIENT:
                 texture_slot = 4;
-                if (++frameId % 2048 == 0)
-                    current_state = !current_state;
-
-                if (!current_state)
-                {
-                    CD3DX12_CPU_DESCRIPTOR_HANDLE srcTextureHandle(cur_mesh.currentDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart(), max_texture_slot - 1, cbvSrvDescriptorSize);
-                    CD3DX12_CPU_DESCRIPTOR_HANDLE dstTextureHandle(cur_mesh.currentDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart(), texture_slot, cbvSrvDescriptorSize);
-
-                    device->CopyDescriptors(
-                        1, &dstTextureHandle, nullptr,
-                        1, &srcTextureHandle, nullptr,
-                        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-                    continue;
-                }
                 break;
             default:
                 continue;
@@ -742,7 +731,10 @@ void DXSample::OnUpdate()
     // map the resource heap to get a gpu virtual address to the beginning of the heap
     ASSERT_SUCCEEDED(constantBufferUploadHeaps[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&cbvGPUAddress[frameIndex])));
 
-    Matrix model = XMMatrixScaling(0.2f, 0.2f, 0.2f) * XMMatrixTranslation(0.0f, -20.0f, 0.0f) * XMMatrixRotationY(angle);
+    float offset_x = (m_modelOfFile.boundBox.x_max + m_modelOfFile.boundBox.x_min) / 2.0f;
+    float offset_y = (m_modelOfFile.boundBox.y_max + m_modelOfFile.boundBox.y_min) / 2.0f;
+    float offset_z = (m_modelOfFile.boundBox.z_max + m_modelOfFile.boundBox.z_min) / 2.0f;
+    Matrix model = XMMatrixTranslation(-offset_x, -offset_y, -offset_z) * XMMatrixRotationY(angle);
     cbPerObject.model = XMMatrixTranspose(model);
     cbPerObject.view = XMMatrixTranspose(cameraViewMat);
     cbPerObject.projection = XMMatrixTranspose(cameraProjMat);

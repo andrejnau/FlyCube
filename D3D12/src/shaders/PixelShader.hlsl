@@ -26,7 +26,7 @@ float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, b
     float4 _color = _texture.Sample(_sample, _tex_coord);
 #ifdef USE_CAMMA_TEX
     if (_need_gamma)
-        _color = float4(pow(_color.rgb, 2.2), _color.a);
+        _color = float4(abs(pow(_color.rgb, 2.2)), _color.a);
 #endif
     return _color;
 }
@@ -61,7 +61,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 
     float4 _color = float4(ambient + diffuse + specular, 1.0);
 #ifdef USE_CAMMA_RT
-    return float4(pow(_color.rgb, 1 / 2.2), _color.a);
+    return float4(pow(abs(_color.rgb), 1 / 2.2), _color.a);
 #else
     return _color;
 #endif

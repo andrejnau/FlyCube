@@ -57,6 +57,6 @@ source_group("Файлы ресурсов" FILES ${resource_files})
 
 add_executable(${target} WIN32 ${headers} ${sources} ${resource_files})
 
-add_definitions(-DASSETS_PATH=L"${CMAKE_CURRENT_SOURCE_DIR}/src/")
+add_definitions(-DASSETS_PATH=L"${CMAKE_CURRENT_SOURCE_DIR}/src/" -DNOMINMAX)
 
 target_link_libraries(${target} d3dx12 d3dcompiler dxgi d3d12 assimp SOIL)

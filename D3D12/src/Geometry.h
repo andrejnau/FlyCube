@@ -12,7 +12,6 @@
 #include <assimp/postprocess.h>
 
 #include "Util.h"
-
 #include <SimpleMath.h>
 
 using namespace DirectX::SimpleMath;
@@ -90,6 +89,17 @@ public:
     std::string m_directory;
     std::vector<Mesh> meshes;
 
+    struct BoundBox
+    {
+        BoundBox()
+        {
+            x_min = y_min = z_min = std::numeric_limits<float>::max();
+            x_max = y_max = z_max = std::numeric_limits<float>::min();
+        }
+        float x_min, y_min, z_min;
+        float x_max, y_max, z_max;
+    } boundBox;
+
 private:
     std::string splitFilename(const std::string& str)
     {
@@ -135,6 +145,15 @@ private:
                 vertex.position.x = mesh->mVertices[i].x;
                 vertex.position.y = mesh->mVertices[i].y;
                 vertex.position.z = mesh->mVertices[i].z;
+
+                boundBox.x_min = std::min(boundBox.x_min, vertex.position.x);
+                boundBox.x_max = std::max(boundBox.x_max, vertex.position.x);
+
+                boundBox.y_min = std::min(boundBox.y_min, vertex.position.y);
+                boundBox.y_max = std::max(boundBox.y_max, vertex.position.y);
+
+                boundBox.z_min = std::min(boundBox.z_min, vertex.position.z);
+                boundBox.z_max = std::max(boundBox.z_max, vertex.position.z);
             }
 
             if (mesh->HasNormals())
