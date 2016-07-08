@@ -134,7 +134,6 @@ public:
         float dt = std::min(0.001f, elapsed / 1500.0f);
         angle += dt;
 
-
         glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDepthMask(GL_TRUE);
@@ -183,7 +182,7 @@ public:
 
         Light light;
         light.ambient = 0.5f * glm::vec3(1.0f);
-        light.diffuse = 1.5f * glm::vec3(1.0f);
+        light.diffuse = 1.0f * glm::vec3(1.0f);
         light.specular = 1.0f * glm::vec3(1.0f);
 
         glUniform3fv(shaderLight.loc_light.ambient, 1, glm::value_ptr(light.ambient));

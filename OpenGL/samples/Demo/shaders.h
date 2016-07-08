@@ -194,6 +194,9 @@ struct ShaderLight
 
             void main()
             {
+                vec4 gamma4 = vec4(vec3(1.0/2.2), 1);
+                vec3 inv_gamma3 = vec3(2.2);
+
                 vec3 normal = fs_in.Normal;
                 if (textures.has_normalMap != 0)
                     normal = CalcBumpedNormal();
@@ -201,14 +204,14 @@ struct ShaderLight
                 // Ambient
                 vec3 ambient = light.ambient * material.ambient;
                 if (textures.has_ambient != 0)
-                    ambient *= texture(textures.ambient, fs_in.TexCoords).rgb;
+                    ambient *= pow(texture(textures.ambient, fs_in.TexCoords).rgb, inv_gamma3);
 
                 // Diffuse
                 vec3 lightDir = normalize(fs_in.LightPos - fs_in.FragPos);
                 float diff = max(dot(lightDir, normal), 0.0);
                 vec3 diffuse = light.diffuse * diff * material.diffuse;
                 if (textures.has_diffuse != 0)
-                    diffuse *= texture(textures.diffuse, fs_in.TexCoords).rgb;
+                    diffuse *= pow(texture(textures.diffuse, fs_in.TexCoords).rgb, inv_gamma3);
 
                 // Specular
                 vec3 viewDir = normalize(fs_in.ViewPos - fs_in.FragPos);
@@ -233,7 +236,7 @@ struct ShaderLight
                         discard;
                 }
 
-                out_Color = result;
+                out_Color = pow(result, gamma4);
             }
         )fs";
 };

@@ -21,14 +21,14 @@ SamplerState g_sampler : register(s0);
 #define USE_CAMMA_RT
 #define USE_CAMMA_TEX
 
-float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord)
+float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, bool _need_gamma = false)
 {
     float4 _color = _texture.Sample(_sample, _tex_coord);
 #ifdef USE_CAMMA_TEX
-    return float4(pow(_color.rgb, 2.2), _color.a);
-#else
-    return _color;
+    if (_need_gamma)
+        _color = float4(pow(_color.rgb, 2.2), _color.a);
 #endif
+    return _color;
 }
 
 float4 main(VS_OUTPUT input) : SV_TARGET
@@ -43,12 +43,12 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     input.normal = normalize(mul(normal, tbn));
 
     // Ambient
-    float3 ambient = getTexture(ambientMap, g_sampler, input.texCoord).rgb;
+    float3 ambient = getTexture(ambientMap, g_sampler, input.texCoord, true).rgb;
 
     // Diffuse
     float3 lightDir = normalize(input.lightPos - input.fragPos);
     float diff = saturate(dot(lightDir, input.normal));
-    float3 diffuse_base = getTexture(diffuseMap, g_sampler, input.texCoord).rgb;
+    float3 diffuse_base = getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
     float3 diffuse = diffuse_base * diff;
 
     // Specular
