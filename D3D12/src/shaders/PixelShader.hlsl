@@ -34,7 +34,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 
     // Diffuse
     float3 lightDir = normalize(input.lightPos - input.fragPos);
-    float diff = max(dot(lightDir, input.normal), 0.0);
+    float diff = saturate(dot(lightDir, input.normal));
     float3 diffuse_base = diffuseMap.Sample(g_sampler, input.texCoord).rgb;
     float3 diffuse = diffuse_base * diff;
 
