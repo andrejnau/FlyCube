@@ -41,8 +41,8 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     // Specular
     float3 viewDir = normalize(input.viewPos - input.fragPos);
     float3 reflectDir = reflect(-lightDir, input.normal);
-    float reflectivity = 1.0 / glossMap.Sample(g_sampler, input.texCoord).r;
-    float spec = pow(max(dot(input.normal, reflectDir), 0.0), reflectivity * 4 * 96.0);
+    float reflectivity = glossMap.Sample(g_sampler, input.texCoord).r;
+    float spec = pow(saturate(dot(input.normal, reflectDir)), reflectivity * 4 * 96.0);
     float3 specular_base = specularMap.Sample(g_sampler, input.texCoord).rgb;
     float3 specular = specular_base * spec;
 
