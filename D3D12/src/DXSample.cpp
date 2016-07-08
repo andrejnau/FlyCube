@@ -419,7 +419,7 @@ void DXSample::CreatePSO()
     ASSERT_SUCCEEDED(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObject)));
 
     blendDesc.RenderTarget[0].BlendEnable = true;
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_DEST_COLOR;
     blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
     psoDesc.BlendState = blendDesc; // a default blent state.
     ASSERT_SUCCEEDED(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObjectWithBlend)));
