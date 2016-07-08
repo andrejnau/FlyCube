@@ -419,7 +419,7 @@ void DXSample::CreatePSO()
     ASSERT_SUCCEEDED(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObject)));
 
     blendDesc.RenderTarget[0].BlendEnable = true;
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_DEST_COLOR;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
     blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
     psoDesc.BlendState = blendDesc; // a default blent state.
     ASSERT_SUCCEEDED(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObjectWithBlend)));
@@ -734,7 +734,8 @@ void DXSample::OnUpdate()
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = std::chrono::system_clock::now();
     static float angle = 0, angle_light = 0;
-    angle += elapsed / 2e6f;
+    if (use_rotare)
+        angle += elapsed / 2e6f;
 
     CD3DX12_RANGE readRange(0, 0);    // We do not intend to read from this resource on the CPU. (End is less than or equal to begin)
 

@@ -191,10 +191,14 @@ private:
             std::vector<Mesh::Texture> add;
 
             std::pair<std::string, aiTextureType> map_from[] = {
-                { "_s", aiTextureType_SPECULAR } };
+                { "_s", aiTextureType_SPECULAR },
+                { "_color", aiTextureType_DIFFUSE }
+            };
 
             std::pair<std::string, aiTextureType> map_to[] = {
-                { "_g", aiTextureType_SHININESS } };
+                { "_g", aiTextureType_SHININESS },
+                { "_gloss", aiTextureType_SHININESS }
+            };
 
             for (auto &from_type : map_from)
             {

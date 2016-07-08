@@ -18,6 +18,19 @@ Texture2D ambientMap : register(t4);
 
 SamplerState g_sampler : register(s0);
 
+#define USE_CAMMA_RT
+#define USE_CAMMA_TEX
+
+float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord)
+{
+    float4 _color = _texture.Sample(_sample, _tex_coord);
+#ifdef USE_CAMMA_TEX
+    return float4(pow(_color.rgb, 2.2), _color.a);
+#else
+    return _color;
+#endif
+}
+
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
     float3 N = normalize(input.normal);
@@ -30,21 +43,26 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     input.normal = normalize(mul(normal, tbn));
 
     // Ambient
-    float3 ambient = ambientMap.Sample(g_sampler, input.texCoord).rgb;
+    float3 ambient = getTexture(ambientMap, g_sampler, input.texCoord).rgb;
 
     // Diffuse
     float3 lightDir = normalize(input.lightPos - input.fragPos);
     float diff = saturate(dot(lightDir, input.normal));
-    float3 diffuse_base = diffuseMap.Sample(g_sampler, input.texCoord).rgb;
+    float3 diffuse_base = getTexture(diffuseMap, g_sampler, input.texCoord).rgb;
     float3 diffuse = diffuse_base * diff;
 
     // Specular
     float3 viewDir = normalize(input.viewPos - input.fragPos);
     float3 reflectDir = reflect(-lightDir, input.normal);
-    float reflectivity = glossMap.Sample(g_sampler, input.texCoord).r;
+    float reflectivity = getTexture(glossMap, g_sampler, input.texCoord).r;
     float spec = pow(saturate(dot(input.normal, reflectDir)), reflectivity * 4 * 96.0);
-    float3 specular_base = specularMap.Sample(g_sampler, input.texCoord).rgb;
+    float3 specular_base = getTexture(specularMap, g_sampler, input.texCoord).rgb;
     float3 specular = specular_base * spec;
 
-    return float4(pow(abs(ambient + diffuse + specular), 1.0 / 1.15), 1.0);
+    float4 _color = float4(ambient + diffuse + specular, 1.0);
+#ifdef USE_CAMMA_RT
+    return float4(pow(_color.rgb, 1 / 2.2), _color.a);
+#else
+    return _color;
+#endif
 }
