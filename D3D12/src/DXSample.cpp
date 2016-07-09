@@ -17,11 +17,22 @@ DXSample::~DXSample()
 
 void DXSample::CreateDevice()
 {
+#if defined(_DEBUG)
+    // Enable the D3D12 debug layer.
+{
+    ComPtr<ID3D12Debug> debugController;
+    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+    {
+        debugController->EnableDebugLayer();
+    }
+}
+#endif
+
     ASSERT_SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory)));
 
-    auto GetHardwareAdapter = [&](IDXGIFactory4* dxgiFactory) -> IDXGIAdapter1*
+    auto GetHardwareAdapter = [&](ComPtr<IDXGIFactory4> dxgiFactory) -> ComPtr<IDXGIAdapter1>
     {
-        IDXGIAdapter1* adapter; // adapters are the graphics card (this includes the embedded graphics on the motherboard)
+        ComPtr<IDXGIAdapter1> adapter; // adapters are the graphics card (this includes the embedded graphics on the motherboard)
         for (UINT adapterIndex = 0; DXGI_ERROR_NOT_FOUND != dxgiFactory->EnumAdapters1(adapterIndex, &adapter); ++adapterIndex)
         {
             DXGI_ADAPTER_DESC1 desc;
@@ -35,15 +46,15 @@ void DXSample::CreateDevice()
 
             // Check to see if the adapter supports Direct3D 12, but don't create the
             // actual device yet.
-            if (SUCCEEDED(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_1, _uuidof(ID3D12Device), nullptr)))
+            if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_1, _uuidof(ID3D12Device), nullptr)))
                 return adapter;
         }
         return nullptr;
     };
 
-    IDXGIAdapter1* adapter = GetHardwareAdapter(dxgiFactory);
+    ComPtr<IDXGIAdapter1> adapter = GetHardwareAdapter(dxgiFactory.Get());
     ASSERT(adapter != nullptr);
-    ASSERT_SUCCEEDED(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&device)));
+    ASSERT_SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&device)));
 }
 
 void DXSample::CreateCommandQueue()
@@ -72,15 +83,13 @@ void DXSample::CreateSwapChain()
     swapChainDesc.OutputWindow = Win32Application::GetHwnd(); // handle to our window
     swapChainDesc.SampleDesc = sampleDesc; // our multi-sampling description
     swapChainDesc.Windowed = true; // set to true, then if in fullscreen must call SetFullScreenState with true for full screen to get uncapped fps
-
-    IDXGISwapChain* tempSwapChain;
+    ComPtr<IDXGISwapChain> tempSwapChain;
     ASSERT_SUCCEEDED(dxgiFactory->CreateSwapChain(
-        commandQueue, // the queue will be flushed once the swap chain is created
+        commandQueue.Get(), // the queue will be flushed once the swap chain is created
         &swapChainDesc, // give it the swap chain description we created above
         &tempSwapChain // store the created swap chain in a temp IDXGISwapChain interface
         ));
-
-    swapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
+    swapChain = static_cast<IDXGISwapChain3*>(tempSwapChain.Get());
     frameIndex = swapChain->GetCurrentBackBufferIndex();
 }
 
@@ -126,7 +135,7 @@ void DXSample::CreateRT()
         ASSERT_SUCCEEDED(swapChain->GetBuffer(i, IID_PPV_ARGS(&renderTargets[i])));
 
         // the we "create" a render target view which binds the swap chain buffer (ID3D12Resource[n]) to the rtv handle
-        device->CreateRenderTargetView(renderTargets[i], nullptr, rtvHandle);
+        device->CreateRenderTargetView(renderTargets[i].Get(), nullptr, rtvHandle);
 
         // we increment the rtv handle by the rtv descriptor size we got above
         rtvHandle.Offset(1, rtvDescriptorSize);
@@ -162,7 +171,7 @@ void DXSample::CreateDepthStencil()
         );
     depthStencilBuffer->SetName(L"Depth/Stencil Resource Heap");
 
-    device->CreateDepthStencilView(depthStencilBuffer, &depthStencilDesc, dsDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+    device->CreateDepthStencilView(depthStencilBuffer.Get(), &depthStencilDesc, dsDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 }
 
 void DXSample::CreateCommandAllocators()
@@ -176,7 +185,7 @@ void DXSample::CreateCommandAllocators()
 void DXSample::CreateCommandList()
 {
     // create the command list with the first allocator
-    ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator[frameIndex], nullptr, IID_PPV_ARGS(&commandList)));
+    ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator[frameIndex].Get(), nullptr, IID_PPV_ARGS(&commandList)));
 }
 
 void DXSample::CreateGeometry()
@@ -189,7 +198,6 @@ void DXSample::CreateGeometry()
         cur_mesh.setupMesh(CommandHelper(device, commandList));
         num_textures += (uint32_t)cur_mesh.textures.size();
     }
-
     // create the descriptor heap that will store our srv
     D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
     heapDesc.NumDescriptors = num_textures;
@@ -212,7 +220,7 @@ void DXSample::CreateGeometry()
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
             cur_mesh.textures[i].offset = id++;
-            CreateTexture(cur_mesh.textures[i].path, cur_mesh.textures[i].offset);
+            CreateTexture(cur_mesh.textures[i]);
         }
     }
 }
@@ -403,11 +411,12 @@ void DXSample::CreatePSO()
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {}; // a structure to define a pso
     psoDesc.InputLayout = inputLayoutDesc; // the structure describing our input layout
-    psoDesc.pRootSignature = rootSignature; // the root signature that describes the input data this pso needs
+    psoDesc.pRootSignature = rootSignature.Get(); // the root signature that describes the input data this pso needs
     psoDesc.VS = vertexShaderBytecode; // structure describing where to find the vertex shader bytecode and how large it is
     psoDesc.PS = pixelShaderBytecode; // same as VS but for pixel shader
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE; // type of topology we are drawing
     psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // format of the render target
+    psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT; // format of the DS
     psoDesc.SampleDesc = sampleDesc; // must be the same sample description as the swapchain and depth/stencil buffer
     psoDesc.SampleMask = UINT_MAX; // sample mask has to do with multi-sampling. 0xffffffff means point sampling is done
     psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT); // a default rasterizer state.
@@ -443,10 +452,9 @@ void DXSample::CreateViewPort()
     scissorRect.bottom = m_height;
 }
 
-void DXSample::CreateTexture(const std::string &path, uint32_t offset)
+void DXSample::CreateTexture(Mesh::Texture &texture)
 {
-    TexInfo texInfo;
-    LoadImageDataFromFile(path, texInfo);
+    TexInfo texInfo = LoadImageDataFromFile(texture.path);
 
     // create a default heap where the upload heap will copy its contents into (contents being the texture)
     ASSERT_SUCCEEDED(device->CreateCommittedResource(
@@ -455,8 +463,8 @@ void DXSample::CreateTexture(const std::string &path, uint32_t offset)
         &texInfo.resourceDescription, // the description of our texture
         D3D12_RESOURCE_STATE_COPY_DEST, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
         nullptr, // used for render targets and depth/stencil buffers
-        IID_PPV_ARGS(&textureBuffer)));
-    textureBuffer->SetName(L"Texture Buffer Resource Heap");
+        IID_PPV_ARGS(&texture.buffer.defaultHeap)));
+    texture.buffer.defaultHeap->SetName(L"Texture Buffer Resource Heap");
 
     UINT64 textureUploadBufferSize;
     // this function gets the size an upload buffer needs to be to upload a texture to the gpu.
@@ -472,8 +480,8 @@ void DXSample::CreateTexture(const std::string &path, uint32_t offset)
         &CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize), // resource description for a buffer (storing the image data in this heap just to copy to the default heap)
         D3D12_RESOURCE_STATE_GENERIC_READ, // We will copy the contents from this heap to the default heap above
         nullptr,
-        IID_PPV_ARGS(&textureBufferUploadHeap)));
-    textureBufferUploadHeap->SetName(L"Texture Buffer Upload Resource Heap");
+        IID_PPV_ARGS(&texture.buffer.uploadHeap)));
+    texture.buffer.uploadHeap->SetName(L"Texture Buffer Upload Resource Heap");
 
     // store vertex buffer in upload heap
     D3D12_SUBRESOURCE_DATA textureData = {};
@@ -482,10 +490,10 @@ void DXSample::CreateTexture(const std::string &path, uint32_t offset)
     textureData.SlicePitch = texInfo.bytesPerRow * texInfo.textureHeight; // also the size of our triangle vertex data
 
     // Now we copy the upload buffer contents to the default heap
-    UpdateSubresources(commandList, textureBuffer, textureBufferUploadHeap, 0, 0, 1, &textureData);
+    UpdateSubresources(commandList.Get(), texture.buffer.defaultHeap.Get(), texture.buffer.uploadHeap.Get(), 0, 0, 1, &textureData);
 
     // transition the texture default heap to a pixel shader resource (we will be sampling from this heap in the pixel shader to get the color of pixels)
-    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(textureBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture.buffer.defaultHeap.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
     // now we create a shader resource view (descriptor that points to the texture and describes it)
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -496,24 +504,26 @@ void DXSample::CreateTexture(const std::string &path, uint32_t offset)
 
     const UINT cbvSrvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     D3D12_CPU_DESCRIPTOR_HANDLE cbvSrvHeapStart = mainDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart();
-    CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(cbvSrvHeapStart, offset, cbvSrvDescriptorSize);
-    device->CreateShaderResourceView(textureBuffer, &srvDesc, cbvSrvHandle);
+    CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(cbvSrvHeapStart, texture.offset, cbvSrvDescriptorSize);
+    device->CreateShaderResourceView(texture.buffer.defaultHeap.Get(), &srvDesc, cbvSrvHandle);
 }
 
 void DXSample::UploadAllResources()
 {
     // Now we execute the command list to upload the initial assets (triangle data)
     commandList->Close();
-    ID3D12CommandList* ppCommandLists[] = { commandList };
+    ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
     commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
     // increment the fence value now, otherwise the buffer might not be uploaded by the time we start drawing
     fenceValue[frameIndex]++;
-    ASSERT_SUCCEEDED(commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]));
+    ASSERT_SUCCEEDED(commandQueue->Signal(fence[frameIndex].Get(), fenceValue[frameIndex]));
 }
 
-void DXSample::LoadImageDataFromFile(std::string filename, TexInfo& texInfo)
+DXSample::TexInfo DXSample::LoadImageDataFromFile(std::string filename)
 {
+    TexInfo texInfo = {};
+
     unsigned char *image = SOIL_load_image(filename.c_str(), &texInfo.textureWidth, &texInfo.textureHeight, 0, SOIL_LOAD_RGBA);
 
     DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -538,13 +548,11 @@ void DXSample::LoadImageDataFromFile(std::string filename, TexInfo& texInfo)
     texInfo.resourceDescription.SampleDesc.Quality = 0; // The quality level of the samples. Higher is better quality, but worse performance
     texInfo.resourceDescription.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // The arrangement of the pixels. Setting to unknown lets the driver choose the most efficient one
     texInfo.resourceDescription.Flags = D3D12_RESOURCE_FLAG_NONE; // no flags
+    return texInfo;
 }
 
 void DXSample::WaitForPreviousFrame()
 {
-    // swap the current rtv buffer index so we draw on the correct buffer
-    frameIndex = swapChain->GetCurrentBackBufferIndex();
-
     // if the current fence value is still less than "fenceValue", then we know the GPU has not finished executing
     // the command queue since it has not reached the "commandQueue->Signal(fence, fenceValue)" command
     if (fence[frameIndex]->GetCompletedValue() < fenceValue[frameIndex])
@@ -563,6 +571,8 @@ void DXSample::WaitForPreviousFrame()
 
 void DXSample::PopulateCommandList()
 {
+    // swap the current rtv buffer index so we draw on the correct buffer
+    frameIndex = swapChain->GetCurrentBackBufferIndex();
     // We have to wait for the gpu to finish with the command allocator before we reset it
     WaitForPreviousFrame();
 
@@ -580,12 +590,12 @@ void DXSample::PopulateCommandList()
     // but in this tutorial we are only clearing the rtv, and do not actually need
     // anything but an initial default pipeline, which is what we get by setting
     // the second parameter to NULL
-    ASSERT_SUCCEEDED(commandList->Reset(commandAllocator[frameIndex], pipelineStateObject));
+    ASSERT_SUCCEEDED(commandList->Reset(commandAllocator[frameIndex].Get(), pipelineStateObject.Get()));
 
     // here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
 
     // transition the "frameIndex" render target from the present state to the render target state so the command list draws to it starting from here
-    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(renderTargets[frameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(renderTargets[frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
     // here we again get the handle to our current render target view so we can set it as the render target in the output merger stage of the pipeline
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), frameIndex, rtvDescriptorSize);
@@ -604,7 +614,7 @@ void DXSample::PopulateCommandList()
     commandList->ClearDepthStencilView(dsDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
     // set root signature
-    commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
+    commandList->SetGraphicsRootSignature(rootSignature.Get()); // set the root signature
 
     // draw triangle
     commandList->RSSetViewports(1, &viewport); // set the viewports
@@ -620,9 +630,9 @@ void DXSample::PopulateCommandList()
             continue;
 
         if (cur_mesh.material.name.C_Str() == std::string("Windows_SG"))
-            commandList->SetPipelineState(pipelineStateObjectWithBlend);
+            commandList->SetPipelineState(pipelineStateObjectWithBlend.Get());
         else
-            commandList->SetPipelineState(pipelineStateObject);
+            commandList->SetPipelineState(pipelineStateObject.Get());
 
         commandList->IASetVertexBuffers(0, 1, &cur_mesh.vertexBufferView);
         commandList->IASetIndexBuffer(&cur_mesh.indexBufferView);
@@ -662,7 +672,7 @@ void DXSample::PopulateCommandList()
                 D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         }
 
-        ID3D12DescriptorHeap *descriptorHeaps[] = { cur_mesh.currentDescriptorTextureHeap };
+        ID3D12DescriptorHeap *descriptorHeaps[] = { cur_mesh.currentDescriptorTextureHeap.Get() };
         commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
         commandList->SetGraphicsRootDescriptorTable(1, cur_mesh.currentDescriptorTextureHeap->GetGPUDescriptorHandleForHeapStart());
         commandList->DrawIndexedInstanced(cur_mesh.indices.size(), 1, 0, 0, 0);
@@ -670,7 +680,7 @@ void DXSample::PopulateCommandList()
 
     // transition the "frameIndex" render target from the render target state to the present state. If the debug layer is enabled, you will receive a
     // warning if present is called on the render target when it's not in the present state
-    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(renderTargets[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(renderTargets[frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
     ASSERT_SUCCEEDED(commandList->Close());
 }
@@ -744,7 +754,7 @@ void DXSample::OnRender()
     PopulateCommandList(); // update the pipeline by sending commands to the commandqueue
 
     // create an array of command lists (only one command list here)
-    ID3D12CommandList* ppCommandLists[] = { commandList };
+    ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
 
     // execute the array of command lists
     commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
@@ -752,50 +762,34 @@ void DXSample::OnRender()
     // this command goes in at the end of our command queue. we will know when our command queue
     // has finished because the fence value will be set to "fenceValue" from the GPU since the command
     // queue is being executed on the GPU
-    ASSERT_SUCCEEDED(commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]));
+    ASSERT_SUCCEEDED(commandQueue->Signal(fence[frameIndex].Get(), fenceValue[frameIndex]));
 
     // present the current backbuffer
     ASSERT_SUCCEEDED(swapChain->Present(0, 0));
 }
 
-#ifndef SAFE_RELEASE
-#define SAFE_RELEASE(x) if (x != nullptr) { x->Release(); x = nullptr; }
-#endif
-
 void DXSample::OnDestroy()
 {
-    WaitForPreviousFrame();
+    WaitForGpu();
+
+    // get swapchain out of full screen before exiting
+    BOOL is_fullscreen = false;
+    ASSERT_SUCCEEDED(swapChain->GetFullscreenState(&is_fullscreen, nullptr));
+    if (is_fullscreen)
+        swapChain->SetFullscreenState(false, nullptr);
 
     // close the fence event
     CloseHandle(fenceEvent);
+}
 
-    // get swapchain out of full screen before exiting
-    BOOL fs = false;
-    if (swapChain->GetFullscreenState(&fs, nullptr))
-        swapChain->SetFullscreenState(false, nullptr);
-
-    SAFE_RELEASE(device);
-    SAFE_RELEASE(swapChain);
-    SAFE_RELEASE(commandQueue);
-    SAFE_RELEASE(rtvDescriptorHeap);
-    SAFE_RELEASE(commandList);
-
+void DXSample::WaitForGpu()
+{
+    frameIndex = swapChain->GetCurrentBackBufferIndex();
     for (int i = 0; i < frameBufferCount; ++i)
     {
-        SAFE_RELEASE(renderTargets[i]);
-        SAFE_RELEASE(commandAllocator[i]);
-        SAFE_RELEASE(fence[i]);
-    }
-
-    SAFE_RELEASE(pipelineStateObject);
-    SAFE_RELEASE(rootSignature);
-
-    SAFE_RELEASE(depthStencilBuffer);
-    SAFE_RELEASE(dsDescriptorHeap);
-
-    for (int i = 0; i < frameBufferCount; ++i)
-    {
-        SAFE_RELEASE(constantBufferUploadHeaps[i]);
+        WaitForPreviousFrame();
+        commandQueue->Signal(fence[frameIndex].Get(), fenceValue[frameIndex]);
+        frameIndex = (frameIndex + 1) % frameBufferCount;
     }
 }
 
@@ -806,10 +800,10 @@ void DXSample::OnSizeChanged(int width, int height)
         m_width = width;
         m_height = height;
 
+        WaitForGpu();
         for (int i = 0; i < frameBufferCount; ++i)
         {
-            SAFE_RELEASE(renderTargets[i]);
-            fenceValue[i] = 0;
+            renderTargets[i].Reset();
         }
 
         DXGI_SWAP_CHAIN_DESC desc = {};

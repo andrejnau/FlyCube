@@ -28,6 +28,7 @@ set(headers
 
 set(sources
     ${source_path}/DXSample.cpp
+    ${source_path}/Geometry.cpp
     ${source_path}/Util.cpp
     ${source_path}/Main.cpp
     ${source_path}/Win32Application.cpp
