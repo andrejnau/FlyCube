@@ -144,7 +144,7 @@ struct ShaderLightDepth
                 gl_Position = projection * view *  model * vec4(a_pos, 1.0);
                 q_pos = vec3(model * vec4(a_pos, 1.0f));
                 q_normal = mat3(transpose(inverse(model))) * a_normal;
-                ShadowCoord = u_DepthBiasMVP * vec4(a_pos, 1.0);
+                ShadowCoord = u_DepthBiasMVP * model * vec4(a_pos, 1.0);
             }
         )vs";
 
@@ -184,7 +184,7 @@ struct ShaderLightDepth
             {
                 float res = 0.0;
 
-                smcoord.z -= 0.0005 * smcoord.w;
+                smcoord.z -= 0.00005 * smcoord.w;
 
                 res += textureProjOffset(u_depthTexture, smcoord, ivec2(-1, -1));
                 res += textureProjOffset(u_depthTexture, smcoord, ivec2(0, -1));
@@ -209,17 +209,16 @@ struct ShaderLightDepth
                 vec3 norm = normalize(q_normal);
                 vec3 lightDir = normalize(light.position - q_pos);
                 float diff = max(dot(norm, lightDir), 0.0);
-                vec3 diffuse = light.diffuse * (diff * material.diffuse);
+                vec3 diffuse = light.diffuse * material.diffuse * diff;
 
                 // Specular
                 vec3 viewDir = normalize(viewPos - q_pos);
                 vec3 reflectDir = reflect(-lightDir, norm);
                 float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-                vec3 specular = light.specular * (spec * material.specular);
+                vec3 specular = light.specular * material.specular * spec;
 
                 float shadow = GetShadowPCF(ShadowCoord);
-                vec3 result = (ambient + diffuse + specular) * shadow;
-                out_Color = vec4(result, 1.0);
+                out_Color = vec4((ambient + diffuse + specular) * shadow, 1.0);
             }
         )fs";
 };

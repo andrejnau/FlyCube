@@ -1,3 +1,2 @@
-#add_subdirectory(CGCoursework)
-#add_subdirectory(CGPhysical)
+add_subdirectory(CGCoursework)
 add_subdirectory(Demo)

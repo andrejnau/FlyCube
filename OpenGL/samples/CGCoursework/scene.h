@@ -36,10 +36,9 @@ public:
         depthTexture = TextureCreateDepth(m_width, m_height);
         depthFBO = FBOCreate(depthTexture);
 
-        lightPosition = glm::vec3(0.0f, 5.0f, 5.0f);
-        light_camera.SetCameraPos(lightPosition);
+        lightPosition = glm::vec3(0.0f, 20.0f, 5.0f);
 
-        camera = glm::vec3(5.0f, 5.0f, 10.0f);
+        camera = glm::vec3(0.0f, 1.00f, 10.0f);
         m_camera.SetCameraPos(camera);
 
         return true;
@@ -64,8 +63,11 @@ public:
         angle += dt;
 
         lightPosition = glm::vec3(10.0f * cos(angle), 10.0f, 10.0f * sin(angle));
-        light_camera.SetCameraPos(lightPosition);
-        light_camera.SetCameraTarget(-lightPosition);
+
+        GLfloat near_plane = 0.1f, far_plane = 1024.0f, size = 5.0f;
+        lightProjection = glm::ortho(-size, size, -size, size, near_plane, far_plane);
+        lightView = glm::lookAt(lightPosition, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+        lightSpaceMatrix = lightProjection * lightView;
 
         glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -80,7 +82,7 @@ public:
         glCullFace(GL_BACK);
         draw_obj();
         draw_cubemap();
-        //draw_shadow();
+        draw_shadow();
     }
 
     void draw_shadow()
@@ -129,13 +131,12 @@ public:
             0.5, 0.0, 0.0, 0.0,
             0.0, 0.5, 0.0, 0.0,
             0.0, 0.0, 0.5, 0.0,
-            0.5, 0.5, 0.5, 1.0
-            );
+            0.5, 0.5, 0.5, 1.0);
 
         glm::mat4 projection, view, model;
         m_camera.GetMatrix(projection, view, model);
 
-        glm::mat4 depthBiasMVP = biasMatrix * light_camera.GetMVPMatrix();
+        glm::mat4 depthBiasMVP = biasMatrix * lightSpaceMatrix;
 
         glUniformMatrix4fv(shaderLightDepth.loc_model, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(shaderLightDepth.loc_view, 1, GL_FALSE, glm::value_ptr(view));
@@ -151,7 +152,7 @@ public:
         material.ambient = glm::vec3(0.1745, 0.01175, 0.01175);
         material.diffuse = glm::vec3(0.61424, 0.04136, 0.04136);
         material.specular = glm::vec3(0.727811, 0.626959, 0.626959);
-        material.shininess = 0.6f;
+        material.shininess = 96.0f;
 
         glUniform3fv(shaderLightDepth.loc_material.ambient, 1, glm::value_ptr(material.ambient));
         glUniform3fv(shaderLightDepth.loc_material.diffuse, 1, glm::value_ptr(material.diffuse));
@@ -161,7 +162,7 @@ public:
         light.position = lightPosition;
         light.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
         light.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-        light.specular = glm::vec3(0.0f, 0.0f, 0.0f);
+        light.specular = glm::vec3(0.5f, 0.5f, 0.5f);
 
         glUniform3fv(shaderLightDepth.loc_light.position, 1, glm::value_ptr(light.position));
         glUniform3fv(shaderLightDepth.loc_light.ambient, 1, glm::value_ptr(light.ambient));
@@ -172,7 +173,7 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfFile.vertices.size());
         glBindVertexArray(0);
 
-        glm::mat4 model_annie = model * glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.0f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
+        glm::mat4 model_annie = model * glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.5f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
 
         glUniformMatrix4fv(shaderLightDepth.loc_model, 1, GL_FALSE, glm::value_ptr(model_annie));
         glBindVertexArray(modelOfFileAnnie.vaoObject);
@@ -216,19 +217,16 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shaderDepth.program);
-        glm::mat4 projection, view, model;
 
-        light_camera.GetMatrix(projection, view, model);
-
-        glm::mat4 Matrix = projection * view * model;
+        glm::mat4 Matrix = lightSpaceMatrix;
         glUniformMatrix4fv(shaderDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
         glBindVertexArray(modelOfFile.vaoObject);
         glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfFile.vertices.size());
         glBindVertexArray(0);
 
-        glm::mat4 model_annie = model * glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.0f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
-        Matrix = projection * view * model_annie;
+        glm::mat4 model_annie = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -2.5f, 2.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f));
+        Matrix = lightSpaceMatrix * model_annie;
         glUniformMatrix4fv(shaderDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
         glBindVertexArray(modelOfFileAnnie.vaoObject);
@@ -354,13 +352,12 @@ public:
                 glDeleteTextures(1, &depthTexture);
             if (depthFBO)
                 glDeleteFramebuffers(1, &depthFBO);
-            depthTexture = TextureCreateDepth(width, height);
+            depthTexture = TextureCreateDepth(1024, 1024);
             depthFBO = FBOCreate(depthTexture);
         }
         m_width = width;
         m_height = height;
         m_camera.SetViewport(x, y, width, height);
-        light_camera.SetViewport(x, y, width, height);
     }
 
     virtual void destroy()
@@ -398,6 +395,10 @@ private:
     glm::vec3 axis_y;
     glm::vec3 axis_z;
 
+    glm::mat4 lightSpaceMatrix;
+    glm::mat4 lightProjection;
+    glm::mat4 lightView;
+
     int m_width;
     int m_height;
 
@@ -421,5 +422,4 @@ private:
     ShaderDepth shaderDepth;
     ShaderSimpleColor shaderSimpleColor;
     Camera m_camera;
-    Camera light_camera;
 };

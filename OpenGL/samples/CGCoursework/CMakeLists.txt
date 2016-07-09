@@ -17,5 +17,5 @@ else()
     add_executable(${PROJECT} ${SOURCES} ${HEADERS})
 endif()
 
-target_link_libraries(${PROJECT} glfw ${GLFW_LIBRARIES} glbinding mlogger SOIL simple_camera utils)
+target_link_libraries(${PROJECT} glfw ${GLFW_LIBRARIES} mlogger SOIL simple_camera utils gl_load)
 set_target_properties(${PROJECT} PROPERTIES FOLDER "samples")
