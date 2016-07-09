@@ -9,8 +9,7 @@
 
 DXSample::DXSample(UINT width, UINT height) :
     m_width(width),
-    m_height(height),
-    m_modelOfFile("model/mechanical-emperor-scorpion/mechanical-emperor-scorpion.obj")
+    m_height(height)
 {}
 
 DXSample::~DXSample()
@@ -182,8 +181,10 @@ void DXSample::CreateCommandList()
 
 void DXSample::CreateGeometry()
 {
+    m_modelOfFile.reset(new Model("model/mechanical-emperor-scorpion/mechanical-emperor-scorpion.obj"));
+
     uint32_t num_textures = 0;
-    for (Mesh & cur_mesh : m_modelOfFile.meshes)
+    for (Mesh & cur_mesh : m_modelOfFile->meshes)
     {
         cur_mesh.setupMesh(CommandHelper(device, commandList));
         num_textures += (uint32_t)cur_mesh.textures.size();
@@ -196,17 +197,17 @@ void DXSample::CreateGeometry()
     heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     ASSERT_SUCCEEDED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mainDescriptorTextureHeap)));
 
-    for (size_t i = 0; i < m_modelOfFile.meshes.size(); ++i)
+    for (size_t i = 0; i < m_modelOfFile->meshes.size(); ++i)
     {
         D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
         heapDesc.NumDescriptors = max_texture_slot;
         heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        ASSERT_SUCCEEDED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_modelOfFile.meshes[i].currentDescriptorTextureHeap)));
+        ASSERT_SUCCEEDED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_modelOfFile->meshes[i].currentDescriptorTextureHeap)));
     }
 
     uint32_t id = 0;
-    for (Mesh & cur_mesh : m_modelOfFile.meshes)
+    for (Mesh & cur_mesh : m_modelOfFile->meshes)
     {
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
@@ -611,9 +612,9 @@ void DXSample::PopulateCommandList()
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // set the primitive topology
     commandList->SetGraphicsRootConstantBufferView(0, constantBufferUploadHeaps[frameIndex]->GetGPUVirtualAddress());
 
-    for (size_t mesh_id = 0; mesh_id < m_modelOfFile.meshes.size(); ++mesh_id)
+    for (size_t mesh_id = 0; mesh_id < m_modelOfFile->meshes.size(); ++mesh_id)
     {
-        Mesh & cur_mesh = m_modelOfFile.meshes[mesh_id];
+        Mesh & cur_mesh = m_modelOfFile->meshes[mesh_id];
 
         if (cur_mesh.material.name.C_Str() == std::string("Ground_SG"))
             continue;
@@ -708,9 +709,9 @@ void DXSample::OnUpdate()
 
     cameraProjMat = XMMatrixPerspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1024.0f);
 
-    float z_width = (m_modelOfFile.boundBox.z_max - m_modelOfFile.boundBox.z_min);
-    float y_width = (m_modelOfFile.boundBox.y_max - m_modelOfFile.boundBox.y_min);
-    float x_width = (m_modelOfFile.boundBox.y_max - m_modelOfFile.boundBox.y_min);
+    float z_width = (m_modelOfFile->boundBox.z_max - m_modelOfFile->boundBox.z_min);
+    float y_width = (m_modelOfFile->boundBox.y_max - m_modelOfFile->boundBox.y_min);
+    float x_width = (m_modelOfFile->boundBox.y_max - m_modelOfFile->boundBox.y_min);
     float model_width = (z_width + y_width + x_width) / 3.0f;
     float scale = 256.0f / std::max(z_width, x_width);
     model_width *= scale;
@@ -720,9 +721,9 @@ void DXSample::OnUpdate()
     cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
     cameraViewMat = XMMatrixLookAtRH(cameraPosition, cameraTarget, cameraUp);
 
-    float offset_x = (m_modelOfFile.boundBox.x_max + m_modelOfFile.boundBox.x_min) / 2.0f;
-    float offset_y = (m_modelOfFile.boundBox.y_max + m_modelOfFile.boundBox.y_min) / 2.0f;
-    float offset_z = (m_modelOfFile.boundBox.z_max + m_modelOfFile.boundBox.z_min) / 2.0f;
+    float offset_x = (m_modelOfFile->boundBox.x_max + m_modelOfFile->boundBox.x_min) / 2.0f;
+    float offset_y = (m_modelOfFile->boundBox.y_max + m_modelOfFile->boundBox.y_min) / 2.0f;
+    float offset_z = (m_modelOfFile->boundBox.z_max + m_modelOfFile->boundBox.z_min) / 2.0f;
     Matrix model = XMMatrixRotationY(-angle) * XMMatrixTranslation(-offset_x, -offset_y, -offset_z) * XMMatrixScaling(scale, scale, scale);
 
     cbPerObject.model = XMMatrixTranspose(model);

@@ -57,7 +57,7 @@ private:
 
     const bool use_rotare = true;
 
-    Model m_modelOfFile;
+    std::unique_ptr<Model> m_modelOfFile;
 
     UINT m_width;
 
