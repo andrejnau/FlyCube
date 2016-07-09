@@ -56,7 +56,11 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float3 reflectDir = reflect(-lightDir, input.normal);
     float reflectivity = getTexture(glossMap, g_sampler, input.texCoord).r;
     float spec = pow(saturate(dot(input.normal, reflectDir)), reflectivity * 1024.0);
+#if 0
     float3 specular_base = getTexture(specularMap, g_sampler, input.texCoord).rgb;
+#else
+    float3 specular_base = 0.5;
+#endif
     float3 specular = specular_base * spec;
 
     float4 _color = float4(ambient + diffuse + specular, 1.0);

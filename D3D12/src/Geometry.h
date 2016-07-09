@@ -216,7 +216,9 @@ private:
 
             std::pair<std::string, aiTextureType> map_to[] = {
                 { "_g", aiTextureType_SHININESS },
-                { "_gloss", aiTextureType_SHININESS }
+                { "_gloss", aiTextureType_SHININESS },
+                { "_rough", aiTextureType_SHININESS },
+                { "_nmap", aiTextureType_HEIGHT }
             };
 
             for (auto &from_type : map_from)

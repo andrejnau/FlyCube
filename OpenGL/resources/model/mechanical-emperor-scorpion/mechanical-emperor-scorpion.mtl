@@ -1,0 +1,84 @@
+#
+#
+#
+
+newmtl _Scorpion_armor
+illum 2
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ns 1024.000000
+map_Kd mechanical emperor scorpion_UVChannel_armor_color.png
+
+newmtl _Scorpion_zangen
+illum 2
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ns 1024.000000
+map_Kd mechanical emperor scorpion_UVChannel_body_color.png
+
+newmtl _Scorpion_poison
+illum 2
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ns 1024.000000
+map_Kd mechanical emperor scorpion_UVChannel_body_color.png
+
+newmtl _Scorpion_kugelgelenke
+illum 2
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ns 1024.000000
+map_Kd mechanical emperor scorpion_UVChannel_body_color.png
+
+newmtl _Scorpion_eyes
+illum 2
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ns 1024.000000
+map_Kd mechanical emperor scorpion_UVChannel_body_color.png
+
+newmtl _Scorpion_body
+illum 2
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ns 1024.000000
+map_Kd mechanical emperor scorpion_UVChannel_body_color.png
+
+newmtl _Scorpion_mechanic_body
+illum 2
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ns 1024.000000
+map_Kd mechanical emperor scorpion_UVChannel_body_color.png
+
+newmtl _Scorpion_kette
+illum 2
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ns 1024.000000
+map_Kd mechanical emperor scorpion_UVChannel_body_color.png
+
+newmtl _Scorpion_pedestal
+illum 2
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ns 1024.000000
+map_Kd mechanical emperor scorpion_UVChannel_1_color.png
+
+newmtl _Scorpion_pedestal_sand
+illum 2
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ns 1024.000000
+map_Kd mechanical emperor scorpion_UVChannel_1_color.png
+

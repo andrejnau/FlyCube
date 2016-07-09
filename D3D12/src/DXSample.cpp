@@ -10,7 +10,7 @@
 DXSample::DXSample(UINT width, UINT height) :
     m_width(width),
     m_height(height),
-    m_modelOfFile("model/export3dcoat/export3dcoat.obj")
+    m_modelOfFile("model/mechanical-emperor-scorpion/mechanical-emperor-scorpion.obj")
 {}
 
 DXSample::~DXSample()
@@ -706,21 +706,24 @@ void DXSample::OnUpdate()
     if (use_rotare)
         angle += elapsed / 2e6f;
 
-    float offset_x = (m_modelOfFile.boundBox.x_max + m_modelOfFile.boundBox.x_min) / 2.0f;
-    float offset_y = (m_modelOfFile.boundBox.y_max + m_modelOfFile.boundBox.y_min) / 2.0f;
-    float offset_z = (m_modelOfFile.boundBox.z_max + m_modelOfFile.boundBox.z_min) / 2.0f;
-    Matrix model = XMMatrixTranslation(-offset_x, -offset_y, -offset_z) * XMMatrixRotationY(-angle);
+    cameraProjMat = XMMatrixPerspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1024.0f);
 
     float z_width = (m_modelOfFile.boundBox.z_max - m_modelOfFile.boundBox.z_min);
     float y_width = (m_modelOfFile.boundBox.y_max - m_modelOfFile.boundBox.y_min);
     float x_width = (m_modelOfFile.boundBox.y_max - m_modelOfFile.boundBox.y_min);
     float model_width = (z_width + y_width + x_width) / 3.0f;
-    cameraPosition = Vector4(0.0f, model_width * 0.25f, model_width * 2.0f, 0.0f);
+    float scale = 256.0f / std::max(z_width, x_width);
+    model_width *= scale;
+
+    cameraPosition = Vector4(0.0f, model_width * 0.25f, -model_width * 2.0f, 0.0f);
     cameraTarget = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
     cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
     cameraViewMat = XMMatrixLookAtRH(cameraPosition, cameraTarget, cameraUp);
 
-    cameraProjMat = XMMatrixPerspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 5000.0f);
+    float offset_x = (m_modelOfFile.boundBox.x_max + m_modelOfFile.boundBox.x_min) / 2.0f;
+    float offset_y = (m_modelOfFile.boundBox.y_max + m_modelOfFile.boundBox.y_min) / 2.0f;
+    float offset_z = (m_modelOfFile.boundBox.z_max + m_modelOfFile.boundBox.z_min) / 2.0f;
+    Matrix model = XMMatrixRotationY(-angle) * XMMatrixTranslation(-offset_x, -offset_y, -offset_z) * XMMatrixScaling(scale, scale, scale);
 
     cbPerObject.model = XMMatrixTranspose(model);
     cbPerObject.view = XMMatrixTranspose(cameraViewMat);
