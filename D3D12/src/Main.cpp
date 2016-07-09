@@ -3,6 +3,6 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
-    DXSample sample(700, 700);
+    DXSample sample(1280, 720);
     return Win32Application::Run(&sample, hInstance, nCmdShow);
 }
