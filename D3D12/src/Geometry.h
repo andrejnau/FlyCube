@@ -108,7 +108,7 @@ private:
     void loadModel()
     {
         Assimp::Importer import;
-        const aiScene* scene = import.ReadFile(m_path, aiProcess_ConvertToLeftHanded | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace);
+        const aiScene* scene = import.ReadFile(m_path, aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace);
         assert(scene && scene->mFlags != AI_SCENE_FLAGS_INCOMPLETE && scene->mRootNode);
         processNode(scene->mRootNode, scene);
     }

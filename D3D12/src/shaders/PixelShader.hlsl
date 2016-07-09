@@ -26,7 +26,7 @@ float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, b
     float4 _color = _texture.Sample(_sample, _tex_coord);
 #ifdef USE_CAMMA_TEX
     if (_need_gamma)
-        _color = float4(abs(pow(_color.rgb, 2.2)), _color.a);
+        _color = float4(pow(abs(_color.rgb), 2.2), _color.a);
 #endif
     return _color;
 }
@@ -55,7 +55,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float3 viewDir = normalize(input.viewPos - input.fragPos);
     float3 reflectDir = reflect(-lightDir, input.normal);
     float reflectivity = getTexture(glossMap, g_sampler, input.texCoord).r;
-    float spec = pow(saturate(dot(input.normal, reflectDir)), reflectivity * 4 * 96.0);
+    float spec = pow(saturate(dot(input.normal, reflectDir)), reflectivity * 1024.0);
     float3 specular_base = getTexture(specularMap, g_sampler, input.texCoord).rgb;
     float3 specular = specular_base * spec;
 

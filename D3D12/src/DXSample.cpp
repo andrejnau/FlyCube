@@ -442,27 +442,6 @@ void DXSample::CreateViewPort()
     scissorRect.bottom = m_height;
 }
 
-void DXSample::CreateMatrix()
-{
-    // build projection and view matrix
-    cameraProjMat = XMMatrixPerspectiveFovLH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 5000.0f);
-
-    // set starting camera state
-    float z_width = (m_modelOfFile.boundBox.z_max - m_modelOfFile.boundBox.z_min);
-    float y_width = (m_modelOfFile.boundBox.y_max - m_modelOfFile.boundBox.y_min);
-    float x_width = (m_modelOfFile.boundBox.y_max - m_modelOfFile.boundBox.y_min);
-    float model_width = (z_width + y_width + x_width) / 3.0f;
-    cameraPosition = Vector4(0.0f, model_width * 0.25f, -model_width * 2.0f, 0.0f);
-    cameraTarget = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
-    cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
-
-    // build view matrix
-    Vector4 cPos = XMLoadFloat4(&cameraPosition);
-    Vector4 cTarg = XMLoadFloat4(&cameraTarget);
-    Vector4 cUp = XMLoadFloat4(&cameraUp);
-    cameraViewMat = XMMatrixLookAtLH(cPos, cTarg, cUp);
-}
-
 void DXSample::CreateTexture(const std::string &path, uint32_t offset)
 {
     TexInfo texInfo;
@@ -711,37 +690,49 @@ void DXSample::OnInit()
     CreateRootSignature();
     CreatePSO();
     CreateViewPort();
-    CreateMatrix();
     UploadAllResources();
 }
 
 void DXSample::OnUpdate()
 {
-    static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now(), end = std::chrono::system_clock::now();
+    static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+    static std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+    static float angle = 0.0;
 
     end = std::chrono::system_clock::now();
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = std::chrono::system_clock::now();
-    static float angle = 0, angle_light = 0;
+
     if (use_rotare)
         angle += elapsed / 2e6f;
-
-    CD3DX12_RANGE readRange(0, 0);    // We do not intend to read from this resource on the CPU. (End is less than or equal to begin)
-
-    // map the resource heap to get a gpu virtual address to the beginning of the heap
-    ASSERT_SUCCEEDED(constantBufferUploadHeaps[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&cbvGPUAddress[frameIndex])));
 
     float offset_x = (m_modelOfFile.boundBox.x_max + m_modelOfFile.boundBox.x_min) / 2.0f;
     float offset_y = (m_modelOfFile.boundBox.y_max + m_modelOfFile.boundBox.y_min) / 2.0f;
     float offset_z = (m_modelOfFile.boundBox.z_max + m_modelOfFile.boundBox.z_min) / 2.0f;
-    Matrix model = XMMatrixTranslation(-offset_x, -offset_y, -offset_z) * XMMatrixRotationY(angle);
+    Matrix model = XMMatrixTranslation(-offset_x, -offset_y, -offset_z) * XMMatrixRotationY(-angle);
+
+    float z_width = (m_modelOfFile.boundBox.z_max - m_modelOfFile.boundBox.z_min);
+    float y_width = (m_modelOfFile.boundBox.y_max - m_modelOfFile.boundBox.y_min);
+    float x_width = (m_modelOfFile.boundBox.y_max - m_modelOfFile.boundBox.y_min);
+    float model_width = (z_width + y_width + x_width) / 3.0f;
+    cameraPosition = Vector4(0.0f, model_width * 0.25f, model_width * 2.0f, 0.0f);
+    cameraTarget = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+    cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
+    cameraViewMat = XMMatrixLookAtRH(cameraPosition, cameraTarget, cameraUp);
+
+    cameraProjMat = XMMatrixPerspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 5000.0f);
+
     cbPerObject.model = XMMatrixTranspose(model);
     cbPerObject.view = XMMatrixTranspose(cameraViewMat);
     cbPerObject.projection = XMMatrixTranspose(cameraProjMat);
-    cbPerObject.lightPos = cbPerObject.viewPos = Vector4(cameraPosition);
+    cbPerObject.lightPos = cameraPosition;
+    cbPerObject.viewPos = cameraPosition;
 
-   // copy our ConstantBuffer instance to the mapped constant buffer resource
-    memcpy(cbvGPUAddress[frameIndex] , &cbPerObject, sizeof(cbPerObject));
+    CD3DX12_RANGE readRange(0, 0);
+    uint8_t* cbvGPUAddress = nullptr;
+    ASSERT_SUCCEEDED(constantBufferUploadHeaps[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&cbvGPUAddress)));
+    memcpy(cbvGPUAddress, &cbPerObject, sizeof(cbPerObject));
+    constantBufferUploadHeaps[frameIndex]->Unmap(0, &readRange);
 }
 
 void DXSample::OnRender()
@@ -822,7 +813,6 @@ void DXSample::OnSizeChanged(int width, int height)
         ASSERT_SUCCEEDED(swapChain->ResizeBuffers(frameBufferCount, width, height, desc.BufferDesc.Format, desc.Flags));
         frameIndex = swapChain->GetCurrentBackBufferIndex();
 
-        CreateMatrix();
         CreateRT();
         CreateDepthStencil();
         CreateViewPort();

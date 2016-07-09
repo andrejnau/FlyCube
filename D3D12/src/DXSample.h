@@ -48,7 +48,6 @@ private:
     void CreateRootSignature();
     void CreatePSO();
     void CreateViewPort();
-    void CreateMatrix();
     void CreateTexture(const std::string & path, uint32_t offset);
     void UploadAllResources();
     void WaitForPreviousFrame();
@@ -131,8 +130,6 @@ private:
                                          // (which will be placed in the resource we created above)
 
     ID3D12Resource* constantBufferUploadHeaps[frameBufferCount]; // this is the memory on the gpu where constant buffers for each frame will be placed
-
-    UINT8* cbvGPUAddress[frameBufferCount]; // this is a pointer to each of the constant buffer resource heaps
 
     Matrix cameraProjMat; // this will store our projection matrix
     Matrix cameraViewMat; // this will store our view matrix
