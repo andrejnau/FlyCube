@@ -5,9 +5,9 @@
 
 std::unique_ptr<tScenes> renderer;
 std::map<int, bool> keys;
-GLfloat deltaTime = 0.0f;
-GLfloat lastFrame = 0.0f;
-GLfloat lastX = 400, lastY = 300;
+double deltaTime = 0.0f;
+double lastFrame = 0.0f;
+double lastX = 400, lastY = 300;
 bool firstMouse = true;
 
 void draw_scene()
@@ -74,8 +74,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
         firstMouse = false;
     }
 
-    GLfloat xoffset = xpos - lastX;
-    GLfloat yoffset = lastY - ypos;  // Reversed since y-coordinates go from bottom to left
+    double xoffset = xpos - lastX;
+    double yoffset = lastY - ypos;  // Reversed since y-coordinates go from bottom to left
 
     lastX = xpos;
     lastY = ypos;
@@ -102,7 +102,7 @@ int main(void)
 
     glfwWindowHint(GLFW_SAMPLES, 4);
 
-    GLFWwindow* window = glfwCreateWindow(1000, 1000, "Simple Demo", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Simple Demo", nullptr, nullptr);
     if (!window)
     {
         glfwTerminate();
@@ -123,8 +123,7 @@ int main(void)
 
     while (!glfwWindowShouldClose(window))
     {
-
-        GLfloat currentFrame = glfwGetTime();
+        double currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 

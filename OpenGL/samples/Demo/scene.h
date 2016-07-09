@@ -100,8 +100,6 @@ public:
 
     virtual bool init()
     {
-        checkGlError("pre");
-
         glEnable(GL_DEPTH_TEST);
         glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
 
@@ -157,10 +155,7 @@ public:
         glm::mat4 projection, view, model;
         m_camera.GetMatrix(projection, view, model);
 
-
-        //projection = lightProjection;
-        //view = lightView;
-        model = glm::scale(glm::vec3(0.01)) * model;
+        model = glm::scale(glm::vec3(0.01f)) * model;
 
         glUniformMatrix4fv(shaderLight.loc_model, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(shaderLight.loc_view, 1, GL_FALSE, glm::value_ptr(view));
@@ -173,15 +168,14 @@ public:
             0.5, 0.0, 0.0, 0.0,
             0.0, 0.5, 0.0, 0.0,
             0.0, 0.0, 0.5, 0.0,
-            0.5, 0.5, 0.5, 1.0
-            );
+            0.5, 0.5, 0.5, 1.0);
 
         glm::mat4 depthBiasMVP = biasMatrix * lightSpaceMatrix;
 
         glUniformMatrix4fv(shaderLight.loc_depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
 
         Light light;
-        light.ambient = 0.5f * glm::vec3(1.0f);
+        light.ambient = 0.4f * glm::vec3(1.0f);
         light.diffuse = 1.0f * glm::vec3(1.0f);
         light.specular = 1.0f * glm::vec3(1.0f);
 
@@ -266,8 +260,6 @@ public:
             glUniform3fv(shaderLight.loc_material.specular, 1, glm::value_ptr(material.specular));
             glUniform1f(shaderLight.loc_material.shininess, material.shininess);
 
-            validateProgram(shaderLight.program);
-
             cur_mesh.bindMesh();
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
             glDrawElements(GL_TRIANGLES, (GLsizei)cur_mesh.indices.size(), GL_UNSIGNED_INT, 0);
@@ -293,7 +285,7 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shaderDepth.program);
-        glm::mat4 model = glm::scale(glm::mat4(1.0), glm::vec3(0.01));
+        glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
         glm::mat4 Matrix = lightSpaceMatrix * model;
         glUniformMatrix4fv(shaderDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
@@ -358,7 +350,6 @@ public:
         glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, 0, plane_texcoords);
 
         glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
-        checkGlError("glDrawElements");
     }
 
     virtual void resize(int x, int y, int width, int height)
