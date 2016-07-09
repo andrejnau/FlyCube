@@ -98,20 +98,15 @@ public:
     glm::mat4 lightProjection;
     glm::mat4 lightView;
 
+    int depth_size = 4096;
+
     virtual bool init()
     {
         glEnable(GL_DEPTH_TEST);
         glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
 
-        depthTexture = TextureCreateDepth(m_width, m_height);
+        depthTexture = TextureCreateDepth(depth_size, depth_size);
         depthFBO = FBODepthCreate(depthTexture);
-
-        lightPos = glm::vec3(1.0, 25.0, 0.0f);
-
-        GLfloat near_plane = 1.0f, far_plane = 25.0f;
-        lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, near_plane, far_plane);
-        lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-        lightSpaceMatrix = lightProjection * lightView;
 
         return true;
     }
@@ -124,20 +119,31 @@ public:
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-        static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now(), end = std::chrono::system_clock::now();
+        static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+        static std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+        static float angle = 0.0;
 
         end = std::chrono::system_clock::now();
         int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         start = std::chrono::system_clock::now();
-        float dt = std::min(0.001f, elapsed / 1500.0f);
-        angle += dt;
+
+        angle += elapsed / 2e6f;
+
+        lightPos = glm::vec3(2.5f * cos(angle), 25.0f, 2.5f * sin(angle));
+
+        GLfloat near_plane = 0.1f, far_plane = 128.0f, size = 25.0f;
+        lightProjection = glm::ortho(-size, size, -size, size, near_plane, far_plane);
+        lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+        lightSpaceMatrix = lightProjection * lightView;
 
         glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDepthMask(GL_TRUE);
         glClear(GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_FRONT);
+        glViewport(0, 0, depth_size, depth_size);
         draw_obj_depth();
+        glViewport(0, 0, m_width, m_height);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -175,7 +181,7 @@ public:
         glUniformMatrix4fv(shaderLight.loc_depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
 
         Light light;
-        light.ambient = 0.4f * glm::vec3(1.0f);
+        light.ambient = 0.2f * glm::vec3(1.0f);
         light.diffuse = 1.0f * glm::vec3(1.0f);
         light.specular = 1.0f * glm::vec3(1.0f);
 
@@ -358,16 +364,6 @@ public:
         m_width = width;
         m_height = height;
         m_camera.SetViewport(x, y, width, height);
-
-        if (width != m_width || height != m_height)
-        {
-            if (depthTexture)
-                glDeleteTextures(1, &depthTexture);
-            if (depthFBO)
-                glDeleteFramebuffers(1, &depthFBO);
-            depthTexture = TextureCreateDepth(width, height);
-            depthFBO = FBODepthCreate(depthTexture);
-        }
     }
 
     virtual void destroy()
