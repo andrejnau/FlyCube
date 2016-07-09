@@ -47,7 +47,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 
     // Diffuse
     float3 lightDir = normalize(input.lightPos - input.fragPos);
-    float diff = saturate(dot(lightDir, input.normal));
+    float diff = saturate(dot(input.normal, lightDir));
     float3 diffuse_base = getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
     float3 diffuse = diffuse_base * diff;
 
@@ -55,7 +55,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float3 viewDir = normalize(input.viewPos - input.fragPos);
     float3 reflectDir = reflect(-lightDir, input.normal);
     float reflectivity = getTexture(glossMap, g_sampler, input.texCoord).r;
-    float spec = pow(saturate(dot(input.normal, reflectDir)), reflectivity * 1024.0);
+    float spec = pow(saturate(dot(viewDir, reflectDir)), reflectivity * 1024.0);
 #if 0
     float3 specular_base = getTexture(specularMap, g_sampler, input.texCoord).rgb;
 #else
