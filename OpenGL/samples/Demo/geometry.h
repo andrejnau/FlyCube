@@ -282,7 +282,7 @@ private:
             }
             if (material->Get(AI_MATKEY_COLOR_SPECULAR, spec) == aiReturn_SUCCESS)
             {
-                retMeh.material.spec = max(glm::vec3(0.05f), glm::vec3(aiColor4DToVec4(spec)));
+                retMeh.material.spec = glm::vec3(aiColor4DToVec4(spec));
             }
             if (material->Get(AI_MATKEY_NAME, name) == aiReturn_SUCCESS)
             {

@@ -124,3 +124,23 @@ struct ShaderDepth
     GLuint program;
     GLint loc_MVP;
 };
+
+struct ShaderSimpleCubeMap
+{
+    ShaderSimpleCubeMap()
+    {
+        std::string path = ASSETS_PATH "shaders/Demo/";
+
+        std::ifstream vertex_stream(path + "ShaderSimpleCubeMap.vs");
+        std::string vertex((std::istreambuf_iterator<char>(vertex_stream)), std::istreambuf_iterator<char>());
+
+        std::ifstream fragment_stream(path + "ShaderSimpleCubeMap.fs");
+        std::string fragment((std::istreambuf_iterator<char>(fragment_stream)), std::istreambuf_iterator<char>());
+
+        program = createProgram(vertex.c_str(), fragment.c_str());
+        loc_MVP = glGetUniformLocation(program, "u_MVP");
+    }
+
+    GLuint program;
+    GLint loc_MVP;
+};

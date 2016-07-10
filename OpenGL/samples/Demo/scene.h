@@ -28,6 +28,19 @@ public:
     {
     }
 
+    virtual bool init()
+    {
+        glEnable(GL_DEPTH_TEST);
+        glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
+
+        c_textureID = loadCubemap();
+
+        depthTexture = TextureCreateDepth(depth_size, depth_size);
+        depthFBO = FBODepthCreate(depthTexture);
+
+        return true;
+    }
+
     GLuint FBODepthCreate(GLuint _Texture_depth)
     {
         GLuint FBO = 0;
@@ -65,15 +78,38 @@ public:
         return texture;
     }
 
-    virtual bool init()
+    GLuint loadCubemap()
     {
-        glEnable(GL_DEPTH_TEST);
-        glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
+        GLuint textureID;
+        glGenTextures(1, &textureID);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
-        depthTexture = TextureCreateDepth(depth_size, depth_size);
-        depthFBO = FBODepthCreate(depthTexture);
+        std::vector <std::string> textures_faces = {
+            ASSETS_PATH "cubemap/skycloud/txStormydays_rt.bmp",
+            ASSETS_PATH "cubemap/skycloud/txStormydays_lf.bmp",
+            ASSETS_PATH "cubemap/skycloud/txStormydays_up.bmp",
+            ASSETS_PATH "cubemap/skycloud/txStormydays_dn.bmp",
+            ASSETS_PATH "cubemap/skycloud/txStormydays_bk.bmp",
+            ASSETS_PATH "cubemap/skycloud/txStormydays_ft.bmp"
+        };
 
-        return true;
+        for (GLuint i = 0; i < textures_faces.size(); i++)
+        {
+            int width, height, channels;
+            unsigned char * image = SOIL_load_image(textures_faces[i].c_str(), &width, &height, &channels, SOIL_LOAD_RGB);
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, (GLint)GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+            SOIL_free_image_data(image);
+        }
+
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, (GLint)GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+        return textureID;
     }
 
     virtual void draw()
@@ -117,6 +153,8 @@ public:
         draw_obj();
 
         draw_shadow();
+
+        draw_cubemap();
     }
 
     void draw_obj()
@@ -317,6 +355,39 @@ public:
         glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
     }
 
+    void draw_cubemap()
+    {
+        glUseProgram(shaderSimpleCubeMap.program);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, c_textureID);
+
+        GLint OldCullFaceMode;
+        glGetIntegerv(GL_CULL_FACE_MODE, &OldCullFaceMode);
+        GLint OldDepthFuncMode;
+        glGetIntegerv(GL_DEPTH_FUNC, &OldDepthFuncMode);
+
+        glCullFace(GL_FRONT);
+        glDepthFunc(GL_LEQUAL);
+
+        glm::mat4 projection, view, model;
+        m_camera.GetMatrix(projection, view, model);
+
+        model = glm::translate(glm::mat4(1.0f), m_camera.GetCameraPos()) * glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)) * model;
+
+        glm::mat4 Matrix = projection * view * model;
+        glUniformMatrix4fv(shaderSimpleCubeMap.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+
+        for (Mesh & cur_mesh : modelOfFileSphere.meshes)
+        {
+            cur_mesh.bindMesh();
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
+            glDrawElements(GL_TRIANGLES, (GLsizei)cur_mesh.indices.size(), GL_UNSIGNED_INT, 0);
+            cur_mesh.unbindMesh();
+        }
+
+        glCullFace(OldCullFaceMode);
+        glDepthFunc(OldDepthFuncMode);
+    }
+
     virtual void resize(int x, int y, int width, int height)
     {
         glViewport(x, y, width, height);
@@ -376,8 +447,11 @@ private:
 
     int depth_size = 2048;
 
+    GLuint c_textureID;
+
     ShaderLight shaderLight;
     ShaderSimpleColor shaderSimpleColor;
+    ShaderSimpleCubeMap shaderSimpleCubeMap;
     ShaderShadowView shaderShadowView;
     ShaderDepth shaderDepth;
     Camera m_camera;
