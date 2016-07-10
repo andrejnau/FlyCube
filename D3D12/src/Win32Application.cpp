@@ -85,19 +85,17 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
             // Save the DXSample* passed in to CreateWindow.
             LPCREATESTRUCT pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
             SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pCreateStruct->lpCreateParams));
-
-            //AllocConsole();
+#if defined(_DEBUG)
+            AllocConsole();
             RedirectIO();
+#endif
             break;
         }
 
         case WM_KEYDOWN:
         {
             if (wParam == VK_ESCAPE)
-            {
-                if (MessageBox(0, L"Are you sure you want to exit?", L"Really?", MB_YESNO | MB_ICONQUESTION) == IDYES)
-                    DestroyWindow(hWnd);
-            }
+                 DestroyWindow(hWnd);
             break;
         }
 
@@ -112,7 +110,9 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
 
         case WM_DESTROY:
         {
+#if defined(_DEBUG)
             FreeConsole();
+#endif
             PostQuitMessage(0);
             break;
         }
