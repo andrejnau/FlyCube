@@ -15,7 +15,7 @@ struct ModelOfFile
 
     void reset(const std::string & file)
     {
-        std::string m_path(PROJECT_RESOURCE_DIR + file);
+        std::string m_path(ASSETS_PATH + file);
         loadOBJ(m_path, vertices, uvs, normals);
         gen_vao();
         init_vao();

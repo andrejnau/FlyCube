@@ -2,19 +2,14 @@ cmake_minimum_required(VERSION 3.5)
 
 set(target DX12)
 
-option(BUILD_SHARED_LIBS "Build package with shared libraries." OFF)
 include(${project_root}/cmake/3rdparty/soil.cmake)
 include(${project_root}/cmake/3rdparty/assimp.cmake)
-
-add_definitions(-DPROJECT_RESOURCE_DIR="${project_root}/OpenGL/resources/")
 
 add_subdirectory(3rdparty/d3dx12)
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(shaders_path "${CMAKE_CURRENT_SOURCE_DIR}/src/shaders")
-
-add_definitions(-D_UNICODE)
+set(shaders_path "${assets_path}/shaders/DX12")
 
 set(headers
     ${include_path}/DXSample.h
@@ -58,6 +53,6 @@ source_group("Файлы ресурсов" FILES ${resource_files})
 
 add_executable(${target} WIN32 ${headers} ${sources} ${resource_files})
 
-add_definitions(-DASSETS_PATH=L"${CMAKE_CURRENT_SOURCE_DIR}/src/" -DNOMINMAX)
+target_compile_definitions(${target} PRIVATE UNICODE _UNICODE NOMINMAX)
 
 target_link_libraries(${target} d3dx12 d3dcompiler dxgi d3d12 assimp SOIL)

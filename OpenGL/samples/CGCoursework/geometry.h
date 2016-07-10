@@ -20,7 +20,7 @@ struct ModelOfFile
 
     void reset(const std::string & file)
     {
-        std::string m_path(PROJECT_RESOURCE_DIR + file);
+        std::string m_path(ASSETS_PATH + file);
         loadOBJ(m_path, vertices, uvs, normals);
         gen_vao();
         init_vao();
@@ -117,7 +117,7 @@ struct ModelCubeSkybox
 {
     ModelCubeSkybox()
     {
-        std::string m_path(PROJECT_RESOURCE_DIR "model/cube.obj");
+        std::string m_path(ASSETS_PATH "model/cube.obj");
 
         vertices = {
             -1.0f, 1.0f, -1.0f,

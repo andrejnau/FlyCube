@@ -14,7 +14,7 @@ void Mesh::setupMesh(CommandHelper commandHelper)
 }
 
 Model::Model(const std::string & file)
-    : m_path(PROJECT_RESOURCE_DIR + file)
+    : m_path(ASSETS_PATH + file)
     , m_directory(splitFilename(m_path))
 {
     loadModel();

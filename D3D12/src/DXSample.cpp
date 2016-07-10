@@ -338,7 +338,7 @@ void DXSample::CreatePSO()
     // compile vertex shader
     ID3DBlob* vertexShader; // d3d blob for holding vertex shader bytecode
     ID3DBlob* errorBuff; // a buffer holding the error data if any
-    ASSERT_SUCCEEDED(D3DCompileFromFile(GetAssetFullPath(L"shaders/VertexShader.hlsl").c_str(),
+    ASSERT_SUCCEEDED(D3DCompileFromFile(GetAssetFullPath(L"shaders/DX12/VertexShader.hlsl").c_str(),
         nullptr,
         nullptr,
         "main",
@@ -357,7 +357,7 @@ void DXSample::CreatePSO()
 
     // compile pixel shader
     ID3DBlob* pixelShader;
-    ASSERT_SUCCEEDED(D3DCompileFromFile(GetAssetFullPath(L"shaders/PixelShader.hlsl").c_str(),
+    ASSERT_SUCCEEDED(D3DCompileFromFile(GetAssetFullPath(L"shaders/DX12/PixelShader.hlsl").c_str(),
         nullptr,
         nullptr,
         "main",

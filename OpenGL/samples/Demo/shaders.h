@@ -8,7 +8,7 @@ struct ShaderLight
 {
     ShaderLight()
     {
-        std::string path = PROJECT_RESOURCE_DIR "../samples/Demo/shaders/";
+        std::string path = ASSETS_PATH "shaders/Demo/";
 
         std::ifstream vertex_stream(path + "ShaderLight.vs");
         std::string vertex((std::istreambuf_iterator<char>(vertex_stream)), std::istreambuf_iterator<char>());
@@ -66,7 +66,7 @@ struct ShaderSimpleColor
 {
     ShaderSimpleColor()
     {
-        std::string path = PROJECT_RESOURCE_DIR "../samples/Demo/shaders/";
+        std::string path = ASSETS_PATH "shaders/Demo/";
 
         std::ifstream vertex_stream(path + "ShaderSimpleColor.vs");
         std::string vertex((std::istreambuf_iterator<char>(vertex_stream)), std::istreambuf_iterator<char>());
@@ -89,7 +89,7 @@ struct ShaderShadowView
 {
     ShaderShadowView()
     {
-        std::string path = PROJECT_RESOURCE_DIR "../samples/Demo/shaders/";
+        std::string path = ASSETS_PATH "shaders/Demo/";
 
         std::ifstream vertex_stream(path + "ShaderShadowView.vs");
         std::string vertex((std::istreambuf_iterator<char>(vertex_stream)), std::istreambuf_iterator<char>());
@@ -109,7 +109,7 @@ struct ShaderDepth
 {
     ShaderDepth()
     {
-        std::string path = PROJECT_RESOURCE_DIR "../samples/Demo/shaders/";
+        std::string path = ASSETS_PATH "shaders/Demo/";
 
         std::ifstream vertex_stream(path + "ShaderDepth.vs");
         std::string vertex((std::istreambuf_iterator<char>(vertex_stream)), std::istreambuf_iterator<char>());

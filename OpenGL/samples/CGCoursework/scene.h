@@ -310,12 +310,12 @@ public:
         glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
         std::vector <std::string> textures_faces = {
-            PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_rt.bmp",
-            PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_lf.bmp",
-            PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_up.bmp",
-            PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_dn.bmp",
-            PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_bk.bmp",
-            PROJECT_RESOURCE_DIR "cubemap/skycloud/txStormydays_ft.bmp"
+            ASSETS_PATH "cubemap/skycloud/txStormydays_rt.bmp",
+            ASSETS_PATH "cubemap/skycloud/txStormydays_lf.bmp",
+            ASSETS_PATH "cubemap/skycloud/txStormydays_up.bmp",
+            ASSETS_PATH "cubemap/skycloud/txStormydays_dn.bmp",
+            ASSETS_PATH "cubemap/skycloud/txStormydays_bk.bmp",
+            ASSETS_PATH "cubemap/skycloud/txStormydays_ft.bmp"
         };
 
         for (GLuint i = 0; i < textures_faces.size(); i++)
