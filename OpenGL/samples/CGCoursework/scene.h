@@ -203,7 +203,7 @@ public:
         glDrawElements(GL_TRIANGLES, (GLsizei)modelPlane.indexes.size(), GL_UNSIGNED_INT, modelPlane.indexes.data());
 
         glUseProgram(shaderSimpleColor.program);
-        model = glm::translate(model, lightPosition) * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+        model = glm::translate(model, lightPosition) * glm::scale(glm::mat4(1.0f), glm::vec3(0.001f));
         glUniformMatrix4fv(shaderSimpleColor.loc_uMVP, 1, GL_FALSE, glm::value_ptr(projection * view * model));
         glUniform3f(shaderSimpleColor.loc_objectColor, 1.0f, 1.0f, 1.0);
 
@@ -238,23 +238,32 @@ public:
 
     void draw_cubemap()
     {
-        glDepthMask(GL_FALSE);
         glUseProgram(shaderSimpleCubeMap.program);
-        glBindVertexArray(modelCube.vaoObject);
+        glBindVertexArray(modelOfFileSphere.vaoObject);
         glBindTexture(GL_TEXTURE_CUBE_MAP, c_textureID);
 
-        glm::mat4 projection, view, model;
+        GLint OldCullFaceMode;
+        glGetIntegerv(GL_CULL_FACE_MODE, &OldCullFaceMode);
+        GLint OldDepthFuncMode;
+        glGetIntegerv(GL_DEPTH_FUNC, &OldDepthFuncMode);
 
+        glCullFace(GL_FRONT);
+        glDepthFunc(GL_LEQUAL);
+
+        glm::mat4 projection, view, model;
         m_camera.GetMatrix(projection, view, model);
 
-        model = glm::scale(glm::mat4(1.0f), glm::vec3(40.0f)) * model;
+        model = glm::translate(glm::mat4(1.0f), m_camera.GetCameraPos()) * glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)) * model;
 
         glm::mat4 Matrix = projection * view * model;
         glUniformMatrix4fv(shaderSimpleCubeMap.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
-        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelCube.vertices.size() / 3);
+        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)modelOfFileSphere.vertices.size());
         glBindVertexArray(0);
         glDepthMask(GL_TRUE);
+
+        glCullFace(OldCullFaceMode);
+        glDepthFunc(OldDepthFuncMode);
     }
 
     GLuint FBOCreate(GLuint _Texture_depth)
@@ -387,7 +396,6 @@ private:
 
     ModelOfFile modelOfFile;
     ShaderSimpleCubeMap shaderSimpleCubeMap;
-    ModelCubeSkybox modelCube;
     ModelOfFile modelOfFileSphere;
     ModelOfFile modelOfFileAnnie;
 

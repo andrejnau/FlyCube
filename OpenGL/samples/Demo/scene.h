@@ -65,13 +65,6 @@ public:
         return texture;
     }
 
-    glm::mat4 lightSpaceMatrix;
-    glm::vec3 lightPos;
-    glm::mat4 lightProjection;
-    glm::mat4 lightView;
-
-    int depth_size = 4096;
-
     virtual bool init()
     {
         glEnable(GL_DEPTH_TEST);
@@ -242,7 +235,7 @@ public:
         }
 
         glUseProgram(shaderSimpleColor.program);
-        model = glm::translate(glm::mat4(1.0f), lightPos) * glm::scale(glm::mat4(1.0f), glm::vec3(15.0f)) * model;
+        model = glm::translate(glm::mat4(1.0f), lightPos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f)) * model;
         glUniformMatrix4fv(shaderSimpleColor.loc_uMVP, 1, GL_FALSE, glm::value_ptr(projection * view * model));
         glUniform3f(shaderSimpleColor.loc_objectColor, 1.0f, 1.0f, 1.0);
 
@@ -375,6 +368,13 @@ private:
 
     Model modelOfFile;
     Model modelOfFileSphere;
+
+    glm::mat4 lightSpaceMatrix;
+    glm::vec3 lightPos;
+    glm::mat4 lightProjection;
+    glm::mat4 lightView;
+
+    int depth_size = 2048;
 
     ShaderLight shaderLight;
     ShaderSimpleColor shaderSimpleColor;

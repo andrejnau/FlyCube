@@ -5,7 +5,7 @@
 
 std::unique_ptr<tScenes> renderer;
 std::map<int, bool> keys;
-double deltaTime = 0.0f;
+float deltaTime = 0.0f;
 double lastFrame = 0.0f;
 double lastX = 400, lastY = 300;
 bool firstMouse = true;
@@ -33,17 +33,17 @@ void Do_Movement()
     auto &camera = renderer->getCamera();
 
     if (keys[GLFW_KEY_W])
-        camera.ProcessKeyboard(FORWARD, deltaTime);
+        camera.ProcessKeyboard(CameraMovement::kForward, deltaTime);
     if (keys[GLFW_KEY_S])
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
+        camera.ProcessKeyboard(CameraMovement::kBackward, deltaTime);
     if (keys[GLFW_KEY_A])
-        camera.ProcessKeyboard(LEFT, deltaTime);
+        camera.ProcessKeyboard(CameraMovement::kLeft, deltaTime);
     if (keys[GLFW_KEY_D])
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+        camera.ProcessKeyboard(CameraMovement::kRight, deltaTime);
     if (keys[GLFW_KEY_Q])
-      camera.ProcessKeyboard(DOWN, deltaTime);
+        camera.ProcessKeyboard(CameraMovement::kDown, deltaTime);
     if (keys[GLFW_KEY_E])
-        camera.ProcessKeyboard(UP, deltaTime);
+        camera.ProcessKeyboard(CameraMovement::kUp, deltaTime);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -80,13 +80,13 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     lastX = xpos;
     lastY = ypos;
 
-    camera.ProcessMouseMovement(xoffset, yoffset);
+    camera.ProcessMouseMovement((float)xoffset, (float)yoffset);
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     auto &camera = renderer->getCamera();
-    camera.ProcessMouseScroll(yoffset);
+    camera.ProcessMouseScroll((float)yoffset);
 }
 
 static void error_callback(int error, const char* description)
@@ -124,7 +124,7 @@ int main(void)
     while (!glfwWindowShouldClose(window))
     {
         double currentFrame = glfwGetTime();
-        deltaTime = currentFrame - lastFrame;
+        deltaTime = (float)(currentFrame - lastFrame);
         lastFrame = currentFrame;
 
         glfwPollEvents();
