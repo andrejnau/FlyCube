@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.5)
-
 set(target DX12)
 
 include(${project_root}/cmake/3rdparty/soil.cmake)
