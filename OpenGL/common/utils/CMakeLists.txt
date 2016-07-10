@@ -9,6 +9,7 @@ set(headers
     ${include_path}/singleton.h
     ${include_path}/state.h
     ${include_path}/utilities.h
+    ${include_path}/mlogger.h
 )
 
 add_library(${PROJECT} INTERFACE)

@@ -134,7 +134,7 @@ exit:
     return program;
 }
 
-bool validateProgram(GLuint program)
+static bool validateProgram(GLuint program)
 {
     glValidateProgram(program);
 
