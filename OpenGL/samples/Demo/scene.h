@@ -181,9 +181,9 @@ public:
         glUniformMatrix4fv(shaderLight.loc_depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
 
         Light light;
-        light.ambient = 0.2f * glm::vec3(1.0f);
-        light.diffuse = 1.0f * glm::vec3(1.0f);
-        light.specular = 1.0f * glm::vec3(1.0f);
+        light.ambient = glm::vec3(0.2f);
+        light.diffuse = glm::vec3(1.0f);
+        light.specular = glm::vec3(0.5f);
 
         glUniform3fv(shaderLight.loc_light.ambient, 1, glm::value_ptr(light.ambient));
         glUniform3fv(shaderLight.loc_light.diffuse, 1, glm::value_ptr(light.diffuse));
@@ -192,9 +192,6 @@ public:
         for (Mesh & cur_mesh : modelOfFile.meshes)
         {
             glDisable(GL_BLEND);
-
-            if (std::string(cur_mesh.material.name.C_Str()) == "16___Default")
-                continue;
 
             glUniform1i(glGetUniformLocation(shaderLight.program, "textures.ambient"), 0);
             glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_ambient"), 0);
@@ -297,9 +294,6 @@ public:
 
         for (Mesh & cur_mesh : modelOfFile.meshes)
         {
-            if (std::string(cur_mesh.material.name.C_Str()) == "16___Default")
-                continue;
-
             cur_mesh.bindMesh();
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
             glDrawElements(GL_TRIANGLES, (GLsizei)cur_mesh.indices.size(), GL_UNSIGNED_INT, 0);

@@ -224,10 +224,14 @@ private:
             std::vector<Mesh::Texture> add;
 
             std::pair<std::string, aiTextureType> map_from[] = {
-                { "_diff", aiTextureType_DIFFUSE } };
+                { "_diff", aiTextureType_DIFFUSE },
+                { "_color", aiTextureType_DIFFUSE }
+            };
 
             std::pair<std::string, aiTextureType> map_to[] = {
-                { "_spec", aiTextureType_SPECULAR } };
+                { "_spec", aiTextureType_SPECULAR },
+                { "_nmap", aiTextureType_HEIGHT }
+            };
 
             for (auto &from_type : map_from)
             {
@@ -244,7 +248,7 @@ private:
                             continue;
 
                         path.replace(loc, from_type.first.size(), to_type.first);
-                        if (std::ifstream(path).good())
+                        if (!std::ifstream(path).good())
                             continue;
 
                         Mesh::Texture texture;
@@ -292,14 +296,18 @@ private:
 
     void loadMaterialTextures(Mesh &retMeh, aiMaterial* mat, aiTextureType type)
     {
-        for (GLuint i = 0; i < mat->GetTextureCount(type); i++)
+        for (uint32_t i = 0; i < mat->GetTextureCount(type); ++i)
         {
-            aiString str;
-            mat->GetTexture(type, i, &str);
+            aiString texture_name;
+            mat->GetTexture(type, i, &texture_name);
+            std::string texture_path = m_directory + "/" + texture_name.C_Str();
+            if (!std::ifstream(texture_path).good())
+                continue;
+
             Mesh::Texture texture;
             texture.id = -1;
             texture.type = type;
-            texture.path = m_directory + "/" + str.C_Str();
+            texture.path = texture_path;
             TextureFromFile(texture);
             retMeh.textures.push_back(texture);
         }
