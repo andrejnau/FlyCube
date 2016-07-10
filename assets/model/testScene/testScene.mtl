@@ -1,0 +1,14 @@
+# Blender MTL File: 'testScene'
+# Material Count: 2
+
+newmtl Material2Object
+Ns 96.0
+Ka 0.174500 0.011750 0.011750
+Kd 0.614240 0.041360 0.041360
+Ks 0.727811 0.626959 0.626959
+
+newmtl Material2Plane
+Ns 96.0
+Ka 0.000000 0.000000 1.000000
+Kd 0.000000 0.000000 1.000000
+Ks 0.000000 0.000000 0.000000
