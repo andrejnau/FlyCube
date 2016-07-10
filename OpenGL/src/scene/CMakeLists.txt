@@ -12,7 +12,11 @@ set (SOURCES
 
 add_library(${PROJECT} ${SOURCES} ${HEADERS})
 
-target_link_libraries(${PROJECT} gl_load SOIL assimp simple_camera utils)
+if (ANDROID)
+    target_link_libraries(${PROJECT} android log GLESv3 SOIL assimp simple_camera utils)
+else()
+    target_link_libraries(${PROJECT} gl_load SOIL assimp simple_camera utils)
+endif()
 
 set_target_properties(${PROJECT} PROPERTIES FOLDER "samples")
 

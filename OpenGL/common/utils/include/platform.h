@@ -4,8 +4,8 @@
     #include <EGL/egl.h>
     #include <GLES3/gl3.h>
     #define LOG_TAG "FlyCube"
-    #include <mlogger_only.h>
 #else
     #include <gl_core_4_5.h>
-    #include <mlogger.h>
 #endif
+
+#include <mlogger.h>

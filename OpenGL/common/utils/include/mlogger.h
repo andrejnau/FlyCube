@@ -38,7 +38,7 @@ namespace mlog
     };
 
 #if defined(__ANDROID__) || defined(ANDROID)
-    int32_t get_value(const severity_level& lvl)
+    static int32_t get_value(const severity_level& lvl)
     {
         switch (lvl)
         {
@@ -66,6 +66,7 @@ namespace mlog
         compare_type compare;
         severity_level value;
 
+#if 0
         filter_level filter_level::operator >= (const severity_level& request)
         {
             filter_level res;
@@ -109,6 +110,7 @@ namespace mlog
             res.value = request;
             return res;
         }
+#endif
     };
 
     class logger
