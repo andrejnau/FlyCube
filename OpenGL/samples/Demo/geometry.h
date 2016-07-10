@@ -315,7 +315,6 @@ private:
 
     void TextureFromFile(Mesh::Texture &texture)
     {
-
         int width, height;
         unsigned char* image = SOIL_load_image(texture.path.C_Str(), &width, &height, 0, SOIL_LOAD_RGBA);
 

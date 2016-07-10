@@ -28,9 +28,6 @@ public:
     {
     }
 
-    GLuint depthFBO = 0;
-    GLuint depthTexture = 0;
-
     GLuint FBODepthCreate(GLuint _Texture_depth)
     {
         GLuint FBO = 0;
@@ -50,44 +47,19 @@ public:
         return FBO;
     }
 
-    GLuint TextureCreate(GLsizei width, GLsizei height)
-    {
-        GLuint texture;
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_EDGE);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, (GLint)GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        return texture;
-    }
-
     GLuint TextureCreateDepth(GLsizei width, GLsizei height)
     {
         GLuint texture;
-        // запросим у OpenGL свободный индекс текстуры
         glGenTextures(1, &texture);
-        // сделаем текстуру активной
         glBindTexture(GL_TEXTURE_2D, texture);
-        // установим параметры фильтрации текстуры - линейная фильтрация
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
-        // установим параметры "оборачиваниея" текстуры - отсутствие оборачивания
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_BORDER);
-        // необходимо для использования depth-текстуры как shadow map
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, (GLint)GL_COMPARE_REF_TO_TEXTURE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, (GLint)GL_LEQUAL);
-
-
         GLfloat border[4] = { 1.0, 0.0, 0.0, 0.0 };
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
-
-        // соаздем "пустую" текстуру под depth-данные
-        glTexStorage2D(GL_TEXTURE_2D, 1, (GLenum)GL_DEPTH_COMPONENT24, width, height);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, (GLint)GL_COMPARE_REF_TO_TEXTURE);
+        glTexStorage2D(GL_TEXTURE_2D, 1, (GLenum)GL_DEPTH_COMPONENT32, width, height);
 
         glBindTexture(GL_TEXTURE_2D, 0);
         return texture;
@@ -397,6 +369,9 @@ private:
     int m_height;
 
     float angle = 0.0f;
+
+    GLuint depthFBO = 0;
+    GLuint depthTexture = 0;
 
     Model modelOfFile;
     Model modelOfFileSphere;

@@ -33,7 +33,7 @@ public:
 
         c_textureID = loadCubemap();
 
-        depthTexture = TextureCreateDepth(m_width, m_height);
+        depthTexture = TextureCreateDepth(depth_size, depth_size);
         depthFBO = FBOCreate(depthTexture);
 
         lightPosition = glm::vec3(0.0f, 20.0f, 5.0f);
@@ -74,9 +74,11 @@ public:
         glDepthMask(GL_TRUE);
         glClear(GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_FRONT);
+        glViewport(0, 0, depth_size, depth_size);
         draw_obj_depth();
-
+        glViewport(0, 0, m_width, m_height);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_BACK);
@@ -274,38 +276,20 @@ public:
         return FBO;
     }
 
-    GLuint TextureCreate(GLsizei width, GLsizei height)
-    {
-        GLuint texture;
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_EDGE);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, (GLint)GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        return texture;
-    }
-
     GLuint TextureCreateDepth(GLsizei width, GLsizei height)
     {
         GLuint texture;
-        // запросим у OpenGL свободный индекс текстуры
         glGenTextures(1, &texture);
-        // сделаем текстуру активной
         glBindTexture(GL_TEXTURE_2D, texture);
-        // установим параметры фильтрации текстуры - линейная фильтрация
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
-        // установим параметры "оборачиваниея" текстуры - отсутствие оборачивания
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_EDGE);
-        // необходимо для использования depth-текстуры как shadow map
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_BORDER);
+        GLfloat border[4] = { 1.0, 0.0, 0.0, 0.0 };
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, (GLint)GL_COMPARE_REF_TO_TEXTURE);
-        // соаздем "пустую" текстуру под depth-данные
-        glTexImage2D(GL_TEXTURE_2D, 0, (GLint)GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glTexStorage2D(GL_TEXTURE_2D, 1, (GLenum)GL_DEPTH_COMPONENT32, width, height);
+        glBindTexture(GL_TEXTURE_2D, 0);
         return texture;
     }
 
@@ -346,15 +330,6 @@ public:
     virtual void resize(int x, int y, int width, int height)
     {
         glViewport(x, y, width, height);
-        if (width != m_width || height != m_height)
-        {
-            if (depthTexture)
-                glDeleteTextures(1, &depthTexture);
-            if (depthFBO)
-                glDeleteFramebuffers(1, &depthFBO);
-            depthTexture = TextureCreateDepth(1024, 1024);
-            depthFBO = FBOCreate(depthTexture);
-        }
         m_width = width;
         m_height = height;
         m_camera.SetViewport(x, y, width, height);
@@ -401,6 +376,7 @@ private:
 
     int m_width;
     int m_height;
+    int depth_size = 2048;
 
     float angle = 0.0f;
 
