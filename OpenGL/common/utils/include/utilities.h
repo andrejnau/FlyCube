@@ -228,7 +228,7 @@ static bool loadOBJ(const std::string &path,
     std::ios_base::sync_with_stdio(false);
 
     std::vector<char> vec(getStream(path));
-    std::stringstream buf, buf_split;
+    std::stringstream buf;
     std::copy(vec.begin(), vec.end(), std::ostreambuf_iterator<char>(buf));
 
     std::vector<GLuint> vertexIndices, uvIndices, normalIndices;
@@ -284,11 +284,11 @@ static bool loadOBJ(const std::string &path,
         }
         else if (type == "f")
         {
+            std::stringstream buf_split;
             std::string line;
             buf.get();
             std::getline(buf, line);
             std::replace(line.begin(), line.end(), '/', ' ');
-            buf_split.swap(std::stringstream());
             buf_split << line;
 
             for (int i = 0; i < 3; ++i)
@@ -304,6 +304,7 @@ static bool loadOBJ(const std::string &path,
 
                 if (!temp_uvs.empty())
                 {
+                    buf_split >> tmp;
                     uvIndex = std::stoi(tmp);
                     uvIndices.push_back(uvIndex);
                 }

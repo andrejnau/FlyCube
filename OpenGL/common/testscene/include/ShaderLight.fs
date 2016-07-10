@@ -19,7 +19,7 @@ R"fs(
         vec3 lightDir = normalize(u_lightPosition - _FragPos);
         float diff = max(dot(lightDir, normal), 0.1);
         float distance = length(u_lightPosition - _FragPos);
-        diff = diff / (0.45 * distance * distance);
+        diff = diff / (0.9 * distance * distance);
         vec3 diffuse = color * diff;
 
         vec3 viewDir = normalize(u_camera - _FragPos);
