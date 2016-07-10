@@ -22,7 +22,7 @@ int Win32Application::Run(DXSample* pSample, HINSTANCE hInstance, int nCmdShow)
     // Create the window and store a handle to it.
     m_hwnd = CreateWindow(
         windowClass.lpszClassName,
-        L"testApp",
+        L"[DX12] testApp",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT,
         CW_USEDEFAULT,

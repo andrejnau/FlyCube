@@ -1,5 +1,4 @@
-set (PROJECT utils)
-project (${PROJECT})
+set (target utils)
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
@@ -12,14 +11,14 @@ set(headers
     ${include_path}/mlogger.h
 )
 
-add_library(${PROJECT} INTERFACE)
+add_library(${target} INTERFACE)
 
-target_include_directories(${PROJECT}
+target_include_directories(${target}
     INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_sources(${PROJECT}
+target_sources(${target}
     INTERFACE
         ${headers}
 )

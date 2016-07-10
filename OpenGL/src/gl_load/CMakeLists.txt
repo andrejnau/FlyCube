@@ -19,4 +19,4 @@ target_include_directories(${PROJECT}
         ${include_path}
 )
 
-set_target_properties(${PROJECT} PROPERTIES FOLDER "common")
+set_target_properties(${PROJECT} PROPERTIES FOLDER "library")

@@ -1,3 +1,0 @@
-#pragma once
-#define GitVersion 0x@GIT_COMMIT_HASH@
-#define GitBranch "@GIT_BRANCH@"

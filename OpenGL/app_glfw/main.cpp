@@ -102,7 +102,7 @@ int main(void)
 
     glfwWindowHint(GLFW_SAMPLES, 4);
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Simple Demo", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "[OpenGL] testApp", nullptr, nullptr);
     if (!window)
     {
         glfwTerminate();

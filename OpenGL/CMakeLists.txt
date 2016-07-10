@@ -9,7 +9,5 @@ include(${project_root}/cmake/3rdparty/soil.cmake)
 include(${project_root}/cmake/3rdparty/assimp.cmake)
 include(${project_root}/cmake/3rdparty/glm.cmake)
 
-add_subdirectory(common)
-add_subdirectory(common/gl_load)
-add_subdirectory(example)
 add_subdirectory(src)
+add_subdirectory(app_glfw)
