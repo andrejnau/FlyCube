@@ -1,2 +1,1 @@
-add_subdirectory(CGCoursework)
 add_subdirectory(Demo)

@@ -63,7 +63,7 @@ vec3 CalcBumpedNormal()
 float GetShadowPCF(in vec4 smcoord)
 {
     float res = 0.0;
-    smcoord.z -= 0.0005 * smcoord.w;
+    smcoord.z -= 0.0001 * smcoord.w;
     res += textureProjOffset(depthTexture, smcoord, ivec2(-1, -1));
     res += textureProjOffset(depthTexture, smcoord, ivec2(0, -1));
     res += textureProjOffset(depthTexture, smcoord, ivec2(1, -1));

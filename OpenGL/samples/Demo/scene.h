@@ -25,6 +25,7 @@ public:
         , axis_z(0.0f, 0.0f, 1.0f)
         , modelOfFile("model/sponza/sponza.obj")
         , modelOfFileSphere("model/sphere.obj")
+        , modelScale(0.01f)
     {
     }
 
@@ -130,9 +131,10 @@ public:
 
         angle += elapsed / 2e6f;
 
-        lightPos = glm::vec3(2.5f * cos(angle), 25.0f, 2.5f * sin(angle));
+        float light_r = 2.5;
+        lightPos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
 
-        GLfloat near_plane = 0.1f, far_plane = 128.0f, size = 25.0f;
+        GLfloat near_plane = 0.1f, far_plane = 128.0f, size = 30.0f;
         lightProjection = glm::ortho(-size, size, -size, size, near_plane, far_plane);
         lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
         lightSpaceMatrix = lightProjection * lightView;
@@ -164,7 +166,7 @@ public:
         glm::mat4 projection, view, model;
         m_camera.GetMatrix(projection, view, model);
 
-        model = glm::scale(glm::vec3(0.01f)) * model;
+        model = glm::scale(glm::vec3(modelScale)) * model;
 
         glUniformMatrix4fv(shaderLight.loc_model, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(shaderLight.loc_view, 1, GL_FALSE, glm::value_ptr(view));
@@ -273,7 +275,7 @@ public:
         }
 
         glUseProgram(shaderSimpleColor.program);
-        model = glm::translate(glm::mat4(1.0f), lightPos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f)) * model;
+        model = glm::translate(glm::mat4(1.0f), lightPos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.001f));
         glUniformMatrix4fv(shaderSimpleColor.loc_uMVP, 1, GL_FALSE, glm::value_ptr(projection * view * model));
         glUniform3f(shaderSimpleColor.loc_objectColor, 1.0f, 1.0f, 1.0);
 
@@ -291,7 +293,7 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shaderDepth.program);
-        glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
+        glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(modelScale));
         glm::mat4 Matrix = lightSpaceMatrix * model;
         glUniformMatrix4fv(shaderDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
@@ -446,6 +448,8 @@ private:
     glm::mat4 lightView;
 
     int depth_size = 2048;
+
+    float modelScale;
 
     GLuint c_textureID;
 
