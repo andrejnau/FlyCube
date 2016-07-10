@@ -288,7 +288,7 @@ static bool loadOBJ(const std::string &path,
             buf.get();
             std::getline(buf, line);
             std::replace(line.begin(), line.end(), '/', ' ');
-            buf_split.clear();
+            buf_split.swap(std::stringstream());
             buf_split << line;
 
             for (int i = 0; i < 3; ++i)
@@ -304,7 +304,6 @@ static bool loadOBJ(const std::string &path,
 
                 if (!temp_uvs.empty())
                 {
-                    buf_split >> tmp;
                     uvIndex = std::stoi(tmp);
                     uvIndices.push_back(uvIndex);
                 }

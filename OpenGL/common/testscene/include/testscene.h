@@ -32,7 +32,7 @@ public:
     {
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
-        glClearColor(0.365f, 0.54f, 0.66f, 1.0f);
+        glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
         return true;
     }
 
@@ -47,14 +47,14 @@ public:
         end = std::chrono::system_clock::now();
         int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         start = std::chrono::system_clock::now();
-        static float angle = 0, angle_light = 0;
-        angle += elapsed / 5000000.0f;
+        float dt = elapsed / 5000000.0f;
+        angle += dt;
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shaderLight.program);
 
-        glm::vec3 lightPosition(2.0f * sin(angle_light), 2.0f * sin(angle_light), 2.0f  * sin(angle_light));
         glm::vec3 camera(0.0f, 0.0f, 2.0f);
+        glm::vec3 lightPosition = camera;
 
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = glm::lookAt(
@@ -74,11 +74,9 @@ public:
 
         model = animX * animY * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f));
 
-        glm::mat4 Matrix = projection * view * model;
-        glm::mat4 MatrixPV = projection * view;
-
-        glUniformMatrix4fv(shaderLight.loc_VP, 1, GL_FALSE, glm::value_ptr(MatrixPV));
-        glUniformMatrix4fv(shaderLight.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+        glUniformMatrix4fv(shaderLight.loc_model, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(shaderLight.loc_view, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(shaderLight.loc_projection, 1, GL_FALSE, glm::value_ptr(projection));
 
         glUniform3fv(shaderLight.loc_lightPosition, 1, glm::value_ptr(lightPosition));
         glUniform3fv(shaderLight.loc_camera, 1, glm::value_ptr(camera));
@@ -98,6 +96,8 @@ private:
     glm::vec3 axis_x;
     glm::vec3 axis_y;
     glm::vec3 axis_z;
+
+    float angle = 0;
 
     int m_width;
     int m_height;
