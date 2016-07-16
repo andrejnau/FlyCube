@@ -1,11 +1,12 @@
 #version 300 es
 precision highp float;
+precision highp sampler2DMS;
 
-uniform sampler2D gPosition;
-uniform sampler2D gNormal;
-uniform sampler2D gAmbient;
-uniform sampler2D gDiffuse;
-uniform sampler2D gSpecular;
+uniform sampler2DMS gPosition;
+uniform sampler2DMS gNormal;
+uniform sampler2DMS gAmbient;
+uniform sampler2DMS gDiffuse;
+uniform sampler2DMS gSpecular;
 
 uniform vec3 lightPos;
 uniform vec3 viewPos;
@@ -35,16 +36,28 @@ float GetShadowPCF(in vec4 smcoord)
     return max(0.25, res);
 }
 
+vec4 getTextureMultisample(sampler2DMS _texture)
+{
+    int num_samples = 4;
+    ivec2 iTexC = ivec2(TexCoords * vec2(textureSize(_texture)));
+    vec4 color = vec4(0.0);
+    for (int i = 0; i < num_samples; ++i)
+    {
+        color += texelFetch(_texture, iTexC, i);
+    }
+    return color / vec4(num_samples);
+}
+
 void main()
 {
     vec4 gamma4 = vec4(vec3(1.0/2.2), 1);
 
-    vec3 fragPos = texture(gPosition, TexCoords).rgb;
-    vec3 normal = texture(gNormal, TexCoords).rgb;
-    vec3 ambient = texture(gAmbient, TexCoords).rgb;
-    vec3 diffuse = texture(gDiffuse, TexCoords).rgb;
-    vec3 specular = texture(gSpecular, TexCoords).rgb;
-    float shininess = texture(gSpecular, TexCoords).a;
+    vec3 fragPos = getTextureMultisample(gPosition).rgb;
+    vec3 normal = getTextureMultisample(gNormal).rgb;
+    vec3 ambient = getTextureMultisample(gAmbient).rgb;
+    vec3 diffuse = getTextureMultisample(gDiffuse).rgb;
+    vec3 specular = getTextureMultisample(gSpecular).rgb;
+    float shininess = getTextureMultisample(gSpecular).a;
 
     vec3 lightDir = normalize(lightPos - fragPos);
     float diff = max(dot(lightDir, normal), 0.0);
