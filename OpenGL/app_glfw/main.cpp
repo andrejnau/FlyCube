@@ -17,7 +17,6 @@ void draw_scene()
 
 void init_scene(int width, int height)
 {
-    ogl_LoadFunctions();
     renderer.reset(new tScenes());
     renderer->resize(0, 0, width, height);
     renderer->init();
@@ -94,19 +93,25 @@ static void error_callback(int error, const char* description)
     fprintf(stderr, "Error: %s\n", description);
 }
 
+void APIENTRY gl_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *msg, const void *data)
+{
+    std::cout << "debug call: " << msg << std::endl;
+}
+
 int main(void)
 {
     glfwSetErrorCallback(error_callback);
     if (!glfwInit())
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
 
     glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "[OpenGL] testApp", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(1280, 720, "[OpenGL] testApp", nullptr, nullptr);
     if (!window)
     {
         glfwTerminate();
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     glfwSetKeyCallback(window, key_callback);
@@ -117,8 +122,12 @@ int main(void)
 
     glfwMakeContextCurrent(window);
 
+    ogl_LoadFunctions();
+    glDebugMessageCallback(gl_callback, nullptr);
+
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
+
     init_scene(width, height);
 
     while (!glfwWindowShouldClose(window))
@@ -135,5 +144,5 @@ int main(void)
         glfwSwapBuffers(window);
     }
 
-    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 }

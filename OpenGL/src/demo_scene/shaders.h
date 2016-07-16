@@ -4,143 +4,169 @@
 #include <string>
 #include <utilities.h>
 
+#define GET_UNIFORM_LOCATION(name) \
+    loc.##name = glGetUniformLocation(program, #name);
+
 struct ShaderLight
 {
     ShaderLight()
     {
-        std::string path = ASSETS_PATH "shaders/Demo/";
+        std::string vertex = GetShaderSource("shaders/Demo/ShaderLight.vs");
+        std::string fragment = GetShaderSource("shaders/Demo/ShaderLight.fs");
 
-        std::ifstream vertex_stream(path + "ShaderLight.vs");
-        std::string vertex((std::istreambuf_iterator<char>(vertex_stream)), std::istreambuf_iterator<char>());
+        ShadersVector shaders = {
+            { GL_VERTEX_SHADER, vertex },
+            { GL_FRAGMENT_SHADER, fragment }
+        };
 
-        std::ifstream fragment_stream(path + "ShaderLight.fs");
-        std::string fragment((std::istreambuf_iterator<char>(fragment_stream)), std::istreambuf_iterator<char>());
+        program = CreateProgram(shaders);
 
-        program = createProgram(vertex.c_str(), fragment.c_str());
+        GET_UNIFORM_LOCATION(material.ambient);
+        GET_UNIFORM_LOCATION(material.diffuse);
+        GET_UNIFORM_LOCATION(material.specular);
+        GET_UNIFORM_LOCATION(material.shininess);
 
-        loc_viewPos = glGetUniformLocation(program, "viewPos");
-        loc_lightPos = glGetUniformLocation(program, "lightPos");
+        GET_UNIFORM_LOCATION(light.ambient);
+        GET_UNIFORM_LOCATION(light.diffuse);
+        GET_UNIFORM_LOCATION(light.specular);
 
-        loc_model = glGetUniformLocation(program, "model");
-        loc_view = glGetUniformLocation(program, "view");
-        loc_projection = glGetUniformLocation(program, "projection");
-        loc_depthBiasMVP = glGetUniformLocation(program, "depthBiasMVP");
+        GET_UNIFORM_LOCATION(viewPos);
+        GET_UNIFORM_LOCATION(lightPos);
 
-        loc_material.ambient = glGetUniformLocation(program, "material.ambient");
-        loc_material.diffuse = glGetUniformLocation(program, "material.diffuse");
-        loc_material.specular = glGetUniformLocation(program, "material.specular");
-        loc_material.shininess = glGetUniformLocation(program, "material.shininess");
-
-        loc_light.ambient = glGetUniformLocation(program, "light.ambient");
-        loc_light.diffuse = glGetUniformLocation(program, "light.diffuse");
-        loc_light.specular = glGetUniformLocation(program, "light.specular");
+        GET_UNIFORM_LOCATION(model);
+        GET_UNIFORM_LOCATION(view);
+        GET_UNIFORM_LOCATION(projection);
+        GET_UNIFORM_LOCATION(depthBiasMVP);
     }
-
-    struct LocMaterial
-    {
-        GLuint ambient;
-        GLuint diffuse;
-        GLuint specular;
-        GLuint shininess;
-    } loc_material;
-
-    struct LocLight
-    {
-        GLuint ambient;
-        GLuint diffuse;
-        GLuint specular;
-    } loc_light;
 
     GLuint program;
 
-    GLint loc_viewPos;
-    GLint loc_lightPos;
+    struct
+    {
+        struct
+        {
+            GLuint ambient;
+            GLuint diffuse;
+            GLuint specular;
+            GLuint shininess;
+        } material;
 
-    GLint loc_model;
-    GLint loc_view;
-    GLint loc_projection;
-    GLint loc_depthBiasMVP;
+        struct
+        {
+            GLuint ambient;
+            GLuint diffuse;
+            GLuint specular;
+        } light;
+
+
+        GLint viewPos;
+        GLint lightPos;
+
+        GLint model;
+        GLint view;
+        GLint projection;
+        GLint depthBiasMVP;
+    } loc;
 };
 
 struct ShaderSimpleColor
 {
     ShaderSimpleColor()
     {
-        std::string path = ASSETS_PATH "shaders/Demo/";
+        std::string vertex = GetShaderSource("shaders/Demo/ShaderSimpleColor.vs");
+        std::string fragment = GetShaderSource("shaders/Demo/ShaderSimpleColor.fs");
 
-        std::ifstream vertex_stream(path + "ShaderSimpleColor.vs");
-        std::string vertex((std::istreambuf_iterator<char>(vertex_stream)), std::istreambuf_iterator<char>());
+        ShadersVector shaders = {
+            { GL_VERTEX_SHADER, vertex },
+            { GL_FRAGMENT_SHADER, fragment }
+        };
 
-        std::ifstream fragment_stream(path + "ShaderSimpleColor.fs");
-        std::string fragment((std::istreambuf_iterator<char>(fragment_stream)), std::istreambuf_iterator<char>());
+        program = CreateProgram(shaders);
 
-        program = createProgram(vertex.c_str(), fragment.c_str());
-
-        loc_objectColor = glGetUniformLocation(program, "objectColor");
-        loc_uMVP = glGetUniformLocation(program, "u_MVP");
+        GET_UNIFORM_LOCATION(objectColor);
+        GET_UNIFORM_LOCATION(u_MVP);
     }
 
     GLuint program;
-    GLint loc_objectColor;
-    GLint loc_uMVP;
+
+    struct
+    {
+        GLint objectColor;
+        GLint u_MVP;
+    } loc;
 };
 
 struct ShaderShadowView
 {
     ShaderShadowView()
     {
-        std::string path = ASSETS_PATH "shaders/Demo/";
+        std::string vertex = GetShaderSource("shaders/Demo/ShaderShadowView.vs");
+        std::string fragment = GetShaderSource("shaders/Demo/ShaderShadowView.fs");
 
-        std::ifstream vertex_stream(path + "ShaderShadowView.vs");
-        std::string vertex((std::istreambuf_iterator<char>(vertex_stream)), std::istreambuf_iterator<char>());
+        ShadersVector shaders = {
+            { GL_VERTEX_SHADER, vertex },
+            { GL_FRAGMENT_SHADER, fragment }
+        };
 
-        std::ifstream fragment_stream(path + "ShaderShadowView.fs");
-        std::string fragment((std::istreambuf_iterator<char>(fragment_stream)), std::istreambuf_iterator<char>());
+        program = CreateProgram(shaders);
 
-        program = createProgram(vertex.c_str(), fragment.c_str());
-        loc_MVP = glGetUniformLocation(program, "u_m4MVP");
+        GET_UNIFORM_LOCATION(u_m4MVP);
     }
 
     GLuint program;
-    GLint loc_MVP;
+
+    struct
+    {
+        GLint u_m4MVP;
+    } loc;
 };
 
 struct ShaderDepth
 {
     ShaderDepth()
     {
-        std::string path = ASSETS_PATH "shaders/Demo/";
+        std::string vertex = GetShaderSource("shaders/Demo/ShaderDepth.vs");
+        std::string fragment = GetShaderSource("shaders/Demo/ShaderDepth.fs");
 
-        std::ifstream vertex_stream(path + "ShaderDepth.vs");
-        std::string vertex((std::istreambuf_iterator<char>(vertex_stream)), std::istreambuf_iterator<char>());
+        ShadersVector shaders = {
+            { GL_VERTEX_SHADER, vertex },
+            { GL_FRAGMENT_SHADER, fragment }
+        };
 
-        std::ifstream fragment_stream(path + "ShaderDepth.fs");
-        std::string fragment((std::istreambuf_iterator<char>(fragment_stream)), std::istreambuf_iterator<char>());
+        program = CreateProgram(shaders);
 
-        program = createProgram(vertex.c_str(), fragment.c_str());
-        loc_MVP = glGetUniformLocation(program, "u_m4MVP");
+        GET_UNIFORM_LOCATION(u_m4MVP);
     }
 
     GLuint program;
-    GLint loc_MVP;
+
+    struct
+    {
+        GLint u_m4MVP;
+    } loc;
 };
 
 struct ShaderSimpleCubeMap
 {
     ShaderSimpleCubeMap()
     {
-        std::string path = ASSETS_PATH "shaders/Demo/";
+        std::string vertex = GetShaderSource("shaders/Demo/ShaderSimpleCubeMap.vs");
+        std::string fragment = GetShaderSource("shaders/Demo/ShaderSimpleCubeMap.fs");
 
-        std::ifstream vertex_stream(path + "ShaderSimpleCubeMap.vs");
-        std::string vertex((std::istreambuf_iterator<char>(vertex_stream)), std::istreambuf_iterator<char>());
+        ShadersVector shaders = {
+            { GL_VERTEX_SHADER, vertex },
+            { GL_FRAGMENT_SHADER, fragment }
+        };
 
-        std::ifstream fragment_stream(path + "ShaderSimpleCubeMap.fs");
-        std::string fragment((std::istreambuf_iterator<char>(fragment_stream)), std::istreambuf_iterator<char>());
+        program = CreateProgram(shaders);
 
-        program = createProgram(vertex.c_str(), fragment.c_str());
-        loc_MVP = glGetUniformLocation(program, "u_MVP");
+        GET_UNIFORM_LOCATION(u_MVP);
     }
 
     GLuint program;
-    GLint loc_MVP;
+
+    struct
+    {
+        GLint u_MVP;
+    } loc;
 };

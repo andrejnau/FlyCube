@@ -1,4 +1,3 @@
-#define ASSETS_PATH ""
 #include <jni.h>
 #include <platform.h>
 #include <testscene.h>

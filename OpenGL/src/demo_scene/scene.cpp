@@ -68,12 +68,12 @@ inline GLuint tScenes::loadCubemap()
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
     std::vector <std::string> textures_faces = {
-        ASSETS_PATH "cubemap/skycloud/txStormydays_rt.bmp",
-        ASSETS_PATH "cubemap/skycloud/txStormydays_lf.bmp",
-        ASSETS_PATH "cubemap/skycloud/txStormydays_up.bmp",
-        ASSETS_PATH "cubemap/skycloud/txStormydays_dn.bmp",
-        ASSETS_PATH "cubemap/skycloud/txStormydays_bk.bmp",
-        ASSETS_PATH "cubemap/skycloud/txStormydays_ft.bmp"
+        GetAssetFullPath("cubemap/skycloud/txStormydays_rt.bmp"),
+        GetAssetFullPath("cubemap/skycloud/txStormydays_lf.bmp"),
+        GetAssetFullPath("cubemap/skycloud/txStormydays_up.bmp"),
+        GetAssetFullPath("cubemap/skycloud/txStormydays_dn.bmp"),
+        GetAssetFullPath("cubemap/skycloud/txStormydays_bk.bmp"),
+        GetAssetFullPath("cubemap/skycloud/txStormydays_ft.bmp")
     };
 
     for (GLuint i = 0; i < textures_faces.size(); i++)
@@ -149,12 +149,12 @@ inline void tScenes::draw_obj()
 
     model = glm::scale(glm::vec3(model_scale)) * model;
 
-    glUniformMatrix4fv(shaderLight.loc_model, 1, GL_FALSE, glm::value_ptr(model));
-    glUniformMatrix4fv(shaderLight.loc_view, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(shaderLight.loc_projection, 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(shaderLight.loc.model, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(shaderLight.loc.view, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(shaderLight.loc.projection, 1, GL_FALSE, glm::value_ptr(projection));
 
-    glUniform3fv(shaderLight.loc_viewPos, 1, glm::value_ptr(m_camera.GetCameraPos()));
-    glUniform3fv(shaderLight.loc_lightPos, 1, glm::value_ptr(lightPos));
+    glUniform3fv(shaderLight.loc.viewPos, 1, glm::value_ptr(m_camera.GetCameraPos()));
+    glUniform3fv(shaderLight.loc.lightPos, 1, glm::value_ptr(lightPos));
 
     glm::mat4 biasMatrix(
         0.5, 0.0, 0.0, 0.0,
@@ -164,16 +164,16 @@ inline void tScenes::draw_obj()
 
     glm::mat4 depthBiasMVP = biasMatrix * lightSpaceMatrix;
 
-    glUniformMatrix4fv(shaderLight.loc_depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
+    glUniformMatrix4fv(shaderLight.loc.depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
 
     Light light;
     light.ambient = glm::vec3(0.2f);
     light.diffuse = glm::vec3(1.0f);
     light.specular = glm::vec3(0.5f);
 
-    glUniform3fv(shaderLight.loc_light.ambient, 1, glm::value_ptr(light.ambient));
-    glUniform3fv(shaderLight.loc_light.diffuse, 1, glm::value_ptr(light.diffuse));
-    glUniform3fv(shaderLight.loc_light.specular, 1, glm::value_ptr(light.specular));
+    glUniform3fv(shaderLight.loc.light.ambient, 1, glm::value_ptr(light.ambient));
+    glUniform3fv(shaderLight.loc.light.diffuse, 1, glm::value_ptr(light.diffuse));
+    glUniform3fv(shaderLight.loc.light.specular, 1, glm::value_ptr(light.specular));
 
     for (Mesh & cur_mesh : modelOfFile.meshes)
     {
@@ -244,10 +244,10 @@ inline void tScenes::draw_obj()
         material.specular = cur_mesh.material.spec;
         material.shininess = cur_mesh.material.shininess;
 
-        glUniform3fv(shaderLight.loc_material.ambient, 1, glm::value_ptr(material.ambient));
-        glUniform3fv(shaderLight.loc_material.diffuse, 1, glm::value_ptr(material.diffuse));
-        glUniform3fv(shaderLight.loc_material.specular, 1, glm::value_ptr(material.specular));
-        glUniform1f(shaderLight.loc_material.shininess, material.shininess);
+        glUniform3fv(shaderLight.loc.material.ambient, 1, glm::value_ptr(material.ambient));
+        glUniform3fv(shaderLight.loc.material.diffuse, 1, glm::value_ptr(material.diffuse));
+        glUniform3fv(shaderLight.loc.material.specular, 1, glm::value_ptr(material.specular));
+        glUniform1f(shaderLight.loc.material.shininess, material.shininess);
 
         cur_mesh.bindMesh();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
@@ -257,8 +257,8 @@ inline void tScenes::draw_obj()
 
     glUseProgram(shaderSimpleColor.program);
     model = glm::translate(glm::mat4(1.0f), lightPos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.001f));
-    glUniformMatrix4fv(shaderSimpleColor.loc_uMVP, 1, GL_FALSE, glm::value_ptr(projection * view * model));
-    glUniform3f(shaderSimpleColor.loc_objectColor, 1.0f, 1.0f, 1.0);
+    glUniformMatrix4fv(shaderSimpleColor.loc.u_MVP, 1, GL_FALSE, glm::value_ptr(projection * view * model));
+    glUniform3f(shaderSimpleColor.loc.objectColor, 1.0f, 1.0f, 1.0);
 
     for (Mesh & cur_mesh : modelOfFileSphere.meshes)
     {
@@ -276,7 +276,7 @@ inline void tScenes::draw_obj_depth()
     glUseProgram(shaderDepth.program);
     glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(model_scale));
     glm::mat4 Matrix = lightSpaceMatrix * model;
-    glUniformMatrix4fv(shaderDepth.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+    glUniformMatrix4fv(shaderDepth.loc.u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
     for (Mesh & cur_mesh : modelOfFile.meshes)
     {
@@ -297,7 +297,7 @@ inline void tScenes::draw_shadow()
 
     glm::mat4 Matrix(1.0f);
 
-    glUniformMatrix4fv(shaderShadowView.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+    glUniformMatrix4fv(shaderShadowView.loc.u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
     static GLfloat plane_vertices[] = {
         -1.0, 1.0, 0.0,
@@ -357,7 +357,7 @@ inline void tScenes::draw_cubemap()
     model = glm::translate(glm::mat4(1.0f), m_camera.GetCameraPos()) * glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)) * model;
 
     glm::mat4 Matrix = projection * view * model;
-    glUniformMatrix4fv(shaderSimpleCubeMap.loc_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+    glUniformMatrix4fv(shaderSimpleCubeMap.loc.u_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
     for (Mesh & cur_mesh : modelOfFileSphere.meshes)
     {

@@ -56,7 +56,7 @@ void Mesh::unbindMesh()
 }
 
 Model::Model(const std::string & file)
-    : m_path(ASSETS_PATH + file)
+    : m_path(GetAssetFullPath(file))
     , m_directory(splitFilename(m_path))
 {
     loadModel();
