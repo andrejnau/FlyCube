@@ -45,7 +45,7 @@ public:
     // Constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = kYaw, float pitch = kPitch);
 
-    void SetViewport(int loc_x, int loc_y, int width, int height);
+    void SetViewport(int width, int height);
 
     void SetCameraPos(glm::vec3 camera_pos);
 

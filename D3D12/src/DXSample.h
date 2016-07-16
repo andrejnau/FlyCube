@@ -23,8 +23,8 @@ using namespace DirectX::SimpleMath;
 class DXSample : public IDXSample
 {
 public:
-    DXSample(UINT width, UINT height);
-    virtual ~DXSample();
+    DXSample(int width, int height);
+    ~DXSample();
 
     virtual void OnInit() override;
     virtual void OnUpdate() override;
@@ -62,9 +62,9 @@ private:
 
     std::unique_ptr<Model> m_modelOfFile;
 
-    UINT m_width;
+    int m_width;
 
-    UINT m_height;
+    int m_height;
 
     static const int frameBufferCount = 3; // number of buffers we want, 2 for double buffering, 3 for tripple buffering
 

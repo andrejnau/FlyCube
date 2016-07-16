@@ -1,100 +1,30 @@
 #include "scene.h"
 
-tScenes::tScenes()
-    : axis_x(1.0f, 0.0f, 0.0f)
-    , axis_y(0.0f, 1.0f, 0.0f)
-    , axis_z(0.0f, 0.0f, 1.0f)
-    , modelOfFile("model/sponza/sponza.obj")
-    , modelOfFileSphere("model/sphere.obj")
-    , model_scale(0.01f)
-{
-}
+tScenes::tScenes(int width, int height)
+    : width_(width)
+    , height_(height)
+    , axis_x_(1.0f, 0.0f, 0.0f)
+    , axis_y_(0.0f, 1.0f, 0.0f)
+    , axis_z_(0.0f, 0.0f, 1.0f)
+    , model_("model/sponza/sponza.obj")
+    , model_sphere_("model/sphere.obj")
+    , model_scale_(0.01f)
+{}
 
-inline bool tScenes::init()
+inline void tScenes::OnInit()
 {
-    glEnable(GL_DEPTH_TEST);
+    camera_.SetViewport(width_, height_);
+
+    glViewport(0, 0, width_, height_);
     glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
+    glEnable(GL_DEPTH_TEST);
 
-    c_textureID = loadCubemap();
-
-    depthTexture = TextureCreateDepth(depth_size, depth_size);
-    depthFBO = FBODepthCreate(depthTexture);
-
-    return true;
+    cubemap_texture_ = LoadCubemap();
+    shadow_texture_ = CreateShadowTexture(depth_size_, depth_size_);
+    shadow_fbo_ = CreateShadowFBO(shadow_texture_);
 }
 
-inline GLuint tScenes::FBODepthCreate(GLuint _Texture_depth)
-{
-    GLuint FBO = 0;
-    GLenum fboStatus;
-    glGenFramebuffers(1, &FBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _Texture_depth, 0);
-    if ((fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        DBG("glCheckFramebufferStatus error 0x%X\n", fboStatus);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        return 0;
-    }
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    return FBO;
-}
-
-inline GLuint tScenes::TextureCreateDepth(GLsizei width, GLsizei height)
-{
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_BORDER);
-    GLfloat border[4] = { 1.0, 0.0, 0.0, 0.0 };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, (GLint)GL_COMPARE_REF_TO_TEXTURE);
-    glTexStorage2D(GL_TEXTURE_2D, 1, (GLenum)GL_DEPTH_COMPONENT32, width, height);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    return texture;
-}
-
-inline GLuint tScenes::loadCubemap()
-{
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-
-    std::vector <std::string> textures_faces = {
-        GetAssetFullPath("cubemap/skycloud/txStormydays_rt.bmp"),
-        GetAssetFullPath("cubemap/skycloud/txStormydays_lf.bmp"),
-        GetAssetFullPath("cubemap/skycloud/txStormydays_up.bmp"),
-        GetAssetFullPath("cubemap/skycloud/txStormydays_dn.bmp"),
-        GetAssetFullPath("cubemap/skycloud/txStormydays_bk.bmp"),
-        GetAssetFullPath("cubemap/skycloud/txStormydays_ft.bmp")
-    };
-
-    for (GLuint i = 0; i < textures_faces.size(); i++)
-    {
-        int width, height, channels;
-        unsigned char * image = SOIL_load_image(textures_faces[i].c_str(), &width, &height, &channels, SOIL_LOAD_RGB);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, (GLint)GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-        SOIL_free_image_data(image);
-    }
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, (GLint)GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-    return textureID;
-}
-
-inline void tScenes::draw()
+void tScenes::OnUpdate()
 {
     auto & state = CurState<bool>::Instance().state;
     if (state["warframe"])
@@ -113,48 +43,63 @@ inline void tScenes::draw()
     angle += elapsed / 2e6f;
 
     float light_r = 2.5;
-    lightPos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
+    light_pos_ = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
 
     GLfloat near_plane = 0.1f, far_plane = 128.0f, size = 30.0f;
-    lightProjection = glm::ortho(-size, size, -size, size, near_plane, far_plane);
-    lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-    lightSpaceMatrix = lightProjection * lightView;
+    light_projection_ = glm::ortho(-size, size, -size, size, near_plane, far_plane);
+    light_view_ = glm::lookAt(light_pos_, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+    light_matrix_ = light_projection_ * light_view_;
+}
 
-    glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+inline void tScenes::OnRender()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo_);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDepthMask(GL_TRUE);
     glClear(GL_DEPTH_BUFFER_BIT);
     glCullFace(GL_FRONT);
-    glViewport(0, 0, depth_size, depth_size);
-    draw_obj_depth();
-    glViewport(0, 0, m_width, m_height);
+    glViewport(0, 0, depth_size_, depth_size_);
+    RenderShadow();
+    glViewport(0, 0, width_, height_);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glCullFace(GL_BACK);
-    draw_obj();
+    RenderScene();
 
-    draw_shadow();
+    RenderShadowTexture();
 
-    draw_cubemap();
+    RenderCubemap();
 }
 
-inline void tScenes::draw_obj()
+inline void tScenes::OnDestroy()
+{
+}
+
+inline void tScenes::OnSizeChanged(int width, int height)
+{
+    width_ = width;
+    height_ = height;
+    glViewport(0, 0, width_, height_);
+    camera_.SetViewport(width_, height_);
+}
+
+inline void tScenes::RenderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shaderLight.program);
+    glUseProgram(shader_light_.program);
     glm::mat4 projection, view, model;
-    m_camera.GetMatrix(projection, view, model);
+    camera_.GetMatrix(projection, view, model);
 
-    model = glm::scale(glm::vec3(model_scale)) * model;
+    model = glm::scale(glm::vec3(model_scale_)) * model;
 
-    glUniformMatrix4fv(shaderLight.loc.model, 1, GL_FALSE, glm::value_ptr(model));
-    glUniformMatrix4fv(shaderLight.loc.view, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(shaderLight.loc.projection, 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(shader_light_.loc.model, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(shader_light_.loc.view, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(shader_light_.loc.projection, 1, GL_FALSE, glm::value_ptr(projection));
 
-    glUniform3fv(shaderLight.loc.viewPos, 1, glm::value_ptr(m_camera.GetCameraPos()));
-    glUniform3fv(shaderLight.loc.lightPos, 1, glm::value_ptr(lightPos));
+    glUniform3fv(shader_light_.loc.viewPos, 1, glm::value_ptr(camera_.GetCameraPos()));
+    glUniform3fv(shader_light_.loc.lightPos, 1, glm::value_ptr(light_pos_));
 
     glm::mat4 biasMatrix(
         0.5, 0.0, 0.0, 0.0,
@@ -162,65 +107,66 @@ inline void tScenes::draw_obj()
         0.0, 0.0, 0.5, 0.0,
         0.5, 0.5, 0.5, 1.0);
 
-    glm::mat4 depthBiasMVP = biasMatrix * lightSpaceMatrix;
+    glm::mat4 depthBiasMVP = biasMatrix * light_matrix_;
 
-    glUniformMatrix4fv(shaderLight.loc.depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
+    glUniformMatrix4fv(shader_light_.loc.depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
 
     Light light;
     light.ambient = glm::vec3(0.2f);
     light.diffuse = glm::vec3(1.0f);
     light.specular = glm::vec3(0.5f);
 
-    glUniform3fv(shaderLight.loc.light.ambient, 1, glm::value_ptr(light.ambient));
-    glUniform3fv(shaderLight.loc.light.diffuse, 1, glm::value_ptr(light.diffuse));
-    glUniform3fv(shaderLight.loc.light.specular, 1, glm::value_ptr(light.specular));
+    glUniform3fv(shader_light_.loc.light.ambient, 1, glm::value_ptr(light.ambient));
+    glUniform3fv(shader_light_.loc.light.diffuse, 1, glm::value_ptr(light.diffuse));
+    glUniform3fv(shader_light_.loc.light.specular, 1, glm::value_ptr(light.specular));
 
-    for (Mesh & cur_mesh : modelOfFile.meshes)
+    for (Mesh & cur_mesh : model_.meshes)
     {
         glDisable(GL_BLEND);
 
-        glUniform1i(glGetUniformLocation(shaderLight.program, "textures.ambient"), 0);
-        glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_ambient"), 0);
-        glUniform1i(glGetUniformLocation(shaderLight.program, "textures.diffuse"), 0);
-        glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_diffuse"), 0);
-        glUniform1i(glGetUniformLocation(shaderLight.program, "textures.specular"), 0);
-        glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_specular"), 0);
-        glUniform1i(glGetUniformLocation(shaderLight.program, "textures.normalMap"), 0);
-        glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_normalMap"), 0);
-        glUniform1i(glGetUniformLocation(shaderLight.program, "textures.alpha"), 0);
-        glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_alpha"), 0);
+        glUniform1i(shader_light_.loc.textures.ambient, 0);
+        glUniform1i(shader_light_.loc.textures.has_ambient, 0);
+        glUniform1i(shader_light_.loc.textures.diffuse, 0);
+        glUniform1i(shader_light_.loc.textures.has_diffuse, 0);
+        glUniform1i(shader_light_.loc.textures.specular, 0);
+        glUniform1i(shader_light_.loc.textures.has_specular, 0);
+        glUniform1i(shader_light_.loc.textures.normalMap, 0);
+        glUniform1i(shader_light_.loc.textures.has_normalMap, 0);
+        glUniform1i(shader_light_.loc.textures.alpha, 0);
+        glUniform1i(shader_light_.loc.textures.has_alpha, 0);
 
         int depth_unit = cur_mesh.textures.size() + 1;
-        glUniform1i(glGetUniformLocation(shaderLight.program, "depthTexture"), depth_unit);
-        glUniform1i(glGetUniformLocation(shaderLight.program, "has_depthTexture"), 0);
+
+        glUniform1i(shader_light_.loc.depthTexture, depth_unit);
+        glUniform1i(shader_light_.loc.has_depthTexture, 0);
 
         for (GLuint i = 0; i < cur_mesh.textures.size(); i++)
         {
             glActiveTexture(GL_TEXTURE0 + i);
             if (cur_mesh.textures[i].type == aiTextureType_AMBIENT)
             {
-                glUniform1i(glGetUniformLocation(shaderLight.program, "textures.ambient"), i);
-                glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_ambient"), 1);
+                glUniform1i(shader_light_.loc.textures.ambient, i);
+                glUniform1i(shader_light_.loc.textures.has_ambient, 1);
             }
             if (cur_mesh.textures[i].type == aiTextureType_DIFFUSE)
             {
-                glUniform1i(glGetUniformLocation(shaderLight.program, "textures.diffuse"), i);
-                glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_diffuse"), 1);
+                glUniform1i(shader_light_.loc.textures.diffuse, i);
+                glUniform1i(shader_light_.loc.textures.has_diffuse, 1);
             }
             else if (cur_mesh.textures[i].type == aiTextureType_SPECULAR)
             {
-                glUniform1i(glGetUniformLocation(shaderLight.program, "textures.specular"), i);
-                glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_specular"), 1);
+                glUniform1i(shader_light_.loc.textures.specular, i);
+                glUniform1i(shader_light_.loc.textures.has_specular, 1);
             }
             else if (cur_mesh.textures[i].type == aiTextureType_HEIGHT)
             {
-                glUniform1i(glGetUniformLocation(shaderLight.program, "textures.normalMap"), i);
-                glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_normalMap"), 1);
+                glUniform1i(shader_light_.loc.textures.normalMap, i);
+                glUniform1i(shader_light_.loc.textures.has_normalMap, 1);
             }
             else if (cur_mesh.textures[i].type == aiTextureType_OPACITY)
             {
-                glUniform1i(glGetUniformLocation(shaderLight.program, "textures.alpha"), i);
-                glUniform1i(glGetUniformLocation(shaderLight.program, "textures.has_alpha"), 1);
+                glUniform1i(shader_light_.loc.textures.alpha, i);
+                glUniform1i(shader_light_.loc.textures.has_alpha, 1);
 
                 glEnable(GL_BLEND);
                 glBlendEquation(GL_FUNC_ADD);
@@ -231,10 +177,10 @@ inline void tScenes::draw_obj()
         }
 
         glActiveTexture(GL_TEXTURE0 + depth_unit);
-        glBindTexture(GL_TEXTURE_2D, depthTexture);
+        glBindTexture(GL_TEXTURE_2D, shadow_texture_);
 
-        glUniform1i(glGetUniformLocation(shaderLight.program, "depthTexture"), depth_unit);
-        glUniform1i(glGetUniformLocation(shaderLight.program, "has_depthTexture"), 1);
+        glUniform1i(shader_light_.loc.depthTexture, depth_unit);
+        glUniform1i(shader_light_.loc.has_depthTexture, 1);
 
         glActiveTexture(GL_TEXTURE0);
 
@@ -244,10 +190,10 @@ inline void tScenes::draw_obj()
         material.specular = cur_mesh.material.spec;
         material.shininess = cur_mesh.material.shininess;
 
-        glUniform3fv(shaderLight.loc.material.ambient, 1, glm::value_ptr(material.ambient));
-        glUniform3fv(shaderLight.loc.material.diffuse, 1, glm::value_ptr(material.diffuse));
-        glUniform3fv(shaderLight.loc.material.specular, 1, glm::value_ptr(material.specular));
-        glUniform1f(shaderLight.loc.material.shininess, material.shininess);
+        glUniform3fv(shader_light_.loc.material.ambient, 1, glm::value_ptr(material.ambient));
+        glUniform3fv(shader_light_.loc.material.diffuse, 1, glm::value_ptr(material.diffuse));
+        glUniform3fv(shader_light_.loc.material.specular, 1, glm::value_ptr(material.specular));
+        glUniform1f(shader_light_.loc.material.shininess, material.shininess);
 
         cur_mesh.bindMesh();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
@@ -255,12 +201,12 @@ inline void tScenes::draw_obj()
         cur_mesh.unbindMesh();
     }
 
-    glUseProgram(shaderSimpleColor.program);
-    model = glm::translate(glm::mat4(1.0f), lightPos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.001f));
-    glUniformMatrix4fv(shaderSimpleColor.loc.u_MVP, 1, GL_FALSE, glm::value_ptr(projection * view * model));
-    glUniform3f(shaderSimpleColor.loc.objectColor, 1.0f, 1.0f, 1.0);
+    glUseProgram(shader_simple_color_.program);
+    model = glm::translate(glm::mat4(1.0f), light_pos_) * glm::scale(glm::mat4(1.0f), glm::vec3(0.001f));
+    glUniformMatrix4fv(shader_simple_color_.loc.u_MVP, 1, GL_FALSE, glm::value_ptr(projection * view * model));
+    glUniform3f(shader_simple_color_.loc.objectColor, 1.0f, 1.0f, 1.0);
 
-    for (Mesh & cur_mesh : modelOfFileSphere.meshes)
+    for (Mesh & cur_mesh : model_sphere_.meshes)
     {
         cur_mesh.bindMesh();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
@@ -269,16 +215,16 @@ inline void tScenes::draw_obj()
     }
 }
 
-inline void tScenes::draw_obj_depth()
+inline void tScenes::RenderShadow()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(shaderDepth.program);
-    glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(model_scale));
-    glm::mat4 Matrix = lightSpaceMatrix * model;
-    glUniformMatrix4fv(shaderDepth.loc.u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+    glUseProgram(shader_depth_.program);
+    glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(model_scale_));
+    glm::mat4 Matrix = light_matrix_ * model;
+    glUniformMatrix4fv(shader_depth_.loc.u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
-    for (Mesh & cur_mesh : modelOfFile.meshes)
+    for (Mesh & cur_mesh : model_.meshes)
     {
         cur_mesh.bindMesh();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
@@ -287,17 +233,17 @@ inline void tScenes::draw_obj_depth()
     }
 }
 
-inline void tScenes::draw_shadow()
+inline void tScenes::RenderShadowTexture()
 {
-    glUseProgram(shaderShadowView.program);
+    glUseProgram(shader_shadow_view_.program);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
-    glUniform1i(glGetUniformLocation(shaderShadowView.program, "sampler"), 0);
+    glBindTexture(GL_TEXTURE_2D, shadow_texture_);
+    glUniform1i(shader_shadow_view_.loc.sampler, 0);
 
     glm::mat4 Matrix(1.0f);
 
-    glUniformMatrix4fv(shaderShadowView.loc.u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+    glUniformMatrix4fv(shader_shadow_view_.loc.u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
     static GLfloat plane_vertices[] = {
         -1.0, 1.0, 0.0,
@@ -318,17 +264,6 @@ inline void tScenes::draw_shadow()
         2, 3, 0
     };
 
-    glBindVertexArray(0);
-    glDisableVertexAttribArray(POS_ATTRIB);
-    glDisableVertexAttribArray(NORMAL_ATTRIB);
-    glDisableVertexAttribArray(TEXTURE_ATTRIB);
-    glDisableVertexAttribArray(TANGENT_ATTRIB);
-    glDisableVertexAttribArray(BITANGENT_ATTRIB);
-    glDisableVertexAttribArray(POS_ATTRIB);
-    glDisableVertexAttribArray(TEXTURE_ATTRIB);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
     glEnableVertexAttribArray(POS_ATTRIB);
     glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, plane_vertices);
 
@@ -338,28 +273,28 @@ inline void tScenes::draw_shadow()
     glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
 }
 
-inline void tScenes::draw_cubemap()
+inline void tScenes::RenderCubemap()
 {
-    glUseProgram(shaderSimpleCubeMap.program);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, c_textureID);
+    glUseProgram(shader_simple_cube_map_.program);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture_);
 
-    GLint OldCullFaceMode;
-    glGetIntegerv(GL_CULL_FACE_MODE, &OldCullFaceMode);
-    GLint OldDepthFuncMode;
-    glGetIntegerv(GL_DEPTH_FUNC, &OldDepthFuncMode);
+    GLint old_cull_face_mode;
+    glGetIntegerv(GL_CULL_FACE_MODE, &old_cull_face_mode);
+    GLint old_depth_func_mode;
+    glGetIntegerv(GL_DEPTH_FUNC, &old_depth_func_mode);
 
     glCullFace(GL_FRONT);
     glDepthFunc(GL_LEQUAL);
 
     glm::mat4 projection, view, model;
-    m_camera.GetMatrix(projection, view, model);
+    camera_.GetMatrix(projection, view, model);
 
-    model = glm::translate(glm::mat4(1.0f), m_camera.GetCameraPos()) * glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)) * model;
+    model = glm::translate(glm::mat4(1.0f), camera_.GetCameraPos()) * glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)) * model;
 
     glm::mat4 Matrix = projection * view * model;
-    glUniformMatrix4fv(shaderSimpleCubeMap.loc.u_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+    glUniformMatrix4fv(shader_simple_cube_map_.loc.u_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
-    for (Mesh & cur_mesh : modelOfFileSphere.meshes)
+    for (Mesh & cur_mesh : model_sphere_.meshes)
     {
         cur_mesh.bindMesh();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
@@ -367,23 +302,81 @@ inline void tScenes::draw_cubemap()
         cur_mesh.unbindMesh();
     }
 
-    glCullFace(OldCullFaceMode);
-    glDepthFunc(OldDepthFuncMode);
+    glCullFace(old_cull_face_mode);
+    glDepthFunc(old_depth_func_mode);
 }
 
-inline void tScenes::resize(int x, int y, int width, int height)
+inline GLuint tScenes::CreateShadowFBO(GLuint shadow_texture)
 {
-    glViewport(x, y, width, height);
-    m_width = width;
-    m_height = height;
-    m_camera.SetViewport(x, y, width, height);
+    GLuint FBO = 0;
+    glGenFramebuffers(1, &FBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadow_texture, 0);
+    GLenum fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+    {
+        DBG("glCheckFramebufferStatus error 0x%X\n", fboStatus);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        return 0;
+    }
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return FBO;
 }
 
-inline void tScenes::destroy()
+inline GLuint tScenes::CreateShadowTexture(GLsizei width, GLsizei height)
 {
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_BORDER);
+    GLfloat border[4] = { 1.0, 0.0, 0.0, 0.0 };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, (GLint)GL_COMPARE_REF_TO_TEXTURE);
+    glTexStorage2D(GL_TEXTURE_2D, 1, (GLenum)GL_DEPTH_COMPONENT32, width, height);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return texture;
+}
+
+inline GLuint tScenes::LoadCubemap()
+{
+    GLuint texture_id;
+    glGenTextures(1, &texture_id);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id);
+
+    std::vector <std::string> textures_faces = {
+        GetAssetFullPath("cubemap/skycloud/txStormydays_rt.bmp"),
+        GetAssetFullPath("cubemap/skycloud/txStormydays_lf.bmp"),
+        GetAssetFullPath("cubemap/skycloud/txStormydays_up.bmp"),
+        GetAssetFullPath("cubemap/skycloud/txStormydays_dn.bmp"),
+        GetAssetFullPath("cubemap/skycloud/txStormydays_bk.bmp"),
+        GetAssetFullPath("cubemap/skycloud/txStormydays_ft.bmp")
+    };
+
+    for (GLuint i = 0; i < textures_faces.size(); i++)
+    {
+        int width, height, channels;
+        unsigned char *image = SOIL_load_image(textures_faces[i].c_str(), &width, &height, &channels, SOIL_LOAD_RGBA);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, (GLint)GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+        SOIL_free_image_data(image);
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, (GLint)GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    return texture_id;
 }
 
 Camera& tScenes::getCamera()
 {
-    return m_camera;
+    return camera_;
 }

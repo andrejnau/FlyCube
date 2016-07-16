@@ -14,7 +14,7 @@ struct ShaderLight
         std::string vertex = GetShaderSource("shaders/Demo/ShaderLight.vs");
         std::string fragment = GetShaderSource("shaders/Demo/ShaderLight.fs");
 
-        ShadersVector shaders = {
+        ShaderVector shaders = {
             { GL_VERTEX_SHADER, vertex },
             { GL_FRAGMENT_SHADER, fragment }
         };
@@ -37,6 +37,24 @@ struct ShaderLight
         GET_UNIFORM_LOCATION(view);
         GET_UNIFORM_LOCATION(projection);
         GET_UNIFORM_LOCATION(depthBiasMVP);
+
+        GET_UNIFORM_LOCATION(textures.normalMap);
+        GET_UNIFORM_LOCATION(textures.has_normalMap);
+
+        GET_UNIFORM_LOCATION(textures.ambient);
+        GET_UNIFORM_LOCATION(textures.has_ambient);
+
+        GET_UNIFORM_LOCATION(textures.diffuse);
+        GET_UNIFORM_LOCATION(textures.has_diffuse);
+
+        GET_UNIFORM_LOCATION(textures.specular);
+        GET_UNIFORM_LOCATION(textures.has_specular);
+
+        GET_UNIFORM_LOCATION(textures.alpha);
+        GET_UNIFORM_LOCATION(textures.has_alpha);
+
+        GET_UNIFORM_LOCATION(depthTexture);
+        GET_UNIFORM_LOCATION(has_depthTexture);
     }
 
     GLuint program;
@@ -58,6 +76,26 @@ struct ShaderLight
             GLuint specular;
         } light;
 
+        struct Texture
+        {
+            GLuint normalMap;
+            GLuint has_normalMap;
+
+            GLuint ambient;
+            GLuint has_ambient;
+
+            GLuint diffuse;
+            GLuint has_diffuse;
+
+            GLuint specular;
+            GLuint has_specular;
+
+            GLuint alpha;
+            GLuint has_alpha;
+        } textures;
+
+        GLint depthTexture;
+        GLint has_depthTexture;
 
         GLint viewPos;
         GLint lightPos;
@@ -76,7 +114,7 @@ struct ShaderSimpleColor
         std::string vertex = GetShaderSource("shaders/Demo/ShaderSimpleColor.vs");
         std::string fragment = GetShaderSource("shaders/Demo/ShaderSimpleColor.fs");
 
-        ShadersVector shaders = {
+        ShaderVector shaders = {
             { GL_VERTEX_SHADER, vertex },
             { GL_FRAGMENT_SHADER, fragment }
         };
@@ -103,7 +141,7 @@ struct ShaderShadowView
         std::string vertex = GetShaderSource("shaders/Demo/ShaderShadowView.vs");
         std::string fragment = GetShaderSource("shaders/Demo/ShaderShadowView.fs");
 
-        ShadersVector shaders = {
+        ShaderVector shaders = {
             { GL_VERTEX_SHADER, vertex },
             { GL_FRAGMENT_SHADER, fragment }
         };
@@ -111,6 +149,7 @@ struct ShaderShadowView
         program = CreateProgram(shaders);
 
         GET_UNIFORM_LOCATION(u_m4MVP);
+        GET_UNIFORM_LOCATION(sampler);
     }
 
     GLuint program;
@@ -118,6 +157,7 @@ struct ShaderShadowView
     struct
     {
         GLint u_m4MVP;
+        GLint sampler;
     } loc;
 };
 
@@ -128,7 +168,7 @@ struct ShaderDepth
         std::string vertex = GetShaderSource("shaders/Demo/ShaderDepth.vs");
         std::string fragment = GetShaderSource("shaders/Demo/ShaderDepth.fs");
 
-        ShadersVector shaders = {
+        ShaderVector shaders = {
             { GL_VERTEX_SHADER, vertex },
             { GL_FRAGMENT_SHADER, fragment }
         };
@@ -153,7 +193,7 @@ struct ShaderSimpleCubeMap
         std::string vertex = GetShaderSource("shaders/Demo/ShaderSimpleCubeMap.vs");
         std::string fragment = GetShaderSource("shaders/Demo/ShaderSimpleCubeMap.fs");
 
-        ShadersVector shaders = {
+        ShaderVector shaders = {
             { GL_VERTEX_SHADER, vertex },
             { GL_FRAGMENT_SHADER, fragment }
         };

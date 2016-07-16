@@ -1,10 +1,11 @@
 #pragma once
 
-class SceneBase
+class ISceneBase
 {
 public:
-    virtual bool init() = 0;
-    virtual void draw() = 0;
-    virtual void destroy() = 0;
-    virtual void resize(int, int, int, int) = 0;
+    virtual void OnInit() = 0;
+    virtual void OnUpdate() = 0;
+    virtual void OnRender() = 0;
+    virtual void OnDestroy() = 0;
+    virtual void OnSizeChanged(int width, int height) = 0;
 };

@@ -3,56 +3,62 @@
 #include <state.h>
 #include <memory>
 
-std::unique_ptr<tScenes> renderer;
-std::map<int, bool> keys;
-float deltaTime = 0.0f;
-double lastFrame = 0.0f;
-double lastX = 400, lastY = 300;
-bool firstMouse = true;
-
-void draw_scene()
+struct SceneControl
 {
-    renderer->draw();
+    tScenes::Ptr scene;
+
+    const int init_width = 1280;
+    const int init_height = 720;
+
+    std::map<int, bool> keys;
+    float delta_time = 0.0f;
+    double last_frame = 0.0f;
+    double last_x = init_width / 2.0;
+    double last_y = init_height / 2.0;
+    bool first_mouse = true;
+} kSceneControl;
+
+tScenes::Ptr& GetScene()
+{
+    return kSceneControl.scene;
 }
 
-void init_scene(int width, int height)
+Camera& GetCamera()
 {
-    renderer.reset(new tScenes());
-    renderer->resize(0, 0, width, height);
-    renderer->init();
+    return GetScene()->getCamera();
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    renderer->resize(0, 0, width, height);
+    GetScene()->OnSizeChanged(width, height);
 }
 
 void Do_Movement()
 {
-    auto &camera = renderer->getCamera();
+    Camera &camera = GetCamera();
 
-    if (keys[GLFW_KEY_W])
-        camera.ProcessKeyboard(CameraMovement::kForward, deltaTime);
-    if (keys[GLFW_KEY_S])
-        camera.ProcessKeyboard(CameraMovement::kBackward, deltaTime);
-    if (keys[GLFW_KEY_A])
-        camera.ProcessKeyboard(CameraMovement::kLeft, deltaTime);
-    if (keys[GLFW_KEY_D])
-        camera.ProcessKeyboard(CameraMovement::kRight, deltaTime);
-    if (keys[GLFW_KEY_Q])
-        camera.ProcessKeyboard(CameraMovement::kDown, deltaTime);
-    if (keys[GLFW_KEY_E])
-        camera.ProcessKeyboard(CameraMovement::kUp, deltaTime);
+    if (kSceneControl.keys[GLFW_KEY_W])
+        camera.ProcessKeyboard(CameraMovement::kForward, kSceneControl.delta_time);
+    if (kSceneControl.keys[GLFW_KEY_S])
+        camera.ProcessKeyboard(CameraMovement::kBackward, kSceneControl.delta_time);
+    if (kSceneControl.keys[GLFW_KEY_A])
+        camera.ProcessKeyboard(CameraMovement::kLeft, kSceneControl.delta_time);
+    if (kSceneControl.keys[GLFW_KEY_D])
+        camera.ProcessKeyboard(CameraMovement::kRight, kSceneControl.delta_time);
+    if (kSceneControl.keys[GLFW_KEY_Q])
+        camera.ProcessKeyboard(CameraMovement::kDown, kSceneControl.delta_time);
+    if (kSceneControl.keys[GLFW_KEY_E])
+        camera.ProcessKeyboard(CameraMovement::kUp, kSceneControl.delta_time);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (action == GLFW_PRESS)
-        keys[key] = true;
+        kSceneControl.keys[key] = true;
     else if (action == GLFW_RELEASE)
-        keys[key] = false;
+        kSceneControl.keys[key] = false;
 
-    if (keys[GLFW_KEY_ESCAPE])
+    if (kSceneControl.keys[GLFW_KEY_ESCAPE])
         exit(0);
 
     if (key == GLFW_KEY_F && action == GLFW_PRESS)
@@ -64,28 +70,25 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    auto &camera = renderer->getCamera();
-
-    if (firstMouse)
+    if (kSceneControl.first_mouse)
     {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
+        kSceneControl.last_x = xpos;
+        kSceneControl.last_y = ypos;
+        kSceneControl.first_mouse = false;
     }
 
-    double xoffset = xpos - lastX;
-    double yoffset = lastY - ypos;  // Reversed since y-coordinates go from bottom to left
+    double xoffset = xpos - kSceneControl.last_x;
+    double yoffset = kSceneControl.last_y - ypos;  // Reversed since y-coordinates go from bottom to left
 
-    lastX = xpos;
-    lastY = ypos;
+    kSceneControl.last_x = xpos;
+    kSceneControl.last_y = ypos;
 
-    camera.ProcessMouseMovement((float)xoffset, (float)yoffset);
+    GetCamera().ProcessMouseMovement((float)xoffset, (float)yoffset);
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    auto &camera = renderer->getCamera();
-    camera.ProcessMouseScroll((float)yoffset);
+    GetCamera().ProcessMouseScroll((float)yoffset);
 }
 
 static void error_callback(int error, const char* description)
@@ -107,7 +110,7 @@ int main(void)
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
-    GLFWwindow *window = glfwCreateWindow(1280, 720, "[OpenGL] testApp", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(kSceneControl.init_width, kSceneControl.init_height, "[OpenGL] testApp", nullptr, nullptr);
     if (!window)
     {
         glfwTerminate();
@@ -128,21 +131,25 @@ int main(void)
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
-    init_scene(width, height);
+    GetScene().reset(new tScenes(width, height));
+    GetScene()->OnInit();
 
     while (!glfwWindowShouldClose(window))
     {
         double currentFrame = glfwGetTime();
-        deltaTime = (float)(currentFrame - lastFrame);
-        lastFrame = currentFrame;
+        kSceneControl.delta_time = (float)(currentFrame - kSceneControl.last_frame);
+        kSceneControl.last_frame = currentFrame;
 
         glfwPollEvents();
         Do_Movement();
 
-        draw_scene();
+        GetScene()->OnUpdate();
+        GetScene()->OnRender();
 
         glfwSwapBuffers(window);
     }
+
+    GetScene()->OnDestroy();
 
     return EXIT_SUCCESS;
 }

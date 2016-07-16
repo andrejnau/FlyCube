@@ -7,9 +7,9 @@
 
 #include <chrono>
 
-DXSample::DXSample(UINT width, UINT height) :
-    m_width(width),
-    m_height(height)
+DXSample::DXSample(int width, int height)
+    : m_width(width)
+    , m_height(height)
 {}
 
 DXSample::~DXSample()

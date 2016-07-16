@@ -1,42 +1,50 @@
 #pragma once
-#define GLM_FORCE_RADIANS
-#include <scenebase.h>
+
 #include "shaders.h"
 #include "geometry.h"
+
+#include <scenebase.h>
 #include <state.h>
-#include <ctime>
+
+#include <simple_camera/camera.h>
+
 #include <chrono>
 #include <memory>
+
 #include <SOIL.h>
 
+#define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <simple_camera/camera.h>
-
-class tScenes : public SceneBase, public SingleTon < tScenes >
+class tScenes : public ISceneBase
 {
 public:
-    tScenes();
+    using Ptr = std::unique_ptr<tScenes>;
 
-    virtual bool init();
-    virtual void draw();
-    virtual void resize(int x, int y, int width, int height);
-    virtual void destroy();
+    tScenes(int width, int height);
 
-    GLuint FBODepthCreate(GLuint _Texture_depth);
-    GLuint TextureCreateDepth(GLsizei width, GLsizei height);
-    GLuint loadCubemap();
-
-    void draw_obj();
-    void draw_obj_depth();
-    void draw_shadow();
-    void draw_cubemap();
+    virtual void OnInit() override;
+    virtual void OnUpdate() override;
+    virtual void OnRender() override;
+    virtual void OnDestroy() override;
+    virtual void OnSizeChanged(int width, int height) override;
 
     Camera & getCamera();
+
 private:
+
+    void RenderScene();
+    void RenderShadow();
+    void RenderShadowTexture();
+    void RenderCubemap();
+
+    GLuint CreateShadowFBO(GLuint shadow_texture);
+    GLuint CreateShadowTexture(GLsizei width, GLsizei height);
+    GLuint LoadCubemap();
+
     struct Material
     {
         glm::vec3 ambient;
@@ -52,33 +60,32 @@ private:
         glm::vec3 specular;
     };
 
-private:
-    int m_width = 0;
-    int m_height = 0;
-    int depth_size = 2048;
-    float angle = 0.0f;
-    float model_scale = 1.0;
+    int width_ = 0;
+    int height_ = 0;
+    int depth_size_ = 2048;
+    float angle_ = 0.0f;
+    float model_scale_ = 1.0;
 
-    GLuint depthFBO = 0;
-    GLuint depthTexture = 0;
-    GLuint c_textureID = 0;
+    GLuint shadow_fbo_ = 0;
+    GLuint shadow_texture_ = 0;
+    GLuint cubemap_texture_ = 0;
 
-    glm::vec3 axis_x;
-    glm::vec3 axis_y;
-    glm::vec3 axis_z;
+    glm::vec3 axis_x_;
+    glm::vec3 axis_y_;
+    glm::vec3 axis_z_;
 
-    glm::mat4 lightSpaceMatrix;
-    glm::vec3 lightPos;
-    glm::mat4 lightProjection;
-    glm::mat4 lightView;
+    glm::vec3 light_pos_;
+    glm::mat4 light_matrix_;
+    glm::mat4 light_projection_;
+    glm::mat4 light_view_;
 
-    Model modelOfFile;
-    Model modelOfFileSphere;
+    Model model_;
+    Model model_sphere_;
 
-    ShaderLight shaderLight;
-    ShaderSimpleColor shaderSimpleColor;
-    ShaderSimpleCubeMap shaderSimpleCubeMap;
-    ShaderShadowView shaderShadowView;
-    ShaderDepth shaderDepth;
-    Camera m_camera;
+    ShaderLight shader_light_;
+    ShaderSimpleColor shader_simple_color_;
+    ShaderSimpleCubeMap shader_simple_cube_map_;
+    ShaderShadowView shader_shadow_view_;
+    ShaderDepth shader_depth_;
+    Camera camera_;
 };

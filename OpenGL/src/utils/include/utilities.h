@@ -11,7 +11,7 @@
 #define TANGENT_ATTRIB 3
 #define BITANGENT_ATTRIB 4
 
-using ShadersVector = std::vector<std::pair<GLenum, std::string>>;
+using ShaderVector = std::vector<std::pair<GLenum, std::string>>;
 
 inline std::string GetAssetFullPath(const std::string &assetName)
 {
@@ -65,7 +65,7 @@ inline GLuint CreateShader(GLenum shaderType, const char *src)
     return shader;
 }
 
-inline GLuint CreateProgram(const ShadersVector &shaders)
+inline GLuint CreateProgram(const ShaderVector &shaders)
 {
     std::vector<GLuint> shadersId;
     for (auto & shader : shaders)

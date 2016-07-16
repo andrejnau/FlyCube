@@ -1,10 +1,10 @@
 #include <simple_camera/camera.h>
 
 Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
-    : front_(glm::vec3(0.0f, 0.0f, -1.0f)),
-      movement_speed_(kSpeed),
-      mouse_sensitivity_(kSensitivty),
-      zoom_(kZoom)
+    : front_(glm::vec3(0.0f, 0.0f, -1.0f))
+    , movement_speed_(kSpeed)
+    , mouse_sensitivity_(kSensitivty)
+    , zoom_(kZoom)
 {
     position_ = position;
     world_up_ = up;
@@ -13,7 +13,7 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
     updateCameraVectors();
 }
 
-void Camera::SetViewport(int loc_x, int loc_y, int width, int height)
+void Camera::SetViewport(int width, int height)
 {
     aspect_ = float(width) / float(height);
 }
