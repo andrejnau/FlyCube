@@ -13,9 +13,9 @@ option (ASSIMP_NO_EXPORT
   ON
 )
 
-add_subdirectory(${project_root}/3rdparty/assimp-3.3 assimp)
-include_directories(${project_root}/3rdparty/assimp-3.3/code/BoostWorkaround)
-include_directories(${project_root}/3rdparty/assimp-3.3/include)
+add_subdirectory(${project_root}/3rdparty/assimp-3.3.1 assimp)
+include_directories(${project_root}/3rdparty/assimp-3.3.1/code/BoostWorkaround)
+include_directories(${project_root}/3rdparty/assimp-3.3.1/include)
 if (NOT ANDROID)
     set_target_properties(assimp PROPERTIES FOLDER "3rdparty/assimp")
     set_target_properties(zlibstatic PROPERTIES FOLDER "3rdparty/assimp")
