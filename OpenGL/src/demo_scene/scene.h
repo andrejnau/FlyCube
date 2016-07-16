@@ -36,11 +36,14 @@ public:
 
 private:
 
-    void RenderScene();
-    void RenderShadow();
+    void GeometryPass();
+    void ShadowPass();
+    void LightPass();
+    void RenderLightSource();
     void RenderShadowTexture();
     void RenderCubemap();
 
+    void InitGBuffer();
     GLuint CreateShadowFBO(GLuint shadow_texture);
     GLuint CreateShadowTexture(GLsizei width, GLsizei height);
     GLuint LoadCubemap();
@@ -70,6 +73,14 @@ private:
     GLuint shadow_texture_ = 0;
     GLuint cubemap_texture_ = 0;
 
+    GLuint g_buffer_;
+
+    GLuint g_position_;
+    GLuint g_normal_;
+    GLuint g_ambient_;
+    GLuint g_diffuse_;
+    GLuint g_specular_;
+
     glm::vec3 axis_x_;
     glm::vec3 axis_y_;
     glm::vec3 axis_z_;
@@ -82,7 +93,8 @@ private:
     Model model_;
     Model model_sphere_;
 
-    ShaderLight shader_light_;
+    ShaderGeometryPass shader_geometry_pass_;
+    ShaderLightPass shader_light_pass_;
     ShaderSimpleColor shader_simple_color_;
     ShaderSimpleCubeMap shader_simple_cube_map_;
     ShaderShadowView shader_shadow_view_;

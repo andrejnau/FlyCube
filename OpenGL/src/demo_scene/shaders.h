@@ -7,12 +7,59 @@
 #define GET_UNIFORM_LOCATION(name) \
     loc.##name = glGetUniformLocation(program, #name);
 
-struct ShaderLight
+struct ShaderLightPass
 {
-    ShaderLight()
+    ShaderLightPass()
     {
-        std::string vertex = GetShaderSource("shaders/Demo/ShaderLight.vs");
-        std::string fragment = GetShaderSource("shaders/Demo/ShaderLight.fs");
+        std::string vertex = GetShaderSource("shaders/Demo/LightPass.vs");
+        std::string fragment = GetShaderSource("shaders/Demo/LightPass.fs");
+
+        ShaderVector shaders = {
+            { GL_VERTEX_SHADER, vertex },
+            { GL_FRAGMENT_SHADER, fragment }
+        };
+
+        program = CreateProgram(shaders);
+
+        GET_UNIFORM_LOCATION(gPosition);
+        GET_UNIFORM_LOCATION(gNormal);
+        GET_UNIFORM_LOCATION(gAmbient);
+        GET_UNIFORM_LOCATION(gDiffuse);
+        GET_UNIFORM_LOCATION(gSpecular);
+
+        GET_UNIFORM_LOCATION(viewPos);
+        GET_UNIFORM_LOCATION(lightPos);
+
+        GET_UNIFORM_LOCATION(depthBiasMVP);
+        GET_UNIFORM_LOCATION(depthTexture);
+        GET_UNIFORM_LOCATION(has_depthTexture);
+    }
+
+    GLuint program;
+
+    struct
+    {
+        GLuint gPosition;
+        GLuint gNormal;
+        GLuint gAmbient;
+        GLuint gDiffuse;
+        GLuint gSpecular;
+
+        GLint viewPos;
+        GLint lightPos;
+        GLint depthBiasMVP;
+
+        GLint depthTexture;
+        GLint has_depthTexture;
+    } loc;
+};
+
+struct ShaderGeometryPass
+{
+    ShaderGeometryPass()
+    {
+        std::string vertex = GetShaderSource("shaders/Demo/GeometryPass.vs");
+        std::string fragment = GetShaderSource("shaders/Demo/GeometryPass.fs");
 
         ShaderVector shaders = {
             { GL_VERTEX_SHADER, vertex },
@@ -30,13 +77,9 @@ struct ShaderLight
         GET_UNIFORM_LOCATION(light.diffuse);
         GET_UNIFORM_LOCATION(light.specular);
 
-        GET_UNIFORM_LOCATION(viewPos);
-        GET_UNIFORM_LOCATION(lightPos);
-
         GET_UNIFORM_LOCATION(model);
         GET_UNIFORM_LOCATION(view);
         GET_UNIFORM_LOCATION(projection);
-        GET_UNIFORM_LOCATION(depthBiasMVP);
 
         GET_UNIFORM_LOCATION(textures.normalMap);
         GET_UNIFORM_LOCATION(textures.has_normalMap);
@@ -52,9 +95,6 @@ struct ShaderLight
 
         GET_UNIFORM_LOCATION(textures.alpha);
         GET_UNIFORM_LOCATION(textures.has_alpha);
-
-        GET_UNIFORM_LOCATION(depthTexture);
-        GET_UNIFORM_LOCATION(has_depthTexture);
     }
 
     GLuint program;
@@ -94,16 +134,9 @@ struct ShaderLight
             GLuint has_alpha;
         } textures;
 
-        GLint depthTexture;
-        GLint has_depthTexture;
-
-        GLint viewPos;
-        GLint lightPos;
-
         GLint model;
         GLint view;
         GLint projection;
-        GLint depthBiasMVP;
     } loc;
 };
 

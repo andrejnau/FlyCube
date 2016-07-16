@@ -25,43 +25,12 @@ inline std::string GetShaderSource(const std::string &file)
     return shader;
 }
 
-inline const char* ShaderType2Mgs(GLenum shaderType)
-{
-    switch (shaderType)
-    {
-    case GL_VERTEX_SHADER:
-        return "vertex";
-    case GL_FRAGMENT_SHADER:
-        return "fragment";
-    case GL_GEOMETRY_SHADER:
-        return "geometry";
-    default:
-        return "undefined shader type";
-    }
-}
-
-inline GLuint CreateShader(GLenum shaderType, const char *src)
+inline GLuint CreateShader(GLenum shaderType, const std::string &src)
 {
     GLuint shader = glCreateShader(shaderType);
-    glShaderSource(shader, 1, &src, nullptr);
+    const GLchar *source[] = { src.c_str() };
+    glShaderSource(shader, 1, source, nullptr);
     glCompileShader(shader);
-
-    GLint compiled = 0;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-    if (static_cast<GLboolean>(compiled) == GL_FALSE)
-    {
-        GLint infoLogLen = 0;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLen);
-        if (infoLogLen > 0)
-        {
-            std::vector<GLchar> infoLog(infoLogLen);
-            glGetShaderInfoLog(shader, infoLogLen, nullptr, infoLog.data());
-            DBG("Could not compile %s shader:\n%s\n", ShaderType2Mgs(shaderType), infoLog.data());
-        }
-        glDeleteShader(shader);
-        return 0;
-    }
-
     return shader;
 }
 
@@ -73,32 +42,11 @@ inline GLuint CreateProgram(const ShaderVector &shaders)
         GLuint id = CreateShader(shader.first, shader.second.c_str());
         shadersId.push_back(id);
     }
-
     GLuint program = glCreateProgram();
-
     for (auto & id : shadersId)
     {
         glAttachShader(program, id);
     }
-
     glLinkProgram(program);
-
-    GLint linked = 0;
-    glGetProgramiv(program, GL_LINK_STATUS, &linked);
-    if (static_cast<GLboolean>(linked) == GL_FALSE)
-    {
-        DBG("Could not link program");
-        GLint infoLogLen = 0;
-        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLen);
-        if (infoLogLen > 0)
-        {
-            std::vector<GLchar> infoLog(infoLogLen);
-            glGetProgramInfoLog(program, infoLogLen, nullptr, infoLog.data());
-            DBG("Could not link program:\n%s\n", infoLog.data());
-        }
-        glDeleteProgram(program);
-        return 0;
-    }
-
     return program;
 }

@@ -22,6 +22,8 @@ inline void tScenes::OnInit()
     cubemap_texture_ = LoadCubemap();
     shadow_texture_ = CreateShadowTexture(depth_size_, depth_size_);
     shadow_fbo_ = CreateShadowFBO(shadow_texture_);
+
+    InitGBuffer();
 }
 
 void tScenes::OnUpdate()
@@ -53,29 +55,39 @@ void tScenes::OnUpdate()
 
 inline void tScenes::OnRender()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo_);
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDepthMask(GL_TRUE);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glCullFace(GL_FRONT);
-    glViewport(0, 0, depth_size_, depth_size_);
-    RenderShadow();
-    glViewport(0, 0, width_, height_);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
 
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glCullFace(GL_BACK);
-    RenderScene();
+    GeometryPass();
 
+    glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo_);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glCullFace(GL_FRONT);
+    glViewport(0, 0, depth_size_, depth_size_);
+    ShadowPass();
+    glViewport(0, 0, width_, height_);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glCullFace(GL_BACK);
+    LightPass();
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, g_buffer_);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, width_, height_, 0, 0, width_, height_, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    RenderLightSource();
     RenderShadowTexture();
-
     RenderCubemap();
 }
 
 inline void tScenes::OnDestroy()
-{
-}
+{}
 
 inline void tScenes::OnSizeChanged(int width, int height)
 {
@@ -85,102 +97,72 @@ inline void tScenes::OnSizeChanged(int width, int height)
     camera_.SetViewport(width_, height_);
 }
 
-inline void tScenes::RenderScene()
+inline void tScenes::GeometryPass()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shader_light_.program);
+    glUseProgram(shader_geometry_pass_.program);
     glm::mat4 projection, view, model;
     camera_.GetMatrix(projection, view, model);
 
     model = glm::scale(glm::vec3(model_scale_)) * model;
 
-    glUniformMatrix4fv(shader_light_.loc.model, 1, GL_FALSE, glm::value_ptr(model));
-    glUniformMatrix4fv(shader_light_.loc.view, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(shader_light_.loc.projection, 1, GL_FALSE, glm::value_ptr(projection));
-
-    glUniform3fv(shader_light_.loc.viewPos, 1, glm::value_ptr(camera_.GetCameraPos()));
-    glUniform3fv(shader_light_.loc.lightPos, 1, glm::value_ptr(light_pos_));
-
-    glm::mat4 biasMatrix(
-        0.5, 0.0, 0.0, 0.0,
-        0.0, 0.5, 0.0, 0.0,
-        0.0, 0.0, 0.5, 0.0,
-        0.5, 0.5, 0.5, 1.0);
-
-    glm::mat4 depthBiasMVP = biasMatrix * light_matrix_;
-
-    glUniformMatrix4fv(shader_light_.loc.depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
+    glUniformMatrix4fv(shader_geometry_pass_.loc.model, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(shader_geometry_pass_.loc.view, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(shader_geometry_pass_.loc.projection, 1, GL_FALSE, glm::value_ptr(projection));
 
     Light light;
     light.ambient = glm::vec3(0.2f);
     light.diffuse = glm::vec3(1.0f);
     light.specular = glm::vec3(0.5f);
 
-    glUniform3fv(shader_light_.loc.light.ambient, 1, glm::value_ptr(light.ambient));
-    glUniform3fv(shader_light_.loc.light.diffuse, 1, glm::value_ptr(light.diffuse));
-    glUniform3fv(shader_light_.loc.light.specular, 1, glm::value_ptr(light.specular));
+    glUniform3fv(shader_geometry_pass_.loc.light.ambient, 1, glm::value_ptr(light.ambient));
+    glUniform3fv(shader_geometry_pass_.loc.light.diffuse, 1, glm::value_ptr(light.diffuse));
+    glUniform3fv(shader_geometry_pass_.loc.light.specular, 1, glm::value_ptr(light.specular));
 
     for (Mesh & cur_mesh : model_.meshes)
     {
-        glDisable(GL_BLEND);
-
-        glUniform1i(shader_light_.loc.textures.ambient, 0);
-        glUniform1i(shader_light_.loc.textures.has_ambient, 0);
-        glUniform1i(shader_light_.loc.textures.diffuse, 0);
-        glUniform1i(shader_light_.loc.textures.has_diffuse, 0);
-        glUniform1i(shader_light_.loc.textures.specular, 0);
-        glUniform1i(shader_light_.loc.textures.has_specular, 0);
-        glUniform1i(shader_light_.loc.textures.normalMap, 0);
-        glUniform1i(shader_light_.loc.textures.has_normalMap, 0);
-        glUniform1i(shader_light_.loc.textures.alpha, 0);
-        glUniform1i(shader_light_.loc.textures.has_alpha, 0);
-
-        int depth_unit = cur_mesh.textures.size() + 1;
-
-        glUniform1i(shader_light_.loc.depthTexture, depth_unit);
-        glUniform1i(shader_light_.loc.has_depthTexture, 0);
+        glUniform1i(shader_geometry_pass_.loc.textures.ambient, 0);
+        glUniform1i(shader_geometry_pass_.loc.textures.has_ambient, 0);
+        glUniform1i(shader_geometry_pass_.loc.textures.diffuse, 0);
+        glUniform1i(shader_geometry_pass_.loc.textures.has_diffuse, 0);
+        glUniform1i(shader_geometry_pass_.loc.textures.specular, 0);
+        glUniform1i(shader_geometry_pass_.loc.textures.has_specular, 0);
+        glUniform1i(shader_geometry_pass_.loc.textures.normalMap, 0);
+        glUniform1i(shader_geometry_pass_.loc.textures.has_normalMap, 0);
+        glUniform1i(shader_geometry_pass_.loc.textures.alpha, 0);
+        glUniform1i(shader_geometry_pass_.loc.textures.has_alpha, 0);
 
         for (GLuint i = 0; i < cur_mesh.textures.size(); i++)
         {
             glActiveTexture(GL_TEXTURE0 + i);
             if (cur_mesh.textures[i].type == aiTextureType_AMBIENT)
             {
-                glUniform1i(shader_light_.loc.textures.ambient, i);
-                glUniform1i(shader_light_.loc.textures.has_ambient, 1);
+                glUniform1i(shader_geometry_pass_.loc.textures.ambient, i);
+                glUniform1i(shader_geometry_pass_.loc.textures.has_ambient, 1);
             }
             if (cur_mesh.textures[i].type == aiTextureType_DIFFUSE)
             {
-                glUniform1i(shader_light_.loc.textures.diffuse, i);
-                glUniform1i(shader_light_.loc.textures.has_diffuse, 1);
+                glUniform1i(shader_geometry_pass_.loc.textures.diffuse, i);
+                glUniform1i(shader_geometry_pass_.loc.textures.has_diffuse, 1);
             }
             else if (cur_mesh.textures[i].type == aiTextureType_SPECULAR)
             {
-                glUniform1i(shader_light_.loc.textures.specular, i);
-                glUniform1i(shader_light_.loc.textures.has_specular, 1);
+                glUniform1i(shader_geometry_pass_.loc.textures.specular, i);
+                glUniform1i(shader_geometry_pass_.loc.textures.has_specular, 1);
             }
             else if (cur_mesh.textures[i].type == aiTextureType_HEIGHT)
             {
-                glUniform1i(shader_light_.loc.textures.normalMap, i);
-                glUniform1i(shader_light_.loc.textures.has_normalMap, 1);
+                glUniform1i(shader_geometry_pass_.loc.textures.normalMap, i);
+                glUniform1i(shader_geometry_pass_.loc.textures.has_normalMap, 1);
             }
             else if (cur_mesh.textures[i].type == aiTextureType_OPACITY)
             {
-                glUniform1i(shader_light_.loc.textures.alpha, i);
-                glUniform1i(shader_light_.loc.textures.has_alpha, 1);
-
-                glEnable(GL_BLEND);
-                glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glUniform1i(shader_geometry_pass_.loc.textures.alpha, i);
+                glUniform1i(shader_geometry_pass_.loc.textures.has_alpha, 1);
             }
 
             glBindTexture(GL_TEXTURE_2D, cur_mesh.textures[i].id);
         }
-
-        glActiveTexture(GL_TEXTURE0 + depth_unit);
-        glBindTexture(GL_TEXTURE_2D, shadow_texture_);
-
-        glUniform1i(shader_light_.loc.depthTexture, depth_unit);
-        glUniform1i(shader_light_.loc.has_depthTexture, 1);
 
         glActiveTexture(GL_TEXTURE0);
 
@@ -190,18 +172,98 @@ inline void tScenes::RenderScene()
         material.specular = cur_mesh.material.spec;
         material.shininess = cur_mesh.material.shininess;
 
-        glUniform3fv(shader_light_.loc.material.ambient, 1, glm::value_ptr(material.ambient));
-        glUniform3fv(shader_light_.loc.material.diffuse, 1, glm::value_ptr(material.diffuse));
-        glUniform3fv(shader_light_.loc.material.specular, 1, glm::value_ptr(material.specular));
-        glUniform1f(shader_light_.loc.material.shininess, material.shininess);
+        glUniform3fv(shader_geometry_pass_.loc.material.ambient, 1, glm::value_ptr(material.ambient));
+        glUniform3fv(shader_geometry_pass_.loc.material.diffuse, 1, glm::value_ptr(material.diffuse));
+        glUniform3fv(shader_geometry_pass_.loc.material.specular, 1, glm::value_ptr(material.specular));
+        glUniform1f(shader_geometry_pass_.loc.material.shininess, material.shininess);
 
         cur_mesh.bindMesh();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
         glDrawElements(GL_TRIANGLES, (GLsizei)cur_mesh.indices.size(), GL_UNSIGNED_INT, 0);
         cur_mesh.unbindMesh();
     }
+}
 
+inline void tScenes::LightPass()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(shader_light_pass_.program);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, g_position_);
+    glUniform1i(shader_light_pass_.loc.gPosition, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, g_normal_);
+    glUniform1i(shader_light_pass_.loc.gNormal, 1);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, g_ambient_);
+    glUniform1i(shader_light_pass_.loc.gAmbient, 2);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, g_diffuse_);
+    glUniform1i(shader_light_pass_.loc.gDiffuse, 3);
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, g_specular_);
+    glUniform1i(shader_light_pass_.loc.gSpecular, 4);
+
+    glUniform3fv(shader_light_pass_.loc.viewPos, 1, glm::value_ptr(camera_.GetCameraPos()));
+    glUniform3fv(shader_light_pass_.loc.lightPos, 1, glm::value_ptr(light_pos_));
+
+    glm::mat4 biasMatrix(
+        0.5, 0.0, 0.0, 0.0,
+        0.0, 0.5, 0.0, 0.0,
+        0.0, 0.0, 0.5, 0.0,
+        0.5, 0.5, 0.5, 1.0);
+
+    glm::mat4 depthBiasMVP = biasMatrix * light_matrix_;
+
+    glUniformMatrix4fv(shader_light_pass_.loc.depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
+
+    static GLfloat plane_vertices[] = {
+        -1.0, 1.0, 0.0,
+        1.0, 1.0, 0.0,
+        1.0, -1.0, 0.0,
+        -1.0, -1.0, 0.0
+    };
+
+    static GLfloat plane_texcoords[] = {
+        0.0, 1.0,
+        1.0, 1.0,
+        1.0, 0.0,
+        0.0, 0.0
+    };
+
+    static GLuint plane_elements[] = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, shadow_texture_);
+    glUniform1i(shader_light_pass_.loc.depthTexture, 5);
+    glUniform1i(shader_light_pass_.loc.has_depthTexture, 1);
+
+    glEnableVertexAttribArray(POS_ATTRIB);
+    glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, plane_vertices);
+
+    glEnableVertexAttribArray(TEXTURE_ATTRIB);
+    glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, 0, plane_texcoords);
+
+    glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
+
+    glDisableVertexAttribArray(POS_ATTRIB);
+    glDisableVertexAttribArray(TEXTURE_ATTRIB);
+}
+
+void tScenes::RenderLightSource()
+{
     glUseProgram(shader_simple_color_.program);
+    glm::mat4 projection, view, model;
+    camera_.GetMatrix(projection, view, model);
+
     model = glm::translate(glm::mat4(1.0f), light_pos_) * glm::scale(glm::mat4(1.0f), glm::vec3(0.001f));
     glUniformMatrix4fv(shader_simple_color_.loc.u_MVP, 1, GL_FALSE, glm::value_ptr(projection * view * model));
     glUniform3f(shader_simple_color_.loc.objectColor, 1.0f, 1.0f, 1.0);
@@ -215,7 +277,7 @@ inline void tScenes::RenderScene()
     }
 }
 
-inline void tScenes::RenderShadow()
+inline void tScenes::ShadowPass()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -304,6 +366,72 @@ inline void tScenes::RenderCubemap()
 
     glCullFace(old_cull_face_mode);
     glDepthFunc(old_depth_func_mode);
+}
+
+void tScenes::InitGBuffer()
+{
+    glGenFramebuffers(1, &g_buffer_);
+    glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
+    GLuint depth_texture;
+
+    // - Position buffer
+    glGenTextures(1, &g_position_);
+    glBindTexture(GL_TEXTURE_2D, g_position_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width_, height_, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_position_, 0);
+
+    // - Normal buffer
+    glGenTextures(1, &g_normal_);
+    glBindTexture(GL_TEXTURE_2D, g_normal_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width_, height_, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, g_normal_, 0);
+
+    // - Ambient buffer
+    glGenTextures(1, &g_ambient_);
+    glBindTexture(GL_TEXTURE_2D, g_ambient_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width_, height_, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_ambient_, 0);
+
+    // - Diffuse buffer
+    glGenTextures(1, &g_diffuse_);
+    glBindTexture(GL_TEXTURE_2D, g_diffuse_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width_, height_, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, g_diffuse_, 0);
+
+    // - Specular buffer
+    glGenTextures(1, &g_specular_);
+    glBindTexture(GL_TEXTURE_2D, g_specular_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width_, height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, g_specular_, 0);
+
+    // - Depth
+    glGenTextures(1, &depth_texture);
+    glBindTexture(GL_TEXTURE_2D, depth_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_BORDER);
+    GLfloat border[4] = { 1.0, 0.0, 0.0, 0.0 };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, (GLint)GL_COMPARE_REF_TO_TEXTURE);
+    glTexStorage2D(GL_TEXTURE_2D, 1, (GLenum)GL_DEPTH_COMPONENT32, width_, height_);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture, 0);
+
+    GLuint attachments[5] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
+    glDrawBuffers(5, attachments);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 inline GLuint tScenes::CreateShadowFBO(GLuint shadow_texture)
