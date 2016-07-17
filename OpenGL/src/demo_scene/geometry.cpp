@@ -131,6 +131,11 @@ inline Mesh Model::processMesh(aiMesh * mesh, const aiScene * scene)
             vertex.bitangent.x = mesh->mBitangents[i].x;
             vertex.bitangent.y = mesh->mBitangents[i].y;
             vertex.bitangent.z = mesh->mBitangents[i].z;
+
+            if (glm::dot(glm::cross(vertex.normal, vertex.tangent), vertex.bitangent) < 0.0f)
+            {
+                vertex.tangent *= -1.0f;
+            }
         }
 
         if (mesh->HasTextureCoords(0))

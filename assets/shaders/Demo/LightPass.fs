@@ -7,6 +7,7 @@ uniform sampler2DMS gNormal;
 uniform sampler2DMS gAmbient;
 uniform sampler2DMS gDiffuse;
 uniform sampler2DMS gSpecular;
+uniform sampler2DMS gSSAO;
 
 uniform vec3 lightPos;
 uniform vec3 viewPos;
@@ -14,6 +15,7 @@ uniform mat4 depthBiasMVP;
 
 uniform sampler2DShadow depthTexture;
 uniform int has_depthTexture;
+uniform int has_SSAO;
 
 in vec2 TexCoords;
 
@@ -33,7 +35,7 @@ float GetShadowPCF(in vec4 smcoord)
     res += textureProjOffset(depthTexture, smcoord, ivec2(0, 1));
     res += textureProjOffset(depthTexture, smcoord, ivec2(1, 1));
     res /= 9.0;
-    return max(0.25, res);
+    return res;
 }
 
 vec4 getTextureMultisample(sampler2DMS _texture)
@@ -74,7 +76,13 @@ void main()
     if (has_depthTexture != 0)
         shadow = GetShadowPCF(shadowCoord);
 
-    vec4 result = vec4(ambient + diffuse * shadow + specular * shadow, 1.0);
+    float occlusion = 1.0;
+    if (has_SSAO != 0)
+    {
+        occlusion = getTextureMultisample(gSSAO).r;
+        occlusion = pow(occlusion, 2.2);
+    }
 
+    vec4 result = vec4(ambient * occlusion + diffuse * shadow + specular * shadow, 1.0);
     out_Color = pow(result, gamma4);
 }

@@ -7,6 +7,39 @@
 #define GET_UNIFORM_LOCATION(name) \
     loc.##name = glGetUniformLocation(program, #name);
 
+struct ShaderSSAOPass
+{
+    ShaderSSAOPass()
+    {
+        std::string vertex = GetShaderSource("shaders/Demo/SSAOPass.vs");
+        std::string fragment = GetShaderSource("shaders/Demo/SSAOPass.fs");
+
+        ShaderVector shaders = {
+            { GL_VERTEX_SHADER, vertex },
+            { GL_FRAGMENT_SHADER, fragment }
+        };
+
+        program = CreateProgram(shaders);
+
+        GET_UNIFORM_LOCATION(gPosition);
+        GET_UNIFORM_LOCATION(gNormal);
+        GET_UNIFORM_LOCATION(gTangent);
+        GET_UNIFORM_LOCATION(samples);
+        GET_UNIFORM_LOCATION(projection);
+    }
+
+    GLuint program;
+
+    struct
+    {
+        GLuint gPosition;
+        GLuint gNormal;
+        GLuint gTangent;
+        GLuint samples;
+        GLuint projection;
+    } loc;
+};
+
 struct ShaderLightPass
 {
     ShaderLightPass()
@@ -26,6 +59,8 @@ struct ShaderLightPass
         GET_UNIFORM_LOCATION(gAmbient);
         GET_UNIFORM_LOCATION(gDiffuse);
         GET_UNIFORM_LOCATION(gSpecular);
+        GET_UNIFORM_LOCATION(gSSAO);
+        GET_UNIFORM_LOCATION(has_SSAO);
 
         GET_UNIFORM_LOCATION(viewPos);
         GET_UNIFORM_LOCATION(lightPos);
@@ -44,6 +79,7 @@ struct ShaderLightPass
         GLuint gAmbient;
         GLuint gDiffuse;
         GLuint gSpecular;
+        GLuint gSSAO;
 
         GLint viewPos;
         GLint lightPos;
@@ -51,6 +87,7 @@ struct ShaderLightPass
 
         GLint depthTexture;
         GLint has_depthTexture;
+        GLint has_SSAO;
     } loc;
 };
 

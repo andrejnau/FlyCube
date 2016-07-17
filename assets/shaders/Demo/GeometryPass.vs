@@ -25,10 +25,10 @@ out vec3 _Tangent;
 void main()
 {
     gl_Position = projection * view * model * vec4(position, 1.0);
-    _FragPos = vec3(model * vec4(position, 1.0));
+    _FragPos = vec3(view * model * vec4(position, 1.0));
     _TexCoords = texCoords;
 
-    mat3 normalMatrix = mat3(transpose(inverse(model)));
+    mat3 normalMatrix = mat3(transpose(inverse(view * model)));
     _Normal = normalize(normalMatrix * normal);
     _Tangent = normalize(normalMatrix * tangent);
 }

@@ -7,8 +7,9 @@ struct SceneControl
 {
     tScenes::Ptr scene;
 
-    const int init_width = 1280;
-    const int init_height = 720;
+    const int base = 90;
+    const int init_width = 16 * base;
+    const int init_height = 9 * base;
 
     std::map<int, bool> keys;
     float delta_time = 0.0f;
@@ -66,6 +67,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         auto & state = CurState<bool>::Instance().state;
         state["warframe"] = !state["warframe"];
     }
+
+    if (key == GLFW_KEY_O && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["occlusion"] = !state["occlusion"];
+    }
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
@@ -101,6 +108,21 @@ void APIENTRY gl_callback(GLenum source, GLenum type, GLuint id, GLenum severity
     std::cout << "debug call: " << msg << std::endl;
 }
 
+void setWindowOnCenter(GLFWwindow* window)
+{
+    int window_width, window_height;
+    glfwGetWindowSize(window, &window_width, &window_height);
+
+    int monitor_width, monitor_height;
+    const GLFWvidmode *monitor_vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    monitor_width = monitor_vidmode->width;
+    monitor_height = monitor_vidmode->height;
+
+    glfwSetWindowPos(window,
+        (monitor_width - window_width) / 2,
+        (monitor_height - window_height) / 2);
+}
+
 int main(void)
 {
     glfwSetErrorCallback(error_callback);
@@ -117,6 +139,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    setWindowOnCenter(window);
     glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
@@ -127,6 +150,9 @@ int main(void)
 
     ogl_LoadFunctions();
     glDebugMessageCallback(gl_callback, nullptr);
+
+    auto & state = CurState<bool>::Instance().state;
+    state["occlusion"] = true;
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);

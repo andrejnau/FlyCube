@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <memory>
+#include <random>
 
 #include <SOIL.h>
 
@@ -38,12 +39,14 @@ private:
 
     void GeometryPass();
     void ShadowPass();
+    void SSAOPass();
     void LightPass();
     void RenderLightSource();
     void RenderShadowTexture();
     void RenderCubemap();
 
     void InitGBuffer();
+    void InitSSAO();
     GLuint CreateShadowFBO(GLuint shadow_texture);
     GLuint CreateShadowTexture(GLsizei width, GLsizei height);
     GLuint LoadCubemap();
@@ -67,23 +70,28 @@ private:
     int height_ = 0;
     int depth_size_ = 2048;
     float angle_ = 0.0f;
-    float model_scale_ = 1.0;
+    float model_scale_ = 0.01f;
 
     GLuint shadow_fbo_ = 0;
     GLuint shadow_texture_ = 0;
     GLuint cubemap_texture_ = 0;
 
-    GLuint g_buffer_;
+    int numSamples = 4;
+
+    GLuint ds_fbo_;
+    GLuint ssao_fbo_;
 
     GLuint g_position_;
     GLuint g_normal_;
     GLuint g_ambient_;
     GLuint g_diffuse_;
     GLuint g_specular_;
+    GLuint g_tangent_;
+    GLuint g_ssao_;
 
-    glm::vec3 axis_x_;
-    glm::vec3 axis_y_;
-    glm::vec3 axis_z_;
+    glm::vec3 axis_x_ = glm::vec3(1.0f, 0.0f, 0.0f);
+    glm::vec3 axis_y_ = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 axis_z_ = glm::vec3(0.0f, 0.0f, 1.0f);
 
     glm::vec3 light_pos_;
     glm::mat4 light_matrix_;
@@ -93,8 +101,11 @@ private:
     Model model_;
     Model model_sphere_;
 
+    std::vector<glm::vec3> ssaoKernel;
+
     ShaderGeometryPass shader_geometry_pass_;
     ShaderLightPass shader_light_pass_;
+    ShaderSSAOPass shader_ssao_pass_;
     ShaderSimpleColor shader_simple_color_;
     ShaderSimpleCubeMap shader_simple_cube_map_;
     ShaderShadowView shader_shadow_view_;
