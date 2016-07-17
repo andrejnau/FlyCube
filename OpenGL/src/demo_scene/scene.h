@@ -45,8 +45,12 @@ private:
     void RenderShadowTexture();
     void RenderCubemap();
 
+    void InitState();
+    void InitCamera();
     void InitGBuffer();
     void InitSSAO();
+    void InitShadow();
+    void InitCubemap();
     GLuint CreateShadowFBO(GLuint shadow_texture);
     GLuint CreateShadowTexture(GLsizei width, GLsizei height);
     GLuint LoadCubemap();

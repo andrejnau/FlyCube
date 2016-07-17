@@ -21,23 +21,6 @@ in vec2 TexCoords;
 
 out vec4 out_Color;
 
-float GetShadowPCF(in vec4 smcoord)
-{
-    float res = 0.0;
-    smcoord.z -= 0.0001 * smcoord.w;
-    res += textureProjOffset(depthTexture, smcoord, ivec2(-1, -1));
-    res += textureProjOffset(depthTexture, smcoord, ivec2(0, -1));
-    res += textureProjOffset(depthTexture, smcoord, ivec2(1, -1));
-    res += textureProjOffset(depthTexture, smcoord, ivec2(-1, 0));
-    res += textureProjOffset(depthTexture, smcoord, ivec2(0, 0));
-    res += textureProjOffset(depthTexture, smcoord, ivec2(1, 0));
-    res += textureProjOffset(depthTexture, smcoord, ivec2(-1, 1));
-    res += textureProjOffset(depthTexture, smcoord, ivec2(0, 1));
-    res += textureProjOffset(depthTexture, smcoord, ivec2(1, 1));
-    res /= 9.0;
-    return res;
-}
-
 vec4 getTextureMultisample(sampler2DMS _texture)
 {
     int num_samples = 4;
@@ -74,7 +57,24 @@ void main()
 
     float shadow = 1.0;
     if (has_depthTexture != 0)
-        shadow = GetShadowPCF(shadowCoord);
+    {
+        shadow = 0.0;
+        float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+        shadowCoord.xyz /= shadowCoord.w;
+        shadowCoord.z -= bias * shadowCoord.w;
+
+        shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(-1, -1));
+        shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(0, -1));
+        shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(1, -1));
+        shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(-1, 0));
+        shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(0, 0));
+        shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(1, 0));
+        shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(-1, 1));
+        shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(0, 1));
+        shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(1, 1));
+
+        shadow /= 9.0;
+    }
 
     float occlusion = 1.0;
     if (has_SSAO != 0)

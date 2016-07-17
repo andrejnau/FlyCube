@@ -73,6 +73,18 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         auto & state = CurState<bool>::Instance().state;
         state["occlusion"] = !state["occlusion"];
     }
+
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["pause"] = !state["pause"];
+    }
+
+    if (key == GLFW_KEY_L && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["shadow"] = !state["shadow"];
+    }
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
@@ -153,6 +165,7 @@ int main(void)
 
     auto & state = CurState<bool>::Instance().state;
     state["occlusion"] = true;
+    state["shadow"] = true;
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);

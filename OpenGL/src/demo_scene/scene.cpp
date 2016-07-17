@@ -14,16 +14,10 @@ inline GLfloat lerp(GLfloat a, GLfloat b, GLfloat f)
 
 inline void tScenes::OnInit()
 {
-    camera_.SetViewport(width_, height_);
-
-    glViewport(0, 0, width_, height_);
-    glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
-    glEnable(GL_DEPTH_TEST);
-
-    cubemap_texture_ = LoadCubemap();
-    shadow_texture_ = CreateShadowTexture(depth_size_, depth_size_);
-    shadow_fbo_ = CreateShadowFBO(shadow_texture_);
-
+    InitState();
+    InitCamera();
+    InitCubemap();
+    InitShadow();
     InitGBuffer();
     InitSSAO();
 }
@@ -44,7 +38,8 @@ void tScenes::OnUpdate()
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = std::chrono::system_clock::now();
 
-    angle += elapsed / 2e6f;
+    if (!state["pause"])
+        angle += elapsed / 2e6f;
 
     float light_r = 2.5;
     light_pos_ = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
@@ -57,21 +52,25 @@ void tScenes::OnUpdate()
 
 inline void tScenes::OnRender()
 {
+    auto & state = CurState<bool>::Instance().state;
+
     glBindFramebuffer(GL_FRAMEBUFFER, ds_fbo_);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glCullFace(GL_BACK);
     GeometryPass();
 
-    glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo_);
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glCullFace(GL_FRONT);
-    glViewport(0, 0, depth_size_, depth_size_);
-    ShadowPass();
-    glViewport(0, 0, width_, height_);
+    if (state["shadow"])
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo_);
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glCullFace(GL_FRONT);
+        glViewport(0, 0, depth_size_, depth_size_);
+        ShadowPass();
+        glViewport(0, 0, width_, height_);
+    }
 
-    auto & state = CurState<bool>::Instance().state;
     if (state["occlusion"])
     {
         glBindFramebuffer(GL_FRAMEBUFFER, ssao_fbo_);
@@ -271,7 +270,15 @@ inline void tScenes::LightPass()
     glActiveTexture(GL_TEXTURE6);
     glBindTexture(GL_TEXTURE_2D, shadow_texture_);
     glUniform1i(shader_light_pass_.loc.depthTexture, 6);
-    glUniform1i(shader_light_pass_.loc.has_depthTexture, 1);
+
+    if (state["shadow"])
+    {
+        glUniform1i(shader_light_pass_.loc.has_depthTexture, 1);
+    }
+    else
+    {
+        glUniform1i(shader_light_pass_.loc.has_depthTexture, 0);
+    }
 
     glEnableVertexAttribArray(POS_ATTRIB);
     glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, plane_vertices);
@@ -450,6 +457,18 @@ inline void tScenes::RenderCubemap()
     glDepthFunc(old_depth_func_mode);
 }
 
+void tScenes::InitState()
+{
+    glViewport(0, 0, width_, height_);
+    glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
+    glEnable(GL_DEPTH_TEST);
+}
+
+void tScenes::InitCamera()
+{
+    camera_.SetViewport(width_, height_);
+}
+
 void tScenes::InitGBuffer()
 {
     glGenFramebuffers(1, &ds_fbo_);
@@ -512,7 +531,7 @@ void tScenes::InitGBuffer()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_BORDER);
-    GLfloat border[4] = { 1.0, 0.0, 0.0, 0.0 };
+    GLfloat border[4] = { 1.0, 1.0, 1.0, 1.0 };
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, (GLint)GL_COMPARE_REF_TO_TEXTURE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth_texture, 0);
@@ -577,6 +596,17 @@ void tScenes::InitSSAO()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void tScenes::InitShadow()
+{
+    shadow_texture_ = CreateShadowTexture(depth_size_, depth_size_);
+    shadow_fbo_ = CreateShadowFBO(shadow_texture_);
+}
+
+void tScenes::InitCubemap()
+{
+    cubemap_texture_ = LoadCubemap();
+}
+
 inline GLuint tScenes::CreateShadowFBO(GLuint shadow_texture)
 {
     GLuint FBO = 0;
@@ -605,7 +635,7 @@ inline GLuint tScenes::CreateShadowTexture(GLsizei width, GLsizei height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_CLAMP_TO_BORDER);
-    GLfloat border[4] = { 1.0, 0.0, 0.0, 0.0 };
+    GLfloat border[4] = { 1.0, 1.0, 1.0, 1.0 };
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, (GLint)GL_COMPARE_REF_TO_TEXTURE);
     glTexStorage2D(GL_TEXTURE_2D, 1, (GLenum)GL_DEPTH_COMPONENT32, width, height);
