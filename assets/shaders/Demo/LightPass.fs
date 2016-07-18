@@ -16,6 +16,7 @@ uniform mat4 depthBiasMVP;
 uniform sampler2DShadow depthTexture;
 uniform int has_depthTexture;
 uniform int has_SSAO;
+uniform int num_samples;
 
 in vec2 TexCoords;
 
@@ -23,7 +24,6 @@ out vec4 out_Color;
 
 vec4 getTextureMultisample(sampler2DMS _texture)
 {
-    int num_samples = 4;
     ivec2 iTexC = ivec2(TexCoords * vec2(textureSize(_texture)));
     vec4 color = vec4(0.0);
     for (int i = 0; i < num_samples; ++i)

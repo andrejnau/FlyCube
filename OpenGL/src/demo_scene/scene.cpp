@@ -248,6 +248,8 @@ inline void tScenes::LightPass()
 
     glUniformMatrix4fv(shader_light_pass_.loc.depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
 
+    glUniform1i(shader_light_pass_.loc.num_samples, num_samples_);
+
     static GLfloat plane_vertices[] = {
         -1.0, 1.0, 0.0,
         1.0, 1.0, 0.0,
@@ -346,10 +348,12 @@ void tScenes::SSAOPass()
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, g_tangent_);
     glUniform1i(shader_ssao_pass_.loc.gTangent, 2);
 
-    glUniform3fv(shader_ssao_pass_.loc.samples, ssaoKernel.size(), glm::value_ptr(ssaoKernel.front()));
+    glUniform3fv(shader_ssao_pass_.loc.samples, ssao_kernel_.size(), glm::value_ptr(ssao_kernel_.front()));
 
     glm::mat4 projection = camera_.GetProjectionMatrix();
     glUniformMatrix4fv(shader_ssao_pass_.loc.projection, 1, GL_FALSE, glm::value_ptr(projection));
+
+    glUniform1i(shader_ssao_pass_.loc.num_samples, num_samples_);
 
     static GLfloat plane_vertices[] = {
         -1.0, 1.0, 0.0,
@@ -478,7 +482,7 @@ void tScenes::InitGBuffer()
     // - Position buffer
     glGenTextures(1, &g_position_);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, g_position_);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGB32F, width_, height_, GL_TRUE);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, num_samples_, GL_RGB32F, width_, height_, GL_TRUE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, g_position_, 0);
@@ -486,7 +490,7 @@ void tScenes::InitGBuffer()
     // - Normal buffer
     glGenTextures(1, &g_normal_);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, g_normal_);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGB32F, width_, height_, GL_TRUE);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, num_samples_, GL_RGB32F, width_, height_, GL_TRUE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, g_normal_, 0);
@@ -494,7 +498,7 @@ void tScenes::InitGBuffer()
     // - Ambient buffer
     glGenTextures(1, &g_ambient_);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, g_ambient_);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGB32F, width_, height_, GL_TRUE);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, num_samples_, GL_RGB32F, width_, height_, GL_TRUE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D_MULTISAMPLE, g_ambient_, 0);
@@ -502,7 +506,7 @@ void tScenes::InitGBuffer()
     // - Diffuse buffer
     glGenTextures(1, &g_diffuse_);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, g_diffuse_);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGB32F, width_, height_, GL_TRUE);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, num_samples_, GL_RGB32F, width_, height_, GL_TRUE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D_MULTISAMPLE, g_diffuse_, 0);
@@ -510,7 +514,7 @@ void tScenes::InitGBuffer()
     // - Specular buffer
     glGenTextures(1, &g_specular_);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, g_specular_);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGBA32F, width_, height_, GL_TRUE);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, num_samples_, GL_RGBA32F, width_, height_, GL_TRUE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D_MULTISAMPLE, g_specular_, 0);
@@ -518,7 +522,7 @@ void tScenes::InitGBuffer()
     // - Tangent buffer
     glGenTextures(1, &g_tangent_);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, g_tangent_);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGB32F, width_, height_, GL_TRUE);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, num_samples_, GL_RGB32F, width_, height_, GL_TRUE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D_MULTISAMPLE, g_tangent_, 0);
@@ -526,7 +530,7 @@ void tScenes::InitGBuffer()
     // - Depth
     glGenTextures(1, &depth_texture);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, depth_texture);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_DEPTH_COMPONENT32, width_, height_, GL_TRUE);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, num_samples_, GL_DEPTH_COMPONENT32, width_, height_, GL_TRUE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_CLAMP_TO_BORDER);
@@ -567,7 +571,7 @@ void tScenes::InitSSAO()
         // Scale samples s.t. they're more aligned to center of kernel
         scale = lerp(0.1f, 1.0f, scale * scale);
         sample *= scale;
-        ssaoKernel.push_back(sample);
+        ssao_kernel_.push_back(sample);
     }
 
     glGenFramebuffers(1, &ssao_fbo_);
@@ -576,7 +580,7 @@ void tScenes::InitSSAO()
     // - Position buffer
     glGenTextures(1, &g_ssao_);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, g_ssao_);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_R32F, width_, height_, GL_TRUE);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, num_samples_, GL_R32F, width_, height_, GL_TRUE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, g_ssao_, 0);

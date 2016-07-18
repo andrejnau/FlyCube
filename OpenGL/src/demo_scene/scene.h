@@ -80,7 +80,7 @@ private:
     GLuint shadow_texture_ = 0;
     GLuint cubemap_texture_ = 0;
 
-    int numSamples = 4;
+    int num_samples_ = 4;
 
     GLuint ds_fbo_;
     GLuint ssao_fbo_;
@@ -105,7 +105,7 @@ private:
     Model model_;
     Model model_sphere_;
 
-    std::vector<glm::vec3> ssaoKernel;
+    std::vector<glm::vec3> ssao_kernel_;
 
     ShaderGeometryPass shader_geometry_pass_;
     ShaderLightPass shader_light_pass_;

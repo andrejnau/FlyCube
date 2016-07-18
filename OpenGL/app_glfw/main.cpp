@@ -173,9 +173,12 @@ int main(void)
     GetScene().reset(new tScenes(width, height));
     GetScene()->OnInit();
 
+    double lastTime = glfwGetTime();
+    int nbFrames = 0;
     while (!glfwWindowShouldClose(window))
     {
         double currentFrame = glfwGetTime();
+
         kSceneControl.delta_time = (float)(currentFrame - kSceneControl.last_frame);
         kSceneControl.last_frame = currentFrame;
 
@@ -186,6 +189,21 @@ int main(void)
         GetScene()->OnRender();
 
         glfwSwapBuffers(window);
+
+        nbFrames++;
+        double delta = currentFrame - lastTime;
+        if (delta >= 1.0)
+        {
+            double fps = double(nbFrames) / delta;
+
+            std::stringstream ss;
+            ss << "[OpenGL] testApp" <<  " [" << fps << " FPS]";
+
+            glfwSetWindowTitle(window, ss.str().c_str());
+
+            nbFrames = 0;
+            lastTime = currentFrame;
+        }
     }
 
     GetScene()->OnDestroy();

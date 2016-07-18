@@ -8,6 +8,7 @@ uniform sampler2DMS gTangent;
 
 #define KERNEL_SIZE 64
 
+uniform int num_samples;
 uniform mat4 projection;
 uniform vec3 samples[KERNEL_SIZE];
 
@@ -19,7 +20,6 @@ out float out_Color;
 
 vec4 getTextureMultisample(sampler2DMS _texture, vec2 texCoords)
 {
-    int num_samples = 4;
     ivec2 iTexC = ivec2(texCoords * vec2(textureSize(_texture)));
     vec4 color = vec4(0.0);
     for (int i = 0; i < num_samples; ++i)
