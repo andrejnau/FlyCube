@@ -25,10 +25,6 @@ inline void tScenes::OnInit()
 void tScenes::OnUpdate()
 {
     auto & state = CurState<bool>::Instance().state;
-    if (state["warframe"])
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    else
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
     static std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
@@ -58,7 +54,15 @@ inline void tScenes::OnRender()
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glCullFace(GL_BACK);
+
+    if (state["warframe"])
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    else
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
     GeometryPass();
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     if (state["shadow"])
     {

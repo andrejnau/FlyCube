@@ -83,6 +83,8 @@ void main()
         occlusion = pow(occlusion, 2.2);
     }
 
-    vec4 result = vec4(ambient * occlusion + diffuse * shadow + specular * shadow, 1.0);
-    out_Color = pow(result, gamma4);
+    vec3 hdrColor  = vec3(ambient * occlusion + diffuse * shadow + specular * shadow);
+    /*float exposure = 2.0;
+    vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);*/
+    out_Color = pow(vec4(hdrColor, 1.0), gamma4);
 }
