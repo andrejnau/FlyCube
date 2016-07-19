@@ -59,10 +59,9 @@ void main()
     if (has_depthTexture != 0)
     {
         shadow = 0.0;
-        float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+        float bias = max(0.001 * (1.0 - dot(normal, lightDir)), 0.0001);
         shadowCoord.xyz /= shadowCoord.w;
         shadowCoord.z -= bias * shadowCoord.w;
-
         shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(-1, -1));
         shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(0, -1));
         shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(1, -1));
@@ -72,7 +71,6 @@ void main()
         shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(-1, 1));
         shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(0, 1));
         shadow += textureProjOffset(depthTexture, shadowCoord, ivec2(1, 1));
-
         shadow /= 9.0;
     }
 
