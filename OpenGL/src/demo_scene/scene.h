@@ -80,8 +80,6 @@ private:
     GLuint shadow_texture_ = 0;
     GLuint cubemap_texture_ = 0;
 
-    int num_samples_ = 4;
-
     GLuint ds_fbo_;
     GLuint ssao_fbo_;
 

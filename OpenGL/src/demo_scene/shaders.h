@@ -26,7 +26,6 @@ struct ShaderSSAOPass
         GET_UNIFORM_LOCATION(gTangent);
         GET_UNIFORM_LOCATION(samples);
         GET_UNIFORM_LOCATION(projection);
-        GET_UNIFORM_LOCATION(num_samples);
     }
 
     GLuint program;
@@ -38,7 +37,6 @@ struct ShaderSSAOPass
         GLuint gTangent;
         GLuint samples;
         GLuint projection;
-        GLuint num_samples;
     } loc;
 };
 
@@ -70,8 +68,6 @@ struct ShaderLightPass
         GET_UNIFORM_LOCATION(depthBiasMVP);
         GET_UNIFORM_LOCATION(depthTexture);
         GET_UNIFORM_LOCATION(has_depthTexture);
-
-        GET_UNIFORM_LOCATION(num_samples);
     }
 
     GLuint program;
@@ -92,8 +88,6 @@ struct ShaderLightPass
         GLint depthTexture;
         GLint has_depthTexture;
         GLint has_SSAO;
-
-        GLint num_samples;
     } loc;
 };
 
