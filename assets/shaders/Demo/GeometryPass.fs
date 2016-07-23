@@ -40,15 +40,15 @@ uniform Texture textures;
 
 in vec3 _FragPos;
 in vec3 _Normal;
-in vec2 _TexCoords;
 in vec3 _Tangent;
+in vec2 _TexCoords;
+in float _DepthProj;
 
-layout (location = 0) out vec3 gPosition;
+layout (location = 0) out vec4 gPosition;
 layout (location = 1) out vec3 gNormal;
 layout (location = 2) out vec3 gAmbient;
 layout (location = 3) out vec3 gDiffuse;
 layout (location = 4) out vec4 gSpecular;
-layout (location = 5) out vec3 gTangent;
 
 vec3 CalcBumpedNormal()
 {
@@ -72,15 +72,13 @@ void main()
             discard;
     }
 
-    gPosition = _FragPos;
+    gPosition = vec4(_FragPos, _DepthProj);
 
     vec3 normal = normalize(_Normal);
     if (textures.has_normalMap != 0)
         normal = CalcBumpedNormal();
 
     gNormal = normal;
-
-    gTangent = _Tangent;
 
     vec3 inv_gamma3 = vec3(2.2);
 

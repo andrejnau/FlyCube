@@ -64,10 +64,7 @@ void main()
 
     float occlusion = 1.0;
     if (has_SSAO != 0)
-    {
-        occlusion = texture(gSSAO, TexCoords).r;
-        occlusion = pow(occlusion, 2.2);
-    }
+        occlusion = pow(texture(gSSAO, TexCoords).r, 2.2);
 
     vec3 hdrColor  = vec3(ambient * occlusion + diffuse * shadow + specular * shadow);
     /*float exposure = 2.0;

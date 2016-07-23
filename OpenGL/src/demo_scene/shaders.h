@@ -7,6 +7,31 @@
 #define GET_UNIFORM_LOCATION(name) \
     loc.##name = glGetUniformLocation(program, #name);
 
+struct ShaderSSAOBlurPass
+{
+    ShaderSSAOBlurPass()
+    {
+        std::string vertex = GetShaderSource("shaders/Demo/SSAOPass.vs");
+        std::string fragment = GetShaderSource("shaders/Demo/SSAOBlurPass.fs");
+
+        ShaderVector shaders = {
+            { GL_VERTEX_SHADER, vertex },
+            { GL_FRAGMENT_SHADER, fragment }
+        };
+
+        program = CreateProgram(shaders);
+
+        GET_UNIFORM_LOCATION(ssaoInput);
+    }
+
+    GLuint program;
+
+    struct
+    {
+        GLuint ssaoInput;
+    } loc;
+};
+
 struct ShaderSSAOPass
 {
     ShaderSSAOPass()
@@ -23,9 +48,9 @@ struct ShaderSSAOPass
 
         GET_UNIFORM_LOCATION(gPosition);
         GET_UNIFORM_LOCATION(gNormal);
-        GET_UNIFORM_LOCATION(gTangent);
         GET_UNIFORM_LOCATION(samples);
         GET_UNIFORM_LOCATION(projection);
+        GET_UNIFORM_LOCATION(noiseTexture);
     }
 
     GLuint program;
@@ -34,9 +59,9 @@ struct ShaderSSAOPass
     {
         GLuint gPosition;
         GLuint gNormal;
-        GLuint gTangent;
         GLuint samples;
         GLuint projection;
+        GLuint noiseTexture;
     } loc;
 };
 

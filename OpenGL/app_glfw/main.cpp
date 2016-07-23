@@ -7,7 +7,7 @@ struct SceneControl
 {
     tScenes::Ptr scene;
 
-    const int base = 90;
+    const int base = 100;
     const int init_width = 16 * base;
     const int init_height = 9 * base;
 

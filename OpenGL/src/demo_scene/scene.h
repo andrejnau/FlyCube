@@ -40,6 +40,7 @@ private:
     void GeometryPass();
     void ShadowPass();
     void SSAOPass();
+    void SSAOBlurPass();
     void LightPass();
     void RenderLightSource();
     void RenderShadowTexture();
@@ -82,14 +83,17 @@ private:
 
     GLuint ds_fbo_;
     GLuint ssao_fbo_;
+    GLuint ssao_blur_fbo_;
 
     GLuint g_position_;
     GLuint g_normal_;
     GLuint g_ambient_;
     GLuint g_diffuse_;
     GLuint g_specular_;
-    GLuint g_tangent_;
     GLuint g_ssao_;
+    GLuint g_ssao_blur_;
+    GLuint g_depth_texture_;
+    GLuint noise_texture_;
 
     glm::vec3 axis_x_ = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 axis_y_ = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -108,6 +112,7 @@ private:
     ShaderGeometryPass shader_geometry_pass_;
     ShaderLightPass shader_light_pass_;
     ShaderSSAOPass shader_ssao_pass_;
+    ShaderSSAOBlurPass shader_ssao_blur_pass_;
     ShaderSimpleColor shader_simple_color_;
     ShaderSimpleCubeMap shader_simple_cube_map_;
     ShaderShadowView shader_shadow_view_;

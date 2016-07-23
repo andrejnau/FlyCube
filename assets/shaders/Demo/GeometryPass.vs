@@ -19,16 +19,19 @@ uniform mat4 projection;
 
 out vec3 _FragPos;
 out vec3 _Normal;
-out vec2 _TexCoords;
 out vec3 _Tangent;
+out vec2 _TexCoords;
+out float _DepthProj;
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(position, 1.0);
-    _FragPos = vec3(view * model * vec4(position, 1.0));
+    vec4 viewPos = view * model * vec4(position, 1.0);
+    _FragPos = viewPos.xyz;
+    gl_Position = projection * viewPos;
+    _DepthProj = gl_Position.z;
     _TexCoords = texCoords;
 
-    mat3 normalMatrix = mat3(transpose(inverse(view * model)));
+    mat3 normalMatrix = transpose(inverse(mat3(view * model)));
     _Normal = normalize(normalMatrix * normal);
     _Tangent = normalize(normalMatrix * tangent);
 }
