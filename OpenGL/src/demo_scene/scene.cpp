@@ -20,6 +20,7 @@ inline void tScenes::OnInit()
     InitShadow();
     InitGBuffer();
     InitSSAO();
+    InitMesh();
 }
 
 void tScenes::OnUpdate()
@@ -254,25 +255,6 @@ inline void tScenes::LightPass()
 
     glUniformMatrix4fv(shader_light_pass_.loc.depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
 
-    static GLfloat plane_vertices[] = {
-        -1.0, 1.0, 0.0,
-        1.0, 1.0, 0.0,
-        1.0, -1.0, 0.0,
-        -1.0, -1.0, 0.0
-    };
-
-    static GLfloat plane_texcoords[] = {
-        0.0, 1.0,
-        1.0, 1.0,
-        1.0, 0.0,
-        0.0, 0.0
-    };
-
-    static GLuint plane_elements[] = {
-        0, 1, 2,
-        2, 3, 0
-    };
-
     glActiveTexture(GL_TEXTURE6);
     glBindTexture(GL_TEXTURE_2D, shadow_texture_);
     glUniform1i(shader_light_pass_.loc.depthTexture, 6);
@@ -286,16 +268,10 @@ inline void tScenes::LightPass()
         glUniform1i(shader_light_pass_.loc.has_depthTexture, 0);
     }
 
-    glEnableVertexAttribArray(POS_ATTRIB);
-    glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, plane_vertices);
-
-    glEnableVertexAttribArray(TEXTURE_ATTRIB);
-    glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, 0, plane_texcoords);
-
-    glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
-
-    glDisableVertexAttribArray(POS_ATTRIB);
-    glDisableVertexAttribArray(TEXTURE_ATTRIB);
+    mesh_square_.bindMesh();
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_square_.EBO);
+    glDrawElements(GL_TRIANGLES, (GLsizei)mesh_square_.indices.size(), GL_UNSIGNED_INT, 0);
+    mesh_square_.unbindMesh();
 }
 
 void tScenes::RenderLightSource()
@@ -357,35 +333,10 @@ void tScenes::SSAOPass()
     glm::mat4 projection = camera_.GetProjectionMatrix();
     glUniformMatrix4fv(shader_ssao_pass_.loc.projection, 1, GL_FALSE, glm::value_ptr(projection));
 
-    static GLfloat plane_vertices[] = {
-        -1.0, 1.0, 0.0,
-        1.0, 1.0, 0.0,
-        1.0, -1.0, 0.0,
-        -1.0, -1.0, 0.0
-    };
-
-    static GLfloat plane_texcoords[] = {
-        0.0, 1.0,
-        1.0, 1.0,
-        1.0, 0.0,
-        0.0, 0.0
-    };
-
-    static GLuint plane_elements[] = {
-        0, 1, 2,
-        2, 3, 0
-    };
-
-    glEnableVertexAttribArray(POS_ATTRIB);
-    glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, plane_vertices);
-
-    glEnableVertexAttribArray(TEXTURE_ATTRIB);
-    glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, 0, plane_texcoords);
-
-    glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
-
-    glDisableVertexAttribArray(POS_ATTRIB);
-    glDisableVertexAttribArray(TEXTURE_ATTRIB);
+    mesh_square_.bindMesh();
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_square_.EBO);
+    glDrawElements(GL_TRIANGLES, (GLsizei)mesh_square_.indices.size(), GL_UNSIGNED_INT, 0);
+    mesh_square_.unbindMesh();
 }
 
 void tScenes::SSAOBlurPass()
@@ -397,39 +348,16 @@ void tScenes::SSAOBlurPass()
     glBindTexture(GL_TEXTURE_2D, g_ssao_);
     glUniform1i(shader_ssao_blur_pass_.loc.ssaoInput, 0);
 
-    static GLfloat plane_vertices[] = {
-        -1.0, 1.0, 0.0,
-        1.0, 1.0, 0.0,
-        1.0, -1.0, 0.0,
-        -1.0, -1.0, 0.0
-    };
-
-    static GLfloat plane_texcoords[] = {
-        0.0, 1.0,
-        1.0, 1.0,
-        1.0, 0.0,
-        0.0, 0.0
-    };
-
-    static GLuint plane_elements[] = {
-        0, 1, 2,
-        2, 3, 0
-    };
-
-    glEnableVertexAttribArray(POS_ATTRIB);
-    glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, plane_vertices);
-
-    glEnableVertexAttribArray(TEXTURE_ATTRIB);
-    glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, 0, plane_texcoords);
-
-    glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
-
-    glDisableVertexAttribArray(POS_ATTRIB);
-    glDisableVertexAttribArray(TEXTURE_ATTRIB);
+    mesh_square_.bindMesh();
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_square_.EBO);
+    glDrawElements(GL_TRIANGLES, (GLsizei)mesh_square_.indices.size(), GL_UNSIGNED_INT, 0);
+    mesh_square_.unbindMesh();
 }
 
 inline void tScenes::RenderShadowTexture()
 {
+    glDisable(GL_DEPTH_TEST);
+
     glUseProgram(shader_shadow_view_.program);
 
     glActiveTexture(GL_TEXTURE0);
@@ -440,32 +368,12 @@ inline void tScenes::RenderShadowTexture()
 
     glUniformMatrix4fv(shader_shadow_view_.loc.u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
-    static GLfloat plane_vertices[] = {
-        -1.0, 1.0, 0.0,
-        -0.5, 1.0, 0.0,
-        -0.5, 0.5, 0.0,
-        -1.0, 0.5, 0.0
-    };
+    mesh_square_shadow_view_.bindMesh();
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_square_shadow_view_.EBO);
+    glDrawElements(GL_TRIANGLES, (GLsizei)mesh_square_shadow_view_.indices.size(), GL_UNSIGNED_INT, 0);
+    mesh_square_shadow_view_.unbindMesh();
 
-    static GLfloat plane_texcoords[] = {
-        0.0, 1.0,
-        1.0, 1.0,
-        1.0, 0.0,
-        0.0, 0.0
-    };
-
-    static GLuint plane_elements[] = {
-        0, 1, 2,
-        2, 3, 0
-    };
-
-    glEnableVertexAttribArray(POS_ATTRIB);
-    glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, 0, plane_vertices);
-
-    glEnableVertexAttribArray(TEXTURE_ATTRIB);
-    glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, 0, plane_texcoords);
-
-    glDrawElements(GL_TRIANGLES, sizeof(plane_elements) / sizeof(*plane_elements), GL_UNSIGNED_INT, plane_elements);
+    glEnable(GL_DEPTH_TEST);
 }
 
 inline void tScenes::RenderCubemap()
@@ -670,6 +578,52 @@ void tScenes::InitShadow()
 void tScenes::InitCubemap()
 {
     cubemap_texture_ = LoadCubemap();
+}
+
+void tScenes::InitMesh()
+{
+    std::vector<glm::vec3> position = {
+        glm::vec3(-1.0, 1.0, 0.0),
+        glm::vec3(1.0, 1.0, 0.0),
+        glm::vec3(1.0, -1.0, 0.0),
+        glm::vec3(-1.0, -1.0, 0.0)
+    };
+
+    std::vector<glm::vec3> position_shadow_view = {
+        glm::vec3(-1.0, 1.0, 0.0),
+        glm::vec3(-0.5, 1.0, 0.0),
+        glm::vec3(-0.5, 0.5, 0.0),
+        glm::vec3(-1.0, 0.5, 0.0)
+    };
+
+    std::vector<glm::vec2> texCoords = {
+        glm::vec2(0.0, 1.0),
+        glm::vec2(1.0, 1.0),
+        glm::vec2(1.0, 0.0),
+        glm::vec2(0.0, 0.0)
+    };
+
+    std::vector<GLuint> indices = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+    mesh_square_.vertices.resize(position.size());
+    mesh_square_shadow_view_.vertices.resize(position.size());
+    for (size_t i = 0; i < mesh_square_.vertices.size(); ++i)
+    {
+        mesh_square_.vertices[i].position = position[i];
+        mesh_square_shadow_view_.vertices[i].position = position_shadow_view[i];
+
+        mesh_square_.vertices[i].texCoords = texCoords[i];
+        mesh_square_shadow_view_.vertices[i].texCoords = texCoords[i];
+    }
+
+    mesh_square_.indices = indices;
+    mesh_square_shadow_view_.indices = indices;
+
+    mesh_square_.setupMesh();
+    mesh_square_shadow_view_.setupMesh();
 }
 
 inline GLuint tScenes::CreateShadowFBO(GLuint shadow_texture)

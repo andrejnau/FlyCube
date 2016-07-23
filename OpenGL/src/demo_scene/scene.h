@@ -52,6 +52,7 @@ private:
     void InitSSAO();
     void InitShadow();
     void InitCubemap();
+    void InitMesh();
     GLuint CreateShadowFBO(GLuint shadow_texture);
     GLuint CreateShadowTexture(GLsizei width, GLsizei height);
     GLuint LoadCubemap();
@@ -106,6 +107,8 @@ private:
 
     Model model_;
     Model model_sphere_;
+    Mesh mesh_square_;
+    Mesh mesh_square_shadow_view_;
 
     std::vector<glm::vec3> ssao_kernel_;
 
