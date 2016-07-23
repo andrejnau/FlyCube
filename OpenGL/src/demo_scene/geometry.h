@@ -12,8 +12,9 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-struct Mesh
+class Mesh
 {
+public:
     struct Vertex
     {
         glm::vec3 position;
@@ -43,12 +44,11 @@ struct Mesh
     std::vector<GLuint> indices;
     std::vector<Texture> textures;
 
-    GLuint VAO, VBO, EBO;
-
     void setupMesh();
-
+    void drawMesh();
+private:
+    GLuint VAO, VBO, EBO;
     void bindMesh();
-
     void unbindMesh();
 };
 

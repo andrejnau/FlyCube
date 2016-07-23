@@ -20,6 +20,14 @@ inline void Mesh::setupMesh()
     glBindVertexArray(0);
 }
 
+void Mesh::drawMesh()
+{
+    bindMesh();
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
+    unbindMesh();
+}
+
 void Mesh::bindMesh()
 {
     glBindVertexArray(VAO);

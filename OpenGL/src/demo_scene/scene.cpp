@@ -194,10 +194,7 @@ inline void tScenes::GeometryPass()
         glUniform3fv(shader_geometry_pass_.loc.material.specular, 1, glm::value_ptr(material.specular));
         glUniform1f(shader_geometry_pass_.loc.material.shininess, material.shininess);
 
-        cur_mesh.bindMesh();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
-        glDrawElements(GL_TRIANGLES, (GLsizei)cur_mesh.indices.size(), GL_UNSIGNED_INT, 0);
-        cur_mesh.unbindMesh();
+        cur_mesh.drawMesh();
     }
 }
 
@@ -268,10 +265,7 @@ inline void tScenes::LightPass()
         glUniform1i(shader_light_pass_.loc.has_depthTexture, 0);
     }
 
-    mesh_square_.bindMesh();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_square_.EBO);
-    glDrawElements(GL_TRIANGLES, (GLsizei)mesh_square_.indices.size(), GL_UNSIGNED_INT, 0);
-    mesh_square_.unbindMesh();
+    mesh_square_.drawMesh();
 }
 
 void tScenes::RenderLightSource()
@@ -286,10 +280,7 @@ void tScenes::RenderLightSource()
 
     for (Mesh & cur_mesh : model_sphere_.meshes)
     {
-        cur_mesh.bindMesh();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
-        glDrawElements(GL_TRIANGLES, (GLsizei)cur_mesh.indices.size(), GL_UNSIGNED_INT, 0);
-        cur_mesh.unbindMesh();
+        cur_mesh.drawMesh();
     }
 }
 
@@ -304,10 +295,7 @@ inline void tScenes::ShadowPass()
 
     for (Mesh & cur_mesh : model_.meshes)
     {
-        cur_mesh.bindMesh();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
-        glDrawElements(GL_TRIANGLES, (GLsizei)cur_mesh.indices.size(), GL_UNSIGNED_INT, 0);
-        cur_mesh.unbindMesh();
+        cur_mesh.drawMesh();
     }
 }
 
@@ -333,10 +321,7 @@ void tScenes::SSAOPass()
     glm::mat4 projection = camera_.GetProjectionMatrix();
     glUniformMatrix4fv(shader_ssao_pass_.loc.projection, 1, GL_FALSE, glm::value_ptr(projection));
 
-    mesh_square_.bindMesh();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_square_.EBO);
-    glDrawElements(GL_TRIANGLES, (GLsizei)mesh_square_.indices.size(), GL_UNSIGNED_INT, 0);
-    mesh_square_.unbindMesh();
+    mesh_square_.drawMesh();
 }
 
 void tScenes::SSAOBlurPass()
@@ -348,10 +333,7 @@ void tScenes::SSAOBlurPass()
     glBindTexture(GL_TEXTURE_2D, g_ssao_);
     glUniform1i(shader_ssao_blur_pass_.loc.ssaoInput, 0);
 
-    mesh_square_.bindMesh();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_square_.EBO);
-    glDrawElements(GL_TRIANGLES, (GLsizei)mesh_square_.indices.size(), GL_UNSIGNED_INT, 0);
-    mesh_square_.unbindMesh();
+    mesh_square_.drawMesh();
 }
 
 inline void tScenes::RenderShadowTexture()
@@ -368,10 +350,7 @@ inline void tScenes::RenderShadowTexture()
 
     glUniformMatrix4fv(shader_shadow_view_.loc.u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
-    mesh_square_shadow_view_.bindMesh();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_square_shadow_view_.EBO);
-    glDrawElements(GL_TRIANGLES, (GLsizei)mesh_square_shadow_view_.indices.size(), GL_UNSIGNED_INT, 0);
-    mesh_square_shadow_view_.unbindMesh();
+    mesh_square_shadow_view_.drawMesh();
 
     glEnable(GL_DEPTH_TEST);
 }
@@ -401,10 +380,7 @@ inline void tScenes::RenderCubemap()
 
     for (Mesh & cur_mesh : model_sphere_.meshes)
     {
-        cur_mesh.bindMesh();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cur_mesh.EBO);
-        glDrawElements(GL_TRIANGLES, (GLsizei)cur_mesh.indices.size(), GL_UNSIGNED_INT, 0);
-        cur_mesh.unbindMesh();
+        cur_mesh.drawMesh();
     }
 
     glCullFace(old_cull_face_mode);
