@@ -262,7 +262,10 @@ inline void Model::loadMaterialTextures(Mesh & retMeh, aiMaterial * mat, aiTextu
         mat->GetTexture(type, i, &texture_name);
         std::string texture_path = m_directory + "/" + texture_name.C_Str();
         if (!std::ifstream(texture_path).good())
+        {
+            DBG("failed to load %s", texture_path.c_str());
             continue;
+        }
 
         Mesh::Texture texture;
         texture.id = -1;
