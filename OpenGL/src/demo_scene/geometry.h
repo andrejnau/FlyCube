@@ -36,7 +36,7 @@ struct Mesh
         glm::vec3 dif = glm::vec3(1.0);
         glm::vec3 spec = glm::vec3(1.0);
         float shininess = 32.0;
-        aiString name;
+        std::string name;
     } material;
 
     std::vector<Vertex> vertices;

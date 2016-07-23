@@ -87,6 +87,8 @@ inline void Model::processNode(aiNode * node, const aiScene * scene)
     {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
         meshes.push_back(processMesh(mesh, scene));
+        //if (meshes.back().material.name == "16___Default")
+        //    meshes.pop_back();
     }
 
     for (GLuint i = 0; i < node->mNumChildren; i++)
@@ -236,7 +238,7 @@ inline Mesh Model::processMesh(aiMesh * mesh, const aiScene * scene)
         }
         if (material->Get(AI_MATKEY_NAME, name) == aiReturn_SUCCESS)
         {
-            retMeh.material.name = name;
+            retMeh.material.name = name.C_Str();
         }
     }
 
