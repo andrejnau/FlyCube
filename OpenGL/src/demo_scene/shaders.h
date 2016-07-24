@@ -93,6 +93,7 @@ struct ShaderLightPass
         GET_UNIFORM_LOCATION(depthBiasMVP);
         GET_UNIFORM_LOCATION(depthTexture);
         GET_UNIFORM_LOCATION(has_depthTexture);
+        GET_UNIFORM_LOCATION(occlusion_only);
     }
 
     GLuint program;
@@ -113,6 +114,7 @@ struct ShaderLightPass
         GLint depthTexture;
         GLint has_depthTexture;
         GLint has_SSAO;
+        GLint occlusion_only;
     } loc;
 };
 

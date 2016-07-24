@@ -231,10 +231,15 @@ inline void tScenes::LightPass()
     if (state["occlusion"])
     {
         glUniform1i(shader_light_pass_.loc.has_SSAO, 1);
+        if (state["occlusion_only"])
+            glUniform1i(shader_light_pass_.loc.occlusion_only, 1);
+        else
+            glUniform1i(shader_light_pass_.loc.occlusion_only, 0);
     }
     else
     {
         glUniform1i(shader_light_pass_.loc.has_SSAO, 0);
+        glUniform1i(shader_light_pass_.loc.occlusion_only, 0);
     }
 
     glm::vec3 cameraPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(camera_.GetCameraPos(), 1.0));

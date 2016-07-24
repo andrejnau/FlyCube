@@ -85,6 +85,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         auto & state = CurState<bool>::Instance().state;
         state["shadow"] = !state["shadow"];
     }
+
+    if (key == GLFW_KEY_P && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["occlusion_only"] = !state["occlusion_only"];
+    }
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)

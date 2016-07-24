@@ -16,6 +16,7 @@ uniform sampler2DShadow depthTexture;
 uniform int has_depthTexture;
 uniform int has_SSAO;
 uniform int num_samples;
+uniform int occlusion_only;
 
 in vec2 TexCoords;
 
@@ -67,7 +68,7 @@ void main()
         occlusion = pow(texture(gSSAO, TexCoords).r, 2.2);
 
     vec3 hdrColor  = vec3(ambient * occlusion + diffuse * shadow + specular * shadow);
-    /*float exposure = 2.0;
-    vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);*/
+    if (occlusion_only != 0)
+        hdrColor = vec3(occlusion);
     out_Color = pow(vec4(hdrColor, 1.0), gamma4);
 }

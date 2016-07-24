@@ -23,12 +23,12 @@ void main()
     vec3 normal = normalize(texture(gNormal, TexCoords).rgb);
     vec3 tangent = normalize(texture(noiseTexture, TexCoords * noiseScale).rgb);
     float fragDepth = texture(gPosition, TexCoords).w;
-    fragPos += 0.015 * normal;
 
     tangent = normalize(tangent - normal * dot(tangent, normal));
     vec3 bitangent = normalize(cross(normal, tangent));
     mat3 TBN = mat3(tangent, bitangent, normal);
 
+    float bias = 0.01;
     float occlusion = 0.0;
     for(int i = 0; i < KERNEL_SIZE; ++i)
     {
@@ -47,7 +47,7 @@ void main()
 
         // range check & accumulate
         float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragDepth - sampleDepthReal));
-        occlusion += step(sampleDepthReal, sampleDepth) * rangeCheck;
+        occlusion += step(sampleDepthReal + bias, sampleDepth) * rangeCheck;
     }
     occlusion = 1.0 - (occlusion / float(KERNEL_SIZE));
     out_Color = occlusion;
