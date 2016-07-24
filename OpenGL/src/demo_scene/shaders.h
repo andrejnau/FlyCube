@@ -5,7 +5,7 @@
 #include <utilities.h>
 
 #define GET_UNIFORM_LOCATION(name) \
-    loc.##name = glGetUniformLocation(program, #name);
+    loc.name = glGetUniformLocation(program, #name);
 
 struct ShaderSSAOBlurPass
 {
