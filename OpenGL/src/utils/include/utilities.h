@@ -15,7 +15,10 @@ using ShaderVector = std::vector<std::pair<GLenum, std::string>>;
 
 inline std::string GetAssetFullPath(const std::string &assetName)
 {
-    return std::string(ASSETS_PATH) + assetName;
+    std::string path = std::string(ASSETS_PATH) + assetName;
+    if (!std::ifstream(path).good())
+        path = "assets/" + assetName;
+    return path;
 }
 
 inline std::string GetShaderSource(const std::string &file)
