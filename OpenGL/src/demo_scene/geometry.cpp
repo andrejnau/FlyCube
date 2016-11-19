@@ -1,5 +1,6 @@
 #include "geometry.h"
-#include <SOIL.h>
+#include <gli/gli.hpp>
+#include <chrono>
 
 inline void Mesh::setupMesh()
 {
@@ -77,9 +78,9 @@ inline std::string Model::splitFilename(const std::string & str)
 
 inline void Model::loadModel()
 {
+    auto start = std::chrono::system_clock::now();
     Assimp::Importer import;
     const aiScene* scene = import.ReadFile(m_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace);
-
     if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
         DBG("ERROR::ASSIMP:: %s", import.GetErrorString());
@@ -87,6 +88,9 @@ inline void Model::loadModel()
     }
 
     processNode(scene->mRootNode, scene);
+
+    auto duration = std::chrono::duration_cast< std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
+    DBG("%lld", duration.count());
 }
 
 inline void Model::processNode(aiNode * node, const aiScene * scene)
@@ -276,18 +280,34 @@ inline void Model::loadMaterialTextures(Mesh & retMeh, aiMaterial * mat, aiTextu
     }
 }
 
-inline void Model::TextureFromFile(Mesh::Texture & texture)
+
+GLuint CreateCompressedTexture(const std::string& Filename, aiTextureType type)
 {
-    int width, height;
-    unsigned char* image = SOIL_load_image(texture.path.C_Str(), &width, &height, 0, SOIL_LOAD_RGBA);
+    gli::texture Texture = gli::load(Filename);
+    if (Texture.empty())
+        return 0;
 
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, (GLint)GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    gli::gl GL(gli::gl::PROFILE_GL33);
+    gli::gl::format const Format = GL.translate(Texture.format(), Texture.swizzles());
+    GLenum Target = GL.translate(Texture.target());
+    assert(gli::is_compressed(Texture.format()) && Target == gli::TARGET_2D);
 
-    if (texture.type == aiTextureType_OPACITY)
+    GLuint TextureName = 0;
+    glGenTextures(1, &TextureName);
+    glBindTexture(Target, TextureName);
+    glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(Texture.levels() - 1));
+    glTexParameteriv(Target, GL_TEXTURE_SWIZZLE_RGBA, &Format.Swizzles[0]);
+    glTexStorage2D(Target, static_cast<GLint>(Texture.levels()), Format.Internal, Texture.extent(0).x, Texture.extent(0).y);
+    for (std::size_t Level = 0; Level < Texture.levels(); ++Level)
+    {
+        glm::tvec3<GLsizei> Extent(Texture.extent(Level));
+        glCompressedTexSubImage2D(Target, static_cast<GLint>(Level), 0, 0, Extent.x, Extent.y,
+            Format.Internal, static_cast<GLsizei>(Texture.size(Level)), Texture.data(0, 0, Level));
+    }
+
+
+    if (type == aiTextureType_OPACITY)
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_NEAREST);
@@ -297,13 +317,15 @@ inline void Model::TextureFromFile(Mesh::Texture & texture)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
     }
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)GL_REPEAT);
+    glBindTexture(Target, 0);
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    return TextureName;
+}
 
-    SOIL_free_image_data(image);
-
-    texture.id = textureID;
+inline void Model::TextureFromFile(Mesh::Texture & texture)
+{
+    DBG("texture %s", texture.path.C_Str());
+    texture.id = CreateCompressedTexture(texture.path.C_Str(), texture.type);
 }
