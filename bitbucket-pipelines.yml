@@ -11,6 +11,8 @@ pipelines:
         script: # Modify the commands below to build your repository.
           - apt-get update
           - apt-get install -y cmake
+          - apt-get install -y xorg-dev
+          - apt-get install -y libglu1-mesa-dev       
           - python init.py
           - mkdir build
           - cd build
