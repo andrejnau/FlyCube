@@ -1,4 +1,4 @@
-# This is a sample build configuration for C++ â€“ Make.
+# This is a sample build configuration for C++ – Make.
 # Check our guides at https://confluence.atlassian.com/x/5Q4SMw for more examples.
 # Only use spaces to indent your .yml configuration.
 # -----
@@ -9,6 +9,8 @@ pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
+          - apt-get update
+          - apt-get install -y cmake
           - python init.py
           - mkdir build
           - cd build
