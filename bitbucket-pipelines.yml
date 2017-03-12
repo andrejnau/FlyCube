@@ -10,11 +10,11 @@ pipelines:
     - step:
         script: # Modify the commands below to build your repository.
           - uname -a
-          - apt-get update
+          - apt-get update -qq
           - apt-get install software-properties-common -y
           - echo 'deb http://ppa.launchpad.net/george-edison55/cmake-3.x/ubuntu trusty main' | tee -a /etc/apt/sources.list.d/cmake.list
-          - apt-get update
-          - apt-get install -y cmake
+          - apt-get update -qq
+          - apt-get install cmake -y --force-yes
           - apt-get install -y xorg-dev
           - apt-get install -y libglu1-mesa-dev    
           - cmake --version   
