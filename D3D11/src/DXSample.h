@@ -2,6 +2,8 @@
 
 #include "IDXSample.h"
 #include "Win32Application.h"
+#include "Geometry.h"
+#include "Util.h"
 
 #include <memory>
 #include <string>
@@ -42,24 +44,25 @@ private:
 
     void CreateViewPort();
 
+    void CreateGeometry();
+
+    struct TexInfo
+    {
+        //D3D12_RESOURCE_DESC resourceDescription;
+        std::unique_ptr<uint8_t[]> imageData;
+        int textureWidth;
+        int textureHeight;
+        int numBitsPerPixel;
+        int imageSize;
+        int bytesPerRow;
+    };
+
+    DXSample::TexInfo LoadImageDataFromFile(std::string filename);
+
     ComPtr<IDXGISwapChain> SwapChain;
     ComPtr<ID3D11Device> d3d11Device;
     ComPtr<ID3D11DeviceContext> d3d11DevCon;
     ComPtr<ID3D11RenderTargetView> renderTargetView;
-
-    //The vertex Structure
-    struct Vertex
-    {
-        Vertex(float x, float y, float z, float r, float g, float b, float a)
-            : pos(x, y, z)
-            , color(r, g, b, a)
-        {}
-        Vector3 pos;
-        Vector4 color;
-    };
-
-    ComPtr<ID3D11Buffer> squareVertBuffer;
-    ComPtr<ID3D11Buffer> squareIndexBuffer;
 
     ComPtr<ID3D11DepthStencilView> depthStencilView;
     ComPtr<ID3D11Texture2D> depthStencilBuffer;
@@ -70,6 +73,35 @@ private:
     ComPtr<ID3DBlob> PS_Buffer;
     ComPtr<ID3D11InputLayout> vertLayout;
 
+    std::unique_ptr<Model> m_modelOfFile;
+
     int m_width;
     int m_height;
+
+
+    const bool use_rotare = true;
+
+    Matrix cameraProjMat; // this will store our projection matrix
+    Matrix cameraViewMat; // this will store our view matrix
+    Matrix cubeWorldMat; // our first cubes world matrix (transformation matrix)
+
+    Vector4 cameraPosition; // this is our cameras position vector
+    Vector4 cameraTarget; // a vector describing the point in space our camera is looking at
+    Vector4 cameraUp; // the worlds up vector
+
+    ComPtr<ID3D11Buffer> cbPerObjectBuffer;
+
+    struct ConstantBufferPerObject
+    {
+        Matrix model;
+        Matrix view;
+        Matrix projection;
+        Vector4 lightPos;
+        Vector4 viewPos;
+    };
+
+    ConstantBufferPerObject cbPerObject;
+
+
+    ComPtr<ID3D11SamplerState> textureSamplerState;
 };

@@ -15,12 +15,16 @@ set(headers
     ${include_path}/Utility.h
     ${include_path}/FileUtility.h
     ${include_path}/Win32Application.h
+    ${include_path}/Geometry.h
+    ${include_path}/Util.h
 )
 
 set(sources
     ${source_path}/DXSample.cpp
     ${source_path}/Main.cpp
     ${source_path}/Win32Application.cpp
+    ${source_path}/Geometry.cpp
+    ${source_path}/Util.cpp
 )
 
 set(pixel_shaders

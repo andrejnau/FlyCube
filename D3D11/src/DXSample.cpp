@@ -18,6 +18,19 @@ void DXSample::OnInit()
 {
     InitializeDirect3d11App();
     InitScene();
+    CreateGeometry();
+
+    D3D11_SAMPLER_DESC sampDesc;
+    ZeroMemory(&sampDesc, sizeof(sampDesc));
+    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    sampDesc.MinLOD = 0;
+    sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    HRESULT hr = d3d11Device->CreateSamplerState(&sampDesc, &textureSamplerState);
 }
 
 void DXSample::OnUpdate()
@@ -29,6 +42,39 @@ void DXSample::OnUpdate()
     end = std::chrono::system_clock::now();
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = std::chrono::system_clock::now();
+
+    if (use_rotare)
+        angle += elapsed / 2e6f;
+
+    cameraProjMat = XMMatrixPerspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1024.0f);
+
+    float z_width = (m_modelOfFile->boundBox.z_max - m_modelOfFile->boundBox.z_min);
+    float y_width = (m_modelOfFile->boundBox.y_max - m_modelOfFile->boundBox.y_min);
+    float x_width = (m_modelOfFile->boundBox.y_max - m_modelOfFile->boundBox.y_min);
+    float model_width = (z_width + y_width + x_width) / 3.0f;
+    float scale = 256.0f / std::max(z_width, x_width);
+    model_width *= scale;
+
+    cameraPosition = Vector4(0.0f, model_width * 0.25f, -model_width * 2.0f, 0.0f);
+    cameraTarget = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+    cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
+    cameraViewMat = XMMatrixLookAtRH(cameraPosition, cameraTarget, cameraUp);
+
+    float offset_x = (m_modelOfFile->boundBox.x_max + m_modelOfFile->boundBox.x_min) / 2.0f;
+    float offset_y = (m_modelOfFile->boundBox.y_max + m_modelOfFile->boundBox.y_min) / 2.0f;
+    float offset_z = (m_modelOfFile->boundBox.z_max + m_modelOfFile->boundBox.z_min) / 2.0f;
+
+    Matrix model = XMMatrixRotationY(-angle) * XMMatrixTranslation(-offset_x, -offset_y, -offset_z) * XMMatrixScaling(scale, scale, scale);
+
+    cbPerObject.model = XMMatrixTranspose(model);
+    cbPerObject.view = XMMatrixTranspose(cameraViewMat);
+    cbPerObject.projection = XMMatrixTranspose(cameraProjMat);
+    cbPerObject.lightPos = cameraPosition;
+    cbPerObject.viewPos = cameraPosition;
+
+    d3d11DevCon->UpdateSubresource(cbPerObjectBuffer.Get(), 0, NULL, &cbPerObject, 0, 0);
+
+    d3d11DevCon->VSSetConstantBuffers(0, 1, cbPerObjectBuffer.GetAddressOf());
 }
 
 void DXSample::OnRender()
@@ -38,7 +84,50 @@ void DXSample::OnRender()
 
     d3d11DevCon->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    d3d11DevCon->DrawIndexed(6, 0, 0);
+    d3d11DevCon->PSSetSamplers(0, 1, &textureSamplerState);
+
+    for (size_t mesh_id = 0; mesh_id < m_modelOfFile->meshes.size(); ++mesh_id)
+    {
+        Mesh & cur_mesh = m_modelOfFile->meshes[mesh_id];
+
+        UINT stride = sizeof(cur_mesh.vertices[0]);
+        UINT offset = 0;
+        d3d11DevCon->IASetVertexBuffers(0, 1, cur_mesh.vertBuffer.GetAddressOf(), &stride, &offset);
+        d3d11DevCon->IASetIndexBuffer(cur_mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
+        std::vector<ID3D11ShaderResourceView*> use_textures(5, nullptr);
+        static uint32_t frameId = 0;
+        for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
+        {
+            uint32_t texture_slot = 0;
+            switch (cur_mesh.textures[i].type)
+            {
+            case aiTextureType_DIFFUSE:
+                texture_slot = 0;
+                break;
+            case aiTextureType_HEIGHT:
+                texture_slot = 1;
+                break;
+            case aiTextureType_SPECULAR:
+                texture_slot = 2;
+                break;
+            case aiTextureType_SHININESS:
+                texture_slot = 3;
+                break;
+            case aiTextureType_AMBIENT:
+                texture_slot = 4;
+                break;
+            default:
+                continue;
+            }
+
+            use_textures[texture_slot] = cur_mesh.textures[i].textureRV.Get();
+        }
+
+        d3d11DevCon->PSSetShaderResources(0, use_textures.size(), use_textures.data());
+
+        d3d11DevCon->DrawIndexed(cur_mesh.indices.size(), 0, 0);
+    }
 
     SwapChain->Present(0, 0);
 }
@@ -187,61 +276,15 @@ bool DXSample::InitScene()
     d3d11DevCon->VSSetShader(VS.Get(), 0, 0);
     d3d11DevCon->PSSetShader(PS.Get(), 0, 0);
 
-    //Create the vertex buffer
-
-    Vertex v[] =
-    {
-        Vertex(-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f),
-        Vertex(-0.5f,  0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f),
-        Vertex(0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f),
-        Vertex(0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f),
-    };
-
-    D3D11_BUFFER_DESC vertexBufferDesc;
-    ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-
-    vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    vertexBufferDesc.ByteWidth = sizeof(Vertex) * 4;
-    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    vertexBufferDesc.CPUAccessFlags = 0;
-    vertexBufferDesc.MiscFlags = 0;
-
-    D3D11_SUBRESOURCE_DATA vertexBufferData;
-
-    ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-    vertexBufferData.pSysMem = v;
-    hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &squareVertBuffer);
-
-
-    DWORD indices[] = {
-        0, 1, 2,
-        0, 2, 3,
-    };
-
-    D3D11_BUFFER_DESC indexBufferDesc;
-    ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-    indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    indexBufferDesc.ByteWidth = sizeof(DWORD) * 2 * 3;
-    indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    indexBufferDesc.CPUAccessFlags = 0;
-    indexBufferDesc.MiscFlags = 0;
-
-    D3D11_SUBRESOURCE_DATA iinitData;
-    iinitData.pSysMem = indices;
-    d3d11Device->CreateBuffer(&indexBufferDesc, &iinitData, &squareIndexBuffer);
-
-    d3d11DevCon->IASetIndexBuffer(squareIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
-    //Set the vertex buffer
-    UINT stride = sizeof(Vertex);
-    UINT offset = 0;
-    d3d11DevCon->IASetVertexBuffers(0, 1, squareVertBuffer.GetAddressOf(), &stride, &offset);
-
     D3D11_INPUT_ELEMENT_DESC layout[] =
     {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(Mesh::Vertex, texCoords), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, tangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, bitangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
+
     UINT numElements = ARRAYSIZE(layout);
 
     //Create the Input Layout
@@ -256,6 +299,18 @@ bool DXSample::InitScene()
 
    
     CreateViewPort();
+
+    D3D11_BUFFER_DESC cbbd;
+    ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
+
+    cbbd.Usage = D3D11_USAGE_DEFAULT;
+    cbbd.ByteWidth = sizeof(cbPerObject);
+    cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    cbbd.CPUAccessFlags = 0;
+    cbbd.MiscFlags = 0;
+
+    hr = d3d11Device->CreateBuffer(&cbbd, NULL, &cbPerObjectBuffer);
+
     return true;
 }
 
@@ -274,4 +329,73 @@ void DXSample::CreateViewPort()
 
     //Set the Viewport
     d3d11DevCon->RSSetViewports(1, &viewport);
+}
+
+
+void DXSample::CreateGeometry()
+{
+    m_modelOfFile.reset(new Model("model/mechanical-emperor-scorpion/mechanical-emperor-scorpion.obj"));
+     
+    for (Mesh & cur_mesh : m_modelOfFile->meshes)
+    {
+        cur_mesh.setupMesh(d3d11Device, d3d11DevCon);
+    }
+
+    uint32_t id = 0;
+    for (Mesh & cur_mesh : m_modelOfFile->meshes)
+    {
+        for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
+        {
+            cur_mesh.textures[i].offset = id++;
+
+            auto metadata = LoadImageDataFromFile(cur_mesh.textures[i].path);
+
+            ComPtr<ID3D11Texture2D> resource;
+
+            D3D11_TEXTURE2D_DESC desc = {};
+            desc.Width = static_cast<UINT>(metadata.textureWidth);
+            desc.Height = static_cast<UINT>(metadata.textureHeight);
+            desc.MipLevels = static_cast<UINT>(1);
+            desc.ArraySize = static_cast<UINT>(1);
+            desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            desc.SampleDesc.Count = 1;
+            desc.SampleDesc.Quality = 0;
+            desc.Usage = D3D11_USAGE_DEFAULT;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.CPUAccessFlags = 0;
+
+            D3D11_SUBRESOURCE_DATA textureBufferData;
+            ZeroMemory(&textureBufferData, sizeof(textureBufferData));
+            textureBufferData.pSysMem = metadata.imageData.get();
+            textureBufferData.SysMemPitch = metadata.bytesPerRow; // size of all our triangle vertex data
+            textureBufferData.SysMemSlicePitch = metadata.bytesPerRow * metadata.textureHeight; // also the size of our triangle vertex data
+
+            HRESULT hr = d3d11Device->CreateTexture2D(&desc, &textureBufferData, &resource);
+
+            D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = 1;
+
+            hr = d3d11Device->CreateShaderResourceView(resource.Get(), &srvDesc, &cur_mesh.textures[i].textureRV);
+        }
+    }
+}
+
+DXSample::TexInfo DXSample::LoadImageDataFromFile(std::string filename)
+{
+    TexInfo texInfo = {};
+
+    unsigned char *image = SOIL_load_image(filename.c_str(), &texInfo.textureWidth, &texInfo.textureHeight, 0, SOIL_LOAD_RGBA);
+
+    DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+    texInfo.numBitsPerPixel = BitsPerPixel(dxgiFormat); // number of bits per pixel
+    texInfo.bytesPerRow = (texInfo.textureWidth * texInfo.numBitsPerPixel) / 8; // number of bytes in each row of the image data
+    texInfo.imageSize = texInfo.bytesPerRow * texInfo.textureHeight; // total image size in bytes
+
+    texInfo.imageData.reset(new uint8_t[texInfo.imageSize]);
+    memcpy(texInfo.imageData.get(), image, texInfo.imageSize);
+    SOIL_free_image_data(image);
+
+    return texInfo;
 }

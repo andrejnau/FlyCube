@@ -1,6 +1,4 @@
-/build
-/build_gl
-/build_dx
+/build*
 *.*~
 *.*.user*
 *.log
