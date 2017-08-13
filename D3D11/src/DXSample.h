@@ -61,6 +61,9 @@ private:
     ComPtr<ID3D11Buffer> squareVertBuffer;
     ComPtr<ID3D11Buffer> squareIndexBuffer;
 
+    ComPtr<ID3D11DepthStencilView> depthStencilView;
+    ComPtr<ID3D11Texture2D> depthStencilBuffer;
+
     ComPtr<ID3D11VertexShader> VS;
     ComPtr<ID3D11PixelShader> PS;
     ComPtr<ID3DBlob> VS_Buffer;

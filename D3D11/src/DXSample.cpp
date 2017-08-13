@@ -36,6 +36,8 @@ void DXSample::OnRender()
     float bgColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     d3d11DevCon->ClearRenderTargetView(renderTargetView.Get(), bgColor);
 
+    d3d11DevCon->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
     d3d11DevCon->DrawIndexed(6, 0, 0);
 
     SwapChain->Present(0, 0);
@@ -126,8 +128,27 @@ void DXSample::CreateRT()
     hr = d3d11Device->CreateRenderTargetView(BackBuffer, NULL, &renderTargetView);
     BackBuffer->Release();
 
-    //Set our Render Target
-    d3d11DevCon->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), NULL);
+
+    //Describe our Depth/Stencil Buffer
+
+    D3D11_TEXTURE2D_DESC depthStencilDesc;
+    depthStencilDesc.Width = m_width;
+    depthStencilDesc.Height = m_height;
+    depthStencilDesc.MipLevels = 1;
+    depthStencilDesc.ArraySize = 1;
+    depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthStencilDesc.SampleDesc.Count = 1;
+    depthStencilDesc.SampleDesc.Quality = 0;
+    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    depthStencilDesc.CPUAccessFlags = 0;
+    depthStencilDesc.MiscFlags = 0;
+
+
+    hr = d3d11Device->CreateTexture2D(&depthStencilDesc, NULL, &depthStencilBuffer);
+    hr = d3d11Device->CreateDepthStencilView(depthStencilBuffer.Get(), NULL, &depthStencilView);
+
+    d3d11DevCon->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 }
 
 bool DXSample::InitScene()
@@ -189,7 +210,7 @@ bool DXSample::InitScene()
 
     ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
     vertexBufferData.pSysMem = v;
-    hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, squareVertBuffer.GetAddressOf());
+    hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &squareVertBuffer);
 
 
     DWORD indices[] = {
@@ -207,7 +228,7 @@ bool DXSample::InitScene()
 
     D3D11_SUBRESOURCE_DATA iinitData;
     iinitData.pSysMem = indices;
-    d3d11Device->CreateBuffer(&indexBufferDesc, &iinitData, squareIndexBuffer.GetAddressOf());
+    d3d11Device->CreateBuffer(&indexBufferDesc, &iinitData, &squareIndexBuffer);
 
     d3d11DevCon->IASetIndexBuffer(squareIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
@@ -248,6 +269,8 @@ void DXSample::CreateViewPort()
     viewport.TopLeftY = 0;
     viewport.Width = m_width;
     viewport.Height = m_height;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
 
     //Set the Viewport
     d3d11DevCon->RSSetViewports(1, &viewport);
