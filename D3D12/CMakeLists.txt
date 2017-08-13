@@ -1,4 +1,4 @@
-set(target DX12)
+set(target DX12App)
 
 add_subdirectory(3rdparty/d3dx12)
 

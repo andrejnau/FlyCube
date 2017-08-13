@@ -27,3 +27,5 @@ target_include_directories(${target}
     PUBLIC
         ${include_path}
 )
+
+set_target_properties(${target} PROPERTIES FOLDER "library")

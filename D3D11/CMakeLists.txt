@@ -1,4 +1,4 @@
-set(target DX11)
+set(target DX11App)
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}/src")

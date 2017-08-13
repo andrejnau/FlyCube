@@ -1,4 +1,4 @@
-set (target Demo)
+set (target OpenGLApp)
 
 set (SOURCES
     main.cpp)
