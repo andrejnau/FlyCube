@@ -1,23 +1,19 @@
 #pragma once
 
-#include "IDXSample.h"
-#include "Win32Application.h"
-#include "Geometry.h"
-#include "Util.h"
-
-#include <memory>
-#include <string>
-
 #include <d3d11.h>
+#include <DXGI1_4.h>
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
-#include <SimpleMath.h>
-
-#include <DXGI1_4.h>
-
 #include <wrl/client.h>
-using namespace Microsoft::WRL;
+#include <memory>
+#include <string>
+#include <SimpleMath.h>
+#include <IDXSample.h>
+#include <Win32Application.h>
+#include <Util.h>
+#include "Geometry.h"
 
+using namespace Microsoft::WRL;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 

@@ -1,13 +1,12 @@
 #pragma once
 
 #include <Windows.h>
-
-class DXSample;
+#include "IDXSample.h"
 
 class Win32Application
 {
 public:
-    static int Run(DXSample* pSample, HINSTANCE hInstance, int nCmdShow);
+    static int Run(IDXSample* pSample, HINSTANCE hInstance, int nCmdShow);
     static HWND GetHwnd();
 
 protected:

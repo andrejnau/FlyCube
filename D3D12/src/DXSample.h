@@ -1,19 +1,17 @@
 #pragma once
 
-#include "IDXSample.h"
-#include "Win32Application.h"
-
-#include <memory>
-#include <string>
-
-#include <d3dx12.h>
 #include <d3d12.h>
+#include <d3dx12.h>
+#include <DXGI1_4.h>
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
+#include <wrl/client.h>
+#include <memory>
+#include <string>
 #include <SimpleMath.h>
-#include <DXGI1_4.h>
-#include <wrl.h>
-
+#include <IDXSample.h>
+#include <Win32Application.h>
+#include <Util.h>
 #include "Geometry.h"
 
 using namespace Microsoft::WRL;

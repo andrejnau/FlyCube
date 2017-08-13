@@ -1,10 +1,8 @@
 #include "DXSample.h"
-#include "Utility.h"
-#include "FileUtility.h"
-
-#include <SOIL.h>
-
 #include <chrono>
+#include <SOIL.h>
+#include <Utility.h>
+#include <FileUtility.h>
 
 DXSample::DXSample(int width, int height)
     : m_width(width)
@@ -334,7 +332,7 @@ void DXSample::CreateViewPort()
 
 void DXSample::CreateGeometry()
 {
-    m_modelOfFile.reset(new Model("model/mechanical-emperor-scorpion/mechanical-emperor-scorpion.obj"));
+    m_modelOfFile.reset(new Model("model/export3dcoat/export3dcoat.obj"));
      
     for (Mesh & cur_mesh : m_modelOfFile->meshes)
     {

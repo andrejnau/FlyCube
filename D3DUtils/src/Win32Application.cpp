@@ -1,10 +1,9 @@
 #include "Win32Application.h"
-#include "DXSample.h"
 #include <cstdio>
 
 HWND Win32Application::m_hwnd = nullptr;
 
-int Win32Application::Run(DXSample* pSample, HINSTANCE hInstance, int nCmdShow)
+int Win32Application::Run(IDXSample* pSample, HINSTANCE hInstance, int nCmdShow)
 {
     // Initialize the window class.
     WNDCLASSEX windowClass = { 0 };
@@ -76,7 +75,7 @@ void RedirectIO()
 // Main message handler for the sample.
 LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    DXSample* pSample = reinterpret_cast<DXSample*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+    IDXSample* pSample = reinterpret_cast<IDXSample*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
     switch (message)
     {

@@ -1,8 +1,5 @@
 set(target DX12)
 
-include(${project_root}/cmake/3rdparty/soil.cmake)
-include(${project_root}/cmake/3rdparty/assimp.cmake)
-
 add_subdirectory(3rdparty/d3dx12)
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -11,20 +8,13 @@ set(shaders_path "${assets_path}/shaders/DX12")
 
 set(headers
     ${include_path}/DXSample.h
-    ${include_path}/IDXSample.h
-    ${include_path}/Util.h
-    ${include_path}/Utility.h
     ${include_path}/Geometry.h
-    ${include_path}/FileUtility.h
-    ${include_path}/Win32Application.h
 )
 
 set(sources
     ${source_path}/DXSample.cpp
     ${source_path}/Geometry.cpp
-    ${source_path}/Util.cpp
     ${source_path}/Main.cpp
-    ${source_path}/Win32Application.cpp
 )
 
 set(pixel_shaders
@@ -53,4 +43,4 @@ add_executable(${target} WIN32 ${headers} ${sources} ${resource_files})
 
 target_compile_definitions(${target} PRIVATE UNICODE _UNICODE NOMINMAX)
 
-target_link_libraries(${target} d3dx12 d3dcompiler dxgi d3d12 assimp SOIL)
+target_link_libraries(${target} d3dx12 d3dcompiler dxgi d3d12 assimp SOIL D3DUtils)

@@ -1,11 +1,9 @@
 #include "DXSample.h"
-#include "Util.h"
-#include "Utility.h"
-#include "FileUtility.h"
-
-#include <SOIL.h>
-
 #include <chrono>
+#include <SOIL.h>
+#include <Util.h>
+#include <Utility.h>
+#include <FileUtility.h>
 
 DXSample::DXSample(int width, int height)
     : m_width(width)
