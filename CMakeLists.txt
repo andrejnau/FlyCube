@@ -23,9 +23,8 @@ include(${project_root}/cmake/3rdparty/gli.cmake)
 
 if (WIN32)
     include(${project_root}/cmake/3rdparty/SimpleMath.cmake)
+    add_subdirectory(D3DUtils)
 endif()
-
-add_subdirectory(D3DUtils)
 
 if (BUILD_OPENGL)
     add_subdirectory(OpenGL)
