@@ -3,7 +3,7 @@
 
 HWND Win32Application::m_hwnd = nullptr;
 
-int Win32Application::Run(IDXSample* pSample, HINSTANCE hInstance, int nCmdShow)
+int Win32Application::Run(IDXSample* pSample, const std::wstring& title, HINSTANCE hInstance, int nCmdShow)
 {
     // Initialize the window class.
     WNDCLASSEX windowClass = { 0 };
@@ -21,7 +21,7 @@ int Win32Application::Run(IDXSample* pSample, HINSTANCE hInstance, int nCmdShow)
     // Create the window and store a handle to it.
     m_hwnd = CreateWindow(
         windowClass.lpszClassName,
-        L"[DX12] testApp",
+        title.c_str(),
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
