@@ -1,86 +1,104 @@
 #pragma once
 
-#include <Windows.h>
-#include <d3d11.h>
-
+#include <string>
 #include <vector>
-#include <fstream>
-
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <SimpleMath.h>
-#include <wrl.h>
-
-using namespace Microsoft::WRL;
-using namespace DirectX::SimpleMath;
-
-struct CommandHelper;
-
-struct Mesh
+struct IMesh
 {
-    struct Vertex
+    struct IVertex
     {
-        Vector3 position;
-        Vector3 normal;
-        Vector2 texCoords;
-        Vector3 tangent;
-        Vector3 bitangent;
+        aiVector3D position;
+        aiVector3D normal;
+        aiVector2D texCoords;
+        aiVector3D tangent;
+        aiVector3D bitangent;
     };
 
-    struct Texture
+    using IIndex = uint32_t;
+
+    struct ITexture
     {
         aiTextureType type;
         std::string path;
-        uint32_t offset;
-
-        ComPtr<ID3D11ShaderResourceView> textureRV;
     };
 
-    struct Material
+    struct IMaterial
     {
-        Vector3 amb = Vector3(0.0, 0.0, 0.0);
-        Vector3 dif = Vector3(1.0, 1.0, 1.0);
-        Vector3 spec = Vector3(1.0, 1.0, 1.0);
+        aiVector3D amb = aiVector3D(0.0, 0.0, 0.0);
+        aiVector3D dif = aiVector3D(1.0, 1.0, 1.0);
+        aiVector3D spec = aiVector3D(1.0, 1.0, 1.0);
         float shininess = 32.0;
         aiString name;
-    } material;
+    };
 
-    ComPtr<ID3D11Buffer> vertBuffer;
-    ComPtr<ID3D11Buffer> indexBuffer;
-
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
-    std::vector<Texture> textures;
-    void setupMesh(ComPtr<ID3D11Device>& d3d11Device, ComPtr<ID3D11DeviceContext>& d3d11DevCon);
+    virtual void AddVertex(const IVertex&) = 0;
+    virtual void AddIndex(const IIndex&) = 0;
+    virtual void AddTexture(const ITexture&) = 0;
+    virtual void SetMaterial(const IMaterial&) = 0;
 };
 
-class Model
+struct BoundBox
+{
+    BoundBox()
+    {
+        x_min = y_min = z_min = std::numeric_limits<float>::max();
+        x_max = y_max = z_max = std::numeric_limits<float>::min();
+    }
+
+    float x_min, y_min, z_min;
+    float x_max, y_max, z_max;
+};
+
+struct IModel
+{
+    virtual IMesh& GetNextMesh() = 0;
+    virtual BoundBox& GetBoundBox() = 0;
+};
+
+class ModelParser
 {
 public:
-    Model(const std::string & file);
-
-    std::string m_path;
-    std::string m_directory;
-    std::vector<Mesh> meshes;
-
-    struct BoundBox
-    {
-        BoundBox();
-        float x_min, y_min, z_min;
-        float x_max, y_max, z_max;
-    } boundBox;
+    ModelParser(const std::string& file, IModel& meshes);
 
 private:
-    std::string splitFilename(const std::string& str);
-    void loadModel();
+    std::string SplitFilename(const std::string& str);
+    void LoadModel();
+    void ProcessNode(aiNode* node, const aiScene* scene);
+    void ProcessMesh(aiMesh* mesh, const aiScene* scene);
+    void FindSimilarTextures(std::vector<IMesh::ITexture>& textures);
+    void LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::vector<IMesh::ITexture>& textures);
 
-    void processNode(aiNode* node, const aiScene* scene);
+private:
+    std::string m_path;
+    std::string m_directory;
+    IModel& m_model;
+};
 
-    Vector3 aiColor4DToVec3(const aiColor4D& x);
+template<typename Mesh>
+struct Model : IModel
+{
+    Model(const std::string& file)
+        : model_parser(file, *this)
+    {
+    }
 
-    Mesh processMesh(aiMesh* mesh, const aiScene* scene);
+    virtual IMesh& GetNextMesh() override
+    {
+        meshes.resize(meshes.size() + 1);
+        return meshes.back();
+    }
 
-    void loadMaterialTextures(Mesh &retMeh, aiMaterial* mat, aiTextureType type);
+    virtual BoundBox& GetBoundBox() override
+    {
+        return bound_box;
+    }
+
+    BoundBox bound_box;
+    std::vector<Mesh> meshes;
+
+private:
+    ModelParser model_parser;
 };

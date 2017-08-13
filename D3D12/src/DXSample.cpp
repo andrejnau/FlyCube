@@ -188,7 +188,7 @@ void DXSample::CreateCommandList()
 
 void DXSample::CreateGeometry()
 {
-    m_modelOfFile.reset(new Model("model/mechanical-emperor-scorpion/mechanical-emperor-scorpion.obj"));
+    m_modelOfFile.reset(new Model("model/export3dcoat/export3dcoat.obj"));
 
     uint32_t num_textures = 0;
     for (Mesh & cur_mesh : m_modelOfFile->meshes)

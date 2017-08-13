@@ -46,9 +46,9 @@ void DXSample::OnUpdate()
 
     cameraProjMat = XMMatrixPerspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1024.0f);
 
-    float z_width = (m_modelOfFile->boundBox.z_max - m_modelOfFile->boundBox.z_min);
-    float y_width = (m_modelOfFile->boundBox.y_max - m_modelOfFile->boundBox.y_min);
-    float x_width = (m_modelOfFile->boundBox.y_max - m_modelOfFile->boundBox.y_min);
+    float z_width = (m_modelOfFile->bound_box.z_max - m_modelOfFile->bound_box.z_min);
+    float y_width = (m_modelOfFile->bound_box.y_max - m_modelOfFile->bound_box.y_min);
+    float x_width = (m_modelOfFile->bound_box.y_max - m_modelOfFile->bound_box.y_min);
     float model_width = (z_width + y_width + x_width) / 3.0f;
     float scale = 256.0f / std::max(z_width, x_width);
     model_width *= scale;
@@ -58,9 +58,9 @@ void DXSample::OnUpdate()
     cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
     cameraViewMat = XMMatrixLookAtRH(cameraPosition, cameraTarget, cameraUp);
 
-    float offset_x = (m_modelOfFile->boundBox.x_max + m_modelOfFile->boundBox.x_min) / 2.0f;
-    float offset_y = (m_modelOfFile->boundBox.y_max + m_modelOfFile->boundBox.y_min) / 2.0f;
-    float offset_z = (m_modelOfFile->boundBox.z_max + m_modelOfFile->boundBox.z_min) / 2.0f;
+    float offset_x = (m_modelOfFile->bound_box.x_max + m_modelOfFile->bound_box.x_min) / 2.0f;
+    float offset_y = (m_modelOfFile->bound_box.y_max + m_modelOfFile->bound_box.y_min) / 2.0f;
+    float offset_z = (m_modelOfFile->bound_box.z_max + m_modelOfFile->bound_box.z_min) / 2.0f;
 
     Matrix model = XMMatrixRotationY(-angle) * XMMatrixTranslation(-offset_x, -offset_y, -offset_z) * XMMatrixScaling(scale, scale, scale);
 
@@ -86,7 +86,7 @@ void DXSample::OnRender()
 
     for (size_t mesh_id = 0; mesh_id < m_modelOfFile->meshes.size(); ++mesh_id)
     {
-        Mesh & cur_mesh = m_modelOfFile->meshes[mesh_id];
+        DX11Mesh & cur_mesh = m_modelOfFile->meshes[mesh_id];
 
         UINT stride = sizeof(cur_mesh.vertices[0]);
         UINT offset = 0;
@@ -276,11 +276,11 @@ bool DXSample::InitScene()
 
     D3D11_INPUT_ELEMENT_DESC layout[] =
     {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(Mesh::Vertex, texCoords), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, tangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, bitangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(DX11Mesh::Vertex, texCoords), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, tangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, bitangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
     UINT numElements = ARRAYSIZE(layout);
@@ -329,23 +329,19 @@ void DXSample::CreateViewPort()
     d3d11DevCon->RSSetViewports(1, &viewport);
 }
 
-
 void DXSample::CreateGeometry()
 {
-    m_modelOfFile.reset(new Model("model/export3dcoat/export3dcoat.obj"));
+    m_modelOfFile.reset(new Model<DX11Mesh>("model/export3dcoat/export3dcoat.obj"));
      
-    for (Mesh & cur_mesh : m_modelOfFile->meshes)
+    for (DX11Mesh & cur_mesh : m_modelOfFile->meshes)
     {
-        cur_mesh.setupMesh(d3d11Device, d3d11DevCon);
+        cur_mesh.SetupMesh(d3d11Device, d3d11DevCon);
     }
 
-    uint32_t id = 0;
-    for (Mesh & cur_mesh : m_modelOfFile->meshes)
+    for (DX11Mesh & cur_mesh : m_modelOfFile->meshes)
     {
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
-            cur_mesh.textures[i].offset = id++;
-
             auto metadata = LoadImageDataFromFile(cur_mesh.textures[i].path);
 
             ComPtr<ID3D11Texture2D> resource;

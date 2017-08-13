@@ -7,6 +7,7 @@ set(shaders_path "${assets_path}/shaders/DX11")
 set(headers
     ${include_path}/DXSample.h
     ${include_path}/Geometry.h
+    ${include_path}/DX11Geometry.h
 )
 
 set(sources

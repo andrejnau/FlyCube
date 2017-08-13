@@ -12,6 +12,7 @@
 #include <Win32Application.h>
 #include <Util.h>
 #include "Geometry.h"
+#include "DX11Geometry.h"
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
@@ -69,7 +70,7 @@ private:
     ComPtr<ID3DBlob> PS_Buffer;
     ComPtr<ID3D11InputLayout> vertLayout;
 
-    std::unique_ptr<Model> m_modelOfFile;
+    std::unique_ptr<Model<DX11Mesh>> m_modelOfFile;
 
     int m_width;
     int m_height;

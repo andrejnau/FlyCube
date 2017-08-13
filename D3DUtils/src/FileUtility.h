@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <codecvt>
 #include <string>
+#include <fstream>
 
 inline std::wstring utf8_to_wstring(const std::string &str)
 {
