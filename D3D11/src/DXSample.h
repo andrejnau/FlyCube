@@ -50,11 +50,17 @@ private:
     //The vertex Structure
     struct Vertex
     {
+        Vertex(float x, float y, float z, float r, float g, float b, float a)
+            : pos(x, y, z)
+            , color(r, g, b, a)
+        {}
         Vector3 pos;
         Vector4 color;
     };
 
-    ComPtr<ID3D11Buffer> triangleVertBuffer;
+    ComPtr<ID3D11Buffer> squareVertBuffer;
+    ComPtr<ID3D11Buffer> squareIndexBuffer;
+
     ComPtr<ID3D11VertexShader> VS;
     ComPtr<ID3D11PixelShader> PS;
     ComPtr<ID3DBlob> VS_Buffer;

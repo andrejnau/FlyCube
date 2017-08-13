@@ -36,7 +36,7 @@ void DXSample::OnRender()
     float bgColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     d3d11DevCon->ClearRenderTargetView(renderTargetView.Get(), bgColor);
 
-    d3d11DevCon->Draw(3, 0);
+    d3d11DevCon->DrawIndexed(6, 0, 0);
 
     SwapChain->Present(0, 0);
 }
@@ -167,18 +167,20 @@ bool DXSample::InitScene()
     d3d11DevCon->PSSetShader(PS.Get(), 0, 0);
 
     //Create the vertex buffer
+
     Vertex v[] =
     {
-        {Vector3(0.0f, 0.5f, 0.5f), Vector4(1.0f, 0.0f, 0.0f, 1.0f)},
-        {Vector3(0.5f, -0.5f, 0.5f), Vector4(0.0f, 1.0f, 0.0f, 1.0f)},
-        {Vector3(-0.5f, -0.5f, 0.5f), Vector4(0.0f, 0.0f, 1.0f, 1.0f)}
+        Vertex(-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f),
+        Vertex(-0.5f,  0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f),
+        Vertex(0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f),
+        Vertex(0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f),
     };
 
     D3D11_BUFFER_DESC vertexBufferDesc;
     ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 
     vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    vertexBufferDesc.ByteWidth = sizeof(Vertex) * 3;
+    vertexBufferDesc.ByteWidth = sizeof(Vertex) * 4;
     vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vertexBufferDesc.CPUAccessFlags = 0;
     vertexBufferDesc.MiscFlags = 0;
@@ -187,12 +189,32 @@ bool DXSample::InitScene()
 
     ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
     vertexBufferData.pSysMem = v;
-    hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, triangleVertBuffer.GetAddressOf());
+    hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, squareVertBuffer.GetAddressOf());
+
+
+    DWORD indices[] = {
+        0, 1, 2,
+        0, 2, 3,
+    };
+
+    D3D11_BUFFER_DESC indexBufferDesc;
+    ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
+    indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    indexBufferDesc.ByteWidth = sizeof(DWORD) * 2 * 3;
+    indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    indexBufferDesc.CPUAccessFlags = 0;
+    indexBufferDesc.MiscFlags = 0;
+
+    D3D11_SUBRESOURCE_DATA iinitData;
+    iinitData.pSysMem = indices;
+    d3d11Device->CreateBuffer(&indexBufferDesc, &iinitData, squareIndexBuffer.GetAddressOf());
+
+    d3d11DevCon->IASetIndexBuffer(squareIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
     //Set the vertex buffer
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
-    d3d11DevCon->IASetVertexBuffers(0, 1, triangleVertBuffer.GetAddressOf(), &stride, &offset);
+    d3d11DevCon->IASetVertexBuffers(0, 1, squareVertBuffer.GetAddressOf(), &stride, &offset);
 
     D3D11_INPUT_ELEMENT_DESC layout[] =
     {
