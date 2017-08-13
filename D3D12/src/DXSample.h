@@ -12,7 +12,7 @@
 #include <IDXSample.h>
 #include <Win32Application.h>
 #include <Util.h>
-#include "Geometry.h"
+#include "DX12Geometry.h"
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
@@ -48,7 +48,7 @@ private:
     void CreateRootSignature();
     void CreatePSO();
     void CreateViewPort();
-    void CreateTexture(Mesh::Texture &texture);
+    void CreateTexture(DX12Mesh::Texture &texture);
     void UploadAllResources();
     void WaitForGpu();
     void WaitForPreviousFrame();
@@ -58,7 +58,7 @@ private:
 
     const bool use_rotare = true;
 
-    std::unique_ptr<Model> m_modelOfFile;
+    std::unique_ptr<Model<DX12Mesh>> m_modelOfFile;
 
     int m_width;
 

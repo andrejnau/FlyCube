@@ -188,12 +188,12 @@ void DXSample::CreateCommandList()
 
 void DXSample::CreateGeometry()
 {
-    m_modelOfFile.reset(new Model("model/export3dcoat/export3dcoat.obj"));
+    m_modelOfFile.reset(new Model<DX12Mesh>("model/export3dcoat/export3dcoat.obj"));
 
     uint32_t num_textures = 0;
-    for (Mesh & cur_mesh : m_modelOfFile->meshes)
+    for (DX12Mesh & cur_mesh : m_modelOfFile->meshes)
     {
-        cur_mesh.setupMesh(CommandHelper(device, commandList));
+        cur_mesh.SetupMesh(CommandHelper(device, commandList));
         num_textures += (uint32_t)cur_mesh.textures.size();
     }
     // create the descriptor heap that will store our srv
@@ -213,7 +213,7 @@ void DXSample::CreateGeometry()
     }
 
     uint32_t id = 0;
-    for (Mesh & cur_mesh : m_modelOfFile->meshes)
+    for (DX12Mesh & cur_mesh : m_modelOfFile->meshes)
     {
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
@@ -377,11 +377,11 @@ void DXSample::CreatePSO()
     // how to read the vertex data bound to it.
     D3D12_INPUT_ELEMENT_DESC inputLayout[] =
     {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, position), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, normal), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(Mesh::Vertex, texCoords), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, tangent), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Mesh::Vertex, bitangent), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX12Mesh::Vertex, position), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX12Mesh::Vertex, normal), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(DX12Mesh::Vertex, texCoords), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX12Mesh::Vertex, tangent), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX12Mesh::Vertex, bitangent), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
 
     // fill out an input layout description structure
@@ -450,7 +450,7 @@ void DXSample::CreateViewPort()
     scissorRect.bottom = m_height;
 }
 
-void DXSample::CreateTexture(Mesh::Texture &texture)
+void DXSample::CreateTexture(DX12Mesh::Texture &texture)
 {
     TexInfo texInfo = LoadImageDataFromFile(texture.path);
 
@@ -622,7 +622,7 @@ void DXSample::PopulateCommandList()
 
     for (size_t mesh_id = 0; mesh_id < m_modelOfFile->meshes.size(); ++mesh_id)
     {
-        Mesh & cur_mesh = m_modelOfFile->meshes[mesh_id];
+        DX12Mesh & cur_mesh = m_modelOfFile->meshes[mesh_id];
 
         if (cur_mesh.material.name.C_Str() == std::string("Ground_SG"))
             continue;
@@ -717,9 +717,9 @@ void DXSample::OnUpdate()
 
     cameraProjMat = XMMatrixPerspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1024.0f);
 
-    float z_width = (m_modelOfFile->boundBox.z_max - m_modelOfFile->boundBox.z_min);
-    float y_width = (m_modelOfFile->boundBox.y_max - m_modelOfFile->boundBox.y_min);
-    float x_width = (m_modelOfFile->boundBox.y_max - m_modelOfFile->boundBox.y_min);
+    float z_width = (m_modelOfFile->bound_box.z_max - m_modelOfFile->bound_box.z_min);
+    float y_width = (m_modelOfFile->bound_box.y_max - m_modelOfFile->bound_box.y_min);
+    float x_width = (m_modelOfFile->bound_box.y_max - m_modelOfFile->bound_box.y_min);
     float model_width = (z_width + y_width + x_width) / 3.0f;
     float scale = 256.0f / std::max(z_width, x_width);
     model_width *= scale;
@@ -729,9 +729,9 @@ void DXSample::OnUpdate()
     cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
     cameraViewMat = XMMatrixLookAtRH(cameraPosition, cameraTarget, cameraUp);
 
-    float offset_x = (m_modelOfFile->boundBox.x_max + m_modelOfFile->boundBox.x_min) / 2.0f;
-    float offset_y = (m_modelOfFile->boundBox.y_max + m_modelOfFile->boundBox.y_min) / 2.0f;
-    float offset_z = (m_modelOfFile->boundBox.z_max + m_modelOfFile->boundBox.z_min) / 2.0f;
+    float offset_x = (m_modelOfFile->bound_box.x_max + m_modelOfFile->bound_box.x_min) / 2.0f;
+    float offset_y = (m_modelOfFile->bound_box.y_max + m_modelOfFile->bound_box.y_min) / 2.0f;
+    float offset_z = (m_modelOfFile->bound_box.z_max + m_modelOfFile->bound_box.z_min) / 2.0f;
     Matrix model = XMMatrixRotationY(-angle) * XMMatrixTranslation(-offset_x, -offset_y, -offset_z) * XMMatrixScaling(scale, scale, scale);
 
     cbPerObject.model = XMMatrixTranspose(model);

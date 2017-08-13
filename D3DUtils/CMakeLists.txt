@@ -9,11 +9,13 @@ set(headers
     ${include_path}/IDXSample.h
     ${include_path}/Util.h
     ${include_path}/Utility.h
+    ${include_path}/Geometry.h
     ${include_path}/Win32Application.h
 )
 
 set(sources
     ${source_path}/Util.cpp
+    ${source_path}/Geometry.cpp
     ${source_path}/Win32Application.cpp
 )
 

@@ -8,12 +8,12 @@ set(shaders_path "${assets_path}/shaders/DX12")
 
 set(headers
     ${include_path}/DXSample.h
-    ${include_path}/Geometry.h
+    ${include_path}/DX12Geometry.h
 )
 
 set(sources
     ${source_path}/DXSample.cpp
-    ${source_path}/Geometry.cpp
+    ${source_path}/DX12Geometry.cpp
     ${source_path}/Main.cpp
 )
 
