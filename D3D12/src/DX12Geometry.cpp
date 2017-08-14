@@ -49,6 +49,7 @@ void CommandHelper::PushBuffer(DX12Mesh::Buffer& buffer, void* buffer_data, size
 
 void DX12Mesh::SetupMesh(CommandHelper commandHelper)
 {
+    texResources.resize(textures.size());
     commandHelper.PushBuffer(vertexHeap, vertices.data(), vertices.size() * sizeof(vertices[0]));
     vertexBufferView.BufferLocation = vertexHeap.defaultHeap->GetGPUVirtualAddress();
     vertexBufferView.StrideInBytes = sizeof(vertices[0]);

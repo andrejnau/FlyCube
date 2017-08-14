@@ -7,7 +7,6 @@
 #include <wrl/client.h>
 #include <memory>
 #include <string>
-#include <SimpleMath.h>
 #include <IDXSample.h>
 #include <Win32Application.h>
 #include <Util.h>
@@ -18,7 +17,6 @@
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
-using namespace DirectX::SimpleMath;
 
 class DXSample : public IDXSample
 {

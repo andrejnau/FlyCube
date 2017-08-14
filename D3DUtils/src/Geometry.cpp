@@ -4,7 +4,12 @@
 #include <fstream>
 #include <set>
 
-ModelParser::ModelParser(const std::string& file, IModel& meshes)
+glm::vec3 aiVector3DToVec3(const aiVector3D& x)
+{
+    return glm::vec3(x.x, x.y, x.z);
+}
+
+ModelLoader::ModelLoader(const std::string& file, IModel& meshes)
     : m_path(ASSETS_PATH + file)
     , m_directory(SplitFilename(m_path))
     , m_model(meshes)
@@ -12,12 +17,12 @@ ModelParser::ModelParser(const std::string& file, IModel& meshes)
     LoadModel();
 }
 
-std::string ModelParser::SplitFilename(const std::string& str)
+std::string ModelLoader::SplitFilename(const std::string& str)
 {
     return str.substr(0, str.find_last_of("/"));
 }
 
-void ModelParser::LoadModel()
+void ModelLoader::LoadModel()
 {
     Assimp::Importer import;
     const aiScene* scene = import.ReadFile(m_path, aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace);
@@ -25,7 +30,7 @@ void ModelParser::LoadModel()
     ProcessNode(scene->mRootNode, scene);
 }
 
-void ModelParser::ProcessNode(aiNode* node, const aiScene* scene)
+void ModelLoader::ProcessNode(aiNode* node, const aiScene* scene)
 {
     for (uint32_t i = 0; i < node->mNumMeshes; ++i)
     {
@@ -39,13 +44,13 @@ void ModelParser::ProcessNode(aiNode* node, const aiScene* scene)
     }
 }
 
-void ModelParser::ProcessMesh(aiMesh* mesh, const aiScene* scene)
+void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 {
     IMesh& cur_mesh = m_model.GetNextMesh();
     // Walk through each of the mesh's vertices
     for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
     {
-        IMesh::IVertex vertex;
+        IMesh::Vertex vertex;
 
         if (mesh->HasPositions())
         {
@@ -65,27 +70,27 @@ void ModelParser::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
         if (mesh->HasNormals())
         {
-            vertex.normal = mesh->mNormals[i];
+            vertex.normal = aiVector3DToVec3(mesh->mNormals[i]);
         }
 
         if (mesh->HasTangentsAndBitangents())
         {
-            vertex.tangent = mesh->mTangents[i];
-            vertex.bitangent = mesh->mBitangents[i];
+            vertex.tangent = aiVector3DToVec3(mesh->mTangents[i]);
+            vertex.bitangent = aiVector3DToVec3(mesh->mBitangents[i]);
         }
 
         // A vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
         // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
         if (mesh->HasTextureCoords(0))
         {
-            vertex.texCoords = aiVector2D(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+            vertex.texCoords = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
         }
         else
         {
-            vertex.texCoords = aiVector2D(0.0f, 0.0f);
+            vertex.texCoords = glm::vec2(0.0f, 0.0f);
         }
 
-        cur_mesh.AddVertex(vertex);
+        cur_mesh.vertices.push_back(vertex);
     }
     // Now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
     for (uint32_t i = 0; i < mesh->mNumFaces; ++i)
@@ -94,14 +99,14 @@ void ModelParser::ProcessMesh(aiMesh* mesh, const aiScene* scene)
         // Retrieve all indices of the face and store them in the indices vector
         for (uint32_t j = 0; j < face.mNumIndices; ++j)
         {
-            cur_mesh.AddIndex(face.mIndices[j]);
+            cur_mesh.indices.push_back(face.mIndices[j]);
         }
     }
 
     // Process materials
     if (mesh->mMaterialIndex >= 0)
     {
-        std::vector<IMesh::ITexture> textures;
+        std::vector<IMesh::Texture> textures;
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
         LoadMaterialTextures(mat, aiTextureType_AMBIENT, textures);
         LoadMaterialTextures(mat, aiTextureType_DIFFUSE, textures);
@@ -111,36 +116,32 @@ void ModelParser::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
         FindSimilarTextures(textures);
 
-        auto comparator = [&](const IMesh::ITexture& lhs, const IMesh::ITexture& rhs)
+        auto comparator = [&](const IMesh::Texture& lhs, const IMesh::Texture& rhs)
         {
             return std::tie(lhs.type, lhs.path) < std::tie(rhs.type, rhs.path);
         };
 
-        std::set<IMesh::ITexture, decltype(comparator)> unique_textures(comparator);
+        std::set<IMesh::Texture, decltype(comparator)> unique_textures(comparator);
 
-        for (IMesh::ITexture& texture : textures)
+        for (IMesh::Texture& texture : textures)
         {
             unique_textures.insert(texture);
         }
 
-        for (const IMesh::ITexture& texture : unique_textures)
+        for (const IMesh::Texture& texture : unique_textures)
         {
-            cur_mesh.AddTexture(texture);
+            cur_mesh.textures.push_back(texture);
         }
 
-        IMesh::IMaterial material;
-
-        mat->Get(AI_MATKEY_SHININESS, material.shininess);
-        mat->Get(AI_MATKEY_COLOR_AMBIENT, material.amb);
-        mat->Get(AI_MATKEY_COLOR_DIFFUSE, material.dif);
-        mat->Get(AI_MATKEY_COLOR_SPECULAR, material.spec);
-        mat->Get(AI_MATKEY_NAME, material.name);
-
-        cur_mesh.SetMaterial(material);
+        mat->Get(AI_MATKEY_SHININESS, cur_mesh.material.shininess);
+        mat->Get(AI_MATKEY_COLOR_AMBIENT, cur_mesh.material.amb);
+        mat->Get(AI_MATKEY_COLOR_DIFFUSE, cur_mesh.material.dif);
+        mat->Get(AI_MATKEY_COLOR_SPECULAR, cur_mesh.material.spec);
+        mat->Get(AI_MATKEY_NAME, cur_mesh.material.name);
     }
 }
 
-void ModelParser::FindSimilarTextures(std::vector<IMesh::ITexture>& textures)
+void ModelLoader::FindSimilarTextures(std::vector<IMesh::Texture>& textures)
 {
     static std::pair<std::string, aiTextureType> map_from[] = {
         { "_s", aiTextureType_SPECULAR },
@@ -154,7 +155,7 @@ void ModelParser::FindSimilarTextures(std::vector<IMesh::ITexture>& textures)
         { "_nmap", aiTextureType_HEIGHT }
     };
 
-    std::vector<IMesh::ITexture> added_textures;
+    std::vector<IMesh::Texture> added_textures;
     for (auto& from_type : map_from)
     {
         for (auto& cur_texture : textures)
@@ -172,7 +173,7 @@ void ModelParser::FindSimilarTextures(std::vector<IMesh::ITexture>& textures)
                 if (!std::ifstream(cur_path).good())
                     continue;
 
-                IMesh::ITexture texture;
+                IMesh::Texture texture;
                 texture.type = to_type.second;
                 texture.path = cur_path;
                 added_textures.push_back(texture);
@@ -183,7 +184,7 @@ void ModelParser::FindSimilarTextures(std::vector<IMesh::ITexture>& textures)
     textures.insert(textures.end(), added_textures.begin(), added_textures.end());
 }
 
-void ModelParser::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::vector<IMesh::ITexture>& textures)
+void ModelLoader::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::vector<IMesh::Texture>& textures)
 {
     for (uint32_t i = 0; i < mat->GetTextureCount(type); ++i)
     {
@@ -193,7 +194,7 @@ void ModelParser::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std:
         if(!std::ifstream(texture_path).good())
             continue;
 
-        IMesh::ITexture texture;
+        IMesh::Texture texture;
         texture.type = type;
         texture.path = texture_path;
         textures.push_back(texture);

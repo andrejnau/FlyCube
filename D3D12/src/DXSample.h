@@ -8,7 +8,6 @@
 #include <wrl/client.h>
 #include <memory>
 #include <string>
-#include <SimpleMath.h>
 #include <IDXSample.h>
 #include <Win32Application.h>
 #include <Util.h>
@@ -18,7 +17,6 @@
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
-using namespace DirectX::SimpleMath;
 
 class DXSample : public IDXSample
 {
@@ -50,7 +48,7 @@ private:
     void CreateRootSignature();
     void CreatePSO();
     void CreateViewPort();
-    void CreateTexture(DX12Mesh::Texture &texture);
+    void CreateTexture(DX12Mesh::Texture& texture, DX12Mesh::TexResources& texResources);
     void UploadAllResources();
     void WaitForGpu();
     void WaitForPreviousFrame();

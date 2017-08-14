@@ -217,8 +217,8 @@ void DXSample::CreateGeometry()
     {
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
-            cur_mesh.textures[i].offset = id++;
-            CreateTexture(cur_mesh.textures[i]);
+            cur_mesh.texResources[i].offset = id++;
+            CreateTexture(cur_mesh.textures[i], cur_mesh.texResources[i]);
         }
     }
 }
@@ -450,7 +450,7 @@ void DXSample::CreateViewPort()
     scissorRect.bottom = m_height;
 }
 
-void DXSample::CreateTexture(DX12Mesh::Texture &texture)
+void DXSample::CreateTexture(DX12Mesh::Texture& texture, DX12Mesh::TexResources& texResources)
 {
     TexInfo texInfo = LoadImageDataFromFile(texture.path);
 
@@ -461,8 +461,8 @@ void DXSample::CreateTexture(DX12Mesh::Texture &texture)
         &texInfo.resourceDescription, // the description of our texture
         D3D12_RESOURCE_STATE_COPY_DEST, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
         nullptr, // used for render targets and depth/stencil buffers
-        IID_PPV_ARGS(&texture.buffer.defaultHeap)));
-    texture.buffer.defaultHeap->SetName(L"Texture Buffer Resource Heap");
+        IID_PPV_ARGS(&texResources.buffer.defaultHeap)));
+    texResources.buffer.defaultHeap->SetName(L"Texture Buffer Resource Heap");
 
     UINT64 textureUploadBufferSize;
     // this function gets the size an upload buffer needs to be to upload a texture to the gpu.
@@ -478,8 +478,8 @@ void DXSample::CreateTexture(DX12Mesh::Texture &texture)
         &CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize), // resource description for a buffer (storing the image data in this heap just to copy to the default heap)
         D3D12_RESOURCE_STATE_GENERIC_READ, // We will copy the contents from this heap to the default heap above
         nullptr,
-        IID_PPV_ARGS(&texture.buffer.uploadHeap)));
-    texture.buffer.uploadHeap->SetName(L"Texture Buffer Upload Resource Heap");
+        IID_PPV_ARGS(&texResources.buffer.uploadHeap)));
+    texResources.buffer.uploadHeap->SetName(L"Texture Buffer Upload Resource Heap");
 
     // store vertex buffer in upload heap
     D3D12_SUBRESOURCE_DATA textureData = {};
@@ -488,10 +488,10 @@ void DXSample::CreateTexture(DX12Mesh::Texture &texture)
     textureData.SlicePitch = texInfo.bytesPerRow * texInfo.textureHeight; // also the size of our triangle vertex data
 
     // Now we copy the upload buffer contents to the default heap
-    UpdateSubresources(commandList.Get(), texture.buffer.defaultHeap.Get(), texture.buffer.uploadHeap.Get(), 0, 0, 1, &textureData);
+    UpdateSubresources(commandList.Get(), texResources.buffer.defaultHeap.Get(), texResources.buffer.uploadHeap.Get(), 0, 0, 1, &textureData);
 
     // transition the texture default heap to a pixel shader resource (we will be sampling from this heap in the pixel shader to get the color of pixels)
-    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture.buffer.defaultHeap.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texResources.buffer.defaultHeap.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
     // now we create a shader resource view (descriptor that points to the texture and describes it)
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -502,8 +502,8 @@ void DXSample::CreateTexture(DX12Mesh::Texture &texture)
 
     const UINT cbvSrvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     D3D12_CPU_DESCRIPTOR_HANDLE cbvSrvHeapStart = mainDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart();
-    CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(cbvSrvHeapStart, texture.offset, cbvSrvDescriptorSize);
-    device->CreateShaderResourceView(texture.buffer.defaultHeap.Get(), &srvDesc, cbvSrvHandle);
+    CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(cbvSrvHeapStart, texResources.offset, cbvSrvDescriptorSize);
+    device->CreateShaderResourceView(texResources.buffer.defaultHeap.Get(), &srvDesc, cbvSrvHandle);
 }
 
 void DXSample::UploadAllResources()
@@ -661,7 +661,7 @@ void DXSample::PopulateCommandList()
                 continue;
             }
 
-            CD3DX12_CPU_DESCRIPTOR_HANDLE srcTextureHandle(mainDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart(), cur_mesh.textures[i].offset, cbvSrvDescriptorSize);
+            CD3DX12_CPU_DESCRIPTOR_HANDLE srcTextureHandle(mainDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart(), cur_mesh.texResources[i].offset, cbvSrvDescriptorSize);
             CD3DX12_CPU_DESCRIPTOR_HANDLE dstTextureHandle(cur_mesh.currentDescriptorTextureHeap->GetCPUDescriptorHandleForHeapStart(), texture_slot, cbvSrvDescriptorSize);
 
             device->CopyDescriptors(

@@ -118,7 +118,7 @@ void DXSample::OnRender()
                 continue;
             }
 
-            use_textures[texture_slot] = cur_mesh.textures[i].textureRV.Get();
+            use_textures[texture_slot] = cur_mesh.texResources[i].Get();
         }
 
         d3d11DevCon->PSSetShaderResources(0, use_textures.size(), use_textures.data());
@@ -370,7 +370,7 @@ void DXSample::CreateGeometry()
             srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
             srvDesc.Texture2D.MipLevels = 1;
 
-            hr = d3d11Device->CreateShaderResourceView(resource.Get(), &srvDesc, &cur_mesh.textures[i].textureRV);
+            hr = d3d11Device->CreateShaderResourceView(resource.Get(), &srvDesc, &cur_mesh.texResources[i]);
         }
     }
 }
