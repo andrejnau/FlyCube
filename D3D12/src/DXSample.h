@@ -13,6 +13,8 @@
 #include <Win32Application.h>
 #include <Util.h>
 #include "DX12Geometry.h"
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
@@ -109,11 +111,11 @@ private:
     // this is the structure of our constant buffer.
     struct ConstantBufferPerObject
     {
-        Matrix model;
-        Matrix view;
-        Matrix projection;
-        Vector4 lightPos;
-        Vector4 viewPos;
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
+        glm::vec4 lightPos;
+        glm::vec4 viewPos;
     };
 
     // Constant buffers must be 256-byte aligned which has to do with constant reads on the GPU.
@@ -132,13 +134,9 @@ private:
 
     ComPtr<ID3D12Resource> constantBufferUploadHeaps[frameBufferCount]; // this is the memory on the gpu where constant buffers for each frame will be placed
 
-    Matrix cameraProjMat; // this will store our projection matrix
-    Matrix cameraViewMat; // this will store our view matrix
-    Matrix cubeWorldMat; // our first cubes world matrix (transformation matrix)
-
-    Vector4 cameraPosition; // this is our cameras position vector
-    Vector4 cameraTarget; // a vector describing the point in space our camera is looking at
-    Vector4 cameraUp; // the worlds up vector
+    glm::vec3 cameraPosition; // this is our cameras position vector
+    glm::vec3 cameraTarget; // a vector describing the point in space our camera is looking at
+    glm::vec3 cameraUp; // the worlds up vector
 
     struct TexInfo
     {

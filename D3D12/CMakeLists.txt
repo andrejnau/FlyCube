@@ -1,7 +1,5 @@
 set(target DX12App)
 
-add_subdirectory(3rdparty/d3dx12)
-
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(shaders_path "${assets_path}/shaders/DX12")
@@ -43,4 +41,10 @@ add_executable(${target} WIN32 ${headers} ${sources} ${resource_files})
 
 target_compile_definitions(${target} PRIVATE UNICODE _UNICODE NOMINMAX)
 
-target_link_libraries(${target} d3dx12 d3dcompiler dxgi d3d12 assimp SOIL D3DUtils)
+target_link_libraries(${target} d3dcompiler dxgi d3d12 assimp SOIL D3DUtils)
+
+target_include_directories(${target}
+    PUBLIC
+        .
+        3rdparty/d3dx12
+)

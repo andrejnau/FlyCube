@@ -2,7 +2,7 @@
 
 #include <d3d11.h>
 #include <wrl.h>
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 #include "Geometry.h"
 
 using namespace Microsoft::WRL;
@@ -72,11 +72,11 @@ struct DX11Mesh : IMesh
 
     struct Vertex
     {
-        Vector3 position;
-        Vector3 normal;
-        Vector2 texCoords;
-        Vector3 tangent;
-        Vector3 bitangent;
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec2 texCoords;
+        glm::vec3 tangent;
+        glm::vec3 bitangent;
     };
 
     struct Texture
@@ -89,9 +89,9 @@ struct DX11Mesh : IMesh
 
     struct Material
     {
-        Vector3 amb = Vector3(0.0, 0.0, 0.0);
-        Vector3 dif = Vector3(1.0, 1.0, 1.0);
-        Vector3 spec = Vector3(1.0, 1.0, 1.0);
+        glm::vec3 amb = glm::vec3(0.0, 0.0, 0.0);
+        glm::vec3 dif = glm::vec3(1.0, 1.0, 1.0);
+        glm::vec3 spec = glm::vec3(1.0, 1.0, 1.0);
         float shininess = 32.0;
         aiString name;
     } material;

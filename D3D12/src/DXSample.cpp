@@ -715,8 +715,6 @@ void DXSample::OnUpdate()
     if (use_rotare)
         angle += elapsed / 2e6f;
 
-    cameraProjMat = XMMatrixPerspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width / (float)m_height, 0.1f, 1024.0f);
-
     float z_width = (m_modelOfFile->bound_box.z_max - m_modelOfFile->bound_box.z_min);
     float y_width = (m_modelOfFile->bound_box.y_max - m_modelOfFile->bound_box.y_min);
     float x_width = (m_modelOfFile->bound_box.y_max - m_modelOfFile->bound_box.y_min);
@@ -724,21 +722,23 @@ void DXSample::OnUpdate()
     float scale = 256.0f / std::max(z_width, x_width);
     model_width *= scale;
 
-    cameraPosition = Vector4(0.0f, model_width * 0.25f, -model_width * 2.0f, 0.0f);
-    cameraTarget = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
-    cameraUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
-    cameraViewMat = XMMatrixLookAtRH(cameraPosition, cameraTarget, cameraUp);
-
     float offset_x = (m_modelOfFile->bound_box.x_max + m_modelOfFile->bound_box.x_min) / 2.0f;
     float offset_y = (m_modelOfFile->bound_box.y_max + m_modelOfFile->bound_box.y_min) / 2.0f;
     float offset_z = (m_modelOfFile->bound_box.z_max + m_modelOfFile->bound_box.z_min) / 2.0f;
-    Matrix model = XMMatrixRotationY(-angle) * XMMatrixTranslation(-offset_x, -offset_y, -offset_z) * XMMatrixScaling(scale, scale, scale);
 
-    cbPerObject.model = XMMatrixTranspose(model);
-    cbPerObject.view = XMMatrixTranspose(cameraViewMat);
-    cbPerObject.projection = XMMatrixTranspose(cameraProjMat);
-    cbPerObject.lightPos = cameraPosition;
-    cbPerObject.viewPos = cameraPosition;
+    cameraPosition = glm::vec3(0.0f, model_width * 0.25f, -model_width * 2.0f);
+    cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+    cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    glm::mat4 model = glm::rotate(-angle, glm::vec3(0.0, 1.0, 0.0)) * glm::translate(glm::vec3(-offset_x, -offset_y, -offset_z)) * glm::scale(glm::vec3(scale, scale, scale));
+    glm::mat4 view = glm::lookAtRH(cameraPosition, cameraTarget, cameraUp);
+    glm::mat4 proj = glm::perspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width, (float)m_height, 0.1f, 1024.0f);
+
+    cbPerObject.model = glm::transpose(model);
+    cbPerObject.view = glm::transpose(view);
+    cbPerObject.projection = glm::transpose(proj);
+    cbPerObject.lightPos = glm::vec4(cameraPosition, 0.0);
+    cbPerObject.viewPos = glm::vec4(cameraPosition, 0.0);
 
     CD3DX12_RANGE readRange(0, 0);
     uint8_t* cbvGPUAddress = nullptr;

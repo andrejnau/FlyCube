@@ -40,4 +40,4 @@ add_executable(${target} WIN32 ${headers} ${sources} ${resource_files})
 
 target_compile_definitions(${target} PRIVATE UNICODE _UNICODE NOMINMAX)
 
-target_link_libraries(${target} d3dcompiler dxgi d3d11 assimp SOIL SimpleMath D3DUtils)
+target_link_libraries(${target} d3dcompiler dxgi d3d11 assimp SOIL D3DUtils)
