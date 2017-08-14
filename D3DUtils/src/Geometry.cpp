@@ -3,6 +3,7 @@
 #include <tuple>
 #include <fstream>
 #include <set>
+#include <FileUtility.h>
 
 glm::vec3 aiVector3DToVec3(const aiVector3D& x)
 {
@@ -10,7 +11,7 @@ glm::vec3 aiVector3DToVec3(const aiVector3D& x)
 }
 
 ModelLoader::ModelLoader(const std::string& file, IModel& meshes)
-    : m_path(ASSETS_PATH + file)
+    : m_path(GetAssetFullPath(file))
     , m_directory(SplitFilename(m_path))
     , m_model(meshes)
 {

@@ -41,12 +41,17 @@ int Win32Application::Run(IDXSample* pSample, const std::wstring& title, HINSTAN
     MSG msg = { 0 };
     while (true)
     {
+        bool is_quit = false;
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
+
+            if (msg.message == WM_QUIT)
+                is_quit = true;
         }
-        if (msg.message == WM_QUIT)
+        
+        if (is_quit)
             break;
 
         pSample->OnUpdate();
