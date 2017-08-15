@@ -5,15 +5,17 @@
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
 #include <wrl/client.h>
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include <memory>
 #include <string>
+
 #include <IDXSample.h>
 #include <Win32Application.h>
 #include <Util.h>
-#include "Geometry.h"
+#include <Geometry.h>
 #include "DX11Geometry.h"
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
@@ -34,56 +36,33 @@ public:
     UINT GetHeight() const  override;
 
 private:
-
-    bool InitializeDirect3d11App();
+    void CreateDeviceAndSwapChain();
     void CreateRT();
-    bool InitScene();
-
     void CreateViewPort();
-
+    void CreateShaders();
+    void CreateLayout();
+    void CreateCB();
+    void CreateSampler();
     void CreateGeometry();
 
-    struct TexInfo
-    {
-        //D3D12_RESOURCE_DESC resourceDescription;
-        std::unique_ptr<uint8_t[]> imageData;
-        int textureWidth;
-        int textureHeight;
-        int numBitsPerPixel;
-        int imageSize;
-        int bytesPerRow;
-    };
+    ComPtr<ID3D11Device> m_device;
+    ComPtr<ID3D11DeviceContext> m_device_context;
+    ComPtr<IDXGISwapChain> m_swap_chain;
 
-    DXSample::TexInfo LoadImageDataFromFile(std::string filename);
+    ComPtr<ID3D11RenderTargetView> m_render_target_view;
+    ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
+    ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
 
-    ComPtr<IDXGISwapChain> SwapChain;
-    ComPtr<ID3D11Device> d3d11Device;
-    ComPtr<ID3D11DeviceContext> d3d11DevCon;
-    ComPtr<ID3D11RenderTargetView> renderTargetView;
+    D3D11_VIEWPORT m_viewport;
 
-    ComPtr<ID3D11DepthStencilView> depthStencilView;
-    ComPtr<ID3D11Texture2D> depthStencilBuffer;
+    ComPtr<ID3D11VertexShader> m_vertex_shader;
+    ComPtr<ID3D11PixelShader> m_pixel_shader;
+    ComPtr<ID3DBlob> m_vertex_shader_buffer;
+    ComPtr<ID3DBlob> m_pixel_shader_buffer;
 
-    ComPtr<ID3D11VertexShader> VS;
-    ComPtr<ID3D11PixelShader> PS;
-    ComPtr<ID3DBlob> VS_Buffer;
-    ComPtr<ID3DBlob> PS_Buffer;
-    ComPtr<ID3D11InputLayout> vertLayout;
+    ComPtr<ID3D11InputLayout> m_input_layout;
 
-    std::unique_ptr<Model<DX11Mesh>> m_modelOfFile;
-
-    int m_width;
-    int m_height;
-
-    const bool use_rotare = true;
-
-    glm::vec3 cameraPosition; // this is our cameras position vector
-    glm::vec3 cameraTarget; // a vector describing the point in space our camera is looking at
-    glm::vec3 cameraUp; // the worlds up vector
-
-    ComPtr<ID3D11Buffer> cbPerObjectBuffer;
-
-    struct ConstantBufferPerObject
+    struct UniformBuffer
     {
         glm::mat4 model;
         glm::mat4 view;
@@ -91,9 +70,25 @@ private:
         glm::vec4 lightPos;
         glm::vec4 viewPos;
     };
+    UniformBuffer m_uniform;
+    ComPtr<ID3D11Buffer> m_uniform_buffer;
 
-    ConstantBufferPerObject cbPerObject;
+    ComPtr<ID3D11SamplerState> m_texture_sampler;
 
+    struct TexInfo
+    {
+        std::vector<uint8_t> image;
+        int width;
+        int height;
+        int num_bits_per_pixel;
+        int image_size;
+        int bytes_per_row;
+    };
+    DXSample::TexInfo LoadImageDataFromFile(const std::string& filename);
 
-    ComPtr<ID3D11SamplerState> textureSamplerState;
+    std::unique_ptr<Model<DX11Mesh>> m_model_of_file;
+
+    int m_width;
+    int m_height;
+    const bool m_use_rotare = true;
 };

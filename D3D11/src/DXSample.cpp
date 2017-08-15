@@ -1,6 +1,7 @@
 #include "DXSample.h"
 #include <chrono>
 #include <SOIL.h>
+#include <Util.h>
 #include <Utility.h>
 #include <FileUtility.h>
 
@@ -14,21 +15,23 @@ DXSample::~DXSample()
 
 void DXSample::OnInit()
 {
-    InitializeDirect3d11App();
-    InitScene();
+    CreateDeviceAndSwapChain();
+    CreateRT();
+    CreateViewPort();
+    CreateShaders();
+    CreateLayout();
+    CreateCB();
+    CreateSampler();
     CreateGeometry();
 
-    D3D11_SAMPLER_DESC sampDesc;
-    ZeroMemory(&sampDesc, sizeof(sampDesc));
-    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    sampDesc.MinLOD = 0;
-    sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    HRESULT hr = d3d11Device->CreateSamplerState(&sampDesc, &textureSamplerState);
+    m_device_context->VSSetShader(m_vertex_shader.Get(), 0, 0);
+    m_device_context->PSSetShader(m_pixel_shader.Get(), 0, 0);
+    m_device_context->PSSetSamplers(0, 1, &m_texture_sampler);
+    m_device_context->VSSetConstantBuffers(0, 1, m_uniform_buffer.GetAddressOf());
+    m_device_context->IASetInputLayout(m_input_layout.Get());
+    m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_device_context->OMSetRenderTargets(1, m_render_target_view.GetAddressOf(), m_depth_stencil_view.Get());
+    m_device_context->RSSetViewports(1, &m_viewport);
 }
 
 void DXSample::OnUpdate()
@@ -41,56 +44,51 @@ void DXSample::OnUpdate()
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = std::chrono::system_clock::now();
 
-    if (use_rotare)
+    if (m_use_rotare)
         angle += elapsed / 2e6f;
 
-    float z_width = (m_modelOfFile->bound_box.z_max - m_modelOfFile->bound_box.z_min);
-    float y_width = (m_modelOfFile->bound_box.y_max - m_modelOfFile->bound_box.y_min);
-    float x_width = (m_modelOfFile->bound_box.y_max - m_modelOfFile->bound_box.y_min);
+    float z_width = (m_model_of_file->bound_box.z_max - m_model_of_file->bound_box.z_min);
+    float y_width = (m_model_of_file->bound_box.y_max - m_model_of_file->bound_box.y_min);
+    float x_width = (m_model_of_file->bound_box.y_max - m_model_of_file->bound_box.y_min);
     float model_width = (z_width + y_width + x_width) / 3.0f;
     float scale = 256.0f / std::max(z_width, x_width);
     model_width *= scale;
 
-    float offset_x = (m_modelOfFile->bound_box.x_max + m_modelOfFile->bound_box.x_min) / 2.0f;
-    float offset_y = (m_modelOfFile->bound_box.y_max + m_modelOfFile->bound_box.y_min) / 2.0f;
-    float offset_z = (m_modelOfFile->bound_box.z_max + m_modelOfFile->bound_box.z_min) / 2.0f;
+    float offset_x = (m_model_of_file->bound_box.x_max + m_model_of_file->bound_box.x_min) / 2.0f;
+    float offset_y = (m_model_of_file->bound_box.y_max + m_model_of_file->bound_box.y_min) / 2.0f;
+    float offset_z = (m_model_of_file->bound_box.z_max + m_model_of_file->bound_box.z_min) / 2.0f;
 
-    cameraPosition = glm::vec3(0.0f, model_width * 0.25f, -model_width * 2.0f);
-    cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-    cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 cameraPosition = glm::vec3(0.0f, model_width * 0.25f, -model_width * 2.0f);
+    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
     glm::mat4 model = glm::rotate(-angle, glm::vec3(0.0, 1.0, 0.0)) * glm::translate(glm::vec3(-offset_x, -offset_y, -offset_z)) * glm::scale(glm::vec3(scale, scale, scale));
     glm::mat4 view = glm::lookAtRH(cameraPosition, cameraTarget, cameraUp);
     glm::mat4 proj = glm::perspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width, (float)m_height, 0.1f, 1024.0f);
 
-    cbPerObject.model = glm::transpose(model);
-    cbPerObject.view = glm::transpose(view);
-    cbPerObject.projection = glm::transpose(proj);
-    cbPerObject.lightPos = glm::vec4(cameraPosition, 0.0);
-    cbPerObject.viewPos = glm::vec4(cameraPosition, 0.0);
+    m_uniform.model = glm::transpose(model);
+    m_uniform.view = glm::transpose(view);
+    m_uniform.projection = glm::transpose(proj);
+    m_uniform.lightPos = glm::vec4(cameraPosition, 0.0);
+    m_uniform.viewPos = glm::vec4(cameraPosition, 0.0);
 
-    d3d11DevCon->UpdateSubresource(cbPerObjectBuffer.Get(), 0, NULL, &cbPerObject, 0, 0);
-
-    d3d11DevCon->VSSetConstantBuffers(0, 1, cbPerObjectBuffer.GetAddressOf());
+    m_device_context->UpdateSubresource(m_uniform_buffer.Get(), 0, nullptr, &m_uniform, 0, 0);
 }
 
 void DXSample::OnRender()
 {
     float bgColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    d3d11DevCon->ClearRenderTargetView(renderTargetView.Get(), bgColor);
+    m_device_context->ClearRenderTargetView(m_render_target_view.Get(), bgColor);
+    m_device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    d3d11DevCon->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-    d3d11DevCon->PSSetSamplers(0, 1, &textureSamplerState);
-
-    for (size_t mesh_id = 0; mesh_id < m_modelOfFile->meshes.size(); ++mesh_id)
+    for (size_t mesh_id = 0; mesh_id < m_model_of_file->meshes.size(); ++mesh_id)
     {
-        DX11Mesh & cur_mesh = m_modelOfFile->meshes[mesh_id];
+        DX11Mesh & cur_mesh = m_model_of_file->meshes[mesh_id];
 
         UINT stride = sizeof(cur_mesh.vertices[0]);
         UINT offset = 0;
-        d3d11DevCon->IASetVertexBuffers(0, 1, cur_mesh.vertBuffer.GetAddressOf(), &stride, &offset);
-        d3d11DevCon->IASetIndexBuffer(cur_mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+        m_device_context->IASetVertexBuffers(0, 1, cur_mesh.vertBuffer.GetAddressOf(), &stride, &offset);
+        m_device_context->IASetIndexBuffer(cur_mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         std::vector<ID3D11ShaderResourceView*> use_textures(5, nullptr);
         static uint32_t frameId = 0;
@@ -121,12 +119,11 @@ void DXSample::OnRender()
             use_textures[texture_slot] = cur_mesh.texResources[i].Get();
         }
 
-        d3d11DevCon->PSSetShaderResources(0, use_textures.size(), use_textures.data());
-
-        d3d11DevCon->DrawIndexed(cur_mesh.indices.size(), 0, 0);
+        m_device_context->PSSetShaderResources(0, use_textures.size(), use_textures.data());
+        m_device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 
-    SwapChain->Present(0, 0);
+    ASSERT_SUCCEEDED(m_swap_chain->Present(0, 0));
 }
 
 void DXSample::OnDestroy()
@@ -140,11 +137,11 @@ void DXSample::OnSizeChanged(int width, int height)
         m_width = width;
         m_height = height;
 
-        renderTargetView.Reset();
+        m_render_target_view.Reset();
 
         DXGI_SWAP_CHAIN_DESC desc = {};
-        SwapChain->GetDesc(&desc);
-        HRESULT hr = SwapChain->ResizeBuffers(1, width, height, desc.BufferDesc.Format, desc.Flags);
+        ASSERT_SUCCEEDED(m_swap_chain->GetDesc(&desc));
+        ASSERT_SUCCEEDED(m_swap_chain->ResizeBuffers(1, width, height, desc.BufferDesc.Format, desc.Flags));
 
         CreateRT();
         CreateViewPort();
@@ -161,15 +158,11 @@ UINT DXSample::GetHeight() const
     return m_height;
 }
 
-bool DXSample::InitializeDirect3d11App()
-{
-    HRESULT hr;
-
+void DXSample::CreateDeviceAndSwapChain()
+{    
     //Describe our Buffer
     DXGI_MODE_DESC bufferDesc;
-
     ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));
-
     bufferDesc.Width = m_width;
     bufferDesc.Height = m_height;
     bufferDesc.RefreshRate.Numerator = 60;
@@ -180,9 +173,7 @@ bool DXSample::InitializeDirect3d11App()
 
     //Describe our SwapChain
     DXGI_SWAP_CHAIN_DESC swapChainDesc;
-
     ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
-
     swapChainDesc.BufferDesc = bufferDesc;
     swapChainDesc.SampleDesc.Count = 1;
     swapChainDesc.SampleDesc.Quality = 0;
@@ -192,31 +183,21 @@ bool DXSample::InitializeDirect3d11App()
     swapChainDesc.Windowed = TRUE;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
-
     //Create our SwapChain
-    hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, NULL,
-        D3D11_SDK_VERSION, &swapChainDesc, &SwapChain, &d3d11Device, NULL, &d3d11DevCon);
-
-
-    CreateRT();
-    return true;
+    ASSERT_SUCCEEDED(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0,
+        D3D11_SDK_VERSION, &swapChainDesc, &m_swap_chain, &m_device, nullptr, &m_device_context));
 }
 
 void DXSample::CreateRT()
 {
-    HRESULT hr;
-
     //Create our BackBuffer
-    ID3D11Texture2D* BackBuffer;
-    hr = SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&BackBuffer);
+    ComPtr<ID3D11Texture2D> BackBuffer;
+    ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&BackBuffer));
 
     //Create our Render Target
-    hr = d3d11Device->CreateRenderTargetView(BackBuffer, NULL, &renderTargetView);
-    BackBuffer->Release();
-
+    ASSERT_SUCCEEDED(m_device->CreateRenderTargetView(BackBuffer.Get(), nullptr, &m_render_target_view));
 
     //Describe our Depth/Stencil Buffer
-
     D3D11_TEXTURE2D_DESC depthStencilDesc;
     depthStencilDesc.Width = m_width;
     depthStencilDesc.Height = m_height;
@@ -230,20 +211,27 @@ void DXSample::CreateRT()
     depthStencilDesc.CPUAccessFlags = 0;
     depthStencilDesc.MiscFlags = 0;
 
-
-    hr = d3d11Device->CreateTexture2D(&depthStencilDesc, NULL, &depthStencilBuffer);
-    hr = d3d11Device->CreateDepthStencilView(depthStencilBuffer.Get(), NULL, &depthStencilView);
-
-    d3d11DevCon->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
+    ASSERT_SUCCEEDED(m_device->CreateTexture2D(&depthStencilDesc, nullptr, &m_depth_stencil_buffer));
+    ASSERT_SUCCEEDED(m_device->CreateDepthStencilView(m_depth_stencil_buffer.Get(), nullptr, &m_depth_stencil_view));
 }
 
-bool DXSample::InitScene()
+void DXSample::CreateViewPort()
 {
-    HRESULT hr;
+    ZeroMemory(&m_viewport, sizeof(D3D11_VIEWPORT));
+    m_viewport.TopLeftX = 0;
+    m_viewport.TopLeftY = 0;
+    m_viewport.Width = m_width;
+    m_viewport.Height = m_height;
+    m_viewport.MinDepth = 0.0f;
+    m_viewport.MaxDepth = 1.0f;
+}
+
+void DXSample::CreateShaders()
+{
     //Compile Shaders from shader file
 
     ComPtr<ID3DBlob> pErrors;
-    hr = D3DCompileFromFile(
+    ASSERT_SUCCEEDED(D3DCompileFromFile(
         GetAssetFullPath(L"shaders/DX11/VertexShader.hlsl").c_str(),
         nullptr,
         nullptr,
@@ -251,10 +239,10 @@ bool DXSample::InitScene()
         "vs_5_0",
         0,
         0,
-        &VS_Buffer,
-        &pErrors);
+        &m_vertex_shader_buffer,
+        &pErrors));
 
-    hr = D3DCompileFromFile(
+    ASSERT_SUCCEEDED(D3DCompileFromFile(
         GetAssetFullPath(L"shaders/DX11/PixelShader.hlsl").c_str(),
         nullptr,
         nullptr,
@@ -262,17 +250,16 @@ bool DXSample::InitScene()
         "ps_5_0",
         0,
         0,
-        &PS_Buffer,
-        &pErrors);
+        &m_pixel_shader_buffer,
+        &pErrors));
 
     //Create the Shader Objects
-    hr = d3d11Device->CreateVertexShader(VS_Buffer->GetBufferPointer(), VS_Buffer->GetBufferSize(), NULL, &VS);
-    hr = d3d11Device->CreatePixelShader(PS_Buffer->GetBufferPointer(), PS_Buffer->GetBufferSize(), NULL, &PS);
+    ASSERT_SUCCEEDED(m_device->CreateVertexShader(m_vertex_shader_buffer->GetBufferPointer(), m_vertex_shader_buffer->GetBufferSize(), nullptr, &m_vertex_shader));
+    ASSERT_SUCCEEDED(m_device->CreatePixelShader(m_pixel_shader_buffer->GetBufferPointer(), m_pixel_shader_buffer->GetBufferSize(), nullptr, &m_pixel_shader));
+}
 
-    //Set Vertex and Pixel Shaders
-    d3d11DevCon->VSSetShader(VS.Get(), 0, 0);
-    d3d11DevCon->PSSetShader(PS.Get(), 0, 0);
-
+void DXSample::CreateLayout()
+{
     D3D11_INPUT_ELEMENT_DESC layout[] =
     {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -285,59 +272,49 @@ bool DXSample::InitScene()
     UINT numElements = ARRAYSIZE(layout);
 
     //Create the Input Layout
-    hr = d3d11Device->CreateInputLayout(layout, numElements, VS_Buffer->GetBufferPointer(),
-        VS_Buffer->GetBufferSize(), &vertLayout);
+    ASSERT_SUCCEEDED(m_device->CreateInputLayout(layout, numElements, m_vertex_shader_buffer->GetBufferPointer(),
+        m_vertex_shader_buffer->GetBufferSize(), &m_input_layout));
+}
 
-    //Set the Input Layout
-    d3d11DevCon->IASetInputLayout(vertLayout.Get());
-
-    //Set Primitive Topology
-    d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-   
-    CreateViewPort();
-
+void DXSample::CreateCB()
+{
     D3D11_BUFFER_DESC cbbd;
     ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
 
     cbbd.Usage = D3D11_USAGE_DEFAULT;
-    cbbd.ByteWidth = sizeof(cbPerObject);
+    cbbd.ByteWidth = sizeof(m_uniform);
     cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     cbbd.CPUAccessFlags = 0;
     cbbd.MiscFlags = 0;
 
-    hr = d3d11Device->CreateBuffer(&cbbd, NULL, &cbPerObjectBuffer);
-
-    return true;
+    ASSERT_SUCCEEDED(m_device->CreateBuffer(&cbbd, nullptr, &m_uniform_buffer));
 }
 
-void DXSample::CreateViewPort()
+void DXSample::CreateSampler()
 {
-    //Create the Viewport
-    D3D11_VIEWPORT viewport;
-    ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+    D3D11_SAMPLER_DESC sampDesc;
+    ZeroMemory(&sampDesc, sizeof(sampDesc));
+    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    sampDesc.MinLOD = 0;
+    sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
-    viewport.Width = m_width;
-    viewport.Height = m_height;
-    viewport.MinDepth = 0.0f;
-    viewport.MaxDepth = 1.0f;
-
-    //Set the Viewport
-    d3d11DevCon->RSSetViewports(1, &viewport);
+    ASSERT_SUCCEEDED(m_device->CreateSamplerState(&sampDesc, &m_texture_sampler));
 }
 
 void DXSample::CreateGeometry()
 {
-    m_modelOfFile.reset(new Model<DX11Mesh>("model/export3dcoat/export3dcoat.obj"));
+    m_model_of_file.reset(new Model<DX11Mesh>("model/export3dcoat/export3dcoat.obj"));
      
-    for (DX11Mesh & cur_mesh : m_modelOfFile->meshes)
+    for (DX11Mesh & cur_mesh : m_model_of_file->meshes)
     {
-        cur_mesh.SetupMesh(d3d11Device, d3d11DevCon);
+        cur_mesh.SetupMesh(m_device, m_device_context);
     }
 
-    for (DX11Mesh & cur_mesh : m_modelOfFile->meshes)
+    for (DX11Mesh & cur_mesh : m_model_of_file->meshes)
     {
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
@@ -346,8 +323,8 @@ void DXSample::CreateGeometry()
             ComPtr<ID3D11Texture2D> resource;
 
             D3D11_TEXTURE2D_DESC desc = {};
-            desc.Width = static_cast<UINT>(metadata.textureWidth);
-            desc.Height = static_cast<UINT>(metadata.textureHeight);
+            desc.Width = static_cast<UINT>(metadata.width);
+            desc.Height = static_cast<UINT>(metadata.height);
             desc.MipLevels = static_cast<UINT>(1);
             desc.ArraySize = static_cast<UINT>(1);
             desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -359,35 +336,35 @@ void DXSample::CreateGeometry()
 
             D3D11_SUBRESOURCE_DATA textureBufferData;
             ZeroMemory(&textureBufferData, sizeof(textureBufferData));
-            textureBufferData.pSysMem = metadata.imageData.get();
-            textureBufferData.SysMemPitch = metadata.bytesPerRow; // size of all our triangle vertex data
-            textureBufferData.SysMemSlicePitch = metadata.bytesPerRow * metadata.textureHeight; // also the size of our triangle vertex data
+            textureBufferData.pSysMem = metadata.image.data();
+            textureBufferData.SysMemPitch = metadata.bytes_per_row; // size of all our triangle vertex data
+            textureBufferData.SysMemSlicePitch = metadata.bytes_per_row * metadata.height; // also the size of our triangle vertex data
 
-            HRESULT hr = d3d11Device->CreateTexture2D(&desc, &textureBufferData, &resource);
+            ASSERT_SUCCEEDED(m_device->CreateTexture2D(&desc, &textureBufferData, &resource));
 
             D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
             srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
             srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
             srvDesc.Texture2D.MipLevels = 1;
 
-            hr = d3d11Device->CreateShaderResourceView(resource.Get(), &srvDesc, &cur_mesh.texResources[i]);
+            ASSERT_SUCCEEDED(m_device->CreateShaderResourceView(resource.Get(), &srvDesc, &cur_mesh.texResources[i]));
         }
     }
 }
 
-DXSample::TexInfo DXSample::LoadImageDataFromFile(std::string filename)
+DXSample::TexInfo DXSample::LoadImageDataFromFile(const std::string & filename)
 {
     TexInfo texInfo = {};
 
-    unsigned char *image = SOIL_load_image(filename.c_str(), &texInfo.textureWidth, &texInfo.textureHeight, 0, SOIL_LOAD_RGBA);
+    unsigned char *image = SOIL_load_image(filename.c_str(), &texInfo.width, &texInfo.height, 0, SOIL_LOAD_RGBA);
 
     DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-    texInfo.numBitsPerPixel = BitsPerPixel(dxgiFormat); // number of bits per pixel
-    texInfo.bytesPerRow = (texInfo.textureWidth * texInfo.numBitsPerPixel) / 8; // number of bytes in each row of the image data
-    texInfo.imageSize = texInfo.bytesPerRow * texInfo.textureHeight; // total image size in bytes
+    texInfo.num_bits_per_pixel = BitsPerPixel(dxgiFormat); // number of bits per pixel
+    texInfo.bytes_per_row = (texInfo.width * texInfo.num_bits_per_pixel) / 8; // number of bytes in each row of the image data
+    texInfo.image_size = texInfo.bytes_per_row * texInfo.height; // total image size in bytes
 
-    texInfo.imageData.reset(new uint8_t[texInfo.imageSize]);
-    memcpy(texInfo.imageData.get(), image, texInfo.imageSize);
+    texInfo.image.resize(texInfo.image_size);
+    memcpy(texInfo.image.data(), image, texInfo.image_size);
     SOIL_free_image_data(image);
 
     return texInfo;
