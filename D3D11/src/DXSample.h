@@ -17,6 +17,8 @@
 #include <Geometry.h>
 #include "DX11Geometry.h"
 
+#include "Shaders.h"
+
 using namespace Microsoft::WRL;
 using namespace DirectX;
 
@@ -28,6 +30,8 @@ public:
 
     virtual void OnInit() override;
     virtual void OnUpdate() override;
+    void GeometryPass();
+    void LightPass();
     virtual void OnRender() override;
     virtual void OnDestroy() override;
     virtual void OnSizeChanged(int width, int height) override;
@@ -39,11 +43,13 @@ private:
     void CreateDeviceAndSwapChain();
     void CreateRT();
     void CreateViewPort();
-    void CreateShaders();
-    void CreateLayout();
-    void CreateCB();
     void CreateSampler();
-    void CreateGeometry();
+
+    std::unique_ptr<Model<DX11Mesh>> CreateGeometry(const std::string & path);
+
+    void CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
+
+    void InitGBuffer();
 
     ComPtr<ID3D11Device> m_device;
     ComPtr<ID3D11DeviceContext> m_device_context;
@@ -55,25 +61,10 @@ private:
 
     D3D11_VIEWPORT m_viewport;
 
-    ComPtr<ID3D11VertexShader> m_vertex_shader;
-    ComPtr<ID3D11PixelShader> m_pixel_shader;
-    ComPtr<ID3DBlob> m_vertex_shader_buffer;
-    ComPtr<ID3DBlob> m_pixel_shader_buffer;
-
-    ComPtr<ID3D11InputLayout> m_input_layout;
-
-    struct UniformBuffer
-    {
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 projection;
-        glm::vec4 lightPos;
-        glm::vec4 viewPos;
-    };
-    UniformBuffer m_uniform;
-    ComPtr<ID3D11Buffer> m_uniform_buffer;
-
     ComPtr<ID3D11SamplerState> m_texture_sampler;
+
+    std::unique_ptr<ShaderGeometryPass> m_shader_geometry_pass;
+    std::unique_ptr<ShaderLightPass> m_shader_light_pass;
 
     struct TexInfo
     {
@@ -87,6 +78,21 @@ private:
     DXSample::TexInfo LoadImageDataFromFile(const std::string& filename);
 
     std::unique_ptr<Model<DX11Mesh>> m_model_of_file;
+    std::unique_ptr<Model<DX11Mesh>> m_model_square;
+
+    ComPtr<ID3D11RenderTargetView> m_position_rtv;
+    ComPtr<ID3D11RenderTargetView> m_normal_rtv;
+    ComPtr<ID3D11RenderTargetView> m_ambient_rtv;
+    ComPtr<ID3D11RenderTargetView> m_diffuse_rtv;
+    ComPtr<ID3D11RenderTargetView> m_specular_rtv;
+    ComPtr<ID3D11RenderTargetView> m_gloss_rtv;
+
+    ComPtr<ID3D11ShaderResourceView> m_position_srv;
+    ComPtr<ID3D11ShaderResourceView> m_normal_srv;
+    ComPtr<ID3D11ShaderResourceView> m_ambient_srv;
+    ComPtr<ID3D11ShaderResourceView> m_diffuse_srv;
+    ComPtr<ID3D11ShaderResourceView> m_specular_srv;
+    ComPtr<ID3D11ShaderResourceView> m_gloss_srv;
 
     int m_width;
     int m_height;

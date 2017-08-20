@@ -16,21 +16,19 @@ DXSample::~DXSample()
 void DXSample::OnInit()
 {
     CreateDeviceAndSwapChain();
+
+    m_shader_geometry_pass.reset(new ShaderGeometryPass(m_device));
+    m_shader_light_pass.reset(new ShaderLightPass(m_device));
+
     CreateRT();
     CreateViewPort();
-    CreateShaders();
-    CreateLayout();
-    CreateCB();
     CreateSampler();
-    CreateGeometry();
+    m_model_of_file = CreateGeometry("model/export3dcoat/export3dcoat.obj");
+    m_model_square = CreateGeometry("model/square.obj");
+    InitGBuffer();
 
-    m_device_context->VSSetShader(m_vertex_shader.Get(), 0, 0);
-    m_device_context->PSSetShader(m_pixel_shader.Get(), 0, 0);
     m_device_context->PSSetSamplers(0, 1, &m_texture_sampler);
-    m_device_context->VSSetConstantBuffers(0, 1, m_uniform_buffer.GetAddressOf());
-    m_device_context->IASetInputLayout(m_input_layout.Get());
     m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    m_device_context->OMSetRenderTargets(1, m_render_target_view.GetAddressOf(), m_depth_stencil_view.Get());
     m_device_context->RSSetViewports(1, &m_viewport);
 }
 
@@ -66,20 +64,48 @@ void DXSample::OnUpdate()
     glm::mat4 view = glm::lookAtRH(cameraPosition, cameraTarget, cameraUp);
     glm::mat4 proj = glm::perspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width, (float)m_height, 0.1f, 1024.0f);
 
-    m_uniform.model = glm::transpose(model);
-    m_uniform.view = glm::transpose(view);
-    m_uniform.projection = glm::transpose(proj);
-    m_uniform.lightPos = glm::vec4(cameraPosition, 0.0);
-    m_uniform.viewPos = glm::vec4(cameraPosition, 0.0);
+    
+    m_shader_geometry_pass->uniform.model = glm::transpose(model);
+    m_shader_geometry_pass->uniform.view = glm::transpose(view);
+    m_shader_geometry_pass->uniform.projection = glm::transpose(proj);
+    m_shader_light_pass->uniform.lightPos = glm::vec4(cameraPosition, 0.0);
+    m_shader_light_pass->uniform.viewPos = glm::vec4(cameraPosition, 0.0);
 
-    m_device_context->UpdateSubresource(m_uniform_buffer.Get(), 0, nullptr, &m_uniform, 0, 0);
+    m_device_context->UpdateSubresource(m_shader_geometry_pass->uniform_buffer.Get(), 0, nullptr, &m_shader_geometry_pass->uniform, 0, 0);
+    m_device_context->UpdateSubresource(m_shader_light_pass->uniform_buffer.Get(), 0, nullptr, &m_shader_light_pass->uniform, 0, 0);
 }
 
 void DXSample::OnRender()
 {
+    GeometryPass();
+    LightPass();
+    ASSERT_SUCCEEDED(m_swap_chain->Present(0, 0));
+}
+
+void DXSample::GeometryPass()
+{
+    m_device_context->VSSetShader(m_shader_geometry_pass->vertex_shader.Get(), 0, 0);
+    m_device_context->PSSetShader(m_shader_geometry_pass->pixel_shader.Get(), 0, 0);
+    m_device_context->VSSetConstantBuffers(0, 1, m_shader_geometry_pass->uniform_buffer.GetAddressOf());
+    m_device_context->IASetInputLayout(m_shader_geometry_pass->input_layout.Get());
+
+    std::vector<ID3D11RenderTargetView*> rtvs = {
+        m_position_rtv.Get(),
+        m_normal_rtv.Get(),
+        m_ambient_rtv.Get(),
+        m_diffuse_rtv.Get(),
+        m_specular_rtv.Get(),
+        m_gloss_rtv.Get(),
+    };
+
     float bgColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_device_context->ClearRenderTargetView(m_render_target_view.Get(), bgColor);
+    for (auto & rtv : rtvs)
+    {
+        m_device_context->ClearRenderTargetView(rtv, bgColor);
+    }
     m_device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+    m_device_context->OMSetRenderTargets(rtvs.size(), rtvs.data(), m_depth_stencil_view.Get());
 
     for (size_t mesh_id = 0; mesh_id < m_model_of_file->meshes.size(); ++mesh_id)
     {
@@ -122,8 +148,43 @@ void DXSample::OnRender()
         m_device_context->PSSetShaderResources(0, use_textures.size(), use_textures.data());
         m_device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
+}
 
-    ASSERT_SUCCEEDED(m_swap_chain->Present(0, 0));
+void DXSample::LightPass()
+{
+    m_device_context->VSSetShader(m_shader_light_pass->vertex_shader.Get(), 0, 0);
+    m_device_context->PSSetShader(m_shader_light_pass->pixel_shader.Get(), 0, 0);
+    m_device_context->PSSetConstantBuffers(0, 1, m_shader_light_pass->uniform_buffer.GetAddressOf());
+    m_device_context->IASetInputLayout(m_shader_light_pass->input_layout.Get());
+
+    m_device_context->OMSetRenderTargets(1, m_render_target_view.GetAddressOf(), m_depth_stencil_view.Get());
+
+    float bgColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    m_device_context->ClearRenderTargetView(m_render_target_view.Get(), bgColor);
+    m_device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+    for (size_t mesh_id = 0; mesh_id < m_model_square->meshes.size(); ++mesh_id)
+    {
+        DX11Mesh & cur_mesh = m_model_square->meshes[mesh_id];
+
+        UINT stride = sizeof(cur_mesh.vertices[0]);
+        UINT offset = 0;
+        m_device_context->IASetVertexBuffers(0, 1, cur_mesh.vertBuffer.GetAddressOf(), &stride, &offset);
+        m_device_context->IASetIndexBuffer(cur_mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
+        std::vector<ID3D11ShaderResourceView*> use_textures =
+        {
+            m_position_srv.Get(),
+            m_normal_srv.Get(),
+            m_ambient_srv.Get(),
+            m_diffuse_srv.Get(),
+            m_specular_srv.Get(),
+            m_gloss_srv.Get()
+        };
+    
+        m_device_context->PSSetShaderResources(0, use_textures.size(), use_textures.data());
+        m_device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
+    }
 }
 
 void DXSample::OnDestroy()
@@ -226,70 +287,6 @@ void DXSample::CreateViewPort()
     m_viewport.MaxDepth = 1.0f;
 }
 
-void DXSample::CreateShaders()
-{
-    //Compile Shaders from shader file
-
-    ComPtr<ID3DBlob> pErrors;
-    ASSERT_SUCCEEDED(D3DCompileFromFile(
-        GetAssetFullPath(L"shaders/DX11/VertexShader.hlsl").c_str(),
-        nullptr,
-        nullptr,
-        "main",
-        "vs_5_0",
-        0,
-        0,
-        &m_vertex_shader_buffer,
-        &pErrors));
-
-    ASSERT_SUCCEEDED(D3DCompileFromFile(
-        GetAssetFullPath(L"shaders/DX11/PixelShader.hlsl").c_str(),
-        nullptr,
-        nullptr,
-        "main",
-        "ps_5_0",
-        0,
-        0,
-        &m_pixel_shader_buffer,
-        &pErrors));
-
-    //Create the Shader Objects
-    ASSERT_SUCCEEDED(m_device->CreateVertexShader(m_vertex_shader_buffer->GetBufferPointer(), m_vertex_shader_buffer->GetBufferSize(), nullptr, &m_vertex_shader));
-    ASSERT_SUCCEEDED(m_device->CreatePixelShader(m_pixel_shader_buffer->GetBufferPointer(), m_pixel_shader_buffer->GetBufferSize(), nullptr, &m_pixel_shader));
-}
-
-void DXSample::CreateLayout()
-{
-    D3D11_INPUT_ELEMENT_DESC layout[] =
-    {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(DX11Mesh::Vertex, texCoords), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, tangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, bitangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    };
-
-    UINT numElements = ARRAYSIZE(layout);
-
-    //Create the Input Layout
-    ASSERT_SUCCEEDED(m_device->CreateInputLayout(layout, numElements, m_vertex_shader_buffer->GetBufferPointer(),
-        m_vertex_shader_buffer->GetBufferSize(), &m_input_layout));
-}
-
-void DXSample::CreateCB()
-{
-    D3D11_BUFFER_DESC cbbd;
-    ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
-
-    cbbd.Usage = D3D11_USAGE_DEFAULT;
-    cbbd.ByteWidth = sizeof(m_uniform);
-    cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    cbbd.CPUAccessFlags = 0;
-    cbbd.MiscFlags = 0;
-
-    ASSERT_SUCCEEDED(m_device->CreateBuffer(&cbbd, nullptr, &m_uniform_buffer));
-}
-
 void DXSample::CreateSampler()
 {
     D3D11_SAMPLER_DESC sampDesc;
@@ -305,16 +302,16 @@ void DXSample::CreateSampler()
     ASSERT_SUCCEEDED(m_device->CreateSamplerState(&sampDesc, &m_texture_sampler));
 }
 
-void DXSample::CreateGeometry()
+std::unique_ptr<Model<DX11Mesh>> DXSample::CreateGeometry(const std::string& path)
 {
-    m_model_of_file.reset(new Model<DX11Mesh>("model/export3dcoat/export3dcoat.obj"));
+    std::unique_ptr<Model<DX11Mesh>> model = std::make_unique<Model<DX11Mesh>>(path);
      
-    for (DX11Mesh & cur_mesh : m_model_of_file->meshes)
+    for (DX11Mesh & cur_mesh : model->meshes)
     {
         cur_mesh.SetupMesh(m_device, m_device_context);
     }
 
-    for (DX11Mesh & cur_mesh : m_model_of_file->meshes)
+    for (DX11Mesh & cur_mesh : model->meshes)
     {
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
@@ -350,6 +347,45 @@ void DXSample::CreateGeometry()
             ASSERT_SUCCEEDED(m_device->CreateShaderResourceView(resource.Get(), &srvDesc, &cur_mesh.texResources[i]));
         }
     }
+    return model;
+}
+
+void DXSample::CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
+{
+    D3D11_TEXTURE2D_DESC texture_desc;
+    ZeroMemory(&texture_desc, sizeof(texture_desc));
+    texture_desc.Width = m_width;
+    texture_desc.Height = m_height;
+    texture_desc.MipLevels = 1;
+    texture_desc.ArraySize = 1;
+    texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    texture_desc.SampleDesc.Count = 1;
+    texture_desc.Usage = D3D11_USAGE_DEFAULT;
+    texture_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    texture_desc.CPUAccessFlags = 0;
+    texture_desc.MiscFlags = 0;
+
+    ComPtr<ID3D11Texture2D> texture;
+    ASSERT_SUCCEEDED(m_device->CreateTexture2D(&texture_desc, nullptr, &texture));
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+    
+    ASSERT_SUCCEEDED(m_device->CreateShaderResourceView(texture.Get(), &srvDesc, &srv));
+
+    ASSERT_SUCCEEDED(m_device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
+}
+
+void DXSample::InitGBuffer()
+{
+    CreateRTV(m_position_rtv, m_position_srv);
+    CreateRTV(m_normal_rtv, m_normal_srv);
+    CreateRTV(m_ambient_rtv, m_ambient_srv);
+    CreateRTV(m_diffuse_rtv, m_diffuse_srv);
+    CreateRTV(m_specular_rtv, m_specular_srv);
+    CreateRTV(m_gloss_rtv, m_gloss_srv);
 }
 
 DXSample::TexInfo DXSample::LoadImageDataFromFile(const std::string & filename)

@@ -7,6 +7,7 @@ set(shaders_path "${assets_path}/shaders/DX11")
 set(headers
     ${include_path}/DXSample.h
     ${include_path}/DX11Geometry.h
+    ${include_path}/Shaders.h
 )
 
 set(sources
@@ -16,10 +17,14 @@ set(sources
 
 set(pixel_shaders
     ${shaders_path}/PixelShader.hlsl
+    ${shaders_path}/GeometryPass_PS.hlsl
+    ${shaders_path}/LightPass_PS.hlsl
 )
 
 set(vertex_shaders
     ${shaders_path}/VertexShader.hlsl
+    ${shaders_path}/GeometryPass_VS.hlsl
+    ${shaders_path}/LightPass_VS.hlsl
 )
 
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_TYPE Pixel)
