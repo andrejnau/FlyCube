@@ -5,9 +5,9 @@
 #include <Utility.h>
 #include <FileUtility.h>
 
-DXSample::DXSample(int width, int height)
-    : m_width(width)
-    , m_height(height)
+DXSample::DXSample()
+    : m_width(0)
+    , m_height(0)
 {}
 
 DXSample::~DXSample()
@@ -78,7 +78,7 @@ void DXSample::CreateSwapChain()
     swapChainDesc.BufferDesc = backBufferDesc; // our back buffer description
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // this says the pipeline will render to this swap chain
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // dxgi will discard the buffer (data) after we call present
-    swapChainDesc.OutputWindow = Win32Application::GetHwnd(); // handle to our window
+    swapChainDesc.OutputWindow = GetActiveWindow(); // handle to our window
     swapChainDesc.SampleDesc = sampleDesc; // our multi-sampling description
     swapChainDesc.Windowed = true; // set to true, then if in fullscreen must call SetFullScreenState with true for full screen to get uncapped fps
     ComPtr<IDXGISwapChain> tempSwapChain;
@@ -683,8 +683,11 @@ void DXSample::PopulateCommandList()
     ASSERT_SUCCEEDED(commandList->Close());
 }
 
-void DXSample::OnInit()
+void DXSample::OnInit(int width, int height)
 {
+    m_width = width;
+    m_height = height;
+
     CreateDevice();
     CreateCommandQueue();
     CreateSwapChain();
@@ -813,14 +816,4 @@ void DXSample::OnSizeChanged(int width, int height)
         CreateDepthStencil();
         CreateViewPort();
     }
-}
-
-UINT DXSample::GetWidth() const
-{
-    return m_width;
-}
-
-UINT DXSample::GetHeight() const
-{
-    return m_height;
 }

@@ -1,8 +1,7 @@
-#include "Win32Application.h"
 #include "DXSample.h"
+#include <AppBox/AppBox.h>
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
+int main(void)
 {
-    DXSample sample(1280, 720);
-    return Win32Application::Run(&sample, L"[DX12] testApp", hInstance, nCmdShow);
+    return AppBox(DXSample(), "[DX12] testApp", 1280, 720).Run();
 }

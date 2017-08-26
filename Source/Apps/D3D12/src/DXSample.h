@@ -8,8 +8,7 @@
 #include <wrl/client.h>
 #include <memory>
 #include <string>
-#include <IDXSample.h>
-#include <Win32Application.h>
+#include <ISample/ISample.h>
 #include <Util.h>
 #include "DX12Geometry.h"
 #include <glm/glm.hpp>
@@ -18,20 +17,17 @@
 using namespace Microsoft::WRL;
 using namespace DirectX;
 
-class DXSample : public IDXSample
+class DXSample : public ISample
 {
 public:
-    DXSample(int width, int height);
+    DXSample();
     ~DXSample();
 
-    virtual void OnInit() override;
+    virtual void OnInit(int width, int height) override;
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnDestroy() override;
     virtual void OnSizeChanged(int width, int height) override;
-
-    UINT GetWidth() const  override;
-    UINT GetHeight() const  override;
 
 private:
 
