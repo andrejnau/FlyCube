@@ -3,19 +3,29 @@
 #include <ISample/ISample.h>
 #include <GLFW/glfw3.h>
 #include <string>
+#include <memory>
+#include <functional>
 
 class AppBox
 {
 public:
-    AppBox(ISample& sample, const std::string& title, int width, int height);
+    using CreateSample = std::function<ISample::Ptr()>;
+    AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height);
     ~AppBox();
     int Run();
 private:
-    void InitWindow(const std::string& title, int width, int height);
+    void InitWindow();
+    void SetWindowToCenter();
 
     static void OnSizeChanged(GLFWwindow* window, int width, int height);
+    static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void OnMouse(GLFWwindow* window, double xpos, double ypos);
+    static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
 
-    ISample& m_sample;
+    CreateSample m_create_sample;
+    ApiType m_api_type;
+    std::string m_title;
+    std::unique_ptr<ISample> m_sample;
     GLFWwindow* m_window;
     int m_width;
     int m_height;

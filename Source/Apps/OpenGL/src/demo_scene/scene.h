@@ -20,23 +20,33 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-class tScenes : public ISceneBase
+#include <ISample/ISample.h>
+
+class tScenes : public ISample
 {
 public:
-    using Ptr = std::unique_ptr<tScenes>;
+    tScenes();
 
-    tScenes(int width, int height);
+    static std::unique_ptr<ISample> Create()
+    {
+        return std::make_unique<tScenes>();
+    }
 
-    virtual void OnInit() override;
+    static void APIENTRY gl_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *msg, const void *data)
+    {
+        std::cout << "debug call: " << msg << std::endl;
+    }
+
+    virtual void OnInit(int width, int height) override;
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnDestroy() override;
     virtual void OnSizeChanged(int width, int height) override;
 
-    Camera & getCamera();
+    virtual void OnKey(int key, int action) override;
+    virtual void OnMouse(bool first_event, double xpos, double ypos) override;
 
 private:
-
     void GeometryPass();
     void ShadowPass();
     void SSAOPass();
@@ -45,6 +55,8 @@ private:
     void RenderLightSource();
     void RenderShadowTexture();
     void RenderCubemap();
+
+    void UpdateCameraMovement();
 
     void InitState();
     void InitCamera();
@@ -72,6 +84,7 @@ private:
         glm::vec3 specular;
     };
 
+    int load_func_;
     int width_ = 0;
     int height_ = 0;
     int depth_size_ = 2048;
@@ -121,4 +134,10 @@ private:
     ShaderShadowView shader_shadow_view_;
     ShaderDepth shader_depth_;
     Camera camera_;
+
+    std::map<int, bool> keys_;
+    float last_frame_ = 0.0;
+    float delta_time_ = 0.0f;
+    double last_x_ = 0.0f;
+    double last_y_ = 0.0f;
 };

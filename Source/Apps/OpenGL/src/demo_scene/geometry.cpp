@@ -290,7 +290,7 @@ GLuint CreateCompressedTexture(const std::string& Filename, aiTextureType type)
     gli::gl GL(gli::gl::PROFILE_GL33);
     gli::gl::format const Format = GL.translate(Texture.format(), Texture.swizzles());
     GLenum Target = GL.translate(Texture.target());
-    assert(gli::is_compressed(Texture.format()) && Target == gli::TARGET_2D);
+    //assert(gli::is_compressed(Texture.format()) && Target == gli::TARGET_2D);
 
     GLuint TextureName = 0;
     glGenTextures(1, &TextureName);

@@ -11,4 +11,4 @@ else()
     add_executable(${target} ${SOURCES})
 endif()
 
-target_link_libraries(${target} glfw demo_scene)
+target_link_libraries(${target} AppBox demo_scene)

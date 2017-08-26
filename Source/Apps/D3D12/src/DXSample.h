@@ -23,6 +23,11 @@ public:
     DXSample();
     ~DXSample();
 
+    static std::unique_ptr<ISample> Create()
+    {
+        return std::make_unique<DXSample>();
+    }
+
     virtual void OnInit(int width, int height) override;
     virtual void OnUpdate() override;
     virtual void OnRender() override;

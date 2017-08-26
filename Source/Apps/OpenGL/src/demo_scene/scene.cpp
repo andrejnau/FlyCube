@@ -1,8 +1,10 @@
 #include "scene.h"
+#include <GLFW/glfw3.h>
 
-tScenes::tScenes(int width, int height)
-    : width_(width)
-    , height_(height)
+tScenes::tScenes()
+    : load_func_(ogl_LoadFunctions())
+    , width_(0)
+    , height_(0)
     , model_("model/sponza/sponza.obj")
     , model_sphere_("model/sphere.obj")
 {}
@@ -12,8 +14,17 @@ inline GLfloat lerp(GLfloat a, GLfloat b, GLfloat f)
     return a + f * (b - a);
 }
 
-inline void tScenes::OnInit()
+inline void tScenes::OnInit(int width, int height)
 {
+    width_ = width;
+    height_ = height;
+
+    glDebugMessageCallback(tScenes::gl_callback, nullptr);
+
+    auto& state = CurState<bool>::Instance().state;
+    state["occlusion"] = true;
+    state["shadow"] = true;
+
     InitState();
     InitCamera();
     InitCubemap();
@@ -25,6 +36,12 @@ inline void tScenes::OnInit()
 
 void tScenes::OnUpdate()
 {
+    double currentFrame = glfwGetTime();
+    delta_time_ = (float)(currentFrame - last_frame_);
+    last_frame_ = currentFrame;
+
+    UpdateCameraMovement();    
+
     auto & state = CurState<bool>::Instance().state;
 
     static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
@@ -112,6 +129,61 @@ inline void tScenes::OnSizeChanged(int width, int height)
     height_ = height;
     glViewport(0, 0, width_, height_);
     camera_.SetViewport(width_, height_);
+}
+
+void tScenes::OnKey(int key, int action)
+{
+    if (action == GLFW_PRESS)
+        keys_[key] = true;
+    else if (action == GLFW_RELEASE)
+        keys_[key] = false;
+
+    if (key == GLFW_KEY_F && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["warframe"] = !state["warframe"];
+    }
+
+    if (key == GLFW_KEY_O && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["occlusion"] = !state["occlusion"];
+    }
+
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["pause"] = !state["pause"];
+    }
+
+    if (key == GLFW_KEY_L && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["shadow"] = !state["shadow"];
+    }
+
+    if (key == GLFW_KEY_P && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["occlusion_only"] = !state["occlusion_only"];
+    }
+}
+
+void tScenes::OnMouse(bool first_event, double xpos, double ypos)
+{
+    if (first_event)
+    {
+        last_x_ = xpos;
+        last_y_ = ypos;
+    }
+
+    double xoffset = xpos - last_x_;
+    double yoffset = last_y_ - ypos;  // Reversed since y-coordinates go from bottom to left
+
+    last_x_ = xpos;
+    last_y_ = ypos;
+
+    camera_.ProcessMouseMovement((float)xoffset, (float)yoffset);
 }
 
 inline void tScenes::GeometryPass()
@@ -390,6 +462,22 @@ inline void tScenes::RenderCubemap()
 
     glCullFace(old_cull_face_mode);
     glDepthFunc(old_depth_func_mode);
+}
+
+void tScenes::UpdateCameraMovement()
+{
+    if (keys_[GLFW_KEY_W])
+        camera_.ProcessKeyboard(CameraMovement::kForward, delta_time_);
+    if (keys_[GLFW_KEY_S])
+        camera_.ProcessKeyboard(CameraMovement::kBackward, delta_time_);
+    if (keys_[GLFW_KEY_A])
+        camera_.ProcessKeyboard(CameraMovement::kLeft, delta_time_);
+    if (keys_[GLFW_KEY_D])
+        camera_.ProcessKeyboard(CameraMovement::kRight, delta_time_);
+    if (keys_[GLFW_KEY_Q])
+        camera_.ProcessKeyboard(CameraMovement::kDown, delta_time_);
+    if (keys_[GLFW_KEY_E])
+        camera_.ProcessKeyboard(CameraMovement::kUp, delta_time_);
 }
 
 void tScenes::InitState()
@@ -675,9 +763,4 @@ inline GLuint tScenes::LoadCubemap()
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
     return texture_id;
-}
-
-Camera& tScenes::getCamera()
-{
-    return camera_;
 }

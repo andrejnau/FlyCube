@@ -11,7 +11,6 @@
 #include <memory>
 #include <string>
 
-#include <IDXSample.h>
 #include <Util.h>
 #include <Geometry.h>
 #include "DX11Geometry.h"
@@ -28,6 +27,11 @@ class DXSample : public ISample
 public:
     DXSample();
     ~DXSample();
+
+    static std::unique_ptr<ISample> Create()
+    {
+        return std::make_unique<DXSample>();
+    }
 
     virtual void OnInit(int width, int height) override;
     virtual void OnUpdate() override;

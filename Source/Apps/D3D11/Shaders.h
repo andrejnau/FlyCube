@@ -13,7 +13,6 @@
 #include <memory>
 #include <string>
 
-#include <IDXSample.h>
 #include <Geometry.h>
 #include <Util.h>
 #include <Utility.h>
