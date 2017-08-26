@@ -47,9 +47,4 @@ set_target_properties(${target} PROPERTIES
 
 target_compile_definitions(${target} PRIVATE UNICODE _UNICODE NOMINMAX)
 
-target_link_libraries(${target} d3dcompiler dxgi d3d11 assimp SOIL D3DUtils AppBox)
-
-target_include_directories(${target}
-    PUBLIC
-        ${project_root}/Source
-)
+target_link_libraries(${target} d3dcompiler dxgi d3d11 assimp SOIL D3DUtils AppBox ISample)
