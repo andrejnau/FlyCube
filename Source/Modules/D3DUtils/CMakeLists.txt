@@ -6,7 +6,6 @@ set(shaders_path "${assets_path}/shaders/DX12")
 
 set(headers
     ${include_path}/FileUtility.h
-    ${include_path}/IDXSample.h
     ${include_path}/Util.h
     ${include_path}/Utility.h
     ${include_path}/Geometry.h

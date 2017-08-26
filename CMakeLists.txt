@@ -25,7 +25,3 @@ include(${project_root}/cmake/3rdparty/glm.cmake)
 include(${project_root}/cmake/3rdparty/gli.cmake)
 
 add_subdirectory(Source)
-
-if (WIN32)
-    add_subdirectory(D3DUtils)
-endif()
