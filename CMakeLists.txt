@@ -24,4 +24,4 @@ include(${project_root}/cmake/3rdparty/assimp.cmake)
 include(${project_root}/cmake/3rdparty/glm.cmake)
 include(${project_root}/cmake/3rdparty/gli.cmake)
 
-add_subdirectory(Source)
+add_subdirectory(src)
