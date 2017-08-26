@@ -5,16 +5,19 @@
 #include <Utility.h>
 #include <FileUtility.h>
 
-DXSample::DXSample(int width, int height)
-    : m_width(width)
-    , m_height(height)
+DXSample::DXSample()
+    : m_width(0)
+    , m_height(0)
 {}
 
 DXSample::~DXSample()
 {}
 
-void DXSample::OnInit()
+void DXSample::OnInit(int width, int height)
 {
+    m_width = width;
+    m_height = height;
+
     CreateDeviceAndSwapChain();
 
     m_shader_geometry_pass.reset(new ShaderGeometryPass(m_device));
@@ -29,7 +32,6 @@ void DXSample::OnInit()
 
     m_device_context->PSSetSamplers(0, 1, &m_texture_sampler);
     m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    m_device_context->RSSetViewports(1, &m_viewport);
 }
 
 void DXSample::OnUpdate()
@@ -84,6 +86,7 @@ void DXSample::OnRender()
 
 void DXSample::GeometryPass()
 {
+    m_device_context->RSSetViewports(1, &m_viewport);
     m_device_context->VSSetShader(m_shader_geometry_pass->vertex_shader.Get(), 0, 0);
     m_device_context->PSSetShader(m_shader_geometry_pass->pixel_shader.Get(), 0, 0);
     m_device_context->VSSetConstantBuffers(0, 1, m_shader_geometry_pass->uniform_buffer.GetAddressOf());
@@ -206,17 +209,8 @@ void DXSample::OnSizeChanged(int width, int height)
 
         CreateRT();
         CreateViewPort();
+        InitGBuffer();
     }
-}
-
-UINT DXSample::GetWidth() const
-{
-    return m_width;
-}
-
-UINT DXSample::GetHeight() const
-{
-    return m_height;
 }
 
 void DXSample::CreateDeviceAndSwapChain()
@@ -240,7 +234,7 @@ void DXSample::CreateDeviceAndSwapChain()
     swapChainDesc.SampleDesc.Quality = 0;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.BufferCount = 1;
-    swapChainDesc.OutputWindow = Win32Application::GetHwnd();
+    swapChainDesc.OutputWindow = GetActiveWindow();
     swapChainDesc.Windowed = TRUE;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 

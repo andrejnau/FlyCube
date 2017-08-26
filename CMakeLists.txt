@@ -21,16 +21,14 @@ include(${project_root}/cmake/3rdparty/assimp.cmake)
 include(${project_root}/cmake/3rdparty/glm.cmake)
 include(${project_root}/cmake/3rdparty/gli.cmake)
 
+add_subdirectory(Source)
+
 if (WIN32)
     add_subdirectory(D3DUtils)
 endif()
 
 if (BUILD_OPENGL)
     add_subdirectory(OpenGL)
-endif()
-
-if(BUILD_DX11 AND WIN32)
-    add_subdirectory(D3D11)
 endif()
 
 if(BUILD_DX12 AND WIN32)
