@@ -14,7 +14,6 @@
 #include <string>
 
 #include <IDXSample.h>
-#include <Win32Application.h>
 #include <Geometry.h>
 #include <Util.h>
 #include <Utility.h>

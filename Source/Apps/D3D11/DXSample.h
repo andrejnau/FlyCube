@@ -12,7 +12,6 @@
 #include <string>
 
 #include <IDXSample.h>
-#include <Win32Application.h>
 #include <Util.h>
 #include <Geometry.h>
 #include "DX11Geometry.h"
