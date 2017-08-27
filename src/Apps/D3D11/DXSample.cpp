@@ -3,7 +3,7 @@
 #include <SOIL.h>
 #include <Util.h>
 #include <Utility.h>
-#include <FileUtility.h>
+#include <Utilities/FileUtility.h>
 
 DXSample::DXSample()
     : m_width(0)

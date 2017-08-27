@@ -1,23 +1,22 @@
-set(target AppBox)
+set(target Geometry)
 
 set(headers
-    AppBox.h
+    Geometry.h
 )
 
 set(sources
-    AppBox.cpp
+    Geometry.cpp
 )
 
 add_library(${target} ${headers} ${sources})
 
-target_link_libraries(${target}
-    ISample
-    glfw
-)
-
 target_include_directories(${target}
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
+)
+
+target_link_libraries(${target}
+    Utilities
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

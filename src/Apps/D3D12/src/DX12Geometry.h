@@ -2,7 +2,7 @@
 
 #include <d3d12.h>
 #include <wrl.h>
-#include <Geometry.h>
+#include <Geometry/Geometry.h>
 #include <glm/glm.hpp>
 
 using namespace Microsoft::WRL;

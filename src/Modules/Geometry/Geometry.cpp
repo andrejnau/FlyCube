@@ -3,7 +3,7 @@
 #include <tuple>
 #include <fstream>
 #include <set>
-#include <FileUtility.h>
+#include <Utilities/FileUtility.h>
 
 glm::vec3 aiVector3DToVec3(const aiVector3D& x)
 {

@@ -3,7 +3,7 @@
 #include <d3d11.h>
 #include <wrl.h>
 #include <glm/glm.hpp>
-#include "Geometry.h"
+#include <Geometry/Geometry.h>
 
 using namespace Microsoft::WRL;
 

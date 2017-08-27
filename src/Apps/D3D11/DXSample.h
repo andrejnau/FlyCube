@@ -12,7 +12,7 @@
 #include <string>
 
 #include <Util.h>
-#include <Geometry.h>
+#include <Geometry/Geometry.h>
 #include "DX11Geometry.h"
 
 #include "Shaders.h"

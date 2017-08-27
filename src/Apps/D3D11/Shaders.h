@@ -13,10 +13,10 @@
 #include <memory>
 #include <string>
 
-#include <Geometry.h>
+#include <Geometry/Geometry.h>
 #include <Util.h>
 #include <Utility.h>
-#include <FileUtility.h>
+#include <Utilities/FileUtility.h>
 
 #include "DX11Geometry.h"
 
