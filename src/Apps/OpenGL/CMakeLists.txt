@@ -2,13 +2,12 @@ set (target OpenGLApp)
 
 set (HEADERS
     scene.h
-    geometry.h
     shaders.h
+    GLGeometry.h
 )
 
 set (SOURCES
     scene.cpp
-    geometry.cpp
     main.cpp
 )
 
@@ -24,4 +23,6 @@ target_link_libraries(${target}
     simple_camera
     utils
     ISample
+    Geometry
+    Utilities
 )

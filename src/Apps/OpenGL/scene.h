@@ -1,7 +1,6 @@
 #pragma once
 
 #include "shaders.h"
-#include "geometry.h"
 
 #include <scenebase.h>
 #include <state.h>
@@ -17,10 +16,12 @@
 #define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/transform.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #include <ISample/ISample.h>
+
+#include "GLGeometry.h"
 
 class tScenes : public ISample
 {
@@ -118,10 +119,10 @@ private:
     glm::mat4 light_projection_;
     glm::mat4 light_view_;
 
-    Model model_;
-    Model model_sphere_;
-    Mesh mesh_square_;
-    Mesh mesh_square_shadow_view_;
+    Model<GLMesh> model_;
+    Model<GLMesh> model_sphere_;
+    GLMesh mesh_square_;
+    GLMesh mesh_square_shadow_view_;
 
     std::vector<glm::vec3> ssao_kernel_;
 

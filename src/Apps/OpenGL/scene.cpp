@@ -32,6 +32,16 @@ inline void tScenes::OnInit(int width, int height)
     InitGBuffer();
     InitSSAO();
     InitMesh();
+
+    for (GLMesh & cur_mesh : model_.meshes)
+    {
+        cur_mesh.setupMesh();
+    }
+
+    for (GLMesh & cur_mesh : model_sphere_.meshes)
+    {
+        cur_mesh.setupMesh();
+    }
 }
 
 void tScenes::OnUpdate()
@@ -208,7 +218,7 @@ inline void tScenes::GeometryPass()
     glUniform3fv(shader_geometry_pass_.loc.light.diffuse, 1, glm::value_ptr(light.diffuse));
     glUniform3fv(shader_geometry_pass_.loc.light.specular, 1, glm::value_ptr(light.specular));
 
-    for (Mesh & cur_mesh : model_.meshes)
+    for (GLMesh & cur_mesh : model_.meshes)
     {
         glUniform1i(shader_geometry_pass_.loc.textures.ambient, 0);
         glUniform1i(shader_geometry_pass_.loc.textures.has_ambient, 0);
@@ -250,7 +260,7 @@ inline void tScenes::GeometryPass()
                 glUniform1i(shader_geometry_pass_.loc.textures.has_alpha, 1);
             }
 
-            glBindTexture(GL_TEXTURE_2D, cur_mesh.textures[i].id);
+            glBindTexture(GL_TEXTURE_2D, cur_mesh.textures_id[i]);
         }
 
         glActiveTexture(GL_TEXTURE0);
@@ -355,7 +365,7 @@ void tScenes::RenderLightSource()
     glUniformMatrix4fv(shader_simple_color_.loc.u_MVP, 1, GL_FALSE, glm::value_ptr(projection * view * model));
     glUniform3f(shader_simple_color_.loc.objectColor, 1.0f, 1.0f, 1.0);
 
-    for (Mesh & cur_mesh : model_sphere_.meshes)
+    for (GLMesh & cur_mesh : model_sphere_.meshes)
     {
         cur_mesh.drawMesh();
     }
@@ -370,7 +380,7 @@ inline void tScenes::ShadowPass()
     glm::mat4 Matrix = light_matrix_ * model;
     glUniformMatrix4fv(shader_depth_.loc.u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
-    for (Mesh & cur_mesh : model_.meshes)
+    for (GLMesh & cur_mesh : model_.meshes)
     {
         cur_mesh.drawMesh();
     }
@@ -455,7 +465,7 @@ inline void tScenes::RenderCubemap()
     glm::mat4 Matrix = projection * view * model;
     glUniformMatrix4fv(shader_simple_cube_map_.loc.u_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
 
-    for (Mesh & cur_mesh : model_sphere_.meshes)
+    for (GLMesh & cur_mesh : model_sphere_.meshes)
     {
         cur_mesh.drawMesh();
     }
