@@ -5,6 +5,14 @@ tScenes::tScenes()
     : load_func_(ogl_LoadFunctions())
     , width_(0)
     , height_(0)
+    , shader_geometry_pass_("shaders/Demo/GeometryPass.vs", "shaders/Demo/GeometryPass.fs")
+    , shader_light_pass_("shaders/Demo/LightPass.vs", "shaders/Demo/LightPass.fs")
+    , shader_ssao_pass_("shaders/Demo/SSAOPass.vs", "shaders/Demo/SSAOPass.fs")
+    , shader_ssao_blur_pass_("shaders/Demo/SSAOPass.vs", "shaders/Demo/SSAOBlurPass.fs")
+    , shader_simple_color_("shaders/Demo/ShaderSimpleColor.vs", "shaders/Demo/ShaderSimpleColor.fs")
+    , shader_simple_cube_map_("shaders/Demo/ShaderSimpleCubeMap.vs", "shaders/Demo/ShaderSimpleCubeMap.fs")
+    , shader_shadow_view_("shaders/Demo/ShaderShadowView.vs", "shaders/Demo/ShaderShadowView.fs")
+    , shader_depth_("shaders/Demo/ShaderDepth.vs", "shaders/Demo/ShaderDepth.fs")
     , model_("model/sponza/sponza.obj")
     , model_sphere_("model/sphere.obj")
 {}
@@ -199,65 +207,65 @@ void tScenes::OnMouse(bool first_event, double xpos, double ypos)
 inline void tScenes::GeometryPass()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shader_geometry_pass_.program);
+    glUseProgram(shader_geometry_pass_.GetProgram());
     glm::mat4 projection, view, model;
     camera_.GetMatrix(projection, view, model);
 
     model = glm::scale(glm::vec3(model_scale_)) * model;
 
-    glUniformMatrix4fv(shader_geometry_pass_.loc.model, 1, GL_FALSE, glm::value_ptr(model));
-    glUniformMatrix4fv(shader_geometry_pass_.loc.view, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(shader_geometry_pass_.loc.projection, 1, GL_FALSE, glm::value_ptr(projection));
+    shader_geometry_pass_.Uniform("model") = model;
+    shader_geometry_pass_.Uniform("view") = view;
+    shader_geometry_pass_.Uniform("projection") = projection;
 
     Light light;
     light.ambient = glm::vec3(0.2f);
     light.diffuse = glm::vec3(1.0f);
     light.specular = glm::vec3(0.5f);
 
-    glUniform3fv(shader_geometry_pass_.loc.light.ambient, 1, glm::value_ptr(light.ambient));
-    glUniform3fv(shader_geometry_pass_.loc.light.diffuse, 1, glm::value_ptr(light.diffuse));
-    glUniform3fv(shader_geometry_pass_.loc.light.specular, 1, glm::value_ptr(light.specular));
+    shader_geometry_pass_.Uniform("light.ambient") = light.ambient;
+    shader_geometry_pass_.Uniform("light.diffuse") = light.diffuse;
+    shader_geometry_pass_.Uniform("light.specular") = light.specular;
 
     for (GLMesh & cur_mesh : model_.meshes)
     {
-        glUniform1i(shader_geometry_pass_.loc.textures.ambient, 0);
-        glUniform1i(shader_geometry_pass_.loc.textures.has_ambient, 0);
-        glUniform1i(shader_geometry_pass_.loc.textures.diffuse, 0);
-        glUniform1i(shader_geometry_pass_.loc.textures.has_diffuse, 0);
-        glUniform1i(shader_geometry_pass_.loc.textures.specular, 0);
-        glUniform1i(shader_geometry_pass_.loc.textures.has_specular, 0);
-        glUniform1i(shader_geometry_pass_.loc.textures.normalMap, 0);
-        glUniform1i(shader_geometry_pass_.loc.textures.has_normalMap, 0);
-        glUniform1i(shader_geometry_pass_.loc.textures.alpha, 0);
-        glUniform1i(shader_geometry_pass_.loc.textures.has_alpha, 0);
+        shader_geometry_pass_.Uniform("textures.ambient") = 0;
+        shader_geometry_pass_.Uniform("textures.has_ambient") = 0;
+        shader_geometry_pass_.Uniform("textures.diffuse") = 0;
+        shader_geometry_pass_.Uniform("textures.has_diffuse") = 0;
+        shader_geometry_pass_.Uniform("textures.specular") = 0;
+        shader_geometry_pass_.Uniform("textures.has_specular") = 0;
+        shader_geometry_pass_.Uniform("textures.normalMap") = 0;
+        shader_geometry_pass_.Uniform("textures.has_normalMap") = 0;
+        shader_geometry_pass_.Uniform("textures.alpha") = 0;
+        shader_geometry_pass_.Uniform("textures.has_alpha") = 0;
 
-        for (GLuint i = 0; i < cur_mesh.textures.size(); i++)
+        for (GLint i = 0; i < (GLint)cur_mesh.textures.size(); i++)
         {
             glActiveTexture(GL_TEXTURE0 + i);
             if (cur_mesh.textures[i].type == aiTextureType_AMBIENT)
             {
-                glUniform1i(shader_geometry_pass_.loc.textures.ambient, i);
-                glUniform1i(shader_geometry_pass_.loc.textures.has_ambient, 1);
+                shader_geometry_pass_.Uniform("textures.ambient") = i;
+                shader_geometry_pass_.Uniform("textures.has_ambient") = 1;
             }
             if (cur_mesh.textures[i].type == aiTextureType_DIFFUSE)
             {
-                glUniform1i(shader_geometry_pass_.loc.textures.diffuse, i);
-                glUniform1i(shader_geometry_pass_.loc.textures.has_diffuse, 1);
+                shader_geometry_pass_.Uniform("textures.diffuse") = i;
+                shader_geometry_pass_.Uniform("textures.has_diffuse") = 1;
             }
             else if (cur_mesh.textures[i].type == aiTextureType_SPECULAR)
             {
-                glUniform1i(shader_geometry_pass_.loc.textures.specular, i);
-                glUniform1i(shader_geometry_pass_.loc.textures.has_specular, 1);
+                shader_geometry_pass_.Uniform("textures.specular") = i;
+                shader_geometry_pass_.Uniform("textures.has_specular") = 1;
             }
             else if (cur_mesh.textures[i].type == aiTextureType_HEIGHT)
             {
-                glUniform1i(shader_geometry_pass_.loc.textures.normalMap, i);
-                glUniform1i(shader_geometry_pass_.loc.textures.has_normalMap, 1);
+                shader_geometry_pass_.Uniform("textures.normalMap") = i;
+                shader_geometry_pass_.Uniform("textures.has_normalMap") = 1;
             }
             else if (cur_mesh.textures[i].type == aiTextureType_OPACITY)
             {
-                glUniform1i(shader_geometry_pass_.loc.textures.alpha, i);
-                glUniform1i(shader_geometry_pass_.loc.textures.has_alpha, 1);
+                shader_geometry_pass_.Uniform("textures.alpha") = i;
+                shader_geometry_pass_.Uniform("textures.has_alpha") = 1;
             }
 
             glBindTexture(GL_TEXTURE_2D, cur_mesh.textures_id[i]);
@@ -271,10 +279,10 @@ inline void tScenes::GeometryPass()
         material.specular = cur_mesh.material.spec;
         material.shininess = cur_mesh.material.shininess;
 
-        glUniform3fv(shader_geometry_pass_.loc.material.ambient, 1, glm::value_ptr(material.ambient));
-        glUniform3fv(shader_geometry_pass_.loc.material.diffuse, 1, glm::value_ptr(material.diffuse));
-        glUniform3fv(shader_geometry_pass_.loc.material.specular, 1, glm::value_ptr(material.specular));
-        glUniform1f(shader_geometry_pass_.loc.material.shininess, material.shininess);
+        shader_geometry_pass_.Uniform("material.ambient") = material.ambient;
+        shader_geometry_pass_.Uniform("material.diffuse") = material.diffuse;
+        shader_geometry_pass_.Uniform("material.specular") = material.specular;
+        shader_geometry_pass_.Uniform("material.shininess") = material.shininess;
 
         cur_mesh.drawMesh();
     }
@@ -283,51 +291,51 @@ inline void tScenes::GeometryPass()
 inline void tScenes::LightPass()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shader_light_pass_.program);
+    glUseProgram(shader_light_pass_.GetProgram());
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_position_);
-    glUniform1i(shader_light_pass_.loc.gPosition, 0);
+    shader_light_pass_.Uniform("gPosition") = 0;
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, g_normal_);
-    glUniform1i(shader_light_pass_.loc.gNormal, 1);
+    shader_light_pass_.Uniform("gNormal") = 1;
 
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, g_ambient_);
-    glUniform1i(shader_light_pass_.loc.gAmbient, 2);
+    shader_light_pass_.Uniform("gAmbient") = 2;
 
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, g_diffuse_);
-    glUniform1i(shader_light_pass_.loc.gDiffuse, 3);
+    shader_light_pass_.Uniform("gDiffuse") = 3;
 
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, g_specular_);
-    glUniform1i(shader_light_pass_.loc.gSpecular, 4);
+    shader_light_pass_.Uniform("gSpecular") = 4;
 
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, g_ssao_blur_);
-    glUniform1i(shader_light_pass_.loc.gSSAO, 5);
+    shader_light_pass_.Uniform("gSSAO") = 5;
 
     auto & state = CurState<bool>::Instance().state;
     if (state["occlusion"])
     {
-        glUniform1i(shader_light_pass_.loc.has_SSAO, 1);
+        shader_light_pass_.Uniform("has_SSAO") = 1;
         if (state["occlusion_only"])
-            glUniform1i(shader_light_pass_.loc.occlusion_only, 1);
+            shader_light_pass_.Uniform("occlusion_only") = 1;
         else
-            glUniform1i(shader_light_pass_.loc.occlusion_only, 0);
+            shader_light_pass_.Uniform("occlusion_only") = 0;
     }
     else
     {
-        glUniform1i(shader_light_pass_.loc.has_SSAO, 0);
-        glUniform1i(shader_light_pass_.loc.occlusion_only, 0);
+        shader_light_pass_.Uniform("has_SSAO") = 0;
+        shader_light_pass_.Uniform("occlusion_only") = 0;
     }
 
     glm::vec3 cameraPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(camera_.GetCameraPos(), 1.0));
     glm::vec3 lightPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(light_pos_, 1.0));
-    glUniform3fv(shader_light_pass_.loc.viewPos, 1, glm::value_ptr(cameraPosView));
-    glUniform3fv(shader_light_pass_.loc.lightPos, 1, glm::value_ptr(lightPosView));
+    shader_light_pass_.Uniform("viewPos") = cameraPosView;
+    shader_light_pass_.Uniform("lightPos") = lightPosView;
 
     glm::mat4 biasMatrix(
         0.5, 0.0, 0.0, 0.0,
@@ -337,19 +345,19 @@ inline void tScenes::LightPass()
 
     glm::mat4 depthBiasMVP = biasMatrix * light_matrix_ * glm::inverse(camera_.GetViewMatrix());
 
-    glUniformMatrix4fv(shader_light_pass_.loc.depthBiasMVP, 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
+    shader_light_pass_.Uniform("depthBiasMVP") = depthBiasMVP;
 
     glActiveTexture(GL_TEXTURE6);
     glBindTexture(GL_TEXTURE_2D, shadow_texture_);
-    glUniform1i(shader_light_pass_.loc.depthTexture, 6);
+    shader_light_pass_.Uniform("depthTexture") = 6;
 
     if (state["shadow"])
     {
-        glUniform1i(shader_light_pass_.loc.has_depthTexture, 1);
+        shader_light_pass_.Uniform("has_depthTexture") = 1;
     }
     else
     {
-        glUniform1i(shader_light_pass_.loc.has_depthTexture, 0);
+        shader_light_pass_.Uniform("has_depthTexture") = 0;
     }
 
     mesh_square_.drawMesh();
@@ -357,13 +365,13 @@ inline void tScenes::LightPass()
 
 void tScenes::RenderLightSource()
 {
-    glUseProgram(shader_simple_color_.program);
+    glUseProgram(shader_simple_color_.GetProgram());
     glm::mat4 projection, view, model;
     camera_.GetMatrix(projection, view, model);
 
     model = glm::translate(glm::mat4(1.0f), light_pos_) * glm::scale(glm::mat4(1.0f), glm::vec3(0.001f));
-    glUniformMatrix4fv(shader_simple_color_.loc.u_MVP, 1, GL_FALSE, glm::value_ptr(projection * view * model));
-    glUniform3f(shader_simple_color_.loc.objectColor, 1.0f, 1.0f, 1.0);
+    shader_simple_color_.Uniform("u_MVP") = projection * view * model;
+    shader_simple_color_.Uniform("objectColor") = glm::vec3(1.0f, 1.0f, 1.0);
 
     for (GLMesh & cur_mesh : model_sphere_.meshes)
     {
@@ -375,10 +383,10 @@ inline void tScenes::ShadowPass()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(shader_depth_.program);
+    glUseProgram(shader_depth_.GetProgram());
     glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(model_scale_));
     glm::mat4 Matrix = light_matrix_ * model;
-    glUniformMatrix4fv(shader_depth_.loc.u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+    shader_depth_.Uniform("u_m4MVP") = Matrix;
 
     for (GLMesh & cur_mesh : model_.meshes)
     {
@@ -389,24 +397,24 @@ inline void tScenes::ShadowPass()
 void tScenes::SSAOPass()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shader_ssao_pass_.program);
+    glUseProgram(shader_ssao_pass_.GetProgram());
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_position_);
-    glUniform1i(shader_ssao_pass_.loc.gPosition, 0);
+    shader_ssao_pass_.Uniform("gPosition") = 0;
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, g_normal_);
-    glUniform1i(shader_ssao_pass_.loc.gNormal, 1);
+    shader_ssao_pass_.Uniform("gNormal") = 1;
 
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, noise_texture_);
-    glUniform1i(shader_ssao_pass_.loc.noiseTexture, 2);
+    shader_ssao_pass_.Uniform("noiseTexture") = 2;
 
-    glUniform3fv(shader_ssao_pass_.loc.samples, ssao_kernel_.size(), glm::value_ptr(ssao_kernel_.front()));
+    shader_ssao_pass_.Uniform("samples") = ssao_kernel_;
 
     glm::mat4 projection = camera_.GetProjectionMatrix();
-    glUniformMatrix4fv(shader_ssao_pass_.loc.projection, 1, GL_FALSE, glm::value_ptr(projection));
+    shader_ssao_pass_.Uniform("projection") = projection;
 
     mesh_square_.drawMesh();
 }
@@ -414,11 +422,11 @@ void tScenes::SSAOPass()
 void tScenes::SSAOBlurPass()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shader_ssao_blur_pass_.program);
+    glUseProgram(shader_ssao_blur_pass_.GetProgram());
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_ssao_);
-    glUniform1i(shader_ssao_blur_pass_.loc.ssaoInput, 0);
+    shader_ssao_blur_pass_.Uniform("ssaoInput") = 0;
 
     mesh_square_.drawMesh();
 }
@@ -427,15 +435,15 @@ inline void tScenes::RenderShadowTexture()
 {
     glDisable(GL_DEPTH_TEST);
 
-    glUseProgram(shader_shadow_view_.program);
+    glUseProgram(shader_shadow_view_.GetProgram());
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, shadow_texture_);
-    glUniform1i(shader_shadow_view_.loc.sampler, 0);
+    shader_shadow_view_.Uniform("sampler") = 0;
 
     glm::mat4 Matrix(1.0f);
 
-    glUniformMatrix4fv(shader_shadow_view_.loc.u_m4MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+    shader_shadow_view_.Uniform("u_m4MVP") = Matrix;
 
     mesh_square_shadow_view_.drawMesh();
 
@@ -444,10 +452,10 @@ inline void tScenes::RenderShadowTexture()
 
 inline void tScenes::RenderCubemap()
 {
-    glUseProgram(shader_simple_cube_map_.program);
+    glUseProgram(shader_simple_cube_map_.GetProgram());
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture_);
-    glUniform1i(shader_shadow_view_.loc.sampler, 0);
+    shader_shadow_view_.Uniform("sampler") = 0;
 
     GLint old_cull_face_mode;
     glGetIntegerv(GL_CULL_FACE_MODE, &old_cull_face_mode);
@@ -463,7 +471,7 @@ inline void tScenes::RenderCubemap()
     model = glm::translate(glm::mat4(1.0f), camera_.GetCameraPos()) * glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)) * model;
 
     glm::mat4 Matrix = projection * view * model;
-    glUniformMatrix4fv(shader_simple_cube_map_.loc.u_MVP, 1, GL_FALSE, glm::value_ptr(Matrix));
+    shader_simple_cube_map_.Uniform("u_MVP") = Matrix;
 
     for (GLMesh & cur_mesh : model_sphere_.meshes)
     {

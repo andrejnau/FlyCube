@@ -1,309 +1,92 @@
 ﻿#pragma once
 
 #include <platform.h>
-#include <string>
 #include <utilities.h>
 
-#define GET_UNIFORM_LOCATION(name) \
-    loc.name = glGetUniformLocation(program, #name);
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
-struct ShaderSSAOBlurPass
+#include <string>
+#include <vector>
+#include <map>
+
+class UniformProxy
 {
-    ShaderSSAOBlurPass()
-    {
-        std::string vertex = GetShaderSource("shaders/Demo/SSAOPass.vs");
-        std::string fragment = GetShaderSource("shaders/Demo/SSAOBlurPass.fs");
-
-        ShaderVector shaders = {
-            { GL_VERTEX_SHADER, vertex },
-            { GL_FRAGMENT_SHADER, fragment }
-        };
-
-        program = CreateProgram(shaders);
-
-        GET_UNIFORM_LOCATION(ssaoInput);
+public:
+    UniformProxy(GLint loc)
+        : m_loc(loc)
+    {       
     }
 
-    GLuint program;
-
-    struct
+    void operator=(const glm::mat4& x)
     {
-        GLuint ssaoInput;
-    } loc;
+        glUniformMatrix4fv(m_loc, 1, GL_FALSE, glm::value_ptr(x));
+    }
+
+    void operator=(const glm::vec3& x)
+    {
+        glUniform3f(m_loc, x.x, x.y, x.z);
+    }
+
+    void operator=(const std::vector<glm::vec3>& x)
+    {
+        glUniform3fv(m_loc, (GLsizei)x.size(), glm::value_ptr(x.front()));
+    }
+
+    void operator=(const GLint& x)
+    {
+        glUniform1i(m_loc, x);
+    }
+
+    void operator=(const float& x)
+    {
+        glUniform1f(m_loc, x);
+    }
+
+    template<typename T>
+    void operator=(const T& x)
+    {
+        static_assert(false, "not implemented");
+    }
+
+private:
+    GLint m_loc;
 };
 
-struct ShaderSSAOPass
+class GLShader
 {
-    ShaderSSAOPass()
+public:
+    GLShader(const std::string& vertex, const std::string& fragment)
     {
-        std::string vertex = GetShaderSource("shaders/Demo/SSAOPass.vs");
-        std::string fragment = GetShaderSource("shaders/Demo/SSAOPass.fs");
+        std::string vertex_src = GetShaderSource(vertex);
+        std::string fragment_src = GetShaderSource(fragment);
 
         ShaderVector shaders = {
-            { GL_VERTEX_SHADER, vertex },
-            { GL_FRAGMENT_SHADER, fragment }
+            { GL_VERTEX_SHADER, vertex_src },
+            { GL_FRAGMENT_SHADER, fragment_src }
         };
 
-        program = CreateProgram(shaders);
-
-        GET_UNIFORM_LOCATION(gPosition);
-        GET_UNIFORM_LOCATION(gNormal);
-        GET_UNIFORM_LOCATION(samples);
-        GET_UNIFORM_LOCATION(projection);
-        GET_UNIFORM_LOCATION(noiseTexture);
+        m_program = CreateProgram(shaders);
     }
 
-    GLuint program;
-
-    struct
+    GLuint GetProgram() const
     {
-        GLuint gPosition;
-        GLuint gNormal;
-        GLuint samples;
-        GLuint projection;
-        GLuint noiseTexture;
-    } loc;
-};
-
-struct ShaderLightPass
-{
-    ShaderLightPass()
-    {
-        std::string vertex = GetShaderSource("shaders/Demo/LightPass.vs");
-        std::string fragment = GetShaderSource("shaders/Demo/LightPass.fs");
-
-        ShaderVector shaders = {
-            { GL_VERTEX_SHADER, vertex },
-            { GL_FRAGMENT_SHADER, fragment }
-        };
-
-        program = CreateProgram(shaders);
-
-        GET_UNIFORM_LOCATION(gPosition);
-        GET_UNIFORM_LOCATION(gNormal);
-        GET_UNIFORM_LOCATION(gAmbient);
-        GET_UNIFORM_LOCATION(gDiffuse);
-        GET_UNIFORM_LOCATION(gSpecular);
-        GET_UNIFORM_LOCATION(gSSAO);
-        GET_UNIFORM_LOCATION(has_SSAO);
-
-        GET_UNIFORM_LOCATION(viewPos);
-        GET_UNIFORM_LOCATION(lightPos);
-
-        GET_UNIFORM_LOCATION(depthBiasMVP);
-        GET_UNIFORM_LOCATION(depthTexture);
-        GET_UNIFORM_LOCATION(has_depthTexture);
-        GET_UNIFORM_LOCATION(occlusion_only);
+        return m_program;
     }
 
-    GLuint program;
-
-    struct
+    UniformProxy Uniform(const std::string& name)
     {
-        GLuint gPosition;
-        GLuint gNormal;
-        GLuint gAmbient;
-        GLuint gDiffuse;
-        GLuint gSpecular;
-        GLuint gSSAO;
-
-        GLint viewPos;
-        GLint lightPos;
-        GLint depthBiasMVP;
-
-        GLint depthTexture;
-        GLint has_depthTexture;
-        GLint has_SSAO;
-        GLint occlusion_only;
-    } loc;
-};
-
-struct ShaderGeometryPass
-{
-    ShaderGeometryPass()
-    {
-        std::string vertex = GetShaderSource("shaders/Demo/GeometryPass.vs");
-        std::string fragment = GetShaderSource("shaders/Demo/GeometryPass.fs");
-
-        ShaderVector shaders = {
-            { GL_VERTEX_SHADER, vertex },
-            { GL_FRAGMENT_SHADER, fragment }
-        };
-
-        program = CreateProgram(shaders);
-
-        GET_UNIFORM_LOCATION(material.ambient);
-        GET_UNIFORM_LOCATION(material.diffuse);
-        GET_UNIFORM_LOCATION(material.specular);
-        GET_UNIFORM_LOCATION(material.shininess);
-
-        GET_UNIFORM_LOCATION(light.ambient);
-        GET_UNIFORM_LOCATION(light.diffuse);
-        GET_UNIFORM_LOCATION(light.specular);
-
-        GET_UNIFORM_LOCATION(model);
-        GET_UNIFORM_LOCATION(view);
-        GET_UNIFORM_LOCATION(projection);
-
-        GET_UNIFORM_LOCATION(textures.normalMap);
-        GET_UNIFORM_LOCATION(textures.has_normalMap);
-
-        GET_UNIFORM_LOCATION(textures.ambient);
-        GET_UNIFORM_LOCATION(textures.has_ambient);
-
-        GET_UNIFORM_LOCATION(textures.diffuse);
-        GET_UNIFORM_LOCATION(textures.has_diffuse);
-
-        GET_UNIFORM_LOCATION(textures.specular);
-        GET_UNIFORM_LOCATION(textures.has_specular);
-
-        GET_UNIFORM_LOCATION(textures.alpha);
-        GET_UNIFORM_LOCATION(textures.has_alpha);
+        return UniformProxy(GetLocation(name));
     }
 
-    GLuint program;
-
-    struct
+private:
+    GLint GetLocation(const std::string& name)
     {
-        struct
-        {
-            GLuint ambient;
-            GLuint diffuse;
-            GLuint specular;
-            GLuint shininess;
-        } material;
-
-        struct
-        {
-            GLuint ambient;
-            GLuint diffuse;
-            GLuint specular;
-        } light;
-
-        struct Texture
-        {
-            GLuint normalMap;
-            GLuint has_normalMap;
-
-            GLuint ambient;
-            GLuint has_ambient;
-
-            GLuint diffuse;
-            GLuint has_diffuse;
-
-            GLuint specular;
-            GLuint has_specular;
-
-            GLuint alpha;
-            GLuint has_alpha;
-        } textures;
-
-        GLint model;
-        GLint view;
-        GLint projection;
-    } loc;
-};
-
-struct ShaderSimpleColor
-{
-    ShaderSimpleColor()
-    {
-        std::string vertex = GetShaderSource("shaders/Demo/ShaderSimpleColor.vs");
-        std::string fragment = GetShaderSource("shaders/Demo/ShaderSimpleColor.fs");
-
-        ShaderVector shaders = {
-            { GL_VERTEX_SHADER, vertex },
-            { GL_FRAGMENT_SHADER, fragment }
-        };
-
-        program = CreateProgram(shaders);
-
-        GET_UNIFORM_LOCATION(objectColor);
-        GET_UNIFORM_LOCATION(u_MVP);
+        if (m_loc.count(name))
+            return m_loc[name];
+        return m_loc[name] = glGetUniformLocation(m_program, name.c_str());
     }
 
-    GLuint program;
-
-    struct
-    {
-        GLint objectColor;
-        GLint u_MVP;
-    } loc;
-};
-
-struct ShaderShadowView
-{
-    ShaderShadowView()
-    {
-        std::string vertex = GetShaderSource("shaders/Demo/ShaderShadowView.vs");
-        std::string fragment = GetShaderSource("shaders/Demo/ShaderShadowView.fs");
-
-        ShaderVector shaders = {
-            { GL_VERTEX_SHADER, vertex },
-            { GL_FRAGMENT_SHADER, fragment }
-        };
-
-        program = CreateProgram(shaders);
-
-        GET_UNIFORM_LOCATION(u_m4MVP);
-        GET_UNIFORM_LOCATION(sampler);
-    }
-
-    GLuint program;
-
-    struct
-    {
-        GLint u_m4MVP;
-        GLint sampler;
-    } loc;
-};
-
-struct ShaderDepth
-{
-    ShaderDepth()
-    {
-        std::string vertex = GetShaderSource("shaders/Demo/ShaderDepth.vs");
-        std::string fragment = GetShaderSource("shaders/Demo/ShaderDepth.fs");
-
-        ShaderVector shaders = {
-            { GL_VERTEX_SHADER, vertex },
-            { GL_FRAGMENT_SHADER, fragment }
-        };
-
-        program = CreateProgram(shaders);
-
-        GET_UNIFORM_LOCATION(u_m4MVP);
-    }
-
-    GLuint program;
-
-    struct
-    {
-        GLint u_m4MVP;
-    } loc;
-};
-
-struct ShaderSimpleCubeMap
-{
-    ShaderSimpleCubeMap()
-    {
-        std::string vertex = GetShaderSource("shaders/Demo/ShaderSimpleCubeMap.vs");
-        std::string fragment = GetShaderSource("shaders/Demo/ShaderSimpleCubeMap.fs");
-
-        ShaderVector shaders = {
-            { GL_VERTEX_SHADER, vertex },
-            { GL_FRAGMENT_SHADER, fragment }
-        };
-
-        program = CreateProgram(shaders);
-
-        GET_UNIFORM_LOCATION(u_MVP);
-    }
-
-    GLuint program;
-
-    struct
-    {
-        GLint u_MVP;
-    } loc;
+    std::map<std::string, GLint> m_loc;
+    GLuint m_program;
 };

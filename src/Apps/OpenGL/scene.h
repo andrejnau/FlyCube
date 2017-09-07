@@ -119,22 +119,22 @@ private:
     glm::mat4 light_projection_;
     glm::mat4 light_view_;
 
+    std::vector<glm::vec3> ssao_kernel_;
+
+    GLShader shader_geometry_pass_;
+    GLShader shader_light_pass_;
+    GLShader shader_ssao_pass_;
+    GLShader shader_ssao_blur_pass_;
+    GLShader shader_simple_color_;
+    GLShader shader_simple_cube_map_;
+    GLShader shader_shadow_view_;
+    GLShader shader_depth_;
+    Camera camera_;
+
     Model<GLMesh> model_;
     Model<GLMesh> model_sphere_;
     GLMesh mesh_square_;
     GLMesh mesh_square_shadow_view_;
-
-    std::vector<glm::vec3> ssao_kernel_;
-
-    ShaderGeometryPass shader_geometry_pass_;
-    ShaderLightPass shader_light_pass_;
-    ShaderSSAOPass shader_ssao_pass_;
-    ShaderSSAOBlurPass shader_ssao_blur_pass_;
-    ShaderSimpleColor shader_simple_color_;
-    ShaderSimpleCubeMap shader_simple_cube_map_;
-    ShaderShadowView shader_shadow_view_;
-    ShaderDepth shader_depth_;
-    Camera camera_;
 
     std::map<int, bool> keys_;
     float last_frame_ = 0.0;
