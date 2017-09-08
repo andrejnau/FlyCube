@@ -54,10 +54,6 @@ inline void tScenes::OnInit(int width, int height)
 
 void tScenes::OnUpdate()
 {
-    double currentFrame = glfwGetTime();
-    delta_time_ = (float)(currentFrame - last_frame_);
-    last_frame_ = currentFrame;
-
     UpdateCameraMovement();    
 
     auto & state = CurState<bool>::Instance().state;
@@ -484,6 +480,10 @@ inline void tScenes::RenderCubemap()
 
 void tScenes::UpdateCameraMovement()
 {
+    double currentFrame = glfwGetTime();
+    delta_time_ = (float)(currentFrame - last_frame_);
+    last_frame_ = currentFrame;
+
     if (keys_[GLFW_KEY_W])
         camera_.ProcessKeyboard(CameraMovement::kForward, delta_time_);
     if (keys_[GLFW_KEY_S])

@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -18,6 +19,7 @@
 #include "Shaders.h"
 
 #include <ISample/ISample.h>
+#include <simple_camera/camera.h>
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
@@ -41,11 +43,15 @@ public:
     virtual void OnDestroy() override;
     virtual void OnSizeChanged(int width, int height) override;
 
+    virtual void OnKey(int key, int action) override;
+    virtual void OnMouse(bool first_event, double xpos, double ypos) override;
+
 private:
     void CreateDeviceAndSwapChain();
     void CreateRT();
     void CreateViewPort();
     void CreateSampler();
+    void UpdateCameraMovement();
 
     std::unique_ptr<Model<DX11Mesh>> CreateGeometry(const std::string & path);
 
@@ -84,6 +90,13 @@ private:
     ComPtr<ID3D11ShaderResourceView> m_diffuse_srv;
     ComPtr<ID3D11ShaderResourceView> m_specular_srv;
     ComPtr<ID3D11ShaderResourceView> m_gloss_srv;
+
+    Camera camera_;
+    std::map<int, bool> keys_;
+    float last_frame_ = 0.0;
+    float delta_time_ = 0.0f;
+    double last_x_ = 0.0f;
+    double last_y_ = 0.0f;
 
     int m_width;
     int m_height;

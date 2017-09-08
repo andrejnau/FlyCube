@@ -58,4 +58,5 @@ target_link_libraries(${target}
     ISample
     Geometry
     Utilities
+    simple_camera
 )

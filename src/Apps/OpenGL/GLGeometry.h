@@ -30,7 +30,6 @@ inline GLuint CreateCompressedTexture(const std::string& Filename, aiTextureType
             Format.Internal, static_cast<GLsizei>(Texture.size(Level)), Texture.data(0, 0, Level));
     }
 
-
     if (type == aiTextureType_OPACITY)
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)GL_NEAREST);

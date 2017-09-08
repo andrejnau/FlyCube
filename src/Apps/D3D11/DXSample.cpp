@@ -3,6 +3,7 @@
 #include <Util.h>
 #include <Utility.h>
 #include <Utilities/FileUtility.h>
+#include <GLFW/glfw3.h>
 
 DXSample::DXSample()
     : m_width(0)
@@ -28,13 +29,16 @@ void DXSample::OnInit(int width, int height)
     m_model_of_file = CreateGeometry("model/export3dcoat/export3dcoat.obj");
     m_model_square = CreateGeometry("model/square.obj");
     InitGBuffer();
+    camera_.SetViewport(m_width, m_height);
 
-    m_device_context->PSSetSamplers(0, 1, &m_texture_sampler);
+    m_device_context->PSSetSamplers(0, 1, m_texture_sampler.GetAddressOf());
     m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 void DXSample::OnUpdate()
 {
+    UpdateCameraMovement();
+
     static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
     static std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
     static float angle = 0.0;
@@ -46,6 +50,7 @@ void DXSample::OnUpdate()
     if (m_use_rotare)
         angle += elapsed / 2e6f;
 
+#if 1
     float z_width = (m_model_of_file->bound_box.z_max - m_model_of_file->bound_box.z_min);
     float y_width = (m_model_of_file->bound_box.y_max - m_model_of_file->bound_box.y_min);
     float x_width = (m_model_of_file->bound_box.y_max - m_model_of_file->bound_box.y_min);
@@ -74,6 +79,29 @@ void DXSample::OnUpdate()
 
     m_device_context->UpdateSubresource(m_shader_geometry_pass->uniform_buffer.Get(), 0, nullptr, &m_shader_geometry_pass->uniform, 0, 0);
     m_device_context->UpdateSubresource(m_shader_light_pass->uniform_buffer.Get(), 0, nullptr, &m_shader_light_pass->uniform, 0, 0);
+#else
+    glm::mat4 projection, view, model;
+    camera_.GetMatrix(projection, view, model);
+
+    float model_scale_ = 0.01f;
+    model = glm::scale(glm::vec3(model_scale_)) * model;
+
+    m_shader_geometry_pass->uniform.model = glm::transpose(model);
+    m_shader_geometry_pass->uniform.view = glm::transpose(view);
+    m_shader_geometry_pass->uniform.projection = glm::transpose(projection);
+
+    float light_r = 2.5;
+    glm::vec3 light_pos_ = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
+
+    glm::vec3 cameraPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(camera_.GetCameraPos(), 1.0));
+    glm::vec3 lightPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(light_pos_, 1.0));
+
+    m_shader_light_pass->uniform.lightPos = glm::vec4(lightPosView, 0.0);
+    m_shader_light_pass->uniform.viewPos = glm::vec4(cameraPosView, 0.0);
+
+    m_device_context->UpdateSubresource(m_shader_geometry_pass->uniform_buffer.Get(), 0, nullptr, &m_shader_geometry_pass->uniform, 0, 0);
+    m_device_context->UpdateSubresource(m_shader_light_pass->uniform_buffer.Get(), 0, nullptr, &m_shader_light_pass->uniform, 0, 0);
+#endif
 }
 
 void DXSample::OnRender()
@@ -209,6 +237,7 @@ void DXSample::OnSizeChanged(int width, int height)
         CreateRT();
         CreateViewPort();
         InitGBuffer();
+        camera_.SetViewport(m_width, m_height);
     }
 }
 
@@ -284,7 +313,7 @@ void DXSample::CreateSampler()
 {
     D3D11_SAMPLER_DESC sampDesc;
     ZeroMemory(&sampDesc, sizeof(sampDesc));
-    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
     sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
     sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
     sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -342,4 +371,49 @@ void DXSample::InitGBuffer()
     CreateRTV(m_diffuse_rtv, m_diffuse_srv);
     CreateRTV(m_specular_rtv, m_specular_srv);
     CreateRTV(m_gloss_rtv, m_gloss_srv);
+}
+
+void DXSample::UpdateCameraMovement()
+{
+    double currentFrame = glfwGetTime();
+    delta_time_ = (float)(currentFrame - last_frame_);
+    last_frame_ = currentFrame;
+
+    if (keys_[GLFW_KEY_W])
+        camera_.ProcessKeyboard(CameraMovement::kForward, delta_time_);
+    if (keys_[GLFW_KEY_S])
+        camera_.ProcessKeyboard(CameraMovement::kBackward, delta_time_);
+    if (keys_[GLFW_KEY_A])
+        camera_.ProcessKeyboard(CameraMovement::kLeft, delta_time_);
+    if (keys_[GLFW_KEY_D])
+        camera_.ProcessKeyboard(CameraMovement::kRight, delta_time_);
+    if (keys_[GLFW_KEY_Q])
+        camera_.ProcessKeyboard(CameraMovement::kDown, delta_time_);
+    if (keys_[GLFW_KEY_E])
+        camera_.ProcessKeyboard(CameraMovement::kUp, delta_time_);
+}
+
+void DXSample::OnKey(int key, int action)
+{
+    if (action == GLFW_PRESS)
+        keys_[key] = true;
+    else if (action == GLFW_RELEASE)
+        keys_[key] = false;
+}
+
+void DXSample::OnMouse(bool first_event, double xpos, double ypos)
+{
+    if (first_event)
+    {
+        last_x_ = xpos;
+        last_y_ = ypos;
+    }
+
+    double xoffset = xpos - last_x_;
+    double yoffset = last_y_ - ypos;  // Reversed since y-coordinates go from bottom to left
+
+    last_x_ = xpos;
+    last_y_ = ypos;
+
+    camera_.ProcessMouseMovement((float)xoffset, (float)yoffset);
 }

@@ -44,7 +44,7 @@ struct DX11Mesh : IMesh
         return texInfo;
     }
 
-    void InitTextures(ComPtr<ID3D11Device>& device)
+    void InitTextures(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& device_context)
     {
         for (size_t i = 0; i < textures.size(); ++i)
         {
@@ -55,14 +55,14 @@ struct DX11Mesh : IMesh
             D3D11_TEXTURE2D_DESC desc = {};
             desc.Width = static_cast<UINT>(metadata.width);
             desc.Height = static_cast<UINT>(metadata.height);
-            desc.MipLevels = static_cast<UINT>(1);
             desc.ArraySize = static_cast<UINT>(1);
             desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
             desc.SampleDesc.Count = 1;
             desc.SampleDesc.Quality = 0;
             desc.Usage = D3D11_USAGE_DEFAULT;
-            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
             desc.CPUAccessFlags = 0;
+            desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
             D3D11_SUBRESOURCE_DATA textureBufferData;
             ZeroMemory(&textureBufferData, sizeof(textureBufferData));
@@ -70,14 +70,17 @@ struct DX11Mesh : IMesh
             textureBufferData.SysMemPitch = metadata.bytes_per_row; // size of all our triangle vertex data
             textureBufferData.SysMemSlicePitch = metadata.bytes_per_row * metadata.height; // also the size of our triangle vertex data
 
-            ASSERT_SUCCEEDED(device->CreateTexture2D(&desc, &textureBufferData, &resource));
+            ASSERT_SUCCEEDED(device->CreateTexture2D(&desc, nullptr, &resource));
+            device_context->UpdateSubresource(resource.Get(), 0, nullptr, textureBufferData.pSysMem, textureBufferData.SysMemPitch, textureBufferData.SysMemSlicePitch);
 
             D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
             srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
             srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = 1;
+            srvDesc.Texture2D.MostDetailedMip = 0;
+            srvDesc.Texture2D.MipLevels = -1;
 
             ASSERT_SUCCEEDED(device->CreateShaderResourceView(resource.Get(), &srvDesc, &texResources[i]));
+            device_context->GenerateMips(texResources[i].Get());
         }
     }
 
@@ -111,6 +114,6 @@ struct DX11Mesh : IMesh
         iinitData.pSysMem = indices.data();
         hr = d3d11Device->CreateBuffer(&indexBufferDesc, &iinitData, &indexBuffer);
 
-        InitTextures(d3d11Device);
+        InitTextures(d3d11Device, d3d11DevCon);
     }
 };
