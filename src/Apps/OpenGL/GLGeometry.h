@@ -1,10 +1,7 @@
 #pragma once
 
-#include <d3d11.h>
-#include <wrl.h>
-#include <glm/glm.hpp>
 #include <Geometry/Geometry.h>
-
+#include <glm/glm.hpp>
 #include <gli/gli.hpp>
 #include <utilities.h>
 
