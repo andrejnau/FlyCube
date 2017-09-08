@@ -1,6 +1,5 @@
 #include "DXSample.h"
 #include <chrono>
-#include <SOIL.h>
 #include <Util.h>
 #include <Utility.h>
 #include <Utilities/FileUtility.h>
@@ -303,44 +302,7 @@ std::unique_ptr<Model<DX11Mesh>> DXSample::CreateGeometry(const std::string& pat
     for (DX11Mesh & cur_mesh : model->meshes)
     {
         cur_mesh.SetupMesh(m_device, m_device_context);
-    }
-
-    for (DX11Mesh & cur_mesh : model->meshes)
-    {
-        for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
-        {
-            auto metadata = LoadImageDataFromFile(cur_mesh.textures[i].path);
-
-            ComPtr<ID3D11Texture2D> resource;
-
-            D3D11_TEXTURE2D_DESC desc = {};
-            desc.Width = static_cast<UINT>(metadata.width);
-            desc.Height = static_cast<UINT>(metadata.height);
-            desc.MipLevels = static_cast<UINT>(1);
-            desc.ArraySize = static_cast<UINT>(1);
-            desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            desc.SampleDesc.Count = 1;
-            desc.SampleDesc.Quality = 0;
-            desc.Usage = D3D11_USAGE_DEFAULT;
-            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-            desc.CPUAccessFlags = 0;
-
-            D3D11_SUBRESOURCE_DATA textureBufferData;
-            ZeroMemory(&textureBufferData, sizeof(textureBufferData));
-            textureBufferData.pSysMem = metadata.image.data();
-            textureBufferData.SysMemPitch = metadata.bytes_per_row; // size of all our triangle vertex data
-            textureBufferData.SysMemSlicePitch = metadata.bytes_per_row * metadata.height; // also the size of our triangle vertex data
-
-            ASSERT_SUCCEEDED(m_device->CreateTexture2D(&desc, &textureBufferData, &resource));
-
-            D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = 1;
-
-            ASSERT_SUCCEEDED(m_device->CreateShaderResourceView(resource.Get(), &srvDesc, &cur_mesh.texResources[i]));
-        }
-    }
+    } 
     return model;
 }
 
@@ -380,22 +342,4 @@ void DXSample::InitGBuffer()
     CreateRTV(m_diffuse_rtv, m_diffuse_srv);
     CreateRTV(m_specular_rtv, m_specular_srv);
     CreateRTV(m_gloss_rtv, m_gloss_srv);
-}
-
-DXSample::TexInfo DXSample::LoadImageDataFromFile(const std::string & filename)
-{
-    TexInfo texInfo = {};
-
-    unsigned char *image = SOIL_load_image(filename.c_str(), &texInfo.width, &texInfo.height, 0, SOIL_LOAD_RGBA);
-
-    DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-    texInfo.num_bits_per_pixel = BitsPerPixel(dxgiFormat); // number of bits per pixel
-    texInfo.bytes_per_row = (texInfo.width * texInfo.num_bits_per_pixel) / 8; // number of bytes in each row of the image data
-    texInfo.image_size = texInfo.bytes_per_row * texInfo.height; // total image size in bytes
-
-    texInfo.image.resize(texInfo.image_size);
-    memcpy(texInfo.image.data(), image, texInfo.image_size);
-    SOIL_free_image_data(image);
-
-    return texInfo;
 }

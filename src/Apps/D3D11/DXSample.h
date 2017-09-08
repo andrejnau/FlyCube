@@ -68,17 +68,6 @@ private:
     std::unique_ptr<ShaderGeometryPass> m_shader_geometry_pass;
     std::unique_ptr<ShaderLightPass> m_shader_light_pass;
 
-    struct TexInfo
-    {
-        std::vector<uint8_t> image;
-        int width;
-        int height;
-        int num_bits_per_pixel;
-        int image_size;
-        int bytes_per_row;
-    };
-    DXSample::TexInfo LoadImageDataFromFile(const std::string& filename);
-
     std::unique_ptr<Model<DX11Mesh>> m_model_of_file;
     std::unique_ptr<Model<DX11Mesh>> m_model_square;
 
