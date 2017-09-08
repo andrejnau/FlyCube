@@ -20,7 +20,7 @@ inline std::string wstring_to_utf8(const std::wstring &str)
 inline std::wstring GetAssetFullPath(const std::wstring& assetName)
 {
     std::wstring path = utf8_to_wstring(ASSETS_PATH) + assetName;
-    if (!std::wifstream(path).good())
+    if (!std::ifstream(wstring_to_utf8(path)).good())
         path = L"assets/" + assetName;
     return path;
 }
