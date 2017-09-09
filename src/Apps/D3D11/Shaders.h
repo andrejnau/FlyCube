@@ -79,6 +79,7 @@ struct ShaderGeometryPass
         int has_specularMap;
         int has_glossMap;
         int has_ambientMap;
+        int has_alphaMap;
     };
 
     CBuffer<TexturesEnables> textures_enables;

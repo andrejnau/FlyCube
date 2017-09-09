@@ -12,6 +12,7 @@ Texture2D normalMap : register(t1);
 Texture2D specularMap : register(t2);
 Texture2D glossMap : register(t3);
 Texture2D ambientMap : register(t4);
+Texture2D alphaMap : register(t5);
 
 SamplerState g_sampler : register(s0);
 
@@ -22,6 +23,7 @@ cbuffer TexturesEnables : register(b0)
     int has_specularMap;
     int has_glossMap;
     int has_ambientMap;
+    int has_alphaMap;
 };
 
 cbuffer Material : register(b1)

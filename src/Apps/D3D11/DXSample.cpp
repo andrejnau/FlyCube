@@ -152,6 +152,9 @@ void DXSample::GeometryPass()
                 texture_slot = 4;
                 m_shader_geometry_pass->textures_enables.data.has_ambientMap = true;
                 break;
+            case aiTextureType_OPACITY:
+                texture_slot = 5;
+                m_shader_geometry_pass->textures_enables.data.has_alphaMap = true;
             default:
                 continue;
             }
