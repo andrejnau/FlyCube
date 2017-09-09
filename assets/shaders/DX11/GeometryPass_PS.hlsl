@@ -82,6 +82,13 @@ float3 CalcBumpedNormal(VS_OUTPUT input)
     return normal;
 }
 
+bool HasTexture(Texture2D _texture)
+{
+    uint width, height;
+    diffuseMap.GetDimensions(width, height);
+    return width > 0 && height > 0;
+}
+
 PS_OUT main(VS_OUTPUT input)
 {
     PS_OUT output;
