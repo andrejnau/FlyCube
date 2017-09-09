@@ -48,8 +48,8 @@ void DXSample::OnUpdate()
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = std::chrono::system_clock::now();
 
-    if (m_use_rotare)
-        angle += elapsed / 2e6f;
+    /*if (m_use_rotare)
+        angle += elapsed / 2e6f;*/
 
     glm::mat4 projection, view, model;
     camera_.GetMatrix(projection, view, model);
@@ -60,12 +60,13 @@ void DXSample::OnUpdate()
     m_shader_geometry_pass->uniform.data.model = glm::transpose(model);
     m_shader_geometry_pass->uniform.data.view = glm::transpose(view);
     m_shader_geometry_pass->uniform.data.projection = glm::transpose(projection);
+    m_shader_geometry_pass->uniform.data.normalMatrix = glm::inverse(model);
 
     float light_r = 2.5;
     glm::vec3 light_pos_ = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
 
-    glm::vec3 cameraPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(camera_.GetCameraPos(), 1.0));
-    glm::vec3 lightPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(light_pos_, 1.0));
+    glm::vec3 cameraPosView = glm::vec3(glm::vec4(camera_.GetCameraPos(), 1.0));
+    glm::vec3 lightPosView = glm::vec3(glm::vec4(light_pos_, 1.0));
 
     m_shader_light_pass->uniform.data.lightPos = glm::vec4(lightPosView, 0.0);
     m_shader_light_pass->uniform.data.viewPos = glm::vec4(cameraPosView, 0.0);

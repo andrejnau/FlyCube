@@ -100,7 +100,7 @@ PS_OUT main(VS_OUTPUT input)
     if (has_diffuseMap)
         output.gDiffuse *= getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
     else
-        output.gAmbient *= material::diffuse;
+        output.gDiffuse *= material::diffuse;
 
     output.gSpecular = getTexture(specularMap, g_sampler, input.texCoord, true).rgb;
     output.gGloss = getTexture(glossMap, g_sampler, input.texCoord, true).rgb;

@@ -45,6 +45,11 @@ void ModelLoader::ProcessNode(aiNode* node, const aiScene* scene)
     }
 }
 
+inline glm::vec4 aiColor4DToVec4(const aiColor4D& x)
+{
+    return glm::vec4(x.r, x.g, x.b, x.a);
+}
+
 void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 {
     IMesh& cur_mesh = m_model.GetNextMesh();
@@ -139,11 +144,25 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
             cur_mesh.textures.push_back(texture);
         }
 
-        mat->Get(AI_MATKEY_SHININESS, cur_mesh.material.shininess);
-        mat->Get(AI_MATKEY_COLOR_AMBIENT, cur_mesh.material.amb);
-        mat->Get(AI_MATKEY_COLOR_DIFFUSE, cur_mesh.material.dif);
-        mat->Get(AI_MATKEY_COLOR_SPECULAR, cur_mesh.material.spec);
-        mat->Get(AI_MATKEY_NAME, cur_mesh.material.name);
+        aiColor4D amb;
+        if (mat->Get(AI_MATKEY_COLOR_AMBIENT, amb) == AI_SUCCESS)
+            cur_mesh.material.amb = glm::vec3(aiColor4DToVec4(amb));
+
+        aiColor4D dif;
+        if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, dif) == AI_SUCCESS)
+            cur_mesh.material.dif = glm::vec3(aiColor4DToVec4(dif));
+
+        aiColor4D spec;
+        if (mat->Get(AI_MATKEY_COLOR_SPECULAR, spec) == AI_SUCCESS)
+            cur_mesh.material.spec = glm::vec3(aiColor4DToVec4(spec));
+
+        float shininess;
+        if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
+            cur_mesh.material.shininess = shininess;
+
+        aiString name;
+        if (mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS)
+            cur_mesh.material.name = name.C_Str();
     }
 }
 

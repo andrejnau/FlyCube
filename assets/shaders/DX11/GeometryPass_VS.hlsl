@@ -11,6 +11,7 @@ cbuffer ConstantBuffer : register(b0)
     float4x4 model;
     float4x4 view;
     float4x4 projection;
+    float4x4 normalMatrix;
 };
 
 struct VS_OUTPUT
@@ -35,8 +36,7 @@ VS_OUTPUT main(VS_INPUT input)
     output.pos = newPosition;
     output.texCoord = input.texCoord;
 
-    float3x3 normalMatrix = (float3x3)(mul(model, view));
-    output.normal = normalize(mul(input.normal, normalMatrix));
-    output.tangent = normalize(mul(input.tangent, normalMatrix));
+    output.normal = normalize(mul(input.normal, (float3x3)normalMatrix));
+    output.tangent = normalize(mul(input.tangent, (float3x3)normalMatrix));
     return output;
 }
