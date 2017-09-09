@@ -23,10 +23,36 @@
 using namespace Microsoft::WRL;
 using namespace DirectX;
 
-inline size_t UpTo(size_t n, size_t m)
+template<typename T>
+class CBuffer
 {
-    return n + (m - n % m) % m;
-}
+public:
+    void CreateBuffer(ComPtr<ID3D11Device>& device)
+    {
+        D3D11_BUFFER_DESC cbbd;
+        ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
+        cbbd.Usage = D3D11_USAGE_DEFAULT;
+        cbbd.ByteWidth = UpTo(sizeof(T), 16);
+        cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+        cbbd.CPUAccessFlags = 0;
+        cbbd.MiscFlags = 0;
+        ASSERT_SUCCEEDED(device->CreateBuffer(&cbbd, nullptr, &buffer));
+    }
+    
+    void Update(ComPtr<ID3D11DeviceContext>& device_context)
+    {
+        device_context->UpdateSubresource(buffer.Get(), 0, nullptr, &data, 0, 0);
+    }
+
+    T data;
+    ComPtr<ID3D11Buffer> buffer;
+
+private:
+    size_t UpTo(size_t n, size_t m)
+    {
+        return n + (m - n % m) % m;
+    }
+};
 
 struct ShaderGeometryPass
 {
@@ -43,8 +69,7 @@ struct ShaderGeometryPass
         glm::mat4 projection;
     };
 
-    UniformBuffer uniform;
-    ComPtr<ID3D11Buffer> uniform_buffer;
+    CBuffer<UniformBuffer> uniform;
 
     struct TexturesEnables
     {
@@ -55,8 +80,26 @@ struct ShaderGeometryPass
         int has_ambientMap;
     };
 
-    TexturesEnables textures_enables;
-    ComPtr<ID3D11Buffer> textures_enables_buffer;
+    CBuffer<TexturesEnables> textures_enables;
+
+    struct Material
+    {
+        glm::vec3 ambient;
+        glm::vec3 diffuse;
+        glm::vec3 specular;
+        float shininess;
+    };
+
+    CBuffer<Material> material;
+
+    struct Light
+    {
+        glm::vec3 ambient; uint8_t _0[4];
+        glm::vec3 diffuse; uint8_t _1[4];
+        glm::vec3 specular; uint8_t _2[4];
+    };
+
+    CBuffer<Light> light;
 
     ShaderGeometryPass(ComPtr<ID3D11Device> m_device)
     {
@@ -101,26 +144,10 @@ struct ShaderGeometryPass
         ASSERT_SUCCEEDED(m_device->CreateInputLayout(layout, numElements, vertex_shader_buffer->GetBufferPointer(),
             vertex_shader_buffer->GetBufferSize(), &input_layout));
 
-        {
-            D3D11_BUFFER_DESC cbbd;
-            ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
-            cbbd.Usage = D3D11_USAGE_DEFAULT;
-            cbbd.ByteWidth = sizeof(uniform);
-            cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-            cbbd.CPUAccessFlags = 0;
-            cbbd.MiscFlags = 0;
-            ASSERT_SUCCEEDED(m_device->CreateBuffer(&cbbd, nullptr, &uniform_buffer));
-        }
-        {
-            D3D11_BUFFER_DESC cbbd;
-            ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
-            cbbd.Usage = D3D11_USAGE_DEFAULT;
-            cbbd.ByteWidth = UpTo(sizeof(textures_enables), 16);
-            cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-            cbbd.CPUAccessFlags = 0;
-            cbbd.MiscFlags = 0;
-            ASSERT_SUCCEEDED(m_device->CreateBuffer(&cbbd, nullptr, &textures_enables_buffer));
-        }
+        uniform.CreateBuffer(m_device);
+        textures_enables.CreateBuffer(m_device);
+        material.CreateBuffer(m_device);
+        light.CreateBuffer(m_device);
     }
 };
 
@@ -138,8 +165,7 @@ struct ShaderLightPass
         glm::vec4 viewPos;
     };
 
-    UniformBuffer uniform;
-    ComPtr<ID3D11Buffer> uniform_buffer;
+    CBuffer<UniformBuffer> uniform;
 
     ShaderLightPass(ComPtr<ID3D11Device> m_device)
     {
@@ -182,13 +208,6 @@ struct ShaderLightPass
         ASSERT_SUCCEEDED(m_device->CreateInputLayout(layout, numElements, vertex_shader_buffer->GetBufferPointer(),
             vertex_shader_buffer->GetBufferSize(), &input_layout));
 
-        D3D11_BUFFER_DESC cbbd;
-        ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
-        cbbd.Usage = D3D11_USAGE_DEFAULT;
-        cbbd.ByteWidth = sizeof(uniform);
-        cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        cbbd.CPUAccessFlags = 0;
-        cbbd.MiscFlags = 0;
-        ASSERT_SUCCEEDED(m_device->CreateBuffer(&cbbd, nullptr, &uniform_buffer));
+        uniform.CreateBuffer(m_device);
     }
 };

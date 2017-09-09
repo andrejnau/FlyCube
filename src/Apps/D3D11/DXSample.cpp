@@ -51,45 +51,15 @@ void DXSample::OnUpdate()
     if (m_use_rotare)
         angle += elapsed / 2e6f;
 
-#if 0
-    float z_width = (m_model_of_file->bound_box.z_max - m_model_of_file->bound_box.z_min);
-    float y_width = (m_model_of_file->bound_box.y_max - m_model_of_file->bound_box.y_min);
-    float x_width = (m_model_of_file->bound_box.y_max - m_model_of_file->bound_box.y_min);
-    float model_width = (z_width + y_width + x_width) / 3.0f;
-    float scale = 256.0f / std::max(z_width, x_width);
-    model_width *= scale;
-
-    float offset_x = (m_model_of_file->bound_box.x_max + m_model_of_file->bound_box.x_min) / 2.0f;
-    float offset_y = (m_model_of_file->bound_box.y_max + m_model_of_file->bound_box.y_min) / 2.0f;
-    float offset_z = (m_model_of_file->bound_box.z_max + m_model_of_file->bound_box.z_min) / 2.0f;
-
-    glm::vec3 cameraPosition = glm::vec3(0.0f, model_width * 0.25f, -model_width * 2.0f);
-    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-    glm::mat4 model = glm::rotate(-angle, glm::vec3(0.0, 1.0, 0.0)) * glm::translate(glm::vec3(-offset_x, -offset_y, -offset_z)) * glm::scale(glm::vec3(scale, scale, scale));
-    glm::mat4 view = glm::lookAtRH(cameraPosition, cameraTarget, cameraUp);
-    glm::mat4 proj = glm::perspectiveFovRH(45.0f * (3.14f / 180.0f), (float)m_width, (float)m_height, 0.1f, 1024.0f);
-
-    
-    m_shader_geometry_pass->uniform.model = glm::transpose(model);
-    m_shader_geometry_pass->uniform.view = glm::transpose(view);
-    m_shader_geometry_pass->uniform.projection = glm::transpose(proj);
-    m_shader_light_pass->uniform.lightPos = glm::vec4(cameraPosition, 0.0);
-    m_shader_light_pass->uniform.viewPos = glm::vec4(cameraPosition, 0.0);
-
-    m_device_context->UpdateSubresource(m_shader_geometry_pass->uniform_buffer.Get(), 0, nullptr, &m_shader_geometry_pass->uniform, 0, 0);
-    m_device_context->UpdateSubresource(m_shader_light_pass->uniform_buffer.Get(), 0, nullptr, &m_shader_light_pass->uniform, 0, 0);
-#else
     glm::mat4 projection, view, model;
     camera_.GetMatrix(projection, view, model);
 
     float model_scale_ = 0.01f;
     model = glm::scale(glm::vec3(model_scale_)) * model;
 
-    m_shader_geometry_pass->uniform.model = glm::transpose(model);
-    m_shader_geometry_pass->uniform.view = glm::transpose(view);
-    m_shader_geometry_pass->uniform.projection = glm::transpose(projection);
+    m_shader_geometry_pass->uniform.data.model = glm::transpose(model);
+    m_shader_geometry_pass->uniform.data.view = glm::transpose(view);
+    m_shader_geometry_pass->uniform.data.projection = glm::transpose(projection);
 
     float light_r = 2.5;
     glm::vec3 light_pos_ = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
@@ -97,12 +67,11 @@ void DXSample::OnUpdate()
     glm::vec3 cameraPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(camera_.GetCameraPos(), 1.0));
     glm::vec3 lightPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(light_pos_, 1.0));
 
-    m_shader_light_pass->uniform.lightPos = glm::vec4(lightPosView, 0.0);
-    m_shader_light_pass->uniform.viewPos = glm::vec4(cameraPosView, 0.0);
+    m_shader_light_pass->uniform.data.lightPos = glm::vec4(lightPosView, 0.0);
+    m_shader_light_pass->uniform.data.viewPos = glm::vec4(cameraPosView, 0.0);
 
-    m_device_context->UpdateSubresource(m_shader_geometry_pass->uniform_buffer.Get(), 0, nullptr, &m_shader_geometry_pass->uniform, 0, 0);
-    m_device_context->UpdateSubresource(m_shader_light_pass->uniform_buffer.Get(), 0, nullptr, &m_shader_light_pass->uniform, 0, 0);
-#endif
+    m_shader_geometry_pass->uniform.Update(m_device_context);
+    m_shader_light_pass->uniform.Update(m_device_context);
 }
 
 void DXSample::OnRender()
@@ -117,8 +86,10 @@ void DXSample::GeometryPass()
     m_device_context->RSSetViewports(1, &m_viewport);
     m_device_context->VSSetShader(m_shader_geometry_pass->vertex_shader.Get(), 0, 0);
     m_device_context->PSSetShader(m_shader_geometry_pass->pixel_shader.Get(), 0, 0);
-    m_device_context->VSSetConstantBuffers(0, 1, m_shader_geometry_pass->uniform_buffer.GetAddressOf());
-    m_device_context->PSSetConstantBuffers(0, 1, m_shader_geometry_pass->textures_enables_buffer.GetAddressOf());
+    m_device_context->VSSetConstantBuffers(0, 1, m_shader_geometry_pass->uniform.buffer.GetAddressOf());
+    m_device_context->PSSetConstantBuffers(0, 1, m_shader_geometry_pass->textures_enables.buffer.GetAddressOf());
+    m_device_context->PSSetConstantBuffers(1, 1, m_shader_geometry_pass->material.buffer.GetAddressOf());
+    m_device_context->PSSetConstantBuffers(2, 1, m_shader_geometry_pass->light.buffer.GetAddressOf());
     m_device_context->IASetInputLayout(m_shader_geometry_pass->input_layout.Get());
 
     std::vector<ID3D11RenderTargetView*> rtvs = {
@@ -149,7 +120,7 @@ void DXSample::GeometryPass()
         m_device_context->IASetIndexBuffer(cur_mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         std::vector<ID3D11ShaderResourceView*> use_textures(5, nullptr);
-        m_shader_geometry_pass->textures_enables = {};
+        m_shader_geometry_pass->textures_enables.data = {};
 
         static uint32_t frameId = 0;
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
@@ -159,26 +130,26 @@ void DXSample::GeometryPass()
             {
             case aiTextureType_DIFFUSE:
                 texture_slot = 0;
-                m_shader_geometry_pass->textures_enables.has_diffuseMap = true;
+                m_shader_geometry_pass->textures_enables.data.has_diffuseMap = true;
                 break;
             case aiTextureType_HEIGHT:
             {
                 texture_slot = 1;
                 auto& state = CurState<bool>::Instance().state;
                 if (!state["disable_norm"])
-                    m_shader_geometry_pass->textures_enables.has_normalMap = true;
+                    m_shader_geometry_pass->textures_enables.data.has_normalMap = true;
             } break;
             case aiTextureType_SPECULAR:
                 texture_slot = 2;
-                m_shader_geometry_pass->textures_enables.has_specularMap = true;
+                m_shader_geometry_pass->textures_enables.data.has_specularMap = true;
                 break;
             case aiTextureType_SHININESS:
                 texture_slot = 3;
-                m_shader_geometry_pass->textures_enables.has_glossMap = true;
+                m_shader_geometry_pass->textures_enables.data.has_glossMap = true;
                 break;
             case aiTextureType_AMBIENT:
                 texture_slot = 4;
-                m_shader_geometry_pass->textures_enables.has_ambientMap = true;
+                m_shader_geometry_pass->textures_enables.data.has_ambientMap = true;
                 break;
             default:
                 continue;
@@ -186,7 +157,22 @@ void DXSample::GeometryPass()
 
             use_textures[texture_slot] = cur_mesh.texResources[i].Get();
         }
-        m_device_context->UpdateSubresource(m_shader_geometry_pass->textures_enables_buffer.Get(), 0, nullptr, &m_shader_geometry_pass->textures_enables, 0, 0);
+
+        auto& material = m_shader_geometry_pass->material.data;
+        material.ambient = cur_mesh.material.amb;
+        material.diffuse = cur_mesh.material.dif;
+        material.specular = cur_mesh.material.spec;
+        material.shininess = cur_mesh.material.shininess;
+        m_shader_geometry_pass->material.Update(m_device_context);
+
+        auto& light = m_shader_geometry_pass->light.data;
+        light.ambient = glm::vec3(0.2f);
+        light.diffuse = glm::vec3(1.0f);
+        light.specular = glm::vec3(0.5f);
+        m_shader_geometry_pass->light.Update(m_device_context);
+
+        m_shader_geometry_pass->textures_enables.Update(m_device_context);
+
         m_device_context->PSSetShaderResources(0, use_textures.size(), use_textures.data());
         m_device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
@@ -196,7 +182,7 @@ void DXSample::LightPass()
 {
     m_device_context->VSSetShader(m_shader_light_pass->vertex_shader.Get(), 0, 0);
     m_device_context->PSSetShader(m_shader_light_pass->pixel_shader.Get(), 0, 0);
-    m_device_context->PSSetConstantBuffers(0, 1, m_shader_light_pass->uniform_buffer.GetAddressOf());
+    m_device_context->PSSetConstantBuffers(0, 1, m_shader_light_pass->uniform.buffer.GetAddressOf());
     m_device_context->IASetInputLayout(m_shader_light_pass->input_layout.Get());
 
     m_device_context->OMSetRenderTargets(1, m_render_target_view.GetAddressOf(), m_depth_stencil_view.Get());

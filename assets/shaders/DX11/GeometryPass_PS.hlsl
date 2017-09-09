@@ -15,13 +15,34 @@ Texture2D ambientMap : register(t4);
 
 SamplerState g_sampler : register(s0);
 
-cbuffer ConstantBuffer : register(b0)
+cbuffer TexturesEnables : register(b0)
 {
     int has_diffuseMap;
     int has_normalMap;
     int has_specularMap;
     int has_glossMap;
     int has_ambientMap;
+};
+
+cbuffer Material : register(b1)
+{
+    namespace material
+    {
+        float3 ambient;
+        float3 diffuse;
+        float3 specular;
+        float shininess;
+    }
+};
+
+cbuffer Light : register(b2)
+{
+    namespace light
+    {
+        float3 ambient;
+        float3 diffuse;
+        float3 specular;
+    }
 };
 
 #define USE_CAMMA_RT
@@ -36,7 +57,6 @@ float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, b
 #endif
     return _color;
 }
-
 
 struct PS_OUT
 {   float4 gPosition : SV_Target0;
@@ -69,8 +89,19 @@ PS_OUT main(VS_OUTPUT input)
         output.gNormal = CalcBumpedNormal(input);
     else
         output.gNormal = normalize(input.normal);
-    output.gAmbient = getTexture(ambientMap, g_sampler, input.texCoord, true).rgb;
-    output.gDiffuse = getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
+
+    output.gAmbient = light::ambient;
+    if (has_ambientMap)
+        output.gAmbient *= getTexture(ambientMap, g_sampler, input.texCoord, true).rgb;
+    else
+        output.gAmbient *= material::ambient;
+
+    output.gDiffuse = light::diffuse;
+    if (has_diffuseMap)
+        output.gDiffuse *= getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
+    else
+        output.gAmbient *= material::diffuse;
+
     output.gSpecular = getTexture(specularMap, g_sampler, input.texCoord, true).rgb;
     output.gGloss = getTexture(glossMap, g_sampler, input.texCoord, true).rgb;
     return output;
