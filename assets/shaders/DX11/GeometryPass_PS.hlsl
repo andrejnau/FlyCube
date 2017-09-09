@@ -5,7 +5,6 @@ struct VS_OUTPUT
     float3 normal : NORMAL;
     float2 texCoord: TEXCOORD;
     float3 tangent: TANGENT;
-    float3 bitangent: BITANGENT;
 };
 
 Texture2D diffuseMap : register(t0);
@@ -15,6 +14,15 @@ Texture2D glossMap : register(t3);
 Texture2D ambientMap : register(t4);
 
 SamplerState g_sampler : register(s0);
+
+cbuffer ConstantBuffer : register(b0)
+{
+    int has_diffuseMap;
+    int has_normalMap;
+    int has_specularMap;
+    int has_glossMap;
+    int has_ambientMap;
+};
 
 #define USE_CAMMA_RT
 #define USE_CAMMA_TEX
@@ -56,7 +64,11 @@ PS_OUT main(VS_OUTPUT input)
 {
     PS_OUT output;
     output.gPosition = float4(input.fragPos.xyz, input.pos.z);
-    output.gNormal = CalcBumpedNormal(input);
+
+    if (has_normalMap)
+        output.gNormal = CalcBumpedNormal(input);
+    else
+        output.gNormal = normalize(input.normal);
     output.gAmbient = getTexture(ambientMap, g_sampler, input.texCoord, true).rgb;
     output.gDiffuse = getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
     output.gSpecular = getTexture(specularMap, g_sampler, input.texCoord, true).rgb;

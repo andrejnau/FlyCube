@@ -4,7 +4,6 @@ struct VS_INPUT
     float3 normal : NORMAL;
     float2 texCoord: TEXCOORD;
     float3 tangent: TANGENT;
-    float3 bitangent: BITANGENT;
 };
 
 cbuffer ConstantBuffer : register(b0)
@@ -21,7 +20,6 @@ struct VS_OUTPUT
     float3 normal : NORMAL;
     float2 texCoord: TEXCOORD;
     float3 tangent: TANGENT;
-    float3 bitangent: BITANGENT;
 };
 
 VS_OUTPUT main(VS_INPUT input)
@@ -37,8 +35,8 @@ VS_OUTPUT main(VS_INPUT input)
     output.pos = newPosition;
     output.texCoord = input.texCoord;
 
-    output.normal = normalize(mul(input.normal, model));
-    output.tangent = normalize(mul(input.tangent, model));
-    output.bitangent = normalize(mul(input.bitangent, model));
+    float3x3 normalMatrix = (float3x3)(mul(model, view));
+    output.normal = normalize(mul(input.normal, normalMatrix));
+    output.tangent = normalize(mul(input.tangent, normalMatrix));
     return output;
 }

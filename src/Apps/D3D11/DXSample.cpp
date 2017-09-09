@@ -183,10 +183,10 @@ void DXSample::GeometryPass()
             default:
                 continue;
             }
-        m_device_context->UpdateSubresource(m_shader_geometry_pass->textures_enables_buffer.Get(), 0, nullptr, &m_shader_geometry_pass->textures_enables, 0, 0);
+
             use_textures[texture_slot] = cur_mesh.texResources[i].Get();
         }
-
+        m_device_context->UpdateSubresource(m_shader_geometry_pass->textures_enables_buffer.Get(), 0, nullptr, &m_shader_geometry_pass->textures_enables, 0, 0);
         m_device_context->PSSetShaderResources(0, use_textures.size(), use_textures.data());
         m_device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
