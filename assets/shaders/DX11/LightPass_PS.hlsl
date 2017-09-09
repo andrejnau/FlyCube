@@ -41,6 +41,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float3 ambient = getTexture(gAmbient, g_sampler, input.texCoord, false).rgb;
     float3 diffuse = getTexture(gDiffuse, g_sampler, input.texCoord, false).rgb;
     float3 specular_base = getTexture(gSpecular, g_sampler, input.texCoord, false).rgb;
+    float shininess = getTexture(gSpecular, g_sampler, input.texCoord, false).a;
 
     float3 lightDir = normalize(lightPos - fragPos);
     float diff = max(dot(lightDir, normal), 0.0);
@@ -49,9 +50,9 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float3 viewDir = normalize(viewPos - fragPos);
     float3 reflectDir = reflect(-lightDir, normal);
     float reflectivity = getTexture(gGloss, g_sampler, input.texCoord).r;
-    float spec = pow(saturate(dot(viewDir, reflectDir)), reflectivity * 1024.0);
-    float3 specular = spec;
+    float spec = pow(saturate(dot(viewDir, reflectDir)), 1024.0);
+    float3 specular = specular_base * spec;
 
-    float3 hdrColor = float3(ambient + diffuse );
+    float3 hdrColor = float3(ambient + diffuse + specular);
     return pow(float4(hdrColor, 1.0), gamma4);
 }

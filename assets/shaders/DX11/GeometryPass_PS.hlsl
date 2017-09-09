@@ -63,7 +63,7 @@ struct PS_OUT
     float3 gNormal   : SV_Target1;
     float3 gAmbient  : SV_Target2; 
     float3 gDiffuse  : SV_Target3;
-    float3 gSpecular : SV_Target4;
+    float4 gSpecular : SV_Target4;
     float3 gGloss    : SV_Target5;
 };
 
@@ -102,7 +102,13 @@ PS_OUT main(VS_OUTPUT input)
     else
         output.gDiffuse *= material::diffuse;
 
-    output.gSpecular = getTexture(specularMap, g_sampler, input.texCoord, true).rgb;
+    output.gSpecular.rgb = light::specular;
+    output.gSpecular.a = material::shininess;
+    if (has_specularMap)
+        output.gSpecular.rgb *= getTexture(specularMap, g_sampler, input.texCoord, true).rgb;
+    else
+        output.gSpecular.rgb *= material::specular;
+
     output.gGloss = getTexture(glossMap, g_sampler, input.texCoord, true).rgb;
     return output;
 }

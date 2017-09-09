@@ -85,8 +85,8 @@ struct ShaderGeometryPass
 
     struct Material
     {
-        glm::vec3 ambient;
-        glm::vec3 diffuse;
+        glm::vec3 ambient; uint8_t _0[4];
+        glm::vec3 diffuse; uint8_t _1[4];
         glm::vec3 specular;
         float shininess;
     };
