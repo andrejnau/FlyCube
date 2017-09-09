@@ -109,6 +109,9 @@ PS_OUT main(VS_OUTPUT input)
     else
         output.gSpecular.rgb *= material::specular;
 
-    output.gGloss = getTexture(glossMap, g_sampler, input.texCoord, true).rgb;
+    if (has_glossMap)
+        output.gGloss = getTexture(glossMap, g_sampler, input.texCoord, true).rgb;
+    else
+        output.gGloss = float3(1.0, 1.0, 1.0);
     return output;
 }
