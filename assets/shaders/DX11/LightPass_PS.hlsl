@@ -52,6 +52,6 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float spec = pow(saturate(dot(viewDir, reflectDir)), reflectivity * 1024.0);
     float3 specular = spec;
 
-    float3 hdrColor  = float3(ambient + diffuse + specular);
+    float3 hdrColor = float3(ambient + diffuse );
     return pow(float4(hdrColor, 1.0), gamma4);
 }

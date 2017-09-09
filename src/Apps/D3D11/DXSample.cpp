@@ -3,6 +3,7 @@
 #include <Util.h>
 #include <Utility.h>
 #include <Utilities/FileUtility.h>
+#include <state.h>
 #include <GLFW/glfw3.h>
 
 DXSample::DXSample()
@@ -26,7 +27,7 @@ void DXSample::OnInit(int width, int height)
     CreateRT();
     CreateViewPort();
     CreateSampler();
-    m_model_of_file = CreateGeometry("model/export3dcoat/export3dcoat.obj");
+    m_model_of_file = CreateGeometry("model/sponza_png/sponza.obj");
     m_model_square = CreateGeometry("model/square.obj");
     InitGBuffer();
     camera_.SetViewport(m_width, m_height);
@@ -50,7 +51,7 @@ void DXSample::OnUpdate()
     if (m_use_rotare)
         angle += elapsed / 2e6f;
 
-#if 1
+#if 0
     float z_width = (m_model_of_file->bound_box.z_max - m_model_of_file->bound_box.z_min);
     float y_width = (m_model_of_file->bound_box.y_max - m_model_of_file->bound_box.y_min);
     float x_width = (m_model_of_file->bound_box.y_max - m_model_of_file->bound_box.y_min);
@@ -117,6 +118,7 @@ void DXSample::GeometryPass()
     m_device_context->VSSetShader(m_shader_geometry_pass->vertex_shader.Get(), 0, 0);
     m_device_context->PSSetShader(m_shader_geometry_pass->pixel_shader.Get(), 0, 0);
     m_device_context->VSSetConstantBuffers(0, 1, m_shader_geometry_pass->uniform_buffer.GetAddressOf());
+    m_device_context->PSSetConstantBuffers(0, 1, m_shader_geometry_pass->textures_enables_buffer.GetAddressOf());
     m_device_context->IASetInputLayout(m_shader_geometry_pass->input_layout.Get());
 
     std::vector<ID3D11RenderTargetView*> rtvs = {
@@ -147,6 +149,8 @@ void DXSample::GeometryPass()
         m_device_context->IASetIndexBuffer(cur_mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         std::vector<ID3D11ShaderResourceView*> use_textures(5, nullptr);
+        m_shader_geometry_pass->textures_enables = {};
+
         static uint32_t frameId = 0;
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
@@ -155,23 +159,31 @@ void DXSample::GeometryPass()
             {
             case aiTextureType_DIFFUSE:
                 texture_slot = 0;
+                m_shader_geometry_pass->textures_enables.has_diffuseMap = true;
                 break;
             case aiTextureType_HEIGHT:
+            {
                 texture_slot = 1;
-                break;
+                auto& state = CurState<bool>::Instance().state;
+                if (!state["disable_norm"])
+                    m_shader_geometry_pass->textures_enables.has_normalMap = true;
+            } break;
             case aiTextureType_SPECULAR:
                 texture_slot = 2;
+                m_shader_geometry_pass->textures_enables.has_specularMap = true;
                 break;
             case aiTextureType_SHININESS:
                 texture_slot = 3;
+                m_shader_geometry_pass->textures_enables.has_glossMap = true;
                 break;
             case aiTextureType_AMBIENT:
                 texture_slot = 4;
+                m_shader_geometry_pass->textures_enables.has_ambientMap = true;
                 break;
             default:
                 continue;
             }
-
+        m_device_context->UpdateSubresource(m_shader_geometry_pass->textures_enables_buffer.Get(), 0, nullptr, &m_shader_geometry_pass->textures_enables, 0, 0);
             use_textures[texture_slot] = cur_mesh.texResources[i].Get();
         }
 
@@ -267,7 +279,7 @@ void DXSample::CreateDeviceAndSwapChain()
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
     //Create our SwapChain
-    ASSERT_SUCCEEDED(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0,
+    ASSERT_SUCCEEDED(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0 * D3D11_CREATE_DEVICE_DEBUG, nullptr, 0,
         D3D11_SDK_VERSION, &swapChainDesc, &m_swap_chain, &m_device, nullptr, &m_device_context));
 }
 
@@ -399,6 +411,12 @@ void DXSample::OnKey(int key, int action)
         keys_[key] = true;
     else if (action == GLFW_RELEASE)
         keys_[key] = false;
+
+    if (key == GLFW_KEY_N && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["disable_norm"] = !state["disable_norm"];
+    }
 }
 
 void DXSample::OnMouse(bool first_event, double xpos, double ypos)

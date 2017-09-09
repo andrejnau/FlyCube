@@ -78,6 +78,11 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
         {
             vertex.tangent = aiVector3DToVec3(mesh->mTangents[i]);
             vertex.bitangent = aiVector3DToVec3(mesh->mBitangents[i]);
+
+            if (glm::dot(glm::cross(vertex.normal, vertex.tangent), vertex.bitangent) < 0.0f)
+            {
+                vertex.tangent *= -1.0f;
+            }
         }
 
         // A vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't

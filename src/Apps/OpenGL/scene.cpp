@@ -158,6 +158,12 @@ void tScenes::OnKey(int key, int action)
         state["warframe"] = !state["warframe"];
     }
 
+    if (key == GLFW_KEY_N && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["disable_norm"] = !state["disable_norm"];
+    }
+
     if (key == GLFW_KEY_O && action == GLFW_PRESS)
     {
         auto & state = CurState<bool>::Instance().state;
@@ -256,7 +262,9 @@ inline void tScenes::GeometryPass()
             else if (cur_mesh.textures[i].type == aiTextureType_HEIGHT)
             {
                 shader_geometry_pass_.Uniform("textures.normalMap") = i;
-                shader_geometry_pass_.Uniform("textures.has_normalMap") = 1;
+                auto & state = CurState<bool>::Instance().state;
+                if (!state["disable_norm"])
+                    shader_geometry_pass_.Uniform("textures.has_normalMap") = 1;
             }
             else if (cur_mesh.textures[i].type == aiTextureType_OPACITY)
             {

@@ -59,4 +59,5 @@ target_link_libraries(${target}
     Geometry
     Utilities
     simple_camera
+	utils
 )

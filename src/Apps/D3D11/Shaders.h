@@ -23,6 +23,11 @@
 using namespace Microsoft::WRL;
 using namespace DirectX;
 
+inline size_t UpTo(size_t n, size_t m)
+{
+    return n + (m - n % m) % m;
+}
+
 struct ShaderGeometryPass
 {
     ComPtr<ID3D11VertexShader> vertex_shader;
@@ -40,6 +45,18 @@ struct ShaderGeometryPass
 
     UniformBuffer uniform;
     ComPtr<ID3D11Buffer> uniform_buffer;
+
+    struct TexturesEnables
+    {
+        int has_diffuseMap;
+        int has_normalMap;
+        int has_specularMap;
+        int has_glossMap;
+        int has_ambientMap;
+    };
+
+    TexturesEnables textures_enables;
+    ComPtr<ID3D11Buffer> textures_enables_buffer;
 
     ShaderGeometryPass(ComPtr<ID3D11Device> m_device)
     {
@@ -76,7 +93,6 @@ struct ShaderGeometryPass
             { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
             { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(DX11Mesh::Vertex, texCoords), D3D11_INPUT_PER_VERTEX_DATA, 0 },
             { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, tangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, bitangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
         };
 
         UINT numElements = ARRAYSIZE(layout);
@@ -85,14 +101,26 @@ struct ShaderGeometryPass
         ASSERT_SUCCEEDED(m_device->CreateInputLayout(layout, numElements, vertex_shader_buffer->GetBufferPointer(),
             vertex_shader_buffer->GetBufferSize(), &input_layout));
 
-        D3D11_BUFFER_DESC cbbd;
-        ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
-        cbbd.Usage = D3D11_USAGE_DEFAULT;
-        cbbd.ByteWidth = sizeof(uniform);
-        cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        cbbd.CPUAccessFlags = 0;
-        cbbd.MiscFlags = 0;
-        ASSERT_SUCCEEDED(m_device->CreateBuffer(&cbbd, nullptr, &uniform_buffer));
+        {
+            D3D11_BUFFER_DESC cbbd;
+            ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
+            cbbd.Usage = D3D11_USAGE_DEFAULT;
+            cbbd.ByteWidth = sizeof(uniform);
+            cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+            cbbd.CPUAccessFlags = 0;
+            cbbd.MiscFlags = 0;
+            ASSERT_SUCCEEDED(m_device->CreateBuffer(&cbbd, nullptr, &uniform_buffer));
+        }
+        {
+            D3D11_BUFFER_DESC cbbd;
+            ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
+            cbbd.Usage = D3D11_USAGE_DEFAULT;
+            cbbd.ByteWidth = UpTo(sizeof(textures_enables), 16);
+            cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+            cbbd.CPUAccessFlags = 0;
+            cbbd.MiscFlags = 0;
+            ASSERT_SUCCEEDED(m_device->CreateBuffer(&cbbd, nullptr, &textures_enables_buffer));
+        }
     }
 };
 
