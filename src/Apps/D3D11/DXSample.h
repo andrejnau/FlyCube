@@ -71,8 +71,8 @@ private:
 
     ComPtr<ID3D11SamplerState> m_texture_sampler;
 
-    std::unique_ptr<ShaderGeometryPass> m_shader_geometry_pass;
-    std::unique_ptr<ShaderLightPass> m_shader_light_pass;
+    std::unique_ptr<DXShader> m_shader_geometry_pass;
+    std::unique_ptr<DXShader> m_shader_light_pass;
 
     std::unique_ptr<Model<DX11Mesh>> m_model_of_file;
     std::unique_ptr<Model<DX11Mesh>> m_model_square;

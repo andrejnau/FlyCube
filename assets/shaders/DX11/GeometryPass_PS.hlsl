@@ -28,23 +28,17 @@ cbuffer TexturesEnables : register(b0)
 
 cbuffer Material : register(b1)
 {
-    struct Material
-    {
-        float3 ambient;
-        float3 diffuse;
-        float3 specular;
-        float shininess;
-    } material;
+    float3 material_ambient;
+    float3 material_diffuse;
+    float3 material_specular;
+    float material_shininess;
 };
 
 cbuffer Light : register(b2)
 {
-    struct Light
-    {
-        float3 ambient;
-        float3 diffuse;
-        float3 specular;
-    } light;
+    float3 light_ambient;
+    float3 light_diffuse;
+    float3 light_specular;
 };
 
 #define USE_CAMMA_RT
@@ -99,24 +93,24 @@ PS_OUT main(VS_OUTPUT input)
     else
         output.gNormal = normalize(input.normal);
 
-    output.gAmbient = light.ambient;
+    output.gAmbient = light_ambient;
     if (has_ambientMap)
         output.gAmbient *= getTexture(ambientMap, g_sampler, input.texCoord, true).rgb;
     else
-        output.gAmbient *= material.ambient;
+        output.gAmbient *= material_ambient;
 
-    output.gDiffuse = light.diffuse;
+    output.gDiffuse = light_diffuse;
     if (has_diffuseMap)
         output.gDiffuse *= getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
     else
-        output.gDiffuse *= material.diffuse;
+        output.gDiffuse *= material_diffuse;
 
-    output.gSpecular.rgb = light.specular;
-    output.gSpecular.a = material.shininess;
+    output.gSpecular.rgb = light_specular;
+    output.gSpecular.a = material_shininess;
     if (has_specularMap)
         output.gSpecular.rgb *= getTexture(specularMap, g_sampler, input.texCoord, true).rgb;
     else
-        output.gSpecular.rgb *= material.specular;
+        output.gSpecular.rgb *= material_specular;
 
     if (has_glossMap)
         output.gGloss = getTexture(glossMap, g_sampler, input.texCoord, true).rgb;

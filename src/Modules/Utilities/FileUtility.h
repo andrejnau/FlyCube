@@ -29,3 +29,8 @@ inline std::string GetAssetFullPath(const std::string& assetName)
 {
     return wstring_to_utf8(GetAssetFullPath(utf8_to_wstring(assetName)));
 }
+
+inline std::wstring GetAssetFullPathW(const std::string& assetName)
+{
+    return GetAssetFullPath(utf8_to_wstring(assetName));
+}
