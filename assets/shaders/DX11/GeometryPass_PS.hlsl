@@ -16,7 +16,7 @@ Texture2D alphaMap : register(t5);
 
 SamplerState g_sampler : register(s0);
 
-cbuffer TexturesEnables : register(b0)
+cbuffer TexturesEnables
 {
     int has_diffuseMap;
     int has_normalMap;
@@ -26,7 +26,7 @@ cbuffer TexturesEnables : register(b0)
     int has_alphaMap;
 };
 
-cbuffer Material : register(b1)
+cbuffer Material
 {
     float3 material_ambient;
     float3 material_diffuse;
@@ -34,7 +34,7 @@ cbuffer Material : register(b1)
     float material_shininess;
 };
 
-cbuffer Light : register(b2)
+cbuffer Light
 {
     float3 light_ambient;
     float3 light_diffuse;

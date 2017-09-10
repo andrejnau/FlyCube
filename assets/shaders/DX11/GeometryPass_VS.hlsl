@@ -6,7 +6,7 @@ struct VS_INPUT
     float3 tangent: TANGENT;
 };
 
-cbuffer ConstantBuffer : register(b0)
+cbuffer ConstantBuffer
 {
     float4x4 model;
     float4x4 view;

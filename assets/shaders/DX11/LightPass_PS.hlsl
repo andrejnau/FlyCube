@@ -26,7 +26,7 @@ float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, b
     return _color;
 }
 
-cbuffer ConstantBuffer : register(b0)
+cbuffer ConstantBuffer
 {
     float4 lightPos;
     float4 viewPos;
