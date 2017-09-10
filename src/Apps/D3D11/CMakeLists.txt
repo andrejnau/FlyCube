@@ -16,13 +16,11 @@ set(sources
 )
 
 set(pixel_shaders
-    ${shaders_path}/PixelShader.hlsl
     ${shaders_path}/GeometryPass_PS.hlsl
     ${shaders_path}/LightPass_PS.hlsl
 )
 
 set(vertex_shaders
-    ${shaders_path}/VertexShader.hlsl
     ${shaders_path}/GeometryPass_VS.hlsl
     ${shaders_path}/LightPass_VS.hlsl
 )
