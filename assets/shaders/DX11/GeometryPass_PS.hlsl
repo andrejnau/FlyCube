@@ -28,7 +28,7 @@ cbuffer TexturesEnables : register(b0)
 
 cbuffer Material : register(b1)
 {
-    struct
+    struct Material
     {
         float3 ambient;
         float3 diffuse;
@@ -39,7 +39,7 @@ cbuffer Material : register(b1)
 
 cbuffer Light : register(b2)
 {
-    struct
+    struct Light
     {
         float3 ambient;
         float3 diffuse;
