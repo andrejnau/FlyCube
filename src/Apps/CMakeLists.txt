@@ -7,5 +7,6 @@ if(BUILD_DX12)
 endif()
 
 if (BUILD_OPENGL)
+    add_subdirectory(GLDemo)
     add_subdirectory(OpenGL)
 endif()
