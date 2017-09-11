@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 #include <Utility.h>
 #include <Geometry/Geometry.h>
-#include <SOIL.h>
+#include <gli/gli.hpp>
 
 using namespace Microsoft::WRL;
 
@@ -16,71 +16,48 @@ struct DX11Mesh : IMesh
 
     std::vector<ComPtr<ID3D11ShaderResourceView>> texResources;
 
-    struct TexInfo
-    {
-        std::vector<uint8_t> image;
-        int width;
-        int height;
-        int num_bits_per_pixel;
-        int image_size;
-        int bytes_per_row;
-    };
-
-    TexInfo LoadImageDataFromFile(const std::string & filename)
-    {
-        TexInfo texInfo = {};
-
-        unsigned char *image = SOIL_load_image(filename.c_str(), &texInfo.width, &texInfo.height, 0, SOIL_LOAD_RGBA);
-
-        DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-        texInfo.num_bits_per_pixel = BitsPerPixel(dxgiFormat); // number of bits per pixel
-        texInfo.bytes_per_row = (texInfo.width * texInfo.num_bits_per_pixel) / 8; // number of bytes in each row of the image data
-        texInfo.image_size = texInfo.bytes_per_row * texInfo.height; // total image size in bytes
-
-        texInfo.image.resize(texInfo.image_size);
-        memcpy(texInfo.image.data(), image, texInfo.image_size);
-        SOIL_free_image_data(image);
-
-        return texInfo;
-    }
-
     void InitTextures(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& device_context)
     {
         for (size_t i = 0; i < textures.size(); ++i)
         {
-            auto metadata = LoadImageDataFromFile(textures[i].path);
-
-            ComPtr<ID3D11Texture2D> resource;
+            gli::texture Texture = gli::load(textures[i].path);
+            auto format = gli::dx().translate(Texture.format());
 
             D3D11_TEXTURE2D_DESC desc = {};
-            desc.Width = static_cast<UINT>(metadata.width);
-            desc.Height = static_cast<UINT>(metadata.height);
+            desc.Width = static_cast<UINT>(Texture.extent(0).x);
+            desc.Height = static_cast<UINT>(Texture.extent(0).y);
             desc.ArraySize = static_cast<UINT>(1);
-            desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            desc.Format = (DXGI_FORMAT)format.DXGIFormat.DDS;
             desc.SampleDesc.Count = 1;
             desc.SampleDesc.Quality = 0;
             desc.Usage = D3D11_USAGE_DEFAULT;
-            desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
             desc.CPUAccessFlags = 0;
-            desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+            desc.MipLevels = Texture.levels();
 
-            D3D11_SUBRESOURCE_DATA textureBufferData;
-            ZeroMemory(&textureBufferData, sizeof(textureBufferData));
-            textureBufferData.pSysMem = metadata.image.data();
-            textureBufferData.SysMemPitch = metadata.bytes_per_row; // size of all our triangle vertex data
-            textureBufferData.SysMemSlicePitch = metadata.bytes_per_row * metadata.height; // also the size of our triangle vertex data
-
+            ComPtr<ID3D11Texture2D> resource;
             ASSERT_SUCCEEDED(device->CreateTexture2D(&desc, nullptr, &resource));
-            device_context->UpdateSubresource(resource.Get(), 0, nullptr, textureBufferData.pSysMem, textureBufferData.SysMemPitch, textureBufferData.SysMemSlicePitch);
+
+            for (std::size_t Level = 0; Level < desc.MipLevels; ++Level)
+            {
+                size_t num_bytes;
+                size_t row_bytes;
+                GetSurfaceInfo(Texture.extent(Level).x, Texture.extent(Level).y, desc.Format, &num_bytes, &row_bytes, nullptr);
+
+                D3D11_SUBRESOURCE_DATA textureBufferData;
+                ZeroMemory(&textureBufferData, sizeof(textureBufferData));
+                textureBufferData.pSysMem = Texture.data(0, 0, Level);
+                textureBufferData.SysMemPitch = row_bytes;
+                textureBufferData.SysMemSlicePitch = num_bytes;
+                device_context->UpdateSubresource(resource.Get(), Level, nullptr, textureBufferData.pSysMem, textureBufferData.SysMemPitch, textureBufferData.SysMemSlicePitch);
+            }
 
             D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            srvDesc.Format = desc.Format;
             srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
             srvDesc.Texture2D.MostDetailedMip = 0;
-            srvDesc.Texture2D.MipLevels = -1;
-
+            srvDesc.Texture2D.MipLevels = desc.MipLevels;
             ASSERT_SUCCEEDED(device->CreateShaderResourceView(resource.Get(), &srvDesc, &texResources[i]));
-            device_context->GenerateMips(texResources[i].Get());
         }
     }
 

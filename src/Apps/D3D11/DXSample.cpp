@@ -27,7 +27,7 @@ void DXSample::OnInit(int width, int height)
     CreateRT();
     CreateViewPort();
     CreateSampler();
-    m_model_of_file = CreateGeometry("model/sponza_png/sponza.obj");
+    m_model_of_file = CreateGeometry("model/sponza/sponza.obj");
     m_model_square = CreateGeometry("model/square.obj");
     InitGBuffer();
     camera_.SetViewport(m_width, m_height);
