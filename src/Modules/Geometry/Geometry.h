@@ -63,11 +63,11 @@ struct IModel
 class ModelLoader
 {
 public:
-    ModelLoader(const std::string& file, IModel& meshes);
+    ModelLoader(const std::string& file, aiPostProcessSteps flags, IModel& meshes);
 
 private:
     std::string SplitFilename(const std::string& str);
-    void LoadModel();
+    void LoadModel(aiPostProcessSteps flags);
     void ProcessNode(aiNode* node, const aiScene* scene);
     void ProcessMesh(aiMesh* mesh, const aiScene* scene);
     void FindSimilarTextures(std::vector<IMesh::Texture>& textures);
@@ -82,8 +82,8 @@ private:
 template<typename Mesh>
 struct Model : IModel
 {
-    Model(const std::string& file)
-        : m_model_loader(file, *this)
+    Model(const std::string& file, uint32_t flags = ~0)
+        : m_model_loader(file, (aiPostProcessSteps)flags, *this)
     {
     }
 

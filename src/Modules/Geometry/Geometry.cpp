@@ -10,12 +10,12 @@ glm::vec3 aiVector3DToVec3(const aiVector3D& x)
     return glm::vec3(x.x, x.y, x.z);
 }
 
-ModelLoader::ModelLoader(const std::string& file, IModel& meshes)
+ModelLoader::ModelLoader(const std::string& file, aiPostProcessSteps flags, IModel& meshes)
     : m_path(GetAssetFullPath(file))
     , m_directory(SplitFilename(m_path))
     , m_model(meshes)
 {
-    LoadModel();
+    LoadModel(flags);
 }
 
 std::string ModelLoader::SplitFilename(const std::string& str)
@@ -23,10 +23,10 @@ std::string ModelLoader::SplitFilename(const std::string& str)
     return str.substr(0, str.find_last_of("/"));
 }
 
-void ModelLoader::LoadModel()
+void ModelLoader::LoadModel(aiPostProcessSteps flags)
 {
     Assimp::Importer import;
-    const aiScene* scene = import.ReadFile(m_path, aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace);
+    const aiScene* scene = import.ReadFile(m_path, flags & (aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace));
     assert(scene && scene->mFlags != AI_SCENE_FLAGS_INCOMPLETE && scene->mRootNode);
     ProcessNode(scene->mRootNode, scene);
 }

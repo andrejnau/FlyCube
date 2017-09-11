@@ -49,26 +49,13 @@ public:
 
 private:
     void GeometryPass();
-    void ShadowPass();
-    void SSAOPass();
-    void SSAOBlurPass();
     void LightPass();
-    void RenderLightSource();
-    void RenderShadowTexture();
-    void RenderCubemap();
 
     void UpdateCameraMovement();
 
     void InitState();
     void InitCamera();
     void InitGBuffer();
-    void InitSSAO();
-    void InitShadow();
-    void InitCubemap();
-    void InitMesh();
-    GLuint CreateShadowFBO(GLuint shadow_texture);
-    GLuint CreateShadowTexture(GLsizei width, GLsizei height);
-    GLuint LoadCubemap();
 
     struct Material
     {
@@ -88,53 +75,30 @@ private:
     int load_func_;
     int width_ = 0;
     int height_ = 0;
-    int depth_size_ = 2048;
     float angle_ = 0.0f;
     float model_scale_ = 0.01f;
 
-    GLuint shadow_fbo_ = 0;
-    GLuint shadow_texture_ = 0;
-    GLuint cubemap_texture_ = 0;
-
     GLuint ds_fbo_;
-    GLuint ssao_fbo_;
-    GLuint ssao_blur_fbo_;
 
     GLuint g_position_;
     GLuint g_normal_;
     GLuint g_ambient_;
     GLuint g_diffuse_;
     GLuint g_specular_;
-    GLuint g_ssao_;
-    GLuint g_ssao_blur_;
     GLuint g_depth_texture_;
-    GLuint noise_texture_;
 
     glm::vec3 axis_x_ = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 axis_y_ = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 axis_z_ = glm::vec3(0.0f, 0.0f, 1.0f);
 
     glm::vec3 light_pos_;
-    glm::mat4 light_matrix_;
-    glm::mat4 light_projection_;
-    glm::mat4 light_view_;
-
-    std::vector<glm::vec3> ssao_kernel_;
 
     GLShader shader_geometry_pass_;
     GLShader shader_light_pass_;
-    GLShader shader_ssao_pass_;
-    GLShader shader_ssao_blur_pass_;
-    GLShader shader_simple_color_;
-    GLShader shader_simple_cube_map_;
-    GLShader shader_shadow_view_;
-    GLShader shader_depth_;
     Camera camera_;
 
     Model<GLMesh> model_;
-    Model<GLMesh> model_sphere_;
-    GLMesh mesh_square_;
-    GLMesh mesh_square_shadow_view_;
+    Model<GLMesh> model_square;
 
     std::map<int, bool> keys_;
     float last_frame_ = 0.0;
