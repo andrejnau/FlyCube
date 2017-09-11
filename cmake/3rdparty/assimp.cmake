@@ -13,12 +13,15 @@ option (ASSIMP_NO_EXPORT
   ON
 )
 
-add_subdirectory(${project_root}/3rdparty/assimp-3.3.1 assimp)
-include_directories(${project_root}/3rdparty/assimp-3.3.1/code/BoostWorkaround)
-include_directories(${project_root}/3rdparty/assimp-3.3.1/include)
+add_subdirectory(${project_root}/3rdparty/assimp-4.0.1 assimp)
+include_directories(${project_root}/3rdparty/assimp-4.0.1/code/BoostWorkaround)
+include_directories(${project_root}/3rdparty/assimp-4.0.1/include)
+include_directories(${CMAKE_BINARY_DIR}/assimp/include)
+
 if (MSVC)
     set_target_properties(assimp PROPERTIES FOLDER "3rdparty/assimp")
     set_target_properties(zlibstatic PROPERTIES FOLDER "3rdparty/assimp")
     set_target_properties(uninstall PROPERTIES FOLDER "3rdparty/assimp")
     set_target_properties(UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTIES FOLDER "3rdparty/assimp")
+    set_target_properties(IrrXML PROPERTIES FOLDER "3rdparty/assimp")
 endif()
