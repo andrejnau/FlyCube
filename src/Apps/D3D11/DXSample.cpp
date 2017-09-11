@@ -277,8 +277,11 @@ void DXSample::CreateDeviceAndSwapChain()
     swapChainDesc.Windowed = TRUE;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
-    //Create our SwapChain
-    ASSERT_SUCCEEDED(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0 * D3D11_CREATE_DEVICE_DEBUG, nullptr, 0,
+    DWORD create_device_flags = 0;
+#if 0
+    create_device_flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+    ASSERT_SUCCEEDED(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, create_device_flags, nullptr, 0,
         D3D11_SDK_VERSION, &swapChainDesc, &m_swap_chain, &m_device, nullptr, &m_device_context));
 }
 
