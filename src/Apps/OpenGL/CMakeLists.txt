@@ -11,7 +11,7 @@ set (SOURCES
     main.cpp
 )
 
-add_executable(${target} WIN32 ${SOURCES})
+add_executable(${target} WIN32 ${HEADERS} ${SOURCES})
 set_target_properties(${target} PROPERTIES
                     LINK_FLAGS "/ENTRY:mainCRTStartup")
 

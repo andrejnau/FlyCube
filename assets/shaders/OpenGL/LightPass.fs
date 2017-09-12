@@ -1,5 +1,4 @@
-#version 300 es
-precision highp float;
+#version 330
 
 uniform sampler2D gPosition;
 uniform sampler2D gNormal;
@@ -7,12 +6,18 @@ uniform sampler2D gAmbient;
 uniform sampler2D gDiffuse;
 uniform sampler2D gSpecular;
 
-uniform vec3 lightPos;
-uniform vec3 viewPos;
+uniform ConstantBuffer
+{
+    vec3 lightPos;
+    vec3 viewPos;
+};
 
-in vec2 TexCoords;
+in VertexData
+{
+   vec2 TexCoords;
+};
 
-out vec4 out_Color;
+layout (location = 0) out vec4 out_Color;
 
 void main()
 {

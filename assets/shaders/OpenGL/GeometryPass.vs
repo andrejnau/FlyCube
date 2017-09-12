@@ -1,27 +1,26 @@
-#version 300 es
-precision highp float;
+#version 330
 
-#define POS_ATTRIB 0
-#define NORMAL_ATTRIB 1
-#define TEXTURE_ATTRIB 2
-#define TANGENT_ATTRIB 3
-#define BITANGENT_ATTRIB 4
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 texCoords;
+layout(location = 3) in vec3 tangent;
+layout(location = 4) in vec3 bitangent;
 
-layout(location = POS_ATTRIB) in vec3 position;
-layout(location = NORMAL_ATTRIB)in vec3 normal;
-layout(location = TEXTURE_ATTRIB) in vec2 texCoords;
-layout(location = TANGENT_ATTRIB) in vec3 tangent;
-layout(location = BITANGENT_ATTRIB) in vec3 bitangent;
+uniform ConstantBuffer
+{
+    mat4 model;
+    mat4 view;
+    mat4 projection;
+};
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-
-out vec3 _FragPos;
-out vec3 _Normal;
-out vec3 _Tangent;
-out vec2 _TexCoords;
-out float _DepthProj;
+out VertexData
+{
+    vec3 _FragPos;
+    vec3 _Normal;
+    vec3 _Tangent;
+    vec2 _TexCoords;
+    float _DepthProj;
+};
 
 void main()
 {

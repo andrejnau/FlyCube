@@ -1,48 +1,44 @@
-#version 300 es
-precision highp float;
+#version 330
 
-struct Material
+uniform Material
 {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
     float shininess;
-};
+} material;
 
-struct Light
+uniform Light
 {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
-};
+} light;
 
-struct Texture
+uniform sampler2D normalMap;
+uniform sampler2D ambientMap;
+uniform sampler2D diffuseMap;
+uniform sampler2D specularMap;
+uniform sampler2D alphaMap;
+
+uniform TexturesEnables
 {
-    sampler2D normalMap;
+    int has_diffuseMap;
     int has_normalMap;
+    int has_specularMap;
+    int has_glossMap;
+    int has_ambientMap;
+    int has_alphaMap;
+} textures;
 
-    sampler2D ambient;
-    int has_ambient;
-
-    sampler2D diffuse;
-    int has_diffuse;
-
-    sampler2D specular;
-    int has_specular;
-
-    sampler2D alpha;
-    int has_alpha;
+in VertexData
+{
+    vec3 _FragPos;
+    vec3 _Normal;
+    vec3 _Tangent;
+    vec2 _TexCoords;
+    float _DepthProj;
 };
-
-uniform Material material;
-uniform Light light;
-uniform Texture textures;
-
-in vec3 _FragPos;
-in vec3 _Normal;
-in vec3 _Tangent;
-in vec2 _TexCoords;
-in float _DepthProj;
 
 layout (location = 0) out vec4 gPosition;
 layout (location = 1) out vec3 gNormal;
@@ -57,7 +53,7 @@ vec3 CalcBumpedNormal()
     T = normalize(T - dot(T, N) * N);
     vec3 B = normalize(cross(T, N));
 
-    vec3 normal = texture(textures.normalMap, _TexCoords).rgb;
+    vec3 normal = texture(normalMap, _TexCoords).rgb;
     normal = normalize(normal * 2.0 - 1.0);
     mat3 tbn = mat3(T, B, N);
     normal = normalize(tbn * normal);
@@ -66,9 +62,9 @@ vec3 CalcBumpedNormal()
 
 void main()
 {
-    if (textures.has_alpha != 0)
+    if (textures.has_alphaMap != 0)
     {
-        if (texture(textures.alpha, _TexCoords).r < 0.5)
+        if (texture(alphaMap, _TexCoords).r < 0.5)
             discard;
     }
 
@@ -84,8 +80,8 @@ void main()
 
     // Ambient
     vec3 ambient = light.ambient;
-    if (textures.has_ambient != 0)
-        ambient *= pow(texture(textures.ambient, _TexCoords).rgb, inv_gamma3);
+    if (textures.has_ambientMap != 0)
+        ambient *= pow(texture(ambientMap, _TexCoords).rgb, inv_gamma3);
     else
         ambient *= material.ambient;
 
@@ -93,8 +89,8 @@ void main()
 
     // Diffuse
     vec3 diffuse = light.diffuse;
-    if (textures.has_diffuse != 0)
-        diffuse *= pow(texture(textures.diffuse, _TexCoords).rgb, inv_gamma3);
+    if (textures.has_diffuseMap != 0)
+        diffuse *= pow(texture(diffuseMap, _TexCoords).rgb, inv_gamma3);
     else
         diffuse *= material.diffuse;
 
@@ -102,8 +98,8 @@ void main()
 
     // Specular
     vec3 specular = light.specular;
-    if (textures.has_specular != 0)
-        specular *= texture(textures.specular, _TexCoords).rgb;
+    if (textures.has_specularMap != 0)
+        specular *= texture(specularMap, _TexCoords).rgb;
     else
         specular *= material.specular;
 

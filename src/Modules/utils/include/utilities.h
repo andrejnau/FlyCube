@@ -28,12 +28,43 @@ inline std::string GetShaderSource(const std::string &file)
     return shader;
 }
 
+inline void CheckLink(GLuint program)
+{
+    std::string err;
+    GLint link_ok;
+    glGetProgramiv(program, GL_LINK_STATUS, &link_ok);
+    if (!link_ok)
+    {
+        GLint infoLogLength;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+        std::vector<GLchar> info_log(infoLogLength);
+        glGetProgramInfoLog(program, info_log.size(), nullptr, info_log.data());
+        err = info_log.data();
+    }
+}
+
+inline void CheckCompile(GLuint shader)
+{
+    std::string err;
+    GLint link_ok;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &link_ok);
+    if (!link_ok)
+    {
+        GLint infoLogLength;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
+        std::vector<GLchar> info_log(infoLogLength);
+        glGetShaderInfoLog(shader, info_log.size(), nullptr, info_log.data());
+        err = info_log.data();
+    }
+}
+
 inline GLuint CreateShader(GLenum shaderType, const std::string &src)
 {
     GLuint shader = glCreateShader(shaderType);
     const GLchar *source[] = { src.c_str() };
     glShaderSource(shader, 1, source, nullptr);
     glCompileShader(shader);
+    CheckCompile(shader);
     return shader;
 }
 
@@ -51,5 +82,6 @@ inline GLuint CreateProgram(const ShaderVector &shaders)
         glAttachShader(program, id);
     }
     glLinkProgram(program);
+    CheckLink(program);
     return program;
 }
