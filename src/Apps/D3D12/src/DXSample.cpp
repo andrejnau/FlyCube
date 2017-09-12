@@ -525,10 +525,12 @@ DXSample::TexInfo DXSample::LoadImageDataFromFile(std::string filename)
     unsigned char *image = SOIL_load_image(filename.c_str(), &texInfo.textureWidth, &texInfo.textureHeight, 0, SOIL_LOAD_RGBA);
 
     DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-    texInfo.numBitsPerPixel = BitsPerPixel(dxgiFormat); // number of bits per pixel
-    texInfo.bytesPerRow = (texInfo.textureWidth * texInfo.numBitsPerPixel) / 8; // number of bytes in each row of the image data
-    texInfo.imageSize = texInfo.bytesPerRow * texInfo.textureHeight; // total image size in bytes
 
+    size_t num_bytes;
+    size_t row_bytes;
+    GetSurfaceInfo(texInfo.textureWidth, texInfo.textureHeight, dxgiFormat, &num_bytes, &row_bytes, nullptr);
+    texInfo.bytesPerRow = row_bytes;
+    texInfo.imageSize = num_bytes;
     texInfo.imageData.reset(new uint8_t[texInfo.imageSize]);
     memcpy(texInfo.imageData.get(), image, texInfo.imageSize);
     SOIL_free_image_data(image);

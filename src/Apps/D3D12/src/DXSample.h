@@ -143,7 +143,6 @@ private:
         std::unique_ptr<uint8_t[]> imageData;
         int textureWidth;
         int textureHeight;
-        int numBitsPerPixel;
         int imageSize;
         int bytesPerRow;
     };
