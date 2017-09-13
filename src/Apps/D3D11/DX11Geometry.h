@@ -110,12 +110,23 @@ struct DX11Mesh : IMesh
 
     void InitTextures(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& device_context)
     {
+        static std::map<std::string, ComPtr<ID3D11ShaderResourceView>> cache;
+
         for (size_t i = 0; i < textures.size(); ++i)
         {
+            auto it = cache.find(textures[i].path);
+            if (it != cache.end())
+            {
+                texResources[i] = it->second;
+                continue;
+            }
+
             if (textures[i].path.find(".dds") != -1)
                 texResources[i] = CreateSRVFromFileDDS(device, device_context, textures[i]);
             else
                 texResources[i] = CreateSRVFromFile(device, device_context, textures[i]);
+
+            cache[textures[i].path] = texResources[i];
         }
     }
 
