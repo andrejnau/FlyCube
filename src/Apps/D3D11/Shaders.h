@@ -77,7 +77,7 @@ public:
             return UniformProxy(m_data.data() + desc.offset, desc.size);
         }
 
-        throw std::exception("name not found");
+        throw "name not found";
     }
 
     void Update(ComPtr<ID3D11DeviceContext>& device_context)
@@ -152,7 +152,7 @@ public:
         auto it = m_vs_buffers.find(name);
         if (it != m_vs_buffers.end())
             return it->second;
-        throw std::exception("name not found");
+        throw "name not found";
     }
 
     CBuffer& GetPSCBuffer(const std::string& name)
@@ -160,7 +160,7 @@ public:
         auto it = m_ps_buffers.find(name);
         if (it != m_ps_buffers.end())
             return it->second;
-        throw std::exception("name not found");
+        throw "name not found";
     }
 
     ComPtr<ID3D11VertexShader> vertex_shader;

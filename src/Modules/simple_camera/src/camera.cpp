@@ -15,7 +15,10 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
 
 void Camera::SetViewport(int width, int height)
 {
-    aspect_ = float(width) / float(height);
+    if (width * height == 0)
+        aspect_ = 1.0;
+    else
+        aspect_ = float(width) / float(height);
 }
 
 void Camera::SetCameraPos(glm::vec3 camera_pos)

@@ -11,9 +11,11 @@ set (SOURCES
     main.cpp
 )
 
-add_executable(${target} WIN32 ${SOURCES})
-set_target_properties(${target} PROPERTIES
-                    LINK_FLAGS "/ENTRY:mainCRTStartup")
+add_executable(${target} WIN32 ${HEADERS} ${SOURCES})
+if (WIN32)
+    set_target_properties(${target} PROPERTIES
+                        LINK_FLAGS "/ENTRY:mainCRTStartup")
+endif()
 
 target_link_libraries(${target}
     AppBox

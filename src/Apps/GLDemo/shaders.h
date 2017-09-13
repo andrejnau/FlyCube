@@ -46,7 +46,7 @@ public:
     template<typename T>
     void operator=(const T& x)
     {
-        static_assert(false, "not implemented");
+        //static_assert(false, "not implemented");
     }
 
 private:

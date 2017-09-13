@@ -46,7 +46,7 @@ public:
     template<typename T>
     void operator=(const T& x)
     {
-        static_assert(false, "not implemented");
+        //static_assert(false, "not implemented");
     }
 
 private:
@@ -142,7 +142,7 @@ public:
             return UniformProxyBuffer(m_data.data() + desc.offset, desc.size);
         }
 
-        throw std::exception("name not found");
+        throw "name not found";
     }
 
     void Update()
@@ -206,7 +206,7 @@ public:
         if (is_fragment)
             return ShaderType::kPixel;
 
-        throw std::exception("unknown shader type");
+        throw "unknown shader type";
     }
 
     CBuffer& GetVSCBuffer(const std::string& name)
@@ -214,7 +214,7 @@ public:
         auto it = m_vs_buffers.find(name);
         if (it != m_vs_buffers.end())
             return it->second;
-        throw std::exception("name not found");
+        throw "name not found";
     }
 
     CBuffer& GetPSCBuffer(const std::string& name)
@@ -222,7 +222,7 @@ public:
         auto it = m_ps_buffers.find(name);
         if (it != m_ps_buffers.end())
             return it->second;
-        throw std::exception("name not found");
+        throw "name not found";
     }
 
     void ParseVariable()
