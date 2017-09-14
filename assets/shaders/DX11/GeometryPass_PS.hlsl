@@ -85,6 +85,12 @@ bool HasTexture(Texture2D _texture)
 
 PS_OUT main(VS_OUTPUT input)
 {
+    if (has_alphaMap)
+    {
+        if (getTexture(alphaMap, g_sampler, input.texCoord, false).r < 0.5)
+            discard;
+    }
+
     PS_OUT output;
     output.gPosition = float4(input.fragPos.xyz, input.pos.z);
 
