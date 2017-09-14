@@ -83,7 +83,7 @@ void DXSample::OnRender()
     ASSERT_SUCCEEDED(m_swap_chain->Present(0, 0));
 }
 
-std::vector<int> MapTextures(DX11Mesh& cur_mesh, CBuffer& textures_enables)
+std::vector<int> MapTextures(DX11Mesh& cur_mesh, DX11ShaderBuffer& textures_enables)
 {
     std::vector<int> use_textures(6, -1);
 

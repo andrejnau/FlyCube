@@ -93,8 +93,8 @@ private:
 
     glm::vec3 light_pos_;
 
-    GLShader shader_geometry_pass_;
-    GLShader shader_light_pass_;
+    GLProgram shader_geometry_pass_;
+    GLProgram shader_light_pass_;
     Camera camera_;
 
     Model<GLMesh> model_;

@@ -3,6 +3,12 @@ set(target Program)
 set(headers
     DX11Program.h
     GLProgram.h
+    IShaderBuffer.h
+    DX11ShaderBuffer.h
+    GLShaderBuffer.h
+    ShaderType.h
+    BufferProxy.h
+    GLUniformProxy.h
 )
 
 set(sources
@@ -18,6 +24,11 @@ target_include_directories(${target}
 
 target_link_libraries(${target}
     Utilities
+    D3DUtils
+    d3dcompiler
+    d3d11
+    gl_load
+    utils
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

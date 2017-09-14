@@ -157,7 +157,7 @@ void tScenes::OnMouse(bool first_event, double xpos, double ypos)
     camera_.ProcessMouseMovement((float)xoffset, (float)yoffset);
 }
 
-void BindingTextures(GLShader& shader, const std::vector<std::string>& tex)
+void BindingTextures(GLProgram& shader, const std::vector<std::string>& tex)
 {
     for (int i = 0; i < tex.size(); ++i)
     {
@@ -165,7 +165,7 @@ void BindingTextures(GLShader& shader, const std::vector<std::string>& tex)
     }
 }
 
-std::vector<int> MapTextures(GLMesh& cur_mesh, CBuffer& textures_enables)
+std::vector<int> MapTextures(GLMesh& cur_mesh, GLShaderBuffer& textures_enables)
 {
     std::vector<int> use_textures(6, -1);
 
