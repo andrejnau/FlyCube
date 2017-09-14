@@ -83,6 +83,57 @@ void DXSample::OnRender()
     ASSERT_SUCCEEDED(m_swap_chain->Present(0, 0));
 }
 
+std::vector<int> MapTextures(DX11Mesh& cur_mesh, CBuffer& textures_enables)
+{
+    std::vector<int> use_textures(6, -1);
+
+    textures_enables.Uniform("has_diffuseMap") = 0;
+    textures_enables.Uniform("has_normalMap") = 0;
+    textures_enables.Uniform("has_specularMap") = 0;
+    textures_enables.Uniform("has_glossMap") = 0;
+    textures_enables.Uniform("has_ambientMap") = 0;
+    textures_enables.Uniform("has_alphaMap") = 0;
+
+    for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
+    {
+        uint32_t texture_slot = 0;
+        switch (cur_mesh.textures[i].type)
+        {
+        case aiTextureType_DIFFUSE:
+            texture_slot = 0;
+            textures_enables.Uniform("has_diffuseMap") = 1;
+            break;
+        case aiTextureType_HEIGHT:
+        {
+            texture_slot = 1;
+            auto& state = CurState<bool>::Instance().state;
+            if (!state["disable_norm"])
+                textures_enables.Uniform("has_normalMap") = 1;
+        } break;
+        case aiTextureType_SPECULAR:
+            texture_slot = 2;
+            textures_enables.Uniform("has_specularMap") = 1;
+            break;
+        case aiTextureType_SHININESS:
+            texture_slot = 3;
+            textures_enables.Uniform("has_glossMap") = 1;
+            break;
+        case aiTextureType_AMBIENT:
+            texture_slot = 4;
+            textures_enables.Uniform("has_ambientMap") = 1;
+            break;
+        case aiTextureType_OPACITY:
+            texture_slot = 5;
+            textures_enables.Uniform("has_alphaMap") = 1;
+            break;
+        default:
+            continue;
+        }
+        use_textures[texture_slot] = i;
+    }
+    return use_textures;
+}
+
 void DXSample::GeometryPass()
 {
     m_device_context->RSSetViewports(1, &m_viewport);
@@ -122,55 +173,16 @@ void DXSample::GeometryPass()
         m_device_context->IASetVertexBuffers(0, 1, cur_mesh.vertBuffer.GetAddressOf(), &stride, &offset);
         m_device_context->IASetIndexBuffer(cur_mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-        std::vector<ID3D11ShaderResourceView*> use_textures(5, nullptr);
         auto& textures_enables = m_shader_geometry_pass->GetPSCBuffer("TexturesEnables");
-
-        textures_enables.Uniform("has_diffuseMap") = 0;
-        textures_enables.Uniform("has_normalMap") = 0;
-        textures_enables.Uniform("has_specularMap") = 0;
-        textures_enables.Uniform("has_glossMap") = 0;
-        textures_enables.Uniform("has_ambientMap") = 0;
-        textures_enables.Uniform("has_alphaMap") = 0;
-
-        static uint32_t frameId = 0;
-        for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
+        std::vector<int> use_textures = MapTextures(cur_mesh, textures_enables);
+        for (int i = 0; i < use_textures.size(); ++i)
         {
-            uint32_t texture_slot = 0;
-            switch (cur_mesh.textures[i].type)
-            {
-            case aiTextureType_DIFFUSE:
-                texture_slot = 0;
-                textures_enables.Uniform("has_diffuseMap") = 1;
-                break;
-            case aiTextureType_HEIGHT:
-            {
-                texture_slot = 1;
-                auto& state = CurState<bool>::Instance().state;
-                if (!state["disable_norm"])
-                    textures_enables.Uniform("has_normalMap") = 1;
-            } break;
-            case aiTextureType_SPECULAR:
-                texture_slot = 2;
-                textures_enables.Uniform("has_specularMap") = 1;
-                break;
-            case aiTextureType_SHININESS:
-                texture_slot = 3;
-                textures_enables.Uniform("has_glossMap") = 1;
-                break;
-            case aiTextureType_AMBIENT:
-                texture_slot = 4;
-                textures_enables.Uniform("has_ambientMap") = 1;
-                break;
-            case aiTextureType_OPACITY:
-                texture_slot = 5;
-                textures_enables.Uniform("has_alphaMap") = 1;
-            default:
-                continue;
-            }
-
-            use_textures[texture_slot] = cur_mesh.texResources[i].Get();
+            int tex_id = use_textures[i];
+            ComPtr<ID3D11ShaderResourceView> srv;
+            if (tex_id >= 0)
+                srv = cur_mesh.texResources[tex_id];
+            m_device_context->PSSetShaderResources(i, 1, srv.GetAddressOf());
         }
-
         textures_enables.Update(m_device_context);
 
         auto& material = m_shader_geometry_pass->GetPSCBuffer("Material");
@@ -186,7 +198,6 @@ void DXSample::GeometryPass()
         light.Uniform("light_specular") = glm::vec3(0.5f);
         light.Update(m_device_context);
 
-        m_device_context->PSSetShaderResources(0, use_textures.size(), use_textures.data());
         m_device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 }

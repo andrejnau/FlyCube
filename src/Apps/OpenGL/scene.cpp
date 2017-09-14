@@ -157,6 +157,65 @@ void tScenes::OnMouse(bool first_event, double xpos, double ypos)
     camera_.ProcessMouseMovement((float)xoffset, (float)yoffset);
 }
 
+void BindingTextures(GLShader& shader, const std::vector<std::string>& tex)
+{
+    for (int i = 0; i < tex.size(); ++i)
+    {
+        shader.Uniform(tex[i]) = i;
+    }
+}
+
+std::vector<int> MapTextures(GLMesh& cur_mesh, CBuffer& textures_enables)
+{
+    std::vector<int> use_textures(6, -1);
+
+    textures_enables.Uniform("has_diffuseMap") = 0;
+    textures_enables.Uniform("has_normalMap") = 0;
+    textures_enables.Uniform("has_specularMap") = 0;
+    textures_enables.Uniform("has_glossMap") = 0;
+    textures_enables.Uniform("has_ambientMap") = 0;
+    textures_enables.Uniform("has_alphaMap") = 0;
+
+    for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
+    {
+        uint32_t texture_slot = 0;
+        switch (cur_mesh.textures[i].type)
+        {
+        case aiTextureType_DIFFUSE:
+            texture_slot = 0;
+            textures_enables.Uniform("has_diffuseMap") = 1;
+            break;
+        case aiTextureType_HEIGHT:
+        {
+            texture_slot = 1;
+            auto& state = CurState<bool>::Instance().state;
+            if (!state["disable_norm"])
+                textures_enables.Uniform("has_normalMap") = 1;
+        } break;
+        case aiTextureType_SPECULAR:
+            texture_slot = 2;
+            textures_enables.Uniform("has_specularMap") = 1;
+            break;
+        case aiTextureType_SHININESS:
+            texture_slot = 3;
+            textures_enables.Uniform("has_glossMap") = 1;
+            break;
+        case aiTextureType_AMBIENT:
+            texture_slot = 4;
+            textures_enables.Uniform("has_ambientMap") = 1;
+            break;
+        case aiTextureType_OPACITY:
+            texture_slot = 5;
+            textures_enables.Uniform("has_alphaMap") = 1;
+            break;
+        default:
+            continue;
+        }
+        use_textures[texture_slot] = i;
+    }
+    return use_textures;
+}
+
 inline void tScenes::GeometryPass()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -185,52 +244,35 @@ inline void tScenes::GeometryPass()
     light_buffer_geometry_pass.Update();
     light_buffer_geometry_pass.SetOnPipeline();
 
+    BindingTextures(
+        shader_geometry_pass_,
+        {
+            "diffuseMap",
+            "normalMap",
+            "specularMap",
+            "glossMap",
+            "ambientMap",
+            "alphaMap"
+        }
+    );
+
     for (GLMesh & cur_mesh : model_.meshes)
     {
-        auto& textures_buffer_geometry_pass = shader_geometry_pass_.GetPSCBuffer("TexturesEnables");
-        textures_buffer_geometry_pass.Uniform("has_diffuseMap") = 0;
-        textures_buffer_geometry_pass.Uniform("has_normalMap") = 0;
-        textures_buffer_geometry_pass.Uniform("has_specularMap") = 0;
-        textures_buffer_geometry_pass.Uniform("has_glossMap") = 0;
-        textures_buffer_geometry_pass.Uniform("has_ambientMap") = 0;
-        textures_buffer_geometry_pass.Uniform("has_alphaMap") = 0;
-
-        for (GLint i = 0; i < (GLint)cur_mesh.textures.size(); i++)
+        auto& textures_enables = shader_geometry_pass_.GetPSCBuffer("TexturesEnables");
+        std::vector<int> use_textures = MapTextures(cur_mesh, textures_enables);
+        for (int i = 0; i < use_textures.size(); ++i)
         {
-            glActiveTexture(GL_TEXTURE0 + i);
-            if (cur_mesh.textures[i].type == aiTextureType_AMBIENT)
-            {
-                shader_geometry_pass_.Uniform("ambientMap") = i;
-                textures_buffer_geometry_pass.Uniform("has_ambientMap") = 1;
-            }
-            if (cur_mesh.textures[i].type == aiTextureType_DIFFUSE)
-            {
-                shader_geometry_pass_.Uniform("diffuseMap") = i;
-                textures_buffer_geometry_pass.Uniform("has_diffuseMap") = 1;
-            }
-            else if (cur_mesh.textures[i].type == aiTextureType_SPECULAR)
-            {
-                shader_geometry_pass_.Uniform("specularMap") = i;
-                textures_buffer_geometry_pass.Uniform("has_specularMap") = 1;
-            }
-            else if (cur_mesh.textures[i].type == aiTextureType_HEIGHT)
-            {
-                shader_geometry_pass_.Uniform("normalMap") = i;
-                auto & state = CurState<bool>::Instance().state;
-                if (!state["disable_norm"])
-                    textures_buffer_geometry_pass.Uniform("has_normalMap") = 1;
-            }
-            else if (cur_mesh.textures[i].type == aiTextureType_OPACITY)
-            {
-                shader_geometry_pass_.Uniform("alphaMap") = i;
-                textures_buffer_geometry_pass.Uniform("has_alphaMap") = 1;
-            }
+            int tex_id = use_textures[i];
+            int loc_tex = 0;
+            if (tex_id >= 0)
+                loc_tex = cur_mesh.textures_id[tex_id];
 
-            glBindTexture(GL_TEXTURE_2D, cur_mesh.textures_id[i]);
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, loc_tex);
         }
 
-        textures_buffer_geometry_pass.Update();
-        textures_buffer_geometry_pass.SetOnPipeline();
+        textures_enables.Update();
+        textures_enables.SetOnPipeline();
 
         glActiveTexture(GL_TEXTURE0);
 

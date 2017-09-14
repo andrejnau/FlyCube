@@ -15,10 +15,11 @@ uniform Light
     vec3 light_specular;
 };
 
-uniform sampler2D normalMap;
-uniform sampler2D ambientMap;
 uniform sampler2D diffuseMap;
+uniform sampler2D normalMap;
 uniform sampler2D specularMap;
+uniform sampler2D glossMap;
+uniform sampler2D ambientMap;
 uniform sampler2D alphaMap;
 
 uniform TexturesEnables
