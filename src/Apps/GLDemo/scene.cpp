@@ -27,7 +27,8 @@ inline void tScenes::OnInit(int width, int height)
     width_ = width;
     height_ = height;
 
-    glDebugMessageCallback(tScenes::gl_callback, nullptr);
+    if (glDebugMessageCallback)
+        glDebugMessageCallback(tScenes::gl_callback, nullptr);
 
     auto& state = CurState<bool>::Instance().state;
     state["occlusion"] = true;
