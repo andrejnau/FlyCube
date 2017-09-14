@@ -45,11 +45,14 @@ public:
     virtual void OnDestroy() override;
     virtual void OnSizeChanged(int width, int height) override;
 
+    virtual glm::mat4 StoreMatrix(const glm::mat4& m) override
+    {
+        return m;
+    }
+
 private:
     void GeometryPass();
     void LightPass();
-
-    void UpdateCameraMovement();
 
     void InitState();
     void InitCamera();

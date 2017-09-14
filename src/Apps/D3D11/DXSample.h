@@ -44,12 +44,16 @@ public:
     virtual void OnDestroy() override;
     virtual void OnSizeChanged(int width, int height) override;
 
+    virtual glm::mat4 StoreMatrix(const glm::mat4& m) override
+    {
+        return glm::transpose(m);
+    }
+
 private:
     void CreateDeviceAndSwapChain();
     void CreateRT();
     void CreateViewPort();
     void CreateSampler();
-    void UpdateCameraMovement();
 
     std::unique_ptr<Model<DX11Mesh>> CreateGeometry(const std::string & path);
 

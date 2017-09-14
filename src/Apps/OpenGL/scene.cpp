@@ -36,48 +36,30 @@ inline void tScenes::OnInit(int width, int height)
 
 void tScenes::OnUpdate()
 {
-    UpdateCameraMovement();    
+    UpdateCameraMovement();
+    UpdateAngle();
 
-    auto & state = CurState<bool>::Instance().state;
+    auto& constant_buffer_geometry_pass = shader_geometry_pass_.GetVSCBuffer("ConstantBuffer");
+    auto& cb_light_pass_ = shader_light_pass_.GetPSCBuffer("ConstantBuffer");
 
-    static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-    static std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-    static float angle = 0.0;
+    UpdateCBuffers(constant_buffer_geometry_pass, cb_light_pass_);
 
-    end = std::chrono::system_clock::now();
-    int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    start = std::chrono::system_clock::now();
+    cb_light_pass_.Update();
+    cb_light_pass_.SetOnPipeline();
 
-    /*if (!state["pause"])
-        angle += elapsed / 2e6f;*/
-
-    float light_r = 2.5;
-    light_pos_ = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
+    constant_buffer_geometry_pass.Update();
+    constant_buffer_geometry_pass.SetOnPipeline();
 }
 
 inline void tScenes::OnRender()
 {
-    auto & state = CurState<bool>::Instance().state;
-
     glBindFramebuffer(GL_FRAMEBUFFER, ds_fbo_);
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glCullFace(GL_BACK);
-
     GeometryPass();
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glCullFace(GL_BACK);
     LightPass();
-
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, ds_fbo_);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(0, 0, width_, height_, 0, 0, width_, height_, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 inline void tScenes::OnDestroy()
@@ -103,17 +85,6 @@ inline void tScenes::GeometryPass()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(shader_geometry_pass_.GetProgram());
-    glm::mat4 projection, view, model;
-    camera_.GetMatrix(projection, view, model);
-
-    model = glm::scale(glm::vec3(model_scale_)) * model;
-
-    auto& constant_buffer_geometry_pass = shader_geometry_pass_.GetVSCBuffer("ConstantBuffer");
-    constant_buffer_geometry_pass.Uniform("model") = model;
-    constant_buffer_geometry_pass.Uniform("view") = view;
-    constant_buffer_geometry_pass.Uniform("projection") = projection;
-    constant_buffer_geometry_pass.Update();
-    constant_buffer_geometry_pass.SetOnPipeline();
 
     Light light;
     light.ambient = glm::vec3(0.2f);
@@ -229,39 +200,10 @@ inline void tScenes::LightPass()
         g_specular_
     });
 
-    glm::vec3 cameraPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(camera_.GetCameraPos(), 1.0));
-    glm::vec3 lightPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(light_pos_, 1.0));
-
-    auto& cb_light_pass_ = shader_light_pass_.GetPSCBuffer("ConstantBuffer");
-    cb_light_pass_.Uniform("viewPos") = cameraPosView;
-    cb_light_pass_.Uniform("lightPos") = lightPosView;
-    cb_light_pass_.Update();
-    cb_light_pass_.SetOnPipeline();
-
     for (GLMesh & cur_mesh : model_square.meshes)
     {
         cur_mesh.drawMesh();
     }
-}
-
-void tScenes::UpdateCameraMovement()
-{
-    double currentFrame = glfwGetTime();
-    delta_time_ = (float)(currentFrame - last_frame_);
-    last_frame_ = currentFrame;
-
-    if (keys_[GLFW_KEY_W])
-        camera_.ProcessKeyboard(CameraMovement::kForward, delta_time_);
-    if (keys_[GLFW_KEY_S])
-        camera_.ProcessKeyboard(CameraMovement::kBackward, delta_time_);
-    if (keys_[GLFW_KEY_A])
-        camera_.ProcessKeyboard(CameraMovement::kLeft, delta_time_);
-    if (keys_[GLFW_KEY_D])
-        camera_.ProcessKeyboard(CameraMovement::kRight, delta_time_);
-    if (keys_[GLFW_KEY_Q])
-        camera_.ProcessKeyboard(CameraMovement::kDown, delta_time_);
-    if (keys_[GLFW_KEY_E])
-        camera_.ProcessKeyboard(CameraMovement::kUp, delta_time_);
 }
 
 void tScenes::InitState()

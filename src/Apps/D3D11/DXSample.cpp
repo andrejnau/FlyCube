@@ -39,40 +39,12 @@ void DXSample::OnInit(int width, int height)
 void DXSample::OnUpdate()
 {
     UpdateCameraMovement();
-
-    static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-    static std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-    static float angle = 0.0;
-
-    end = std::chrono::system_clock::now();
-    int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    start = std::chrono::system_clock::now();
-
-    /*if (m_use_rotare)
-        angle += elapsed / 2e6f;*/
-
-    glm::mat4 projection, view, model;
-    camera_.GetMatrix(projection, view, model);
-
-    float model_scale_ = 0.01f;
-    model = glm::scale(glm::vec3(model_scale_)) * model;
+    UpdateAngle();
 
     auto& constant_buffer_geometry_pass = m_shader_geometry_pass->GetVSCBuffer("ConstantBuffer");
-    constant_buffer_geometry_pass.Uniform("model") = glm::transpose(model);
-    constant_buffer_geometry_pass.Uniform("view") = glm::transpose(view);
-    constant_buffer_geometry_pass.Uniform("projection") = glm::transpose(projection);
-    constant_buffer_geometry_pass.Uniform("normalMatrix") = glm::inverse(model);
-    constant_buffer_geometry_pass.Update(m_device_context);
-
-    float light_r = 2.5;
-    glm::vec3 light_pos_ = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
-
-    glm::vec3 cameraPosView = glm::vec3(glm::vec4(camera_.GetCameraPos(), 1.0));
-    glm::vec3 lightPosView = glm::vec3(glm::vec4(light_pos_, 1.0));
-
     auto& constant_buffer_light_pass = m_shader_light_pass->GetPSCBuffer("ConstantBuffer");
-    constant_buffer_light_pass.Uniform("lightPos") = glm::vec4(lightPosView, 0.0);
-    constant_buffer_light_pass.Uniform("viewPos") = glm::vec4(cameraPosView, 0.0);
+    UpdateCBuffers(constant_buffer_geometry_pass, constant_buffer_light_pass);
+    constant_buffer_geometry_pass.Update(m_device_context);
     constant_buffer_light_pass.Update(m_device_context);
 }
 
@@ -345,24 +317,4 @@ void DXSample::InitGBuffer()
     CreateRTV(m_diffuse_rtv, m_diffuse_srv);
     CreateRTV(m_specular_rtv, m_specular_srv);
     CreateRTV(m_gloss_rtv, m_gloss_srv);
-}
-
-void DXSample::UpdateCameraMovement()
-{
-    double currentFrame = glfwGetTime();
-    delta_time_ = (float)(currentFrame - last_frame_);
-    last_frame_ = currentFrame;
-
-    if (keys_[GLFW_KEY_W])
-        camera_.ProcessKeyboard(CameraMovement::kForward, delta_time_);
-    if (keys_[GLFW_KEY_S])
-        camera_.ProcessKeyboard(CameraMovement::kBackward, delta_time_);
-    if (keys_[GLFW_KEY_A])
-        camera_.ProcessKeyboard(CameraMovement::kLeft, delta_time_);
-    if (keys_[GLFW_KEY_D])
-        camera_.ProcessKeyboard(CameraMovement::kRight, delta_time_);
-    if (keys_[GLFW_KEY_Q])
-        camera_.ProcessKeyboard(CameraMovement::kDown, delta_time_);
-    if (keys_[GLFW_KEY_E])
-        camera_.ProcessKeyboard(CameraMovement::kUp, delta_time_);
 }

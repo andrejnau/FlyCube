@@ -11,6 +11,7 @@ uniform ConstantBuffer
     mat4 model;
     mat4 view;
     mat4 projection;
+    mat4 normalMatrix;
 };
 
 out VertexData
@@ -30,7 +31,6 @@ void main()
     _DepthProj = gl_Position.z;
     _TexCoords = texCoords;
 
-    mat3 normalMatrix = transpose(inverse(mat3(view * model)));
-    _Normal = normalize(normalMatrix * normal);
-    _Tangent = normalize(normalMatrix * tangent);
+    _Normal = normalize(mat3(normalMatrix) * normal);
+    _Tangent = normalize(mat3(normalMatrix) * tangent);
 }
