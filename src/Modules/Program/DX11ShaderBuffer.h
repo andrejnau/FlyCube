@@ -18,7 +18,7 @@
 
 using namespace Microsoft::WRL;
 
-class DX11ShaderBuffer : IShaderBuffer
+class DX11ShaderBuffer : public IShaderBuffer
 {
 public:
     DX11ShaderBuffer(ComPtr<ID3D11Device>& device, ShaderType shader_type, ComPtr<ID3D11ShaderReflection>& reflector, UINT index)

@@ -99,57 +99,6 @@ void BindingTextures(GLProgram& shader, const std::vector<std::string>& tex)
     }
 }
 
-std::vector<int> MapTextures(GLMesh& cur_mesh, GLShaderBuffer& textures_enables)
-{
-    std::vector<int> use_textures(6, -1);
-
-    textures_enables.Uniform("has_diffuseMap") = 0;
-    textures_enables.Uniform("has_normalMap") = 0;
-    textures_enables.Uniform("has_specularMap") = 0;
-    textures_enables.Uniform("has_glossMap") = 0;
-    textures_enables.Uniform("has_ambientMap") = 0;
-    textures_enables.Uniform("has_alphaMap") = 0;
-
-    for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
-    {
-        uint32_t texture_slot = 0;
-        switch (cur_mesh.textures[i].type)
-        {
-        case aiTextureType_DIFFUSE:
-            texture_slot = 0;
-            textures_enables.Uniform("has_diffuseMap") = 1;
-            break;
-        case aiTextureType_HEIGHT:
-        {
-            texture_slot = 1;
-            auto& state = CurState<bool>::Instance().state;
-            if (!state["disable_norm"])
-                textures_enables.Uniform("has_normalMap") = 1;
-        } break;
-        case aiTextureType_SPECULAR:
-            texture_slot = 2;
-            textures_enables.Uniform("has_specularMap") = 1;
-            break;
-        case aiTextureType_SHININESS:
-            texture_slot = 3;
-            textures_enables.Uniform("has_glossMap") = 1;
-            break;
-        case aiTextureType_AMBIENT:
-            texture_slot = 4;
-            textures_enables.Uniform("has_ambientMap") = 1;
-            break;
-        case aiTextureType_OPACITY:
-            texture_slot = 5;
-            textures_enables.Uniform("has_alphaMap") = 1;
-            break;
-        default:
-            continue;
-        }
-        use_textures[texture_slot] = i;
-    }
-    return use_textures;
-}
-
 inline void tScenes::GeometryPass()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

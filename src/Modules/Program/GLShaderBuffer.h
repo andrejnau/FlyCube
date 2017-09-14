@@ -14,7 +14,7 @@
 
 #include "ShaderType.h"
 
-class GLShaderBuffer : IShaderBuffer
+class GLShaderBuffer : public IShaderBuffer
 {
 public:
     GLuint CreateBuffer(size_t size)
