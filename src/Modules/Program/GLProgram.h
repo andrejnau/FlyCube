@@ -15,7 +15,7 @@ class UniformProxy
 public:
     UniformProxy(GLint loc)
         : m_loc(loc)
-    {       
+    {
     }
 
     void operator=(const glm::mat4& x)

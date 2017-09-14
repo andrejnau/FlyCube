@@ -1,6 +1,5 @@
 #pragma once
 
-#include "shaders.h"
 
 #include <scenebase.h>
 #include <state.h>
@@ -20,6 +19,7 @@
 #include <glm/gtx/transform.hpp>
 
 #include <ISample/ISample.h>
+#include <Program/GLProgram.h>
 
 #include "GLGeometry.h"
 

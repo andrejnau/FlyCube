@@ -2,7 +2,6 @@ set (target OpenGLApp)
 
 set (HEADERS
     scene.h
-    shaders.h
     GLGeometry.h
 )
 

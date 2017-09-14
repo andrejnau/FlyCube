@@ -16,7 +16,7 @@
 #include <Geometry/Geometry.h>
 #include "DX11Geometry.h"
 
-#include "Shaders.h"
+#include <Program/DX11Program.h>
 
 #include <ISample/ISample.h>
 #include <simple_camera/camera.h>
