@@ -178,21 +178,21 @@ inline void tScenes::GeometryPass()
     light.specular = glm::vec3(0.5f);
 
     auto& light_buffer_geometry_pass = shader_geometry_pass_.GetPSCBuffer("Light");
-    light_buffer_geometry_pass.Uniform("Light.ambient") = light.ambient;
-    light_buffer_geometry_pass.Uniform("Light.diffuse") = light.diffuse;
-    light_buffer_geometry_pass.Uniform("Light.specular") = light.specular;
+    light_buffer_geometry_pass.Uniform("light_ambient") = light.ambient;
+    light_buffer_geometry_pass.Uniform("light_diffuse") = light.diffuse;
+    light_buffer_geometry_pass.Uniform("light_specular") = light.specular;
     light_buffer_geometry_pass.Update();
     light_buffer_geometry_pass.SetOnPipeline();
 
     for (GLMesh & cur_mesh : model_.meshes)
     {
         auto& textures_buffer_geometry_pass = shader_geometry_pass_.GetPSCBuffer("TexturesEnables");
-        textures_buffer_geometry_pass.Uniform("TexturesEnables.has_diffuseMap") = 0;
-        textures_buffer_geometry_pass.Uniform("TexturesEnables.has_normalMap") = 0;
-        textures_buffer_geometry_pass.Uniform("TexturesEnables.has_specularMap") = 0;
-        textures_buffer_geometry_pass.Uniform("TexturesEnables.has_glossMap") = 0;
-        textures_buffer_geometry_pass.Uniform("TexturesEnables.has_ambientMap") = 0;
-        textures_buffer_geometry_pass.Uniform("TexturesEnables.has_alphaMap") = 0;
+        textures_buffer_geometry_pass.Uniform("has_diffuseMap") = 0;
+        textures_buffer_geometry_pass.Uniform("has_normalMap") = 0;
+        textures_buffer_geometry_pass.Uniform("has_specularMap") = 0;
+        textures_buffer_geometry_pass.Uniform("has_glossMap") = 0;
+        textures_buffer_geometry_pass.Uniform("has_ambientMap") = 0;
+        textures_buffer_geometry_pass.Uniform("has_alphaMap") = 0;
 
         for (GLint i = 0; i < (GLint)cur_mesh.textures.size(); i++)
         {
@@ -200,29 +200,29 @@ inline void tScenes::GeometryPass()
             if (cur_mesh.textures[i].type == aiTextureType_AMBIENT)
             {
                 shader_geometry_pass_.Uniform("ambientMap") = i;
-                textures_buffer_geometry_pass.Uniform("TexturesEnables.has_ambientMap") = 1;
+                textures_buffer_geometry_pass.Uniform("has_ambientMap") = 1;
             }
             if (cur_mesh.textures[i].type == aiTextureType_DIFFUSE)
             {
                 shader_geometry_pass_.Uniform("diffuseMap") = i;
-                textures_buffer_geometry_pass.Uniform("TexturesEnables.has_diffuseMap") = 1;
+                textures_buffer_geometry_pass.Uniform("has_diffuseMap") = 1;
             }
             else if (cur_mesh.textures[i].type == aiTextureType_SPECULAR)
             {
                 shader_geometry_pass_.Uniform("specularMap") = i;
-                textures_buffer_geometry_pass.Uniform("TexturesEnables.has_specularMap") = 1;
+                textures_buffer_geometry_pass.Uniform("has_specularMap") = 1;
             }
             else if (cur_mesh.textures[i].type == aiTextureType_HEIGHT)
             {
                 shader_geometry_pass_.Uniform("normalMap") = i;
                 auto & state = CurState<bool>::Instance().state;
                 if (!state["disable_norm"])
-                    textures_buffer_geometry_pass.Uniform("TexturesEnables.has_normalMap") = 1;
+                    textures_buffer_geometry_pass.Uniform("has_normalMap") = 1;
             }
             else if (cur_mesh.textures[i].type == aiTextureType_OPACITY)
             {
                 shader_geometry_pass_.Uniform("alphaMap") = i;
-                textures_buffer_geometry_pass.Uniform("TexturesEnables.has_alphaMap") = 1;
+                textures_buffer_geometry_pass.Uniform("has_alphaMap") = 1;
             }
 
             glBindTexture(GL_TEXTURE_2D, cur_mesh.textures_id[i]);
@@ -240,10 +240,10 @@ inline void tScenes::GeometryPass()
         material.specular = cur_mesh.material.spec;
         material.shininess = cur_mesh.material.shininess;
 
-        material_buffer_geometry_pass.Uniform("Material.ambient") = material.ambient;
-        material_buffer_geometry_pass.Uniform("Material.diffuse") = material.diffuse;
-        material_buffer_geometry_pass.Uniform("Material.specular") = material.specular;
-        material_buffer_geometry_pass.Uniform("Material.shininess") = material.shininess;
+        material_buffer_geometry_pass.Uniform("material_ambient") = material.ambient;
+        material_buffer_geometry_pass.Uniform("material_diffuse") = material.diffuse;
+        material_buffer_geometry_pass.Uniform("material_specular") = material.specular;
+        material_buffer_geometry_pass.Uniform("material_shininess") = material.shininess;
         material_buffer_geometry_pass.Update();
         material_buffer_geometry_pass.SetOnPipeline();
 

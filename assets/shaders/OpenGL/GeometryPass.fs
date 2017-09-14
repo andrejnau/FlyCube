@@ -2,18 +2,18 @@
 
 uniform Material
 {
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-    float shininess;
-} material;
+    vec3 material_ambient;
+    vec3 material_diffuse;
+    vec3 material_specular;
+    float material_shininess;
+};
 
 uniform Light
 {
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-} light;
+    vec3 light_ambient;
+    vec3 light_diffuse;
+    vec3 light_specular;
+};
 
 uniform sampler2D normalMap;
 uniform sampler2D ambientMap;
@@ -29,7 +29,7 @@ uniform TexturesEnables
     int has_glossMap;
     int has_ambientMap;
     int has_alphaMap;
-} textures;
+};
 
 in VertexData
 {
@@ -62,7 +62,7 @@ vec3 CalcBumpedNormal()
 
 void main()
 {
-    if (textures.has_alphaMap != 0)
+    if (has_alphaMap != 0)
     {
         if (texture(alphaMap, _TexCoords).r < 0.5)
             discard;
@@ -71,7 +71,7 @@ void main()
     gPosition = vec4(_FragPos, _DepthProj);
 
     vec3 normal = normalize(_Normal);
-    if (textures.has_normalMap != 0)
+    if (has_normalMap != 0)
         normal = CalcBumpedNormal();
 
     gNormal = normal;
@@ -79,30 +79,30 @@ void main()
     vec3 inv_gamma3 = vec3(2.2);
 
     // Ambient
-    vec3 ambient = light.ambient;
-    if (textures.has_ambientMap != 0)
+    vec3 ambient = light_ambient;
+    if (has_ambientMap != 0)
         ambient *= pow(texture(ambientMap, _TexCoords).rgb, inv_gamma3);
     else
-        ambient *= material.ambient;
+        ambient *= material_ambient;
 
     gAmbient = ambient;
 
     // Diffuse
-    vec3 diffuse = light.diffuse;
-    if (textures.has_diffuseMap != 0)
+    vec3 diffuse = light_diffuse;
+    if (has_diffuseMap != 0)
         diffuse *= pow(texture(diffuseMap, _TexCoords).rgb, inv_gamma3);
     else
-        diffuse *= material.diffuse;
+        diffuse *= material_diffuse;
 
     gDiffuse = diffuse;
 
     // Specular
-    vec3 specular = light.specular;
-    if (textures.has_specularMap != 0)
+    vec3 specular = light_specular;
+    if (has_specularMap != 0)
         specular *= texture(specularMap, _TexCoords).rgb;
     else
-        specular *= material.specular;
+        specular *= material_specular;
 
     gSpecular.rgb = specular;
-    gSpecular.a =  material.shininess;
+    gSpecular.a =  material_shininess;
 }
