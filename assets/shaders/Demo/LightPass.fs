@@ -39,7 +39,7 @@ void main()
 
     vec3 viewDir = normalize(viewPos - fragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(normal, reflectDir), 0.0), shininess);
+    float spec = pow(clamp(dot(viewDir, reflectDir), 0.0, 1.0), shininess);
     specular *= spec;
 
     vec4 shadowCoord = depthBiasMVP * vec4(fragPos, 1.0);
