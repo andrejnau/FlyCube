@@ -177,30 +177,57 @@ inline void tScenes::GeometryPass()
     }
 }
 
+class BindTextureGuard
+{
+public:
+    BindTextureGuard(const std::vector<GLuint>& tex_id)
+        : m_count(tex_id.size())
+    {
+        for (int i = 0; i < tex_id.size(); ++i)
+        {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, tex_id[i]);
+        }
+        glActiveTexture(GL_TEXTURE0);
+    }
+
+    ~BindTextureGuard()
+    {
+        for (int i = 0; i < m_count; ++i)
+        {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        glActiveTexture(GL_TEXTURE0);
+    }
+private:
+    size_t m_count;
+};
+
 inline void tScenes::LightPass()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(shader_light_pass_.GetProgram());
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, g_position_);
-    shader_light_pass_.Uniform("gPosition") = 0;
+    BindingTextures(
+        shader_light_pass_,
+        {
+            "gPosition",
+            "gNormal",
+            "gAmbient",
+            "gDiffuse",
+            "ambientMap",
+            "gSpecular"
+        }
+    );
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, g_normal_);
-    shader_light_pass_.Uniform("gNormal") = 1;
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, g_ambient_);
-    shader_light_pass_.Uniform("gAmbient") = 2;
-
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, g_diffuse_);
-    shader_light_pass_.Uniform("gDiffuse") = 3;
-
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, g_specular_);
-    shader_light_pass_.Uniform("gSpecular") = 4;
+    BindTextureGuard texture_guard({
+        g_position_,
+        g_normal_,
+        g_ambient_,
+        g_diffuse_,
+        g_specular_
+    });
 
     glm::vec3 cameraPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(camera_.GetCameraPos(), 1.0));
     glm::vec3 lightPosView = glm::vec3(camera_.GetViewMatrix() * glm::vec4(light_pos_, 1.0));
