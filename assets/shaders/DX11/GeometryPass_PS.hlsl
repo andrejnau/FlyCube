@@ -87,7 +87,7 @@ PS_OUT main(VS_OUTPUT input)
 {
     if (has_alphaMap)
     {
-        if (getTexture(alphaMap, g_sampler, input.texCoord, false).r < 0.5)
+        if (getTexture(alphaMap, g_sampler, input.texCoord).r < 0.5)
             discard;
     }
 
