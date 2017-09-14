@@ -48,8 +48,8 @@ void tScenes::OnUpdate()
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = std::chrono::system_clock::now();
 
-    if (!state["pause"])
-        angle += elapsed / 2e6f;
+    /*if (!state["pause"])
+        angle += elapsed / 2e6f;*/
 
     float light_r = 2.5;
     light_pos_ = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
@@ -63,11 +63,6 @@ inline void tScenes::OnRender()
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glCullFace(GL_BACK);
-
-    if (state["warframe"])
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    else
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     GeometryPass();
 
@@ -94,67 +89,6 @@ inline void tScenes::OnSizeChanged(int width, int height)
     height_ = height;
     glViewport(0, 0, width_, height_);
     camera_.SetViewport(width_, height_);
-}
-
-void tScenes::OnKey(int key, int action)
-{
-    if (action == GLFW_PRESS)
-        keys_[key] = true;
-    else if (action == GLFW_RELEASE)
-        keys_[key] = false;
-
-    if (key == GLFW_KEY_F && action == GLFW_PRESS)
-    {
-        auto & state = CurState<bool>::Instance().state;
-        state["warframe"] = !state["warframe"];
-    }
-
-    if (key == GLFW_KEY_N && action == GLFW_PRESS)
-    {
-        auto & state = CurState<bool>::Instance().state;
-        state["disable_norm"] = !state["disable_norm"];
-    }
-
-    if (key == GLFW_KEY_O && action == GLFW_PRESS)
-    {
-        auto & state = CurState<bool>::Instance().state;
-        state["occlusion"] = !state["occlusion"];
-    }
-
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        auto & state = CurState<bool>::Instance().state;
-        state["pause"] = !state["pause"];
-    }
-
-    if (key == GLFW_KEY_L && action == GLFW_PRESS)
-    {
-        auto & state = CurState<bool>::Instance().state;
-        state["shadow"] = !state["shadow"];
-    }
-
-    if (key == GLFW_KEY_P && action == GLFW_PRESS)
-    {
-        auto & state = CurState<bool>::Instance().state;
-        state["occlusion_only"] = !state["occlusion_only"];
-    }
-}
-
-void tScenes::OnMouse(bool first_event, double xpos, double ypos)
-{
-    if (first_event)
-    {
-        last_x_ = xpos;
-        last_y_ = ypos;
-    }
-
-    double xoffset = xpos - last_x_;
-    double yoffset = last_y_ - ypos;  // Reversed since y-coordinates go from bottom to left
-
-    last_x_ = xpos;
-    last_y_ = ypos;
-
-    camera_.ProcessMouseMovement((float)xoffset, (float)yoffset);
 }
 
 void BindingTextures(GLProgram& shader, const std::vector<std::string>& tex)

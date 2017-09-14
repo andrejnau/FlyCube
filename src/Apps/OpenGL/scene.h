@@ -19,11 +19,12 @@
 #include <glm/gtx/transform.hpp>
 
 #include <ISample/ISample.h>
+#include <ISample/SampleBase.h>
 #include <Program/GLProgram.h>
 
 #include "GLGeometry.h"
 
-class tScenes : public ISample
+class tScenes : public SampleBase
 {
 public:
     tScenes();
@@ -43,9 +44,6 @@ public:
     virtual void OnRender() override;
     virtual void OnDestroy() override;
     virtual void OnSizeChanged(int width, int height) override;
-
-    virtual void OnKey(int key, int action) override;
-    virtual void OnMouse(bool first_event, double xpos, double ypos) override;
 
 private:
     void GeometryPass();
@@ -95,14 +93,7 @@ private:
 
     GLProgram shader_geometry_pass_;
     GLProgram shader_light_pass_;
-    Camera camera_;
 
     Model<GLMesh> model_;
     Model<GLMesh> model_square;
-
-    std::map<int, bool> keys_;
-    float last_frame_ = 0.0;
-    float delta_time_ = 0.0f;
-    double last_x_ = 0.0f;
-    double last_y_ = 0.0f;
 };

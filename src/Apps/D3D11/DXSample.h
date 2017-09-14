@@ -19,12 +19,13 @@
 #include <Program/DX11Program.h>
 
 #include <ISample/ISample.h>
+#include <ISample/SampleBase.h>
 #include <simple_camera/camera.h>
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
 
-class DXSample : public ISample
+class DXSample : public SampleBase
 {
 public:
     DXSample();
@@ -42,9 +43,6 @@ public:
     virtual void OnRender() override;
     virtual void OnDestroy() override;
     virtual void OnSizeChanged(int width, int height) override;
-
-    virtual void OnKey(int key, int action) override;
-    virtual void OnMouse(bool first_event, double xpos, double ypos) override;
 
 private:
     void CreateDeviceAndSwapChain();
@@ -90,13 +88,6 @@ private:
     ComPtr<ID3D11ShaderResourceView> m_diffuse_srv;
     ComPtr<ID3D11ShaderResourceView> m_specular_srv;
     ComPtr<ID3D11ShaderResourceView> m_gloss_srv;
-
-    Camera camera_;
-    std::map<int, bool> keys_;
-    float last_frame_ = 0.0;
-    float delta_time_ = 0.0f;
-    double last_x_ = 0.0f;
-    double last_y_ = 0.0f;
 
     int m_width;
     int m_height;

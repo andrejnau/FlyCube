@@ -417,34 +417,3 @@ void DXSample::UpdateCameraMovement()
     if (keys_[GLFW_KEY_E])
         camera_.ProcessKeyboard(CameraMovement::kUp, delta_time_);
 }
-
-void DXSample::OnKey(int key, int action)
-{
-    if (action == GLFW_PRESS)
-        keys_[key] = true;
-    else if (action == GLFW_RELEASE)
-        keys_[key] = false;
-
-    if (key == GLFW_KEY_N && action == GLFW_PRESS)
-    {
-        auto & state = CurState<bool>::Instance().state;
-        state["disable_norm"] = !state["disable_norm"];
-    }
-}
-
-void DXSample::OnMouse(bool first_event, double xpos, double ypos)
-{
-    if (first_event)
-    {
-        last_x_ = xpos;
-        last_y_ = ypos;
-    }
-
-    double xoffset = xpos - last_x_;
-    double yoffset = last_y_ - ypos;  // Reversed since y-coordinates go from bottom to left
-
-    last_x_ = xpos;
-    last_y_ = ypos;
-
-    camera_.ProcessMouseMovement((float)xoffset, (float)yoffset);
-}

@@ -21,6 +21,6 @@ public:
     virtual void OnRender() = 0;
     virtual void OnDestroy() = 0;
 
-    virtual void OnKey(int key, int action) {}
-    virtual void OnMouse(bool first, double xpos, double ypos) {}
+    virtual void OnKey(int key, int action) {};
+    virtual void OnMouse(bool first, double xpos, double ypos) {};
 };
