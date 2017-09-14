@@ -85,10 +85,12 @@ void DXSample::GeometryPass()
 
     m_device_context->OMSetRenderTargets(rtvs.size(), rtvs.data(), m_depth_stencil_view.Get());
 
-    for (size_t mesh_id = 0; mesh_id < m_model_of_file->meshes.size(); ++mesh_id)
-    {
-        DX11Mesh & cur_mesh = m_model_of_file->meshes[mesh_id];
+    auto& light = m_shader_geometry_pass->GetPSCBuffer("Light");
+    SetLight(light);
+    light.Update(m_device_context);
 
+    for (DX11Mesh& cur_mesh : m_model_of_file->meshes)
+    {
         UINT stride = sizeof(cur_mesh.vertices[0]);
         UINT offset = 0;
         m_device_context->IASetVertexBuffers(0, 1, cur_mesh.vertBuffer.GetAddressOf(), &stride, &offset);
@@ -107,17 +109,8 @@ void DXSample::GeometryPass()
         textures_enables.Update(m_device_context);
 
         auto& material = m_shader_geometry_pass->GetPSCBuffer("Material");
-        material.Uniform("material_ambient") = cur_mesh.material.amb;
-        material.Uniform("material_diffuse") = cur_mesh.material.dif;
-        material.Uniform("material_specular") = cur_mesh.material.spec;
-        material.Uniform("material_shininess") = cur_mesh.material.shininess;
+        SetMaterial(material, cur_mesh);
         material.Update(m_device_context);
-
-        auto& light = m_shader_geometry_pass->GetPSCBuffer("Light");
-        light.Uniform("light_ambient") = glm::vec3(0.2f);
-        light.Uniform("light_diffuse") = glm::vec3(1.0f);
-        light.Uniform("light_specular") = glm::vec3(0.5f);
-        light.Update(m_device_context);
 
         m_device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }

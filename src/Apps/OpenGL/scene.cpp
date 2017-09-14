@@ -86,15 +86,8 @@ inline void tScenes::GeometryPass()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(shader_geometry_pass_.GetProgram());
 
-    Light light;
-    light.ambient = glm::vec3(0.2f);
-    light.diffuse = glm::vec3(1.0f);
-    light.specular = glm::vec3(0.5f);
-
     auto& light_buffer_geometry_pass = shader_geometry_pass_.GetPSCBuffer("Light");
-    light_buffer_geometry_pass.Uniform("light_ambient") = light.ambient;
-    light_buffer_geometry_pass.Uniform("light_diffuse") = light.diffuse;
-    light_buffer_geometry_pass.Uniform("light_specular") = light.specular;
+    SetLight(light_buffer_geometry_pass);
     light_buffer_geometry_pass.Update();
     light_buffer_geometry_pass.SetOnPipeline();
 
@@ -124,23 +117,13 @@ inline void tScenes::GeometryPass()
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, loc_tex);
         }
+        glActiveTexture(GL_TEXTURE0);
 
         textures_enables.Update();
         textures_enables.SetOnPipeline();
 
-        glActiveTexture(GL_TEXTURE0);
-
         auto& material_buffer_geometry_pass = shader_geometry_pass_.GetPSCBuffer("Material");
-        Material material;
-        material.ambient = cur_mesh.material.amb;
-        material.diffuse = cur_mesh.material.dif;
-        material.specular = cur_mesh.material.spec;
-        material.shininess = cur_mesh.material.shininess;
-
-        material_buffer_geometry_pass.Uniform("material_ambient") = material.ambient;
-        material_buffer_geometry_pass.Uniform("material_diffuse") = material.diffuse;
-        material_buffer_geometry_pass.Uniform("material_specular") = material.specular;
-        material_buffer_geometry_pass.Uniform("material_shininess") = material.shininess;
+        SetMaterial(material_buffer_geometry_pass, cur_mesh);
         material_buffer_geometry_pass.Update();
         material_buffer_geometry_pass.SetOnPipeline();
 

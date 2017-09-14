@@ -154,6 +154,21 @@ public:
             camera_.ProcessKeyboard(CameraMovement::kUp, delta_time_);
     }
 
+    void SetLight(IShaderBuffer& light_buffer_geometry_pass)
+    {
+        light_buffer_geometry_pass.Uniform("light_ambient") = glm::vec3(0.2f);
+        light_buffer_geometry_pass.Uniform("light_diffuse") = glm::vec3(1.0f);
+        light_buffer_geometry_pass.Uniform("light_specular") = glm::vec3(0.5f);
+    }
+
+    void SetMaterial(IShaderBuffer& material_buffer_geometry_pass, IMesh& cur_mesh)
+    {
+        material_buffer_geometry_pass.Uniform("material_ambient") = cur_mesh.material.amb;
+        material_buffer_geometry_pass.Uniform("material_diffuse") = cur_mesh.material.dif;
+        material_buffer_geometry_pass.Uniform("material_specular") = cur_mesh.material.spec;
+        material_buffer_geometry_pass.Uniform("material_shininess") = cur_mesh.material.shininess;
+    }
+
     Camera camera_;
     std::map<int, bool> keys_;
     float last_frame_ = 0.0;

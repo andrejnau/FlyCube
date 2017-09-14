@@ -58,26 +58,9 @@ private:
     void InitCamera();
     void InitGBuffer();
 
-    struct Material
-    {
-        glm::vec3 ambient;
-        glm::vec3 diffuse;
-        glm::vec3 specular;
-        float shininess;
-    };
-
-    struct Light
-    {
-        glm::vec3 ambient;
-        glm::vec3 diffuse;
-        glm::vec3 specular;
-    };
-
     int load_func_;
     int width_ = 0;
     int height_ = 0;
-    float angle_ = 0.0f;
-    float model_scale_ = 0.01f;
 
     GLuint ds_fbo_;
 
@@ -87,12 +70,6 @@ private:
     GLuint g_diffuse_;
     GLuint g_specular_;
     GLuint g_depth_texture_;
-
-    glm::vec3 axis_x_ = glm::vec3(1.0f, 0.0f, 0.0f);
-    glm::vec3 axis_y_ = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 axis_z_ = glm::vec3(0.0f, 0.0f, 1.0f);
-
-    glm::vec3 light_pos_;
 
     GLProgram shader_geometry_pass_;
     GLProgram shader_light_pass_;
