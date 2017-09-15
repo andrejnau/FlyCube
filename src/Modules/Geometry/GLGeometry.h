@@ -4,11 +4,6 @@
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
 
-#define POS_ATTRIB 0
-#define NORMAL_ATTRIB 1
-#define TANGENT_ATTRIB 2
-#define TEXTURE_ATTRIB 3
-
 inline GLuint CreateTexture(const std::string& filename, aiTextureType type)
 {
     static std::map<std::string, GLuint> cache;
@@ -91,51 +86,29 @@ struct GLMesh : IMesh
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, position));
+
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, normal));
+
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, tangent));
+
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, texCoords));
 
         glBindVertexArray(0);
     }
 
     void drawMesh()
     {
-        bindMesh();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
-        unbindMesh();
-    }
-
-    void bindMesh()
-    {
         glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-        // Vertex Positions
-        glEnableVertexAttribArray(POS_ATTRIB);
-        glVertexAttribPointer(POS_ATTRIB, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, position));
-        // Vertex Normals
-        glEnableVertexAttribArray(NORMAL_ATTRIB);
-        glVertexAttribPointer(NORMAL_ATTRIB, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, normal));
-        // Vertex Texture Coords
-        glEnableVertexAttribArray(TEXTURE_ATTRIB);
-        glVertexAttribPointer(TEXTURE_ATTRIB, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, texCoords));
-
-        glEnableVertexAttribArray(TANGENT_ATTRIB);
-        glVertexAttribPointer(TANGENT_ATTRIB, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, tangent));
-    }
-
-    void unbindMesh()
-    {
+        glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glDisableVertexAttribArray(POS_ATTRIB);
-        glDisableVertexAttribArray(NORMAL_ATTRIB);
-        glDisableVertexAttribArray(TEXTURE_ATTRIB);
-        glDisableVertexAttribArray(TANGENT_ATTRIB);
     }
 };
