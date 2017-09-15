@@ -16,21 +16,25 @@ uniform ConstantBuffer
 
 out VertexData
 {
-    vec3 _FragPos;
-    vec3 _Normal;
-    vec3 _Tangent;
-    vec2 _TexCoords;
-    float _DepthProj;
-};
+    vec4 pos;
+    vec3 fragPos;
+    vec3 normal;
+    vec2 texCoord;
+    vec3 tangent;
+} vs_out;
 
 void main()
 {
-    vec4 viewPos = view * model * vec4(position, 1.0);
-    _FragPos = viewPos.xyz;
-    gl_Position = projection * viewPos;
-    _DepthProj = gl_Position.z;
-    _TexCoords = texCoords;
+    vec4 newPosition = vec4(position, 1.0);
+    newPosition = model * newPosition;
+    vs_out.fragPos = vec3(newPosition);
+    newPosition = projection * view * newPosition;
 
-    _Normal = normalize(mat3(normalMatrix) * normal);
-    _Tangent = normalize(mat3(normalMatrix) * tangent);
+    vs_out.pos = newPosition;
+    vs_out.texCoord = texCoords;
+
+    vs_out.normal = normalize(mat3(normalMatrix) * normal);
+    vs_out.tangent = normalize(mat3(normalMatrix) * tangent);
+
+    gl_Position =  vs_out.pos;
 }
