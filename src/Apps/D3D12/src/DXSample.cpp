@@ -450,7 +450,7 @@ void DXSample::CreateViewPort()
     scissorRect.bottom = m_height;
 }
 
-void DXSample::CreateTexture(DX12Mesh::Texture& texture, DX12Mesh::TexResources& texResources)
+void DXSample::CreateTexture(TextureInfo& texture, DX12Mesh::TexResources& texResources)
 {
     TexInfo texInfo = LoadImageDataFromFile(texture.path);
 

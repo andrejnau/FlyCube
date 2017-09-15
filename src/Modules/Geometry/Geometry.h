@@ -6,6 +6,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <glm/glm.hpp>
+#include <TextureLoader/TextureInfo.h>
 
 struct IMesh
 {
@@ -20,12 +21,6 @@ struct IMesh
 
     using Index = uint32_t;
 
-    struct Texture
-    {
-        aiTextureType type;
-        std::string path;
-    };
-
     struct Material
     {
         glm::vec3 amb = glm::vec3(0.0, 0.0, 0.0);
@@ -38,7 +33,7 @@ struct IMesh
     Material material;
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-    std::vector<Texture> textures;
+    std::vector<TextureInfo> textures;
 };
 
 struct BoundBox
@@ -70,8 +65,8 @@ private:
     void LoadModel(aiPostProcessSteps flags);
     void ProcessNode(aiNode* node, const aiScene* scene);
     void ProcessMesh(aiMesh* mesh, const aiScene* scene);
-    void FindSimilarTextures(std::vector<IMesh::Texture>& textures);
-    void LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::vector<IMesh::Texture>& textures);
+    void FindSimilarTextures(std::vector<TextureInfo>& textures);
+    void LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::vector<TextureInfo>& textures);
 
 private:
     std::string m_path;

@@ -60,7 +60,7 @@ inline GLuint CreateTexture(const std::string& filename, aiTextureType type)
     return cache[filename] = texture_name;
 }
 
-inline GLuint TextureFromFile(IMesh::Texture& texture)
+inline GLuint TextureFromFile(TextureInfo& texture)
 {
     DBG("texture %s", texture.path.c_str());
     return CreateTexture(texture.path, texture.type);

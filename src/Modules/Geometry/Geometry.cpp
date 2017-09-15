@@ -117,7 +117,7 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     // Process materials
     if (mesh->mMaterialIndex >= 0)
     {
-        std::vector<IMesh::Texture> textures;
+        std::vector<TextureInfo> textures;
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
         LoadMaterialTextures(mat, aiTextureType_AMBIENT, textures);
         LoadMaterialTextures(mat, aiTextureType_DIFFUSE, textures);
@@ -127,19 +127,19 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
         FindSimilarTextures(textures);
 
-        auto comparator = [&](const IMesh::Texture& lhs, const IMesh::Texture& rhs)
+        auto comparator = [&](const TextureInfo& lhs, const TextureInfo& rhs)
         {
             return std::tie(lhs.type, lhs.path) < std::tie(rhs.type, rhs.path);
         };
 
-        std::set<IMesh::Texture, decltype(comparator)> unique_textures(comparator);
+        std::set<TextureInfo, decltype(comparator)> unique_textures(comparator);
 
-        for (IMesh::Texture& texture : textures)
+        for (TextureInfo& texture : textures)
         {
             unique_textures.insert(texture);
         }
 
-        for (const IMesh::Texture& texture : unique_textures)
+        for (const TextureInfo& texture : unique_textures)
         {
             cur_mesh.textures.push_back(texture);
         }
@@ -166,7 +166,7 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     }
 }
 
-void ModelLoader::FindSimilarTextures(std::vector<IMesh::Texture>& textures)
+void ModelLoader::FindSimilarTextures(std::vector<TextureInfo>& textures)
 {
     static std::pair<std::string, aiTextureType> map_from[] = {
         { "_s", aiTextureType_SPECULAR },
@@ -182,7 +182,7 @@ void ModelLoader::FindSimilarTextures(std::vector<IMesh::Texture>& textures)
         { "_spec", aiTextureType_SPECULAR },
     };
 
-    std::vector<IMesh::Texture> added_textures;
+    std::vector<TextureInfo> added_textures;
     for (auto& from_type : map_from)
     {
         for (auto& cur_texture : textures)
@@ -200,7 +200,7 @@ void ModelLoader::FindSimilarTextures(std::vector<IMesh::Texture>& textures)
                 if (!std::ifstream(cur_path).good())
                     continue;
 
-                IMesh::Texture texture;
+                TextureInfo texture;
                 texture.type = to_type.second;
                 texture.path = cur_path;
                 added_textures.push_back(texture);
@@ -211,7 +211,7 @@ void ModelLoader::FindSimilarTextures(std::vector<IMesh::Texture>& textures)
     textures.insert(textures.end(), added_textures.begin(), added_textures.end());
 }
 
-void ModelLoader::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::vector<IMesh::Texture>& textures)
+void ModelLoader::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::vector<TextureInfo>& textures)
 {
     for (uint32_t i = 0; i < mat->GetTextureCount(type); ++i)
     {
@@ -221,7 +221,7 @@ void ModelLoader::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std:
         if(!std::ifstream(texture_path).good())
             continue;
 
-        IMesh::Texture texture;
+        TextureInfo texture;
         texture.type = type;
         texture.path = texture_path;
         textures.push_back(texture);

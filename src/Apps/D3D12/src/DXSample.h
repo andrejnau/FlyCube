@@ -49,7 +49,7 @@ private:
     void CreateRootSignature();
     void CreatePSO();
     void CreateViewPort();
-    void CreateTexture(DX12Mesh::Texture& texture, DX12Mesh::TexResources& texResources);
+    void CreateTexture(TextureInfo& texture, DX12Mesh::TexResources& texResources);
     void UploadAllResources();
     void WaitForGpu();
     void WaitForPreviousFrame();
