@@ -31,10 +31,7 @@ public:
     DXSample();
     ~DXSample();
 
-    static std::unique_ptr<ISample> Create()
-    {
-        return std::make_unique<DXSample>();
-    }
+    static std::unique_ptr<ISample> Create();
 
     virtual void OnInit(int width, int height) override;
     virtual void OnUpdate() override;
@@ -43,11 +40,7 @@ public:
     virtual void OnRender() override;
     virtual void OnDestroy() override;
     virtual void OnSizeChanged(int width, int height) override;
-
-    virtual glm::mat4 StoreMatrix(const glm::mat4& m) override
-    {
-        return glm::transpose(m);
-    }
+    virtual glm::mat4 StoreMatrix(const glm::mat4& m) override;
 
 private:
     void CreateDeviceAndSwapChain();

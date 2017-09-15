@@ -14,6 +14,11 @@ DXSample::DXSample()
 DXSample::~DXSample()
 {}
 
+std::unique_ptr<ISample> DXSample::Create()
+{
+    return std::make_unique<DXSample>();
+}
+
 void DXSample::OnInit(int width, int height)
 {
     m_width = width;
@@ -175,6 +180,11 @@ void DXSample::OnSizeChanged(int width, int height)
         InitGBuffer();
         camera_.SetViewport(m_width, m_height);
     }
+}
+
+inline glm::mat4 DXSample::StoreMatrix(const glm::mat4 & m)
+{
+    return glm::transpose(m);
 }
 
 void DXSample::CreateDeviceAndSwapChain()

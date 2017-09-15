@@ -1,5 +1,9 @@
 #include "scene.h"
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
 tScenes::tScenes()
     : load_func_(ogl_LoadFunctions())
@@ -11,13 +15,20 @@ tScenes::tScenes()
     , model_square("model/square.obj", ~aiProcess_FlipUVs)
 {}
 
+std::unique_ptr<ISample> tScenes::Create()
+{
+    return std::make_unique<tScenes>();
+}
+
+void APIENTRY gl_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *msg, const void *data)
+{
+    std::cout << "debug call: " << msg << std::endl;
+}
+
 inline void tScenes::OnInit(int width, int height)
 {
     width_ = width;
     height_ = height;
-
-    if (glDebugMessageCallback)
-        glDebugMessageCallback(tScenes::gl_callback, nullptr);
 
     InitState();
     InitCamera();
@@ -32,6 +43,9 @@ inline void tScenes::OnInit(int width, int height)
     {
         cur_mesh.setupMesh();
     }
+
+    if (glDebugMessageCallback)
+        glDebugMessageCallback(gl_callback, nullptr);
 }
 
 void tScenes::OnUpdate()
@@ -41,14 +55,9 @@ void tScenes::OnUpdate()
 
     auto& constant_buffer_geometry_pass = shader_geometry_pass_.GetVSCBuffer("ConstantBuffer");
     auto& cb_light_pass_ = shader_light_pass_.GetPSCBuffer("ConstantBuffer");
-
     UpdateCBuffers(constant_buffer_geometry_pass, cb_light_pass_);
-
     cb_light_pass_.Update();
-    cb_light_pass_.SetOnPipeline();
-
     constant_buffer_geometry_pass.Update();
-    constant_buffer_geometry_pass.SetOnPipeline();
 }
 
 inline void tScenes::OnRender()
@@ -73,6 +82,11 @@ inline void tScenes::OnSizeChanged(int width, int height)
     camera_.SetViewport(width_, height_);
 }
 
+glm::mat4 tScenes::StoreMatrix(const glm::mat4& m)
+{
+    return m;
+}
+
 void BindingTextures(GLProgram& shader, const std::vector<std::string>& tex)
 {
     for (int i = 0; i < tex.size(); ++i)
@@ -83,13 +97,16 @@ void BindingTextures(GLProgram& shader, const std::vector<std::string>& tex)
 
 inline void tScenes::GeometryPass()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(shader_geometry_pass_.GetProgram());
+
+    shader_geometry_pass_.GetVSCBuffer("ConstantBuffer").SetOnPipeline();
+    shader_geometry_pass_.GetPSCBuffer("Light").SetOnPipeline();
+    shader_geometry_pass_.GetPSCBuffer("Material").SetOnPipeline();
+    shader_geometry_pass_.GetPSCBuffer("TexturesEnables").SetOnPipeline();
 
     auto& light_buffer_geometry_pass = shader_geometry_pass_.GetPSCBuffer("Light");
     SetLight(light_buffer_geometry_pass);
     light_buffer_geometry_pass.Update();
-    light_buffer_geometry_pass.SetOnPipeline();
 
     BindingTextures(
         shader_geometry_pass_,
@@ -107,6 +124,8 @@ inline void tScenes::GeometryPass()
     {
         auto& textures_enables = shader_geometry_pass_.GetPSCBuffer("TexturesEnables");
         std::vector<int> use_textures = MapTextures(cur_mesh, textures_enables);
+        textures_enables.Update();
+
         for (int i = 0; i < use_textures.size(); ++i)
         {
             int tex_id = use_textures[i];
@@ -117,15 +136,10 @@ inline void tScenes::GeometryPass()
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, loc_tex);
         }
-        glActiveTexture(GL_TEXTURE0);
-
-        textures_enables.Update();
-        textures_enables.SetOnPipeline();
 
         auto& material_buffer_geometry_pass = shader_geometry_pass_.GetPSCBuffer("Material");
         SetMaterial(material_buffer_geometry_pass, cur_mesh);
         material_buffer_geometry_pass.Update();
-        material_buffer_geometry_pass.SetOnPipeline();
 
         cur_mesh.drawMesh();
     }
@@ -160,8 +174,9 @@ private:
 
 inline void tScenes::LightPass()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(shader_light_pass_.GetProgram());
+
+    shader_light_pass_.GetPSCBuffer("ConstantBuffer").SetOnPipeline();
 
     BindingTextures(
         shader_light_pass_,
