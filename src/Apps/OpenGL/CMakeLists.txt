@@ -21,7 +21,6 @@ target_link_libraries(${target}
     SOIL
     assimp
     simple_camera
-    utils
     ISample
     Geometry
     Utilities

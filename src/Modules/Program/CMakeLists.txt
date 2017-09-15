@@ -28,7 +28,6 @@ target_link_libraries(${target}
     d3dcompiler
     d3d11
     gl_load
-    utils
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

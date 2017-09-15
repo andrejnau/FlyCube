@@ -3,7 +3,7 @@
 #include <Util.h>
 #include <Utility.h>
 #include <Utilities/FileUtility.h>
-#include <state.h>
+#include <Utilities/State.h>
 #include <GLFW/glfw3.h>
 
 DXSample::DXSample()

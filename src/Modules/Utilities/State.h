@@ -1,6 +1,6 @@
 #pragma once
 
-#include <singleton.h>
+#include "Utilities/Singleton.h"
 #include <map>
 
 template<typename T>

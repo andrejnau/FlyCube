@@ -22,7 +22,6 @@ target_link_libraries(${target}
     SOIL
     d3d11
     gl_load
-    utils
     Utilities
     D3DUtils
 )

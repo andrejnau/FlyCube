@@ -4,6 +4,7 @@
 #include <TextureLoader/GLTextureLoader.h>
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
+#include <Utilities/Logger.h>
 
 struct GLMesh : IMesh
 {
