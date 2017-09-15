@@ -3,7 +3,11 @@
 #include <Geometry/Geometry.h>
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
-#include <utilities.h>
+
+#define POS_ATTRIB 0
+#define NORMAL_ATTRIB 1
+#define TANGENT_ATTRIB 2
+#define TEXTURE_ATTRIB 3
 
 inline GLuint CreateTexture(const std::string& filename, aiTextureType type)
 {

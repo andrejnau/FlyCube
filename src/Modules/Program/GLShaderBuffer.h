@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include <platform.h>
-#include <utilities.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
