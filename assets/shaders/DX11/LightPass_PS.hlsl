@@ -1,15 +1,14 @@
 struct VS_OUTPUT
 {
-    float4 pos: SV_POSITION;
-    float2 texCoord: TEXCOORD;
+    float4 pos      : SV_POSITION;
+    float2 texCoord : TEXCOORD;
 };
 
 Texture2D gPosition : register(t0);
-Texture2D gNormal : register(t1);
-Texture2D gAmbient : register(t2);
-Texture2D gDiffuse : register(t3);
+Texture2D gNormal   : register(t1);
+Texture2D gAmbient  : register(t2);
+Texture2D gDiffuse  : register(t3);
 Texture2D gSpecular : register(t4);
-Texture2D gGloss : register(t5);
 
 SamplerState g_sampler : register(s0);
 
@@ -49,9 +48,8 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 
     float3 viewDir = normalize(viewPos - fragPos);
     float3 reflectDir = reflect(-lightDir, normal);
-    float reflectivity = getTexture(gGloss, g_sampler, input.texCoord).r;
     float spec = pow(saturate(dot(viewDir, reflectDir)), shininess);
-    float3 specular = specular_base * spec * reflectivity;
+    float3 specular = specular_base * spec;
 
     float3 hdrColor = float3(ambient + diffuse + specular);
     return pow(float4(hdrColor, 1.0), gamma4);

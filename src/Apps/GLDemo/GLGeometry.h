@@ -122,9 +122,6 @@ struct GLMesh : IMesh
 
         glEnableVertexAttribArray(TANGENT_ATTRIB);
         glVertexAttribPointer(TANGENT_ATTRIB, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, tangent));
-
-        glEnableVertexAttribArray(BITANGENT_ATTRIB);
-        glVertexAttribPointer(BITANGENT_ATTRIB, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, bitangent));
     }
 
     void unbindMesh()
@@ -136,6 +133,5 @@ struct GLMesh : IMesh
         glDisableVertexAttribArray(NORMAL_ATTRIB);
         glDisableVertexAttribArray(TEXTURE_ATTRIB);
         glDisableVertexAttribArray(TANGENT_ATTRIB);
-        glDisableVertexAttribArray(BITANGENT_ATTRIB);
     }
 };

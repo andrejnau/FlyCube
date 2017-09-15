@@ -78,7 +78,6 @@ void DXSample::GeometryPass()
         m_ambient_rtv.Get(),
         m_diffuse_rtv.Get(),
         m_specular_rtv.Get(),
-        m_gloss_rtv.Get(),
     };
 
     float bgColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
@@ -149,10 +148,9 @@ void DXSample::LightPass()
             m_normal_srv.Get(),
             m_ambient_srv.Get(),
             m_diffuse_srv.Get(),
-            m_specular_srv.Get(),
-            m_gloss_srv.Get()
+            m_specular_srv.Get()
         };
-    
+
         m_device_context->PSSetShaderResources(0, use_textures.size(), use_textures.data());
         m_device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
@@ -319,5 +317,4 @@ void DXSample::InitGBuffer()
     CreateRTV(m_ambient_rtv, m_ambient_srv);
     CreateRTV(m_diffuse_rtv, m_diffuse_srv);
     CreateRTV(m_specular_rtv, m_specular_srv);
-    CreateRTV(m_gloss_rtv, m_gloss_srv);
 }

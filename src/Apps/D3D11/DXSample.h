@@ -76,14 +76,12 @@ private:
     ComPtr<ID3D11RenderTargetView> m_ambient_rtv;
     ComPtr<ID3D11RenderTargetView> m_diffuse_rtv;
     ComPtr<ID3D11RenderTargetView> m_specular_rtv;
-    ComPtr<ID3D11RenderTargetView> m_gloss_rtv;
 
     ComPtr<ID3D11ShaderResourceView> m_position_srv;
     ComPtr<ID3D11ShaderResourceView> m_normal_srv;
     ComPtr<ID3D11ShaderResourceView> m_ambient_srv;
     ComPtr<ID3D11ShaderResourceView> m_diffuse_srv;
     ComPtr<ID3D11ShaderResourceView> m_specular_srv;
-    ComPtr<ID3D11ShaderResourceView> m_gloss_srv;
 
     int m_width;
     int m_height;

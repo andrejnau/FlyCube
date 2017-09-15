@@ -7,9 +7,8 @@
 
 #define POS_ATTRIB 0
 #define NORMAL_ATTRIB 1
-#define TEXTURE_ATTRIB 2
-#define TANGENT_ATTRIB 3
-#define BITANGENT_ATTRIB 4
+#define TANGENT_ATTRIB 2
+#define TEXTURE_ATTRIB 3
 
 using ShaderVector = std::vector<std::pair<GLenum, std::string>>;
 

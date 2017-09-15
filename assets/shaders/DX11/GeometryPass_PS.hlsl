@@ -1,29 +1,29 @@
 struct VS_OUTPUT
 {
-    float4 pos: SV_POSITION;
-    float3 fragPos : POSITION;
-    float3 normal : NORMAL;
-    float2 texCoord: TEXCOORD;
-    float3 tangent: TANGENT;
+    float4 pos       : SV_POSITION;
+    float3 fragPos   : POSITION;
+    float3 normal    : NORMAL;
+    float3 tangent   : TANGENT;
+    float2 texCoord  : TEXCOORD;
 };
 
-Texture2D diffuseMap : register(t0);
-Texture2D normalMap : register(t1);
-Texture2D specularMap : register(t2);
-Texture2D glossMap : register(t3);
-Texture2D ambientMap : register(t4);
-Texture2D alphaMap : register(t5);
+Texture2D normalMap   : register(t0);
+Texture2D alphaMap    : register(t1);
+Texture2D ambientMap  : register(t2);
+Texture2D diffuseMap  : register(t3);
+Texture2D specularMap : register(t4);
+Texture2D glossMap    : register(t5);
 
 SamplerState g_sampler : register(s0);
 
 cbuffer TexturesEnables
 {
-    int has_diffuseMap;
     int has_normalMap;
+    int has_alphaMap;
+    int has_ambientMap;
+    int has_diffuseMap;
     int has_specularMap;
     int has_glossMap;
-    int has_ambientMap;
-    int has_alphaMap;
 };
 
 cbuffer Material
@@ -41,26 +41,20 @@ cbuffer Light
     float3 light_specular;
 };
 
-#define USE_CAMMA_RT
-#define USE_CAMMA_TEX
-
 float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, bool _need_gamma = false)
 {
     float4 _color = _texture.Sample(_sample, _tex_coord);
-#ifdef USE_CAMMA_TEX
     if (_need_gamma)
         _color = float4(pow(abs(_color.rgb), 2.2), _color.a);
-#endif
     return _color;
 }
 
 struct PS_OUT
 {   float4 gPosition : SV_Target0;
     float3 gNormal   : SV_Target1;
-    float3 gAmbient  : SV_Target2; 
+    float3 gAmbient  : SV_Target2;
     float3 gDiffuse  : SV_Target3;
     float4 gSpecular : SV_Target4;
-    float3 gGloss    : SV_Target5;
 };
 
 float3 CalcBumpedNormal(VS_OUTPUT input)
@@ -112,15 +106,15 @@ PS_OUT main(VS_OUTPUT input)
         output.gDiffuse *= material_diffuse;
 
     output.gSpecular.rgb = light_specular;
-    output.gSpecular.a = material_shininess;
     if (has_specularMap)
         output.gSpecular.rgb *= getTexture(specularMap, g_sampler, input.texCoord, true).rgb;
     else
         output.gSpecular.rgb *= material_specular;
 
     if (has_glossMap)
-        output.gGloss = getTexture(glossMap, g_sampler, input.texCoord, true).rgb;
+        output.gSpecular.a = getTexture(glossMap, g_sampler, input.texCoord, false).r;
     else
-        output.gGloss = float3(1.0, 1.0, 1.0);
+        output.gSpecular.a = material_shininess;
+
     return output;
 }

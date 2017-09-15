@@ -2,9 +2,8 @@
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
-layout(location = 2) in vec2 texCoords;
-layout(location = 3) in vec3 tangent;
-layout(location = 4) in vec3 bitangent;
+layout(location = 2) in vec3 tangent;
+layout(location = 3) in vec2 texCoord;
 
 uniform ConstantBuffer
 {
@@ -19,22 +18,19 @@ out VertexData
     vec4 pos;
     vec3 fragPos;
     vec3 normal;
-    vec2 texCoord;
     vec3 tangent;
+    vec2 texCoord;
 } vs_out;
 
 void main()
 {
-    vec4 newPosition = vec4(position, 1.0);
-    newPosition = model * newPosition;
-    vs_out.fragPos = vec3(newPosition);
-    newPosition = projection * view * newPosition;
+    vec4 worldPos = model * vec4(position, 1.0);
+    vs_out.fragPos = worldPos.xyz;
+    vs_out.pos = projection * view * worldPos;
+    vs_out.texCoord = texCoord;
 
-    vs_out.pos = newPosition;
-    vs_out.texCoord = texCoords;
-
-    vs_out.normal = normalize(mat3(normalMatrix) * normal);
-    vs_out.tangent = normalize(mat3(normalMatrix) * tangent);
+    vs_out.normal = mat3(normalMatrix ) * normal;
+    vs_out.tangent = mat3(normalMatrix) * tangent;
 
     gl_Position =  vs_out.pos;
 }

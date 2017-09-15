@@ -1,9 +1,9 @@
 struct VS_INPUT
 {
-    float3 pos : POSITION;
-    float3 normal : NORMAL;
-    float2 texCoord: TEXCOORD;
-    float3 tangent: TANGENT;
+    float3 pos       : POSITION;
+    float3 normal    : NORMAL;
+    float3 tangent   : TANGENT;
+    float2 texCoord  : TEXCOORD;
 };
 
 cbuffer ConstantBuffer
@@ -16,27 +16,24 @@ cbuffer ConstantBuffer
 
 struct VS_OUTPUT
 {
-    float4 pos: SV_POSITION;
-    float3 fragPos : POSITION;
-    float3 normal : NORMAL;
-    float2 texCoord: TEXCOORD;
-    float3 tangent: TANGENT;
+    float4 pos       : SV_POSITION;
+    float3 fragPos   : POSITION;
+    float3 normal    : NORMAL;
+    float3 tangent   : TANGENT;
+    float2 texCoord  : TEXCOORD;
 };
 
-VS_OUTPUT main(VS_INPUT input)
+VS_OUTPUT main(VS_INPUT vs_in)
 {
-    VS_OUTPUT output;
+    VS_OUTPUT vs_out;
 
-    float4 newPosition = float4(input.pos, 1.0f);
-    newPosition = mul(newPosition, model);
-    output.fragPos = newPosition;
-    newPosition = mul(newPosition, view);
-    newPosition = mul(newPosition, projection);
+    float4 worldPos = mul(float4(vs_in.pos, 1.0), model);
+    vs_out.fragPos = worldPos.xyz;
+    vs_out.pos = mul(worldPos, mul(view, projection));;
+    vs_out.texCoord = vs_in.texCoord;
 
-    output.pos = newPosition;
-    output.texCoord = input.texCoord;
+    vs_out.normal = mul(vs_in.normal, (float3x3)normalMatrix);
+    vs_out.tangent = mul(vs_in.tangent, (float3x3)normalMatrix);
 
-    output.normal = normalize(mul(input.normal, (float3x3)normalMatrix));
-    output.tangent = normalize(mul(input.tangent, (float3x3)normalMatrix));
-    return output;
+    return vs_out;
 }

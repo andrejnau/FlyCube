@@ -111,12 +111,12 @@ inline void tScenes::GeometryPass()
     BindingTextures(
         shader_geometry_pass_,
         {
-            "diffuseMap",
             "normalMap",
-            "specularMap",
-            "glossMap",
+            "alphaMap",
             "ambientMap",
-            "alphaMap"
+            "diffuseMap",
+            "specularMap",
+            "glossMap"
         }
     );
 
@@ -185,7 +185,6 @@ inline void tScenes::LightPass()
             "gNormal",
             "gAmbient",
             "gDiffuse",
-            "ambientMap",
             "gSpecular"
         }
     );

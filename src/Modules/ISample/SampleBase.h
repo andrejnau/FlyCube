@@ -67,32 +67,32 @@ public:
             uint32_t texture_slot = 0;
             switch (cur_mesh.textures[i].type)
             {
-            case aiTextureType_DIFFUSE:
-                texture_slot = 0;
-                textures_enables.Uniform("has_diffuseMap") = 1;
-                break;
             case aiTextureType_HEIGHT:
             {
-                texture_slot = 1;
+                texture_slot = 0;
                 auto& state = CurState<bool>::Instance().state;
                 if (!state["disable_norm"])
                     textures_enables.Uniform("has_normalMap") = 1;
             } break;
-            case aiTextureType_SPECULAR:
+            case aiTextureType_OPACITY:
+                texture_slot = 1;
+                textures_enables.Uniform("has_alphaMap") = 1;
+                break;
+            case aiTextureType_AMBIENT:
                 texture_slot = 2;
+                textures_enables.Uniform("has_ambientMap") = 1;
+                break;
+            case aiTextureType_DIFFUSE:
+                texture_slot = 3;
+                textures_enables.Uniform("has_diffuseMap") = 1;
+                break;
+            case aiTextureType_SPECULAR:
+                texture_slot = 4;
                 textures_enables.Uniform("has_specularMap") = 1;
                 break;
             case aiTextureType_SHININESS:
-                texture_slot = 3;
-                textures_enables.Uniform("has_glossMap") = 1;
-                break;
-            case aiTextureType_AMBIENT:
-                texture_slot = 4;
-                textures_enables.Uniform("has_ambientMap") = 1;
-                break;
-            case aiTextureType_OPACITY:
                 texture_slot = 5;
-                textures_enables.Uniform("has_alphaMap") = 1;
+                textures_enables.Uniform("has_glossMap") = 1;
                 break;
             default:
                 continue;
@@ -126,7 +126,7 @@ public:
         constant_buffer_geometry_pass.Uniform("model") = StoreMatrix(model);
         constant_buffer_geometry_pass.Uniform("view") = StoreMatrix(view);
         constant_buffer_geometry_pass.Uniform("projection") = StoreMatrix(projection);
-        constant_buffer_geometry_pass.Uniform("normalMatrix") = StoreMatrix(model);
+        constant_buffer_geometry_pass.Uniform("normalMatrix") = StoreMatrix(glm::transpose(glm::inverse(model)));
 
         float light_r = 2.5;
         glm::vec3 light_pos_ = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));

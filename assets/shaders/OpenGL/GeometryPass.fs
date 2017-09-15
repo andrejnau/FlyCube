@@ -1,5 +1,31 @@
 #version 330
 
+in VertexData
+{
+    vec4 pos;
+    vec3 fragPos;
+    vec3 normal;
+    vec3 tangent;
+    vec2 texCoord;
+} ps_in;
+
+uniform sampler2D normalMap;
+uniform sampler2D alphaMap;
+uniform sampler2D ambientMap;
+uniform sampler2D diffuseMap;
+uniform sampler2D specularMap;
+uniform sampler2D glossMap;
+
+uniform TexturesEnables
+{
+    int has_normalMap;
+    int has_alphaMap;
+    int has_ambientMap;
+    int has_diffuseMap;
+    int has_specularMap;
+    int has_glossMap;
+};
+
 uniform Material
 {
     vec3 material_ambient;
@@ -14,32 +40,6 @@ uniform Light
     vec3 light_diffuse;
     vec3 light_specular;
 };
-
-uniform sampler2D diffuseMap;
-uniform sampler2D normalMap;
-uniform sampler2D specularMap;
-uniform sampler2D glossMap;
-uniform sampler2D ambientMap;
-uniform sampler2D alphaMap;
-
-uniform TexturesEnables
-{
-    int has_diffuseMap;
-    int has_normalMap;
-    int has_specularMap;
-    int has_glossMap;
-    int has_ambientMap;
-    int has_alphaMap;
-};
-
-in VertexData
-{
-    vec4 pos;
-    vec3 fragPos;
-    vec3 normal;
-    vec2 texCoord;
-    vec3 tangent;
-} ps_in;
 
 layout (location = 0) out vec4 gPosition;
 layout (location = 1) out vec3 gNormal;
@@ -100,10 +100,14 @@ void main()
     // Specular
     vec3 specular = light_specular;
     if (has_specularMap != 0)
-        specular *= texture(specularMap, ps_in.texCoord).rgb;
+        specular *= pow(texture(specularMap, ps_in.texCoord).rgb, inv_gamma3);
     else
         specular *= material_specular;
 
+    float shininess = material_shininess;
+    if (has_glossMap != 0)
+        shininess= texture(glossMap, ps_in.texCoord).r;
+
     gSpecular.rgb = specular;
-    gSpecular.a =  material_shininess;
+    gSpecular.a =  shininess;
 }
