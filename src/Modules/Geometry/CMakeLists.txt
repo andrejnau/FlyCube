@@ -2,6 +2,8 @@ set(target Geometry)
 
 set(headers
     Geometry.h
+    GLGeometry.h
+    DX11Geometry.h
 )
 
 set(sources

@@ -2,7 +2,7 @@
 
 #include <ISample/SampleBase.h>
 #include <Program/GLProgram.h>
-#include "GLGeometry.h"
+#include <Geometry/GLGeometry.h>
 
 class tScenes : public SampleBase
 {
