@@ -79,7 +79,7 @@ inline void tScenes::OnSizeChanged(int width, int height)
     width_ = width;
     height_ = height;
     glViewport(0, 0, width_, height_);
-    camera_.SetViewport(width_, height_);
+    m_camera.SetViewport(width_, height_);
 }
 
 glm::mat4 tScenes::StoreMatrix(const glm::mat4& m)
@@ -212,7 +212,7 @@ void tScenes::InitState()
 
 void tScenes::InitCamera()
 {
-    camera_.SetViewport(width_, height_);
+    m_camera.SetViewport(width_, height_);
 }
 
 void tScenes::InitGBuffer()

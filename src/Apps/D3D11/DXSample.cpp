@@ -34,7 +34,7 @@ void DXSample::OnInit(int width, int height)
     m_model_of_file = CreateGeometry("model/sponza/sponza.obj");
     m_model_square = CreateGeometry("model/square.obj");
     InitGBuffer();
-    camera_.SetViewport(m_width, m_height);
+    m_camera.SetViewport(m_width, m_height);
 
     m_device_context->PSSetSamplers(0, 1, m_texture_sampler.GetAddressOf());
     m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -175,7 +175,7 @@ void DXSample::OnSizeChanged(int width, int height)
         CreateRT();
         CreateViewPort();
         InitGBuffer();
-        camera_.SetViewport(m_width, m_height);
+        m_camera.SetViewport(m_width, m_height);
     }
 }
 

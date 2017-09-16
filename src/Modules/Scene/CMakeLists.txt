@@ -6,7 +6,7 @@ set(headers
 )
 
 set(sources
-    empty.cpp
+    SceneBase.cpp
 )
 
 add_library(${target} ${headers} ${sources})
