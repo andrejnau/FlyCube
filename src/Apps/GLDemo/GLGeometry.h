@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
 #include <utilities.h>
+#include <Utilities/Logger.h>
 
 inline GLuint CreateTexture(const std::string& filename, aiTextureType type)
 {

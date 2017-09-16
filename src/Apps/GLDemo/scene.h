@@ -3,9 +3,9 @@
 #include "shaders.h"
 
 #include <scenebase.h>
-#include <state.h>
+#include <Utilities/State.h>
 
-#include <simple_camera/camera.h>
+#include <SimpleCamera/Camera.h>
 
 #include <chrono>
 #include <memory>

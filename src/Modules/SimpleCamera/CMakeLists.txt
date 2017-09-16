@@ -1,14 +1,11 @@
-set(target TextureLoader)
+set(target SimpleCamera)
 
 set(headers
-    GLTextureLoader.h
-    DX11TextureLoader.h
-    TextureInfo.h
+    Camera.h
 )
 
 set(sources
-    GLTextureLoader.cpp
-    DX11TextureLoader.cpp
+    Camera.cpp
 )
 
 add_library(${target} ${headers} ${sources})
@@ -19,11 +16,6 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
-    SOIL
-    d3d11
-    gl_load
-    Utilities
-    D3DUtils
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

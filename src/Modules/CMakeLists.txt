@@ -6,7 +6,7 @@ add_subdirectory(ISample)
 add_subdirectory(AppBox)
 add_subdirectory(WinConsole)
 
-add_subdirectory(simple_camera)
+add_subdirectory(SimpleCamera)
 add_subdirectory(gl_load)
 add_subdirectory(Utilities)
 add_subdirectory(Geometry)

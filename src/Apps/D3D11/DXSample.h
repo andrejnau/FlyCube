@@ -19,7 +19,6 @@
 
 #include <ISample/ISample.h>
 #include <ISample/SampleBase.h>
-#include <simple_camera/camera.h>
 
 using namespace Microsoft::WRL;
 using namespace DirectX;

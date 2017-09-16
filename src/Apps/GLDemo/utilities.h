@@ -1,6 +1,6 @@
 #pragma once
 
-#include <platform.h>
+#include <gl_load/gl_core_4_5.h>
 #include <string>
 #include <vector>
 #include <fstream>

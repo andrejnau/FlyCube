@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "ISample.h"
-#include <simple_camera/camera.h>
+#include <SimpleCamera/Camera.h>
 #include <Geometry/Geometry.h>
 #include <Program/IShaderBuffer.h>
 #include <GLFW/glfw3.h>
@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/transform.hpp>
+
 
 class SampleBase : public ISample
 {

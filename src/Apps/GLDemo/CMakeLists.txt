@@ -22,7 +22,7 @@ target_link_libraries(${target}
     gl_load
     SOIL
     assimp
-    simple_camera
+    SimpleCamera
     ISample
     Geometry
     Utilities
