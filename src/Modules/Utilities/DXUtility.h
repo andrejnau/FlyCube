@@ -8,7 +8,7 @@
 //
 // Developed by Minigraph
 //
-// Author:  James Stanard 
+// Author:  James Stanard
 //
 
 #pragma once
@@ -17,7 +17,7 @@
 #include <cstdio>
 #include <cstdarg>
 
-namespace Utility
+namespace DXUtility
 {
     inline void Print(const char* msg) { printf(msg); }
     inline void Print(const wchar_t* msg) { wprintf(msg); }
@@ -66,7 +66,7 @@ namespace Utility
     }
 #endif
 
-} // namespace Utility
+} // namespace DXUtility
 
 #ifdef ERROR
 #undef ERROR
@@ -95,19 +95,19 @@ namespace Utility
 #define STRINGIFY_BUILTIN(x) STRINGIFY(x)
 #define ASSERT( isFalse, ... ) \
 		if (!(bool)(isFalse)) { \
-			Utility::Print("\nAssertion failed in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
-			Utility::PrintSubMessage("\'" #isFalse "\' is false"); \
-			Utility::PrintSubMessage(__VA_ARGS__); \
-			Utility::Print("\n"); \
+			DXUtility::Print("\nAssertion failed in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
+			DXUtility::PrintSubMessage("\'" #isFalse "\' is false"); \
+			DXUtility::PrintSubMessage(__VA_ARGS__); \
+			DXUtility::Print("\n"); \
 			__debugbreak(); \
 		}
 
 #define ASSERT_SUCCEEDED( hr, ... ) \
 		if (FAILED(hr)) { \
-			Utility::Print("\nHRESULT failed in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
-			Utility::PrintSubMessage("hr = 0x%08X", hr); \
-			Utility::PrintSubMessage(__VA_ARGS__); \
-			Utility::Print("\n"); \
+			DXUtility::Print("\nHRESULT failed in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
+			DXUtility::PrintSubMessage("hr = 0x%08X", hr); \
+			DXUtility::PrintSubMessage(__VA_ARGS__); \
+			DXUtility::Print("\n"); \
 			__debugbreak(); \
 		}
 
@@ -117,22 +117,22 @@ namespace Utility
 		static bool s_TriggeredWarning = false; \
 		if ((bool)(isTrue) && !s_TriggeredWarning) { \
 			s_TriggeredWarning = true; \
-			Utility::Print("\nWarning issued in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
-			Utility::PrintSubMessage("\'" #isTrue "\' is true"); \
-			Utility::PrintSubMessage(__VA_ARGS__); \
-			Utility::Print("\n"); \
+			DXUtility::Print("\nWarning issued in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
+			DXUtility::PrintSubMessage("\'" #isTrue "\' is true"); \
+			DXUtility::PrintSubMessage(__VA_ARGS__); \
+			DXUtility::Print("\n"); \
 		} \
 	}
 
 #define WARN_ONCE_IF_NOT( isTrue, ... ) WARN_ONCE_IF(!(isTrue), __VA_ARGS__)
 
 #define ERROR( ... ) \
-		Utility::Print("\nError reported in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
-		Utility::PrintSubMessage(__VA_ARGS__); \
-		Utility::Print("\n");
+		DXUtility::Print("\nError reported in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
+		DXUtility::PrintSubMessage(__VA_ARGS__); \
+		DXUtility::Print("\n");
 
 #define DEBUGPRINT( msg, ... ) \
-	Utility::Printf( msg "\n", ##__VA_ARGS__ );
+	DXUtility::Printf( msg "\n", ##__VA_ARGS__ );
 
 #endif
 

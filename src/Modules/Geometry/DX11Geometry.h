@@ -3,7 +3,7 @@
 #include <d3d11.h>
 #include <wrl.h>
 #include <glm/glm.hpp>
-#include <Utility.h>
+#include <Utilities/DXUtility.h>
 #include <Geometry/Geometry.h>
 #include <TextureLoader/DX11TextureLoader.h>
 #include <gli/gli.hpp>

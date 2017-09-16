@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include <Utility.h>
+#include <Utilities/DXUtility.h>
 #include <Geometry/Geometry.h>
 #include <Utilities/FileUtility.h>
 

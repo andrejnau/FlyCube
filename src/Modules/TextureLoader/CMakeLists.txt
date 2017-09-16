@@ -4,11 +4,13 @@ set(headers
     GLTextureLoader.h
     DX11TextureLoader.h
     TextureInfo.h
+    DXGIFormatHelper.h
 )
 
 set(sources
     GLTextureLoader.cpp
     DX11TextureLoader.cpp
+    DXGIFormatHelper.cpp
 )
 
 add_library(${target} ${headers} ${sources})
@@ -21,9 +23,9 @@ target_include_directories(${target}
 target_link_libraries(${target}
     SOIL
     d3d11
+    dxgi
     gl_load
     Utilities
-    D3DUtils
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

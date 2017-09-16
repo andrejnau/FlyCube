@@ -1,7 +1,6 @@
 #include "DXSample.h"
 #include <chrono>
-#include <Util.h>
-#include <Utility.h>
+#include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
 #include <Utilities/State.h>
 #include <GLFW/glfw3.h>

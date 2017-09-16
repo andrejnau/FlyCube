@@ -12,7 +12,7 @@
 #include <memory>
 #include <string>
 
-#include <Util.h>
+#include <Utilities/DXUtility.h>
 #include <Geometry/DX11Geometry.h>
 
 #include <Program/DX11Program.h>

@@ -1,6 +1,6 @@
 #include "TextureLoader/DX11TextureLoader.h"
-#include <Utility.h>
-#include <Util.h>
+#include "TextureLoader/DXGIFormatHelper.h"
+#include <Utilities/DXUtility.h>
 #include <gli/gli.hpp>
 #include <SOIL.h>
 

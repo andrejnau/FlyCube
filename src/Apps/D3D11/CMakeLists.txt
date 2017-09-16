@@ -49,7 +49,6 @@ target_link_libraries(${target}
     d3d11
     assimp
     SOIL
-    D3DUtils
     AppBox
     ISample
     Geometry
