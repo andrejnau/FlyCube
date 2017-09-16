@@ -12,7 +12,10 @@ set(headers
 )
 
 set(sources
-    empty.cpp
+    DX11Program.cpp
+    DX11ShaderBuffer.cpp
+    GLProgram.cpp
+    GLShaderBuffer.cpp
 )
 
 add_library(${target} ${headers} ${sources})
@@ -24,10 +27,9 @@ target_include_directories(${target}
 
 target_link_libraries(${target}
     Utilities
-    D3DUtils
     d3dcompiler
     d3d11
-    gl_load
+    GLLoader
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

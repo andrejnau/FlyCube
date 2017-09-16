@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "BufferProxy.h"
+#include "Program/BufferProxy.h"
 
 class IShaderBuffer
 {
