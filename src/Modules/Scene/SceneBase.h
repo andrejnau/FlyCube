@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Scene/IScene.h"
-#include <SimpleCamera/Camera.h>
+#include <Camera/Camera.h>
 #include <Program/IShaderBuffer.h>
 #include <Geometry/Geometry.h>
 #include <glm/glm.hpp>

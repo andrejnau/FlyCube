@@ -20,7 +20,6 @@ target_link_libraries(${target}
     GLLoader
     SOIL
     assimp
-    SimpleCamera
     Scene
     Geometry
     Utilities

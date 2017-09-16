@@ -1,4 +1,4 @@
-set(target SimpleCamera)
+set(target Camera)
 
 set(headers
     Camera.h

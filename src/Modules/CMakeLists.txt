@@ -1,7 +1,7 @@
 add_subdirectory(Scene)
 add_subdirectory(AppBox)
 add_subdirectory(WinConsole)
-add_subdirectory(SimpleCamera)
+add_subdirectory(Camera)
 add_subdirectory(GLLoader)
 add_subdirectory(Utilities)
 add_subdirectory(Geometry)

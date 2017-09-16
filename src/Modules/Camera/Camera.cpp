@@ -1,4 +1,4 @@
-#include "SimpleCamera/Camera.h"
+#include "Camera/Camera.h"
 
 Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
     : front_(glm::vec3(0.0f, 0.0f, -1.0f))

@@ -16,4 +16,8 @@ target_include_directories(${target}
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
+target_link_libraries(${target}
+    Camera
+)
+
 set_target_properties(${target} PROPERTIES FOLDER "library")
