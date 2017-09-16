@@ -17,7 +17,7 @@ endif()
 
 target_link_libraries(${target}
     AppBox
-    GLLoader
+    glLoadGen
     SOIL
     assimp
     Scene

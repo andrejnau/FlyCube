@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <GLLoader/GL.h>
+#include <glLoadGen/gl.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Program/GLShaderBuffer.h"
 #include "Program/GLUniformProxy.h"
-#include <GLLoader/GL.h>
+#include <glLoadGen/gl.h>
 #include <string>
 #include <map>
 

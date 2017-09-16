@@ -2,7 +2,7 @@
 
 #include "Program/IShaderBuffer.h"
 #include "Program/ShaderType.h"
-#include <GLLoader/GL.h>
+#include <glLoadGen/gl.h>
 #include <string>
 #include <vector>
 #include <map>
