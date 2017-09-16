@@ -1,4 +1,4 @@
-#include "DXSample.h"
+#include "DX11Scene.h"
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
 #include <Utilities/State.h>
@@ -6,20 +6,20 @@
 #include <GLFW/glfw3.h>
 #include <chrono>
 
-DXSample::DXSample()
+DX11Scene::DX11Scene()
     : m_width(0)
     , m_height(0)
 {}
 
-DXSample::~DXSample()
+DX11Scene::~DX11Scene()
 {}
 
-IScene::Ptr DXSample::Create()
+IScene::Ptr DX11Scene::Create()
 {
-    return std::make_unique<DXSample>();
+    return std::make_unique<DX11Scene>();
 }
 
-void DXSample::OnInit(int width, int height)
+void DX11Scene::OnInit(int width, int height)
 {
     m_width = width;
     m_height = height;
@@ -41,7 +41,7 @@ void DXSample::OnInit(int width, int height)
     m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void DXSample::OnUpdate()
+void DX11Scene::OnUpdate()
 {
     UpdateCameraMovement();
     UpdateAngle();
@@ -53,14 +53,14 @@ void DXSample::OnUpdate()
     constant_buffer_light_pass.Update(m_device_context);
 }
 
-void DXSample::OnRender()
+void DX11Scene::OnRender()
 {
     GeometryPass();
     LightPass();
     ASSERT_SUCCEEDED(m_swap_chain->Present(0, 0));
 }
 
-void DXSample::GeometryPass()
+void DX11Scene::GeometryPass()
 {
     m_device_context->RSSetViewports(1, &m_viewport);
     m_device_context->VSSetShader(m_shader_geometry_pass->vertex_shader.Get(), 0, 0);
@@ -120,7 +120,7 @@ void DXSample::GeometryPass()
     }
 }
 
-void DXSample::LightPass()
+void DX11Scene::LightPass()
 {
     m_device_context->VSSetShader(m_shader_light_pass->vertex_shader.Get(), 0, 0);
     m_device_context->PSSetShader(m_shader_light_pass->pixel_shader.Get(), 0, 0);
@@ -156,11 +156,11 @@ void DXSample::LightPass()
     }
 }
 
-void DXSample::OnDestroy()
+void DX11Scene::OnDestroy()
 {
 }
 
-void DXSample::OnSizeChanged(int width, int height)
+void DX11Scene::OnSizeChanged(int width, int height)
 {
     if (width != m_width || height != m_height)
     {
@@ -180,13 +180,13 @@ void DXSample::OnSizeChanged(int width, int height)
     }
 }
 
-inline glm::mat4 DXSample::StoreMatrix(const glm::mat4 & m)
+inline glm::mat4 DX11Scene::StoreMatrix(const glm::mat4 & m)
 {
     return glm::transpose(m);
 }
 
-void DXSample::CreateDeviceAndSwapChain()
-{    
+void DX11Scene::CreateDeviceAndSwapChain()
+{
     //Describe our Buffer
     DXGI_MODE_DESC bufferDesc;
     ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));
@@ -218,7 +218,7 @@ void DXSample::CreateDeviceAndSwapChain()
         D3D11_SDK_VERSION, &swapChainDesc, &m_swap_chain, &m_device, nullptr, &m_device_context));
 }
 
-void DXSample::CreateRT()
+void DX11Scene::CreateRT()
 {
     //Create our BackBuffer
     ComPtr<ID3D11Texture2D> BackBuffer;
@@ -245,7 +245,7 @@ void DXSample::CreateRT()
     ASSERT_SUCCEEDED(m_device->CreateDepthStencilView(m_depth_stencil_buffer.Get(), nullptr, &m_depth_stencil_view));
 }
 
-void DXSample::CreateViewPort()
+void DX11Scene::CreateViewPort()
 {
     ZeroMemory(&m_viewport, sizeof(D3D11_VIEWPORT));
     m_viewport.TopLeftX = 0;
@@ -256,7 +256,7 @@ void DXSample::CreateViewPort()
     m_viewport.MaxDepth = 1.0f;
 }
 
-void DXSample::CreateSampler()
+void DX11Scene::CreateSampler()
 {
     D3D11_SAMPLER_DESC sampDesc;
     ZeroMemory(&sampDesc, sizeof(sampDesc));
@@ -271,18 +271,18 @@ void DXSample::CreateSampler()
     ASSERT_SUCCEEDED(m_device->CreateSamplerState(&sampDesc, &m_texture_sampler));
 }
 
-std::unique_ptr<Model<DX11Mesh>> DXSample::CreateGeometry(const std::string& path)
+std::unique_ptr<Model<DX11Mesh>> DX11Scene::CreateGeometry(const std::string& path)
 {
     std::unique_ptr<Model<DX11Mesh>> model = std::make_unique<Model<DX11Mesh>>(path);
-     
+
     for (DX11Mesh & cur_mesh : model->meshes)
     {
         cur_mesh.SetupMesh(m_device, m_device_context);
-    } 
+    }
     return model;
 }
 
-void DXSample::CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
+void DX11Scene::CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
 {
     D3D11_TEXTURE2D_DESC texture_desc;
     ZeroMemory(&texture_desc, sizeof(texture_desc));
@@ -304,13 +304,13 @@ void DXSample::CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11Shade
     srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MipLevels = 1;
-    
+
     ASSERT_SUCCEEDED(m_device->CreateShaderResourceView(texture.Get(), &srvDesc, &srv));
 
     ASSERT_SUCCEEDED(m_device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
 }
 
-void DXSample::InitGBuffer()
+void DX11Scene::InitGBuffer()
 {
     CreateRTV(m_position_rtv, m_position_srv);
     CreateRTV(m_normal_rtv, m_normal_srv);

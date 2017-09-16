@@ -10,11 +10,11 @@
 
 using namespace Microsoft::WRL;
 
-class DXSample : public SceneBase
+class DX11Scene : public SceneBase
 {
 public:
-    DXSample();
-    ~DXSample();
+    DX11Scene();
+    ~DX11Scene();
 
     static IScene::Ptr Create();
 

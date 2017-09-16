@@ -4,10 +4,10 @@
 #include <Program/GLProgram.h>
 #include <Geometry/GLGeometry.h>
 
-class tScenes : public SceneBase
+class GLScene : public SceneBase
 {
 public:
-    tScenes();
+    GLScene();
 
     static IScene::Ptr Create();
 

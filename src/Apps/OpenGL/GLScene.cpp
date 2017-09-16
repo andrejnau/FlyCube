@@ -1,11 +1,11 @@
-#include "scene.h"
+#include "GLScene.h"
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/transform.hpp>
 
-tScenes::tScenes()
+GLScene::GLScene()
     : load_func_(ogl_LoadFunctions())
     , width_(0)
     , height_(0)
@@ -15,9 +15,9 @@ tScenes::tScenes()
     , model_square("model/square.obj", ~aiProcess_FlipUVs)
 {}
 
-IScene::Ptr tScenes::Create()
+IScene::Ptr GLScene::Create()
 {
-    return std::make_unique<tScenes>();
+    return std::make_unique<GLScene>();
 }
 
 void APIENTRY gl_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *msg, const void *data)
@@ -25,7 +25,7 @@ void APIENTRY gl_callback(GLenum source, GLenum type, GLuint id, GLenum severity
     std::cout << "debug call: " << msg << std::endl;
 }
 
-inline void tScenes::OnInit(int width, int height)
+inline void GLScene::OnInit(int width, int height)
 {
     width_ = width;
     height_ = height;
@@ -48,7 +48,7 @@ inline void tScenes::OnInit(int width, int height)
         glDebugMessageCallback(gl_callback, nullptr);
 }
 
-void tScenes::OnUpdate()
+void GLScene::OnUpdate()
 {
     UpdateCameraMovement();
     UpdateAngle();
@@ -60,7 +60,7 @@ void tScenes::OnUpdate()
     constant_buffer_geometry_pass.Update();
 }
 
-inline void tScenes::OnRender()
+inline void GLScene::OnRender()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, ds_fbo_);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -71,10 +71,10 @@ inline void tScenes::OnRender()
     LightPass();
 }
 
-inline void tScenes::OnDestroy()
+inline void GLScene::OnDestroy()
 {}
 
-inline void tScenes::OnSizeChanged(int width, int height)
+inline void GLScene::OnSizeChanged(int width, int height)
 {
     width_ = width;
     height_ = height;
@@ -82,7 +82,7 @@ inline void tScenes::OnSizeChanged(int width, int height)
     m_camera.SetViewport(width_, height_);
 }
 
-glm::mat4 tScenes::StoreMatrix(const glm::mat4& m)
+glm::mat4 GLScene::StoreMatrix(const glm::mat4& m)
 {
     return m;
 }
@@ -95,7 +95,7 @@ void BindingTextures(GLProgram& shader, const std::vector<std::string>& tex)
     }
 }
 
-inline void tScenes::GeometryPass()
+inline void GLScene::GeometryPass()
 {
     glUseProgram(shader_geometry_pass_.GetProgram());
 
@@ -172,7 +172,7 @@ private:
     size_t m_count;
 };
 
-inline void tScenes::LightPass()
+inline void GLScene::LightPass()
 {
     glUseProgram(shader_light_pass_.GetProgram());
 
@@ -203,19 +203,19 @@ inline void tScenes::LightPass()
     }
 }
 
-void tScenes::InitState()
+void GLScene::InitState()
 {
     glViewport(0, 0, width_, height_);
     glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 }
 
-void tScenes::InitCamera()
+void GLScene::InitCamera()
 {
     m_camera.SetViewport(width_, height_);
 }
 
-void tScenes::InitGBuffer()
+void GLScene::InitGBuffer()
 {
     glGenFramebuffers(1, &ds_fbo_);
     glBindFramebuffer(GL_FRAMEBUFFER, ds_fbo_);

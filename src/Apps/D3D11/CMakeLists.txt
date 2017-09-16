@@ -5,11 +5,11 @@ set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
 set(shaders_path "${assets_path}/shaders/DX11")
 
 set(headers
-    ${include_path}/DXSample.h
+    ${include_path}/DX11Scene.h
 )
 
 set(sources
-    ${source_path}/DXSample.cpp
+    ${source_path}/DX11Scene.cpp
     ${source_path}/Main.cpp
 )
 
@@ -33,9 +33,7 @@ set_property(SOURCE ${vertex_shaders} PROPERTY VS_SHADER_MODEL 5.0)
 
 set(resource_files ${pixel_shaders} ${vertex_shaders})
 
-source_group("Заголовочные файлы" FILES ${headers})
-source_group("Файлы исходного кода" FILES ${sources})
-source_group("Файлы ресурсов" FILES ${resource_files})
+source_group("Shader Files" FILES ${resource_files})
 
 add_executable(${target} WIN32 ${headers} ${sources} ${resource_files})
 set_target_properties(${target} PROPERTIES
