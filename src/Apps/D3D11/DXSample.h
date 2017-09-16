@@ -1,26 +1,14 @@
 #pragma once
 
+#include <Scene/SceneBase.h>
+#include <Geometry/DX11Geometry.h>
+#include <Program/DX11Program.h>
 #include <d3d11.h>
 #include <DXGI1_4.h>
-#include <D3Dcompiler.h>
-#include <DirectXMath.h>
-#include <wrl/client.h>
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
-
-#include <map>
-#include <memory>
+#include <wrl.h>
 #include <string>
 
-#include <Utilities/DXUtility.h>
-#include <Geometry/DX11Geometry.h>
-
-#include <Program/DX11Program.h>
-
-#include <Scene/SceneBase.h>
-
 using namespace Microsoft::WRL;
-using namespace DirectX;
 
 class DXSample : public SceneBase
 {

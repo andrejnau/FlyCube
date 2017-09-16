@@ -1,11 +1,11 @@
 #pragma once
 
+#include "Geometry/Geometry.h"
+#include <Utilities/DXUtility.h>
+#include <Texture/DX11TextureLoader.h>
 #include <d3d11.h>
 #include <wrl.h>
 #include <glm/glm.hpp>
-#include <Utilities/DXUtility.h>
-#include <Geometry/Geometry.h>
-#include <Texture/DX11TextureLoader.h>
 #include <gli/gli.hpp>
 #include <SOIL.h>
 

@@ -1,8 +1,7 @@
 ﻿#pragma once
 
-#include <string>
-
 #include "Program/BufferProxy.h"
+#include <string>
 
 class IShaderBuffer
 {

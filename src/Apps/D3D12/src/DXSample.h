@@ -5,7 +5,7 @@
 #include <DXGI1_4.h>
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
-#include <wrl/client.h>
+#include <wrl.h>
 #include <memory>
 #include <string>
 #include <ISample/ISample.h>

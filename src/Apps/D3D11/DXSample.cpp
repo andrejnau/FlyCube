@@ -1,9 +1,10 @@
 #include "DXSample.h"
-#include <chrono>
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
 #include <Utilities/State.h>
+#include <D3Dcompiler.h>
 #include <GLFW/glfw3.h>
+#include <chrono>
 
 DXSample::DXSample()
     : m_width(0)

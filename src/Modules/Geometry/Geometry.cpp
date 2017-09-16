@@ -1,9 +1,9 @@
-#include "Geometry.h"
+#include "Geometry/Geometry.h"
+#include <Utilities/FileUtility.h>
 #include <vector>
 #include <tuple>
 #include <fstream>
 #include <set>
-#include <Utilities/FileUtility.h>
 
 glm::vec3 aiVector3DToVec3(const aiVector3D& x)
 {

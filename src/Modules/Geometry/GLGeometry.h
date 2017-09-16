@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Geometry/Geometry.h>
+#include "Geometry/Geometry.h"
 #include <Texture/GLTextureLoader.h>
+#include <Utilities/Logger.h>
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
-#include <Utilities/Logger.h>
 
 struct GLMesh : IMesh
 {

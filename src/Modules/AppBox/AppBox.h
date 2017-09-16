@@ -2,9 +2,9 @@
 
 #include <Scene/IScene.h>
 #include <GLFW/glfw3.h>
+#include <functional>
 #include <string>
 #include <memory>
-#include <functional>
 
 class AppBox
 {

@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-#include "DX11ShaderBuffer.h"
+#include "Program/DX11ShaderBuffer.h"
 #include <d3d11.h>
-#include <wrl/client.h>
+#include <wrl.h>
 #include <map>
 #include <string>
 
