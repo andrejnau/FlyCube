@@ -1,11 +1,12 @@
-set(target SimpleCamera)
+set(target GLLoader)
 
 set(headers
-    Camera.h
+    GL.h
+    gl_core_4_5.h
 )
 
 set(sources
-    Camera.cpp
+    gl_core_4_5.c
 )
 
 add_library(${target} ${headers} ${sources})

@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <gl_load/gl_core_4_5.h>
+#include <GLLoader/GL.h>
 
 class UniformProxy
 {

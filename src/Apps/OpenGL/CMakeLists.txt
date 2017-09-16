@@ -17,7 +17,7 @@ endif()
 
 target_link_libraries(${target}
     AppBox
-    gl_load
+    GLLoader
     SOIL
     assimp
     SimpleCamera
