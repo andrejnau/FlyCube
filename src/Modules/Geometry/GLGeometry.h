@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Geometry/Geometry.h>
-#include <TextureLoader/GLTextureLoader.h>
+#include <Texture/GLTextureLoader.h>
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
 #include <Utilities/Logger.h>

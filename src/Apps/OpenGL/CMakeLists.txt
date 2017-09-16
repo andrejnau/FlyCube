@@ -23,5 +23,5 @@ target_link_libraries(${target}
     Scene
     Geometry
     Utilities
-    TextureLoader
+    Texture
 )

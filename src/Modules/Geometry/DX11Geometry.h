@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 #include <Utilities/DXUtility.h>
 #include <Geometry/Geometry.h>
-#include <TextureLoader/DX11TextureLoader.h>
+#include <Texture/DX11TextureLoader.h>
 #include <gli/gli.hpp>
 #include <SOIL.h>
 

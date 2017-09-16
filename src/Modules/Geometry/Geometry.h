@@ -6,7 +6,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <glm/glm.hpp>
-#include <TextureLoader/TextureInfo.h>
+#include <Texture/TextureInfo.h>
 
 struct IMesh
 {

@@ -1,4 +1,4 @@
-set(target TextureLoader)
+set(target Texture)
 
 set(headers
     GLTextureLoader.h

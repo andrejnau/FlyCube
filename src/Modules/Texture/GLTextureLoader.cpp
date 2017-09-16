@@ -1,4 +1,4 @@
-#include "TextureLoader/GLTextureLoader.h"
+#include "Texture/GLTextureLoader.h"
 #include <gli/gli.hpp>
 #include <map>
 
