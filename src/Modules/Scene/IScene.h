@@ -8,12 +8,12 @@ enum class ApiType
     kDX
 };
 
-class ISample
+class IScene
 {
 public:
-    virtual ~ISample() {}
+    virtual ~IScene() {}
 
-    using Ptr = std::unique_ptr<ISample>;
+    using Ptr = std::unique_ptr<IScene>;
 
     virtual void OnInit(int width, int height) = 0;
     virtual void OnSizeChanged(int width, int height) = 0;

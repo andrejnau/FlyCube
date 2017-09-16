@@ -1,15 +1,15 @@
 #pragma once
 
-#include <ISample/SampleBase.h>
+#include <Scene/SceneBase.h>
 #include <Program/GLProgram.h>
 #include <Geometry/GLGeometry.h>
 
-class tScenes : public SampleBase
+class tScenes : public SceneBase
 {
 public:
     tScenes();
 
-    static std::unique_ptr<ISample> Create();
+    static IScene::Ptr Create();
 
     virtual void OnInit(int width, int height) override;
     virtual void OnUpdate() override;

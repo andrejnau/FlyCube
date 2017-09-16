@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "ISample.h"
+#include "Scene/IScene.h"
 #include <SimpleCamera/Camera.h>
 #include <Geometry/Geometry.h>
 #include <Program/IShaderBuffer.h>
@@ -16,10 +16,10 @@
 #include <glm/gtx/transform.hpp>
 
 
-class SampleBase : public ISample
+class SceneBase : public IScene
 {
 public:
-    virtual ~SampleBase() {}
+    virtual ~SceneBase() {}
 
     virtual void OnKey(int key, int action) override
     {

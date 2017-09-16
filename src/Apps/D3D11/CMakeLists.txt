@@ -50,7 +50,7 @@ target_link_libraries(${target}
     assimp
     SOIL
     AppBox
-    ISample
+    Scene
     Geometry
     Utilities
     SimpleCamera

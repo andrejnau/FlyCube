@@ -1,18 +1,15 @@
-set(target AppBox)
+set(target Scene)
 
 set(headers
-    AppBox.h
+    IScene.h
+    SceneBase.h
 )
 
 set(sources
-    AppBox.cpp
+    empty.cpp
 )
 
 add_library(${target} ${headers} ${sources})
-
-target_link_libraries(${target}
-    glfw
-)
 
 target_include_directories(${target}
     PUBLIC

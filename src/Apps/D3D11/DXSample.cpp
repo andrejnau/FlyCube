@@ -13,7 +13,7 @@ DXSample::DXSample()
 DXSample::~DXSample()
 {}
 
-std::unique_ptr<ISample> DXSample::Create()
+IScene::Ptr DXSample::Create()
 {
     return std::make_unique<DXSample>();
 }

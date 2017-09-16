@@ -17,19 +17,18 @@
 
 #include <Program/DX11Program.h>
 
-#include <ISample/ISample.h>
-#include <ISample/SampleBase.h>
+#include <Scene/SceneBase.h>
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
 
-class DXSample : public SampleBase
+class DXSample : public SceneBase
 {
 public:
     DXSample();
     ~DXSample();
 
-    static std::unique_ptr<ISample> Create();
+    static IScene::Ptr Create();
 
     virtual void OnInit(int width, int height) override;
     virtual void OnUpdate() override;

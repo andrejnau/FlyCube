@@ -21,7 +21,7 @@ target_link_libraries(${target}
     SOIL
     assimp
     SimpleCamera
-    ISample
+    Scene
     Geometry
     Utilities
     TextureLoader

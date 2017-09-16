@@ -1,4 +1,4 @@
-add_subdirectory(ISample)
+add_subdirectory(Scene)
 add_subdirectory(AppBox)
 add_subdirectory(WinConsole)
 add_subdirectory(SimpleCamera)

@@ -15,7 +15,7 @@ tScenes::tScenes()
     , model_square("model/square.obj", ~aiProcess_FlipUVs)
 {}
 
-std::unique_ptr<ISample> tScenes::Create()
+IScene::Ptr tScenes::Create()
 {
     return std::make_unique<tScenes>();
 }
