@@ -32,11 +32,8 @@ GLShaderBuffer::GLShaderBuffer(ShaderType shader_type, GLuint program, GLint blo
         GLint uni_offset;
         glGetActiveUniformsiv(m_program, (GLsizei)1, &uni_location, GL_UNIFORM_OFFSET, &uni_offset);
 
-        GLint uni_size;
-        glGetActiveUniformsiv(m_program, (GLsizei)1, &uni_location, GL_UNIFORM_SIZE, &uni_size);
-
         VDesc& vdesc = m_vdesc[uni_name.data()];
-        vdesc.size = uni_size;
+        vdesc.size = -1;
         vdesc.offset = uni_offset;
     }
 }
