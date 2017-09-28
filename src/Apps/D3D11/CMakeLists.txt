@@ -5,11 +5,9 @@ set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
 set(shaders_path "${assets_path}/shaders/DX11")
 
 set(headers
-    ${include_path}/DX11Scene.h
 )
 
 set(sources
-    ${source_path}/DX11Scene.cpp
     ${source_path}/Main.cpp
 )
 
@@ -53,4 +51,5 @@ target_link_libraries(${target}
     Utilities
     Texture
     Program
+    Context
 )

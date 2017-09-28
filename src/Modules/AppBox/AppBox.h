@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Scene/IScene.h>
+#include <Context/Context.h>
 #include <GLFW/glfw3.h>
 #include <functional>
 #include <string>
@@ -9,7 +10,7 @@
 class AppBox
 {
 public:
-    using CreateSample = std::function<IScene::Ptr()>;
+    using CreateSample = std::function<IScene::Ptr(ApiType)>;
     AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height);
     ~AppBox();
     int Run();

@@ -3,5 +3,5 @@ if(BUILD_DX11)
 endif()
 
 if (BUILD_OPENGL)
-    add_subdirectory(OpenGL)
+    #add_subdirectory(OpenGL)
 endif()

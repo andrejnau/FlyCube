@@ -2,12 +2,6 @@
 
 #include <memory>
 
-enum class ApiType
-{
-    kOpenGL,
-    kDX
-};
-
 class IScene
 {
 public:

@@ -33,7 +33,7 @@ int AppBox::Run()
     if (!m_window)
         return EXIT_FAILURE;
 
-    m_sample = m_create_sample();
+    m_sample = m_create_sample(m_api_type);
     m_sample->OnInit(m_width, m_height);
 
     int frame_number = 0;
@@ -45,7 +45,7 @@ int AppBox::Run()
         m_sample->OnUpdate();
         m_sample->OnRender();
 
-        if (m_api_type == ApiType::kOpenGL)
+        if (m_api_type == ApiType::kGL)
         {
             glfwSwapBuffers(m_window);
         }
@@ -72,7 +72,7 @@ int AppBox::Run()
 
 void AppBox::InitWindow()
 {
-    if (m_api_type == ApiType::kOpenGL)
+    if (m_api_type == ApiType::kGL)
     {
         glfwWindowHint(GLFW_SAMPLES, 4);
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
@@ -89,7 +89,7 @@ void AppBox::InitWindow()
     if (!m_window)
         return;
 
-    if (m_api_type == ApiType::kOpenGL)
+    if (m_api_type == ApiType::kGL)
     {
         glfwMakeContextCurrent(m_window);
     }

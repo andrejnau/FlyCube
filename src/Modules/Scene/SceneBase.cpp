@@ -35,7 +35,7 @@ void SceneBase::OnMouse(bool first_event, double xpos, double ypos)
     m_camera.ProcessMouseMovement((float)xoffset, (float)yoffset);
 }
 
-void SceneBase::UpdateAngle()
+/*void SceneBase::UpdateAngle()
 {
     static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
     std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
@@ -152,3 +152,4 @@ std::vector<int> SceneBase::MapTextures(IMesh & cur_mesh, IShaderBuffer & textur
     }
     return use_textures;
 }
+*/

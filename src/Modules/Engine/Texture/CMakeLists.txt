@@ -1,23 +1,18 @@
-set(target AppBox)
+set(target Texture)
 
 set(headers
-    AppBox.h
+    Texture.h
 )
 
 set(sources
-    AppBox.cpp
+    Texture.cpp
 )
 
 add_library(${target} ${headers} ${sources})
-
-target_link_libraries(${target}
-    glfw
-    Context
-)
 
 target_include_directories(${target}
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-set_target_properties(${target} PROPERTIES FOLDER "library")
+set_target_properties(${target} PROPERTIES FOLDER "library/Engine")

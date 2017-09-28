@@ -10,6 +10,10 @@ endif()
 
 option(BUILD_OPENGL "Build OpenGL sample" ON)
 
+if (BUILD_DX11)
+    add_definitions(-DBUILD_DX11)
+endif()
+
 set(project_root ${CMAKE_CURRENT_SOURCE_DIR})
 set(assets_path ${CMAKE_CURRENT_SOURCE_DIR}/assets/)
 

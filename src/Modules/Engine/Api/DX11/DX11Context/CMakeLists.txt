@@ -1,12 +1,11 @@
-set(target Scene)
+set(target DX11Context)
 
 set(headers
-    IScene.h
-    SceneBase.h
+    DX11Context.h
 )
 
 set(sources
-    SceneBase.cpp
+    DX11Context.cpp
 )
 
 add_library(${target} ${headers} ${sources})
@@ -17,8 +16,8 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
-    Camera
     Context
+    Utilities
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")
