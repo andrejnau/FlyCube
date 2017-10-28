@@ -1,14 +1,12 @@
 set(target Texture)
 
 set(headers
-    GLTextureLoader.h
     DX11TextureLoader.h
     TextureInfo.h
     DXGIFormatHelper.h
 )
 
 set(sources
-    GLTextureLoader.cpp
     DX11TextureLoader.cpp
     DXGIFormatHelper.cpp
 )
