@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Geometry/Geometry.h"
+#include "DX11Geometry/Geometry.h"
 #include <Utilities/DXUtility.h>
-#include <Texture/DX11TextureLoader.h>
+#include <DX11Texture/DX11TextureLoader.h>
 #include <d3d11.h>
 #include <wrl.h>
 #include <glm/glm.hpp>

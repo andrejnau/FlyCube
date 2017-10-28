@@ -1,19 +1,21 @@
 ﻿#pragma once
 
-#include "Program/DX11ShaderBuffer.h"
+#include "DX11Program/DX11ShaderBuffer.h"
 #include <d3d11.h>
 #include <wrl.h>
 #include <map>
 #include <string>
 
+#include <Program/Program.h>
+
 using namespace Microsoft::WRL;
 
-class DXShader
+class DX11Program : public Program
 {
 public:
-    DXShader(ComPtr<ID3D11Device>& device, const std::string& vertex, const std::string& pixel);
-    DX11ShaderBuffer& GetVSCBuffer(const std::string& name);
-    DX11ShaderBuffer& GetPSCBuffer(const std::string& name);
+    DX11Program(ComPtr<ID3D11Device>& device, const std::string& vertex, const std::string& pixel);
+    virtual IShaderBuffer& GetVSCBuffer(const std::string& name) override;
+    virtual IShaderBuffer& GetPSCBuffer(const std::string& name) override;
 
     ComPtr<ID3D11VertexShader> vertex_shader;
     ComPtr<ID3D11PixelShader> pixel_shader;

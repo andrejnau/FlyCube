@@ -1,6 +1,7 @@
 #pragma once
 
-#include <Texture/TextureInfo.h>
+#include <DX11Texture/TextureInfo.h>
+#include <Geometry/Geometry.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -75,7 +76,7 @@ private:
 };
 
 template<typename Mesh>
-struct Model : IModel
+struct Model : public IModel, public Geometry
 {
     Model(const std::string& file, uint32_t flags = ~0)
         : m_model_loader(file, (aiPostProcessSteps)flags, *this)

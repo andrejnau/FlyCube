@@ -2,6 +2,8 @@ set(target Program)
 
 set(headers
     Program.h
+    BufferProxy.h
+    IShaderBuffer.h
 )
 
 set(sources

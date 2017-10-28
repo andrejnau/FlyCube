@@ -17,7 +17,11 @@ target_include_directories(${target}
 
 target_link_libraries(${target}
     Context
+    DX11Program
     Utilities
+    DX11Texture
+    DX11Geometry
+    assimp
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

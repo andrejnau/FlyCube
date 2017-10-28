@@ -27,10 +27,13 @@ public:
     }
 
     virtual FrameBuffer::Ptr CreateFrameBuffer() override;
-    virtual Geometry::Ptr CreateGeometry() override;
-    virtual Program::Ptr CreateProgram() override;
+    virtual Geometry::Ptr CreateGeometry(const std::string& path) override;
+    virtual Program::Ptr CreateProgram(const std::string& vertex, const std::string& pixel) override;
     virtual SwapChain::Ptr CreateSwapChain() override;
     virtual Texture::Ptr CreateTexture() override;
+
+    virtual void Draw(const Geometry::Ptr& geometry) override;
+
 
     void CreateDeviceAndSwapChain();
 

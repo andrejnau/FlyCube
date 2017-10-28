@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-#include "Program/IShaderBuffer.h"
-#include "Program/ShaderType.h"
+#include <Program/IShaderBuffer.h>
+#include "DX11Program/ShaderType.h"
 #include <d3d11.h>
 #include <d3d11shader.h>
 #include <wrl.h>

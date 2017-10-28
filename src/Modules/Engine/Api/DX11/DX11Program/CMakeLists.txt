@@ -1,21 +1,14 @@
-set(target Program)
+set(target DX11Program)
 
 set(headers
     DX11Program.h
-    GLProgram.h
-    IShaderBuffer.h
     DX11ShaderBuffer.h
-    GLShaderBuffer.h
     ShaderType.h
-    BufferProxy.h
-    GLUniformProxy.h
 )
 
 set(sources
     DX11Program.cpp
     DX11ShaderBuffer.cpp
-    GLProgram.cpp
-    GLShaderBuffer.cpp
 )
 
 add_library(${target} ${headers} ${sources})
@@ -28,8 +21,9 @@ target_include_directories(${target}
 target_link_libraries(${target}
     Utilities
     d3dcompiler
+    Program
     d3d11
-    glLoadGen
+    DX11Geometry
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

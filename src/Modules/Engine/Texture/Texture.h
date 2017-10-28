@@ -5,5 +5,6 @@
 class Texture
 {
 public:
-    using Ptr = std::shared_ptr<SwapChain>;
+    using Ptr = std::shared_ptr<Texture>;
+    virtual ~Texture() = default;
 };

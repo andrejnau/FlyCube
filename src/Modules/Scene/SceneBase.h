@@ -30,6 +30,12 @@ public:
     virtual void OnInit(int width, int height) override
     {
         m_context = CreareContext(m_api_type, width, height);
+
+        m_shader_geometry_pass = m_context->CreateProgram("shaders/DX11/GeometryPass_VS.hlsl", "shaders/DX11/GeometryPass_PS.hlsl");
+        m_shader_light_pass = m_context->CreateProgram("shaders/DX11/LightPass_VS.hlsl", "shaders/DX11/LightPass_PS.hlsl");
+
+        m_model_of_file = m_context->CreateGeometry("model/sponza/sponza.obj");
+        m_model_square = m_context->CreateGeometry("model/square.obj");
     }
 
     virtual void OnSizeChanged(int width, int height) override
@@ -50,6 +56,11 @@ public:
     }
 
 protected:
+    Program::Ptr m_shader_geometry_pass;
+    Program::Ptr m_shader_light_pass;
+
+    Geometry::Ptr m_model_of_file;
+    Geometry::Ptr m_model_square;
    /* void UpdateAngle();
     void UpdateCameraMovement();
     void UpdateCBuffers(IShaderBuffer& constant_buffer_geometry_pass, IShaderBuffer& constant_buffer_light_pass);

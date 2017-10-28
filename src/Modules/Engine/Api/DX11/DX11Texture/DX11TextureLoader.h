@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Texture/TextureInfo.h"
+#include "DX11Texture/TextureInfo.h"
 #include <d3d11.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;

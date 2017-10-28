@@ -19,10 +19,12 @@ public:
     using Ptr = std::shared_ptr<Context>;
 
     virtual FrameBuffer::Ptr CreateFrameBuffer() = 0;
-    virtual Geometry::Ptr CreateGeometry() = 0;
-    virtual Program::Ptr CreateProgram() = 0;
+    virtual Geometry::Ptr CreateGeometry(const std::string& path) = 0;
+    virtual Program::Ptr CreateProgram(const std::string& vertex, const std::string& pixel) = 0;
     virtual SwapChain::Ptr CreateSwapChain() = 0;
     virtual Texture::Ptr CreateTexture() = 0;
+
+    virtual void Draw(const Geometry::Ptr& geometry) = 0;
 };
 
 Context::Ptr CreareContext(ApiType api_type, int width, int height);

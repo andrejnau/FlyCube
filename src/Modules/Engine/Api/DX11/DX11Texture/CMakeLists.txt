@@ -1,14 +1,12 @@
-set(target Texture)
+set(target DX11Texture)
 
 set(headers
-    GLTextureLoader.h
     DX11TextureLoader.h
     TextureInfo.h
     DXGIFormatHelper.h
 )
 
 set(sources
-    GLTextureLoader.cpp
     DX11TextureLoader.cpp
     DXGIFormatHelper.cpp
 )
@@ -24,7 +22,6 @@ target_link_libraries(${target}
     SOIL
     d3d11
     dxgi
-    glLoadGen
     Utilities
 )
 

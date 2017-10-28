@@ -1,5 +1,5 @@
-#include "Texture/DX11TextureLoader.h"
-#include "Texture/DXGIFormatHelper.h"
+#include "DX11Texture/DX11TextureLoader.h"
+#include "DX11Texture/DXGIFormatHelper.h"
 #include <Utilities/DXUtility.h>
 #include <gli/gli.hpp>
 #include <SOIL.h>

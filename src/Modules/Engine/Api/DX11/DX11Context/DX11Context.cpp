@@ -1,4 +1,6 @@
 #include "DX11Context/DX11Context.h"
+#include "DX11Program/DX11Program.h"
+#include "DX11Geometry/DX11Geometry.h"
 
 #include <Utilities/DXUtility.h>
 
@@ -13,14 +15,19 @@ FrameBuffer::Ptr DX11Context::CreateFrameBuffer()
     return FrameBuffer::Ptr();
 }
 
-Geometry::Ptr DX11Context::CreateGeometry()
+Geometry::Ptr DX11Context::CreateGeometry(const std::string& path)
 {
-    return Geometry::Ptr();
+    auto model = std::make_shared<Model<DX11Mesh>>(path);
+    for (DX11Mesh & cur_mesh : model->meshes)
+    {
+        cur_mesh.SetupMesh(m_device, m_device_context);
+    }
+    return model;
 }
 
-Program::Ptr DX11Context::CreateProgram()
+Program::Ptr DX11Context::CreateProgram(const std::string & vertex, const std::string & pixel)
 {
-    return Program::Ptr();
+    return std::make_shared<DX11Program>(m_device, vertex, pixel);
 }
 
 SwapChain::Ptr DX11Context::CreateSwapChain()
@@ -33,6 +40,9 @@ Texture::Ptr DX11Context::CreateTexture()
     return Texture::Ptr();
 }
 
+void DX11Context::Draw(const Geometry::Ptr & geometry)
+{
+}
 
 void DX11Context::CreateDeviceAndSwapChain()
 {

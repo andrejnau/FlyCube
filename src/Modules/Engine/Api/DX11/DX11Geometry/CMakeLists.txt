@@ -1,8 +1,7 @@
-set(target Geometry)
+set(target DX11Geometry)
 
 set(headers
     Geometry.h
-    GLGeometry.h
     DX11Geometry.h
 )
 
@@ -19,6 +18,8 @@ target_include_directories(${target}
 
 target_link_libraries(${target}
     Utilities
+    Geometry
+    DX11Texture
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")
