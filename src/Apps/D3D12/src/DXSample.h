@@ -8,8 +8,7 @@
 #include <wrl.h>
 #include <memory>
 #include <string>
-#include <ISample/ISample.h>
-#include <Util.h>
+#include <Scene/IScene.h>
 #include "DX12Geometry.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -17,13 +16,13 @@
 using namespace Microsoft::WRL;
 using namespace DirectX;
 
-class DXSample : public ISample
+class DXSample : public IScene
 {
 public:
     DXSample();
     ~DXSample();
 
-    static std::unique_ptr<ISample> Create()
+    static std::unique_ptr<IScene> Create()
     {
         return std::make_unique<DXSample>();
     }

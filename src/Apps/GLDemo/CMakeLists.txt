@@ -19,12 +19,12 @@ endif()
 
 target_link_libraries(${target}
     AppBox
-    gl_load
     SOIL
     assimp
-    SimpleCamera
-    ISample
+    Camera
+    Scene
     Geometry
     Utilities
-    TextureLoader
+    Texture
+    glLoadGen
 )

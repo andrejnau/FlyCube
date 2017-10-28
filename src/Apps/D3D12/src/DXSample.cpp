@@ -1,9 +1,9 @@
 #include "DXSample.h"
 #include <chrono>
 #include <SOIL.h>
-#include <Util.h>
-#include <Utility.h>
 #include <Utilities/FileUtility.h>
+#include <Utilities/DXUtility.h>
+#include <Texture/DXGIFormatHelper.h>
 
 DXSample::DXSample()
     : m_width(0)

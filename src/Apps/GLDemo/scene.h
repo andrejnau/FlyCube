@@ -5,7 +5,7 @@
 #include <scenebase.h>
 #include <Utilities/State.h>
 
-#include <SimpleCamera/Camera.h>
+#include <Camera/Camera.h>
 
 #include <chrono>
 #include <memory>
@@ -19,16 +19,16 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/transform.hpp>
 
-#include <ISample/ISample.h>
+#include <Scene/IScene.h>
 
 #include "GLGeometry.h"
 
-class tScenes : public ISample
+class tScenes : public IScene
 {
 public:
     tScenes();
 
-    static std::unique_ptr<ISample> Create()
+    static std::unique_ptr<IScene> Create()
     {
         return std::make_unique<tScenes>();
     }

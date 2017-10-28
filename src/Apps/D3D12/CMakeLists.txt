@@ -49,11 +49,11 @@ target_link_libraries(${target}
     d3d12
     assimp
     SOIL
-    D3DUtils
     AppBox
-    ISample
+    Scene
     Geometry
     Utilities
+    Texture
 )
 
 target_include_directories(${target}
