@@ -1,0 +1,232 @@
+#include <Utilities/FileUtility.h>
+#include <Utilities/DXUtility.h>
+#include <mustache.hpp>
+#include <d3dcompiler.h>
+#include <wrl.h>
+#include <string>
+#include <stdexcept>
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <iterator>
+
+using namespace Microsoft::WRL;
+using namespace kainjow;
+
+struct Option
+{
+    std::string shader_name;
+    std::string shader_path;
+    std::string entrypoint;
+    std::string target;
+    std::string template_path;
+    std::string output_dir;
+};
+
+inline void ThrowIfFailed(bool res, const std::string& msg)
+{
+    if (!res)
+        throw std::runtime_error(msg);
+}
+
+class ShaderReflection
+{
+public:
+    ShaderReflection(const Option& option)
+        : m_option(option)
+        , m_tmpl(ReadFile(m_option.template_path))
+    {
+    }
+
+    void Parse()
+    {
+        ParseShader(CompileShader(m_option.shader_path, m_option.entrypoint, m_option.target));
+    }
+
+    void Gen()
+    {
+        std::ofstream os(m_option.output_dir + "/" + m_option.shader_name + ".h");
+        m_tmpl.render(m_tcontext, os);
+    }
+
+private:
+    std::string ReadFile(const std::string& path)
+    {
+        std::ifstream is(path);
+        return std::string(std::istreambuf_iterator<char>(is), std::istreambuf_iterator<char>());
+    }
+
+    std::string TargetToShaderType(const std::string& str)
+    {
+        if (str.find("ps") == 0)
+            return "ShaderType::kPixel";
+        if (str.find("vs") == 0)
+            return "ShaderType::kVertex";
+        if (str.find("cs") == 0)
+            return "ShaderType::kCompute";
+        return "???";
+    }
+
+    std::string TargetToShaderPrefix(const std::string& str)
+    {
+        if (str.find("ps") == 0)
+            return "PS";
+        if (str.find("vs") == 0)
+            return "VS";
+        if (str.find("cs") == 0)
+            return "CS";
+        return "???";
+    }
+
+    std::string TypeFromDesc(D3D11_SHADER_TYPE_DESC& desc)
+    {
+        if (desc.Class == D3D_SHADER_VARIABLE_CLASS::D3D10_SVC_MATRIX_COLUMNS)
+        {
+            assert(desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_FLOAT);
+            assert(desc.Columns == desc.Rows);
+            return "glm::mat" + std::to_string(desc.Columns);
+        }
+        else if (desc.Class == D3D_SHADER_VARIABLE_CLASS::D3D_SVC_VECTOR)
+        {
+            assert(desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_FLOAT);
+            return "glm::vec" + std::to_string(desc.Columns);
+        }
+        else if (desc.Class == D3D_SHADER_VARIABLE_CLASS::D3D_SVC_SCALAR)
+        {
+            if (desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_INT)
+                return "int32_t";
+            else if (desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_FLOAT)
+                return "float";
+        }
+        return "???";
+    }
+
+    void ParseShader(ComPtr<ID3DBlob>& shader_buffer)
+    {
+        m_tcontext["ShaderName"] = m_option.shader_name;
+        m_tcontext["ShaderType"] = TargetToShaderType(m_option.target);
+        m_tcontext["ShaderPrefix"] = TargetToShaderPrefix(m_option.target);
+        m_tcontext["ShaderPath"] = m_option.shader_path;
+        m_tcontext["Entrypoint"] = m_option.entrypoint;
+        m_tcontext["Target"] = m_option.target;
+
+        mustache::data tcbuffers{ mustache::data::type::list };
+
+        ComPtr<ID3D11ShaderReflection> reflector;
+        D3DReflect(shader_buffer->GetBufferPointer(), shader_buffer->GetBufferSize(), IID_PPV_ARGS(&reflector));
+
+        D3D11_SHADER_DESC desc = {};
+        reflector->GetDesc(&desc);
+
+        for (UINT i = 0; i < desc.ConstantBuffers; ++i)
+        {
+            ID3D11ShaderReflectionConstantBuffer* buffer = reflector->GetConstantBufferByIndex(i);
+            D3D11_SHADER_BUFFER_DESC bdesc = {};
+            buffer->GetDesc(&bdesc);
+
+            ID3D11ShaderReflectionConstantBuffer* cbuffer = reflector->GetConstantBufferByIndex(i);
+            D3D11_SHADER_BUFFER_DESC cbdesc = {};
+            cbuffer->GetDesc(&cbdesc);
+
+            mustache::data tcbuffer;
+            tcbuffer.set("BufferName", bdesc.Name);
+            tcbuffer.set("BufferSize", std::to_string(bdesc.Size));
+            tcbuffer.set("BufferIndex", std::to_string(i));
+
+            mustache::data tvariables{ mustache::data::type::list };
+
+            for (UINT i = 0; i < cbdesc.Variables; ++i)
+            {
+                ID3D11ShaderReflectionVariable* variable = cbuffer->GetVariableByIndex(i);
+
+                D3D11_SHADER_VARIABLE_DESC vdesc;
+                variable->GetDesc(&vdesc);
+
+                ID3D11ShaderReflectionType* vtype = variable->GetType();
+
+                D3D11_SHADER_TYPE_DESC type_desc = {};
+                vtype->GetDesc(&type_desc);
+
+                mustache::data tvariable;
+                tvariable.set("Name", vdesc.Name);
+                tvariable.set("StartOffset", std::to_string(vdesc.StartOffset));
+                tvariable.set("VariableSize", std::to_string(vdesc.Size));
+                tvariable.set("Type", TypeFromDesc(type_desc));
+                
+                tvariables.push_back(tvariable);
+            }
+            tcbuffer.set("Variables", tvariables);
+
+            tcbuffers.push_back(tcbuffer);
+        }
+
+        m_tcontext["CBuffers"] = mustache::data{ tcbuffers };
+    }
+
+    ComPtr<ID3DBlob> CompileShader(const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+    {
+        ComPtr<ID3DBlob> errors;
+        ComPtr<ID3DBlob> shader_buffer;
+        ASSERT_SUCCEEDED(D3DCompileFromFile(
+            GetAssetFullPathW(shader_path).c_str(),
+            nullptr,
+            nullptr,
+            entrypoint.c_str(),
+            target.c_str(),
+            0,
+            0,
+            &shader_buffer,
+            &errors));
+        return shader_buffer;
+    }
+
+    const Option& m_option;
+    mustache::mustache m_tmpl;
+    mustache::data m_tcontext;
+};
+
+class ParseCmd
+{
+public:
+    ParseCmd(int argc, char *argv[])
+    {
+        ThrowIfFailed(argc == 7, "Invalide CommandLine");
+        size_t arg_index = 1;
+        m_option.shader_name = argv[arg_index++];
+        m_option.shader_path = argv[arg_index++];
+        m_option.entrypoint = argv[arg_index++];
+        m_option.target = argv[arg_index++];
+        m_option.template_path = argv[arg_index++];
+        m_option.output_dir = argv[arg_index++];
+    }
+
+    const Option& GetOption() const
+    {
+        return m_option;
+    }
+
+    static void Usage()
+    {
+        std::cout << "TODO" << std::endl;
+    }
+
+private:
+    Option m_option;
+};
+
+int main(int argc, char *argv[])
+{
+    try
+    {
+        ParseCmd cmd(argc, argv);
+        ShaderReflection ref(cmd.GetOption());
+        ref.Parse();
+        ref.Gen();
+    }
+    catch (std::exception&)
+    {
+        ParseCmd::Usage();
+        return ~0;
+    }
+    return 0;
+}

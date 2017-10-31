@@ -16,11 +16,12 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdarg>
+#include <Windows.h>
 
 namespace DXUtility
 {
-    inline void Print(const char* msg) { printf(msg); }
-    inline void Print(const wchar_t* msg) { wprintf(msg); }
+    inline void Print(const char* msg) { OutputDebugStringA(msg); }
+    inline void Print(const wchar_t* msg) { OutputDebugStringW(msg); }
 
     inline void Printf(const char* format, ...)
     {

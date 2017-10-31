@@ -17,5 +17,6 @@ include(${project_root}/cmake/3rdparty/assimp.cmake)
 include(${project_root}/cmake/3rdparty/glm.cmake)
 include(${project_root}/cmake/3rdparty/gli.cmake)
 include(${project_root}/cmake/3rdparty/gl.cmake)
+include(${project_root}/cmake/3rdparty/mustache.cmake)
 
 add_subdirectory(src)

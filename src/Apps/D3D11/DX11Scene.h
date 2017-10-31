@@ -2,11 +2,16 @@
 
 #include <Scene/SceneBase.h>
 #include <Geometry/DX11Geometry.h>
-#include <Program/DX11Program.h>
 #include <d3d11.h>
 #include <DXGI1_4.h>
 #include <wrl.h>
 #include <string>
+
+#include <Program/Program.h>
+#include <ProgramRef/GeometryPassPS.h>
+#include <ProgramRef/GeometryPassVS.h>
+#include <ProgramRef/LightPassPS.h>
+#include <ProgramRef/LightPassVS.h>
 
 using namespace Microsoft::WRL;
 
@@ -51,8 +56,8 @@ private:
 
     ComPtr<ID3D11SamplerState> m_texture_sampler;
 
-    std::unique_ptr<DXShader> m_shader_geometry_pass;
-    std::unique_ptr<DXShader> m_shader_light_pass;
+    std::unique_ptr<Program<GeometryPassPS, GeometryPassVS>> m_shader_geometry_pass;
+    std::unique_ptr<Program<LightPassPS, LightPassVS>> m_shader_light_pass;
 
     std::unique_ptr<Model<DX11Mesh>> m_model_of_file;
     std::unique_ptr<Model<DX11Mesh>> m_model_square;

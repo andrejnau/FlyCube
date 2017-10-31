@@ -2,7 +2,6 @@
 
 #include "Scene/IScene.h"
 #include <Camera/Camera.h>
-#include <Program/IShaderBuffer.h>
 #include <Geometry/Geometry.h>
 #include <glm/glm.hpp>
 #include <vector>
@@ -19,10 +18,6 @@ public:
 protected:
     void UpdateAngle();
     void UpdateCameraMovement();
-    void UpdateCBuffers(IShaderBuffer& constant_buffer_geometry_pass, IShaderBuffer& constant_buffer_light_pass);
-    void SetLight(IShaderBuffer& light_buffer_geometry_pass);
-    void SetMaterial(IShaderBuffer& material_buffer_geometry_pass, IMesh& cur_mesh);
-    std::vector<int> MapTextures(IMesh& cur_mesh, IShaderBuffer& textures_enables);
 
     Camera m_camera;
     std::map<int, bool> m_keys;

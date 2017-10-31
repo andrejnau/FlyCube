@@ -1,16 +1,12 @@
 set(target Program)
 
 set(headers
-    DX11Program.h
-    IShaderBuffer.h
-    DX11ShaderBuffer.h
     ShaderType.h
-    BufferProxy.h
+    Program.h
 )
 
 set(sources
-    DX11Program.cpp
-    DX11ShaderBuffer.cpp
+    empty.cpp
 )
 
 add_library(${target} ${headers} ${sources})

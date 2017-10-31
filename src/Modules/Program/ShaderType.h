@@ -3,5 +3,6 @@
 enum class ShaderType
 {
     kVertex,
-    kPixel
+    kPixel,
+    kCompute
 };
