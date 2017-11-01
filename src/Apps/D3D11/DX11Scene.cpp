@@ -113,61 +113,43 @@ void DX11Scene::GeometryPass()
         m_device_context->IASetVertexBuffers(0, 1, cur_mesh.vertBuffer.GetAddressOf(), &stride, &offset);
         m_device_context->IASetIndexBuffer(cur_mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-        std::vector<int> use_textures(6, -1);
-
-        m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_alphaMap = 0;
-        m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_diffuseMap = 0;
-        m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_normalMap = 0;
-        m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_specularMap = 0;
-        m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_glossMap = 0;
-        m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_ambientMap = 0;
-        m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_alphaMap = 0;
-
+        m_shader_geometry_pass->ps.cbuffer.TexturesEnables = {};
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
         {
-            uint32_t texture_slot = 0;
+            auto& state = CurState<bool>::Instance().state;
+            if (state["disable_norm"] && cur_mesh.textures[i].type == aiTextureType_HEIGHT)
+                continue;
+            
+            ComPtr<ID3D11ShaderResourceView>& srv = cur_mesh.texResources[i];
             switch (cur_mesh.textures[i].type)
             {
             case aiTextureType_HEIGHT:
-            {
-                texture_slot = 0;
-                auto& state = CurState<bool>::Instance().state;
-                if (!state["disable_norm"])
-                    m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_normalMap = 1;
-            } break;
+                m_device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.normalMap, 1, srv.GetAddressOf());
+                m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_normalMap = 1;
+                break;
             case aiTextureType_OPACITY:
-                texture_slot = 1;
+                m_device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.alphaMap, 1, srv.GetAddressOf());
                 m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_alphaMap = 1;
                 break;
             case aiTextureType_AMBIENT:
-                texture_slot = 2;
+                m_device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.ambientMap, 1, srv.GetAddressOf());
                 m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_ambientMap = 1;
                 break;
             case aiTextureType_DIFFUSE:
-                texture_slot = 3;
+                m_device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.diffuseMap, 1, srv.GetAddressOf());
                 m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_diffuseMap = 1;
                 break;
             case aiTextureType_SPECULAR:
-                texture_slot = 4;
+                m_device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.specularMap, 1, srv.GetAddressOf());
                 m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_specularMap = 1;
                 break;
             case aiTextureType_SHININESS:
-                texture_slot = 5;
+                m_device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.glossMap, 1, srv.GetAddressOf());
                 m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_glossMap = 1;
                 break;
             default:
                 continue;
             }
-            use_textures[texture_slot] = i;
-        }
-
-        for (int i = 0; i < use_textures.size(); ++i)
-        {
-            int tex_id = use_textures[i];
-            ComPtr<ID3D11ShaderResourceView> srv;
-            if (tex_id >= 0)
-                srv = cur_mesh.texResources[tex_id];
-            m_device_context->PSSetShaderResources(i, 1, srv.GetAddressOf());
         }
 
         m_shader_geometry_pass->ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
@@ -200,16 +182,11 @@ void DX11Scene::LightPass()
         m_device_context->IASetVertexBuffers(0, 1, cur_mesh.vertBuffer.GetAddressOf(), &stride, &offset);
         m_device_context->IASetIndexBuffer(cur_mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-        std::vector<ID3D11ShaderResourceView*> use_textures =
-        {
-            m_position_srv.Get(),
-            m_normal_srv.Get(),
-            m_ambient_srv.Get(),
-            m_diffuse_srv.Get(),
-            m_specular_srv.Get()
-        };
-
-        m_device_context->PSSetShaderResources(0, use_textures.size(), use_textures.data());
+        m_device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gPosition, 1, m_position_srv.GetAddressOf());
+        m_device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gNormal,   1, m_normal_srv.GetAddressOf());
+        m_device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gAmbient,  1, m_ambient_srv.GetAddressOf());
+        m_device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gDiffuse,  1, m_diffuse_srv.GetAddressOf());
+        m_device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gSpecular, 1, m_specular_srv.GetAddressOf());
         m_device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 }

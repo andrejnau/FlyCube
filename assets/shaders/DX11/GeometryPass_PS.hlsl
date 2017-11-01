@@ -7,12 +7,12 @@ struct VS_OUTPUT
     float2 texCoord  : TEXCOORD;
 };
 
-Texture2D normalMap   : register(t0);
-Texture2D alphaMap    : register(t1);
-Texture2D ambientMap  : register(t2);
-Texture2D diffuseMap  : register(t3);
-Texture2D specularMap : register(t4);
-Texture2D glossMap    : register(t5);
+Texture2D normalMap;
+Texture2D alphaMap;
+Texture2D ambientMap;
+Texture2D diffuseMap;
+Texture2D specularMap;
+Texture2D glossMap;
 
 SamplerState g_sampler : register(s0);
 

@@ -159,8 +159,23 @@ private:
 
             tcbuffers.push_back(tcbuffer);
         }
-
         m_tcontext["CBuffers"] = mustache::data{ tcbuffers };
+
+        mustache::data ttextures{ mustache::data::type::list };
+        for (UINT i = 0; i < desc.BoundResources; ++i)
+        {
+            D3D11_SHADER_INPUT_BIND_DESC res_desc = {};
+            ASSERT_SUCCEEDED(reflector->GetResourceBindingDesc(i, &res_desc));
+            if (res_desc.Type != D3D_SIT_TEXTURE)
+                continue;
+
+            mustache::data ttexture;
+            ttexture.set("Name", res_desc.Name);
+            ttexture.set("Slot", std::to_string(res_desc.BindPoint));
+            ttextures.push_back(ttexture);
+        }
+
+        m_tcontext["Textures"] = mustache::data{ ttextures };
     }
 
     ComPtr<ID3DBlob> CompileShader(const std::string& shader_path, const std::string& entrypoint, const std::string& target)

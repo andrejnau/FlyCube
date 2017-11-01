@@ -4,11 +4,11 @@ struct VS_OUTPUT
     float2 texCoord : TEXCOORD;
 };
 
-Texture2D gPosition : register(t0);
-Texture2D gNormal   : register(t1);
-Texture2D gAmbient  : register(t2);
-Texture2D gDiffuse  : register(t3);
-Texture2D gSpecular : register(t4);
+Texture2D gPosition;
+Texture2D gNormal;
+Texture2D gAmbient;
+Texture2D gDiffuse;
+Texture2D gSpecular;
 
 SamplerState g_sampler : register(s0);
 

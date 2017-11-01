@@ -19,6 +19,12 @@ public:
         {{/CBuffers}}
     } cbuffer;
 
+    struct
+    {
+        {{#Textures}}static constexpr const UINT {{Name}} = {{Slot}};
+        {{/Textures}}
+    } texture;
+
     {{ShaderName}}(ComPtr<ID3D11Device>& device)
         : Shader(device, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
         , cbuffer{}  
