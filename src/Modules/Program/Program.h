@@ -12,16 +12,68 @@
 
 using namespace Microsoft::WRL;
 
-class ShaderBase
+struct BufferLayout
 {
-public:
-    virtual ~ShaderBase() = default;
+    BufferLayout(
+        ComPtr<ID3D11Device>& device,
+        size_t buffer_size, 
+        UINT slot,
+        std::vector<size_t>&& data_size,
+        std::vector<size_t>&& data_offset,
+        std::vector<size_t>&& buf_offset
+    )
+        : buffer(CreateBuffer(device, buffer_size))
+        , slot(slot)
+        , data(buffer_size)
+        , data_size(std::move(data_size))
+        , data_offset(std::move(data_offset))
+        , buf_offset(std::move(buf_offset))
+    {
+    }
 
-    virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) = 0;
-    virtual void BindCBuffers(ComPtr<ID3D11DeviceContext>& device_context) = 0;
-    virtual void UpdateCBuffers(ComPtr<ID3D11DeviceContext>& device_context) = 0;
+    ComPtr<ID3D11Buffer> buffer;
+    UINT slot;
 
-    static ComPtr<ID3D11Buffer> CreateBuffer(ComPtr<ID3D11Device>& device, UINT buffer_size)
+    void UpdateCBuffer(ComPtr<ID3D11DeviceContext>& device_context, const char* src_data)
+    {
+        bool dirty = false;
+        for (size_t i = 0; i < data_size.size(); ++i)
+        {
+            const char* ptr_src = src_data + data_offset[i];
+            char* ptr_dst = data.data() + buf_offset[i];
+            if (std::memcmp(ptr_dst, ptr_src, data_size[i]) != 0)
+            {
+                std::memcpy(ptr_dst, ptr_src, data_size[i]);
+                dirty = true;
+            }
+        }
+
+        if (dirty)
+            device_context->UpdateSubresource(buffer.Get(), 0, nullptr, data.data(), 0, 0);
+    }
+
+    template<ShaderType>
+    void BindCBuffer(ComPtr<ID3D11DeviceContext>& device_context);
+
+    template<>
+    void BindCBuffer<ShaderType::kPixel>(ComPtr<ID3D11DeviceContext>& device_context)
+    {
+        device_context->PSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+    }
+
+    template<>
+    void BindCBuffer<ShaderType::kVertex>(ComPtr<ID3D11DeviceContext>& device_context)
+    {
+        device_context->VSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+    }
+
+private:
+    std::vector<char> data;
+    std::vector<size_t> data_size;
+    std::vector<size_t> data_offset;
+    std::vector<size_t> buf_offset;
+
+    ComPtr<ID3D11Buffer> CreateBuffer(ComPtr<ID3D11Device>& device, UINT buffer_size)
     {
         ComPtr<ID3D11Buffer> buffer;
         D3D11_BUFFER_DESC cbbd;
@@ -34,6 +86,18 @@ public:
         ASSERT_SUCCEEDED(device->CreateBuffer(&cbbd, nullptr, &buffer));
         return buffer;
     }
+};
+
+class ShaderBase
+{
+protected:
+    
+public:
+    virtual ~ShaderBase() = default;
+
+    virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) = 0;
+    virtual void BindCBuffers(ComPtr<ID3D11DeviceContext>& device_context) = 0;
+    virtual void UpdateCBuffers(ComPtr<ID3D11DeviceContext>& device_context) = 0;
 
     ShaderBase(const std::string& shader_path, const std::string& entrypoint, const std::string& target)
     {

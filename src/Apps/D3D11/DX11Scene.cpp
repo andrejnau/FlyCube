@@ -105,7 +105,6 @@ void DX11Scene::GeometryPass()
     m_shader_geometry_pass->ps.cbuffer.Light.light_ambient = glm::vec3(0.2f);
     m_shader_geometry_pass->ps.cbuffer.Light.light_diffuse = glm::vec3(1.0f);
     m_shader_geometry_pass->ps.cbuffer.Light.light_specular = glm::vec3(0.5f);
-    m_shader_geometry_pass->ps.UpdateCBuffers(m_device_context);
 
     for (DX11Mesh& cur_mesh : m_model_of_file->meshes)
     {

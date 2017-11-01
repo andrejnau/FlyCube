@@ -21,10 +21,9 @@ public:
 
     {{ShaderName}}(ComPtr<ID3D11Device>& device)
         : Shader(device, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
-        , cbuffer{}
+        , cbuffer{}  
+        , cbuffer_impl(device)     
     {
-        {{#CBuffers}}cbuffer_impl.{{BufferName}}.buffer = CreateBuffer(device, {{BufferSize}});
-        {{/CBuffers}}
     }
 
     virtual void UpdateCBuffers(ComPtr<ID3D11DeviceContext>& device_context) override
@@ -36,58 +35,37 @@ public:
 private:
     virtual void BindCBuffers(ComPtr<ID3D11DeviceContext>& device_context) override
     {
-        {{#CBuffers}}cbuffer_impl.{{BufferName}}.BindCBuffer(device_context); 
+        {{#CBuffers}}cbuffer_impl.{{BufferName}}.BindCBuffer<{{ShaderType}}>(device_context);
         {{/CBuffers}}
     }
     
-    struct
+    class CBufferImpl
     {
-        {{#CBuffers}}
-        struct
-        {
-            void BindCBuffer(ComPtr<ID3D11DeviceContext>& device_context)
-            {
-                  device_context->{{ShaderPrefix}}SetConstantBuffers(slot, 1, buffer.GetAddressOf());
-            }
-            
-            void UpdateCBuffer(ComPtr<ID3D11DeviceContext>& device_context, const char* src_data)
-            {
-                for (size_t i = 0; i < data_size.size(); ++i)
-                {
-                    const char* ptr_src = src_data + data_offset[i];
-                    char* ptr_dst = data.data() + buf_offset[i];
-                    std::memcpy(ptr_dst, ptr_src, data_size[i]);
-                }
-
-                device_context->UpdateSubresource(buffer.Get(), 0, nullptr, data.data(), 0, 0);
-            }
-
-            ComPtr<ID3D11Buffer> buffer;
-
-            std::array<char, {{BufferSize}}> data;
-
-            UINT slot = {{BufferIndex}};
-            
-            std::vector<int> data_size =
-            {
-                {{#Variables}}{{VariableSize}},
-                {{/Variables}}
-            };
-            
-            std::vector<int> data_offset =
-            {
-                {{#Variables}}offsetof(decltype(cbuffer.{{BufferName}}), {{Name}}),
-                {{/Variables}}              
-            };
-            
-            std::vector<int> buf_offset =
-            {
-                {{#Variables}}{{StartOffset}},
-                {{/Variables}}
-            };
-            
-        } {{BufferName}};
+    public:
+        {{#CBuffers}}BufferLayout {{BufferName}};
         {{/CBuffers}}
+        CBufferImpl(ComPtr<ID3D11Device>& device)
+            : TODO(true)
+            {{#CBuffers}}, {{BufferName}}(
+                device,
+                {{BufferSize}},
+                {{BufferIndex}},
+                {
+                    {{#Variables}}{{VariableSize}}, {{/Variables}}
+                },
+                {
+                    {{#Variables}}offsetof(decltype(cbuffer.{{BufferName}}), {{Name}}), {{/Variables}}              
+                },
+                {
+                    {{#Variables}}{{StartOffset}}, {{/Variables}}
+                }
+            )
+            {{/CBuffers}}
+        {
+        }
+
+    private:
+        bool TODO;
 
     } cbuffer_impl;
 };
