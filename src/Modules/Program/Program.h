@@ -153,16 +153,76 @@ public:
         : ShaderBase(shader_path, entrypoint, target)
     {
         ASSERT_SUCCEEDED(device->CreateVertexShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
+        CreateInputLayout(device);
+    }
 
-        D3D11_INPUT_ELEMENT_DESC layout[] =
+    void CreateInputLayout(ComPtr<ID3D11Device>& device)
+    {
+        ComPtr<ID3D11ShaderReflection> reflector;
+        D3DReflect(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), IID_PPV_ARGS(&reflector));
+
+        D3D11_SHADER_DESC shader_desc = {};
+        reflector->GetDesc(&shader_desc);
+
+        UINT byte_offset = 0;
+        std::vector<D3D11_INPUT_ELEMENT_DESC> input_layout_desc;
+        for (UINT i = 0; i < shader_desc.InputParameters; ++i)
         {
-            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(DX11Mesh::Vertex, tangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(DX11Mesh::Vertex, texCoords), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        };
+            D3D11_SIGNATURE_PARAMETER_DESC param_desc = {};
+            reflector->GetInputParameterDesc(i, &param_desc);
 
-        ASSERT_SUCCEEDED(device->CreateInputLayout(layout, ARRAYSIZE(layout), m_shader_buffer->GetBufferPointer(),
+            D3D11_INPUT_ELEMENT_DESC layout = {};
+            layout.SemanticName = param_desc.SemanticName;
+            layout.SemanticIndex = param_desc.SemanticIndex;
+            layout.InputSlot = 0;
+            layout.AlignedByteOffset = byte_offset;
+            layout.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+            layout.InstanceDataStepRate = 0;
+
+            if (param_desc.Mask == 1)
+            {
+                if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
+                    layout.Format = DXGI_FORMAT_R32_UINT;
+                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
+                    layout.Format = DXGI_FORMAT_R32_SINT;
+                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
+                    layout.Format = DXGI_FORMAT_R32_FLOAT;
+                byte_offset += 4;
+            }
+            else if (param_desc.Mask <= 3)
+            {
+                if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
+                    layout.Format = DXGI_FORMAT_R32G32_UINT;
+                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
+                    layout.Format = DXGI_FORMAT_R32G32_SINT;
+                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
+                    layout.Format = DXGI_FORMAT_R32G32_FLOAT;
+                byte_offset += 8;
+            }
+            else if (param_desc.Mask <= 7)
+            {
+                if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
+                    layout.Format = DXGI_FORMAT_R32G32B32_UINT;
+                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
+                    layout.Format = DXGI_FORMAT_R32G32B32_SINT;
+                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
+                    layout.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+                byte_offset += 12;
+            }
+            else if (param_desc.Mask <= 15)
+            {
+                if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
+                    layout.Format = DXGI_FORMAT_R32G32B32A32_UINT;
+                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
+                    layout.Format = DXGI_FORMAT_R32G32B32A32_SINT;
+                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
+                    layout.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+                byte_offset += 16;
+            }
+            input_layout_desc.push_back(layout);
+        }
+
+        ASSERT_SUCCEEDED(device->CreateInputLayout(input_layout_desc.data(), input_layout_desc.size(), m_shader_buffer->GetBufferPointer(),
             m_shader_buffer->GetBufferSize(), &input_layout));
     }
 
