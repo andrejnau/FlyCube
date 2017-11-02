@@ -28,7 +28,6 @@ public:
     void LightPass();
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
-    virtual glm::mat4 StoreMatrix(const glm::mat4& m) override;
 
 private:
     void CreateRT();
@@ -36,10 +35,8 @@ private:
     void CreateSampler();
 
     void CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
-    void SetVertexBuffer(UINT slot, ID3D11Buffer* buffer, UINT stride, UINT offset);
 
     void InitGBuffer();
-
 
     ComPtr<ID3D11RenderTargetView> m_render_target_view;
     ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;

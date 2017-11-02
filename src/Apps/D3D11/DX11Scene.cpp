@@ -30,8 +30,8 @@ DX11Scene::DX11Scene(int width, int height)
     CreateViewPort();
     CreateSampler();
     InitGBuffer();
-    m_camera.SetViewport(m_width, m_height);
 
+    m_camera.SetViewport(m_width, m_height);
     m_context.device_context->PSSetSamplers(0, 1, m_texture_sampler.GetAddressOf());
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
@@ -52,10 +52,10 @@ void DX11Scene::OnUpdate()
     float model_scale_ = 0.01f;
     model = glm::scale(glm::vec3(model_scale_)) * model;
 
-    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.model = StoreMatrix(model);
-    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.view = StoreMatrix(view);
-    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.projection = StoreMatrix(projection);
-    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.normalMatrix = StoreMatrix(glm::transpose(glm::inverse(model)));
+    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.model = glm::transpose(model);
+    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.view = glm::transpose(view);
+    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.projection = glm::transpose(projection);
+    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model)));
     m_shader_geometry_pass.vs.UpdateCBuffers(m_context.device_context);
 
     float light_r = 2.5;
@@ -109,10 +109,10 @@ void DX11Scene::GeometryPass()
 
     for (DX11Mesh& cur_mesh : m_model_of_file.meshes)
     {
-        SetVertexBuffer(m_shader_geometry_pass.vs.geometry.POSITION, cur_mesh.positions_buffer.Get(), sizeof(cur_mesh.positions.front()), 0);
-        SetVertexBuffer(m_shader_geometry_pass.vs.geometry.NORMAL, cur_mesh.normals_buffer.Get(), sizeof(cur_mesh.normals.front()), 0);
-        SetVertexBuffer(m_shader_geometry_pass.vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer.Get(), sizeof(cur_mesh.texcoords.front()), 0);
-        SetVertexBuffer(m_shader_geometry_pass.vs.geometry.TANGENT, cur_mesh.tangents_buffer.Get(), sizeof(cur_mesh.tangents.front()), 0);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.POSITION, cur_mesh.positions_buffer, sizeof(glm::vec3), 0);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.NORMAL, cur_mesh.normals_buffer, sizeof(glm::vec3), 0);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer, sizeof(glm::vec2), 0);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.TANGENT, cur_mesh.tangents_buffer, sizeof(glm::vec3), 0);
         m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         if (!state["disable_norm"])
@@ -148,8 +148,8 @@ void DX11Scene::LightPass()
 
     for (DX11Mesh& cur_mesh : m_model_square.meshes)
     {
-        SetVertexBuffer(m_shader_light_pass.vs.geometry.POSITION, cur_mesh.positions_buffer.Get(), sizeof(cur_mesh.positions.front()), 0);
-        SetVertexBuffer(m_shader_light_pass.vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer.Get(), sizeof(cur_mesh.texcoords.front()), 0);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_light_pass.vs.geometry.POSITION, cur_mesh.positions_buffer, sizeof(glm::vec3), 0);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_light_pass.vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer, sizeof(glm::vec2), 0);
         m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gPosition, 1, m_position_srv.GetAddressOf());
@@ -179,11 +179,6 @@ void DX11Scene::OnResize(int width, int height)
         InitGBuffer();
         m_camera.SetViewport(m_width, m_height);
     }
-}
-
-inline glm::mat4 DX11Scene::StoreMatrix(const glm::mat4 & m)
-{
-    return glm::transpose(m);
 }
 
 void DX11Scene::CreateRT()
@@ -241,8 +236,7 @@ void DX11Scene::CreateSampler()
 
 void DX11Scene::CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
 {
-    D3D11_TEXTURE2D_DESC texture_desc;
-    ZeroMemory(&texture_desc, sizeof(texture_desc));
+    D3D11_TEXTURE2D_DESC texture_desc = {};
     texture_desc.Width = m_width;
     texture_desc.Height = m_height;
     texture_desc.MipLevels = 1;
@@ -251,25 +245,17 @@ void DX11Scene::CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11Shad
     texture_desc.SampleDesc.Count = 1;
     texture_desc.Usage = D3D11_USAGE_DEFAULT;
     texture_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-    texture_desc.CPUAccessFlags = 0;
-    texture_desc.MiscFlags = 0;
 
     ComPtr<ID3D11Texture2D> texture;
     ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&texture_desc, nullptr, &texture));
 
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels = 1;
+    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+    srv_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srv_desc.Texture2D.MipLevels = 1;
 
-    ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(texture.Get(), &srvDesc, &srv));
-
+    ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(texture.Get(), &srv_desc, &srv));
     ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
-}
-
-void DX11Scene::SetVertexBuffer(UINT slot, ID3D11Buffer* buffer, UINT stride, UINT offset)
-{
-    m_context.device_context->IASetVertexBuffers(slot, 1, &buffer, &stride, &offset);
 }
 
 void DX11Scene::InitGBuffer()

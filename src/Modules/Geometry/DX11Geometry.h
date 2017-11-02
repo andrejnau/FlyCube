@@ -87,4 +87,9 @@ struct DX11Mesh : IMesh
             srv = texResources[it->second].Get();
         device_context->PSSetShaderResources(slot, 1, &srv);
     }
+
+    void SetVertexBuffer(ComPtr<ID3D11DeviceContext>& device_context, UINT slot, ComPtr<ID3D11Buffer>& buffer, UINT stride, UINT offset)
+    {
+        device_context->IASetVertexBuffers(slot, 1, buffer.GetAddressOf(), &stride, &offset);
+    }
 };

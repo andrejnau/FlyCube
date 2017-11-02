@@ -11,7 +11,6 @@ class SceneBase : public IScene
 {
 public:
     virtual ~SceneBase() {}
-    virtual glm::mat4 StoreMatrix(const glm::mat4& x) = 0;
     virtual void OnKey(int key, int action) override;
     virtual void OnMouse(bool first_event, double xpos, double ypos) override;
 
