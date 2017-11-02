@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Scene/SceneBase.h>
+#include <Context/Context.h>
 #include <Geometry/DX11Geometry.h>
 #include <d3d11.h>
 #include <DXGI1_4.h>
@@ -18,22 +19,18 @@ using namespace Microsoft::WRL;
 class DX11Scene : public SceneBase
 {
 public:
-    DX11Scene();
-    ~DX11Scene();
+    DX11Scene(int width, int height);
 
-    static IScene::Ptr Create();
+    static IScene::Ptr Create(int width, int height);
 
-    virtual void OnInit(int width, int height) override;
     virtual void OnUpdate() override;
     void GeometryPass();
     void LightPass();
     virtual void OnRender() override;
-    virtual void OnDestroy() override;
-    virtual void OnSizeChanged(int width, int height) override;
+    virtual void OnResize(int width, int height) override;
     virtual glm::mat4 StoreMatrix(const glm::mat4& m) override;
 
 private:
-    void CreateDeviceAndSwapChain();
     void CreateRT();
     void CreateViewPort();
     void CreateSampler();
@@ -45,9 +42,6 @@ private:
 
     void InitGBuffer();
 
-    ComPtr<ID3D11Device> m_device;
-    ComPtr<ID3D11DeviceContext> m_device_context;
-    ComPtr<IDXGISwapChain> m_swap_chain;
 
     ComPtr<ID3D11RenderTargetView> m_render_target_view;
     ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
@@ -77,5 +71,5 @@ private:
 
     int m_width;
     int m_height;
-    const bool m_use_rotare = true;
+    Context m_context;
 };

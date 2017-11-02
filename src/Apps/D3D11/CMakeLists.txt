@@ -64,6 +64,7 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
+    Context
     d3dcompiler
     dxgi
     d3d11

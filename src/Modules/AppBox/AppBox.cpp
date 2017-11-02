@@ -21,7 +21,7 @@ AppBox::~AppBox()
 {
     if (m_window)
     {
-        m_sample->OnDestroy();
+        m_sample.reset();
         glfwDestroyWindow(m_window);
     }
 
@@ -33,8 +33,7 @@ int AppBox::Run()
     if (!m_window)
         return EXIT_FAILURE;
 
-    m_sample = m_create_sample();
-    m_sample->OnInit(m_width, m_height);
+    m_sample = m_create_sample(m_width, m_height);
 
     int frame_number = 0;
     double last_time = glfwGetTime();
@@ -122,7 +121,7 @@ void AppBox::OnSizeChanged(GLFWwindow* window, int width, int height)
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
     self->m_width = width;
     self->m_height = height;
-    self->m_sample->OnSizeChanged(width, height);
+    self->m_sample->OnResize(width, height);
 }
 
 void AppBox::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)

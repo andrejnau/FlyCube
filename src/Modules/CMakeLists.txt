@@ -1,4 +1,5 @@
 add_subdirectory(Scene)
+add_subdirectory(Context)
 add_subdirectory(AppBox)
 add_subdirectory(WinConsole)
 add_subdirectory(Camera)

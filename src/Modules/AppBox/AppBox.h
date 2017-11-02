@@ -9,7 +9,7 @@
 class AppBox
 {
 public:
-    using CreateSample = std::function<IScene::Ptr()>;
+    using CreateSample = std::function<IScene::Ptr(int, int)>;
     AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height);
     ~AppBox();
     int Run();
