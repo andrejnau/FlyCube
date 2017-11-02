@@ -10,15 +10,6 @@
 
 struct IMesh
 {
-    struct Vertex
-    {
-        glm::vec3 position;
-        glm::vec3 normal;
-        glm::vec2 texCoords;
-        glm::vec3 tangent;
-        glm::vec3 bitangent;
-    };
-
     using Index = uint32_t;
 
     struct Material
@@ -31,7 +22,11 @@ struct IMesh
     };
 
     Material material;
-    std::vector<Vertex> vertices;
+
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> texcoords;
+    std::vector<glm::vec3> tangents;
     std::vector<uint32_t> indices;
     std::vector<TextureInfo> textures;
 };

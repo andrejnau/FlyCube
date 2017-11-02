@@ -25,6 +25,12 @@ public:
         {{/Textures}}
     } texture;
 
+    struct
+    {
+        {{#Inputs}}static constexpr const UINT {{Name}} = {{Slot}};
+        {{/Inputs}}
+    } geometry;
+
     {{ShaderName}}(ComPtr<ID3D11Device>& device)
         : Shader(device, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
         , cbuffer{}  

@@ -164,7 +164,6 @@ public:
         D3D11_SHADER_DESC shader_desc = {};
         reflector->GetDesc(&shader_desc);
 
-        UINT byte_offset = 0;
         std::vector<D3D11_INPUT_ELEMENT_DESC> input_layout_desc;
         for (UINT i = 0; i < shader_desc.InputParameters; ++i)
         {
@@ -174,8 +173,7 @@ public:
             D3D11_INPUT_ELEMENT_DESC layout = {};
             layout.SemanticName = param_desc.SemanticName;
             layout.SemanticIndex = param_desc.SemanticIndex;
-            layout.InputSlot = 0;
-            layout.AlignedByteOffset = byte_offset;
+            layout.InputSlot = i;
             layout.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
             layout.InstanceDataStepRate = 0;
 
@@ -187,7 +185,6 @@ public:
                     layout.Format = DXGI_FORMAT_R32_SINT;
                 else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
                     layout.Format = DXGI_FORMAT_R32_FLOAT;
-                byte_offset += 4;
             }
             else if (param_desc.Mask <= 3)
             {
@@ -197,7 +194,6 @@ public:
                     layout.Format = DXGI_FORMAT_R32G32_SINT;
                 else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
                     layout.Format = DXGI_FORMAT_R32G32_FLOAT;
-                byte_offset += 8;
             }
             else if (param_desc.Mask <= 7)
             {
@@ -207,7 +203,6 @@ public:
                     layout.Format = DXGI_FORMAT_R32G32B32_SINT;
                 else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
                     layout.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-                byte_offset += 12;
             }
             else if (param_desc.Mask <= 15)
             {
@@ -217,7 +212,6 @@ public:
                     layout.Format = DXGI_FORMAT_R32G32B32A32_SINT;
                 else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
                     layout.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-                byte_offset += 16;
             }
             input_layout_desc.push_back(layout);
         }

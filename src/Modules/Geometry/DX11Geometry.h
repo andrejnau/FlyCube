@@ -8,13 +8,18 @@
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
 #include <SOIL.h>
+#include <map>
+#include <vector>
 
 using namespace Microsoft::WRL;
 
 struct DX11Mesh : IMesh
 {
-    ComPtr<ID3D11Buffer> vertBuffer;
-    ComPtr<ID3D11Buffer> indexBuffer;
+    ComPtr<ID3D11Buffer> positions_buffer;
+    ComPtr<ID3D11Buffer> normals_buffer;
+    ComPtr<ID3D11Buffer> texcoords_buffer;
+    ComPtr<ID3D11Buffer> tangents_buffer;
+    ComPtr<ID3D11Buffer> indices_buffer;
 
     std::vector<ComPtr<ID3D11ShaderResourceView>> texResources;
 
@@ -35,36 +40,30 @@ struct DX11Mesh : IMesh
         }
     }
 
-    void SetupMesh(ComPtr<ID3D11Device>& d3d11Device, ComPtr<ID3D11DeviceContext>& d3d11DevCon)
+    template<typename T>
+    ComPtr<ID3D11Buffer> CreateBuffer(ComPtr<ID3D11Device>& device, const std::vector<T>& v, UINT BindFlags)
     {
+        ComPtr<ID3D11Buffer> buffer;
+        D3D11_BUFFER_DESC buffer_desc = {};
+        buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+        buffer_desc.ByteWidth = v.size() * sizeof(v.front());
+        buffer_desc.BindFlags = BindFlags;
+
+        D3D11_SUBRESOURCE_DATA buffer_data = {};
+        buffer_data.pSysMem = v.data();
+        ASSERT_SUCCEEDED(device->CreateBuffer(&buffer_desc, &buffer_data, &buffer));
+        return buffer;
+    }
+
+    void SetupMesh(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& device_context)
+    {
+        positions_buffer = CreateBuffer(device, positions, D3D11_BIND_VERTEX_BUFFER);
+        normals_buffer = CreateBuffer(device, normals, D3D11_BIND_VERTEX_BUFFER);
+        texcoords_buffer = CreateBuffer(device, texcoords, D3D11_BIND_VERTEX_BUFFER);
+        tangents_buffer = CreateBuffer(device, tangents, D3D11_BIND_VERTEX_BUFFER);
+        indices_buffer = CreateBuffer(device, indices, D3D11_BIND_INDEX_BUFFER);
+
         texResources.resize(textures.size());
-        D3D11_BUFFER_DESC vertexBufferDesc;
-        ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-
-        vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-        vertexBufferDesc.ByteWidth = vertices.size() * sizeof(vertices[0]);
-        vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        vertexBufferDesc.CPUAccessFlags = 0;
-        vertexBufferDesc.MiscFlags = 0;
-
-        D3D11_SUBRESOURCE_DATA vertexBufferData;
-
-        ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-        vertexBufferData.pSysMem = vertices.data();
-        HRESULT hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertBuffer);
-
-        D3D11_BUFFER_DESC indexBufferDesc;
-        ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-        indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-        indexBufferDesc.ByteWidth = indices.size() * sizeof(indices[0]);
-        indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-        indexBufferDesc.CPUAccessFlags = 0;
-        indexBufferDesc.MiscFlags = 0;
-
-        D3D11_SUBRESOURCE_DATA iinitData;
-        iinitData.pSysMem = indices.data();
-        hr = d3d11Device->CreateBuffer(&indexBufferDesc, &iinitData, &indexBuffer);
-
-        InitTextures(d3d11Device, d3d11DevCon);
+        InitTextures(device, device_context);
     }
 };

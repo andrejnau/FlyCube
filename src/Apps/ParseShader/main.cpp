@@ -174,8 +174,23 @@ private:
             ttexture.set("Slot", std::to_string(res_desc.BindPoint));
             ttextures.push_back(ttexture);
         }
-
         m_tcontext["Textures"] = mustache::data{ ttextures };
+
+        mustache::data tinputs{ mustache::data::type::list };
+        for (UINT i = 0; i < desc.InputParameters; ++i)
+        {
+            D3D11_SIGNATURE_PARAMETER_DESC param_desc = {};
+            reflector->GetInputParameterDesc(i, &param_desc);
+
+            mustache::data tinput;
+            std::string input_name = param_desc.SemanticName;
+            if (param_desc.SemanticIndex)
+                input_name += std::to_string(param_desc.SemanticIndex);
+            tinput.set("Name", input_name);
+            tinput.set("Slot", std::to_string(i));
+            tinputs.push_back(tinput);
+        }
+        m_tcontext["Inputs"] = mustache::data{ tinputs };
     }
 
     ComPtr<ID3DBlob> CompileShader(const std::string& shader_path, const std::string& entrypoint, const std::string& target)

@@ -108,10 +108,11 @@ void DX11Scene::GeometryPass()
 
     for (DX11Mesh& cur_mesh : m_model_of_file->meshes)
     {
-        UINT stride = sizeof(cur_mesh.vertices[0]);
-        UINT offset = 0;
-        m_device_context->IASetVertexBuffers(0, 1, cur_mesh.vertBuffer.GetAddressOf(), &stride, &offset);
-        m_device_context->IASetIndexBuffer(cur_mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+        SetVertexBuffer(m_shader_geometry_pass->vs.geometry.POSITION, cur_mesh.positions_buffer.Get(), sizeof(cur_mesh.positions.front()), 0);
+        SetVertexBuffer(m_shader_geometry_pass->vs.geometry.NORMAL, cur_mesh.normals_buffer.Get(), sizeof(cur_mesh.normals.front()), 0);
+        SetVertexBuffer(m_shader_geometry_pass->vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer.Get(), sizeof(cur_mesh.texcoords.front()), 0);
+        SetVertexBuffer(m_shader_geometry_pass->vs.geometry.TANGENT, cur_mesh.tangents_buffer.Get(), sizeof(cur_mesh.tangents.front()), 0);
+        m_device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         m_shader_geometry_pass->ps.cbuffer.TexturesEnables = {};
         for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
@@ -176,11 +177,9 @@ void DX11Scene::LightPass()
     for (size_t mesh_id = 0; mesh_id < m_model_square->meshes.size(); ++mesh_id)
     {
         DX11Mesh & cur_mesh = m_model_square->meshes[mesh_id];
-
-        UINT stride = sizeof(cur_mesh.vertices[0]);
-        UINT offset = 0;
-        m_device_context->IASetVertexBuffers(0, 1, cur_mesh.vertBuffer.GetAddressOf(), &stride, &offset);
-        m_device_context->IASetIndexBuffer(cur_mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+        SetVertexBuffer(m_shader_light_pass->vs.geometry.POSITION, cur_mesh.positions_buffer.Get(), sizeof(cur_mesh.positions.front()), 0);
+        SetVertexBuffer(m_shader_light_pass->vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer.Get(), sizeof(cur_mesh.texcoords.front()), 0);
+        m_device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         m_device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gPosition, 1, m_position_srv.GetAddressOf());
         m_device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gNormal,   1, m_normal_srv.GetAddressOf());
@@ -343,6 +342,11 @@ void DX11Scene::CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11Shad
     ASSERT_SUCCEEDED(m_device->CreateShaderResourceView(texture.Get(), &srvDesc, &srv));
 
     ASSERT_SUCCEEDED(m_device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
+}
+
+void DX11Scene::SetVertexBuffer(UINT slot, ID3D11Buffer* buffer, UINT stride, UINT offset)
+{
+    m_device_context->IASetVertexBuffers(slot, 1, &buffer, &stride, &offset);
 }
 
 void DX11Scene::InitGBuffer()

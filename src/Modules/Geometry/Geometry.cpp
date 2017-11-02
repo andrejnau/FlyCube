@@ -56,7 +56,14 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     // Walk through each of the mesh's vertices
     for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
     {
-        IMesh::Vertex vertex;
+        struct Vertex
+        {
+            glm::vec3 position;
+            glm::vec3 normal;
+            glm::vec2 texcoord;
+            glm::vec3 tangent;
+            glm::vec3 bitangent;
+        } vertex;
 
         if (mesh->HasPositions())
         {
@@ -94,14 +101,17 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
         // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
         if (mesh->HasTextureCoords(0))
         {
-            vertex.texCoords = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+            vertex.texcoord = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
         }
         else
         {
-            vertex.texCoords = glm::vec2(0.0f, 0.0f);
+            vertex.texcoord = glm::vec2(0.0f, 0.0f);
         }
 
-        cur_mesh.vertices.push_back(vertex);
+        cur_mesh.positions.push_back(vertex.position);
+        cur_mesh.normals.push_back(vertex.normal);
+        cur_mesh.texcoords.push_back(vertex.texcoord);
+        cur_mesh.tangents.push_back(vertex.tangent);
     }
     // Now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
     for (uint32_t i = 0; i < mesh->mNumFaces; ++i)

@@ -41,6 +41,7 @@ private:
     std::unique_ptr<Model<DX11Mesh>> CreateGeometry(const std::string & path);
 
     void CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
+    void SetVertexBuffer(UINT slot, ID3D11Buffer* buffer, UINT stride, UINT offset);
 
     void InitGBuffer();
 
