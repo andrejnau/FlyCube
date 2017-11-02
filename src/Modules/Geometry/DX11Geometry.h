@@ -21,6 +21,7 @@ struct DX11Mesh : IMesh
     ComPtr<ID3D11Buffer> tangents_buffer;
     ComPtr<ID3D11Buffer> indices_buffer;
 
+    std::map<aiTextureType, size_t> m_type2id;
     std::vector<ComPtr<ID3D11ShaderResourceView>> texResources;
 
     void InitTextures(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& device_context)
@@ -65,5 +66,25 @@ struct DX11Mesh : IMesh
 
         texResources.resize(textures.size());
         InitTextures(device, device_context);
+
+        for (size_t i = 0; i < textures.size(); ++i)
+        {
+            m_type2id[textures[i].type] = i;
+        }
+    }
+
+    void UnsetTexture(ComPtr<ID3D11DeviceContext>& device_context, UINT slot)
+    {
+        ID3D11ShaderResourceView* srv = nullptr;
+        device_context->PSSetShaderResources(slot, 1, &srv);
+    }
+
+    void SetTexture(ComPtr<ID3D11DeviceContext>& device_context, aiTextureType type, UINT slot)
+    {
+        ID3D11ShaderResourceView* srv = nullptr;
+        auto it = m_type2id.find(type);
+        if (it != m_type2id.end())
+            srv = texResources[it->second].Get();
+        device_context->PSSetShaderResources(slot, 1, &srv);
     }
 };

@@ -16,16 +16,6 @@ Texture2D glossMap;
 
 SamplerState g_sampler : register(s0);
 
-cbuffer TexturesEnables
-{
-    int has_normalMap;
-    int has_alphaMap;
-    int has_ambientMap;
-    int has_diffuseMap;
-    int has_specularMap;
-    int has_glossMap;
-};
-
 cbuffer Material
 {
     float3 material_ambient;
@@ -50,7 +40,8 @@ float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, b
 }
 
 struct PS_OUT
-{   float4 gPosition : SV_Target0;
+{
+    float4 gPosition : SV_Target0;
     float3 gNormal   : SV_Target1;
     float3 gAmbient  : SV_Target2;
     float3 gDiffuse  : SV_Target3;
@@ -73,13 +64,13 @@ float3 CalcBumpedNormal(VS_OUTPUT input)
 bool HasTexture(Texture2D _texture)
 {
     uint width, height;
-    diffuseMap.GetDimensions(width, height);
+    _texture.GetDimensions(width, height);
     return width > 0 && height > 0;
 }
 
 PS_OUT main(VS_OUTPUT input)
 {
-    if (has_alphaMap)
+    if (HasTexture(alphaMap))
     {
         if (getTexture(alphaMap, g_sampler, input.texCoord).r < 0.5)
             discard;
@@ -88,30 +79,30 @@ PS_OUT main(VS_OUTPUT input)
     PS_OUT output;
     output.gPosition = float4(input.fragPos.xyz, input.pos.z);
 
-    if (has_normalMap)
+    if (HasTexture(normalMap))
         output.gNormal = CalcBumpedNormal(input);
     else
         output.gNormal = normalize(input.normal);
 
     output.gAmbient = light_ambient;
-    if (has_ambientMap)
+    if (HasTexture(ambientMap))
         output.gAmbient *= getTexture(ambientMap, g_sampler, input.texCoord, true).rgb;
     else
         output.gAmbient *= material_ambient;
 
     output.gDiffuse = light_diffuse;
-    if (has_diffuseMap)
+    if (HasTexture(diffuseMap))
         output.gDiffuse *= getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
     else
         output.gDiffuse *= material_diffuse;
 
     output.gSpecular.rgb = light_specular;
-    if (has_specularMap)
+    if (HasTexture(specularMap))
         output.gSpecular.rgb *= getTexture(specularMap, g_sampler, input.texCoord, true).rgb;
     else
         output.gSpecular.rgb *= material_specular;
 
-    if (has_glossMap)
+    if (HasTexture(glossMap))
         output.gSpecular.a = getTexture(glossMap, g_sampler, input.texCoord, false).r;
     else
         output.gSpecular.a = material_shininess;

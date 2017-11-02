@@ -96,6 +96,8 @@ void DX11Scene::GeometryPass()
     m_shader_geometry_pass->ps.cbuffer.Light.light_diffuse = glm::vec3(1.0f);
     m_shader_geometry_pass->ps.cbuffer.Light.light_specular = glm::vec3(0.5f);
 
+    auto& state = CurState<bool>::Instance().state;
+
     for (DX11Mesh& cur_mesh : m_model_of_file->meshes)
     {
         SetVertexBuffer(m_shader_geometry_pass->vs.geometry.POSITION, cur_mesh.positions_buffer.Get(), sizeof(cur_mesh.positions.front()), 0);
@@ -104,51 +106,22 @@ void DX11Scene::GeometryPass()
         SetVertexBuffer(m_shader_geometry_pass->vs.geometry.TANGENT, cur_mesh.tangents_buffer.Get(), sizeof(cur_mesh.tangents.front()), 0);
         m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-        m_shader_geometry_pass->ps.cbuffer.TexturesEnables = {};
-        for (size_t i = 0; i < cur_mesh.textures.size(); ++i)
-        {
-            auto& state = CurState<bool>::Instance().state;
-            if (state["disable_norm"] && cur_mesh.textures[i].type == aiTextureType_HEIGHT)
-                continue;
-            
-            ComPtr<ID3D11ShaderResourceView>& srv = cur_mesh.texResources[i];
-            switch (cur_mesh.textures[i].type)
-            {
-            case aiTextureType_HEIGHT:
-                m_context.device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.normalMap, 1, srv.GetAddressOf());
-                m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_normalMap = 1;
-                break;
-            case aiTextureType_OPACITY:
-                m_context.device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.alphaMap, 1, srv.GetAddressOf());
-                m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_alphaMap = 1;
-                break;
-            case aiTextureType_AMBIENT:
-                m_context.device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.ambientMap, 1, srv.GetAddressOf());
-                m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_ambientMap = 1;
-                break;
-            case aiTextureType_DIFFUSE:
-                m_context.device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.diffuseMap, 1, srv.GetAddressOf());
-                m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_diffuseMap = 1;
-                break;
-            case aiTextureType_SPECULAR:
-                m_context.device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.specularMap, 1, srv.GetAddressOf());
-                m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_specularMap = 1;
-                break;
-            case aiTextureType_SHININESS:
-                m_context.device_context->PSSetShaderResources(m_shader_geometry_pass->ps.texture.glossMap, 1, srv.GetAddressOf());
-                m_shader_geometry_pass->ps.cbuffer.TexturesEnables.has_glossMap = 1;
-                break;
-            default:
-                continue;
-            }
-        }
+        if (!state["disable_norm"])
+            cur_mesh.SetTexture(m_context.device_context, aiTextureType_HEIGHT, m_shader_geometry_pass->ps.texture.normalMap);
+        else
+            cur_mesh.UnsetTexture(m_context.device_context, m_shader_geometry_pass->ps.texture.normalMap);
+        cur_mesh.SetTexture(m_context.device_context, aiTextureType_OPACITY, m_shader_geometry_pass->ps.texture.alphaMap);
+        cur_mesh.SetTexture(m_context.device_context, aiTextureType_AMBIENT, m_shader_geometry_pass->ps.texture.ambientMap);
+        cur_mesh.SetTexture(m_context.device_context, aiTextureType_DIFFUSE, m_shader_geometry_pass->ps.texture.diffuseMap);
+        cur_mesh.SetTexture(m_context.device_context, aiTextureType_SPECULAR, m_shader_geometry_pass->ps.texture.specularMap);
+        cur_mesh.SetTexture(m_context.device_context, aiTextureType_SHININESS, m_shader_geometry_pass->ps.texture.glossMap);
 
         m_shader_geometry_pass->ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
         m_shader_geometry_pass->ps.cbuffer.Material.material_diffuse = cur_mesh.material.dif;
         m_shader_geometry_pass->ps.cbuffer.Material.material_specular = cur_mesh.material.spec;
         m_shader_geometry_pass->ps.cbuffer.Material.material_shininess = cur_mesh.material.shininess;
-
         m_shader_geometry_pass->ps.UpdateCBuffers(m_context.device_context);
+
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 }
