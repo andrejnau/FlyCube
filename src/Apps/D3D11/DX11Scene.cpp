@@ -11,15 +11,24 @@ DX11Scene::DX11Scene(int width, int height)
     : m_width(width)
     , m_height(height)
     , m_context(m_width, m_height)
+    , m_shader_geometry_pass(m_context.device)
+    , m_shader_light_pass(m_context.device)
+    , m_model_of_file("model/sponza/sponza.obj")
+    , m_model_square("model/square.obj")
 {
-    m_shader_geometry_pass.reset(new Program<GeometryPassPS, GeometryPassVS>(m_context.device));
-    m_shader_light_pass.reset(new Program<LightPassPS, LightPassVS>(m_context.device));
+    for (DX11Mesh& cur_mesh : m_model_of_file.meshes)
+    {
+        cur_mesh.SetupMesh(m_context.device, m_context.device_context);
+    }
+
+    for (DX11Mesh& cur_mesh : m_model_square.meshes)
+    {
+        cur_mesh.SetupMesh(m_context.device, m_context.device_context);
+    }
 
     CreateRT();
     CreateViewPort();
     CreateSampler();
-    m_model_of_file = CreateGeometry("model/sponza/sponza.obj");
-    m_model_square = CreateGeometry("model/square.obj");
     InitGBuffer();
     m_camera.SetViewport(m_width, m_height);
 
@@ -43,11 +52,11 @@ void DX11Scene::OnUpdate()
     float model_scale_ = 0.01f;
     model = glm::scale(glm::vec3(model_scale_)) * model;
 
-    m_shader_geometry_pass->vs.cbuffer.ConstantBuffer.model = StoreMatrix(model);
-    m_shader_geometry_pass->vs.cbuffer.ConstantBuffer.view = StoreMatrix(view);
-    m_shader_geometry_pass->vs.cbuffer.ConstantBuffer.projection = StoreMatrix(projection);
-    m_shader_geometry_pass->vs.cbuffer.ConstantBuffer.normalMatrix = StoreMatrix(glm::transpose(glm::inverse(model)));
-    m_shader_geometry_pass->vs.UpdateCBuffers(m_context.device_context);
+    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.model = StoreMatrix(model);
+    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.view = StoreMatrix(view);
+    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.projection = StoreMatrix(projection);
+    m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.normalMatrix = StoreMatrix(glm::transpose(glm::inverse(model)));
+    m_shader_geometry_pass.vs.UpdateCBuffers(m_context.device_context);
 
     float light_r = 2.5;
     glm::vec3 light_pos_ = glm::vec3(light_r * cos(m_angle), 25.0f, light_r * sin(m_angle));
@@ -55,9 +64,9 @@ void DX11Scene::OnUpdate()
     glm::vec3 cameraPosView = glm::vec3(glm::vec4(m_camera.GetCameraPos(), 1.0));
     glm::vec3 lightPosView = glm::vec3(glm::vec4(light_pos_, 1.0));
 
-    m_shader_light_pass->ps.cbuffer.ConstantBuffer.lightPos = glm::vec4(lightPosView, 0);
-    m_shader_light_pass->ps.cbuffer.ConstantBuffer.viewPos = glm::vec4(cameraPosView, 0.0);
-    m_shader_light_pass->ps.UpdateCBuffers(m_context.device_context);
+    m_shader_light_pass.ps.cbuffer.ConstantBuffer.lightPos = glm::vec4(lightPosView, 0);
+    m_shader_light_pass.ps.cbuffer.ConstantBuffer.viewPos = glm::vec4(cameraPosView, 0.0);
+    m_shader_light_pass.ps.UpdateCBuffers(m_context.device_context);
 }
 
 void DX11Scene::OnRender()
@@ -71,9 +80,9 @@ void DX11Scene::GeometryPass()
 {
     m_context.device_context->RSSetViewports(1, &m_viewport);
 
-    m_shader_geometry_pass->UseProgram(m_context.device_context);
-    m_shader_geometry_pass->UseProgram(m_context.device_context);
-    m_context.device_context->IASetInputLayout(m_shader_geometry_pass->vs.input_layout.Get());
+    m_shader_geometry_pass.UseProgram(m_context.device_context);
+    m_shader_geometry_pass.UseProgram(m_context.device_context);
+    m_context.device_context->IASetInputLayout(m_shader_geometry_pass.vs.input_layout.Get());
 
     std::vector<ID3D11RenderTargetView*> rtvs = {
         m_position_rtv.Get(),
@@ -92,35 +101,35 @@ void DX11Scene::GeometryPass()
 
     m_context.device_context->OMSetRenderTargets(rtvs.size(), rtvs.data(), m_depth_stencil_view.Get());
 
-    m_shader_geometry_pass->ps.cbuffer.Light.light_ambient = glm::vec3(0.2f);
-    m_shader_geometry_pass->ps.cbuffer.Light.light_diffuse = glm::vec3(1.0f);
-    m_shader_geometry_pass->ps.cbuffer.Light.light_specular = glm::vec3(0.5f);
+    m_shader_geometry_pass.ps.cbuffer.Light.light_ambient = glm::vec3(0.2f);
+    m_shader_geometry_pass.ps.cbuffer.Light.light_diffuse = glm::vec3(1.0f);
+    m_shader_geometry_pass.ps.cbuffer.Light.light_specular = glm::vec3(0.5f);
 
     auto& state = CurState<bool>::Instance().state;
 
-    for (DX11Mesh& cur_mesh : m_model_of_file->meshes)
+    for (DX11Mesh& cur_mesh : m_model_of_file.meshes)
     {
-        SetVertexBuffer(m_shader_geometry_pass->vs.geometry.POSITION, cur_mesh.positions_buffer.Get(), sizeof(cur_mesh.positions.front()), 0);
-        SetVertexBuffer(m_shader_geometry_pass->vs.geometry.NORMAL, cur_mesh.normals_buffer.Get(), sizeof(cur_mesh.normals.front()), 0);
-        SetVertexBuffer(m_shader_geometry_pass->vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer.Get(), sizeof(cur_mesh.texcoords.front()), 0);
-        SetVertexBuffer(m_shader_geometry_pass->vs.geometry.TANGENT, cur_mesh.tangents_buffer.Get(), sizeof(cur_mesh.tangents.front()), 0);
+        SetVertexBuffer(m_shader_geometry_pass.vs.geometry.POSITION, cur_mesh.positions_buffer.Get(), sizeof(cur_mesh.positions.front()), 0);
+        SetVertexBuffer(m_shader_geometry_pass.vs.geometry.NORMAL, cur_mesh.normals_buffer.Get(), sizeof(cur_mesh.normals.front()), 0);
+        SetVertexBuffer(m_shader_geometry_pass.vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer.Get(), sizeof(cur_mesh.texcoords.front()), 0);
+        SetVertexBuffer(m_shader_geometry_pass.vs.geometry.TANGENT, cur_mesh.tangents_buffer.Get(), sizeof(cur_mesh.tangents.front()), 0);
         m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         if (!state["disable_norm"])
-            cur_mesh.SetTexture(m_context.device_context, aiTextureType_HEIGHT, m_shader_geometry_pass->ps.texture.normalMap);
+            cur_mesh.SetTexture(m_context.device_context, aiTextureType_HEIGHT, m_shader_geometry_pass.ps.texture.normalMap);
         else
-            cur_mesh.UnsetTexture(m_context.device_context, m_shader_geometry_pass->ps.texture.normalMap);
-        cur_mesh.SetTexture(m_context.device_context, aiTextureType_OPACITY, m_shader_geometry_pass->ps.texture.alphaMap);
-        cur_mesh.SetTexture(m_context.device_context, aiTextureType_AMBIENT, m_shader_geometry_pass->ps.texture.ambientMap);
-        cur_mesh.SetTexture(m_context.device_context, aiTextureType_DIFFUSE, m_shader_geometry_pass->ps.texture.diffuseMap);
-        cur_mesh.SetTexture(m_context.device_context, aiTextureType_SPECULAR, m_shader_geometry_pass->ps.texture.specularMap);
-        cur_mesh.SetTexture(m_context.device_context, aiTextureType_SHININESS, m_shader_geometry_pass->ps.texture.glossMap);
+            cur_mesh.UnsetTexture(m_context.device_context, m_shader_geometry_pass.ps.texture.normalMap);
+        cur_mesh.SetTexture(m_context.device_context, aiTextureType_OPACITY, m_shader_geometry_pass.ps.texture.alphaMap);
+        cur_mesh.SetTexture(m_context.device_context, aiTextureType_AMBIENT, m_shader_geometry_pass.ps.texture.ambientMap);
+        cur_mesh.SetTexture(m_context.device_context, aiTextureType_DIFFUSE, m_shader_geometry_pass.ps.texture.diffuseMap);
+        cur_mesh.SetTexture(m_context.device_context, aiTextureType_SPECULAR, m_shader_geometry_pass.ps.texture.specularMap);
+        cur_mesh.SetTexture(m_context.device_context, aiTextureType_SHININESS, m_shader_geometry_pass.ps.texture.glossMap);
 
-        m_shader_geometry_pass->ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
-        m_shader_geometry_pass->ps.cbuffer.Material.material_diffuse = cur_mesh.material.dif;
-        m_shader_geometry_pass->ps.cbuffer.Material.material_specular = cur_mesh.material.spec;
-        m_shader_geometry_pass->ps.cbuffer.Material.material_shininess = cur_mesh.material.shininess;
-        m_shader_geometry_pass->ps.UpdateCBuffers(m_context.device_context);
+        m_shader_geometry_pass.ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
+        m_shader_geometry_pass.ps.cbuffer.Material.material_diffuse = cur_mesh.material.dif;
+        m_shader_geometry_pass.ps.cbuffer.Material.material_specular = cur_mesh.material.spec;
+        m_shader_geometry_pass.ps.cbuffer.Material.material_shininess = cur_mesh.material.shininess;
+        m_shader_geometry_pass.ps.UpdateCBuffers(m_context.device_context);
 
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
@@ -128,8 +137,8 @@ void DX11Scene::GeometryPass()
 
 void DX11Scene::LightPass()
 {
-    m_shader_light_pass->UseProgram(m_context.device_context);
-    m_context.device_context->IASetInputLayout(m_shader_light_pass->vs.input_layout.Get());
+    m_shader_light_pass.UseProgram(m_context.device_context);
+    m_context.device_context->IASetInputLayout(m_shader_light_pass.vs.input_layout.Get());
 
     m_context.device_context->OMSetRenderTargets(1, m_render_target_view.GetAddressOf(), m_depth_stencil_view.Get());
 
@@ -137,18 +146,17 @@ void DX11Scene::LightPass()
     m_context.device_context->ClearRenderTargetView(m_render_target_view.Get(), bgColor);
     m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    for (size_t mesh_id = 0; mesh_id < m_model_square->meshes.size(); ++mesh_id)
+    for (DX11Mesh& cur_mesh : m_model_square.meshes)
     {
-        DX11Mesh & cur_mesh = m_model_square->meshes[mesh_id];
-        SetVertexBuffer(m_shader_light_pass->vs.geometry.POSITION, cur_mesh.positions_buffer.Get(), sizeof(cur_mesh.positions.front()), 0);
-        SetVertexBuffer(m_shader_light_pass->vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer.Get(), sizeof(cur_mesh.texcoords.front()), 0);
+        SetVertexBuffer(m_shader_light_pass.vs.geometry.POSITION, cur_mesh.positions_buffer.Get(), sizeof(cur_mesh.positions.front()), 0);
+        SetVertexBuffer(m_shader_light_pass.vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer.Get(), sizeof(cur_mesh.texcoords.front()), 0);
         m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gPosition, 1, m_position_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gNormal,   1, m_normal_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gAmbient,  1, m_ambient_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gDiffuse,  1, m_diffuse_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass->ps.texture.gSpecular, 1, m_specular_srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gPosition, 1, m_position_srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gNormal,   1, m_normal_srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gAmbient,  1, m_ambient_srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gDiffuse,  1, m_diffuse_srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gSpecular, 1, m_specular_srv.GetAddressOf());
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 }
@@ -229,17 +237,6 @@ void DX11Scene::CreateSampler()
     sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
     ASSERT_SUCCEEDED(m_context.device->CreateSamplerState(&sampDesc, &m_texture_sampler));
-}
-
-std::unique_ptr<Model<DX11Mesh>> DX11Scene::CreateGeometry(const std::string& path)
-{
-    std::unique_ptr<Model<DX11Mesh>> model = std::make_unique<Model<DX11Mesh>>(path);
-
-    for (DX11Mesh & cur_mesh : model->meshes)
-    {
-        cur_mesh.SetupMesh(m_context.device, m_context.device_context);
-    }
-    return model;
 }
 
 void DX11Scene::CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)

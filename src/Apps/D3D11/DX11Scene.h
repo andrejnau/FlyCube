@@ -35,8 +35,6 @@ private:
     void CreateViewPort();
     void CreateSampler();
 
-    std::unique_ptr<Model<DX11Mesh>> CreateGeometry(const std::string & path);
-
     void CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
     void SetVertexBuffer(UINT slot, ID3D11Buffer* buffer, UINT stride, UINT offset);
 
@@ -50,12 +48,6 @@ private:
     D3D11_VIEWPORT m_viewport;
 
     ComPtr<ID3D11SamplerState> m_texture_sampler;
-
-    std::unique_ptr<Program<GeometryPassPS, GeometryPassVS>> m_shader_geometry_pass;
-    std::unique_ptr<Program<LightPassPS, LightPassVS>> m_shader_light_pass;
-
-    std::unique_ptr<Model<DX11Mesh>> m_model_of_file;
-    std::unique_ptr<Model<DX11Mesh>> m_model_square;
 
     ComPtr<ID3D11RenderTargetView> m_position_rtv;
     ComPtr<ID3D11RenderTargetView> m_normal_rtv;
@@ -72,4 +64,8 @@ private:
     int m_width;
     int m_height;
     Context m_context;
+    Program<GeometryPassPS, GeometryPassVS> m_shader_geometry_pass;
+    Program<LightPassPS, LightPassVS> m_shader_light_pass;
+    Model<DX11Mesh> m_model_of_file;
+    Model<DX11Mesh> m_model_square;
 };
