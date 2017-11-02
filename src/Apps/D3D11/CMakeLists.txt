@@ -8,7 +8,7 @@ function(add_shader shader_name shader_path entrypoint target)
     add_custom_command(OUTPUT ${output_file}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
         COMMAND $<TARGET_FILE:ParseShader> ${shader_name} ${shader_path} ${entrypoint} ${target} ${template} ${output_dir}
-        DEPENDS ${template}
+        DEPENDS ${template} "${assets_path}/${shader_path}"
     )
 endfunction()
 
