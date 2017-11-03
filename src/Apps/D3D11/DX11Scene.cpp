@@ -11,11 +11,12 @@ DX11Scene::DX11Scene(int width, int height)
     : m_width(width)
     , m_height(height)
     , m_context(m_width, m_height)
-    , m_shader_light_pass(m_context.device)
     , m_model_of_file("model/sponza/sponza.obj")
     , m_model_square("model/square.obj")
-    , m_geometry_pass_input{ m_model_of_file, m_camera, m_depth_stencil_view, m_depth_stencil_buffer }
+    , m_geometry_pass_input{ m_model_of_file, m_camera, m_depth_stencil_view }
     , m_geometry_pass(m_context, m_geometry_pass_input, width, height)
+    , m_light_pass_input{ m_geometry_pass.output, m_model_square, m_camera, m_render_target_view, m_depth_stencil_view }
+    , m_light_pass(m_context, m_light_pass_input, width, height)
 {
     for (DX11Mesh& cur_mesh : m_model_of_file.meshes)
         cur_mesh.SetupMesh(m_context);
@@ -43,47 +44,15 @@ void DX11Scene::OnUpdate()
     UpdateAngle();
 
     m_geometry_pass.OnUpdate();
-
-    float light_r = 2.5;
-    glm::vec3 light_pos = glm::vec3(light_r * cos(m_angle), 25.0f, light_r * sin(m_angle));
-    glm::vec3 cameraPosView = glm::vec3(glm::vec4(m_camera.GetCameraPos(), 1.0));
-    glm::vec3 lightPosView = glm::vec3(glm::vec4(light_pos, 1.0));
-
-    m_shader_light_pass.ps.cbuffer.ConstantBuffer.lightPos = glm::vec4(lightPosView, 0);
-    m_shader_light_pass.ps.cbuffer.ConstantBuffer.viewPos = glm::vec4(cameraPosView, 0.0);
+    m_light_pass.OnUpdate();
 }
 
 void DX11Scene::OnRender()
 {
     m_geometry_pass.OnRender();
-    LightPass();
+    m_light_pass.OnRender();
+
     ASSERT_SUCCEEDED(m_context.swap_chain->Present(0, 0));
-}
-
-void DX11Scene::LightPass()
-{
-    m_shader_light_pass.UseProgram(m_context.device_context);
-    m_context.device_context->IASetInputLayout(m_shader_light_pass.vs.input_layout.Get());
-
-    float bgColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_context.device_context->ClearRenderTargetView(m_render_target_view.Get(), bgColor);
-    m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-    m_context.device_context->OMSetRenderTargets(1, m_render_target_view.GetAddressOf(), m_depth_stencil_view.Get());
-
-    for (DX11Mesh& cur_mesh : m_model_square.meshes)
-    {
-        m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-        cur_mesh.SetVertexBuffer(m_context, m_shader_light_pass.vs.geometry.POSITION, VertexType::kPosition);
-        cur_mesh.SetVertexBuffer(m_context, m_shader_light_pass.vs.geometry.TEXCOORD, VertexType::kTexcoord);
-
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gPosition, 1, m_geometry_pass.output.position_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gNormal,   1, m_geometry_pass.output.normal_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gAmbient,  1, m_geometry_pass.output.ambient_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gDiffuse,  1, m_geometry_pass.output.diffuse_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gSpecular, 1, m_geometry_pass.output.specular_srv.GetAddressOf());
-        m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
-    }
 }
 
 void DX11Scene::OnResize(int width, int height)
@@ -105,6 +74,7 @@ void DX11Scene::OnResize(int width, int height)
     m_camera.SetViewport(m_width, m_height);
 
     m_geometry_pass.OnResize(width, height);
+    m_light_pass.OnResize(width, height);
 }
 
 void DX11Scene::CreateRT()

@@ -18,7 +18,6 @@ public:
         Model<DX11Mesh>& model;
         Camera& camera;
         ComPtr<ID3D11DepthStencilView>& depth_stencil_view;
-        ComPtr<ID3D11Texture2D>& depth_stencil_buffer;
     };
 
     struct Output

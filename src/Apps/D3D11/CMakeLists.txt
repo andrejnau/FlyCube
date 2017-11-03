@@ -23,11 +23,13 @@ set(shaders_path "${assets_path}/shaders/DX11")
 
 set(headers
     ${source_path}/GeometryPass.h
+    ${source_path}/LightPass.h
     ${include_path}/DX11Scene.h
 )
 
 set(sources
     ${source_path}/GeometryPass.cpp
+    ${source_path}/LightPass.cpp
     ${source_path}/DX11Scene.cpp
     ${source_path}/Main.cpp
 )

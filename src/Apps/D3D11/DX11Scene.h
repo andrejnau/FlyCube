@@ -15,6 +15,7 @@
 #include <ProgramRef/LightPassVS.h>
 
 #include "D3D11/GeometryPass.h"
+#include "D3D11/LightPass.h"
 
 using namespace Microsoft::WRL;
 
@@ -26,7 +27,6 @@ public:
     static IScene::Ptr Create(int width, int height);
 
     virtual void OnUpdate() override;
-    void LightPass();
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
 
@@ -46,9 +46,10 @@ private:
     int m_width;
     int m_height;
     Context m_context;
-    Program<LightPassPS, LightPassVS> m_shader_light_pass;
     Model<DX11Mesh> m_model_of_file;
     Model<DX11Mesh> m_model_square;
     GeometryPass::Input m_geometry_pass_input;
     GeometryPass m_geometry_pass;
+    LightPass::Input m_light_pass_input;
+    LightPass m_light_pass;
 };
