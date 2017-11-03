@@ -10,6 +10,7 @@ function(add_shader shader_name shader_path entrypoint target)
         COMMAND $<TARGET_FILE:ParseShader> ${shader_name} ${shader_path} ${entrypoint} ${target} ${template} ${output_dir}
         DEPENDS ${template} "${assets_path}/${shader_path}"
     )
+    source_group("Shader Ref Files" FILES ${output_file})
 endfunction()
 
 add_shader(GeometryPassPS "shaders/DX11/GeometryPass_PS.hlsl" main ps_5_0)
