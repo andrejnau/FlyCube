@@ -109,10 +109,10 @@ void DX11Scene::GeometryPass()
 
     for (DX11Mesh& cur_mesh : m_model_of_file.meshes)
     {
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.POSITION, cur_mesh.positions_buffer, sizeof(glm::vec3), 0);
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.NORMAL, cur_mesh.normals_buffer, sizeof(glm::vec3), 0);
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer, sizeof(glm::vec2), 0);
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.TANGENT, cur_mesh.tangents_buffer, sizeof(glm::vec3), 0);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.POSITION, VertexType::kPosition);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.NORMAL, VertexType::kNormal);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.TEXCOORD, VertexType::kTexcoord);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.TANGENT, VertexType::kTangent);
         m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         if (!state["disable_norm"])
@@ -148,8 +148,8 @@ void DX11Scene::LightPass()
 
     for (DX11Mesh& cur_mesh : m_model_square.meshes)
     {
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_light_pass.vs.geometry.POSITION, cur_mesh.positions_buffer, sizeof(glm::vec3), 0);
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_light_pass.vs.geometry.TEXCOORD, cur_mesh.texcoords_buffer, sizeof(glm::vec2), 0);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_light_pass.vs.geometry.POSITION, VertexType::kPosition);
+        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_light_pass.vs.geometry.TEXCOORD, VertexType::kTexcoord);
         m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gPosition, 1, m_position_srv.GetAddressOf());

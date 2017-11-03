@@ -88,8 +88,20 @@ struct DX11Mesh : IMesh
         device_context->PSSetShaderResources(slot, 1, &srv);
     }
 
-    void SetVertexBuffer(ComPtr<ID3D11DeviceContext>& device_context, UINT slot, ComPtr<ID3D11Buffer>& buffer, UINT stride, UINT offset)
+    void SetVertexBufferImpl(ComPtr<ID3D11DeviceContext>& device_context, UINT slot, ComPtr<ID3D11Buffer>& buffer, UINT stride, UINT offset)
     {
         device_context->IASetVertexBuffers(slot, 1, buffer.GetAddressOf(), &stride, &offset);
+    }
+
+    void SetVertexBuffer(ComPtr<ID3D11DeviceContext>& device_context, UINT slot, VertexType type)
+    {
+        if (type == VertexType::kPosition)
+            SetVertexBufferImpl(device_context, slot, positions_buffer, sizeof(positions.front()), 0);
+        else if (type == VertexType::kTexcoord)
+            SetVertexBufferImpl(device_context, slot, texcoords_buffer, sizeof(texcoords.front()), 0);
+        else if (type == VertexType::kNormal)
+            SetVertexBufferImpl(device_context, slot, normals_buffer, sizeof(normals.front()), 0);
+        else if (type == VertexType::kTangent)
+            SetVertexBufferImpl(device_context, slot, tangents_buffer, sizeof(tangents.front()), 0);
     }
 };

@@ -8,6 +8,14 @@
 #include <string>
 #include <vector>
 
+enum class VertexType
+{
+    kPosition,
+    kTexcoord,
+    kNormal,
+    kTangent
+};
+
 struct IMesh
 {
     using Index = uint32_t;
