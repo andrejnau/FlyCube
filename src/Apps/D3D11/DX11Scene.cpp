@@ -14,7 +14,8 @@ DX11Scene::DX11Scene(int width, int height)
     , m_shader_light_pass(m_context.device)
     , m_model_of_file("model/sponza/sponza.obj")
     , m_model_square("model/square.obj")
-    , m_geometry_pass(m_context, m_model_of_file,  m_camera, width, height)
+    , m_geometry_pass_input{ m_model_of_file, m_camera, m_depth_stencil_view, m_depth_stencil_buffer }
+    , m_geometry_pass(m_context, m_geometry_pass_input, width, height)
 {
     for (DX11Mesh& cur_mesh : m_model_of_file.meshes)
         cur_mesh.SetupMesh(m_context);
@@ -76,11 +77,11 @@ void DX11Scene::LightPass()
         cur_mesh.SetVertexBuffer(m_context, m_shader_light_pass.vs.geometry.POSITION, VertexType::kPosition);
         cur_mesh.SetVertexBuffer(m_context, m_shader_light_pass.vs.geometry.TEXCOORD, VertexType::kTexcoord);
 
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gPosition, 1, m_geometry_pass.m_position_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gNormal,   1, m_geometry_pass.m_normal_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gAmbient,  1, m_geometry_pass.m_ambient_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gDiffuse,  1, m_geometry_pass.m_diffuse_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gSpecular, 1, m_geometry_pass.m_specular_srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gPosition, 1, m_geometry_pass.output.position_srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gNormal,   1, m_geometry_pass.output.normal_srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gAmbient,  1, m_geometry_pass.output.ambient_srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gDiffuse,  1, m_geometry_pass.output.diffuse_srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gSpecular, 1, m_geometry_pass.output.specular_srv.GetAddressOf());
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 }

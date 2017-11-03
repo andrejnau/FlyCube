@@ -1,29 +1,23 @@
 #include "GeometryPass.h"
 
 #include <Utilities/DXUtility.h>
-#include <Utilities/FileUtility.h>
 #include <Utilities/State.h>
-#include <D3Dcompiler.h>
-#include <GLFW/glfw3.h>
-#include <chrono>
 #include <glm/gtx/transform.hpp>
 
-GeometryPass::GeometryPass(Context& context, Model<DX11Mesh>& model, Camera& camera, int width, int height)
+GeometryPass::GeometryPass(Context& context, Input& input, int width, int height)
     : m_context(context)
-    , m_model(model)
+    , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(m_context.device)
-    , m_camera(camera)
+    , m_program(context.device)
 {
     InitGBuffers();
-    CreaetDepth();
 }
 
 void GeometryPass::OnUpdate()
 {
     glm::mat4 projection, view, model;
-    m_camera.GetMatrix(projection, view, model);
+    m_input.camera.GetMatrix(projection, view, model);
 
     float model_scale = 0.01f;
     model = glm::scale(glm::vec3(model_scale)) * model;
@@ -50,14 +44,14 @@ void GeometryPass::OnRender()
         m_specular_rtv.Get(),
     };
 
-    float bgColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     for (auto & rtv : rtvs)
-        m_context.device_context->ClearRenderTargetView(rtv, bgColor);
-    m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_context.device_context->OMSetRenderTargets(rtvs.size(), rtvs.data(), m_depth_stencil_view.Get());
+        m_context.device_context->ClearRenderTargetView(rtv, color);
+    m_context.device_context->ClearDepthStencilView(m_input.depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_context.device_context->OMSetRenderTargets(rtvs.size(), rtvs.data(), m_input.depth_stencil_view.Get());
 
     auto& state = CurState<bool>::Instance().state;
-    for (DX11Mesh& cur_mesh : m_model.meshes)
+    for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
         m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
         cur_mesh.SetVertexBuffer(m_context, m_program.vs.geometry.POSITION, VertexType::kPosition);
@@ -94,23 +88,6 @@ void GeometryPass::OnResize(int width, int height)
     m_width = width;
     m_height = height;
     InitGBuffers();
-    CreaetDepth();
-}
-
-void GeometryPass::CreaetDepth()
-{
-    D3D11_TEXTURE2D_DESC depth_stencil_desc = {};
-    depth_stencil_desc.Width = m_width;
-    depth_stencil_desc.Height = m_height;
-    depth_stencil_desc.MipLevels = 1;
-    depth_stencil_desc.ArraySize = 1;
-    depth_stencil_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depth_stencil_desc.SampleDesc.Count = 1;
-    depth_stencil_desc.Usage = D3D11_USAGE_DEFAULT;
-    depth_stencil_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&depth_stencil_desc, nullptr, &m_depth_stencil_buffer));
-    ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(m_depth_stencil_buffer.Get(), nullptr, &m_depth_stencil_view));
 }
 
 void GeometryPass::CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
@@ -139,9 +116,9 @@ void GeometryPass::CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D
 
 void GeometryPass::InitGBuffers()
 {
-    CreateRtvSrv(m_position_rtv, m_position_srv);
-    CreateRtvSrv(m_normal_rtv, m_normal_srv);
-    CreateRtvSrv(m_ambient_rtv, m_ambient_srv);
-    CreateRtvSrv(m_diffuse_rtv, m_diffuse_srv);
-    CreateRtvSrv(m_specular_rtv, m_specular_srv);
+    CreateRtvSrv(m_position_rtv, output.position_srv);
+    CreateRtvSrv(m_normal_rtv, output.normal_srv);
+    CreateRtvSrv(m_ambient_rtv, output.ambient_srv);
+    CreateRtvSrv(m_diffuse_rtv, output.diffuse_srv);
+    CreateRtvSrv(m_specular_rtv, output.specular_srv);
 }

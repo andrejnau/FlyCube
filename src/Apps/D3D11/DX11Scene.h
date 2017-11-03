@@ -49,5 +49,6 @@ private:
     Program<LightPassPS, LightPassVS> m_shader_light_pass;
     Model<DX11Mesh> m_model_of_file;
     Model<DX11Mesh> m_model_square;
+    GeometryPass::Input m_geometry_pass_input;
     GeometryPass m_geometry_pass;
 };

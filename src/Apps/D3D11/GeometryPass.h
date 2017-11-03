@@ -1,53 +1,50 @@
 #pragma once
 
-
 #include <Scene/SceneBase.h>
 #include <Context/Context.h>
 #include <Geometry/DX11Geometry.h>
-#include <d3d11.h>
-#include <DXGI1_4.h>
-#include <wrl.h>
-#include <string>
-
-#include <Program/Program.h>
 #include <ProgramRef/GeometryPassPS.h>
 #include <ProgramRef/GeometryPassVS.h>
-#include <ProgramRef/LightPassPS.h>
-#include <ProgramRef/LightPassVS.h>
+#include <d3d11.h>
+#include <wrl.h>
 
 using namespace Microsoft::WRL;
-
 
 class GeometryPass : public IScene
 {
 public:
-    GeometryPass(Context& context, Model<DX11Mesh>& model, Camera& camera, int width, int height);
+    struct Input
+    {
+        Model<DX11Mesh>& model;
+        Camera& camera;
+        ComPtr<ID3D11DepthStencilView>& depth_stencil_view;
+        ComPtr<ID3D11Texture2D>& depth_stencil_buffer;
+    };
+
+    struct Output
+    {
+        ComPtr<ID3D11ShaderResourceView> position_srv;
+        ComPtr<ID3D11ShaderResourceView> normal_srv;
+        ComPtr<ID3D11ShaderResourceView> ambient_srv;
+        ComPtr<ID3D11ShaderResourceView> diffuse_srv;
+        ComPtr<ID3D11ShaderResourceView> specular_srv;
+    } output;
+
+    GeometryPass(Context& context, Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
 
-    void CreaetDepth();
-
-    ComPtr<ID3D11ShaderResourceView> m_position_srv;
-    ComPtr<ID3D11ShaderResourceView> m_normal_srv;
-    ComPtr<ID3D11ShaderResourceView> m_ambient_srv;
-    ComPtr<ID3D11ShaderResourceView> m_diffuse_srv;
-    ComPtr<ID3D11ShaderResourceView> m_specular_srv;
-
 private:
     Context& m_context;
-    Model<DX11Mesh>& m_model;
-    Camera& m_camera;
+    Input& m_input;
     int m_width;
     int m_height;
     Program<GeometryPassPS, GeometryPassVS> m_program;
 
     void CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
     void InitGBuffers();
-
-    ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
-    ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
 
     ComPtr<ID3D11RenderTargetView> m_position_rtv;
     ComPtr<ID3D11RenderTargetView> m_normal_rtv;
