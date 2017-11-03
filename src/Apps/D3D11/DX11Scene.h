@@ -14,6 +14,8 @@
 #include <ProgramRef/LightPassPS.h>
 #include <ProgramRef/LightPassVS.h>
 
+#include "D3D11/GeometryPass.h"
+
 using namespace Microsoft::WRL;
 
 class DX11Scene : public SceneBase
@@ -24,7 +26,6 @@ public:
     static IScene::Ptr Create(int width, int height);
 
     virtual void OnUpdate() override;
-    void GeometryPass();
     void LightPass();
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
@@ -34,10 +35,6 @@ private:
     void CreateViewPort();
     void CreateSampler();
 
-    void CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
-
-    void InitGBuffer();
-
     ComPtr<ID3D11RenderTargetView> m_render_target_view;
     ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
     ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
@@ -46,23 +43,11 @@ private:
 
     ComPtr<ID3D11SamplerState> m_texture_sampler;
 
-    ComPtr<ID3D11RenderTargetView> m_position_rtv;
-    ComPtr<ID3D11RenderTargetView> m_normal_rtv;
-    ComPtr<ID3D11RenderTargetView> m_ambient_rtv;
-    ComPtr<ID3D11RenderTargetView> m_diffuse_rtv;
-    ComPtr<ID3D11RenderTargetView> m_specular_rtv;
-
-    ComPtr<ID3D11ShaderResourceView> m_position_srv;
-    ComPtr<ID3D11ShaderResourceView> m_normal_srv;
-    ComPtr<ID3D11ShaderResourceView> m_ambient_srv;
-    ComPtr<ID3D11ShaderResourceView> m_diffuse_srv;
-    ComPtr<ID3D11ShaderResourceView> m_specular_srv;
-
     int m_width;
     int m_height;
     Context m_context;
-    Program<GeometryPassPS, GeometryPassVS> m_shader_geometry_pass;
     Program<LightPassPS, LightPassVS> m_shader_light_pass;
     Model<DX11Mesh> m_model_of_file;
     Model<DX11Mesh> m_model_square;
+    GeometryPass m_geometry_pass;
 };

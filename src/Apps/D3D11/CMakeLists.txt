@@ -22,10 +22,12 @@ set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
 set(shaders_path "${assets_path}/shaders/DX11")
 
 set(headers
+    ${source_path}/GeometryPass.h
     ${include_path}/DX11Scene.h
 )
 
 set(sources
+    ${source_path}/GeometryPass.cpp
     ${source_path}/DX11Scene.cpp
     ${source_path}/Main.cpp
 )
@@ -60,6 +62,7 @@ target_compile_definitions(${target} PRIVATE UNICODE _UNICODE NOMINMAX)
 
 target_include_directories(${target}
     PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/.."
         ${CMAKE_BINARY_DIR}/gen
 )
 
