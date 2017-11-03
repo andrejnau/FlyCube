@@ -17,14 +17,9 @@ DX11Scene::DX11Scene(int width, int height)
     , m_model_square("model/square.obj")
 {
     for (DX11Mesh& cur_mesh : m_model_of_file.meshes)
-    {
-        cur_mesh.SetupMesh(m_context.device, m_context.device_context);
-    }
-
+        cur_mesh.SetupMesh(m_context);
     for (DX11Mesh& cur_mesh : m_model_square.meshes)
-    {
-        cur_mesh.SetupMesh(m_context.device, m_context.device_context);
-    }
+        cur_mesh.SetupMesh(m_context);
 
     CreateRT();
     CreateViewPort();
@@ -32,6 +27,7 @@ DX11Scene::DX11Scene(int width, int height)
     InitGBuffer();
 
     m_camera.SetViewport(m_width, m_height);
+    m_context.device_context->RSSetViewports(1, &m_viewport);
     m_context.device_context->PSSetSamplers(0, 1, m_texture_sampler.GetAddressOf());
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
@@ -49,24 +45,24 @@ void DX11Scene::OnUpdate()
     glm::mat4 projection, view, model;
     m_camera.GetMatrix(projection, view, model);
 
-    float model_scale_ = 0.01f;
-    model = glm::scale(glm::vec3(model_scale_)) * model;
+    float model_scale = 0.01f;
+    model = glm::scale(glm::vec3(model_scale)) * model;
 
     m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.model = glm::transpose(model);
     m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.view = glm::transpose(view);
     m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.projection = glm::transpose(projection);
     m_shader_geometry_pass.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model)));
-    m_shader_geometry_pass.vs.UpdateCBuffers(m_context.device_context);
+    m_shader_geometry_pass.ps.cbuffer.Light.light_ambient = glm::vec3(0.2f);
+    m_shader_geometry_pass.ps.cbuffer.Light.light_diffuse = glm::vec3(1.0f);
+    m_shader_geometry_pass.ps.cbuffer.Light.light_specular = glm::vec3(0.5f);
 
     float light_r = 2.5;
-    glm::vec3 light_pos_ = glm::vec3(light_r * cos(m_angle), 25.0f, light_r * sin(m_angle));
-
+    glm::vec3 light_pos = glm::vec3(light_r * cos(m_angle), 25.0f, light_r * sin(m_angle));
     glm::vec3 cameraPosView = glm::vec3(glm::vec4(m_camera.GetCameraPos(), 1.0));
-    glm::vec3 lightPosView = glm::vec3(glm::vec4(light_pos_, 1.0));
+    glm::vec3 lightPosView = glm::vec3(glm::vec4(light_pos, 1.0));
 
     m_shader_light_pass.ps.cbuffer.ConstantBuffer.lightPos = glm::vec4(lightPosView, 0);
     m_shader_light_pass.ps.cbuffer.ConstantBuffer.viewPos = glm::vec4(cameraPosView, 0.0);
-    m_shader_light_pass.ps.UpdateCBuffers(m_context.device_context);
 }
 
 void DX11Scene::OnRender()
@@ -78,9 +74,6 @@ void DX11Scene::OnRender()
 
 void DX11Scene::GeometryPass()
 {
-    m_context.device_context->RSSetViewports(1, &m_viewport);
-
-    m_shader_geometry_pass.UseProgram(m_context.device_context);
     m_shader_geometry_pass.UseProgram(m_context.device_context);
     m_context.device_context->IASetInputLayout(m_shader_geometry_pass.vs.input_layout.Get());
 
@@ -94,41 +87,35 @@ void DX11Scene::GeometryPass()
 
     float bgColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     for (auto & rtv : rtvs)
-    {
         m_context.device_context->ClearRenderTargetView(rtv, bgColor);
-    }
     m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_context.device_context->OMSetRenderTargets(rtvs.size(), rtvs.data(), m_depth_stencil_view.Get());
 
-    m_shader_geometry_pass.ps.cbuffer.Light.light_ambient = glm::vec3(0.2f);
-    m_shader_geometry_pass.ps.cbuffer.Light.light_diffuse = glm::vec3(1.0f);
-    m_shader_geometry_pass.ps.cbuffer.Light.light_specular = glm::vec3(0.5f);
-
     auto& state = CurState<bool>::Instance().state;
-
     for (DX11Mesh& cur_mesh : m_model_of_file.meshes)
     {
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.POSITION, VertexType::kPosition);
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.NORMAL, VertexType::kNormal);
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.TEXCOORD, VertexType::kTexcoord);
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_geometry_pass.vs.geometry.TANGENT, VertexType::kTangent);
         m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+        cur_mesh.SetVertexBuffer(m_context, m_shader_geometry_pass.vs.geometry.POSITION, VertexType::kPosition);
+        cur_mesh.SetVertexBuffer(m_context, m_shader_geometry_pass.vs.geometry.NORMAL, VertexType::kNormal);
+        cur_mesh.SetVertexBuffer(m_context, m_shader_geometry_pass.vs.geometry.TEXCOORD, VertexType::kTexcoord);
+        cur_mesh.SetVertexBuffer(m_context, m_shader_geometry_pass.vs.geometry.TANGENT, VertexType::kTangent);
 
         if (!state["disable_norm"])
-            cur_mesh.SetTexture(m_context.device_context, aiTextureType_HEIGHT, m_shader_geometry_pass.ps.texture.normalMap);
+            cur_mesh.SetTexture(m_context, aiTextureType_HEIGHT, m_shader_geometry_pass.ps.texture.normalMap);
         else
-            cur_mesh.UnsetTexture(m_context.device_context, m_shader_geometry_pass.ps.texture.normalMap);
-        cur_mesh.SetTexture(m_context.device_context, aiTextureType_OPACITY, m_shader_geometry_pass.ps.texture.alphaMap);
-        cur_mesh.SetTexture(m_context.device_context, aiTextureType_AMBIENT, m_shader_geometry_pass.ps.texture.ambientMap);
-        cur_mesh.SetTexture(m_context.device_context, aiTextureType_DIFFUSE, m_shader_geometry_pass.ps.texture.diffuseMap);
-        cur_mesh.SetTexture(m_context.device_context, aiTextureType_SPECULAR, m_shader_geometry_pass.ps.texture.specularMap);
-        cur_mesh.SetTexture(m_context.device_context, aiTextureType_SHININESS, m_shader_geometry_pass.ps.texture.glossMap);
+            cur_mesh.UnsetTexture(m_context, m_shader_geometry_pass.ps.texture.normalMap);
+        cur_mesh.SetTexture(m_context, aiTextureType_OPACITY, m_shader_geometry_pass.ps.texture.alphaMap);
+        cur_mesh.SetTexture(m_context, aiTextureType_AMBIENT, m_shader_geometry_pass.ps.texture.ambientMap);
+        cur_mesh.SetTexture(m_context, aiTextureType_DIFFUSE, m_shader_geometry_pass.ps.texture.diffuseMap);
+        cur_mesh.SetTexture(m_context, aiTextureType_SPECULAR, m_shader_geometry_pass.ps.texture.specularMap);
+        cur_mesh.SetTexture(m_context, aiTextureType_SHININESS, m_shader_geometry_pass.ps.texture.glossMap);
 
         m_shader_geometry_pass.ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
         m_shader_geometry_pass.ps.cbuffer.Material.material_diffuse = cur_mesh.material.dif;
         m_shader_geometry_pass.ps.cbuffer.Material.material_specular = cur_mesh.material.spec;
         m_shader_geometry_pass.ps.cbuffer.Material.material_shininess = cur_mesh.material.shininess;
+
         m_shader_geometry_pass.ps.UpdateCBuffers(m_context.device_context);
 
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
@@ -140,17 +127,17 @@ void DX11Scene::LightPass()
     m_shader_light_pass.UseProgram(m_context.device_context);
     m_context.device_context->IASetInputLayout(m_shader_light_pass.vs.input_layout.Get());
 
-    m_context.device_context->OMSetRenderTargets(1, m_render_target_view.GetAddressOf(), m_depth_stencil_view.Get());
-
     float bgColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_context.device_context->ClearRenderTargetView(m_render_target_view.Get(), bgColor);
     m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+    m_context.device_context->OMSetRenderTargets(1, m_render_target_view.GetAddressOf(), m_depth_stencil_view.Get());
+
     for (DX11Mesh& cur_mesh : m_model_square.meshes)
     {
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_light_pass.vs.geometry.POSITION, VertexType::kPosition);
-        cur_mesh.SetVertexBuffer(m_context.device_context, m_shader_light_pass.vs.geometry.TEXCOORD, VertexType::kTexcoord);
         m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+        cur_mesh.SetVertexBuffer(m_context, m_shader_light_pass.vs.geometry.POSITION, VertexType::kPosition);
+        cur_mesh.SetVertexBuffer(m_context, m_shader_light_pass.vs.geometry.TEXCOORD, VertexType::kTexcoord);
 
         m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gPosition, 1, m_position_srv.GetAddressOf());
         m_context.device_context->PSSetShaderResources(m_shader_light_pass.ps.texture.gNormal,   1, m_normal_srv.GetAddressOf());
@@ -183,28 +170,21 @@ void DX11Scene::OnResize(int width, int height)
 
 void DX11Scene::CreateRT()
 {
-    //Create our BackBuffer
-    ComPtr<ID3D11Texture2D> BackBuffer;
-    ASSERT_SUCCEEDED(m_context.swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&BackBuffer));
+    ComPtr<ID3D11Texture2D> back_buffer;
+    ASSERT_SUCCEEDED(m_context.swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back_buffer));
+    ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(back_buffer.Get(), nullptr, &m_render_target_view));
 
-    //Create our Render Target
-    ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(BackBuffer.Get(), nullptr, &m_render_target_view));
+    D3D11_TEXTURE2D_DESC depth_stencil_desc = {};
+    depth_stencil_desc.Width = m_width;
+    depth_stencil_desc.Height = m_height;
+    depth_stencil_desc.MipLevels = 1;
+    depth_stencil_desc.ArraySize = 1;
+    depth_stencil_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depth_stencil_desc.SampleDesc.Count = 1;
+    depth_stencil_desc.Usage = D3D11_USAGE_DEFAULT;
+    depth_stencil_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-    //Describe our Depth/Stencil Buffer
-    D3D11_TEXTURE2D_DESC depthStencilDesc;
-    depthStencilDesc.Width = m_width;
-    depthStencilDesc.Height = m_height;
-    depthStencilDesc.MipLevels = 1;
-    depthStencilDesc.ArraySize = 1;
-    depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depthStencilDesc.SampleDesc.Count = 1;
-    depthStencilDesc.SampleDesc.Quality = 0;
-    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    depthStencilDesc.CPUAccessFlags = 0;
-    depthStencilDesc.MiscFlags = 0;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&depthStencilDesc, nullptr, &m_depth_stencil_buffer));
+    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&depth_stencil_desc, nullptr, &m_depth_stencil_buffer));
     ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(m_depth_stencil_buffer.Get(), nullptr, &m_depth_stencil_view));
 }
 
@@ -221,17 +201,16 @@ void DX11Scene::CreateViewPort()
 
 void DX11Scene::CreateSampler()
 {
-    D3D11_SAMPLER_DESC sampDesc;
-    ZeroMemory(&sampDesc, sizeof(sampDesc));
-    sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    sampDesc.MinLOD = 0;
-    sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    D3D11_SAMPLER_DESC samp_desc = {};
+    samp_desc.Filter = D3D11_FILTER_ANISOTROPIC;
+    samp_desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samp_desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samp_desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    samp_desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samp_desc.MinLOD = 0;
+    samp_desc.MaxLOD = D3D11_FLOAT32_MAX;
 
-    ASSERT_SUCCEEDED(m_context.device->CreateSamplerState(&sampDesc, &m_texture_sampler));
+    ASSERT_SUCCEEDED(m_context.device->CreateSamplerState(&samp_desc, &m_texture_sampler));
 }
 
 void DX11Scene::CreateRTV(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)

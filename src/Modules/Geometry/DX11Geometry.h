@@ -3,6 +3,7 @@
 #include "Geometry/Geometry.h"
 #include <Utilities/DXUtility.h>
 #include <Texture/DX11TextureLoader.h>
+#include <Context/Context.h>
 #include <d3d11.h>
 #include <wrl.h>
 #include <glm/glm.hpp>
@@ -24,7 +25,7 @@ struct DX11Mesh : IMesh
     std::map<aiTextureType, size_t> m_type2id;
     std::vector<ComPtr<ID3D11ShaderResourceView>> texResources;
 
-    void InitTextures(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& device_context)
+    void InitTextures(Context& context)
     {
         static std::map<std::string, ComPtr<ID3D11ShaderResourceView>> cache;
 
@@ -37,12 +38,12 @@ struct DX11Mesh : IMesh
                 continue;
             }
 
-            cache[textures[i].path] = texResources[i] = CreateTexture(device, device_context, textures[i]);
+            cache[textures[i].path] = texResources[i] = CreateTexture(context.device, context.device_context, textures[i]);
         }
     }
 
     template<typename T>
-    ComPtr<ID3D11Buffer> CreateBuffer(ComPtr<ID3D11Device>& device, const std::vector<T>& v, UINT BindFlags)
+    ComPtr<ID3D11Buffer> CreateBuffer(Context& context, const std::vector<T>& v, UINT BindFlags)
     {
         ComPtr<ID3D11Buffer> buffer;
         D3D11_BUFFER_DESC buffer_desc = {};
@@ -52,20 +53,20 @@ struct DX11Mesh : IMesh
 
         D3D11_SUBRESOURCE_DATA buffer_data = {};
         buffer_data.pSysMem = v.data();
-        ASSERT_SUCCEEDED(device->CreateBuffer(&buffer_desc, &buffer_data, &buffer));
+        ASSERT_SUCCEEDED(context.device->CreateBuffer(&buffer_desc, &buffer_data, &buffer));
         return buffer;
     }
 
-    void SetupMesh(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& device_context)
+    void SetupMesh(Context& context)
     {
-        positions_buffer = CreateBuffer(device, positions, D3D11_BIND_VERTEX_BUFFER);
-        normals_buffer = CreateBuffer(device, normals, D3D11_BIND_VERTEX_BUFFER);
-        texcoords_buffer = CreateBuffer(device, texcoords, D3D11_BIND_VERTEX_BUFFER);
-        tangents_buffer = CreateBuffer(device, tangents, D3D11_BIND_VERTEX_BUFFER);
-        indices_buffer = CreateBuffer(device, indices, D3D11_BIND_INDEX_BUFFER);
+        positions_buffer = CreateBuffer(context, positions, D3D11_BIND_VERTEX_BUFFER);
+        normals_buffer = CreateBuffer(context, normals, D3D11_BIND_VERTEX_BUFFER);
+        texcoords_buffer = CreateBuffer(context, texcoords, D3D11_BIND_VERTEX_BUFFER);
+        tangents_buffer = CreateBuffer(context, tangents, D3D11_BIND_VERTEX_BUFFER);
+        indices_buffer = CreateBuffer(context, indices, D3D11_BIND_INDEX_BUFFER);
 
         texResources.resize(textures.size());
-        InitTextures(device, device_context);
+        InitTextures(context);
 
         for (size_t i = 0; i < textures.size(); ++i)
         {
@@ -73,35 +74,35 @@ struct DX11Mesh : IMesh
         }
     }
 
-    void UnsetTexture(ComPtr<ID3D11DeviceContext>& device_context, UINT slot)
+    void UnsetTexture(Context& context, UINT slot)
     {
         ID3D11ShaderResourceView* srv = nullptr;
-        device_context->PSSetShaderResources(slot, 1, &srv);
+        context.device_context->PSSetShaderResources(slot, 1, &srv);
     }
 
-    void SetTexture(ComPtr<ID3D11DeviceContext>& device_context, aiTextureType type, UINT slot)
+    void SetTexture(Context& context, aiTextureType type, UINT slot)
     {
         ID3D11ShaderResourceView* srv = nullptr;
         auto it = m_type2id.find(type);
         if (it != m_type2id.end())
             srv = texResources[it->second].Get();
-        device_context->PSSetShaderResources(slot, 1, &srv);
+        context.device_context->PSSetShaderResources(slot, 1, &srv);
     }
 
-    void SetVertexBufferImpl(ComPtr<ID3D11DeviceContext>& device_context, UINT slot, ComPtr<ID3D11Buffer>& buffer, UINT stride, UINT offset)
+    void SetVertexBufferImpl(Context& context, UINT slot, ComPtr<ID3D11Buffer>& buffer, UINT stride, UINT offset)
     {
-        device_context->IASetVertexBuffers(slot, 1, buffer.GetAddressOf(), &stride, &offset);
+        context.device_context->IASetVertexBuffers(slot, 1, buffer.GetAddressOf(), &stride, &offset);
     }
 
-    void SetVertexBuffer(ComPtr<ID3D11DeviceContext>& device_context, UINT slot, VertexType type)
+    void SetVertexBuffer(Context& context, UINT slot, VertexType type)
     {
         if (type == VertexType::kPosition)
-            SetVertexBufferImpl(device_context, slot, positions_buffer, sizeof(positions.front()), 0);
+            SetVertexBufferImpl(context, slot, positions_buffer, sizeof(positions.front()), 0);
         else if (type == VertexType::kTexcoord)
-            SetVertexBufferImpl(device_context, slot, texcoords_buffer, sizeof(texcoords.front()), 0);
+            SetVertexBufferImpl(context, slot, texcoords_buffer, sizeof(texcoords.front()), 0);
         else if (type == VertexType::kNormal)
-            SetVertexBufferImpl(device_context, slot, normals_buffer, sizeof(normals.front()), 0);
+            SetVertexBufferImpl(context, slot, normals_buffer, sizeof(normals.front()), 0);
         else if (type == VertexType::kTangent)
-            SetVertexBufferImpl(device_context, slot, tangents_buffer, sizeof(tangents.front()), 0);
+            SetVertexBufferImpl(context, slot, tangents_buffer, sizeof(tangents.front()), 0);
     }
 };
