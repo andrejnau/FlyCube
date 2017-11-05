@@ -13,10 +13,8 @@ DX11Scene::DX11Scene(int width, int height)
     , m_context(m_width, m_height)
     , m_model_of_file(m_context, "model/sponza/sponza.obj")
     , m_model_square(m_context, "model/square.obj")
-    , m_geometry_pass_input{ m_model_of_file, m_camera, m_depth_stencil_view }
-    , m_geometry_pass(m_context, m_geometry_pass_input, width, height)
-    , m_light_pass_input{ m_geometry_pass.output, m_model_square, m_camera, m_render_target_view, m_depth_stencil_view }
-    , m_light_pass(m_context, m_light_pass_input, width, height)
+    , m_geometry_pass(m_context, { m_model_of_file, m_camera, m_depth_stencil_view }, width, height)
+    , m_light_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera, m_render_target_view, m_depth_stencil_view }, width, height)
 {
     CreateRT();
     CreateViewPort();

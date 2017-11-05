@@ -1,6 +1,6 @@
 #include "LightPass.h"
 
-LightPass::LightPass(Context & context, Input & input, int width, int height)
+LightPass::LightPass(Context& context, const Input& input, int width, int height)
     : m_context(context)
     , m_input(input)
     , m_width(width)

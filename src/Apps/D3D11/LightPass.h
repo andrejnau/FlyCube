@@ -28,7 +28,7 @@ public:
     {
     } output;
 
-    LightPass(Context& context, Input& input, int width, int height);
+    LightPass(Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
@@ -36,7 +36,7 @@ public:
 
 private:
     Context& m_context;
-    Input& m_input;
+    Input m_input;
     int m_width;
     int m_height;
     Program<LightPassPS, LightPassVS> m_program;

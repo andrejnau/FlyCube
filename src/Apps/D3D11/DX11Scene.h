@@ -48,8 +48,6 @@ private:
     Context m_context;
     Model<DX11Mesh> m_model_of_file;
     Model<DX11Mesh> m_model_square;
-    GeometryPass::Input m_geometry_pass_input;
     GeometryPass m_geometry_pass;
-    LightPass::Input m_light_pass_input;
     LightPass m_light_pass;
 };

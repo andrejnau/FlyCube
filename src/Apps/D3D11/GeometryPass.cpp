@@ -4,7 +4,7 @@
 #include <Utilities/State.h>
 #include <glm/gtx/transform.hpp>
 
-GeometryPass::GeometryPass(Context& context, Input& input, int width, int height)
+GeometryPass::GeometryPass(Context& context, const Input& input, int width, int height)
     : m_context(context)
     , m_input(input)
     , m_width(width)
