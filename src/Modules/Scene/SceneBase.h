@@ -11,8 +11,6 @@ class SceneBase : public IScene
 {
 public:
     virtual ~SceneBase() {}
-    virtual void OnKey(int key, int action) override;
-    virtual void OnMouse(bool first_event, double xpos, double ypos) override;
 
 protected:
     void UpdateAngle();

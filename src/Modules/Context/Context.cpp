@@ -1,7 +1,11 @@
 #include "Context/Context.h"
 #include <Utilities/DXUtility.h>
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 
-Context::Context(int width, int height)
+Context::Context(GLFWwindow* window, int width, int height)
+    : window(window)
 {
     DXGI_MODE_DESC bufferDesc;
     ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));
@@ -20,7 +24,7 @@ Context::Context(int width, int height)
     swapChainDesc.SampleDesc.Quality = 0;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.BufferCount = 1;
-    swapChainDesc.OutputWindow = GetActiveWindow();
+    swapChainDesc.OutputWindow = glfwGetWin32Window(window);
     swapChainDesc.Windowed = TRUE;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 

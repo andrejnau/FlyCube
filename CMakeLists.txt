@@ -18,5 +18,6 @@ include(${project_root}/cmake/3rdparty/glm.cmake)
 include(${project_root}/cmake/3rdparty/gli.cmake)
 include(${project_root}/cmake/3rdparty/gl.cmake)
 include(${project_root}/cmake/3rdparty/mustache.cmake)
+include(${project_root}/cmake/3rdparty/imgui.cmake)
 
 add_subdirectory(src)

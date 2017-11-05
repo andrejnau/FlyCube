@@ -7,14 +7,15 @@
 #include <chrono>
 #include <glm/gtx/transform.hpp>
 
-DX11Scene::DX11Scene(int width, int height)
+DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     : m_width(width)
     , m_height(height)
-    , m_context(m_width, m_height)
+    , m_context(window, m_width, m_height)
     , m_model_of_file(m_context, "model/sponza/sponza.obj")
     , m_model_square(m_context, "model/square.obj")
     , m_geometry_pass(m_context, { m_model_of_file, m_camera, m_depth_stencil_view }, width, height)
     , m_light_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera, m_render_target_view, m_depth_stencil_view }, width, height)
+    , m_imgui_pass(m_context, {m_render_target_view, m_depth_stencil_view }, width, height)
 {
     CreateRT();
     CreateViewPort();
@@ -26,9 +27,9 @@ DX11Scene::DX11Scene(int width, int height)
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-IScene::Ptr DX11Scene::Create(int width, int height)
+IScene::Ptr DX11Scene::Create(GLFWwindow* window, int width, int height)
 {
-    return std::make_unique<DX11Scene>(width, height);
+    return std::make_unique<DX11Scene>(window, width, height);
 }
 
 void DX11Scene::OnUpdate()
@@ -38,12 +39,14 @@ void DX11Scene::OnUpdate()
 
     m_geometry_pass.OnUpdate();
     m_light_pass.OnUpdate();
+    m_imgui_pass.OnUpdate();
 }
 
 void DX11Scene::OnRender()
 {
     m_geometry_pass.OnRender();
     m_light_pass.OnRender();
+    m_imgui_pass.OnRender();
 
     ASSERT_SUCCEEDED(m_context.swap_chain->Present(0, 0));
 }
@@ -68,6 +71,52 @@ void DX11Scene::OnResize(int width, int height)
 
     m_geometry_pass.OnResize(width, height);
     m_light_pass.OnResize(width, height);
+    m_imgui_pass.OnResize(width, height);
+}
+
+void DX11Scene::OnKey(int key, int action)
+{
+    if (action == GLFW_PRESS)
+        m_keys[key] = true;
+    else if (action == GLFW_RELEASE)
+        m_keys[key] = false;
+
+    if (key == GLFW_KEY_N && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["disable_norm"] = !state["disable_norm"];
+    }
+
+    m_imgui_pass.OnKey(key, action);
+}
+
+void DX11Scene::OnMouse(bool first_event, double xpos, double ypos)
+{
+    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+    {
+        if (first_event)
+        {
+            m_last_x = xpos;
+            m_last_y = ypos;
+        }
+
+        double xoffset = xpos - m_last_x;
+        double yoffset = m_last_y - ypos;
+
+        m_last_x = xpos;
+        m_last_y = ypos;
+
+        m_camera.ProcessMouseMovement((float)xoffset, (float)yoffset);
+    }
+    else
+    {
+        m_imgui_pass.OnMouse(first_event, xpos, ypos);
+    }
+}
+
+void DX11Scene::OnMouseButton(int button, int action)
+{
+    m_imgui_pass.OnMouseButton(button, action);
 }
 
 void DX11Scene::CreateRT()

@@ -18,7 +18,8 @@ enum class VertexType
     kPosition,
     kTexcoord,
     kNormal,
-    kTangent
+    kTangent,
+    kColor
 };
 
 struct IMesh
@@ -40,6 +41,7 @@ struct IMesh
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texcoords;
     std::vector<glm::vec3> tangents;
+    std::vector<glm::vec4> colors;
     std::vector<uint32_t> indices;
     std::vector<TextureInfo> textures;
 };

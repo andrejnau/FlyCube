@@ -33,7 +33,7 @@ int AppBox::Run()
     if (!m_window)
         return EXIT_FAILURE;
 
-    m_sample = m_create_sample(m_width, m_height);
+    m_sample = m_create_sample(m_window, m_width, m_height);
 
     int frame_number = 0;
     double last_time = glfwGetTime();
@@ -153,10 +153,14 @@ void AppBox::OnMouse(GLFWwindow* window, double xpos, double ypos)
     }
     else
     {
+        self->m_sample->OnMouse(first_event, xpos, ypos);
         first_event = true;
     }
 }
 
 void AppBox::OnMouseButton(GLFWwindow * window, int button, int action, int mods)
 {
+    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
+
+    self->m_sample->OnMouseButton(button, action);
 }

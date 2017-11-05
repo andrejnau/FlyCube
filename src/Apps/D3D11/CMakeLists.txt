@@ -17,6 +17,8 @@ add_shader(GeometryPassPS "shaders/DX11/GeometryPass_PS.hlsl" main ps_5_0)
 add_shader(GeometryPassVS "shaders/DX11/GeometryPass_VS.hlsl" main vs_5_0)
 add_shader(LightPassPS "shaders/DX11/LightPass_PS.hlsl" main ps_5_0)
 add_shader(LightPassVS "shaders/DX11/LightPass_VS.hlsl" main vs_5_0)
+add_shader(ImGuiPassPS "shaders/DX11/ImGuiPass_PS.hlsl" main ps_5_0)
+add_shader(ImGuiPassVS "shaders/DX11/ImGuiPass_VS.hlsl" main vs_5_0)
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}")
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -25,12 +27,14 @@ set(shaders_path "${assets_path}/shaders/DX11")
 set(headers
     ${source_path}/GeometryPass.h
     ${source_path}/LightPass.h
+    ${source_path}/ImGuiPass.h
     ${include_path}/DX11Scene.h
 )
 
 set(sources
     ${source_path}/GeometryPass.cpp
     ${source_path}/LightPass.cpp
+    ${source_path}/ImGuiPass.cpp
     ${source_path}/DX11Scene.cpp
     ${source_path}/Main.cpp
 )
@@ -38,11 +42,13 @@ set(sources
 set(pixel_shaders
     ${shaders_path}/GeometryPass_PS.hlsl
     ${shaders_path}/LightPass_PS.hlsl
+    ${shaders_path}/ImGuiPass_PS.hlsl
 )
 
 set(vertex_shaders
     ${shaders_path}/GeometryPass_VS.hlsl
     ${shaders_path}/LightPass_VS.hlsl
+    ${shaders_path}/ImGuiPass_VS.hlsl
 )
 
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_TYPE Pixel)
@@ -82,4 +88,5 @@ target_link_libraries(${target}
     Utilities
     Texture
     Program
+    imgui
 )

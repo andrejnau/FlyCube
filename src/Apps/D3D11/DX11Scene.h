@@ -16,19 +16,24 @@
 
 #include "D3D11/GeometryPass.h"
 #include "D3D11/LightPass.h"
+#include "D3D11/ImGuiPass.h"
 
 using namespace Microsoft::WRL;
 
 class DX11Scene : public SceneBase
 {
 public:
-    DX11Scene(int width, int height);
+    DX11Scene(GLFWwindow* window, int width, int height);
 
-    static IScene::Ptr Create(int width, int height);
+    static IScene::Ptr Create(GLFWwindow* window, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
+
+    virtual void OnKey(int key, int action) override;
+    virtual void OnMouse(bool first, double xpos, double ypos) override;
+    virtual void OnMouseButton(int button, int action) override;
 
 private:
     void CreateRT();
@@ -50,4 +55,5 @@ private:
     Model<DX11Mesh> m_model_square;
     GeometryPass m_geometry_pass;
     LightPass m_light_pass;
+    ImGuiPass m_imgui_pass;
 };

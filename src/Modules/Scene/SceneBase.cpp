@@ -4,37 +4,6 @@
 #include <GLFW/glfw3.h>
 #include <chrono>
 
-void SceneBase::OnKey(int key, int action)
-{
-    if (action == GLFW_PRESS)
-        m_keys[key] = true;
-    else if (action == GLFW_RELEASE)
-        m_keys[key] = false;
-
-    if (key == GLFW_KEY_N && action == GLFW_PRESS)
-    {
-        auto & state = CurState<bool>::Instance().state;
-        state["disable_norm"] = !state["disable_norm"];
-    }
-}
-
-void SceneBase::OnMouse(bool first_event, double xpos, double ypos)
-{
-    if (first_event)
-    {
-        m_last_x = xpos;
-        m_last_y = ypos;
-    }
-
-    double xoffset = xpos - m_last_x;
-    double yoffset = m_last_y - ypos;
-
-    m_last_x = xpos;
-    m_last_y = ypos;
-
-    m_camera.ProcessMouseMovement((float)xoffset, (float)yoffset);
-}
-
 void SceneBase::UpdateAngle()
 {
     static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
