@@ -34,9 +34,9 @@ void LightPass::OnRender()
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
-        m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-        cur_mesh.SetVertexBuffer(m_context, m_program.vs.geometry.POSITION, VertexType::kPosition);
-        cur_mesh.SetVertexBuffer(m_context, m_program.vs.geometry.TEXCOORD, VertexType::kTexcoord);
+        cur_mesh.SetIndexBuffer();
+        cur_mesh.SetVertexBuffer(m_program.vs.geometry.POSITION, VertexType::kPosition);
+        cur_mesh.SetVertexBuffer(m_program.vs.geometry.TEXCOORD, VertexType::kTexcoord);
 
         m_context.device_context->PSSetShaderResources(m_program.ps.texture.gPosition, 1, m_input.geometry_pass.position_srv.GetAddressOf());
         m_context.device_context->PSSetShaderResources(m_program.ps.texture.gNormal, 1, m_input.geometry_pass.normal_srv.GetAddressOf());

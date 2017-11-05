@@ -11,18 +11,13 @@ DX11Scene::DX11Scene(int width, int height)
     : m_width(width)
     , m_height(height)
     , m_context(m_width, m_height)
-    , m_model_of_file("model/sponza/sponza.obj")
-    , m_model_square("model/square.obj")
+    , m_model_of_file(m_context, "model/sponza/sponza.obj")
+    , m_model_square(m_context, "model/square.obj")
     , m_geometry_pass_input{ m_model_of_file, m_camera, m_depth_stencil_view }
     , m_geometry_pass(m_context, m_geometry_pass_input, width, height)
     , m_light_pass_input{ m_geometry_pass.output, m_model_square, m_camera, m_render_target_view, m_depth_stencil_view }
     , m_light_pass(m_context, m_light_pass_input, width, height)
 {
-    for (DX11Mesh& cur_mesh : m_model_of_file.meshes)
-        cur_mesh.SetupMesh(m_context);
-    for (DX11Mesh& cur_mesh : m_model_square.meshes)
-        cur_mesh.SetupMesh(m_context);
-
     CreateRT();
     CreateViewPort();
     CreateSampler();

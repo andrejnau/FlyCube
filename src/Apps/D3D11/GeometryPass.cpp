@@ -53,21 +53,21 @@ void GeometryPass::OnRender()
     auto& state = CurState<bool>::Instance().state;
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
-        m_context.device_context->IASetIndexBuffer(cur_mesh.indices_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-        cur_mesh.SetVertexBuffer(m_context, m_program.vs.geometry.POSITION, VertexType::kPosition);
-        cur_mesh.SetVertexBuffer(m_context, m_program.vs.geometry.NORMAL, VertexType::kNormal);
-        cur_mesh.SetVertexBuffer(m_context, m_program.vs.geometry.TEXCOORD, VertexType::kTexcoord);
-        cur_mesh.SetVertexBuffer(m_context, m_program.vs.geometry.TANGENT, VertexType::kTangent);
+        cur_mesh.SetIndexBuffer();
+        cur_mesh.SetVertexBuffer(m_program.vs.geometry.POSITION, VertexType::kPosition);
+        cur_mesh.SetVertexBuffer(m_program.vs.geometry.NORMAL, VertexType::kNormal);
+        cur_mesh.SetVertexBuffer(m_program.vs.geometry.TEXCOORD, VertexType::kTexcoord);
+        cur_mesh.SetVertexBuffer(m_program.vs.geometry.TANGENT, VertexType::kTangent);
 
         if (!state["disable_norm"])
-            cur_mesh.SetTexture(m_context, aiTextureType_HEIGHT, m_program.ps.texture.normalMap);
+            cur_mesh.SetTexture(aiTextureType_HEIGHT, m_program.ps.texture.normalMap);
         else
-            cur_mesh.UnsetTexture(m_context, m_program.ps.texture.normalMap);
-        cur_mesh.SetTexture(m_context, aiTextureType_OPACITY, m_program.ps.texture.alphaMap);
-        cur_mesh.SetTexture(m_context, aiTextureType_AMBIENT, m_program.ps.texture.ambientMap);
-        cur_mesh.SetTexture(m_context, aiTextureType_DIFFUSE, m_program.ps.texture.diffuseMap);
-        cur_mesh.SetTexture(m_context, aiTextureType_SPECULAR, m_program.ps.texture.specularMap);
-        cur_mesh.SetTexture(m_context, aiTextureType_SHININESS, m_program.ps.texture.glossMap);
+            cur_mesh.UnsetTexture(m_program.ps.texture.normalMap);
+        cur_mesh.SetTexture(aiTextureType_OPACITY, m_program.ps.texture.alphaMap);
+        cur_mesh.SetTexture(aiTextureType_AMBIENT, m_program.ps.texture.ambientMap);
+        cur_mesh.SetTexture(aiTextureType_DIFFUSE, m_program.ps.texture.diffuseMap);
+        cur_mesh.SetTexture(aiTextureType_SPECULAR, m_program.ps.texture.specularMap);
+        cur_mesh.SetTexture(aiTextureType_SHININESS, m_program.ps.texture.glossMap);
 
         m_program.ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
         m_program.ps.cbuffer.Material.material_diffuse = cur_mesh.material.dif;

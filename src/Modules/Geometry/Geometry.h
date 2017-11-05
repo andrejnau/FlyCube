@@ -6,7 +6,12 @@
 #include <assimp/postprocess.h>
 #include <glm/glm.hpp>
 #include <string>
+#include <algorithm>
+#include <utility>
 #include <vector>
+#include <cstdint>
+
+class Context;
 
 enum class VertexType
 {
@@ -80,14 +85,19 @@ private:
 template<typename Mesh>
 struct Model : IModel
 {
-    Model(const std::string& file, uint32_t flags = ~0)
-        : m_model_loader(file, (aiPostProcessSteps)flags, *this)
+    Model(Context& context, const std::string& file, uint32_t flags = ~0)
+        : m_context(context)
+        , m_model_loader(file, (aiPostProcessSteps)flags, *this)
     {
+        for (auto& mesh : meshes)
+        {
+            mesh.SetupMesh();
+        }
     }
 
     virtual IMesh& GetNextMesh() override
     {
-        meshes.resize(meshes.size() + 1);
+        meshes.push_back(m_context);
         return meshes.back();
     }
 
@@ -105,6 +115,7 @@ struct Model : IModel
     std::vector<Mesh> meshes;
 
 private:
+    Context& m_context;
     ModelLoader m_model_loader;
 };
 

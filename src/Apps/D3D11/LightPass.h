@@ -12,7 +12,7 @@
 
 using namespace Microsoft::WRL;
 
-class LightPass : public IScene
+class LightPass : public IPass
 {
 public:
     struct Input

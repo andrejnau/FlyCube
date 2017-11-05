@@ -10,7 +10,7 @@
 
 using namespace Microsoft::WRL;
 
-class GeometryPass : public IScene
+class GeometryPass : public IPass
 {
 public:
     struct Input

@@ -19,6 +19,7 @@ target_link_libraries(${target}
     Utilities
     d3dcompiler
     d3d11
+    dxgi
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")
