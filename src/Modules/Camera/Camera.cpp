@@ -35,7 +35,7 @@ glm::vec3 Camera::GetCameraPos() const
 
 glm::mat4 Camera::GetProjectionMatrix() const
 {
-    return glm::perspective(fovy_, aspect_, z_near_, z_far_);
+    return glm::perspective(glm::radians(fovy_), aspect_, z_near_, z_far_);
 }
 
 glm::mat4 Camera::GetViewMatrix() const
