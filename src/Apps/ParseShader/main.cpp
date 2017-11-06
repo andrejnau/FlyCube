@@ -60,10 +60,12 @@ private:
     {
         if (str.find("ps") == 0)
             return "ShaderType::kPixel";
-        if (str.find("vs") == 0)
+        else if (str.find("vs") == 0)
             return "ShaderType::kVertex";
-        if (str.find("cs") == 0)
+        else if (str.find("cs") == 0)
             return "ShaderType::kCompute";
+        else if (str.find("gs") == 0)
+            return "ShaderType::kGeometry";
         return "???";
     }
 
@@ -71,34 +73,47 @@ private:
     {
         if (str.find("ps") == 0)
             return "PS";
-        if (str.find("vs") == 0)
+        else if (str.find("vs") == 0)
             return "VS";
-        if (str.find("cs") == 0)
+        else if (str.find("cs") == 0)
             return "CS";
+        else if (str.find("gs") == 0)
+            return "GS";
         return "???";
     }
 
     std::string TypeFromDesc(D3D11_SHADER_TYPE_DESC& desc)
     {
+        std::string res;       
         if (desc.Class == D3D_SHADER_VARIABLE_CLASS::D3D10_SVC_MATRIX_COLUMNS)
         {
             assert(desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_FLOAT);
             assert(desc.Columns == desc.Rows);
-            return "glm::mat" + std::to_string(desc.Columns);
+            res = "glm::mat" + std::to_string(desc.Columns);
         }
         else if (desc.Class == D3D_SHADER_VARIABLE_CLASS::D3D_SVC_VECTOR)
         {
             assert(desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_FLOAT);
-            return "glm::vec" + std::to_string(desc.Columns);
+            res = "glm::vec" + std::to_string(desc.Columns);
         }
         else if (desc.Class == D3D_SHADER_VARIABLE_CLASS::D3D_SVC_SCALAR)
         {
             if (desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_INT)
-                return "int32_t";
+                res = "int32_t";
             else if (desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_FLOAT)
-                return "float";
+                res = "float";
         }
-        return "???";
+        else
+        {
+            res = "???";
+        }
+
+        if (desc.Elements > 0)
+        {
+            res = "std::array<" + res + ", " + std::to_string(desc.Elements) + ">";
+        }
+
+        return res;
     }
 
     void ParseShader(ComPtr<ID3DBlob>& shader_buffer)

@@ -67,6 +67,12 @@ struct BufferLayout
         device_context->VSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
     }
 
+    template<>
+    void BindCBuffer<ShaderType::kGeometry>(ComPtr<ID3D11DeviceContext>& device_context)
+    {
+        device_context->GSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+    }
+
 private:
     std::vector<char> data;
     std::vector<size_t> data_size;
@@ -226,6 +232,26 @@ public:
     }
 };
 
+template<>
+class Shader<ShaderType::kGeometry> : public ShaderBase
+{
+public:
+    static const ShaderType type = ShaderType::kGeometry;
+
+    ComPtr<ID3D11GeometryShader> shader;
+
+    Shader(ComPtr<ID3D11Device>& device, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+        : ShaderBase(shader_path, entrypoint, target)
+    {
+        ASSERT_SUCCEEDED(device->CreateGeometryShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
+    }
+
+    virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) override
+    {
+        device_context->GSSetShader(shader.Get(), nullptr, 0);
+    }
+};
+
 template<ShaderType, typename T> class ShaderHolderImpl {};
 
 template<typename T>
@@ -264,6 +290,26 @@ public:
 
     ShaderHolderImpl(ComPtr<ID3D11Device>& device)
         : vs(device)
+    {
+    }
+};
+
+template<typename T>
+class ShaderHolderImpl<ShaderType::kGeometry, T>
+{
+public:
+    struct Api : public T
+    {
+        using T::T;
+    } gs;
+
+    ShaderBase& GetApi()
+    {
+        return gs;
+    }
+
+    ShaderHolderImpl(ComPtr<ID3D11Device>& device)
+        : gs(device)
     {
     }
 };

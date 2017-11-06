@@ -13,7 +13,7 @@ public:
         {{#CBuffers}}
         struct
         {
-            {{#Variables}}{{Type}} {{Name}};
+            {{#Variables}}{{&Type}} {{Name}};
             {{/Variables}}
         } {{BufferName}};
         {{/CBuffers}}
