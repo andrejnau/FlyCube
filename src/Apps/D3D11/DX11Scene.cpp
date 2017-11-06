@@ -67,6 +67,7 @@ void DX11Scene::OnResize(int width, int height)
 
     CreateRT();
     CreateViewPort();
+    m_context.device_context->RSSetViewports(1, &m_viewport);
     m_camera.SetViewport(m_width, m_height);
 
     m_geometry_pass.OnResize(width, height);
