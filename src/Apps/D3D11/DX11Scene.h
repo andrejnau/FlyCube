@@ -17,6 +17,7 @@
 #include "D3D11/GeometryPass.h"
 #include "D3D11/LightPass.h"
 #include "D3D11/ImGuiPass.h"
+#include "D3D11/ShadowPass.h"
 
 using namespace Microsoft::WRL;
 
@@ -49,6 +50,7 @@ private:
     D3D11_VIEWPORT m_viewport;
 
     ComPtr<ID3D11SamplerState> m_texture_sampler;
+    glm::vec3 light_pos;
 
     int m_width;
     int m_height;
@@ -56,6 +58,7 @@ private:
     Model<DX11Mesh> m_model_of_file;
     Model<DX11Mesh> m_model_square;
     GeometryPass m_geometry_pass;
+    ShadowPass m_shadow_pass;
     LightPass m_light_pass;
     ImGuiPass m_imgui_pass;
 };

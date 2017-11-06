@@ -4,15 +4,6 @@
 #include <GLFW/glfw3.h>
 #include <chrono>
 
-void SceneBase::UpdateAngle()
-{
-    static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-    std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-    int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    start = end;
-    //angle += elapsed / 2e6f;
-}
-
 void SceneBase::UpdateCameraMovement()
 {
     double currentFrame = glfwGetTime();

@@ -13,7 +13,6 @@ public:
     virtual ~SceneBase() {}
 
 protected:
-    void UpdateAngle();
     void UpdateCameraMovement();
 
     Camera m_camera;

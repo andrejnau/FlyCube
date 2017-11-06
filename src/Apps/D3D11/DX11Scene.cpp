@@ -14,7 +14,8 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     , m_model_of_file(m_context, "model/sponza/sponza.obj")
     , m_model_square(m_context, "model/square.obj")
     , m_geometry_pass(m_context, { m_model_of_file, m_camera, m_depth_stencil_view }, width, height)
-    , m_light_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera, m_render_target_view, m_depth_stencil_view }, width, height)
+    , m_shadow_pass(m_context, { m_model_of_file, m_camera, light_pos }, width, height)
+    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_model_square, m_camera, m_render_target_view, m_depth_stencil_view, light_pos }, width, height)
     , m_imgui_pass(m_context, {m_render_target_view, m_depth_stencil_view }, width, height)
 {
     CreateRT();
@@ -22,7 +23,6 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     CreateSampler();
 
     m_camera.SetViewport(m_width, m_height);
-    m_context.device_context->RSSetViewports(1, &m_viewport);
     m_context.device_context->PSSetSamplers(0, 1, m_texture_sampler.GetAddressOf());
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
@@ -35,18 +35,43 @@ IScene::Ptr DX11Scene::Create(GLFWwindow* window, int width, int height)
 void DX11Scene::OnUpdate()
 {
     UpdateCameraMovement();
-    UpdateAngle();
+
+    static float angle = 0.0f;
+    static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+    std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+    int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    start = end;
+    angle += elapsed / 2e6f;
+
+    float light_r = 2.5;
+    light_pos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
+
+    light_pos = m_camera.GetCameraPos();
 
     m_geometry_pass.OnUpdate();
+    m_shadow_pass.OnUpdate();
     m_light_pass.OnUpdate();
-    m_imgui_pass.OnUpdate();
+
+    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    {
+        m_imgui_pass.OnUpdate();
+    }
 }
 
 void DX11Scene::OnRender()
 {
+    m_context.device_context->RSSetViewports(1, &m_viewport);
     m_geometry_pass.OnRender();
+
+    m_shadow_pass.OnRender();
+
+    m_context.device_context->RSSetViewports(1, &m_viewport);
     m_light_pass.OnRender();
-    m_imgui_pass.OnRender();
+
+    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    {
+        m_imgui_pass.OnRender();
+    }
 
     ASSERT_SUCCEEDED(m_context.swap_chain->Present(0, 0));
 }
@@ -71,6 +96,7 @@ void DX11Scene::OnResize(int width, int height)
     m_camera.SetViewport(m_width, m_height);
 
     m_geometry_pass.OnResize(width, height);
+    m_shadow_pass.OnResize(width, height);
     m_light_pass.OnResize(width, height);
     m_imgui_pass.OnResize(width, height);
 }

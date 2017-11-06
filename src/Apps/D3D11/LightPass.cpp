@@ -1,4 +1,6 @@
 #include "LightPass.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 
 LightPass::LightPass(Context& context, const Input& input, int width, int height)
     : m_context(context)
@@ -7,18 +9,50 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     , m_height(height)
     , m_program(context.device)
 {
+    D3D11_SAMPLER_DESC samp_desc = {};
+    samp_desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+    samp_desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samp_desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samp_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samp_desc.ComparisonFunc = D3D11_COMPARISON_LESS;
+    samp_desc.MinLOD = 0;
+    samp_desc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    ASSERT_SUCCEEDED(m_context.device->CreateSamplerState(&samp_desc, &m_shadow_sampler));
+    m_context.device_context->PSSetSamplers(1, 1, m_shadow_sampler.GetAddressOf());
 }
 
 void LightPass::OnUpdate()
 {
-    float angle = 0.0;
-    float light_r = 2.5;
-    glm::vec3 light_pos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
-    glm::vec3 cameraPosView = glm::vec3(glm::vec4(m_input.camera.GetCameraPos(), 1.0));
-    glm::vec3 lightPosView = glm::vec3(glm::vec4(light_pos, 1.0));
+    m_program.ps.cbuffer.ConstantBuffer.lightPos = m_input.light_pos;
+    m_program.ps.cbuffer.ConstantBuffer.viewPos = m_input.camera.GetCameraPos();
 
-    m_program.ps.cbuffer.ConstantBuffer.lightPos = glm::vec4(lightPosView, 0);
-    m_program.ps.cbuffer.ConstantBuffer.viewPos = glm::vec4(cameraPosView, 0.0);
+
+
+    glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 Down = glm::vec3(0.0f, -1.0f, 0.0f);
+    glm::vec3 Left = glm::vec3(-1.0f, 0.0f, 0.0f);
+    glm::vec3 Right = glm::vec3(1.0f, 0.0f, 0.0f);
+    glm::vec3 ForwardRH = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 ForwardLH = glm::vec3(0.0f, 0.0f, 1.0f);
+    glm::vec3 BackwardRH = glm::vec3(0.0f, 0.0f, 1.0f);
+    glm::vec3 BackwardLH = glm::vec3(0.0f, 0.0f, -1.0f);
+
+    glm::vec3 position = m_input.camera.GetCameraPos();
+
+    m_program.ps.cbuffer.Params.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1024.0f));
+
+    std::array<glm::mat4, 6>& view = m_program.ps.cbuffer.Params.View;
+    view[0] = glm::transpose(glm::lookAt(position, position + Right, Up));
+    view[1] = glm::transpose(glm::lookAt(position, position + Left, Up));
+    view[2] = glm::transpose(glm::lookAt(position, position + Up, BackwardRH));
+    view[3] = glm::transpose(glm::lookAt(position, position + Down, ForwardRH));
+    view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
+    view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
+
+    glm::mat4 model = m_input.camera.GetModelMatrix();
+    float model_scale = 0.01f;
+    model = glm::scale(glm::vec3(model_scale)) * model;
 }
 
 void LightPass::OnRender()
@@ -43,6 +77,8 @@ void LightPass::OnRender()
         m_context.device_context->PSSetShaderResources(m_program.ps.texture.gAmbient, 1, m_input.geometry_pass.ambient_srv.GetAddressOf());
         m_context.device_context->PSSetShaderResources(m_program.ps.texture.gDiffuse, 1, m_input.geometry_pass.diffuse_srv.GetAddressOf());
         m_context.device_context->PSSetShaderResources(m_program.ps.texture.gSpecular, 1, m_input.geometry_pass.specular_srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_program.ps.texture.cubeShadowMap, 1, m_input.shadow_pass.srv.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_program.ps.texture.cubeMapId, 1, m_input.shadow_pass.cubemap_id.GetAddressOf());
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 }

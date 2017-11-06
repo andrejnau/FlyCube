@@ -9,8 +9,35 @@ Texture2D gNormal;
 Texture2D gAmbient;
 Texture2D gDiffuse;
 Texture2D gSpecular;
+TextureCube<float> cubeShadowMap;
+TextureCube<float> cubeMapId;
+
+SamplerState gTextureSampler
+{
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = Wrap;
+    AddressV = Wrap;
+};
+
+cbuffer Params
+{
+    float4x4 View[6];
+    float4x4 Projection;
+};
 
 SamplerState g_sampler : register(s0);
+SamplerComparisonState cubeShadowComparsionSampler : register(s1);
+
+float sampleCubeShadowHPCF(float3 frag_pos, float3 light_pos)
+{
+    float3 vec = normalize(frag_pos - light_pos);
+    uint id = (uint) cubeMapId.Sample(gTextureSampler, vec).r;
+    float4 target = float4(frag_pos, 1.0);
+    target = mul(target, View[id]);
+    target = mul(target, Projection);
+    target.xyz /= target.w;
+    return cubeShadowMap.SampleCmpLevelZero(cubeShadowComparsionSampler, target.xyz, target.z).r;
+}
 
 #define USE_CAMMA_RT
 #define USE_CAMMA_TEX
@@ -27,8 +54,8 @@ float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, b
 
 cbuffer ConstantBuffer
 {
-    float4 lightPos;
-    float4 viewPos;
+    float3 lightPos;
+    float3 viewPos;
 };
 
 float4 main(VS_OUTPUT input) : SV_TARGET
@@ -51,6 +78,6 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float spec = pow(saturate(dot(viewDir, reflectDir)), shininess);
     float3 specular = specular_base * spec;
 
-    float3 hdrColor = float3(ambient + diffuse + specular);
+    float3 hdrColor = float3(ambient + diffuse * sampleCubeShadowHPCF(fragPos, lightPos) + specular);
     return pow(float4(hdrColor, 1.0), gamma4);
 }
