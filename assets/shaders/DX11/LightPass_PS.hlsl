@@ -30,14 +30,54 @@ SamplerComparisonState cubeShadowComparsionSampler : register(s1);
 
 float sampleCubeShadowHPCF(float3 frag_pos, float3 light_pos)
 {
-    float3 vec = normalize(frag_pos - light_pos);
+    float3 vec = (frag_pos - light_pos);
     uint id = (uint) cubeMapId.Sample(gTextureSampler, vec).r;
-    float4 target = float4(frag_pos, 1.0);
+    float4 target = float4(vec, 1.0);
     target = mul(target, View[id]);
     target = mul(target, Projection);
     target.xyz /= target.w;
-    return cubeShadowMap.SampleCmpLevelZero(cubeShadowComparsionSampler, target.xyz, target.z).r;
+
+    float depth = (target.z + 1.0) / 2.0;
+    return cubeShadowMap.SampleCmpLevelZero(cubeShadowComparsionSampler, vec, depth).r;
 }
+
+float _vectorToDepth(float3 vec, float n, float f)
+{
+    float3 AbsVec = abs(vec);
+    float LocalZcomp = max(AbsVec.x, max(AbsVec.y, AbsVec.z));
+
+    float NormZComp = (f + n) / (f - n) - (2 * f * n) / (f - n) / LocalZcomp;
+    return (NormZComp + 1.0) * 0.5;
+}
+
+float _sampleCubeShadowHPCF2(float3 frag_pos, float3 light_pos)
+{
+    float3 vL = frag_pos - light_pos;
+    float3 L = normalize(vL);
+    float sD = _vectorToDepth(vL, 0.0, 1.0);
+    return cubeShadowMap.SampleCmpLevelZero(cubeShadowComparsionSampler, float3(L.xy, -L.z), sD).r;
+}
+
+float _sampleCubeShadowHPCF(float3 frag_pos, float3 light_pos)
+{
+    float3 shadowPos = frag_pos - light_pos;
+    float3 shadowDistance = length(shadowPos);
+    float3 shadowDir = normalize(shadowPos);
+
+    // Doing the max of the components tells us 2 things: which cubemap face we're going to use,
+    // and also what the projected distance is onto the major axis for that face.
+    float projectedDistance = max(max(abs(shadowPos.x), abs(shadowPos.y)), abs(shadowPos.z));
+
+    // Compute the project depth value that matches what would be stored in the depth buffer
+    // for the current cube map face. Note that we use a reversed infinite projection.
+    float nearClip = 1.0;
+    float a = 0.0f;
+    float b = nearClip;
+    float z = projectedDistance * a + b;
+    float dbDistance = (z / shadowDistance + 1.0) / 2.0;
+    return cubeShadowMap.SampleCmpLevelZero(cubeShadowComparsionSampler, shadowDir, dbDistance).r;
+}
+
 
 #define USE_CAMMA_RT
 #define USE_CAMMA_TEX
@@ -78,6 +118,6 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float spec = pow(saturate(dot(viewDir, reflectDir)), shininess);
     float3 specular = specular_base * spec;
 
-    float3 hdrColor = float3(ambient + diffuse * sampleCubeShadowHPCF(fragPos, lightPos) + specular);
+    float3 hdrColor = float3(ambient + diffuse * _sampleCubeShadowHPCF(fragPos, lightPos) + specular);
     return pow(float4(hdrColor, 1.0), gamma4);
 }
