@@ -21,6 +21,8 @@ private:
     static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
     static void OnMouse(GLFWwindow* window, double xpos, double ypos);
     static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
+    static void OnScroll(GLFWwindow* window, double xoffset, double yoffset);
+    static void OnInputChar(GLFWwindow* window, unsigned int ch);
 
     CreateSample m_create_sample;
     ApiType m_api_type;

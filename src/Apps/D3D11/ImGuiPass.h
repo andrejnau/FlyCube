@@ -41,6 +41,9 @@ public:
     virtual void OnKey(int key, int action) override;
     virtual void OnMouse(bool first, double xpos, double ypos) override;
     virtual void OnMouseButton(int button, int action) override;
+    virtual void OnScroll(double xoffset, double yoffset) override;
+    virtual void OnInputChar(unsigned int ch) override;
+
 private:
     Context& m_context;
     Input m_input;

@@ -24,6 +24,8 @@ public:
     virtual void OnKey(int key, int action) = 0;
     virtual void OnMouse(bool first, double xpos, double ypos) = 0;
     virtual void OnMouseButton(int button, int action) = 0;
+    virtual void OnScroll(double xoffset, double yoffset) = 0;
+    virtual void OnInputChar(unsigned int ch) = 0;
 };
 
 class IScene

@@ -98,6 +98,9 @@ void AppBox::InitWindow()
     glfwSetKeyCallback(m_window, AppBox::OnKey);
     glfwSetCursorPosCallback(m_window, AppBox::OnMouse);
     glfwSetMouseButtonCallback(m_window, AppBox::OnMouseButton);
+    glfwSetScrollCallback(m_window, AppBox::OnScroll);
+    glfwSetCharCallback(m_window, AppBox::OnInputChar);
+    
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
@@ -158,9 +161,20 @@ void AppBox::OnMouse(GLFWwindow* window, double xpos, double ypos)
     }
 }
 
-void AppBox::OnMouseButton(GLFWwindow * window, int button, int action, int mods)
+void AppBox::OnMouseButton(GLFWwindow* window, int button, int action, int mods)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
-
     self->m_sample->OnMouseButton(button, action);
+}
+
+void AppBox::OnScroll(GLFWwindow* window, double xoffset, double yoffset)
+{
+    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
+    self->m_sample->OnScroll(xoffset, yoffset);
+}
+
+void AppBox::OnInputChar(GLFWwindow* window, unsigned int ch)
+{
+    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
+    self->m_sample->OnInputChar(ch);
 }

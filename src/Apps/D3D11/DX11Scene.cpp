@@ -76,6 +76,12 @@ void DX11Scene::OnResize(int width, int height)
 
 void DX11Scene::OnKey(int key, int action)
 {
+    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    {
+        m_imgui_pass.OnKey(key, action);
+        return;
+    }
+
     if (action == GLFW_PRESS)
         m_keys[key] = true;
     else if (action == GLFW_RELEASE)
@@ -86,37 +92,53 @@ void DX11Scene::OnKey(int key, int action)
         auto & state = CurState<bool>::Instance().state;
         state["disable_norm"] = !state["disable_norm"];
     }
-
-    m_imgui_pass.OnKey(key, action);
 }
 
 void DX11Scene::OnMouse(bool first_event, double xpos, double ypos)
 {
-    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
-    {
-        if (first_event)
-        {
-            m_last_x = xpos;
-            m_last_y = ypos;
-        }
-
-        double xoffset = xpos - m_last_x;
-        double yoffset = m_last_y - ypos;
-
-        m_last_x = xpos;
-        m_last_y = ypos;
-
-        m_camera.ProcessMouseMovement((float)xoffset, (float)yoffset);
-    }
-    else
+    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         m_imgui_pass.OnMouse(first_event, xpos, ypos);
+        return;
     }
+
+    if (first_event)
+    {
+        m_last_x = xpos;
+        m_last_y = ypos;
+    }
+
+    double xoffset = xpos - m_last_x;
+    double yoffset = m_last_y - ypos;
+
+    m_last_x = xpos;
+    m_last_y = ypos;
+
+    m_camera.ProcessMouseMovement((float)xoffset, (float)yoffset);
 }
 
 void DX11Scene::OnMouseButton(int button, int action)
 {
-    m_imgui_pass.OnMouseButton(button, action);
+    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    {
+        m_imgui_pass.OnMouseButton(button, action);
+    }
+}
+
+void DX11Scene::OnScroll(double xoffset, double yoffset)
+{
+    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    {
+        m_imgui_pass.OnScroll(xoffset, yoffset);
+    }
+}
+
+void DX11Scene::OnInputChar(unsigned int ch)
+{
+    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    {
+        m_imgui_pass.OnInputChar(ch);
+    }
 }
 
 void DX11Scene::CreateRT()

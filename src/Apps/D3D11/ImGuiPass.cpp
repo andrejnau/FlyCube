@@ -231,10 +231,6 @@ bool  ImGuiPass::ImGui_ImplDX11_Init()
     io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
     io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
 
-
-    io.ClipboardUserData = glfwGetWin32Window(m_context.window);
-    io.ImeWindowHandle = glfwGetWin32Window(m_context.window);;
-
     return true;
 }
 
@@ -308,7 +304,7 @@ void ImGuiPass::OnUpdate()
 
     bool show_test_window = true;
     bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     {
         ImGuiIO& io = ImGui::GetIO();
@@ -392,4 +388,17 @@ void ImGuiPass::OnMouseButton(int button, int action)
     ImGuiIO& io = ImGui::GetIO();
     if (button >= 0 && button < 3)
         io.MouseDown[button] = action == GLFW_PRESS;
+}
+
+void ImGuiPass::OnScroll(double xoffset, double yoffset)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    io.MouseWheel += yoffset;
+}
+
+void ImGuiPass::OnInputChar(unsigned int ch)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    if (ch > 0 && ch < 0x10000)
+        io.AddInputCharacter((unsigned short)ch);
 }
