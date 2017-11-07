@@ -9,7 +9,7 @@ Texture2D gNormal;
 Texture2D gAmbient;
 Texture2D gDiffuse;
 Texture2D gSpecular;
-TextureCube<float> cubeShadowMap;
+TextureCube<float> LightCubeShadowMap;
 
 cbuffer Params
 {
@@ -17,71 +17,103 @@ cbuffer Params
     float4x4 Projection;
 };
 
+cbuffer ShadowParams
+{
+    float s_near;
+    float s_far;
+    float s_size;
+};
+
 SamplerState g_sampler : register(s0);
-SamplerComparisonState cubeShadowComparsionSampler : register(s1);
+SamplerComparisonState LightCubeShadowComparsionSampler : register(s1);
 
-uint convert_xyz_to_cube_uv(float3 v)
+float _vectorToDepth(float3 vec, float n, float f)
 {
-    float x = v.x;
-    float y = v.y;
-    float z = v.z;
+    float3 AbsVec = abs(vec);
+    float LocalZcomp = max(AbsVec.x, max(AbsVec.y, AbsVec.z));
 
-    float absX = abs(x);
-    float absY = abs(y);
-    float absZ = abs(z);
-
-    int isXPositive = x > 0 ? 1 : 0;
-    int isYPositive = y > 0 ? 1 : 0;
-    int isZPositive = z > 0 ? 1 : 0;
-
-    uint res = 0;
-
-    if (isXPositive && absX >= absY && absX >= absZ)
-    {
-        res = 0;
-    }
-    else if (!isXPositive && absX >= absY && absX >= absZ)
-    {
-        res = 1;
-    }
-    else if (isYPositive && absY >= absX && absY >= absZ)
-    {
-        res = 2;
-    }
-    else if (!isYPositive && absY >= absX && absY >= absZ)
-    {
-        res = 3;
-    }
-    else if (isZPositive && absZ >= absX && absZ >= absY)
-    {
-        res = 4;
-    }
-    else if (!isZPositive && absZ >= absX && absZ >= absY)
-    {
-        res = 5;
-    }
-    else
-    {
-        discard;
-    }
-
-    return res;
+    float NormZComp = (f + n) / (f - n) - (2 * f * n) / (f - n) / LocalZcomp;
+    return NormZComp;
 }
 
-float sampleCubeShadow(float3 frag_pos, float3 light_pos, uint id)
+float _sampleCubeShadowHPCF(float3 L, float3 vL)
 {
-    float3 vec = normalize(frag_pos - light_pos);
-    float4 target = float4(frag_pos, 1.0);
-    target = mul(target, mul(View[id], Projection));
-    //target.xyz /= target.w;
-    float depth = (target.z + 1.0) * 0.5;
-    return cubeShadowMap.SampleCmpLevelZero(cubeShadowComparsionSampler, vec, depth).r;
+    float sD = _vectorToDepth(vL, s_near, s_far);
+    return LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, float3(L.xy, -L.z), sD).r;
 }
 
-float sampleCubeShadowHPCF(float3 frag_pos, float3 light_pos)
+float _sampleCubeShadowPCFSwizzle3x3(float3 L, float3 vL)
 {
-    uint id = convert_xyz_to_cube_uv(frag_pos - light_pos);
-    return sampleCubeShadow(frag_pos, light_pos, id);
+    float sD = _vectorToDepth(vL, s_near, s_far);
+
+    float3 forward = float3(L.xy, -L.z);
+    float3 right = float3(forward.z, -forward.x, forward.y);
+    right -= forward * dot(right, forward);
+    right = normalize(right);
+    float3 up = cross(right, forward);
+
+    float tapoffset = (1.0f / s_size);
+
+    right *= tapoffset;
+    up *= tapoffset;
+
+    float3 v0;
+    v0.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right - up, sD).r;
+    v0.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - up, sD).r;
+    v0.z = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + right - up, sD).r;
+	
+    float3 v1;
+    v1.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right, sD).r;
+    v1.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward, sD).r;
+    v1.z = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + right, sD).r;
+
+    float3 v2;
+    v2.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right + up, sD).r;
+    v2.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + up, sD).r;
+    v2.z = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + right + up, sD).r;
+	
+	
+    return dot(v0 + v1 + v2, .1111111f);
+}
+
+
+// UE4: https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Shaders/ShadowProjectionCommon.usf
+static const float2 DiscSamples5[] =
+{ // 5 random points in disc with radius 2.500000
+    float2(0.000000, 2.500000),
+	float2(2.377641, 0.772542),
+	float2(1.469463, -2.022543),
+	float2(-1.469463, -2.022542),
+	float2(-2.377641, 0.772543),
+};
+
+float _sampleCubeShadowPCFDisc5(float3 L, float3 vL)
+{
+    float3 SideVector = normalize(cross(L, float3(0, 0, 1)));
+    float3 UpVector = cross(SideVector, L);
+
+    SideVector *= 1.0 / s_size;
+    UpVector *= 1.0 / s_size;
+	
+    float sD = _vectorToDepth(vL, s_near, s_far);
+
+    float3 nlV = float3(L.xy, -L.z);
+
+    float totalShadow = 0;
+
+	[UNROLL]
+    for (int i = 0; i < 5; ++i)
+    {
+        float3 SamplePos = nlV + SideVector * DiscSamples5[i].x + UpVector * DiscSamples5[i].y;
+        totalShadow += LightCubeShadowMap.SampleCmpLevelZero(
+				LightCubeShadowComparsionSampler,
+				SamplePos,
+				sD);
+    }
+    totalShadow /= 5;
+
+    return totalShadow;
+
 }
 
 #define USE_CAMMA_RT
@@ -123,6 +155,10 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float spec = pow(saturate(dot(viewDir, reflectDir)), shininess);
     float3 specular = specular_base * spec;
 
-    float3 hdrColor = float3(ambient + diffuse * sampleCubeShadowHPCF(fragPos, lightPos) + specular);
+    float3 vL = fragPos - lightPos;
+    float3 L = normalize(vL);
+
+    float shadow = _sampleCubeShadowPCFDisc5(L, vL);
+    float3 hdrColor = float3(ambient + diffuse * shadow + specular * shadow);
     return pow(float4(hdrColor, 1.0), gamma4);
 }

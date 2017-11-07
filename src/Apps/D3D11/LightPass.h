@@ -44,4 +44,5 @@ private:
     int m_height;
     Program<LightPassPS, LightPassVS> m_program;
     ComPtr<ID3D11SamplerState> m_shadow_sampler;
+    ComPtr<ID3D11RasterizerState> m_rasterizer_state;
 };

@@ -5,6 +5,7 @@
 #include <Geometry/DX11Geometry.h>
 #include <ProgramRef/ShadowPassVS.h>
 #include <ProgramRef/ShadowPassGS.h>
+#include <ProgramRef/ShadowPassPS.h>
 #include <d3d11.h>
 #include <wrl.h>
 
@@ -22,8 +23,8 @@ public:
 
     struct Output
     {
-        ComPtr<ID3D11ShaderResourceView> srv;
-        ComPtr<ID3D11ShaderResourceView> cubemap_id;
+        ComPtr<ID3D11ShaderResourceView> srv_hardware;
+        ComPtr<ID3D11ShaderResourceView> srv_software;
     } output;
 
     ShadowPass(Context& context, const Input& input, int width, int height);
@@ -32,10 +33,8 @@ public:
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
 
-    void CreateTexture();
-
-    void CreateTextureId();
-
+    void CreateTextureDsv();
+    void CreateTextureRtv();
     void CreateViewPort();
 
 private:
@@ -43,9 +42,10 @@ private:
     Input m_input;
     int m_width;
     int m_height;
-    int m_size = 1024;
+    int m_size = 2048;
     ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
-    Program<ShadowPassVS, ShadowPassGS> m_program;
+    ComPtr<ID3D11RenderTargetView> m_rtv;
+    Program<ShadowPassVS, ShadowPassGS, ShadowPassPS> m_program;
     D3D11_VIEWPORT m_viewport;
 };
 

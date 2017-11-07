@@ -20,6 +20,14 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
 
     ASSERT_SUCCEEDED(m_context.device->CreateSamplerState(&samp_desc, &m_shadow_sampler));
     m_context.device_context->PSSetSamplers(1, 1, m_shadow_sampler.GetAddressOf());
+
+    D3D11_RASTERIZER_DESC shadowState;
+    ZeroMemory(&shadowState, sizeof(D3D11_RASTERIZER_DESC));
+    shadowState.FillMode = D3D11_FILL_SOLID;
+    shadowState.CullMode = D3D11_CULL_BACK;
+    shadowState.DepthBias = 10000;
+    m_context.device->CreateRasterizerState(&shadowState, &m_rasterizer_state);
+    int vb = 0;
 }
 
 void LightPass::OnUpdate()
@@ -27,32 +35,17 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.ConstantBuffer.lightPos = m_input.light_pos;
     m_program.ps.cbuffer.ConstantBuffer.viewPos = m_input.camera.GetCameraPos();
 
-
-
-    glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 Down = glm::vec3(0.0f, -1.0f, 0.0f);
-    glm::vec3 Left = glm::vec3(-1.0f, 0.0f, 0.0f);
-    glm::vec3 Right = glm::vec3(1.0f, 0.0f, 0.0f);
-    glm::vec3 ForwardRH = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 ForwardLH = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 BackwardRH = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 BackwardLH = glm::vec3(0.0f, 0.0f, -1.0f);
-
-    glm::vec3 position = m_input.light_pos;
-
-    m_program.ps.cbuffer.Params.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1024.0f));
-
-    std::array<glm::mat4, 6>& view = m_program.ps.cbuffer.Params.View;
-    view[0] = glm::transpose(glm::lookAt(position, position + Right, Up));
-    view[1] = glm::transpose(glm::lookAt(position, position + Left, Up));
-    view[2] = glm::transpose(glm::lookAt(position, position + Up, BackwardRH));
-    view[3] = glm::transpose(glm::lookAt(position, position + Down, ForwardRH));
-    view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
-    view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
+    m_program.ps.cbuffer.ShadowParams.s_near = 0.1;
+    m_program.ps.cbuffer.ShadowParams.s_far = 1024.0;
+    m_program.ps.cbuffer.ShadowParams.s_size = 2048;
 }
 
 void LightPass::OnRender()
 {
+    ID3D11RasterizerState* cur = nullptr;
+    m_context.device_context->RSGetState(&cur);
+    m_context.device_context->RSSetState(m_rasterizer_state.Get());
+
     m_program.UseProgram(m_context.device_context);
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
@@ -73,10 +66,10 @@ void LightPass::OnRender()
         m_context.device_context->PSSetShaderResources(m_program.ps.texture.gAmbient, 1, m_input.geometry_pass.ambient_srv.GetAddressOf());
         m_context.device_context->PSSetShaderResources(m_program.ps.texture.gDiffuse, 1, m_input.geometry_pass.diffuse_srv.GetAddressOf());
         m_context.device_context->PSSetShaderResources(m_program.ps.texture.gSpecular, 1, m_input.geometry_pass.specular_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_program.ps.texture.cubeShadowMap, 1, m_input.shadow_pass.srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_program.ps.texture.cubeShadowMap + 1, 1, m_input.shadow_pass.cubemap_id.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_program.ps.texture.LightCubeShadowMap, 1, m_input.shadow_pass.srv_hardware.GetAddressOf());
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
+
 }
 
 void LightPass::OnResize(int width, int height)
