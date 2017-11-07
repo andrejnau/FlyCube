@@ -38,9 +38,9 @@ void LightPass::OnUpdate()
     glm::vec3 BackwardRH = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 BackwardLH = glm::vec3(0.0f, 0.0f, -1.0f);
 
-    glm::vec3 position = m_input.camera.GetCameraPos();
+    glm::vec3 position = m_input.light_pos;
 
-    /*m_program.ps.cbuffer.Params.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1024.0f));
+    m_program.ps.cbuffer.Params.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1024.0f));
 
     std::array<glm::mat4, 6>& view = m_program.ps.cbuffer.Params.View;
     view[0] = glm::transpose(glm::lookAt(position, position + Right, Up));
@@ -48,7 +48,7 @@ void LightPass::OnUpdate()
     view[2] = glm::transpose(glm::lookAt(position, position + Up, BackwardRH));
     view[3] = glm::transpose(glm::lookAt(position, position + Down, ForwardRH));
     view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
-    view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));*/
+    view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
 }
 
 void LightPass::OnRender()
@@ -74,7 +74,7 @@ void LightPass::OnRender()
         m_context.device_context->PSSetShaderResources(m_program.ps.texture.gDiffuse, 1, m_input.geometry_pass.diffuse_srv.GetAddressOf());
         m_context.device_context->PSSetShaderResources(m_program.ps.texture.gSpecular, 1, m_input.geometry_pass.specular_srv.GetAddressOf());
         m_context.device_context->PSSetShaderResources(m_program.ps.texture.cubeShadowMap, 1, m_input.shadow_pass.srv.GetAddressOf());
-        //m_context.device_context->PSSetShaderResources(m_program.ps.texture.cubeMapId, 1, m_input.shadow_pass.cubemap_id.GetAddressOf());
+        m_context.device_context->PSSetShaderResources(m_program.ps.texture.cubeShadowMap + 1, 1, m_input.shadow_pass.cubemap_id.GetAddressOf());
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 }

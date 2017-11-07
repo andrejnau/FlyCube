@@ -10,14 +10,6 @@ Texture2D gAmbient;
 Texture2D gDiffuse;
 Texture2D gSpecular;
 TextureCube<float> cubeShadowMap;
-TextureCube<float> cubeMapId;
-
-SamplerState gTextureSampler
-{
-    Filter = MIN_MAG_MIP_LINEAR;
-    AddressU = Wrap;
-    AddressV = Wrap;
-};
 
 cbuffer Params
 {
@@ -28,56 +20,69 @@ cbuffer Params
 SamplerState g_sampler : register(s0);
 SamplerComparisonState cubeShadowComparsionSampler : register(s1);
 
-float sampleCubeShadowHPCF(float3 frag_pos, float3 light_pos)
+uint convert_xyz_to_cube_uv(float3 v)
 {
-    float3 vec = (frag_pos - light_pos);
-    uint id = (uint) cubeMapId.Sample(gTextureSampler, vec).r;
-    float4 target = float4(vec, 1.0);
-    target = mul(target, View[id]);
-    target = mul(target, Projection);
-    target.xyz /= target.w;
+    float x = v.x;
+    float y = v.y;
+    float z = v.z;
 
-    float depth = (target.z + 1.0) / 2.0;
+    float absX = abs(x);
+    float absY = abs(y);
+    float absZ = abs(z);
+
+    int isXPositive = x > 0 ? 1 : 0;
+    int isYPositive = y > 0 ? 1 : 0;
+    int isZPositive = z > 0 ? 1 : 0;
+
+    uint res = 0;
+
+    if (isXPositive && absX >= absY && absX >= absZ)
+    {
+        res = 0;
+    }
+    else if (!isXPositive && absX >= absY && absX >= absZ)
+    {
+        res = 1;
+    }
+    else if (isYPositive && absY >= absX && absY >= absZ)
+    {
+        res = 2;
+    }
+    else if (!isYPositive && absY >= absX && absY >= absZ)
+    {
+        res = 3;
+    }
+    else if (isZPositive && absZ >= absX && absZ >= absY)
+    {
+        res = 4;
+    }
+    else if (!isZPositive && absZ >= absX && absZ >= absY)
+    {
+        res = 5;
+    }
+    else
+    {
+        discard;
+    }
+
+    return res;
+}
+
+float sampleCubeShadow(float3 frag_pos, float3 light_pos, uint id)
+{
+    float3 vec = normalize(frag_pos - light_pos);
+    float4 target = float4(frag_pos, 1.0);
+    target = mul(target, mul(View[id], Projection));
+    //target.xyz /= target.w;
+    float depth = (target.z + 1.0) * 0.5;
     return cubeShadowMap.SampleCmpLevelZero(cubeShadowComparsionSampler, vec, depth).r;
 }
 
-float _vectorToDepth(float3 vec, float n, float f)
+float sampleCubeShadowHPCF(float3 frag_pos, float3 light_pos)
 {
-    float3 AbsVec = abs(vec);
-    float LocalZcomp = max(AbsVec.x, max(AbsVec.y, AbsVec.z));
-
-    float NormZComp = (f + n) / (f - n) - (2 * f * n) / (f - n) / LocalZcomp;
-    return (NormZComp + 1.0) * 0.5;
+    uint id = convert_xyz_to_cube_uv(frag_pos - light_pos);
+    return sampleCubeShadow(frag_pos, light_pos, id);
 }
-
-float _sampleCubeShadowHPCF2(float3 frag_pos, float3 light_pos)
-{
-    float3 vL = frag_pos - light_pos;
-    float3 L = normalize(vL);
-    float sD = _vectorToDepth(vL, 0.0, 1.0);
-    return cubeShadowMap.SampleCmpLevelZero(cubeShadowComparsionSampler, float3(L.xy, -L.z), sD).r;
-}
-
-float _sampleCubeShadowHPCF(float3 frag_pos, float3 light_pos)
-{
-    float3 shadowPos = frag_pos - light_pos;
-    float3 shadowDistance = length(shadowPos);
-    float3 shadowDir = normalize(shadowPos);
-
-    // Doing the max of the components tells us 2 things: which cubemap face we're going to use,
-    // and also what the projected distance is onto the major axis for that face.
-    float projectedDistance = max(max(abs(shadowPos.x), abs(shadowPos.y)), abs(shadowPos.z));
-
-    // Compute the project depth value that matches what would be stored in the depth buffer
-    // for the current cube map face. Note that we use a reversed infinite projection.
-    float nearClip = 1.0;
-    float a = 0.0f;
-    float b = nearClip;
-    float z = projectedDistance * a + b;
-    float dbDistance = (z / shadowDistance + 1.0) / 2.0;
-    return cubeShadowMap.SampleCmpLevelZero(cubeShadowComparsionSampler, shadowDir, dbDistance).r;
-}
-
 
 #define USE_CAMMA_RT
 #define USE_CAMMA_TEX
@@ -118,6 +123,6 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float spec = pow(saturate(dot(viewDir, reflectDir)), shininess);
     float3 specular = specular_base * spec;
 
-    float3 hdrColor = float3(ambient + diffuse * _sampleCubeShadowHPCF(fragPos, lightPos) + specular);
+    float3 hdrColor = float3(ambient + diffuse * sampleCubeShadowHPCF(fragPos, lightPos) + specular);
     return pow(float4(hdrColor, 1.0), gamma4);
 }

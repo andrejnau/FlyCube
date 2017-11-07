@@ -25,7 +25,7 @@ void ShadowPass::OnUpdate()
     glm::vec3 BackwardRH = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 BackwardLH = glm::vec3(0.0f, 0.0f, -1.0f);
 
-    glm::vec3 position = m_input.camera.GetCameraPos();
+    glm::vec3 position = m_input.light_pos;
 
     m_program.gs.cbuffer.Params.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1024.0f));
 

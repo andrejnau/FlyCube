@@ -45,8 +45,7 @@ void DX11Scene::OnUpdate()
 
     float light_r = 2.5;
     light_pos = glm::vec3(light_r * cos(angle), 5.0f, light_r * sin(angle));
-
-    //light_pos = m_camera.GetCameraPos();
+    light_pos = m_camera.GetCameraPos();
 
     m_geometry_pass.OnUpdate();
     m_shadow_pass.OnUpdate();
