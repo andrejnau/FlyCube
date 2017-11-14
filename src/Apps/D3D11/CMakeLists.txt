@@ -21,7 +21,6 @@ add_shader(ImGuiPassPS "shaders/DX11/ImGuiPass_PS.hlsl" main ps_5_0)
 add_shader(ImGuiPassVS "shaders/DX11/ImGuiPass_VS.hlsl" main vs_5_0)
 add_shader(ShadowPassVS "shaders/DX11/ShadowPass_VS.hlsl" main vs_5_0)
 add_shader(ShadowPassGS "shaders/DX11/ShadowPass_GS.hlsl" main gs_5_0)
-add_shader(ShadowPassPS "shaders/DX11/ShadowPass_PS.hlsl" main ps_5_0)
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}")
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -48,7 +47,6 @@ set(pixel_shaders
     ${shaders_path}/GeometryPass_PS.hlsl
     ${shaders_path}/LightPass_PS.hlsl
     ${shaders_path}/ImGuiPass_PS.hlsl
-    ${shaders_path}/ShadowPass_PS.hlsl
 )
 
 set(vertex_shaders

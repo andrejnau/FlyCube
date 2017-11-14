@@ -10,7 +10,6 @@ ShadowPass::ShadowPass(Context& context, const Input& input, int width, int heig
     , m_program(context.device)
 {
     CreateTextureDsv();
-    CreateTextureRtv();
     CreateViewPort();
 }
 
@@ -42,9 +41,6 @@ void ShadowPass::OnUpdate()
     model = glm::scale(glm::vec3(model_scale)) * model;
 
     m_program.vs.cbuffer.Params.World = glm::transpose(model);
-
-
-    m_program.ps.cbuffer.Params.light_pos = m_input.light_pos;
 }
 
 void ShadowPass::OnRender()
@@ -52,10 +48,11 @@ void ShadowPass::OnRender()
     m_context.device_context->RSSetViewports(1, &m_viewport);
 
     m_program.UseProgram(m_context.device_context);
+    m_context.device_context->PSSetShader(nullptr, nullptr, 0);
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
     m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_context.device_context->OMSetRenderTargets(1, m_rtv.GetAddressOf(), m_depth_stencil_view.Get());
+    m_context.device_context->OMSetRenderTargets(0, nullptr, m_depth_stencil_view.Get());
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
@@ -96,37 +93,7 @@ void ShadowPass::CreateTextureDsv()
     ComPtr<ID3D11Texture2D> cube_texture;
     ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&texture_desc, nullptr, &cube_texture));
     ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(cube_texture.Get(), &dsv_desc, &m_depth_stencil_view));
-    ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(cube_texture.Get(), &srv_desc, &output.srv_hardware));
-}
-
-void ShadowPass::CreateTextureRtv()
-{
-    ComPtr<ID3D11Texture2D> cube_texture;
-
-    D3D11_TEXTURE2D_DESC texture_desc = {};
-    texture_desc.Width = m_size;
-    texture_desc.Height = m_size;
-    texture_desc.MipLevels = 1;
-    texture_desc.ArraySize = 6;
-    texture_desc.Format = DXGI_FORMAT_R32G32_FLOAT;
-    texture_desc.SampleDesc.Count = 1;
-    texture_desc.Usage = D3D11_USAGE_DEFAULT;
-    texture_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-    texture_desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
-
-    D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
-    dsv_desc.Format = texture_desc.Format;
-    dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-    dsv_desc.Texture2DArray.ArraySize = texture_desc.ArraySize;
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-    srv_desc.Format = texture_desc.Format;
-    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-    srv_desc.TextureCube.MipLevels = texture_desc.MipLevels;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&texture_desc, nullptr, &cube_texture));
-    ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(cube_texture.Get(), &srv_desc, &output.srv_software));
-    ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(cube_texture.Get(), nullptr, &m_rtv));
+    ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(cube_texture.Get(), &srv_desc, &output.srv));
 }
 
 void ShadowPass::CreateViewPort()

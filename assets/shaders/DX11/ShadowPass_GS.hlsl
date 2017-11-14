@@ -12,7 +12,6 @@ struct VertexOutput
 struct GeometryOutput
 {
     float4 Position : SV_POSITION;
-    float4 PositionW : POSITION;
     uint RTIndex : SV_RenderTargetArrayIndex;
 };
 
@@ -33,7 +32,6 @@ void main(triangle VertexOutput input[3], inout TriangleStream<GeometryOutput> C
                 float4 worldPosition = input[v].Position;
                 float4 viewPosition = mul(worldPosition, View[f]);
                 output.Position = mul(viewPosition, Projection);
-                output.PositionW = worldPosition;
 
                 CubeMapStream.Append(output);
             }

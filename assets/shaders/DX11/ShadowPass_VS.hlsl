@@ -11,7 +11,6 @@ struct VertexInput
 struct VertexOutput
 {
     float4 Position : SV_POSITION;
-    float3 light_pos : LIGHTPOS;
 };
 
 VertexOutput main(VertexInput input)
