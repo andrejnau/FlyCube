@@ -15,6 +15,7 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     , m_model_square(m_context, "model/square.obj")
     , m_geometry_pass(m_context, { m_model_of_file, m_camera, m_depth_stencil_view }, width, height)
     , m_shadow_pass(m_context, { m_model_of_file, m_camera, light_pos }, width, height)
+    , m_generate_mipmap_pass(m_context, { m_shadow_pass.output }, width, height)
     , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_model_square, m_camera, m_render_target_view, m_depth_stencil_view, light_pos }, width, height)
     , m_imgui_pass(m_context, {m_render_target_view, m_depth_stencil_view }, width, height)
 {
@@ -62,6 +63,7 @@ void DX11Scene::OnRender()
     m_geometry_pass.OnRender();
 
     m_shadow_pass.OnRender();
+    m_generate_mipmap_pass.OnRender();
 
     m_context.device_context->RSSetViewports(1, &m_viewport);
     m_light_pass.OnRender();

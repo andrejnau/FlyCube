@@ -69,10 +69,14 @@ void ShadowPass::OnResize(int width, int height)
 
 void ShadowPass::CreateTextureDsv()
 {
+    int mipmap = 1;
+    while ((m_size >> mipmap) > 1)
+        ++mipmap;
+
     D3D11_TEXTURE2D_DESC texture_desc = {};
     texture_desc.Width = m_size;
     texture_desc.Height = m_size;
-    texture_desc.MipLevels = 1;
+    texture_desc.MipLevels = mipmap;
     texture_desc.ArraySize = 6;
     texture_desc.Format = DXGI_FORMAT_R32_TYPELESS;
     texture_desc.SampleDesc.Count = 1;
@@ -88,7 +92,7 @@ void ShadowPass::CreateTextureDsv()
     D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
     srv_desc.Format = DXGI_FORMAT_R32_FLOAT;
     srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-    srv_desc.TextureCube.MipLevels = 1;
+    srv_desc.TextureCube.MipLevels = mipmap;
 
     ComPtr<ID3D11Texture2D> cube_texture;
     ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&texture_desc, nullptr, &cube_texture));

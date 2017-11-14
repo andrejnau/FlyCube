@@ -21,6 +21,7 @@ add_shader(ImGuiPassPS "shaders/DX11/ImGuiPass_PS.hlsl" main ps_5_0)
 add_shader(ImGuiPassVS "shaders/DX11/ImGuiPass_VS.hlsl" main vs_5_0)
 add_shader(ShadowPassVS "shaders/DX11/ShadowPass_VS.hlsl" main vs_5_0)
 add_shader(ShadowPassGS "shaders/DX11/ShadowPass_GS.hlsl" main gs_5_0)
+add_shader(GenerateMipmapCS "shaders/DX11/GenerateMipmap_CS.hlsl" main cs_5_0)
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}")
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -31,6 +32,7 @@ set(headers
     ${source_path}/LightPass.h
     ${source_path}/ImGuiPass.h
     ${source_path}/ShadowPass.h
+    ${source_path}/GenerateMipmapPass.h
     ${include_path}/DX11Scene.h
 )
 
@@ -39,6 +41,7 @@ set(sources
     ${source_path}/LightPass.cpp
     ${source_path}/ImGuiPass.cpp
     ${source_path}/ShadowPass.cpp
+    ${source_path}/GenerateMipmapPass.cpp
     ${source_path}/DX11Scene.cpp
     ${source_path}/Main.cpp
 )
@@ -60,6 +63,10 @@ set(geometry_shaders
     ${shaders_path}/ShadowPass_GS.hlsl
 )
 
+set(compute_shaders
+    ${shaders_path}/GenerateMipmap_CS.hlsl
+)
+
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_TYPE Pixel)
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_MODEL 5.0)
@@ -72,7 +79,11 @@ set_property(SOURCE ${geometry_shaders} PROPERTY VS_SHADER_TYPE Geometry)
 set_property(SOURCE ${geometry_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
 set_property(SOURCE ${geometry_shaders} PROPERTY VS_SHADER_MODEL 5.0)
 
-set(resource_files ${pixel_shaders} ${vertex_shaders} ${geometry_shaders} )
+set_property(SOURCE ${compute_shaders} PROPERTY VS_SHADER_TYPE Compute)
+set_property(SOURCE ${compute_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
+set_property(SOURCE ${compute_shaders} PROPERTY VS_SHADER_MODEL 5.0)
+
+set(resource_files ${pixel_shaders} ${vertex_shaders} ${geometry_shaders} ${compute_shaders})
 
 source_group("Shader Files" FILES ${resource_files})
 
