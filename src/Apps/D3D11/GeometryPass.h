@@ -17,7 +17,6 @@ public:
     {
         Model<DX11Mesh>& model;
         Camera& camera;
-        ComPtr<ID3D11DepthStencilView>& depth_stencil_view;
     };
 
     struct Output
@@ -43,6 +42,8 @@ private:
     Program<GeometryPassPS, GeometryPassVS> m_program;
 
     void CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
+    void CreateRtvSrvMs(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
+    void CreateDsv();
     void InitGBuffers();
 
     ComPtr<ID3D11RenderTargetView> m_position_rtv;
@@ -50,5 +51,6 @@ private:
     ComPtr<ID3D11RenderTargetView> m_ambient_rtv;
     ComPtr<ID3D11RenderTargetView> m_diffuse_rtv;
     ComPtr<ID3D11RenderTargetView> m_specular_rtv;
+    ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
 };
 

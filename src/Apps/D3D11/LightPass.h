@@ -8,6 +8,8 @@
 #include <Geometry/DX11Geometry.h>
 #include <ProgramRef/LightPassPS.h>
 #include <ProgramRef/LightPassVS.h>
+#include <ProgramRef/LightPassMSPS.h>
+#include <ProgramRef/LightPassMSVS.h>
 #include <d3d11.h>
 #include <wrl.h>
 
@@ -42,7 +44,8 @@ private:
     Input m_input;
     int m_width;
     int m_height;
-    Program<LightPassPS, LightPassVS> m_program;
+    //Program<LightPassPS, LightPassVS> m_program;
+    Program<LightPassMSPS, LightPassMSVS> m_program;
     ComPtr<ID3D11SamplerState> m_shadow_sampler;
     ComPtr<ID3D11RasterizerState> m_rasterizer_state;
 };

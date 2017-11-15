@@ -17,6 +17,8 @@ add_shader(GeometryPassPS "shaders/DX11/GeometryPass_PS.hlsl" main ps_5_0)
 add_shader(GeometryPassVS "shaders/DX11/GeometryPass_VS.hlsl" main vs_5_0)
 add_shader(LightPassPS "shaders/DX11/LightPass_PS.hlsl" main ps_5_0)
 add_shader(LightPassVS "shaders/DX11/LightPass_VS.hlsl" main vs_5_0)
+add_shader(LightPassMSPS "shaders/DX11/LightPassMS_PS.hlsl" main ps_5_0)
+add_shader(LightPassMSVS "shaders/DX11/LightPassMS_VS.hlsl" main vs_5_0)
 add_shader(ImGuiPassPS "shaders/DX11/ImGuiPass_PS.hlsl" main ps_5_0)
 add_shader(ImGuiPassVS "shaders/DX11/ImGuiPass_VS.hlsl" main vs_5_0)
 add_shader(ShadowPassVS "shaders/DX11/ShadowPass_VS.hlsl" main vs_5_0)
@@ -49,12 +51,14 @@ set(sources
 set(pixel_shaders
     ${shaders_path}/GeometryPass_PS.hlsl
     ${shaders_path}/LightPass_PS.hlsl
+    ${shaders_path}/LightPassMS_PS.hlsl
     ${shaders_path}/ImGuiPass_PS.hlsl
 )
 
 set(vertex_shaders
     ${shaders_path}/GeometryPass_VS.hlsl
     ${shaders_path}/LightPass_VS.hlsl
+    ${shaders_path}/LightPassMS_VS.hlsl
     ${shaders_path}/ImGuiPass_VS.hlsl
     ${shaders_path}/ShadowPass_VS.hlsl
 )

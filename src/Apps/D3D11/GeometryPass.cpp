@@ -47,8 +47,8 @@ void GeometryPass::OnRender()
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     for (auto & rtv : rtvs)
         m_context.device_context->ClearRenderTargetView(rtv, color);
-    m_context.device_context->ClearDepthStencilView(m_input.depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_context.device_context->OMSetRenderTargets(rtvs.size(), rtvs.data(), m_input.depth_stencil_view.Get());
+    m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_context.device_context->OMSetRenderTargets(rtvs.size(), rtvs.data(), m_depth_stencil_view.Get());
 
     auto& state = CurState<bool>::Instance().state;
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
@@ -92,6 +92,9 @@ void GeometryPass::OnResize(int width, int height)
 
 void GeometryPass::CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
 {
+    if (true)
+        return CreateRtvSrvMs(rtv, srv);
+
     D3D11_TEXTURE2D_DESC texture_desc = {};
     texture_desc.Width = m_width;
     texture_desc.Height = m_height;
@@ -114,6 +117,53 @@ void GeometryPass::CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D
     ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
 }
 
+void GeometryPass::CreateRtvSrvMs(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
+{
+    D3D11_TEXTURE2D_DESC texture_desc = {};
+    texture_desc.Width = m_width;
+    texture_desc.Height = m_height;
+    texture_desc.MipLevels = 1;
+    texture_desc.ArraySize = 1;
+    texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    texture_desc.SampleDesc.Count = 8;
+    texture_desc.SampleDesc.Quality = 16;
+    texture_desc.Usage = D3D11_USAGE_DEFAULT;
+    texture_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    uint32_t quality = 0;
+    m_context.device->CheckMultisampleQualityLevels(DXGI_FORMAT_R32G32B32A32_FLOAT, 8, &quality);
+
+    ComPtr<ID3D11Texture2D> texture;
+    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&texture_desc, nullptr, &texture));
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+    srv_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+    srv_desc.Texture2D.MipLevels = 1;
+
+    ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(texture.Get(), &srv_desc, &srv));
+    ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
+}
+
+void GeometryPass::CreateDsv()
+{
+    D3D11_TEXTURE2D_DESC depth_stencil_desc = {};
+    depth_stencil_desc.Width = m_width;
+    depth_stencil_desc.Height = m_height;
+    depth_stencil_desc.MipLevels = 1;
+    depth_stencil_desc.ArraySize = 1;
+    depth_stencil_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depth_stencil_desc.SampleDesc.Count = 8;
+    depth_stencil_desc.SampleDesc.Quality = 16;
+    depth_stencil_desc.Usage = D3D11_USAGE_DEFAULT;
+    depth_stencil_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+    ComPtr<ID3D11Texture2D> depth_stencil_buffer;
+    
+    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&depth_stencil_desc, nullptr, &depth_stencil_buffer));
+    ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(depth_stencil_buffer.Get(), nullptr, &m_depth_stencil_view));
+}
+
 void GeometryPass::InitGBuffers()
 {
     CreateRtvSrv(m_position_rtv, output.position_srv);
@@ -121,4 +171,5 @@ void GeometryPass::InitGBuffers()
     CreateRtvSrv(m_ambient_rtv, output.ambient_srv);
     CreateRtvSrv(m_diffuse_rtv, output.diffuse_srv);
     CreateRtvSrv(m_specular_rtv, output.specular_srv);
+    CreateDsv();
 }
