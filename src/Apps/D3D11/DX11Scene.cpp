@@ -63,7 +63,6 @@ void DX11Scene::OnRender()
     m_geometry_pass.OnRender();
 
     m_shadow_pass.OnRender();
-    m_generate_mipmap_pass.OnRender();
 
     m_context.device_context->RSSetViewports(1, &m_viewport);
     m_light_pass.OnRender();
