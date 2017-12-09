@@ -102,6 +102,9 @@ private:
     ComPtr<ID3D11Buffer> CreateBuffer(const std::vector<T>& v, UINT BindFlags)
     {
         ComPtr<ID3D11Buffer> buffer;
+        if (v.empty())
+            return buffer;
+
         D3D11_BUFFER_DESC buffer_desc = {};
         buffer_desc.Usage = D3D11_USAGE_DEFAULT;
         buffer_desc.ByteWidth = static_cast<UINT>(v.size() * sizeof(v.front()));

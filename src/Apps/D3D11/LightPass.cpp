@@ -70,6 +70,8 @@ void LightPass::OnRender()
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 
+    std::vector<ID3D11ShaderResourceView*> empty(m_program.ps.texture.LightCubeShadowMap);
+    m_context.device_context->PSSetShaderResources(0, empty.size(), empty.data());
 }
 
 void LightPass::OnResize(int width, int height)
