@@ -66,7 +66,7 @@ private:
             return "ShaderType::kCompute";
         else if (str.find("gs") == 0)
             return "ShaderType::kGeometry";
-        return "???";
+        return "";
     }
 
     std::string TargetToShaderPrefix(const std::string& str)
@@ -79,39 +79,49 @@ private:
             return "CS";
         else if (str.find("gs") == 0)
             return "GS";
-        return "???";
+        return "";
     }
 
-    std::string TypeFromDesc(D3D11_SHADER_TYPE_DESC& desc)
+    std::string TypeFromDesc(const D3D11_SHADER_TYPE_DESC& desc)
     {
-        std::string res;       
-        if (desc.Class == D3D_SHADER_VARIABLE_CLASS::D3D10_SVC_MATRIX_COLUMNS)
+        std::string type_prefix;
+        std::string type;
+        std::string res;
+        switch (desc.Type)
         {
-            assert(desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_FLOAT);
-            assert(desc.Columns == desc.Rows);
-            res = "glm::mat" + std::to_string(desc.Columns);
+        case D3D_SHADER_VARIABLE_TYPE::D3D_SVT_FLOAT:
+            type_prefix = "";
+            type = "float";
+            break;
+        case D3D_SHADER_VARIABLE_TYPE::D3D_SVT_INT:
+            type_prefix = "i";
+            type = "int32_t";
+            break;
+        case D3D_SHADER_VARIABLE_TYPE::D3D_SVT_UINT:
+            type_prefix = "u";
+            type = "uint32_t";
+            break;
+        case D3D_SHADER_VARIABLE_TYPE::D3D_SVT_BOOL:
+            type_prefix = "b";
+            type = "bool";
+            break;
         }
-        else if (desc.Class == D3D_SHADER_VARIABLE_CLASS::D3D_SVC_VECTOR)
+
+        switch (desc.Class)
         {
-            assert(desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_FLOAT);
-            res = "glm::vec" + std::to_string(desc.Columns);
-        }
-        else if (desc.Class == D3D_SHADER_VARIABLE_CLASS::D3D_SVC_SCALAR)
-        {
-            if (desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_INT)
-                res = "int32_t";
-            else if (desc.Type == D3D_SHADER_VARIABLE_TYPE::D3D_SVT_FLOAT)
-                res = "float";
-        }
-        else
-        {
-            res = "???";
+        case D3D_SHADER_VARIABLE_CLASS::D3D_SVC_SCALAR:
+            res = type;
+            break;
+        case D3D_SHADER_VARIABLE_CLASS::D3D_SVC_VECTOR:
+            res = "glm::" + type_prefix + "vec" + std::to_string(desc.Columns);
+            break;
+        case D3D_SHADER_VARIABLE_CLASS::D3D_SVC_MATRIX_COLUMNS:
+            res = "glm::" + type_prefix + "mat" + std::to_string(desc.Rows) + "x" + std::to_string(desc.Columns);
+            break;
         }
 
         if (desc.Elements > 0)
-        {
             res = "std::array<" + res + ", " + std::to_string(desc.Elements) + ">";
-        }
 
         return res;
     }
@@ -147,6 +157,7 @@ private:
             tcbuffer.set("BufferName", bdesc.Name);
             tcbuffer.set("BufferSize", std::to_string(bdesc.Size));
             tcbuffer.set("BufferIndex", std::to_string(i));
+            tcbuffer.set("BufferSeparator", i == 0 ? ":" : ",");
 
             mustache::data tvariables{ mustache::data::type::list };
 

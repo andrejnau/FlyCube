@@ -4,32 +4,27 @@
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>
- 
+
 class {{ShaderName}} : public Shader<{{ShaderType}}>
 {
 public:
     struct
-    { 
-        {{#CBuffers}}
-        struct
+    {
+{{#CBuffers}}        struct
         {
-            {{#Variables}}{{&Type}} {{Name}};
-            {{/Variables}}
-        } {{BufferName}};
-        {{/CBuffers}}
-    } cbuffer;
+{{#Variables}}            {{&Type}} {{Name}};
+{{/Variables}}        } {{BufferName}};
+{{/CBuffers}}    } cbuffer;
 
     struct
     {
-        {{#Textures}}static constexpr const UINT {{Name}} = {{Slot}};
-        {{/Textures}}
-    } texture;
+{{#Textures}}        static constexpr const uint32_t {{Name}} = {{Slot}};
+{{/Textures}}    } texture;
 
     struct
     {
-        {{#Inputs}}static constexpr const UINT {{Name}} = {{Slot}};
-        {{/Inputs}}
-    } geometry;
+{{#Inputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
+{{/Inputs}}    } geometry;
 
     {{ShaderName}}(ComPtr<ID3D11Device>& device)
         : Shader(device, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
@@ -57,8 +52,7 @@ private:
         {{#CBuffers}}BufferLayout {{BufferName}};
         {{/CBuffers}}
         CBufferImpl(ComPtr<ID3D11Device>& device)
-            : TODO(true)
-            {{#CBuffers}}, {{BufferName}}(
+            {{#CBuffers}}{{BufferSeparator}} {{BufferName}}(
                 device,
                 {{BufferSize}},
                 {{BufferIndex}},
@@ -75,9 +69,5 @@ private:
             {{/CBuffers}}
         {
         }
-
-    private:
-        bool TODO;
-
     } cbuffer_impl;
 };
