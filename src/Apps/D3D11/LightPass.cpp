@@ -27,7 +27,9 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     shadowState.CullMode = D3D11_CULL_BACK;
     shadowState.DepthBias = 10000;
     m_context.device->CreateRasterizerState(&shadowState, &m_rasterizer_state);
-    int vb = 0;
+
+    D3D_SHADER_MACRO define[] = { "USE_MSAA", "1", NULL, NULL };
+    m_program.ApplyDefine(m_context.device, m_settings.msaa_count > 1 ? define : nullptr);
 }
 
 void LightPass::OnUpdate()
@@ -81,5 +83,11 @@ void LightPass::OnResize(int width, int height)
 
 void LightPass::OnModifySettings(const Settings& settings)
 {
+    Settings prev = m_settings;
     m_settings = settings;
+    if (prev.msaa_count != settings.msaa_count)
+    {
+        D3D_SHADER_MACRO define[] = { "USE_MSAA", "1", NULL, NULL };
+        m_program.ApplyDefine(m_context.device, settings.msaa_count > 1 ? define : nullptr);
+    }
 }

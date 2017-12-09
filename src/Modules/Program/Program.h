@@ -110,16 +110,25 @@ public:
     virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) = 0;
     virtual void BindCBuffers(ComPtr<ID3D11DeviceContext>& device_context) = 0;
     virtual void UpdateCBuffers(ComPtr<ID3D11DeviceContext>& device_context) = 0;
+    virtual void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define) = 0;
 
     ShaderBase(const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+        : m_shader_path(shader_path)
+        , m_entrypoint(entrypoint)
+        , m_target(target)
+    {
+        CompileShader();
+    }
+
+    void CompileShader(const D3D_SHADER_MACRO* define = nullptr)
     {
         ComPtr<ID3DBlob> errors;
         ASSERT_SUCCEEDED(D3DCompileFromFile(
-            GetAssetFullPathW(shader_path).c_str(),
+            GetAssetFullPathW(m_shader_path).c_str(),
+            define,
             nullptr,
-            nullptr,
-            entrypoint.c_str(),
-            target.c_str(),
+            m_entrypoint.c_str(),
+            m_target.c_str(),
             0,
             0,
             &m_shader_buffer,
@@ -127,6 +136,9 @@ public:
     }
 
 protected:
+    std::string m_shader_path;
+    std::string m_entrypoint;
+    std::string m_target;
     ComPtr<ID3DBlob> m_shader_buffer;
 };
 
@@ -149,6 +161,12 @@ public:
     virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) override
     {
         device_context->PSSetShader(shader.Get(), nullptr, 0);
+    }
+
+    virtual void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define) override
+    {
+        CompileShader(define);
+        ASSERT_SUCCEEDED(device->CreatePixelShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
 };
 
@@ -236,6 +254,13 @@ public:
     {
         device_context->VSSetShader(shader.Get(), nullptr, 0);
     }
+
+    virtual void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define) override
+    {
+        CompileShader(define);
+        ASSERT_SUCCEEDED(device->CreateVertexShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
+        CreateInputLayout(device);
+    }
 };
 
 template<>
@@ -255,6 +280,12 @@ public:
     virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) override
     {
         device_context->GSSetShader(shader.Get(), nullptr, 0);
+    }
+
+    virtual void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define) override
+    {
+        CompileShader(define);
+        ASSERT_SUCCEEDED(device->CreateGeometryShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
 };
 
@@ -276,8 +307,13 @@ public:
     {
         device_context->CSSetShader(shader.Get(), nullptr, 0);
     }
-};
 
+    virtual void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define) override
+    {
+        CompileShader(define);
+        ASSERT_SUCCEEDED(device->CreateComputeShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
+    }
+};
 
 template<ShaderType, typename T> class ShaderHolderImpl {};
 
@@ -380,6 +416,14 @@ public:
             shader.get().UseShader(device_context);
             shader.get().UpdateCBuffers(device_context);
             shader.get().BindCBuffers(device_context);
+        }
+    }
+
+    void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define)
+    {
+        for (auto& shader : m_shaders)
+        {
+            shader.get().ApplyDefine(device, define);
         }
     }
 

@@ -4,8 +4,6 @@ struct VS_OUTPUT
     float2 texCoord : TEXCOORD;
 };
 
-#define USE_MSAA
-
 #ifdef USE_MSAA 
 #define TEXTURE_TYPE Texture2DMS<float4>
 #else
