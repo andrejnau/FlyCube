@@ -9,6 +9,7 @@
 #include <vector>
 #include <fstream>
 #include <iterator>
+#include <cctype>
 
 using namespace Microsoft::WRL;
 using namespace kainjow;
@@ -18,7 +19,8 @@ struct Option
     std::string shader_name;
     std::string shader_path;
     std::string entrypoint;
-    std::string target;
+    std::string type;
+    std::string model;
     std::string template_path;
     std::string output_dir;
 };
@@ -36,11 +38,14 @@ public:
         : m_option(option)
         , m_tmpl(ReadFile(m_option.template_path))
     {
+        m_target = "xs_" + m_option.model;
+        m_target.replace(m_target.find("."), 1, "_");
+        m_target.front() = std::tolower(m_option.type[0]);
     }
 
     void Parse()
     {
-        ParseShader(CompileShader(m_option.shader_path, m_option.entrypoint, m_option.target));
+        ParseShader(CompileShader(m_option.shader_path, m_option.entrypoint, m_target));
     }
 
     void Gen()
@@ -129,11 +134,11 @@ private:
     void ParseShader(ComPtr<ID3DBlob>& shader_buffer)
     {
         m_tcontext["ShaderName"] = m_option.shader_name;
-        m_tcontext["ShaderType"] = TargetToShaderType(m_option.target);
-        m_tcontext["ShaderPrefix"] = TargetToShaderPrefix(m_option.target);
+        m_tcontext["ShaderType"] = TargetToShaderType(m_target);
+        m_tcontext["ShaderPrefix"] = TargetToShaderPrefix(m_target);
         m_tcontext["ShaderPath"] = m_option.shader_path;
         m_tcontext["Entrypoint"] = m_option.entrypoint;
-        m_tcontext["Target"] = m_option.target;
+        m_tcontext["Target"] = m_target;
 
         mustache::data tcbuffers{ mustache::data::type::list };
 
@@ -239,6 +244,7 @@ private:
     const Option& m_option;
     mustache::mustache m_tmpl;
     mustache::data m_tcontext;
+    std::string m_target;
 };
 
 class ParseCmd
@@ -246,12 +252,13 @@ class ParseCmd
 public:
     ParseCmd(int argc, char *argv[])
     {
-        ThrowIfFailed(argc == 7, "Invalide CommandLine");
+        ThrowIfFailed(argc == 8, "Invalide CommandLine");
         size_t arg_index = 1;
         m_option.shader_name = argv[arg_index++];
         m_option.shader_path = argv[arg_index++];
         m_option.entrypoint = argv[arg_index++];
-        m_option.target = argv[arg_index++];
+        m_option.type = argv[arg_index++];
+        m_option.model = argv[arg_index++];
         m_option.template_path = argv[arg_index++];
         m_option.output_dir = argv[arg_index++];
     }
