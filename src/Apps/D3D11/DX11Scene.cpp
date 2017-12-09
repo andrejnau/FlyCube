@@ -17,7 +17,7 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     , m_shadow_pass(m_context, { m_model_of_file, m_camera, light_pos }, width, height)
     , m_generate_mipmap_pass(m_context, { m_shadow_pass.output }, width, height)
     , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_model_square, m_camera, m_render_target_view, m_depth_stencil_view, light_pos }, width, height)
-    , m_imgui_pass(m_context, {m_render_target_view, m_depth_stencil_view }, width, height)
+    , m_imgui_pass(m_context, { *this, m_render_target_view, m_depth_stencil_view }, width, height)
 {
     CreateRT();
     CreateViewPort();
@@ -47,14 +47,14 @@ void DX11Scene::OnUpdate()
     float light_r = 2.5;
     light_pos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
 
-    m_geometry_pass.OnUpdate();
-    m_shadow_pass.OnUpdate();
-    m_light_pass.OnUpdate();
-
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         m_imgui_pass.OnUpdate();
     }
+
+    m_geometry_pass.OnUpdate();
+    m_shadow_pass.OnUpdate();
+    m_light_pass.OnUpdate();
 }
 
 void DX11Scene::OnRender()
@@ -165,6 +165,12 @@ void DX11Scene::OnInputChar(unsigned int ch)
     {
         m_imgui_pass.OnInputChar(ch);
     }
+}
+
+void DX11Scene::OnModifySettings(const Settings& settings)
+{
+    m_geometry_pass.OnModifySettings(settings);
+    m_light_pass.OnModifySettings(settings);
 }
 
 void DX11Scene::CreateRT()

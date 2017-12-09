@@ -295,55 +295,64 @@ ImGuiPass::~ImGuiPass()
     ImGui::Shutdown();
 }
 
+class ImGuiSettings
+{
+public:
+    ImGuiSettings(const ComPtr<ID3D11Device>& device)
+    {
+        for (uint32_t i = 2; i <= D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT; ++i)
+        {
+            uint32_t quality = 0;
+            device->CheckMultisampleQualityLevels(DXGI_FORMAT_R32G32B32A32_FLOAT, i, &quality);
+            if (quality == 0)
+                continue;
+            msaa_str.push_back("x" + std::to_string(i));
+            msaa.push_back(i);
+        }
+    }
+
+    void NewFrame(IModifySettings& listener)
+    {
+        bool modify_settings = false;
+        ImGui::NewFrame();
+
+        ImGui::Begin("Settings");
+
+        static auto fn = [](void* data, int idx, const char** out_text) -> bool
+        {
+            if (!data || !out_text)
+                return false;
+            const auto& self = *(ImGuiSettings*)data;
+            *out_text = self.msaa_str[idx].c_str();
+            return true;
+        };
+
+        if (ImGui::Combo("MSAA", &msaa_idx, fn, this, msaa_str.size()))
+        {
+            settings.msaa_count = msaa[msaa_idx];
+            modify_settings = true;
+        }
+
+        ImGui::End();
+
+        if (modify_settings)
+            listener.OnModifySettings(settings);
+    }
+
+private:
+    Settings settings;
+    int msaa_idx = 0;
+    std::vector<uint32_t> msaa = { 1 };
+    std::vector<std::string> msaa_str = { "Off" };
+};
+
 void ImGuiPass::OnUpdate()
 {
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         return;
 
-    ImGuiIO& io = ImGui::GetIO();
-
-    static bool show_test_window = true;
-    static bool show_another_window = false;
-    static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-    {
-        ImGuiIO& io = ImGui::GetIO();
-
-        // Setup time step
-        INT64 current_time;
-        QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
-        io.DeltaTime = (float)(current_time - m_time) / m_ticks_per_second;
-        m_time = current_time;
-
-        ImGui::NewFrame();
-    }
-
-    // 1. Show a simple window
-    // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
-    {
-        static float f = 0.0f;
-        ImGui::Text("Hello, world!");
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-        ImGui::ColorEdit3("clear color", (float*)&clear_color);
-        if (ImGui::Button("Test Window")) show_test_window ^= 1;
-        if (ImGui::Button("Another Window")) show_another_window ^= 1;
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    }
-
-    // 2. Show another simple window, this time using an explicit Begin/End pair
-    if (show_another_window)
-    {
-        ImGui::Begin("Another Window", &show_another_window);
-        ImGui::Text("Hello from another window!");
-        ImGui::End();
-    }
-
-    // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
-    if (show_test_window)
-    {
-        ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);     // Normally user code doesn't need/want to call it because positions are saved in .ini file anyway. Here we just want to make the demo initial state a bit more friendly!
-        ImGui::ShowTestWindow(&show_test_window);
-    }
+    static ImGuiSettings settings(m_context.device);
+    settings.NewFrame(m_input.root_scene);
 
     ImGui::Render();
 }
@@ -355,7 +364,6 @@ void ImGuiPass::OnRender()
         RenderDrawLists(ImGui::GetDrawData());
     }
 }
-
 
 void ImGuiPass::OnResize(int width, int height)
 {

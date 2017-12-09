@@ -34,6 +34,7 @@ void LightPass::OnUpdate()
 {
     m_program.ps.cbuffer.ConstantBuffer.lightPos = m_input.light_pos;
     m_program.ps.cbuffer.ConstantBuffer.viewPos = m_input.camera.GetCameraPos();
+    m_program.ps.cbuffer.Params.sample_count = m_settings.msaa_count;
 
     m_program.ps.cbuffer.ShadowParams.s_near = 0.1;
     m_program.ps.cbuffer.ShadowParams.s_far = 1024.0;
@@ -76,4 +77,9 @@ void LightPass::OnRender()
 
 void LightPass::OnResize(int width, int height)
 {
+}
+
+void LightPass::OnModifySettings(const Settings& settings)
+{
+    m_settings = settings;
 }

@@ -48,14 +48,12 @@ set(sources
 set(pixel_shaders
     ${shaders_path}/GeometryPass_PS.hlsl
     ${shaders_path}/LightPass_PS.hlsl
-    ${shaders_path}/LightPassMS_PS.hlsl
     ${shaders_path}/ImGuiPass_PS.hlsl
 )
 
 set(vertex_shaders
     ${shaders_path}/GeometryPass_VS.hlsl
     ${shaders_path}/LightPass_VS.hlsl
-    ${shaders_path}/LightPassMS_VS.hlsl
     ${shaders_path}/ImGuiPass_VS.hlsl
     ${shaders_path}/ShadowPass_VS.hlsl
 )

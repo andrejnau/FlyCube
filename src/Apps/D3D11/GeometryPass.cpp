@@ -90,34 +90,17 @@ void GeometryPass::OnResize(int width, int height)
     InitGBuffers();
 }
 
-void GeometryPass::CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
+void GeometryPass::OnModifySettings(const Settings& settings)
 {
-    if (true)
-        return CreateRtvSrvMs(rtv, srv);
-
-    D3D11_TEXTURE2D_DESC texture_desc = {};
-    texture_desc.Width = m_width;
-    texture_desc.Height = m_height;
-    texture_desc.MipLevels = 1;
-    texture_desc.ArraySize = 1;
-    texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-    texture_desc.SampleDesc.Count = 1;
-    texture_desc.Usage = D3D11_USAGE_DEFAULT;
-    texture_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
-    ComPtr<ID3D11Texture2D> texture;
-    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&texture_desc, nullptr, &texture));
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-    srv_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    srv_desc.Texture2D.MipLevels = 1;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(texture.Get(), &srv_desc, &srv));
-    ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
+    Settings prev = m_settings;
+    m_settings = settings;
+    if (prev.msaa_count != settings.msaa_count)
+    {
+        InitGBuffers();
+    }
 }
 
-void GeometryPass::CreateRtvSrvMs(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
+void GeometryPass::CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
 {
     D3D11_TEXTURE2D_DESC texture_desc = {};
     texture_desc.Width = m_width;
@@ -125,21 +108,29 @@ void GeometryPass::CreateRtvSrvMs(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID
     texture_desc.MipLevels = 1;
     texture_desc.ArraySize = 1;
     texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-    texture_desc.SampleDesc.Count = 8;
-    texture_desc.SampleDesc.Quality = 16;
     texture_desc.Usage = D3D11_USAGE_DEFAULT;
     texture_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
     uint32_t quality = 0;
-    m_context.device->CheckMultisampleQualityLevels(DXGI_FORMAT_R32G32B32A32_FLOAT, 8, &quality);
+    m_context.device->CheckMultisampleQualityLevels(texture_desc.Format, m_settings.msaa_count, &quality);
+    texture_desc.SampleDesc.Count = m_settings.msaa_count;
+    texture_desc.SampleDesc.Quality = quality - 1;
 
     ComPtr<ID3D11Texture2D> texture;
     ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&texture_desc, nullptr, &texture));
 
     D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
     srv_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
     srv_desc.Texture2D.MipLevels = 1;
+
+    if (m_settings.msaa_count == 1)
+    {
+        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    }
+    else
+    {
+        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+    }
 
     ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(texture.Get(), &srv_desc, &srv));
     ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
@@ -153,13 +144,15 @@ void GeometryPass::CreateDsv()
     depth_stencil_desc.MipLevels = 1;
     depth_stencil_desc.ArraySize = 1;
     depth_stencil_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depth_stencil_desc.SampleDesc.Count = 8;
-    depth_stencil_desc.SampleDesc.Quality = 16;
     depth_stencil_desc.Usage = D3D11_USAGE_DEFAULT;
     depth_stencil_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
+    uint32_t quality = 0;
+    m_context.device->CheckMultisampleQualityLevels(depth_stencil_desc.Format, m_settings.msaa_count, &quality);
+    depth_stencil_desc.SampleDesc.Count = m_settings.msaa_count;
+    depth_stencil_desc.SampleDesc.Quality = quality - 1;
+
     ComPtr<ID3D11Texture2D> depth_stencil_buffer;
-    
     ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&depth_stencil_desc, nullptr, &depth_stencil_buffer));
     ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(depth_stencil_buffer.Get(), nullptr, &m_depth_stencil_view));
 }

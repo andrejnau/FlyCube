@@ -38,6 +38,7 @@ public:
     virtual void OnMouseButton(int button, int action) override;
     virtual void OnScroll(double xoffset, double yoffset) override;
     virtual void OnInputChar(unsigned int ch) override;
+    virtual void OnModifySettings(const Settings& settings) override;
 
 private:
     void CreateRT();

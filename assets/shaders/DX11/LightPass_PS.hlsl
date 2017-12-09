@@ -4,17 +4,26 @@ struct VS_OUTPUT
     float2 texCoord : TEXCOORD;
 };
 
-Texture2D gPosition;
-Texture2D gNormal;
-Texture2D gAmbient;
-Texture2D gDiffuse;
-Texture2D gSpecular;
+#define USE_MSAA
+
+#ifdef USE_MSAA 
+#define TEXTURE_TYPE Texture2DMS<float4>
+#else
+#define TEXTURE_TYPE Texture2D
+#endif
+
+TEXTURE_TYPE gPosition;
+TEXTURE_TYPE gNormal;
+TEXTURE_TYPE gAmbient;
+TEXTURE_TYPE gDiffuse;
+TEXTURE_TYPE gSpecular;
 TextureCube<float> LightCubeShadowMap;
 
 cbuffer Params
 {
     float4x4 View[6];
     float4x4 Projection;
+    uint sample_count;
 };
 
 cbuffer ShadowParams
@@ -61,7 +70,7 @@ float _sampleCubeShadowPCFSwizzle3x3(float3 L, float3 vL)
     v0.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right - up, sD).r;
     v0.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - up, sD).r;
     v0.z = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + right - up, sD).r;
-	
+    
     float3 v1;
     v1.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right, sD).r;
     v1.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward, sD).r;
@@ -71,20 +80,19 @@ float _sampleCubeShadowPCFSwizzle3x3(float3 L, float3 vL)
     v2.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right + up, sD).r;
     v2.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + up, sD).r;
     v2.z = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + right + up, sD).r;
-	
-	
+    
+    
     return dot(v0 + v1 + v2, .1111111f);
 }
-
 
 // UE4: https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Shaders/ShadowProjectionCommon.usf
 static const float2 DiscSamples5[] =
 { // 5 random points in disc with radius 2.500000
     float2(0.000000, 2.500000),
-	float2(2.377641, 0.772542),
-	float2(1.469463, -2.022543),
-	float2(-1.469463, -2.022542),
-	float2(-2.377641, 0.772543),
+    float2(2.377641, 0.772542),
+    float2(1.469463, -2.022543),
+    float2(-1.469463, -2.022542),
+    float2(-2.377641, 0.772543),
 };
 
 float _sampleCubeShadowPCFDisc5(float3 L, float3 vL)
@@ -94,21 +102,21 @@ float _sampleCubeShadowPCFDisc5(float3 L, float3 vL)
 
     SideVector *= 1.0 / s_size;
     UpVector *= 1.0 / s_size;
-	
+    
     float sD = _vectorToDepth(vL, s_near, s_far);
 
     float3 nlV = float3(L.xy, -L.z);
 
     float totalShadow = 0;
 
-	[UNROLL]
+    [UNROLL]
     for (int i = 0; i < 5; ++i)
     {
         float3 SamplePos = nlV + SideVector * DiscSamples5[i].x + UpVector * DiscSamples5[i].y;
         totalShadow += LightCubeShadowMap.SampleCmpLevelZero(
-				LightCubeShadowComparsionSampler,
-				SamplePos,
-				sD);
+                LightCubeShadowComparsionSampler,
+                SamplePos,
+                sD);
     }
     totalShadow /= 5;
 
@@ -119,9 +127,17 @@ float _sampleCubeShadowPCFDisc5(float3 L, float3 vL)
 #define USE_CAMMA_RT
 #define USE_CAMMA_TEX
 
-float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, bool _need_gamma = false)
+float4 getTexture(TEXTURE_TYPE _texture, float2 _tex_coord, int ss_index, bool _need_gamma = false)
 {
-    float4 _color = _texture.Sample(_sample, _tex_coord);
+#ifdef USE_MSAA
+    float3 gbufferDim;
+    _texture.GetDimensions(gbufferDim.x, gbufferDim.y, gbufferDim.z);
+    float2 texcoord = _tex_coord * float2(gbufferDim.xy);
+    float4 _color = _texture.Load(texcoord, ss_index);
+#else
+    float4 _color = _texture.Sample(g_sampler, _tex_coord);
+#endif
+
 #ifdef USE_CAMMA_TEX
     if (_need_gamma)
         _color = float4(pow(abs(_color.rgb), 2.2), _color.a);
@@ -135,17 +151,8 @@ cbuffer ConstantBuffer
     float3 viewPos;
 };
 
-float4 main(VS_OUTPUT input) : SV_TARGET
+float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffuse, float3 specular_base, float shininess)
 {
-    float4 gamma4 = float4(1.0/2.2, 1.0 / 2.2, 1.0 / 2.2, 1);
-
-    float3 fragPos = getTexture(gPosition, g_sampler, input.texCoord, false).rgb;
-    float3 normal = getTexture(gNormal, g_sampler, input.texCoord, false).rgb;
-    float3 ambient = getTexture(gAmbient, g_sampler, input.texCoord, false).rgb;
-    float3 diffuse = getTexture(gDiffuse, g_sampler, input.texCoord, false).rgb;
-    float3 specular_base = getTexture(gSpecular, g_sampler, input.texCoord, false).rgb;
-    float shininess = getTexture(gSpecular, g_sampler, input.texCoord, false).a;
-
     float3 lightDir = normalize(lightPos - fragPos);
     float diff = max(dot(lightDir, normal), 0.0);
     diffuse *= diff;
@@ -160,5 +167,25 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 
     float shadow = _sampleCubeShadowPCFDisc5(L, vL);
     float3 hdrColor = float3(ambient + diffuse * shadow + specular * shadow);
-    return pow(float4(hdrColor, 1.0), gamma4);
+    return hdrColor;
+}
+
+float4 main(VS_OUTPUT input) : SV_TARGET
+{
+    float4 gamma4 = float4(1.0/2.2, 1.0 / 2.2, 1.0 / 2.2, 1);
+
+    float3 lighting = 0;
+    for (int i = 0; i < sample_count; ++i)
+    {
+        float3 fragPos = getTexture(gPosition, input.texCoord, i).rgb;
+        float3 normal = getTexture(gNormal, input.texCoord, i).rgb;
+        float3 ambient = getTexture(gAmbient, input.texCoord, i).rgb;
+        float3 diffuse = getTexture(gDiffuse, input.texCoord, i).rgb;
+        float3 specular_base = getTexture(gSpecular, input.texCoord, i).rgb;
+        float shininess = getTexture(gSpecular, input.texCoord, i).a;
+        lighting += CalcLighting(fragPos, normal, ambient, diffuse, specular_base, shininess);
+    }
+    lighting /= sample_count;
+
+    return pow(float4(lighting, 1.0), gamma4);
 }

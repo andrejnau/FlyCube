@@ -10,7 +10,7 @@
 
 using namespace Microsoft::WRL;
 
-class GeometryPass : public IPass
+class GeometryPass : public IPass, public IModifySettings
 {
 public:
     struct Input
@@ -33,6 +33,7 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
+    virtual void OnModifySettings(const Settings& settings) override;
 
 private:
     Context& m_context;
@@ -42,7 +43,6 @@ private:
     Program<GeometryPassPS, GeometryPassVS> m_program;
 
     void CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
-    void CreateRtvSrvMs(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
     void CreateDsv();
     void InitGBuffers();
 
@@ -52,5 +52,6 @@ private:
     ComPtr<ID3D11RenderTargetView> m_diffuse_rtv;
     ComPtr<ID3D11RenderTargetView> m_specular_rtv;
     ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
+    Settings m_settings;
 };
 

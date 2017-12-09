@@ -8,6 +8,20 @@ enum class ApiType
     kDX
 };
 
+class Settings
+{
+public:
+    uint32_t msaa_count = 1;
+    int width = 1280;
+    int height = 720;
+};
+
+class IModifySettings
+{
+public:
+    virtual void OnModifySettings(const Settings& settings) = 0;
+};
+
 class IPass
 {
 public:
@@ -31,6 +45,7 @@ public:
 class IScene
     : public IPass
     , public IInput
+    , public IModifySettings
 {
 public:
     using Ptr = std::unique_ptr<IScene>;

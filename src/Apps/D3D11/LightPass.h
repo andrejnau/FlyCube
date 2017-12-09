@@ -15,7 +15,7 @@
 
 using namespace Microsoft::WRL;
 
-class LightPass : public IPass
+class LightPass : public IPass, public IModifySettings
 {
 public:
     struct Input
@@ -38,14 +38,15 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
+    virtual void OnModifySettings(const Settings & settings) override;
 
 private:
     Context& m_context;
     Input m_input;
     int m_width;
     int m_height;
-    //Program<LightPassPS, LightPassVS> m_program;
-    Program<LightPassMSPS, LightPassMSVS> m_program;
+    Program<LightPassPS, LightPassVS> m_program;
     ComPtr<ID3D11SamplerState> m_shadow_sampler;
     ComPtr<ID3D11RasterizerState> m_rasterizer_state;
+    Settings m_settings;
 };
