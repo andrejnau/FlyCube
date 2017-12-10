@@ -44,7 +44,7 @@ void DX11Scene::OnUpdate()
     start = end;
 
     auto& state = CurState<bool>::Instance().state;
-    if (!state["pause"])
+    if (state["pause"])
         angle += elapsed / 2e6f;
 
     float light_r = 2.5;
