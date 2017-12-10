@@ -110,22 +110,31 @@ public:
     virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) = 0;
     virtual void BindCBuffers(ComPtr<ID3D11DeviceContext>& device_context) = 0;
     virtual void UpdateCBuffers(ComPtr<ID3D11DeviceContext>& device_context) = 0;
-    virtual void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define) = 0;
+    virtual void UpdateShader(ComPtr<ID3D11Device>& device) = 0;
+
+    std::map<std::string, std::string> define;
 
     ShaderBase(const std::string& shader_path, const std::string& entrypoint, const std::string& target)
         : m_shader_path(shader_path)
         , m_entrypoint(entrypoint)
         , m_target(target)
     {
-        CompileShader();
     }
 
-    void CompileShader(const D3D_SHADER_MACRO* define = nullptr)
+protected:
+    void CompileShader()
     {
+        std::vector<D3D_SHADER_MACRO> macro;
+        for (const auto & x : define)
+        {
+            macro.push_back({ x.first.c_str(), x.second.c_str() });
+        }
+        macro.push_back({ nullptr, nullptr });
+
         ComPtr<ID3DBlob> errors;
         ASSERT_SUCCEEDED(D3DCompileFromFile(
             GetAssetFullPathW(m_shader_path).c_str(),
-            define,
+            macro.data(),
             nullptr,
             m_entrypoint.c_str(),
             m_target.c_str(),
@@ -135,7 +144,6 @@ public:
             &errors));
     }
 
-protected:
     std::string m_shader_path;
     std::string m_entrypoint;
     std::string m_target;
@@ -155,7 +163,6 @@ public:
     Shader(ComPtr<ID3D11Device>& device, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
         : ShaderBase(shader_path, entrypoint, target)
     {
-        ASSERT_SUCCEEDED(device->CreatePixelShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
 
     virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) override
@@ -163,9 +170,9 @@ public:
         device_context->PSSetShader(shader.Get(), nullptr, 0);
     }
 
-    virtual void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define) override
+    virtual void UpdateShader(ComPtr<ID3D11Device>& device) override
     {
-        CompileShader(define);
+        CompileShader();
         ASSERT_SUCCEEDED(device->CreatePixelShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
 };
@@ -182,8 +189,6 @@ public:
     Shader(ComPtr<ID3D11Device>& device, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
         : ShaderBase(shader_path, entrypoint, target)
     {
-        ASSERT_SUCCEEDED(device->CreateVertexShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
-        CreateInputLayout(device);
     }
 
     void CreateInputLayout(ComPtr<ID3D11Device>& device)
@@ -255,9 +260,9 @@ public:
         device_context->VSSetShader(shader.Get(), nullptr, 0);
     }
 
-    virtual void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define) override
+    virtual void UpdateShader(ComPtr<ID3D11Device>& device) override
     {
-        CompileShader(define);
+        CompileShader();
         ASSERT_SUCCEEDED(device->CreateVertexShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
         CreateInputLayout(device);
     }
@@ -274,7 +279,6 @@ public:
     Shader(ComPtr<ID3D11Device>& device, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
         : ShaderBase(shader_path, entrypoint, target)
     {
-        ASSERT_SUCCEEDED(device->CreateGeometryShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
 
     virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) override
@@ -282,9 +286,9 @@ public:
         device_context->GSSetShader(shader.Get(), nullptr, 0);
     }
 
-    virtual void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define) override
+    virtual void UpdateShader(ComPtr<ID3D11Device>& device) override
     {
-        CompileShader(define);
+        CompileShader();
         ASSERT_SUCCEEDED(device->CreateGeometryShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
 };
@@ -300,7 +304,6 @@ public:
     Shader(ComPtr<ID3D11Device>& device, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
         : ShaderBase(shader_path, entrypoint, target)
     {
-        ASSERT_SUCCEEDED(device->CreateComputeShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
 
     virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) override
@@ -308,9 +311,9 @@ public:
         device_context->CSSetShader(shader.Get(), nullptr, 0);
     }
 
-    virtual void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define) override
+    virtual void UpdateShader(ComPtr<ID3D11Device>& device) override
     {
-        CompileShader(define);
+        CompileShader();
         ASSERT_SUCCEEDED(device->CreateComputeShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
 };
@@ -407,6 +410,16 @@ public:
         : ShaderHolder<Args>(device)...
         , m_shaders({ ShaderHolder<Args>::GetApi()... })
     {
+        UpdateShaders(device);
+    }
+
+    template<typename Setup>
+    Program(ComPtr<ID3D11Device>& device, const Setup& setup)
+        : ShaderHolder<Args>(device)...
+        , m_shaders({ ShaderHolder<Args>::GetApi()... })
+    {
+        setup(*this);
+        UpdateShaders(device);
     }
 
     void UseProgram(ComPtr<ID3D11DeviceContext>& device_context)
@@ -419,14 +432,14 @@ public:
         }
     }
 
-    void ApplyDefine(ComPtr<ID3D11Device>& device, const D3D_SHADER_MACRO* define)
+private:
+    void UpdateShaders(ComPtr<ID3D11Device>& device)
     {
         for (auto& shader : m_shaders)
         {
-            shader.get().ApplyDefine(device, define);
+            shader.get().UpdateShader(device);
         }
     }
 
-private:
     std::vector<std::reference_wrapper<ShaderBase>> m_shaders;
 };

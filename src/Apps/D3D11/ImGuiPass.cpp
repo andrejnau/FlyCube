@@ -308,6 +308,8 @@ public:
                 continue;
             msaa_str.push_back("x" + std::to_string(i));
             msaa.push_back(i);
+            if (i == settings.msaa_count)
+                msaa_idx = msaa.size() - 1;
         }
     }
 

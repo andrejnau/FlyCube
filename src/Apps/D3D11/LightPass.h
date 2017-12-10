@@ -33,6 +33,8 @@ public:
     {
     } output;
 
+    void SetDefines(Program<LightPassPS, LightPassVS>& program);
+
     LightPass(Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
@@ -41,6 +43,7 @@ public:
     virtual void OnModifySettings(const Settings & settings) override;
 
 private:
+    Settings m_settings;
     Context& m_context;
     Input m_input;
     int m_width;
@@ -48,5 +51,4 @@ private:
     Program<LightPassPS, LightPassVS> m_program;
     ComPtr<ID3D11SamplerState> m_shadow_sampler;
     ComPtr<ID3D11RasterizerState> m_rasterizer_state;
-    Settings m_settings;
 };

@@ -7,7 +7,7 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context.device)
+    , m_program(context.device, std::bind(&LightPass::SetDefines, this, std::placeholders::_1))
 {
     D3D11_SAMPLER_DESC samp_desc = {};
     samp_desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
@@ -27,16 +27,17 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     shadowState.CullMode = D3D11_CULL_BACK;
     shadowState.DepthBias = 10000;
     m_context.device->CreateRasterizerState(&shadowState, &m_rasterizer_state);
+}
 
-    D3D_SHADER_MACRO define[] = { "USE_MSAA", "1", NULL, NULL };
-    m_program.ApplyDefine(m_context.device, m_settings.msaa_count > 1 ? define : nullptr);
+void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
+{
+    program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
 }
 
 void LightPass::OnUpdate()
 {
     m_program.ps.cbuffer.ConstantBuffer.lightPos = m_input.light_pos;
     m_program.ps.cbuffer.ConstantBuffer.viewPos = m_input.camera.GetCameraPos();
-    m_program.ps.cbuffer.Params.sample_count = m_settings.msaa_count;
 
     m_program.ps.cbuffer.ShadowParams.s_near = 0.1;
     m_program.ps.cbuffer.ShadowParams.s_far = 1024.0;
@@ -85,9 +86,9 @@ void LightPass::OnModifySettings(const Settings& settings)
 {
     Settings prev = m_settings;
     m_settings = settings;
-    if (prev.msaa_count != settings.msaa_count)
+    if (prev.msaa_count != m_settings.msaa_count)
     {
-        D3D_SHADER_MACRO define[] = { "USE_MSAA", "1", NULL, NULL };
-        m_program.ApplyDefine(m_context.device, settings.msaa_count > 1 ? define : nullptr);
+        m_program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+        m_program.ps.UpdateShader(m_context.device);
     }
 }

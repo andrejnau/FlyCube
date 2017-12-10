@@ -4,7 +4,11 @@ struct VS_OUTPUT
     float2 texCoord : TEXCOORD;
 };
 
-#ifdef USE_MSAA 
+#ifndef SAMPLE_COUNT
+#define SAMPLE_COUNT 1
+#endif
+
+#if SAMPLE_COUNT > 1
 #define TEXTURE_TYPE Texture2DMS<float4>
 #else
 #define TEXTURE_TYPE Texture2D
@@ -16,13 +20,6 @@ TEXTURE_TYPE gAmbient;
 TEXTURE_TYPE gDiffuse;
 TEXTURE_TYPE gSpecular;
 TextureCube<float> LightCubeShadowMap;
-
-cbuffer Params
-{
-    float4x4 View[6];
-    float4x4 Projection;
-    uint sample_count;
-};
 
 cbuffer ShadowParams
 {
@@ -85,7 +82,8 @@ float _sampleCubeShadowPCFSwizzle3x3(float3 L, float3 vL)
 
 // UE4: https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Shaders/ShadowProjectionCommon.usf
 static const float2 DiscSamples5[] =
-{ // 5 random points in disc with radius 2.500000
+{
+    // 5 random points in disc with radius 2.500000
     float2(0.000000, 2.500000),
     float2(2.377641, 0.772542),
     float2(1.469463, -2.022543),
@@ -107,7 +105,7 @@ float _sampleCubeShadowPCFDisc5(float3 L, float3 vL)
 
     float totalShadow = 0;
 
-    [UNROLL]
+    [unroll]
     for (int i = 0; i < 5; ++i)
     {
         float3 SamplePos = nlV + SideVector * DiscSamples5[i].x + UpVector * DiscSamples5[i].y;
@@ -127,7 +125,7 @@ float _sampleCubeShadowPCFDisc5(float3 L, float3 vL)
 
 float4 getTexture(TEXTURE_TYPE _texture, float2 _tex_coord, int ss_index, bool _need_gamma = false)
 {
-#ifdef USE_MSAA
+#if SAMPLE_COUNT > 1
     float3 gbufferDim;
     _texture.GetDimensions(gbufferDim.x, gbufferDim.y, gbufferDim.z);
     float2 texcoord = _tex_coord * float2(gbufferDim.xy);
@@ -173,7 +171,8 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float4 gamma4 = float4(1.0/2.2, 1.0 / 2.2, 1.0 / 2.2, 1);
 
     float3 lighting = 0;
-    for (int i = 0; i < sample_count; ++i)
+    [unroll]
+    for (uint i = 0; i < SAMPLE_COUNT; ++i)
     {
         float3 fragPos = getTexture(gPosition, input.texCoord, i).rgb;
         float3 normal = getTexture(gNormal, input.texCoord, i).rgb;
@@ -183,7 +182,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         float shininess = getTexture(gSpecular, input.texCoord, i).a;
         lighting += CalcLighting(fragPos, normal, ambient, diffuse, specular_base, shininess);
     }
-    lighting /= sample_count;
+    lighting /= SAMPLE_COUNT;
 
-    return pow(float4(lighting, 1.0), gamma4);
+    return pow(abs(float4(lighting, 1.0)), gamma4);
 }
