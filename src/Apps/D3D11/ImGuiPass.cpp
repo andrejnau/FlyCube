@@ -335,6 +335,21 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::SliderFloat("s_near", &settings.s_near, 0.1f, 8.0f, "%.3f"))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::SliderFloat("s_far", &settings.s_far, 0.1f, 1024.0f, "%.3f"))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::SliderInt("s_size", &settings.s_size, 512, 4096))
+        {
+            modify_settings = true;
+        }
+
         ImGui::End();
 
         if (modify_settings)

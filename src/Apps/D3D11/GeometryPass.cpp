@@ -53,6 +53,9 @@ void GeometryPass::OnRender()
     auto& state = CurState<bool>::Instance().state;
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
+        if (cur_mesh.material.name == "16___Default")
+            continue;
+
         cur_mesh.SetIndexBuffer();
         cur_mesh.SetVertexBuffer(m_program.vs.geometry.POSITION, VertexType::kPosition);
         cur_mesh.SetVertexBuffer(m_program.vs.geometry.NORMAL, VertexType::kNormal);

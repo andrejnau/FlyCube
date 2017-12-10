@@ -49,6 +49,7 @@ set(pixel_shaders
     ${shaders_path}/GeometryPass_PS.hlsl
     ${shaders_path}/LightPass_PS.hlsl
     ${shaders_path}/ImGuiPass_PS.hlsl
+    ${shaders_path}/ShadowPass_PS.hlsl
 )
 
 set(vertex_shaders

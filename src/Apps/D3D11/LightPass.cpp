@@ -25,8 +25,12 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     ZeroMemory(&shadowState, sizeof(D3D11_RASTERIZER_DESC));
     shadowState.FillMode = D3D11_FILL_SOLID;
     shadowState.CullMode = D3D11_CULL_BACK;
-    shadowState.DepthBias = 10000;
+    shadowState.DepthBias = 4096;
     m_context.device->CreateRasterizerState(&shadowState, &m_rasterizer_state);
+
+    m_input.camera.SetCameraPos(glm::vec3(0.0, 2.75, 0.0));
+    m_input.camera.SetCameraYaw(-178.0f);
+    m_input.camera.SetCameraYaw(-1.75f);
 }
 
 void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
@@ -39,9 +43,9 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.ConstantBuffer.lightPos = m_input.light_pos;
     m_program.ps.cbuffer.ConstantBuffer.viewPos = m_input.camera.GetCameraPos();
 
-    m_program.ps.cbuffer.ShadowParams.s_near = 0.1;
-    m_program.ps.cbuffer.ShadowParams.s_far = 1024.0;
-    m_program.ps.cbuffer.ShadowParams.s_size = 2048;
+    m_program.ps.cbuffer.ShadowParams.s_near = m_settings.s_near;
+    m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;
+    m_program.ps.cbuffer.ShadowParams.s_size = m_settings.s_size;
 }
 
 void LightPass::OnRender()

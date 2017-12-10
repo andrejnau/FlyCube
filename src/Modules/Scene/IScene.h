@@ -14,6 +14,9 @@ public:
     uint32_t msaa_count = 8;
     int width = 1280;
     int height = 720;
+    float s_near = 0.5f;
+    float s_far = 1024.0f;
+    int s_size = 3072;
 };
 
 class IModifySettings

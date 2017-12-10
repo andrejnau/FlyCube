@@ -28,6 +28,18 @@ void Camera::SetCameraPos(glm::vec3 camera_pos)
     updateCameraVectors();
 }
 
+void Camera::SetCameraYaw(float yaw)
+{
+    yaw_ = yaw;
+    updateCameraVectors();
+}
+
+void Camera::SetCameraPitch(float pitch)
+{
+    pitch_ = pitch;
+    updateCameraVectors();
+}
+
 glm::vec3 Camera::GetCameraPos() const
 {
     return position_;

@@ -47,6 +47,8 @@ public:
     void SetViewport(int width, int height);
 
     void SetCameraPos(glm::vec3 camera_pos);
+    void SetCameraYaw(float yaw);
+    void SetCameraPitch(float pitch);
 
     glm::vec3 GetCameraPos() const;
 

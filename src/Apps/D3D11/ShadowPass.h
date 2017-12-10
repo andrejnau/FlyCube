@@ -5,12 +5,13 @@
 #include <Geometry/DX11Geometry.h>
 #include <ProgramRef/ShadowPassVS.h>
 #include <ProgramRef/ShadowPassGS.h>
+#include <ProgramRef/ShadowPassPS.h>
 #include <d3d11.h>
 #include <wrl.h>
 
 using namespace Microsoft::WRL;
 
-class ShadowPass : public IPass
+class ShadowPass : public IPass, public IModifySettings
 {
 public:
     struct Input
@@ -30,18 +31,19 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
+    virtual void OnModifySettings(const Settings & settings) override;
 
     void CreateTextureDsv();
     void CreateViewPort();
 
 private:
+    Settings m_settings;
     Context& m_context;
     Input m_input;
     int m_width;
     int m_height;
-    int m_size = 2048;
     ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
-    Program<ShadowPassVS, ShadowPassGS> m_program;
+    Program<ShadowPassVS, ShadowPassGS, ShadowPassPS> m_program;
     D3D11_VIEWPORT m_viewport;
 };
 

@@ -42,7 +42,10 @@ void DX11Scene::OnUpdate()
     std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = end;
-    angle += elapsed / 2e6f;
+
+    auto& state = CurState<bool>::Instance().state;
+    if (!state["pause"])
+        angle += elapsed / 2e6f;
 
     float light_r = 2.5;
     light_pos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
@@ -118,6 +121,18 @@ void DX11Scene::OnKey(int key, int action)
         auto & state = CurState<bool>::Instance().state;
         state["disable_norm"] = !state["disable_norm"];
     }
+
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["pause"] = !state["pause"];
+    }
+
+    if (key == GLFW_KEY_J && action == GLFW_PRESS)
+    {
+        auto & state = CurState<bool>::Instance().state;
+        state["no_shadow_discard"] = !state["no_shadow_discard"];
+    }
 }
 
 void DX11Scene::OnMouse(bool first_event, double xpos, double ypos)
@@ -171,6 +186,7 @@ void DX11Scene::OnModifySettings(const Settings& settings)
 {
     m_geometry_pass.OnModifySettings(settings);
     m_light_pass.OnModifySettings(settings);
+    m_shadow_pass.OnModifySettings(settings);
 }
 
 void DX11Scene::CreateRT()

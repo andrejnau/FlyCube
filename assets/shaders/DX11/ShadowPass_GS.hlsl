@@ -6,12 +6,14 @@ cbuffer Params
 
 struct VertexOutput
 {
-    float4 Position : SV_POSITION;
+    float4 pos : SV_POSITION;
+    float2 texCoord  : TEXCOORD;
 };
 
 struct GeometryOutput
 {
-    float4 Position : SV_POSITION;
+    float4 pos : SV_POSITION;
+    float2 texCoord  : TEXCOORD;
     uint RTIndex : SV_RenderTargetArrayIndex;
 };
 
@@ -29,9 +31,10 @@ void main(triangle VertexOutput input[3], inout TriangleStream<GeometryOutput> C
 			[unroll]
             for (int v = 0; v < 3; ++v)
             {
-                float4 worldPosition = input[v].Position;
+                float4 worldPosition = input[v].pos;
                 float4 viewPosition = mul(worldPosition, View[f]);
-                output.Position = mul(viewPosition, Projection);
+                output.pos = mul(viewPosition, Projection);
+                output.texCoord = input[v].texCoord;
 
                 CubeMapStream.Append(output);
             }
