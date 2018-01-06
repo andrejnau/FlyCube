@@ -50,8 +50,22 @@ inline glm::vec4 aiColor4DToVec4(const aiColor4D& x)
     return glm::vec4(x.r, x.g, x.b, x.a);
 }
 
+bool SkipMesh(aiMesh* mesh, const aiScene* scene)
+{
+    if (mesh->mMaterialIndex >= scene->mNumMaterials)
+        return false;
+    aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
+    aiString name;
+    if (!mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS)
+        return false;
+    return std::string(name.C_Str()) == "16___Default";
+}
+
 void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 {
+    if (SkipMesh(mesh, scene))
+        return;
+
     IMesh& cur_mesh = m_model.GetNextMesh();
     // Walk through each of the mesh's vertices
     for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
