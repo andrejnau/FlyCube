@@ -8,8 +8,6 @@
 #include <Geometry/DX11Geometry.h>
 #include <ProgramRef/LightPassPS.h>
 #include <ProgramRef/LightPassVS.h>
-#include <ProgramRef/LightPassMSPS.h>
-#include <ProgramRef/LightPassMSVS.h>
 #include <d3d11.h>
 #include <wrl.h>
 
