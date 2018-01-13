@@ -6,7 +6,10 @@ set(sources
     ${source_path}/main.cpp
 )
 
-add_executable(${target} ${sources})
+add_executable(${target} 
+    ${source_path}/templates/program.in
+    ${sources}
+)
 
 target_compile_definitions(${target} PRIVATE UNICODE _UNICODE NOMINMAX)
 

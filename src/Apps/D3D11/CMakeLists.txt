@@ -32,6 +32,7 @@ set(headers
     ${include_path}/ImGuiPass.h
     ${include_path}/ShadowPass.h
     ${include_path}/GenerateMipmapPass.h
+    ${include_path}/ComputeLuminance.h
     ${include_path}/DX11Scene.h
 )
 
@@ -41,6 +42,7 @@ set(sources
     ${source_path}/ImGuiPass.cpp
     ${source_path}/ShadowPass.cpp
     ${source_path}/GenerateMipmapPass.cpp
+    ${source_path}/ComputeLuminance.cpp
     ${source_path}/DX11Scene.cpp
     ${source_path}/Main.cpp
 )
@@ -50,6 +52,7 @@ set(pixel_shaders
     ${shaders_path}/LightPass_PS.hlsl
     ${shaders_path}/ImGuiPass_PS.hlsl
     ${shaders_path}/ShadowPass_PS.hlsl
+    ${shaders_path}/HDRApply_PS.hlsl
 )
 
 set(vertex_shaders
@@ -57,6 +60,7 @@ set(vertex_shaders
     ${shaders_path}/LightPass_VS.hlsl
     ${shaders_path}/ImGuiPass_VS.hlsl
     ${shaders_path}/ShadowPass_VS.hlsl
+    ${shaders_path}/HDRApply_VS.hlsl
 )
 
 set(geometry_shaders
@@ -65,6 +69,8 @@ set(geometry_shaders
 
 set(compute_shaders
     ${shaders_path}/GenerateMipmap_CS.hlsl
+    ${shaders_path}/HDRLum1DPass_CS.hlsl
+    ${shaders_path}/HDRLum2DPass_CS.hlsl
 )
 
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)

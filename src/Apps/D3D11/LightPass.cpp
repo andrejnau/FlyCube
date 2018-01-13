@@ -31,6 +31,9 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     m_input.camera.SetCameraPos(glm::vec3(0.0, 2.75, 0.0));
     m_input.camera.SetCameraYaw(-178.0f);
     m_input.camera.SetCameraYaw(-1.75f);
+
+    CreateRtvSrv(m_rtv, output.srv);
+    CreateDsv();
 }
 
 void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
@@ -58,10 +61,10 @@ void LightPass::OnRender()
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_context.device_context->ClearRenderTargetView(m_input.render_target_view.Get(), color);
-    m_context.device_context->ClearDepthStencilView(m_input.depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_context.device_context->ClearRenderTargetView(m_rtv.Get(), color);
+    m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    m_context.device_context->OMSetRenderTargets(1, m_input.render_target_view.GetAddressOf(), m_input.depth_stencil_view.Get());
+    m_context.device_context->OMSetRenderTargets(1, m_rtv.GetAddressOf(), m_depth_stencil_view.Get());
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
@@ -78,12 +81,16 @@ void LightPass::OnRender()
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 
+    m_context.device_context->OMSetRenderTargets(0, nullptr, nullptr);
+
     std::vector<ID3D11ShaderResourceView*> empty(m_program.ps.texture.LightCubeShadowMap);
     m_context.device_context->PSSetShaderResources(0, empty.size(), empty.data());
 }
 
 void LightPass::OnResize(int width, int height)
 {
+    CreateRtvSrv(m_rtv, output.srv);
+    CreateDsv();
 }
 
 void LightPass::OnModifySettings(const Settings& settings)
@@ -95,4 +102,47 @@ void LightPass::OnModifySettings(const Settings& settings)
         m_program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
         m_program.ps.UpdateShader(m_context.device);
     }
+}
+
+void LightPass::CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
+{
+    D3D11_TEXTURE2D_DESC texture_desc = {};
+    texture_desc.Width = m_width;
+    texture_desc.Height = m_height;
+    texture_desc.MipLevels = 1;
+    texture_desc.ArraySize = 1;
+    texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    texture_desc.Usage = D3D11_USAGE_DEFAULT;
+    texture_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    texture_desc.SampleDesc.Count = 1;
+    texture_desc.SampleDesc.Quality = 0;
+
+    ComPtr<ID3D11Texture2D> texture;
+    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&texture_desc, nullptr, &texture));
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+    srv_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    srv_desc.Texture2D.MipLevels = 1;
+    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+
+    ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(texture.Get(), &srv_desc, &srv));
+    ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
+}
+
+void LightPass::CreateDsv()
+{
+    D3D11_TEXTURE2D_DESC depth_stencil_desc = {};
+    depth_stencil_desc.Width = m_width;
+    depth_stencil_desc.Height = m_height;
+    depth_stencil_desc.MipLevels = 1;
+    depth_stencil_desc.ArraySize = 1;
+    depth_stencil_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depth_stencil_desc.Usage = D3D11_USAGE_DEFAULT;
+    depth_stencil_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    depth_stencil_desc.SampleDesc.Count = 1;
+    depth_stencil_desc.SampleDesc.Quality = 0;
+
+    ComPtr<ID3D11Texture2D> depth_stencil_buffer;
+    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&depth_stencil_desc, nullptr, &depth_stencil_buffer));
+    ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(depth_stencil_buffer.Get(), nullptr, &m_depth_stencil_view));
 }

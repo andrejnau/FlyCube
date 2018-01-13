@@ -350,6 +350,21 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("Tone mapping", &settings.use_tone_mapping))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::SliderFloat("Exposure", &settings.Exposure, 0, 2))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::SliderFloat("White", &settings.White, 0, 2))
+        {
+            modify_settings = true;
+        }
+
         ImGui::End();
 
         if (modify_settings)

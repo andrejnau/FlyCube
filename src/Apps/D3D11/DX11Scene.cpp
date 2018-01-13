@@ -16,7 +16,8 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     , m_geometry_pass(m_context, { m_model_of_file, m_camera }, width, height)
     , m_shadow_pass(m_context, { m_model_of_file, m_camera, light_pos }, width, height)
     , m_generate_mipmap_pass(m_context, { m_shadow_pass.output }, width, height)
-    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_model_square, m_camera, m_render_target_view, m_depth_stencil_view, light_pos }, width, height)
+    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_model_square, m_camera, light_pos }, width, height)
+    , m_compute_luminance(m_context, { m_light_pass.output.srv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
     , m_imgui_pass(m_context, { *this, m_render_target_view, m_depth_stencil_view }, width, height)
 {
     CreateRT();
@@ -69,6 +70,7 @@ void DX11Scene::OnRender()
 
     m_context.device_context->RSSetViewports(1, &m_viewport);
     m_light_pass.OnRender();
+    m_compute_luminance.OnRender();
 
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
@@ -186,6 +188,7 @@ void DX11Scene::OnModifySettings(const Settings& settings)
 {
     m_geometry_pass.OnModifySettings(settings);
     m_light_pass.OnModifySettings(settings);
+    m_compute_luminance.OnModifySettings(settings);
     m_shadow_pass.OnModifySettings(settings);
 }
 

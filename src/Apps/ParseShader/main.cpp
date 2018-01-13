@@ -150,17 +150,16 @@ private:
 
         for (UINT i = 0; i < desc.ConstantBuffers; ++i)
         {
-            ID3D11ShaderReflectionConstantBuffer* buffer = reflector->GetConstantBufferByIndex(i);
-            D3D11_SHADER_BUFFER_DESC bdesc = {};
-            buffer->GetDesc(&bdesc);
-
             ID3D11ShaderReflectionConstantBuffer* cbuffer = reflector->GetConstantBufferByIndex(i);
             D3D11_SHADER_BUFFER_DESC cbdesc = {};
             cbuffer->GetDesc(&cbdesc);
 
+            if (cbdesc.Type != D3D_CT_CBUFFER)
+                continue;
+
             mustache::data tcbuffer;
-            tcbuffer.set("BufferName", bdesc.Name);
-            tcbuffer.set("BufferSize", std::to_string(bdesc.Size));
+            tcbuffer.set("BufferName", cbdesc.Name);
+            tcbuffer.set("BufferSize", std::to_string(cbdesc.Size));
             tcbuffer.set("BufferIndex", std::to_string(i));
             tcbuffer.set("BufferSeparator", i == 0 ? ":" : ",");
 
@@ -193,19 +192,34 @@ private:
         m_tcontext["CBuffers"] = mustache::data{ tcbuffers };
 
         mustache::data ttextures{ mustache::data::type::list };
+        mustache::data tuavs{ mustache::data::type::list };
         for (UINT i = 0; i < desc.BoundResources; ++i)
         {
             D3D11_SHADER_INPUT_BIND_DESC res_desc = {};
             ASSERT_SUCCEEDED(reflector->GetResourceBindingDesc(i, &res_desc));
-            if (res_desc.Type != D3D_SIT_TEXTURE)
-                continue;
-
-            mustache::data ttexture;
-            ttexture.set("Name", res_desc.Name);
-            ttexture.set("Slot", std::to_string(res_desc.BindPoint));
-            ttextures.push_back(ttexture);
+            switch (res_desc.Type)
+            {
+            case D3D_SIT_TEXTURE:
+            case D3D_SIT_STRUCTURED:
+            {
+                mustache::data ttexture;
+                ttexture.set("Name", res_desc.Name);
+                ttexture.set("Slot", std::to_string(res_desc.BindPoint));
+                ttextures.push_back(ttexture);
+                break;  
+            }
+            case D3D_SIT_UAV_RWSTRUCTURED:
+            {
+                mustache::data tuav;
+                tuav.set("Name", res_desc.Name);
+                tuav.set("Slot", std::to_string(res_desc.BindPoint));
+                tuavs.push_back(tuav);
+                break;
+            }
+            }
         }
         m_tcontext["Textures"] = mustache::data{ ttextures };
+        m_tcontext["UAVs"] = mustache::data{ tuavs };
 
         mustache::data tinputs{ mustache::data::type::list };
         for (UINT i = 0; i < desc.InputParameters; ++i)

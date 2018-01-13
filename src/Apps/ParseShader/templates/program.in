@@ -23,6 +23,11 @@ public:
 
     struct
     {
+{{#UAVs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
+{{/UAVs}}    } uav;
+
+    struct
+    {
 {{#Inputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
 {{/Inputs}}    } geometry;
 

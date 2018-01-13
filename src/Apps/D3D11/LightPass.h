@@ -22,13 +22,12 @@ public:
         ShadowPass::Output& shadow_pass;
         Model<DX11Mesh>& model;
         Camera& camera;
-        ComPtr<ID3D11RenderTargetView>& render_target_view;
-        ComPtr<ID3D11DepthStencilView>& depth_stencil_view;
         glm::vec3& light_pos;
     };
 
     struct Output
     {
+        ComPtr<ID3D11ShaderResourceView> srv;
     } output;
 
     void SetDefines(Program<LightPassPS, LightPassVS>& program);
@@ -40,6 +39,10 @@ public:
     virtual void OnResize(int width, int height) override;
     virtual void OnModifySettings(const Settings & settings) override;
 
+    void CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
+
+    void CreateDsv();
+
 private:
     Settings m_settings;
     Context& m_context;
@@ -49,4 +52,7 @@ private:
     Program<LightPassPS, LightPassVS> m_program;
     ComPtr<ID3D11SamplerState> m_shadow_sampler;
     ComPtr<ID3D11RasterizerState> m_rasterizer_state;
+    ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
+    ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
+    ComPtr<ID3D11RenderTargetView> m_rtv;
 };

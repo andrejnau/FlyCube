@@ -19,6 +19,7 @@
 #include "D3D11/ImGuiPass.h"
 #include "D3D11/ShadowPass.h"
 #include "D3D11/GenerateMipmapPass.h"
+#include "D3D11/ComputeLuminance.h"
 
 using namespace Microsoft::WRL;
 
@@ -63,5 +64,6 @@ private:
     ShadowPass m_shadow_pass;
     GenerateMipmapPass m_generate_mipmap_pass;
     LightPass m_light_pass;
+    ComputeLuminance m_compute_luminance;
     ImGuiPass m_imgui_pass;
 };
