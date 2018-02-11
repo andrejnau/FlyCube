@@ -19,20 +19,74 @@ void GeometryPass::OnUpdate()
     glm::mat4 projection, view, model;
     m_input.camera.GetMatrix(projection, view, model);
 
-    float model_scale = 0.01f;
+    float model_scale = 0.1f;
     model = glm::scale(glm::vec3(model_scale)) * model;
 
     m_program.vs.cbuffer.ConstantBuffer.model = glm::transpose(model);
     m_program.vs.cbuffer.ConstantBuffer.view = glm::transpose(view);
     m_program.vs.cbuffer.ConstantBuffer.projection = glm::transpose(projection);
     m_program.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model)));
-    m_program.ps.cbuffer.Light.light_ambient = glm::vec3(0.2f);
+    m_program.ps.cbuffer.Light.light_ambient = glm::vec3(0.0f);
     m_program.ps.cbuffer.Light.light_diffuse = glm::vec3(1.0f);
     m_program.ps.cbuffer.Light.light_specular = glm::vec3(0.5f);
 }
 
 void GeometryPass::OnRender()
 {
+    float RunningTime = glfwGetTime();
+    std::vector<glm::mat4> Transforms;
+    m_input.model.bones.BoneTransform(RunningTime, Transforms);
+
+    ComPtr<ID3D11ShaderResourceView> bones_info_srv;
+    ComPtr<ID3D11ShaderResourceView> bones_srv;
+
+    {
+        ComPtr<ID3D11Buffer> bones_buffer;
+        D3D11_BUFFER_DESC bones_buffer_desc = {};
+        bones_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+        bones_buffer_desc.ByteWidth = m_input.model.bones.bone_info_flat.size() * sizeof(Bones::BoneInfo);
+        bones_buffer_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        bones_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+        bones_buffer_desc.StructureByteStride = sizeof(Bones::BoneInfo);
+        ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&bones_buffer_desc, nullptr, &bones_buffer));
+
+        if (!m_input.model.bones.bone_info_flat.empty())
+            m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, m_input.model.bones.bone_info_flat.data(), 0, 0);
+
+        D3D11_SHADER_RESOURCE_VIEW_DESC  bones_srv_desc = {};
+        bones_srv_desc.Format = DXGI_FORMAT_UNKNOWN;
+        bones_srv_desc.Buffer.FirstElement = 0;
+        bones_srv_desc.Buffer.NumElements = m_input.model.bones.bone_info_flat.size();
+        bones_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+
+        ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(bones_buffer.Get(), &bones_srv_desc, &bones_info_srv));
+    }
+
+    {
+        ComPtr<ID3D11Buffer> bones_buffer;
+        D3D11_BUFFER_DESC bones_buffer_desc = {};
+        bones_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+        bones_buffer_desc.ByteWidth = Transforms.size() * sizeof(glm::mat4);
+        bones_buffer_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        bones_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+        bones_buffer_desc.StructureByteStride = sizeof(glm::mat4);
+        ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&bones_buffer_desc, nullptr, &bones_buffer));
+
+        if (!Transforms.empty())
+            m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, Transforms.data(), 0, 0);
+
+        D3D11_SHADER_RESOURCE_VIEW_DESC  bones_srv_desc = {};
+        bones_srv_desc.Format = DXGI_FORMAT_UNKNOWN;
+        bones_srv_desc.Buffer.FirstElement = 0;
+        bones_srv_desc.Buffer.NumElements = Transforms.size();
+        bones_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+
+        ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(bones_buffer.Get(), &bones_srv_desc, &bones_srv));
+    }
+
+    m_context.device_context->VSSetShaderResources(0, 1, bones_info_srv.GetAddressOf());
+    m_context.device_context->VSSetShaderResources(1, 1, bones_srv.GetAddressOf());
+
     m_program.UseProgram(m_context.device_context);
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
@@ -57,7 +111,8 @@ void GeometryPass::OnRender()
         cur_mesh.SetVertexBuffer(m_program.vs.geometry.POSITION, VertexType::kPosition);
         cur_mesh.SetVertexBuffer(m_program.vs.geometry.NORMAL, VertexType::kNormal);
         cur_mesh.SetVertexBuffer(m_program.vs.geometry.TEXCOORD, VertexType::kTexcoord);
-        cur_mesh.SetVertexBuffer(m_program.vs.geometry.TANGENT, VertexType::kTangent);
+        cur_mesh.SetVertexBuffer(m_program.vs.geometry.TEXCOORD1, VertexType::kBoneOffset);
+        cur_mesh.SetVertexBuffer(m_program.vs.geometry.TEXCOORD2, VertexType::kBoneCount);
 
         if (!state["disable_norm"])
             cur_mesh.SetTexture(aiTextureType_HEIGHT, m_program.ps.texture.normalMap);

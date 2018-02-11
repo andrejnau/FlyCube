@@ -43,12 +43,13 @@ void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
 
 void LightPass::OnUpdate()
 {
-    m_program.ps.cbuffer.ConstantBuffer.lightPos = m_input.light_pos;
+    m_program.ps.cbuffer.ConstantBuffer.lightPos = m_input.camera.GetCameraPos();//m_input.light_pos;
     m_program.ps.cbuffer.ConstantBuffer.viewPos = m_input.camera.GetCameraPos();
 
     m_program.ps.cbuffer.ShadowParams.s_near = m_settings.s_near;
     m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;
     m_program.ps.cbuffer.ShadowParams.s_size = m_settings.s_size;
+    m_program.ps.cbuffer.ShadowParams.use_shadow = false;
 }
 
 void LightPass::OnRender()

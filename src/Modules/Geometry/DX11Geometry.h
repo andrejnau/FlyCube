@@ -29,6 +29,8 @@ public:
         m_texcoords_buffer = CreateBuffer(texcoords, D3D11_BIND_VERTEX_BUFFER);
         m_tangents_buffer = CreateBuffer(tangents, D3D11_BIND_VERTEX_BUFFER);
         m_colors_buffer = CreateBuffer(colors, D3D11_BIND_VERTEX_BUFFER);
+        m_bones_offset_buffer = CreateBuffer(bones_offset, D3D11_BIND_VERTEX_BUFFER);
+        m_bones_count_buffer = CreateBuffer(bones_count, D3D11_BIND_VERTEX_BUFFER);
         m_indices_buffer = CreateBuffer(indices, D3D11_BIND_INDEX_BUFFER);
 
         m_tex_srv.resize(textures.size());
@@ -67,6 +69,10 @@ public:
             SetVertexBufferImpl(slot, m_tangents_buffer, sizeof(tangents.front()), 0);
         else if (type == VertexType::kColor)
             SetVertexBufferImpl(slot, m_colors_buffer, sizeof(colors.front()), 0);
+        else if (type == VertexType::kBoneOffset)
+            SetVertexBufferImpl(slot, m_bones_offset_buffer, sizeof(bones_offset.front()), 0);
+        else if (type == VertexType::kBoneCount)
+            SetVertexBufferImpl(slot, m_bones_count_buffer, sizeof(bones_count.front()), 0);
     }
 
     void SetIndexBuffer()
@@ -123,6 +129,8 @@ private:
     ComPtr<ID3D11Buffer> m_texcoords_buffer;
     ComPtr<ID3D11Buffer> m_tangents_buffer;
     ComPtr<ID3D11Buffer> m_colors_buffer;
+    ComPtr<ID3D11Buffer> m_bones_offset_buffer;
+    ComPtr<ID3D11Buffer> m_bones_count_buffer;
     ComPtr<ID3D11Buffer> m_indices_buffer;
 
     std::map<aiTextureType, size_t> m_type2id;

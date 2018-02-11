@@ -17,7 +17,7 @@ public:
     float s_near = 0.5f;
     float s_far = 1024.0f;
     int s_size = 3072;
-    bool use_tone_mapping = true;
+    bool use_tone_mapping = false;
     float Exposure = 0.35;
     float White = 1.5;
 };

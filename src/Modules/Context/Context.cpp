@@ -29,7 +29,7 @@ Context::Context(GLFWwindow* window, int width, int height)
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
     DWORD create_device_flags = 0;
-#if 0
+#if 1
     create_device_flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 

@@ -26,6 +26,7 @@ cbuffer ShadowParams
     float s_near;
     float s_far;
     float s_size;
+    bool use_shadow = false;
 };
 
 SamplerState g_sampler : register(s0);
@@ -151,6 +152,8 @@ float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffus
 {
     float3 lightDir = normalize(lightPos - fragPos);
     float diff = max(dot(lightDir, normal), 0.0);
+    if (!use_shadow)
+        diff = 1.0;
     diffuse *= diff;
 
     float3 viewDir = normalize(viewPos - fragPos);
@@ -162,6 +165,8 @@ float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffus
     float3 L = normalize(vL);
 
     float shadow = _sampleCubeShadowPCFDisc5(L, vL);
+    if (!use_shadow)
+        shadow = 1.0;
     float3 hdrColor = float3(ambient + diffuse * shadow + specular * shadow);
     return hdrColor;
 }
