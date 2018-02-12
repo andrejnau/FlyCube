@@ -8,9 +8,11 @@ using namespace Microsoft::WRL;
 
 ComPtr<ID3D11ShaderResourceView> CreateSRVFromFile(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& device_context, TextureInfo& texture)
 {
-    int width;
-    int height;
+    int width = 0;
+    int height = 0;
     unsigned char *image = SOIL_load_image(texture.path.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
+    if (!image)
+        return {};
 
     D3D11_TEXTURE2D_DESC desc = {};
     desc.Width = static_cast<UINT>(width);

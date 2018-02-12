@@ -38,22 +38,34 @@ VS_OUTPUT main(VS_INPUT vs_in)
 {
     VS_OUTPUT vs_out;
 
-    float4 pos = float4(0, 0, 0, 0);
+    float4x4 transform = {
+        { 0, 0, 0, 0 },
+        { 0, 0, 0, 0 },
+        { 0, 0, 0, 0 },
+        { 0, 0, 0, 0 }
+    };
     for (uint i = 0; i < vs_in.bones_count; ++i)
     {
-        pos += bone_info[i + vs_in.bones_offset].weight * mul(float4(vs_in.pos, 1.0), gBones[bone_info[i + vs_in.bones_offset].bone_id]);
+        transform += bone_info[i + vs_in.bones_offset].weight * gBones[bone_info[i + vs_in.bones_offset].bone_id];
     }
     if (vs_in.bones_count == 0)
     {
-        pos = float4(vs_in.pos, 1.0);
+        float4x4 transform_identity = {
+            { 1, 0, 0, 0 },
+            { 0, 1, 0, 0 },
+            { 0, 0, 1, 0 },
+            { 0, 0, 0, 1 }
+        };
+        transform = transform_identity;
     }
+    float4 pos = mul(float4(vs_in.pos, 1.0), transform);
     float4 worldPos = mul(pos, model);
     vs_out.fragPos = worldPos.xyz;
     vs_out.pos = mul(worldPos, mul(view, projection));
     vs_out.texCoord = vs_in.texCoord;
 
-    vs_out.normal = mul(vs_in.normal, (float3x3)normalMatrix);
-    vs_out.tangent = mul(vs_in.tangent, (float3x3)normalMatrix);
+    vs_out.normal = mul(mul(vs_in.normal, transform), (float3x3)normalMatrix);
+    vs_out.tangent = mul(mul(vs_in.tangent, transform), (float3x3)normalMatrix);
 
     return vs_out;
 }
