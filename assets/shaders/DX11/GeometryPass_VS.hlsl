@@ -1,11 +1,11 @@
 struct VS_INPUT
 {
-    float3 pos       : POSITION;
-    float3 normal    : NORMAL;
-    float2 texCoord  : TEXCOORD;
-    float3 tangent   : TANGENT;
-    uint bones_offset : TEXCOORD1;
-    uint bones_count  : TEXCOORD2;
+    float3 pos        : POSITION;
+    float3 normal     : NORMAL;
+    float2 texCoord   : TEXCOORD;
+    float3 tangent    : TANGENT;
+    uint bones_offset : BONES_OFFSET;
+    uint bones_count  : BONES_COUNT;
 };
 
 struct BoneInfo

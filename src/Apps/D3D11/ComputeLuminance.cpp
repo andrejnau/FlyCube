@@ -118,9 +118,9 @@ void ComputeLuminance::Draw(ComPtr<ID3D11ShaderResourceView> input)
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
-        cur_mesh.SetIndexBuffer();
-        cur_mesh.SetVertexBuffer(m_HDRApply.vs.geometry.POSITION, VertexType::kPosition);
-        cur_mesh.SetVertexBuffer(m_HDRApply.vs.geometry.TEXCOORD, VertexType::kTexcoord);
+        cur_mesh.indices_buffer.Bind();
+        cur_mesh.positions_buffer.BindToSlot(m_HDRApply.vs.geometry.POSITION);
+        cur_mesh.texcoords_buffer.BindToSlot(m_HDRApply.vs.geometry.TEXCOORD);
 
         m_context.device_context->PSSetShaderResources(m_HDRApply.ps.texture.hdr_input, 1, m_input.srv.GetAddressOf());
         m_context.device_context->PSSetShaderResources(m_HDRApply.ps.texture.lum, 1, input.GetAddressOf());

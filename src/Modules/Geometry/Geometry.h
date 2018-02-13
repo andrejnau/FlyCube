@@ -14,21 +14,8 @@
 
 class Context;
 
-enum class VertexType
-{
-    kPosition,
-    kTexcoord,
-    kNormal,
-    kTangent,
-    kBoneOffset,
-    kBoneCount,
-    kColor
-};
-
 struct IMesh
 {
-    using Index = uint32_t;
-
     struct Material
     {
         glm::vec3 amb = glm::vec3(0.0, 0.0, 0.0);
@@ -36,19 +23,7 @@ struct IMesh
         glm::vec3 spec = glm::vec3(1.0, 1.0, 1.0);
         float shininess = 32.0;
         std::string name;
-    };
-
-    Material material;
-
-
-
-    /*struct VertexBoneData
-    {
-        vec4 BoneIDs;
-        vec4  Weights;
-        uint IDs[NUM_BONES_PER_VEREX];
-        *float Weights[NUM_BONES_PER_VEREX];
-    }*/
+    } material;
 
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> normals;
@@ -361,7 +336,7 @@ struct BoundBox
 
 struct IModel
 {
-    virtual IMesh& GetNextMesh() = 0;
+    virtual void AddMesh(const IMesh& mesh) = 0;
     virtual BoundBox& GetBoundBox() = 0;
     virtual const BoundBox& GetBoundBox() const = 0;
     virtual Bones& GetBones() = 0;
@@ -402,16 +377,11 @@ struct Model : IModel
         : m_context(context)
         , m_model_loader(file, (aiPostProcessSteps)flags, *this)
     {
-        for (auto& mesh : meshes)
-        {
-            mesh.SetupMesh();
-        }
     }
 
-    virtual IMesh& GetNextMesh() override
+    virtual void AddMesh(const IMesh& mesh) override
     {
-        meshes.push_back(m_context);
-        return meshes.back();
+        meshes.emplace_back(m_context, mesh);
     }
 
     virtual BoundBox& GetBoundBox() override

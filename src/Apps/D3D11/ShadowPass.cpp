@@ -57,9 +57,9 @@ void ShadowPass::OnRender()
     auto& state = CurState<bool>::Instance().state;
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
-        cur_mesh.SetIndexBuffer();
-        cur_mesh.SetVertexBuffer(m_program.vs.geometry.SV_POSITION, VertexType::kPosition);
-        cur_mesh.SetVertexBuffer(m_program.vs.geometry.TEXCOORD, VertexType::kTexcoord);
+        cur_mesh.indices_buffer.Bind();
+        cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.SV_POSITION);
+        cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
 
         if (!state["no_shadow_discard"])
             cur_mesh.SetTexture(aiTextureType_OPACITY, m_program.ps.texture.alphaMap);

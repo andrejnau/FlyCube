@@ -78,7 +78,7 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     if (SkipMesh(mesh, scene))
         return;
 
-    IMesh& cur_mesh = m_model.GetNextMesh();
+    IMesh cur_mesh = {};
     // Walk through each of the mesh's vertices
     for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
     {
@@ -202,6 +202,8 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     }
 
     m_bones.LoadBones(mesh, scene, cur_mesh);
+
+    m_model.AddMesh(cur_mesh);
 }
 
 void ModelLoader::FindSimilarTextures(std::vector<TextureInfo>& textures)

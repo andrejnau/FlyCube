@@ -81,7 +81,7 @@ struct DX11StateBackup
 void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
 {
     DX11StateBackup guard(m_context.device_context.Get());
-    DX11Mesh mesh(m_context);
+    IMesh mesh = {};
     for (int n = 0; n < draw_data->CmdListsCount; ++n)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
@@ -99,15 +99,16 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
             mesh.indices.push_back(cmd_list->IdxBuffer.Data[j]);
         }
     }
-    mesh.SetupMesh();
+
+    DX11Mesh dx11_mesh(m_context, mesh);
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f* m_height, 0.0f);
 
     m_program.UseProgram(m_context.device_context);
-    mesh.SetIndexBuffer();
-    mesh.SetVertexBuffer(m_program.vs.geometry.POSITION, VertexType::kPosition);
-    mesh.SetVertexBuffer(m_program.vs.geometry.TEXCOORD, VertexType::kTexcoord);
-    mesh.SetVertexBuffer(m_program.vs.geometry.COLOR, VertexType::kColor);
+    dx11_mesh.indices_buffer.Bind();
+    dx11_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
+    dx11_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
+    dx11_mesh.colors_buffer.BindToSlot(m_program.vs.geometry.COLOR);
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
