@@ -111,6 +111,7 @@ void GeometryPass::OnRender()
         cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
         cur_mesh.normals_buffer.BindToSlot(m_program.vs.geometry.NORMAL);
         cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
+        cur_mesh.tangents_buffer.BindToSlot(m_program.vs.geometry.TANGENT);
         cur_mesh.bones_offset_buffer.BindToSlot(m_program.vs.geometry.BONES_OFFSET);
         cur_mesh.bones_count_buffer.BindToSlot(m_program.vs.geometry.BONES_COUNT);
 

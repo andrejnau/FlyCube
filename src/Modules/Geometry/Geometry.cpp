@@ -211,7 +211,8 @@ void ModelLoader::FindSimilarTextures(std::vector<TextureInfo>& textures)
     static std::pair<std::string, aiTextureType> map_from[] = {
         { "_s", aiTextureType_SPECULAR },
         { "_diff", aiTextureType_DIFFUSE },
-        { "_color", aiTextureType_DIFFUSE }
+        { "_color", aiTextureType_DIFFUSE },
+        { "Diffuse", aiTextureType_DIFFUSE },
     };
 
     static std::pair<std::string, aiTextureType> map_to[] = {
@@ -220,6 +221,9 @@ void ModelLoader::FindSimilarTextures(std::vector<TextureInfo>& textures)
         { "_rough", aiTextureType_SHININESS },
         { "_nmap", aiTextureType_HEIGHT },
         { "_spec", aiTextureType_SPECULAR },
+        { "Normal", aiTextureType_HEIGHT },
+        { "Specular", aiTextureType_SPECULAR },
+        { "Roughness", aiTextureType_SHININESS },
     };
 
     std::vector<TextureInfo> added_textures;
