@@ -108,6 +108,7 @@ public:
 
         for (size_t i = 0; i < textures.size(); ++i)
         {
+            assert(m_type2id.count(textures[i].type) == 0);
             m_type2id[textures[i].type] = i;
         }
     }
