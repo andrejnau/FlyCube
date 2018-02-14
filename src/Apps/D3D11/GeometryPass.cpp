@@ -18,14 +18,9 @@ void GeometryPass::OnUpdate()
 {
     glm::mat4 projection, view, model;
     m_input.camera.GetMatrix(projection, view, model);
-
-    float model_scale = 0.01f;
-    model = glm::scale(glm::vec3(model_scale)) * model;
-
-    m_program.vs.cbuffer.ConstantBuffer.model = glm::transpose(model);
+    
     m_program.vs.cbuffer.ConstantBuffer.view = glm::transpose(view);
     m_program.vs.cbuffer.ConstantBuffer.projection = glm::transpose(projection);
-    m_program.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model)));
     m_program.ps.cbuffer.Light.light_ambient = glm::vec3(0.2f);
     m_program.ps.cbuffer.Light.light_diffuse = glm::vec3(1.0f);
     m_program.ps.cbuffer.Light.light_specular = glm::vec3(0.5f);
@@ -33,60 +28,6 @@ void GeometryPass::OnUpdate()
 
 void GeometryPass::OnRender()
 {
-    float RunningTime = glfwGetTime();
-    std::vector<glm::mat4> Transforms;
-    m_input.model.bones.BoneTransform(RunningTime, Transforms);
-
-    ComPtr<ID3D11ShaderResourceView> bones_info_srv;
-    ComPtr<ID3D11ShaderResourceView> bones_srv;
-
-    {
-        ComPtr<ID3D11Buffer> bones_buffer;
-        D3D11_BUFFER_DESC bones_buffer_desc = {};
-        bones_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-        bones_buffer_desc.ByteWidth = m_input.model.bones.bone_info_flat.size() * sizeof(Bones::BoneInfo);
-        bones_buffer_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        bones_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-        bones_buffer_desc.StructureByteStride = sizeof(Bones::BoneInfo);
-        ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&bones_buffer_desc, nullptr, &bones_buffer));
-
-        if (!m_input.model.bones.bone_info_flat.empty())
-            m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, m_input.model.bones.bone_info_flat.data(), 0, 0);
-
-        D3D11_SHADER_RESOURCE_VIEW_DESC  bones_srv_desc = {};
-        bones_srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-        bones_srv_desc.Buffer.FirstElement = 0;
-        bones_srv_desc.Buffer.NumElements = m_input.model.bones.bone_info_flat.size();
-        bones_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-
-        ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(bones_buffer.Get(), &bones_srv_desc, &bones_info_srv));
-    }
-
-    {
-        ComPtr<ID3D11Buffer> bones_buffer;
-        D3D11_BUFFER_DESC bones_buffer_desc = {};
-        bones_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-        bones_buffer_desc.ByteWidth = Transforms.size() * sizeof(glm::mat4);
-        bones_buffer_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        bones_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-        bones_buffer_desc.StructureByteStride = sizeof(glm::mat4);
-        ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&bones_buffer_desc, nullptr, &bones_buffer));
-
-        if (!Transforms.empty())
-            m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, Transforms.data(), 0, 0);
-
-        D3D11_SHADER_RESOURCE_VIEW_DESC  bones_srv_desc = {};
-        bones_srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-        bones_srv_desc.Buffer.FirstElement = 0;
-        bones_srv_desc.Buffer.NumElements = Transforms.size();
-        bones_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-
-        ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(bones_buffer.Get(), &bones_srv_desc, &bones_srv));
-    }
-
-    m_context.device_context->VSSetShaderResources(0, 1, bones_info_srv.GetAddressOf());
-    m_context.device_context->VSSetShaderResources(1, 1, bones_srv.GetAddressOf());
-
     m_program.UseProgram(m_context.device_context);
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
@@ -105,34 +46,95 @@ void GeometryPass::OnRender()
     m_context.device_context->OMSetRenderTargets(rtvs.size(), rtvs.data(), m_depth_stencil_view.Get());
 
     auto& state = CurState<bool>::Instance().state;
-    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+    for (auto& scene_item : m_input.scene_list)
     {
-        cur_mesh.indices_buffer.Bind();
-        cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
-        cur_mesh.normals_buffer.BindToSlot(m_program.vs.geometry.NORMAL);
-        cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
-        cur_mesh.tangents_buffer.BindToSlot(m_program.vs.geometry.TANGENT);
-        cur_mesh.bones_offset_buffer.BindToSlot(m_program.vs.geometry.BONES_OFFSET);
-        cur_mesh.bones_count_buffer.BindToSlot(m_program.vs.geometry.BONES_COUNT);
+        m_program.vs.cbuffer.ConstantBuffer.model = glm::transpose(scene_item.matrix);
+        m_program.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(scene_item.matrix)));
+        m_program.vs.UpdateCBuffers(m_context.device_context);
 
-        if (!state["disable_norm"])
-            cur_mesh.SetTexture(aiTextureType_HEIGHT, m_program.ps.texture.normalMap);
-        else
-            cur_mesh.UnsetTexture(m_program.ps.texture.normalMap);
-        cur_mesh.SetTexture(aiTextureType_OPACITY, m_program.ps.texture.alphaMap);
-        cur_mesh.SetTexture(aiTextureType_AMBIENT, m_program.ps.texture.ambientMap);
-        cur_mesh.SetTexture(aiTextureType_DIFFUSE, m_program.ps.texture.diffuseMap);
-        cur_mesh.SetTexture(aiTextureType_SPECULAR, m_program.ps.texture.specularMap);
-        cur_mesh.SetTexture(aiTextureType_SHININESS, m_program.ps.texture.glossMap);
+        float RunningTime = glfwGetTime();
+        std::vector<glm::mat4> Transforms;
+        scene_item.model.bones.BoneTransform(RunningTime, Transforms);
 
-        m_program.ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
-        m_program.ps.cbuffer.Material.material_diffuse = cur_mesh.material.dif;
-        m_program.ps.cbuffer.Material.material_specular = cur_mesh.material.spec;
-        m_program.ps.cbuffer.Material.material_shininess = cur_mesh.material.shininess;
+        ComPtr<ID3D11ShaderResourceView> bones_info_srv;
+        ComPtr<ID3D11ShaderResourceView> bones_srv;
 
-        m_program.ps.UpdateCBuffers(m_context.device_context);
+        {
+            ComPtr<ID3D11Buffer> bones_buffer;
+            D3D11_BUFFER_DESC bones_buffer_desc = {};
+            bones_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+            bones_buffer_desc.ByteWidth = scene_item.model.bones.bone_info_flat.size() * sizeof(Bones::BoneInfo);
+            bones_buffer_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            bones_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            bones_buffer_desc.StructureByteStride = sizeof(Bones::BoneInfo);
+            ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&bones_buffer_desc, nullptr, &bones_buffer));
 
-        m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
+            if (!scene_item.model.bones.bone_info_flat.empty())
+                m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, scene_item.model.bones.bone_info_flat.data(), 0, 0);
+
+            D3D11_SHADER_RESOURCE_VIEW_DESC  bones_srv_desc = {};
+            bones_srv_desc.Format = DXGI_FORMAT_UNKNOWN;
+            bones_srv_desc.Buffer.FirstElement = 0;
+            bones_srv_desc.Buffer.NumElements = scene_item.model.bones.bone_info_flat.size();
+            bones_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+
+            ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(bones_buffer.Get(), &bones_srv_desc, &bones_info_srv));
+        }
+
+        {
+            ComPtr<ID3D11Buffer> bones_buffer;
+            D3D11_BUFFER_DESC bones_buffer_desc = {};
+            bones_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+            bones_buffer_desc.ByteWidth = Transforms.size() * sizeof(glm::mat4);
+            bones_buffer_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            bones_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            bones_buffer_desc.StructureByteStride = sizeof(glm::mat4);
+            ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&bones_buffer_desc, nullptr, &bones_buffer));
+
+            if (!Transforms.empty())
+                m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, Transforms.data(), 0, 0);
+
+            D3D11_SHADER_RESOURCE_VIEW_DESC  bones_srv_desc = {};
+            bones_srv_desc.Format = DXGI_FORMAT_UNKNOWN;
+            bones_srv_desc.Buffer.FirstElement = 0;
+            bones_srv_desc.Buffer.NumElements = Transforms.size();
+            bones_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+
+            ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(bones_buffer.Get(), &bones_srv_desc, &bones_srv));
+        }
+
+        m_context.device_context->VSSetShaderResources(m_program.vs.texture.bone_info, 1, bones_info_srv.GetAddressOf());
+        m_context.device_context->VSSetShaderResources(m_program.vs.texture.gBones, 1, bones_srv.GetAddressOf());
+
+        for (DX11Mesh& cur_mesh : scene_item.model.meshes)
+        {
+            cur_mesh.indices_buffer.Bind();
+            cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
+            cur_mesh.normals_buffer.BindToSlot(m_program.vs.geometry.NORMAL);
+            cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
+            cur_mesh.tangents_buffer.BindToSlot(m_program.vs.geometry.TANGENT);
+            cur_mesh.bones_offset_buffer.BindToSlot(m_program.vs.geometry.BONES_OFFSET);
+            cur_mesh.bones_count_buffer.BindToSlot(m_program.vs.geometry.BONES_COUNT);
+
+            if (!state["disable_norm"])
+                cur_mesh.SetTexture(aiTextureType_HEIGHT, m_program.ps.texture.normalMap);
+            else
+                cur_mesh.UnsetTexture(m_program.ps.texture.normalMap);
+            cur_mesh.SetTexture(aiTextureType_OPACITY, m_program.ps.texture.alphaMap);
+            cur_mesh.SetTexture(aiTextureType_AMBIENT, m_program.ps.texture.ambientMap);
+            cur_mesh.SetTexture(aiTextureType_DIFFUSE, m_program.ps.texture.diffuseMap);
+            cur_mesh.SetTexture(aiTextureType_SPECULAR, m_program.ps.texture.specularMap);
+            cur_mesh.SetTexture(aiTextureType_SHININESS, m_program.ps.texture.glossMap);
+
+            m_program.ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
+            m_program.ps.cbuffer.Material.material_diffuse = cur_mesh.material.dif;
+            m_program.ps.cbuffer.Material.material_specular = cur_mesh.material.spec;
+            m_program.ps.cbuffer.Material.material_shininess = cur_mesh.material.shininess;
+
+            m_program.ps.UpdateCBuffers(m_context.device_context);
+
+            m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
+        }
     }
 }
 

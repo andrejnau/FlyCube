@@ -426,3 +426,18 @@ struct ModelSize
     float offset_y;
     float offset_z;
 };
+
+template<typename Mesh>
+struct ListItem
+{
+    ListItem(Context& context, const std::string& file)
+        : model(context, file)
+    {
+    }
+
+    Model<Mesh> model;
+    glm::mat4 matrix;
+};
+
+template<typename Mesh>
+using SceneList = std::vector<ListItem<Mesh>>;

@@ -15,7 +15,7 @@ class GeometryPass : public IPass, public IModifySettings
 public:
     struct Input
     {
-        Model<DX11Mesh>& model;
+        SceneList<DX11Mesh>& scene_list;
         Camera& camera;
     };
 

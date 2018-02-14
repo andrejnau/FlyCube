@@ -58,7 +58,7 @@ private:
     int m_width;
     int m_height;
     Context m_context;
-    Model<DX11Mesh> m_model_of_file;
+    SceneList<DX11Mesh> m_scene_list;
     Model<DX11Mesh> m_model_square;
     GeometryPass m_geometry_pass;
     ShadowPass m_shadow_pass;
