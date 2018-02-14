@@ -27,8 +27,7 @@ std::string ModelLoader::SplitFilename(const std::string& str)
 
 void ModelLoader::LoadModel(aiPostProcessSteps flags)
 {
-    // aiProcess_PreTransformVertices
-    const aiScene* scene = import.ReadFile(m_path, flags & (aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes |  aiProcess_CalcTangentSpace));
+    const aiScene* scene = m_import.ReadFile(m_path, flags & (aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes |  aiProcess_CalcTangentSpace));
     assert(scene && scene->mFlags != AI_SCENE_FLAGS_INCOMPLETE && scene->mRootNode);
     ProcessNode(scene->mRootNode, scene);
 }
@@ -60,16 +59,9 @@ bool SkipMesh(aiMesh* mesh, const aiScene* scene)
     aiString name;
     if (!mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS)
         return false;
-    std::set<std::string> q = {
-        /*"hair_outer",
-        "hair_inner",*/
-        "fur",
+    static std::set<std::string> q = {
         "16___Default"
     };
-    if (mesh->mNumBones == 0)
-    {
-        volatile int b = 0;
-    }
     return q.count(std::string(name.C_Str()));
 }
 
@@ -212,7 +204,6 @@ void ModelLoader::FindSimilarTextures(std::vector<TextureInfo>& textures)
         { "_s", aiTextureType_SPECULAR },
         { "_diff", aiTextureType_DIFFUSE },
         { "_color", aiTextureType_DIFFUSE },
-        { "Diffuse", aiTextureType_DIFFUSE },
     };
 
     static std::pair<std::string, aiTextureType> map_to[] = {
@@ -221,9 +212,6 @@ void ModelLoader::FindSimilarTextures(std::vector<TextureInfo>& textures)
         { "_rough", aiTextureType_SHININESS },
         { "_nmap", aiTextureType_HEIGHT },
         { "_spec", aiTextureType_SPECULAR },
-        { "Normal", aiTextureType_HEIGHT },
-        { "Specular", aiTextureType_SPECULAR },
-        { "Roughness", aiTextureType_SHININESS },
     };
 
     std::vector<TextureInfo> added_textures;

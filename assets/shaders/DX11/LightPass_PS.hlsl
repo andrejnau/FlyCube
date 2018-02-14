@@ -26,7 +26,7 @@ cbuffer ShadowParams
     float s_near;
     float s_far;
     float s_size;
-    bool use_shadow = false;
+    bool use_shadow;
 };
 
 SamplerState g_sampler : register(s0);
@@ -151,7 +151,7 @@ cbuffer ConstantBuffer
 float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffuse, float3 specular_base, float shininess)
 {
     float3 lightDir = normalize(lightPos - fragPos);
-    float diff = max(dot(lightDir, normal), 0.25);
+    float diff = max(dot(lightDir, normal), 0.0);
     diffuse *= diff;
 
     float3 viewDir = normalize(viewPos - fragPos);

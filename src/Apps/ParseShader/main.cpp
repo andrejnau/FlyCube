@@ -157,11 +157,14 @@ private:
             if (cbdesc.Type != D3D_CT_CBUFFER)
                 continue;
 
+            D3D11_SHADER_INPUT_BIND_DESC res_desc = {};
+            ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(cbdesc.Name, &res_desc));
+
             mustache::data tcbuffer;
             tcbuffer.set("BufferName", cbdesc.Name);
             tcbuffer.set("BufferSize", std::to_string(cbdesc.Size));
-            tcbuffer.set("BufferIndex", std::to_string(i));
-            tcbuffer.set("BufferSeparator", i == 0 ? ":" : ",");
+            tcbuffer.set("BufferIndex", std::to_string(res_desc.BindPoint));
+            tcbuffer.set("BufferSeparator", tcbuffers.is_empty_list() ? ":" : ",");
 
             mustache::data tvariables{ mustache::data::type::list };
 
@@ -199,6 +202,10 @@ private:
             ASSERT_SUCCEEDED(reflector->GetResourceBindingDesc(i, &res_desc));
             switch (res_desc.Type)
             {
+            case D3D_SIT_SAMPLER:
+            {
+                break;
+            }
             case D3D_SIT_TEXTURE:
             case D3D_SIT_STRUCTURED:
             {

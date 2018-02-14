@@ -19,14 +19,14 @@ void GeometryPass::OnUpdate()
     glm::mat4 projection, view, model;
     m_input.camera.GetMatrix(projection, view, model);
 
-    float model_scale = 0.1f;
+    float model_scale = 0.01f;
     model = glm::scale(glm::vec3(model_scale)) * model;
 
     m_program.vs.cbuffer.ConstantBuffer.model = glm::transpose(model);
     m_program.vs.cbuffer.ConstantBuffer.view = glm::transpose(view);
     m_program.vs.cbuffer.ConstantBuffer.projection = glm::transpose(projection);
     m_program.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model)));
-    m_program.ps.cbuffer.Light.light_ambient = glm::vec3(0.0f);
+    m_program.ps.cbuffer.Light.light_ambient = glm::vec3(0.2f);
     m_program.ps.cbuffer.Light.light_diffuse = glm::vec3(1.0f);
     m_program.ps.cbuffer.Light.light_specular = glm::vec3(0.5f);
 }

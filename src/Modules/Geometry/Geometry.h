@@ -347,14 +347,6 @@ class ModelLoader
 public:
     ModelLoader(const std::string& file, aiPostProcessSteps flags, IModel& meshes);
 
-    // aiProcess_PreTransformVertices
-    Assimp::Importer import;
-
-    ~ModelLoader()
-    {
-        int b = 0;
-    }
-
 private:
     std::string SplitFilename(const std::string& str);
     void LoadModel(aiPostProcessSteps flags);
@@ -366,6 +358,7 @@ private:
 private:
     std::string m_path;
     std::string m_directory;
+    Assimp::Importer m_import;
     IModel& m_model;
     Bones& m_bones;
 };
