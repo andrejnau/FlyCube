@@ -3,6 +3,7 @@
 #include "Program/ShaderType.h"
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
+#include <Context/Context.h>
 #include <d3dcompiler.h>
 #include <d3d11.h>
 #include <wrl.h>
@@ -12,17 +13,21 @@
 
 using namespace Microsoft::WRL;
 
-struct BufferLayout
+class BufferLayout
 {
+    Context & m_context;
+
+public:
     BufferLayout(
-        ComPtr<ID3D11Device>& device,
+        Context& context,
         size_t buffer_size, 
         UINT slot,
         std::vector<size_t>&& data_size,
         std::vector<size_t>&& data_offset,
         std::vector<size_t>&& buf_offset
     )
-        : buffer(CreateBuffer(device, buffer_size))
+        : m_context(context)
+        , buffer(CreateBuffer(buffer_size))
         , slot(slot)
         , data(buffer_size)
         , data_size(std::move(data_size))
@@ -34,7 +39,7 @@ struct BufferLayout
     ComPtr<ID3D11Buffer> buffer;
     UINT slot;
 
-    void UpdateCBuffer(ComPtr<ID3D11DeviceContext>& device_context, const char* src_data)
+    void UpdateCBuffer(const char* src_data)
     {
         bool dirty = false;
         for (size_t i = 0; i < data_size.size(); ++i)
@@ -49,34 +54,34 @@ struct BufferLayout
         }
 
         if (dirty)
-            device_context->UpdateSubresource(buffer.Get(), 0, nullptr, data.data(), 0, 0);
+            m_context.device_context->UpdateSubresource(buffer.Get(), 0, nullptr, data.data(), 0, 0);
     }
 
     template<ShaderType>
-    void BindCBuffer(ComPtr<ID3D11DeviceContext>& device_context);
+    void BindCBuffer();
 
     template<>
-    void BindCBuffer<ShaderType::kPixel>(ComPtr<ID3D11DeviceContext>& device_context)
+    void BindCBuffer<ShaderType::kPixel>()
     {
-        device_context->PSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+        m_context.device_context->PSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
     }
 
     template<>
-    void BindCBuffer<ShaderType::kVertex>(ComPtr<ID3D11DeviceContext>& device_context)
+    void BindCBuffer<ShaderType::kVertex>()
     {
-        device_context->VSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+        m_context.device_context->VSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
     }
 
     template<>
-    void BindCBuffer<ShaderType::kGeometry>(ComPtr<ID3D11DeviceContext>& device_context)
+    void BindCBuffer<ShaderType::kGeometry>()
     {
-        device_context->GSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+        m_context.device_context->GSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
     }
 
     template<>
-    void BindCBuffer<ShaderType::kCompute>(ComPtr<ID3D11DeviceContext>& device_context)
+    void BindCBuffer<ShaderType::kCompute>()
     {
-        device_context->CSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+        m_context.device_context->CSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
     }
 
 private:
@@ -85,7 +90,7 @@ private:
     std::vector<size_t> data_offset;
     std::vector<size_t> buf_offset;
 
-    ComPtr<ID3D11Buffer> CreateBuffer(ComPtr<ID3D11Device>& device, UINT buffer_size)
+    ComPtr<ID3D11Buffer> CreateBuffer(UINT buffer_size)
     {
         ComPtr<ID3D11Buffer> buffer;
         D3D11_BUFFER_DESC cbbd;
@@ -95,7 +100,7 @@ private:
         cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         cbbd.CPUAccessFlags = 0;
         cbbd.MiscFlags = 0;
-        ASSERT_SUCCEEDED(device->CreateBuffer(&cbbd, nullptr, &buffer));
+        ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&cbbd, nullptr, &buffer));
         return buffer;
     }
 };
@@ -107,15 +112,16 @@ protected:
 public:
     virtual ~ShaderBase() = default;
 
-    virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) = 0;
-    virtual void BindCBuffers(ComPtr<ID3D11DeviceContext>& device_context) = 0;
-    virtual void UpdateCBuffers(ComPtr<ID3D11DeviceContext>& device_context) = 0;
-    virtual void UpdateShader(ComPtr<ID3D11Device>& device) = 0;
+    virtual void UseShader() = 0;
+    virtual void BindCBuffers() = 0;
+    virtual void UpdateCBuffers() = 0;
+    virtual void UpdateShader() = 0;
 
     std::map<std::string, std::string> define;
 
-    ShaderBase(const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-        : m_shader_path(shader_path)
+    ShaderBase(Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+        : m_context(context)
+        , m_shader_path(shader_path)
         , m_entrypoint(entrypoint)
         , m_target(target)
     {
@@ -144,6 +150,7 @@ protected:
             &errors));
     }
 
+    Context& m_context;
     std::string m_shader_path;
     std::string m_entrypoint;
     std::string m_target;
@@ -160,20 +167,20 @@ public:
 
     ComPtr<ID3D11PixelShader> shader;
 
-    Shader(ComPtr<ID3D11Device>& device, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-        : ShaderBase(shader_path, entrypoint, target)
+    Shader(Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+        : ShaderBase(context, shader_path, entrypoint, target)
     {
     }
 
-    virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) override
+    virtual void UseShader() override
     {
-        device_context->PSSetShader(shader.Get(), nullptr, 0);
+        m_context.device_context->PSSetShader(shader.Get(), nullptr, 0);
     }
 
-    virtual void UpdateShader(ComPtr<ID3D11Device>& device) override
+    virtual void UpdateShader() override
     {
         CompileShader();
-        ASSERT_SUCCEEDED(device->CreatePixelShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
+        ASSERT_SUCCEEDED(m_context.device->CreatePixelShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
 };
 
@@ -186,12 +193,12 @@ public:
     ComPtr<ID3D11VertexShader> shader;
     ComPtr<ID3D11InputLayout> input_layout;
 
-    Shader(ComPtr<ID3D11Device>& device, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-        : ShaderBase(shader_path, entrypoint, target)
+    Shader(Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+        : ShaderBase(context, shader_path, entrypoint, target)
     {
     }
 
-    void CreateInputLayout(ComPtr<ID3D11Device>& device)
+    void CreateInputLayout()
     {
         ComPtr<ID3D11ShaderReflection> reflector;
         D3DReflect(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), IID_PPV_ARGS(&reflector));
@@ -251,20 +258,20 @@ public:
             input_layout_desc.push_back(layout);
         }
 
-        ASSERT_SUCCEEDED(device->CreateInputLayout(input_layout_desc.data(), input_layout_desc.size(), m_shader_buffer->GetBufferPointer(),
+        ASSERT_SUCCEEDED(m_context.device->CreateInputLayout(input_layout_desc.data(), input_layout_desc.size(), m_shader_buffer->GetBufferPointer(),
             m_shader_buffer->GetBufferSize(), &input_layout));
     }
 
-    virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) override
+    virtual void UseShader() override
     {
-        device_context->VSSetShader(shader.Get(), nullptr, 0);
+        m_context.device_context->VSSetShader(shader.Get(), nullptr, 0);
     }
 
-    virtual void UpdateShader(ComPtr<ID3D11Device>& device) override
+    virtual void UpdateShader() override
     {
         CompileShader();
-        ASSERT_SUCCEEDED(device->CreateVertexShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
-        CreateInputLayout(device);
+        ASSERT_SUCCEEDED(m_context.device->CreateVertexShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
+        CreateInputLayout();
     }
 };
 
@@ -276,20 +283,20 @@ public:
 
     ComPtr<ID3D11GeometryShader> shader;
 
-    Shader(ComPtr<ID3D11Device>& device, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-        : ShaderBase(shader_path, entrypoint, target)
+    Shader(Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+        : ShaderBase(context, shader_path, entrypoint, target)
     {
     }
 
-    virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) override
+    virtual void UseShader() override
     {
-        device_context->GSSetShader(shader.Get(), nullptr, 0);
+        m_context.device_context->GSSetShader(shader.Get(), nullptr, 0);
     }
 
-    virtual void UpdateShader(ComPtr<ID3D11Device>& device) override
+    virtual void UpdateShader() override
     {
         CompileShader();
-        ASSERT_SUCCEEDED(device->CreateGeometryShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
+        ASSERT_SUCCEEDED(m_context.device->CreateGeometryShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
 };
 
@@ -301,20 +308,20 @@ public:
 
     ComPtr<ID3D11ComputeShader> shader;
 
-    Shader(ComPtr<ID3D11Device>& device, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-        : ShaderBase(shader_path, entrypoint, target)
+    Shader(Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+        : ShaderBase(context, shader_path, entrypoint, target)
     {
     }
 
-    virtual void UseShader(ComPtr<ID3D11DeviceContext>& device_context) override
+    virtual void UseShader() override
     {
-        device_context->CSSetShader(shader.Get(), nullptr, 0);
+        m_context.device_context->CSSetShader(shader.Get(), nullptr, 0);
     }
 
-    virtual void UpdateShader(ComPtr<ID3D11Device>& device) override
+    virtual void UpdateShader() override
     {
         CompileShader();
-        ASSERT_SUCCEEDED(device->CreateComputeShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
+        ASSERT_SUCCEEDED(m_context.device->CreateComputeShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
 };
 
@@ -334,8 +341,8 @@ public:
         return ps;
     }
 
-    ShaderHolderImpl(ComPtr<ID3D11Device>& device)
-        : ps(device)
+    ShaderHolderImpl(Context& context)
+        : ps(context)
     {
     }
 };
@@ -354,8 +361,8 @@ public:
         return vs;
     }
 
-    ShaderHolderImpl(ComPtr<ID3D11Device>& device)
-        : vs(device)
+    ShaderHolderImpl(Context& context)
+        : vs(context)
     {
     }
 };
@@ -374,8 +381,8 @@ public:
         return gs;
     }
 
-    ShaderHolderImpl(ComPtr<ID3D11Device>& device)
-        : gs(device)
+    ShaderHolderImpl(Context& context)
+        : gs(context)
     {
     }
 };
@@ -394,8 +401,8 @@ public:
         return cs;
     }
 
-    ShaderHolderImpl(ComPtr<ID3D11Device>& device)
-        : cs(device)
+    ShaderHolderImpl(Context& context)
+        : cs(context)
     {
     }
 };
@@ -406,38 +413,38 @@ template<typename ... Args>
 class Program : public ShaderHolder<Args>...
 {
 public:
-    Program(ComPtr<ID3D11Device>& device)
-        : ShaderHolder<Args>(device)...
+    Program(Context& context)
+        : ShaderHolder<Args>(context)...
         , m_shaders({ ShaderHolder<Args>::GetApi()... })
     {
-        UpdateShaders(device);
+        UpdateShaders();
     }
 
     template<typename Setup>
-    Program(ComPtr<ID3D11Device>& device, const Setup& setup)
-        : ShaderHolder<Args>(device)...
+    Program(Context& context, const Setup& setup)
+        : ShaderHolder<Args>(context)...
         , m_shaders({ ShaderHolder<Args>::GetApi()... })
     {
         setup(*this);
-        UpdateShaders(device);
+        UpdateShaders();
     }
 
-    void UseProgram(ComPtr<ID3D11DeviceContext>& device_context)
+    void UseProgram()
     {
         for (auto& shader : m_shaders)
         {
-            shader.get().UseShader(device_context);
-            shader.get().UpdateCBuffers(device_context);
-            shader.get().BindCBuffers(device_context);
+            shader.get().UseShader();
+            shader.get().UpdateCBuffers();
+            shader.get().BindCBuffers();
         }
     }
 
 private:
-    void UpdateShaders(ComPtr<ID3D11Device>& device)
+    void UpdateShaders()
     {
         for (auto& shader : m_shaders)
         {
-            shader.get().UpdateShader(device);
+            shader.get().UpdateShader();
         }
     }
 

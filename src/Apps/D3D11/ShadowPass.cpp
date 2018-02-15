@@ -8,7 +8,7 @@ ShadowPass::ShadowPass(Context& context, const Input& input, int width, int heig
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context.device)
+    , m_program(context)
 {
     CreateTextureDsv();
     CreateViewPort();
@@ -42,7 +42,7 @@ void ShadowPass::OnRender()
 {
     m_context.device_context->RSSetViewports(1, &m_viewport);
 
-    m_program.UseProgram(m_context.device_context);
+    m_program.UseProgram();
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
     m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -52,7 +52,7 @@ void ShadowPass::OnRender()
     for (auto& scene_item : m_input.scene_list)
     {
         m_program.vs.cbuffer.Params.World = glm::transpose(scene_item.matrix);
-        m_program.vs.UpdateCBuffers(m_context.device_context);
+        m_program.vs.UpdateCBuffers();
 
         float RunningTime = glfwGetTime();
         std::vector<glm::mat4> Transforms;

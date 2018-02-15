@@ -104,7 +104,7 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f* m_height, 0.0f);
 
-    m_program.UseProgram(m_context.device_context);
+    m_program.UseProgram();
     dx11_mesh.indices_buffer.Bind();
     dx11_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
     dx11_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
@@ -240,7 +240,7 @@ ImGuiPass::ImGuiPass(Context& context, const Input& input, int width, int height
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context.device)
+    , m_program(context)
 {
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)width, (float)height);

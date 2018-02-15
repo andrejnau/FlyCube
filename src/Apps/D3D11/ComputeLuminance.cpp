@@ -8,9 +8,9 @@ ComputeLuminance::ComputeLuminance(Context& context, const Input& input, int wid
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_HDRLum1DPassCS(context.device)
-    , m_HDRLum2DPassCS(context.device)
-    , m_HDRApply(context.device)
+    , m_HDRLum1DPassCS(context)
+    , m_HDRLum2DPassCS(context)
+    , m_HDRApply(context)
 {
 }
 
@@ -21,7 +21,7 @@ void ComputeLuminance::OnUpdate()
 ComPtr<ID3D11ShaderResourceView> ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y)
 {
     m_HDRLum2DPassCS.cs.cbuffer.cbv.dispatchSize = glm::uvec2(thread_group_x, thread_group_y);
-    m_HDRLum2DPassCS.UseProgram(m_context.device_context);
+    m_HDRLum2DPassCS.UseProgram();
 
     uint32_t total_invoke = thread_group_x * thread_group_y;
 
@@ -61,7 +61,7 @@ ComPtr<ID3D11ShaderResourceView> ComputeLuminance::GetLum2DPassCS(uint32_t threa
 ComPtr<ID3D11ShaderResourceView> ComputeLuminance::GetLum1DPassCS(ComPtr<ID3D11ShaderResourceView> input, uint32_t input_buffer_size, uint32_t thread_group_x)
 {
     m_HDRLum1DPassCS.cs.cbuffer.cbv.bufferSize = input_buffer_size;
-    m_HDRLum1DPassCS.UseProgram(m_context.device_context);
+    m_HDRLum1DPassCS.UseProgram();
 
     ComPtr<ID3D11Buffer> buffer;
     D3D11_BUFFER_DESC buffer_desc = {};
@@ -107,7 +107,7 @@ void ComputeLuminance::Draw(ComPtr<ID3D11ShaderResourceView> input)
     m_HDRApply.ps.cbuffer.$Globals.Exposure = m_settings.Exposure;
     m_HDRApply.ps.cbuffer.$Globals.White = m_settings.White;
     m_HDRApply.ps.cbuffer.cbv.use_tone_mapping = m_settings.use_tone_mapping;
-    m_HDRApply.UseProgram(m_context.device_context);
+    m_HDRApply.UseProgram();
     m_context.device_context->IASetInputLayout(m_HDRApply.vs.input_layout.Get());
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };

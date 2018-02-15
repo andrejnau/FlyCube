@@ -31,23 +31,23 @@ public:
 {{#Inputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
 {{/Inputs}}    } geometry;
 
-    {{ShaderName}}(ComPtr<ID3D11Device>& device)
-        : Shader(device, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
+    {{ShaderName}}(Context& context)
+        : Shader(context, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
         , cbuffer{}  
-        , cbuffer_impl(device)     
+        , cbuffer_impl(context)     
     {
     }
 
-    virtual void UpdateCBuffers(ComPtr<ID3D11DeviceContext>& device_context) override
+    virtual void UpdateCBuffers() override
     {
-        {{#CBuffers}}cbuffer_impl.{{BufferName}}.UpdateCBuffer(device_context, (const char*)&cbuffer.{{BufferName}}); 
+        {{#CBuffers}}cbuffer_impl.{{BufferName}}.UpdateCBuffer((const char*)&cbuffer.{{BufferName}}); 
         {{/CBuffers}}
     } 
  
 private:
-    virtual void BindCBuffers(ComPtr<ID3D11DeviceContext>& device_context) override
+    virtual void BindCBuffers() override
     {
-        {{#CBuffers}}cbuffer_impl.{{BufferName}}.BindCBuffer<{{ShaderType}}>(device_context);
+        {{#CBuffers}}cbuffer_impl.{{BufferName}}.BindCBuffer<{{ShaderType}}>();
         {{/CBuffers}}
     }
     
@@ -56,9 +56,9 @@ private:
     public:
         {{#CBuffers}}BufferLayout {{BufferName}};
         {{/CBuffers}}
-        CBufferImpl(ComPtr<ID3D11Device>& device)
+        CBufferImpl(Context& context)
             {{#CBuffers}}{{BufferSeparator}} {{BufferName}}(
-                device,
+                context,
                 {{BufferSize}},
                 {{BufferIndex}},
                 {

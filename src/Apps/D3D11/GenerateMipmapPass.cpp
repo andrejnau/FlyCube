@@ -8,7 +8,7 @@ GenerateMipmapPass::GenerateMipmapPass(Context& context, const Input& input, int
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context.device)
+    , m_program(context)
 {
     D3D11_SAMPLER_DESC samp_desc = {};
     samp_desc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
@@ -39,7 +39,7 @@ void GenerateMipmapPass::OnRender()
     uint32_t width = 2048;
     uint32_t height = 2048;
 
-    m_program.UseProgram(m_context.device_context);
+    m_program.UseProgram();
 
     D3D11_TEXTURE2D_DESC texture_desc = {};
     texture_desc.Width = width;
@@ -84,7 +84,7 @@ void GenerateMipmapPass::OnRender()
             m_context.device_context->CSSetShaderResources(m_program.cs.texture.SrcTexture, 1, srv.GetAddressOf());
 
             m_program.cs.cbuffer.CB.TexelSize = glm::vec2(1.0f / dst_width, 1.0f / dst_height);
-            m_program.cs.UpdateCBuffers(m_context.device_context);
+            m_program.cs.UpdateCBuffers();
 
             m_context.device_context->Dispatch(std::max(dst_width / 8, 1u), std::max(dst_height / 8, 1u), 1);
             m_context.device_context->CopySubresourceRegion(texture.Get(), 

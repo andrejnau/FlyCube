@@ -9,7 +9,7 @@ GeometryPass::GeometryPass(Context& context, const Input& input, int width, int 
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context.device)
+    , m_program(context)
 {
     InitGBuffers();
 }
@@ -28,7 +28,7 @@ void GeometryPass::OnUpdate()
 
 void GeometryPass::OnRender()
 {
-    m_program.UseProgram(m_context.device_context);
+    m_program.UseProgram();
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
     std::vector<ID3D11RenderTargetView*> rtvs = {
@@ -50,7 +50,7 @@ void GeometryPass::OnRender()
     {
         m_program.vs.cbuffer.ConstantBuffer.model = glm::transpose(scene_item.matrix);
         m_program.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(scene_item.matrix)));
-        m_program.vs.UpdateCBuffers(m_context.device_context);
+        m_program.vs.UpdateCBuffers();
 
         float RunningTime = glfwGetTime();
         std::vector<glm::mat4> Transforms;
@@ -131,7 +131,7 @@ void GeometryPass::OnRender()
             m_program.ps.cbuffer.Material.material_specular = cur_mesh.material.spec;
             m_program.ps.cbuffer.Material.material_shininess = cur_mesh.material.shininess;
 
-            m_program.ps.UpdateCBuffers(m_context.device_context);
+            m_program.ps.UpdateCBuffers();
 
             m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
         }

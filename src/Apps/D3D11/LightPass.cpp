@@ -7,7 +7,7 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context.device, std::bind(&LightPass::SetDefines, this, std::placeholders::_1))
+    , m_program(context, std::bind(&LightPass::SetDefines, this, std::placeholders::_1))
 {
     D3D11_SAMPLER_DESC samp_desc = {};
     samp_desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
@@ -58,7 +58,7 @@ void LightPass::OnRender()
     m_context.device_context->RSGetState(&cur);
     m_context.device_context->RSSetState(m_rasterizer_state.Get());
 
-    m_program.UseProgram(m_context.device_context);
+    m_program.UseProgram();
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
@@ -101,7 +101,7 @@ void LightPass::OnModifySettings(const Settings& settings)
     if (prev.msaa_count != m_settings.msaa_count)
     {
         m_program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
-        m_program.ps.UpdateShader(m_context.device);
+        m_program.ps.UpdateShader();
     }
 }
 
