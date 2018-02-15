@@ -28,7 +28,7 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     shadowState.DepthBias = 4096;
     m_context.device->CreateRasterizerState(&shadowState, &m_rasterizer_state);
 
-    m_input.camera.SetCameraPos(glm::vec3(0.0, 2.75, 0.0));
+    m_input.camera.SetCameraPos(glm::vec3(-3.0, 2.75, 0.0));
     m_input.camera.SetCameraYaw(-178.0f);
     m_input.camera.SetCameraYaw(-1.75f);
 
