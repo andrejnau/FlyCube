@@ -5,6 +5,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
 #include <string>
 #include <algorithm>
 #include <utility>
@@ -50,23 +51,33 @@ public:
 
     struct BoneMatrix
     {
-        aiMatrix4x4 offsset;
-        aiMatrix4x4 FinalTransformation;
+        glm::mat4 offsset;
+        glm::mat4 FinalTransformation;
     };
 
     std::vector<BoneMatrix> bone_matrix;
 
-    template <typename RM, typename CM>
-    void CopyMat(const RM& from, CM& to)
+    glm::mat4 aiMatrix4x4ToMat4(const aiMatrix4x4& mat)
     {
-        to[0][0] = from.a1; to[1][0] = from.a2;
-        to[2][0] = from.a3; to[3][0] = from.a4;
-        to[0][1] = from.b1; to[1][1] = from.b2;
-        to[2][1] = from.b3; to[3][1] = from.b4;
-        to[0][2] = from.c1; to[1][2] = from.c2;
-        to[2][2] = from.c3; to[3][2] = from.c4;
-        to[0][3] = from.d1; to[1][3] = from.d2;
-        to[2][3] = from.d3; to[3][3] = from.d4;
+        glm::mat4 res;
+        res[0][0] = mat.a1; res[1][0] = mat.a2;
+        res[2][0] = mat.a3; res[3][0] = mat.a4;
+        res[0][1] = mat.b1; res[1][1] = mat.b2;
+        res[2][1] = mat.b3; res[3][1] = mat.b4;
+        res[0][2] = mat.c1; res[1][2] = mat.c2;
+        res[2][2] = mat.c3; res[3][2] = mat.c4;
+        res[0][3] = mat.d1; res[1][3] = mat.d2;
+        res[2][3] = mat.d3; res[3][3] = mat.d4;
+        return res;
+    }
+
+    glm::mat3 aiMatrix3x3ToMat3(const aiMatrix3x3& mat)
+    {
+        glm::mat4 res;
+        res[0][0] = mat.a1; res[0][1] = mat.b1; res[0][2] = mat.c1;
+        res[1][0] = mat.a2; res[1][1] = mat.b2; res[1][2] = mat.c2;
+        res[2][0] = mat.a3; res[2][1] = mat.b3; res[2][2] = mat.c3; 
+        return res;
     }
 
     const aiNodeAnim* FindNodeAnim(const aiAnimation* pAnimation, const std::string NodeName)
@@ -110,8 +121,7 @@ public:
     {
         if (!m_pScene->mAnimations)
             return;
-        aiMatrix4x4 Identity;
-        InitIdentity(Identity);
+        glm::mat4 Identity(1.0);
 
         float TicksPerSecond = (float)(m_pScene->mAnimations[0]->mTicksPerSecond != 0 ? m_pScene->mAnimations[0]->mTicksPerSecond : 25.0f);
         float TimeInTicks = TimeInSeconds * TicksPerSecond;
@@ -123,18 +133,16 @@ public:
 
         for (uint32_t i = 0; i < Transforms.size(); i++)
         {
-            CopyMat(bone_matrix[i].FinalTransformation, Transforms[i]);
-            Transforms[i] = glm::transpose(Transforms[i]);
+            Transforms[i] = glm::transpose(bone_matrix[i].FinalTransformation);
         }
     }
 
-    void ReadNodeHeirarchy(float AnimationTime, const aiScene* m_pScene, const aiNode* pNode, const aiMatrix4x4& ParentTransform)
+    void ReadNodeHeirarchy(float AnimationTime, const aiScene* m_pScene, const aiNode* pNode, const glm::mat4& ParentTransform)
     {
         std::string NodeName(pNode->mName.data);
 
         const aiAnimation* pAnimation = m_pScene->mAnimations[0];
-
-        aiMatrix4x4 NodeTransformation(pNode->mTransformation);
+        glm::mat4 NodeTransformation(aiMatrix4x4ToMat4(pNode->mTransformation));
 
         const aiNodeAnim* pNodeAnim = FindNodeAnim(pAnimation, NodeName);
 
@@ -142,29 +150,29 @@ public:
             // Interpolate scaling and generate scaling transformation matrix
             aiVector3D Scaling;
             CalcInterpolatedScaling(Scaling, AnimationTime, pNodeAnim);
-            aiMatrix4x4 ScalingM;
-            InitScaleTransform(ScalingM, Scaling.x, Scaling.y, Scaling.z);
+            glm::mat4 ScalingM;
+            ScalingM = glm::scale(glm::vec3(Scaling.x, Scaling.y, Scaling.z));
 
             // Interpolate rotation and generate rotation transformation matrix
             aiQuaternion RotationQ;
             CalcInterpolatedRotation(RotationQ, AnimationTime, pNodeAnim);
-            aiMatrix4x4 RotationM = aiMatrix4x4(RotationQ.GetMatrix());
+            glm::mat4 RotationM = aiMatrix3x3ToMat3(RotationQ.GetMatrix());
 
             // Interpolate translation and generate translation transformation matrix
             aiVector3D Translation;
             CalcInterpolatedPosition(Translation, AnimationTime, pNodeAnim);
-            aiMatrix4x4 TranslationM;
-            InitTranslationTransform(TranslationM, Translation.x, Translation.y, Translation.z);
+            glm::mat4 TranslationM;
+            TranslationM = glm::translate(glm::vec3(Translation.x, Translation.y, Translation.z));
 
             // Combine the above transformations
             NodeTransformation = TranslationM * RotationM * ScalingM;
         }
 
-        aiMatrix4x4 GlobalTransformation = ParentTransform * NodeTransformation;
+        glm::mat4 GlobalTransformation = ParentTransform * NodeTransformation;
 
         if (bone_mapping.find(NodeName) != bone_mapping.end()) {
             uint32_t BoneIndex = bone_mapping[NodeName];
-            bone_matrix[BoneIndex].FinalTransformation = m_pScene->mRootNode->mTransformation.Inverse() * GlobalTransformation * bone_matrix[BoneIndex].offsset;
+            bone_matrix[BoneIndex].FinalTransformation = aiMatrix4x4ToMat4(m_pScene->mRootNode->mTransformation.Inverse()) * GlobalTransformation * bone_matrix[BoneIndex].offsset;
         }
 
         for (uint32_t i = 0; i < pNode->mNumChildren; i++) {
@@ -294,7 +302,7 @@ public:
                 bone_mapping[bone_name] = bone_index;
                 if (bone_index >= bone_matrix.size())
                     bone_matrix.resize(bone_index + 1);
-                bone_matrix[bone_index].offsset = mesh->mBones[i]->mOffsetMatrix;
+                bone_matrix[bone_index].offsset = aiMatrix4x4ToMat4(mesh->mBones[i]->mOffsetMatrix);
             }
             else
             {
