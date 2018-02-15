@@ -80,43 +80,6 @@ public:
         return res;
     }
 
-    const aiNodeAnim* FindNodeAnim(const aiAnimation* pAnimation, const std::string NodeName)
-    {
-        for (uint32_t i = 0; i < pAnimation->mNumChannels; i++) {
-            const aiNodeAnim* pNodeAnim = pAnimation->mChannels[i];
-
-            if (std::string(pNodeAnim->mNodeName.data) == NodeName) {
-                return pNodeAnim;
-            }
-        }
-
-        return NULL;
-    }
-
-    void InitScaleTransform(aiMatrix4x4& m, float ScaleX, float ScaleY, float ScaleZ)
-    {
-        m[0][0] = ScaleX; m[0][1] = 0.0f;   m[0][2] = 0.0f;   m[0][3] = 0.0f;
-        m[1][0] = 0.0f;   m[1][1] = ScaleY; m[1][2] = 0.0f;   m[1][3] = 0.0f;
-        m[2][0] = 0.0f;   m[2][1] = 0.0f;   m[2][2] = ScaleZ; m[2][3] = 0.0f;
-        m[3][0] = 0.0f;   m[3][1] = 0.0f;   m[3][2] = 0.0f;   m[3][3] = 1.0f;
-    }
-
-    void InitTranslationTransform(aiMatrix4x4& m, float x, float y, float z)
-    {
-        m[0][0] = 1.0f; m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = x;
-        m[1][0] = 0.0f; m[1][1] = 1.0f; m[1][2] = 0.0f; m[1][3] = y;
-        m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = 1.0f; m[2][3] = z;
-        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
-    }
-
-    void InitIdentity(aiMatrix4x4& m)
-    {
-        m[0][0] = 1.0f; m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = 0.0f;
-        m[1][0] = 0.0f; m[1][1] = 1.0f; m[1][2] = 0.0f; m[1][3] = 0.0f;
-        m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = 1.0f; m[2][3] = 0.0f;
-        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
-    }
-
     void BoneTransform(float TimeInSeconds, std::vector<glm::mat4>& Transforms)
     {
         if (!m_pScene->mAnimations)
@@ -146,7 +109,8 @@ public:
 
         const aiNodeAnim* pNodeAnim = FindNodeAnim(pAnimation, NodeName);
 
-        if (pNodeAnim) {
+        if (pNodeAnim)
+        {
             // Interpolate scaling and generate scaling transformation matrix
             aiVector3D Scaling;
             CalcInterpolatedScaling(Scaling, AnimationTime, pNodeAnim);
@@ -170,12 +134,14 @@ public:
 
         glm::mat4 GlobalTransformation = ParentTransform * NodeTransformation;
 
-        if (bone_mapping.find(NodeName) != bone_mapping.end()) {
+        if (bone_mapping.find(NodeName) != bone_mapping.end())
+        {
             uint32_t BoneIndex = bone_mapping[NodeName];
             bone_matrix[BoneIndex].FinalTransformation = aiMatrix4x4ToMat4(m_pScene->mRootNode->mTransformation.Inverse()) * GlobalTransformation * bone_matrix[BoneIndex].offsset;
         }
 
-        for (uint32_t i = 0; i < pNode->mNumChildren; i++) {
+        for (uint32_t i = 0; i < pNode->mNumChildren; i++)
+        {
             ReadNodeHeirarchy(AnimationTime, m_pScene, pNode->mChildren[i], GlobalTransformation);
         }
     }
@@ -183,7 +149,8 @@ public:
 
     void CalcInterpolatedScaling(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
     {
-        if (pNodeAnim->mNumScalingKeys == 1) {
+        if (pNodeAnim->mNumScalingKeys == 1)
+        {
             Out = pNodeAnim->mScalingKeys[0].mValue;
             return;
         }
@@ -203,7 +170,8 @@ public:
     void CalcInterpolatedRotation(aiQuaternion& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
     {
         // we need at least two values to interpolate...
-        if (pNodeAnim->mNumRotationKeys == 1) {
+        if (pNodeAnim->mNumRotationKeys == 1)
+        {
             Out = pNodeAnim->mRotationKeys[0].mValue;
             return;
         }
@@ -222,7 +190,8 @@ public:
 
     void CalcInterpolatedPosition(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
     {
-        if (pNodeAnim->mNumPositionKeys == 1) {
+        if (pNodeAnim->mNumPositionKeys == 1)
+        {
             Out = pNodeAnim->mPositionKeys[0].mValue;
             return;
         }
@@ -239,46 +208,49 @@ public:
         Out = Start + Factor * Delta;
     }
 
+    const aiNodeAnim* FindNodeAnim(const aiAnimation* pAnimation, const std::string& NodeName)
+    {
+        for (uint32_t i = 0; i < pAnimation->mNumChannels; ++i)
+        {
+            const aiNodeAnim* pNodeAnim = pAnimation->mChannels[i];
+            if (std::string(pNodeAnim->mNodeName.data) == NodeName)
+                return pNodeAnim;
+        }
+        return nullptr;
+    }
+
     uint32_t FindPosition(float AnimationTime, const aiNodeAnim* pNodeAnim)
     {
-        for (uint32_t i = 0; i < pNodeAnim->mNumPositionKeys - 1; i++) {
-            if (AnimationTime < (float)pNodeAnim->mPositionKeys[i + 1].mTime) {
+        for (uint32_t i = 0; i < pNodeAnim->mNumPositionKeys - 1; ++i)
+        {
+            if (AnimationTime < (float)pNodeAnim->mPositionKeys[i + 1].mTime)
                 return i;
-            }
         }
-
         assert(0);
-
         return 0;
     }
 
     uint32_t FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
     {
         assert(pNodeAnim->mNumRotationKeys > 0);
-
-        for (uint32_t i = 0; i < pNodeAnim->mNumRotationKeys - 1; i++) {
-            if (AnimationTime < (float)pNodeAnim->mRotationKeys[i + 1].mTime) {
+        for (uint32_t i = 0; i < pNodeAnim->mNumRotationKeys - 1; ++i)
+        {
+            if (AnimationTime < (float)pNodeAnim->mRotationKeys[i + 1].mTime)
                 return i;
-            }
         }
-
         assert(0);
-
         return 0;
     }
 
     uint32_t FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim)
     {
         assert(pNodeAnim->mNumScalingKeys > 0);
-
-        for (uint32_t i = 0; i < pNodeAnim->mNumScalingKeys - 1; i++) {
-            if (AnimationTime < (float)pNodeAnim->mScalingKeys[i + 1].mTime) {
+        for (uint32_t i = 0; i < pNodeAnim->mNumScalingKeys - 1; i++)
+        {
+            if (AnimationTime < (float)pNodeAnim->mScalingKeys[i + 1].mTime)
                 return i;
-            }
         }
-
         assert(0);
-
         return 0;
     }
 
