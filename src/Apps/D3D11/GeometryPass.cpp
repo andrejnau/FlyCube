@@ -52,9 +52,7 @@ void GeometryPass::OnRender()
         m_program.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(scene_item.matrix)));
         m_program.vs.UpdateCBuffers();
 
-        float RunningTime = glfwGetTime();
-        std::vector<glm::mat4> Transforms;
-        scene_item.model.bones.BoneTransform(RunningTime, Transforms);
+        scene_item.model.bones.UpdateAnimation(glfwGetTime());
 
         ComPtr<ID3D11ShaderResourceView> bones_info_srv;
         ComPtr<ID3D11ShaderResourceView> bones_srv;
@@ -63,19 +61,19 @@ void GeometryPass::OnRender()
             ComPtr<ID3D11Buffer> bones_buffer;
             D3D11_BUFFER_DESC bones_buffer_desc = {};
             bones_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-            bones_buffer_desc.ByteWidth = scene_item.model.bones.bone_info_flat.size() * sizeof(Bones::BoneInfo);
+            bones_buffer_desc.ByteWidth = scene_item.model.bones.bone_info.size() * sizeof(Bones::BoneInfo);
             bones_buffer_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
             bones_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
             bones_buffer_desc.StructureByteStride = sizeof(Bones::BoneInfo);
             ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&bones_buffer_desc, nullptr, &bones_buffer));
 
-            if (!scene_item.model.bones.bone_info_flat.empty())
-                m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, scene_item.model.bones.bone_info_flat.data(), 0, 0);
+            if (!scene_item.model.bones.bone_info.empty())
+                m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, scene_item.model.bones.bone_info.data(), 0, 0);
 
             D3D11_SHADER_RESOURCE_VIEW_DESC  bones_srv_desc = {};
             bones_srv_desc.Format = DXGI_FORMAT_UNKNOWN;
             bones_srv_desc.Buffer.FirstElement = 0;
-            bones_srv_desc.Buffer.NumElements = scene_item.model.bones.bone_info_flat.size();
+            bones_srv_desc.Buffer.NumElements = scene_item.model.bones.bone_info.size();
             bones_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
 
             ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(bones_buffer.Get(), &bones_srv_desc, &bones_info_srv));
@@ -85,19 +83,19 @@ void GeometryPass::OnRender()
             ComPtr<ID3D11Buffer> bones_buffer;
             D3D11_BUFFER_DESC bones_buffer_desc = {};
             bones_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-            bones_buffer_desc.ByteWidth = Transforms.size() * sizeof(glm::mat4);
+            bones_buffer_desc.ByteWidth = scene_item.model.bones.bone.size() * sizeof(glm::mat4);
             bones_buffer_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
             bones_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
             bones_buffer_desc.StructureByteStride = sizeof(glm::mat4);
             ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&bones_buffer_desc, nullptr, &bones_buffer));
 
-            if (!Transforms.empty())
-                m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, Transforms.data(), 0, 0);
+            if (bones_buffer_desc.ByteWidth)
+                m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, scene_item.model.bones.bone.data(), 0, 0);
 
             D3D11_SHADER_RESOURCE_VIEW_DESC  bones_srv_desc = {};
             bones_srv_desc.Format = DXGI_FORMAT_UNKNOWN;
             bones_srv_desc.Buffer.FirstElement = 0;
-            bones_srv_desc.Buffer.NumElements = Transforms.size();
+            bones_srv_desc.Buffer.NumElements = scene_item.model.bones.bone.size();
             bones_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
 
             ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(bones_buffer.Get(), &bones_srv_desc, &bones_srv));

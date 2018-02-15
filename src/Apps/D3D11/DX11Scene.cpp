@@ -19,6 +19,8 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     , m_compute_luminance(m_context, { m_light_pass.output.srv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
     , m_imgui_pass(m_context, { *this, m_render_target_view, m_depth_stencil_view }, width, height)
 {
+    // prevent a call ~aiScene 
+    m_scene_list.reserve(2);
     m_scene_list.emplace_back(m_context, "model/sponza/sponza.obj");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f));
     m_scene_list.emplace_back(m_context, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");

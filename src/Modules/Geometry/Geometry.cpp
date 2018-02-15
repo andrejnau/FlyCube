@@ -29,6 +29,7 @@ void ModelLoader::LoadModel(aiPostProcessSteps flags)
 {
     const aiScene* scene = m_import.ReadFile(m_path, flags & (aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes |  aiProcess_CalcTangentSpace));
     assert(scene && scene->mFlags != AI_SCENE_FLAGS_INCOMPLETE && scene->mRootNode);
+    m_bones.LoadModel(scene);
     ProcessNode(scene->mRootNode, scene);
 }
 
@@ -193,7 +194,7 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
             cur_mesh.material.name = name.C_Str();
     }
 
-    m_bones.LoadBones(mesh, scene, cur_mesh);
+    m_bones.ProcessMesh(mesh, cur_mesh);
 
     m_model.AddMesh(cur_mesh);
 }
