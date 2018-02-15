@@ -68,17 +68,30 @@ void DX11Scene::OnUpdate()
 void DX11Scene::OnRender()
 {
     m_context.device_context->RSSetViewports(1, &m_viewport);
-    m_geometry_pass.OnRender();
 
+    m_context.perf->BeginEvent(L"Geometry Pass");
+    m_geometry_pass.OnRender();
+    m_context.perf->EndEvent();
+
+    m_context.perf->BeginEvent(L"Shadow Pass");
     m_shadow_pass.OnRender();
+    m_context.perf->EndEvent();
 
     m_context.device_context->RSSetViewports(1, &m_viewport);
+
+    m_context.perf->BeginEvent(L"Light Pass");
     m_light_pass.OnRender();
+    m_context.perf->EndEvent();
+
+    m_context.perf->BeginEvent(L"HDR Pass");
     m_compute_luminance.OnRender();
+    m_context.perf->EndEvent();
 
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
+        m_context.perf->BeginEvent(L"ImGui Pass");
         m_imgui_pass.OnRender();
+        m_context.perf->EndEvent();
     }
 
     ASSERT_SUCCEEDED(m_context.swap_chain->Present(0, 0));

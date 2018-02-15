@@ -35,4 +35,6 @@ Context::Context(GLFWwindow* window, int width, int height)
 
     ASSERT_SUCCEEDED(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, create_device_flags, nullptr, 0,
         D3D11_SDK_VERSION, &swapChainDesc, &swap_chain, &device, nullptr, &device_context));
+
+    device_context.As(&perf);
 }
