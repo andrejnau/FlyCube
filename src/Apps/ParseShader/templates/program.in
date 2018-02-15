@@ -59,6 +59,7 @@ private:
         CBufferImpl(Context& context)
             {{#CBuffers}}{{BufferSeparator}} {{BufferName}}(
                 context,
+                "<{{BufferName}}>",
                 {{BufferSize}},
                 {{BufferIndex}},
                 {

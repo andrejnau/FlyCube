@@ -113,6 +113,7 @@ target_link_libraries(${target}
     d3dcompiler
     dxgi
     d3d11
+    dxguid
     assimp
     SOIL
     AppBox

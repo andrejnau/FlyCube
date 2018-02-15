@@ -20,6 +20,7 @@ class BufferLayout
 public:
     BufferLayout(
         Context& context,
+        const std::string& name,
         size_t buffer_size, 
         UINT slot,
         std::vector<size_t>&& data_size,
@@ -34,6 +35,7 @@ public:
         , data_offset(std::move(data_offset))
         , buf_offset(std::move(buf_offset))
     {
+        buffer->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
     }
 
     ComPtr<ID3D11Buffer> buffer;
