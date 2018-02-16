@@ -122,7 +122,6 @@ void ShadowPass::OnRender()
             m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
         }
     }
-    m_context.device_context->GSSetShader(nullptr, nullptr, 0);
 }
 
 void ShadowPass::OnResize(int width, int height)

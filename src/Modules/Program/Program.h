@@ -418,6 +418,7 @@ public:
     Program(Context& context)
         : ShaderHolder<Args>(context)...
         , m_shaders({ ShaderHolder<Args>::GetApi()... })
+        , m_context(context)
     {
         UpdateShaders();
     }
@@ -426,6 +427,7 @@ public:
     Program(Context& context, const Setup& setup)
         : ShaderHolder<Args>(context)...
         , m_shaders({ ShaderHolder<Args>::GetApi()... })
+        , m_context(context)
     {
         setup(*this);
         UpdateShaders();
@@ -433,6 +435,12 @@ public:
 
     void UseProgram()
     {
+        m_context.device_context->VSSetShader(nullptr, nullptr, 0);
+        m_context.device_context->GSSetShader(nullptr, nullptr, 0);
+        m_context.device_context->DSSetShader(nullptr, nullptr, 0);
+        m_context.device_context->HSSetShader(nullptr, nullptr, 0);
+        m_context.device_context->PSSetShader(nullptr, nullptr, 0);
+        m_context.device_context->CSSetShader(nullptr, nullptr, 0);
         for (auto& shader : m_shaders)
         {
             shader.get().UseShader();
@@ -451,4 +459,5 @@ private:
     }
 
     std::vector<std::reference_wrapper<ShaderBase>> m_shaders;
+    Context& m_context;
 };
