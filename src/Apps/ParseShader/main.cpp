@@ -196,6 +196,7 @@ private:
 
         mustache::data ttextures{ mustache::data::type::list };
         mustache::data tuavs{ mustache::data::type::list };
+        mustache::data tsamplers{ mustache::data::type::list };
         for (UINT i = 0; i < desc.BoundResources; ++i)
         {
             D3D11_SHADER_INPUT_BIND_DESC res_desc = {};
@@ -204,6 +205,11 @@ private:
             {
             case D3D_SIT_SAMPLER:
             {
+                mustache::data tsampler;
+                tsampler.set("Name", res_desc.Name);
+                tsampler.set("Slot", std::to_string(res_desc.BindPoint));
+                tsamplers.push_back(tsampler);
+                break;
                 break;
             }
             case D3D_SIT_TEXTURE:
@@ -227,6 +233,7 @@ private:
         }
         m_tcontext["Textures"] = mustache::data{ ttextures };
         m_tcontext["UAVs"] = mustache::data{ tuavs };
+        m_tcontext["Samplers"] = mustache::data{ tsamplers };
 
         mustache::data tinputs{ mustache::data::type::list };
         for (UINT i = 0; i < desc.InputParameters; ++i)

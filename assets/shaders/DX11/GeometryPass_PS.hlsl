@@ -14,7 +14,7 @@ Texture2D diffuseMap;
 Texture2D specularMap;
 Texture2D glossMap;
 
-SamplerState g_sampler : register(s0);
+SamplerState g_sampler;
 
 cbuffer Material
 {

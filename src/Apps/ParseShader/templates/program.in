@@ -31,6 +31,11 @@ public:
 {{#Inputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
 {{/Inputs}}    } geometry;
 
+    struct
+    {
+{{#Samplers}}        static constexpr const uint32_t {{Name}} = {{Slot}};
+{{/Samplers}}    } sampler;
+
     {{ShaderName}}(Context& context)
         : Shader(context, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
         , cbuffer{}  

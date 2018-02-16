@@ -7,7 +7,7 @@ struct GeometryOutput
 
 Texture2D alphaMap;
 
-SamplerState g_sampler : register(s0);
+SamplerState g_sampler;
 
 bool HasTexture(Texture2D _texture)
 {

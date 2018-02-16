@@ -1,4 +1,4 @@
-cbuffer vertexBuffer : register(b0) 
+cbuffer vertexBuffer
 {
     float4x4 ProjectionMatrix; 
 };

@@ -19,7 +19,7 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     samp_desc.MaxLOD = D3D11_FLOAT32_MAX;
 
     ASSERT_SUCCEEDED(m_context.device->CreateSamplerState(&samp_desc, &m_shadow_sampler));
-    m_context.device_context->PSSetSamplers(1, 1, m_shadow_sampler.GetAddressOf());
+    m_context.device_context->PSSetSamplers(m_program.ps.sampler.LightCubeShadowComparsionSampler, 1, m_shadow_sampler.GetAddressOf());
 
     D3D11_RASTERIZER_DESC shadowState;
     ZeroMemory(&shadowState, sizeof(D3D11_RASTERIZER_DESC));
