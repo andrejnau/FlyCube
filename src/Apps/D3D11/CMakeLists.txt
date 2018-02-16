@@ -31,7 +31,6 @@ set(headers
     ${include_path}/LightPass.h
     ${include_path}/ImGuiPass.h
     ${include_path}/ShadowPass.h
-    ${include_path}/GenerateMipmapPass.h
     ${include_path}/ComputeLuminance.h
     ${include_path}/DX11Scene.h
 )
@@ -41,7 +40,6 @@ set(sources
     ${source_path}/LightPass.cpp
     ${source_path}/ImGuiPass.cpp
     ${source_path}/ShadowPass.cpp
-    ${source_path}/GenerateMipmapPass.cpp
     ${source_path}/ComputeLuminance.cpp
     ${source_path}/DX11Scene.cpp
     ${source_path}/Main.cpp
@@ -68,7 +66,6 @@ set(geometry_shaders
 )
 
 set(compute_shaders
-    ${shaders_path}/GenerateMipmap_CS.hlsl
     ${shaders_path}/HDRLum1DPass_CS.hlsl
     ${shaders_path}/HDRLum2DPass_CS.hlsl
 )
