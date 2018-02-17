@@ -26,9 +26,14 @@ public:
 {{#Textures}}       SRVBinding {{Name}};
 {{/Textures}}    } srv;
 
-    struct
+    struct UAV
     {
-{{#UAVs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
+        UAV(ShaderBase& shader)
+{{#UAVs}}            {{Separator}} {{Name}}(shader, {{Slot}})
+{{/UAVs}}        {
+        }
+
+{{#UAVs}}       UAVBinding {{Name}};
 {{/UAVs}}    } uav;
 
     struct
@@ -45,6 +50,7 @@ public:
         : Shader(context, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
         , cbuffer{}
         , srv(*this) 
+        , uav(*this) 
         , cbuffer_impl(context)
     {
     }

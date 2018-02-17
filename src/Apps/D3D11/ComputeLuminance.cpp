@@ -51,7 +51,7 @@ ComPtr<ID3D11ShaderResourceView> ComputeLuminance::GetLum2DPassCS(uint32_t threa
 
     ComPtr<ID3D11UnorderedAccessView> uav;
     m_context.device->CreateUnorderedAccessView(buffer.Get(), &uav_desc, &uav);
-    m_context.device_context->CSSetUnorderedAccessViews(m_HDRLum2DPassCS.cs.uav.result, 1, uav.GetAddressOf(), nullptr);
+    m_HDRLum2DPassCS.cs.uav.result.Attach(uav);
     m_HDRLum2DPassCS.cs.srv.input.Attach(m_input.srv);
     m_context.device_context->Dispatch(thread_group_x, thread_group_y, 1);
 
@@ -89,14 +89,13 @@ ComPtr<ID3D11ShaderResourceView> ComputeLuminance::GetLum1DPassCS(ComPtr<ID3D11S
 
     ComPtr<ID3D11UnorderedAccessView> uav;
     m_context.device->CreateUnorderedAccessView(buffer.Get(), &uav_desc, &uav);
-    m_context.device_context->CSSetUnorderedAccessViews(m_HDRLum1DPassCS.cs.uav.result, 1, uav.GetAddressOf(), nullptr);
+    m_HDRLum1DPassCS.cs.uav.result.Attach(uav);
 
     m_HDRLum2DPassCS.cs.srv.input.Attach(input);
 
     m_context.device_context->Dispatch(thread_group_x, 1, 1);
 
-    ID3D11UnorderedAccessView* empty = nullptr;
-    m_context.device_context->CSSetUnorderedAccessViews(m_HDRLum1DPassCS.cs.uav.result, 1, &empty, nullptr);
+    m_HDRLum1DPassCS.cs.uav.result.Attach();
 
     return srv;
 }

@@ -119,6 +119,7 @@ public:
     virtual void UpdateCBuffers() = 0;
     virtual void UpdateShader() = 0;
     virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) = 0;
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav) = 0;
 
     std::map<std::string, std::string> define;
 
@@ -178,6 +179,24 @@ private:
     uint32_t m_slot;
 };
 
+class UAVBinding
+{
+public:
+    UAVBinding(ShaderBase& shader, uint32_t slot)
+        : m_shader(shader)
+        , m_slot(slot)
+    {
+    }
+
+    void Attach(ComPtr<ID3D11UnorderedAccessView>& uav = ComPtr<ID3D11UnorderedAccessView>{})
+    {
+        m_shader.Attach(m_slot, uav);
+    }
+private:
+    ShaderBase & m_shader;
+    uint32_t m_slot;
+};
+
 template<ShaderType> class Shader : public ShaderBase {};
 
 template<>
@@ -207,6 +226,11 @@ public:
     virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) override
     {
         m_context.device_context->PSSetShaderResources(slot, 1, srv.GetAddressOf());
+    }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav) override
+    {
+
     }
 };
 
@@ -304,6 +328,11 @@ public:
     {
         m_context.device_context->VSSetShaderResources(slot, 1, srv.GetAddressOf());
     }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav) override
+    {
+
+    }
 };
 
 template<>
@@ -334,6 +363,11 @@ public:
     {
         m_context.device_context->GSSetShaderResources(slot, 1, srv.GetAddressOf());
     }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav) override
+    {
+
+    }
 };
 
 template<>
@@ -363,6 +397,11 @@ public:
     virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) override
     {
         m_context.device_context->CSSetShaderResources(slot, 1, srv.GetAddressOf());
+    }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav) override
+    {
+        m_context.device_context->CSSetUnorderedAccessViews(slot, 1, uav.GetAddressOf(), nullptr);
     }
 };
 

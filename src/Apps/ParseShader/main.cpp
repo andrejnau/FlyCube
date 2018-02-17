@@ -227,6 +227,7 @@ private:
                 mustache::data tuav;
                 tuav.set("Name", res_desc.Name);
                 tuav.set("Slot", std::to_string(res_desc.BindPoint));
+                tuav.set("Separator", tuavs.is_empty_list() ? ":" : ",");
                 tuavs.push_back(tuav);
                 break;
             }
