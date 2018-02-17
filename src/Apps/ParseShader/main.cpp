@@ -218,6 +218,7 @@ private:
                 mustache::data ttexture;
                 ttexture.set("Name", res_desc.Name);
                 ttexture.set("Slot", std::to_string(res_desc.BindPoint));
+                ttexture.set("Separator", ttextures.is_empty_list() ? ":" : ",");
                 ttextures.push_back(ttexture);
                 break;  
             }

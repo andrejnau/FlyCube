@@ -52,7 +52,7 @@ ComPtr<ID3D11ShaderResourceView> ComputeLuminance::GetLum2DPassCS(uint32_t threa
     ComPtr<ID3D11UnorderedAccessView> uav;
     m_context.device->CreateUnorderedAccessView(buffer.Get(), &uav_desc, &uav);
     m_context.device_context->CSSetUnorderedAccessViews(m_HDRLum2DPassCS.cs.uav.result, 1, uav.GetAddressOf(), nullptr);
-    m_context.device_context->CSSetShaderResources(m_HDRLum2DPassCS.cs.texture.input, 1, m_input.srv.GetAddressOf());
+    m_HDRLum2DPassCS.cs.srv.input.Attach(m_input.srv);
     m_context.device_context->Dispatch(thread_group_x, thread_group_y, 1);
 
     return srv;
@@ -91,7 +91,7 @@ ComPtr<ID3D11ShaderResourceView> ComputeLuminance::GetLum1DPassCS(ComPtr<ID3D11S
     m_context.device->CreateUnorderedAccessView(buffer.Get(), &uav_desc, &uav);
     m_context.device_context->CSSetUnorderedAccessViews(m_HDRLum1DPassCS.cs.uav.result, 1, uav.GetAddressOf(), nullptr);
 
-    m_context.device_context->CSSetShaderResources(m_HDRLum1DPassCS.cs.texture.input, 1, input.GetAddressOf());
+    m_HDRLum2DPassCS.cs.srv.input.Attach(input);
 
     m_context.device_context->Dispatch(thread_group_x, 1, 1);
 
@@ -122,12 +122,12 @@ void ComputeLuminance::Draw(ComPtr<ID3D11ShaderResourceView> input)
         cur_mesh.positions_buffer.BindToSlot(m_HDRApply.vs.geometry.POSITION);
         cur_mesh.texcoords_buffer.BindToSlot(m_HDRApply.vs.geometry.TEXCOORD);
 
-        m_context.device_context->PSSetShaderResources(m_HDRApply.ps.texture.hdr_input, 1, m_input.srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_HDRApply.ps.texture.lum, 1, input.GetAddressOf());
+        m_HDRApply.ps.srv.hdr_input.Attach(m_input.srv);
+        m_HDRApply.ps.srv.lum.Attach(input);
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 
-    std::vector<ID3D11ShaderResourceView*> empty(m_HDRApply.ps.texture.hdr_input);
+    std::vector<ID3D11ShaderResourceView*> empty(D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
     m_context.device_context->PSSetShaderResources(0, empty.size(), empty.data());
 }
 

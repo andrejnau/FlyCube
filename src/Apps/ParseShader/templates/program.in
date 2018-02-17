@@ -16,10 +16,15 @@ public:
 {{/Variables}}        } {{BufferName}};
 {{/CBuffers}}    } cbuffer;
 
-    struct
+    struct SRV
     {
-{{#Textures}}        static constexpr const uint32_t {{Name}} = {{Slot}};
-{{/Textures}}    } texture;
+        SRV(ShaderBase& shader)
+{{#Textures}}            {{Separator}} {{Name}}(shader, {{Slot}})
+{{/Textures}}        {
+        }
+
+{{#Textures}}       SRVBinding {{Name}};
+{{/Textures}}    } srv;
 
     struct
     {
@@ -38,8 +43,9 @@ public:
 
     {{ShaderName}}(Context& context)
         : Shader(context, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
-        , cbuffer{}  
-        , cbuffer_impl(context)     
+        , cbuffer{}
+        , srv(*this) 
+        , cbuffer_impl(context)
     {
     }
 

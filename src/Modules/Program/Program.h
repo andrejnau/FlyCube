@@ -118,6 +118,7 @@ public:
     virtual void BindCBuffers() = 0;
     virtual void UpdateCBuffers() = 0;
     virtual void UpdateShader() = 0;
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) = 0;
 
     std::map<std::string, std::string> define;
 
@@ -159,6 +160,24 @@ protected:
     ComPtr<ID3DBlob> m_shader_buffer;
 };
 
+class SRVBinding
+{
+public:
+    SRVBinding(ShaderBase& shader, uint32_t slot)
+        : m_shader(shader)
+        , m_slot(slot)
+    {
+    }
+
+    void Attach(ComPtr<ID3D11ShaderResourceView>& srv = ComPtr<ID3D11ShaderResourceView>{})
+    {
+        m_shader.Attach(m_slot, srv);
+    }
+private:
+    ShaderBase& m_shader;
+    uint32_t m_slot;
+};
+
 template<ShaderType> class Shader : public ShaderBase {};
 
 template<>
@@ -183,6 +202,11 @@ public:
     {
         CompileShader();
         ASSERT_SUCCEEDED(m_context.device->CreatePixelShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
+    }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) override
+    {
+        m_context.device_context->PSSetShaderResources(slot, 1, srv.GetAddressOf());
     }
 };
 
@@ -275,6 +299,11 @@ public:
         ASSERT_SUCCEEDED(m_context.device->CreateVertexShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
         CreateInputLayout();
     }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) override
+    {
+        m_context.device_context->VSSetShaderResources(slot, 1, srv.GetAddressOf());
+    }
 };
 
 template<>
@@ -300,6 +329,11 @@ public:
         CompileShader();
         ASSERT_SUCCEEDED(m_context.device->CreateGeometryShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
     }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) override
+    {
+        m_context.device_context->GSSetShaderResources(slot, 1, srv.GetAddressOf());
+    }
 };
 
 template<>
@@ -324,6 +358,11 @@ public:
     {
         CompileShader();
         ASSERT_SUCCEEDED(m_context.device->CreateComputeShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
+    }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) override
+    {
+        m_context.device_context->CSSetShaderResources(slot, 1, srv.GetAddressOf());
     }
 };
 

@@ -73,18 +73,18 @@ void LightPass::OnRender()
         cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
         cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
 
-        m_context.device_context->PSSetShaderResources(m_program.ps.texture.gPosition, 1, m_input.geometry_pass.position_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_program.ps.texture.gNormal, 1, m_input.geometry_pass.normal_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_program.ps.texture.gAmbient, 1, m_input.geometry_pass.ambient_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_program.ps.texture.gDiffuse, 1, m_input.geometry_pass.diffuse_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_program.ps.texture.gSpecular, 1, m_input.geometry_pass.specular_srv.GetAddressOf());
-        m_context.device_context->PSSetShaderResources(m_program.ps.texture.LightCubeShadowMap, 1, m_input.shadow_pass.srv.GetAddressOf());
+        m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position_srv);
+        m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal_srv);
+        m_program.ps.srv.gAmbient.Attach(m_input.geometry_pass.ambient_srv);
+        m_program.ps.srv.gDiffuse.Attach(m_input.geometry_pass.diffuse_srv);
+        m_program.ps.srv.gSpecular.Attach(m_input.geometry_pass.specular_srv);
+        m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 
     m_context.device_context->OMSetRenderTargets(0, nullptr, nullptr);
 
-    std::vector<ID3D11ShaderResourceView*> empty(m_program.ps.texture.LightCubeShadowMap);
+    std::vector<ID3D11ShaderResourceView*> empty(D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
     m_context.device_context->PSSetShaderResources(0, empty.size(), empty.data());
 }
 

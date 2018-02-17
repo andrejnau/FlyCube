@@ -103,8 +103,8 @@ void ShadowPass::OnRender()
             ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(bones_buffer.Get(), &bones_srv_desc, &bones_srv));
         }
 
-        m_context.device_context->VSSetShaderResources(m_program.vs.texture.bone_info, 1, bones_info_srv.GetAddressOf());
-        m_context.device_context->VSSetShaderResources(m_program.vs.texture.gBones, 1, bones_srv.GetAddressOf());
+        m_program.vs.srv.bone_info.Attach(bones_info_srv);
+        m_program.vs.srv.gBones.Attach(bones_srv);
 
         for (DX11Mesh& cur_mesh : scene_item.model.meshes)
         {
@@ -115,9 +115,9 @@ void ShadowPass::OnRender()
             cur_mesh.bones_count_buffer.BindToSlot(m_program.vs.geometry.BONES_COUNT);
 
             if (!state["no_shadow_discard"])
-                cur_mesh.SetTexture(aiTextureType_OPACITY, m_program.ps.texture.alphaMap);
+                m_program.ps.srv.alphaMap.Attach(cur_mesh.GetTexture(aiTextureType_OPACITY));
             else
-                cur_mesh.UnsetTexture(m_program.ps.texture.alphaMap);
+                m_program.ps.srv.alphaMap.Attach();
 
             m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
         }

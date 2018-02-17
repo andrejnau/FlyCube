@@ -122,19 +122,13 @@ public:
     IAVertexBuffer bones_count_buffer;
     IAIndexBuffer indices_buffer;
 
-    void SetTexture(aiTextureType type, UINT slot)
+    ComPtr<ID3D11ShaderResourceView> GetTexture(aiTextureType type)
     {
-        ID3D11ShaderResourceView* srv = nullptr;
+        ComPtr<ID3D11ShaderResourceView> srv;
         auto it = m_type2id.find(type);
         if (it != m_type2id.end())
-            srv = m_tex_srv[it->second].Get();
-        m_context.device_context->PSSetShaderResources(slot, 1, &srv);
-    }
-
-    void UnsetTexture(UINT slot)
-    {
-        ID3D11ShaderResourceView* srv = nullptr;
-        m_context.device_context->PSSetShaderResources(slot, 1, &srv);
+            srv = m_tex_srv[it->second];
+        return srv;
     }
 
 private:
