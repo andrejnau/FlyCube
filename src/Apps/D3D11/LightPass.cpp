@@ -51,6 +51,7 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;
     m_program.ps.cbuffer.ShadowParams.s_size = m_settings.s_size;
     m_program.ps.cbuffer.ShadowParams.use_shadow = true;
+    m_program.ps.cbuffer.ShadowParams.use_occlusion = m_settings.use_occlusion;
 }
 
 void LightPass::OnRender()
@@ -80,6 +81,7 @@ void LightPass::OnRender()
         m_program.ps.srv.gDiffuse.Attach(m_input.geometry_pass.diffuse_srv);
         m_program.ps.srv.gSpecular.Attach(m_input.geometry_pass.specular_srv);
         m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
+        m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv);
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 

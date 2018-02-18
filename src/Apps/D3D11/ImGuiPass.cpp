@@ -356,6 +356,11 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("use_occlusion", &settings.use_occlusion))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::SliderFloat("Exposure", &settings.Exposure, 0, 2))
         {
             modify_settings = true;

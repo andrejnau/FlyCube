@@ -19,6 +19,7 @@ TEXTURE_TYPE gNormal;
 TEXTURE_TYPE gAmbient;
 TEXTURE_TYPE gDiffuse;
 TEXTURE_TYPE gSpecular;
+Texture2D gSSAO;
 TextureCube<float> LightCubeShadowMap;
 
 cbuffer ShadowParams
@@ -27,6 +28,7 @@ cbuffer ShadowParams
     float s_far;
     float s_size;
     bool use_shadow;
+    bool use_occlusion;
 };
 
 SamplerState g_sampler : register(s0);
@@ -148,7 +150,7 @@ cbuffer ConstantBuffer
     float3 viewPos;
 };
 
-float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffuse, float3 specular_base, float shininess)
+float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffuse, float3 specular_base, float shininess, float occlusion)
 {
     float3 lightDir = normalize(lightPos - fragPos);
     float diff = max(dot(lightDir, normal), 0.0);
@@ -165,7 +167,8 @@ float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffus
     float shadow = _sampleCubeShadowPCFDisc5(L, vL);
     if (!use_shadow)
         shadow = 1.0;
-    float3 hdrColor = float3(ambient + diffuse * shadow + specular * shadow);
+
+    float3 hdrColor = float3(ambient * occlusion + diffuse * shadow + specular * shadow);
     return hdrColor;
 }
 
@@ -183,7 +186,11 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         float3 diffuse = getTexture(gDiffuse, input.texCoord, i).rgb;
         float3 specular_base = getTexture(gSpecular, input.texCoord, i).rgb;
         float shininess = getTexture(gSpecular, input.texCoord, i).a;
-        lighting += CalcLighting(fragPos, normal, ambient, diffuse, specular_base, shininess);
+        float occlusion = gSSAO.Sample(g_sampler, input.texCoord).r;
+        occlusion = pow(occlusion, 2.2);
+        if (!use_occlusion)
+            occlusion = 1.0;
+        lighting += CalcLighting(fragPos, normal, ambient, diffuse, specular_base, shininess, occlusion);
     }
     lighting /= SAMPLE_COUNT;
 

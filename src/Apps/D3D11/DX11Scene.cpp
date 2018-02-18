@@ -16,7 +16,7 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
     , m_shadow_pass(m_context, { m_scene_list, m_camera, light_pos }, width, height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
-    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_model_square, m_camera, light_pos }, width, height)
+    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, light_pos }, width, height)
     , m_compute_luminance(m_context, { m_light_pass.output.srv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
     , m_imgui_pass(m_context, { *this, m_render_target_view, m_depth_stencil_view }, width, height)
 {

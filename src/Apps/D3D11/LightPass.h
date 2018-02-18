@@ -2,6 +2,7 @@
 
 #include "D3D11/GeometryPass.h"
 #include "D3D11/ShadowPass.h"
+#include "D3D11/SSAOPass.h"
 
 #include <Scene/SceneBase.h>
 #include <Context/Context.h>
@@ -20,6 +21,7 @@ public:
     {
         GeometryPass::Output& geometry_pass;
         ShadowPass::Output& shadow_pass;
+        SSAOPass::Output& ssao_pass;
         Model<DX11Mesh>& model;
         Camera& camera;
         glm::vec3& light_pos;

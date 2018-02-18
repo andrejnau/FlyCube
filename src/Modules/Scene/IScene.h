@@ -11,13 +11,14 @@ enum class ApiType
 class Settings
 {
 public:
-    uint32_t msaa_count = 8;
+    uint32_t msaa_count = 1;
     int width = 1280;
     int height = 720;
     float s_near = 0.5f;
     float s_far = 1024.0f;
     int s_size = 3072;
     bool use_tone_mapping = true;
+    bool use_occlusion = true;
     float Exposure = 0.35;
     float White = 1.5;
 };
