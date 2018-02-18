@@ -26,6 +26,8 @@ public:
         ComPtr<ID3D11ShaderResourceView> ambient_srv;
         ComPtr<ID3D11ShaderResourceView> diffuse_srv;
         ComPtr<ID3D11ShaderResourceView> specular_srv;
+        ComPtr<ID3D11ShaderResourceView> position_view_srv;
+        ComPtr<ID3D11ShaderResourceView> normal_view_srv;
     } output;
 
     GeometryPass(Context& context, const Input& input, int width, int height);
@@ -49,6 +51,8 @@ private:
     ComPtr<ID3D11RenderTargetView> m_ambient_rtv;
     ComPtr<ID3D11RenderTargetView> m_diffuse_rtv;
     ComPtr<ID3D11RenderTargetView> m_specular_rtv;
+    ComPtr<ID3D11RenderTargetView> m_position_view_rtv;
+    ComPtr<ID3D11RenderTargetView> m_normal_view_rtv;
     ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
     Settings m_settings;
 };

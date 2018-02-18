@@ -15,6 +15,7 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     , m_model_square(m_context, "model/square.obj")
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
     , m_shadow_pass(m_context, { m_scene_list, m_camera, light_pos }, width, height)
+    , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
     , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_model_square, m_camera, light_pos }, width, height)
     , m_compute_luminance(m_context, { m_light_pass.output.srv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
     , m_imgui_pass(m_context, { *this, m_render_target_view, m_depth_stencil_view }, width, height)
@@ -64,6 +65,7 @@ void DX11Scene::OnUpdate()
 
     m_geometry_pass.OnUpdate();
     m_shadow_pass.OnUpdate();
+    m_ssao_pass.OnUpdate();
     m_light_pass.OnUpdate();
 }
 
@@ -80,6 +82,10 @@ void DX11Scene::OnRender()
     m_context.perf->EndEvent();
 
     m_context.device_context->RSSetViewports(1, &m_viewport);
+
+    m_context.perf->BeginEvent(L"SSAO Pass");
+    m_ssao_pass.OnRender();
+    m_context.perf->EndEvent();
 
     m_context.perf->BeginEvent(L"Light Pass");
     m_light_pass.OnRender();
@@ -209,6 +215,7 @@ void DX11Scene::OnModifySettings(const Settings& settings)
     m_light_pass.OnModifySettings(settings);
     m_compute_luminance.OnModifySettings(settings);
     m_shadow_pass.OnModifySettings(settings);
+    m_ssao_pass.OnModifySettings(settings);
 }
 
 void DX11Scene::CreateRT()

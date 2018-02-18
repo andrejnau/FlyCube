@@ -1,13 +1,13 @@
 #pragma once
 
-inline void CreateRtvSrv(Context& context, uint32_t msaa_count, int width, int height, ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
+inline void CreateRtvSrv(Context& context, uint32_t msaa_count, int width, int height, ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv, DXGI_FORMAT format = DXGI_FORMAT_R32G32B32A32_FLOAT)
 {
     D3D11_TEXTURE2D_DESC texture_desc = {};
     texture_desc.Width = width;
     texture_desc.Height = height;
     texture_desc.MipLevels = 1;
     texture_desc.ArraySize = 1;
-    texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    texture_desc.Format = format;
     texture_desc.Usage = D3D11_USAGE_DEFAULT;
     texture_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
@@ -20,7 +20,7 @@ inline void CreateRtvSrv(Context& context, uint32_t msaa_count, int width, int h
     ASSERT_SUCCEEDED(context.device->CreateTexture2D(&texture_desc, nullptr, &texture));
 
     D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-    srv_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    srv_desc.Format = format;
     srv_desc.Texture2D.MipLevels = 1;
 
     if (msaa_count == 1)

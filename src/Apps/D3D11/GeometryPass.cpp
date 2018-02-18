@@ -38,6 +38,8 @@ void GeometryPass::OnRender()
         m_ambient_rtv.Get(),
         m_diffuse_rtv.Get(),
         m_specular_rtv.Get(),
+        m_position_view_rtv.Get(),
+        m_normal_view_rtv.Get(),
     };
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
@@ -51,6 +53,7 @@ void GeometryPass::OnRender()
     {
         m_program.vs.cbuffer.ConstantBuffer.model = glm::transpose(scene_item.matrix);
         m_program.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(scene_item.matrix)));
+        m_program.vs.cbuffer.ConstantBuffer.normalMatrixView = glm::transpose(glm::transpose(glm::inverse(m_input.camera.GetViewMatrix() * scene_item.matrix)));
         m_program.vs.UpdateCBuffers();
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
@@ -121,5 +124,7 @@ void GeometryPass::InitGBuffers()
     CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_ambient_rtv, output.ambient_srv);
     CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_diffuse_rtv, output.diffuse_srv);
     CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_specular_rtv, output.specular_srv);
+    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_position_view_rtv, output.position_view_srv);
+    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_normal_view_rtv, output.normal_view_srv);
     CreateDsv(m_context, m_settings.msaa_count, m_width, m_height, m_depth_stencil_view);
 }
