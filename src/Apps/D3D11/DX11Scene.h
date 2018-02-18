@@ -47,7 +47,6 @@ private:
 
     ComPtr<ID3D11RenderTargetView> m_render_target_view;
     ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
-    ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
 
     D3D11_VIEWPORT m_viewport;
 

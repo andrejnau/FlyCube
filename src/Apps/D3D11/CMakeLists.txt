@@ -33,6 +33,7 @@ set(headers
     ${include_path}/ShadowPass.h
     ${include_path}/ComputeLuminance.h
     ${include_path}/DX11Scene.h
+    ${include_path}/DX11CreateUtils.h
 )
 
 set(sources

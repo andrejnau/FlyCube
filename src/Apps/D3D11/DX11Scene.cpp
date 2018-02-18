@@ -1,4 +1,5 @@
 #include "DX11Scene.h"
+#include "DX11CreateUtils.h"
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
 #include <Utilities/State.h>
@@ -215,19 +216,7 @@ void DX11Scene::CreateRT()
     ComPtr<ID3D11Texture2D> back_buffer;
     ASSERT_SUCCEEDED(m_context.swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back_buffer));
     ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(back_buffer.Get(), nullptr, &m_render_target_view));
-
-    D3D11_TEXTURE2D_DESC depth_stencil_desc = {};
-    depth_stencil_desc.Width = m_width;
-    depth_stencil_desc.Height = m_height;
-    depth_stencil_desc.MipLevels = 1;
-    depth_stencil_desc.ArraySize = 1;
-    depth_stencil_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depth_stencil_desc.SampleDesc.Count = 1;
-    depth_stencil_desc.Usage = D3D11_USAGE_DEFAULT;
-    depth_stencil_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&depth_stencil_desc, nullptr, &m_depth_stencil_buffer));
-    ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(m_depth_stencil_buffer.Get(), nullptr, &m_depth_stencil_view));
+    CreateDsv(m_context, 1, m_width, m_height, m_depth_stencil_view);
 }
 
 void DX11Scene::CreateViewPort()

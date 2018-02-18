@@ -1,4 +1,5 @@
 #include "GeometryPass.h"
+#include "DX11CreateUtils.h"
 
 #include <Utilities/DXUtility.h>
 #include <Utilities/State.h>
@@ -54,52 +55,8 @@ void GeometryPass::OnRender()
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
 
-        ComPtr<ID3D11ShaderResourceView> bones_info_srv;
-        ComPtr<ID3D11ShaderResourceView> bones_srv;
-
-        {
-            ComPtr<ID3D11Buffer> bones_buffer;
-            D3D11_BUFFER_DESC bones_buffer_desc = {};
-            bones_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-            bones_buffer_desc.ByteWidth = scene_item.model.bones.bone_info.size() * sizeof(Bones::BoneInfo);
-            bones_buffer_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-            bones_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-            bones_buffer_desc.StructureByteStride = sizeof(Bones::BoneInfo);
-            ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&bones_buffer_desc, nullptr, &bones_buffer));
-
-            if (!scene_item.model.bones.bone_info.empty())
-                m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, scene_item.model.bones.bone_info.data(), 0, 0);
-
-            D3D11_SHADER_RESOURCE_VIEW_DESC  bones_srv_desc = {};
-            bones_srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-            bones_srv_desc.Buffer.FirstElement = 0;
-            bones_srv_desc.Buffer.NumElements = scene_item.model.bones.bone_info.size();
-            bones_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-
-            ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(bones_buffer.Get(), &bones_srv_desc, &bones_info_srv));
-        }
-
-        {
-            ComPtr<ID3D11Buffer> bones_buffer;
-            D3D11_BUFFER_DESC bones_buffer_desc = {};
-            bones_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-            bones_buffer_desc.ByteWidth = scene_item.model.bones.bone.size() * sizeof(glm::mat4);
-            bones_buffer_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-            bones_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-            bones_buffer_desc.StructureByteStride = sizeof(glm::mat4);
-            ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&bones_buffer_desc, nullptr, &bones_buffer));
-
-            if (bones_buffer_desc.ByteWidth)
-                m_context.device_context->UpdateSubresource(bones_buffer.Get(), 0, nullptr, scene_item.model.bones.bone.data(), 0, 0);
-
-            D3D11_SHADER_RESOURCE_VIEW_DESC  bones_srv_desc = {};
-            bones_srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-            bones_srv_desc.Buffer.FirstElement = 0;
-            bones_srv_desc.Buffer.NumElements = scene_item.model.bones.bone.size();
-            bones_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-
-            ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(bones_buffer.Get(), &bones_srv_desc, &bones_srv));
-        }
+        ComPtr<ID3D11ShaderResourceView> bones_info_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone_info);
+        ComPtr<ID3D11ShaderResourceView> bones_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone);
 
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bones_srv);
@@ -157,69 +114,12 @@ void GeometryPass::OnModifySettings(const Settings& settings)
     }
 }
 
-void GeometryPass::CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv)
-{
-    D3D11_TEXTURE2D_DESC texture_desc = {};
-    texture_desc.Width = m_width;
-    texture_desc.Height = m_height;
-    texture_desc.MipLevels = 1;
-    texture_desc.ArraySize = 1;
-    texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-    texture_desc.Usage = D3D11_USAGE_DEFAULT;
-    texture_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
-    uint32_t quality = 0;
-    m_context.device->CheckMultisampleQualityLevels(texture_desc.Format, m_settings.msaa_count, &quality);
-    texture_desc.SampleDesc.Count = m_settings.msaa_count;
-    texture_desc.SampleDesc.Quality = quality - 1;
-
-    ComPtr<ID3D11Texture2D> texture;
-    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&texture_desc, nullptr, &texture));
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-    srv_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-    srv_desc.Texture2D.MipLevels = 1;
-
-    if (m_settings.msaa_count == 1)
-    {
-        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    }
-    else
-    {
-        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
-    }
-
-    ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(texture.Get(), &srv_desc, &srv));
-    ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
-}
-
-void GeometryPass::CreateDsv()
-{
-    D3D11_TEXTURE2D_DESC depth_stencil_desc = {};
-    depth_stencil_desc.Width = m_width;
-    depth_stencil_desc.Height = m_height;
-    depth_stencil_desc.MipLevels = 1;
-    depth_stencil_desc.ArraySize = 1;
-    depth_stencil_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depth_stencil_desc.Usage = D3D11_USAGE_DEFAULT;
-    depth_stencil_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-
-    uint32_t quality = 0;
-    m_context.device->CheckMultisampleQualityLevels(depth_stencil_desc.Format, m_settings.msaa_count, &quality);
-    depth_stencil_desc.SampleDesc.Count = m_settings.msaa_count;
-    depth_stencil_desc.SampleDesc.Quality = quality - 1;
-
-    ComPtr<ID3D11Texture2D> depth_stencil_buffer;
-    ASSERT_SUCCEEDED(m_context.device->CreateTexture2D(&depth_stencil_desc, nullptr, &depth_stencil_buffer));
-    ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(depth_stencil_buffer.Get(), nullptr, &m_depth_stencil_view));
-}
-
 void GeometryPass::InitGBuffers()
 {
-    CreateRtvSrv(m_position_rtv, output.position_srv);
-    CreateRtvSrv(m_normal_rtv, output.normal_srv);
-    CreateRtvSrv(m_ambient_rtv, output.ambient_srv);
-    CreateRtvSrv(m_diffuse_rtv, output.diffuse_srv);
-    CreateRtvSrv(m_specular_rtv, output.specular_srv);
-    CreateDsv();
+    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_position_rtv, output.position_srv);
+    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_normal_rtv, output.normal_srv);
+    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_ambient_rtv, output.ambient_srv);
+    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_diffuse_rtv, output.diffuse_srv);
+    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_specular_rtv, output.specular_srv);
+    CreateDsv(m_context, m_settings.msaa_count, m_width, m_height, m_depth_stencil_view);
 }

@@ -33,7 +33,6 @@ public:
     virtual void OnResize(int width, int height) override;
     virtual void OnModifySettings(const Settings & settings) override;
 
-    void CreateTextureDsv();
     void CreateViewPort();
 
 private:

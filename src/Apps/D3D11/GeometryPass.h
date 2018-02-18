@@ -42,8 +42,6 @@ private:
     int m_height;
     Program<GeometryPassPS, GeometryPassVS> m_program;
 
-    void CreateRtvSrv(ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv);
-    void CreateDsv();
     void InitGBuffers();
 
     ComPtr<ID3D11RenderTargetView> m_position_rtv;
