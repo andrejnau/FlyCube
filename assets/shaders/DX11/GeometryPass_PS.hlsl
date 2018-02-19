@@ -48,8 +48,6 @@ struct PS_OUT
     float3 gAmbient  : SV_Target2;
     float3 gDiffuse  : SV_Target3;
     float4 gSpecular : SV_Target4;
-    float3 gPositionView : SV_Target5;
-    float3 gNormalView   : SV_Target6;
 };
 
 float3 CalcBumpedNormal(VS_OUTPUT input)
@@ -81,9 +79,7 @@ PS_OUT main(VS_OUTPUT input)
     }
 
     PS_OUT output;
-    output.gPosition = float4(input.fragPos.xyz, input.pos.z);
-    output.gPositionView = input.fragPosView;
-    output.gNormalView = normalize(input.normalView);
+    output.gPosition = float4(input.fragPos.xyz, 1);
 
     if (HasTexture(normalMap))
         output.gNormal = CalcBumpedNormal(input);

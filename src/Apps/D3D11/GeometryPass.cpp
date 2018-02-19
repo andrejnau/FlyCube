@@ -38,8 +38,6 @@ void GeometryPass::OnRender()
         m_ambient_rtv.Get(),
         m_diffuse_rtv.Get(),
         m_specular_rtv.Get(),
-        m_position_view_rtv.Get(),
-        m_normal_view_rtv.Get(),
     };
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
@@ -124,7 +122,5 @@ void GeometryPass::InitGBuffers()
     CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_ambient_rtv, output.ambient_srv);
     CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_diffuse_rtv, output.diffuse_srv);
     CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_specular_rtv, output.specular_srv);
-    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_position_view_rtv, output.position_view_srv);
-    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_normal_view_rtv, output.normal_view_srv);
     CreateDsv(m_context, m_settings.msaa_count, m_width, m_height, m_depth_stencil_view);
 }

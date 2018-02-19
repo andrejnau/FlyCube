@@ -98,7 +98,6 @@ void SSAOPass::OnUpdate()
     m_program.ps.cbuffer.SSAOBuffer.projection = glm::transpose(projection);
     m_program.ps.cbuffer.SSAOBuffer.view = glm::transpose(view);
     m_program.ps.cbuffer.SSAOBuffer.viewInverse = glm::transpose(glm::transpose(glm::inverse(m_input.camera.GetViewMatrix())));
-    m_program.ps.cbuffer.SSAOBuffer.occlusion_with_view_space = m_settings.occlusion_with_view_space;
 }
 
 void SSAOPass::OnRender()
@@ -118,16 +117,8 @@ void SSAOPass::OnRender()
         cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
         cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
 
-        if (m_settings.occlusion_with_view_space)
-        {
-            m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position_view_srv);
-            m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal_view_srv);
-        }
-        else
-        {
-            m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position_srv);
-            m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal_srv);
-        }
+        m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position_srv);
+        m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal_srv);
 
         m_program.ps.srv.noiseTexture.Attach(m_noise_texture);
 

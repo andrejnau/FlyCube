@@ -51,8 +51,6 @@ private:
     ComPtr<ID3D11RenderTargetView> m_ambient_rtv;
     ComPtr<ID3D11RenderTargetView> m_diffuse_rtv;
     ComPtr<ID3D11RenderTargetView> m_specular_rtv;
-    ComPtr<ID3D11RenderTargetView> m_position_view_rtv;
-    ComPtr<ID3D11RenderTargetView> m_normal_view_rtv;
     ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
     Settings m_settings;
 };
