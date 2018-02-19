@@ -361,6 +361,11 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::SliderInt("ssao_scale", &settings.ssao_scale, 1, 8))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::SliderFloat("Exposure", &settings.Exposure, 0, 2))
         {
             modify_settings = true;

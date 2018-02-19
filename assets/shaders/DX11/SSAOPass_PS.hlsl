@@ -29,6 +29,7 @@ cbuffer SSAOBuffer
     float4 samples[KERNEL_SIZE];
     int width;
     int height;
+    int ssao_scale;
 };
 
 float4 getTexture(Texture2DMS<float4> _texture, float2 _tex_coord, int ss_index)
@@ -66,7 +67,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 {
     float radius = 0.3; 
     float bias = 0.01;
-    const float2 noiseScale = float2(width / 4.0, height / 4.0);
+    const float2 noiseScale = float2(width / ssao_scale, height / ssao_scale);
     float occlusion = 0;
     [unroll]
     for (uint i = 0; i < SAMPLE_COUNT; ++i)
