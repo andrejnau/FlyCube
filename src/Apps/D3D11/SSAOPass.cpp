@@ -102,6 +102,9 @@ void SSAOPass::OnUpdate()
 
 void SSAOPass::OnRender()
 {
+    if (!m_settings.use_occlusion)
+        return;
+
     m_program.UseProgram();
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
