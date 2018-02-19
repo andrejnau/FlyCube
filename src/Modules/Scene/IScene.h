@@ -19,6 +19,7 @@ public:
     int s_size = 3072;
     bool use_tone_mapping = true;
     bool use_occlusion = true;
+    bool occlusion_with_view_space = true;
     float Exposure = 0.35;
     float White = 1.5;
 };

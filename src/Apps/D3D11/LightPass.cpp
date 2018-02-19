@@ -81,7 +81,7 @@ void LightPass::OnRender()
         m_program.ps.srv.gDiffuse.Attach(m_input.geometry_pass.diffuse_srv);
         m_program.ps.srv.gSpecular.Attach(m_input.geometry_pass.specular_srv);
         m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
-        m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv);
+        m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
 

@@ -23,9 +23,12 @@ Texture2D noiseTexture;
 cbuffer SSAOBuffer
 {
     float4x4 projection;
+    float4x4 view;
+    float4x4 viewInverse;
     float4 samples[KERNEL_SIZE];
     int width;
     int height;
+    bool occlusion_with_view_space;
     bool is;
 };
 
@@ -46,18 +49,33 @@ float4 getTexture(Texture2D _texture, float2 _tex_coord, int ss_index = 0)
     return _color;
 }
 
+float3 get_pos(float2 texCoord, int ss_index)
+{
+    float3 fragPos = getTexture(gPosition, texCoord, ss_index).xyz;
+    if (!occlusion_with_view_space)
+        fragPos = mul(float4(fragPos, 1), view).xyz;
+    return fragPos;
+}
+
+float3 get_normal(float2 texCoord, int ss_index)
+{
+    float3 normal = normalize(getTexture(gNormal, texCoord, ss_index).xyz);
+    if (!occlusion_with_view_space)
+        normal = normalize(mul(normal, (float3x3)viewInverse));
+    return normal;
+}
+
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
-    float radius = 0.4;
-    float bias = 0.025;
+    float radius = 0.3; 
+    float bias = 0.01;
     const float2 noiseScale = float2(width / 4.0, height / 4.0);
-
     float occlusions = 0;
     [unroll]
     for (uint i = 0; i < SAMPLE_COUNT; ++i)
     {
-        float3 fragPos = getTexture(gPosition, input.texCoord, i).xyz;
-        float3 normal = normalize(getTexture(gNormal, input.texCoord, i).xyz);
+        float3 fragPos = get_pos(input.texCoord, i);
+        float3 normal = get_normal(input.texCoord, i);
         float3 tangent = normalize(getTexture(noiseTexture, ((input.texCoord * noiseScale) % 4) / 4.0, i)).xyz;
         tangent = normalize(tangent - dot(tangent, normal) * normal);
         float3 bitangent = normalize(cross(tangent, normal));
@@ -79,7 +97,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             offset.y = 1.0 - offset.y;
 
              // get sample depth
-            float sampleDepth = getTexture(gPosition, offset.xy, i).z;
+            float sampleDepth = get_pos(offset.xy, i).z;
 
              // range check & accumulate
             float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
@@ -89,5 +107,5 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     }
     occlusions /= SAMPLE_COUNT;
 
-    return float4(occlusions, 0.0, 0.0, 0.0);
+    return float4(occlusions, occlusions, occlusions, 0.0);
 }

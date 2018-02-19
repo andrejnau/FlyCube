@@ -7,7 +7,7 @@ struct VS_OUTPUT
 Texture2D ssaoInput;
 SamplerState g_sampler : register(s0);
 
-float main(VS_OUTPUT input) : SV_TARGET
+float4 main(VS_OUTPUT input) : SV_TARGET
 {
     float2 dim;
     ssaoInput.GetDimensions(dim.x, dim.y);
@@ -22,5 +22,6 @@ float main(VS_OUTPUT input) : SV_TARGET
             result += ssaoInput.Sample(g_sampler, input.texCoord + offset).r;
         }
     }
-    return result / (4.0 * 4.0);
+    result /= (4.0 * 4.0);
+    return float4(result, result, result, 0);
 }

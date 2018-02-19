@@ -361,6 +361,11 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("occlusion_with_view_space", &settings.occlusion_with_view_space))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::SliderFloat("Exposure", &settings.Exposure, 0, 2))
         {
             modify_settings = true;

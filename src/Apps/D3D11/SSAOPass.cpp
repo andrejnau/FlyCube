@@ -18,9 +18,11 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
     , m_width(width)
     , m_height(height)
     , m_program(context, std::bind(&SSAOPass::SetDefines, this, std::placeholders::_1))
+    , m_program_blur(context)
 {
     CreateDsv(m_context, 1, m_width, m_height, m_depth_stencil_view);
     CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv, output.srv);
+    CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv_blur, output.srv_blur);
 
     std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
     std::default_random_engine generator;
@@ -94,6 +96,9 @@ void SSAOPass::OnUpdate()
     glm::mat4 projection, view, model;
     m_input.camera.GetMatrix(projection, view, model);
     m_program.ps.cbuffer.SSAOBuffer.projection = glm::transpose(projection);
+    m_program.ps.cbuffer.SSAOBuffer.view = glm::transpose(view);
+    m_program.ps.cbuffer.SSAOBuffer.viewInverse = glm::transpose(glm::transpose(glm::inverse(m_input.camera.GetViewMatrix())));
+    m_program.ps.cbuffer.SSAOBuffer.occlusion_with_view_space = m_settings.occlusion_with_view_space;
 }
 
 void SSAOPass::OnRender()
@@ -107,15 +112,23 @@ void SSAOPass::OnRender()
     m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     m_context.device_context->OMSetRenderTargets(1, m_rtv.GetAddressOf(), m_depth_stencil_view.Get());
 
-    auto& state = CurState<bool>::Instance().state;
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
         cur_mesh.indices_buffer.Bind();
         cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
         cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
 
-        m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position_view_srv);
-        m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal_view_srv);
+        if (m_settings.occlusion_with_view_space)
+        {
+            m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position_view_srv);
+            m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal_view_srv);
+        }
+        else
+        {
+            m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position_srv);
+            m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal_srv);
+        }
+
         m_program.ps.srv.noiseTexture.Attach(m_noise_texture);
 
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
@@ -125,6 +138,26 @@ void SSAOPass::OnRender()
 
     std::vector<ID3D11ShaderResourceView*> empty(D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
     m_context.device_context->PSSetShaderResources(0, empty.size(), empty.data());
+
+    m_program_blur.UseProgram();
+    m_context.device_context->IASetInputLayout(m_program_blur.vs.input_layout.Get());
+
+    m_context.device_context->ClearRenderTargetView(m_rtv_blur.Get(), color);
+    m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_context.device_context->OMSetRenderTargets(1, m_rtv_blur.GetAddressOf(), m_depth_stencil_view.Get());
+
+    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+    {
+        cur_mesh.indices_buffer.Bind();
+        cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
+        cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
+        m_program_blur.ps.srv.ssaoInput.Attach(output.srv);
+        m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
+    }
+
+    m_context.device_context->OMSetRenderTargets(0, nullptr, nullptr);
+
+    m_context.device_context->PSSetShaderResources(0, empty.size(), empty.data());
 }
 
 void SSAOPass::OnResize(int width, int height)
@@ -133,6 +166,7 @@ void SSAOPass::OnResize(int width, int height)
     m_height = height;
     CreateDsv(m_context, 1, m_width, m_height, m_depth_stencil_view);
     CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv, output.srv);
+    CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv_blur, output.srv_blur);
 }
 
 void SSAOPass::OnModifySettings(const Settings& settings)

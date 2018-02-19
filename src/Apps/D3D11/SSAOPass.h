@@ -5,6 +5,7 @@
 #include <Geometry/DX11Geometry.h>
 #include <ProgramRef/SSAOPassPS.h>
 #include <ProgramRef/SSAOPassVS.h>
+#include <ProgramRef/SSAOBlurPassPS.h>
 #include <d3d11.h>
 #include <wrl.h>
 
@@ -23,6 +24,7 @@ public:
     struct Output
     {
         ComPtr<ID3D11ShaderResourceView> srv;
+        ComPtr<ID3D11ShaderResourceView> srv_blur;
     } output;
 
     SSAOPass(Context& context, const Input& input, int width, int height);
@@ -44,6 +46,7 @@ private:
     ComPtr<ID3D11SamplerState> m_texture_sampler;
     ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
     ComPtr<ID3D11RenderTargetView> m_rtv;
+    ComPtr<ID3D11RenderTargetView> m_rtv_blur;
     Program<SSAOPassPS, SSAOPassVS> m_program;
+    Program<SSAOBlurPassPS, SSAOPassVS> m_program_blur;
 };
-
