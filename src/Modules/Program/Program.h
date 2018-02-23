@@ -332,6 +332,67 @@ private:
     uint32_t m_slot;
 };
 
+class RTVBinding
+{
+public:
+    RTVBinding(Context& context, uint32_t slot)
+        : m_context(context)
+        , m_slot(slot)
+    {
+    }
+
+    RTVBinding& Attach(const ComPtr<ID3D11Resource>& res = {})
+    {
+        ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(res.Get(), nullptr, &rtv));
+        return *this;
+    }
+
+    void ClearRenderTarget(const FLOAT ColorRGBA[4])
+    {
+        m_context.device_context->ClearRenderTargetView(rtv.Get(), ColorRGBA);
+    }
+
+    const ComPtr<ID3D11RenderTargetView>& GetRtv() const
+    {
+        return rtv;
+    }
+
+private:
+    Context& m_context;
+    uint32_t m_slot;
+    ComPtr<ID3D11RenderTargetView> rtv;
+};
+
+class DSVBinding
+{
+public:
+    DSVBinding(Context& context)
+        : m_context(context)
+    {
+    }
+
+    DSVBinding& Attach(const ComPtr<ID3D11Resource>& res = {})
+    {
+        ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(res.Get(), nullptr, &dsv));
+        return *this;
+    }
+
+    void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+    {
+        m_context.device_context->ClearDepthStencilView(dsv.Get(), ClearFlags, Depth, Stencil);
+    }
+
+    const ComPtr<ID3D11DepthStencilView>& GetDsv() const
+    {
+        return dsv;
+    }
+
+private:
+    Context & m_context;
+    uint32_t m_slot;
+    ComPtr<ID3D11DepthStencilView> dsv;
+};
+
 template<ShaderType> class Shader : public ShaderBase {};
 
 template<>

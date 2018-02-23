@@ -41,10 +41,27 @@ public:
 {{#Inputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
 {{/Inputs}}    } ia;
 
-    struct
+    {{#HasOutputs}}
+    struct RTV
     {
-{{#Outputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
-{{/Outputs}}    } om;
+        RTV(Context& context)
+{{#Outputs}}            {{Separator}} rtv{{Slot}}(context, {{Slot}})
+{{/Outputs}}            {{DSVSeparator}} dsv(context)
+        {
+        }
+
+        void Apply(Context& context)
+        {
+            std::vector<ID3D11RenderTargetView*> rtv_ptr;
+{{#Outputs}}            rtv_ptr.push_back(rtv{{Slot}}.GetRtv().Get());
+{{/Outputs}}
+            context.device_context->OMSetRenderTargets(rtv_ptr.size(), rtv_ptr.data(), dsv.GetDsv().Get());
+        }
+
+{{#Outputs}}        RTVBinding rtv{{Slot}};
+{{/Outputs}}        DSVBinding dsv;
+    } om;
+    {{/HasOutputs}}
 
     struct
     {
@@ -56,6 +73,7 @@ public:
         , cbuffer{}
         , srv(*this) 
         , uav(*this) 
+        {{#HasOutputs}} , om(context) {{/HasOutputs}}
         , cbuffer_impl(context)
     {
     }

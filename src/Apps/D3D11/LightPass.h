@@ -29,7 +29,7 @@ public:
 
     struct Output
     {
-        ComPtr<ID3D11Resource> srv;
+        ComPtr<ID3D11Resource> rtv;
     } output;
 
     void SetDefines(Program<LightPassPS, LightPassVS>& program);
@@ -50,6 +50,5 @@ private:
     Program<LightPassPS, LightPassVS> m_program;
     ComPtr<ID3D11SamplerState> m_shadow_sampler;
     ComPtr<ID3D11RasterizerState> m_rasterizer_state;
-    ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
-    ComPtr<ID3D11RenderTargetView> m_rtv;
+    ComPtr<ID3D11Resource> m_depth_stencil_view;
 };

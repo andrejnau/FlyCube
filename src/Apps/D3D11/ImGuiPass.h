@@ -18,8 +18,6 @@ public:
     struct Input
     {
         IModifySettings& root_scene;
-        ComPtr<ID3D11RenderTargetView>& render_target_view;
-        ComPtr<ID3D11DepthStencilView>& depth_stencil_view;
     };
 
     struct Output

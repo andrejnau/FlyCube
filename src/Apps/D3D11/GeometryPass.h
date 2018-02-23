@@ -44,12 +44,7 @@ private:
 
     void InitGBuffers();
 
-    ComPtr<ID3D11RenderTargetView> m_position_rtv;
-    ComPtr<ID3D11RenderTargetView> m_normal_rtv;
-    ComPtr<ID3D11RenderTargetView> m_ambient_rtv;
-    ComPtr<ID3D11RenderTargetView> m_diffuse_rtv;
-    ComPtr<ID3D11RenderTargetView> m_specular_rtv;
-    ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
+    ComPtr<ID3D11Resource> m_depth_stencil;
     Settings m_settings;
 };
 

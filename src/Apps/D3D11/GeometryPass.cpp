@@ -32,19 +32,14 @@ void GeometryPass::OnRender()
     m_program.UseProgram();
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
-    std::vector<ID3D11RenderTargetView*> rtvs = {
-        m_position_rtv.Get(),
-        m_normal_rtv.Get(),
-        m_ambient_rtv.Get(),
-        m_diffuse_rtv.Get(),
-        m_specular_rtv.Get(),
-    };
-
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    for (auto & rtv : rtvs)
-        m_context.device_context->ClearRenderTargetView(rtv, color);
-    m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_context.device_context->OMSetRenderTargets(rtvs.size(), rtvs.data(), m_depth_stencil_view.Get());
+    m_program.ps.om.rtv0.Attach(output.position).ClearRenderTarget(color);
+    m_program.ps.om.rtv1.Attach(output.normal).ClearRenderTarget(color);
+    m_program.ps.om.rtv2.Attach(output.ambient).ClearRenderTarget(color);
+    m_program.ps.om.rtv3.Attach(output.diffuse).ClearRenderTarget(color);
+    m_program.ps.om.rtv4.Attach(output.specular).ClearRenderTarget(color);
+    m_program.ps.om.dsv.Attach(m_depth_stencil).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program.ps.om.Apply(m_context);
 
     auto& state = CurState<bool>::Instance().state;
     for (auto& scene_item : m_input.scene_list)
@@ -90,7 +85,7 @@ void GeometryPass::OnRender()
 
             m_program.ps.UpdateCBuffers();
 
-            m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
+            m_context.DrawIndexed(cur_mesh.indices.size());
         }
     }
 }
@@ -117,10 +112,10 @@ void GeometryPass::OnModifySettings(const Settings& settings)
 
 void GeometryPass::InitGBuffers()
 {
-    output.position = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_position_rtv);
-    output.normal = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_normal_rtv);
-    output.ambient = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_ambient_rtv);
-    output.diffuse = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_diffuse_rtv);
-    output.specular = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_specular_rtv);
-    CreateDsv(m_context, m_settings.msaa_count, m_width, m_height, m_depth_stencil_view);
+    output.position = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height);
+    output.normal = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height);
+    output.ambient = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height);
+    output.diffuse = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height);
+    output.specular = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height);
+    m_depth_stencil = CreateDsv(m_context, m_settings.msaa_count, m_width, m_height);
 }

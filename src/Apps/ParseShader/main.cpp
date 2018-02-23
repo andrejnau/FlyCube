@@ -279,9 +279,12 @@ private:
                     input_name += std::to_string(param_desc.SemanticIndex);
                 toutput.set("Name", input_name);
                 toutput.set("Slot", std::to_string(i));
+                toutput.set("Separator", toutputs.is_empty_list() ? ":" : ",");
                 toutputs.push_back(toutput);
             }
             m_tcontext["Outputs"] = mustache::data{ toutputs };
+            m_tcontext["DSVSeparator"] = toutputs.is_empty_list() ? ":" : ",";
+            m_tcontext["HasOutputs"] = true;
         }
     }
 

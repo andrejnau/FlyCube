@@ -44,9 +44,7 @@ private:
     int m_height;
     ComPtr<ID3D11Texture2D> m_noise_texture;
     ComPtr<ID3D11SamplerState> m_texture_sampler;
-    ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
-    ComPtr<ID3D11RenderTargetView> m_rtv;
-    ComPtr<ID3D11RenderTargetView> m_rtv_blur;
+    ComPtr<ID3D11Resource> m_depth_stencil_view;
     Program<SSAOPassPS, SSAOPassVS> m_program;
     Program<SSAOBlurPassPS, SSAOPassVS> m_program_blur;
 };

@@ -76,10 +76,9 @@ void ComputeLuminance::Draw(ComPtr<ID3D11Resource> input)
     m_context.device_context->IASetInputLayout(m_HDRApply.vs.input_layout.Get());
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_context.device_context->ClearRenderTargetView(m_input.rtv.Get(), color);
-    m_context.device_context->ClearDepthStencilView(m_input.dsv.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-    m_context.device_context->OMSetRenderTargets(1, m_input.rtv.GetAddressOf(), m_input.dsv.Get());
+    m_HDRApply.ps.om.rtv0.Attach(m_input.rtv).ClearRenderTarget(color);
+    m_HDRApply.ps.om.dsv.Attach(m_input.dsv).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_HDRApply.ps.om.Apply(m_context);
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
@@ -89,7 +88,7 @@ void ComputeLuminance::Draw(ComPtr<ID3D11Resource> input)
 
         m_HDRApply.ps.srv.hdr_input.Attach(m_input.hdr_res);
         m_HDRApply.ps.srv.lum.Attach(input);
-        m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
+        m_context.DrawIndexed(cur_mesh.indices.size());
     }
 
     std::vector<ID3D11ShaderResourceView*> empty(D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);

@@ -38,3 +38,27 @@ Context::Context(GLFWwindow* window, int width, int height)
 
     device_context.As(&perf);
 }
+
+ComPtr<ID3D11Resource> Context::GetBackBuffer()
+{
+    ComPtr<ID3D11Texture2D> back_buffer;
+    ASSERT_SUCCEEDED(swap_chain->GetBuffer(0, IID_PPV_ARGS(&back_buffer)));
+    return back_buffer;
+}
+
+void Context::ResizeBackBuffer(int width, int height)
+{
+    DXGI_SWAP_CHAIN_DESC desc = {};
+    ASSERT_SUCCEEDED(swap_chain->GetDesc(&desc));
+    ASSERT_SUCCEEDED(swap_chain->ResizeBuffers(1, width, height, desc.BufferDesc.Format, desc.Flags));
+}
+
+void Context::Present()
+{
+    ASSERT_SUCCEEDED(swap_chain->Present(0, 0));
+}
+
+void Context::DrawIndexed(UINT IndexCount)
+{
+    device_context->DrawIndexed(IndexCount, 0, 0);
+}

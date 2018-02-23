@@ -1,6 +1,6 @@
 #pragma once
 
-inline ComPtr<ID3D11Resource> CreateRtvSrv(Context& context, uint32_t msaa_count, int width, int height, ComPtr<ID3D11RenderTargetView>& rtv)
+inline ComPtr<ID3D11Resource> CreateRtvSrv(Context& context, uint32_t msaa_count, int width, int height)
 {
     D3D11_TEXTURE2D_DESC texture_desc = {};
     texture_desc.Width = width;
@@ -19,12 +19,10 @@ inline ComPtr<ID3D11Resource> CreateRtvSrv(Context& context, uint32_t msaa_count
     ComPtr<ID3D11Texture2D> texture;
     ASSERT_SUCCEEDED(context.device->CreateTexture2D(&texture_desc, nullptr, &texture));
 
-    ASSERT_SUCCEEDED(context.device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
-
     return texture;
 }
 
-inline void CreateDsv(Context& context, uint32_t msaa_count, int width, int height, ComPtr<ID3D11DepthStencilView>& depth_stencil_view)
+inline ComPtr<ID3D11Resource> CreateDsv(Context& context, uint32_t msaa_count, int width, int height)
 {
     D3D11_TEXTURE2D_DESC depth_stencil_desc = {};
     depth_stencil_desc.Width = width;
@@ -42,7 +40,7 @@ inline void CreateDsv(Context& context, uint32_t msaa_count, int width, int heig
 
     ComPtr<ID3D11Texture2D> depth_stencil_buffer;
     ASSERT_SUCCEEDED(context.device->CreateTexture2D(&depth_stencil_desc, nullptr, &depth_stencil_buffer));
-    ASSERT_SUCCEEDED(context.device->CreateDepthStencilView(depth_stencil_buffer.Get(), nullptr, &depth_stencil_view));
+    return depth_stencil_buffer;
 }
 
 template<typename T>

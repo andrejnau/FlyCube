@@ -17,8 +17,8 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     , m_shadow_pass(m_context, { m_scene_list, m_camera, light_pos }, width, height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
     , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, light_pos }, width, height)
-    , m_compute_luminance(m_context, { m_light_pass.output.srv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
-    , m_imgui_pass(m_context, { *this, m_render_target_view, m_depth_stencil_view }, width, height)
+    , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
+    , m_imgui_pass(m_context, { *this }, width, height)
 {
     // prevent a call ~aiScene 
     m_scene_list.reserve(2);
@@ -104,7 +104,7 @@ void DX11Scene::OnRender()
         m_context.perf->EndEvent();
     }
 
-    ASSERT_SUCCEEDED(m_context.swap_chain->Present(0, 0));
+    m_context.Present();
 }
 
 void DX11Scene::OnResize(int width, int height)
@@ -117,9 +117,7 @@ void DX11Scene::OnResize(int width, int height)
 
     m_render_target_view.Reset();
 
-    DXGI_SWAP_CHAIN_DESC desc = {};
-    ASSERT_SUCCEEDED(m_context.swap_chain->GetDesc(&desc));
-    ASSERT_SUCCEEDED(m_context.swap_chain->ResizeBuffers(1, width, height, desc.BufferDesc.Format, desc.Flags));
+    m_context.ResizeBackBuffer(width, height);
 
     CreateRT();
     CreateViewPort();
@@ -222,10 +220,8 @@ void DX11Scene::OnModifySettings(const Settings& settings)
 
 void DX11Scene::CreateRT()
 {
-    ComPtr<ID3D11Texture2D> back_buffer;
-    ASSERT_SUCCEEDED(m_context.swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back_buffer));
-    ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(back_buffer.Get(), nullptr, &m_render_target_view));
-    CreateDsv(m_context, 1, m_width, m_height, m_depth_stencil_view);
+    m_render_target_view = m_context.GetBackBuffer();
+    m_depth_stencil_view = CreateDsv(m_context, 1, m_width, m_height);
 }
 
 void DX11Scene::CreateViewPort()

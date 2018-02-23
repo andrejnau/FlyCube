@@ -33,8 +33,8 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     m_input.camera.SetCameraYaw(-178.0f);
     m_input.camera.SetCameraYaw(-1.75f);
 
-    output.srv = CreateRtvSrv(m_context, 1, width, height, m_rtv);
-    CreateDsv(m_context, 1, width, height, m_depth_stencil_view);
+    output.rtv = CreateRtvSrv(m_context, 1, width, height);
+    m_depth_stencil_view = CreateDsv(m_context, 1, width, height);
 }
 
 void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
@@ -64,10 +64,9 @@ void LightPass::OnRender()
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_context.device_context->ClearRenderTargetView(m_rtv.Get(), color);
-    m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-    m_context.device_context->OMSetRenderTargets(1, m_rtv.GetAddressOf(), m_depth_stencil_view.Get());
+    m_program.ps.om.rtv0.Attach(output.rtv).ClearRenderTarget(color);
+    m_program.ps.om.dsv.Attach(m_depth_stencil_view).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program.ps.om.Apply(m_context);
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
@@ -82,7 +81,7 @@ void LightPass::OnRender()
         m_program.ps.srv.gSpecular.Attach(m_input.geometry_pass.specular);
         m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
         m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
-        m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
+        m_context.DrawIndexed(cur_mesh.indices.size());
     }
 
     m_context.device_context->OMSetRenderTargets(0, nullptr, nullptr);
@@ -95,8 +94,9 @@ void LightPass::OnResize(int width, int height)
 {
     m_width = width;
     m_height = height;
-    output.srv = CreateRtvSrv(m_context, 1, width, height, m_rtv);
-    CreateDsv(m_context, 1, width, height, m_depth_stencil_view);
+
+    output.rtv = CreateRtvSrv(m_context, 1, width, height);
+    m_depth_stencil_view = CreateDsv(m_context, 1, width, height);
 }
 
 void LightPass::OnModifySettings(const Settings& settings)

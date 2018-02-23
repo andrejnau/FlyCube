@@ -19,8 +19,8 @@ public:
     {
         ComPtr<ID3D11Resource>& hdr_res;
         Model<DX11Mesh>& model;
-        ComPtr<ID3D11RenderTargetView>& rtv;
-        ComPtr<ID3D11DepthStencilView>& dsv;
+        ComPtr<ID3D11Resource>& rtv;
+        ComPtr<ID3D11Resource>& dsv;
     };
 
     struct Output
