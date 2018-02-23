@@ -109,7 +109,7 @@ private:
             break;
         case D3D_SHADER_VARIABLE_TYPE::D3D_SVT_BOOL:
             type_prefix = "b";
-            type = "bool";
+            type = "uint32_t";
             break;
         }
 
