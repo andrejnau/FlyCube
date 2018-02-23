@@ -174,8 +174,6 @@ float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffus
 
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
-    float4 gamma4 = float4(1.0/2.2, 1.0 / 2.2, 1.0 / 2.2, 1);
-
     float3 lighting = 0;
     [unroll]
     for (uint i = 0; i < SAMPLE_COUNT; ++i)
@@ -194,5 +192,5 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     }
     lighting /= SAMPLE_COUNT;
 
-    return pow(abs(float4(lighting, 1.0)), gamma4);
+    return float4(lighting, 1.0);
 }

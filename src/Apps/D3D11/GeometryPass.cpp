@@ -22,9 +22,9 @@ void GeometryPass::OnUpdate()
     
     m_program.vs.cbuffer.ConstantBuffer.view = glm::transpose(view);
     m_program.vs.cbuffer.ConstantBuffer.projection = glm::transpose(projection);
-    m_program.ps.cbuffer.Light.light_ambient = glm::vec3(0.2f);
-    m_program.ps.cbuffer.Light.light_diffuse = glm::vec3(1.0f);
-    m_program.ps.cbuffer.Light.light_specular = glm::vec3(0.5f);
+    m_program.ps.cbuffer.Light.light_ambient = glm::vec3(m_settings.light_ambient);
+    m_program.ps.cbuffer.Light.light_diffuse = glm::vec3(m_settings.light_diffuse);
+    m_program.ps.cbuffer.Light.light_specular = glm::vec3(m_settings.light_specular);
 }
 
 void GeometryPass::OnRender()
@@ -73,10 +73,10 @@ void GeometryPass::OnRender()
                 m_program.ps.srv.normalMap.Attach();
 
             m_program.ps.srv.alphaMap.Attach(cur_mesh.GetTexture(aiTextureType_OPACITY));
-            m_program.ps.srv.ambientMap.Attach(cur_mesh.GetTexture(aiTextureType_AMBIENT));
+            m_program.ps.srv.ambientMap.Attach(cur_mesh.GetTexture(aiTextureType_DIFFUSE));
             m_program.ps.srv.diffuseMap.Attach(cur_mesh.GetTexture(aiTextureType_DIFFUSE));
             m_program.ps.srv.specularMap.Attach(cur_mesh.GetTexture(aiTextureType_SPECULAR));
-            m_program.ps.srv.glossMap.Attach(cur_mesh.GetTexture(aiTextureType_SHININESS));
+            //m_program.ps.srv.glossMap.Attach(cur_mesh.GetTexture(aiTextureType_SHININESS));
 
             m_program.ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
             m_program.ps.cbuffer.Material.material_diffuse = cur_mesh.material.dif;

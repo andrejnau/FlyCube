@@ -54,5 +54,6 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     }
 
     // Convert back to RGB and send to output buffer
-    return float4(mul(xyzCol, xyz2rgb), 1.0);
+    float4 gamma4 = float4(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2, 1);
+    return pow(float4(mul(xyzCol, xyz2rgb), 1.0), gamma4);
 }

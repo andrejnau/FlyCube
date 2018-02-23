@@ -371,7 +371,22 @@ public:
             modify_settings = true;
         }
 
-        if (ImGui::SliderFloat("White", &settings.White, 0, 2))
+        if (ImGui::SliderFloat("White", &settings.White, 0, 5))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::SliderFloat("light_ambient", &settings.light_ambient, 0, 2))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::SliderFloat("light_diffuse", &settings.light_diffuse, 0, 2))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::SliderFloat("light_specular", &settings.light_specular, 0, 2))
         {
             modify_settings = true;
         }

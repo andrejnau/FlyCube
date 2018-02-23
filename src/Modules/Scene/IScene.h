@@ -11,7 +11,7 @@ enum class ApiType
 class Settings
 {
 public:
-    uint32_t msaa_count = 2;
+    uint32_t msaa_count = 1;
     int width = 1280;
     int height = 720;
     float s_near = 0.5f;
@@ -19,9 +19,12 @@ public:
     int s_size = 3072;
     bool use_tone_mapping = true;
     bool use_occlusion = true;
+    float light_ambient = 0.2;
+    float light_diffuse = 1.0;
+    float light_specular = 1.0;
     int ssao_scale = 1;
-    float Exposure = 0.35;
-    float White = 1.5;
+    float Exposure = 0.1;
+    float White = 3;
 };
 
 class IModifySettings
