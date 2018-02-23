@@ -106,9 +106,9 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
 
     m_program.UseProgram();
     dx11_mesh.indices_buffer.Bind();
-    dx11_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
-    dx11_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
-    dx11_mesh.colors_buffer.BindToSlot(m_program.vs.geometry.COLOR);
+    dx11_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
+    dx11_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
+    dx11_mesh.colors_buffer.BindToSlot(m_program.vs.ia.COLOR);
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 

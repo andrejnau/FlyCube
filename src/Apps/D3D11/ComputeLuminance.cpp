@@ -84,8 +84,8 @@ void ComputeLuminance::Draw(ComPtr<ID3D11Resource> input)
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
         cur_mesh.indices_buffer.Bind();
-        cur_mesh.positions_buffer.BindToSlot(m_HDRApply.vs.geometry.POSITION);
-        cur_mesh.texcoords_buffer.BindToSlot(m_HDRApply.vs.geometry.TEXCOORD);
+        cur_mesh.positions_buffer.BindToSlot(m_HDRApply.vs.ia.POSITION);
+        cur_mesh.texcoords_buffer.BindToSlot(m_HDRApply.vs.ia.TEXCOORD);
 
         m_HDRApply.ps.srv.hdr_input.Attach(m_input.hdr_res);
         m_HDRApply.ps.srv.lum.Attach(input);

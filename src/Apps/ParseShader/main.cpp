@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iterator>
 #include <cctype>
+#include <map>
 
 using namespace Microsoft::WRL;
 using namespace kainjow;
@@ -237,21 +238,51 @@ private:
         m_tcontext["UAVs"] = mustache::data{ tuavs };
         m_tcontext["Samplers"] = mustache::data{ tsamplers };
 
-        mustache::data tinputs{ mustache::data::type::list };
-        for (UINT i = 0; i < desc.InputParameters; ++i)
+        if (m_target.find("vs") != -1)
         {
-            D3D11_SIGNATURE_PARAMETER_DESC param_desc = {};
-            reflector->GetInputParameterDesc(i, &param_desc);
+            mustache::data tinputs{ mustache::data::type::list };
+            std::map<std::string, size_t> use_name;
+            for (UINT i = 0; i < desc.InputParameters; ++i)
+            {
+                D3D11_SIGNATURE_PARAMETER_DESC param_desc = {};
+                reflector->GetInputParameterDesc(i, &param_desc);
+                ++use_name[param_desc.SemanticName];
+            }
+            for (UINT i = 0; i < desc.InputParameters; ++i)
+            {
+                D3D11_SIGNATURE_PARAMETER_DESC param_desc = {};
+                reflector->GetInputParameterDesc(i, &param_desc);
 
-            mustache::data tinput;
-            std::string input_name = param_desc.SemanticName;
-            if (param_desc.SemanticIndex)
-                input_name += std::to_string(param_desc.SemanticIndex);
-            tinput.set("Name", input_name);
-            tinput.set("Slot", std::to_string(i));
-            tinputs.push_back(tinput);
+                mustache::data tinput;
+                std::string input_name = param_desc.SemanticName;
+                if (param_desc.SemanticIndex || use_name[param_desc.SemanticName] > 1)
+                    input_name += std::to_string(param_desc.SemanticIndex);
+                tinput.set("Name", input_name);
+                tinput.set("Slot", std::to_string(i));
+                tinputs.push_back(tinput);
+            }
+            m_tcontext["Inputs"] = mustache::data{ tinputs };
         }
-        m_tcontext["Inputs"] = mustache::data{ tinputs };
+
+        if (m_target.find("ps") != -1)
+        {
+            mustache::data toutputs{ mustache::data::type::list };          
+
+            for (UINT i = 0; i < desc.OutputParameters; ++i)
+            {
+                D3D11_SIGNATURE_PARAMETER_DESC param_desc = {};
+                reflector->GetOutputParameterDesc(i, &param_desc);
+
+                mustache::data toutput;
+                std::string input_name = param_desc.SemanticName;
+                if (param_desc.SemanticIndex || desc.OutputParameters > 1)
+                    input_name += std::to_string(param_desc.SemanticIndex);
+                toutput.set("Name", input_name);
+                toutput.set("Slot", std::to_string(i));
+                toutputs.push_back(toutput);
+            }
+            m_tcontext["Outputs"] = mustache::data{ toutputs };
+        }
     }
 
     ComPtr<ID3DBlob> CompileShader(const std::string& shader_path, const std::string& entrypoint, const std::string& target)

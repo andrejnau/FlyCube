@@ -65,12 +65,12 @@ void GeometryPass::OnRender()
         for (DX11Mesh& cur_mesh : scene_item.model.meshes)
         {
             cur_mesh.indices_buffer.Bind();
-            cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
-            cur_mesh.normals_buffer.BindToSlot(m_program.vs.geometry.NORMAL);
-            cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
-            cur_mesh.tangents_buffer.BindToSlot(m_program.vs.geometry.TANGENT);
-            cur_mesh.bones_offset_buffer.BindToSlot(m_program.vs.geometry.BONES_OFFSET);
-            cur_mesh.bones_count_buffer.BindToSlot(m_program.vs.geometry.BONES_COUNT);
+            cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
+            cur_mesh.normals_buffer.BindToSlot(m_program.vs.ia.NORMAL);
+            cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
+            cur_mesh.tangents_buffer.BindToSlot(m_program.vs.ia.TANGENT);
+            cur_mesh.bones_offset_buffer.BindToSlot(m_program.vs.ia.BONES_OFFSET);
+            cur_mesh.bones_count_buffer.BindToSlot(m_program.vs.ia.BONES_COUNT);
 
             if (!state["disable_norm"])
                 m_program.ps.srv.normalMap.Attach(cur_mesh.GetTexture(aiTextureType_HEIGHT));

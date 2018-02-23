@@ -39,7 +39,12 @@ public:
     struct
     {
 {{#Inputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
-{{/Inputs}}    } geometry;
+{{/Inputs}}    } ia;
+
+    struct
+    {
+{{#Outputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
+{{/Outputs}}    } om;
 
     struct
     {

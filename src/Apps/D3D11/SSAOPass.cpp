@@ -111,8 +111,8 @@ void SSAOPass::OnRender()
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
         cur_mesh.indices_buffer.Bind();
-        cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
-        cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
+        cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
+        cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
 
         m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position);
         m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal);
@@ -137,8 +137,8 @@ void SSAOPass::OnRender()
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
         cur_mesh.indices_buffer.Bind();
-        cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
-        cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
+        cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
+        cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
         m_program_blur.ps.srv.ssaoInput.Attach(output.srv);
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
