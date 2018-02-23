@@ -56,8 +56,8 @@ void GeometryPass::OnRender()
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
 
-        ComPtr<ID3D11ShaderResourceView> bones_info_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone_info);
-        ComPtr<ID3D11ShaderResourceView> bones_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone);
+        ComPtr<ID3D11Resource> bones_info_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone_info);
+        ComPtr<ID3D11Resource> bones_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone);
 
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bones_srv);
@@ -117,10 +117,10 @@ void GeometryPass::OnModifySettings(const Settings& settings)
 
 void GeometryPass::InitGBuffers()
 {
-    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_position_rtv, output.position_srv);
-    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_normal_rtv, output.normal_srv);
-    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_ambient_rtv, output.ambient_srv);
-    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_diffuse_rtv, output.diffuse_srv);
-    CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_specular_rtv, output.specular_srv);
+    output.position = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_position_rtv);
+    output.normal = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_normal_rtv);
+    output.ambient = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_ambient_rtv);
+    output.diffuse = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_diffuse_rtv);
+    output.specular = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height, m_specular_rtv);
     CreateDsv(m_context, m_settings.msaa_count, m_width, m_height, m_depth_stencil_view);
 }

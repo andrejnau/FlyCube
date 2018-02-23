@@ -1,13 +1,13 @@
 #pragma once
 
-inline void CreateRtvSrv(Context& context, uint32_t msaa_count, int width, int height, ComPtr<ID3D11RenderTargetView>& rtv, ComPtr<ID3D11ShaderResourceView>& srv, DXGI_FORMAT format = DXGI_FORMAT_R32G32B32A32_FLOAT)
+inline ComPtr<ID3D11Resource> CreateRtvSrv(Context& context, uint32_t msaa_count, int width, int height, ComPtr<ID3D11RenderTargetView>& rtv)
 {
     D3D11_TEXTURE2D_DESC texture_desc = {};
     texture_desc.Width = width;
     texture_desc.Height = height;
     texture_desc.MipLevels = 1;
     texture_desc.ArraySize = 1;
-    texture_desc.Format = format;
+    texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
     texture_desc.Usage = D3D11_USAGE_DEFAULT;
     texture_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
@@ -19,21 +19,9 @@ inline void CreateRtvSrv(Context& context, uint32_t msaa_count, int width, int h
     ComPtr<ID3D11Texture2D> texture;
     ASSERT_SUCCEEDED(context.device->CreateTexture2D(&texture_desc, nullptr, &texture));
 
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-    srv_desc.Format = format;
-    srv_desc.Texture2D.MipLevels = 1;
-
-    if (msaa_count == 1)
-    {
-        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    }
-    else
-    {
-        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
-    }
-
-    ASSERT_SUCCEEDED(context.device->CreateShaderResourceView(texture.Get(), &srv_desc, &srv));
     ASSERT_SUCCEEDED(context.device->CreateRenderTargetView(texture.Get(), nullptr, &rtv));
+
+    return texture;
 }
 
 inline void CreateDsv(Context& context, uint32_t msaa_count, int width, int height, ComPtr<ID3D11DepthStencilView>& depth_stencil_view)
@@ -58,13 +46,12 @@ inline void CreateDsv(Context& context, uint32_t msaa_count, int width, int heig
 }
 
 template<typename T>
-inline ComPtr<ID3D11ShaderResourceView> CreateBufferSRV(Context& context, const std::vector<T>& v)
+inline ComPtr<ID3D11Resource> CreateBufferSRV(Context& context, const std::vector<T>& v)
 {
-    ComPtr<ID3D11ShaderResourceView> srv;
-    if (v.empty())
-        return srv;
-    
     ComPtr<ID3D11Buffer> buffer;
+    if (v.empty())
+        return buffer;
+    
     D3D11_BUFFER_DESC buffer_desc = {};
     buffer_desc.Usage = D3D11_USAGE_DEFAULT;
     buffer_desc.ByteWidth = v.size() * sizeof(T);
@@ -75,17 +62,10 @@ inline ComPtr<ID3D11ShaderResourceView> CreateBufferSRV(Context& context, const 
     
     context.device_context->UpdateSubresource(buffer.Get(), 0, nullptr, v.data(), 0, 0);
 
-    D3D11_SHADER_RESOURCE_VIEW_DESC  srv_desc = {};
-    srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-    srv_desc.Buffer.FirstElement = 0;
-    srv_desc.Buffer.NumElements = v.size();
-    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-    ASSERT_SUCCEEDED(context.device->CreateShaderResourceView(buffer.Get(), &srv_desc, &srv));
-
-    return srv;
+    return buffer;
 }
 
-inline void CreateShadowDSV(Context& context, const Settings& settings, ComPtr<ID3D11DepthStencilView>& depth_stencil_view, ComPtr<ID3D11ShaderResourceView>& srv)
+inline ComPtr<ID3D11Resource> CreateShadowDSV(Context& context, const Settings& settings, ComPtr<ID3D11DepthStencilView>& depth_stencil_view)
 {
     D3D11_TEXTURE2D_DESC texture_desc = {};
     texture_desc.Width = settings.s_size;
@@ -111,5 +91,5 @@ inline void CreateShadowDSV(Context& context, const Settings& settings, ComPtr<I
     ComPtr<ID3D11Texture2D> cube_texture;
     ASSERT_SUCCEEDED(context.device->CreateTexture2D(&texture_desc, nullptr, &cube_texture));
     ASSERT_SUCCEEDED(context.device->CreateDepthStencilView(cube_texture.Get(), &dsv_desc, &depth_stencil_view));
-    ASSERT_SUCCEEDED(context.device->CreateShaderResourceView(cube_texture.Get(), &srv_desc, &srv));
+    return cube_texture;
 }

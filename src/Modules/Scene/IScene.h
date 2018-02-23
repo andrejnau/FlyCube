@@ -11,7 +11,7 @@ enum class ApiType
 class Settings
 {
 public:
-    uint32_t msaa_count = 1;
+    uint32_t msaa_count = 2;
     int width = 1280;
     int height = 720;
     float s_near = 0.5f;

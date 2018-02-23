@@ -17,7 +17,7 @@ class ComputeLuminance : public IPass, public IModifySettings
 public:
     struct Input
     {
-        ComPtr<ID3D11ShaderResourceView>& srv;
+        ComPtr<ID3D11Resource>& hdr_res;
         Model<DX11Mesh>& model;
         ComPtr<ID3D11RenderTargetView>& rtv;
         ComPtr<ID3D11DepthStencilView>& dsv;
@@ -35,10 +35,10 @@ public:
     virtual void OnModifySettings(const Settings & settings) override;
 
 private:
-    ComPtr<ID3D11ShaderResourceView> GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y);
-    ComPtr<ID3D11ShaderResourceView > GetLum1DPassCS(ComPtr<ID3D11ShaderResourceView> input, uint32_t input_buffer_size, uint32_t thread_group_x);
+    ComPtr<ID3D11Resource> GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y);
+    ComPtr<ID3D11Resource > GetLum1DPassCS(ComPtr<ID3D11Resource> input, uint32_t input_buffer_size, uint32_t thread_group_x);
 
-    void Draw(ComPtr<ID3D11ShaderResourceView> input);
+    void Draw(ComPtr<ID3D11Resource> input);
 
     Settings m_settings;
     Context& m_context;

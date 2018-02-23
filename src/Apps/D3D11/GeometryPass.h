@@ -21,13 +21,11 @@ public:
 
     struct Output
     {
-        ComPtr<ID3D11ShaderResourceView> position_srv;
-        ComPtr<ID3D11ShaderResourceView> normal_srv;
-        ComPtr<ID3D11ShaderResourceView> ambient_srv;
-        ComPtr<ID3D11ShaderResourceView> diffuse_srv;
-        ComPtr<ID3D11ShaderResourceView> specular_srv;
-        ComPtr<ID3D11ShaderResourceView> position_view_srv;
-        ComPtr<ID3D11ShaderResourceView> normal_view_srv;
+        ComPtr<ID3D11Resource> position;
+        ComPtr<ID3D11Resource> normal;
+        ComPtr<ID3D11Resource> ambient;
+        ComPtr<ID3D11Resource> diffuse;
+        ComPtr<ID3D11Resource> specular;
     } output;
 
     GeometryPass(Context& context, const Input& input, int width, int height);

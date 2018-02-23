@@ -23,7 +23,7 @@ public:
 
     struct Output
     {
-        ComPtr<ID3D11ShaderResourceView> srv;
+        ComPtr<ID3D11Resource> srv;
     } output;
 
     ShadowPass(Context& context, const Input& input, int width, int height);

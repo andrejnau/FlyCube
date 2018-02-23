@@ -23,8 +23,8 @@ public:
 
     struct Output
     {
-        ComPtr<ID3D11ShaderResourceView> srv;
-        ComPtr<ID3D11ShaderResourceView> srv_blur;
+        ComPtr<ID3D11Resource> srv;
+        ComPtr<ID3D11Resource> srv_blur;
     } output;
 
     SSAOPass(Context& context, const Input& input, int width, int height);
@@ -42,7 +42,7 @@ private:
     Input m_input;
     int m_width;
     int m_height;
-    ComPtr<ID3D11ShaderResourceView> m_noise_texture;
+    ComPtr<ID3D11Texture2D> m_noise_texture;
     ComPtr<ID3D11SamplerState> m_texture_sampler;
     ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
     ComPtr<ID3D11RenderTargetView> m_rtv;

@@ -33,7 +33,7 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     m_input.camera.SetCameraYaw(-178.0f);
     m_input.camera.SetCameraYaw(-1.75f);
 
-    CreateRtvSrv(m_context, 1, width, height, m_rtv, output.srv);
+    output.srv = CreateRtvSrv(m_context, 1, width, height, m_rtv);
     CreateDsv(m_context, 1, width, height, m_depth_stencil_view);
 }
 
@@ -75,11 +75,11 @@ void LightPass::OnRender()
         cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
         cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
 
-        m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position_srv);
-        m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal_srv);
-        m_program.ps.srv.gAmbient.Attach(m_input.geometry_pass.ambient_srv);
-        m_program.ps.srv.gDiffuse.Attach(m_input.geometry_pass.diffuse_srv);
-        m_program.ps.srv.gSpecular.Attach(m_input.geometry_pass.specular_srv);
+        m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position);
+        m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal);
+        m_program.ps.srv.gAmbient.Attach(m_input.geometry_pass.ambient);
+        m_program.ps.srv.gDiffuse.Attach(m_input.geometry_pass.diffuse);
+        m_program.ps.srv.gSpecular.Attach(m_input.geometry_pass.specular);
         m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
         m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
@@ -95,7 +95,7 @@ void LightPass::OnResize(int width, int height)
 {
     m_width = width;
     m_height = height;
-    CreateRtvSrv(m_context, 1, width, height, m_rtv, output.srv);
+    output.srv = CreateRtvSrv(m_context, 1, width, height, m_rtv);
     CreateDsv(m_context, 1, width, height, m_depth_stencil_view);
 }
 

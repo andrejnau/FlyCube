@@ -98,6 +98,8 @@ public:
 
     void UpdateAnimation(float time_in_seconds)
     {
+        if (!m_scene)
+            return;
         if (!m_scene->mAnimations)
             return;
 

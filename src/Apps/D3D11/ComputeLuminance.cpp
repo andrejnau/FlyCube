@@ -18,7 +18,7 @@ void ComputeLuminance::OnUpdate()
 {
 }
 
-ComPtr<ID3D11ShaderResourceView> ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y)
+ComPtr<ID3D11Resource> ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y)
 {
     m_HDRLum2DPassCS.cs.cbuffer.cbv.dispatchSize = glm::uvec2(thread_group_x, thread_group_y);
     m_HDRLum2DPassCS.UseProgram();
@@ -34,31 +34,14 @@ ComPtr<ID3D11ShaderResourceView> ComputeLuminance::GetLum2DPassCS(uint32_t threa
     buffer_desc.StructureByteStride = 4;
     ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&buffer_desc, nullptr, &buffer));
 
-    ComPtr<ID3D11ShaderResourceView> srv;
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-    srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-    srv_desc.Buffer.FirstElement = 0;
-    srv_desc.Buffer.NumElements = total_invoke;
-    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(buffer.Get(), &srv_desc, &srv));
-
-    D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
-    uav_desc.Format = DXGI_FORMAT_UNKNOWN;
-    uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-    uav_desc.Buffer.FirstElement = 0;
-    uav_desc.Buffer.NumElements = total_invoke;
-
-    ComPtr<ID3D11UnorderedAccessView> uav;
-    m_context.device->CreateUnorderedAccessView(buffer.Get(), &uav_desc, &uav);
-    m_HDRLum2DPassCS.cs.uav.result.Attach(uav);
-    m_HDRLum2DPassCS.cs.srv.input.Attach(m_input.srv);
+    m_HDRLum2DPassCS.cs.uav.result.Attach(buffer);
+    m_HDRLum2DPassCS.cs.srv.input.Attach(m_input.hdr_res);
     m_context.device_context->Dispatch(thread_group_x, thread_group_y, 1);
 
-    return srv;
+    return buffer;
 }
 
-ComPtr<ID3D11ShaderResourceView> ComputeLuminance::GetLum1DPassCS(ComPtr<ID3D11ShaderResourceView> input, uint32_t input_buffer_size, uint32_t thread_group_x)
+ComPtr<ID3D11Resource> ComputeLuminance::GetLum1DPassCS(ComPtr<ID3D11Resource> input, uint32_t input_buffer_size, uint32_t thread_group_x)
 {
     m_HDRLum1DPassCS.cs.cbuffer.cbv.bufferSize = input_buffer_size;
     m_HDRLum1DPassCS.UseProgram();
@@ -72,35 +55,18 @@ ComPtr<ID3D11ShaderResourceView> ComputeLuminance::GetLum1DPassCS(ComPtr<ID3D11S
     buffer_desc.StructureByteStride = 4;
     ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&buffer_desc, nullptr, &buffer));
 
-    ComPtr<ID3D11ShaderResourceView> srv;
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-    srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-    srv_desc.Buffer.FirstElement = 0;
-    srv_desc.Buffer.NumElements = thread_group_x;
-    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(buffer.Get(), &srv_desc, &srv));
-
-    D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
-    uav_desc.Format = DXGI_FORMAT_UNKNOWN;
-    uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-    uav_desc.Buffer.FirstElement = 0;
-    uav_desc.Buffer.NumElements = thread_group_x;
-
-    ComPtr<ID3D11UnorderedAccessView> uav;
-    m_context.device->CreateUnorderedAccessView(buffer.Get(), &uav_desc, &uav);
-    m_HDRLum1DPassCS.cs.uav.result.Attach(uav);
-
-    m_HDRLum2DPassCS.cs.srv.input.Attach(input);
+ 
+    m_HDRLum1DPassCS.cs.uav.result.Attach(buffer);
+    m_HDRLum1DPassCS.cs.srv.input.Attach(input);
 
     m_context.device_context->Dispatch(thread_group_x, 1, 1);
 
     m_HDRLum1DPassCS.cs.uav.result.Attach();
 
-    return srv;
+    return buffer;
 }
 
-void ComputeLuminance::Draw(ComPtr<ID3D11ShaderResourceView> input)
+void ComputeLuminance::Draw(ComPtr<ID3D11Resource> input)
 {
     m_HDRApply.ps.cbuffer.cbv.dim = glm::uvec2(m_width, m_height);
     m_HDRApply.ps.cbuffer.$Globals.Exposure = m_settings.Exposure;
@@ -121,7 +87,7 @@ void ComputeLuminance::Draw(ComPtr<ID3D11ShaderResourceView> input)
         cur_mesh.positions_buffer.BindToSlot(m_HDRApply.vs.geometry.POSITION);
         cur_mesh.texcoords_buffer.BindToSlot(m_HDRApply.vs.geometry.TEXCOORD);
 
-        m_HDRApply.ps.srv.hdr_input.Attach(m_input.srv);
+        m_HDRApply.ps.srv.hdr_input.Attach(m_input.hdr_res);
         m_HDRApply.ps.srv.lum.Attach(input);
         m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
     }
@@ -132,10 +98,8 @@ void ComputeLuminance::Draw(ComPtr<ID3D11ShaderResourceView> input)
 
 void ComputeLuminance::OnRender()
 {
-    ComPtr<ID3D11Resource> res;
-    m_input.srv->GetResource(&res);
     ComPtr<ID3D11Texture2D> texture;
-    res.As(&texture);
+    m_input.hdr_res.As(&texture);
 
     D3D11_TEXTURE2D_DESC tex_desc = {};
     texture->GetDesc(&tex_desc);

@@ -122,13 +122,15 @@ public:
     IAVertexBuffer bones_count_buffer;
     IAIndexBuffer indices_buffer;
 
-    ComPtr<ID3D11ShaderResourceView> GetTexture(aiTextureType type)
+    ComPtr<ID3D11Resource> GetTexture(aiTextureType type)
     {
-        ComPtr<ID3D11ShaderResourceView> srv;
+        ComPtr<ID3D11Resource> res;
         auto it = m_type2id.find(type);
         if (it != m_type2id.end())
-            srv = m_tex_srv[it->second];
-        return srv;
+        {
+            m_tex_srv[it->second]->GetResource(&res);
+        }
+        return res;
     }
 
 private:

@@ -5,8 +5,6 @@ struct VS_OUTPUT
     float3 normal    : NORMAL;
     float3 tangent   : TANGENT;
     float2 texCoord  : TEXCOORD;
-    float3 fragPosView : POSITIONVIEW;
-    float3 normalView    : NORMALVIEW;
 };
 
 Texture2D normalMap;

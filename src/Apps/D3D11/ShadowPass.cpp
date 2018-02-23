@@ -11,7 +11,7 @@ ShadowPass::ShadowPass(Context& context, const Input& input, int width, int heig
     , m_height(height)
     , m_program(context)
 {
-    CreateShadowDSV(m_context, m_settings, m_depth_stencil_view, output.srv);
+    output.srv = CreateShadowDSV(m_context, m_settings, m_depth_stencil_view);
     CreateViewPort();
 }
 
@@ -57,8 +57,8 @@ void ShadowPass::OnRender()
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
 
-        ComPtr<ID3D11ShaderResourceView> bones_info_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone_info);
-        ComPtr<ID3D11ShaderResourceView> bones_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone);
+        ComPtr<ID3D11Resource> bones_info_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone_info);
+        ComPtr<ID3D11Resource> bones_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone);
 
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bones_srv);
@@ -91,7 +91,7 @@ void ShadowPass::OnModifySettings(const Settings& settings)
     m_settings = settings;
     if (prev.s_size != settings.s_size)
     {
-        CreateShadowDSV(m_context, m_settings, m_depth_stencil_view, output.srv);
+        output.srv = CreateShadowDSV(m_context, m_settings, m_depth_stencil_view);
         CreateViewPort();
     }
 }

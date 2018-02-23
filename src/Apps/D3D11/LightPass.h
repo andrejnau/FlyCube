@@ -29,7 +29,7 @@ public:
 
     struct Output
     {
-        ComPtr<ID3D11ShaderResourceView> srv;
+        ComPtr<ID3D11Resource> srv;
     } output;
 
     void SetDefines(Program<LightPassPS, LightPassVS>& program);

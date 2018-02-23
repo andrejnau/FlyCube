@@ -22,8 +22,10 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
 {
     // prevent a call ~aiScene 
     m_scene_list.reserve(2);
+#ifndef _DEBUG
     m_scene_list.emplace_back(m_context, "model/sponza/sponza.obj");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f));
+#endif
     m_scene_list.emplace_back(m_context, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(75.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 

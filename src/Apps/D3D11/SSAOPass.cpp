@@ -21,8 +21,8 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
     , m_program_blur(context)
 {
     CreateDsv(m_context, 1, m_width, m_height, m_depth_stencil_view);
-    CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv, output.srv);
-    CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv_blur, output.srv_blur);
+    output.srv = CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv);
+    output.srv_blur = CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv_blur);
 
     std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
     std::default_random_engine generator;
@@ -67,14 +67,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
     textureBufferData.SysMemSlicePitch = num_bytes;
 
     ComPtr<ID3D11Texture2D> noise_texture_buffer;
-    ASSERT_SUCCEEDED(context.device->CreateTexture2D(&texture_desc, &textureBufferData, &noise_texture_buffer));
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-    srv_desc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-    srv_desc.Texture2D.MipLevels = 1;
-    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-
-    ASSERT_SUCCEEDED(context.device->CreateShaderResourceView(noise_texture_buffer.Get(), &srv_desc, &m_noise_texture));
+    ASSERT_SUCCEEDED(context.device->CreateTexture2D(&texture_desc, &textureBufferData, &m_noise_texture));
 
     D3D11_SAMPLER_DESC samp_desc = {};
     samp_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -121,8 +114,8 @@ void SSAOPass::OnRender()
         cur_mesh.positions_buffer.BindToSlot(m_program.vs.geometry.POSITION);
         cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.geometry.TEXCOORD);
 
-        m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position_srv);
-        m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal_srv);
+        m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position);
+        m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal);
 
         m_program.ps.srv.noiseTexture.Attach(m_noise_texture);
 
@@ -160,8 +153,8 @@ void SSAOPass::OnResize(int width, int height)
     m_width = width;
     m_height = height;
     CreateDsv(m_context, 1, m_width, m_height, m_depth_stencil_view);
-    CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv, output.srv);
-    CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv_blur, output.srv_blur);
+    output.srv = CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv);
+    output.srv_blur = CreateRtvSrv(m_context, 1, m_width, m_height, m_rtv_blur);
 }
 
 void SSAOPass::OnModifySettings(const Settings& settings)

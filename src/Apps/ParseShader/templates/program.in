@@ -19,7 +19,7 @@ public:
     struct SRV
     {
         SRV(ShaderBase& shader)
-{{#Textures}}            {{Separator}} {{Name}}(shader, {{Slot}})
+{{#Textures}}            {{Separator}} {{Name}}(shader, "{{Name}}", {{Slot}})
 {{/Textures}}        {
         }
 
@@ -29,7 +29,7 @@ public:
     struct UAV
     {
         UAV(ShaderBase& shader)
-{{#UAVs}}            {{Separator}} {{Name}}(shader, {{Slot}})
+{{#UAVs}}            {{Separator}} {{Name}}(shader, "{{Name}}", {{Slot}})
 {{/UAVs}}        {
         }
 
