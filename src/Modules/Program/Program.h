@@ -3,7 +3,7 @@
 #include "Program/ShaderType.h"
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
-#include <Context/Context.h>
+#include <Context/DX11Context.h>
 #include <d3dcompiler.h>
 #include <d3d11.h>
 #include <wrl.h>
@@ -16,11 +16,11 @@ using namespace Microsoft::WRL;
 
 class BufferLayout
 {
-    Context & m_context;
+    DX11Context & m_context;
 
 public:
     BufferLayout(
-        Context& context,
+        DX11Context& context,
         const std::string& name,
         size_t buffer_size, 
         UINT slot,
@@ -121,15 +121,23 @@ public:
     virtual void UpdateShader() = 0;
     virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) = 0;
     virtual void Attach(uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav) = 0;
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11SamplerState>& sampler) = 0;
 
-    void AttachSRV(const std::string& name, uint32_t slot, const ComPtr<ID3D11Resource>& res)
+    void AttachSRV(const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res)
     {
         Attach(slot, CreateSrv(name, slot, res));
     }
 
-    ComPtr<ID3D11ShaderResourceView> CreateSrv(const std::string& name, uint32_t slot, const ComPtr<ID3D11Resource>& res)
+    ComPtr<ID3D11ShaderResourceView> CreateSrv(const std::string& name, uint32_t slot, const ComPtr<IUnknown>& ires)
     {
         ComPtr<ID3D11ShaderResourceView> srv;
+
+        if (!ires)
+            return srv;
+
+        ComPtr<ID3D11Resource> res;
+        ires.As(&res);
+
         if (!res)
             return srv;
 
@@ -206,14 +214,20 @@ public:
     }
 
 
-    void AttachUAV(const std::string& name, uint32_t slot, const ComPtr<ID3D11Resource>& res)
+    void AttachUAV(const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res)
     {
         Attach(slot, CreateUAV(name, slot, res));
     }
 
-    ComPtr<ID3D11UnorderedAccessView> CreateUAV(const std::string& name, uint32_t slot, const ComPtr<ID3D11Resource>& res)
+    ComPtr<ID3D11UnorderedAccessView> CreateUAV(const std::string& name, uint32_t slot, const ComPtr<IUnknown>& ires)
     {
         ComPtr<ID3D11UnorderedAccessView> uav;
+        if (!ires)
+            return uav;
+
+        ComPtr<ID3D11Resource> res;
+        ires.As(&res);
+
         if (!res)
             return uav;
 
@@ -252,7 +266,7 @@ public:
 
     std::map<std::string, std::string> define;
 
-    ShaderBase(Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+    ShaderBase(DX11Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
         : m_context(context)
         , m_shader_path(shader_path)
         , m_entrypoint(entrypoint)
@@ -283,7 +297,7 @@ protected:
             &errors));
     }
 
-    Context& m_context;
+    DX11Context& m_context;
     std::string m_shader_path;
     std::string m_entrypoint;
     std::string m_target;
@@ -300,7 +314,7 @@ public:
     {
     }
 
-    void Attach(const ComPtr<ID3D11Resource>& res = {})
+    void Attach(const ComPtr<IUnknown>& res = {})
     {
         m_shader.AttachSRV(m_name, m_slot, res);
     }
@@ -321,7 +335,7 @@ public:
     {
     }
 
-    void Attach(const ComPtr<ID3D11Resource>& res = {})
+    void Attach(const ComPtr<IUnknown>& res = {})
     {
         m_shader.AttachUAV(m_name, m_slot, res);
     }
@@ -335,14 +349,16 @@ private:
 class RTVBinding
 {
 public:
-    RTVBinding(Context& context, uint32_t slot)
+    RTVBinding(DX11Context& context, uint32_t slot)
         : m_context(context)
         , m_slot(slot)
     {
     }
 
-    RTVBinding& Attach(const ComPtr<ID3D11Resource>& res = {})
+    RTVBinding& Attach(const ComPtr<IUnknown>& ires = {})
     {
+        ComPtr<ID3D11Resource> res;
+        ires.As(&res);
         ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(res.Get(), nullptr, &rtv));
         return *this;
     }
@@ -358,7 +374,7 @@ public:
     }
 
 private:
-    Context& m_context;
+    DX11Context& m_context;
     uint32_t m_slot;
     ComPtr<ID3D11RenderTargetView> rtv;
 };
@@ -366,14 +382,31 @@ private:
 class DSVBinding
 {
 public:
-    DSVBinding(Context& context)
+    DSVBinding(DX11Context& context)
         : m_context(context)
     {
     }
 
-    DSVBinding& Attach(const ComPtr<ID3D11Resource>& res = {})
+    DSVBinding& Attach(const ComPtr<IUnknown>& ires = {})
     {
-        ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(res.Get(), nullptr, &dsv));
+        ComPtr<ID3D11Texture2D> tex;
+        ires.As(&tex);
+
+        D3D11_TEXTURE2D_DESC tex_dec = {};
+        tex->GetDesc(&tex_dec);
+
+        if (tex_dec.Format == DXGI_FORMAT_R32_TYPELESS) // TODO
+        {
+            D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
+            dsv_desc.Format = DXGI_FORMAT_D32_FLOAT;
+            dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+            dsv_desc.Texture2DArray.ArraySize = tex_dec.ArraySize;
+            ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(tex.Get(), &dsv_desc, &dsv));
+        }
+        else
+        {
+            ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(tex.Get(), nullptr, &dsv));
+        }
         return *this;
     }
 
@@ -388,9 +421,30 @@ public:
     }
 
 private:
-    Context & m_context;
+    DX11Context & m_context;
     uint32_t m_slot;
     ComPtr<ID3D11DepthStencilView> dsv;
+};
+
+class SamplerBinding
+{
+public:
+    SamplerBinding(ShaderBase& shader, uint32_t slot)
+        : m_shader(shader)
+        , m_slot(slot)
+    {
+    }
+
+    void Attach(const ComPtr<IUnknown>& ires = {})
+    {
+        ComPtr<ID3D11SamplerState> sampler;
+        ires.As(&sampler);
+        m_shader.Attach(m_slot, sampler);
+    }
+
+private:
+    ShaderBase& m_shader;
+    uint32_t m_slot;
 };
 
 template<ShaderType> class Shader : public ShaderBase {};
@@ -403,7 +457,7 @@ public:
 
     ComPtr<ID3D11PixelShader> shader;
 
-    Shader(Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+    Shader(DX11Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
         : ShaderBase(context, shader_path, entrypoint, target)
     {
     }
@@ -428,6 +482,11 @@ public:
     {
 
     }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11SamplerState>& sampler) override
+    {
+        m_context.device_context->PSSetSamplers(slot, 1, sampler.GetAddressOf());
+    }
 };
 
 template<>
@@ -439,7 +498,7 @@ public:
     ComPtr<ID3D11VertexShader> shader;
     ComPtr<ID3D11InputLayout> input_layout;
 
-    Shader(Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+    Shader(DX11Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
         : ShaderBase(context, shader_path, entrypoint, target)
     {
     }
@@ -510,6 +569,7 @@ public:
 
     virtual void UseShader() override
     {
+        m_context.device_context->IASetInputLayout(input_layout.Get());
         m_context.device_context->VSSetShader(shader.Get(), nullptr, 0);
     }
 
@@ -529,6 +589,11 @@ public:
     {
 
     }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11SamplerState>& sampler) override
+    {
+        m_context.device_context->VSSetSamplers(slot, 1, sampler.GetAddressOf());
+    }
 };
 
 template<>
@@ -539,7 +604,7 @@ public:
 
     ComPtr<ID3D11GeometryShader> shader;
 
-    Shader(Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+    Shader(DX11Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
         : ShaderBase(context, shader_path, entrypoint, target)
     {
     }
@@ -564,6 +629,11 @@ public:
     {
 
     }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11SamplerState>& sampler) override
+    {
+        m_context.device_context->GSSetSamplers(slot, 1, sampler.GetAddressOf());
+    }
 };
 
 template<>
@@ -574,7 +644,7 @@ public:
 
     ComPtr<ID3D11ComputeShader> shader;
 
-    Shader(Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
+    Shader(DX11Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
         : ShaderBase(context, shader_path, entrypoint, target)
     {
     }
@@ -599,6 +669,11 @@ public:
     {
         m_context.device_context->CSSetUnorderedAccessViews(slot, 1, uav.GetAddressOf(), nullptr);
     }
+
+    virtual void Attach(uint32_t slot, ComPtr<ID3D11SamplerState>& sampler) override
+    {
+        m_context.device_context->CSSetSamplers(slot, 1, sampler.GetAddressOf());
+    }
 };
 
 template<ShaderType, typename T> class ShaderHolderImpl {};
@@ -617,7 +692,7 @@ public:
         return ps;
     }
 
-    ShaderHolderImpl(Context& context)
+    ShaderHolderImpl(DX11Context& context)
         : ps(context)
     {
     }
@@ -637,7 +712,7 @@ public:
         return vs;
     }
 
-    ShaderHolderImpl(Context& context)
+    ShaderHolderImpl(DX11Context& context)
         : vs(context)
     {
     }
@@ -657,7 +732,7 @@ public:
         return gs;
     }
 
-    ShaderHolderImpl(Context& context)
+    ShaderHolderImpl(DX11Context& context)
         : gs(context)
     {
     }
@@ -677,7 +752,7 @@ public:
         return cs;
     }
 
-    ShaderHolderImpl(Context& context)
+    ShaderHolderImpl(DX11Context& context)
         : cs(context)
     {
     }
@@ -689,7 +764,7 @@ template<typename ... Args>
 class Program : public ShaderHolder<Args>...
 {
 public:
-    Program(Context& context)
+    Program(DX11Context& context)
         : ShaderHolder<Args>(context)...
         , m_shaders({ ShaderHolder<Args>::GetApi()... })
         , m_context(context)
@@ -698,7 +773,7 @@ public:
     }
 
     template<typename Setup>
-    Program(Context& context, const Setup& setup)
+    Program(DX11Context& context, const Setup& setup)
         : ShaderHolder<Args>(context)...
         , m_shaders({ ShaderHolder<Args>::GetApi()... })
         , m_context(context)
@@ -733,5 +808,5 @@ private:
     }
 
     std::vector<std::reference_wrapper<ShaderBase>> m_shaders;
-    Context& m_context;
+    DX11Context& m_context;
 };

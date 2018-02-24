@@ -1,17 +1,17 @@
 #include "GeometryPass.h"
-#include "DX11CreateUtils.h"
 
 #include <Utilities/DXUtility.h>
 #include <Utilities/State.h>
 #include <glm/gtx/transform.hpp>
 
-GeometryPass::GeometryPass(Context& context, const Input& input, int width, int height)
+GeometryPass::GeometryPass(DX11Context& context, const Input& input, int width, int height)
     : m_context(context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
     , m_program(context)
 {
+    m_g_sampler = m_context.CreateSamplerAnisotropic();
     InitGBuffers();
 }
 
@@ -29,8 +29,11 @@ void GeometryPass::OnUpdate()
 
 void GeometryPass::OnRender()
 {
+    m_context.SetViewport(m_width, m_height);
+
     m_program.UseProgram();
-    m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
+
+    m_program.ps.sampler.g_sampler.Attach(m_g_sampler);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_program.ps.om.rtv0.Attach(output.position).ClearRenderTarget(color);
@@ -39,7 +42,7 @@ void GeometryPass::OnRender()
     m_program.ps.om.rtv3.Attach(output.diffuse).ClearRenderTarget(color);
     m_program.ps.om.rtv4.Attach(output.specular).ClearRenderTarget(color);
     m_program.ps.om.dsv.Attach(m_depth_stencil).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_program.ps.om.Apply(m_context);
+    m_program.ps.om.Apply();
 
     auto& state = CurState<bool>::Instance().state;
     for (auto& scene_item : m_input.scene_list)
@@ -51,8 +54,8 @@ void GeometryPass::OnRender()
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
 
-        ComPtr<ID3D11Resource> bones_info_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone_info);
-        ComPtr<ID3D11Resource> bones_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone);
+        ComPtr<IUnknown> bones_info_srv = m_context.CreateBufferSRV(scene_item.model.bones.bone_info.data(), scene_item.model.bones.bone_info.size(), sizeof(scene_item.model.bones.bone_info.front()));
+        ComPtr<IUnknown> bones_srv = m_context.CreateBufferSRV(scene_item.model.bones.bone.data(), scene_item.model.bones.bone.size(), sizeof(scene_item.model.bones.bone.front()));
 
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bones_srv);
@@ -112,10 +115,10 @@ void GeometryPass::OnModifySettings(const Settings& settings)
 
 void GeometryPass::InitGBuffers()
 {
-    output.position = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height);
-    output.normal = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height);
-    output.ambient = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height);
-    output.diffuse = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height);
-    output.specular = CreateRtvSrv(m_context, m_settings.msaa_count, m_width, m_height);
-    m_depth_stencil = CreateDsv(m_context, m_settings.msaa_count, m_width, m_height);
+    output.position = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);
+    output.normal = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);
+    output.ambient = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);
+    output.diffuse = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);
+    output.specular = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);
+    m_depth_stencil = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), DXGI_FORMAT_D24_UNORM_S8_UINT, m_settings.msaa_count, m_width, m_height, 1);
 }

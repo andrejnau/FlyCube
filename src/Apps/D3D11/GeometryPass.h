@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Scene/SceneBase.h>
-#include <Context/Context.h>
+#include <Context/DX11Context.h>
 #include <Geometry/DX11Geometry.h>
 #include <ProgramRef/GeometryPassPS.h>
 #include <ProgramRef/GeometryPassVS.h>
@@ -21,14 +21,14 @@ public:
 
     struct Output
     {
-        ComPtr<ID3D11Resource> position;
-        ComPtr<ID3D11Resource> normal;
-        ComPtr<ID3D11Resource> ambient;
-        ComPtr<ID3D11Resource> diffuse;
-        ComPtr<ID3D11Resource> specular;
+        ComPtr<IUnknown> position;
+        ComPtr<IUnknown> normal;
+        ComPtr<IUnknown> ambient;
+        ComPtr<IUnknown> diffuse;
+        ComPtr<IUnknown> specular;
     } output;
 
-    GeometryPass(Context& context, const Input& input, int width, int height);
+    GeometryPass(DX11Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
@@ -44,7 +44,7 @@ private:
 
     void InitGBuffers();
 
-    ComPtr<ID3D11Resource> m_depth_stencil;
+    ComPtr<IUnknown> m_depth_stencil;
     Settings m_settings;
+    ComPtr<IUnknown> m_g_sampler;
 };
-

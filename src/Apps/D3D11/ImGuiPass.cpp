@@ -235,12 +235,12 @@ bool  ImGuiPass::ImGui_ImplDX11_Init()
     return true;
 }
 
-ImGuiPass::ImGuiPass(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+ImGuiPass::ImGuiPass(DX11Context& DX11Context, const Input& input, int width, int height)
+    : m_context(DX11Context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context)
+    , m_program(DX11Context)
 {
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)width, (float)height);

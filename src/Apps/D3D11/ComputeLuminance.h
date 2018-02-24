@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Scene/SceneBase.h>
-#include <Context/Context.h>
+#include <Context/DX11Context.h>
 #include <Geometry/DX11Geometry.h>
 #include <ProgramRef/HDRLum1DPassCS.h>
 #include <ProgramRef/HDRLum2DPassCS.h>
@@ -17,17 +17,17 @@ class ComputeLuminance : public IPass, public IModifySettings
 public:
     struct Input
     {
-        ComPtr<ID3D11Resource>& hdr_res;
+        ComPtr<IUnknown>& hdr_res;
         Model<DX11Mesh>& model;
-        ComPtr<ID3D11Resource>& rtv;
-        ComPtr<ID3D11Resource>& dsv;
+        ComPtr<IUnknown>& rtv;
+        ComPtr<IUnknown>& dsv;
     };
 
     struct Output
     {
     } output;
 
-    ComputeLuminance(Context& context, const Input& input, int width, int height);
+    ComputeLuminance(DX11Context& DX11Context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
@@ -35,13 +35,13 @@ public:
     virtual void OnModifySettings(const Settings & settings) override;
 
 private:
-    ComPtr<ID3D11Resource> GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y);
-    ComPtr<ID3D11Resource > GetLum1DPassCS(ComPtr<ID3D11Resource> input, uint32_t input_buffer_size, uint32_t thread_group_x);
+    ComPtr<IUnknown> GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y);
+    ComPtr<IUnknown > GetLum1DPassCS(ComPtr<IUnknown> input, uint32_t input_buffer_size, uint32_t thread_group_x);
 
-    void Draw(ComPtr<ID3D11Resource> input);
+    void Draw(ComPtr<IUnknown> input);
 
     Settings m_settings;
-    Context& m_context;
+    DX11Context& m_context;
     Input m_input;
     int m_width;
     int m_height;

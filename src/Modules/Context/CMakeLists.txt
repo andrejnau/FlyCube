@@ -2,10 +2,12 @@ set(target Context)
 
 set(headers
     Context.h
+    DX11Context.h
 )
 
 set(sources
     Context.cpp
+    DX11Context.cpp
 )
 
 add_library(${target} ${headers} ${sources})

@@ -1,5 +1,4 @@
 #include "SSAOPass.h"
-#include "DX11CreateUtils.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <Utilities/State.h>
@@ -12,17 +11,17 @@ inline float lerp(float a, float b, float f)
     return a + f * (b - a);
 }
 
-SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+SSAOPass::SSAOPass(DX11Context& DX11Context, const Input& input, int width, int height)
+    : m_context(DX11Context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context, std::bind(&SSAOPass::SetDefines, this, std::placeholders::_1))
-    , m_program_blur(context)
+    , m_program(DX11Context, std::bind(&SSAOPass::SetDefines, this, std::placeholders::_1))
+    , m_program_blur(DX11Context)
 {
-    m_depth_stencil_view = CreateDsv(m_context, 1, m_width, m_height);
-    output.srv = CreateRtvSrv(m_context, 1, m_width, m_height);
-    output.srv_blur = CreateRtvSrv(m_context, 1, m_width, m_height);
+    output.srv = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    output.srv_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
 
     std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
     std::default_random_engine generator;
@@ -67,18 +66,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
     textureBufferData.SysMemSlicePitch = num_bytes;
 
     ComPtr<ID3D11Texture2D> noise_texture_buffer;
-    ASSERT_SUCCEEDED(context.device->CreateTexture2D(&texture_desc, &textureBufferData, &m_noise_texture));
-
-    D3D11_SAMPLER_DESC samp_desc = {};
-    samp_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-    samp_desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    samp_desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    samp_desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-    samp_desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    samp_desc.MinLOD = 0;
-    samp_desc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateSamplerState(&samp_desc, &m_texture_sampler));
+    ASSERT_SUCCEEDED(DX11Context.device->CreateTexture2D(&texture_desc, &textureBufferData, &m_noise_texture));
 }
 
 void SSAOPass::OnUpdate()
@@ -96,16 +84,17 @@ void SSAOPass::OnUpdate()
 
 void SSAOPass::OnRender()
 {
+    m_context.SetViewport(m_width, m_height);
+
     if (!m_settings.use_occlusion)
         return;
 
     m_program.UseProgram();
-    m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
     float color[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
     m_program.ps.om.rtv0.Attach(output.srv).ClearRenderTarget(color);
     m_program.ps.om.dsv.Attach(m_depth_stencil_view).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_program.ps.om.Apply(m_context);
+    m_program.ps.om.Apply();
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
@@ -121,18 +110,11 @@ void SSAOPass::OnRender()
         m_context.DrawIndexed(cur_mesh.indices.size());
     }
 
-    m_context.device_context->OMSetRenderTargets(0, nullptr, nullptr);
-
-    std::vector<ID3D11ShaderResourceView*> empty(D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-    m_context.device_context->PSSetShaderResources(0, empty.size(), empty.data());
-
     m_program_blur.UseProgram();
-    m_context.device_context->IASetInputLayout(m_program_blur.vs.input_layout.Get());
-
 
     m_program.ps.om.rtv0.Attach(output.srv_blur).ClearRenderTarget(color);
     m_program.ps.om.dsv.Attach(m_depth_stencil_view).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_program.ps.om.Apply(m_context);
+    m_program.ps.om.Apply();
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
@@ -140,21 +122,17 @@ void SSAOPass::OnRender()
         cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
         cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
         m_program_blur.ps.srv.ssaoInput.Attach(output.srv);
-        m_context.device_context->DrawIndexed(cur_mesh.indices.size(), 0, 0);
+        m_context.DrawIndexed(cur_mesh.indices.size());
     }
-
-    m_context.device_context->OMSetRenderTargets(0, nullptr, nullptr);
-
-    m_context.device_context->PSSetShaderResources(0, empty.size(), empty.data());
 }
 
 void SSAOPass::OnResize(int width, int height)
 {
     m_width = width;
     m_height = height;
-    m_depth_stencil_view = CreateDsv(m_context, 1, m_width, m_height);
-    output.srv = CreateRtvSrv(m_context, 1, m_width, m_height);
-    output.srv_blur = CreateRtvSrv(m_context, 1, m_width, m_height);
+    output.srv = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    output.srv_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
 }
 
 void SSAOPass::OnModifySettings(const Settings& settings)

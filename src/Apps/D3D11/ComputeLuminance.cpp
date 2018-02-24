@@ -3,14 +3,14 @@
 #include <glm/gtx/transform.hpp>
 #include <Utilities/State.h>
 
-ComputeLuminance::ComputeLuminance(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+ComputeLuminance::ComputeLuminance(DX11Context& DX11Context, const Input& input, int width, int height)
+    : m_context(DX11Context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_HDRLum1DPassCS(context)
-    , m_HDRLum2DPassCS(context)
-    , m_HDRApply(context)
+    , m_HDRLum1DPassCS(DX11Context)
+    , m_HDRLum2DPassCS(DX11Context)
+    , m_HDRApply(DX11Context)
 {
 }
 
@@ -18,7 +18,7 @@ void ComputeLuminance::OnUpdate()
 {
 }
 
-ComPtr<ID3D11Resource> ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y)
+ComPtr<IUnknown> ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y)
 {
     m_HDRLum2DPassCS.cs.cbuffer.cbv.dispatchSize = glm::uvec2(thread_group_x, thread_group_y);
     m_HDRLum2DPassCS.UseProgram();
@@ -41,7 +41,7 @@ ComPtr<ID3D11Resource> ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x,
     return buffer;
 }
 
-ComPtr<ID3D11Resource> ComputeLuminance::GetLum1DPassCS(ComPtr<ID3D11Resource> input, uint32_t input_buffer_size, uint32_t thread_group_x)
+ComPtr<IUnknown> ComputeLuminance::GetLum1DPassCS(ComPtr<IUnknown> input, uint32_t input_buffer_size, uint32_t thread_group_x)
 {
     m_HDRLum1DPassCS.cs.cbuffer.cbv.bufferSize = input_buffer_size;
     m_HDRLum1DPassCS.UseProgram();
@@ -66,19 +66,18 @@ ComPtr<ID3D11Resource> ComputeLuminance::GetLum1DPassCS(ComPtr<ID3D11Resource> i
     return buffer;
 }
 
-void ComputeLuminance::Draw(ComPtr<ID3D11Resource> input)
+void ComputeLuminance::Draw(ComPtr<IUnknown> input)
 {
     m_HDRApply.ps.cbuffer.cbv.dim = glm::uvec2(m_width, m_height);
     m_HDRApply.ps.cbuffer.$Globals.Exposure = m_settings.Exposure;
     m_HDRApply.ps.cbuffer.$Globals.White = m_settings.White;
     m_HDRApply.ps.cbuffer.cbv.use_tone_mapping = m_settings.use_tone_mapping;
     m_HDRApply.UseProgram();
-    m_context.device_context->IASetInputLayout(m_HDRApply.vs.input_layout.Get());
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_HDRApply.ps.om.rtv0.Attach(m_input.rtv).ClearRenderTarget(color);
     m_HDRApply.ps.om.dsv.Attach(m_input.dsv).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_HDRApply.ps.om.Apply(m_context);
+    m_HDRApply.ps.om.Apply();
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
@@ -97,6 +96,8 @@ void ComputeLuminance::Draw(ComPtr<ID3D11Resource> input)
 
 void ComputeLuminance::OnRender()
 {
+    m_context.SetViewport(m_width, m_height);
+
     ComPtr<ID3D11Texture2D> texture;
     m_input.hdr_res.As(&texture);
 

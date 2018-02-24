@@ -1,28 +1,34 @@
 #pragma once
 
-#include <d3d11.h>
-#include <d3d11_1.h>
-#include <DXGI1_4.h>
 #include <wrl.h>
 #include <GLFW/glfw3.h>
-#include <vector>
-
+#include <dxgiformat.h>
 using namespace Microsoft::WRL;
+
+enum BindFlag
+{
+    kRtv = 1 << 1,
+    kDsv = 1 << 2,
+    kSrv = 1 << 3,
+};
 
 class Context
 {
 public:
     Context(GLFWwindow* window, int width, int height);
-    ComPtr<ID3D11Resource> GetBackBuffer();
-    void ResizeBackBuffer(int width, int height);
-    void Present();
-    void DrawIndexed(UINT IndexCount);
-    ComPtr<ID3D11Device> device;
-    ComPtr<ID3D11DeviceContext> device_context;
-    ComPtr<ID3DUserDefinedAnnotation> perf;
+    virtual ComPtr<IUnknown> GetBackBuffer() = 0;
+    virtual void Present() = 0;
+    virtual void DrawIndexed(UINT IndexCount) = 0;
+    virtual void OnResize(int width, int height);
+    virtual void SetViewport(int width, int height) = 0;
     GLFWwindow* window;
-private:
-    std::vector<ComPtr<ID3D11RenderTargetView>> rtv;
-    ComPtr<ID3D11DepthStencilView> dsv;
-    ComPtr<IDXGISwapChain3> swap_chain;
+
+    virtual ComPtr<IUnknown> CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1) = 0;
+    virtual ComPtr<IUnknown> CreateBufferSRV(void* data, size_t size, size_t stride) = 0;
+    virtual ComPtr<IUnknown> CreateSamplerAnisotropic() = 0;
+    virtual ComPtr<IUnknown> CreateSamplerShadow() = 0;
+protected:
+    virtual void ResizeBackBuffer(int width, int height) = 0;
+    int m_width;
+    int m_height;
 };

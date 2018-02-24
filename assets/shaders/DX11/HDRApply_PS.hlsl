@@ -14,8 +14,6 @@ StructuredBuffer<float> lum;
 
 Texture2D hdr_input;
 
-SamplerState g_sampler;
-
 static const float3x3 rgb2xyz = float3x3(
     0.4124564, 0.2126729, 0.0193339,
     0.3575761, 0.7151522, 0.1191920,

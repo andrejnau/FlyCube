@@ -1,40 +1,23 @@
 #include "LightPass.h"
-#include "DX11CreateUtils.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-LightPass::LightPass(Context& context, const Input& input, int width, int height)
+LightPass::LightPass(DX11Context& context, const Input& input, int width, int height)
     : m_context(context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
     , m_program(context, std::bind(&LightPass::SetDefines, this, std::placeholders::_1))
 {
-    D3D11_SAMPLER_DESC samp_desc = {};
-    samp_desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-    samp_desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samp_desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samp_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samp_desc.ComparisonFunc = D3D11_COMPARISON_LESS;
-    samp_desc.MinLOD = 0;
-    samp_desc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateSamplerState(&samp_desc, &m_shadow_sampler));
-    m_context.device_context->PSSetSamplers(m_program.ps.sampler.LightCubeShadowComparsionSampler, 1, m_shadow_sampler.GetAddressOf());
-
-    D3D11_RASTERIZER_DESC shadowState;
-    ZeroMemory(&shadowState, sizeof(D3D11_RASTERIZER_DESC));
-    shadowState.FillMode = D3D11_FILL_SOLID;
-    shadowState.CullMode = D3D11_CULL_BACK;
-    shadowState.DepthBias = 4096;
-    m_context.device->CreateRasterizerState(&shadowState, &m_rasterizer_state);
+    m_shadow_sampler = m_context.CreateSamplerShadow();
+    m_g_sampler = m_context.CreateSamplerAnisotropic();
 
     m_input.camera.SetCameraPos(glm::vec3(-3.0, 2.75, 0.0));
     m_input.camera.SetCameraYaw(-178.0f);
     m_input.camera.SetCameraYaw(-1.75f);
 
-    output.rtv = CreateRtvSrv(m_context, 1, width, height);
-    m_depth_stencil_view = CreateDsv(m_context, 1, width, height);
+    output.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
 }
 
 void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
@@ -56,17 +39,17 @@ void LightPass::OnUpdate()
 
 void LightPass::OnRender()
 {
-    ID3D11RasterizerState* cur = nullptr;
-    m_context.device_context->RSGetState(&cur);
-    m_context.device_context->RSSetState(m_rasterizer_state.Get());
+    m_context.SetViewport(m_width, m_height);
 
     m_program.UseProgram();
-    m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
+
+    m_program.ps.sampler.g_sampler.Attach(m_g_sampler);
+    m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_shadow_sampler);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_program.ps.om.rtv0.Attach(output.rtv).ClearRenderTarget(color);
     m_program.ps.om.dsv.Attach(m_depth_stencil_view).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_program.ps.om.Apply(m_context);
+    m_program.ps.om.Apply();
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
@@ -84,10 +67,7 @@ void LightPass::OnRender()
         m_context.DrawIndexed(cur_mesh.indices.size());
     }
 
-    m_context.device_context->OMSetRenderTargets(0, nullptr, nullptr);
-
-    std::vector<ID3D11ShaderResourceView*> empty(D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-    m_context.device_context->PSSetShaderResources(0, empty.size(), empty.data());
+    m_program.ps.om.DetachAll();
 }
 
 void LightPass::OnResize(int width, int height)
@@ -95,8 +75,8 @@ void LightPass::OnResize(int width, int height)
     m_width = width;
     m_height = height;
 
-    output.rtv = CreateRtvSrv(m_context, 1, width, height);
-    m_depth_stencil_view = CreateDsv(m_context, 1, width, height);
+    output.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
 }
 
 void LightPass::OnModifySettings(const Settings& settings)

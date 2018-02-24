@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GeometryPass.h"
-#include <Context/Context.h>
+#include <Context/DX11Context.h>
 #include <Geometry/DX11Geometry.h>
 #include <ProgramRef/SSAOPassPS.h>
 #include <ProgramRef/SSAOPassVS.h>
@@ -23,11 +23,11 @@ public:
 
     struct Output
     {
-        ComPtr<ID3D11Resource> srv;
-        ComPtr<ID3D11Resource> srv_blur;
+        ComPtr<IUnknown> srv;
+        ComPtr<IUnknown> srv_blur;
     } output;
 
-    SSAOPass(Context& context, const Input& input, int width, int height);
+    SSAOPass(DX11Context& DX11Context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
@@ -44,7 +44,7 @@ private:
     int m_height;
     ComPtr<ID3D11Texture2D> m_noise_texture;
     ComPtr<ID3D11SamplerState> m_texture_sampler;
-    ComPtr<ID3D11Resource> m_depth_stencil_view;
+    ComPtr<IUnknown> m_depth_stencil_view;
     Program<SSAOPassPS, SSAOPassVS> m_program;
     Program<SSAOBlurPassPS, SSAOPassVS> m_program_blur;
 };

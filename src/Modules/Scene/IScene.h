@@ -5,7 +5,8 @@
 enum class ApiType
 {
     kOpenGL,
-    kDX
+    kDX11,
+    kDX12
 };
 
 class Settings

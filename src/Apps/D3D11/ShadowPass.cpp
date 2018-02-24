@@ -4,15 +4,14 @@
 #include <glm/gtx/transform.hpp>
 #include <Utilities/State.h>
 
-ShadowPass::ShadowPass(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+ShadowPass::ShadowPass(DX11Context& DX11Context, const Input& input, int width, int height)
+    : m_context(DX11Context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context)
+    , m_program(DX11Context)
 {
-    output.srv = CreateShadowDSV(m_context, m_settings, m_depth_stencil_view);
-    CreateViewPort();
+    output.srv = m_context.CreateTexture(BindFlag::kDsv | BindFlag::kSrv, DXGI_FORMAT_R32_TYPELESS, 1, m_settings.s_size, m_settings.s_size, 6);
 }
 
 void ShadowPass::OnUpdate()
@@ -41,13 +40,12 @@ void ShadowPass::OnUpdate()
 
 void ShadowPass::OnRender()
 {
-    m_context.device_context->RSSetViewports(1, &m_viewport);
+    m_context.SetViewport(m_settings.s_size, m_settings.s_size);
 
     m_program.UseProgram();
-    m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
-    m_context.device_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_context.device_context->OMSetRenderTargets(0, nullptr, m_depth_stencil_view.Get());
+    m_program.ps.om.dsv.Attach(output.srv).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0.0);
+    m_program.ps.om.Apply();
 
     auto& state = CurState<bool>::Instance().state;
     for (auto& scene_item : m_input.scene_list)
@@ -57,8 +55,8 @@ void ShadowPass::OnRender()
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
 
-        ComPtr<ID3D11Resource> bones_info_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone_info);
-        ComPtr<ID3D11Resource> bones_srv = CreateBufferSRV(m_context, scene_item.model.bones.bone);
+        ComPtr<IUnknown> bones_info_srv = m_context.CreateBufferSRV(scene_item.model.bones.bone_info.data(), scene_item.model.bones.bone_info.size(), sizeof(scene_item.model.bones.bone_info.front()));
+        ComPtr<IUnknown> bones_srv = m_context.CreateBufferSRV(scene_item.model.bones.bone.data(), scene_item.model.bones.bone.size(), sizeof(scene_item.model.bones.bone.front()));
 
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bones_srv);
@@ -91,18 +89,6 @@ void ShadowPass::OnModifySettings(const Settings& settings)
     m_settings = settings;
     if (prev.s_size != settings.s_size)
     {
-        output.srv = CreateShadowDSV(m_context, m_settings, m_depth_stencil_view);
-        CreateViewPort();
+        output.srv = m_context.CreateTexture(BindFlag::kDsv | BindFlag::kSrv, DXGI_FORMAT_R32_TYPELESS, 1, m_settings.s_size, m_settings.s_size, 6);
     }
-}
-
-void ShadowPass::CreateViewPort()
-{
-    ZeroMemory(&m_viewport, sizeof(D3D11_VIEWPORT));
-    m_viewport.TopLeftX = 0;
-    m_viewport.TopLeftY = 0;
-    m_viewport.Width = m_settings.s_size;
-    m_viewport.Height = m_settings.s_size;
-    m_viewport.MinDepth = 0.0f;
-    m_viewport.MaxDepth = 1.0f;
 }

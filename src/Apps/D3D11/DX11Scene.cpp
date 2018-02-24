@@ -1,5 +1,4 @@
 #include "DX11Scene.h"
-#include "DX11CreateUtils.h"
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
 #include <Utilities/State.h>
@@ -30,12 +29,18 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(75.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     CreateRT();
-    CreateViewPort();
-    CreateSampler();
 
     m_camera.SetViewport(m_width, m_height);
-    m_context.device_context->PSSetSamplers(0, 1, m_texture_sampler.GetAddressOf());
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    ComPtr<ID3D11RasterizerState> m_rasterizer_state;
+    D3D11_RASTERIZER_DESC shadowState;
+    ZeroMemory(&shadowState, sizeof(D3D11_RASTERIZER_DESC));
+    shadowState.FillMode = D3D11_FILL_SOLID;
+    shadowState.CullMode = D3D11_CULL_BACK;
+    shadowState.DepthBias = 4096;
+    m_context.device->CreateRasterizerState(&shadowState, &m_rasterizer_state);
+    m_context.device_context->RSSetState(m_rasterizer_state.Get());
 }
 
 IScene::Ptr DX11Scene::Create(GLFWwindow* window, int width, int height)
@@ -73,8 +78,6 @@ void DX11Scene::OnUpdate()
 
 void DX11Scene::OnRender()
 {
-    m_context.device_context->RSSetViewports(1, &m_viewport);
-
     m_context.perf->BeginEvent(L"Geometry Pass");
     m_geometry_pass.OnRender();
     m_context.perf->EndEvent();
@@ -82,8 +85,6 @@ void DX11Scene::OnRender()
     m_context.perf->BeginEvent(L"Shadow Pass");
     m_shadow_pass.OnRender();
     m_context.perf->EndEvent();
-
-    m_context.device_context->RSSetViewports(1, &m_viewport);
 
     m_context.perf->BeginEvent(L"SSAO Pass");
     m_ssao_pass.OnRender();
@@ -117,11 +118,9 @@ void DX11Scene::OnResize(int width, int height)
 
     m_render_target_view.Reset();
 
-    m_context.ResizeBackBuffer(width, height);
+    m_context.OnResize(width, height);
 
     CreateRT();
-    CreateViewPort();
-    m_context.device_context->RSSetViewports(1, &m_viewport);
     m_camera.SetViewport(m_width, m_height);
 
     m_geometry_pass.OnResize(width, height);
@@ -221,30 +220,5 @@ void DX11Scene::OnModifySettings(const Settings& settings)
 void DX11Scene::CreateRT()
 {
     m_render_target_view = m_context.GetBackBuffer();
-    m_depth_stencil_view = CreateDsv(m_context, 1, m_width, m_height);
-}
-
-void DX11Scene::CreateViewPort()
-{
-    ZeroMemory(&m_viewport, sizeof(D3D11_VIEWPORT));
-    m_viewport.TopLeftX = 0;
-    m_viewport.TopLeftY = 0;
-    m_viewport.Width = m_width;
-    m_viewport.Height = m_height;
-    m_viewport.MinDepth = 0.0f;
-    m_viewport.MaxDepth = 1.0f;
-}
-
-void DX11Scene::CreateSampler()
-{
-    D3D11_SAMPLER_DESC samp_desc = {};
-    samp_desc.Filter = D3D11_FILTER_ANISOTROPIC;
-    samp_desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    samp_desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    samp_desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-    samp_desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    samp_desc.MinLOD = 0;
-    samp_desc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateSamplerState(&samp_desc, &m_texture_sampler));
+    m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
 }

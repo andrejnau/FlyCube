@@ -44,36 +44,50 @@ public:
     {{#HasOutputs}}
     struct RTV
     {
-        RTV(Context& context)
+        RTV(DX11Context& context)
 {{#Outputs}}            {{Separator}} rtv{{Slot}}(context, {{Slot}})
 {{/Outputs}}            {{DSVSeparator}} dsv(context)
+            , m_context(context)
         {
         }
 
-        void Apply(Context& context)
+        void Apply()
         {
             std::vector<ID3D11RenderTargetView*> rtv_ptr;
 {{#Outputs}}            rtv_ptr.push_back(rtv{{Slot}}.GetRtv().Get());
 {{/Outputs}}
-            context.device_context->OMSetRenderTargets(rtv_ptr.size(), rtv_ptr.data(), dsv.GetDsv().Get());
+            m_context.device_context->OMSetRenderTargets(rtv_ptr.size(), rtv_ptr.data(), dsv.GetDsv().Get());
+        }
+
+        void DetachAll()
+        {
+            m_context.device_context->OMSetRenderTargets(0, nullptr, nullptr); 
         }
 
 {{#Outputs}}        RTVBinding rtv{{Slot}};
 {{/Outputs}}        DSVBinding dsv;
+        private:
+            DX11Context& m_context;
     } om;
     {{/HasOutputs}}
 
-    struct
+    struct Sampler
     {
-{{#Samplers}}        static constexpr const uint32_t {{Name}} = {{Slot}};
+        Sampler(ShaderBase& shader)
+{{#Samplers}}            {{Separator}} {{Name}}(shader, {{Slot}})
+{{/Samplers}}        {
+        }
+
+{{#Samplers}}       SamplerBinding {{Name}};
 {{/Samplers}}    } sampler;
 
-    {{ShaderName}}(Context& context)
+    {{ShaderName}}(DX11Context& context)
         : Shader(context, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
         , cbuffer{}
         , srv(*this) 
         , uav(*this) 
         {{#HasOutputs}} , om(context) {{/HasOutputs}}
+        , sampler(*this) 
         , cbuffer_impl(context)
     {
     }
@@ -96,7 +110,7 @@ private:
     public:
         {{#CBuffers}}BufferLayout {{BufferName}};
         {{/CBuffers}}
-        CBufferImpl(Context& context)
+        CBufferImpl(DX11Context& context)
             {{#CBuffers}}{{BufferSeparator}} {{BufferName}}(
                 context,
                 "<{{BufferName}}>",

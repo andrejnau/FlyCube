@@ -209,6 +209,7 @@ private:
                 mustache::data tsampler;
                 tsampler.set("Name", res_desc.Name);
                 tsampler.set("Slot", std::to_string(res_desc.BindPoint));
+                tsampler.set("Separator", tsamplers.is_empty_list() ? ":" : ",");
                 tsamplers.push_back(tsampler);
                 break;
                 break;

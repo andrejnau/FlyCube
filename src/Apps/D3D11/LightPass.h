@@ -5,7 +5,7 @@
 #include "D3D11/SSAOPass.h"
 
 #include <Scene/SceneBase.h>
-#include <Context/Context.h>
+#include <Context/DX11Context.h>
 #include <Geometry/DX11Geometry.h>
 #include <ProgramRef/LightPassPS.h>
 #include <ProgramRef/LightPassVS.h>
@@ -29,12 +29,12 @@ public:
 
     struct Output
     {
-        ComPtr<ID3D11Resource> rtv;
+        ComPtr<IUnknown> rtv;
     } output;
 
     void SetDefines(Program<LightPassPS, LightPassVS>& program);
 
-    LightPass(Context& context, const Input& input, int width, int height);
+    LightPass(DX11Context& DX11Context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
@@ -48,7 +48,7 @@ private:
     int m_width;
     int m_height;
     Program<LightPassPS, LightPassVS> m_program;
-    ComPtr<ID3D11SamplerState> m_shadow_sampler;
-    ComPtr<ID3D11RasterizerState> m_rasterizer_state;
-    ComPtr<ID3D11Resource> m_depth_stencil_view;
+    ComPtr<IUnknown> m_shadow_sampler;
+    ComPtr<IUnknown> m_g_sampler;
+    ComPtr<IUnknown> m_depth_stencil_view;
 };

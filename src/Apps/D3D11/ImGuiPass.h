@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Scene/SceneBase.h>
-#include <Context/Context.h>
+#include <Context/DX11Context.h>
 #include <Geometry/DX11Geometry.h>
 #include <d3d11.h>
 #include <wrl.h>
@@ -30,7 +30,7 @@ public:
 
     bool ImGui_ImplDX11_Init();
 
-    ImGuiPass(Context& context, const Input& input, int width, int height);
+    ImGuiPass(DX11Context& DX11Context, const Input& input, int width, int height);
     ~ImGuiPass();
 
     virtual void OnUpdate() override;
@@ -44,7 +44,7 @@ public:
     virtual void OnInputChar(unsigned int ch) override;
 
 private:
-    Context& m_context;
+    DX11Context& m_context;
     Input m_input;
     int m_width;
     int m_height;

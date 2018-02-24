@@ -3,7 +3,7 @@
 #include "Geometry/Geometry.h"
 #include <Utilities/DXUtility.h>
 #include <Texture/DX11TextureLoader.h>
-#include <Context/Context.h>
+#include <Context/DX11Context.h>
 #include <d3d11.h>
 #include <wrl.h>
 #include <glm/glm.hpp>
@@ -17,7 +17,7 @@ using namespace Microsoft::WRL;
 class IABuffer
 {
 protected:
-    IABuffer(Context& context)
+    IABuffer(DX11Context& context)
         : m_context(context)
     {}
 
@@ -39,14 +39,14 @@ protected:
         return buffer;
     }
 
-    Context& m_context;
+    DX11Context& m_context;
 };
 
 class IAVertexBuffer : IABuffer
 {
 public:
     template<typename T>
-    IAVertexBuffer(Context& context, const std::vector<T>& v)
+    IAVertexBuffer(DX11Context& context, const std::vector<T>& v)
         : IABuffer(context)
         , m_buffer(CreateBuffer(v, D3D11_BIND_VERTEX_BUFFER))
         , m_stride(sizeof(v.front()))
@@ -68,7 +68,7 @@ class IAIndexBuffer : IABuffer
 {
 public:
     template<typename T>
-    IAIndexBuffer(Context& context, const std::vector<T>& v, DXGI_FORMAT format)
+    IAIndexBuffer(DX11Context& context, const std::vector<T>& v, DXGI_FORMAT format)
         : IABuffer(context)
         , m_buffer(CreateBuffer(v, D3D11_BIND_INDEX_BUFFER))
         , m_format(format)
@@ -91,7 +91,7 @@ class DX11Mesh : public IMesh
 {
 public:
 
-    DX11Mesh(Context& context, const IMesh& mesh)
+    DX11Mesh(DX11Context& context, const IMesh& mesh)
         : IMesh(mesh)
         , m_context(context)
         , positions_buffer(context, positions)
@@ -152,7 +152,7 @@ private:
     }
 
 private:
-    Context& m_context;
+    DX11Context& m_context;
     std::map<aiTextureType, size_t> m_type2id;
     std::vector<ComPtr<ID3D11ShaderResourceView>> m_tex_srv;
 };

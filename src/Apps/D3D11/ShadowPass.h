@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Scene/SceneBase.h>
-#include <Context/Context.h>
+#include <Context/DX11Context.h>
 #include <Geometry/DX11Geometry.h>
 #include <ProgramRef/ShadowPassVS.h>
 #include <ProgramRef/ShadowPassGS.h>
@@ -23,17 +23,15 @@ public:
 
     struct Output
     {
-        ComPtr<ID3D11Resource> srv;
+        ComPtr<IUnknown> srv;
     } output;
 
-    ShadowPass(Context& context, const Input& input, int width, int height);
+    ShadowPass(DX11Context& DX11Context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
     virtual void OnModifySettings(const Settings & settings) override;
-
-    void CreateViewPort();
 
 private:
     Settings m_settings;
@@ -41,8 +39,6 @@ private:
     Input m_input;
     int m_width;
     int m_height;
-    ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
     Program<ShadowPassVS, ShadowPassGS, ShadowPassPS> m_program;
-    D3D11_VIEWPORT m_viewport;
 };
 

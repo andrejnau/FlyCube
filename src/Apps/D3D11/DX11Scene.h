@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Scene/SceneBase.h>
-#include <Context/Context.h>
+#include <Context/DX11Context.h>
 #include <Geometry/DX11Geometry.h>
 #include <d3d11.h>
 #include <DXGI1_4.h>
@@ -43,20 +43,15 @@ public:
 
 private:
     void CreateRT();
-    void CreateViewPort();
-    void CreateSampler();
 
-    ComPtr<ID3D11Resource> m_render_target_view;
-    ComPtr<ID3D11Resource> m_depth_stencil_view;
+    ComPtr<IUnknown> m_render_target_view;
+    ComPtr<IUnknown> m_depth_stencil_view;
 
-    D3D11_VIEWPORT m_viewport;
-
-    ComPtr<ID3D11SamplerState> m_texture_sampler;
     glm::vec3 light_pos;
 
     int m_width;
     int m_height;
-    Context m_context;
+    DX11Context m_context;
     SceneList<DX11Mesh> m_scene_list;
     Model<DX11Mesh> m_model_square;
     GeometryPass m_geometry_pass;
