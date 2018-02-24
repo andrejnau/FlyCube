@@ -24,5 +24,5 @@ public:
 private:
     std::vector<ComPtr<ID3D11RenderTargetView>> rtv;
     ComPtr<ID3D11DepthStencilView> dsv;
-    ComPtr<IDXGISwapChain> swap_chain;
+    ComPtr<IDXGISwapChain3> swap_chain;
 };
