@@ -110,7 +110,6 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
     dx11_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
     dx11_mesh.colors_buffer.BindToSlot(m_program.vs.ia.COLOR);
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    m_context.device_context->IASetInputLayout(m_program.vs.input_layout.Get());
 
     m_context.device_context->PSSetSamplers(0, 1, m_font_sampler.GetAddressOf());
 
@@ -235,12 +234,12 @@ bool  ImGuiPass::ImGui_ImplDX11_Init()
     return true;
 }
 
-ImGuiPass::ImGuiPass(DX11Context& DX11Context, const Input& input, int width, int height)
-    : m_context(DX11Context)
+ImGuiPass::ImGuiPass(DX11Context& context, const Input& input, int width, int height)
+    : m_context(context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(DX11Context)
+    , m_program(context)
 {
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)width, (float)height);

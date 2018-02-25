@@ -26,7 +26,7 @@ public:
         ComPtr<IUnknown> srv;
     } output;
 
-    ShadowPass(DX11Context& DX11Context, const Input& input, int width, int height);
+    ShadowPass(Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;

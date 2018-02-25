@@ -27,7 +27,7 @@ public:
         ComPtr<IUnknown> srv_blur;
     } output;
 
-    SSAOPass(DX11Context& DX11Context, const Input& input, int width, int height);
+    SSAOPass(Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
@@ -42,7 +42,7 @@ private:
     Input m_input;
     int m_width;
     int m_height;
-    ComPtr<ID3D11Texture2D> m_noise_texture;
+    ComPtr<IUnknown> m_noise_texture;
     ComPtr<ID3D11SamplerState> m_texture_sampler;
     ComPtr<IUnknown> m_depth_stencil_view;
     Program<SSAOPassPS, SSAOPassVS> m_program;

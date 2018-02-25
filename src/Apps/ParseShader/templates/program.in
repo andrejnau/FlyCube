@@ -4,10 +4,16 @@
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>
+#include <memory>
 
-class {{ShaderName}} : public Shader<{{ShaderType}}>
+class {{ShaderName}} : public ShaderBase
 {
+    std::unique_ptr<ShaderApi> shader_api;
+
 public:
+
+    static const ShaderType type = {{ShaderType}};
+
     struct
     {
 {{#CBuffers}}        struct
@@ -18,7 +24,7 @@ public:
 
     struct SRV
     {
-        SRV(ShaderBase& shader)
+        SRV(ShaderApi& shader)
 {{#Textures}}            {{Separator}} {{Name}}(shader, "{{Name}}", {{Slot}})
 {{/Textures}}        {
         }
@@ -28,7 +34,7 @@ public:
 
     struct UAV
     {
-        UAV(ShaderBase& shader)
+        UAV(ShaderApi& shader)
 {{#UAVs}}            {{Separator}} {{Name}}(shader, "{{Name}}", {{Slot}})
 {{/UAVs}}        {
         }
@@ -41,39 +47,14 @@ public:
 {{#Inputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
 {{/Inputs}}    } ia;
 
-    {{#HasOutputs}}
-    struct RTV
+    struct
     {
-        RTV(DX11Context& context)
-{{#Outputs}}            {{Separator}} rtv{{Slot}}(context, {{Slot}})
-{{/Outputs}}            {{DSVSeparator}} dsv(context)
-            , m_context(context)
-        {
-        }
-
-        void Apply()
-        {
-            std::vector<ID3D11RenderTargetView*> rtv_ptr;
-{{#Outputs}}            rtv_ptr.push_back(rtv{{Slot}}.GetRtv().Get());
-{{/Outputs}}
-            m_context.device_context->OMSetRenderTargets(rtv_ptr.size(), rtv_ptr.data(), dsv.GetDsv().Get());
-        }
-
-        void DetachAll()
-        {
-            m_context.device_context->OMSetRenderTargets(0, nullptr, nullptr); 
-        }
-
-{{#Outputs}}        RTVBinding rtv{{Slot}};
-{{/Outputs}}        DSVBinding dsv;
-        private:
-            DX11Context& m_context;
-    } om;
-    {{/HasOutputs}}
+{{#Outputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
+{{/Outputs}}    } om;
 
     struct Sampler
     {
-        Sampler(ShaderBase& shader)
+        Sampler(ShaderApi& shader)
 {{#Samplers}}            {{Separator}} {{Name}}(shader, {{Slot}})
 {{/Samplers}}        {
         }
@@ -81,15 +62,26 @@ public:
 {{#Samplers}}       SamplerBinding {{Name}};
 {{/Samplers}}    } sampler;
 
-    {{ShaderName}}(DX11Context& context)
-        : Shader(context, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
+    {{ShaderName}}(ProgramApi& program_base)
+        : ShaderBase("{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
+        , shader_api(program_base.CreateShader({{ShaderType}}))
         , cbuffer{}
-        , srv(*this) 
-        , uav(*this) 
-        {{#HasOutputs}} , om(context) {{/HasOutputs}}
-        , sampler(*this) 
-        , cbuffer_impl(context)
+        , srv(*shader_api)
+        , uav(*shader_api)
+        , sampler(*shader_api)
+        , cbuffer_impl(*shader_api)
     {
+    }
+
+    virtual void UpdateShader() override
+    {
+        m_shader_buffer = CompileShader();
+        shader_api->CreateShader(m_shader_buffer);
+    }
+
+    virtual void UseShader() override
+    {
+        shader_api->UseShader();
     }
 
     virtual void UpdateCBuffers() override
@@ -101,7 +93,7 @@ public:
 private:
     virtual void BindCBuffers() override
     {
-        {{#CBuffers}}cbuffer_impl.{{BufferName}}.BindCBuffer<{{ShaderType}}>();
+        {{#CBuffers}}shader_api->BindCBuffer({{BufferIndex}}, cbuffer_impl.{{BufferName}}.GetBuffer());
         {{/CBuffers}}
     }
     
@@ -110,9 +102,9 @@ private:
     public:
         {{#CBuffers}}BufferLayout {{BufferName}};
         {{/CBuffers}}
-        CBufferImpl(DX11Context& context)
+        CBufferImpl(ShaderApi& shader)
             {{#CBuffers}}{{BufferSeparator}} {{BufferName}}(
-                context,
+                shader,
                 "<{{BufferName}}>",
                 {{BufferSize}},
                 {{BufferIndex}},

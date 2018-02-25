@@ -6,41 +6,35 @@
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include <glm/gtx/transform.hpp>
+#include <Context/ContextSelector.h>
 
 DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     : m_width(width)
     , m_height(height)
-    , m_context(window, m_width, m_height)
-    , m_model_square(m_context, "model/square.obj")
+    , m_context_ptr(CreateContext(ApiType::kDX11, window, m_width, m_height))
+    , m_context(*m_context_ptr)
+    , m_model_square((DX11Context&)*m_context_ptr, "model/square.obj")
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
     , m_shadow_pass(m_context, { m_scene_list, m_camera, light_pos }, width, height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
     , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, light_pos }, width, height)
     , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
-    , m_imgui_pass(m_context, { *this }, width, height)
+    , m_imgui_pass((DX11Context&)*m_context_ptr, { *this }, width, height)
 {
     // prevent a call ~aiScene 
     m_scene_list.reserve(2);
 #ifndef _DEBUG
-    m_scene_list.emplace_back(m_context, "model/sponza/sponza.obj");
+    m_scene_list.emplace_back((DX11Context&)*m_context_ptr, "model/sponza/sponza.obj");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f));
 #endif
-    m_scene_list.emplace_back(m_context, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
+    m_scene_list.emplace_back((DX11Context&)*m_context_ptr, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(75.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     CreateRT();
 
     m_camera.SetViewport(m_width, m_height);
-    m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    ComPtr<ID3D11RasterizerState> m_rasterizer_state;
-    D3D11_RASTERIZER_DESC shadowState;
-    ZeroMemory(&shadowState, sizeof(D3D11_RASTERIZER_DESC));
-    shadowState.FillMode = D3D11_FILL_SOLID;
-    shadowState.CullMode = D3D11_CULL_BACK;
-    shadowState.DepthBias = 4096;
-    m_context.device->CreateRasterizerState(&shadowState, &m_rasterizer_state);
-    m_context.device_context->RSSetState(m_rasterizer_state.Get());
+    m_context.RSSetState(m_context.CreateShadowRSState());
 }
 
 IScene::Ptr DX11Scene::Create(GLFWwindow* window, int width, int height)
@@ -78,31 +72,31 @@ void DX11Scene::OnUpdate()
 
 void DX11Scene::OnRender()
 {
-    m_context.perf->BeginEvent(L"Geometry Pass");
+    m_context.BeginEvent(L"Geometry Pass");
     m_geometry_pass.OnRender();
-    m_context.perf->EndEvent();
+    m_context.EndEvent();
 
-    m_context.perf->BeginEvent(L"Shadow Pass");
+    m_context.BeginEvent(L"Shadow Pass");
     m_shadow_pass.OnRender();
-    m_context.perf->EndEvent();
+    m_context.EndEvent();
 
-    m_context.perf->BeginEvent(L"SSAO Pass");
+    m_context.BeginEvent(L"SSAO Pass");
     m_ssao_pass.OnRender();
-    m_context.perf->EndEvent();
+    m_context.EndEvent();
 
-    m_context.perf->BeginEvent(L"Light Pass");
+    m_context.BeginEvent(L"Light Pass");
     m_light_pass.OnRender();
-    m_context.perf->EndEvent();
+    m_context.EndEvent();
 
-    m_context.perf->BeginEvent(L"HDR Pass");
+    m_context.BeginEvent(L"HDR Pass");
     m_compute_luminance.OnRender();
-    m_context.perf->EndEvent();
+    m_context.EndEvent();
 
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        m_context.perf->BeginEvent(L"ImGui Pass");
+        m_context.BeginEvent(L"ImGui Pass");
         m_imgui_pass.OnRender();
-        m_context.perf->EndEvent();
+        m_context.EndEvent();
     }
 
     m_context.Present();

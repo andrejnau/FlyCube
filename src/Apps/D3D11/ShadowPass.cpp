@@ -1,15 +1,14 @@
 #include "ShadowPass.h"
-#include "DX11CreateUtils.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <Utilities/State.h>
 
-ShadowPass::ShadowPass(DX11Context& DX11Context, const Input& input, int width, int height)
-    : m_context(DX11Context)
+ShadowPass::ShadowPass(Context& context, const Input& input, int width, int height)
+    : m_context(context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(DX11Context)
+    , m_program(context)
 {
     output.srv = m_context.CreateTexture(BindFlag::kDsv | BindFlag::kSrv, DXGI_FORMAT_R32_TYPELESS, 1, m_settings.s_size, m_settings.s_size, 6);
 }
@@ -44,8 +43,9 @@ void ShadowPass::OnRender()
 
     m_program.UseProgram();
 
-    m_program.ps.om.dsv.Attach(output.srv).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0.0);
-    m_program.ps.om.Apply();
+    float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    m_context.OMSetRenderTargets({}, output.srv);
+    m_context.ClearDepthStencil(output.srv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     auto& state = CurState<bool>::Instance().state;
     for (auto& scene_item : m_input.scene_list)
@@ -55,8 +55,13 @@ void ShadowPass::OnRender()
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
 
-        ComPtr<IUnknown> bones_info_srv = m_context.CreateBufferSRV(scene_item.model.bones.bone_info.data(), scene_item.model.bones.bone_info.size(), sizeof(scene_item.model.bones.bone_info.front()));
-        ComPtr<IUnknown> bones_srv = m_context.CreateBufferSRV(scene_item.model.bones.bone.data(), scene_item.model.bones.bone.size(), sizeof(scene_item.model.bones.bone.front()));
+        ComPtr<IUnknown> bones_info_srv = m_context.CreateBuffer(BindFlag::kSrv, scene_item.model.bones.bone_info.size() * sizeof(Bones::BoneInfo), sizeof(Bones::BoneInfo), "bone_info");
+        if (!scene_item.model.bones.bone_info.empty())
+            m_context.UpdateSubresource(bones_info_srv, 0, scene_item.model.bones.bone_info.data(), 0, 0);
+
+        ComPtr<IUnknown> bones_srv = m_context.CreateBuffer(BindFlag::kSrv, scene_item.model.bones.bone.size() * sizeof(glm::mat4), sizeof(glm::mat4), "bone");
+        if (!scene_item.model.bones.bone.empty())
+            m_context.UpdateSubresource(bones_srv, 0, scene_item.model.bones.bone.data(), 0, 0);
 
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bones_srv);

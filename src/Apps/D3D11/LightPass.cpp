@@ -2,7 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-LightPass::LightPass(DX11Context& context, const Input& input, int width, int height)
+LightPass::LightPass(Context& context, const Input& input, int width, int height)
     : m_context(context)
     , m_input(input)
     , m_width(width)
@@ -47,9 +47,9 @@ void LightPass::OnRender()
     m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_shadow_sampler);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_program.ps.om.rtv0.Attach(output.rtv).ClearRenderTarget(color);
-    m_program.ps.om.dsv.Attach(m_depth_stencil_view).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_program.ps.om.Apply();
+    m_context.OMSetRenderTargets({ output.rtv }, m_depth_stencil_view);
+    m_context.ClearRenderTarget(output.rtv, color);
+    m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
@@ -67,7 +67,7 @@ void LightPass::OnRender()
         m_context.DrawIndexed(cur_mesh.indices.size());
     }
 
-    m_program.ps.om.DetachAll();
+    m_context.OMSetRenderTargets({}, nullptr);
 }
 
 void LightPass::OnResize(int width, int height)

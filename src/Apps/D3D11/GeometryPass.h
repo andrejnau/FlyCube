@@ -28,7 +28,7 @@ public:
         ComPtr<IUnknown> specular;
     } output;
 
-    GeometryPass(DX11Context& context, const Input& input, int width, int height);
+    GeometryPass(Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;

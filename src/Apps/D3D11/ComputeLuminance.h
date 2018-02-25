@@ -27,7 +27,7 @@ public:
     {
     } output;
 
-    ComputeLuminance(DX11Context& DX11Context, const Input& input, int width, int height);
+    ComputeLuminance(Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
@@ -41,7 +41,7 @@ private:
     void Draw(ComPtr<IUnknown> input);
 
     Settings m_settings;
-    DX11Context& m_context;
+    Context& m_context;
     Input m_input;
     int m_width;
     int m_height;

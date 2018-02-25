@@ -4,7 +4,7 @@
 #include <Utilities/State.h>
 #include <glm/gtx/transform.hpp>
 
-GeometryPass::GeometryPass(DX11Context& context, const Input& input, int width, int height)
+GeometryPass::GeometryPass(Context& context, const Input& input, int width, int height)
     : m_context(context)
     , m_input(input)
     , m_width(width)
@@ -36,13 +36,19 @@ void GeometryPass::OnRender()
     m_program.ps.sampler.g_sampler.Attach(m_g_sampler);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_program.ps.om.rtv0.Attach(output.position).ClearRenderTarget(color);
-    m_program.ps.om.rtv1.Attach(output.normal).ClearRenderTarget(color);
-    m_program.ps.om.rtv2.Attach(output.ambient).ClearRenderTarget(color);
-    m_program.ps.om.rtv3.Attach(output.diffuse).ClearRenderTarget(color);
-    m_program.ps.om.rtv4.Attach(output.specular).ClearRenderTarget(color);
-    m_program.ps.om.dsv.Attach(m_depth_stencil).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_program.ps.om.Apply();
+    m_context.OMSetRenderTargets({ 
+        output.position,
+        output.normal,
+        output.ambient,
+        output.diffuse,
+        output.specular,
+        }, m_depth_stencil);
+    m_context.ClearRenderTarget(output.position, color);
+    m_context.ClearRenderTarget(output.normal, color);
+    m_context.ClearRenderTarget(output.ambient, color);
+    m_context.ClearRenderTarget(output.diffuse, color);
+    m_context.ClearRenderTarget(output.specular, color);
+    m_context.ClearDepthStencil(m_depth_stencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     auto& state = CurState<bool>::Instance().state;
     for (auto& scene_item : m_input.scene_list)
@@ -54,8 +60,13 @@ void GeometryPass::OnRender()
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
 
-        ComPtr<IUnknown> bones_info_srv = m_context.CreateBufferSRV(scene_item.model.bones.bone_info.data(), scene_item.model.bones.bone_info.size(), sizeof(scene_item.model.bones.bone_info.front()));
-        ComPtr<IUnknown> bones_srv = m_context.CreateBufferSRV(scene_item.model.bones.bone.data(), scene_item.model.bones.bone.size(), sizeof(scene_item.model.bones.bone.front()));
+        ComPtr<IUnknown> bones_info_srv = m_context.CreateBuffer(BindFlag::kSrv, scene_item.model.bones.bone_info.size() * sizeof(Bones::BoneInfo), sizeof(Bones::BoneInfo), "bone_info");
+        if (!scene_item.model.bones.bone_info.empty())
+            m_context.UpdateSubresource(bones_info_srv, 0, scene_item.model.bones.bone_info.data(), 0, 0);
+
+        ComPtr<IUnknown> bones_srv = m_context.CreateBuffer(BindFlag::kSrv, scene_item.model.bones.bone.size() * sizeof(glm::mat4), sizeof(glm::mat4), "bone");
+        if (!scene_item.model.bones.bone.empty())
+            m_context.UpdateSubresource(bones_srv, 0, scene_item.model.bones.bone.data(), 0, 0);
 
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bones_srv);

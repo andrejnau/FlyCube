@@ -3,14 +3,14 @@
 #include <glm/gtx/transform.hpp>
 #include <Utilities/State.h>
 
-ComputeLuminance::ComputeLuminance(DX11Context& DX11Context, const Input& input, int width, int height)
-    : m_context(DX11Context)
+ComputeLuminance::ComputeLuminance(Context& context, const Input& input, int width, int height)
+    : m_context(context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_HDRLum1DPassCS(DX11Context)
-    , m_HDRLum2DPassCS(DX11Context)
-    , m_HDRApply(DX11Context)
+    , m_HDRLum1DPassCS(context)
+    , m_HDRLum2DPassCS(context)
+    , m_HDRApply(context)
 {
 }
 
@@ -25,18 +25,11 @@ ComPtr<IUnknown> ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint3
 
     uint32_t total_invoke = thread_group_x * thread_group_y;
 
-    ComPtr<ID3D11Buffer> buffer;
-    D3D11_BUFFER_DESC buffer_desc = {};
-    buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-    buffer_desc.ByteWidth = sizeof(float) * total_invoke;
-    buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-    buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    buffer_desc.StructureByteStride = 4;
-    ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&buffer_desc, nullptr, &buffer));
+    ComPtr<IUnknown> buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * total_invoke, 4, "2d result");
 
     m_HDRLum2DPassCS.cs.uav.result.Attach(buffer);
     m_HDRLum2DPassCS.cs.srv.input.Attach(m_input.hdr_res);
-    m_context.device_context->Dispatch(thread_group_x, thread_group_y, 1);
+    m_context.Dispatch(thread_group_x, thread_group_y, 1);
 
     return buffer;
 }
@@ -46,20 +39,12 @@ ComPtr<IUnknown> ComputeLuminance::GetLum1DPassCS(ComPtr<IUnknown> input, uint32
     m_HDRLum1DPassCS.cs.cbuffer.cbv.bufferSize = input_buffer_size;
     m_HDRLum1DPassCS.UseProgram();
 
-    ComPtr<ID3D11Buffer> buffer;
-    D3D11_BUFFER_DESC buffer_desc = {};
-    buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-    buffer_desc.ByteWidth = sizeof(float) * thread_group_x;
-    buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-    buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    buffer_desc.StructureByteStride = 4;
-    ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&buffer_desc, nullptr, &buffer));
-
+    ComPtr<IUnknown> buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * thread_group_x, 4, "1d result");
  
     m_HDRLum1DPassCS.cs.uav.result.Attach(buffer);
     m_HDRLum1DPassCS.cs.srv.input.Attach(input);
 
-    m_context.device_context->Dispatch(thread_group_x, 1, 1);
+    m_context.Dispatch(thread_group_x, 1, 1);
 
     m_HDRLum1DPassCS.cs.uav.result.Attach();
 
@@ -75,9 +60,9 @@ void ComputeLuminance::Draw(ComPtr<IUnknown> input)
     m_HDRApply.UseProgram();
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_HDRApply.ps.om.rtv0.Attach(m_input.rtv).ClearRenderTarget(color);
-    m_HDRApply.ps.om.dsv.Attach(m_input.dsv).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_HDRApply.ps.om.Apply();
+    m_context.OMSetRenderTargets({ m_input.rtv }, m_input.dsv);
+    m_context.ClearRenderTarget(m_input.rtv, color);
+    m_context.ClearDepthStencil(m_input.dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
@@ -89,9 +74,6 @@ void ComputeLuminance::Draw(ComPtr<IUnknown> input)
         m_HDRApply.ps.srv.lum.Attach(input);
         m_context.DrawIndexed(cur_mesh.indices.size());
     }
-
-    std::vector<ID3D11ShaderResourceView*> empty(D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-    m_context.device_context->PSSetShaderResources(0, empty.size(), empty.data());
 }
 
 void ComputeLuminance::OnRender()

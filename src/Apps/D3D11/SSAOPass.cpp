@@ -11,13 +11,13 @@ inline float lerp(float a, float b, float f)
     return a + f * (b - a);
 }
 
-SSAOPass::SSAOPass(DX11Context& DX11Context, const Input& input, int width, int height)
-    : m_context(DX11Context)
+SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
+    : m_context(context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(DX11Context, std::bind(&SSAOPass::SetDefines, this, std::placeholders::_1))
-    , m_program_blur(DX11Context)
+    , m_program(context, std::bind(&SSAOPass::SetDefines, this, std::placeholders::_1))
+    , m_program_blur(context)
 {
     output.srv = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
     output.srv_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
@@ -46,27 +46,11 @@ SSAOPass::SSAOPass(DX11Context& DX11Context, const Input& input, int width, int 
         ssaoNoise.push_back(noise);
     }
 
-    D3D11_TEXTURE2D_DESC texture_desc = {};
-    texture_desc.Width = 4;
-    texture_desc.Height = 4;
-    texture_desc.MipLevels = 1;
-    texture_desc.ArraySize = 1;
-    texture_desc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-    texture_desc.Usage = D3D11_USAGE_DEFAULT;
-    texture_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    texture_desc.SampleDesc.Count = 1;
-    texture_desc.SampleDesc.Quality = 0;
-
-    size_t num_bytes;
-    size_t row_bytes;
-    GetSurfaceInfo(4, 4, texture_desc.Format, &num_bytes, &row_bytes, nullptr);
-    D3D11_SUBRESOURCE_DATA textureBufferData = {};
-    textureBufferData.pSysMem = ssaoNoise.data();
-    textureBufferData.SysMemPitch = row_bytes;
-    textureBufferData.SysMemSlicePitch = num_bytes;
-
-    ComPtr<ID3D11Texture2D> noise_texture_buffer;
-    ASSERT_SUCCEEDED(DX11Context.device->CreateTexture2D(&texture_desc, &textureBufferData, &m_noise_texture));
+    m_noise_texture = context.CreateTexture(BindFlag::kSrv, DXGI_FORMAT_R32G32B32_FLOAT, 1, 4, 4, 1);
+    size_t num_bytes = 0;
+    size_t row_bytes = 0;
+    GetSurfaceInfo(4, 4, DXGI_FORMAT_R32G32B32_FLOAT, &num_bytes, &row_bytes, nullptr);
+    context.UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
 }
 
 void SSAOPass::OnUpdate()
@@ -91,10 +75,10 @@ void SSAOPass::OnRender()
 
     m_program.UseProgram();
 
-    float color[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    m_program.ps.om.rtv0.Attach(output.srv).ClearRenderTarget(color);
-    m_program.ps.om.dsv.Attach(m_depth_stencil_view).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_program.ps.om.Apply();
+    float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    m_context.OMSetRenderTargets({ output.srv }, m_depth_stencil_view);
+    m_context.ClearRenderTarget(output.srv, color);
+    m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {
@@ -112,9 +96,9 @@ void SSAOPass::OnRender()
 
     m_program_blur.UseProgram();
 
-    m_program.ps.om.rtv0.Attach(output.srv_blur).ClearRenderTarget(color);
-    m_program.ps.om.dsv.Attach(m_depth_stencil_view).ClearDepthStencil(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    m_program.ps.om.Apply();
+    m_context.OMSetRenderTargets({ output.srv_blur }, m_depth_stencil_view);
+    m_context.ClearRenderTarget(output.srv_blur, color);
+    m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
     {

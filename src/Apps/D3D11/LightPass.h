@@ -34,7 +34,7 @@ public:
 
     void SetDefines(Program<LightPassPS, LightPassVS>& program);
 
-    LightPass(DX11Context& DX11Context, const Input& input, int width, int height);
+    LightPass(Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;

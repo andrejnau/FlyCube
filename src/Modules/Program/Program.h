@@ -10,17 +10,20 @@
 #include <cstddef>
 #include <map>
 #include <string>
+#include <memory>
 #include <vector>
+#include <Program/ShaderApi.h>
+#include <Program/ShaderBase.h>
+#include <Program/ProgramApi.h>
 
 using namespace Microsoft::WRL;
 
 class BufferLayout
 {
-    DX11Context & m_context;
-
+    ShaderApi& m_shader;
 public:
     BufferLayout(
-        DX11Context& context,
+        ShaderApi& shader,
         const std::string& name,
         size_t buffer_size, 
         UINT slot,
@@ -28,18 +31,17 @@ public:
         std::vector<size_t>&& data_offset,
         std::vector<size_t>&& buf_offset
     )
-        : m_context(context)
-        , buffer(CreateBuffer(buffer_size))
+        : m_shader(shader)
+        , buffer(shader.GetContext().CreateBuffer(BindFlag::kCbv, buffer_size, 0, name))
         , slot(slot)
         , data(buffer_size)
         , data_size(std::move(data_size))
         , data_offset(std::move(data_offset))
         , buf_offset(std::move(buf_offset))
     {
-        buffer->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
     }
 
-    ComPtr<ID3D11Buffer> buffer;
+    ComPtr<IUnknown> buffer;
     UINT slot;
 
     void UpdateCBuffer(const char* src_data)
@@ -57,34 +59,12 @@ public:
         }
 
         if (dirty)
-            m_context.device_context->UpdateSubresource(buffer.Get(), 0, nullptr, data.data(), 0, 0);
+            m_shader.UpdateData(buffer, data.data());
     }
 
-    template<ShaderType>
-    void BindCBuffer();
-
-    template<>
-    void BindCBuffer<ShaderType::kPixel>()
+    ComPtr<IUnknown> GetBuffer()
     {
-        m_context.device_context->PSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
-    }
-
-    template<>
-    void BindCBuffer<ShaderType::kVertex>()
-    {
-        m_context.device_context->VSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
-    }
-
-    template<>
-    void BindCBuffer<ShaderType::kGeometry>()
-    {
-        m_context.device_context->GSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
-    }
-
-    template<>
-    void BindCBuffer<ShaderType::kCompute>()
-    {
-        m_context.device_context->CSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+        return buffer;
     }
 
 private:
@@ -92,222 +72,12 @@ private:
     std::vector<size_t> data_size;
     std::vector<size_t> data_offset;
     std::vector<size_t> buf_offset;
-
-    ComPtr<ID3D11Buffer> CreateBuffer(UINT buffer_size)
-    {
-        ComPtr<ID3D11Buffer> buffer;
-        D3D11_BUFFER_DESC cbbd;
-        ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
-        cbbd.Usage = D3D11_USAGE_DEFAULT;
-        cbbd.ByteWidth = buffer_size;
-        cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        cbbd.CPUAccessFlags = 0;
-        cbbd.MiscFlags = 0;
-        ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&cbbd, nullptr, &buffer));
-        return buffer;
-    }
-};
-
-class ShaderBase
-{
-protected:
-    
-public:
-    virtual ~ShaderBase() = default;
-
-    virtual void UseShader() = 0;
-    virtual void BindCBuffers() = 0;
-    virtual void UpdateCBuffers() = 0;
-    virtual void UpdateShader() = 0;
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) = 0;
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav) = 0;
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11SamplerState>& sampler) = 0;
-
-    void AttachSRV(const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res)
-    {
-        Attach(slot, CreateSrv(name, slot, res));
-    }
-
-    ComPtr<ID3D11ShaderResourceView> CreateSrv(const std::string& name, uint32_t slot, const ComPtr<IUnknown>& ires)
-    {
-        ComPtr<ID3D11ShaderResourceView> srv;
-
-        if (!ires)
-            return srv;
-
-        ComPtr<ID3D11Resource> res;
-        ires.As(&res);
-
-        if (!res)
-            return srv;
-
-        ComPtr<ID3D11ShaderReflection> reflector;
-        D3DReflect(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), IID_PPV_ARGS(&reflector));
-
-        D3D11_SHADER_INPUT_BIND_DESC res_desc = {};
-        ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
-
-        D3D11_RESOURCE_DIMENSION dim = {};
-        res->GetType(&dim);
-
-        switch (res_desc.Dimension)
-        {
-        case D3D_SRV_DIMENSION_BUFFER:
-        {
-            ComPtr<ID3D11Buffer> buf;
-            res.As(&buf);
-            D3D11_BUFFER_DESC buf_dec = {};
-            buf->GetDesc(&buf_dec);
-
-            D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-            srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-            srv_desc.Buffer.FirstElement = 0;
-            srv_desc.Buffer.NumElements = buf_dec.ByteWidth / buf_dec.StructureByteStride;
-            srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-
-            ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(buf.Get(), &srv_desc, &srv));
-            break;
-        }
-        case D3D_SRV_DIMENSION_TEXTURE2D:
-        {
-            ComPtr<ID3D11Texture2D> tex;
-            res.As(&tex);
-            D3D11_TEXTURE2D_DESC tex_dec = {};
-            tex->GetDesc(&tex_dec);
-            D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-            srv_desc.Format = tex_dec.Format;
-            srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-            srv_desc.Texture2D.MipLevels = tex_dec.MipLevels;
-            ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(tex.Get(), &srv_desc, &srv));
-            break;
-        }
-        case D3D_SRV_DIMENSION_TEXTURE2DMS:
-        {
-            ComPtr<ID3D11Texture2D> tex;
-            res.As(&tex);
-            D3D11_TEXTURE2D_DESC tex_dec = {};
-            tex->GetDesc(&tex_dec);
-            D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-            srv_desc.Format = tex_dec.Format;
-            srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
-            ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(tex.Get(), &srv_desc, &srv));
-            break;
-        }
-        case D3D_SRV_DIMENSION_TEXTURECUBE:
-        {
-            ComPtr<ID3D11Texture2D> tex;
-            res.As(&tex);
-            D3D11_TEXTURE2D_DESC tex_dec = {};
-            tex->GetDesc(&tex_dec);
-            D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-            srv_desc.Format = DXGI_FORMAT_R32_FLOAT; // TODO tex_dec.Format;
-            srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-            srv_desc.TextureCube.MipLevels = tex_dec.MipLevels;
-            ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(tex.Get(), &srv_desc, &srv));
-            break;
-        }
-        default:
-            assert(false);
-            break;
-        }
-        return srv;
-    }
-
-
-    void AttachUAV(const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res)
-    {
-        Attach(slot, CreateUAV(name, slot, res));
-    }
-
-    ComPtr<ID3D11UnorderedAccessView> CreateUAV(const std::string& name, uint32_t slot, const ComPtr<IUnknown>& ires)
-    {
-        ComPtr<ID3D11UnorderedAccessView> uav;
-        if (!ires)
-            return uav;
-
-        ComPtr<ID3D11Resource> res;
-        ires.As(&res);
-
-        if (!res)
-            return uav;
-
-        ComPtr<ID3D11ShaderReflection> reflector;
-        D3DReflect(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), IID_PPV_ARGS(&reflector));
-
-        D3D11_SHADER_INPUT_BIND_DESC res_desc = {};
-        ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
-
-        D3D11_RESOURCE_DIMENSION dim = {};
-        res->GetType(&dim);
-
-        switch (res_desc.Dimension)
-        {
-        case D3D_SRV_DIMENSION_BUFFER:
-        {
-            ComPtr<ID3D11Buffer> buf;
-            res.As(&buf);
-            D3D11_BUFFER_DESC buf_dec = {};
-            buf->GetDesc(&buf_dec);
-
-            D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
-            uav_desc.Format = DXGI_FORMAT_UNKNOWN;
-            uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-            uav_desc.Buffer.FirstElement = 0;
-            uav_desc.Buffer.NumElements = buf_dec.ByteWidth / buf_dec.StructureByteStride;
-            m_context.device->CreateUnorderedAccessView(buf.Get(), &uav_desc, &uav);
-            break;
-        }
-        default:
-            assert(false);
-            break;
-        }
-        return uav;
-    }
-
-    std::map<std::string, std::string> define;
-
-    ShaderBase(DX11Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-        : m_context(context)
-        , m_shader_path(shader_path)
-        , m_entrypoint(entrypoint)
-        , m_target(target)
-    {
-    }
-
-protected:
-    void CompileShader()
-    {
-        std::vector<D3D_SHADER_MACRO> macro;
-        for (const auto & x : define)
-        {
-            macro.push_back({ x.first.c_str(), x.second.c_str() });
-        }
-        macro.push_back({ nullptr, nullptr });
-
-        ComPtr<ID3DBlob> errors;
-        ASSERT_SUCCEEDED(D3DCompileFromFile(
-            GetAssetFullPathW(m_shader_path).c_str(),
-            macro.data(),
-            nullptr,
-            m_entrypoint.c_str(),
-            m_target.c_str(),
-            0,
-            0,
-            &m_shader_buffer,
-            &errors));
-    }
-
-    DX11Context& m_context;
-    std::string m_shader_path;
-    std::string m_entrypoint;
-    std::string m_target;
-    ComPtr<ID3DBlob> m_shader_buffer;
 };
 
 class SRVBinding
 {
 public:
-    SRVBinding(ShaderBase& shader, const std::string& name, uint32_t slot)
+    SRVBinding(ShaderApi& shader, const std::string& name, uint32_t slot)
         : m_shader(shader)
         , m_name(name)
         , m_slot(slot)
@@ -320,7 +90,7 @@ public:
     }
 
 private:
-    ShaderBase& m_shader;
+    ShaderApi& m_shader;
     std::string m_name;
     uint32_t m_slot;
 };
@@ -328,7 +98,7 @@ private:
 class UAVBinding
 {
 public:
-    UAVBinding(ShaderBase& shader, const std::string& name, uint32_t slot)
+    UAVBinding(ShaderApi& shader, const std::string& name, uint32_t slot)
         : m_shader(shader)
         , m_name(name)
         , m_slot(slot)
@@ -341,95 +111,15 @@ public:
     }
 
 private:
-    ShaderBase & m_shader;
+    ShaderApi & m_shader;
     std::string m_name;
     uint32_t m_slot;
-};
-
-class RTVBinding
-{
-public:
-    RTVBinding(DX11Context& context, uint32_t slot)
-        : m_context(context)
-        , m_slot(slot)
-    {
-    }
-
-    RTVBinding& Attach(const ComPtr<IUnknown>& ires = {})
-    {
-        ComPtr<ID3D11Resource> res;
-        ires.As(&res);
-        ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(res.Get(), nullptr, &rtv));
-        return *this;
-    }
-
-    void ClearRenderTarget(const FLOAT ColorRGBA[4])
-    {
-        m_context.device_context->ClearRenderTargetView(rtv.Get(), ColorRGBA);
-    }
-
-    const ComPtr<ID3D11RenderTargetView>& GetRtv() const
-    {
-        return rtv;
-    }
-
-private:
-    DX11Context& m_context;
-    uint32_t m_slot;
-    ComPtr<ID3D11RenderTargetView> rtv;
-};
-
-class DSVBinding
-{
-public:
-    DSVBinding(DX11Context& context)
-        : m_context(context)
-    {
-    }
-
-    DSVBinding& Attach(const ComPtr<IUnknown>& ires = {})
-    {
-        ComPtr<ID3D11Texture2D> tex;
-        ires.As(&tex);
-
-        D3D11_TEXTURE2D_DESC tex_dec = {};
-        tex->GetDesc(&tex_dec);
-
-        if (tex_dec.Format == DXGI_FORMAT_R32_TYPELESS) // TODO
-        {
-            D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
-            dsv_desc.Format = DXGI_FORMAT_D32_FLOAT;
-            dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-            dsv_desc.Texture2DArray.ArraySize = tex_dec.ArraySize;
-            ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(tex.Get(), &dsv_desc, &dsv));
-        }
-        else
-        {
-            ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(tex.Get(), nullptr, &dsv));
-        }
-        return *this;
-    }
-
-    void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
-    {
-        m_context.device_context->ClearDepthStencilView(dsv.Get(), ClearFlags, Depth, Stencil);
-    }
-
-    const ComPtr<ID3D11DepthStencilView>& GetDsv() const
-    {
-        return dsv;
-    }
-
-private:
-    DX11Context & m_context;
-    uint32_t m_slot;
-    ComPtr<ID3D11DepthStencilView> dsv;
 };
 
 class SamplerBinding
 {
 public:
-    SamplerBinding(ShaderBase& shader, uint32_t slot)
+    SamplerBinding(ShaderApi& shader, uint32_t slot)
         : m_shader(shader)
         , m_slot(slot)
     {
@@ -443,237 +133,8 @@ public:
     }
 
 private:
-    ShaderBase& m_shader;
+    ShaderApi& m_shader;
     uint32_t m_slot;
-};
-
-template<ShaderType> class Shader : public ShaderBase {};
-
-template<>
-class Shader<ShaderType::kPixel> : public ShaderBase
-{
-public:
-    static const ShaderType type = ShaderType::kPixel;
-
-    ComPtr<ID3D11PixelShader> shader;
-
-    Shader(DX11Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-        : ShaderBase(context, shader_path, entrypoint, target)
-    {
-    }
-
-    virtual void UseShader() override
-    {
-        m_context.device_context->PSSetShader(shader.Get(), nullptr, 0);
-    }
-
-    virtual void UpdateShader() override
-    {
-        CompileShader();
-        ASSERT_SUCCEEDED(m_context.device->CreatePixelShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) override
-    {
-        m_context.device_context->PSSetShaderResources(slot, 1, srv.GetAddressOf());
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav) override
-    {
-
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11SamplerState>& sampler) override
-    {
-        m_context.device_context->PSSetSamplers(slot, 1, sampler.GetAddressOf());
-    }
-};
-
-template<>
-class Shader<ShaderType::kVertex> : public ShaderBase
-{
-public:
-    static const ShaderType type = ShaderType::kVertex;
-
-    ComPtr<ID3D11VertexShader> shader;
-    ComPtr<ID3D11InputLayout> input_layout;
-
-    Shader(DX11Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-        : ShaderBase(context, shader_path, entrypoint, target)
-    {
-    }
-
-    void CreateInputLayout()
-    {
-        ComPtr<ID3D11ShaderReflection> reflector;
-        D3DReflect(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), IID_PPV_ARGS(&reflector));
-
-        D3D11_SHADER_DESC shader_desc = {};
-        reflector->GetDesc(&shader_desc);
-
-        std::vector<D3D11_INPUT_ELEMENT_DESC> input_layout_desc;
-        for (UINT i = 0; i < shader_desc.InputParameters; ++i)
-        {
-            D3D11_SIGNATURE_PARAMETER_DESC param_desc = {};
-            reflector->GetInputParameterDesc(i, &param_desc);
-
-            D3D11_INPUT_ELEMENT_DESC layout = {};
-            layout.SemanticName = param_desc.SemanticName;
-            layout.SemanticIndex = param_desc.SemanticIndex;
-            layout.InputSlot = i;
-            layout.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-            layout.InstanceDataStepRate = 0;
-
-            if (param_desc.Mask == 1)
-            {
-                if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
-                    layout.Format = DXGI_FORMAT_R32_UINT;
-                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
-                    layout.Format = DXGI_FORMAT_R32_SINT;
-                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
-                    layout.Format = DXGI_FORMAT_R32_FLOAT;
-            }
-            else if (param_desc.Mask <= 3)
-            {
-                if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
-                    layout.Format = DXGI_FORMAT_R32G32_UINT;
-                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
-                    layout.Format = DXGI_FORMAT_R32G32_SINT;
-                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
-                    layout.Format = DXGI_FORMAT_R32G32_FLOAT;
-            }
-            else if (param_desc.Mask <= 7)
-            {
-                if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
-                    layout.Format = DXGI_FORMAT_R32G32B32_UINT;
-                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
-                    layout.Format = DXGI_FORMAT_R32G32B32_SINT;
-                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
-                    layout.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-            }
-            else if (param_desc.Mask <= 15)
-            {
-                if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
-                    layout.Format = DXGI_FORMAT_R32G32B32A32_UINT;
-                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
-                    layout.Format = DXGI_FORMAT_R32G32B32A32_SINT;
-                else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
-                    layout.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-            }
-            input_layout_desc.push_back(layout);
-        }
-
-        ASSERT_SUCCEEDED(m_context.device->CreateInputLayout(input_layout_desc.data(), input_layout_desc.size(), m_shader_buffer->GetBufferPointer(),
-            m_shader_buffer->GetBufferSize(), &input_layout));
-    }
-
-    virtual void UseShader() override
-    {
-        m_context.device_context->IASetInputLayout(input_layout.Get());
-        m_context.device_context->VSSetShader(shader.Get(), nullptr, 0);
-    }
-
-    virtual void UpdateShader() override
-    {
-        CompileShader();
-        ASSERT_SUCCEEDED(m_context.device->CreateVertexShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
-        CreateInputLayout();
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) override
-    {
-        m_context.device_context->VSSetShaderResources(slot, 1, srv.GetAddressOf());
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav) override
-    {
-
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11SamplerState>& sampler) override
-    {
-        m_context.device_context->VSSetSamplers(slot, 1, sampler.GetAddressOf());
-    }
-};
-
-template<>
-class Shader<ShaderType::kGeometry> : public ShaderBase
-{
-public:
-    static const ShaderType type = ShaderType::kGeometry;
-
-    ComPtr<ID3D11GeometryShader> shader;
-
-    Shader(DX11Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-        : ShaderBase(context, shader_path, entrypoint, target)
-    {
-    }
-
-    virtual void UseShader() override
-    {
-        m_context.device_context->GSSetShader(shader.Get(), nullptr, 0);
-    }
-
-    virtual void UpdateShader() override
-    {
-        CompileShader();
-        ASSERT_SUCCEEDED(m_context.device->CreateGeometryShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) override
-    {
-        m_context.device_context->GSSetShaderResources(slot, 1, srv.GetAddressOf());
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav) override
-    {
-
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11SamplerState>& sampler) override
-    {
-        m_context.device_context->GSSetSamplers(slot, 1, sampler.GetAddressOf());
-    }
-};
-
-template<>
-class Shader<ShaderType::kCompute> : public ShaderBase
-{
-public:
-    static const ShaderType type = ShaderType::kCompute;
-
-    ComPtr<ID3D11ComputeShader> shader;
-
-    Shader(DX11Context& context, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-        : ShaderBase(context, shader_path, entrypoint, target)
-    {
-    }
-
-    virtual void UseShader() override
-    {
-        m_context.device_context->CSSetShader(shader.Get(), nullptr, 0);
-    }
-
-    virtual void UpdateShader() override
-    {
-        CompileShader();
-        ASSERT_SUCCEEDED(m_context.device->CreateComputeShader(m_shader_buffer->GetBufferPointer(), m_shader_buffer->GetBufferSize(), nullptr, &shader));
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv) override
-    {
-        m_context.device_context->CSSetShaderResources(slot, 1, srv.GetAddressOf());
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav) override
-    {
-        m_context.device_context->CSSetUnorderedAccessViews(slot, 1, uav.GetAddressOf(), nullptr);
-    }
-
-    virtual void Attach(uint32_t slot, ComPtr<ID3D11SamplerState>& sampler) override
-    {
-        m_context.device_context->CSSetSamplers(slot, 1, sampler.GetAddressOf());
-    }
 };
 
 template<ShaderType, typename T> class ShaderHolderImpl {};
@@ -687,13 +148,13 @@ public:
         using T::T;
     } ps;
 
-    ShaderBase& GetApi()
+    T& GetApi()
     {
         return ps;
     }
 
-    ShaderHolderImpl(DX11Context& context)
-        : ps(context)
+    ShaderHolderImpl(ProgramApi& program_base)
+        : ps(program_base)
     {
     }
 };
@@ -707,13 +168,13 @@ public:
         using T::T;
     } vs;
 
-    ShaderBase& GetApi()
+    T& GetApi()
     {
         return vs;
     }
 
-    ShaderHolderImpl(DX11Context& context)
-        : vs(context)
+    ShaderHolderImpl(ProgramApi& program_base)
+        : vs(program_base)
     {
     }
 };
@@ -727,13 +188,13 @@ public:
         using T::T;
     } gs;
 
-    ShaderBase& GetApi()
+    T& GetApi()
     {
         return gs;
     }
 
-    ShaderHolderImpl(DX11Context& context)
-        : gs(context)
+    ShaderHolderImpl(ProgramApi& program_base)
+        : gs(program_base)
     {
     }
 };
@@ -747,13 +208,13 @@ public:
         using T::T;
     } cs;
 
-    ShaderBase& GetApi()
+    T& GetApi()
     {
         return cs;
     }
 
-    ShaderHolderImpl(DX11Context& context)
-        : cs(context)
+    ShaderHolderImpl(ProgramApi& program_base)
+        : cs(program_base)
     {
     }
 };
@@ -763,50 +224,62 @@ template<typename T> class ShaderHolder : public ShaderHolderImpl<T::type, T> { 
 template<typename ... Args>
 class Program : public ShaderHolder<Args>...
 {
+    Program(std::unique_ptr<ProgramApi>&& program_base)
+        : ShaderHolder<Args>(*program_base)...
+        , m_program_base(std::move(program_base))
+    {
+    }
 public:
-    Program(DX11Context& context)
-        : ShaderHolder<Args>(context)...
-        , m_shaders({ ShaderHolder<Args>::GetApi()... })
-        , m_context(context)
+    Program(Context& context)
+        : Program(context.CreateProgram())
     {
         UpdateShaders();
     }
 
     template<typename Setup>
-    Program(DX11Context& context, const Setup& setup)
-        : ShaderHolder<Args>(context)...
-        , m_shaders({ ShaderHolder<Args>::GetApi()... })
-        , m_context(context)
+    Program(Context& context, const Setup& setup)
+        : Program(context.CreateProgram())
     {
         setup(*this);
         UpdateShaders();
     }
 
+    using shader_callback = std::function<void(ShaderBase&)>;
+
+    template <typename T>
+    bool ApplyCallback(shader_callback fn)
+    {
+        fn(static_cast<ShaderHolder<T>&>(*this).GetApi());
+        return true;
+    }
+
+    template<typename ... Args> void DevNull(Args ... args) {}
+
+    template<typename... Args>
+    void EnumerateShader(shader_callback fn)
+    {
+        DevNull(ApplyCallback<Args>(fn)...);
+    }
+
     void UseProgram()
     {
-        m_context.device_context->VSSetShader(nullptr, nullptr, 0);
-        m_context.device_context->GSSetShader(nullptr, nullptr, 0);
-        m_context.device_context->DSSetShader(nullptr, nullptr, 0);
-        m_context.device_context->HSSetShader(nullptr, nullptr, 0);
-        m_context.device_context->PSSetShader(nullptr, nullptr, 0);
-        m_context.device_context->CSSetShader(nullptr, nullptr, 0);
-        for (auto& shader : m_shaders)
+        m_program_base->UseProgram();
+        EnumerateShader<Args...>([&](ShaderBase& shader)
         {
-            shader.get().UseShader();
-            shader.get().UpdateCBuffers();
-            shader.get().BindCBuffers();
-        }
+            shader.UseShader();
+            shader.UpdateCBuffers();
+            shader.BindCBuffers();
+        });
     }
 
 private:
     void UpdateShaders()
     {
-        for (auto& shader : m_shaders)
+        EnumerateShader<Args...>([&](ShaderBase& shader)
         {
-            shader.get().UpdateShader();
-        }
+            shader.UpdateShader();
+        });
     }
 
-    std::vector<std::reference_wrapper<ShaderBase>> m_shaders;
-    DX11Context& m_context;
+    std::unique_ptr<ProgramApi> m_program_base;
 };

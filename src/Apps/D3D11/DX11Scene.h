@@ -51,7 +51,8 @@ private:
 
     int m_width;
     int m_height;
-    DX11Context m_context;
+    std::unique_ptr<Context> m_context_ptr;
+    Context& m_context;
     SceneList<DX11Mesh> m_scene_list;
     Model<DX11Mesh> m_model_square;
     GeometryPass m_geometry_pass;
