@@ -4,6 +4,8 @@
 #include <gli/gli.hpp>
 #include <SOIL.h>
 
+#include <Context/Context.h>
+
 using namespace Microsoft::WRL;
 
 ComPtr<ID3D11ShaderResourceView> CreateSRVFromFile(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& device_context, TextureInfo& texture)
@@ -54,7 +56,7 @@ ComPtr<ID3D11ShaderResourceView> CreateSRVFromFile(ComPtr<ID3D11Device>& device,
     return srv;
 }
 
-ComPtr<ID3D11ShaderResourceView> CreateSRVFromFileDDS(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& device_context, TextureInfo& texture)
+ComPtr<IUnknown> CreateSRVFromFileDDS(Context& context, TextureInfo& texture)
 {
     gli::texture Texture = gli::load(texture.path);
     auto format = gli::dx().translate(Texture.format());
@@ -71,10 +73,9 @@ ComPtr<ID3D11ShaderResourceView> CreateSRVFromFileDDS(ComPtr<ID3D11Device>& devi
     desc.CPUAccessFlags = 0;
     desc.MipLevels = Texture.levels();
 
-    ComPtr<ID3D11Texture2D> resource;
-    ASSERT_SUCCEEDED(device->CreateTexture2D(&desc, nullptr, &resource));
+    ComPtr<IUnknown> resource = context.CreateTexture(BindFlag::kSrv, desc.Format, 1, desc.Width, desc.Height, desc.ArraySize);
 
-    for (std::size_t Level = 0; Level < desc.MipLevels; ++Level)
+    for (std::size_t Level = 0; Level < 1 + 0 * desc.MipLevels; ++Level)
     {
         size_t num_bytes;
         size_t row_bytes;
@@ -85,24 +86,17 @@ ComPtr<ID3D11ShaderResourceView> CreateSRVFromFileDDS(ComPtr<ID3D11Device>& devi
         textureBufferData.pSysMem = Texture.data(0, 0, Level);
         textureBufferData.SysMemPitch = row_bytes;
         textureBufferData.SysMemSlicePitch = num_bytes;
-        device_context->UpdateSubresource(resource.Get(), Level, nullptr, textureBufferData.pSysMem, textureBufferData.SysMemPitch, textureBufferData.SysMemSlicePitch);
+        context.UpdateSubresource(resource, Level, textureBufferData.pSysMem, textureBufferData.SysMemPitch, textureBufferData.SysMemSlicePitch);
     }
 
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = desc.Format;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    srvDesc.Texture2D.MipLevels = desc.MipLevels;
-
-    ComPtr<ID3D11ShaderResourceView> srv;
-    ASSERT_SUCCEEDED(device->CreateShaderResourceView(resource.Get(), &srvDesc, &srv));
-    return srv;
+    return resource;
 }
 
-ComPtr<ID3D11ShaderResourceView> CreateTexture(ComPtr<ID3D11Device>& device, ComPtr<ID3D11DeviceContext>& device_context, TextureInfo & texture)
+ComPtr<IUnknown> CreateTexture(Context& context, TextureInfo & texture)
 {
     if (texture.path.find(".dds") != -1)
-        return CreateSRVFromFileDDS(device, device_context, texture);
-    else
-        return CreateSRVFromFile(device, device_context, texture);
+        return CreateSRVFromFileDDS(context, texture);
+    return nullptr;
+    //else
+    //    return CreateSRVFromFile(device, device_context, texture);
 }

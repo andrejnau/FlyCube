@@ -14,6 +14,8 @@ enum BindFlag
     kSrv = 1 << 3,
     kUav = 1 << 4,
     kCbv = 1 << 5,
+    kIbv = 1 << 6,
+    kVbv = 1 << 7,
 };
 
 class Context
@@ -30,12 +32,15 @@ public:
     virtual void ClearRenderTarget(ComPtr<IUnknown> rtv, const FLOAT ColorRGBA[4]) = 0;
     virtual void ClearDepthStencil(ComPtr<IUnknown> dsv, UINT ClearFlags, FLOAT Depth, UINT8 Stencil) = 0;
 
+    virtual void IASetIndexBuffer(ComPtr<IUnknown> res, UINT SizeInBytes, DXGI_FORMAT Format) = 0;
+    virtual void IASetVertexBuffer(UINT slot, ComPtr<IUnknown> res, UINT SizeInBytes, UINT Stride) = 0;
+
     virtual void BeginEvent(LPCWSTR Name) = 0;
     virtual void EndEvent() = 0;
 
     GLFWwindow* window;
 
-    virtual ComPtr<IUnknown> CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1) = 0;
+    virtual ComPtr<IUnknown> CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) = 0;
     virtual ComPtr<IUnknown> CreateSamplerAnisotropic() = 0;
     virtual ComPtr<IUnknown> CreateSamplerShadow() = 0;
     virtual ComPtr<IUnknown> CreateShadowRSState() = 0;

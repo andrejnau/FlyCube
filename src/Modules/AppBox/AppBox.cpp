@@ -33,7 +33,7 @@ int AppBox::Run()
     if (!m_window)
         return EXIT_FAILURE;
 
-    m_sample = m_create_sample(m_window, m_width, m_height);
+    m_sample = m_create_sample(m_api_type, m_window, m_width, m_height);
 
     int frame_number = 0;
     double last_time = glfwGetTime();

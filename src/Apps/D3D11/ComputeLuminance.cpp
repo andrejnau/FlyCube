@@ -78,6 +78,8 @@ void ComputeLuminance::Draw(ComPtr<IUnknown> input)
 
 void ComputeLuminance::OnRender()
 {
+    // TODO
+    return;
     m_context.SetViewport(m_width, m_height);
 
     ComPtr<ID3D11Texture2D> texture;

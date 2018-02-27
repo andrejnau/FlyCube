@@ -75,6 +75,7 @@ void SSAOPass::OnRender()
 
     m_program.UseProgram();
 
+
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_context.OMSetRenderTargets({ output.srv }, m_depth_stencil_view);
     m_context.ClearRenderTarget(output.srv, color);

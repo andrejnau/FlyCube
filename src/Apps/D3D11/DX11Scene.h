@@ -26,9 +26,9 @@ using namespace Microsoft::WRL;
 class DX11Scene : public SceneBase
 {
 public:
-    DX11Scene(GLFWwindow* window, int width, int height);
+    DX11Scene(ApiType type, GLFWwindow* window, int width, int height);
 
-    static IScene::Ptr Create(GLFWwindow* window, int width, int height);
+    static IScene::Ptr Create(ApiType api_type, GLFWwindow* window, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
@@ -59,6 +59,6 @@ private:
     ShadowPass m_shadow_pass;
     SSAOPass m_ssao_pass;
     LightPass m_light_pass;
-    ComputeLuminance m_compute_luminance;
-    ImGuiPass m_imgui_pass;
+   // ComputeLuminance m_compute_luminance;
+   // ImGuiPass m_imgui_pass;
 };

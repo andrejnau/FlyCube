@@ -12,7 +12,6 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include <Program/ShaderApi.h>
 #include <Program/ShaderBase.h>
 #include <Program/ProgramApi.h>
 
@@ -20,10 +19,10 @@ using namespace Microsoft::WRL;
 
 class BufferLayout
 {
-    ShaderApi& m_shader;
+    ProgramApi& m_shader;
 public:
     BufferLayout(
-        ShaderApi& shader,
+        ProgramApi& shader,
         const std::string& name,
         size_t buffer_size, 
         UINT slot,
@@ -76,9 +75,10 @@ private:
 
 class SRVBinding
 {
-public:
-    SRVBinding(ShaderApi& shader, const std::string& name, uint32_t slot)
-        : m_shader(shader)
+public:    
+    SRVBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
+        : m_program_api(program_api)
+        , m_shader_type(shader_type)
         , m_name(name)
         , m_slot(slot)
     {
@@ -86,11 +86,12 @@ public:
 
     void Attach(const ComPtr<IUnknown>& res = {})
     {
-        m_shader.AttachSRV(m_name, m_slot, res);
+        m_program_api.AttachSRV(m_shader_type, m_name, m_slot, res);
     }
 
 private:
-    ShaderApi& m_shader;
+    ProgramApi& m_program_api;
+    ShaderType m_shader_type;
     std::string m_name;
     uint32_t m_slot;
 };
@@ -98,8 +99,9 @@ private:
 class UAVBinding
 {
 public:
-    UAVBinding(ShaderApi& shader, const std::string& name, uint32_t slot)
-        : m_shader(shader)
+    UAVBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
+        : m_program_api(program_api)
+        , m_shader_type(shader_type)
         , m_name(name)
         , m_slot(slot)
     {
@@ -107,11 +109,12 @@ public:
 
     void Attach(const ComPtr<IUnknown>& res = {})
     {
-        m_shader.AttachUAV(m_name, m_slot, res);
+        m_program_api.AttachUAV(m_shader_type, m_name, m_slot, res);
     }
 
 private:
-    ShaderApi & m_shader;
+    ProgramApi& m_program_api;
+    ShaderType m_shader_type;
     std::string m_name;
     uint32_t m_slot;
 };
@@ -119,21 +122,21 @@ private:
 class SamplerBinding
 {
 public:
-    SamplerBinding(ShaderApi& shader, uint32_t slot)
-        : m_shader(shader)
+    SamplerBinding(ProgramApi& program_api, ShaderType shader_type, uint32_t slot)
+        : m_program_api(program_api)
+        , m_shader_type(shader_type)
         , m_slot(slot)
     {
     }
 
-    void Attach(const ComPtr<IUnknown>& ires = {})
+    void Attach(const ComPtr<IUnknown>& res = {})
     {
-        ComPtr<ID3D11SamplerState> sampler;
-        ires.As(&sampler);
-        m_shader.Attach(m_slot, sampler);
+        m_program_api.AttachSampler(m_shader_type, m_slot, res);
     }
 
 private:
-    ShaderApi& m_shader;
+    ProgramApi& m_program_api;
+    ShaderType m_shader_type;
     uint32_t m_slot;
 };
 
@@ -266,7 +269,6 @@ public:
         m_program_base->UseProgram();
         EnumerateShader<Args...>([&](ShaderBase& shader)
         {
-            shader.UseShader();
             shader.UpdateCBuffers();
             shader.BindCBuffers();
         });

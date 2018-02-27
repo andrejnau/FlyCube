@@ -102,13 +102,13 @@ void DX11Context::ClearDepthStencil(ComPtr<IUnknown> dsv, UINT ClearFlags, FLOAT
     device_context->ClearDepthStencilView(ToDsv(dsv).Get(), ClearFlags, Depth, Stencil);
 }
 
-ComPtr<IUnknown> DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth)
+ComPtr<IUnknown> DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
     D3D11_TEXTURE2D_DESC texture_desc = {};
     texture_desc.Width = width;
     texture_desc.Height = height;
     texture_desc.ArraySize = depth;
-    texture_desc.MipLevels = 1;
+    texture_desc.MipLevels = mip_levels;
     texture_desc.Format = format;
     texture_desc.Usage = D3D11_USAGE_DEFAULT;
 
@@ -209,9 +209,29 @@ ComPtr<IUnknown> DX11Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size,
         desc.BindFlags |= D3D11_BIND_CONSTANT_BUFFER;
     if (bind_flag & BindFlag::kSrv)
         desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+    if (bind_flag & BindFlag::kVbv)
+        desc.BindFlags |= D3D11_BIND_VERTEX_BUFFER;
+    if (bind_flag & BindFlag::kIbv)
+        desc.BindFlags |= D3D11_BIND_INDEX_BUFFER;
+
     ASSERT_SUCCEEDED(device->CreateBuffer(&desc, nullptr, &buffer));
     buffer->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
     return buffer;
+}
+
+void DX11Context::IASetIndexBuffer(ComPtr<IUnknown> res, UINT SizeInBytes, DXGI_FORMAT Format)
+{
+    ComPtr<ID3D11Buffer> buf;
+    res.As(&buf);
+    device_context->IASetIndexBuffer(buf.Get(), Format, 0);
+}
+
+void DX11Context::IASetVertexBuffer(UINT slot, ComPtr<IUnknown> res, UINT SizeInBytes, UINT Stride)
+{
+    ComPtr<ID3D11Buffer> buf;
+    res.As(&buf);
+    UINT offset = 0;
+    device_context->IASetVertexBuffers(slot, 1, buf.GetAddressOf(), &Stride, &offset);
 }
 
 void DX11Context::UpdateSubresource(ComPtr<IUnknown> ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)

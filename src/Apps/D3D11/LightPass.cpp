@@ -16,7 +16,8 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     m_input.camera.SetCameraYaw(-178.0f);
     m_input.camera.SetCameraYaw(-1.75f);
 
-    output.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    if (m_input.rtv)
+        m_input.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
     m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
 }
 
@@ -33,8 +34,8 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.ShadowParams.s_near = m_settings.s_near;
     m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;
     m_program.ps.cbuffer.ShadowParams.s_size = m_settings.s_size;
-    m_program.ps.cbuffer.ShadowParams.use_shadow = true;
-    m_program.ps.cbuffer.ShadowParams.use_occlusion = m_settings.use_occlusion;
+    m_program.ps.cbuffer.ShadowParams.use_shadow = false;
+    m_program.ps.cbuffer.ShadowParams.use_occlusion = 0*m_settings.use_occlusion;
 }
 
 void LightPass::OnRender()
@@ -47,8 +48,8 @@ void LightPass::OnRender()
     m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_shadow_sampler);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_context.OMSetRenderTargets({ output.rtv }, m_depth_stencil_view);
-    m_context.ClearRenderTarget(output.rtv, color);
+    m_context.OMSetRenderTargets({ m_input.rtv }, m_depth_stencil_view);
+    m_context.ClearRenderTarget(m_input.rtv, color);
     m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     for (DX11Mesh& cur_mesh : m_input.model.meshes)
@@ -75,7 +76,8 @@ void LightPass::OnResize(int width, int height)
     m_width = width;
     m_height = height;
 
-    output.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    if (m_input.rtv)
+        m_input.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
     m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
 }
 

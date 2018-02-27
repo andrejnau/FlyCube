@@ -8,18 +8,18 @@
 #include <glm/gtx/transform.hpp>
 #include <Context/ContextSelector.h>
 
-DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
+DX11Scene::DX11Scene(ApiType type, GLFWwindow* window, int width, int height)
     : m_width(width)
     , m_height(height)
-    , m_context_ptr(CreateContext(ApiType::kDX11, window, m_width, m_height))
+    , m_context_ptr(CreateContext(type, window, m_width, m_height))
     , m_context(*m_context_ptr)
     , m_model_square((DX11Context&)*m_context_ptr, "model/square.obj")
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
     , m_shadow_pass(m_context, { m_scene_list, m_camera, light_pos }, width, height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
-    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, light_pos }, width, height)
-    , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
-    , m_imgui_pass((DX11Context&)*m_context_ptr, { *this }, width, height)
+    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, light_pos, m_render_target_view }, width, height)
+   // , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
+    //, m_imgui_pass((DX11Context&)*m_context_ptr, { *this }, width, height)
 {
     // prevent a call ~aiScene 
     m_scene_list.reserve(2);
@@ -37,9 +37,9 @@ DX11Scene::DX11Scene(GLFWwindow* window, int width, int height)
     m_context.RSSetState(m_context.CreateShadowRSState());
 }
 
-IScene::Ptr DX11Scene::Create(GLFWwindow* window, int width, int height)
+IScene::Ptr DX11Scene::Create(ApiType api_type, GLFWwindow* window, int width, int height)
 {
-    return std::make_unique<DX11Scene>(window, width, height);
+    return std::make_unique<DX11Scene>(api_type, window, width, height);
 }
 
 void DX11Scene::OnUpdate()
@@ -61,7 +61,7 @@ void DX11Scene::OnUpdate()
 
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        m_imgui_pass.OnUpdate();
+        //m_imgui_pass.OnUpdate();
     }
 
     m_geometry_pass.OnUpdate();
@@ -72,6 +72,8 @@ void DX11Scene::OnUpdate()
 
 void DX11Scene::OnRender()
 {
+    m_render_target_view = m_context.GetBackBuffer();
+
     m_context.BeginEvent(L"Geometry Pass");
     m_geometry_pass.OnRender();
     m_context.EndEvent();
@@ -89,13 +91,13 @@ void DX11Scene::OnRender()
     m_context.EndEvent();
 
     m_context.BeginEvent(L"HDR Pass");
-    m_compute_luminance.OnRender();
+  //  m_compute_luminance.OnRender();
     m_context.EndEvent();
 
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         m_context.BeginEvent(L"ImGui Pass");
-        m_imgui_pass.OnRender();
+        //m_imgui_pass.OnRender();
         m_context.EndEvent();
     }
 
@@ -120,14 +122,14 @@ void DX11Scene::OnResize(int width, int height)
     m_geometry_pass.OnResize(width, height);
     m_shadow_pass.OnResize(width, height);
     m_light_pass.OnResize(width, height);
-    m_imgui_pass.OnResize(width, height);
+    //m_imgui_pass.OnResize(width, height);
 }
 
 void DX11Scene::OnKey(int key, int action)
 {
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        m_imgui_pass.OnKey(key, action);
+        //m_imgui_pass.OnKey(key, action);
         return;
     }
 
@@ -159,7 +161,7 @@ void DX11Scene::OnMouse(bool first_event, double xpos, double ypos)
 {
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        m_imgui_pass.OnMouse(first_event, xpos, ypos);
+        //m_imgui_pass.OnMouse(first_event, xpos, ypos);
         return;
     }
 
@@ -182,7 +184,7 @@ void DX11Scene::OnMouseButton(int button, int action)
 {
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        m_imgui_pass.OnMouseButton(button, action);
+        //m_imgui_pass.OnMouseButton(button, action);
     }
 }
 
@@ -190,7 +192,7 @@ void DX11Scene::OnScroll(double xoffset, double yoffset)
 {
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        m_imgui_pass.OnScroll(xoffset, yoffset);
+        //m_imgui_pass.OnScroll(xoffset, yoffset);
     }
 }
 
@@ -198,7 +200,7 @@ void DX11Scene::OnInputChar(unsigned int ch)
 {
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        m_imgui_pass.OnInputChar(ch);
+        //m_imgui_pass.OnInputChar(ch);
     }
 }
 
@@ -206,13 +208,12 @@ void DX11Scene::OnModifySettings(const Settings& settings)
 {
     m_geometry_pass.OnModifySettings(settings);
     m_light_pass.OnModifySettings(settings);
-    m_compute_luminance.OnModifySettings(settings);
+//    m_compute_luminance.OnModifySettings(settings);
     m_shadow_pass.OnModifySettings(settings);
     m_ssao_pass.OnModifySettings(settings);
 }
 
 void DX11Scene::CreateRT()
 {
-    m_render_target_view = m_context.GetBackBuffer();
     m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
 }

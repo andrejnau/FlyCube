@@ -8,7 +8,7 @@
 
 class {{ShaderName}} : public ShaderBase
 {
-    std::unique_ptr<ShaderApi> shader_api;
+    ProgramApi& program_api;
 
 public:
 
@@ -24,8 +24,8 @@ public:
 
     struct SRV
     {
-        SRV(ShaderApi& shader)
-{{#Textures}}            {{Separator}} {{Name}}(shader, "{{Name}}", {{Slot}})
+        SRV(ProgramApi& program_api)
+{{#Textures}}            {{Separator}} {{Name}}(program_api, type, "{{Name}}", {{Slot}})
 {{/Textures}}        {
         }
 
@@ -34,8 +34,8 @@ public:
 
     struct UAV
     {
-        UAV(ShaderApi& shader)
-{{#UAVs}}            {{Separator}} {{Name}}(shader, "{{Name}}", {{Slot}})
+        UAV(ProgramApi& program_api)
+{{#UAVs}}            {{Separator}} {{Name}}(program_api, type, "{{Name}}", {{Slot}})
 {{/UAVs}}        {
         }
 
@@ -54,34 +54,29 @@ public:
 
     struct Sampler
     {
-        Sampler(ShaderApi& shader)
-{{#Samplers}}            {{Separator}} {{Name}}(shader, {{Slot}})
+        Sampler(ProgramApi& program_api)
+{{#Samplers}}            {{Separator}} {{Name}}(program_api, type, {{Slot}})
 {{/Samplers}}        {
         }
 
 {{#Samplers}}       SamplerBinding {{Name}};
 {{/Samplers}}    } sampler;
 
-    {{ShaderName}}(ProgramApi& program_base)
+    {{ShaderName}}(ProgramApi& program_api)
         : ShaderBase("{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
-        , shader_api(program_base.CreateShader({{ShaderType}}))
+        , program_api(program_api)
         , cbuffer{}
-        , srv(*shader_api)
-        , uav(*shader_api)
-        , sampler(*shader_api)
-        , cbuffer_impl(*shader_api)
+        , srv(program_api)
+        , uav(program_api)
+        , sampler(program_api)
+        , cbuffer_impl(program_api)
     {
     }
 
     virtual void UpdateShader() override
     {
         m_shader_buffer = CompileShader();
-        shader_api->CreateShader(m_shader_buffer);
-    }
-
-    virtual void UseShader() override
-    {
-        shader_api->UseShader();
+        program_api.OnCompileShader(type, m_shader_buffer);
     }
 
     virtual void UpdateCBuffers() override
@@ -93,7 +88,7 @@ public:
 private:
     virtual void BindCBuffers() override
     {
-        {{#CBuffers}}shader_api->BindCBuffer({{BufferIndex}}, cbuffer_impl.{{BufferName}}.GetBuffer());
+        {{#CBuffers}}program_api.AttachCBuffer(type, {{BufferIndex}}, cbuffer_impl.{{BufferName}}.GetBuffer());
         {{/CBuffers}}
     }
     
@@ -102,9 +97,9 @@ private:
     public:
         {{#CBuffers}}BufferLayout {{BufferName}};
         {{/CBuffers}}
-        CBufferImpl(ShaderApi& shader)
+        CBufferImpl(ProgramApi& program_api)
             {{#CBuffers}}{{BufferSeparator}} {{BufferName}}(
-                shader,
+                program_api,
                 "<{{BufferName}}>",
                 {{BufferSize}},
                 {{BufferIndex}},

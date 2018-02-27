@@ -1,8 +1,12 @@
 set(target Program)
 
 set(headers
-    ShaderType.h
+    DX11ProgramApi.h
+    DX12ProgramApi.h
     Program.h
+    ProgramApi.h
+    ShaderBase.h
+    ShaderType.h
 )
 
 set(sources

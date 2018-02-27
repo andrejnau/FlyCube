@@ -25,11 +25,12 @@ public:
         Model<DX11Mesh>& model;
         Camera& camera;
         glm::vec3& light_pos;
+        ComPtr<IUnknown>& rtv;
+
     };
 
     struct Output
     {
-        ComPtr<IUnknown> rtv;
     } output;
 
     void SetDefines(Program<LightPassPS, LightPassVS>& program);

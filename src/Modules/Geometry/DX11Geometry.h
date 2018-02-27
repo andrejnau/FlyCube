@@ -14,76 +14,61 @@
 
 using namespace Microsoft::WRL;
 
-class IABuffer
-{
-protected:
-    IABuffer(DX11Context& context)
-        : m_context(context)
-    {}
-
-    template<typename T>
-    ComPtr<ID3D11Buffer> CreateBuffer(const std::vector<T>& v, UINT BindFlags)
-    {
-        ComPtr<ID3D11Buffer> buffer;
-        if (v.empty())
-            return buffer;
-
-        D3D11_BUFFER_DESC buffer_desc = {};
-        buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-        buffer_desc.ByteWidth = static_cast<UINT>(v.size() * sizeof(v.front()));
-        buffer_desc.BindFlags = BindFlags;
-
-        D3D11_SUBRESOURCE_DATA buffer_data = {};
-        buffer_data.pSysMem = v.data();
-        ASSERT_SUCCEEDED(m_context.device->CreateBuffer(&buffer_desc, &buffer_data, &buffer));
-        return buffer;
-    }
-
-    DX11Context& m_context;
-};
-
-class IAVertexBuffer : IABuffer
+class IAVertexBuffer
 {
 public:
     template<typename T>
-    IAVertexBuffer(DX11Context& context, const std::vector<T>& v)
-        : IABuffer(context)
-        , m_buffer(CreateBuffer(v, D3D11_BIND_VERTEX_BUFFER))
+    IAVertexBuffer(Context& context, const std::vector<T>& v)
+        : m_context(context)
         , m_stride(sizeof(v.front()))
         , m_offset(0)
+        , m_size(v.size() * sizeof(v.front()))
     {
+        m_buffer = m_context.CreateBuffer(BindFlag::kVbv, v.size() * sizeof(v.front()), 0, "IAVertexBuffer");
+        if (m_buffer)
+            m_context.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
 
     void BindToSlot(UINT slot)
     {
-        m_context.device_context->IASetVertexBuffers(slot, 1, m_buffer.GetAddressOf(), &m_stride, &m_offset);
+        if (m_buffer)
+            m_context.IASetVertexBuffer(slot, m_buffer, m_size, m_stride);
     }
+
 private:
-    ComPtr<ID3D11Buffer> m_buffer;
+    Context& m_context;
+    ComPtr<IUnknown> m_buffer;
     UINT m_stride;
     UINT m_offset;
+    UINT m_size;
 };
 
-class IAIndexBuffer : IABuffer
+class IAIndexBuffer
 {
 public:
     template<typename T>
-    IAIndexBuffer(DX11Context& context, const std::vector<T>& v, DXGI_FORMAT format)
-        : IABuffer(context)
-        , m_buffer(CreateBuffer(v, D3D11_BIND_INDEX_BUFFER))
+    IAIndexBuffer(Context& context, const std::vector<T>& v, DXGI_FORMAT format)
+        : m_context(context)
         , m_format(format)
         , m_offset(0)
+        , m_size(v.size() * sizeof(v.front()))
     {
+        m_buffer = m_context.CreateBuffer(BindFlag::kIbv, m_size, 0, "IAIndexBuffer");
+        if (m_buffer)
+            m_context.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
 
     void Bind()
     {
-        m_context.device_context->IASetIndexBuffer(m_buffer.Get(), m_format, m_offset);
+        if (m_buffer)
+            m_context.IASetIndexBuffer(m_buffer, m_size, m_format);
     }
 
 private:
-    ComPtr<ID3D11Buffer> m_buffer;
+    Context& m_context;
+    ComPtr<IUnknown> m_buffer;
     UINT m_offset;
+    UINT m_size;
     DXGI_FORMAT m_format;
 };
 
@@ -122,21 +107,20 @@ public:
     IAVertexBuffer bones_count_buffer;
     IAIndexBuffer indices_buffer;
 
-    ComPtr<ID3D11Resource> GetTexture(aiTextureType type)
+    ComPtr<IUnknown> GetTexture(aiTextureType type)
     {
-        ComPtr<ID3D11Resource> res;
         auto it = m_type2id.find(type);
         if (it != m_type2id.end())
         {
-            m_tex_srv[it->second]->GetResource(&res);
+            return m_tex_srv[it->second];
         }
-        return res;
+        return nullptr;
     }
 
 private:
     void InitTextures()
     {
-        static std::map<std::string, ComPtr<ID3D11ShaderResourceView>> cache;
+        static std::map<std::string, ComPtr<IUnknown>> cache;
 
         for (size_t i = 0; i < textures.size(); ++i)
         {
@@ -147,12 +131,12 @@ private:
                 continue;
             }
 
-            cache[textures[i].path] = m_tex_srv[i] = CreateTexture(m_context.device, m_context.device_context, textures[i]);
+            cache[textures[i].path] = m_tex_srv[i] = CreateTexture(m_context, textures[i]);
         }
     }
 
 private:
     DX11Context& m_context;
     std::map<aiTextureType, size_t> m_type2id;
-    std::vector<ComPtr<ID3D11ShaderResourceView>> m_tex_srv;
+    std::vector<ComPtr<IUnknown>> m_tex_srv;
 };
