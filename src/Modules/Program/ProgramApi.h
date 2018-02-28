@@ -17,6 +17,7 @@
 using namespace Microsoft::WRL;
 
 class Context;
+class SamplerDesc;
 
 class ProgramApi
 {
@@ -29,7 +30,7 @@ public:
     virtual void AttachRTV(uint32_t slot, const ComPtr<IUnknown>& res) = 0;
     virtual void AttachDSV(const ComPtr<IUnknown>& res) = 0;
     virtual void UpdateOmSet() = 0;
-    virtual void AttachSampler(ShaderType type, uint32_t slot, const ComPtr<IUnknown>& res) = 0;
+    virtual void AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc) = 0;
     virtual void AttachCBuffer(ShaderType type, uint32_t slot, const ComPtr<IUnknown>& res) = 0;
     virtual Context& GetContext() = 0;
 };

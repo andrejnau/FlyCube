@@ -39,7 +39,6 @@ private:
     Input m_input;
     int m_width;
     int m_height;
-    ComPtr<IUnknown> m_g_sampler;
     Program<ShadowPassVS, ShadowPassGS, ShadowPassPS> m_program;
 };
 

@@ -90,8 +90,67 @@ public:
         ++draw_offset;
     }
 
+    bool is_first_draw;
+
+    void BeforeDraw()
+    {
+        if (!is_first_draw)
+            return;
+        is_first_draw = false;
+        ComPtr<ID3D12ShaderReflection> reflector;
+        D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&reflector));
+
+        auto input_layout_elements = GetInputLayout(reflector);
+        D3D12_INPUT_LAYOUT_DESC input_layout = {};
+        input_layout.NumElements = input_layout_elements.size();
+        input_layout.pInputElementDescs = input_layout_elements.data();
+
+        if (psoDesc.RTVFormats[0] != 0)
+        {
+            int b = 0;
+        }
+
+        psoDesc.RasterizerState = {};
+
+        //if (psoDesc.DSVFormat == DXGI_FORMAT_D32_FLOAT)
+        {
+            psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+            psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+            psoDesc.RasterizerState.DepthBias = 4096;
+            psoDesc.RasterizerState.DepthClipEnable = false;
+        }
+
+        psoDesc.InputLayout = input_layout; // the structure describing our input layout
+        psoDesc.pRootSignature = rootSignature.Get(); // the root signature that describes the input data this pso needs
+        psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE; // type of topology we are drawing
+
+        DXGI_SAMPLE_DESC sampleDesc = {};
+        sampleDesc.Count = 1; // multisample count (no multisampling, so we just put 1, since we still need 1 sample)
+
+        psoDesc.SampleDesc = sampleDesc; // must be the same sample description as the swapchain and depth/stencil buffer
+        psoDesc.SampleMask = UINT_MAX; // sample mask has to do with multi-sampling. 0xffffffff means point sampling is done
+        psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT); // a default rasterizer state.
+        D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+        psoDesc.BlendState = blendDesc; // a default blent state.
+        psoDesc.NumRenderTargets = m_num_rtvs; // we are only binding one render target
+
+
+        CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
+        depthStencilDesc.DepthEnable = true;
+        depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+        depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+        depthStencilDesc.StencilEnable = FALSE;
+
+        psoDesc.DepthStencilState = depthStencilDesc; // a default depth stencil state
+        ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObject)));
+
+        m_context.commandList->SetPipelineState(pipelineStateObject.Get());
+    }
+
     void UseProgram(size_t draw_calls) override
     {
+        is_first_draw = true;
+
         draw_offset = 0;
         m_context.current_program = this;
         size_t num_resources = 0;
@@ -309,45 +368,6 @@ public:
             "%s", (char*)errorBuff->GetBufferPointer());
         ASSERT_SUCCEEDED(m_context.device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 
-        ComPtr<ID3D12ShaderReflection> reflector;
-        D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&reflector));
-
-        auto input_layout_elements = GetInputLayout(reflector);
-        D3D12_INPUT_LAYOUT_DESC input_layout = {};
-        input_layout.NumElements = input_layout_elements.size();
-        input_layout.pInputElementDescs = input_layout_elements.data();
-
-        if (psoDesc.RTVFormats[0] != 0)
-        {
-            int b = 0;
-        }
-
-        psoDesc.InputLayout = input_layout; // the structure describing our input layout
-        psoDesc.pRootSignature = rootSignature.Get(); // the root signature that describes the input data this pso needs
-        psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE; // type of topology we are drawing
-        psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT; // format of the DS
-
-        DXGI_SAMPLE_DESC sampleDesc = {};
-        sampleDesc.Count = 1; // multisample count (no multisampling, so we just put 1, since we still need 1 sample)
-
-        psoDesc.SampleDesc = sampleDesc; // must be the same sample description as the swapchain and depth/stencil buffer
-        psoDesc.SampleMask = UINT_MAX; // sample mask has to do with multi-sampling. 0xffffffff means point sampling is done
-        psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT); // a default rasterizer state.
-        D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-        psoDesc.BlendState = blendDesc; // a default blent state.
-        psoDesc.NumRenderTargets = m_num_rtvs; // we are only binding one render target
-
-
-        CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
-        depthStencilDesc.DepthEnable = true;
-        depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-        depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-        depthStencilDesc.StencilEnable = FALSE;
-
-        psoDesc.DepthStencilState = depthStencilDesc; // a default depth stencil state
-        ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObject)));
-
-        m_context.commandList->SetPipelineState(pipelineStateObject.Get());
         m_context.commandList->SetGraphicsRootSignature(rootSignature.Get());
         m_context.commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -453,6 +473,9 @@ public:
     {
         ComPtr<ID3D12Resource> renderTarget;
         res.As(&renderTarget);
+
+        m_context.ResourceBarrier(renderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtv_heap->GetCPUDescriptorHandleForHeapStart(), slot,
             m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
 
@@ -467,6 +490,9 @@ public:
             return;
         ComPtr<ID3D12Resource> renderTarget;
         res.As(&renderTarget);
+
+        m_context.ResourceBarrier(renderTarget, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(dsv_heap->GetCPUDescriptorHandleForHeapStart(), 0,
             m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
 
@@ -492,24 +518,53 @@ public:
         }
     }
 
-    virtual void AttachSampler(ShaderType type, uint32_t slot, const ComPtr<IUnknown>& res) override
+    virtual void AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc) override
     {
         CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(sampler_heap->GetCPUDescriptorHandleForHeapStart(),
             draw_offset  * m_num_samplers+  m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER] + slot,
             m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER));
 
-        D3D12_SAMPLER_DESC wrapSamplerDesc = {};
-        wrapSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-        wrapSamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        wrapSamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        wrapSamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        wrapSamplerDesc.MinLOD = 0;
-        wrapSamplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-        wrapSamplerDesc.MipLODBias = 0.0f;
-        wrapSamplerDesc.MaxAnisotropy = 1;
-        wrapSamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-        wrapSamplerDesc.BorderColor[0] = wrapSamplerDesc.BorderColor[1] = wrapSamplerDesc.BorderColor[2] = wrapSamplerDesc.BorderColor[3] = 0;
-        m_context.device->CreateSampler(&wrapSamplerDesc, cbvSrvHandle);
+        D3D12_SAMPLER_DESC sampler_desc = {};
+
+        switch (desc.filter)
+        {
+        case SamplerFilter::kAnisotropic:
+            sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
+            break;
+        case SamplerFilter::kComparisonMinMagMipLinear:
+            sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+            break;
+        }
+
+        switch (desc.mode)
+        {
+        case SamplerTextureAddressMode::kWrap:
+            sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+            sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+            sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+            break;
+        case SamplerTextureAddressMode::kClamp:
+            sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+            sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+            sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+            break;
+        }
+
+        switch (desc.func)
+        {
+        case SamplerComparisonFunc::kNever:
+            sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+            break;
+        case SamplerComparisonFunc::kLess:
+            sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS;
+            break;
+        }
+
+        sampler_desc.MinLOD = 0;
+        sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
+        sampler_desc.MaxAnisotropy = 1;
+
+        m_context.device->CreateSampler(&sampler_desc, cbvSrvHandle);
 
         const UINT cbvSrvDescriptorSize = m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
         CD3DX12_GPU_DESCRIPTOR_HANDLE gpucbvSrvHandle(sampler_heap->GetGPUDescriptorHandleForHeapStart(),
@@ -520,8 +575,13 @@ public:
 
     virtual void AttachCBuffer(ShaderType type, uint32_t slot, const ComPtr<IUnknown>& res) override
     {
+
         ComPtr<ID3D12Resource> buf;
         res.As(&buf);
+
+        m_context.ResourceBarrier(buf, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+
+
         // Describe and create a constant buffer view.
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
         cbvDesc.BufferLocation = buf->GetGPUVirtualAddress();
@@ -553,6 +613,11 @@ private:
 
         ComPtr<ID3D12Resource> res;
         ires.As(&res);
+
+        if (type == ShaderType::kPixel)
+         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        else
+            m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
         if (!res)
             return;

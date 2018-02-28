@@ -191,10 +191,52 @@ public:
     {
     }
 
-    virtual void AttachSampler(ShaderType type, uint32_t slot, const ComPtr<IUnknown>& res) override
+    virtual void AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc) override
     {
         ComPtr<ID3D11SamplerState> sampler;
-        res.As(&sampler);
+
+        D3D11_SAMPLER_DESC sampler_desc = {};
+
+        switch (desc.filter)
+        {
+        case SamplerFilter::kAnisotropic:
+            sampler_desc.Filter = D3D11_FILTER_ANISOTROPIC;
+            break;
+        case SamplerFilter::kComparisonMinMagMipLinear:
+            sampler_desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+            break;
+        }
+
+        switch (desc.mode)
+        {
+        case SamplerTextureAddressMode::kWrap:
+            sampler_desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+            sampler_desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+            sampler_desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+            break;
+        case SamplerTextureAddressMode::kClamp:
+            sampler_desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+            sampler_desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+            sampler_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+            break;
+        }
+
+        switch (desc.func)
+        {
+        case SamplerComparisonFunc::kNever:
+            sampler_desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+            break;
+        case SamplerComparisonFunc::kLess:
+            sampler_desc.ComparisonFunc = D3D11_COMPARISON_LESS;
+            break;
+        }
+
+        sampler_desc.MinLOD = 0;
+        sampler_desc.MaxLOD = D3D11_FLOAT32_MAX;
+        sampler_desc.MaxAnisotropy = 1;
+
+        ASSERT_SUCCEEDED(m_context.device->CreateSamplerState(&sampler_desc, &sampler));
+
         switch (type)
         {
         case ShaderType::kVertex:

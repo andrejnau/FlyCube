@@ -73,9 +73,9 @@ ComPtr<IUnknown> CreateSRVFromFileDDS(Context& context, TextureInfo& texture)
     desc.CPUAccessFlags = 0;
     desc.MipLevels = Texture.levels();
 
-    ComPtr<IUnknown> resource = context.CreateTexture(BindFlag::kSrv, desc.Format, 1, desc.Width, desc.Height, desc.ArraySize);
+    ComPtr<IUnknown> resource = context.CreateTexture(BindFlag::kSrv, desc.Format, 1, desc.Width, desc.Height, desc.ArraySize, desc.MipLevels);
 
-    for (std::size_t Level = 0; Level < 1 + 0 * desc.MipLevels; ++Level)
+    for (std::size_t Level = 0; Level < desc.MipLevels; ++Level)
     {
         size_t num_bytes;
         size_t row_bytes;

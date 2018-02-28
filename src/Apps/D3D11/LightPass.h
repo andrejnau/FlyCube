@@ -49,7 +49,5 @@ private:
     int m_width;
     int m_height;
     Program<LightPassPS, LightPassVS> m_program;
-    ComPtr<IUnknown> m_shadow_sampler;
-    ComPtr<IUnknown> m_g_sampler;
     ComPtr<IUnknown> m_depth_stencil_view;
 };

@@ -11,7 +11,6 @@ ShadowPass::ShadowPass(Context& context, const Input& input, int width, int heig
     , m_program(context)
 {
     output.srv = m_context.CreateTexture(BindFlag::kDsv | BindFlag::kSrv, DXGI_FORMAT_R32_TYPELESS, 1, m_settings.s_size, m_settings.s_size, 6);
-    m_g_sampler = m_context.CreateSamplerAnisotropic();
 }
 
 void ShadowPass::OnUpdate()
@@ -52,7 +51,11 @@ void ShadowPass::OnRender()
     }
 
     m_program.UseProgram(cnt);
-    m_program.ps.sampler.g_sampler.Attach(m_g_sampler);
+
+    m_program.ps.sampler.g_sampler.Attach({
+        SamplerFilter::kAnisotropic,
+        SamplerTextureAddressMode::kWrap,
+        SamplerComparisonFunc::kNever });
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_context.OMSetRenderTargets({}, output.srv);

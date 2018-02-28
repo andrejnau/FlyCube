@@ -153,7 +153,7 @@ cbuffer ConstantBuffer
 float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffuse, float3 specular_base, float shininess, float occlusion)
 {
     float3 lightDir = normalize(lightPos - fragPos);
-    float diff = max(dot(lightDir, normal), 0.0);
+    float diff = max(dot(lightDir, normal), 0.2);
     diffuse *= diff;
 
     float3 viewDir = normalize(viewPos - fragPos);

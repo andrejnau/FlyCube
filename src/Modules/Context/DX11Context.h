@@ -23,8 +23,7 @@ public:
     virtual void ClearRenderTarget(ComPtr<IUnknown> rtv, const FLOAT ColorRGBA[4]) override;
     virtual void ClearDepthStencil(ComPtr<IUnknown> dsv, UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
     virtual ComPtr<IUnknown> CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels) override;
-    virtual ComPtr<IUnknown> CreateSamplerAnisotropic() override;
-    virtual ComPtr<IUnknown> CreateSamplerShadow() override;
+
     virtual ComPtr<IUnknown> CreateShadowRSState() override;
     virtual void RSSetState(ComPtr<IUnknown> state) override;
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;

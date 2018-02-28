@@ -46,5 +46,4 @@ private:
 
     ComPtr<IUnknown> m_depth_stencil;
     Settings m_settings;
-    ComPtr<IUnknown> m_g_sampler;
 };

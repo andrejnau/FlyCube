@@ -133,45 +133,10 @@ ComPtr<IUnknown> DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT form
     return texture;
 }
 
-ComPtr<IUnknown> DX11Context::CreateSamplerAnisotropic()
-{
-    ComPtr<ID3D11SamplerState> m_texture_sampler;
-
-    D3D11_SAMPLER_DESC samp_desc = {};
-    samp_desc.Filter = D3D11_FILTER_ANISOTROPIC;
-    samp_desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    samp_desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    samp_desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-    samp_desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    samp_desc.MinLOD = 0;
-    samp_desc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    ASSERT_SUCCEEDED(device->CreateSamplerState(&samp_desc, &m_texture_sampler));
-    return m_texture_sampler;
-}
-
-ComPtr<IUnknown> DX11Context::CreateSamplerShadow()
-{
-    ComPtr<ID3D11SamplerState> m_shadow_sampler;
-
-    D3D11_SAMPLER_DESC samp_desc = {};
-    samp_desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-    samp_desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samp_desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samp_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samp_desc.ComparisonFunc = D3D11_COMPARISON_LESS;
-    samp_desc.MinLOD = 0;
-    samp_desc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    ASSERT_SUCCEEDED(device->CreateSamplerState(&samp_desc, &m_shadow_sampler));
-    return m_shadow_sampler;
-}
-
 ComPtr<IUnknown> DX11Context::CreateShadowRSState()
 {
     ComPtr<ID3D11RasterizerState> rasterizer_state;
     D3D11_RASTERIZER_DESC shadowState = {};
-    ZeroMemory(&shadowState, sizeof(D3D11_RASTERIZER_DESC));
     shadowState.FillMode = D3D11_FILL_SOLID;
     shadowState.CullMode = D3D11_CULL_BACK;
     shadowState.DepthBias = 4096;

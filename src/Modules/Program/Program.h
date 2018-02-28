@@ -129,9 +129,9 @@ public:
     {
     }
 
-    void Attach(const ComPtr<IUnknown>& res = {})
+    void Attach(const SamplerDesc& desc)
     {
-        m_program_api.AttachSampler(m_shader_type, m_slot, res);
+        m_program_api.AttachSampler(m_shader_type, m_slot, desc);
     }
 
 private:

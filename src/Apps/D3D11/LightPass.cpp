@@ -9,9 +9,6 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     , m_height(height)
     , m_program(context, std::bind(&LightPass::SetDefines, this, std::placeholders::_1))
 {
-    m_shadow_sampler = m_context.CreateSamplerShadow();
-    m_g_sampler = m_context.CreateSamplerAnisotropic();
-
     m_input.camera.SetCameraPos(glm::vec3(-3.0, 2.75, 0.0));
     m_input.camera.SetCameraYaw(-178.0f);
     m_input.camera.SetCameraYaw(-1.75f);
@@ -34,7 +31,7 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.ShadowParams.s_near = m_settings.s_near;
     m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;
     m_program.ps.cbuffer.ShadowParams.s_size = m_settings.s_size;
-    m_program.ps.cbuffer.ShadowParams.use_shadow = false;
+    m_program.ps.cbuffer.ShadowParams.use_shadow = true;
     m_program.ps.cbuffer.ShadowParams.use_occlusion = 0*m_settings.use_occlusion;
 }
 
@@ -50,8 +47,15 @@ void LightPass::OnRender()
 
     m_program.UseProgram(cnt);
 
-    m_program.ps.sampler.g_sampler.Attach(m_g_sampler);
-    m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_shadow_sampler);
+    m_program.ps.sampler.g_sampler.Attach({
+        SamplerFilter::kAnisotropic,
+        SamplerTextureAddressMode::kWrap,
+        SamplerComparisonFunc::kNever });
+
+    m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach({
+        SamplerFilter::kComparisonMinMagMipLinear,
+        SamplerTextureAddressMode::kClamp,
+        SamplerComparisonFunc::kLess });
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_context.OMSetRenderTargets({ m_input.rtv }, m_depth_stencil_view);

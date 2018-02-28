@@ -10,7 +10,7 @@
 DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     : Context(window, width, height)
 {
-#if defined(_DEBUG)
+#if defined(_DEBUG) || 1
     // Enable the D3D12 debug layer.
     {
         ComPtr<ID3D12Debug> debugController;
@@ -18,6 +18,8 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
         {
             debugController->EnableDebugLayer();
         }
+
+       
     }
 #endif
 
@@ -53,6 +55,9 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     D3D12_COMMAND_QUEUE_DESC cqDesc = {}; // we will be using all the default values
     ASSERT_SUCCEEDED(device->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&commandQueue))); // create the command queue
 
+    ASSERT_SUCCEEDED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
+    ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList)));
+
     ASSERT_SUCCEEDED(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&dxgi_factory)));
 
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
@@ -67,6 +72,7 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
     ASSERT_SUCCEEDED(dxgi_factory->CreateSwapChainForHwnd(commandQueue.Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
     tmp_swap_chain.As(&swap_chain);
+    frame_index = swap_chain->GetCurrentBackBufferIndex();
 
     // Create synchronization objects and wait until assets have been uploaded to the GPU.
     {
@@ -86,15 +92,44 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
         WaitForPreviousFrame();
     }
 
-     ASSERT_SUCCEEDED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
-     ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList)));
+    
 
+
+     ComPtr<ID3D12InfoQueue> d3dInfoQueue;
+     if (SUCCEEDED(device.As(&d3dInfoQueue)))
+     {
+         //d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+         //d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+
+         /*D3D12_INFO_QUEUE_FILTER filter;
+         memset(&filter, 0, sizeof(filter));
+
+         // To set the type of messages to allow, 
+         // set filter.AllowList as follows:
+
+         D3D12_MESSAGE_SEVERITY sevs[] = {
+             D3D12_MESSAGE_SEVERITY_CORRUPTION,
+             D3D12_MESSAGE_SEVERITY_ERROR };
+
+         D3D12_MESSAGE_SEVERITY sddevs[] = {
+             D3D12_MESSAGE_SEVERITY_WARNING
+              };
+
+         filter.AllowList.NumSeverities = sizeof(sevs) / sizeof(D3D12_MESSAGE_SEVERITY);
+         filter.AllowList.pSeverityList = sevs;
+
+         filter.DenyList.NumSeverities = sizeof(sddevs) / sizeof(D3D12_MESSAGE_SEVERITY);
+         filter.DenyList.pSeverityList = sddevs;
+
+         auto hr = d3dInfoQueue->AddRetrievalFilterEntries(&filter);*/
+     }
 }
 
 ComPtr<IUnknown> DX12Context::GetBackBuffer()
 {
     ComPtr<ID3D12Resource> back_buffer;
     ASSERT_SUCCEEDED(swap_chain->GetBuffer(frame_index, IID_PPV_ARGS(&back_buffer)));
+    SetState(back_buffer, D3D12_RESOURCE_STATE_PRESENT);
     return back_buffer;
 }
 
@@ -123,11 +158,17 @@ void DX12Context::WaitForPreviousFrame()
 
 void DX12Context::Present()
 {
+   /* ComPtr<ID3D12Resource> back_buffer;
+    ASSERT_SUCCEEDED(swap_chain->GetBuffer(frame_index, IID_PPV_ARGS(&back_buffer)));
+    ResourceBarrier(back_buffer, D3D12_RESOURCE_STATE_PRESENT);*/
+
     commandList->Close();
     ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
 
     // execute the array of command lists
     commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+  
 
     ASSERT_SUCCEEDED(swap_chain->Present(1, 0));
 
@@ -140,6 +181,8 @@ void DX12Context::Present()
 
 void DX12Context::DrawIndexed(UINT IndexCount)
 {
+    current_program->BeforeDraw();
+
     commandList->DrawIndexedInstanced(IndexCount, 1, 0, 0, 0);
     current_program->NextDraw();
 }
@@ -162,8 +205,8 @@ void DX12Context::SetViewport(int width, int height)
     D3D12_RECT scissorRect; // the area to draw in. pixels outside that area will not be drawn onto
     scissorRect.left = 0;
     scissorRect.top = 0;
-    scissorRect.right = m_width;
-    scissorRect.bottom = m_height;
+    scissorRect.right = width;
+    scissorRect.bottom = height;
     commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
 }
 
@@ -223,7 +266,24 @@ ComPtr<IUnknown> DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT form
     resourceDescription.SampleDesc.Count = msaa_count;
     resourceDescription.SampleDesc.Quality = ms_desc.NumQualityLevels - 1;
 
+
     ComPtr<ID3D12Resource> defaultHeap;
+
+    if (format == DXGI_FORMAT_R32_TYPELESS)
+        format = DXGI_FORMAT_D32_FLOAT;
+
+    D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+    depthOptimizedClearValue.Format = format;
+    depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+    depthOptimizedClearValue.DepthStencil.Stencil = 0;
+    depthOptimizedClearValue.Color[0] = 0;
+    depthOptimizedClearValue.Color[1] = 0.2;
+    depthOptimizedClearValue.Color[2] = 0.4;
+    depthOptimizedClearValue.Color[3] = 1.0;
+
+    D3D12_CLEAR_VALUE* sdgsdfgdffdg = nullptr;
+    //if (resourceDescription.Flags != 0)
+     //   sdgsdfgdffdg = &depthOptimizedClearValue;
 
     // create a default heap where the upload heap will copy its contents into (contents being the texture)
     ASSERT_SUCCEEDED(device->CreateCommittedResource(
@@ -231,20 +291,12 @@ ComPtr<IUnknown> DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT form
         D3D12_HEAP_FLAG_NONE, // no flags
         &resourceDescription, // the description of our texture
         D3D12_RESOURCE_STATE_COPY_DEST, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
-        nullptr, // used for render targets and depth/stencil buffers
+        sdgsdfgdffdg, // used for render targets and depth/stencil buffers
         IID_PPV_ARGS(&defaultHeap)));
 
+    SetState(defaultHeap, D3D12_RESOURCE_STATE_COPY_DEST);
+
     return defaultHeap;
-}
-
-ComPtr<IUnknown> DX12Context::CreateSamplerAnisotropic()
-{
-    return ComPtr<IUnknown>();
-}
-
-ComPtr<IUnknown> DX12Context::CreateSamplerShadow()
-{
-    return ComPtr<IUnknown>();
 }
 
 ComPtr<IUnknown> DX12Context::CreateShadowRSState()
@@ -282,6 +334,9 @@ ComPtr<IUnknown> DX12Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size,
         nullptr, // optimized clear value must be null for this type of resource. used for render targets and depth/stencil buffers
         IID_PPV_ARGS(&defaultHeap));
 
+    SetState(defaultHeap, D3D12_RESOURCE_STATE_COPY_DEST);
+
+
     defaultHeap->SetPrivateData(buffer_stride, sizeof(stride), &stride);
     defaultHeap->SetPrivateData(buffer_bind_flag, sizeof(bind_flag), &bind_flag);
     defaultHeap->SetName(utf8_to_wstring(name).c_str());
@@ -297,6 +352,7 @@ void DX12Context::IASetIndexBuffer(ComPtr<IUnknown> res, UINT SizeInBytes, DXGI_
     indexBufferView.SizeInBytes = SizeInBytes;
     indexBufferView.BufferLocation = buf->GetGPUVirtualAddress();
     commandList->IASetIndexBuffer(&indexBufferView);
+    ResourceBarrier(buf, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 }
 
 void DX12Context::IASetVertexBuffer(UINT slot, ComPtr<IUnknown> res, UINT SizeInBytes, UINT Stride)
@@ -308,6 +364,7 @@ void DX12Context::IASetVertexBuffer(UINT slot, ComPtr<IUnknown> res, UINT SizeIn
     vertexBufferView.SizeInBytes = SizeInBytes;
     vertexBufferView.StrideInBytes = Stride;
     commandList->IASetVertexBuffers(slot, 1, &vertexBufferView);
+    ResourceBarrier(buf, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 }
 
 void DX12Context::UpdateSubresource(ComPtr<IUnknown> ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)
@@ -322,10 +379,24 @@ void DX12Context::UpdateSubresource(ComPtr<IUnknown> ires, UINT DstSubresource, 
     // each row must be 256 byte aligned except for the last row, which can just be the size in bytes of the row
     // eg. textureUploadBufferSize = ((((width * numBytesPerPixel) + 255) & ~255) * (height - 1)) + (width * numBytesPerPixel);
     //textureUploadBufferSize = (((imageBytesPerRow + 255) & ~255) * (textureDesc.Height - 1)) + imageBytesPerRow;
-    device->GetCopyableFootprints(&desc, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
+    device->GetCopyableFootprints(&desc, DstSubresource, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
 
+    const UINT subresourceCount = desc.DepthOrArraySize * desc.MipLevels;
+    UINT64 uploadBufferSize = GetRequiredIntermediateSize(defaultHeap.Get(), DstSubresource, 1);
     ComPtr<ID3D12Resource> uploadHeap;
     UINT buffer_size = textureUploadBufferSize;
+
+    if (buffer_size != uploadBufferSize)
+    {
+        int msgboxID = MessageBox(
+            NULL,
+            (LPCWSTR)L"Resource not available\nDo you want to try again?",
+            (LPCWSTR)L"Account Details",
+            MB_ICONWARNING | MB_CANCELTRYCONTINUE | MB_DEFBUTTON2
+        );
+        int fghgf = 0;
+    }
+
     // create upload heap
     // upload heaps are used to upload data to the GPU. CPU can write to it, GPU can read from it
     // We will upload the vertex buffer using this heap to the default heap
@@ -348,32 +419,12 @@ void DX12Context::UpdateSubresource(ComPtr<IUnknown> ires, UINT DstSubresource, 
     vertexData.RowPitch = SrcRowPitch; // size of all our triangle vertex data
     vertexData.SlicePitch = SrcDepthPitch; // also the size of our triangle vertex data
 
-    UINT bind_flag = 0;
-    UINT stride_size = sizeof(bind_flag);
-    auto hr = defaultHeap->GetPrivateData(buffer_bind_flag, &stride_size, &bind_flag);
-    D3D12_RESOURCE_STATES next_state = D3D12_RESOURCE_STATE_COMMON;
-    if (bind_flag & BindFlag::kVbv)
-        next_state = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-    if (bind_flag & BindFlag::kCbv)
-        next_state = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-    if (bind_flag & BindFlag::kIbv)
-        next_state = D3D12_RESOURCE_STATE_INDEX_BUFFER;
-    if (bind_flag & BindFlag::kSrv)
-        next_state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    
-   // if (next_state == D3D12_RESOURCE_STATE_COMMON)
-    //    return;
+
+    ResourceBarrier(defaultHeap, D3D12_RESOURCE_STATE_COPY_DEST);
 
     // we are now creating a command with the command list to copy the data from
     // the upload heap to the default heap
-    UpdateSubresources(commandList.Get(), defaultHeap.Get(), uploadHeap.Get(), 0, 0, 1, &vertexData);
-
-
-
-
-
-    // transition the vertex buffer data from copy destination state to vertex buffer state
-    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(defaultHeap.Get(), D3D12_RESOURCE_STATE_COPY_DEST, next_state));
+    UpdateSubresources(commandList.Get(), defaultHeap.Get(), uploadHeap.Get(), 0, DstSubresource, 1, &vertexData);
 }
 
 void DX12Context::BeginEvent(LPCWSTR Name)

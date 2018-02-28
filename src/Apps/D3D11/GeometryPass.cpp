@@ -11,7 +11,6 @@ GeometryPass::GeometryPass(Context& context, const Input& input, int width, int 
     , m_height(height)
     , m_program(context)
 {
-    m_g_sampler = m_context.CreateSamplerAnisotropic();
     InitGBuffers();
 }
 
@@ -41,7 +40,10 @@ void GeometryPass::OnRender()
     }
     m_program.UseProgram(cnt);
 
-    m_program.ps.sampler.g_sampler.Attach(m_g_sampler);
+    m_program.ps.sampler.g_sampler.Attach({
+        SamplerFilter::kAnisotropic,
+        SamplerTextureAddressMode::kWrap,
+        SamplerComparisonFunc::kNever});
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_context.OMSetRenderTargets({ 
@@ -94,11 +96,11 @@ void GeometryPass::OnRender()
             else
                 m_program.ps.srv.normalMap.Attach();
 
-          //  m_program.ps.srv.alphaMap.Attach(cur_mesh.GetTexture(aiTextureType_OPACITY));
+            m_program.ps.srv.alphaMap.Attach(cur_mesh.GetTexture(aiTextureType_OPACITY));
             m_program.ps.srv.ambientMap.Attach(cur_mesh.GetTexture(aiTextureType_DIFFUSE));
             m_program.ps.srv.diffuseMap.Attach(cur_mesh.GetTexture(aiTextureType_DIFFUSE));
-          // m_program.ps.srv.specularMap.Attach(cur_mesh.GetTexture(aiTextureType_SPECULAR));
-            //m_program.ps.srv.glossMap.Attach(cur_mesh.GetTexture(aiTextureType_SHININESS));
+            m_program.ps.srv.specularMap.Attach(cur_mesh.GetTexture(aiTextureType_SPECULAR));
+            m_program.ps.srv.glossMap.Attach(cur_mesh.GetTexture(aiTextureType_SHININESS));
 
             m_program.ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
             m_program.ps.cbuffer.Material.material_diffuse = cur_mesh.material.dif;

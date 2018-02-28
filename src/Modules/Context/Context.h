@@ -7,6 +7,31 @@
 #include <Program/ProgramApi.h>
 using namespace Microsoft::WRL;
 
+enum class SamplerFilter
+{
+    kAnisotropic,
+    kComparisonMinMagMipLinear
+};
+
+enum class SamplerTextureAddressMode
+{
+    kWrap,
+    kClamp
+};
+
+enum class SamplerComparisonFunc
+{
+    kNever,
+    kLess
+};
+
+struct SamplerDesc
+{
+    SamplerFilter filter;
+    SamplerTextureAddressMode mode;
+    SamplerComparisonFunc func;
+};
+
 enum BindFlag
 {
     kRtv = 1 << 1,
@@ -41,8 +66,7 @@ public:
     GLFWwindow* window;
 
     virtual ComPtr<IUnknown> CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) = 0;
-    virtual ComPtr<IUnknown> CreateSamplerAnisotropic() = 0;
-    virtual ComPtr<IUnknown> CreateSamplerShadow() = 0;
+
     virtual ComPtr<IUnknown> CreateShadowRSState() = 0;
     virtual void RSSetState(ComPtr<IUnknown> state) = 0;
     virtual std::unique_ptr<ProgramApi> CreateProgram() = 0;
