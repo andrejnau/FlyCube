@@ -73,7 +73,13 @@ void SSAOPass::OnRender()
     if (!m_settings.use_occlusion)
         return;
 
-    m_program.UseProgram();
+    size_t cnt = 0;
+    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+    {
+        ++cnt;
+    }
+
+    m_program.UseProgram(cnt);
 
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
@@ -92,10 +98,12 @@ void SSAOPass::OnRender()
 
         m_program.ps.srv.noiseTexture.Attach(m_noise_texture);
 
+        m_program.ps.BindCBuffers();
+        m_program.vs.BindCBuffers();
         m_context.DrawIndexed(cur_mesh.indices.size());
     }
 
-    m_program_blur.UseProgram();
+    m_program_blur.UseProgram(cnt);
 
     m_context.OMSetRenderTargets({ output.srv_blur }, m_depth_stencil_view);
     m_context.ClearRenderTarget(output.srv_blur, color);
@@ -107,6 +115,9 @@ void SSAOPass::OnRender()
         cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
         cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
         m_program_blur.ps.srv.ssaoInput.Attach(output.srv);
+
+        m_program_blur.ps.BindCBuffers();
+        m_program_blur.vs.BindCBuffers();
         m_context.DrawIndexed(cur_mesh.indices.size());
     }
 }

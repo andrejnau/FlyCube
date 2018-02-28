@@ -29,20 +29,20 @@ set(shaders_path "${assets_path}/shaders/DX11")
 set(headers
     ${include_path}/GeometryPass.h
     ${include_path}/LightPass.h
-    ${include_path}/ImGuiPass.h
+    #${include_path}/ImGuiPass.h
     ${include_path}/ShadowPass.h
     ${include_path}/SSAOPass.h
-    ${include_path}/ComputeLuminance.h
+    #${include_path}/ComputeLuminance.h
     ${include_path}/DX11Scene.h
 )
 
 set(sources
     ${source_path}/GeometryPass.cpp
     ${source_path}/LightPass.cpp
-    ${source_path}/ImGuiPass.cpp
+   # ${source_path}/ImGuiPass.cpp
     ${source_path}/ShadowPass.cpp
     ${source_path}/SSAOPass.cpp
-    ${source_path}/ComputeLuminance.cpp
+    #${source_path}/ComputeLuminance.cpp
     ${source_path}/DX11Scene.cpp
     ${source_path}/Main.cpp
 )

@@ -31,7 +31,15 @@ void GeometryPass::OnRender()
 {
     m_context.SetViewport(m_width, m_height);
 
-    m_program.UseProgram();
+    size_t cnt = 0;
+    for (auto& scene_item : m_input.scene_list)
+    {
+        for (DX11Mesh& cur_mesh : scene_item.model.meshes)
+        {
+            ++cnt;
+        }
+    }
+    m_program.UseProgram(cnt);
 
     m_program.ps.sampler.g_sampler.Attach(m_g_sampler);
 
@@ -81,15 +89,15 @@ void GeometryPass::OnRender()
             cur_mesh.bones_offset_buffer.BindToSlot(m_program.vs.ia.BONES_OFFSET);
             cur_mesh.bones_count_buffer.BindToSlot(m_program.vs.ia.BONES_COUNT);
 
-           /* if (!state["disable_norm"])
+            if (!state["disable_norm"])
                 m_program.ps.srv.normalMap.Attach(cur_mesh.GetTexture(aiTextureType_HEIGHT));
             else
-                m_program.ps.srv.normalMap.Attach();*/
+                m_program.ps.srv.normalMap.Attach();
 
-           // m_program.ps.srv.alphaMap.Attach(cur_mesh.GetTexture(aiTextureType_OPACITY));
-           // m_program.ps.srv.ambientMap.Attach(cur_mesh.GetTexture(aiTextureType_DIFFUSE));
+          //  m_program.ps.srv.alphaMap.Attach(cur_mesh.GetTexture(aiTextureType_OPACITY));
+            m_program.ps.srv.ambientMap.Attach(cur_mesh.GetTexture(aiTextureType_DIFFUSE));
             m_program.ps.srv.diffuseMap.Attach(cur_mesh.GetTexture(aiTextureType_DIFFUSE));
-        //    m_program.ps.srv.specularMap.Attach(cur_mesh.GetTexture(aiTextureType_SPECULAR));
+          // m_program.ps.srv.specularMap.Attach(cur_mesh.GetTexture(aiTextureType_SPECULAR));
             //m_program.ps.srv.glossMap.Attach(cur_mesh.GetTexture(aiTextureType_SHININESS));
 
             m_program.ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
@@ -98,7 +106,8 @@ void GeometryPass::OnRender()
             m_program.ps.cbuffer.Material.material_shininess = cur_mesh.material.shininess;
 
             m_program.ps.UpdateCBuffers();
-
+            m_program.ps.BindCBuffers();
+            m_program.vs.BindCBuffers();
             m_context.DrawIndexed(cur_mesh.indices.size());
         }
     }

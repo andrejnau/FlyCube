@@ -264,9 +264,9 @@ public:
         DevNull(ApplyCallback<Args>(fn)...);
     }
 
-    void UseProgram()
+    void UseProgram(size_t draws)
     {
-        m_program_base->UseProgram();
+        m_program_base->UseProgram(draws);
         EnumerateShader<Args...>([&](ShaderBase& shader)
         {
             shader.UpdateCBuffers();

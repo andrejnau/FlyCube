@@ -16,6 +16,8 @@ public:
     }
 
     size_t m_num_rtvs = 0;
+    size_t m_num_res = 0;
+    size_t m_num_samplers = 0;
     std::map<ShaderType, ComPtr<ID3DBlob>> m_blob_map;
 
     std::map<ShaderType, std::map<D3D12_DESCRIPTOR_RANGE_TYPE, size_t>> m_heap_offset_map;
@@ -83,9 +85,14 @@ public:
 
         return input_layout_desc;
     }
-
-    void UseProgram() override
+    void NextDraw()
     {
+        ++draw_offset;
+    }
+
+    void UseProgram(size_t draw_calls) override
+    {
+        draw_offset = 0;
         m_context.current_program = this;
         size_t num_resources = 0;
         size_t num_samplers = 0;
@@ -251,17 +258,19 @@ public:
 
         {
             D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-            heap_desc.NumDescriptors = num_resources;
+            heap_desc.NumDescriptors = num_resources * draw_calls;
             heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
             heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+            m_num_res = num_resources;
             ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&resource_heap)));
         }
 
         {
             D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-            heap_desc.NumDescriptors = num_samplers;
+            heap_desc.NumDescriptors = num_samplers * draw_calls;
             heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
             heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+            m_num_samplers = num_samplers;
             ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&sampler_heap)));
         }
 
@@ -327,7 +336,15 @@ public:
         D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
         psoDesc.BlendState = blendDesc; // a default blent state.
         psoDesc.NumRenderTargets = m_num_rtvs; // we are only binding one render target
-        psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT); // a default depth stencil state
+
+
+        CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
+        depthStencilDesc.DepthEnable = true;
+        depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+        depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+        depthStencilDesc.StencilEnable = FALSE;
+
+        psoDesc.DepthStencilState = depthStencilDesc; // a default depth stencil state
         ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObject)));
 
         m_context.commandList->SetPipelineState(pipelineStateObject.Get());
@@ -372,13 +389,15 @@ public:
         }
     }
 
+    size_t draw_offset = 0;
+
     virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res) override
     {
         CreateSrv(type, name, slot, res);
 
         const UINT cbvSrvDescriptorSize = m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         CD3DX12_GPU_DESCRIPTOR_HANDLE gpucbvSrvHandle(resource_heap->GetGPUDescriptorHandleForHeapStart(),
-            m_root_param_start_heap_map[type], cbvSrvDescriptorSize);
+            draw_offset * m_num_res +  m_root_param_start_heap_map[type], cbvSrvDescriptorSize);
 
         m_context.commandList->SetGraphicsRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SRV], gpucbvSrvHandle);
     }
@@ -389,7 +408,7 @@ public:
 
         const UINT cbvSrvDescriptorSize = m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         CD3DX12_GPU_DESCRIPTOR_HANDLE gpucbvSrvHandle(resource_heap->GetGPUDescriptorHandleForHeapStart(),
-            m_root_param_start_heap_map[type], cbvSrvDescriptorSize);
+            draw_offset * m_num_res +  m_root_param_start_heap_map[type], cbvSrvDescriptorSize);
 
         m_context.commandList->SetGraphicsRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_UAV], gpucbvSrvHandle);
     }
@@ -400,7 +419,7 @@ public:
         for (int i = 0; i < m_num_rtvs; ++i)
         {
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtv_heap->GetCPUDescriptorHandleForHeapStart(), i,
-                m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+                 m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
             const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
             m_context.commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
             rtvss.push_back(rtvHandle);
@@ -412,7 +431,7 @@ public:
 
         
         // clear the depth/stencil buffer
-        m_context.commandList->ClearDepthStencilView(om_dsv, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+        m_context.commandList->ClearDepthStencilView(om_dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
         ComPtr<ID3D12ShaderReflection> reflector;
         D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&reflector));
@@ -476,7 +495,7 @@ public:
     virtual void AttachSampler(ShaderType type, uint32_t slot, const ComPtr<IUnknown>& res) override
     {
         CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(sampler_heap->GetCPUDescriptorHandleForHeapStart(),
-            m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER] + slot,
+            draw_offset  * m_num_samplers+  m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER] + slot,
             m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER));
 
         D3D12_SAMPLER_DESC wrapSamplerDesc = {};
@@ -494,7 +513,7 @@ public:
 
         const UINT cbvSrvDescriptorSize = m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
         CD3DX12_GPU_DESCRIPTOR_HANDLE gpucbvSrvHandle(sampler_heap->GetGPUDescriptorHandleForHeapStart(),
-            m_root_param_start_heap_map_sampler[type], cbvSrvDescriptorSize);
+            draw_offset* m_num_samplers +  m_root_param_start_heap_map_sampler[type], cbvSrvDescriptorSize);
 
         m_context.commandList->SetGraphicsRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER], gpucbvSrvHandle);
     }
@@ -509,14 +528,14 @@ public:
         cbvDesc.SizeInBytes = (buf->GetDesc().Width + 255) & ~255;	// CB size is required to be 256-byte aligned.
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(resource_heap->GetCPUDescriptorHandleForHeapStart(),
-            m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_CBV] + slot,
+            draw_offset * m_num_res +  m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_CBV] + slot,
             m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
         m_context.device->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
 
         const UINT cbvSrvDescriptorSize = m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         CD3DX12_GPU_DESCRIPTOR_HANDLE gpucbvSrvHandle(resource_heap->GetGPUDescriptorHandleForHeapStart(), 
-            m_root_param_start_heap_map[type], cbvSrvDescriptorSize);
+            draw_offset * m_num_res +  m_root_param_start_heap_map[type], cbvSrvDescriptorSize);
         m_context.commandList->SetGraphicsRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_CBV], gpucbvSrvHandle);
     }
 
@@ -547,7 +566,7 @@ private:
         D3D12_RESOURCE_DESC desc = res->GetDesc();
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(resource_heap->GetCPUDescriptorHandleForHeapStart(),
-            m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SRV] + slot,
+            draw_offset * m_num_res + m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SRV] + slot,
             m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
         switch (res_desc.Dimension)
@@ -625,7 +644,7 @@ private:
         D3D12_RESOURCE_DESC desc = res->GetDesc();
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(resource_heap->GetCPUDescriptorHandleForHeapStart(),
-            m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_UAV] + slot,
+            draw_offset * m_num_res + m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_UAV] + slot,
             m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
         switch (res_desc.Dimension)

@@ -42,7 +42,13 @@ void LightPass::OnRender()
 {
     m_context.SetViewport(m_width, m_height);
 
-    m_program.UseProgram();
+    size_t cnt = 0;
+    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+    {
+        ++cnt;
+    }
+
+    m_program.UseProgram(cnt);
 
     m_program.ps.sampler.g_sampler.Attach(m_g_sampler);
     m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_shadow_sampler);
@@ -65,6 +71,9 @@ void LightPass::OnRender()
         m_program.ps.srv.gSpecular.Attach(m_input.geometry_pass.specular);
         m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
         m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
+
+        m_program.ps.BindCBuffers();
+        m_program.vs.BindCBuffers();
         m_context.DrawIndexed(cur_mesh.indices.size());
     }
 

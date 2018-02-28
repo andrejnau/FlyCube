@@ -21,7 +21,7 @@ class Context;
 class ProgramApi
 {
 public:
-    virtual void UseProgram() = 0;
+    virtual void UseProgram(size_t draw_calls) = 0;
     virtual void UpdateData(ComPtr<IUnknown>, const void* ptr) = 0;
     virtual void OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& blob) = 0;
     virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res) = 0;

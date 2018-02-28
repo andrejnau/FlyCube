@@ -141,6 +141,7 @@ void DX12Context::Present()
 void DX12Context::DrawIndexed(UINT IndexCount)
 {
     commandList->DrawIndexedInstanced(IndexCount, 1, 0, 0, 0);
+    current_program->NextDraw();
 }
 
 void DX12Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)

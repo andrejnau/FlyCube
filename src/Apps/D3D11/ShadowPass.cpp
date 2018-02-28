@@ -42,7 +42,16 @@ void ShadowPass::OnRender()
 {
     m_context.SetViewport(m_settings.s_size, m_settings.s_size);
 
-    m_program.UseProgram();
+    size_t cnt = 0;
+    for (auto& scene_item : m_input.scene_list)
+    {
+        for (DX11Mesh& cur_mesh : scene_item.model.meshes)
+        {
+            ++cnt;
+        }
+    }
+
+    m_program.UseProgram(cnt);
     m_program.ps.sampler.g_sampler.Attach(m_g_sampler);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
@@ -81,6 +90,9 @@ void ShadowPass::OnRender()
             else
                 m_program.ps.srv.alphaMap.Attach();
 
+            m_program.ps.BindCBuffers();
+            m_program.vs.BindCBuffers();
+            m_program.gs.BindCBuffers();
             m_context.DrawIndexed(cur_mesh.indices.size());
         }
     }
