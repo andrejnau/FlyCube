@@ -102,8 +102,6 @@ add_executable(${target} WIN32 ${headers} ${sources} ${shaders_files} ${shaders_
 set_target_properties(${target} PROPERTIES
                         LINK_FLAGS "/ENTRY:mainCRTStartup")
 
-target_compile_definitions(${target} PRIVATE UNICODE _UNICODE NOMINMAX)
-
 target_include_directories(${target}
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."

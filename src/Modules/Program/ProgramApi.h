@@ -4,6 +4,7 @@
 #include <memory>
 
 #include <Program/ShaderType.h>
+#include <Context/BaseTypes.h>
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
 #include <map>
@@ -17,14 +18,6 @@ using namespace Microsoft::WRL;
 
 class Context;
 class SamplerDesc;
-
-enum class ResourceType
-{
-    kSrv,
-    kUav,
-    kCbv,
-    kSampler
-};
 
 class ProgramApi
 {

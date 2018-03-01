@@ -1,122 +1,12 @@
 #pragma once
 
-#define NOMINMAX
 #include <Context/DX12Context.h>
 #include "Program/ProgramApi.h"
 #include <algorithm>
 #include <deque>
 #include <array>
 
-struct BindingInfo
-{
-    D3D_SRV_DIMENSION dimension;
-    bool operator<(const BindingInfo& oth) const
-    {
-        return dimension < oth.dimension;
-    }
-};
-
-class DescriptorVector
-{
-public:
-    DX12Context& m_context;
-    DescriptorVector(DX12Context& context)
-        : m_context(context)
-    {
-        resource_heap.heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        sampler_heap.heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-    }
-
-    struct VectorDescriptors
-    {
-        size_t last = 0;
-        size_t size = 0;
-        ComPtr<ID3D12DescriptorHeap> heap;
-        D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
-
-        std::map<std::tuple<BindingInfo, IUnknown*>, size_t> m_descriptor;
-
-        size_t CreateOffset(DX12Context& context)
-        {
-            if (last + 1 > size)
-            {
-                ComPtr<ID3D12DescriptorHeap> new_heap;
-                D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-                heap_desc.NumDescriptors = 2 * (size + 1);
-                heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-                heap_desc.Type = heap_type;
-                ASSERT_SUCCEEDED(context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&new_heap)));
-                if (size > 0)
-                {
-                    context.device->CopyDescriptorsSimple(
-                        size,
-                        new_heap->GetCPUDescriptorHandleForHeapStart(),
-                        heap->GetCPUDescriptorHandleForHeapStart(),
-                        heap_type);
-                }
-                size = heap_desc.NumDescriptors;
-                heap = new_heap;
-            }
-            return ++last - 1;
-        }
-
-        size_t FindOffset(DX12Context& context, BindingInfo info, ComPtr<IUnknown> res)
-        {
-            auto it = m_descriptor.find({ info, res.Get() });
-            if (it != m_descriptor.end())
-                return it->second;
-            else
-                return m_descriptor[{ info, res.Get() }] = CreateOffset(context);
-        }
-
-        bool HasOffset(DX12Context& context, BindingInfo info, ComPtr<IUnknown> res)
-        {
-            auto it = m_descriptor.find({ info, res.Get() });
-            if (it != m_descriptor.end())
-                return true;
-            return false;
-        }
-    };
-
-    VectorDescriptors& SelectHeap(ResourceType res_type)
-    {
-        switch (res_type)
-        {
-        case ResourceType::kSrv:
-        case ResourceType::kUav:
-            return resource_heap;
-            break;
-        case ResourceType::kSampler:
-            return sampler_heap;
-            break;
-        default:
-        {
-            assert(false);
-            static VectorDescriptors heap;
-            return heap;
-        }
-        }
-    }
-
-    CD3DX12_CPU_DESCRIPTOR_HANDLE GetDescriptor(ResourceType res_type, BindingInfo info, ComPtr<IUnknown> res)
-    {
-        VectorDescriptors& vec_heap = SelectHeap(res_type);
-        size_t offset = vec_heap.FindOffset(m_context, info, res);
-        return CD3DX12_CPU_DESCRIPTOR_HANDLE(
-            vec_heap.heap->GetCPUDescriptorHandleForHeapStart(),
-            offset,
-            m_context.device->GetDescriptorHandleIncrementSize(vec_heap.heap_type));
-    }
-
-    bool HasDescriptor(ResourceType res_type, BindingInfo info, ComPtr<IUnknown> res)
-    {
-        VectorDescriptors& vec_heap = SelectHeap(res_type);
-        return vec_heap.HasOffset(m_context, info, res);
-    }
-
-    VectorDescriptors resource_heap;
-    VectorDescriptors sampler_heap;
-};
+#include "Context/DescriptorPool.h"
 
 class DX12ProgramApi : public ProgramApi
 {
@@ -124,12 +14,6 @@ public:
     DX12ProgramApi(DX12Context& context)
         : m_context(context)
     {
-    }
-
-    DescriptorVector& GetDescriptorVector()
-    {
-        static DescriptorVector vec(m_context);
-        return vec;
     }
 
     std::map<std::tuple<ShaderType, ResourceType, uint32_t>, size_t> m_descriptor_count;
@@ -597,7 +481,7 @@ public:
     {
         CreateSrv(type, name, slot, res);
 
-        D3D12_CPU_DESCRIPTOR_HANDLE res_handle = GetDescriptorVector().GetDescriptor(ResourceType::kSrv, GetBindingInfo(type, ResourceType::kSrv, slot), res);
+        D3D12_CPU_DESCRIPTOR_HANDLE res_handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kSrv, GetBindingInfo(type, ResourceType::kSrv, slot), res);
         D3D12_CPU_DESCRIPTOR_HANDLE binding_handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(
             resource_heap->GetCPUDescriptorHandleForHeapStart(),
             draw_offset * m_num_res + m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SRV] + slot,
@@ -840,10 +724,10 @@ private:
         else
             m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-        if (GetDescriptorVector().HasDescriptor(ResourceType::kSrv, GetBindingInfo(type, ResourceType::kSrv, slot), ires))
+        if (m_context.descriptor_pool->HasDescriptor(ResourceType::kSrv, GetBindingInfo(type, ResourceType::kSrv, slot), ires))
             return;
 
-        D3D12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle = GetDescriptorVector().GetDescriptor(ResourceType::kSrv, GetBindingInfo(type, ResourceType::kSrv, slot), ires);
+        D3D12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle = m_context.descriptor_pool->GetDescriptor(ResourceType::kSrv, GetBindingInfo(type, ResourceType::kSrv, slot), ires);
 
         ComPtr<ID3D12ShaderReflection> reflector;
         D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));

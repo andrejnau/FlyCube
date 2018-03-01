@@ -10,6 +10,7 @@
 #include <vector>
 #include <d3d12.h>
 #include <d3dx12.h>
+#include "Context/DescriptorPool.h"
 
 using namespace Microsoft::WRL;
 
@@ -89,6 +90,8 @@ public:
     ComPtr<ID3D12GraphicsCommandList> commandList; // a command list we can record commands into, then execute them to render the frame
     ComPtr<ID3D12CommandAllocator> commandAllocator; // we want enough a
     DX12ProgramApi* current_program = nullptr;
+
+    std::unique_ptr<DescriptorPool> descriptor_pool;
 private:
     void WaitForPreviousFrame();
     virtual void ResizeBackBuffer(int width, int height) override;

@@ -4,7 +4,6 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
-
 #include <Program/DX12ProgramApi.h>
 
 DX12Context::DX12Context(GLFWwindow* window, int width, int height)
@@ -102,6 +101,8 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
          d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
      }
 #endif
+
+     descriptor_pool.reset(new DescriptorPool(*this));
 }
 
 ComPtr<IUnknown> DX12Context::GetBackBuffer()

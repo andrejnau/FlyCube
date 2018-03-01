@@ -72,16 +72,11 @@ void ShadowPass::OnRender()
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
 
-        ComPtr<IUnknown> bones_info_srv = m_context.CreateBuffer(BindFlag::kSrv, scene_item.model.bones.bone_info.size() * sizeof(Bones::BoneInfo), sizeof(Bones::BoneInfo), "bone_info");
-        if (!scene_item.model.bones.bone_info.empty())
-            m_context.UpdateSubresource(bones_info_srv, 0, scene_item.model.bones.bone_info.data(), 0, 0);
-
-        ComPtr<IUnknown> bones_srv = m_context.CreateBuffer(BindFlag::kSrv, scene_item.model.bones.bone.size() * sizeof(glm::mat4), sizeof(glm::mat4), "bone");
-        if (!scene_item.model.bones.bone.empty())
-            m_context.UpdateSubresource(bones_srv, 0, scene_item.model.bones.bone.data(), 0, 0);
+        ComPtr<IUnknown> bones_info_srv = scene_item.model.bones.GetBonesInfo(m_context);
+        ComPtr<IUnknown> bone_srv = scene_item.model.bones.GetBone(m_context);
 
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
-        m_program.vs.srv.gBones.Attach(bones_srv);
+        m_program.vs.srv.gBones.Attach(bone_srv);
 
         for (DX11Mesh& cur_mesh : scene_item.model.meshes)
         {

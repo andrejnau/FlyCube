@@ -9,6 +9,7 @@ set(headers
 
 set(sources
     Context.cpp
+    DescriptorPool.cpp
     DX11Context.cpp
     DX12Context.cpp
 )

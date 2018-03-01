@@ -10,7 +10,7 @@ set(headers
 )
 
 set(sources
-    empty.cpp
+    DX12ProgramApi.cpp
 )
 
 add_library(${target} ${headers} ${sources})
@@ -18,6 +18,7 @@ add_library(${target} ${headers} ${sources})
 target_include_directories(${target}
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
+        "${project_root}/3rdparty/d3dx12"
 )
 
 target_link_libraries(${target}

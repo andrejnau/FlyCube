@@ -11,8 +11,6 @@ add_executable(${target}
     ${sources}
 )
 
-target_compile_definitions(${target} PRIVATE UNICODE _UNICODE NOMINMAX)
-
 target_link_libraries(${target}
     Utilities
     d3dcompiler

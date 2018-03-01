@@ -12,8 +12,7 @@
 #include <vector>
 #include <cstdint>
 #include <map>
-
-class Context;
+#include <Context/Context.h>
 
 struct IMesh
 {
@@ -94,6 +93,27 @@ public:
             cur_mesh.bones_count[vertex_id] = per_vertex_bone_info[vertex_id].size();
             std::copy(per_vertex_bone_info[vertex_id].begin(), per_vertex_bone_info[vertex_id].end(), back_inserter(bone_info));
         }
+    }
+
+    ComPtr<IUnknown> bones_info_srv;
+    ComPtr<IUnknown> bone_srv;
+
+    ComPtr<IUnknown> GetBonesInfo(Context& context)
+    {
+        if (!bones_info_srv)
+            bones_info_srv = context.CreateBuffer(BindFlag::kSrv, bone_info.size() * sizeof(BoneInfo), sizeof(BoneInfo), "bones_info");
+        if (!bone_info.empty())
+            context.UpdateSubresource(bones_info_srv, 0, bone_info.data(), 0, 0);
+        return bones_info_srv;
+    }
+
+    ComPtr<IUnknown> GetBone(Context& context)
+    {
+        if (!bone_srv)
+            bone_srv = context.CreateBuffer(BindFlag::kSrv, bone.size() * sizeof(glm::mat4), sizeof(glm::mat4), "bone");
+        if (!bone.empty())
+            context.UpdateSubresource(bone_srv, 0, bone.data(), 0, 0);
+        return bone_srv;
     }
 
     void UpdateAnimation(float time_in_seconds)
