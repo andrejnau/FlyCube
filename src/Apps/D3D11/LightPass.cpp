@@ -13,8 +13,8 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     m_input.camera.SetCameraYaw(-178.0f);
     m_input.camera.SetCameraYaw(-1.75f);
 
-    if (m_input.rtv)
-        m_input.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    m_input.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    output.rtv = m_input.rtv;
     m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
 }
 
@@ -31,8 +31,8 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.ShadowParams.s_near = m_settings.s_near;
     m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;
     m_program.ps.cbuffer.ShadowParams.s_size = m_settings.s_size;
-    m_program.ps.cbuffer.ShadowParams.use_shadow = true;
-    m_program.ps.cbuffer.ShadowParams.use_occlusion = 0*m_settings.use_occlusion;
+    m_program.ps.cbuffer.ShadowParams.use_shadow = m_settings.use_shadow;
+    m_program.ps.cbuffer.ShadowParams.use_occlusion = m_settings.use_occlusion;
 }
 
 void LightPass::OnRender()
@@ -89,8 +89,8 @@ void LightPass::OnResize(int width, int height)
     m_width = width;
     m_height = height;
 
-    if (m_input.rtv)
-        m_input.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    m_input.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
+    output.rtv = m_input.rtv;
     m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
 }
 

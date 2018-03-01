@@ -7,7 +7,6 @@
 #include <ProgramRef/HDRLum2DPassCS.h>
 #include <ProgramRef/HDRApplyPS.h>
 #include <ProgramRef/HDRApplyVS.h>
-#include <d3d11.h>
 #include <wrl.h>
 
 using namespace Microsoft::WRL;

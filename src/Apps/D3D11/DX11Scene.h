@@ -59,6 +59,6 @@ private:
     ShadowPass m_shadow_pass;
     SSAOPass m_ssao_pass;
     LightPass m_light_pass;
-   // ComputeLuminance m_compute_luminance;
-   // ImGuiPass m_imgui_pass;
+    ComputeLuminance m_compute_luminance;
+    std::unique_ptr<ImGuiPass> m_imgui_pass;
 };

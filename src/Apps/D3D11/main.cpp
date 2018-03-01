@@ -1,7 +1,26 @@
 #include "DX11Scene.h"
 #include <AppBox/AppBox.h>
 
-int main(void)
+int main(int argc, char *argv[])
 {
-    return AppBox(DX11Scene::Create, ApiType::kDX12, "[DX11] testApp", 1280, 720).Run();
+    ApiType type = ApiType::kDX12;
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string arg(argv[i]);
+        if (arg == "--dx11")
+            type = ApiType::kDX11;
+        else if (arg == "--dx12")
+            type = ApiType::kDX12;
+    }
+    std::string title;
+    switch (type)
+    {
+    case ApiType::kDX11:
+        title = "[DX11] testApp";
+        break;
+    case ApiType::kDX12:
+        title = "[DX12] testApp";
+        break;
+    }
+    return AppBox(DX11Scene::Create, type, title, 1280, 720).Run();
 }

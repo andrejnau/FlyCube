@@ -15,6 +15,22 @@ public:
     {
     }
 
+    void SetRootSignature(ID3D12RootSignature* pRootSignature)
+    {
+        if (m_blob_map.count(ShaderType::kCompute))
+            m_context.commandList->SetComputeRootSignature(pRootSignature);
+        else
+            m_context.commandList->SetGraphicsRootSignature(pRootSignature);
+    }
+
+    void SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor)
+    {
+        if (m_blob_map.count(ShaderType::kCompute))
+            m_context.commandList->SetComputeRootDescriptorTable(RootParameterIndex, BaseDescriptor);
+        else
+            m_context.commandList->SetGraphicsRootDescriptorTable(RootParameterIndex, BaseDescriptor);
+    }
+
     size_t m_num_rtvs = 0;
     size_t m_num_res = 0;
     size_t m_num_samplers = 0;
@@ -92,11 +108,8 @@ public:
 
     bool is_first_draw;
 
-    void BeforeDraw()
+    void CreateGraphicsPSO()
     {
-        if (!is_first_draw)
-            return;
-        is_first_draw = false;
         ComPtr<ID3D12ShaderReflection> reflector;
         D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&reflector));
 
@@ -147,8 +160,28 @@ public:
         m_context.commandList->SetPipelineState(pipelineStateObject.Get());
     }
 
+    void CreateComputePSO()
+    {
+        compute_pso.pRootSignature = rootSignature.Get();
+        ASSERT_SUCCEEDED(m_context.device->CreateComputePipelineState(&compute_pso, IID_PPV_ARGS(&pipelineStateObject)));
+        m_context.commandList->SetPipelineState(pipelineStateObject.Get());
+    }
+
+    void BeforeDraw()
+    {
+        if (!is_first_draw)
+            return;
+        is_first_draw = false;
+   
+        if (m_blob_map.count(ShaderType::kCompute))
+            CreateComputePSO();
+        else
+            CreateGraphicsPSO();
+    }
+
     void UseProgram(size_t draw_calls) override
     {
+        ++draw_calls;
         is_first_draw = true;
 
         draw_offset = 0;
@@ -315,6 +348,7 @@ public:
             num_samplers += num_sampler;
         }
 
+        if (num_resources * draw_calls)
         {
             D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
             heap_desc.NumDescriptors = num_resources * draw_calls;
@@ -324,6 +358,7 @@ public:
             ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&resource_heap)));
         }
 
+        if (num_samplers * draw_calls)
         {
             D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
             heap_desc.NumDescriptors = num_samplers * draw_calls;
@@ -333,6 +368,7 @@ public:
             ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&sampler_heap)));
         }
 
+        if (num_rtvs)
         {
             D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
             heap_desc.NumDescriptors = num_rtvs;
@@ -368,11 +404,15 @@ public:
             "%s", (char*)errorBuff->GetBufferPointer());
         ASSERT_SUCCEEDED(m_context.device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 
-        m_context.commandList->SetGraphicsRootSignature(rootSignature.Get());
+        SetRootSignature(rootSignature.Get());
         m_context.commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        ID3D12DescriptorHeap *descriptorHeaps[] = { resource_heap.Get(), sampler_heap.Get() };
-        m_context.commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+        std::vector<ID3D12DescriptorHeap*> descriptorHeaps;
+        if (resource_heap)
+            descriptorHeaps.push_back(resource_heap.Get());
+        if (sampler_heap)
+            descriptorHeaps.push_back(sampler_heap.Get());
+        m_context.commandList->SetDescriptorHeaps(descriptorHeaps.size(), descriptorHeaps.data());
     }
 
     ComPtr<ID3D12DescriptorHeap> resource_heap;
@@ -419,7 +459,7 @@ public:
         CD3DX12_GPU_DESCRIPTOR_HANDLE gpucbvSrvHandle(resource_heap->GetGPUDescriptorHandleForHeapStart(),
             draw_offset * m_num_res +  m_root_param_start_heap_map[type], cbvSrvDescriptorSize);
 
-        m_context.commandList->SetGraphicsRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SRV], gpucbvSrvHandle);
+        SetRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SRV], gpucbvSrvHandle);
     }
 
     virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res) override
@@ -430,26 +470,46 @@ public:
         CD3DX12_GPU_DESCRIPTOR_HANDLE gpucbvSrvHandle(resource_heap->GetGPUDescriptorHandleForHeapStart(),
             draw_offset * m_num_res +  m_root_param_start_heap_map[type], cbvSrvDescriptorSize);
 
-        m_context.commandList->SetGraphicsRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_UAV], gpucbvSrvHandle);
+        SetRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_UAV], gpucbvSrvHandle);
     }
 
-    virtual void UpdateOmSet() override
+    size_t used_rtv = 0;
+    bool use_dsv = false;
+
+    void OMSetRenderTargets(std::vector<ComPtr<IUnknown>> rtv, ComPtr<IUnknown> dsv)
     {
+        for (auto& rtv_format : psoDesc.RTVFormats)
+        {
+            rtv_format = DXGI_FORMAT_UNKNOWN;
+        }
+        psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+
+        size_t slot = 0;
+        used_rtv = 0;
+        for (auto& x : rtv)
+        {
+            ++used_rtv;
+            CreateRTV(slot++, x);
+        }
+
+        if (dsv)
+            use_dsv = true;
+        CreateDSV(dsv);
+
         std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvss;
-        for (int i = 0; i < m_num_rtvs; ++i)
+        for (int i = 0; i < used_rtv; ++i)
         {
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtv_heap->GetCPUDescriptorHandleForHeapStart(), i,
-                 m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+                m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
             const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
             m_context.commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
             rtvss.push_back(rtvHandle);
         }
-        D3D12_CPU_DESCRIPTOR_HANDLE om_rtv = rtv_heap->GetCPUDescriptorHandleForHeapStart();
-        D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = dsv_heap->GetCPUDescriptorHandleForHeapStart();
+        D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = {};
+        if (dsv_heap && use_dsv)
+            om_dsv = dsv_heap->GetCPUDescriptorHandleForHeapStart();
         m_context.commandList->OMSetRenderTargets(rtvss.size(), rtvss.data(), FALSE, &om_dsv);
 
-
-        
         // clear the depth/stencil buffer
         m_context.commandList->ClearDepthStencilView(om_dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
@@ -462,14 +522,14 @@ public:
         input_layout.pInputElementDescs = input_layout_elements.data();
         psoDesc.InputLayout = input_layout;
 
-      //  ComPtr<ID3D12PipelineState> tmppipelineStateObject;
-      //  ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&tmppipelineStateObject)));
+        //  ComPtr<ID3D12PipelineState> tmppipelineStateObject;
+        //  ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&tmppipelineStateObject)));
 
-       // m_context.commandList->SetPipelineState(tmppipelineStateObject.Get());
+        // m_context.commandList->SetPipelineState(tmppipelineStateObject.Get());
         //pipelineStateObject = tmppipelineStateObject;
     }
 
-    virtual void AttachRTV(uint32_t slot, const ComPtr<IUnknown>& res) override
+    void CreateRTV(uint32_t slot, const ComPtr<IUnknown>& res)
     {
         ComPtr<ID3D12Resource> renderTarget;
         res.As(&renderTarget);
@@ -484,7 +544,7 @@ public:
         m_context.device->CreateRenderTargetView(renderTarget.Get(), nullptr, rtvHandle);
     }
 
-    virtual void AttachDSV(const ComPtr<IUnknown>& res) override
+    void CreateDSV(const ComPtr<IUnknown>& res)
     {
         if (!res)
             return;
@@ -570,7 +630,7 @@ public:
         CD3DX12_GPU_DESCRIPTOR_HANDLE gpucbvSrvHandle(sampler_heap->GetGPUDescriptorHandleForHeapStart(),
             draw_offset* m_num_samplers +  m_root_param_start_heap_map_sampler[type], cbvSrvDescriptorSize);
 
-        m_context.commandList->SetGraphicsRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER], gpucbvSrvHandle);
+        SetRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER], gpucbvSrvHandle);
     }
 
     virtual void AttachCBuffer(ShaderType type, uint32_t slot, const ComPtr<IUnknown>& res) override
@@ -596,7 +656,7 @@ public:
         const UINT cbvSrvDescriptorSize = m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         CD3DX12_GPU_DESCRIPTOR_HANDLE gpucbvSrvHandle(resource_heap->GetGPUDescriptorHandleForHeapStart(), 
             draw_offset * m_num_res +  m_root_param_start_heap_map[type], cbvSrvDescriptorSize);
-        m_context.commandList->SetGraphicsRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_CBV], gpucbvSrvHandle);
+        SetRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_CBV], gpucbvSrvHandle);
     }
 
     virtual Context& GetContext() override
@@ -690,9 +750,22 @@ private:
 
     void CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& ires)
     {
-        ComPtr<ID3D11UnorderedAccessView> uav;
+        CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(resource_heap->GetCPUDescriptorHandleForHeapStart(),
+            draw_offset * m_num_res + m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_UAV] + slot,
+            m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+
+
         if (!ires)
+        {
+           /* D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+            uav_desc.Format = DXGI_FORMAT_UNKNOWN;
+            uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+            uav_desc.Buffer.FirstElement = 0;
+            uav_desc.Buffer.NumElements = 4;
+            uav_desc.Buffer.StructureByteStride = 4;
+            m_context.device->CreateUnorderedAccessView(nullptr, nullptr, nullptr, cbvSrvHandle);*/
             return;
+        }
 
         ComPtr<ID3D12Resource> res;
         ires.As(&res);
@@ -708,9 +781,8 @@ private:
 
         D3D12_RESOURCE_DESC desc = res->GetDesc();
 
-        CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(resource_heap->GetCPUDescriptorHandleForHeapStart(),
-            draw_offset * m_num_res + m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_UAV] + slot,
-            m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+  
+
 
         switch (res_desc.Dimension)
         {

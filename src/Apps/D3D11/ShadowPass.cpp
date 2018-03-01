@@ -39,6 +39,9 @@ void ShadowPass::OnUpdate()
 
 void ShadowPass::OnRender()
 {
+    if (!m_settings.use_shadow)
+        return;
+
     m_context.SetViewport(m_settings.s_size, m_settings.s_size);
 
     size_t cnt = 0;

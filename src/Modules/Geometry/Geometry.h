@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <map>
 
-class DX11Context;
+class Context;
 
 struct IMesh
 {
@@ -313,7 +313,7 @@ private:
 template<typename Mesh>
 struct Model : IModel
 {
-    Model(DX11Context& context, const std::string& file, uint32_t flags = ~0)
+    Model(Context& context, const std::string& file, uint32_t flags = ~0)
         : m_context(context)
         , m_model_loader(file, (aiPostProcessSteps)flags, *this)
     {
@@ -344,7 +344,7 @@ struct Model : IModel
     std::vector<Mesh> meshes;
 
 private:
-    DX11Context& m_context;
+    Context& m_context;
     ModelLoader m_model_loader;
 };
 
@@ -377,7 +377,7 @@ struct ModelSize
 template<typename Mesh>
 struct ListItem
 {
-    ListItem(DX11Context& context, const std::string& file)
+    ListItem(Context& context, const std::string& file)
         : model(context, file)
     {
     }

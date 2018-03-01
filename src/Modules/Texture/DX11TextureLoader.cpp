@@ -3,6 +3,7 @@
 #include <Utilities/DXUtility.h>
 #include <gli/gli.hpp>
 #include <SOIL.h>
+#include <d3d11.h>
 
 #include <Context/Context.h>
 

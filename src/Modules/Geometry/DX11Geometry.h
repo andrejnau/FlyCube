@@ -3,8 +3,7 @@
 #include "Geometry/Geometry.h"
 #include <Utilities/DXUtility.h>
 #include <Texture/DX11TextureLoader.h>
-#include <Context/DX11Context.h>
-#include <d3d11.h>
+#include <Context/Context.h>
 #include <wrl.h>
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
@@ -76,7 +75,7 @@ class DX11Mesh : public IMesh
 {
 public:
 
-    DX11Mesh(DX11Context& context, const IMesh& mesh)
+    DX11Mesh(Context& context, const IMesh& mesh)
         : IMesh(mesh)
         , m_context(context)
         , positions_buffer(context, positions)
@@ -136,7 +135,7 @@ private:
     }
 
 private:
-    DX11Context& m_context;
+    Context& m_context;
     std::map<aiTextureType, size_t> m_type2id;
     std::vector<ComPtr<IUnknown>> m_tex_srv;
 };

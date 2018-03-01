@@ -10,7 +10,7 @@
 DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     : Context(window, width, height)
 {
-#if defined(_DEBUG) || 1
+#if defined(_DEBUG)
     // Enable the D3D12 debug layer.
     {
         ComPtr<ID3D12Debug> debugController;
@@ -18,8 +18,6 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
         {
             debugController->EnableDebugLayer();
         }
-
-       
     }
 #endif
 
@@ -29,6 +27,7 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     auto GetHardwareAdapter = [&](ComPtr<IDXGIFactory4> dxgiFactory) -> ComPtr<IDXGIAdapter1>
     {
         ComPtr<IDXGIAdapter1> adapter; // adapters are the graphics card (this includes the embedded graphics on the motherboard)
+        size_t cnt = 0;
         for (UINT adapterIndex = 0; DXGI_ERROR_NOT_FOUND != dxgiFactory->EnumAdapters1(adapterIndex, &adapter); ++adapterIndex)
         {
             DXGI_ADAPTER_DESC1 desc;
@@ -39,6 +38,9 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
                 // Don't select the Basic Render Driver adapter.
                 continue;
             }
+
+            if (++cnt < 1)
+                continue;
 
             // Check to see if the adapter supports Direct3D 12, but don't create the
             // actual device yet.
@@ -92,37 +94,14 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
         WaitForPreviousFrame();
     }
 
-    
-
-
+#if 0
      ComPtr<ID3D12InfoQueue> d3dInfoQueue;
      if (SUCCEEDED(device.As(&d3dInfoQueue)))
      {
-         //d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-         //d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-
-         /*D3D12_INFO_QUEUE_FILTER filter;
-         memset(&filter, 0, sizeof(filter));
-
-         // To set the type of messages to allow, 
-         // set filter.AllowList as follows:
-
-         D3D12_MESSAGE_SEVERITY sevs[] = {
-             D3D12_MESSAGE_SEVERITY_CORRUPTION,
-             D3D12_MESSAGE_SEVERITY_ERROR };
-
-         D3D12_MESSAGE_SEVERITY sddevs[] = {
-             D3D12_MESSAGE_SEVERITY_WARNING
-              };
-
-         filter.AllowList.NumSeverities = sizeof(sevs) / sizeof(D3D12_MESSAGE_SEVERITY);
-         filter.AllowList.pSeverityList = sevs;
-
-         filter.DenyList.NumSeverities = sizeof(sddevs) / sizeof(D3D12_MESSAGE_SEVERITY);
-         filter.DenyList.pSeverityList = sddevs;
-
-         auto hr = d3dInfoQueue->AddRetrievalFilterEntries(&filter);*/
+         d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+         d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
      }
+#endif
 }
 
 ComPtr<IUnknown> DX12Context::GetBackBuffer()
@@ -158,17 +137,15 @@ void DX12Context::WaitForPreviousFrame()
 
 void DX12Context::Present()
 {
-   /* ComPtr<ID3D12Resource> back_buffer;
+    ComPtr<ID3D12Resource> back_buffer;
     ASSERT_SUCCEEDED(swap_chain->GetBuffer(frame_index, IID_PPV_ARGS(&back_buffer)));
-    ResourceBarrier(back_buffer, D3D12_RESOURCE_STATE_PRESENT);*/
+    ResourceBarrier(back_buffer, D3D12_RESOURCE_STATE_PRESENT);
 
     commandList->Close();
     ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
 
     // execute the array of command lists
     commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-  
 
     ASSERT_SUCCEEDED(swap_chain->Present(1, 0));
 
@@ -182,13 +159,15 @@ void DX12Context::Present()
 void DX12Context::DrawIndexed(UINT IndexCount)
 {
     current_program->BeforeDraw();
-
     commandList->DrawIndexedInstanced(IndexCount, 1, 0, 0, 0);
     current_program->NextDraw();
 }
 
 void DX12Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
 {
+    current_program->BeforeDraw();
+    commandList->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
+    current_program->NextDraw();
 }
 
 void DX12Context::SetViewport(int width, int height)
@@ -215,15 +194,7 @@ void DX12Context::OMSetRenderTargets(std::vector<ComPtr<IUnknown>> rtv, ComPtr<I
     if (!current_program)
         return;
 
-    int slot = 0;
-    for (auto& x : rtv)
-    {
-        current_program->AttachRTV(slot++, x);
-    }
-
-    current_program->AttachDSV(dsv);
-
-    current_program->UpdateOmSet();
+    current_program->OMSetRenderTargets(rtv, dsv);
 }
 
 void DX12Context::ClearRenderTarget(ComPtr<IUnknown> rtv, const FLOAT ColorRGBA[4])
@@ -321,6 +292,17 @@ ComPtr<IUnknown> DX12Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size,
 
     if (bind_flag & BindFlag::kCbv)
         buffer_size = (buffer_size + 255) & ~255;
+
+    auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
+    if (bind_flag & BindFlag::kRtv)
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+    if (bind_flag & BindFlag::kDsv)
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+    if (bind_flag & BindFlag::kUav)
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
     // create default heap
     // default heap is memory on the GPU. Only the GPU has access to this memory
     // To get data into this heap, we will have to upload the data using
@@ -328,7 +310,7 @@ ComPtr<IUnknown> DX12Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size,
     device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
         D3D12_HEAP_FLAG_NONE, // no flags
-        &CD3DX12_RESOURCE_DESC::Buffer(buffer_size), // resource description for a buffer
+        &desc, // resource description for a buffer
         D3D12_RESOURCE_STATE_COPY_DEST, // we will start this heap in the copy destination state since we will copy data
                                         // from the upload heap to this heap
         nullptr, // optimized clear value must be null for this type of resource. used for render targets and depth/stencil buffers
@@ -427,12 +409,16 @@ void DX12Context::UpdateSubresource(ComPtr<IUnknown> ires, UINT DstSubresource, 
     UpdateSubresources(commandList.Get(), defaultHeap.Get(), uploadHeap.Get(), 0, DstSubresource, 1, &vertexData);
 }
 
+#include <pix_win.h>
+
 void DX12Context::BeginEvent(LPCWSTR Name)
 {
+    PIXBeginEvent(commandList.Get(), 0, Name);
 }
 
 void DX12Context::EndEvent()
 {
+    PIXEndEvent(commandList.Get());
 }
 
 void DX12Context::ResizeBackBuffer(int width, int height)

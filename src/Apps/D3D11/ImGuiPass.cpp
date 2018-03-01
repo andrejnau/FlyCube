@@ -104,7 +104,7 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f* m_height, 0.0f);
 
-    m_program.UseProgram();
+    m_program.UseProgram(0 /*TODO*/);
     dx11_mesh.indices_buffer.Bind();
     dx11_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
     dx11_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
@@ -346,6 +346,11 @@ public:
         }
 
         if (ImGui::SliderInt("s_size", &settings.s_size, 512, 4096))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("use_shadow", &settings.use_shadow))
         {
             modify_settings = true;
         }

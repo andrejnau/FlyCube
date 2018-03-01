@@ -17,10 +17,12 @@ DX11Scene::DX11Scene(ApiType type, GLFWwindow* window, int width, int height)
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
     , m_shadow_pass(m_context, { m_scene_list, m_camera, light_pos }, width, height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
-    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, light_pos, m_render_target_view }, width, height)
-   // , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
-    //, m_imgui_pass((DX11Context&)*m_context_ptr, { *this }, width, height)
+    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, light_pos, nullptr }, width, height)
+    , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
 {
+    if (type == ApiType::kDX11)
+        m_imgui_pass.reset(new ImGuiPass((DX11Context&)*m_context_ptr, { *this }, width, height));
+
     // prevent a call ~aiScene 
     m_scene_list.reserve(2);
 #ifndef _DEBUG
@@ -61,7 +63,8 @@ void DX11Scene::OnUpdate()
 
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        //m_imgui_pass.OnUpdate();
+        if (m_imgui_pass)
+            m_imgui_pass->OnUpdate();
     }
 
     m_geometry_pass.OnUpdate();
@@ -91,14 +94,17 @@ void DX11Scene::OnRender()
     m_context.EndEvent();
 
     m_context.BeginEvent(L"HDR Pass");
-  //  m_compute_luminance.OnRender();
+    m_compute_luminance.OnRender();
     m_context.EndEvent();
 
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        m_context.BeginEvent(L"ImGui Pass");
-        //m_imgui_pass.OnRender();
-        m_context.EndEvent();
+        if (m_imgui_pass)
+        {
+            m_context.BeginEvent(L"ImGui Pass");
+            m_imgui_pass->OnRender();
+            m_context.EndEvent();
+        }
     }
 
     m_context.Present();
@@ -122,14 +128,16 @@ void DX11Scene::OnResize(int width, int height)
     m_geometry_pass.OnResize(width, height);
     m_shadow_pass.OnResize(width, height);
     m_light_pass.OnResize(width, height);
-    //m_imgui_pass.OnResize(width, height);
+    if (m_imgui_pass)
+        m_imgui_pass->OnResize(width, height);
 }
 
 void DX11Scene::OnKey(int key, int action)
 {
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        //m_imgui_pass.OnKey(key, action);
+        if (m_imgui_pass)
+            m_imgui_pass->OnKey(key, action);
         return;
     }
 
@@ -161,7 +169,8 @@ void DX11Scene::OnMouse(bool first_event, double xpos, double ypos)
 {
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        //m_imgui_pass.OnMouse(first_event, xpos, ypos);
+        if (m_imgui_pass)
+            m_imgui_pass->OnMouse(first_event, xpos, ypos);
         return;
     }
 
@@ -184,7 +193,8 @@ void DX11Scene::OnMouseButton(int button, int action)
 {
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        //m_imgui_pass.OnMouseButton(button, action);
+        if (m_imgui_pass)
+            m_imgui_pass->OnMouseButton(button, action);
     }
 }
 
@@ -192,7 +202,8 @@ void DX11Scene::OnScroll(double xoffset, double yoffset)
 {
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        //m_imgui_pass.OnScroll(xoffset, yoffset);
+        if (m_imgui_pass)
+            m_imgui_pass->OnScroll(xoffset, yoffset);
     }
 }
 
@@ -200,7 +211,8 @@ void DX11Scene::OnInputChar(unsigned int ch)
 {
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        //m_imgui_pass.OnInputChar(ch);
+        if (m_imgui_pass)
+            m_imgui_pass->OnInputChar(ch);
     }
 }
 
@@ -208,7 +220,7 @@ void DX11Scene::OnModifySettings(const Settings& settings)
 {
     m_geometry_pass.OnModifySettings(settings);
     m_light_pass.OnModifySettings(settings);
-//    m_compute_luminance.OnModifySettings(settings);
+    m_compute_luminance.OnModifySettings(settings);
     m_shadow_pass.OnModifySettings(settings);
     m_ssao_pass.OnModifySettings(settings);
 }

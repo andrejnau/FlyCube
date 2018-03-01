@@ -179,18 +179,6 @@ public:
         }
     }
 
-    virtual void AttachRTV(uint32_t slot, const ComPtr<IUnknown>& res) override
-    {
-    }
-
-    virtual void AttachDSV(const ComPtr<IUnknown>& res) override
-    {
-    }
-
-    virtual void UpdateOmSet() override
-    {
-    }
-
     virtual void AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc) override
     {
         ComPtr<ID3D11SamplerState> sampler;

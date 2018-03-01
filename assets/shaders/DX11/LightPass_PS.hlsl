@@ -164,9 +164,9 @@ float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffus
     float3 vL = fragPos - lightPos;
     float3 L = normalize(vL);
 
-    float shadow = _sampleCubeShadowPCFDisc5(L, vL);
-    if (!use_shadow)
-        shadow = 1.0;
+    float shadow = 1.0; 
+    if (use_shadow)
+        shadow = _sampleCubeShadowPCFDisc5(L, vL);
 
     float3 hdrColor = float3(ambient * occlusion + diffuse * shadow + specular * shadow);
     return hdrColor;

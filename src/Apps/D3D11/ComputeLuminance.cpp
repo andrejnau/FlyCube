@@ -21,7 +21,7 @@ void ComputeLuminance::OnUpdate()
 ComPtr<IUnknown> ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y)
 {
     m_HDRLum2DPassCS.cs.cbuffer.cbv.dispatchSize = glm::uvec2(thread_group_x, thread_group_y);
-    m_HDRLum2DPassCS.UseProgram();
+    m_HDRLum2DPassCS.UseProgram(1);
 
     uint32_t total_invoke = thread_group_x * thread_group_y;
 
@@ -37,7 +37,7 @@ ComPtr<IUnknown> ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint3
 ComPtr<IUnknown> ComputeLuminance::GetLum1DPassCS(ComPtr<IUnknown> input, uint32_t input_buffer_size, uint32_t thread_group_x)
 {
     m_HDRLum1DPassCS.cs.cbuffer.cbv.bufferSize = input_buffer_size;
-    m_HDRLum1DPassCS.UseProgram();
+    m_HDRLum1DPassCS.UseProgram(1);
 
     ComPtr<IUnknown> buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * thread_group_x, 4, "1d result");
  
@@ -56,8 +56,18 @@ void ComputeLuminance::Draw(ComPtr<IUnknown> input)
     m_HDRApply.ps.cbuffer.cbv.dim = glm::uvec2(m_width, m_height);
     m_HDRApply.ps.cbuffer.$Globals.Exposure = m_settings.Exposure;
     m_HDRApply.ps.cbuffer.$Globals.White = m_settings.White;
-    m_HDRApply.ps.cbuffer.cbv.use_tone_mapping = m_settings.use_tone_mapping;
-    m_HDRApply.UseProgram();
+
+    if (input)
+        m_HDRApply.ps.cbuffer.cbv.use_tone_mapping = m_settings.use_tone_mapping;
+    else
+        m_HDRApply.ps.cbuffer.cbv.use_tone_mapping = false;
+
+    int cnt = 0;
+    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+    {
+        ++cnt;
+    }
+    m_HDRApply.UseProgram(cnt);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_context.OMSetRenderTargets({ m_input.rtv }, m_input.dsv);
@@ -78,28 +88,26 @@ void ComputeLuminance::Draw(ComPtr<IUnknown> input)
 
 void ComputeLuminance::OnRender()
 {
-    // TODO
-    return;
     m_context.SetViewport(m_width, m_height);
 
-    ComPtr<ID3D11Texture2D> texture;
-    m_input.hdr_res.As(&texture);
-
-    D3D11_TEXTURE2D_DESC tex_desc = {};
-    texture->GetDesc(&tex_desc);
-
-    uint32_t thread_group_x = (tex_desc.Width + 31) / 32;
-    uint32_t thread_group_y = (tex_desc.Height + 31) / 32;
-
-    auto buf = GetLum2DPassCS(thread_group_x, thread_group_y);
-    for (int block_size = thread_group_x * thread_group_y; block_size > 1;)
+    if (m_settings.use_tone_mapping)
     {
-        uint32_t next_block_size = (block_size + 127) / 128;
-        buf = GetLum1DPassCS(buf, block_size, next_block_size);
-        block_size = next_block_size;
-    }
+        uint32_t thread_group_x = (m_width + 31) / 32;
+        uint32_t thread_group_y = (m_height + 31) / 32;
 
-    Draw(buf);
+        auto buf = GetLum2DPassCS(thread_group_x, thread_group_y);
+        for (int block_size = thread_group_x * thread_group_y; block_size > 1;)
+        {
+            uint32_t next_block_size = (block_size + 127) / 128;
+            buf = GetLum1DPassCS(buf, block_size, next_block_size);
+            block_size = next_block_size;
+        }
+        Draw(buf);
+    }
+    else
+    {
+        Draw(nullptr);
+    }
 }
 
 void ComputeLuminance::OnResize(int width, int height)

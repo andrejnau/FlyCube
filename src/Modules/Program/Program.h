@@ -3,9 +3,8 @@
 #include "Program/ShaderType.h"
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
-#include <Context/DX11Context.h>
+#include <Context/Context.h>
 #include <d3dcompiler.h>
-#include <d3d11.h>
 #include <wrl.h>
 #include <cstddef>
 #include <map>
