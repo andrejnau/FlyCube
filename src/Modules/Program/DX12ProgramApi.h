@@ -7,12 +7,143 @@
 #include <deque>
 #include <array>
 
+struct BindingInfo
+{
+    D3D_SRV_DIMENSION dimension;
+    bool operator<(const BindingInfo& oth) const
+    {
+        return dimension < oth.dimension;
+    }
+};
+
+class DescriptorVector
+{
+public:
+    DX12Context& m_context;
+    DescriptorVector(DX12Context& context)
+        : m_context(context)
+    {
+        resource_heap.heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        sampler_heap.heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+    }
+
+    struct VectorDescriptors
+    {
+        size_t last = 0;
+        size_t size = 0;
+        ComPtr<ID3D12DescriptorHeap> heap;
+        D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
+
+        std::map<std::tuple<BindingInfo, IUnknown*>, size_t> m_descriptor;
+
+        size_t CreateOffset(DX12Context& context)
+        {
+            if (last + 1 > size)
+            {
+                ComPtr<ID3D12DescriptorHeap> new_heap;
+                D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+                heap_desc.NumDescriptors = 2 * (size + 1);
+                heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+                heap_desc.Type = heap_type;
+                ASSERT_SUCCEEDED(context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&new_heap)));
+                if (size > 0)
+                {
+                    context.device->CopyDescriptorsSimple(
+                        size,
+                        new_heap->GetCPUDescriptorHandleForHeapStart(),
+                        heap->GetCPUDescriptorHandleForHeapStart(),
+                        heap_type);
+                }
+                size = heap_desc.NumDescriptors;
+                heap = new_heap;
+            }
+            return ++last - 1;
+        }
+
+        size_t FindOffset(DX12Context& context, BindingInfo info, ComPtr<IUnknown> res)
+        {
+            auto it = m_descriptor.find({ info, res.Get() });
+            if (it != m_descriptor.end())
+                return it->second;
+            else
+                return m_descriptor[{ info, res.Get() }] = CreateOffset(context);
+        }
+
+        bool HasOffset(DX12Context& context, BindingInfo info, ComPtr<IUnknown> res)
+        {
+            auto it = m_descriptor.find({ info, res.Get() });
+            if (it != m_descriptor.end())
+                return true;
+            return false;
+        }
+    };
+
+    VectorDescriptors& SelectHeap(ResourceType res_type)
+    {
+        switch (res_type)
+        {
+        case ResourceType::kSrv:
+        case ResourceType::kUav:
+            return resource_heap;
+            break;
+        case ResourceType::kSampler:
+            return sampler_heap;
+            break;
+        default:
+        {
+            assert(false);
+            static VectorDescriptors heap;
+            return heap;
+        }
+        }
+    }
+
+    CD3DX12_CPU_DESCRIPTOR_HANDLE GetDescriptor(ResourceType res_type, BindingInfo info, ComPtr<IUnknown> res)
+    {
+        VectorDescriptors& vec_heap = SelectHeap(res_type);
+        size_t offset = vec_heap.FindOffset(m_context, info, res);
+        return CD3DX12_CPU_DESCRIPTOR_HANDLE(
+            vec_heap.heap->GetCPUDescriptorHandleForHeapStart(),
+            offset,
+            m_context.device->GetDescriptorHandleIncrementSize(vec_heap.heap_type));
+    }
+
+    bool HasDescriptor(ResourceType res_type, BindingInfo info, ComPtr<IUnknown> res)
+    {
+        VectorDescriptors& vec_heap = SelectHeap(res_type);
+        return vec_heap.HasOffset(m_context, info, res);
+    }
+
+    VectorDescriptors resource_heap;
+    VectorDescriptors sampler_heap;
+};
+
 class DX12ProgramApi : public ProgramApi
 {
 public:
     DX12ProgramApi(DX12Context& context)
         : m_context(context)
     {
+    }
+
+    DescriptorVector& GetDescriptorVector()
+    {
+        static DescriptorVector vec(m_context);
+        return vec;
+    }
+
+    std::map<std::tuple<ShaderType, ResourceType, uint32_t>, size_t> m_descriptor_count;
+    size_t GetDescriptorCount(ShaderType shader_type, ResourceType res_type, uint32_t slot)
+    {
+        auto it = m_descriptor_count.find({ shader_type, res_type, slot });
+        if (it != m_descriptor_count.end())
+            return it->second;
+        return 1;
+    }
+
+    virtual void SetDescriptorCount(ShaderType shader_type, ResourceType res_type, uint32_t slot, size_t count) override
+    {
+        m_descriptor_count[{shader_type, res_type, slot}] = count;
     }
 
     void SetRootSignature(ID3D12RootSignature* pRootSignature)
@@ -179,6 +310,8 @@ public:
             CreateGraphicsPSO();
     }
 
+    std::map<std::tuple<ShaderType, ResourceType, uint32_t>, BindingInfo> m_binding_info;
+
     void UseProgram(size_t draw_calls) override
     {
         ++draw_calls;
@@ -211,24 +344,31 @@ public:
             {
                 D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
                 ASSERT_SUCCEEDED(reflector->GetResourceBindingDesc(i, &res_desc));
+                ResourceType res_type;
                 switch (res_desc.Type)
                 {
                 case D3D_SIT_SAMPLER:
                     num_sampler = std::max<size_t>(num_sampler, res_desc.BindPoint + res_desc.BindCount);
+                    res_type = ResourceType::kSampler;
                     break;
                 case D3D_SIT_CBUFFER:
                     num_cbv = std::max<size_t>(num_cbv, res_desc.BindPoint + res_desc.BindCount);
+                    res_type = ResourceType::kCbv;
                     break;
                 case D3D_SIT_TBUFFER:
                 case D3D_SIT_TEXTURE:
                 case D3D_SIT_STRUCTURED:
                 case D3D_SIT_BYTEADDRESS:
                     num_srv = std::max<size_t>(num_srv, res_desc.BindPoint + res_desc.BindCount);
+                    res_type = ResourceType::kSrv;
                     break;
                 default:
                     num_uav = std::max<size_t>(num_uav, res_desc.BindPoint + res_desc.BindCount);
+                    res_type = ResourceType::kUav;
                     break;
                 }
+
+                m_binding_info[{shader_blob.first, res_type, res_desc.BindPoint }].dimension = res_desc.Dimension;
             }
 
             if (shader_blob.first == ShaderType::kPixel)
@@ -451,9 +591,22 @@ public:
 
     size_t draw_offset = 0;
 
+  
+
     virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res) override
     {
         CreateSrv(type, name, slot, res);
+
+        D3D12_CPU_DESCRIPTOR_HANDLE res_handle = GetDescriptorVector().GetDescriptor(ResourceType::kSrv, GetBindingInfo(type, ResourceType::kSrv, slot), res);
+        D3D12_CPU_DESCRIPTOR_HANDLE binding_handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(
+            resource_heap->GetCPUDescriptorHandleForHeapStart(),
+            draw_offset * m_num_res + m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SRV] + slot,
+            m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+
+        m_context.device->CopyDescriptors(
+            1, &binding_handle, nullptr,
+            1, &res_handle, nullptr,
+            D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
         const UINT cbvSrvDescriptorSize = m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         CD3DX12_GPU_DESCRIPTOR_HANDLE gpucbvSrvHandle(resource_heap->GetGPUDescriptorHandleForHeapStart(),
@@ -666,6 +819,11 @@ public:
 
 private:
 
+    BindingInfo GetBindingInfo(ShaderType shader_type, ResourceType res_type, uint32_t slot)
+    {
+        return m_binding_info[{shader_type, res_type, slot}];
+    }
+
     void CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& ires)
     {
         if (!ires)
@@ -674,13 +832,18 @@ private:
         ComPtr<ID3D12Resource> res;
         ires.As(&res);
 
+        if (!res)
+            return;
+
         if (type == ShaderType::kPixel)
-         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         else
             m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-        if (!res)
+        if (GetDescriptorVector().HasDescriptor(ResourceType::kSrv, GetBindingInfo(type, ResourceType::kSrv, slot), ires))
             return;
+
+        D3D12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle = GetDescriptorVector().GetDescriptor(ResourceType::kSrv, GetBindingInfo(type, ResourceType::kSrv, slot), ires);
 
         ComPtr<ID3D12ShaderReflection> reflector;
         D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
@@ -689,10 +852,6 @@ private:
         ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
 
         D3D12_RESOURCE_DESC desc = res->GetDesc();
-
-        CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(resource_heap->GetCPUDescriptorHandleForHeapStart(),
-            draw_offset * m_num_res + m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SRV] + slot,
-            m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
         switch (res_desc.Dimension)
         {

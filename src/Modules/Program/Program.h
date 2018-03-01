@@ -83,6 +83,11 @@ public:
     {
     }
 
+    void Resize(size_t count)
+    {
+        m_program_api.SetDescriptorCount(m_shader_type, ResourceType::kSrv, m_slot, count);
+    }
+
     void Attach(const ComPtr<IUnknown>& res = {})
     {
         m_program_api.AttachSRV(m_shader_type, m_name, m_slot, res);
@@ -106,6 +111,11 @@ public:
     {
     }
 
+    void Resize(size_t count)
+    {
+        m_program_api.SetDescriptorCount(m_shader_type, ResourceType::kUav, m_slot, count);
+    }
+
     void Attach(const ComPtr<IUnknown>& res = {})
     {
         m_program_api.AttachUAV(m_shader_type, m_name, m_slot, res);
@@ -126,6 +136,11 @@ public:
         , m_shader_type(shader_type)
         , m_slot(slot)
     {
+    }
+
+    void Resize(size_t count)
+    {
+        m_program_api.SetDescriptorCount(m_shader_type, ResourceType::kSampler, m_slot, count);
     }
 
     void Attach(const SamplerDesc& desc)
