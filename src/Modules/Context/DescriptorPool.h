@@ -10,6 +10,9 @@ using namespace Microsoft::WRL;
 #include "Context/BaseTypes.h"
 #include "Context/Resource.h"
 
+#include <Utilities/DXUtility.h>
+#include <algorithm>
+
 class DX12Context;
 
 struct BindingInfo
@@ -21,6 +24,37 @@ struct BindingInfo
     }
 };
 
+class DescriptorHeapRange
+{
+public:
+    DescriptorHeapRange(ComPtr<ID3D12DescriptorHeap>& heap, size_t offset, size_t size, size_t increment_size);
+    D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(size_t offset = 0) const;
+    D3D12_GPU_DESCRIPTOR_HANDLE GetGpuHandle(size_t offset = 0) const;
+
+private:
+    ComPtr<ID3D12DescriptorHeap>& m_heap;
+    size_t m_offset;
+    size_t m_size;
+    size_t m_increment_size;
+};
+
+class DescriptorHeapAllocator
+{
+public:
+    DescriptorHeapAllocator(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags);
+    DescriptorHeapRange Allocate(size_t count);
+
+private:
+    void ResizeHeap(size_t req_size);
+
+    DX12Context& m_context;
+    D3D12_DESCRIPTOR_HEAP_TYPE m_type;
+    D3D12_DESCRIPTOR_HEAP_FLAGS m_flags;
+    size_t m_offset;
+    size_t m_size;
+    ComPtr<ID3D12DescriptorHeap> m_heap;
+};
+
 struct DescriptorPoolByType
 {
 public:
@@ -29,15 +63,9 @@ public:
     D3D12_CPU_DESCRIPTOR_HANDLE GetDescriptor(BindingInfo info, Resource::Ptr res);
 
 private:
-    size_t CreateOffset();
-    size_t GetOffset(BindingInfo info, Resource::Ptr res);
-
     DX12Context& m_context;
-    D3D12_DESCRIPTOR_HEAP_TYPE m_type;
-    size_t m_tail;
-    size_t m_size;
-    ComPtr<ID3D12DescriptorHeap> m_heap;
-    std::map<std::tuple<BindingInfo, Resource::Ptr>, size_t> m_descriptor_offset;
+    DescriptorHeapAllocator m_heap_alloc;
+    std::map<std::tuple<BindingInfo, Resource::Ptr>, DescriptorHeapRange> m_descriptors;
 };
 
 class DescriptorPool
