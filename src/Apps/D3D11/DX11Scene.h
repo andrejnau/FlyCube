@@ -44,8 +44,8 @@ public:
 private:
     void CreateRT();
 
-    ComPtr<IUnknown> m_render_target_view;
-    ComPtr<IUnknown> m_depth_stencil_view;
+    Resource::Ptr m_render_target_view;
+    Resource::Ptr m_depth_stencil_view;
 
     glm::vec3 light_pos;
 

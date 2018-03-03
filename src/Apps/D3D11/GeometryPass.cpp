@@ -70,8 +70,8 @@ void GeometryPass::OnRender()
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
 
-        ComPtr<IUnknown> bones_info_srv = scene_item.model.bones.GetBonesInfo(m_context);
-        ComPtr<IUnknown> bone_srv = scene_item.model.bones.GetBone(m_context);
+        Resource::Ptr bones_info_srv = scene_item.model.bones.GetBonesInfo(m_context);
+        Resource::Ptr bone_srv = scene_item.model.bones.GetBone(m_context);
             
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bone_srv);

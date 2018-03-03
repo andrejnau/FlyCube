@@ -101,6 +101,7 @@ public:
                 program_api,
                 "<{{BufferName}}>",
                 {{BufferSize}},
+                type,
                 {{BufferIndex}},
                 {
                     {{#Variables}}{{VariableSize}}, {{/Variables}}

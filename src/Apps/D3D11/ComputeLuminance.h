@@ -16,10 +16,10 @@ class ComputeLuminance : public IPass, public IModifySettings
 public:
     struct Input
     {
-        ComPtr<IUnknown>& hdr_res;
+        Resource::Ptr& hdr_res;
         Model<DX11Mesh>& model;
-        ComPtr<IUnknown>& rtv;
-        ComPtr<IUnknown>& dsv;
+        Resource::Ptr& rtv;
+        Resource::Ptr& dsv;
     };
 
     struct Output
@@ -34,10 +34,10 @@ public:
     virtual void OnModifySettings(const Settings & settings) override;
 
 private:
-    ComPtr<IUnknown> GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y);
-    ComPtr<IUnknown > GetLum1DPassCS(ComPtr<IUnknown> input, uint32_t input_buffer_size, uint32_t thread_group_x);
+    Resource::Ptr GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y);
+    Resource::Ptr GetLum1DPassCS(Resource::Ptr input, uint32_t input_buffer_size, uint32_t thread_group_x);
 
-    void Draw(ComPtr<IUnknown> input);
+    void Draw(Resource::Ptr input);
 
     Settings m_settings;
     Context& m_context;

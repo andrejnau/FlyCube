@@ -18,14 +18,14 @@ void ComputeLuminance::OnUpdate()
 {
 }
 
-ComPtr<IUnknown> ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y)
+Resource::Ptr ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y)
 {
     m_HDRLum2DPassCS.cs.cbuffer.cbv.dispatchSize = glm::uvec2(thread_group_x, thread_group_y);
     m_HDRLum2DPassCS.UseProgram(1);
 
     uint32_t total_invoke = thread_group_x * thread_group_y;
 
-    ComPtr<IUnknown> buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * total_invoke, 4, "2d result");
+    Resource::Ptr buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * total_invoke, 4);
 
     m_HDRLum2DPassCS.cs.uav.result.Attach(buffer);
     m_HDRLum2DPassCS.cs.srv.input.Attach(m_input.hdr_res);
@@ -34,12 +34,12 @@ ComPtr<IUnknown> ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint3
     return buffer;
 }
 
-ComPtr<IUnknown> ComputeLuminance::GetLum1DPassCS(ComPtr<IUnknown> input, uint32_t input_buffer_size, uint32_t thread_group_x)
+Resource::Ptr ComputeLuminance::GetLum1DPassCS(Resource::Ptr input, uint32_t input_buffer_size, uint32_t thread_group_x)
 {
     m_HDRLum1DPassCS.cs.cbuffer.cbv.bufferSize = input_buffer_size;
     m_HDRLum1DPassCS.UseProgram(1);
 
-    ComPtr<IUnknown> buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * thread_group_x, 4, "1d result");
+    Resource::Ptr buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * thread_group_x, 4);
  
     m_HDRLum1DPassCS.cs.uav.result.Attach(buffer);
     m_HDRLum1DPassCS.cs.srv.input.Attach(input);
@@ -51,7 +51,7 @@ ComPtr<IUnknown> ComputeLuminance::GetLum1DPassCS(ComPtr<IUnknown> input, uint32
     return buffer;
 }
 
-void ComputeLuminance::Draw(ComPtr<IUnknown> input)
+void ComputeLuminance::Draw(Resource::Ptr input)
 {
     m_HDRApply.ps.cbuffer.cbv.dim = glm::uvec2(m_width, m_height);
     m_HDRApply.ps.cbuffer.$Globals.Exposure = m_settings.Exposure;

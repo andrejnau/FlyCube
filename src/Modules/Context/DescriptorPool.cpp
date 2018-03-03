@@ -10,15 +10,15 @@ DescriptorPoolByType::DescriptorPoolByType(DX12Context& context, D3D12_DESCRIPTO
 {
 }
 
-bool DescriptorPoolByType::HasDescriptor(BindingInfo info, ComPtr<IUnknown> res)
+bool DescriptorPoolByType::HasDescriptor(BindingInfo info, Resource::Ptr res)
 {
-    auto it = m_descriptor_offset.find({ info, res.Get() });
+    auto it = m_descriptor_offset.find({ info, res });
     if (it != m_descriptor_offset.end())
         return true;
     return false;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DescriptorPoolByType::GetDescriptor(BindingInfo info, ComPtr<IUnknown> res)
+D3D12_CPU_DESCRIPTOR_HANDLE DescriptorPoolByType::GetDescriptor(BindingInfo info, Resource::Ptr res)
 {
     size_t offset = GetOffset(info, res);
     return CD3DX12_CPU_DESCRIPTOR_HANDLE(
@@ -51,13 +51,13 @@ size_t DescriptorPoolByType::CreateOffset()
     return m_tail++;
 }
 
-size_t DescriptorPoolByType::GetOffset(BindingInfo info, ComPtr<IUnknown> res)
+size_t DescriptorPoolByType::GetOffset(BindingInfo info, Resource::Ptr res)
 {
-    auto it = m_descriptor_offset.find({ info, res.Get() });
+    auto it = m_descriptor_offset.find({ info, res });
     if (it != m_descriptor_offset.end())
         return it->second;
     else
-        return m_descriptor_offset[{ info, res.Get() }] = CreateOffset();
+        return m_descriptor_offset[{ info, res }] = CreateOffset();
 }
 
 DescriptorPool::DescriptorPool(DX12Context& context)
@@ -67,13 +67,13 @@ DescriptorPool::DescriptorPool(DX12Context& context)
 {
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DescriptorPool::GetDescriptor(ResourceType res_type, BindingInfo info, ComPtr<IUnknown> res)
+D3D12_CPU_DESCRIPTOR_HANDLE DescriptorPool::GetDescriptor(ResourceType res_type, BindingInfo info, Resource::Ptr res)
 {
     DescriptorPoolByType& pool = SelectHeap(res_type);
     return pool.GetDescriptor(info, res);
 }
 
-bool DescriptorPool::HasDescriptor(ResourceType res_type, BindingInfo info, ComPtr<IUnknown> res)
+bool DescriptorPool::HasDescriptor(ResourceType res_type, BindingInfo info, Resource::Ptr res)
 {
     DescriptorPoolByType& pool = SelectHeap(res_type);
     return pool.HasDescriptor(info, res);

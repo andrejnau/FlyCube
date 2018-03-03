@@ -57,7 +57,7 @@ ComPtr<ID3D11ShaderResourceView> CreateSRVFromFile(ComPtr<ID3D11Device>& device,
     return srv;
 }
 
-ComPtr<IUnknown> CreateSRVFromFileDDS(Context& context, TextureInfo& texture)
+Resource::Ptr CreateSRVFromFileDDS(Context& context, TextureInfo& texture)
 {
     gli::texture Texture = gli::load(texture.path);
     auto format = gli::dx().translate(Texture.format());
@@ -74,7 +74,7 @@ ComPtr<IUnknown> CreateSRVFromFileDDS(Context& context, TextureInfo& texture)
     desc.CPUAccessFlags = 0;
     desc.MipLevels = Texture.levels();
 
-    ComPtr<IUnknown> resource = context.CreateTexture(BindFlag::kSrv, desc.Format, 1, desc.Width, desc.Height, desc.ArraySize, desc.MipLevels);
+    Resource::Ptr resource = context.CreateTexture(BindFlag::kSrv, desc.Format, 1, desc.Width, desc.Height, desc.ArraySize, desc.MipLevels);
 
     for (std::size_t Level = 0; Level < desc.MipLevels; ++Level)
     {
@@ -93,7 +93,7 @@ ComPtr<IUnknown> CreateSRVFromFileDDS(Context& context, TextureInfo& texture)
     return resource;
 }
 
-ComPtr<IUnknown> CreateTexture(Context& context, TextureInfo & texture)
+Resource::Ptr CreateTexture(Context& context, TextureInfo & texture)
 {
     if (texture.path.find(".dds") != -1)
         return CreateSRVFromFileDDS(context, texture);

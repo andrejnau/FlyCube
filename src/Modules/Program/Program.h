@@ -24,22 +24,26 @@ public:
         ProgramApi& shader,
         const std::string& name,
         size_t buffer_size, 
+        ShaderType type, 
         UINT slot,
         std::vector<size_t>&& data_size,
         std::vector<size_t>&& data_offset,
         std::vector<size_t>&& buf_offset
     )
         : m_shader(shader)
-        , buffer(shader.GetContext().CreateBuffer(BindFlag::kCbv, buffer_size, 0, name))
+        , buffer(shader.GetContext().CreateBuffer(BindFlag::kCbv, buffer_size, 0))
+        , type(type)
         , slot(slot)
         , data(buffer_size)
         , data_size(std::move(data_size))
         , data_offset(std::move(data_offset))
         , buf_offset(std::move(buf_offset))
     {
+        buffer->SetName(name);
     }
 
-    ComPtr<IUnknown> buffer;
+    Resource::Ptr buffer;
+    ShaderType type;
     UINT slot;
 
     void UpdateCBuffer(const char* src_data)
@@ -57,10 +61,10 @@ public:
         }
 
         if (dirty)
-            m_shader.UpdateData(buffer, data.data());
+            m_shader.UpdateData(type, slot, buffer, data.data());
     }
 
-    ComPtr<IUnknown> GetBuffer()
+    Resource::Ptr& GetBuffer()
     {
         return buffer;
     }
@@ -88,9 +92,9 @@ public:
         m_program_api.SetDescriptorCount(m_shader_type, ResourceType::kSrv, m_slot, count);
     }
 
-    void Attach(const ComPtr<IUnknown>& res = {})
+    void Attach(const Resource::Ptr& ires = {})
     {
-        m_program_api.AttachSRV(m_shader_type, m_name, m_slot, res);
+        m_program_api.AttachSRV(m_shader_type, m_name, m_slot, ires);
     }
 
 private:
@@ -116,9 +120,9 @@ public:
         m_program_api.SetDescriptorCount(m_shader_type, ResourceType::kUav, m_slot, count);
     }
 
-    void Attach(const ComPtr<IUnknown>& res = {})
+    void Attach(const Resource::Ptr& ires = {})
     {
-        m_program_api.AttachUAV(m_shader_type, m_name, m_slot, res);
+        m_program_api.AttachUAV(m_shader_type, m_name, m_slot, ires);
     }
 
 private:

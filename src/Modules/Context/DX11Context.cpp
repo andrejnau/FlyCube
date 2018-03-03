@@ -38,11 +38,15 @@ DX11Context::DX11Context(GLFWwindow* window, int width, int height)
     device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-ComPtr<IUnknown> DX11Context::GetBackBuffer()
+Resource::Ptr DX11Context::GetBackBuffer()
 {
+    DX11Resource::Ptr res = std::make_shared<DX11Resource>();
+
     ComPtr<ID3D11Texture2D> back_buffer;
     ASSERT_SUCCEEDED(swap_chain->GetBuffer(0, IID_PPV_ARGS(&back_buffer)));
-    return back_buffer;
+    res->resource = back_buffer;
+
+    return res;
 }
 
 void DX11Context::ResizeBackBuffer(int width, int height)
@@ -52,7 +56,7 @@ void DX11Context::ResizeBackBuffer(int width, int height)
     ASSERT_SUCCEEDED(swap_chain->ResizeBuffers(1, width, height, desc.BufferDesc.Format, desc.Flags));
 }
 
-void DX11Context::Present()
+void DX11Context::Present(const Resource::Ptr&)
 {
     ASSERT_SUCCEEDED(swap_chain->Present(0, 0));
 }
@@ -79,7 +83,7 @@ void DX11Context::SetViewport(int width, int height)
     device_context->RSSetViewports(1, &viewport);
 }
 
-void DX11Context::OMSetRenderTargets(std::vector<ComPtr<IUnknown>> rtv_res, ComPtr<IUnknown> dsv_res)
+void DX11Context::OMSetRenderTargets(std::vector<Resource::Ptr> rtv_res, Resource::Ptr dsv_res)
 {
     std::vector<ComPtr<ID3D11RenderTargetView>> rtv;
     std::vector<ID3D11RenderTargetView*> rtv_ptr;
@@ -92,63 +96,48 @@ void DX11Context::OMSetRenderTargets(std::vector<ComPtr<IUnknown>> rtv_res, ComP
     device_context->OMSetRenderTargets(rtv_ptr.size(), rtv_ptr.data(), _dsv.Get());
 }
 
-void DX11Context::ClearRenderTarget(ComPtr<IUnknown> rtv, const FLOAT ColorRGBA[4])
+void DX11Context::ClearRenderTarget(Resource::Ptr rtv, const FLOAT ColorRGBA[4])
 {
     device_context->ClearRenderTargetView(ToRtv(rtv).Get(), ColorRGBA);
 }
 
-void DX11Context::ClearDepthStencil(ComPtr<IUnknown> dsv, UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+void DX11Context::ClearDepthStencil(Resource::Ptr dsv, UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
 {
     device_context->ClearDepthStencilView(ToDsv(dsv).Get(), ClearFlags, Depth, Stencil);
 }
 
-ComPtr<IUnknown> DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
+Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
-    D3D11_TEXTURE2D_DESC texture_desc = {};
-    texture_desc.Width = width;
-    texture_desc.Height = height;
-    texture_desc.ArraySize = depth;
-    texture_desc.MipLevels = mip_levels;
-    texture_desc.Format = format;
-    texture_desc.Usage = D3D11_USAGE_DEFAULT;
+    DX11Resource::Ptr res = std::make_shared<DX11Resource>();
+
+    D3D11_TEXTURE2D_DESC desc = {};
+    desc.Width = width;
+    desc.Height = height;
+    desc.ArraySize = depth;
+    desc.MipLevels = mip_levels;
+    desc.Format = format;
+    desc.Usage = D3D11_USAGE_DEFAULT;
 
     if (bind_flag & BindFlag::kRtv)
-        texture_desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+        desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
     if (bind_flag & BindFlag::kDsv)
-        texture_desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
+        desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
     if (bind_flag & BindFlag::kSrv)
-        texture_desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+        desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
 
     if (depth > 1)
-        texture_desc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
+        desc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 
     uint32_t quality = 0;
-    device->CheckMultisampleQualityLevels(texture_desc.Format, msaa_count, &quality);
-    texture_desc.SampleDesc.Count = msaa_count;
-    texture_desc.SampleDesc.Quality = quality - 1;
+    device->CheckMultisampleQualityLevels(desc.Format, msaa_count, &quality);
+    desc.SampleDesc.Count = msaa_count;
+    desc.SampleDesc.Quality = quality - 1;
 
     ComPtr<ID3D11Texture2D> texture;
-    ASSERT_SUCCEEDED(device->CreateTexture2D(&texture_desc, nullptr, &texture));
+    ASSERT_SUCCEEDED(device->CreateTexture2D(&desc, nullptr, &texture));
+    res->resource = texture;
 
-    return texture;
-}
-
-ComPtr<IUnknown> DX11Context::CreateShadowRSState()
-{
-    ComPtr<ID3D11RasterizerState> rasterizer_state;
-    D3D11_RASTERIZER_DESC shadowState = {};
-    shadowState.FillMode = D3D11_FILL_SOLID;
-    shadowState.CullMode = D3D11_CULL_BACK;
-    shadowState.DepthBias = 4096;
-    device->CreateRasterizerState(&shadowState, &rasterizer_state);
-    return rasterizer_state;
-}
-
-void DX11Context::RSSetState(ComPtr<IUnknown> state)
-{
-    ComPtr<ID3D11RasterizerState> rasterizer_state;
-    state.As(&rasterizer_state);
-    device_context->RSSetState(rasterizer_state.Get());
+    return res;
 }
 
 std::unique_ptr<ProgramApi> DX11Context::CreateProgram()
@@ -156,18 +145,20 @@ std::unique_ptr<ProgramApi> DX11Context::CreateProgram()
     return std::make_unique<DX11ProgramApi>(*this);
 }
 
-ComPtr<IUnknown> DX11Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride, const std::string& name)
+Resource::Ptr DX11Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride)
 {
-    ComPtr<ID3D11Buffer> buffer;
+    DX11Resource::Ptr res = std::make_shared<DX11Resource>();
+
     if (buffer_size == 0)
-        return buffer;
+        return res;
+
     D3D11_BUFFER_DESC desc = {};
     desc.Usage = D3D11_USAGE_DEFAULT;
     desc.ByteWidth = buffer_size;
     desc.StructureByteStride = stride;
+
     if (stride != 0)
         desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-
     if (bind_flag & BindFlag::kUav)
         desc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
     if (bind_flag & BindFlag::kCbv)
@@ -179,31 +170,34 @@ ComPtr<IUnknown> DX11Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size,
     if (bind_flag & BindFlag::kIbv)
         desc.BindFlags |= D3D11_BIND_INDEX_BUFFER;
 
+    ComPtr<ID3D11Buffer> buffer;
     ASSERT_SUCCEEDED(device->CreateBuffer(&desc, nullptr, &buffer));
-    buffer->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
-    return buffer;
+    res->resource = buffer;
+
+    return res;
 }
 
-void DX11Context::IASetIndexBuffer(ComPtr<IUnknown> res, UINT SizeInBytes, DXGI_FORMAT Format)
+void DX11Context::IASetIndexBuffer(Resource::Ptr ires, UINT SizeInBytes, DXGI_FORMAT Format)
 {
+    auto res = std::static_pointer_cast<DX11Resource>(ires);
     ComPtr<ID3D11Buffer> buf;
-    res.As(&buf);
+    res->resource.As(&buf);
     device_context->IASetIndexBuffer(buf.Get(), Format, 0);
 }
 
-void DX11Context::IASetVertexBuffer(UINT slot, ComPtr<IUnknown> res, UINT SizeInBytes, UINT Stride)
+void DX11Context::IASetVertexBuffer(UINT slot, Resource::Ptr ires, UINT SizeInBytes, UINT Stride)
 {
+    auto res = std::static_pointer_cast<DX11Resource>(ires);
     ComPtr<ID3D11Buffer> buf;
-    res.As(&buf);
+    res->resource.As(&buf);
     UINT offset = 0;
     device_context->IASetVertexBuffers(slot, 1, buf.GetAddressOf(), &Stride, &offset);
 }
 
-void DX11Context::UpdateSubresource(ComPtr<IUnknown> ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)
+void DX11Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch, size_t version)
 {
-    ComPtr<ID3D11Resource> res;
-    ires.As(&res);
-    device_context->UpdateSubresource(res.Get(), DstSubresource, nullptr, pSrcData, SrcRowPitch, SrcDepthPitch);
+    auto res = std::static_pointer_cast<DX11Resource>(ires);
+    device_context->UpdateSubresource(res->resource.Get(), DstSubresource, nullptr, pSrcData, SrcRowPitch, SrcDepthPitch);
 }
 
 void DX11Context::BeginEvent(LPCWSTR Name)

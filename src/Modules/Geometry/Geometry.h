@@ -95,22 +95,22 @@ public:
         }
     }
 
-    ComPtr<IUnknown> bones_info_srv;
-    ComPtr<IUnknown> bone_srv;
+    Resource::Ptr bones_info_srv;
+    Resource::Ptr bone_srv;
 
-    ComPtr<IUnknown> GetBonesInfo(Context& context)
+    Resource::Ptr GetBonesInfo(Context& context)
     {
         if (!bones_info_srv)
-            bones_info_srv = context.CreateBuffer(BindFlag::kSrv, bone_info.size() * sizeof(BoneInfo), sizeof(BoneInfo), "bones_info");
+            bones_info_srv = context.CreateBuffer(BindFlag::kSrv, bone_info.size() * sizeof(BoneInfo), sizeof(BoneInfo));
         if (!bone_info.empty())
             context.UpdateSubresource(bones_info_srv, 0, bone_info.data(), 0, 0);
         return bones_info_srv;
     }
 
-    ComPtr<IUnknown> GetBone(Context& context)
+    Resource::Ptr GetBone(Context& context)
     {
         if (!bone_srv)
-            bone_srv = context.CreateBuffer(BindFlag::kSrv, bone.size() * sizeof(glm::mat4), sizeof(glm::mat4), "bone");
+            bone_srv = context.CreateBuffer(BindFlag::kSrv, bone.size() * sizeof(glm::mat4), sizeof(glm::mat4));
         if (!bone.empty())
             context.UpdateSubresource(bone_srv, 0, bone.data(), 0, 0);
         return bone_srv;

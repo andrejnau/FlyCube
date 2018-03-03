@@ -23,7 +23,7 @@ public:
 
     struct Output
     {
-        ComPtr<IUnknown> srv;
+        Resource::Ptr srv;
     } output;
 
     ShadowPass(Context& context, const Input& input, int width, int height);

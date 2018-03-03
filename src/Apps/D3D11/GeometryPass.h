@@ -21,11 +21,11 @@ public:
 
     struct Output
     {
-        ComPtr<IUnknown> position;
-        ComPtr<IUnknown> normal;
-        ComPtr<IUnknown> ambient;
-        ComPtr<IUnknown> diffuse;
-        ComPtr<IUnknown> specular;
+        Resource::Ptr position;
+        Resource::Ptr normal;
+        Resource::Ptr ambient;
+        Resource::Ptr diffuse;
+        Resource::Ptr specular;
     } output;
 
     GeometryPass(Context& context, const Input& input, int width, int height);
@@ -44,6 +44,6 @@ private:
 
     void InitGBuffers();
 
-    ComPtr<IUnknown> m_depth_stencil;
+    Resource::Ptr m_depth_stencil;
     Settings m_settings;
 };

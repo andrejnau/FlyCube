@@ -23,7 +23,7 @@ public:
         , m_offset(0)
         , m_size(v.size() * sizeof(v.front()))
     {
-        m_buffer = m_context.CreateBuffer(BindFlag::kVbv, v.size() * sizeof(v.front()), 0, "IAVertexBuffer");
+        m_buffer = m_context.CreateBuffer(BindFlag::kVbv, v.size() * sizeof(v.front()), 0);
         if (m_buffer)
             m_context.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
@@ -36,7 +36,7 @@ public:
 
 private:
     Context& m_context;
-    ComPtr<IUnknown> m_buffer;
+    Resource::Ptr m_buffer;
     UINT m_stride;
     UINT m_offset;
     UINT m_size;
@@ -52,7 +52,7 @@ public:
         , m_offset(0)
         , m_size(v.size() * sizeof(v.front()))
     {
-        m_buffer = m_context.CreateBuffer(BindFlag::kIbv, m_size, 0, "IAIndexBuffer");
+        m_buffer = m_context.CreateBuffer(BindFlag::kIbv, m_size, 0);
         if (m_buffer)
             m_context.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
@@ -65,7 +65,7 @@ public:
 
 private:
     Context& m_context;
-    ComPtr<IUnknown> m_buffer;
+    Resource::Ptr m_buffer;
     UINT m_offset;
     UINT m_size;
     DXGI_FORMAT m_format;
@@ -106,7 +106,7 @@ public:
     IAVertexBuffer bones_count_buffer;
     IAIndexBuffer indices_buffer;
 
-    ComPtr<IUnknown> GetTexture(aiTextureType type)
+    Resource::Ptr GetTexture(aiTextureType type)
     {
         auto it = m_type2id.find(type);
         if (it != m_type2id.end())
@@ -119,7 +119,7 @@ public:
 private:
     void InitTextures()
     {
-        static std::map<std::string, ComPtr<IUnknown>> cache;
+        static std::map<std::string, Resource::Ptr> cache;
 
         for (size_t i = 0; i < textures.size(); ++i)
         {
@@ -137,5 +137,5 @@ private:
 private:
     Context& m_context;
     std::map<aiTextureType, size_t> m_type2id;
-    std::vector<ComPtr<IUnknown>> m_tex_srv;
+    std::vector<Resource::Ptr> m_tex_srv;
 };

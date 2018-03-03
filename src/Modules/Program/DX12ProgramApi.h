@@ -125,6 +125,11 @@ public:
 
     void CreateGraphicsPSO()
     {
+        if (!change_pso_desc)
+            return;
+
+        change_pso_desc = false;
+
         ComPtr<ID3D12ShaderReflection> reflector;
         D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&reflector));
 
@@ -172,40 +177,43 @@ public:
         psoDesc.DepthStencilState = depthStencilDesc; // a default depth stencil state
         ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObject)));
 
-        m_context.commandList->SetPipelineState(pipelineStateObject.Get());
     }
 
     void CreateComputePSO()
     {
+        
         compute_pso.pRootSignature = rootSignature.Get();
         ASSERT_SUCCEEDED(m_context.device->CreateComputePipelineState(&compute_pso, IID_PPV_ARGS(&pipelineStateObject)));
         m_context.commandList->SetPipelineState(pipelineStateObject.Get());
     }
+
+    bool change_pso_desc = false;
 
     void BeforeDraw()
     {
         if (!is_first_draw)
             return;
         is_first_draw = false;
-   
+
         if (m_blob_map.count(ShaderType::kCompute))
             CreateComputePSO();
         else
             CreateGraphicsPSO();
+
+        m_context.commandList->SetPipelineState(pipelineStateObject.Get());
     }
 
     std::map<std::tuple<ShaderType, ResourceType, uint32_t>, BindingInfo> m_binding_info;
 
-    void UseProgram(size_t draw_calls) override
-    {
-        ++draw_calls;
-        is_first_draw = true;
+    size_t num_resources = 0;
+    size_t num_samplers = 0;
+    size_t num_rtvs = 0;
 
-        draw_offset = 0;
-        m_context.current_program = this;
-        size_t num_resources = 0;
-        size_t num_samplers = 0;
-        size_t num_rtvs = 0;
+    void ParseShaders()
+    {
+        num_resources = 0;
+        num_samplers = 0;
+        num_rtvs = 0;
 
         std::vector<D3D12_ROOT_PARAMETER> rootParameters;
         std::deque<std::array<D3D12_DESCRIPTOR_RANGE, 4>> descriptorTableRanges;
@@ -282,7 +290,7 @@ public:
                 break;
             }
 
-          
+
 
             descriptorTableRanges.emplace_back();
             size_t index = 0;
@@ -372,6 +380,28 @@ public:
             num_samplers += num_sampler;
         }
 
+        D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
+
+        CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+        rootSignatureDesc.Init(rootParameters.size(),
+            rootParameters.data(),
+            0,
+            nullptr,
+            rootSignatureFlags);
+
+        ID3DBlob* signature;
+        ID3DBlob* errorBuff; // a buffer holding the error data if any
+        ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &errorBuff),
+            "%s", (char*)errorBuff->GetBufferPointer());
+        ASSERT_SUCCEEDED(m_context.device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+
+    }
+
+    void CreateNewHeap(size_t draw_calls)
+    {
         if (num_resources * draw_calls)
         {
             D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
@@ -410,26 +440,30 @@ public:
             ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&dsv_heap)));
         }
 
-        D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
-            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
+    } 
+    size_t last_draw_calls = 0;
 
-        CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-        rootSignatureDesc.Init(rootParameters.size(),
-            rootParameters.data(),
-            0,
-            nullptr,
-            rootSignatureFlags);
+    void UseProgram(size_t draw_calls) override
+    {
+        ++draw_calls;
+        is_first_draw = true;
 
-        ID3DBlob* signature;
-        ID3DBlob* errorBuff; // a buffer holding the error data if any
-        ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &errorBuff),
-            "%s", (char*)errorBuff->GetBufferPointer());
-        ASSERT_SUCCEEDED(m_context.device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+        draw_offset = 0;
+
+        m_context.current_program = this;
+
+        if (change_pso_desc)
+            ParseShaders();
+
+        m_context.commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         SetRootSignature(rootSignature.Get());
-        m_context.commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        if (last_draw_calls != draw_calls)
+        {
+            CreateNewHeap(draw_calls);
+            last_draw_calls = draw_calls;
+        }
 
         std::vector<ID3D12DescriptorHeap*> descriptorHeaps;
         if (resource_heap)
@@ -445,9 +479,15 @@ public:
     ComPtr<ID3D12DescriptorHeap> dsv_heap;
     ComPtr<ID3D12RootSignature> rootSignature;
 
-    virtual void UpdateData(ComPtr<IUnknown> ires, const void* ptr) override
+    void OnPresent()
     {
-        m_context.UpdateSubresource(ires, 0, ptr, 0, 0);
+        ver.clear();
+    }
+
+    std::map<std::tuple<ShaderType, UINT>, size_t>  ver;
+    virtual void UpdateData(ShaderType type, UINT slot, const Resource::Ptr& ires, const void* ptr) override
+    {
+        m_context.UpdateSubresource(ires, 0, ptr, 0, 0, ++ver[{type, slot}]);
     }
 
     virtual void OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& blob) override
@@ -471,13 +511,15 @@ public:
             psoDesc.GS = ShaderBytecode;
             break;
         }
+
+        change_pso_desc = true;
     }
 
     size_t draw_offset = 0;
 
   
 
-    virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res) override
+    virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override
     {
         CreateSrv(type, name, slot, res);
 
@@ -499,7 +541,7 @@ public:
         SetRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SRV], gpucbvSrvHandle);
     }
 
-    virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res) override
+    virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override
     {
         CreateUAV(type, name, slot, res);
 
@@ -513,14 +555,8 @@ public:
     size_t used_rtv = 0;
     bool use_dsv = false;
 
-    void OMSetRenderTargets(std::vector<ComPtr<IUnknown>> rtv, ComPtr<IUnknown> dsv)
+    void OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv)
     {
-        for (auto& rtv_format : psoDesc.RTVFormats)
-        {
-            rtv_format = DXGI_FORMAT_UNKNOWN;
-        }
-        psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-
         size_t slot = 0;
         used_rtv = 0;
         for (auto& x : rtv)
@@ -549,54 +585,45 @@ public:
 
         // clear the depth/stencil buffer
         m_context.commandList->ClearDepthStencilView(om_dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-
-        ComPtr<ID3D12ShaderReflection> reflector;
-        D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&reflector));
-
-        auto input_layout_elements = GetInputLayout(reflector);
-        D3D12_INPUT_LAYOUT_DESC input_layout = {};
-        input_layout.NumElements = input_layout_elements.size();
-        input_layout.pInputElementDescs = input_layout_elements.data();
-        psoDesc.InputLayout = input_layout;
-
-        //  ComPtr<ID3D12PipelineState> tmppipelineStateObject;
-        //  ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&tmppipelineStateObject)));
-
-        // m_context.commandList->SetPipelineState(tmppipelineStateObject.Get());
-        //pipelineStateObject = tmppipelineStateObject;
     }
 
-    void CreateRTV(uint32_t slot, const ComPtr<IUnknown>& res)
+    void CreateRTV(uint32_t slot, const Resource::Ptr& ires)
     {
-        ComPtr<ID3D12Resource> renderTarget;
-        res.As(&renderTarget);
+        auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-        m_context.ResourceBarrier(renderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtv_heap->GetCPUDescriptorHandleForHeapStart(), slot,
             m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
 
-        psoDesc.RTVFormats[slot] = renderTarget->GetDesc().Format;
+        if (psoDesc.RTVFormats[slot] != res->default_res->GetDesc().Format)
+        {
+            psoDesc.RTVFormats[slot] = res->default_res->GetDesc().Format;
+            change_pso_desc = true;
+        }
 
-        m_context.device->CreateRenderTargetView(renderTarget.Get(), nullptr, rtvHandle);
+        m_context.device->CreateRenderTargetView(res->default_res.Get(), nullptr, rtvHandle);
     }
 
-    void CreateDSV(const ComPtr<IUnknown>& res)
+    void CreateDSV(const Resource::Ptr& ires)
     {
-        if (!res)
+        if (!ires)
             return;
-        ComPtr<ID3D12Resource> renderTarget;
-        res.As(&renderTarget);
 
-        m_context.ResourceBarrier(renderTarget, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        auto res = std::static_pointer_cast<DX12Resource>(ires);
+        
+        m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(dsv_heap->GetCPUDescriptorHandleForHeapStart(), 0,
             m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
 
-        auto desc = renderTarget->GetDesc();
+        auto desc = res->default_res->GetDesc();
 
-        psoDesc.DSVFormat = renderTarget->GetDesc().Format;
-
+        if (psoDesc.DSVFormat != res->default_res->GetDesc().Format)
+        {
+            change_pso_desc = true;
+            psoDesc.DSVFormat = res->default_res->GetDesc().Format;
+        }
 
         if (desc.Format == DXGI_FORMAT_R32_TYPELESS) // TODO
         {
@@ -606,12 +633,12 @@ public:
             dsv_desc.Format = DXGI_FORMAT_D32_FLOAT;
             dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
             dsv_desc.Texture2DArray.ArraySize = desc.DepthOrArraySize;
-            m_context.device->CreateDepthStencilView(renderTarget.Get(), &dsv_desc, rtvHandle);
+            m_context.device->CreateDepthStencilView(res->default_res.Get(), &dsv_desc, rtvHandle);
 
         }
         else
         {
-            m_context.device->CreateDepthStencilView(renderTarget.Get(), nullptr, rtvHandle);
+            m_context.device->CreateDepthStencilView(res->default_res.Get(), nullptr, rtvHandle);
         }
     }
 
@@ -670,19 +697,17 @@ public:
         SetRootDescriptorTable(m_root_param_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER], gpucbvSrvHandle);
     }
 
-    virtual void AttachCBuffer(ShaderType type, uint32_t slot, const ComPtr<IUnknown>& res) override
+    virtual void AttachCBuffer(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override
     {
+        auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-        ComPtr<ID3D12Resource> buf;
-        res.As(&buf);
-
-        m_context.ResourceBarrier(buf, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+        m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 
         // Describe and create a constant buffer view.
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-        cbvDesc.BufferLocation = buf->GetGPUVirtualAddress();
-        cbvDesc.SizeInBytes = (buf->GetDesc().Width + 255) & ~255;	// CB size is required to be 256-byte aligned.
+        cbvDesc.BufferLocation = res->default_res->GetGPUVirtualAddress();
+        cbvDesc.SizeInBytes = (res->default_res->GetDesc().Width + 255) & ~255;	// CB size is required to be 256-byte aligned.
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(resource_heap->GetCPUDescriptorHandleForHeapStart(),
             draw_offset * m_num_res +  m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_CBV] + slot,
@@ -708,13 +733,12 @@ private:
         return m_binding_info[{shader_type, res_type, slot}];
     }
 
-    void CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& ires)
+    void CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
     {
         if (!ires)
             return;
 
-        ComPtr<ID3D12Resource> res;
-        ires.As(&res);
+        auto res = std::static_pointer_cast<DX12Resource>(ires);
 
         if (!res)
             return;
@@ -735,24 +759,20 @@ private:
         D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
         ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
 
-        D3D12_RESOURCE_DESC desc = res->GetDesc();
+        D3D12_RESOURCE_DESC desc = res->default_res->GetDesc();
 
         switch (res_desc.Dimension)
         {
         case D3D_SRV_DIMENSION_BUFFER:
         {
-            size_t stride = 0;
-            UINT stride_size = sizeof(stride);
-            auto hr = res->GetPrivateData(buffer_stride, &stride_size, &stride);
-
             D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
             srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             srv_desc.Format = DXGI_FORMAT_UNKNOWN;
             srv_desc.Buffer.FirstElement = 0;
-            srv_desc.Buffer.NumElements = desc.Width / stride;
-            srv_desc.Buffer.StructureByteStride = stride;
+            srv_desc.Buffer.NumElements = desc.Width / res->stride;
+            srv_desc.Buffer.StructureByteStride = res->stride;
             srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-            m_context.device->CreateShaderResourceView(res.Get(), &srv_desc, cbvSrvHandle);
+            m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, cbvSrvHandle);
 
             break;
         }
@@ -763,7 +783,7 @@ private:
             srv_desc.Format = desc.Format;
             srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
             srv_desc.Texture2D.MipLevels = desc.MipLevels;
-            m_context.device->CreateShaderResourceView(res.Get(), &srv_desc, cbvSrvHandle);
+            m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, cbvSrvHandle);
             break;
         }
         case D3D_SRV_DIMENSION_TEXTURE2DMS:
@@ -772,7 +792,7 @@ private:
             srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             srv_desc.Format = desc.Format;
             srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
-            m_context.device->CreateShaderResourceView(res.Get(), &srv_desc, cbvSrvHandle);
+            m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, cbvSrvHandle);
             break;
         }
         case D3D_SRV_DIMENSION_TEXTURECUBE:
@@ -782,7 +802,7 @@ private:
             srv_desc.Format = DXGI_FORMAT_R32_FLOAT; // TODO tex_dec.Format;
             srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
             srv_desc.TextureCube.MipLevels = desc.MipLevels;
-            m_context.device->CreateShaderResourceView(res.Get(), &srv_desc, cbvSrvHandle);
+            m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, cbvSrvHandle);
             break;
         }
         default:
@@ -791,27 +811,13 @@ private:
         }
     }
 
-    void CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& ires)
+    void CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
     {
         CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(resource_heap->GetCPUDescriptorHandleForHeapStart(),
             draw_offset * m_num_res + m_heap_offset_map[type][D3D12_DESCRIPTOR_RANGE_TYPE_UAV] + slot,
             m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-
-
-        if (!ires)
-        {
-           /* D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
-            uav_desc.Format = DXGI_FORMAT_UNKNOWN;
-            uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-            uav_desc.Buffer.FirstElement = 0;
-            uav_desc.Buffer.NumElements = 4;
-            uav_desc.Buffer.StructureByteStride = 4;
-            m_context.device->CreateUnorderedAccessView(nullptr, nullptr, nullptr, cbvSrvHandle);*/
-            return;
-        }
-
-        ComPtr<ID3D12Resource> res;
-        ires.As(&res);
+       
+        auto res = std::static_pointer_cast<DX12Resource>(ires);
 
         if (!res)
             return;
@@ -822,26 +828,19 @@ private:
         D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
         ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
 
-        D3D12_RESOURCE_DESC desc = res->GetDesc();
-
-  
-
+        D3D12_RESOURCE_DESC desc = res->default_res->GetDesc();
 
         switch (res_desc.Dimension)
         {
         case D3D_SRV_DIMENSION_BUFFER:
         {
-            size_t stride = 0;
-            UINT stride_size = sizeof(stride);
-            auto hr = res->GetPrivateData(buffer_stride, &stride_size, &stride);
-
             D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
             uav_desc.Format = DXGI_FORMAT_UNKNOWN;
             uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
             uav_desc.Buffer.FirstElement = 0;
-            uav_desc.Buffer.NumElements = desc.Width / stride;
-            uav_desc.Buffer.StructureByteStride = stride;
-            m_context.device->CreateUnorderedAccessView(res.Get(), nullptr, &uav_desc, cbvSrvHandle);
+            uav_desc.Buffer.NumElements = desc.Width / res->stride;
+            uav_desc.Buffer.StructureByteStride = res->stride;
+            m_context.device->CreateUnorderedAccessView(res->default_res.Get(), nullptr, &uav_desc, cbvSrvHandle);
      
             break;
         }

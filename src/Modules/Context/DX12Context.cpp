@@ -105,12 +105,14 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
      descriptor_pool.reset(new DescriptorPool(*this));
 }
 
-ComPtr<IUnknown> DX12Context::GetBackBuffer()
+Resource::Ptr DX12Context::GetBackBuffer()
 {
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>();
     ComPtr<ID3D12Resource> back_buffer;
     ASSERT_SUCCEEDED(swap_chain->GetBuffer(frame_index, IID_PPV_ARGS(&back_buffer)));
-    SetState(back_buffer, D3D12_RESOURCE_STATE_PRESENT);
-    return back_buffer;
+    res->state = D3D12_RESOURCE_STATE_PRESENT;
+    res->default_res = back_buffer;
+    return res;
 }
 
 void DX12Context::WaitForPreviousFrame()
@@ -135,12 +137,11 @@ void DX12Context::WaitForPreviousFrame()
     frame_index = swap_chain->GetCurrentBackBufferIndex();
 }
 
+std::vector<DX12ProgramApi*> tmp;
 
-void DX12Context::Present()
+void DX12Context::Present(const Resource::Ptr& ires)
 {
-    ComPtr<ID3D12Resource> back_buffer;
-    ASSERT_SUCCEEDED(swap_chain->GetBuffer(frame_index, IID_PPV_ARGS(&back_buffer)));
-    ResourceBarrier(back_buffer, D3D12_RESOURCE_STATE_PRESENT);
+    ResourceBarrier(std::static_pointer_cast<DX12Resource>(ires), D3D12_RESOURCE_STATE_PRESENT);
 
     commandList->Close();
     ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
@@ -155,6 +156,9 @@ void DX12Context::Present()
     ASSERT_SUCCEEDED(commandAllocator->Reset());
 
     ASSERT_SUCCEEDED(commandList->Reset(commandAllocator.Get(), nullptr));
+
+    for (auto & x : tmp)
+        x->OnPresent();
 }
 
 void DX12Context::DrawIndexed(UINT IndexCount)
@@ -190,7 +194,7 @@ void DX12Context::SetViewport(int width, int height)
     commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
 }
 
-void DX12Context::OMSetRenderTargets(std::vector<ComPtr<IUnknown>> rtv, ComPtr<IUnknown> dsv)
+void DX12Context::OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv)
 {
     if (!current_program)
         return;
@@ -198,216 +202,141 @@ void DX12Context::OMSetRenderTargets(std::vector<ComPtr<IUnknown>> rtv, ComPtr<I
     current_program->OMSetRenderTargets(rtv, dsv);
 }
 
-void DX12Context::ClearRenderTarget(ComPtr<IUnknown> rtv, const FLOAT ColorRGBA[4])
+void DX12Context::ClearRenderTarget(Resource::Ptr rtv, const FLOAT ColorRGBA[4])
 {
 }
 
-void DX12Context::ClearDepthStencil(ComPtr<IUnknown> dsv, UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+void DX12Context::ClearDepthStencil(Resource::Ptr dsv, UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
 {
 }
 
-ComPtr<IUnknown> DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
+Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
-    D3D12_RESOURCE_DESC resourceDescription;
-    // now describe the texture with the information we have obtained from the image
-    resourceDescription = {};
-    resourceDescription.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    resourceDescription.Alignment = 0; // may be 0, 4KB, 64KB, or 4MB. 0 will let runtime decide between 64KB and 4MB (4MB for multi-sampled textures)
-    resourceDescription.Width = width; // width of the texture
-    resourceDescription.Height = height; // height of the texture
-    resourceDescription.DepthOrArraySize = depth; // if 3d image, depth of 3d image. Otherwise an array of 1D or 2D textures (we only have one image, so we set 1)
-    resourceDescription.MipLevels = mip_levels; // Number of mipmaps. We are not generating mipmaps for this texture, so we have only one level
-    resourceDescription.Format = format; // This is the dxgi format of the image (format of the pixels)
-    resourceDescription.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // The arrangement of the pixels. Setting to unknown lets the driver choose the most efficient one
-    resourceDescription.Flags = D3D12_RESOURCE_FLAG_NONE; // no flags
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>();
 
+    D3D12_RESOURCE_DESC desc = {};
+    desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    desc.Width = width;
+    desc.Height = height;
+    desc.DepthOrArraySize = depth;
+    desc.MipLevels = mip_levels;
+    desc.Format = format;
+
+    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS ms_check_desc = {};
+    ms_check_desc.Format = desc.Format;
+    ms_check_desc.SampleCount = msaa_count;
+    device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &ms_check_desc, sizeof(ms_check_desc));
+    desc.SampleDesc.Count = msaa_count;
+    desc.SampleDesc.Quality = ms_check_desc.NumQualityLevels - 1;
 
     if (bind_flag & BindFlag::kRtv)
-        resourceDescription.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     if (bind_flag & BindFlag::kDsv)
-        resourceDescription.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     if (bind_flag & BindFlag::kUav)
-        resourceDescription.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
-    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS ms_desc = {};
-    ms_desc.Format = format;
-    ms_desc.SampleCount = msaa_count;
-    device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &ms_desc, sizeof(ms_desc));
-    resourceDescription.SampleDesc.Count = msaa_count;
-    resourceDescription.SampleDesc.Quality = ms_desc.NumQualityLevels - 1;
+    res->state = D3D12_RESOURCE_STATE_COPY_DEST;
 
-
-    ComPtr<ID3D12Resource> defaultHeap;
-
-    if (format == DXGI_FORMAT_R32_TYPELESS)
-        format = DXGI_FORMAT_D32_FLOAT;
-
-    D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-    depthOptimizedClearValue.Format = format;
-    depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
-    depthOptimizedClearValue.DepthStencil.Stencil = 0;
-    depthOptimizedClearValue.Color[0] = 0;
-    depthOptimizedClearValue.Color[1] = 0.2;
-    depthOptimizedClearValue.Color[2] = 0.4;
-    depthOptimizedClearValue.Color[3] = 1.0;
-
-    D3D12_CLEAR_VALUE* sdgsdfgdffdg = nullptr;
-    //if (resourceDescription.Flags != 0)
-     //   sdgsdfgdffdg = &depthOptimizedClearValue;
-
-    // create a default heap where the upload heap will copy its contents into (contents being the texture)
     ASSERT_SUCCEEDED(device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
-        D3D12_HEAP_FLAG_NONE, // no flags
-        &resourceDescription, // the description of our texture
-        D3D12_RESOURCE_STATE_COPY_DEST, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
-        sdgsdfgdffdg, // used for render targets and depth/stencil buffers
-        IID_PPV_ARGS(&defaultHeap)));
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &desc,
+        res->state,
+        nullptr,
+        IID_PPV_ARGS(&res->default_res)));
 
-    SetState(defaultHeap, D3D12_RESOURCE_STATE_COPY_DEST);
-
-    return defaultHeap;
+    return res;
 }
 
-ComPtr<IUnknown> DX12Context::CreateShadowRSState()
+Resource::Ptr DX12Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride)
 {
-    return ComPtr<IUnknown>();
-}
-
-void DX12Context::RSSetState(ComPtr<IUnknown> state)
-{
-}
-
-std::unique_ptr<ProgramApi> DX12Context::CreateProgram()
-{
-    return std::make_unique<DX12ProgramApi>(*this);
-}
-
-ComPtr<IUnknown> DX12Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride, const std::string & name)
-{
-    ComPtr<ID3D12Resource> defaultHeap;
     if (buffer_size == 0)
-        return defaultHeap;
+        return DX12Resource::Ptr();
+
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>();
 
     if (bind_flag & BindFlag::kCbv)
         buffer_size = (buffer_size + 255) & ~255;
 
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
+
     if (bind_flag & BindFlag::kRtv)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-
     if (bind_flag & BindFlag::kDsv)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
     if (bind_flag & BindFlag::kUav)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
-    // create default heap
-    // default heap is memory on the GPU. Only the GPU has access to this memory
-    // To get data into this heap, we will have to upload the data using
-    // an upload heap
+    res->stride = stride;
+    res->state = D3D12_RESOURCE_STATE_COPY_DEST;
+
     device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
-        D3D12_HEAP_FLAG_NONE, // no flags
-        &desc, // resource description for a buffer
-        D3D12_RESOURCE_STATE_COPY_DEST, // we will start this heap in the copy destination state since we will copy data
-                                        // from the upload heap to this heap
-        nullptr, // optimized clear value must be null for this type of resource. used for render targets and depth/stencil buffers
-        IID_PPV_ARGS(&defaultHeap));
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &desc,
+        res->state,
+        nullptr,
+        IID_PPV_ARGS(&res->default_res));
 
-    SetState(defaultHeap, D3D12_RESOURCE_STATE_COPY_DEST);
-
-
-    defaultHeap->SetPrivateData(buffer_stride, sizeof(stride), &stride);
-    defaultHeap->SetPrivateData(buffer_bind_flag, sizeof(bind_flag), &bind_flag);
-    defaultHeap->SetName(utf8_to_wstring(name).c_str());
-    return defaultHeap;
+    return res;
 }
 
-void DX12Context::IASetIndexBuffer(ComPtr<IUnknown> res, UINT SizeInBytes, DXGI_FORMAT Format)
+void DX12Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch, size_t version)
 {
-    ComPtr<ID3D12Resource> buf;
-    res.As(&buf);
+    auto res = std::static_pointer_cast<DX12Resource>(ires);
+
+    auto& upload_res = res->GetUploadResource(DstSubresource + version);
+    if (!upload_res)
+    {
+        UINT64 buffer_size = GetRequiredIntermediateSize(res->default_res.Get(), DstSubresource, 1);
+        device->CreateCommittedResource(
+            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+            D3D12_HEAP_FLAG_NONE,
+            &CD3DX12_RESOURCE_DESC::Buffer(buffer_size),
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&upload_res));
+    }
+
+    D3D12_SUBRESOURCE_DATA data = {};
+    data.pData = pSrcData;
+    data.RowPitch = SrcRowPitch;
+    data.SlicePitch = SrcDepthPitch;
+
+    ResourceBarrier(res, D3D12_RESOURCE_STATE_COPY_DEST);
+
+    UpdateSubresources(commandList.Get(), res->default_res.Get(), upload_res.Get(), 0, DstSubresource, 1, &data);
+}
+
+
+std::unique_ptr<ProgramApi> DX12Context::CreateProgram()
+{
+    auto res =  std::make_unique<DX12ProgramApi>(*this);
+    tmp.push_back(res.get());
+    return res;
+}
+
+void DX12Context::IASetIndexBuffer(Resource::Ptr ires, UINT SizeInBytes, DXGI_FORMAT Format)
+{
+    auto res = std::static_pointer_cast<DX12Resource>(ires);
     D3D12_INDEX_BUFFER_VIEW indexBufferView = {};
     indexBufferView.Format = Format;
     indexBufferView.SizeInBytes = SizeInBytes;
-    indexBufferView.BufferLocation = buf->GetGPUVirtualAddress();
+    indexBufferView.BufferLocation = res->default_res->GetGPUVirtualAddress();
     commandList->IASetIndexBuffer(&indexBufferView);
-    ResourceBarrier(buf, D3D12_RESOURCE_STATE_INDEX_BUFFER);
+    ResourceBarrier(res, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 }
 
-void DX12Context::IASetVertexBuffer(UINT slot, ComPtr<IUnknown> res, UINT SizeInBytes, UINT Stride)
+void DX12Context::IASetVertexBuffer(UINT slot, Resource::Ptr ires, UINT SizeInBytes, UINT Stride)
 {
-    ComPtr<ID3D12Resource> buf;
-    res.As(&buf);
+    auto res = std::static_pointer_cast<DX12Resource>(ires);
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView = {};
-    vertexBufferView.BufferLocation = buf->GetGPUVirtualAddress();
+    vertexBufferView.BufferLocation = res->default_res->GetGPUVirtualAddress();
     vertexBufferView.SizeInBytes = SizeInBytes;
     vertexBufferView.StrideInBytes = Stride;
     commandList->IASetVertexBuffers(slot, 1, &vertexBufferView);
-    ResourceBarrier(buf, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-}
-
-void DX12Context::UpdateSubresource(ComPtr<IUnknown> ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)
-{
-    ComPtr<ID3D12Resource> defaultHeap;
-    ires.As(&defaultHeap);
-
-    D3D12_RESOURCE_DESC desc = defaultHeap->GetDesc();
-
-    UINT64 textureUploadBufferSize;
-    // this function gets the size an upload buffer needs to be to upload a texture to the gpu.
-    // each row must be 256 byte aligned except for the last row, which can just be the size in bytes of the row
-    // eg. textureUploadBufferSize = ((((width * numBytesPerPixel) + 255) & ~255) * (height - 1)) + (width * numBytesPerPixel);
-    //textureUploadBufferSize = (((imageBytesPerRow + 255) & ~255) * (textureDesc.Height - 1)) + imageBytesPerRow;
-    device->GetCopyableFootprints(&desc, DstSubresource, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
-
-    const UINT subresourceCount = desc.DepthOrArraySize * desc.MipLevels;
-    UINT64 uploadBufferSize = GetRequiredIntermediateSize(defaultHeap.Get(), DstSubresource, 1);
-    ComPtr<ID3D12Resource> uploadHeap;
-    UINT buffer_size = textureUploadBufferSize;
-
-    if (buffer_size != uploadBufferSize)
-    {
-        int msgboxID = MessageBox(
-            NULL,
-            (LPCWSTR)L"Resource not available\nDo you want to try again?",
-            (LPCWSTR)L"Account Details",
-            MB_ICONWARNING | MB_CANCELTRYCONTINUE | MB_DEFBUTTON2
-        );
-        int fghgf = 0;
-    }
-
-    // create upload heap
-    // upload heaps are used to upload data to the GPU. CPU can write to it, GPU can read from it
-    // We will upload the vertex buffer using this heap to the default heap
-    ComPtr<ID3D12Resource> upload_heap;
-    device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), // upload heap
-        D3D12_HEAP_FLAG_NONE, // no flags
-        &CD3DX12_RESOURCE_DESC::Buffer(buffer_size), // resource description for a buffer
-        D3D12_RESOURCE_STATE_GENERIC_READ, // GPU will read from this buffer and copy its contents to the default heap
-        nullptr,
-        IID_PPV_ARGS(&uploadHeap));
-
-    static std::vector<ComPtr<IUnknown>> w;
-    w.push_back(uploadHeap);
-    w.push_back(ires);
-
-    // store vertex buffer in upload heap
-    D3D12_SUBRESOURCE_DATA vertexData = {};
-    vertexData.pData = pSrcData; // pointer to our vertex array
-    vertexData.RowPitch = SrcRowPitch; // size of all our triangle vertex data
-    vertexData.SlicePitch = SrcDepthPitch; // also the size of our triangle vertex data
-
-
-    ResourceBarrier(defaultHeap, D3D12_RESOURCE_STATE_COPY_DEST);
-
-    // we are now creating a command with the command list to copy the data from
-    // the upload heap to the default heap
-    UpdateSubresources(commandList.Get(), defaultHeap.Get(), uploadHeap.Get(), 0, DstSubresource, 1, &vertexData);
+    ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 }
 
 #include <pix_win.h>

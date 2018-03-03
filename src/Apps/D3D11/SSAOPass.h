@@ -23,8 +23,8 @@ public:
 
     struct Output
     {
-        ComPtr<IUnknown> srv;
-        ComPtr<IUnknown> srv_blur;
+        Resource::Ptr srv;
+        Resource::Ptr srv_blur;
     } output;
 
     SSAOPass(Context& context, const Input& input, int width, int height);
@@ -42,9 +42,9 @@ private:
     Input m_input;
     int m_width;
     int m_height;
-    ComPtr<IUnknown> m_noise_texture;
+    Resource::Ptr m_noise_texture;
     ComPtr<ID3D11SamplerState> m_texture_sampler;
-    ComPtr<IUnknown> m_depth_stencil_view;
+    Resource::Ptr m_depth_stencil_view;
     Program<SSAOPassPS, SSAOPassVS> m_program;
     Program<SSAOBlurPassPS, SSAOPassVS> m_program_blur;
 };

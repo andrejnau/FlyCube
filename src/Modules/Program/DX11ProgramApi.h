@@ -22,11 +22,9 @@ public:
         m_context.device_context->IASetInputLayout(input_layout.Get());
     }
 
-    virtual void UpdateData(ComPtr<IUnknown> ires, const void* ptr) override
+    virtual void UpdateData(ShaderType type, UINT slot, const Resource::Ptr& ires, const void* ptr) override
     {
-        ComPtr<ID3D11Resource> buffer;
-        ires.As(&buffer);
-        m_context.device_context->UpdateSubresource(buffer.Get(), 0, nullptr, ptr, 0, 0);
+        m_context.UpdateSubresource(ires, 0, ptr, 0, 0);
     }
 
     std::map<ShaderType, ComPtr<ID3DBlob>> m_blob_map;
@@ -121,12 +119,12 @@ public:
         }
     }
 
-    virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res) override
+    virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override
     {
         Attach(type, slot, CreateSrv(type, name, slot, res));
     }
 
-    virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& res) override
+    virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override
     {
         Attach(type, slot, CreateUAV(type, name, slot, res));
     }
@@ -242,10 +240,12 @@ public:
         }
     }
 
-    virtual void AttachCBuffer(ShaderType type, uint32_t slot, const ComPtr<IUnknown>& res) override
+    virtual void AttachCBuffer(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override
     {
+        auto res = std::static_pointer_cast<DX11Resource>(ires);
+
         ComPtr<ID3D11Buffer> buf;
-        res.As(&buf);
+        res->resource.As(&buf);
 
         switch (type)
         {
@@ -264,18 +264,14 @@ public:
         }
     }
 
-    ComPtr<ID3D11ShaderResourceView> CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& ires)
+    ComPtr<ID3D11ShaderResourceView> CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
     {
         ComPtr<ID3D11ShaderResourceView> srv;
 
         if (!ires)
             return srv;
 
-        ComPtr<ID3D11Resource> res;
-        ires.As(&res);
-
-        if (!res)
-            return srv;
+        auto res = std::static_pointer_cast<DX11Resource>(ires);
 
         ComPtr<ID3D11ShaderReflection> reflector;
         D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
@@ -284,14 +280,14 @@ public:
         ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
 
         D3D11_RESOURCE_DIMENSION dim = {};
-        res->GetType(&dim);
+        res->resource->GetType(&dim);
 
         switch (res_desc.Dimension)
         {
         case D3D_SRV_DIMENSION_BUFFER:
         {
             ComPtr<ID3D11Buffer> buf;
-            res.As(&buf);
+            res->resource.As(&buf);
             D3D11_BUFFER_DESC buf_dec = {};
             buf->GetDesc(&buf_dec);
 
@@ -307,7 +303,7 @@ public:
         case D3D_SRV_DIMENSION_TEXTURE2D:
         {
             ComPtr<ID3D11Texture2D> tex;
-            res.As(&tex);
+            res->resource.As(&tex);
             D3D11_TEXTURE2D_DESC tex_dec = {};
             tex->GetDesc(&tex_dec);
             D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
@@ -320,7 +316,7 @@ public:
         case D3D_SRV_DIMENSION_TEXTURE2DMS:
         {
             ComPtr<ID3D11Texture2D> tex;
-            res.As(&tex);
+            res->resource.As(&tex);
             D3D11_TEXTURE2D_DESC tex_dec = {};
             tex->GetDesc(&tex_dec);
             D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
@@ -332,7 +328,7 @@ public:
         case D3D_SRV_DIMENSION_TEXTURECUBE:
         {
             ComPtr<ID3D11Texture2D> tex;
-            res.As(&tex);
+            res->resource.As(&tex);
             D3D11_TEXTURE2D_DESC tex_dec = {};
             tex->GetDesc(&tex_dec);
             D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
@@ -349,14 +345,13 @@ public:
         return srv;
     }
 
-    ComPtr<ID3D11UnorderedAccessView> CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const ComPtr<IUnknown>& ires)
+    ComPtr<ID3D11UnorderedAccessView> CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
     {
         ComPtr<ID3D11UnorderedAccessView> uav;
         if (!ires)
             return uav;
 
-        ComPtr<ID3D11Resource> res;
-        ires.As(&res);
+        auto res = std::static_pointer_cast<DX11Resource>(ires);
 
         if (!res)
             return uav;
@@ -368,14 +363,14 @@ public:
         ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
 
         D3D11_RESOURCE_DIMENSION dim = {};
-        res->GetType(&dim);
+        res->resource->GetType(&dim);
 
         switch (res_desc.Dimension)
         {
         case D3D_SRV_DIMENSION_BUFFER:
         {
             ComPtr<ID3D11Buffer> buf;
-            res.As(&buf);
+            res->resource.As(&buf);
             D3D11_BUFFER_DESC buf_dec = {};
             buf->GetDesc(&buf_dec);
 

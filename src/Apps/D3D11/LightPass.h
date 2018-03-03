@@ -25,12 +25,12 @@ public:
         Model<DX11Mesh>& model;
         Camera& camera;
         glm::vec3& light_pos;
-        ComPtr<IUnknown> rtv = nullptr;
+        Resource::Ptr rtv = nullptr;
     };
 
     struct Output
     {
-        ComPtr<IUnknown> rtv;
+        Resource::Ptr rtv;
     } output;
 
     void SetDefines(Program<LightPassPS, LightPassVS>& program);
@@ -49,5 +49,5 @@ private:
     int m_width;
     int m_height;
     Program<LightPassPS, LightPassVS> m_program;
-    ComPtr<IUnknown> m_depth_stencil_view;
+    Resource::Ptr m_depth_stencil_view;
 };

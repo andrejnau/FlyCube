@@ -35,8 +35,6 @@ DX11Scene::DX11Scene(ApiType type, GLFWwindow* window, int width, int height)
     CreateRT();
 
     m_camera.SetViewport(m_width, m_height);
-
-    m_context.RSSetState(m_context.CreateShadowRSState());
 }
 
 IScene::Ptr DX11Scene::Create(ApiType api_type, GLFWwindow* window, int width, int height)
@@ -107,7 +105,7 @@ void DX11Scene::OnRender()
         }
     }
 
-    m_context.Present();
+    m_context.Present(m_render_target_view);
 }
 
 void DX11Scene::OnResize(int width, int height)
@@ -118,7 +116,7 @@ void DX11Scene::OnResize(int width, int height)
     m_width = width;
     m_height = height;
 
-    m_render_target_view.Reset();
+    m_render_target_view.reset();
 
     m_context.OnResize(width, height);
 
