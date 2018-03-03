@@ -17,8 +17,6 @@
 
 using namespace Microsoft::WRL;
 
-class Context;
-class SamplerDesc;
 class BufferLayout;
 
 class ProgramApi

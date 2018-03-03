@@ -82,7 +82,7 @@ DescriptorPoolByType::DescriptorPoolByType(DX12Context& context, D3D12_DESCRIPTO
 {
 }
 
-bool DescriptorPoolByType::HasDescriptor(size_t bind_id, const Resource::Ptr& res)
+bool DescriptorPoolByType::HasDescriptor(size_t bind_id, const ComPtr<ID3D12Resource>& res)
 {
     auto it = m_descriptors.find({ bind_id, res });
     if (it != m_descriptors.end())
@@ -90,7 +90,7 @@ bool DescriptorPoolByType::HasDescriptor(size_t bind_id, const Resource::Ptr& re
     return false;
 }
 
-DescriptorHeapRange DescriptorPoolByType::GetDescriptor(size_t bind_id, const Resource::Ptr& res)
+DescriptorHeapRange DescriptorPoolByType::GetDescriptor(size_t bind_id, const ComPtr<ID3D12Resource>& res)
 {
     auto it = m_descriptors.find({ bind_id, res });
     if (it == m_descriptors.end())
@@ -113,13 +113,13 @@ DescriptorPool::DescriptorPool(DX12Context& context)
 {
 }
 
-DescriptorHeapRange DescriptorPool::GetDescriptor(ResourceType res_type, size_t bind_id, const Resource::Ptr& res)
+DescriptorHeapRange DescriptorPool::GetDescriptor(ResourceType res_type, size_t bind_id, const ComPtr<ID3D12Resource>& res)
 {
     DescriptorPoolByType& pool = SelectHeap(res_type);
     return pool.GetDescriptor(bind_id, res);
 }
 
-bool DescriptorPool::HasDescriptor(ResourceType res_type, size_t bind_id, const Resource::Ptr& res)
+bool DescriptorPool::HasDescriptor(ResourceType res_type, size_t bind_id, const ComPtr<ID3D12Resource>& res)
 {
     DescriptorPoolByType& pool = SelectHeap(res_type);
     return pool.HasDescriptor(bind_id, res);

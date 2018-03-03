@@ -105,7 +105,7 @@ void DX12ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32
         std::forward_as_tuple(CreateUAV(type, name, slot, res)));
 }
 
-void DX12ProgramApi::AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& res)
+void DX12ProgramApi::AttachCBV(ShaderType type, uint32_t slot, const ComPtr<ID3D12Resource>& res)
 {
     auto it = m_heap_ranges.find({ type, ResourceType::kCbv, slot });
     if (it != m_heap_ranges.end())
@@ -152,8 +152,8 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
     else
         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), ires);
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), ires);
+    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res->default_res);
+    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res->default_res);
 
     if (is_created_view)
         return handle;
@@ -222,8 +222,8 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), ires);
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), ires);
+    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res->default_res);
+    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res->default_res);
 
     if (is_created_view)
         return handle;
@@ -258,28 +258,26 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
     return handle;
 }
 
-DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
+DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, const ComPtr<ID3D12Resource>& res)
 {
-    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), ires);
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), ires);
+    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res);
+    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res);
 
     if (is_created_view)
         return handle;
 
-    auto res = std::static_pointer_cast<DX12Resource>(ires);
-
     D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
-    desc.BufferLocation = res->default_res->GetGPUVirtualAddress();
-    desc.SizeInBytes = (res->default_res->GetDesc().Width + 255) & ~255;
+    desc.BufferLocation = res->GetGPUVirtualAddress();
+    desc.SizeInBytes = (res->GetDesc().Width + 255) & ~255;
 
     m_context.device->CreateConstantBufferView(&desc, handle.GetCpuHandle());
 
     return handle;
 }
 
-DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
+ComPtr<ID3D12Resource> DX12ProgramApi::CreateCBuffer(size_t buffer_size)
 {
-    DX12Resource::Ptr res = std::make_shared<DX12Resource>();
+    ComPtr<ID3D12Resource> res;
     ComPtr<ID3D12Resource> buffer;
     buffer_size = (buffer_size + 255) & ~255;
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
@@ -289,7 +287,7 @@ DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
         &desc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
-        IID_PPV_ARGS(&res->default_res));
+        IID_PPV_ARGS(&res));
     return res;
 }
 
@@ -370,10 +368,9 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 
 DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
 {
-    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), ires);
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), ires);
-
     auto res = std::static_pointer_cast<DX12Resource>(ires);
+    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res->default_res);
+    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res->default_res);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
@@ -554,9 +551,9 @@ void DX12ProgramApi::ApplyBindings()
         {
             CD3DX12_RANGE range(0, 0);
             char* cbvGPUAddress = nullptr;
-            ASSERT_SUCCEEDED(res->default_res->Map(0, &range, reinterpret_cast<void**>(&cbvGPUAddress)));
+            ASSERT_SUCCEEDED(res->Map(0, &range, reinterpret_cast<void**>(&cbvGPUAddress)));
             memcpy(cbvGPUAddress, buffer_data.data(), buffer_data.size());
-            res->default_res->Unmap(0, &range);
+            res->Unmap(0, &range);
             m_changed_binding = true;
         }
 
@@ -633,7 +630,7 @@ void DX12ProgramApi::ApplyBindings()
             {
                 auto& shader_type = std::get<0>(x.first);
                 auto& res = m_cbv_buffer[{shader_type, slot}][m_cbv_offset[{shader_type, slot}]];
-                m_context.commandList->SetGraphicsRootConstantBufferView(x.second.root_param_index + slot, res->default_res->GetGPUVirtualAddress());
+                m_context.commandList->SetGraphicsRootConstantBufferView(x.second.root_param_index + slot, res->GetGPUVirtualAddress());
             }
         }
     }
