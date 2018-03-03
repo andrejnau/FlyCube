@@ -237,12 +237,32 @@ Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format,
 
     res->state = D3D12_RESOURCE_STATE_COPY_DEST;
 
+    D3D12_CLEAR_VALUE* p_clear_value = nullptr;
+    D3D12_CLEAR_VALUE clear_value = {};
+    clear_value.Format = format;
+    if (bind_flag & BindFlag::kRtv)
+    {
+        clear_value.Color[0] = 0.0f;
+        clear_value.Color[1] = 0.2f;
+        clear_value.Color[2] = 0.4f;
+        clear_value.Color[3] = 1.0f;
+        p_clear_value = &clear_value;
+    }
+    else if (bind_flag & BindFlag::kDsv)
+    {
+        clear_value.DepthStencil.Depth = 1.0f;
+        clear_value.DepthStencil.Stencil = 0.0f;
+        if (format == DXGI_FORMAT_R32_TYPELESS)
+            clear_value.Format = DXGI_FORMAT_D32_FLOAT;
+        p_clear_value = &clear_value;
+    }
+
     ASSERT_SUCCEEDED(device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
         D3D12_HEAP_FLAG_NONE,
         &desc,
         res->state,
-        nullptr,
+        p_clear_value,
         IID_PPV_ARGS(&res->default_res)));
 
     return res;

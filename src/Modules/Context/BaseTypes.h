@@ -30,5 +30,7 @@ enum class ResourceType
     kSrv,
     kUav,
     kCbv,
-    kSampler
+    kSampler,
+    kRtv,
+    kDsv
 };

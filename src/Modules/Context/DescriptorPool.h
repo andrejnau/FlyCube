@@ -60,8 +60,8 @@ struct DescriptorPoolByType
 {
 public:
     DescriptorPoolByType(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type);
-    bool HasDescriptor(size_t bind_id, Resource::Ptr res);
-    DescriptorHeapRange GetDescriptor(size_t bind_id, Resource::Ptr res);
+    bool HasDescriptor(size_t bind_id, const Resource::Ptr& res);
+    DescriptorHeapRange GetDescriptor(size_t bind_id, const Resource::Ptr& res);
 
 private:
     DX12Context& m_context;
@@ -73,8 +73,8 @@ class DescriptorPool
 {
 public:
     DescriptorPool(DX12Context& context);
-    DescriptorHeapRange GetDescriptor(ResourceType res_type, size_t bind_id, Resource::Ptr res);
-    bool HasDescriptor(ResourceType res_type, size_t bind_id, Resource::Ptr res);
+    DescriptorHeapRange GetDescriptor(ResourceType res_type, size_t bind_id, const Resource::Ptr& res);
+    bool HasDescriptor(ResourceType res_type, size_t bind_id, const Resource::Ptr& res);
     void OnFrameBegin();
     void ReqFrameDescription(ResourceType res_type, size_t count);
     DescriptorHeapRange Allocate(ResourceType res_type, size_t count);
@@ -85,6 +85,8 @@ private:
     DX12Context& m_context;
     DescriptorPoolByType m_resource;
     DescriptorPoolByType m_sampler;
+    DescriptorPoolByType m_rtv;
+    DescriptorPoolByType m_dsv;
     DescriptorHeapAllocator m_shader_resource;
     DescriptorHeapAllocator m_shader_sampler;
     size_t m_need_resources = 0;

@@ -147,10 +147,10 @@ std::unique_ptr<ProgramApi> DX11Context::CreateProgram()
 
 Resource::Ptr DX11Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride)
 {
-    DX11Resource::Ptr res = std::make_shared<DX11Resource>();
-
     if (buffer_size == 0)
-        return res;
+        return DX12Resource::Ptr();
+
+    DX11Resource::Ptr res = std::make_shared<DX11Resource>();
 
     D3D11_BUFFER_DESC desc = {};
     desc.Usage = D3D11_USAGE_DEFAULT;

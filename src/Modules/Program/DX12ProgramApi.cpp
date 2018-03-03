@@ -34,33 +34,9 @@ void DX12ProgramApi::SetMaxEvents(size_t count)
 
 void DX12ProgramApi::UseProgram()
 {
-    is_first_draw = true;
-
-    draw_offset = 0;
-
     m_context.current_program = this;
-
     m_context.commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    SetRootSignature(rootSignature.Get());
-
-
-    if (m_num_rtv)
-    {
-        D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-        heap_desc.NumDescriptors = m_num_rtv;
-        heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-        ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&rtv_heap)));
-    }
-
-    {
-        D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-        heap_desc.NumDescriptors = 1;
-        heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-        ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&dsv_heap)));
-    }
+    SetRootSignature(m_root_signature.Get());
 }
 
 void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& blob)
@@ -72,20 +48,20 @@ void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& bl
     switch (type)
     {
     case ShaderType::kVertex:
-        psoDesc.VS = ShaderBytecode;
+        m_pso_desc.VS = ShaderBytecode;
         break;
     case ShaderType::kPixel:
-        psoDesc.PS = ShaderBytecode;
+        m_pso_desc.PS = ShaderBytecode;
         break;
     case ShaderType::kCompute:
-        compute_pso.CS = ShaderBytecode;
+        m_compute_pso_desc.CS = ShaderBytecode;
         break;
     case ShaderType::kGeometry:
-        psoDesc.GS = ShaderBytecode;
+        m_pso_desc.GS = ShaderBytecode;
         break;
     }
 
-    change_pso_desc = true;
+    m_changed_pso_desc = true;
     ParseShaders();
 }
 
@@ -117,17 +93,6 @@ void DX12ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32
         std::forward_as_tuple(CreateUAV(type, name, slot, res)));
 }
 
-void DX12ProgramApi::AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
-{
-    auto it = m_ranges.find({ type, ResourceType::kSampler, slot });
-    if (it != m_ranges.end())
-        m_ranges.erase(it);
-
-    m_ranges.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, ResourceType::kSampler, slot),
-        std::forward_as_tuple(CreateSampler(type, slot, desc)));
-}
-
 void DX12ProgramApi::AttachCBuffer(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
 {
     auto it = m_ranges.find({ type, ResourceType::kCbv, slot });
@@ -140,6 +105,17 @@ void DX12ProgramApi::AttachCBuffer(ShaderType type, uint32_t slot, const Resourc
     m_ranges.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, ResourceType::kCbv, slot),
         std::forward_as_tuple(CreateCBV(type, slot, ires)));
+}
+
+void DX12ProgramApi::AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
+{
+    auto it = m_ranges.find({ type, ResourceType::kSampler, slot });
+    if (it != m_ranges.end())
+        m_ranges.erase(it);
+
+    m_ranges.emplace(std::piecewise_construct,
+        std::forward_as_tuple(type, ResourceType::kSampler, slot),
+        std::forward_as_tuple(CreateSampler(type, slot, desc)));
 }
 
 void DX12ProgramApi::UpdateData(ShaderType type, UINT slot, const Resource::Ptr & ires, const void * ptr)
@@ -269,6 +245,27 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
     return handle;
 }
 
+DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
+{
+    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), ires);
+    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), ires);
+
+    auto res = std::static_pointer_cast<DX12Resource>(ires);
+
+    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+
+    if (is_created_view)
+        return handle;
+
+    D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
+    desc.BufferLocation = res->default_res->GetGPUVirtualAddress();
+    desc.SizeInBytes = (res->default_res->GetDesc().Width + 255) & ~255;
+
+    m_context.device->CreateConstantBufferView(&desc, handle.GetCpuHandle());
+
+    return handle;
+}
+
 DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
 {
     DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kSampler, GetBindingId(m_program_id, type, ResourceType::kSampler, slot), nullptr);
@@ -318,23 +315,68 @@ DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot
     return handle;
 }
 
-DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
+DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr& ires)
 {
-    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), ires);
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), ires);
+    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), nullptr);
+    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), nullptr);
 
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-    if (is_created_view)
-        return handle;
+    if (m_pso_desc.RTVFormats[slot] != res->default_res->GetDesc().Format)
+    {
+        m_pso_desc.RTVFormats[slot] = res->default_res->GetDesc().Format;
+        m_changed_pso_desc = true;
+    }
 
-    D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
-    desc.BufferLocation = res->default_res->GetGPUVirtualAddress();
-    desc.SizeInBytes = (res->default_res->GetDesc().Width + 255) & ~255;
+    if (m_pso_desc.SampleDesc.Count != res->default_res->GetDesc().SampleDesc.Count)
+    {
+        m_pso_desc.SampleDesc = res->default_res->GetDesc().SampleDesc;
+        m_changed_pso_desc = true;
+    }
 
-    m_context.device->CreateConstantBufferView(&desc, handle.GetCpuHandle());
+    m_context.device->CreateRenderTargetView(res->default_res.Get(), nullptr, handle.GetCpuHandle());
+
+    return handle;
+}
+
+DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
+{
+    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), ires);
+    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), ires);
+
+    auto res = std::static_pointer_cast<DX12Resource>(ires);
+
+    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+
+    auto desc = res->default_res->GetDesc();
+
+    if (m_pso_desc.DSVFormat != res->default_res->GetDesc().Format)
+    {
+        m_pso_desc.DSVFormat = res->default_res->GetDesc().Format;
+        m_changed_pso_desc = true;
+    }
+
+    if (m_pso_desc.SampleDesc.Count != res->default_res->GetDesc().SampleDesc.Count)
+    {
+        m_pso_desc.SampleDesc = res->default_res->GetDesc().SampleDesc;
+        m_changed_pso_desc = true;
+    }
+
+    if (desc.Format == DXGI_FORMAT_R32_TYPELESS)
+    {
+        m_pso_desc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+        D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
+        dsv_desc.Format = m_pso_desc.DSVFormat;
+        dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+        dsv_desc.Texture2DArray.ArraySize = desc.DepthOrArraySize;
+        m_context.device->CreateDepthStencilView(res->default_res.Get(), &dsv_desc, handle.GetCpuHandle());
+    }
+    else
+    {
+        m_context.device->CreateDepthStencilView(res->default_res.Get(), nullptr, handle.GetCpuHandle());
+    }
 
     return handle;
 }
@@ -420,65 +462,46 @@ std::vector<D3D12_INPUT_ELEMENT_DESC> DX12ProgramApi::GetInputLayout(ComPtr<ID3D
 
 void DX12ProgramApi::CreateGraphicsPSO()
 {
-    if (!change_pso_desc)
+    if (!m_changed_pso_desc)
         return;
-
-    change_pso_desc = false;
+    m_changed_pso_desc = false;
 
     ComPtr<ID3D12ShaderReflection> reflector;
     D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&reflector));
-
     auto input_layout_elements = GetInputLayout(reflector);
     D3D12_INPUT_LAYOUT_DESC input_layout = {};
     input_layout.NumElements = input_layout_elements.size();
     input_layout.pInputElementDescs = input_layout_elements.data();
 
-    if (psoDesc.RTVFormats[0] != 0)
-    {
-        int b = 0;
-    }
+    m_pso_desc.InputLayout = input_layout;
+    m_pso_desc.pRootSignature = m_root_signature.Get();
+    m_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    m_pso_desc.SampleMask = UINT_MAX;
+    m_pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    m_pso_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    m_pso_desc.NumRenderTargets = m_num_rtv;
 
-    psoDesc.RasterizerState = {};
+    CD3DX12_DEPTH_STENCIL_DESC depth_stencil_desc(D3D12_DEFAULT);
+    depth_stencil_desc.DepthEnable = true;
+    depth_stencil_desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+    depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    depth_stencil_desc.StencilEnable = FALSE;
+    m_pso_desc.DepthStencilState = depth_stencil_desc;
 
-    //if (psoDesc.DSVFormat == DXGI_FORMAT_D32_FLOAT)
-    {
-        psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-        psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
-        psoDesc.RasterizerState.DepthBias = 4096;
-        psoDesc.RasterizerState.DepthClipEnable = false;
-    }
+    m_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+    m_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+    m_pso_desc.RasterizerState.DepthBias = 4096;
+    m_pso_desc.RasterizerState.DepthClipEnable = false;
 
-    psoDesc.InputLayout = input_layout; // the structure describing our input layout
-    psoDesc.pRootSignature = rootSignature.Get(); // the root signature that describes the input data this pso needs
-    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE; // type of topology we are drawing
-
-    DXGI_SAMPLE_DESC sampleDesc = {};
-    sampleDesc.Count = 1; // multisample count (no multisampling, so we just put 1, since we still need 1 sample)
-
-    psoDesc.SampleDesc = sampleDesc; // must be the same sample description as the swapchain and depth/stencil buffer
-    psoDesc.SampleMask = UINT_MAX; // sample mask has to do with multi-sampling. 0xffffffff means point sampling is done
-    psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT); // a default rasterizer state.
-    D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-    psoDesc.BlendState = blendDesc; // a default blent state.
-    psoDesc.NumRenderTargets = m_num_rtv; // we are only binding one render target
-
-    CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
-    depthStencilDesc.DepthEnable = true;
-    depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-    depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-    depthStencilDesc.StencilEnable = FALSE;
-
-    psoDesc.DepthStencilState = depthStencilDesc; // a default depth stencil state
-    ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStateObject)));
-
+    ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&m_pso_desc, IID_PPV_ARGS(&m_pso)));
 }
 
 void DX12ProgramApi::CreateComputePSO()
 {
 
-    compute_pso.pRootSignature = rootSignature.Get();
-    ASSERT_SUCCEEDED(m_context.device->CreateComputePipelineState(&compute_pso, IID_PPV_ARGS(&pipelineStateObject)));
-    m_context.commandList->SetPipelineState(pipelineStateObject.Get());
+    m_compute_pso_desc.pRootSignature = m_root_signature.Get();
+    ASSERT_SUCCEEDED(m_context.device->CreateComputePipelineState(&m_compute_pso_desc, IID_PPV_ARGS(&m_pso)));
+    m_context.commandList->SetPipelineState(m_pso.Get());
 }
 
 void DX12ProgramApi::ApplyBindings()
@@ -488,7 +511,7 @@ void DX12ProgramApi::ApplyBindings()
     else
         CreateGraphicsPSO();
 
-    m_context.commandList->SetPipelineState(pipelineStateObject.Get());
+    m_context.commandList->SetPipelineState(m_pso.Get());
 
     DescriptorHeapRange res_heap = m_context.descriptor_pool->Allocate(ResourceType::kSrv, m_num_cbv + m_num_srv + m_num_uav);
     DescriptorHeapRange sampler_heap = m_context.descriptor_pool->Allocate(ResourceType::kSampler, m_num_sampler);
@@ -744,7 +767,7 @@ void DX12ProgramApi::ParseShaders()
     ID3DBlob* errorBuff; // a buffer holding the error data if any
     ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &errorBuff),
         "%s", (char*)errorBuff->GetBufferPointer());
-    ASSERT_SUCCEEDED(m_context.device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+    ASSERT_SUCCEEDED(m_context.device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signature)));
 
 }
 
@@ -756,86 +779,28 @@ void DX12ProgramApi::OnPresent()
 void DX12ProgramApi::OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv)
 {
     size_t slot = 0;
-    used_rtv = 0;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv;
+    D3D12_CPU_DESCRIPTOR_HANDLE* om_dsv = nullptr;
+
+    std::vector<DescriptorHeapRange> rtv_range;
     for (auto& x : rtv)
     {
-        ++used_rtv;
-        CreateRTV(slot++, x);
+        rtv_range.emplace_back(CreateRTV(slot++, x));
+    }
+
+    for (auto& x : rtv_range)
+    {
+        om_rtv.emplace_back(x.GetCpuHandle());
+        const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+        m_context.commandList->ClearRenderTargetView(om_rtv.back(), clearColor, 0, nullptr);
     }
 
     if (dsv)
-        use_dsv = true;
-    CreateDSV(dsv);
-
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvss;
-    for (int i = 0; i < used_rtv; ++i)
     {
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtv_heap->GetCPUDescriptorHandleForHeapStart(), i,
-            m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
-        const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-        m_context.commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-        rtvss.push_back(rtvHandle);
-    }
-    D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = {};
-    if (dsv_heap && use_dsv)
-        om_dsv = dsv_heap->GetCPUDescriptorHandleForHeapStart();
-    m_context.commandList->OMSetRenderTargets(rtvss.size(), rtvss.data(), FALSE, &om_dsv);
-
-    // clear the depth/stencil buffer
-    m_context.commandList->ClearDepthStencilView(om_dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-}
-
-void DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr & ires)
-{
-    auto res = std::static_pointer_cast<DX12Resource>(ires);
-
-    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtv_heap->GetCPUDescriptorHandleForHeapStart(), slot,
-        m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
-
-    if (psoDesc.RTVFormats[slot] != res->default_res->GetDesc().Format)
-    {
-        psoDesc.RTVFormats[slot] = res->default_res->GetDesc().Format;
-        change_pso_desc = true;
+        auto range = CreateDSV(dsv);
+        om_dsv = &range.GetCpuHandle();
+        m_context.commandList->ClearDepthStencilView(*om_dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
     }
 
-    m_context.device->CreateRenderTargetView(res->default_res.Get(), nullptr, rtvHandle);
-}
-
-void DX12ProgramApi::CreateDSV(const Resource::Ptr & ires)
-{
-    if (!ires)
-        return;
-
-    auto res = std::static_pointer_cast<DX12Resource>(ires);
-
-    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(dsv_heap->GetCPUDescriptorHandleForHeapStart(), 0,
-        m_context.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
-
-    auto desc = res->default_res->GetDesc();
-
-    if (psoDesc.DSVFormat != res->default_res->GetDesc().Format)
-    {
-        change_pso_desc = true;
-        psoDesc.DSVFormat = res->default_res->GetDesc().Format;
-    }
-
-    if (desc.Format == DXGI_FORMAT_R32_TYPELESS) // TODO
-    {
-        psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-
-        D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
-        dsv_desc.Format = DXGI_FORMAT_D32_FLOAT;
-        dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
-        dsv_desc.Texture2DArray.ArraySize = desc.DepthOrArraySize;
-        m_context.device->CreateDepthStencilView(res->default_res.Get(), &dsv_desc, rtvHandle);
-
-    }
-    else
-    {
-        m_context.device->CreateDepthStencilView(res->default_res.Get(), nullptr, rtvHandle);
-    }
+    m_context.commandList->OMSetRenderTargets(om_rtv.size(), om_rtv.data(), FALSE, om_dsv);
 }

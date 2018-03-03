@@ -69,6 +69,7 @@ void DX11Scene::OnUpdate()
     m_shadow_pass.OnUpdate();
     m_ssao_pass.OnUpdate();
     m_light_pass.OnUpdate();
+    m_compute_luminance.OnUpdate();
 }
 
 void DX11Scene::OnRender()

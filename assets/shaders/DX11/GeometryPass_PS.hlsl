@@ -42,9 +42,9 @@ float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, b
 struct PS_OUT
 {
     float4 gPosition : SV_Target0;
-    float3 gNormal   : SV_Target1;
-    float3 gAmbient  : SV_Target2;
-    float3 gDiffuse  : SV_Target3;
+    float4 gNormal   : SV_Target1;
+    float4 gAmbient  : SV_Target2;
+    float4 gDiffuse  : SV_Target3;
     float4 gSpecular : SV_Target4;
 };
 
@@ -80,21 +80,24 @@ PS_OUT main(VS_OUTPUT input)
     output.gPosition = float4(input.fragPos.xyz, 1);
 
     if (HasTexture(normalMap))
-        output.gNormal = CalcBumpedNormal(input);
+        output.gNormal.rgb = CalcBumpedNormal(input);
     else
-        output.gNormal = normalize(input.normal);
+        output.gNormal.rgb = normalize(input.normal);
+    output.gNormal.a = 1.0;
 
-    output.gAmbient = light_ambient;
+    output.gAmbient.rgb = light_ambient;
     if (HasTexture(ambientMap))
-        output.gAmbient *= getTexture(ambientMap, g_sampler, input.texCoord, true).rgb;
+        output.gAmbient.rgb *= getTexture(ambientMap, g_sampler, input.texCoord, true).rgb;
     else
-        output.gAmbient *= material_ambient;
+        output.gAmbient.rgb *= material_ambient;
+    output.gAmbient.a = 1.0;
 
-    output.gDiffuse = light_diffuse;
+    output.gDiffuse.rgb = light_diffuse;
     if (HasTexture(diffuseMap))
-        output.gDiffuse *= getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
+        output.gDiffuse.rgb *= getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
     else
-        output.gDiffuse *= material_diffuse;
+        output.gDiffuse.rgb *= material_diffuse;
+    output.gDiffuse.a = 1.0;
 
     output.gSpecular.rgb = light_specular;
     if (HasTexture(specularMap))

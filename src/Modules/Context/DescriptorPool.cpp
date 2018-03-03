@@ -1,6 +1,7 @@
 #include "Context/DescriptorPool.h"
 #include "Context/DX12Context.h"
 #include <d3dx12.h>
+#include <assert.h>
 
 DescriptorHeapRange::DescriptorHeapRange(ComPtr<ID3D12DescriptorHeap>& heap, size_t offset, size_t size, size_t increment_size, D3D12_DESCRIPTOR_HEAP_TYPE type)
     : m_heap(heap)
@@ -39,7 +40,10 @@ DescriptorHeapAllocator::DescriptorHeapAllocator(DX12Context& context, D3D12_DES
 DescriptorHeapRange DescriptorHeapAllocator::Allocate(size_t count)
 {
     if (m_offset + count > m_size)
+    {
+        assert(!(m_size > 0 && m_flags == D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE));
         ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
+    }
     m_offset += count;
     return DescriptorHeapRange(m_heap, m_offset - count, count, m_context.device->GetDescriptorHandleIncrementSize(m_type), m_type);
 }
@@ -78,7 +82,7 @@ DescriptorPoolByType::DescriptorPoolByType(DX12Context& context, D3D12_DESCRIPTO
 {
 }
 
-bool DescriptorPoolByType::HasDescriptor(size_t bind_id, Resource::Ptr res)
+bool DescriptorPoolByType::HasDescriptor(size_t bind_id, const Resource::Ptr& res)
 {
     auto it = m_descriptors.find({ bind_id, res });
     if (it != m_descriptors.end())
@@ -86,7 +90,7 @@ bool DescriptorPoolByType::HasDescriptor(size_t bind_id, Resource::Ptr res)
     return false;
 }
 
-DescriptorHeapRange DescriptorPoolByType::GetDescriptor(size_t bind_id, Resource::Ptr res)
+DescriptorHeapRange DescriptorPoolByType::GetDescriptor(size_t bind_id, const Resource::Ptr& res)
 {
     auto it = m_descriptors.find({ bind_id, res });
     if (it == m_descriptors.end())
@@ -102,18 +106,20 @@ DescriptorPool::DescriptorPool(DX12Context& context)
     : m_context(context)
     , m_resource(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
     , m_sampler(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)
+    , m_rtv(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
+    , m_dsv(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
     , m_shader_resource(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
     , m_shader_sampler(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
 {
 }
 
-DescriptorHeapRange DescriptorPool::GetDescriptor(ResourceType res_type, size_t bind_id, Resource::Ptr res)
+DescriptorHeapRange DescriptorPool::GetDescriptor(ResourceType res_type, size_t bind_id, const Resource::Ptr& res)
 {
     DescriptorPoolByType& pool = SelectHeap(res_type);
     return pool.GetDescriptor(bind_id, res);
 }
 
-bool DescriptorPool::HasDescriptor(ResourceType res_type, size_t bind_id, Resource::Ptr res)
+bool DescriptorPool::HasDescriptor(ResourceType res_type, size_t bind_id, const Resource::Ptr& res)
 {
     DescriptorPoolByType& pool = SelectHeap(res_type);
     return pool.HasDescriptor(bind_id, res);
@@ -166,10 +172,12 @@ DescriptorPoolByType& DescriptorPool::SelectHeap(ResourceType res_type)
     case ResourceType::kUav:
     case ResourceType::kCbv:
         return m_resource;
-        break;
     case ResourceType::kSampler:
         return m_sampler;
-        break;
+    case ResourceType::kRtv:
+        return m_rtv;
+    case ResourceType::kDsv:
+        return m_dsv;
     default:
     {
         throw "fatal failure";

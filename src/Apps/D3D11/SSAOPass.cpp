@@ -71,13 +71,12 @@ void SSAOPass::OnUpdate()
 
 void SSAOPass::OnRender()
 {
-    m_context.SetViewport(m_width, m_height);
-
     if (!m_settings.use_occlusion)
         return;
 
-    m_program.UseProgram();
+    m_context.SetViewport(m_width, m_height);
 
+    m_program.UseProgram();
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_context.OMSetRenderTargets({ output.srv }, m_depth_stencil_view);
