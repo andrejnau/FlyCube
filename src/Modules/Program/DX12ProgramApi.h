@@ -56,6 +56,7 @@ private:
     std::map<ShaderType, std::map<D3D12_DESCRIPTOR_RANGE_TYPE, size_t>> m_root_param_start_heap_map;
     ComPtr<ID3D12RootSignature> m_root_signature;
     bool m_changed_pso_desc = false;
+    bool m_changed_binding = false;
     D3D12_GRAPHICS_PIPELINE_STATE_DESC m_pso_desc = {};
     D3D12_COMPUTE_PIPELINE_STATE_DESC m_compute_pso_desc = {};
     ComPtr<ID3D12PipelineState> m_pso;
