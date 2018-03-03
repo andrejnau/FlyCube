@@ -69,7 +69,7 @@ public:
         , srv(program_api)
         , uav(program_api)
         , sampler(program_api)
-        , cbuffer_impl(program_api)
+        , cbuffer_impl(*this)
     {
     }
 
@@ -79,31 +79,22 @@ public:
         program_api.OnCompileShader(type, m_shader_buffer);
     }
 
-    virtual void UpdateCBuffers() override
+    virtual void UseShader() override
     {
-        {{#CBuffers}}cbuffer_impl.{{BufferName}}.UpdateCBuffer((const char*)&cbuffer.{{BufferName}}); 
+        {{#CBuffers}}program_api.AttachCBuffer(type, {{BufferIndex}}, cbuffer_impl.{{BufferName}});
         {{/CBuffers}}
     } 
  
  private:
-    virtual void BindCBuffers() override
-    {
-        {{#CBuffers}}program_api.AttachCBuffer(type, {{BufferIndex}}, cbuffer_impl.{{BufferName}}.GetBuffer());
-        {{/CBuffers}}
-    }
-    
     class CBufferImpl
     {
     public:
         {{#CBuffers}}BufferLayout {{BufferName}};
         {{/CBuffers}}
-        CBufferImpl(ProgramApi& program_api)
+        CBufferImpl({{ShaderName}}& shader)
             {{#CBuffers}}{{BufferSeparator}} {{BufferName}}(
-                program_api,
-                "<{{BufferName}}>",
+                (const char*)&shader.cbuffer.{{BufferName}},
                 {{BufferSize}},
-                type,
-                {{BufferIndex}},
                 {
                     {{#Variables}}{{VariableSize}}, {{/Variables}}
                 },

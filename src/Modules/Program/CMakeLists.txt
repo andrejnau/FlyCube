@@ -10,6 +10,7 @@ set(headers
 )
 
 set(sources
+    DX11ProgramApi.cpp
     DX12ProgramApi.cpp
 )
 

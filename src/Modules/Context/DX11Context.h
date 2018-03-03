@@ -12,12 +12,14 @@ using namespace Microsoft::WRL;
 
 #include "Context/Resource.h"
 
+class DX11ProgramApi;
+
 class DX11Context : public Context
 {
 public:
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) override;
     virtual Resource::Ptr CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride) override;
-    virtual void UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void *pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch, size_t version = 0) override;
+    virtual void UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void *pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch) override;
 
     DX11Context(GLFWwindow* window, int width, int height);
     virtual Resource::Ptr GetBackBuffer() override;
@@ -40,6 +42,9 @@ public:
     ComPtr<ID3D11Device> device;
     ComPtr<ID3D11DeviceContext> device_context;
     ComPtr<ID3DUserDefinedAnnotation> perf;
+
+    DX11ProgramApi* current_program = nullptr;
+
 private:
     ComPtr<ID3D11DepthStencilView> ToDsv(const Resource::Ptr& ires)
     {

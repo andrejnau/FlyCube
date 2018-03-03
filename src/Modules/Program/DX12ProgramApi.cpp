@@ -1,4 +1,5 @@
 #include "Program/DX12ProgramApi.h"
+#include "Program/BufferLayout.h"
 
 size_t GenId()
 {
@@ -34,6 +35,7 @@ void DX12ProgramApi::SetMaxEvents(size_t count)
 
 void DX12ProgramApi::UseProgram()
 {
+    m_changed_binding = true;
     m_context.current_program = this;
     m_context.commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     SetRootSignature(m_root_signature.Get());
@@ -69,9 +71,9 @@ void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& bl
 
 void DX12ProgramApi::AttachSRV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr& res)
 {
-    auto it = m_ranges.find({ type, ResourceType::kSrv, slot });
-    if (it != m_ranges.end())
-        m_ranges.erase(it);
+    auto it = m_heap_ranges.find({ type, ResourceType::kSrv, slot });
+    if (it != m_heap_ranges.end())
+        m_heap_ranges.erase(it);
     else if (!res)
         return;
 
@@ -80,16 +82,16 @@ void DX12ProgramApi::AttachSRV(ShaderType type, const std::string & name, uint32
     if (!res)
         return;
 
-    m_ranges.emplace(std::piecewise_construct,
+    m_heap_ranges.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, ResourceType::kSrv, slot),
         std::forward_as_tuple(CreateSrv(type, name, slot, res)));
 }
 
 void DX12ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr& res)
 {
-    auto it = m_ranges.find({ type, ResourceType::kUav, slot });
-    if (it != m_ranges.end())
-        m_ranges.erase(it);
+    auto it = m_heap_ranges.find({ type, ResourceType::kUav, slot });
+    if (it != m_heap_ranges.end())
+        m_heap_ranges.erase(it);
     else if (!res)
         return;
 
@@ -98,16 +100,16 @@ void DX12ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32
     if (!res)
         return;
 
-    m_ranges.emplace(std::piecewise_construct,
+    m_heap_ranges.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, ResourceType::kUav, slot),
         std::forward_as_tuple(CreateUAV(type, name, slot, res)));
 }
 
-void DX12ProgramApi::AttachCBuffer(ShaderType type, uint32_t slot, const Resource::Ptr& res)
+void DX12ProgramApi::AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& res)
 {
-    auto it = m_ranges.find({ type, ResourceType::kCbv, slot });
-    if (it != m_ranges.end())
-        m_ranges.erase(it);
+    auto it = m_heap_ranges.find({ type, ResourceType::kCbv, slot });
+    if (it != m_heap_ranges.end())
+        m_heap_ranges.erase(it);
     else if (!res)
         return;
 
@@ -116,34 +118,29 @@ void DX12ProgramApi::AttachCBuffer(ShaderType type, uint32_t slot, const Resourc
     if (!res)
         return;
 
-    m_ranges.emplace(std::piecewise_construct,
+    m_heap_ranges.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, ResourceType::kCbv, slot),
         std::forward_as_tuple(CreateCBV(type, slot, res)));
 }
 
+void DX12ProgramApi::AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buffer)
+{
+    m_cbv_layout.emplace(std::piecewise_construct,
+        std::forward_as_tuple(type, slot),
+        std::forward_as_tuple(buffer));
+}
+
 void DX12ProgramApi::AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
 {
-    auto it = m_ranges.find({ type, ResourceType::kSampler, slot });
-    if (it != m_ranges.end())
-        m_ranges.erase(it);
+    auto it = m_heap_ranges.find({ type, ResourceType::kSampler, slot });
+    if (it != m_heap_ranges.end())
+        m_heap_ranges.erase(it);
 
     m_changed_binding = true;
 
-    m_ranges.emplace(std::piecewise_construct,
+    m_heap_ranges.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, ResourceType::kSampler, slot),
         std::forward_as_tuple(CreateSampler(type, slot, desc)));
-}
-
-void DX12ProgramApi::UpdateData(ShaderType type, UINT slot, const Resource::Ptr & ires, const void * ptr)
-{
-    m_context.UpdateSubresource(ires, 0, ptr, 0, 0, ++ver[{type, slot}]);
-    auto res = std::static_pointer_cast<DX12Resource>(ires);
-    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-}
-
-Context & DX12ProgramApi::GetContext()
-{
-    return m_context;
 }
 
 DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
@@ -266,12 +263,10 @@ DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, co
     bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), ires);
     DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), ires);
 
-    auto res = std::static_pointer_cast<DX12Resource>(ires);
-
-    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-
     if (is_created_view)
         return handle;
+
+    auto res = std::static_pointer_cast<DX12Resource>(ires);
 
     D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
     desc.BufferLocation = res->default_res->GetGPUVirtualAddress();
@@ -280,6 +275,22 @@ DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, co
     m_context.device->CreateConstantBufferView(&desc, handle.GetCpuHandle());
 
     return handle;
+}
+
+DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
+{
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>();
+    ComPtr<ID3D12Resource> buffer;
+    buffer_size = (buffer_size + 255) & ~255;
+    auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
+    m_context.device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+        D3D12_HEAP_FLAG_NONE,
+        &desc,
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        IID_PPV_ARGS(&res->default_res));
+    return res;
 }
 
 DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
@@ -528,6 +539,33 @@ void DX12ProgramApi::ApplyBindings()
     else
         CreateGraphicsPSO();
 
+    for (auto &x : m_cbv_layout)
+    {
+        BufferLayout& buffer = x.second;
+        auto& buffer_data = buffer.GetBuffer();
+        bool change_buffer = buffer.SyncData();
+        if (change_buffer && m_cbv_offset.count(x.first))
+            ++m_cbv_offset[x.first];
+        if (m_cbv_offset[x.first] >= m_cbv_buffer[x.first].size())
+            m_cbv_buffer[x.first].push_back(CreateCBuffer(buffer_data.size()));
+
+        auto& res = m_cbv_buffer[x.first][m_cbv_offset[x.first]];
+        if (change_buffer)
+        {
+            CD3DX12_RANGE range(0, 0);
+            char* cbvGPUAddress = nullptr;
+            ASSERT_SUCCEEDED(res->default_res->Map(0, &range, reinterpret_cast<void**>(&cbvGPUAddress)));
+            memcpy(cbvGPUAddress, buffer_data.data(), buffer_data.size());
+            res->default_res->Unmap(0, &range);
+            m_changed_binding = true;
+        }
+
+        if (m_use_cbv_table)
+        {
+            AttachCBV(std::get<0>(x.first), std::get<1>(x.first), res);
+        }
+    }
+
     if (!m_changed_binding)
         return;
     m_changed_binding = false;
@@ -543,7 +581,7 @@ void DX12ProgramApi::ApplyBindings()
         descriptor_heaps[descriptor_count++] = sampler_heap.GetHeap().Get();
     m_context.commandList->SetDescriptorHeaps(descriptor_count, descriptor_heaps);
 
-    for (auto & x : m_ranges)
+    for (auto & x : m_heap_ranges)
     {
         D3D12_DESCRIPTOR_RANGE_TYPE range_type;
         D3D12_DESCRIPTOR_HEAP_TYPE heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -566,7 +604,8 @@ void DX12ProgramApi::ApplyBindings()
             break;
         }
         D3D12_CPU_DESCRIPTOR_HANDLE view_handle = x.second.GetCpuHandle();
-        D3D12_CPU_DESCRIPTOR_HANDLE binding_handle = heap_range.get().GetCpuHandle(m_heap_offset_map[std::get<0>(x.first)][range_type] + std::get<2>(x.first));
+
+        D3D12_CPU_DESCRIPTOR_HANDLE binding_handle = heap_range.get().GetCpuHandle(m_binding_layout[{std::get<0>(x.first), range_type}].table.heap_offset + std::get<2>(x.first));
 
         m_context.device->CopyDescriptors(
             1, &binding_handle, nullptr,
@@ -574,19 +613,28 @@ void DX12ProgramApi::ApplyBindings()
             heap_type);
     }
 
-    for (auto & x : m_root_param_map)
+    for (auto &x : m_binding_layout)
     {
-        for (auto & y : x.second)
+        if (x.second.type == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
         {
             std::reference_wrapper<DescriptorHeapRange> heap_range = res_heap;
-            switch (y.first)
+            switch (std::get<1>(x.first))
             {
             case D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER:
                 heap_range = std::ref(sampler_heap);
                 break;
             }
 
-            SetRootDescriptorTable(y.second, heap_range.get().GetGpuHandle(m_root_param_start_heap_map[x.first][y.first]));
+            SetRootDescriptorTable(x.second.root_param_index, heap_range.get().GetGpuHandle(x.second.table.root_param_heap_offset));
+        }
+        else if (x.second.type == D3D12_ROOT_PARAMETER_TYPE_CBV)
+        {
+            for (size_t slot = 0; slot < x.second.view.root_param_num; ++slot)
+            {
+                auto& shader_type = std::get<0>(x.first);
+                auto& res = m_cbv_buffer[{shader_type, slot}][m_cbv_offset[{shader_type, slot}]];
+                m_context.commandList->SetGraphicsRootConstantBufferView(x.second.root_param_index + slot, res->default_res->GetGPUVirtualAddress());
+            }
         }
     }
 }
@@ -602,15 +650,10 @@ void DX12ProgramApi::ParseShaders()
     size_t num_resources = 0;
     size_t num_samplers = 0;
 
-    std::vector<D3D12_ROOT_PARAMETER> rootParameters;
-    std::deque<std::array<D3D12_DESCRIPTOR_RANGE, 4>> descriptorTableRanges;
+    std::vector<D3D12_ROOT_PARAMETER> root_parameters;
+    std::deque<std::array<D3D12_DESCRIPTOR_RANGE, 4>> descriptor_table_ranges;
     for (auto& shader_blob : m_blob_map)
     {
-        m_root_param_start_heap_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_SRV] = num_resources;
-        m_root_param_start_heap_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_UAV] = num_resources;
-        m_root_param_start_heap_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_CBV] = num_resources;
-        m_root_param_start_heap_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER] = num_samplers;
-
         size_t num_cbv = 0;
         size_t num_srv = 0;
         size_t num_uav = 0;
@@ -677,88 +720,120 @@ void DX12ProgramApi::ParseShaders()
             break;
         }
 
-        descriptorTableRanges.emplace_back();
+        m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SRV}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SRV}].table.root_param_heap_offset = num_resources;
+        m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SRV}].table.heap_offset = num_resources;
+
+        m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_UAV}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_UAV}].table.root_param_heap_offset = num_resources;
+        m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_UAV}].table.heap_offset = num_resources + num_srv;
+
+        if (m_use_cbv_table)
+        {
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].table.root_param_heap_offset = num_resources;
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].table.heap_offset = num_resources + num_srv + num_uav;
+        }
+        else
+        {
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].type = D3D12_ROOT_PARAMETER_TYPE_CBV;
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].view.root_param_num = num_cbv;
+        }
+
+        m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER}].table.root_param_heap_offset = num_samplers;
+        m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER}].table.heap_offset = num_samplers;
+
+        if (!num_srv)
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SRV}].root_param_index = -1;
+        if (!num_uav)
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_UAV}].root_param_index = -1;
+        if (!num_cbv)
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].root_param_index = -1;
+        if (!num_sampler)
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER}].root_param_index = -1;
+
+        descriptor_table_ranges.emplace_back();
         size_t index = 0;
 
-        m_heap_offset_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_SRV] = num_resources;
-        m_heap_offset_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_UAV] = num_resources + num_srv;
-        m_heap_offset_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_CBV] = num_resources + num_srv + num_uav;
-        m_heap_offset_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER] = num_samplers;
-
-        if ((num_srv + num_uav + num_cbv) > 0)
+        if (((num_srv + num_uav) > 0) || (m_use_cbv_table && num_cbv > 0))
         {
             if (num_srv)
             {
-                descriptorTableRanges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                descriptorTableRanges.back()[index].NumDescriptors = num_srv;
-                descriptorTableRanges.back()[index].BaseShaderRegister = 0;
-                descriptorTableRanges.back()[index].RegisterSpace = 0;
-                descriptorTableRanges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+                descriptor_table_ranges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                descriptor_table_ranges.back()[index].NumDescriptors = num_srv;
+                descriptor_table_ranges.back()[index].BaseShaderRegister = 0;
+                descriptor_table_ranges.back()[index].RegisterSpace = 0;
+                descriptor_table_ranges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
                 ++index;
             }
 
             if (num_uav)
             {
-                descriptorTableRanges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-                descriptorTableRanges.back()[index].NumDescriptors = num_uav;
-                descriptorTableRanges.back()[index].BaseShaderRegister = 0;
-                descriptorTableRanges.back()[index].RegisterSpace = 0;
-                descriptorTableRanges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+                descriptor_table_ranges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                descriptor_table_ranges.back()[index].NumDescriptors = num_uav;
+                descriptor_table_ranges.back()[index].BaseShaderRegister = 0;
+                descriptor_table_ranges.back()[index].RegisterSpace = 0;
+                descriptor_table_ranges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
                 ++index;
             }
 
-            if (num_cbv)
+            if (m_use_cbv_table && num_cbv)
             {
-                descriptorTableRanges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-                descriptorTableRanges.back()[index].NumDescriptors = num_cbv;
-                descriptorTableRanges.back()[index].BaseShaderRegister = 0;
-                descriptorTableRanges.back()[index].RegisterSpace = 0;
-                descriptorTableRanges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+                descriptor_table_ranges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                descriptor_table_ranges.back()[index].NumDescriptors = num_cbv;
+                descriptor_table_ranges.back()[index].BaseShaderRegister = 0;
+                descriptor_table_ranges.back()[index].RegisterSpace = 0;
+                descriptor_table_ranges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
                 ++index;
             }
 
             D3D12_ROOT_DESCRIPTOR_TABLE descriptorTableTexture;
             descriptorTableTexture.NumDescriptorRanges = index;
-            descriptorTableTexture.pDescriptorRanges = &descriptorTableRanges.back()[0];
+            descriptorTableTexture.pDescriptorRanges = &descriptor_table_ranges.back()[0];
 
-            m_root_param_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_SRV] = rootParameters.size();
-            m_root_param_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_UAV] = rootParameters.size();
-            m_root_param_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_CBV] = rootParameters.size();
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SRV}].root_param_index = root_parameters.size();
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_UAV}].root_param_index = root_parameters.size();
+            if (m_use_cbv_table)
+                m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].root_param_index = root_parameters.size();
 
-            rootParameters.emplace_back();
-            rootParameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-            rootParameters.back().DescriptorTable = descriptorTableTexture;
-            rootParameters.back().ShaderVisibility = visibility;
+            root_parameters.emplace_back();
+            root_parameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            root_parameters.back().DescriptorTable = descriptorTableTexture;
+            root_parameters.back().ShaderVisibility = visibility;
         }
-        else
+
+        if (!m_use_cbv_table && num_cbv > 0)
         {
-            m_root_param_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_SRV] = -1;
-            m_root_param_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_UAV] = -1;
-            m_root_param_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_CBV] = -1;
-        }
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].root_param_index = root_parameters.size();
 
+            for (size_t j = 0; j < num_cbv; ++j)
+            {
+                root_parameters.emplace_back();
+                root_parameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+                root_parameters.back().Descriptor.ShaderRegister = j;
+                root_parameters.back().ShaderVisibility = visibility;
+            }
+        }
+        
         if (num_sampler)
         {
-            descriptorTableRanges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-            descriptorTableRanges.back()[index].NumDescriptors = num_sampler;
-            descriptorTableRanges.back()[index].BaseShaderRegister = 0;
-            descriptorTableRanges.back()[index].RegisterSpace = 0;
-            descriptorTableRanges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+            descriptor_table_ranges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+            descriptor_table_ranges.back()[index].NumDescriptors = num_sampler;
+            descriptor_table_ranges.back()[index].BaseShaderRegister = 0;
+            descriptor_table_ranges.back()[index].RegisterSpace = 0;
+            descriptor_table_ranges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
             D3D12_ROOT_DESCRIPTOR_TABLE descriptorTableSampler;
             descriptorTableSampler.NumDescriptorRanges = 1;
-            descriptorTableSampler.pDescriptorRanges = &descriptorTableRanges.back()[index];
+            descriptorTableSampler.pDescriptorRanges = &descriptor_table_ranges.back()[index];
 
-            m_root_param_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER] = rootParameters.size();
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER}].root_param_index = root_parameters.size();
 
-            rootParameters.emplace_back();
-            rootParameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-            rootParameters.back().DescriptorTable = descriptorTableSampler;
-            rootParameters.back().ShaderVisibility = visibility;
-        }
-        else
-        {
-            m_root_param_map[shader_blob.first][D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER] = -1;
+            root_parameters.emplace_back();
+            root_parameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            root_parameters.back().DescriptorTable = descriptorTableSampler;
+            root_parameters.back().ShaderVisibility = visibility;
         }
 
         num_resources += num_cbv + num_srv + num_uav;
@@ -776,23 +851,22 @@ void DX12ProgramApi::ParseShaders()
         D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
 
     CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-    rootSignatureDesc.Init(rootParameters.size(),
-        rootParameters.data(),
+    rootSignatureDesc.Init(root_parameters.size(),
+        root_parameters.data(),
         0,
         nullptr,
         rootSignatureFlags);
 
     ID3DBlob* signature;
-    ID3DBlob* errorBuff; // a buffer holding the error data if any
+    ID3DBlob* errorBuff;
     ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &errorBuff),
         "%s", (char*)errorBuff->GetBufferPointer());
     ASSERT_SUCCEEDED(m_context.device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signature)));
-
 }
 
 void DX12ProgramApi::OnPresent()
 {
-    ver.clear();
+    m_cbv_offset.clear();
 }
 
 void DX12ProgramApi::OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv)

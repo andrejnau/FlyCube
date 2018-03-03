@@ -301,11 +301,11 @@ Resource::Ptr DX12Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, si
     return res;
 }
 
-void DX12Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch, size_t version)
+void DX12Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-    auto& upload_res = res->GetUploadResource(DstSubresource + version);
+    auto& upload_res = res->GetUploadResource(DstSubresource);
     if (!upload_res)
     {
         UINT64 buffer_size = GetRequiredIntermediateSize(res->default_res.Get(), DstSubresource, 1);
@@ -327,7 +327,6 @@ void DX12Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresour
 
     UpdateSubresources(commandList.Get(), res->default_res.Get(), upload_res.Get(), 0, DstSubresource, 1, &data);
 }
-
 
 std::unique_ptr<ProgramApi> DX12Context::CreateProgram()
 {

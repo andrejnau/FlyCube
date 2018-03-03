@@ -65,7 +65,6 @@ void ShadowPass::OnRender()
     for (auto& scene_item : m_input.scene_list)
     {
         m_program.vs.cbuffer.Params.World = glm::transpose(scene_item.matrix);
-        m_program.vs.UpdateCBuffers();
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
 

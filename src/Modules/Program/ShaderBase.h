@@ -20,9 +20,8 @@ protected:
     
 public:
     virtual ~ShaderBase() = default;
-    virtual void UpdateCBuffers() = 0;
-    virtual void BindCBuffers() = 0;
     virtual void UpdateShader() = 0;
+    virtual void UseShader() = 0;
 
     ShaderBase(const std::string& shader_path, const std::string& entrypoint, const std::string& target)
         : m_shader_path(shader_path)

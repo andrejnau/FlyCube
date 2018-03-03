@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
+#include <Program/DX11ProgramApi.h>
 
 struct DX11StateBackup
 {
@@ -137,8 +138,9 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
             const D3D11_RECT r = { (LONG)pcmd->ClipRect.x, (LONG)pcmd->ClipRect.y, (LONG)pcmd->ClipRect.z, (LONG)pcmd->ClipRect.w };
             m_context.device_context->PSSetShaderResources(0, 1, (ID3D11ShaderResourceView**)&pcmd->TextureId);
             m_context.device_context->RSSetScissorRects(1, &r);
+            m_context.current_program->ApplyBindings();
             m_context.device_context->DrawIndexed(pcmd->ElemCount, idx_offset, vtx_offset);
-            idx_offset += pcmd->ElemCount;
+            idx_offset += pcmd->ElemCount;  
         }
         vtx_offset += cmd_list->VtxBuffer.Size;
     }

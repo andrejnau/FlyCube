@@ -36,6 +36,14 @@ DX11Context::DX11Context(GLFWwindow* window, int width, int height)
     tmp_swap_chain.As(&swap_chain);
 
     device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    ComPtr<ID3D11RasterizerState> rasterizer_state;
+    D3D11_RASTERIZER_DESC shadowState = {};
+    shadowState.FillMode = D3D11_FILL_SOLID;
+    shadowState.CullMode = D3D11_CULL_BACK;
+    shadowState.DepthBias = 4096;
+    device->CreateRasterizerState(&shadowState, &rasterizer_state);
+    device_context->RSSetState(rasterizer_state.Get());
 }
 
 Resource::Ptr DX11Context::GetBackBuffer()
@@ -63,11 +71,13 @@ void DX11Context::Present(const Resource::Ptr&)
 
 void DX11Context::DrawIndexed(UINT IndexCount)
 {
+    current_program->ApplyBindings();
     device_context->DrawIndexed(IndexCount, 0, 0);
 }
 
 void DX11Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
 {
+    current_program->ApplyBindings();
     device_context->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
@@ -194,7 +204,7 @@ void DX11Context::IASetVertexBuffer(UINT slot, Resource::Ptr ires, UINT SizeInBy
     device_context->IASetVertexBuffers(slot, 1, buf.GetAddressOf(), &Stride, &offset);
 }
 
-void DX11Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch, size_t version)
+void DX11Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)
 {
     auto res = std::static_pointer_cast<DX11Resource>(ires);
     device_context->UpdateSubresource(res->resource.Get(), DstSubresource, nullptr, pSrcData, SrcRowPitch, SrcDepthPitch);

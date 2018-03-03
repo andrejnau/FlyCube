@@ -64,7 +64,6 @@ void GeometryPass::OnRender()
         m_program.vs.cbuffer.ConstantBuffer.model = glm::transpose(scene_item.matrix);
         m_program.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(scene_item.matrix)));
         m_program.vs.cbuffer.ConstantBuffer.normalMatrixView = glm::transpose(glm::transpose(glm::inverse(m_input.camera.GetViewMatrix() * scene_item.matrix)));
-        m_program.vs.UpdateCBuffers();
 
         scene_item.model.bones.UpdateAnimation(glfwGetTime());
 
@@ -100,7 +99,6 @@ void GeometryPass::OnRender()
             m_program.ps.cbuffer.Material.material_specular = cur_mesh.material.spec;
             m_program.ps.cbuffer.Material.material_shininess = cur_mesh.material.shininess;
 
-            m_program.ps.UpdateCBuffers();
             m_context.DrawIndexed(cur_mesh.indices.size());
         }
     }

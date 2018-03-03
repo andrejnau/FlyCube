@@ -13,68 +13,9 @@
 #include <vector>
 #include <Program/ShaderBase.h>
 #include <Program/ProgramApi.h>
+#include "Program/BufferLayout.h"
 
 using namespace Microsoft::WRL;
-
-class BufferLayout
-{
-    ProgramApi& m_shader;
-public:
-    BufferLayout(
-        ProgramApi& shader,
-        const std::string& name,
-        size_t buffer_size, 
-        ShaderType type, 
-        UINT slot,
-        std::vector<size_t>&& data_size,
-        std::vector<size_t>&& data_offset,
-        std::vector<size_t>&& buf_offset
-    )
-        : m_shader(shader)
-        , buffer(shader.GetContext().CreateBuffer(BindFlag::kCbv, buffer_size, 0))
-        , type(type)
-        , slot(slot)
-        , data(buffer_size)
-        , data_size(std::move(data_size))
-        , data_offset(std::move(data_offset))
-        , buf_offset(std::move(buf_offset))
-    {
-        buffer->SetName(name);
-    }
-
-    Resource::Ptr buffer;
-    ShaderType type;
-    UINT slot;
-
-    void UpdateCBuffer(const char* src_data)
-    {
-        bool dirty = false;
-        for (size_t i = 0; i < data_size.size(); ++i)
-        {
-            const char* ptr_src = src_data + data_offset[i];
-            char* ptr_dst = data.data() + buf_offset[i];
-            if (std::memcmp(ptr_dst, ptr_src, data_size[i]) != 0)
-            {
-                std::memcpy(ptr_dst, ptr_src, data_size[i]);
-                dirty = true;
-            }
-        }
-
-        if (dirty)
-            m_shader.UpdateData(type, slot, buffer, data.data());
-    }
-
-    Resource::Ptr& GetBuffer()
-    {
-        return buffer;
-    }
-
-private:
-    std::vector<char> data;
-    std::vector<size_t> data_size;
-    std::vector<size_t> data_offset;
-    std::vector<size_t> buf_offset;
-};
 
 class SRVBinding
 {
@@ -277,8 +218,7 @@ public:
         m_program_base->UseProgram();
         EnumerateShader<Args...>([&](ShaderBase& shader)
         {
-            shader.UpdateCBuffers();
-            shader.BindCBuffers();
+            shader.UseShader();
         });
     }
 
