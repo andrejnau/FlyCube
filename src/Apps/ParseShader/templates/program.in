@@ -85,6 +85,7 @@ public:
         {{/CBuffers}}
     } 
  
+ private:
     virtual void BindCBuffers() override
     {
         {{#CBuffers}}program_api.AttachCBuffer(type, {{BufferIndex}}, cbuffer_impl.{{BufferName}}.GetBuffer());

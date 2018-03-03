@@ -104,7 +104,7 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f* m_height, 0.0f);
 
-    m_program.UseProgram(0 /*TODO*/);
+    m_program.UseProgram();
     dx11_mesh.indices_buffer.Bind();
     dx11_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
     dx11_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);

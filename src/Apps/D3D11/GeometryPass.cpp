@@ -24,21 +24,19 @@ void GeometryPass::OnUpdate()
     m_program.ps.cbuffer.Light.light_ambient = glm::vec3(m_settings.light_ambient);
     m_program.ps.cbuffer.Light.light_diffuse = glm::vec3(m_settings.light_diffuse);
     m_program.ps.cbuffer.Light.light_specular = glm::vec3(m_settings.light_specular);
+
+    size_t cnt = 0;
+    for (auto& scene_item : m_input.scene_list)
+        for (DX11Mesh& cur_mesh : scene_item.model.meshes)
+            ++cnt;
+    m_program.SetMaxEvents(cnt);
 }
 
 void GeometryPass::OnRender()
 {
     m_context.SetViewport(m_width, m_height);
 
-    size_t cnt = 0;
-    for (auto& scene_item : m_input.scene_list)
-    {
-        for (DX11Mesh& cur_mesh : scene_item.model.meshes)
-        {
-            ++cnt;
-        }
-    }
-    m_program.UseProgram(cnt);
+    m_program.UseProgram();
 
     m_program.ps.sampler.g_sampler.Attach({
         SamplerFilter::kAnisotropic,
@@ -103,8 +101,6 @@ void GeometryPass::OnRender()
             m_program.ps.cbuffer.Material.material_shininess = cur_mesh.material.shininess;
 
             m_program.ps.UpdateCBuffers();
-            m_program.ps.BindCBuffers();
-            m_program.vs.BindCBuffers();
             m_context.DrawIndexed(cur_mesh.indices.size());
         }
     }

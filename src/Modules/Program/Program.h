@@ -87,11 +87,6 @@ public:
     {
     }
 
-    void Resize(size_t count)
-    {
-        m_program_api.SetDescriptorCount(m_shader_type, ResourceType::kSrv, m_slot, count);
-    }
-
     void Attach(const Resource::Ptr& ires = {})
     {
         m_program_api.AttachSRV(m_shader_type, m_name, m_slot, ires);
@@ -115,11 +110,6 @@ public:
     {
     }
 
-    void Resize(size_t count)
-    {
-        m_program_api.SetDescriptorCount(m_shader_type, ResourceType::kUav, m_slot, count);
-    }
-
     void Attach(const Resource::Ptr& ires = {})
     {
         m_program_api.AttachUAV(m_shader_type, m_name, m_slot, ires);
@@ -140,11 +130,6 @@ public:
         , m_shader_type(shader_type)
         , m_slot(slot)
     {
-    }
-
-    void Resize(size_t count)
-    {
-        m_program_api.SetDescriptorCount(m_shader_type, ResourceType::kSampler, m_slot, count);
     }
 
     void Attach(const SamplerDesc& desc)
@@ -257,6 +242,11 @@ public:
         UpdateShaders();
     }
 
+    void SetMaxEvents(size_t count)
+    {
+        m_program_base->SetMaxEvents(count);
+    }
+
     template<typename Setup>
     Program(Context& context, const Setup& setup)
         : Program(context.CreateProgram())
@@ -282,9 +272,9 @@ public:
         DevNull(ApplyCallback<Args>(fn)...);
     }
 
-    void UseProgram(size_t draws)
+    void UseProgram()
     {
-        m_program_base->UseProgram(draws);
+        m_program_base->UseProgram();
         EnumerateShader<Args...>([&](ShaderBase& shader)
         {
             shader.UpdateCBuffers();

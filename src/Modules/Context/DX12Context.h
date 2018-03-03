@@ -56,9 +56,9 @@ public:
         res->state = state;
     }
 
-    static const int frameBufferCount = 2; // number of buffers we want, 2 for double buffering, 3 for tripple buffering
-    ComPtr<ID3D12GraphicsCommandList> commandList; // a command list we can record commands into, then execute them to render the frame
-    ComPtr<ID3D12CommandAllocator> commandAllocator; // we want enough a
+    static const int frameBufferCount = 3;
+    ComPtr<ID3D12GraphicsCommandList> commandList;
+    ComPtr<ID3D12CommandAllocator> commandAllocator;
     DX12ProgramApi* current_program = nullptr;
 
     std::unique_ptr<DescriptorPool> descriptor_pool;

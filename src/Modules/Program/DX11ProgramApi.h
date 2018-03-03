@@ -11,7 +11,9 @@ public:
     {
     }
 
-    virtual void UseProgram(size_t) override
+    virtual void SetMaxEvents(size_t) override {}
+
+    virtual void UseProgram() override
     {
         m_context.device_context->VSSetShader(vshader.Get(), nullptr, 0);
         m_context.device_context->GSSetShader(gshader.Get(), nullptr, 0);

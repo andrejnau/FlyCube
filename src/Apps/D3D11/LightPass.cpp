@@ -33,19 +33,18 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.ShadowParams.s_size = m_settings.s_size;
     m_program.ps.cbuffer.ShadowParams.use_shadow = m_settings.use_shadow;
     m_program.ps.cbuffer.ShadowParams.use_occlusion = m_settings.use_occlusion;
+
+    size_t cnt = 0;
+    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+        ++cnt;
+    m_program.SetMaxEvents(cnt);
 }
 
 void LightPass::OnRender()
 {
     m_context.SetViewport(m_width, m_height);
 
-    size_t cnt = 0;
-    for (DX11Mesh& cur_mesh : m_input.model.meshes)
-    {
-        ++cnt;
-    }
-
-    m_program.UseProgram(cnt);
+    m_program.UseProgram();
 
     m_program.ps.sampler.g_sampler.Attach({
         SamplerFilter::kAnisotropic,
@@ -76,8 +75,6 @@ void LightPass::OnRender()
         m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
         m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
 
-        m_program.ps.BindCBuffers();
-        m_program.vs.BindCBuffers();
         m_context.DrawIndexed(cur_mesh.indices.size());
     }
 

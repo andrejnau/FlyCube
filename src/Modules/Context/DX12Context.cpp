@@ -93,7 +93,7 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
         WaitForPreviousFrame();
     }
 
-#if 0
+#if defined(_DEBUG)
      ComPtr<ID3D12InfoQueue> d3dInfoQueue;
      if (SUCCEEDED(device.As(&d3dInfoQueue)))
      {
@@ -157,22 +157,21 @@ void DX12Context::Present(const Resource::Ptr& ires)
 
     ASSERT_SUCCEEDED(commandList->Reset(commandAllocator.Get(), nullptr));
 
+    descriptor_pool->OnFrameBegin();
     for (auto & x : tmp)
         x->OnPresent();
 }
 
 void DX12Context::DrawIndexed(UINT IndexCount)
 {
-    current_program->BeforeDraw();
+    current_program->ApplyBindings();
     commandList->DrawIndexedInstanced(IndexCount, 1, 0, 0, 0);
-    current_program->NextDraw();
 }
 
 void DX12Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
 {
-    current_program->BeforeDraw();
+    current_program->ApplyBindings();
     commandList->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
-    current_program->NextDraw();
 }
 
 void DX12Context::SetViewport(int width, int height)

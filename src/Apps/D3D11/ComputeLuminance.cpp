@@ -16,12 +16,18 @@ ComputeLuminance::ComputeLuminance(Context& context, const Input& input, int wid
 
 void ComputeLuminance::OnUpdate()
 {
+    m_HDRLum2DPassCS.SetMaxEvents(1);
+    m_HDRLum1DPassCS.SetMaxEvents(1);
+    int cnt = 0;
+    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+        ++cnt;
+    m_HDRApply.SetMaxEvents(cnt);
 }
 
 Resource::Ptr ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y)
 {
     m_HDRLum2DPassCS.cs.cbuffer.cbv.dispatchSize = glm::uvec2(thread_group_x, thread_group_y);
-    m_HDRLum2DPassCS.UseProgram(1);
+    m_HDRLum2DPassCS.UseProgram();
 
     uint32_t total_invoke = thread_group_x * thread_group_y;
 
@@ -37,7 +43,7 @@ Resource::Ptr ComputeLuminance::GetLum2DPassCS(uint32_t thread_group_x, uint32_t
 Resource::Ptr ComputeLuminance::GetLum1DPassCS(Resource::Ptr input, uint32_t input_buffer_size, uint32_t thread_group_x)
 {
     m_HDRLum1DPassCS.cs.cbuffer.cbv.bufferSize = input_buffer_size;
-    m_HDRLum1DPassCS.UseProgram(1);
+    m_HDRLum1DPassCS.UseProgram();
 
     Resource::Ptr buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * thread_group_x, 4);
  
@@ -62,12 +68,7 @@ void ComputeLuminance::Draw(Resource::Ptr input)
     else
         m_HDRApply.ps.cbuffer.cbv.use_tone_mapping = false;
 
-    int cnt = 0;
-    for (DX11Mesh& cur_mesh : m_input.model.meshes)
-    {
-        ++cnt;
-    }
-    m_HDRApply.UseProgram(cnt);
+    m_HDRApply.UseProgram();
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_context.OMSetRenderTargets({ m_input.rtv }, m_input.dsv);

@@ -35,6 +35,12 @@ void ShadowPass::OnUpdate()
     view[3] = glm::transpose(glm::lookAt(position, position + Down, ForwardRH));
     view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
     view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
+
+    size_t cnt = 0;
+    for (auto& scene_item : m_input.scene_list)
+        for (DX11Mesh& cur_mesh : scene_item.model.meshes)
+            ++cnt;
+    m_program.SetMaxEvents(cnt);
 }
 
 void ShadowPass::OnRender()
@@ -44,16 +50,7 @@ void ShadowPass::OnRender()
 
     m_context.SetViewport(m_settings.s_size, m_settings.s_size);
 
-    size_t cnt = 0;
-    for (auto& scene_item : m_input.scene_list)
-    {
-        for (DX11Mesh& cur_mesh : scene_item.model.meshes)
-        {
-            ++cnt;
-        }
-    }
-
-    m_program.UseProgram(cnt);
+    m_program.UseProgram();
 
     m_program.ps.sampler.g_sampler.Attach({
         SamplerFilter::kAnisotropic,
@@ -91,9 +88,6 @@ void ShadowPass::OnRender()
             else
                 m_program.ps.srv.alphaMap.Attach();
 
-            m_program.ps.BindCBuffers();
-            m_program.vs.BindCBuffers();
-            m_program.gs.BindCBuffers();
             m_context.DrawIndexed(cur_mesh.indices.size());
         }
     }
