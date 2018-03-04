@@ -149,7 +149,7 @@ void DX12Context::Present(const Resource::Ptr& ires)
     // execute the array of command lists
     commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-    ASSERT_SUCCEEDED(swap_chain->Present(1, 0));
+    ASSERT_SUCCEEDED(swap_chain->Present(0, 0));
 
     WaitForPreviousFrame();
 
