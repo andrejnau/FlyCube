@@ -2,7 +2,7 @@
 
 #include <Scene/SceneBase.h>
 #include <Context/DX11Context.h>
-#include <Geometry/DX11Geometry.h>
+#include <Geometry/Geometry.h>
 #include <d3d11.h>
 #include <DXGI1_4.h>
 #include <wrl.h>
@@ -53,8 +53,8 @@ private:
     int m_height;
     std::unique_ptr<Context> m_context_ptr;
     Context& m_context;
-    SceneList<DX11Mesh> m_scene_list;
-    Model<DX11Mesh> m_model_square;
+    SceneModels m_scene_list;
+    Model m_model_square;
     GeometryPass m_geometry_pass;
     ShadowPass m_shadow_pass;
     SSAOPass m_ssao_pass;

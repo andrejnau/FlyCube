@@ -2,7 +2,7 @@
 
 #include <Scene/SceneBase.h>
 #include <Context/DX11Context.h>
-#include <Geometry/DX11Geometry.h>
+#include <Geometry/Geometry.h>
 #include <d3d11.h>
 #include <wrl.h>
 #include <imgui.h>

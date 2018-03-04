@@ -2,7 +2,7 @@
 
 #include <Scene/SceneBase.h>
 #include <Context/DX11Context.h>
-#include <Geometry/DX11Geometry.h>
+#include <Geometry/Geometry.h>
 #include <ProgramRef/GeometryPassPS.h>
 #include <ProgramRef/GeometryPassVS.h>
 #include <d3d11.h>
@@ -15,7 +15,7 @@ class GeometryPass : public IPass, public IModifySettings
 public:
     struct Input
     {
-        SceneList<DX11Mesh>& scene_list;
+        SceneModels& scene_list;
         Camera& camera;
     };
 

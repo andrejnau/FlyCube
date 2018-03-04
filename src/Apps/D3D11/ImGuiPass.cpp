@@ -101,7 +101,7 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
         }
     }
 
-    DX11Mesh dx11_mesh(m_context, mesh);
+    Mesh dx11_mesh(m_context, mesh);
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f* m_height, 0.0f);
 

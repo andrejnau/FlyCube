@@ -6,7 +6,7 @@
 
 #include <Scene/SceneBase.h>
 #include <Context/DX11Context.h>
-#include <Geometry/DX11Geometry.h>
+#include <Geometry/Geometry.h>
 #include <ProgramRef/LightPassPS.h>
 #include <ProgramRef/LightPassVS.h>
 #include <d3d11.h>
@@ -22,7 +22,7 @@ public:
         GeometryPass::Output& geometry_pass;
         ShadowPass::Output& shadow_pass;
         SSAOPass::Output& ssao_pass;
-        Model<DX11Mesh>& model;
+        Model& model;
         Camera& camera;
         glm::vec3& light_pos;
         Resource::Ptr rtv = nullptr;

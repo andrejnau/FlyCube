@@ -1,12 +1,20 @@
 set(target Geometry)
 
 set(headers
+    IMesh.h
+    IModel.h
+    Mesh.h
+    Bones.h
+    Model.h
+    ModelLoader.h
     Geometry.h
-    DX11Geometry.h
 )
 
 set(sources
-    Geometry.cpp
+    Mesh.cpp
+    Bones.cpp
+    Model.cpp
+    ModelLoader.cpp
 )
 
 add_library(${target} ${headers} ${sources})
@@ -18,6 +26,7 @@ target_include_directories(${target}
 
 target_link_libraries(${target}
     Utilities
+    assimp
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

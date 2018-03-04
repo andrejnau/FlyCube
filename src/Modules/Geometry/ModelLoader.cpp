@@ -1,21 +1,18 @@
-#include "Geometry/Geometry.h"
+#include "Geometry/ModelLoader.h"
+#include "Geometry/Model.h"
 #include <Utilities/FileUtility.h>
 #include <vector>
-#include <tuple>
-#include <fstream>
 #include <set>
-#include <map>
 
 glm::vec3 aiVector3DToVec3(const aiVector3D& x)
 {
     return glm::vec3(x.x, x.y, x.z);
 }
 
-ModelLoader::ModelLoader(const std::string& file, aiPostProcessSteps flags, IModel& meshes)
+ModelLoader::ModelLoader(const std::string& file, aiPostProcessSteps flags, IModel& model)
     : m_path(GetAssetFullPath(file))
     , m_directory(SplitFilename(m_path))
-    , m_model(meshes)
-    , m_bones(meshes.GetBones())
+    , m_model(model)
 {
     LoadModel(flags);
 }
@@ -27,9 +24,9 @@ std::string ModelLoader::SplitFilename(const std::string& str)
 
 void ModelLoader::LoadModel(aiPostProcessSteps flags)
 {
-    const aiScene* scene = m_import.ReadFile(m_path, flags & (aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes |  aiProcess_CalcTangentSpace));
+    const aiScene* scene = m_import.ReadFile(m_path, flags& (aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes |  aiProcess_CalcTangentSpace));
     assert(scene && scene->mFlags != AI_SCENE_FLAGS_INCOMPLETE && scene->mRootNode);
-    m_bones.LoadModel(scene);
+    m_model.GetBones().LoadModel(scene);
     ProcessNode(scene->mRootNode, scene);
 }
 
@@ -89,15 +86,6 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
             vertex.position.x = mesh->mVertices[i].x;
             vertex.position.y = mesh->mVertices[i].y;
             vertex.position.z = mesh->mVertices[i].z;
-
-            m_model.GetBoundBox().x_min = std::min(m_model.GetBoundBox().x_min, vertex.position.x);
-            m_model.GetBoundBox().x_max = std::max(m_model.GetBoundBox().x_max, vertex.position.x);
-
-            m_model.GetBoundBox().y_min = std::min(m_model.GetBoundBox().y_min, vertex.position.y);
-            m_model.GetBoundBox().y_max = std::max(m_model.GetBoundBox().y_max, vertex.position.y);
-
-            m_model.GetBoundBox().z_min = std::min(m_model.GetBoundBox().z_min, vertex.position.z);
-            m_model.GetBoundBox().z_max = std::max(m_model.GetBoundBox().z_max, vertex.position.z);
         }
 
         if (mesh->HasNormals())
@@ -194,8 +182,7 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
             cur_mesh.material.name = name.C_Str();
     }
 
-    m_bones.ProcessMesh(mesh, cur_mesh);
-
+    m_model.GetBones().ProcessMesh(mesh, cur_mesh);
     m_model.AddMesh(cur_mesh);
 }
 

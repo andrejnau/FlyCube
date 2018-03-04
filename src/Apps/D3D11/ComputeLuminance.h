@@ -2,7 +2,7 @@
 
 #include <Scene/SceneBase.h>
 #include <Context/DX11Context.h>
-#include <Geometry/DX11Geometry.h>
+#include <Geometry/Geometry.h>
 #include <ProgramRef/HDRLum1DPassCS.h>
 #include <ProgramRef/HDRLum2DPassCS.h>
 #include <ProgramRef/HDRApplyPS.h>
@@ -17,7 +17,7 @@ public:
     struct Input
     {
         Resource::Ptr& hdr_res;
-        Model<DX11Mesh>& model;
+        Model& model;
         Resource::Ptr& rtv;
         Resource::Ptr& dsv;
     };

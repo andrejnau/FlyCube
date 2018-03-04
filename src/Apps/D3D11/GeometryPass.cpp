@@ -27,7 +27,7 @@ void GeometryPass::OnUpdate()
 
     size_t cnt = 0;
     for (auto& scene_item : m_input.scene_list)
-        for (DX11Mesh& cur_mesh : scene_item.model.meshes)
+        for (Mesh& cur_mesh : scene_item.model.meshes)
             ++cnt;
     m_program.SetMaxEvents(cnt);
 }
@@ -73,7 +73,7 @@ void GeometryPass::OnRender()
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bone_srv);
 
-        for (DX11Mesh& cur_mesh : scene_item.model.meshes)
+        for (Mesh& cur_mesh : scene_item.model.meshes)
         {
             cur_mesh.indices_buffer.Bind();
             cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);

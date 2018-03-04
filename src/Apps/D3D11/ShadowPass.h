@@ -16,7 +16,7 @@ class ShadowPass : public IPass, public IModifySettings
 public:
     struct Input
     {
-        SceneList<DX11Mesh>& scene_list;
+        SceneList<Mesh>& scene_list;
         Camera& camera;
         glm::vec3& light_pos;
     };

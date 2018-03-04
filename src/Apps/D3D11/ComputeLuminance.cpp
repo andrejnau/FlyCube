@@ -19,7 +19,7 @@ void ComputeLuminance::OnUpdate()
     m_HDRLum2DPassCS.SetMaxEvents(1);
     m_HDRLum1DPassCS.SetMaxEvents(1);
     int cnt = 0;
-    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+    for (Mesh& cur_mesh : m_input.model.meshes)
         ++cnt;
     m_HDRApply.SetMaxEvents(cnt);
 }
@@ -75,7 +75,7 @@ void ComputeLuminance::Draw(Resource::Ptr input)
     m_context.ClearRenderTarget(m_input.rtv, color);
     m_context.ClearDepthStencil(m_input.dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+    for (Mesh& cur_mesh : m_input.model.meshes)
     {
         cur_mesh.indices_buffer.Bind();
         cur_mesh.positions_buffer.BindToSlot(m_HDRApply.vs.ia.POSITION);

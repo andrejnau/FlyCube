@@ -83,7 +83,7 @@ void SSAOPass::OnRender()
     m_context.ClearRenderTarget(output.srv, color);
     m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+    for (Mesh& cur_mesh : m_input.model.meshes)
     {
         cur_mesh.indices_buffer.Bind();
         cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
@@ -103,7 +103,7 @@ void SSAOPass::OnRender()
     m_context.ClearRenderTarget(output.srv_blur, color);
     m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+    for (Mesh& cur_mesh : m_input.model.meshes)
     {
         cur_mesh.indices_buffer.Bind();
         cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);

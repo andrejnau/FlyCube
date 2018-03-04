@@ -35,7 +35,7 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.ShadowParams.use_occlusion = m_settings.use_occlusion;
 
     size_t cnt = 0;
-    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+    for (Mesh& cur_mesh : m_input.model.meshes)
         ++cnt;
     m_program.SetMaxEvents(cnt);
 }
@@ -61,7 +61,7 @@ void LightPass::OnRender()
     m_context.ClearRenderTarget(m_input.rtv, color);
     m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    for (DX11Mesh& cur_mesh : m_input.model.meshes)
+    for (Mesh& cur_mesh : m_input.model.meshes)
     {
         cur_mesh.indices_buffer.Bind();
         cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);

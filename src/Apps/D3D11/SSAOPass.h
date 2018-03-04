@@ -2,7 +2,7 @@
 
 #include "GeometryPass.h"
 #include <Context/DX11Context.h>
-#include <Geometry/DX11Geometry.h>
+#include <Geometry/Geometry.h>
 #include <ProgramRef/SSAOPassPS.h>
 #include <ProgramRef/SSAOPassVS.h>
 #include <ProgramRef/SSAOBlurPassPS.h>
@@ -17,7 +17,7 @@ public:
     struct Input
     {
         GeometryPass::Output& geometry_pass;
-        Model<DX11Mesh>& model;
+        Model& model;
         Camera& camera;
     };
 
