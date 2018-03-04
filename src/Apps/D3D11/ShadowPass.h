@@ -2,7 +2,7 @@
 
 #include <Scene/SceneBase.h>
 #include <Context/DX11Context.h>
-#include <Geometry/DX11Geometry.h>
+#include <Geometry/Geometry.h>
 #include <ProgramRef/ShadowPassVS.h>
 #include <ProgramRef/ShadowPassGS.h>
 #include <ProgramRef/ShadowPassPS.h>
@@ -16,7 +16,7 @@ class ShadowPass : public IPass, public IModifySettings
 public:
     struct Input
     {
-        SceneList<Mesh>& scene_list;
+        SceneModels& scene_list;
         Camera& camera;
         glm::vec3& light_pos;
     };
