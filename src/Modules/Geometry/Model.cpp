@@ -2,7 +2,7 @@
 
 Model::Model(Context& context, const std::string& file, uint32_t flags)
     : m_context(context)
-    , m_model_loader(file, (aiPostProcessSteps)flags, *this)
+    , m_model_loader(std::make_unique<ModelLoader>(file, (aiPostProcessSteps)flags, *this))
 {
 }
 

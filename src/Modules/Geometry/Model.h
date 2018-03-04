@@ -16,5 +16,5 @@ public:
 
 private:
     Context& m_context;
-    ModelLoader m_model_loader;
+    std::unique_ptr<ModelLoader> m_model_loader;
 };
