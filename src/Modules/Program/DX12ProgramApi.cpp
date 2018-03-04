@@ -342,10 +342,10 @@ DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot
 
 DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr& ires)
 {
-    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), nullptr);
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), nullptr);
-
     auto res = std::static_pointer_cast<DX12Resource>(ires);
+
+    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res->default_res);
+    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res->default_res);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -360,6 +360,9 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
         m_pso_desc.SampleDesc = res->default_res->GetDesc().SampleDesc;
         m_changed_pso_desc = true;
     }
+
+    if (is_created_view)
+        return handle;
 
     m_context.device->CreateRenderTargetView(res->default_res.Get(), nullptr, handle.GetCpuHandle());
 
@@ -376,17 +379,18 @@ DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
 
     auto desc = res->default_res->GetDesc();
 
-    DXGI_FORMAT format = res->default_res->GetDesc().Format;
-    if (desc.Format == DXGI_FORMAT_R32_TYPELESS)
+    DXGI_FORMAT format = desc.Format;
+    if (format == DXGI_FORMAT_R32_TYPELESS)
     {
         format = DXGI_FORMAT_D32_FLOAT;
         D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
         dsv_desc.Format = format;
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
         dsv_desc.Texture2DArray.ArraySize = desc.DepthOrArraySize;
-        m_context.device->CreateDepthStencilView(res->default_res.Get(), &dsv_desc, handle.GetCpuHandle());
+        if (!is_created_view)
+            m_context.device->CreateDepthStencilView(res->default_res.Get(), &dsv_desc, handle.GetCpuHandle());
     }
-    else
+    else if (!is_created_view)
     {
         m_context.device->CreateDepthStencilView(res->default_res.Get(), nullptr, handle.GetCpuHandle());
     }
