@@ -25,5 +25,6 @@ private:
     std::string m_path;
     std::string m_directory;
     Assimp::Importer m_import;
+    std::vector<IMesh> m_meshes;
     IModel& m_model;
 };

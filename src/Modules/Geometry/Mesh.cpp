@@ -1,50 +1,117 @@
 #include "Geometry/Mesh.h"
 #include <Texture/TextureLoader.h>
 
-Mesh::Mesh(Context& context, const IMesh& mesh)
-    : IMesh(mesh)
-    , m_context(context)
-    , positions_buffer(context, positions)
-    , normals_buffer(context, normals)
-    , texcoords_buffer(context, texcoords)
-    , tangents_buffer(context, tangents)
-    , bones_offset_buffer(context, bones_offset)
-    , bones_count_buffer(context, bones_count)
-    , indices_buffer(context, indices, DXGI_FORMAT_R32_UINT)
+MergedMesh::MergedMesh(const std::vector<IMesh>& meshes)
 {
-    m_tex_srv.resize(textures.size());
-    InitTextures();
+    size_t count_non_empty_positions = 0;
+    size_t count_non_empty_normals = 0;
+    size_t count_non_empty_texcoords = 0;
+    size_t count_non_empty_tangents = 0;
+    size_t count_non_empty_bones_offset = 0;
+    size_t count_non_empty_bones_count = 0;
 
-    for (size_t i = 0; i < textures.size(); ++i)
+    for (const auto & mesh : meshes)
     {
-        assert(m_type2id.count(textures[i].type) == 0);
-        m_type2id[textures[i].type] = i;
+        count_non_empty_positions += !mesh.positions.empty();
+        count_non_empty_normals += !mesh.normals.empty();
+        count_non_empty_texcoords += !mesh.texcoords.empty();
+        count_non_empty_tangents += !mesh.tangents.empty();
+        count_non_empty_bones_offset += !mesh.bones_offset.empty();
+        count_non_empty_bones_count += !mesh.bones_count.empty();
     }
-}
 
-Resource::Ptr Mesh::GetTexture(aiTextureType type)
-{
-    auto it = m_type2id.find(type);
-    if (it != m_type2id.end())
+    size_t cur_size = 0;
+    size_t id = 0;
+    for (const auto & mesh : meshes)
     {
-        return m_tex_srv[it->second];
-    }
-    return nullptr;
-}
+        ranges.emplace_back();
+        ranges.back().id = id++;
+        ranges.back().index_count = mesh.indices.size();
+        ranges.back().start_index_location = indices.size();
+        ranges.back().base_vertex_location = cur_size;
 
-void Mesh::InitTextures()
-{
-    static std::map<std::string, Resource::Ptr> cache;
+        size_t max_size = 0;
+        max_size = std::max(max_size, mesh.positions.size());
+        max_size = std::max(max_size, mesh.normals.size());
+        max_size = std::max(max_size, mesh.texcoords.size());
+        max_size = std::max(max_size, mesh.tangents.size());
+        max_size = std::max(max_size, mesh.bones_offset.size());
+        max_size = std::max(max_size, mesh.bones_count.size());
 
-    for (size_t i = 0; i < textures.size(); ++i)
-    {
-        auto it = cache.find(textures[i].path);
-        if (it != cache.end())
+        if (count_non_empty_positions)
         {
-            m_tex_srv[i] = it->second;
-            continue;
+            std::copy(mesh.positions.begin(), mesh.positions.end(), back_inserter(positions));
+            positions.resize(cur_size + max_size);
         }
 
-        cache[textures[i].path] = m_tex_srv[i] = CreateTexture(m_context, textures[i]);
+        if (count_non_empty_normals)
+        {
+            std::copy(mesh.normals.begin(), mesh.normals.end(), back_inserter(normals));
+            normals.resize(cur_size + max_size);
+        }
+
+        if (count_non_empty_texcoords)
+        {
+            std::copy(mesh.texcoords.begin(), mesh.texcoords.end(), back_inserter(texcoords));
+            texcoords.resize(cur_size + max_size);
+        }
+
+        if (count_non_empty_tangents)
+        {
+            std::copy(mesh.tangents.begin(), mesh.tangents.end(), back_inserter(tangents));
+            tangents.resize(cur_size + max_size);
+        }
+
+        if (count_non_empty_bones_offset)
+        {
+            std::copy(mesh.bones_offset.begin(), mesh.bones_offset.end(), back_inserter(bones_offset));
+            bones_offset.resize(cur_size + max_size);
+        }
+
+        if (count_non_empty_bones_count)
+        {
+            std::copy(mesh.bones_count.begin(), mesh.bones_count.end(), back_inserter(bones_count));
+            bones_count.resize(cur_size + max_size);
+        }
+
+        std::copy(mesh.indices.begin(), mesh.indices.end(), back_inserter(indices));
+        cur_size += max_size;
     }
+}
+
+IAMergedMesh::IAMergedMesh(Context & context, std::vector<IMesh>& meshes)
+    : m_data(std::make_unique<MergedMesh>(meshes))
+    , positions(context, m_data->positions)
+    , normals(context, m_data->normals)
+    , texcoords(context, m_data->texcoords)
+    , tangents(context, m_data->tangents)
+    , bones_offset(context, m_data->bones_offset)
+    , bones_count(context, m_data->bones_count)
+    , indices(context, m_data->indices, DXGI_FORMAT_R32_UINT)
+    , ranges(std::move(m_data->ranges))
+{
+    for (auto & mesh : meshes)
+    {
+        material.emplace_back(context, mesh.material, mesh.textures);
+    }
+
+    m_data.reset();
+}
+
+Material::Material(Context & context, const IMesh::Material & material, std::vector<TextureInfo>& textures)
+    : IMesh::Material(material)
+{
+    static std::map<std::string, Resource::Ptr> tex_cache;
+    for (size_t i = 0; i < textures.size(); ++i)
+    {
+        auto it = tex_cache.find(textures[i].path);
+        if (it == tex_cache.end())
+            it = tex_cache.emplace(textures[i].path, CreateTexture(context, textures[i])).first;
+        m_type2id[textures[i].type] = it->second;
+    }
+}
+
+Resource::Ptr Material::GetTexture(aiTextureType type)
+{
+    return m_type2id[type];
 }

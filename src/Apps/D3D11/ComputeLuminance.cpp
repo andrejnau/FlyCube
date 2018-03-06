@@ -19,7 +19,7 @@ void ComputeLuminance::OnUpdate()
     m_HDRLum2DPassCS.SetMaxEvents(1);
     m_HDRLum1DPassCS.SetMaxEvents(1);
     int cnt = 0;
-    for (Mesh& cur_mesh : m_input.model.meshes)
+    for (auto& cur_mesh : m_input.model.ia.ranges)
         ++cnt;
     m_HDRApply.SetMaxEvents(cnt);
 }
@@ -75,15 +75,15 @@ void ComputeLuminance::Draw(Resource::Ptr input)
     m_context.ClearRenderTarget(m_input.rtv, color);
     m_context.ClearDepthStencil(m_input.dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    for (Mesh& cur_mesh : m_input.model.meshes)
-    {
-        cur_mesh.indices_buffer.Bind();
-        cur_mesh.positions_buffer.BindToSlot(m_HDRApply.vs.ia.POSITION);
-        cur_mesh.texcoords_buffer.BindToSlot(m_HDRApply.vs.ia.TEXCOORD);
+    m_input.model.ia.indices.Bind();
+    m_input.model.ia.positions.BindToSlot(m_HDRApply.vs.ia.POSITION);
+    m_input.model.ia.texcoords.BindToSlot(m_HDRApply.vs.ia.TEXCOORD);
 
+    for (auto& range : m_input.model.ia.ranges)
+    {
         m_HDRApply.ps.srv.hdr_input.Attach(m_input.hdr_res);
         m_HDRApply.ps.srv.lum.Attach(input);
-        m_context.DrawIndexed(cur_mesh.indices.size());
+        m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 }
 

@@ -11,10 +11,13 @@ public:
     virtual void AddMesh(const IMesh& mesh) override;
     virtual Bones& GetBones() override;
 
-    std::vector<Mesh> meshes;
+    std::vector<IMesh> meshes;
     Bones bones;
 
 private:
     Context& m_context;
     std::unique_ptr<ModelLoader> m_model_loader;
+
+public:
+    IAMergedMesh ia;
 };

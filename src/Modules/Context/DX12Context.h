@@ -26,7 +26,6 @@ public:
         return frame_index;
     }
 
-
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) override;
     virtual Resource::Ptr CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride) override;
     virtual void UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void *pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch) override;
@@ -34,7 +33,7 @@ public:
     virtual Resource::Ptr GetBackBuffer() override;
     void MoveToNextFrame();
     virtual void Present(const Resource::Ptr& ires) override;
-    virtual void DrawIndexed(UINT IndexCount) override;
+    virtual void DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation) override;
 
     virtual void Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ) override;
     virtual void SetViewport(int width, int height) override;

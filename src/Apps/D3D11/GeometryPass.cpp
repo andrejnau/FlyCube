@@ -27,7 +27,7 @@ void GeometryPass::OnUpdate()
 
     size_t cnt = 0;
     for (auto& scene_item : m_input.scene_list)
-        for (Mesh& cur_mesh : scene_item.model.meshes)
+        for (auto& cur_mesh : scene_item.model.ia.ranges)
             ++cnt;
     m_program.SetMaxEvents(cnt);
 }
@@ -73,33 +73,35 @@ void GeometryPass::OnRender()
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bone_srv);
 
-        for (Mesh& cur_mesh : scene_item.model.meshes)
+        scene_item.model.ia.indices.Bind();
+        scene_item.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
+        scene_item.model.ia.normals.BindToSlot(m_program.vs.ia.NORMAL);
+        scene_item.model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
+        scene_item.model.ia.tangents.BindToSlot(m_program.vs.ia.TANGENT);
+        scene_item.model.ia.bones_offset.BindToSlot(m_program.vs.ia.BONES_OFFSET);
+        scene_item.model.ia.bones_count.BindToSlot(m_program.vs.ia.BONES_COUNT);
+
+        for (auto& range : scene_item.model.ia.ranges)
         {
-            cur_mesh.indices_buffer.Bind();
-            cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
-            cur_mesh.normals_buffer.BindToSlot(m_program.vs.ia.NORMAL);
-            cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
-            cur_mesh.tangents_buffer.BindToSlot(m_program.vs.ia.TANGENT);
-            cur_mesh.bones_offset_buffer.BindToSlot(m_program.vs.ia.BONES_OFFSET);
-            cur_mesh.bones_count_buffer.BindToSlot(m_program.vs.ia.BONES_COUNT);
+            auto& material = scene_item.model.ia.material[range.id];
 
             if (!state["disable_norm"])
-                m_program.ps.srv.normalMap.Attach(cur_mesh.GetTexture(aiTextureType_HEIGHT));
+                m_program.ps.srv.normalMap.Attach(material.GetTexture(aiTextureType_HEIGHT));
             else
                 m_program.ps.srv.normalMap.Attach();
 
-            m_program.ps.srv.alphaMap.Attach(cur_mesh.GetTexture(aiTextureType_OPACITY));
-            m_program.ps.srv.ambientMap.Attach(cur_mesh.GetTexture(aiTextureType_DIFFUSE));
-            m_program.ps.srv.diffuseMap.Attach(cur_mesh.GetTexture(aiTextureType_DIFFUSE));
-            m_program.ps.srv.specularMap.Attach(cur_mesh.GetTexture(aiTextureType_SPECULAR));
-            m_program.ps.srv.glossMap.Attach(cur_mesh.GetTexture(aiTextureType_SHININESS));
+            m_program.ps.srv.alphaMap.Attach(material.GetTexture(aiTextureType_OPACITY));
+            m_program.ps.srv.ambientMap.Attach(material.GetTexture(aiTextureType_DIFFUSE));
+            m_program.ps.srv.diffuseMap.Attach(material.GetTexture(aiTextureType_DIFFUSE));
+            m_program.ps.srv.specularMap.Attach(material.GetTexture(aiTextureType_SPECULAR));
+            m_program.ps.srv.glossMap.Attach(material.GetTexture(aiTextureType_SHININESS));
 
-            m_program.ps.cbuffer.Material.material_ambient = cur_mesh.material.amb;
-            m_program.ps.cbuffer.Material.material_diffuse = cur_mesh.material.dif;
-            m_program.ps.cbuffer.Material.material_specular = cur_mesh.material.spec;
-            m_program.ps.cbuffer.Material.material_shininess = cur_mesh.material.shininess;
+            m_program.ps.cbuffer.Material.material_ambient = material.amb;
+            m_program.ps.cbuffer.Material.material_diffuse = material.dif;
+            m_program.ps.cbuffer.Material.material_specular = material.spec;
+            m_program.ps.cbuffer.Material.material_shininess = material.shininess;
 
-            m_context.DrawIndexed(cur_mesh.indices.size());
+            m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
 }

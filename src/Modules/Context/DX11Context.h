@@ -24,7 +24,7 @@ public:
     DX11Context(GLFWwindow* window, int width, int height);
     virtual Resource::Ptr GetBackBuffer() override;
     virtual void Present(const Resource::Ptr& ires) override;
-    virtual void DrawIndexed(UINT IndexCount) override;
+    virtual void DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation) override;
     virtual void Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ) override;
     virtual void SetViewport(int width, int height) override;
     virtual void OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv) override;

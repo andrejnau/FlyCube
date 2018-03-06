@@ -25,7 +25,7 @@ public:
     Context(GLFWwindow* window, int width, int height);
     virtual Resource::Ptr GetBackBuffer() = 0;
     virtual void Present(const Resource::Ptr& ires) = 0;
-    virtual void DrawIndexed(UINT IndexCount) = 0;
+    virtual void DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation) = 0;
     virtual void Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ) = 0;
     virtual void OnResize(int width, int height);
     virtual void SetViewport(int width, int height) = 0;

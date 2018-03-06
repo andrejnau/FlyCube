@@ -38,7 +38,7 @@ void ShadowPass::OnUpdate()
 
     size_t cnt = 0;
     for (auto& scene_item : m_input.scene_list)
-        for (Mesh& cur_mesh : scene_item.model.meshes)
+        for (auto& cur_mesh : scene_item.model.ia.ranges)
             ++cnt;
     m_program.SetMaxEvents(cnt);
 }
@@ -74,20 +74,22 @@ void ShadowPass::OnRender()
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bone_srv);
 
-        for (Mesh& cur_mesh : scene_item.model.meshes)
+        scene_item.model.ia.indices.Bind();
+        scene_item.model.ia.positions.BindToSlot(m_program.vs.ia.SV_POSITION);
+        scene_item.model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
+        scene_item.model.ia.bones_offset.BindToSlot(m_program.vs.ia.BONES_OFFSET);
+        scene_item.model.ia.bones_count.BindToSlot(m_program.vs.ia.BONES_COUNT);
+
+        for (auto& range : scene_item.model.ia.ranges)
         {
-            cur_mesh.indices_buffer.Bind();
-            cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.SV_POSITION);
-            cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
-            cur_mesh.bones_offset_buffer.BindToSlot(m_program.vs.ia.BONES_OFFSET);
-            cur_mesh.bones_count_buffer.BindToSlot(m_program.vs.ia.BONES_COUNT);
+            auto& material = scene_item.model.ia.material[range.id];
 
             if (!state["no_shadow_discard"])
-                m_program.ps.srv.alphaMap.Attach(cur_mesh.GetTexture(aiTextureType_OPACITY));
+                m_program.ps.srv.alphaMap.Attach(material.GetTexture(aiTextureType_OPACITY));
             else
                 m_program.ps.srv.alphaMap.Attach();
 
-            m_context.DrawIndexed(cur_mesh.indices.size());
+            m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
 }

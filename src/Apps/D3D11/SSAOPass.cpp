@@ -83,18 +83,16 @@ void SSAOPass::OnRender()
     m_context.ClearRenderTarget(output.srv, color);
     m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    for (Mesh& cur_mesh : m_input.model.meshes)
-    {
-        cur_mesh.indices_buffer.Bind();
-        cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
-        cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
+    m_input.model.ia.indices.Bind();
+    m_input.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
+    m_input.model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
 
+    for (auto& range : m_input.model.ia.ranges)
+    {
         m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position);
         m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal);
-
         m_program.ps.srv.noiseTexture.Attach(m_noise_texture);
-
-        m_context.DrawIndexed(cur_mesh.indices.size());
+        m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 
     m_program_blur.UseProgram();
@@ -103,14 +101,13 @@ void SSAOPass::OnRender()
     m_context.ClearRenderTarget(output.srv_blur, color);
     m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    for (Mesh& cur_mesh : m_input.model.meshes)
+    m_input.model.ia.indices.Bind();
+    m_input.model.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);
+    m_input.model.ia.texcoords.BindToSlot(m_program_blur.vs.ia.TEXCOORD);
+    for (auto& range : m_input.model.ia.ranges)
     {
-        cur_mesh.indices_buffer.Bind();
-        cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
-        cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
         m_program_blur.ps.srv.ssaoInput.Attach(output.srv);
-
-        m_context.DrawIndexed(cur_mesh.indices.size());
+        m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 }
 

@@ -34,7 +34,7 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.ShadowParams.use_occlusion = m_settings.use_occlusion;
 
     size_t cnt = 0;
-    for (Mesh& cur_mesh : m_input.model.meshes)
+    for (auto& cur_mesh : m_input.model.ia.ranges)
         ++cnt;
     m_program.SetMaxEvents(cnt);
 }
@@ -60,12 +60,12 @@ void LightPass::OnRender()
     m_context.ClearRenderTarget(output.rtv, color);
     m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    for (Mesh& cur_mesh : m_input.model.meshes)
-    {
-        cur_mesh.indices_buffer.Bind();
-        cur_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
-        cur_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
+    m_input.model.ia.indices.Bind();
+    m_input.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
+    m_input.model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
 
+    for (auto& range : m_input.model.ia.ranges)
+    {
         m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position);
         m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal);
         m_program.ps.srv.gAmbient.Attach(m_input.geometry_pass.ambient);
@@ -74,7 +74,7 @@ void LightPass::OnRender()
         m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
         m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
 
-        m_context.DrawIndexed(cur_mesh.indices.size());
+        m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 
     m_context.OMSetRenderTargets({}, nullptr);

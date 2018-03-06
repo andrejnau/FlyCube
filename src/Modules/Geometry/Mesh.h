@@ -1,27 +1,59 @@
 #pragma once
 
+#include <memory>
 #include "Geometry/IMesh.h"
 #include "Geometry/IABuffer.h"
+#include <Texture/TextureLoader.h>
 
-class Mesh : public IMesh
+struct MeshRange
+{
+    size_t id = 0;
+    UINT index_count = 0;
+    UINT start_index_location = 0;
+    INT base_vertex_location = 0;
+};
+
+class MergedMesh
 {
 public:
-    Mesh(Context& context, const IMesh& mesh);
+    MergedMesh(const std::vector<IMesh>& meshes);
+    
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> texcoords;
+    std::vector<glm::vec3> tangents;
+    std::vector<uint32_t> bones_offset;
+    std::vector<uint32_t> bones_count;
+    std::vector<uint32_t> indices;
+    std::vector<MeshRange> ranges;
+};
 
-    IAVertexBuffer positions_buffer;
-    IAVertexBuffer normals_buffer;
-    IAVertexBuffer texcoords_buffer;
-    IAVertexBuffer tangents_buffer;
-    IAVertexBuffer bones_offset_buffer;
-    IAVertexBuffer bones_count_buffer;
-    IAIndexBuffer indices_buffer;
+class Material : public IMesh::Material
+{
+public:
+    Material(Context& context, const IMesh::Material& material, std::vector<TextureInfo>& textures);
 
     Resource::Ptr GetTexture(aiTextureType type);
 
 private:
-    void InitTextures();
+    std::map<aiTextureType, Resource::Ptr> m_type2id;
+};
 
-    Context& m_context;
-    std::map<aiTextureType, size_t> m_type2id;
-    std::vector<Resource::Ptr> m_tex_srv;
+class IAMergedMesh
+{
+    std::unique_ptr<MergedMesh> m_data;
+public:
+    IAMergedMesh(Context& context, std::vector<IMesh>& meshes);
+
+    IAVertexBuffer positions;
+    IAVertexBuffer normals;
+    IAVertexBuffer texcoords;
+    IAVertexBuffer tangents;
+    IAVertexBuffer bones_offset;
+    IAVertexBuffer bones_count;
+    IAIndexBuffer indices;
+    std::vector<MeshRange> ranges;
+    std::vector<Material> material;
+private:
+    std::map<std::string, Resource::Ptr> m_tex_cache;
 };

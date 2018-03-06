@@ -159,10 +159,10 @@ void DX12Context::Present(const Resource::Ptr& ires)
         x->OnPresent();
 }
 
-void DX12Context::DrawIndexed(UINT IndexCount)
+void DX12Context::DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
 {
     current_program->ApplyBindings();
-    commandList->DrawIndexedInstanced(IndexCount, 1, 0, 0, 0);
+    commandList->DrawIndexedInstanced(IndexCount, 1, StartIndexLocation, BaseVertexLocation, 0);
 }
 
 void DX12Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)

@@ -69,10 +69,10 @@ void DX11Context::Present(const Resource::Ptr&)
     ASSERT_SUCCEEDED(swap_chain->Present(0, 0));
 }
 
-void DX11Context::DrawIndexed(UINT IndexCount)
+void DX11Context::DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
 {
     current_program->ApplyBindings();
-    device_context->DrawIndexed(IndexCount, 0, 0);
+    device_context->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 
 void DX11Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
