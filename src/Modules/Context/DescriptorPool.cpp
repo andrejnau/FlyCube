@@ -82,7 +82,7 @@ DescriptorPoolByType::DescriptorPoolByType(DX12Context& context, D3D12_DESCRIPTO
 {
 }
 
-DescriptorByResource DescriptorPoolByType::GetDescriptor(size_t bind_id, const ComPtr<ID3D12Resource>& res)
+DescriptorByResource DescriptorPoolByType::GetDescriptor(size_t bind_id, const ID3D12Resource* res)
 {
     bool exist = true;
     auto it = m_descriptors.find({ bind_id, res });
@@ -107,7 +107,7 @@ DescriptorPool::DescriptorPool(DX12Context& context)
 {
 }
 
-DescriptorByResource DescriptorPool::GetDescriptor(ResourceType res_type, size_t bind_id, const ComPtr<ID3D12Resource>& res)
+DescriptorByResource DescriptorPool::GetDescriptor(ResourceType res_type, size_t bind_id, const ID3D12Resource* res)
 {
     DescriptorPoolByType& pool = SelectHeap(res_type);
     return pool.GetDescriptor(bind_id, res);

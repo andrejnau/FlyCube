@@ -152,7 +152,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
     else
         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res->default_res);
+    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res->default_res.Get());
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -221,7 +221,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res->default_res);
+    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res->default_res.Get());
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -258,7 +258,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
 
 DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, const ComPtr<ID3D12Resource>& res)
 {
-    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res);
+    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res.Get());
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -341,7 +341,7 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res->default_res);
+    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res->default_res.Get());
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -368,7 +368,7 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
-    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res->default_res);
+    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res->default_res.Get());
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
