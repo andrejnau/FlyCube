@@ -90,10 +90,7 @@ IAMergedMesh::IAMergedMesh(Context & context, std::vector<IMesh>& meshes)
     , indices(context, m_data->indices, DXGI_FORMAT_R32_UINT)
     , ranges(std::move(m_data->ranges))
 {
-    for (auto & mesh : meshes)
-    {
-        material.emplace_back(context, mesh.material, mesh.textures);
-    }
+
 
     m_data.reset();
 }
@@ -107,11 +104,28 @@ Material::Material(Context & context, const IMesh::Material & material, std::vec
         auto it = tex_cache.find(textures[i].path);
         if (it == tex_cache.end())
             it = tex_cache.emplace(textures[i].path, CreateTexture(context, textures[i])).first;
-        m_type2id[textures[i].type] = it->second;
-    }
-}
 
-Resource::Ptr Material::GetTexture(aiTextureType type)
-{
-    return m_type2id[type];
+        auto& tex = it->second;
+        switch (textures[i].type)
+        {
+        case aiTextureType_AMBIENT:
+            texture.ambient = tex;
+            break;
+        case aiTextureType_DIFFUSE:
+            texture.diffuse = tex;
+            break;
+        case aiTextureType_SPECULAR:
+            texture.specular = tex;
+            break;
+        case aiTextureType_SHININESS:
+            texture.gloss = tex;
+            break;
+        case aiTextureType_HEIGHT:
+            texture.normal = tex;
+            break;
+        case aiTextureType_OPACITY:
+            texture.alpha = tex;
+            break;
+        }
+    }
 }

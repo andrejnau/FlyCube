@@ -26,8 +26,8 @@ void GeometryPass::OnUpdate()
     m_program.ps.cbuffer.Light.light_specular = glm::vec3(m_settings.light_specular);
 
     size_t cnt = 0;
-    for (auto& scene_item : m_input.scene_list)
-        for (auto& cur_mesh : scene_item.model.ia.ranges)
+    for (auto& model : m_input.scene_list)
+        for (auto& cur_mesh : model.ia.ranges)
             ++cnt;
     m_program.SetMaxEvents(cnt);
 }
@@ -59,42 +59,42 @@ void GeometryPass::OnRender()
     m_context.ClearDepthStencil(m_depth_stencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     auto& state = CurState<bool>::Instance().state;
-    for (auto& scene_item : m_input.scene_list)
+    for (auto& model : m_input.scene_list)
     {
-        m_program.vs.cbuffer.ConstantBuffer.model = glm::transpose(scene_item.matrix);
-        m_program.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(scene_item.matrix)));
-        m_program.vs.cbuffer.ConstantBuffer.normalMatrixView = glm::transpose(glm::transpose(glm::inverse(m_input.camera.GetViewMatrix() * scene_item.matrix)));
+        m_program.vs.cbuffer.ConstantBuffer.model = glm::transpose(model.matrix);
+        m_program.vs.cbuffer.ConstantBuffer.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model.matrix)));
+        m_program.vs.cbuffer.ConstantBuffer.normalMatrixView = glm::transpose(glm::transpose(glm::inverse(m_input.camera.GetViewMatrix() * model.matrix)));
 
-        scene_item.model.bones.UpdateAnimation(glfwGetTime());
+        model.bones.UpdateAnimation(glfwGetTime());
 
-        Resource::Ptr bones_info_srv = scene_item.model.bones.GetBonesInfo(m_context);
-        Resource::Ptr bone_srv = scene_item.model.bones.GetBone(m_context);
+        Resource::Ptr bones_info_srv = model.bones.GetBonesInfo(m_context);
+        Resource::Ptr bone_srv = model.bones.GetBone(m_context);
             
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bone_srv);
 
-        scene_item.model.ia.indices.Bind();
-        scene_item.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
-        scene_item.model.ia.normals.BindToSlot(m_program.vs.ia.NORMAL);
-        scene_item.model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
-        scene_item.model.ia.tangents.BindToSlot(m_program.vs.ia.TANGENT);
-        scene_item.model.ia.bones_offset.BindToSlot(m_program.vs.ia.BONES_OFFSET);
-        scene_item.model.ia.bones_count.BindToSlot(m_program.vs.ia.BONES_COUNT);
+        model.ia.indices.Bind();
+        model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
+        model.ia.normals.BindToSlot(m_program.vs.ia.NORMAL);
+        model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
+        model.ia.tangents.BindToSlot(m_program.vs.ia.TANGENT);
+        model.ia.bones_offset.BindToSlot(m_program.vs.ia.BONES_OFFSET);
+        model.ia.bones_count.BindToSlot(m_program.vs.ia.BONES_COUNT);
 
-        for (auto& range : scene_item.model.ia.ranges)
+        for (auto& range : model.ia.ranges)
         {
-            auto& material = scene_item.model.ia.material[range.id];
+            auto& material = model.GetMaterial(range.id);
 
             if (!state["disable_norm"])
-                m_program.ps.srv.normalMap.Attach(material.GetTexture(aiTextureType_HEIGHT));
+                m_program.ps.srv.normalMap.Attach(material.texture.normal);
             else
                 m_program.ps.srv.normalMap.Attach();
 
-            m_program.ps.srv.alphaMap.Attach(material.GetTexture(aiTextureType_OPACITY));
-            m_program.ps.srv.ambientMap.Attach(material.GetTexture(aiTextureType_DIFFUSE));
-            m_program.ps.srv.diffuseMap.Attach(material.GetTexture(aiTextureType_DIFFUSE));
-            m_program.ps.srv.specularMap.Attach(material.GetTexture(aiTextureType_SPECULAR));
-            m_program.ps.srv.glossMap.Attach(material.GetTexture(aiTextureType_SHININESS));
+            m_program.ps.srv.alphaMap.Attach(material.texture.alpha);
+            m_program.ps.srv.ambientMap.Attach(material.texture.diffuse);
+            m_program.ps.srv.diffuseMap.Attach(material.texture.diffuse);
+            m_program.ps.srv.specularMap.Attach(material.texture.specular);
+            m_program.ps.srv.glossMap.Attach(material.texture.gloss);
 
             m_program.ps.cbuffer.Material.material_ambient = material.amb;
             m_program.ps.cbuffer.Material.material_diffuse = material.dif;

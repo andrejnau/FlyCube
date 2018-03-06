@@ -33,10 +33,15 @@ class Material : public IMesh::Material
 public:
     Material(Context& context, const IMesh::Material& material, std::vector<TextureInfo>& textures);
 
-    Resource::Ptr GetTexture(aiTextureType type);
-
-private:
-    std::map<aiTextureType, Resource::Ptr> m_type2id;
+    struct
+    {
+        Resource::Ptr ambient;
+        Resource::Ptr diffuse;
+        Resource::Ptr specular;
+        Resource::Ptr gloss;
+        Resource::Ptr normal;
+        Resource::Ptr alpha;
+    } texture;
 };
 
 class IAMergedMesh
@@ -53,7 +58,6 @@ public:
     IAVertexBuffer bones_count;
     IAIndexBuffer indices;
     std::vector<MeshRange> ranges;
-    std::vector<Material> material;
 private:
     std::map<std::string, Resource::Ptr> m_tex_cache;
 };
