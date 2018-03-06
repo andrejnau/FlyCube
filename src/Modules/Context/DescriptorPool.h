@@ -56,12 +56,17 @@ private:
     ComPtr<ID3D12DescriptorHeap> m_heap;
 };
 
+struct DescriptorByResource
+{
+    DescriptorHeapRange handle;
+    bool exist;
+};
+
 struct DescriptorPoolByType
 {
 public:
     DescriptorPoolByType(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type);
-    bool HasDescriptor(size_t bind_id, const ComPtr<ID3D12Resource>& res);
-    DescriptorHeapRange GetDescriptor(size_t bind_id, const ComPtr<ID3D12Resource>& res);
+    DescriptorByResource GetDescriptor(size_t bind_id, const ComPtr<ID3D12Resource>& res);
 
 private:
     DX12Context& m_context;
@@ -73,8 +78,7 @@ class DescriptorPool
 {
 public:
     DescriptorPool(DX12Context& context);
-    DescriptorHeapRange GetDescriptor(ResourceType res_type, size_t bind_id, const ComPtr<ID3D12Resource>& res);
-    bool HasDescriptor(ResourceType res_type, size_t bind_id, const ComPtr<ID3D12Resource>& res);
+    DescriptorByResource GetDescriptor(ResourceType res_type, size_t bind_id, const ComPtr<ID3D12Resource>& res);
     void OnFrameBegin();
     void ReqFrameDescription(ResourceType res_type, size_t count);
     DescriptorHeapRange Allocate(ResourceType res_type, size_t count);

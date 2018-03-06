@@ -152,11 +152,10 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
     else
         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res->default_res);
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res->default_res);
+    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res->default_res);
 
-    if (is_created_view)
-        return handle;
+    if (descriptor.exist)
+        return descriptor.handle;
 
     ComPtr<ID3D12ShaderReflection> reflector;
     D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
@@ -177,7 +176,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
         srv_desc.Buffer.NumElements = desc.Width / res->stride;
         srv_desc.Buffer.StructureByteStride = res->stride;
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, handle.GetCpuHandle());
+        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
 
         break;
     }
@@ -188,7 +187,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
         srv_desc.Format = desc.Format;
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         srv_desc.Texture2D.MipLevels = desc.MipLevels;
-        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, handle.GetCpuHandle());
+        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
         break;
     }
     case D3D_SRV_DIMENSION_TEXTURE2DMS:
@@ -197,7 +196,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
         srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         srv_desc.Format = desc.Format;
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
-        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, handle.GetCpuHandle());
+        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
         break;
     }
     case D3D_SRV_DIMENSION_TEXTURECUBE:
@@ -207,7 +206,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
         srv_desc.Format = DXGI_FORMAT_R32_FLOAT; // TODO tex_dec.Format;
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
         srv_desc.TextureCube.MipLevels = desc.MipLevels;
-        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, handle.GetCpuHandle());
+        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
         break;
     }
     default:
@@ -215,18 +214,17 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
         break;
     }
 
-    return handle;
+    return descriptor.handle;
 }
 
 DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & ires)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res->default_res);
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res->default_res);
+    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res->default_res);
 
-    if (is_created_view)
-        return handle;
+    if (descriptor.exist)
+        return descriptor.handle;
 
     ComPtr<ID3D12ShaderReflection> reflector;
     D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
@@ -246,7 +244,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
         uav_desc.Buffer.FirstElement = 0;
         uav_desc.Buffer.NumElements = desc.Width / res->stride;
         uav_desc.Buffer.StructureByteStride = res->stride;
-        m_context.device->CreateUnorderedAccessView(res->default_res.Get(), nullptr, &uav_desc, handle.GetCpuHandle());
+        m_context.device->CreateUnorderedAccessView(res->default_res.Get(), nullptr, &uav_desc, descriptor.handle.GetCpuHandle());
 
         break;
     }
@@ -255,24 +253,23 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
         break;
     }
 
-    return handle;
+    return descriptor.handle;
 }
 
 DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, const ComPtr<ID3D12Resource>& res)
 {
-    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res);
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res);
+    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res);
 
-    if (is_created_view)
-        return handle;
+    if (descriptor.exist)
+        return descriptor.handle;
 
     D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
     desc.BufferLocation = res->GetGPUVirtualAddress();
     desc.SizeInBytes = (res->GetDesc().Width + 255) & ~255;
 
-    m_context.device->CreateConstantBufferView(&desc, handle.GetCpuHandle());
+    m_context.device->CreateConstantBufferView(&desc, descriptor.handle.GetCpuHandle());
 
-    return handle;
+    return descriptor.handle;
 }
 
 ComPtr<ID3D12Resource> DX12ProgramApi::CreateCBuffer(size_t buffer_size)
@@ -293,7 +290,7 @@ ComPtr<ID3D12Resource> DX12ProgramApi::CreateCBuffer(size_t buffer_size)
 
 DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
 {
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kSampler, GetBindingId(m_program_id, type, ResourceType::kSampler, slot), nullptr);
+    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kSampler, GetBindingId(m_program_id, type, ResourceType::kSampler, slot), nullptr);
 
     D3D12_SAMPLER_DESC sampler_desc = {};
 
@@ -335,17 +332,16 @@ DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot
     sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
     sampler_desc.MaxAnisotropy = 1;
 
-    m_context.device->CreateSampler(&sampler_desc, handle.GetCpuHandle());
+    m_context.device->CreateSampler(&sampler_desc, descriptor.handle.GetCpuHandle());
 
-    return handle;
+    return descriptor.handle;
 }
 
 DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr& ires)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res->default_res);
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res->default_res);
+    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res->default_res);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -361,19 +357,18 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
         m_changed_pso_desc = true;
     }
 
-    if (is_created_view)
-        return handle;
+    if (descriptor.exist)
+        return descriptor.handle;
 
-    m_context.device->CreateRenderTargetView(res->default_res.Get(), nullptr, handle.GetCpuHandle());
+    m_context.device->CreateRenderTargetView(res->default_res.Get(), nullptr, descriptor.handle.GetCpuHandle());
 
-    return handle;
+    return descriptor.handle;
 }
 
 DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
-    bool is_created_view = m_context.descriptor_pool->HasDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res->default_res);
-    DescriptorHeapRange handle = m_context.descriptor_pool->GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res->default_res);
+    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res->default_res);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
@@ -387,12 +382,12 @@ DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
         dsv_desc.Format = format;
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
         dsv_desc.Texture2DArray.ArraySize = desc.DepthOrArraySize;
-        if (!is_created_view)
-            m_context.device->CreateDepthStencilView(res->default_res.Get(), &dsv_desc, handle.GetCpuHandle());
+        if (!descriptor.exist)
+            m_context.device->CreateDepthStencilView(res->default_res.Get(), &dsv_desc, descriptor.handle.GetCpuHandle());
     }
-    else if (!is_created_view)
+    else if (!descriptor.exist)
     {
-        m_context.device->CreateDepthStencilView(res->default_res.Get(), nullptr, handle.GetCpuHandle());
+        m_context.device->CreateDepthStencilView(res->default_res.Get(), nullptr, descriptor.handle.GetCpuHandle());
     }
 
     if (m_pso_desc.DSVFormat != format)
@@ -407,7 +402,7 @@ DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
         m_changed_pso_desc = true;
     }
 
-    return handle;
+    return descriptor.handle;
 }
 
 void DX12ProgramApi::SetRootSignature(ID3D12RootSignature * pRootSignature)
