@@ -425,7 +425,6 @@ void DX12ProgramApi::SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_D
 
 std::vector<D3D12_INPUT_ELEMENT_DESC> DX12ProgramApi::GetInputLayout(ComPtr<ID3D12ShaderReflection> reflector)
 {
-    reflector.Get()->AddRef(); // fix me
     D3D12_SHADER_DESC shader_desc = {};
     reflector->GetDesc(&shader_desc);
 
