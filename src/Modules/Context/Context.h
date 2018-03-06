@@ -9,10 +9,15 @@ using namespace Microsoft::WRL;
 
 #include "Context/BaseTypes.h"
 #include "Context/Resource.h"
+#include <array>
 
 class Context
 {
 public:
+
+    static constexpr size_t FrameCount = 3;
+    virtual size_t GetFrameIndex() { return 0; };
+
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) = 0;
     virtual Resource::Ptr CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride) = 0;
     virtual void UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void *pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch) = 0;
@@ -43,3 +48,6 @@ protected:
     int m_width;
     int m_height;
 };
+
+template <typename T>
+using PerFrameData = std::array<T, Context::FrameCount>;

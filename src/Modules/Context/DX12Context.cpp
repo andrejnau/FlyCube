@@ -56,9 +56,6 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     D3D12_COMMAND_QUEUE_DESC cqDesc = {}; // we will be using all the default values
     ASSERT_SUCCEEDED(device->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&commandQueue))); // create the command queue
 
-    ASSERT_SUCCEEDED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
-    ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList)));
-
     ASSERT_SUCCEEDED(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&dxgi_factory)));
 
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
@@ -67,7 +64,7 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     swap_chain_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     swap_chain_desc.SampleDesc.Count = 1;
     swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swap_chain_desc.BufferCount = frameBufferCount;
+    swap_chain_desc.BufferCount = FrameCount;
     swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
@@ -75,22 +72,17 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     tmp_swap_chain.As(&swap_chain);
     frame_index = swap_chain->GetCurrentBackBufferIndex();
 
-    // Create synchronization objects and wait until assets have been uploaded to the GPU.
+    for (size_t i = 0; i < FrameCount; ++i)
     {
-        ASSERT_SUCCEEDED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
-        m_fenceValue = 1;
+        ASSERT_SUCCEEDED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator[i])));
+    }
 
-        // Create an event handle to use for frame synchronization.
+    ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator[frame_index].Get(), nullptr, IID_PPV_ARGS(&commandList)));
+
+    {
+        ASSERT_SUCCEEDED(device->CreateFence(m_fenceValues[frame_index], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
+        m_fenceValues[frame_index]++;
         m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        if (m_fenceEvent == nullptr)
-        {
-            ASSERT_SUCCEEDED(HRESULT_FROM_WIN32(GetLastError()));
-        }
-
-        // Wait for the command list to execute; we are reusing the same command 
-        // list in our main loop but for now, we just want to wait for setup to 
-        // complete before continuing.
-        WaitForPreviousFrame();
     }
 
 #if defined(_DEBUG)
@@ -115,27 +107,28 @@ Resource::Ptr DX12Context::GetBackBuffer()
     return res;
 }
 
-void DX12Context::WaitForPreviousFrame()
+// Prepare to render the next frame.
+void DX12Context::MoveToNextFrame()
 {
-    // WAITING FOR THE FRAME TO COMPLETE BEFORE CONTINUING IS NOT BEST PRACTICE.
-    // This is code implemented as such for simplicity. The D3D12HelloFrameBuffering
-    // sample illustrates how to use fences for efficient resource usage and to
-    // maximize GPU utilization.
+    // Schedule a Signal command in the queue.
+    const UINT64 currentFenceValue = m_fenceValues[frame_index];
+    ASSERT_SUCCEEDED(commandQueue->Signal(m_fence.Get(), currentFenceValue));
 
-    // Signal and increment the fence value.
-    const UINT64 fence = m_fenceValue;
-    ASSERT_SUCCEEDED(commandQueue->Signal(m_fence.Get(), fence));
-    m_fenceValue++;
+    // Update the frame index.
+    frame_index = swap_chain->GetCurrentBackBufferIndex();
 
-    // Wait until the previous frame is finished.
-    if (m_fence->GetCompletedValue() < fence)
+    // If the next frame is not ready to be rendered yet, wait until it is ready.
+    if (m_fence->GetCompletedValue() < m_fenceValues[frame_index])
     {
-        ASSERT_SUCCEEDED(m_fence->SetEventOnCompletion(fence, m_fenceEvent));
-        WaitForSingleObject(m_fenceEvent, INFINITE);
+        ASSERT_SUCCEEDED(m_fence->SetEventOnCompletion(m_fenceValues[frame_index], m_fenceEvent));
+        WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
     }
 
-    frame_index = swap_chain->GetCurrentBackBufferIndex();
+    // Set the fence value for the next frame.
+    m_fenceValues[frame_index] = currentFenceValue + 1;
 }
+
+
 
 std::vector<DX12ProgramApi*> tmp;
 
@@ -151,13 +144,17 @@ void DX12Context::Present(const Resource::Ptr& ires)
 
     ASSERT_SUCCEEDED(swap_chain->Present(0, 0));
 
-    WaitForPreviousFrame();
+    MoveToNextFrame();
 
-    ASSERT_SUCCEEDED(commandAllocator->Reset());
+    ASSERT_SUCCEEDED(commandAllocator[frame_index]->Reset());
 
-    ASSERT_SUCCEEDED(commandList->Reset(commandAllocator.Get(), nullptr));
+    ASSERT_SUCCEEDED(commandList->Reset(commandAllocator[frame_index].Get(), nullptr));
 
-    descriptor_pool->OnFrameBegin();
+    if (frame_index == 0)
+    {
+        descriptor_pool->OnFrameBegin();
+       
+    }
     for (auto & x : tmp)
         x->OnPresent();
 }

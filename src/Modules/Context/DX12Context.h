@@ -21,11 +21,18 @@ class DX12Context : public Context
 public:
     DX12Context(GLFWwindow* window, int width, int height);
 
+    virtual size_t GetFrameIndex() override
+    {
+        return frame_index;
+    }
+
+
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) override;
     virtual Resource::Ptr CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride) override;
     virtual void UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void *pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch) override;
 
     virtual Resource::Ptr GetBackBuffer() override;
+    void MoveToNextFrame();
     virtual void Present(const Resource::Ptr& ires) override;
     virtual void DrawIndexed(UINT IndexCount) override;
 
@@ -45,7 +52,7 @@ public:
     ComPtr<ID3D12Device> device;
     ComPtr<ID3D12CommandQueue> commandQueue;
     ComPtr<ID3D12Fence> m_fence;
-    uint32_t m_fenceValue = 0;
+    uint32_t m_fenceValues[FrameCount] = {};
     uint32_t frame_index = 0;
     HANDLE m_fenceEvent;
 
@@ -56,14 +63,13 @@ public:
         res->state = state;
     }
 
-    static const int frameBufferCount = 3;
     ComPtr<ID3D12GraphicsCommandList> commandList;
-    ComPtr<ID3D12CommandAllocator> commandAllocator;
+
+    ComPtr<ID3D12CommandAllocator> commandAllocator[FrameCount];
     DX12ProgramApi* current_program = nullptr;
 
     std::unique_ptr<DescriptorPool> descriptor_pool;
 private:
-    void WaitForPreviousFrame();
     virtual void ResizeBackBuffer(int width, int height) override;
     ComPtr<IDXGISwapChain3> swap_chain;
 };

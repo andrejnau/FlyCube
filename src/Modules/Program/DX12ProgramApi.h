@@ -77,8 +77,8 @@ private:
 
     std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE>, BindingLayout> m_binding_layout;
     std::map<std::tuple<ShaderType, size_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
-    std::map<std::tuple<ShaderType, size_t>, std::vector<ComPtr<ID3D12Resource>>> m_cbv_buffer;
-    std::map<std::tuple<ShaderType, size_t>, size_t> m_cbv_offset;
+    PerFrameData<std::map<std::tuple<ShaderType, size_t>, std::vector<ComPtr<ID3D12Resource>>>> m_cbv_buffer;
+    PerFrameData<std::map<std::tuple<ShaderType, size_t>, size_t>> m_cbv_offset;
     ComPtr<ID3D12RootSignature> m_root_signature;
     bool m_changed_pso_desc = false;
     bool m_changed_binding = false;

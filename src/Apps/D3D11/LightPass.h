@@ -25,7 +25,6 @@ public:
         Model& model;
         Camera& camera;
         glm::vec3& light_pos;
-        Resource::Ptr rtv = nullptr;
     };
 
     struct Output

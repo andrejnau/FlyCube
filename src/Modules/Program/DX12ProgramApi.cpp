@@ -27,10 +27,10 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
 
 void DX12ProgramApi::SetMaxEvents(size_t count)
 {
-    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kCbv, m_num_cbv * count);
-    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kSrv, m_num_srv * count);
-    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kUav, m_num_uav * count);
-    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kSampler, m_num_sampler * count);
+    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kCbv, m_num_cbv * count * Context::FrameCount);
+    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kSrv, m_num_srv * count * Context::FrameCount);
+    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kUav, m_num_uav * count * Context::FrameCount);
+    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kSampler, m_num_sampler);
 }
 
 void DX12ProgramApi::UseProgram()
@@ -545,12 +545,13 @@ void DX12ProgramApi::ApplyBindings()
         BufferLayout& buffer = x.second;
         auto& buffer_data = buffer.GetBuffer();
         bool change_buffer = buffer.SyncData();
-        if (change_buffer && m_cbv_offset.count(x.first))
-            ++m_cbv_offset[x.first];
-        if (m_cbv_offset[x.first] >= m_cbv_buffer[x.first].size())
-            m_cbv_buffer[x.first].push_back(CreateCBuffer(buffer_data.size()));
+        change_buffer = change_buffer || !m_cbv_offset[m_context.GetFrameIndex()].count(x.first);
+        if (change_buffer && m_cbv_offset[m_context.GetFrameIndex()].count(x.first))
+            ++m_cbv_offset[m_context.GetFrameIndex()][x.first];
+        if (m_cbv_offset[m_context.GetFrameIndex()][x.first] >= m_cbv_buffer[m_context.GetFrameIndex()][x.first].size())
+            m_cbv_buffer[m_context.GetFrameIndex()][x.first].push_back(CreateCBuffer(buffer_data.size()));
 
-        auto& res = m_cbv_buffer[x.first][m_cbv_offset[x.first]];
+        auto& res = m_cbv_buffer[m_context.GetFrameIndex()][x.first][m_cbv_offset[m_context.GetFrameIndex()][x.first]];
         if (change_buffer)
         {
             CD3DX12_RANGE range(0, 0);
@@ -572,7 +573,7 @@ void DX12ProgramApi::ApplyBindings()
     m_changed_binding = false;
 
     DescriptorHeapRange res_heap = m_context.descriptor_pool->Allocate(ResourceType::kSrv, m_num_cbv + m_num_srv + m_num_uav);
-    DescriptorHeapRange sampler_heap = m_context.descriptor_pool->Allocate(ResourceType::kSampler, m_num_sampler);
+    static DescriptorHeapRange sampler_heap = m_context.descriptor_pool->Allocate(ResourceType::kSampler, m_num_sampler);
 
     ID3D12DescriptorHeap* descriptor_heaps[2] = {};
     size_t descriptor_count = 0;
@@ -633,7 +634,7 @@ void DX12ProgramApi::ApplyBindings()
             for (size_t slot = 0; slot < x.second.view.root_param_num; ++slot)
             {
                 auto& shader_type = std::get<0>(x.first);
-                auto& res = m_cbv_buffer[{shader_type, slot}][m_cbv_offset[{shader_type, slot}]];
+                auto& res = m_cbv_buffer[m_context.GetFrameIndex()][{shader_type, slot}][m_cbv_offset[m_context.GetFrameIndex()][{shader_type, slot}]];
                 m_context.commandList->SetGraphicsRootConstantBufferView(x.second.root_param_index + slot, res->GetGPUVirtualAddress());
             }
         }
@@ -867,7 +868,7 @@ void DX12ProgramApi::ParseShaders()
 
 void DX12ProgramApi::OnPresent()
 {
-    m_cbv_offset.clear();
+    m_cbv_offset[m_context.GetFrameIndex()].clear();
 }
 
 void DX12ProgramApi::OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv)
