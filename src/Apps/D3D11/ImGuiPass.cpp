@@ -1,6 +1,5 @@
 #include "ImGuiPass.h"
-#include <Geometry/Geometry.h>
-#include <imgui.h>
+#include <Geometry/IABuffer.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
@@ -82,7 +81,12 @@ struct DX11StateBackup
 void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
 {
     DX11StateBackup guard(m_context.device_context.Get());
-    IMesh mesh = {};
+
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec2> texcoords;
+    std::vector<glm::vec4> colors;
+    std::vector<uint32_t> indices;
+
     for (int n = 0; n < draw_data->CmdListsCount; ++n)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
@@ -91,25 +95,28 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
             auto& pos = cmd_list->VtxBuffer.Data[j].pos;
             auto& uv = cmd_list->VtxBuffer.Data[j].uv;
             uint8_t* col = reinterpret_cast<uint8_t*>(&cmd_list->VtxBuffer.Data[j].col);
-            mesh.positions.push_back({ pos.x, pos.y, 0.0 });
-            mesh.texcoords.push_back({ uv.x, uv.y });
-            mesh.colors.push_back({ *(col + 0) / 255.0, *(col + 1) / 255.0,*(col + 2) / 255.0,*(col + 3)/255.0 });
+            positions.push_back({ pos.x, pos.y, 0.0 });
+            texcoords.push_back({ uv.x, uv.y });
+            colors.push_back({ *(col + 0) / 255.0, *(col + 1) / 255.0,*(col + 2) / 255.0,*(col + 3)/255.0 });
         }
         for (int j = 0; j < cmd_list->IdxBuffer.Size; ++j)
         {
-            mesh.indices.push_back(cmd_list->IdxBuffer.Data[j]);
+            indices.push_back(cmd_list->IdxBuffer.Data[j]);
         }
     }
 
-    Mesh dx11_mesh(m_context, mesh);
+    IAVertexBuffer positions_buffer(m_context, positions);
+    IAVertexBuffer texcoords_buffer(m_context, texcoords);
+    IAVertexBuffer colors_buffer(m_context, colors);
+    IAIndexBuffer indices_buffer(m_context, indices, DXGI_FORMAT_R32_UINT);
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f* m_height, 0.0f);
 
     m_program.UseProgram();
-    dx11_mesh.indices_buffer.Bind();
-    dx11_mesh.positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
-    dx11_mesh.texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
-    dx11_mesh.colors_buffer.BindToSlot(m_program.vs.ia.COLOR);
+    indices_buffer.Bind();
+    positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
+    texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
+    colors_buffer.BindToSlot(m_program.vs.ia.COLOR);
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     m_context.device_context->PSSetSamplers(0, 1, m_font_sampler.GetAddressOf());

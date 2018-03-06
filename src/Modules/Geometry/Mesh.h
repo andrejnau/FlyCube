@@ -12,7 +12,6 @@ public:
     IAVertexBuffer normals_buffer;
     IAVertexBuffer texcoords_buffer;
     IAVertexBuffer tangents_buffer;
-    IAVertexBuffer colors_buffer;
     IAVertexBuffer bones_offset_buffer;
     IAVertexBuffer bones_count_buffer;
     IAIndexBuffer indices_buffer;
