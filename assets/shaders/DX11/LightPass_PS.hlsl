@@ -150,7 +150,7 @@ cbuffer ConstantBuffer
     float3 viewPos;
 };
 
-float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffuse, float3 specular_base, float shininess, float occlusion)
+float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffuse, float3 specular_color, float shininess, float occlusion)
 {
     float3 lightDir = normalize(lightPos - fragPos);
     float diff = max(dot(lightDir, normal), 0.2);
@@ -159,7 +159,7 @@ float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffus
     float3 viewDir = normalize(viewPos - fragPos);
     float3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(saturate(dot(viewDir, reflectDir)), shininess);
-    float3 specular = specular_base * spec;
+    float3 specular = specular_color * spec;
 
     float3 vL = fragPos - lightPos;
     float3 L = normalize(vL);
@@ -182,13 +182,13 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         float3 normal = getTexture(gNormal, input.texCoord, i).rgb;
         float3 ambient = getTexture(gAmbient, input.texCoord, i).rgb;
         float3 diffuse = getTexture(gDiffuse, input.texCoord, i).rgb;
-        float3 specular_base = getTexture(gSpecular, input.texCoord, i).rgb;
+        float3 specular_color = getTexture(gSpecular, input.texCoord, i).rgb;
         float shininess = getTexture(gSpecular, input.texCoord, i).a;
         float occlusion = gSSAO.Sample(g_sampler, input.texCoord).r;
         occlusion = pow(occlusion, 2.2);
         if (!use_occlusion)
             occlusion = 1.0;
-        lighting += CalcLighting(fragPos, normal, ambient, diffuse, specular_base, shininess, occlusion);
+        lighting += CalcLighting(fragPos, normal, ambient, diffuse, specular_color, shininess, occlusion);
     }
     lighting /= SAMPLE_COUNT;
 

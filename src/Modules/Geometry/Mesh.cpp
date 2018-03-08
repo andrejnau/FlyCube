@@ -118,7 +118,7 @@ Material::Material(Context & context, const IMesh::Material & material, std::vec
             texture.specular = tex;
             break;
         case aiTextureType_SHININESS:
-            texture.gloss = tex;
+            texture.shininess = tex;
             break;
         case aiTextureType_HEIGHT:
             texture.normal = tex;

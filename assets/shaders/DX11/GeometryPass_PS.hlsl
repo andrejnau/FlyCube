@@ -12,7 +12,7 @@ Texture2D alphaMap;
 Texture2D ambientMap;
 Texture2D diffuseMap;
 Texture2D specularMap;
-Texture2D glossMap;
+Texture2D shininessMap;
 
 SamplerState g_sampler;
 
@@ -105,8 +105,8 @@ PS_OUT main(VS_OUTPUT input)
     else
         output.gSpecular.rgb *= material_specular;
 
-    if (HasTexture(glossMap))
-        output.gSpecular.a = getTexture(glossMap, g_sampler, input.texCoord, false).r;
+    if (HasTexture(shininessMap))
+        output.gSpecular.a = getTexture(shininessMap, g_sampler, input.texCoord, false).r;
     else
         output.gSpecular.a = material_shininess;
 

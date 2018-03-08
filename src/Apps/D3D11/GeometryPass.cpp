@@ -94,7 +94,7 @@ void GeometryPass::OnRender()
             m_program.ps.srv.ambientMap.Attach(material.texture.diffuse);
             m_program.ps.srv.diffuseMap.Attach(material.texture.diffuse);
             m_program.ps.srv.specularMap.Attach(material.texture.specular);
-            m_program.ps.srv.glossMap.Attach(material.texture.gloss);
+            m_program.ps.srv.shininessMap.Attach(material.texture.shininess);
 
             m_program.ps.cbuffer.Material.material_ambient = material.amb;
             m_program.ps.cbuffer.Material.material_diffuse = material.dif;

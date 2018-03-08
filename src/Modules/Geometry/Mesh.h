@@ -38,7 +38,7 @@ public:
         Resource::Ptr ambient;
         Resource::Ptr diffuse;
         Resource::Ptr specular;
-        Resource::Ptr gloss;
+        Resource::Ptr shininess;
         Resource::Ptr normal;
         Resource::Ptr alpha;
     } texture;
