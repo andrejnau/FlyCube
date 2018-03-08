@@ -221,6 +221,8 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
+    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
     auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res->default_res.Get());
 
     if (descriptor.exist)
@@ -423,6 +425,16 @@ void DX12ProgramApi::SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_D
         m_context.commandList->SetGraphicsRootDescriptorTable(RootParameterIndex, BaseDescriptor);
 }
 
+void DX12ProgramApi::SetRootConstantBufferView(UINT RootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS BufferLocation)
+{
+    if (RootParameterIndex == -1)
+        return;
+    if (m_blob_map.count(ShaderType::kCompute))
+        m_context.commandList->SetComputeRootConstantBufferView(RootParameterIndex, BufferLocation);
+    else
+        m_context.commandList->SetGraphicsRootConstantBufferView(RootParameterIndex, BufferLocation);
+}
+
 std::vector<D3D12_INPUT_ELEMENT_DESC> DX12ProgramApi::GetInputLayout(ComPtr<ID3D12ShaderReflection> reflector)
 {
     D3D12_SHADER_DESC shader_desc = {};
@@ -522,9 +534,13 @@ void DX12ProgramApi::CreateGraphicsPSO()
 
 void DX12ProgramApi::CreateComputePSO()
 {
-    m_compute_pso_desc.pRootSignature = m_root_signature.Get();
-    ASSERT_SUCCEEDED(m_context.device->CreateComputePipelineState(&m_compute_pso_desc, IID_PPV_ARGS(&m_pso)));
-    m_context.commandList->SetPipelineState(m_pso.Get());
+    if (!m_compute_pso)
+    {
+        m_compute_pso_desc.pRootSignature = m_root_signature.Get();
+        ASSERT_SUCCEEDED(m_context.device->CreateComputePipelineState(&m_compute_pso_desc, IID_PPV_ARGS(&m_compute_pso)));
+    }
+    m_context.commandList->SetPipelineState(m_compute_pso.Get());
+    m_compute_pso->SetName(L"m_compute_pso");
 }
 
 void DX12ProgramApi::ApplyBindings()
@@ -629,7 +645,7 @@ void DX12ProgramApi::ApplyBindings()
             {
                 auto& shader_type = std::get<0>(x.first);
                 auto& res = m_cbv_buffer[m_context.GetFrameIndex()][{shader_type, slot}][m_cbv_offset[m_context.GetFrameIndex()][{shader_type, slot}]];
-                m_context.commandList->SetGraphicsRootConstantBufferView(x.second.root_param_index + slot, res->GetGPUVirtualAddress());
+                SetRootConstantBufferView(x.second.root_param_index + slot, res->GetGPUVirtualAddress());
             }
         }
     }

@@ -19,7 +19,7 @@ public:
     float s_far = 1024.0f;
     int s_size = 3072;
     bool use_shadow = true;
-    bool use_tone_mapping = false;
+    bool use_tone_mapping = true;
     bool use_occlusion = true;
     float light_ambient = 0.2;
     float light_diffuse = 1.0;

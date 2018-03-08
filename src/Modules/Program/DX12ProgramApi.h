@@ -38,6 +38,7 @@ private:
 
     void SetRootSignature(ID3D12RootSignature* pRootSignature);
     void SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor);
+    void SetRootConstantBufferView(UINT RootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS BufferLocation);
     std::vector<D3D12_INPUT_ELEMENT_DESC> GetInputLayout(ComPtr<ID3D12ShaderReflection> reflector);
     void CreateGraphicsPSO();
     void CreateComputePSO();
@@ -85,6 +86,7 @@ private:
     D3D12_GRAPHICS_PIPELINE_STATE_DESC m_pso_desc = {};
     D3D12_COMPUTE_PIPELINE_STATE_DESC m_compute_pso_desc = {};
     ComPtr<ID3D12PipelineState> m_pso;
+    ComPtr<ID3D12PipelineState> m_compute_pso;
 
     const bool m_use_cbv_table = false;
 

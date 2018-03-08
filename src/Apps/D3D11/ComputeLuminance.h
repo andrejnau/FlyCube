@@ -34,10 +34,13 @@ public:
     virtual void OnModifySettings(const Settings & settings) override;
 
 private:
-    Resource::Ptr GetLum2DPassCS(uint32_t thread_group_x, uint32_t thread_group_y);
-    Resource::Ptr GetLum1DPassCS(Resource::Ptr input, uint32_t input_buffer_size, uint32_t thread_group_x);
+    void GetLum2DPassCS(size_t buf_id, uint32_t thread_group_x, uint32_t thread_group_y);
+    void GetLum1DPassCS(size_t buf_id, uint32_t input_buffer_size, uint32_t thread_group_x);
+    void CreateBuffers();
+    uint32_t m_thread_group_x;
+    uint32_t m_thread_group_y;
 
-    void Draw(Resource::Ptr input);
+    void Draw(size_t buf_id);
 
     Settings m_settings;
     Context& m_context;
@@ -47,4 +50,5 @@ private:
     Program<HDRLum1DPassCS> m_HDRLum1DPassCS;
     Program<HDRLum2DPassCS> m_HDRLum2DPassCS;
     Program<HDRApplyPS, HDRApplyVS> m_HDRApply;
+    std::vector<Resource::Ptr> m_use_res;
 };
