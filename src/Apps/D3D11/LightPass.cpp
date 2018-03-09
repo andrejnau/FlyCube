@@ -26,6 +26,7 @@ void LightPass::OnUpdate()
 {
     m_program.ps.cbuffer.ConstantBuffer.lightPos = m_input.light_pos;
     m_program.ps.cbuffer.ConstantBuffer.viewPos = m_input.camera.GetCameraPos();
+    m_program.ps.cbuffer.ConstantBuffer.blinn = m_settings.use_blinn;
 
     m_program.ps.cbuffer.ShadowParams.s_near = m_settings.s_near;
     m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;

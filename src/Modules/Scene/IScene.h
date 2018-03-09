@@ -21,6 +21,7 @@ public:
     bool use_shadow = true;
     bool use_tone_mapping = true;
     bool use_occlusion = true;
+    bool use_blinn = false;
     float light_ambient = 0.2;
     float light_diffuse = 1.0;
     float light_specular = 1.0;

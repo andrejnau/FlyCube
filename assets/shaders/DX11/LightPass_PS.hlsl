@@ -148,28 +148,31 @@ cbuffer ConstantBuffer
 {
     float3 lightPos;
     float3 viewPos;
+    bool blinn;
 };
 
-float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffuse, float3 specular_color, float shininess, float occlusion)
+float3 CalcLighting(float3 fragPos, float3 normal, float3 ambient, float3 diffuse, float3 specular, float shininess, float occlusion)
 {
     float3 lightDir = normalize(lightPos - fragPos);
-    float diff = max(dot(lightDir, normal), 0.2);
-    diffuse *= diff;
-
     float3 viewDir = normalize(viewPos - fragPos);
-    float3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(saturate(dot(viewDir, reflectDir)), shininess);
-    float3 specular = specular_color * spec;
 
-    float3 vL = fragPos - lightPos;
-    float3 L = normalize(vL);
+    float diff = saturate(dot(normal, lightDir));
+
+    float spec = 0;
+    if (blinn)
+        spec = pow(saturate(dot(normalize(lightDir + viewDir), normal)), shininess);
+    else
+        spec = pow(saturate(dot(viewDir, reflect(-lightDir, normal))), shininess);
 
     float shadow = 1.0; 
     if (use_shadow)
+    {
+        float3 vL = fragPos - lightPos;
+        float3 L = normalize(vL);
         shadow = _sampleCubeShadowPCFDisc5(L, vL);
+    }
 
-    float3 hdrColor = float3(ambient * occlusion + diffuse * shadow + specular * shadow);
-    return hdrColor;
+    return ambient * occlusion + shadow * (diff * diffuse + spec * specular);
 }
 
 float4 main(VS_OUTPUT input) : SV_TARGET
@@ -182,13 +185,13 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         float3 normal = getTexture(gNormal, input.texCoord, i).rgb;
         float3 ambient = getTexture(gAmbient, input.texCoord, i).rgb;
         float3 diffuse = getTexture(gDiffuse, input.texCoord, i).rgb;
-        float3 specular_color = getTexture(gSpecular, input.texCoord, i).rgb;
+        float3 specular = getTexture(gSpecular, input.texCoord, i).rgb;
         float shininess = getTexture(gSpecular, input.texCoord, i).a;
         float occlusion = gSSAO.Sample(g_sampler, input.texCoord).r;
         occlusion = pow(occlusion, 2.2);
         if (!use_occlusion)
             occlusion = 1.0;
-        lighting += CalcLighting(fragPos, normal, ambient, diffuse, specular_color, shininess, occlusion);
+        lighting += CalcLighting(fragPos, normal, ambient, diffuse, specular, shininess, occlusion);
     }
     lighting /= SAMPLE_COUNT;
 

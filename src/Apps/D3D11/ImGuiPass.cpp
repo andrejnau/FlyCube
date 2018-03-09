@@ -374,6 +374,11 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("use_blinn", &settings.use_blinn))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::SliderInt("ssao_scale", &settings.ssao_scale, 1, 8))
         {
             modify_settings = true;
