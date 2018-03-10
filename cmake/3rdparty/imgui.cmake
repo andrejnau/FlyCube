@@ -8,3 +8,5 @@ target_include_directories(imgui
     PUBLIC
         ${project_root}/3rdparty/imgui-1.52
 )
+
+set_target_properties(imgui PROPERTIES FOLDER "3rdparty/imgui")

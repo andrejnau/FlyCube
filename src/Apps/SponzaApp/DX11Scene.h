@@ -14,12 +14,12 @@
 #include <ProgramRef/LightPassPS.h>
 #include <ProgramRef/LightPassVS.h>
 
-#include "D3D11/GeometryPass.h"
-#include "D3D11/LightPass.h"
-#include "D3D11/ImGuiPass.h"
-#include "D3D11/ShadowPass.h"
-#include "D3D11/SSAOPass.h"
-#include "D3D11/ComputeLuminance.h"
+#include "GeometryPass.h"
+#include "LightPass.h"
+#include "ImGuiPass.h"
+#include "ShadowPass.h"
+#include "SSAOPass.h"
+#include "ComputeLuminance.h"
 
 using namespace Microsoft::WRL;
 

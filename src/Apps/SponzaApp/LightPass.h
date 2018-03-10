@@ -1,8 +1,8 @@
 #pragma once
 
-#include "D3D11/GeometryPass.h"
-#include "D3D11/ShadowPass.h"
-#include "D3D11/SSAOPass.h"
+#include "GeometryPass.h"
+#include "ShadowPass.h"
+#include "SSAOPass.h"
 
 #include <Scene/SceneBase.h>
 #include <Context/DX11Context.h>

@@ -1,4 +1,4 @@
-set(target DX11App)
+set(target SponzaApp)
 
 function(gen_shaders_ref shaders shaders_ref)
     set(template ${project_root}/src/Apps/ParseShader/templates/program.in)
