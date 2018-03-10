@@ -24,7 +24,7 @@ endfunction()
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}")
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
-set(shaders_path "${assets_path}/shaders/DX11")
+set(shaders_path "${assets_path}/shaders/Sponza")
 
 set(headers
     ${include_path}/GeometryPass.h
