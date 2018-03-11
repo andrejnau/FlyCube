@@ -1,0 +1,11 @@
+newmtl lambert3SG
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd export3dcoat_lambert3SG_color.png
+map_Ks export3dcoat_lambert3SG_gloss.png
+map_bump export3dcoat_lambert3SG_nmap.png

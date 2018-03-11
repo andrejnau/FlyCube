@@ -29,8 +29,9 @@ public:
         //, m_model(m_context, "model/material-ball-in-3d-coat/export3dcoat.obj")
         //, m_model(m_context, "model/knight-artorias/Artorias.fbx")
         //, m_model(m_context, "model/zbrush-for-concept-mech-design-dver/model.dae")
-       // , m_model(m_context, "model/sponza_pbr/sponza.obj")
-        , m_model(m_context, "model/knight-artorias/Artorias.obj")
+        // , m_model(m_context, "model/sponza_pbr/sponza.obj")
+        // , m_model(m_context, "model/knight-artorias/Artorias.obj")
+        , m_model(m_context, "model/export3dcoat/export3dcoat.obj")
     {
         InitRT();
     }
@@ -100,7 +101,7 @@ public:
         float offset_y = (m_model.bound_box.y_max + m_model.bound_box.y_min) / 2.0f;
         float offset_z = (m_model.bound_box.z_max + m_model.bound_box.z_min) / 2.0f;
 
-        glm::vec3 cameraPosition = glm::vec3(0.0f, model_width * 0.25f, model_width * 2.0f);
+        glm::vec3 cameraPosition = glm::vec3(0.0f, model_width * 0.25f, model_width * 3.0f);
 
         glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -113,7 +114,7 @@ public:
             static bool is = true;
             if (is)
             {
-               // m_camera.SetCameraPos(cameraPosition);
+                m_camera.SetCameraPos(cameraPosition);
                 is = false;
             }
             glm::mat4 tmp;

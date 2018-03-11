@@ -189,26 +189,35 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<TextureInfo>& textures)
 {
     static std::pair<std::string, aiTextureType> texture_types[] = {
-        { "_albedo",    aiTextureType_DIFFUSE },
-        { "_diff",      aiTextureType_DIFFUSE },
-        { "_diffuse",   aiTextureType_DIFFUSE },
-        { "_nmap",      aiTextureType_HEIGHT },
-        { "_normal",    aiTextureType_HEIGHT },
+        { "_albedo",    aiTextureType_DIFFUSE   },
+        { "_diff",      aiTextureType_DIFFUSE   },
+        { "_diffuse",   aiTextureType_DIFFUSE   },
+        { "_nmap",      aiTextureType_HEIGHT    },
+        { "_normal",    aiTextureType_HEIGHT    },
         { "_rough",     aiTextureType_SHININESS },
         { "_roughness", aiTextureType_SHININESS },
-        { "_metalness", aiTextureType_EMISSIVE },
-        { "_metallic",  aiTextureType_EMISSIVE },
-        { "_ao",        aiTextureType_LIGHTMAP },
-        { "_mask",      aiTextureType_OPACITY },
-        { "_opacity",      aiTextureType_OPACITY },
+        { "_metalness", aiTextureType_EMISSIVE  },
+        { "_metallic",  aiTextureType_EMISSIVE  },
+        { "_ao",        aiTextureType_LIGHTMAP  },
+        { "_mask",      aiTextureType_OPACITY   },
+        { "_opacity",   aiTextureType_OPACITY   },
+        { "_spec",      aiTextureType_SPECULAR  },
     };
-
-    for (auto & suf : { ".dds", ".png", ".jpg" })
+    std::set<aiTextureType> used;
+    for (auto& cur_texture : textures)
     {
-        std::string cur_path = m_directory + "/textures/" + mat_name + "_albedo" + suf;
-        if (std::ifstream(cur_path).good())
+        used.insert(cur_texture.type);
+    }
+
+    if (!used.count(aiTextureType_DIFFUSE))
+    {
+        for (auto & ext : { ".dds", ".png", ".jpg" })
         {
-            textures.push_back({ aiTextureType_DIFFUSE, cur_path });
+            std::string cur_path = m_directory + "/textures/" + mat_name + "_albedo" + ext;
+            if (std::ifstream(cur_path).good())
+            {
+                textures.push_back({ aiTextureType_DIFFUSE, cur_path });
+            }
         }
     }
 
@@ -225,6 +234,10 @@ void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<T
 
             for (auto& to_type : texture_types)
             {
+                if (used.count(to_type.second))
+                {
+                    continue;
+                }
                 std::string cur_path = path;
                 cur_path.replace(loc, from_type.first.size(), to_type.first);
                 if (!std::ifstream(cur_path).good())
@@ -234,6 +247,7 @@ void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<T
                 texture.type = to_type.second;
                 texture.path = cur_path;
                 added_textures.push_back(texture);
+                used.insert(to_type.second);
             }
         }
     }
