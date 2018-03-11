@@ -18,7 +18,7 @@ private:
     std::string SplitFilename(const std::string& str);
     void ProcessNode(aiNode* node, const aiScene* scene);
     void ProcessMesh(aiMesh* mesh, const aiScene* scene);
-    void FindSimilarTextures(std::vector<TextureInfo>& textures);
+    void FindSimilarTextures(const std::string& mat_name, std::vector<TextureInfo>& textures);
     void LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::vector<TextureInfo>& textures);
 
 private:

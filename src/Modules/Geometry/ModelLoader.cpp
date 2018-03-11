@@ -134,33 +134,7 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     // Process materials
     if (mesh->mMaterialIndex >= 0)
     {
-        std::vector<TextureInfo> textures;
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
-        LoadMaterialTextures(mat, aiTextureType_AMBIENT, textures);
-        LoadMaterialTextures(mat, aiTextureType_DIFFUSE, textures);
-        LoadMaterialTextures(mat, aiTextureType_SPECULAR, textures);
-        LoadMaterialTextures(mat, aiTextureType_HEIGHT, textures);
-        LoadMaterialTextures(mat, aiTextureType_OPACITY, textures);
-
-        FindSimilarTextures(textures);
-
-        auto comparator = [&](const TextureInfo& lhs, const TextureInfo& rhs)
-        {
-            return std::tie(lhs.type, lhs.path) < std::tie(rhs.type, rhs.path);
-        };
-
-        std::set<TextureInfo, decltype(comparator)> unique_textures(comparator);
-
-        for (TextureInfo& texture : textures)
-        {
-            unique_textures.insert(texture);
-        }
-
-        for (const TextureInfo& texture : unique_textures)
-        {
-            cur_mesh.textures.push_back(texture);
-        }
-
         aiColor4D amb;
         if (mat->Get(AI_MATKEY_COLOR_AMBIENT, amb) == AI_SUCCESS)
             cur_mesh.material.amb = glm::vec3(aiColor4DToVec4(amb));
@@ -180,50 +154,66 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
         aiString name;
         if (mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS)
             cur_mesh.material.name = name.C_Str();
+
+        std::vector<TextureInfo> textures;
+        LoadMaterialTextures(mat, aiTextureType_AMBIENT, textures);
+        LoadMaterialTextures(mat, aiTextureType_DIFFUSE, textures);
+        LoadMaterialTextures(mat, aiTextureType_SPECULAR, textures);
+        LoadMaterialTextures(mat, aiTextureType_HEIGHT, textures);
+        LoadMaterialTextures(mat, aiTextureType_OPACITY, textures);
+
+        FindSimilarTextures(cur_mesh.material.name, textures);
+
+        auto comparator = [&](const TextureInfo& lhs, const TextureInfo& rhs)
+        {
+            return std::tie(lhs.type, lhs.path) < std::tie(rhs.type, rhs.path);
+        };
+
+        std::set<TextureInfo, decltype(comparator)> unique_textures(comparator);
+
+        for (TextureInfo& texture : textures)
+        {
+            unique_textures.insert(texture);
+        }
+
+        for (const TextureInfo& texture : unique_textures)
+        {
+            cur_mesh.textures.push_back(texture);
+        }
     }
 
     m_model.GetBones().ProcessMesh(mesh, cur_mesh);
     m_model.AddMesh(cur_mesh);
 }
 
-void ModelLoader::FindSimilarTextures(std::vector<TextureInfo>& textures)
+void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<TextureInfo>& textures)
 {
-    static std::pair<std::string, aiTextureType> map_from[] = {
-        { "_s", aiTextureType_SPECULAR },
-        { "_metallic", aiTextureType_AMBIENT },
-        { "_normal", aiTextureType_HEIGHT },
-        { "_Normal", aiTextureType_HEIGHT },
-        { "_diffuse", aiTextureType_DIFFUSE },
-        { "_diff", aiTextureType_DIFFUSE },
-        { "_color", aiTextureType_DIFFUSE },
-        { "_albedo", aiTextureType_DIFFUSE },
-        { "Diffuse", aiTextureType_DIFFUSE },
-    };
-
-    static std::pair<std::string, aiTextureType> map_to[] = {
-        { "_g", aiTextureType_SHININESS },
-        { "_gloss", aiTextureType_SHININESS },
-        { "_rough", aiTextureType_SHININESS },
-        { "_nmap", aiTextureType_HEIGHT },
-        { "_spec", aiTextureType_SPECULAR },
-        { "Normal", aiTextureType_HEIGHT },
-        { "Specular", aiTextureType_SPECULAR },
-        { "_Roughness", aiTextureType_SHININESS },
+    static std::pair<std::string, aiTextureType> texture_types[] = {
+        { "_albedo",    aiTextureType_DIFFUSE },
+        { "_diff",      aiTextureType_DIFFUSE },
+        { "_diffuse",   aiTextureType_DIFFUSE },
+        { "_nmap",      aiTextureType_HEIGHT },
+        { "_normal",    aiTextureType_HEIGHT },
+        { "_rough",     aiTextureType_SHININESS },
         { "_roughness", aiTextureType_SHININESS },
         { "_metalness", aiTextureType_EMISSIVE },
-        { "_metallic", aiTextureType_EMISSIVE },
-        { "_ao", aiTextureType_LIGHTMAP },
-        { "_mask", aiTextureType_OPACITY },
+        { "_metallic",  aiTextureType_EMISSIVE },
+        { "_ao",        aiTextureType_LIGHTMAP },
+        { "_mask",      aiTextureType_OPACITY },
+        { "_opacity",      aiTextureType_OPACITY },
     };
 
-    std::string cur_path = m_directory + "/textures/_albedo.jpeg";
-    if (std::ifstream(cur_path).good())
+    for (auto & suf : { ".dds", ".png", ".jpg" })
     {
-        textures.push_back({ aiTextureType_DIFFUSE, cur_path });
+        std::string cur_path = m_directory + "/textures/" + mat_name + "_albedo" + suf;
+        if (std::ifstream(cur_path).good())
+        {
+            textures.push_back({ aiTextureType_DIFFUSE, cur_path });
+        }
     }
 
     std::vector<TextureInfo> added_textures;
-    for (auto& from_type : map_from)
+    for (auto& from_type : texture_types)
     {
         for (auto& cur_texture : textures)
         {
@@ -233,7 +223,7 @@ void ModelLoader::FindSimilarTextures(std::vector<TextureInfo>& textures)
             if (loc == std::string::npos)
                 continue;
 
-            for (auto& to_type : map_to)
+            for (auto& to_type : texture_types)
             {
                 std::string cur_path = path;
                 cur_path.replace(loc, from_type.first.size(), to_type.first);
