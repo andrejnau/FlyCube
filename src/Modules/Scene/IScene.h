@@ -33,7 +33,7 @@ public:
 class IModifySettings
 {
 public:
-    virtual void OnModifySettings(const Settings& settings) = 0;
+    virtual void OnModifySettings(const Settings& settings) {}
 };
 
 class IPass
@@ -49,11 +49,11 @@ class IInput
 {
 public:
     virtual ~IInput() = default;
-    virtual void OnKey(int key, int action) = 0;
-    virtual void OnMouse(bool first, double xpos, double ypos) = 0;
-    virtual void OnMouseButton(int button, int action) = 0;
-    virtual void OnScroll(double xoffset, double yoffset) = 0;
-    virtual void OnInputChar(unsigned int ch) = 0;
+    virtual void OnKey(int key, int action) {}
+    virtual void OnMouse(bool first, double xpos, double ypos) {}
+    virtual void OnMouseButton(int button, int action) {}
+    virtual void OnScroll(double xoffset, double yoffset) {}
+    virtual void OnInputChar(unsigned int ch) {}
 };
 
 class IScene

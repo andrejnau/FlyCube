@@ -1,5 +1,6 @@
 #include "Program/DX12ProgramApi.h"
 #include "Program/BufferLayout.h"
+#include <Utilities/State.h>
 
 size_t GenId()
 {
@@ -525,8 +526,11 @@ void DX12ProgramApi::CreateGraphicsPSO()
 
     m_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     m_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
-    m_pso_desc.RasterizerState.DepthBias = 4096;
     m_pso_desc.RasterizerState.DepthClipEnable = false;
+
+    auto& state = CurState<bool>::Instance().state;
+    if (state["DepthBias"])
+        m_pso_desc.RasterizerState.DepthBias = 4096;
 
     ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&m_pso_desc, IID_PPV_ARGS(&m_pso)));
     m_context.commandList->SetPipelineState(m_pso.Get());
@@ -636,8 +640,8 @@ void DX12ProgramApi::ApplyBindings()
                 heap_range = std::ref(sampler_heap);
                 break;
             }
-
-            SetRootDescriptorTable(x.second.root_param_index, heap_range.get().GetGpuHandle(x.second.table.root_param_heap_offset));
+            if (x.second.root_param_index != -1)
+                SetRootDescriptorTable(x.second.root_param_index, heap_range.get().GetGpuHandle(x.second.table.root_param_heap_offset));
         }
         else if (x.second.type == D3D12_ROOT_PARAMETER_TYPE_CBV)
         {

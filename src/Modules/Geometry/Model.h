@@ -4,6 +4,18 @@
 #include "Geometry/Bones.h"
 #include "Geometry/ModelLoader.h"
 
+struct BoundBox
+{
+    BoundBox()
+    {
+        x_min = y_min = z_min = std::numeric_limits<float>::max();
+        x_max = y_max = z_max = std::numeric_limits<float>::min();
+    }
+
+    float x_min, y_min, z_min;
+    float x_max, y_max, z_max;
+};
+
 class Model : public IModel
 {
 public:
@@ -28,4 +40,5 @@ private:
 public:
     IAMergedMesh ia;
     std::vector<Material> materials;
+    BoundBox bound_box;
 };

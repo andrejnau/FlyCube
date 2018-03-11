@@ -8,6 +8,16 @@ Model::Model(Context& context, const std::string& file, uint32_t flags)
     for (auto & mesh : meshes)
     {
         materials.emplace_back(context, mesh.material, mesh.textures);
+
+        for (auto & pos : mesh.positions)
+        {
+            bound_box.x_min = std::min(bound_box.x_min, pos.x);
+            bound_box.x_max = std::max(bound_box.x_max, pos.x);
+            bound_box.y_min = std::min(bound_box.y_min, pos.y);
+            bound_box.y_max = std::max(bound_box.y_max, pos.y);
+            bound_box.z_min = std::min(bound_box.z_min, pos.z);
+            bound_box.z_max = std::max(bound_box.z_max, pos.z);
+        }
     }
 }
 

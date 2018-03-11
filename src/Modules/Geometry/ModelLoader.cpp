@@ -190,8 +190,13 @@ void ModelLoader::FindSimilarTextures(std::vector<TextureInfo>& textures)
 {
     static std::pair<std::string, aiTextureType> map_from[] = {
         { "_s", aiTextureType_SPECULAR },
+        { "_metallic", aiTextureType_AMBIENT },
+        { "_normal", aiTextureType_HEIGHT },
+        { "_Normal", aiTextureType_HEIGHT },
+        { "_diffuse", aiTextureType_DIFFUSE },
         { "_diff", aiTextureType_DIFFUSE },
         { "_color", aiTextureType_DIFFUSE },
+        { "_albedo", aiTextureType_DIFFUSE },
         { "Diffuse", aiTextureType_DIFFUSE },
     };
 
@@ -203,8 +208,19 @@ void ModelLoader::FindSimilarTextures(std::vector<TextureInfo>& textures)
         { "_spec", aiTextureType_SPECULAR },
         { "Normal", aiTextureType_HEIGHT },
         { "Specular", aiTextureType_SPECULAR },
-        { "Roughness", aiTextureType_SHININESS },
+        { "_Roughness", aiTextureType_SHININESS },
+        { "_roughness", aiTextureType_SHININESS },
+        { "_metalness", aiTextureType_EMISSIVE },
+        { "_metallic", aiTextureType_EMISSIVE },
+        { "_ao", aiTextureType_LIGHTMAP },
+        { "_mask", aiTextureType_OPACITY },
     };
+
+    std::string cur_path = m_directory + "/textures/_albedo.jpeg";
+    if (std::ifstream(cur_path).good())
+    {
+        textures.push_back({ aiTextureType_DIFFUSE, cur_path });
+    }
 
     std::vector<TextureInfo> added_textures;
     for (auto& from_type : map_from)

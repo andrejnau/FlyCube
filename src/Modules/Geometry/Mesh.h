@@ -41,6 +41,8 @@ public:
         Resource::Ptr shininess;
         Resource::Ptr normal;
         Resource::Ptr alpha;
+        Resource::Ptr metalness;
+        Resource::Ptr ao;
     } texture;
 };
 

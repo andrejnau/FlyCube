@@ -1,5 +1,6 @@
 #include "DX11Scene.h"
 #include <AppBox/AppBox.h>
+#include <Utilities/State.h>
 
 int main(int argc, char *argv[])
 {
@@ -22,5 +23,9 @@ int main(int argc, char *argv[])
         title = "[DX12] testApp";
         break;
     }
+
+    auto& state = CurState<bool>::Instance().state;
+    state["DepthBias"] = true;
+
     return AppBox(DX11Scene::Create, type, title, 1280, 720).Run();
 }

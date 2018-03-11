@@ -90,8 +90,6 @@ IAMergedMesh::IAMergedMesh(Context & context, std::vector<IMesh>& meshes)
     , indices(context, m_data->indices, DXGI_FORMAT_R32_UINT)
     , ranges(std::move(m_data->ranges))
 {
-
-
     m_data.reset();
 }
 
@@ -125,6 +123,12 @@ Material::Material(Context & context, const IMesh::Material & material, std::vec
             break;
         case aiTextureType_OPACITY:
             texture.alpha = tex;
+            break;
+        case aiTextureType_EMISSIVE:
+            texture.metalness = tex;
+            break;
+        case aiTextureType_LIGHTMAP:
+            texture.ao = tex;
             break;
         }
     }
