@@ -16,6 +16,18 @@ void DX11ProgramApi::UseProgram()
     m_context.device_context->HSSetShader(nullptr, nullptr, 0);
     m_context.device_context->PSSetShader(pshader.Get(), nullptr, 0);
     m_context.device_context->CSSetShader(cshader.Get(), nullptr, 0);
+
+    ID3D11ShaderResourceView* empty_srv[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {};
+    m_context.device_context->VSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, empty_srv);
+    m_context.device_context->GSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, empty_srv);
+    m_context.device_context->DSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, empty_srv);
+    m_context.device_context->HSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, empty_srv);
+    m_context.device_context->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, empty_srv);
+    m_context.device_context->CSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, empty_srv);
+
+    ID3D11UnorderedAccessView* empty_uav[D3D11_1_UAV_SLOT_COUNT] = {};
+    m_context.device_context->CSSetUnorderedAccessViews(0, D3D11_1_UAV_SLOT_COUNT, empty_uav, nullptr);
+
     m_context.device_context->IASetInputLayout(input_layout.Get());
 }
 
