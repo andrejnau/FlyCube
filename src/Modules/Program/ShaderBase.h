@@ -56,7 +56,7 @@ protected:
             nullptr,
             m_entrypoint.c_str(),
             m_target.c_str(),
-            0,
+            D3DCOMPILE_DEBUG,
             0,
             &shader_buffer,
             &errors));
