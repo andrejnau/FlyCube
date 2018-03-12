@@ -3,6 +3,7 @@
 #include <Program/ShaderType.h>
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
+#include <Utilities/State.h>
 #include <map>
 #include <vector>
 
@@ -35,6 +36,11 @@ public:
 protected:
     ComPtr<ID3DBlob> CompileShader() const
     {
+        decltype(&::D3DCompileFromFile) _D3DCompileFromFile = &::D3DCompileFromFile;
+        auto& state = CurState<bool>::Instance().state;
+        if (state["DXIL"])
+            _D3DCompileFromFile = (decltype(&::D3DCompileFromFile))GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DCompileFromFile");
+
         ComPtr<ID3DBlob> shader_buffer;
         std::vector<D3D_SHADER_MACRO> macro;
         for (const auto & x : define)
@@ -44,7 +50,7 @@ protected:
         macro.push_back({ nullptr, nullptr });
 
         ComPtr<ID3DBlob> errors;
-        ASSERT_SUCCEEDED(D3DCompileFromFile(
+        ASSERT_SUCCEEDED(_D3DCompileFromFile(
             GetAssetFullPathW(m_shader_path).c_str(),
             macro.data(),
             nullptr,

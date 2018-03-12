@@ -122,16 +122,16 @@ public:
             cameraPosition = m_camera.GetCameraPos();
         }
 
-        m_program.vs.cbuffer.ConstantBuffer.model = glm::transpose(model_mat);
-        m_program.vs.cbuffer.ConstantBuffer.view = glm::transpose(view);
-        m_program.vs.cbuffer.ConstantBuffer.projection = glm::transpose(proj);
+        m_program.vs.cbuffer.ConstantBuf.model = glm::transpose(model_mat);
+        m_program.vs.cbuffer.ConstantBuf.view = glm::transpose(view);
+        m_program.vs.cbuffer.ConstantBuf.projection = glm::transpose(proj);
 
         float light_r = 2.5;
         glm::vec3 light_pos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
 
-        m_program.vs.cbuffer.ConstantBuffer.lightPos = glm::vec4(cameraPosition, 0.0);
-        //m_program.vs.cbuffer.ConstantBuffer.lightPos = glm::vec4(light_pos, 0.0);
-        m_program.vs.cbuffer.ConstantBuffer.viewPos = glm::vec4(cameraPosition, 0.0);
+        m_program.vs.cbuffer.ConstantBuf.lightPos = glm::vec4(cameraPosition, 0.0);
+        //m_program.vs.cbuffer.ConstantBuf.lightPos = glm::vec4(light_pos, 0.0);
+        m_program.vs.cbuffer.ConstantBuf.viewPos = glm::vec4(cameraPosition, 0.0);
 
         size_t cnt = 0;
         for (auto& cur_mesh : m_model.ia.ranges)

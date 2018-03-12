@@ -17,7 +17,7 @@ struct BoneInfo
 StructuredBuffer<BoneInfo> bone_info;
 StructuredBuffer<float4x4> gBones;
 
-cbuffer ConstantBuffer
+cbuffer ConstantBuf
 {
     float4x4 model;
     float4x4 view;

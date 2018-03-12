@@ -45,6 +45,8 @@ private:
     void ParseShaders();
 
 private:
+    decltype(&::D3DReflect) _D3DReflect = &::D3DReflect;
+
     size_t m_num_cbv = 0;
     size_t m_num_srv = 0;
     size_t m_num_uav = 0;

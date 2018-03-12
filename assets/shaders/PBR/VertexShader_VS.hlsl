@@ -19,7 +19,7 @@ struct VS_OUTPUT
     float3 viewPos : POSITION_VIEW;
 };
 
-cbuffer ConstantBuffer : register(b0)
+cbuffer ConstantBuf : register(b0)
 {
     float4x4 model;
     float4x4 view;

@@ -24,6 +24,9 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     : m_context(context)
     , m_program_id(GenId())
 {
+    auto& state = CurState<bool>::Instance().state;
+    if (state["DXIL"])
+        _D3DReflect = (decltype(&::D3DReflect))GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DReflect");
 }
 
 void DX12ProgramApi::SetMaxEvents(size_t count)
@@ -159,7 +162,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
         return descriptor.handle;
 
     ComPtr<ID3D12ShaderReflection> reflector;
-    D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
+    _D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
 
     D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
     ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
@@ -230,7 +233,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
         return descriptor.handle;
 
     ComPtr<ID3D12ShaderReflection> reflector;
-    D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
+    _D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
 
     D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
     ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
@@ -503,7 +506,7 @@ void DX12ProgramApi::CreateGraphicsPSO()
     m_changed_pso_desc = false;
 
     ComPtr<ID3D12ShaderReflection> reflector;
-    D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&reflector));
+    _D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&reflector));
     auto input_layout_elements = GetInputLayout(reflector);
     D3D12_INPUT_LAYOUT_DESC input_layout = {};
     input_layout.NumElements = input_layout_elements.size();
@@ -676,7 +679,7 @@ void DX12ProgramApi::ParseShaders()
         size_t num_sampler = 0;
 
         ComPtr<ID3D12ShaderReflection> reflector;
-        D3DReflect(shader_blob.second->GetBufferPointer(), shader_blob.second->GetBufferSize(), IID_PPV_ARGS(&reflector));
+        _D3DReflect(shader_blob.second->GetBufferPointer(), shader_blob.second->GetBufferSize(), IID_PPV_ARGS(&reflector));
 
         D3D12_SHADER_DESC desc = {};
         reflector->GetDesc(&desc);

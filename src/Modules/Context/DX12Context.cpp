@@ -1,14 +1,32 @@
 #include "Context/DX12Context.h"
 #include <Utilities/DXUtility.h>
+#include <Utilities/State.h>
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
 #include <Program/DX12ProgramApi.h>
 
+// Note that Windows 10 Creator Update SDK is required for enabling Shader Model 6 feature.
+static HRESULT EnableExperimentalShaderModels()
+{
+    static const GUID D3D12ExperimentalShaderModelsID = { /* 76f5573e-f13a-40f5-b297-81ce9e18933f */
+        0x76f5573e,
+        0xf13a,
+        0x40f5,
+    { 0xb2, 0x97, 0x81, 0xce, 0x9e, 0x18, 0x93, 0x3f }
+    };
+
+    return D3D12EnableExperimentalFeatures(1, &D3D12ExperimentalShaderModelsID, nullptr, nullptr);
+}
+
 DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     : Context(window, width, height)
 {
+    auto& state = CurState<bool>::Instance().state;
+    if (state["DXIL"])
+        EnableExperimentalShaderModels();
+
 #if defined(_DEBUG)
     // Enable the D3D12 debug layer.
     {

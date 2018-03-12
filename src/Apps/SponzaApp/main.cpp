@@ -26,6 +26,11 @@ int main(int argc, char *argv[])
 
     auto& state = CurState<bool>::Instance().state;
     state["DepthBias"] = true;
+    if (type == ApiType::kDX12 && LoadLibraryA("d3dcompiler_dxc_bridge.dll"))
+    {
+        state["DXIL"] = true;
+        title += " with Shader Model 6.0";
+    }
 
     return AppBox(DX11Scene::Create, type, title, 1280, 720).Run();
 }

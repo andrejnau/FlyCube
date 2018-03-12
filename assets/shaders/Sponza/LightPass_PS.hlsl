@@ -144,7 +144,7 @@ float4 getTexture(TEXTURE_TYPE _texture, float2 _tex_coord, int ss_index, bool _
     return _color;
 }
 
-cbuffer ConstantBuffer
+cbuffer ConstantBuf
 {
     float3 lightPos;
     float3 viewPos;
