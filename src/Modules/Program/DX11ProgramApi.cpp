@@ -25,8 +25,12 @@ void DX11ProgramApi::UseProgram()
     m_context.device_context->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, empty_srv);
     m_context.device_context->CSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, empty_srv);
 
-    ID3D11UnorderedAccessView* empty_uav[D3D11_1_UAV_SLOT_COUNT] = {};
-    m_context.device_context->CSSetUnorderedAccessViews(0, D3D11_1_UAV_SLOT_COUNT, empty_uav, nullptr);
+    ID3D11UnorderedAccessView* empty_uav[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
+    m_context.device_context->CSSetUnorderedAccessViews(0, D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, empty_uav, nullptr);
+
+    ID3D11RenderTargetView* empty_rtv[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
+    ID3D11DepthStencilView* empty_dsv = nullptr;
+    m_context.device_context->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, empty_rtv, empty_dsv);
 
     m_context.device_context->IASetInputLayout(input_layout.Get());
 }
@@ -54,6 +58,14 @@ void DX11ProgramApi::ApplyBindings()
 
         AttachCBV(std::get<0>(x.first), std::get<1>(x.first), res);
     }
+
+    std::vector<ID3D11RenderTargetView*> rtv_ptr;
+    for (auto & rtv : m_rtvs)
+    {
+        rtv_ptr.emplace_back(rtv.Get());
+    }
+    ComPtr<ID3D11DepthStencilView> dsv = m_dsv.Get();
+    m_context.device_context->OMSetRenderTargets(rtv_ptr.size(), rtv_ptr.data(), dsv.Get());
 }
 
 void DX11ProgramApi::CreateInputLayout()
@@ -237,6 +249,28 @@ void DX11ProgramApi::AttachSampler(ShaderType type, uint32_t slot, const Sampler
         m_context.device_context->GSSetSamplers(slot, 1, sampler.GetAddressOf());
         break;
     }
+}
+
+void DX11ProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& ires)
+{
+    if (m_rtvs.size() >= slot)
+        m_rtvs.resize(slot + 1);
+    m_rtvs[slot] = CreateRtv(ires);
+}
+
+void DX11ProgramApi::AttachDSV(const Resource::Ptr& ires)
+{
+    m_dsv = CreateDsv(ires);
+}
+
+void DX11ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
+{
+    m_context.device_context->ClearRenderTargetView(m_rtvs[slot].Get(), ColorRGBA);
+}
+
+void DX11ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+{
+    m_context.device_context->ClearDepthStencilView(m_dsv.Get(), ClearFlags, Depth, Stencil);
 }
 
 void DX11ProgramApi::AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr & ires)

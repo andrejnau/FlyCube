@@ -30,9 +30,6 @@ public:
     virtual void OnResize(int width, int height);
     virtual void SetViewport(int width, int height) = 0;
     virtual void SetScissorRect(LONG left, LONG top, LONG right, LONG bottom) = 0;
-    virtual void OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv) = 0;
-    virtual void ClearRenderTarget(Resource::Ptr rtv, const FLOAT ColorRGBA[4]) = 0;
-    virtual void ClearDepthStencil(Resource::Ptr dsv, UINT ClearFlags, FLOAT Depth, UINT8 Stencil) = 0;
 
     virtual void IASetIndexBuffer(Resource::Ptr res, UINT SizeInBytes, DXGI_FORMAT Format) = 0;
     virtual void IASetVertexBuffer(UINT slot, Resource::Ptr res, UINT SizeInBytes, UINT Stride) = 0;

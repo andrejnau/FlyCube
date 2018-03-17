@@ -22,9 +22,12 @@ public:
     virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
     virtual void AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buffer) override;
     virtual void AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc) override;
+    virtual void AttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void AttachDSV(const Resource::Ptr& ires) override;
+    virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
+    virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
 
     void OnPresent();
-    void OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv);
 
 private:
     void AttachCBV(ShaderType type, uint32_t slot, const ComPtr<ID3D12Resource>& res);
@@ -43,6 +46,7 @@ private:
     void CreateGraphicsPSO();
     void CreateComputePSO();
     void ParseShaders();
+    void OMSetRenderTargets();
 
 private:
     decltype(&::D3DReflect) _D3DReflect = &::D3DReflect;
@@ -85,6 +89,7 @@ private:
     ComPtr<ID3D12RootSignature> m_root_signature;
     bool m_changed_pso_desc = false;
     bool m_changed_binding = false;
+    bool m_changed_om = false;
     D3D12_GRAPHICS_PIPELINE_STATE_DESC m_pso_desc = {};
     D3D12_COMPUTE_PIPELINE_STATE_DESC m_compute_pso_desc = {};
     ComPtr<ID3D12PipelineState> m_pso;

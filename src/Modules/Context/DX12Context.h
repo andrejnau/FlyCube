@@ -38,9 +38,6 @@ public:
     virtual void Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ) override;
     virtual void SetViewport(int width, int height) override;
     virtual void SetScissorRect(LONG left, LONG top, LONG right, LONG bottom) override;
-    virtual void OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv) override;
-    virtual void ClearRenderTarget(Resource::Ptr rtv, const FLOAT ColorRGBA[4]) override;
-    virtual void ClearDepthStencil(Resource::Ptr dsv, UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
 
     virtual void IASetIndexBuffer(Resource::Ptr res, UINT SizeInBytes, DXGI_FORMAT Format) override;

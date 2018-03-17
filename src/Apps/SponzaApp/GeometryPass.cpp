@@ -44,19 +44,12 @@ void GeometryPass::OnRender()
         SamplerComparisonFunc::kNever});
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_context.OMSetRenderTargets({ 
-        output.position,
-        output.normal,
-        output.ambient,
-        output.diffuse,
-        output.specular,
-        }, m_depth_stencil);
-    m_context.ClearRenderTarget(output.position, color);
-    m_context.ClearRenderTarget(output.normal, color);
-    m_context.ClearRenderTarget(output.ambient, color);
-    m_context.ClearRenderTarget(output.diffuse, color);
-    m_context.ClearRenderTarget(output.specular, color);
-    m_context.ClearDepthStencil(m_depth_stencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program.ps.om.rtv0.Attach(output.position).Clear(color);
+    m_program.ps.om.rtv1.Attach(output.normal).Clear(color);
+    m_program.ps.om.rtv2.Attach(output.ambient).Clear(color);
+    m_program.ps.om.rtv3.Attach(output.diffuse).Clear(color);
+    m_program.ps.om.rtv4.Attach(output.specular).Clear(color);
+    m_program.ps.om.dsv.Attach(m_depth_stencil).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     auto& state = CurState<bool>::Instance().state;
     for (auto& model : m_input.scene_list)

@@ -99,29 +99,6 @@ void DX11Context::SetScissorRect(LONG left, LONG top, LONG right, LONG bottom)
     device_context->RSSetScissorRects(1, &rect);
 }
 
-void DX11Context::OMSetRenderTargets(std::vector<Resource::Ptr> rtv_res, Resource::Ptr dsv_res)
-{
-    std::vector<ComPtr<ID3D11RenderTargetView>> rtv;
-    std::vector<ID3D11RenderTargetView*> rtv_ptr;
-    for (auto & res : rtv_res)
-    {
-        rtv.emplace_back(ToRtv(res));
-        rtv_ptr.emplace_back(rtv.back().Get());
-    }
-    ComPtr<ID3D11DepthStencilView> _dsv = ToDsv(dsv_res);
-    device_context->OMSetRenderTargets(rtv_ptr.size(), rtv_ptr.data(), _dsv.Get());
-}
-
-void DX11Context::ClearRenderTarget(Resource::Ptr rtv, const FLOAT ColorRGBA[4])
-{
-    device_context->ClearRenderTargetView(ToRtv(rtv).Get(), ColorRGBA);
-}
-
-void DX11Context::ClearDepthStencil(Resource::Ptr dsv, UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
-{
-    device_context->ClearDepthStencilView(ToDsv(dsv).Get(), ClearFlags, Depth, Stencil);
-}
-
 Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
     DX11Resource::Ptr res = std::make_shared<DX11Resource>();

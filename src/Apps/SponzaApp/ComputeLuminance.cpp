@@ -62,9 +62,8 @@ void ComputeLuminance::Draw(size_t buf_id)
     m_HDRApply.UseProgram();
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_context.OMSetRenderTargets({ m_input.rtv }, m_input.dsv);
-    m_context.ClearRenderTarget(m_input.rtv, color);
-    m_context.ClearDepthStencil(m_input.dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_HDRApply.ps.om.rtv0.Attach(m_input.rtv).Clear(color);
+    m_HDRApply.ps.om.dsv.Attach(m_input.dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_HDRApply.vs.ia.POSITION);

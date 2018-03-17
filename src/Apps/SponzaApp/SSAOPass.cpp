@@ -79,9 +79,8 @@ void SSAOPass::OnRender()
     m_program.UseProgram();
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_context.OMSetRenderTargets({ output.srv }, m_depth_stencil_view);
-    m_context.ClearRenderTarget(output.srv, color);
-    m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program.ps.om.rtv0.Attach(output.srv).Clear(color);
+    m_program.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
@@ -96,10 +95,8 @@ void SSAOPass::OnRender()
     }
 
     m_program_blur.UseProgram();
-
-    m_context.OMSetRenderTargets({ output.srv_blur }, m_depth_stencil_view);
-    m_context.ClearRenderTarget(output.srv_blur, color);
-    m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program_blur.ps.om.rtv0.Attach(output.srv_blur).Clear(color);
+    m_program_blur.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);

@@ -57,9 +57,8 @@ void LightPass::OnRender()
         SamplerComparisonFunc::kLess });
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_context.OMSetRenderTargets({ output.rtv }, m_depth_stencil_view);
-    m_context.ClearRenderTarget(output.rtv, color);
-    m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program.ps.om.rtv0.Attach(output.rtv).Clear(color);
+    m_program.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
@@ -77,8 +76,6 @@ void LightPass::OnRender()
 
         m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
-
-    m_context.OMSetRenderTargets({}, nullptr);
 }
 
 void LightPass::OnResize(int width, int height)

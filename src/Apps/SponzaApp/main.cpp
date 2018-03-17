@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-    ApiType type = ApiType::kDX12;
+    ApiType type = ApiType::kDX11;
     for (int i = 1; i < argc; ++i)
     {
         std::string arg(argv[i]);
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
     auto& state = CurState<bool>::Instance().state;
     state["DepthBias"] = true;
-    if (type == ApiType::kDX12 && LoadLibraryA("d3dcompiler_dxc_bridge.dll"))
+    if (0 && type == ApiType::kDX12 && LoadLibraryA("d3dcompiler_dxc_bridge.dll"))
     {
         state["DXIL"] = true;
         title += " with Shader Model 6.0";

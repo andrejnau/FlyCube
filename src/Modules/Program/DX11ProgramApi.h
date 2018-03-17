@@ -17,6 +17,10 @@ public:
     virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
     virtual void AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buffer_layout) override;
     virtual void AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc) override;
+    virtual void AttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void AttachDSV(const Resource::Ptr& ires) override;
+    virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
+    virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
 
 private:
     void CreateInputLayout();
@@ -26,6 +30,50 @@ private:
     void AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires);
     ComPtr<ID3D11ShaderResourceView> CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
     ComPtr<ID3D11UnorderedAccessView> CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
+
+    ComPtr<ID3D11DepthStencilView> CreateDsv(const Resource::Ptr& ires)
+    {
+        ComPtr<ID3D11DepthStencilView> dsv;
+        if (!ires)
+            return dsv;
+
+        auto res = std::static_pointer_cast<DX11Resource>(ires);
+
+        ComPtr<ID3D11Texture2D> tex;
+        res->resource.As(&tex);
+
+        D3D11_TEXTURE2D_DESC tex_dec = {};
+        tex->GetDesc(&tex_dec);
+
+        if (tex_dec.Format == DXGI_FORMAT_R32_TYPELESS) // TODO
+        {
+            D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
+            dsv_desc.Format = DXGI_FORMAT_D32_FLOAT;
+            dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+            dsv_desc.Texture2DArray.ArraySize = tex_dec.ArraySize;
+            ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(tex.Get(), &dsv_desc, &dsv));
+        }
+        else
+        {
+            ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(tex.Get(), nullptr, &dsv));
+        }
+        return dsv;
+    }
+
+    ComPtr<ID3D11RenderTargetView> CreateRtv(const Resource::Ptr& ires)
+    {
+        auto res = std::static_pointer_cast<DX11Resource>(ires);
+
+        ComPtr<ID3D11RenderTargetView> rtv;
+        if (!ires)
+            return rtv;
+
+        ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(res->resource.Get(), nullptr, &rtv));
+        return rtv;
+    }
+
+    std::vector<ComPtr<ID3D11RenderTargetView>> m_rtvs;
+    ComPtr<ID3D11DepthStencilView> m_dsv;
 
     std::map<std::tuple<ShaderType, size_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
     std::map<std::tuple<ShaderType, size_t>, Resource::Ptr> m_cbv_buffer;

@@ -214,22 +214,6 @@ void DX12Context::SetScissorRect(LONG left, LONG top, LONG right, LONG bottom)
     commandList->RSSetScissorRects(1, &rect);
 }
 
-void DX12Context::OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv)
-{
-    if (!current_program)
-        return;
-
-    current_program->OMSetRenderTargets(rtv, dsv);
-}
-
-void DX12Context::ClearRenderTarget(Resource::Ptr rtv, const FLOAT ColorRGBA[4])
-{
-}
-
-void DX12Context::ClearDepthStencil(Resource::Ptr dsv, UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
-{
-}
-
 Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
     DX12Resource::Ptr res = std::make_shared<DX12Resource>();

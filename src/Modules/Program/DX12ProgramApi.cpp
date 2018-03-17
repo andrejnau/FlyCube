@@ -147,6 +147,50 @@ void DX12ProgramApi::AttachSampler(ShaderType type, uint32_t slot, const Sampler
         std::forward_as_tuple(CreateSampler(type, slot, desc)));
 }
 
+void DX12ProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& ires)
+{
+    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kRtv, slot });
+    if (it != m_heap_ranges.end())
+        m_heap_ranges.erase(it);
+
+    m_changed_om = true;
+
+    m_heap_ranges.emplace(std::piecewise_construct,
+        std::forward_as_tuple(ShaderType::kPixel, ResourceType::kRtv, slot),
+        std::forward_as_tuple(CreateRTV(slot, ires)));
+}
+
+void DX12ProgramApi::AttachDSV(const Resource::Ptr& ires)
+{
+    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kDsv, 0 });
+    if (it != m_heap_ranges.end())
+        m_heap_ranges.erase(it);
+
+    m_changed_om = true;
+
+    m_heap_ranges.emplace(std::piecewise_construct,
+        std::forward_as_tuple(ShaderType::kPixel, ResourceType::kDsv, 0),
+        std::forward_as_tuple(CreateDSV(ires)));
+}
+
+void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
+{
+    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kRtv, slot });
+    if (it == m_heap_ranges.end())
+        return;
+    auto& range = it->second;
+    m_context.commandList->ClearRenderTargetView(range.GetCpuHandle(), ColorRGBA, 0, nullptr);
+}
+
+void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+{
+    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kDsv, 0 });
+    if (it == m_heap_ranges.end())
+        return;
+    auto& range = it->second;
+    m_context.commandList->ClearDepthStencilView(range.GetCpuHandle(), (D3D12_CLEAR_FLAGS)ClearFlags, Depth, Stencil, 0, nullptr);
+}
+
 DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
@@ -591,6 +635,9 @@ void DX12ProgramApi::ApplyBindings()
         }
     }
 
+    if (m_changed_om)
+        OMSetRenderTargets();
+
     if (!m_changed_binding)
         return;
     m_changed_binding = false;
@@ -611,6 +658,7 @@ void DX12ProgramApi::ApplyBindings()
         D3D12_DESCRIPTOR_RANGE_TYPE range_type;
         D3D12_DESCRIPTOR_HEAP_TYPE heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
         std::reference_wrapper<DescriptorHeapRange> heap_range = res_heap;
+        bool is_rtv_dsv = false;
         switch (std::get<1>(x.first))
         {
         case ResourceType::kSrv:
@@ -627,7 +675,15 @@ void DX12ProgramApi::ApplyBindings()
             heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
             heap_range = std::ref(sampler_heap);
             break;
+        case ResourceType::kRtv:
+        case ResourceType::kDsv:
+            is_rtv_dsv = true;
+            break;
         }
+
+        if (is_rtv_dsv)
+            continue;
+
         D3D12_CPU_DESCRIPTOR_HANDLE view_handle = x.second.GetCpuHandle();
 
         D3D12_CPU_DESCRIPTOR_HANDLE binding_handle = heap_range.get().GetCpuHandle(m_binding_layout[{std::get<0>(x.first), range_type}].table.heap_offset + std::get<2>(x.first));
@@ -894,31 +950,23 @@ void DX12ProgramApi::OnPresent()
     m_cbv_offset[m_context.GetFrameIndex()].clear();
 }
 
-void DX12ProgramApi::OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv)
+void DX12ProgramApi::OMSetRenderTargets()
 {
-    size_t slot = 0;
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv;
-    D3D12_CPU_DESCRIPTOR_HANDLE* om_dsv = nullptr;
-
-    std::vector<DescriptorHeapRange> rtv_range;
-    for (auto& x : rtv)
+    for (uint32_t slot = 0; slot < m_num_rtv; ++slot)
     {
-        rtv_range.emplace_back(CreateRTV(slot++, x));
+        auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kRtv, slot });
+        om_rtv.emplace_back();
+        if (it != m_heap_ranges.end())
+            om_rtv.back() = it->second.GetCpuHandle();
     }
 
-    for (auto& x : rtv_range)
+    D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = {};
+    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kDsv, 0 });
+    if (it != m_heap_ranges.end())
     {
-        om_rtv.emplace_back(x.GetCpuHandle());
-        const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-        m_context.commandList->ClearRenderTargetView(om_rtv.back(), clearColor, 0, nullptr);
+        om_dsv = it->second.GetCpuHandle();
     }
 
-    if (dsv)
-    {
-        auto range = CreateDSV(dsv);
-        om_dsv = &range.GetCpuHandle();
-        m_context.commandList->ClearDepthStencilView(*om_dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-    }
-
-    m_context.commandList->OMSetRenderTargets(om_rtv.size(), om_rtv.data(), FALSE, om_dsv);
+    m_context.commandList->OMSetRenderTargets(om_rtv.size(), om_rtv.data(), FALSE, &om_dsv);
 }

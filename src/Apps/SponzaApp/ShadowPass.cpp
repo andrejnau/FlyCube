@@ -58,8 +58,7 @@ void ShadowPass::OnRender()
         SamplerComparisonFunc::kNever });
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_context.OMSetRenderTargets({}, output.srv);
-    m_context.ClearDepthStencil(output.srv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program.ps.om.dsv.Attach(output.srv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     auto& state = CurState<bool>::Instance().state;
     for (auto& model : m_input.scene_list)

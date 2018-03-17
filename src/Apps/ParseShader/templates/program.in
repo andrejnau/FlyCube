@@ -47,10 +47,19 @@ public:
 {{#Inputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
 {{/Inputs}}    } ia;
 
-    struct
+    {{#HasOutputs}}
+    struct OM
     {
-{{#Outputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
-{{/Outputs}}    } om;
+        OM(ProgramApi& program_api)
+{{#Outputs}}            {{Separator}} rtv{{Slot}}(program_api, {{Slot}})
+{{/Outputs}}            {{DSVSeparator}} dsv(program_api)
+        {
+        }
+
+{{#Outputs}}        RTVBinding rtv{{Slot}};
+{{/Outputs}}        DSVBinding dsv;
+    } om;
+    {{/HasOutputs}}
 
     struct Sampler
     {
@@ -68,6 +77,7 @@ public:
         , cbuffer{}
         , srv(program_api)
         , uav(program_api)
+        {{#HasOutputs}}, om(program_api) {{/HasOutputs}}
         , sampler(program_api)
         , cbuffer_impl(*this)
     {

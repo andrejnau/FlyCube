@@ -153,11 +153,8 @@ public:
             SamplerComparisonFunc::kNever });
 
         float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-        m_context.OMSetRenderTargets({
-            m_render_target_view,
-            }, m_depth_stencil_view);
-        m_context.ClearRenderTarget(m_render_target_view, color);
-        m_context.ClearDepthStencil(m_depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+        m_program.ps.om.rtv0.Attach(m_render_target_view).Clear(color);
+        m_program.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
         m_model.ia.indices.Bind();
         m_model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);

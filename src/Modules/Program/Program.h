@@ -85,6 +85,54 @@ private:
     uint32_t m_slot;
 };
 
+class RTVBinding
+{
+public:
+    RTVBinding(ProgramApi& program_api, uint32_t slot)
+        : m_program_api(program_api)
+        , m_slot(slot)
+    {
+    }
+
+    RTVBinding& Attach(const Resource::Ptr& ires = {})
+    {
+        m_program_api.AttachRTV(m_slot, ires);
+        return *this;
+    }
+
+    void Clear(const FLOAT ColorRGBA[4])
+    {
+        m_program_api.ClearRenderTarget(m_slot, ColorRGBA);
+    }
+
+private:
+    ProgramApi& m_program_api;
+    uint32_t m_slot;
+};
+
+class DSVBinding
+{
+public:
+    DSVBinding(ProgramApi& program_api)
+        : m_program_api(program_api)
+    {
+    }
+
+    DSVBinding& Attach(const Resource::Ptr& ires = {})
+    {
+        m_program_api.AttachDSV(ires);
+        return *this;
+    }
+
+    void Clear(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+    {
+        m_program_api.ClearDepthStencil(ClearFlags, Depth, Stencil);
+    }
+
+private:
+    ProgramApi& m_program_api;
+};
+
 template<ShaderType, typename T> class ShaderHolderImpl {};
 
 template<typename T>

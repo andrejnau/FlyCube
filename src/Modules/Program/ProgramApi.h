@@ -30,4 +30,8 @@ public:
     virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) = 0;
     virtual void AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buffer) = 0;
     virtual void AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc) = 0;
+    virtual void AttachRTV(uint32_t slot, const Resource::Ptr& ires) = 0;
+    virtual void AttachDSV(const Resource::Ptr& ires) = 0;
+    virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) = 0;
+    virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) = 0;
 };
