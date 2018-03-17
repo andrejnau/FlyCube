@@ -55,7 +55,10 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     ++m_fence_values[m_frame_index];
     m_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
-    descriptor_pool.reset(new DescriptorPool(*this));
+    for (size_t i = 0; i < FrameCount; ++i)
+    {
+        descriptor_pool[i].reset(new DescriptorPool(*this));
+    }
 
 #if defined(_DEBUG)
     ComPtr<ID3D12InfoQueue> info_queue;
@@ -283,8 +286,7 @@ void DX12Context::Present(const Resource::Ptr& ires)
     ASSERT_SUCCEEDED(m_command_allocator[m_frame_index]->Reset());
     ASSERT_SUCCEEDED(command_list->Reset(m_command_allocator[m_frame_index].Get(), nullptr));
 
-    if (m_frame_index == 0)
-        descriptor_pool->OnFrameBegin();
+    descriptor_pool[m_frame_index]->OnFrameBegin();
     for (auto & x : m_created_program)
         x.get().OnPresent();
 }

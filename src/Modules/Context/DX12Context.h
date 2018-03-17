@@ -41,9 +41,14 @@ public:
     void ResourceBarrier(const DX12Resource::Ptr& res, D3D12_RESOURCE_STATES state);
     void UseProgram(DX12ProgramApi& program_api);
 
+    DescriptorPool& GetDescriptorPool()
+    {
+        return *descriptor_pool[m_frame_index];
+    }
+
     ComPtr<ID3D12GraphicsCommandList> command_list;
     ComPtr<ID3D12Device> device;
-    std::unique_ptr<DescriptorPool> descriptor_pool;
+    PerFrameData<std::unique_ptr<DescriptorPool>> descriptor_pool;
 
 private:
     virtual void ResizeBackBuffer(int width, int height) override;

@@ -345,9 +345,6 @@ private:
 
 void ImGuiPass::OnUpdate()
 {
-    size_t max_cnt = 2048;
-    m_program.SetMaxEvents(max_cnt);
-
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         return;
 
@@ -366,7 +363,7 @@ void ImGuiPass::OnUpdate()
             ++cnt;
         }
     }
-    assert(cnt <= max_cnt);
+    m_program.SetMaxEvents(cnt);
 }
 
 void ImGuiPass::OnRender()

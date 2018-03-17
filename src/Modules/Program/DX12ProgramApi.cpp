@@ -41,10 +41,10 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
 
 void DX12ProgramApi::SetMaxEvents(size_t count)
 {
-    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kCbv, m_num_cbv * count * Context::FrameCount);
-    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kSrv, m_num_srv * count * Context::FrameCount);
-    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kUav, m_num_uav * count * Context::FrameCount);
-    m_context.descriptor_pool->ReqFrameDescription(ResourceType::kSampler, m_num_sampler);
+    m_context.GetDescriptorPool().ReqFrameDescription(ResourceType::kCbv, m_num_cbv * count * Context::FrameCount);
+    m_context.GetDescriptorPool().ReqFrameDescription(ResourceType::kSrv, m_num_srv * count * Context::FrameCount);
+    m_context.GetDescriptorPool().ReqFrameDescription(ResourceType::kUav, m_num_uav * count * Context::FrameCount);
+    m_context.GetDescriptorPool().ReqFrameDescription(ResourceType::kSampler, m_num_sampler);
 }
 
 void DX12ProgramApi::UseProgram()
@@ -66,8 +66,12 @@ void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& bl
     switch (type)
     {
     case ShaderType::kVertex:
+    {
         m_pso_desc.VS = ShaderBytecode;
+        _D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&m_input_layout_reflector));
+        m_input_layout = GetInputLayout(m_input_layout_reflector);
         break;
+    }
     case ShaderType::kPixel:
         m_pso_desc.PS = ShaderBytecode;
         break;
@@ -281,7 +285,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
     else
         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res->default_res.Get());
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res->default_res.Get());
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -352,7 +356,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res->default_res.Get());
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res->default_res.Get());
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -389,7 +393,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
 
 DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, const ComPtr<ID3D12Resource>& res)
 {
-    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res.Get());
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res.Get());
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -421,7 +425,7 @@ ComPtr<ID3D12Resource> DX12ProgramApi::CreateCBuffer(size_t buffer_size)
 
 DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
 {
-    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kSampler, GetBindingId(m_program_id, type, ResourceType::kSampler, slot), nullptr);
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kSampler, GetBindingId(m_program_id, type, ResourceType::kSampler, slot), nullptr);
 
     D3D12_SAMPLER_DESC sampler_desc = {};
 
@@ -478,7 +482,7 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res->default_res.Get());
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res->default_res.Get());
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -505,7 +509,7 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
-    auto descriptor = m_context.descriptor_pool->GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res->default_res.Get());
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res->default_res.Get());
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
@@ -634,16 +638,10 @@ void DX12ProgramApi::CreateGraphicsPSO()
 {
     if (!m_changed_pso_desc)
         return;
-    m_changed_pso_desc = false;
+    m_changed_pso_desc = false; 
 
-    ComPtr<ID3D12ShaderReflection> reflector;
-    _D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&reflector));
-    auto input_layout_elements = GetInputLayout(reflector);
-    D3D12_INPUT_LAYOUT_DESC input_layout = {};
-    input_layout.NumElements = input_layout_elements.size();
-    input_layout.pInputElementDescs = input_layout_elements.data();
-
-    m_pso_desc.InputLayout = input_layout;
+    m_pso_desc.InputLayout.NumElements = m_input_layout.size();
+    m_pso_desc.InputLayout.pInputElementDescs = m_input_layout.data();
     m_pso_desc.pRootSignature = m_root_signature.Get();
     m_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     m_pso_desc.SampleMask = UINT_MAX;
@@ -667,13 +665,12 @@ void DX12ProgramApi::CreateGraphicsPSO()
 
 void DX12ProgramApi::CreateComputePSO()
 {
-    if (!m_compute_pso)
+    if (!m_current_pso)
     {
         m_compute_pso_desc.pRootSignature = m_root_signature.Get();
-        ASSERT_SUCCEEDED(m_context.device->CreateComputePipelineState(&m_compute_pso_desc, IID_PPV_ARGS(&m_compute_pso)));
+        ASSERT_SUCCEEDED(m_context.device->CreateComputePipelineState(&m_compute_pso_desc, IID_PPV_ARGS(&m_current_pso)));
     }
-    m_context.command_list->SetPipelineState(m_compute_pso.Get());
-    m_compute_pso->SetName(L"m_compute_pso");
+    m_context.command_list->SetPipelineState(m_current_pso.Get());
 }
 
 void DX12ProgramApi::ApplyBindings()
@@ -718,8 +715,8 @@ void DX12ProgramApi::ApplyBindings()
         return;
     m_changed_binding = false;
 
-    DescriptorHeapRange res_heap = m_context.descriptor_pool->Allocate(ResourceType::kSrv, m_num_cbv + m_num_srv + m_num_uav);
-    static DescriptorHeapRange sampler_heap = m_context.descriptor_pool->Allocate(ResourceType::kSampler, m_num_sampler);
+    DescriptorHeapRange res_heap = m_context.GetDescriptorPool().Allocate(ResourceType::kSrv, m_num_cbv + m_num_srv + m_num_uav);
+    static DescriptorHeapRange sampler_heap = m_context.GetDescriptorPool().Allocate(ResourceType::kSampler, m_num_sampler);
 
     ID3D12DescriptorHeap* descriptor_heaps[2] = {};
     size_t descriptor_count = 0;

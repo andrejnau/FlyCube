@@ -96,7 +96,6 @@ private:
     bool m_changed_om = false;
     D3D12_GRAPHICS_PIPELINE_STATE_DESC m_pso_desc = {};
     D3D12_COMPUTE_PIPELINE_STATE_DESC m_compute_pso_desc = {};
-    ComPtr<ID3D12PipelineState> m_compute_pso;
 
     template<typename T>
     struct Hasher
@@ -124,7 +123,7 @@ private:
     public:
         bool operator() (const T& t1, const T& t2) const
         {
-            return memcmp(&t1, &t2, sizeof(T));
+            return memcmp(&t1, &t2, sizeof(T)) == 0;
         }
     };
 
@@ -132,6 +131,9 @@ private:
         Hasher<D3D12_GRAPHICS_PIPELINE_STATE_DESC>, 
         EqualFn<D3D12_GRAPHICS_PIPELINE_STATE_DESC>> m_pso;
     ComPtr<ID3D12PipelineState> m_current_pso;
+
+    std::vector<D3D12_INPUT_ELEMENT_DESC> m_input_layout;
+    ComPtr<ID3D12ShaderReflection> m_input_layout_reflector;
 
     const bool m_use_cbv_table = false;
 
