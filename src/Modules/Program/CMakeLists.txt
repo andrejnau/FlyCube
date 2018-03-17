@@ -1,6 +1,7 @@
 set(target Program)
 
 set(headers
+    BufferLayout.h
     DX11ProgramApi.h
     DX12ProgramApi.h
     Program.h
@@ -23,10 +24,9 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
-    Utilities
-    d3dcompiler
     d3d11
-    glLoadGen
+    d3dcompiler
+    Utilities
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")
