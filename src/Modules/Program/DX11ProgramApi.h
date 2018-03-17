@@ -21,6 +21,9 @@ public:
     virtual void AttachDSV(const Resource::Ptr& ires) override;
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
+    virtual void SetRasterizeState(const RasterizerDesc& desc) override;
+    virtual void SetBlendState(const BlendDesc& desc) override;
+    virtual void SetDepthStencilState(const DepthStencilDesc& desc) override;
 
 private:
     void CreateInputLayout();

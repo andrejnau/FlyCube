@@ -27,6 +27,16 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     auto& state = CurState<bool>::Instance().state;
     if (state["DXIL"])
         _D3DReflect = (decltype(&::D3DReflect))GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DReflect");
+
+    m_pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    m_pso_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+
+    CD3DX12_DEPTH_STENCIL_DESC depth_stencil_desc(D3D12_DEFAULT);
+    depth_stencil_desc.DepthEnable = true;
+    depth_stencil_desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+    depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    depth_stencil_desc.StencilEnable = FALSE;
+    m_pso_desc.DepthStencilState = depth_stencil_desc;
 }
 
 void DX12ProgramApi::SetMaxEvents(size_t count)
@@ -43,8 +53,8 @@ void DX12ProgramApi::UseProgram()
     m_changed_binding = true;
     m_context.command_list->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     SetRootSignature(m_root_signature.Get());
-    if (m_pso)
-        m_context.command_list->SetPipelineState(m_pso.Get());
+    if (m_current_pso)
+        m_context.command_list->SetPipelineState(m_current_pso.Get());
 }
 
 void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& blob)
@@ -189,6 +199,77 @@ void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stenc
         return;
     auto& range = it->second;
     m_context.command_list->ClearDepthStencilView(range.GetCpuHandle(), (D3D12_CLEAR_FLAGS)ClearFlags, Depth, Stencil, 0, nullptr);
+}
+
+void DX12ProgramApi::SetRasterizeState(const RasterizerDesc& desc)
+{
+    m_changed_pso_desc = true;
+    switch (desc.fill_mode)
+    {
+    case FillMode::kWireframe:
+        m_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+        break;
+    case FillMode::kSolid:
+        m_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        break;
+    }
+
+    switch (desc.cull_mode)
+    {
+    case CullMode::kNone:
+        m_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        break;
+    case CullMode::kFront:
+        m_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+        break;
+    case CullMode::kBack:
+        m_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+        break;
+    }
+
+    m_pso_desc.RasterizerState.DepthBias = desc.DepthBias;
+}
+
+void DX12ProgramApi::SetBlendState(const BlendDesc& desc)
+{
+    m_changed_pso_desc = true;
+    auto& rt_desc = m_pso_desc.BlendState.RenderTarget[0];
+
+    auto convert = [](Blend type)
+    {
+        switch (type)
+        {
+        case Blend::kZero:
+            return D3D12_BLEND_ZERO;
+        case Blend::kSrcAlpha:
+            return D3D12_BLEND_SRC_ALPHA;
+        case Blend::kInvSrcAlpha:
+            return D3D12_BLEND_INV_SRC_ALPHA;
+        }
+    };
+
+    auto convert_op = [](BlendOp type)
+    {
+        switch (type)
+        {
+        case BlendOp::kAdd:
+            return D3D12_BLEND_OP_ADD;
+        }
+    };
+
+    rt_desc.BlendEnable = desc.blend_enable;
+    rt_desc.BlendOp = convert_op(desc.blend_op);
+    rt_desc.SrcBlend = convert(desc.blend_src);
+    rt_desc.DestBlend = convert(desc.blend_dest);
+    rt_desc.BlendOpAlpha = convert_op(desc.blend_op_alpha);
+    rt_desc.SrcBlendAlpha = convert(desc.blend_src_alpha);
+    rt_desc.DestBlendAlpha = convert(desc.blend_dest_apha);
+    rt_desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+}
+
+void DX12ProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
+{
+    m_pso_desc.DepthStencilState.DepthEnable = desc.depth_enable;
 }
 
 DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
@@ -566,27 +647,22 @@ void DX12ProgramApi::CreateGraphicsPSO()
     m_pso_desc.pRootSignature = m_root_signature.Get();
     m_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     m_pso_desc.SampleMask = UINT_MAX;
-    m_pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-    m_pso_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
     m_pso_desc.NumRenderTargets = m_num_rtv;
 
-    CD3DX12_DEPTH_STENCIL_DESC depth_stencil_desc(D3D12_DEFAULT);
-    depth_stencil_desc.DepthEnable = true;
-    depth_stencil_desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-    depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-    depth_stencil_desc.StencilEnable = FALSE;
-    m_pso_desc.DepthStencilState = depth_stencil_desc;
+    auto it = m_pso.find(m_pso_desc);
+    if (it == m_pso.end())
+    {
+        ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&m_pso_desc, IID_PPV_ARGS(&m_current_pso)));
+        m_pso.emplace(std::piecewise_construct,
+            std::forward_as_tuple(m_pso_desc),
+            std::forward_as_tuple(m_current_pso));
+    }
+    else
+    {
+        m_current_pso = it->second;
+    }
 
-    m_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-    m_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
-    m_pso_desc.RasterizerState.DepthClipEnable = false;
-
-    auto& state = CurState<bool>::Instance().state;
-    if (state["DepthBias"])
-        m_pso_desc.RasterizerState.DepthBias = 4096;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&m_pso_desc, IID_PPV_ARGS(&m_pso)));
-    m_context.command_list->SetPipelineState(m_pso.Get());
+    m_context.command_list->SetPipelineState(m_current_pso.Get());
 }
 
 void DX12ProgramApi::CreateComputePSO()
@@ -962,11 +1038,12 @@ void DX12ProgramApi::OMSetRenderTargets()
     }
 
     D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = {};
+    D3D12_CPU_DESCRIPTOR_HANDLE* om_dsv_ptr = nullptr;
     auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kDsv, 0 });
     if (it != m_heap_ranges.end())
     {
         om_dsv = it->second.GetCpuHandle();
+        om_dsv_ptr = &om_dsv;
     }
-
-    m_context.command_list->OMSetRenderTargets(om_rtv.size(), om_rtv.data(), FALSE, &om_dsv);
+    m_context.command_list->OMSetRenderTargets(om_rtv.size(), om_rtv.data(), FALSE, om_dsv_ptr);
 }

@@ -33,6 +33,7 @@ void DX11ProgramApi::UseProgram()
     m_context.device_context->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, empty_rtv, empty_dsv);
 
     m_context.device_context->IASetInputLayout(input_layout.Get());
+    m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 void DX11ProgramApi::AttachCBuffer(ShaderType type, UINT slot, BufferLayout & buffer_layout)
@@ -271,6 +272,92 @@ void DX11ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
 void DX11ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
 {
     m_context.device_context->ClearDepthStencilView(m_dsv.Get(), ClearFlags, Depth, Stencil);
+}
+
+void DX11ProgramApi::SetRasterizeState(const RasterizerDesc & desc)
+{
+    D3D11_RASTERIZER_DESC rs_desc = {};
+    switch (desc.fill_mode)
+    {
+    case FillMode::kWireframe:
+        rs_desc.FillMode = D3D11_FILL_WIREFRAME;
+        break;
+    case FillMode::kSolid:
+        rs_desc.FillMode = D3D11_FILL_SOLID;
+        break;
+    }
+
+    switch (desc.cull_mode)
+    {
+    case CullMode::kNone:
+        rs_desc.CullMode = D3D11_CULL_NONE;
+        break;
+    case CullMode::kFront:
+        rs_desc.CullMode = D3D11_CULL_FRONT;
+        break;
+    case CullMode::kBack:
+        rs_desc.CullMode = D3D11_CULL_BACK;
+        break;
+    }
+
+    rs_desc.DepthBias = desc.DepthBias;
+
+    ComPtr<ID3D11RasterizerState> rasterizer_state;
+    m_context.device->CreateRasterizerState(&rs_desc, &rasterizer_state);
+    m_context.device_context->RSSetState(rasterizer_state.Get());
+}
+
+void DX11ProgramApi::SetBlendState(const BlendDesc& desc)
+{
+    D3D11_BLEND_DESC blend_desc = {};
+
+    D3D11_RENDER_TARGET_BLEND_DESC& rt_desc = blend_desc.RenderTarget[0];
+
+    auto convert = [](Blend type)
+    {
+        switch (type)
+        {
+        case Blend::kZero:
+            return D3D11_BLEND_ZERO;
+        case Blend::kSrcAlpha:
+            return D3D11_BLEND_SRC_ALPHA;
+        case Blend::kInvSrcAlpha:
+            return D3D11_BLEND_INV_SRC_ALPHA;
+        }
+    };
+
+    auto convert_op = [](BlendOp type)
+    {
+        switch (type)
+        {
+        case BlendOp::kAdd:
+            return D3D11_BLEND_OP_ADD;
+        }
+    };
+
+    rt_desc.BlendEnable = desc.blend_enable;
+    rt_desc.BlendOp = convert_op(desc.blend_op);
+    rt_desc.SrcBlend = convert(desc.blend_src);
+    rt_desc.DestBlend = convert(desc.blend_dest);
+    rt_desc.BlendOpAlpha = convert_op(desc.blend_op_alpha);
+    rt_desc.SrcBlendAlpha = convert(desc.blend_src_alpha);
+    rt_desc.DestBlendAlpha = convert(desc.blend_dest_apha);
+    rt_desc.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+    ComPtr<ID3D11BlendState> blend_state;
+    m_context.device->CreateBlendState(&blend_desc, &blend_state);
+
+    const float blend_factor[4] = { 0.f, 0.f, 0.f, 0.f };
+    m_context.device_context->OMSetBlendState(blend_state.Get(), blend_factor, 0xffffffff);
+}
+
+void DX11ProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
+{
+    D3D11_DEPTH_STENCIL_DESC depth_stencil_desc = {};
+    depth_stencil_desc.DepthEnable = desc.depth_enable;
+    ComPtr<ID3D11DepthStencilState> depth_stencil_state;
+    m_context.device->CreateDepthStencilState(&depth_stencil_desc, &depth_stencil_state);
+    m_context.device_context->OMSetDepthStencilState(depth_stencil_state.Get(), 0);
 }
 
 void DX11ProgramApi::AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr & ires)

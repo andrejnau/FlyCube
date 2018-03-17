@@ -30,13 +30,6 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     {
         debug_controller->EnableDebugLayer();
     }
-
-    ComPtr<ID3D12InfoQueue> info_queue;
-    if (SUCCEEDED(device.As(&info_queue)))
-    {
-        info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-        info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-    }
 #endif
 
     ComPtr<IDXGIFactory4> dxgi_factory;
@@ -59,9 +52,19 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_command_allocator[m_frame_index].Get(), nullptr, IID_PPV_ARGS(&command_list)));
 
     ASSERT_SUCCEEDED(device->CreateFence(m_fence_values[m_frame_index], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
+    ++m_fence_values[m_frame_index];
     m_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
     descriptor_pool.reset(new DescriptorPool(*this));
+
+#if defined(_DEBUG)
+    ComPtr<ID3D12InfoQueue> info_queue;
+    if (SUCCEEDED(device.As(&info_queue)))
+    {
+        info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+        info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+    }
+#endif
 }
 
 std::unique_ptr<ProgramApi> DX12Context::CreateProgram()

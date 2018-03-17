@@ -50,3 +50,52 @@ enum BindFlag
     kVbv = 1 << 7,
     kSampler = 1 << 8,
 };
+
+enum class FillMode
+{
+    kWireframe,
+    kSolid
+};
+
+enum class CullMode
+{
+    kNone,
+    kFront,
+    kBack,
+};
+
+struct RasterizerDesc
+{
+    FillMode fill_mode;
+    CullMode cull_mode;
+    INT DepthBias = 0;
+};
+
+
+enum class Blend
+{
+    kZero,
+    kSrcAlpha,
+    kInvSrcAlpha,
+};
+
+enum class BlendOp
+{
+    kAdd,
+};
+
+struct BlendDesc
+{
+    bool blend_enable;
+    Blend blend_src;
+    Blend blend_dest;
+    BlendOp blend_op;
+    Blend blend_src_alpha;
+    Blend blend_dest_apha;
+    BlendOp blend_op_alpha;
+};
+
+struct DepthStencilDesc
+{
+    bool depth_enable;
+};

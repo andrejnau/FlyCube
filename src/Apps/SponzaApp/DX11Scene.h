@@ -60,5 +60,5 @@ private:
     SSAOPass m_ssao_pass;
     LightPass m_light_pass;
     ComputeLuminance m_compute_luminance;
-    std::unique_ptr<ImGuiPass> m_imgui_pass;
+    ImGuiPass m_imgui_pass;
 };

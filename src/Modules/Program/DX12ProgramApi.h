@@ -6,6 +6,7 @@
 #include <deque>
 #include <array>
 #include <set>
+#include <unordered_map>
 
 #include "Context/DescriptorPool.h"
 
@@ -26,6 +27,9 @@ public:
     virtual void AttachDSV(const Resource::Ptr& ires) override;
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
+    virtual void SetRasterizeState(const RasterizerDesc& desc) override;
+    virtual void SetBlendState(const BlendDesc& desc) override;
+    virtual void SetDepthStencilState(const DepthStencilDesc& desc) override;
 
     void OnPresent();
 
@@ -92,8 +96,42 @@ private:
     bool m_changed_om = false;
     D3D12_GRAPHICS_PIPELINE_STATE_DESC m_pso_desc = {};
     D3D12_COMPUTE_PIPELINE_STATE_DESC m_compute_pso_desc = {};
-    ComPtr<ID3D12PipelineState> m_pso;
     ComPtr<ID3D12PipelineState> m_compute_pso;
+
+    template<typename T>
+    struct Hasher
+    {
+        std::size_t operator()(const T& oid) const
+        {
+            const uint8_t* data = reinterpret_cast<const uint8_t*>(&oid);
+            auto size = sizeof(T);
+            std::size_t prime = 31;
+            std::size_t p_pow = 1;
+            std::size_t hash = 0;
+            for (size_t i = 0; i < size; ++i)
+            {
+                hash += (*data + 1ll) * p_pow;
+                p_pow *= prime;
+                ++data;
+            }
+            return hash;
+        }
+    };
+
+    template<typename T>
+    class EqualFn
+    {
+    public:
+        bool operator() (const T& t1, const T& t2) const
+        {
+            return memcmp(&t1, &t2, sizeof(T));
+        }
+    };
+
+    std::unordered_map<D3D12_GRAPHICS_PIPELINE_STATE_DESC, ComPtr<ID3D12PipelineState>,
+        Hasher<D3D12_GRAPHICS_PIPELINE_STATE_DESC>, 
+        EqualFn<D3D12_GRAPHICS_PIPELINE_STATE_DESC>> m_pso;
+    ComPtr<ID3D12PipelineState> m_current_pso;
 
     const bool m_use_cbv_table = false;
 

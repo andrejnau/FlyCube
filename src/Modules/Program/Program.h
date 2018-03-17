@@ -271,6 +271,21 @@ public:
         });
     }
 
+    void SetRasterizeState(const RasterizerDesc& desc)
+    {
+        m_program_base->SetRasterizeState(desc);
+    }
+
+    void SetBlendState(const BlendDesc& desc)
+    {
+        m_program_base->SetBlendState(desc);
+    }
+
+    void SetDepthStencilState(const DepthStencilDesc& desc)
+    {
+        m_program_base->SetDepthStencilState(desc);
+    }
+
 private:
     void UpdateShaders()
     {

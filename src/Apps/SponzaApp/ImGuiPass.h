@@ -17,6 +17,7 @@ class ImGuiPass : public IPass
 public:
     struct Input
     {
+        Resource::Ptr& rtv;
         IModifySettings& root_scene;
     };
 
@@ -28,9 +29,9 @@ public:
 
     void CreateFontsTexture();
 
-    bool ImGui_ImplDX11_Init();
+    bool InitImGui();
 
-    ImGuiPass(DX11Context& DX11Context, const Input& input, int width, int height);
+    ImGuiPass(Context& DX11Context, const Input& input, int width, int height);
     ~ImGuiPass();
 
     virtual void OnUpdate() override;
@@ -45,7 +46,6 @@ public:
 
 private:
     Context & m_context;
-    DX11Context& m_context_dx11;
     Input m_input;
     int m_width;
     int m_height;
@@ -55,9 +55,10 @@ private:
     INT64                    m_ticks_per_second = 0;
 
     Resource::Ptr m_font_texture_view;
-    ComPtr<ID3D11RasterizerState>   m_rasterizer_state;
-    ComPtr<ID3D11BlendState>        m_blend_state;
-    ComPtr<ID3D11DepthStencilState> m_depth_stencil_state;
 
     Program<ImGuiPassPS, ImGuiPassVS> m_program;
+    PerFrameData<std::unique_ptr<IAVertexBuffer>> m_positions_buffer;
+    PerFrameData<std::unique_ptr<IAVertexBuffer>> m_texcoords_buffer;
+    PerFrameData<std::unique_ptr<IAVertexBuffer>> m_colors_buffer;
+    PerFrameData<std::unique_ptr<IAIndexBuffer>> m_indices_buffer;
 };

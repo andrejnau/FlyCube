@@ -73,6 +73,8 @@ void ShadowPass::OnRender()
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bone_srv);
 
+        m_program.SetRasterizeState({ FillMode::kSolid, CullMode::kBack, 4096 });
+
         model.ia.indices.Bind();
         model.ia.positions.BindToSlot(m_program.vs.ia.SV_POSITION);
         model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);

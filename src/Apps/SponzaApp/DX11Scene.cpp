@@ -19,10 +19,8 @@ DX11Scene::DX11Scene(ApiType type, GLFWwindow* window, int width, int height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
     , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, light_pos }, width, height)
     , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
+    , m_imgui_pass(m_context, { m_render_target_view, *this }, width, height)
 {
-    if (type == ApiType::kDX11)
-        m_imgui_pass.reset(new ImGuiPass((DX11Context&)*m_context_ptr, { *this }, width, height));
-
 #if !defined(_DEBUG)
     m_scene_list.emplace_back(m_context, "model/sponza/sponza.obj");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f));
@@ -57,11 +55,7 @@ void DX11Scene::OnUpdate()
     float light_r = 2.5;
     light_pos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
 
-    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
-    {
-        if (m_imgui_pass)
-            m_imgui_pass->OnUpdate();
-    }
+    m_imgui_pass.OnUpdate();
 
     m_geometry_pass.OnUpdate();
     m_shadow_pass.OnUpdate();
@@ -96,12 +90,9 @@ void DX11Scene::OnRender()
 
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        if (m_imgui_pass)
-        {
-            m_context.BeginEvent(L"ImGui Pass");
-            m_imgui_pass->OnRender();
-            m_context.EndEvent();
-        }
+        m_context.BeginEvent(L"ImGui Pass");
+        m_imgui_pass.OnRender();
+        m_context.EndEvent();
     }
 
     m_context.Present(m_render_target_view);
@@ -125,16 +116,14 @@ void DX11Scene::OnResize(int width, int height)
     m_geometry_pass.OnResize(width, height);
     m_shadow_pass.OnResize(width, height);
     m_light_pass.OnResize(width, height);
-    if (m_imgui_pass)
-        m_imgui_pass->OnResize(width, height);
+    m_imgui_pass.OnResize(width, height);
 }
 
 void DX11Scene::OnKey(int key, int action)
 {
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        if (m_imgui_pass)
-            m_imgui_pass->OnKey(key, action);
+        m_imgui_pass.OnKey(key, action);
         return;
     }
 
@@ -166,8 +155,7 @@ void DX11Scene::OnMouse(bool first_event, double xpos, double ypos)
 {
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        if (m_imgui_pass)
-            m_imgui_pass->OnMouse(first_event, xpos, ypos);
+        m_imgui_pass.OnMouse(first_event, xpos, ypos);
         return;
     }
 
@@ -190,8 +178,7 @@ void DX11Scene::OnMouseButton(int button, int action)
 {
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        if (m_imgui_pass)
-            m_imgui_pass->OnMouseButton(button, action);
+        m_imgui_pass.OnMouseButton(button, action);
     }
 }
 
@@ -199,8 +186,7 @@ void DX11Scene::OnScroll(double xoffset, double yoffset)
 {
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        if (m_imgui_pass)
-            m_imgui_pass->OnScroll(xoffset, yoffset);
+        m_imgui_pass.OnScroll(xoffset, yoffset);
     }
 }
 
@@ -208,8 +194,7 @@ void DX11Scene::OnInputChar(unsigned int ch)
 {
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        if (m_imgui_pass)
-            m_imgui_pass->OnInputChar(ch);
+        m_imgui_pass.OnInputChar(ch);
     }
 }
 

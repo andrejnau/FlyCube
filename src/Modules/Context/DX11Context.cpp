@@ -35,17 +35,6 @@ DX11Context::DX11Context(GLFWwindow* window, int width, int height)
     m_swap_chain = CreateSwapChain(device, dxgi_factory, glfwGetWin32Window(window), width, height, FrameCount);
 
     device_context.As(&perf);
-
-
-    device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    ComPtr<ID3D11RasterizerState> rasterizer_state;
-    D3D11_RASTERIZER_DESC shadowState = {};
-    shadowState.FillMode = D3D11_FILL_SOLID;
-    shadowState.CullMode = D3D11_CULL_BACK;
-    shadowState.DepthBias = 4096;
-    device->CreateRasterizerState(&shadowState, &rasterizer_state);
-    device_context->RSSetState(rasterizer_state.Get());
 }
 
 std::unique_ptr<ProgramApi> DX11Context::CreateProgram()

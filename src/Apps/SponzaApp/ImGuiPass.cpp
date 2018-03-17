@@ -34,10 +34,12 @@ struct DX11StateBackup
         ID3D11InputLayout*          InputLayout;
     } old;
 
-    ID3D11DeviceContext* ctx;
-    DX11StateBackup(ID3D11DeviceContext* ctx)
-        : ctx(ctx)
+    ID3D11DeviceContext* ctx = nullptr;;
+    DX11StateBackup(DX11Context* context)
     {
+        if (!context)
+            return;
+        ctx = context->device_context.Get();
         // Backup DX state that will be modified to restore it afterwards (unfortunately this is very ugly looking and verbose. Close your eyes!)
         old.ScissorRectsCount = old.ViewportsCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
         ctx->RSGetScissorRects(&old.ScissorRectsCount, old.ScissorRects);
@@ -59,6 +61,8 @@ struct DX11StateBackup
 
     ~DX11StateBackup()
     {
+        if (!ctx)
+            return;
         // Restore modified DX state
         ctx->RSSetScissorRects(old.ScissorRectsCount, old.ScissorRects);
         ctx->RSSetViewports(old.ViewportsCount, old.Viewports);
@@ -81,7 +85,7 @@ struct DX11StateBackup
 
 void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
 {
-    DX11StateBackup guard(m_context_dx11.device_context.Get());
+    DX11StateBackup guard(dynamic_cast<DX11Context*>(&m_context));
 
     std::vector<glm::vec3> positions;
     std::vector<glm::vec2> texcoords;
@@ -106,28 +110,37 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
         }
     }
 
-    IAVertexBuffer positions_buffer(m_context, positions);
-    IAVertexBuffer texcoords_buffer(m_context, texcoords);
-    IAVertexBuffer colors_buffer(m_context, colors);
-    IAIndexBuffer indices_buffer(m_context, indices, DXGI_FORMAT_R32_UINT);
+    m_positions_buffer[m_context.GetFrameIndex()].reset(new IAVertexBuffer(m_context, positions));
+    m_texcoords_buffer[m_context.GetFrameIndex()].reset(new IAVertexBuffer(m_context, texcoords));
+    m_colors_buffer[m_context.GetFrameIndex()].reset(new IAVertexBuffer(m_context, colors));
+    m_indices_buffer[m_context.GetFrameIndex()].reset(new IAIndexBuffer(m_context, indices, DXGI_FORMAT_R32_UINT));
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f* m_height, 0.0f);
 
     m_program.UseProgram();
-    indices_buffer.Bind();
-    positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
-    texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
-    colors_buffer.BindToSlot(m_program.vs.ia.COLOR);
+
+    m_program.ps.om.rtv0.Attach(m_input.rtv);
+
+    m_indices_buffer[m_context.GetFrameIndex()]->Bind();
+    m_positions_buffer[m_context.GetFrameIndex()]->BindToSlot(m_program.vs.ia.POSITION);
+    m_texcoords_buffer[m_context.GetFrameIndex()]->BindToSlot(m_program.vs.ia.TEXCOORD);
+    m_colors_buffer[m_context.GetFrameIndex()]->BindToSlot(m_program.vs.ia.COLOR);
 
     m_program.ps.sampler.sampler0.Attach({
         SamplerFilter::kMinMagMipLinear,
         SamplerTextureAddressMode::kWrap,
         SamplerComparisonFunc::kAlways });
 
-    const float blend_factor[4] = { 0.f, 0.f, 0.f, 0.f };
-    m_context_dx11.device_context->OMSetBlendState(m_blend_state.Get(), blend_factor, 0xffffffff);
-    m_context_dx11.device_context->OMSetDepthStencilState(m_depth_stencil_state.Get(), 0);
-    m_context_dx11.device_context->RSSetState(m_rasterizer_state.Get());
+    m_program.SetBlendState({
+        true,
+        Blend::kSrcAlpha,
+        Blend::kInvSrcAlpha,
+        BlendOp::kAdd,
+        Blend::kInvSrcAlpha,
+        Blend::kZero,
+        BlendOp::kAdd });
+    m_program.SetRasterizeState({ FillMode::kSolid, CullMode::kNone });
+    m_program.SetDepthStencilState({ false });
 
     m_context.SetViewport(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
@@ -166,7 +179,7 @@ void ImGuiPass::CreateFontsTexture()
     io.Fonts->TexID = (void *)&m_font_texture_view;
 }
 
-bool  ImGuiPass::ImGui_ImplDX11_Init()
+bool ImGuiPass::InitImGui()
 {
     if (!QueryPerformanceFrequency((LARGE_INTEGER *)&m_ticks_per_second))
         return false;
@@ -197,9 +210,8 @@ bool  ImGuiPass::ImGui_ImplDX11_Init()
     return true;
 }
 
-ImGuiPass::ImGuiPass(DX11Context& context, const Input& input, int width, int height)
+ImGuiPass::ImGuiPass(Context& context, const Input& input, int width, int height)
     : m_context(context)
-    , m_context_dx11(context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
@@ -208,49 +220,7 @@ ImGuiPass::ImGuiPass(DX11Context& context, const Input& input, int width, int he
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)width, (float)height);
 
-    ImGui_ImplDX11_Init();
-
-    // Create the blending setup
-    {
-        D3D11_BLEND_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
-        desc.AlphaToCoverageEnable = false;
-        desc.RenderTarget[0].BlendEnable = true;
-        desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-        desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-        desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-        desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-        desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-        desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-        desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-        m_context_dx11.device->CreateBlendState(&desc, &m_blend_state);
-    }
-
-    // Create the rasterizer state
-    {
-        D3D11_RASTERIZER_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
-        desc.FillMode = D3D11_FILL_SOLID;
-        desc.CullMode = D3D11_CULL_NONE;
-        desc.ScissorEnable = true;
-        desc.DepthClipEnable = true;
-        m_context_dx11.device->CreateRasterizerState(&desc, &m_rasterizer_state);
-    }
-
-    // Create depth-stencil State
-    {
-        D3D11_DEPTH_STENCIL_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
-        desc.DepthEnable = false;
-        desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-        desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-        desc.StencilEnable = false;
-        desc.FrontFace.StencilFailOp = desc.FrontFace.StencilDepthFailOp = desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-        desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-        desc.BackFace = desc.FrontFace;
-        m_context_dx11.device->CreateDepthStencilState(&desc, &m_depth_stencil_state);
-    }
-
+    InitImGui();
     CreateFontsTexture();
 }
 
@@ -262,14 +232,10 @@ ImGuiPass::~ImGuiPass()
 class ImGuiSettings
 {
 public:
-    ImGuiSettings(const ComPtr<ID3D11Device>& device)
+    ImGuiSettings()
     {
-        for (uint32_t i = 2; i <= D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT; ++i)
+        for (uint32_t i = 2; i <= 8; i *= 2)
         {
-            uint32_t quality = 0;
-            device->CheckMultisampleQualityLevels(DXGI_FORMAT_R32G32B32A32_FLOAT, i, &quality);
-            if (quality == 0)
-                continue;
             msaa_str.push_back("x" + std::to_string(i));
             msaa.push_back(i);
             if (i == settings.msaa_count)
@@ -379,13 +345,28 @@ private:
 
 void ImGuiPass::OnUpdate()
 {
+    size_t max_cnt = 2048;
+    m_program.SetMaxEvents(max_cnt);
+
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         return;
 
-    static ImGuiSettings settings(m_context_dx11.device);
+    static ImGuiSettings settings;
     settings.NewFrame(m_input.root_scene);
 
     ImGui::Render();
+
+    int cnt = 0;
+    auto draw_data = ImGui::GetDrawData();
+    for (int n = 0; n < draw_data->CmdListsCount; ++n)
+    {
+        const ImDrawList* cmd_list = draw_data->CmdLists[n];
+        for (int j = 0; j < cmd_list->VtxBuffer.Size; ++j)
+        {
+            ++cnt;
+        }
+    }
+    assert(cnt <= max_cnt);
 }
 
 void ImGuiPass::OnRender()
