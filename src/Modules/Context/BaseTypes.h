@@ -3,7 +3,8 @@
 enum class SamplerFilter
 {
     kAnisotropic,
-    kComparisonMinMagMipLinear
+    kMinMagMipLinear,
+    kComparisonMinMagMipLinear,
 };
 
 enum class SamplerTextureAddressMode
@@ -15,6 +16,7 @@ enum class SamplerTextureAddressMode
 enum class SamplerComparisonFunc
 {
     kNever,
+    kAlways,
     kLess
 };
 

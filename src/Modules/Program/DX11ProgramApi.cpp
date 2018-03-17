@@ -181,6 +181,9 @@ void DX11ProgramApi::AttachSampler(ShaderType type, uint32_t slot, const Sampler
     case SamplerFilter::kAnisotropic:
         sampler_desc.Filter = D3D11_FILTER_ANISOTROPIC;
         break;
+    case SamplerFilter::kMinMagMipLinear:
+        sampler_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        break;
     case SamplerFilter::kComparisonMinMagMipLinear:
         sampler_desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
         break;
@@ -204,6 +207,9 @@ void DX11ProgramApi::AttachSampler(ShaderType type, uint32_t slot, const Sampler
     {
     case SamplerComparisonFunc::kNever:
         sampler_desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+        break;
+    case SamplerComparisonFunc::kAlways:
+        sampler_desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
         break;
     case SamplerComparisonFunc::kLess:
         sampler_desc.ComparisonFunc = D3D11_COMPARISON_LESS;

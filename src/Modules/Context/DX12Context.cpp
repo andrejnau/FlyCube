@@ -208,6 +208,12 @@ void DX12Context::SetViewport(int width, int height)
     commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
 }
 
+void DX12Context::SetScissorRect(LONG left, LONG top, LONG right, LONG bottom)
+{
+    D3D12_RECT rect = { left, top, right, bottom };
+    commandList->RSSetScissorRects(1, &rect);
+}
+
 void DX12Context::OMSetRenderTargets(std::vector<Resource::Ptr> rtv, Resource::Ptr dsv)
 {
     if (!current_program)

@@ -93,6 +93,12 @@ void DX11Context::SetViewport(int width, int height)
     device_context->RSSetViewports(1, &viewport);
 }
 
+void DX11Context::SetScissorRect(LONG left, LONG top, LONG right, LONG bottom)
+{
+    D3D11_RECT rect = { left, top, right, bottom };
+    device_context->RSSetScissorRects(1, &rect);
+}
+
 void DX11Context::OMSetRenderTargets(std::vector<Resource::Ptr> rtv_res, Resource::Ptr dsv_res)
 {
     std::vector<ComPtr<ID3D11RenderTargetView>> rtv;

@@ -305,6 +305,9 @@ DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot
     case SamplerFilter::kAnisotropic:
         sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
         break;
+    case SamplerFilter::kMinMagMipLinear:
+        sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        break;
     case SamplerFilter::kComparisonMinMagMipLinear:
         sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
         break;
@@ -328,6 +331,9 @@ DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot
     {
     case SamplerComparisonFunc::kNever:
         sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        break;
+    case SamplerComparisonFunc::kAlways:
+        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
         break;
     case SamplerComparisonFunc::kLess:
         sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS;

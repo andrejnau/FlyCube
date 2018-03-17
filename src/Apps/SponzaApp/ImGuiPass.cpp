@@ -6,6 +6,7 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 #include <Program/DX11ProgramApi.h>
+#include "Texture/DXGIFormatHelper.h"
 
 struct DX11StateBackup
 {
@@ -80,7 +81,7 @@ struct DX11StateBackup
 
 void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
 {
-    DX11StateBackup guard(m_context.device_context.Get());
+    DX11StateBackup guard(m_context_dx11.device_context.Get());
 
     std::vector<glm::vec3> positions;
     std::vector<glm::vec2> texcoords;
@@ -117,22 +118,18 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
     positions_buffer.BindToSlot(m_program.vs.ia.POSITION);
     texcoords_buffer.BindToSlot(m_program.vs.ia.TEXCOORD);
     colors_buffer.BindToSlot(m_program.vs.ia.COLOR);
-    m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    m_context.device_context->PSSetSamplers(0, 1, m_font_sampler.GetAddressOf());
+    m_program.ps.sampler.sampler0.Attach({
+        SamplerFilter::kMinMagMipLinear,
+        SamplerTextureAddressMode::kWrap,
+        SamplerComparisonFunc::kAlways });
 
     const float blend_factor[4] = { 0.f, 0.f, 0.f, 0.f };
-    m_context.device_context->OMSetBlendState(m_blend_state.Get(), blend_factor, 0xffffffff);
-    m_context.device_context->OMSetDepthStencilState(m_depth_stencil_state.Get(), 0);
-    m_context.device_context->RSSetState(m_rasterizer_state.Get());
+    m_context_dx11.device_context->OMSetBlendState(m_blend_state.Get(), blend_factor, 0xffffffff);
+    m_context_dx11.device_context->OMSetDepthStencilState(m_depth_stencil_state.Get(), 0);
+    m_context_dx11.device_context->RSSetState(m_rasterizer_state.Get());
 
-    D3D11_VIEWPORT vp = {};
-    vp.Width = ImGui::GetIO().DisplaySize.x;
-    vp.Height = ImGui::GetIO().DisplaySize.y;
-    vp.MinDepth = 0.0f;
-    vp.MaxDepth = 1.0f;
-    vp.TopLeftX = vp.TopLeftY = 0.0f;
-    m_context.device_context->RSSetViewports(1, &vp);
+    m_context.SetViewport(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
     int vtx_offset = 0;
     int idx_offset = 0;
@@ -142,11 +139,9 @@ void ImGuiPass::RenderDrawLists(ImDrawData* draw_data)
         for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; ++cmd_i)
         {
             const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
-            const D3D11_RECT r = { (LONG)pcmd->ClipRect.x, (LONG)pcmd->ClipRect.y, (LONG)pcmd->ClipRect.z, (LONG)pcmd->ClipRect.w };
-            m_context.device_context->PSSetShaderResources(0, 1, (ID3D11ShaderResourceView**)&pcmd->TextureId);
-            m_context.device_context->RSSetScissorRects(1, &r);
-            m_context.current_program->ApplyBindings();
-            m_context.device_context->DrawIndexed(pcmd->ElemCount, idx_offset, vtx_offset);
+            m_program.ps.srv.texture0.Attach(*(Resource::Ptr*)pcmd->TextureId);
+            m_context.SetScissorRect((LONG)pcmd->ClipRect.x, (LONG)pcmd->ClipRect.y, (LONG)pcmd->ClipRect.z, (LONG)pcmd->ClipRect.w);
+            m_context.DrawIndexed(pcmd->ElemCount, idx_offset, vtx_offset);
             idx_offset += pcmd->ElemCount;  
         }
         vtx_offset += cmd_list->VtxBuffer.Size;
@@ -161,55 +156,14 @@ void ImGuiPass::CreateFontsTexture()
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
-    // Upload texture to graphics system
-    {
-        D3D11_TEXTURE2D_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
-        desc.Width = width;
-        desc.Height = height;
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        desc.CPUAccessFlags = 0;
-
-        ID3D11Texture2D *pTexture = NULL;
-        D3D11_SUBRESOURCE_DATA subResource;
-        subResource.pSysMem = pixels;
-        subResource.SysMemPitch = desc.Width * 4;
-        subResource.SysMemSlicePitch = 0;
-        m_context.device->CreateTexture2D(&desc, &subResource, &pTexture);
-
-        // Create texture view
-        D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-        ZeroMemory(&srvDesc, sizeof(srvDesc));
-        srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-        srvDesc.Texture2D.MipLevels = desc.MipLevels;
-        srvDesc.Texture2D.MostDetailedMip = 0;
-        m_context.device->CreateShaderResourceView(pTexture, &srvDesc, &m_font_texture_view);
-        pTexture->Release();
-    }
+    m_font_texture_view = m_context.CreateTexture(BindFlag::kSrv, DXGI_FORMAT_R8G8B8A8_UNORM, 1, width, height);
+    size_t num_bytes = 0;
+    size_t row_bytes = 0;
+    GetSurfaceInfo(width, height, DXGI_FORMAT_R8G8B8A8_UNORM, &num_bytes, &row_bytes, nullptr);
+    m_context.UpdateSubresource(m_font_texture_view, 0, pixels, row_bytes, num_bytes);
 
     // Store our identifier
-    io.Fonts->TexID = (void *)m_font_texture_view.Get();
-
-    // Create texture sampler
-    {
-        D3D11_SAMPLER_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
-        desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-        desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-        desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-        desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-        desc.MipLODBias = 0.f;
-        desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-        desc.MinLOD = 0.f;
-        desc.MaxLOD = 0.f;
-        m_context.device->CreateSamplerState(&desc, &m_font_sampler);
-    }
+    io.Fonts->TexID = (void *)&m_font_texture_view;
 }
 
 bool  ImGuiPass::ImGui_ImplDX11_Init()
@@ -245,6 +199,7 @@ bool  ImGuiPass::ImGui_ImplDX11_Init()
 
 ImGuiPass::ImGuiPass(DX11Context& context, const Input& input, int width, int height)
     : m_context(context)
+    , m_context_dx11(context)
     , m_input(input)
     , m_width(width)
     , m_height(height)
@@ -268,7 +223,7 @@ ImGuiPass::ImGuiPass(DX11Context& context, const Input& input, int width, int he
         desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
         desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
         desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-        m_context.device->CreateBlendState(&desc, &m_blend_state);
+        m_context_dx11.device->CreateBlendState(&desc, &m_blend_state);
     }
 
     // Create the rasterizer state
@@ -279,7 +234,7 @@ ImGuiPass::ImGuiPass(DX11Context& context, const Input& input, int width, int he
         desc.CullMode = D3D11_CULL_NONE;
         desc.ScissorEnable = true;
         desc.DepthClipEnable = true;
-        m_context.device->CreateRasterizerState(&desc, &m_rasterizer_state);
+        m_context_dx11.device->CreateRasterizerState(&desc, &m_rasterizer_state);
     }
 
     // Create depth-stencil State
@@ -293,7 +248,7 @@ ImGuiPass::ImGuiPass(DX11Context& context, const Input& input, int width, int he
         desc.FrontFace.StencilFailOp = desc.FrontFace.StencilDepthFailOp = desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
         desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
         desc.BackFace = desc.FrontFace;
-        m_context.device->CreateDepthStencilState(&desc, &m_depth_stencil_state);
+        m_context_dx11.device->CreateDepthStencilState(&desc, &m_depth_stencil_state);
     }
 
     CreateFontsTexture();
@@ -427,7 +382,7 @@ void ImGuiPass::OnUpdate()
     if (glfwGetInputMode(m_context.window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         return;
 
-    static ImGuiSettings settings(m_context.device);
+    static ImGuiSettings settings(m_context_dx11.device);
     settings.NewFrame(m_input.root_scene);
 
     ImGui::Render();

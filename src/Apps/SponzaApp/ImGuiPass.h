@@ -44,7 +44,8 @@ public:
     virtual void OnInputChar(unsigned int ch) override;
 
 private:
-    DX11Context& m_context;
+    Context & m_context;
+    DX11Context& m_context_dx11;
     Input m_input;
     int m_width;
     int m_height;
@@ -53,8 +54,7 @@ private:
     INT64                    m_time = 0;
     INT64                    m_ticks_per_second = 0;
 
-    ComPtr<ID3D11SamplerState> m_font_sampler;
-    ComPtr<ID3D11ShaderResourceView> m_font_texture_view;
+    Resource::Ptr m_font_texture_view;
     ComPtr<ID3D11RasterizerState>   m_rasterizer_state;
     ComPtr<ID3D11BlendState>        m_blend_state;
     ComPtr<ID3D11DepthStencilState> m_depth_stencil_state;
