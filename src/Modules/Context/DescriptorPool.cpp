@@ -1,7 +1,8 @@
 #include "Context/DescriptorPool.h"
-#include "Context/DX12Context.h"
-#include <d3dx12.h>
+
 #include <assert.h>
+
+#include "Context/DX12Context.h"
 
 DescriptorHeapRange::DescriptorHeapRange(ComPtr<ID3D12DescriptorHeap>& heap, size_t offset, size_t size, size_t increment_size, D3D12_DESCRIPTOR_HEAP_TYPE type)
     : m_heap(heap)

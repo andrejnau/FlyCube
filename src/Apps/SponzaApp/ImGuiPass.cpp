@@ -379,7 +379,7 @@ private:
 
 void ImGuiPass::OnUpdate()
 {
-    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         return;
 
     static ImGuiSettings settings(m_context_dx11.device);
@@ -390,7 +390,7 @@ void ImGuiPass::OnUpdate()
 
 void ImGuiPass::OnRender()
 {
-    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         RenderDrawLists(ImGui::GetDrawData());
     }

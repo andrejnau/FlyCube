@@ -57,7 +57,7 @@ void DX11Scene::OnUpdate()
     float light_r = 2.5;
     light_pos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
 
-    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         if (m_imgui_pass)
             m_imgui_pass->OnUpdate();
@@ -94,7 +94,7 @@ void DX11Scene::OnRender()
     m_compute_luminance.OnRender();
     m_context.EndEvent();
 
-    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         if (m_imgui_pass)
         {
@@ -131,7 +131,7 @@ void DX11Scene::OnResize(int width, int height)
 
 void DX11Scene::OnKey(int key, int action)
 {
-    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         if (m_imgui_pass)
             m_imgui_pass->OnKey(key, action);
@@ -164,7 +164,7 @@ void DX11Scene::OnKey(int key, int action)
 
 void DX11Scene::OnMouse(bool first_event, double xpos, double ypos)
 {
-    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         if (m_imgui_pass)
             m_imgui_pass->OnMouse(first_event, xpos, ypos);
@@ -188,7 +188,7 @@ void DX11Scene::OnMouse(bool first_event, double xpos, double ypos)
 
 void DX11Scene::OnMouseButton(int button, int action)
 {
-    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         if (m_imgui_pass)
             m_imgui_pass->OnMouseButton(button, action);
@@ -197,7 +197,7 @@ void DX11Scene::OnMouseButton(int button, int action)
 
 void DX11Scene::OnScroll(double xoffset, double yoffset)
 {
-    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         if (m_imgui_pass)
             m_imgui_pass->OnScroll(xoffset, yoffset);
@@ -206,7 +206,7 @@ void DX11Scene::OnScroll(double xoffset, double yoffset)
 
 void DX11Scene::OnInputChar(unsigned int ch)
 {
-    if (glfwGetInputMode(m_context.window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         if (m_imgui_pass)
             m_imgui_pass->OnInputChar(ch);

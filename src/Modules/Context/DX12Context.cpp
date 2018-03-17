@@ -1,10 +1,11 @@
 #include "Context/DX12Context.h"
-#include <Utilities/DXUtility.h>
-#include <Utilities/State.h>
-#include <GLFW/glfw3.h>
+
+#include <pix_win.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
+#include <Utilities/DXUtility.h>
+#include <Utilities/State.h>
 #include <Program/DX12ProgramApi.h>
 
 // Note that Windows 10 Creator Update SDK is required for enabling Shader Model 6 feature.
@@ -72,7 +73,7 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     ASSERT_SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&device)));
 
     D3D12_COMMAND_QUEUE_DESC cqDesc = {}; // we will be using all the default values
-    ASSERT_SUCCEEDED(device->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&commandQueue))); // create the command queue
+    ASSERT_SUCCEEDED(device->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&m_command_queue))); // create the command queue
 
     ASSERT_SUCCEEDED(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&dxgi_factory)));
 
@@ -86,21 +87,21 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
-    ASSERT_SUCCEEDED(dxgi_factory->CreateSwapChainForHwnd(commandQueue.Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
-    tmp_swap_chain.As(&swap_chain);
-    frame_index = swap_chain->GetCurrentBackBufferIndex();
+    ASSERT_SUCCEEDED(dxgi_factory->CreateSwapChainForHwnd(m_command_queue.Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
+    tmp_swap_chain.As(&m_swap_chain);
+    m_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
 
     for (size_t i = 0; i < FrameCount; ++i)
     {
-        ASSERT_SUCCEEDED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator[i])));
+        ASSERT_SUCCEEDED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_command_allocator[i])));
     }
 
-    ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator[frame_index].Get(), nullptr, IID_PPV_ARGS(&commandList)));
+    ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_command_allocator[m_frame_index].Get(), nullptr, IID_PPV_ARGS(&command_list)));
 
     {
-        ASSERT_SUCCEEDED(device->CreateFence(m_fenceValues[frame_index], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
-        m_fenceValues[frame_index]++;
-        m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        ASSERT_SUCCEEDED(device->CreateFence(m_fence_values[m_frame_index], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
+        m_fence_values[m_frame_index]++;
+        m_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
     }
 
 #if defined(_DEBUG)
@@ -115,103 +116,11 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
      descriptor_pool.reset(new DescriptorPool(*this));
 }
 
-Resource::Ptr DX12Context::GetBackBuffer()
+std::unique_ptr<ProgramApi> DX12Context::CreateProgram()
 {
-    DX12Resource::Ptr res = std::make_shared<DX12Resource>();
-    ComPtr<ID3D12Resource> back_buffer;
-    ASSERT_SUCCEEDED(swap_chain->GetBuffer(frame_index, IID_PPV_ARGS(&back_buffer)));
-    res->state = D3D12_RESOURCE_STATE_PRESENT;
-    res->default_res = back_buffer;
+    auto res = std::make_unique<DX12ProgramApi>(*this);
+    m_created_program.push_back(*res.get());
     return res;
-}
-
-// Prepare to render the next frame.
-void DX12Context::MoveToNextFrame()
-{
-    // Schedule a Signal command in the queue.
-    const UINT64 currentFenceValue = m_fenceValues[frame_index];
-    ASSERT_SUCCEEDED(commandQueue->Signal(m_fence.Get(), currentFenceValue));
-
-    // Update the frame index.
-    frame_index = swap_chain->GetCurrentBackBufferIndex();
-
-    // If the next frame is not ready to be rendered yet, wait until it is ready.
-    if (m_fence->GetCompletedValue() < m_fenceValues[frame_index])
-    {
-        ASSERT_SUCCEEDED(m_fence->SetEventOnCompletion(m_fenceValues[frame_index], m_fenceEvent));
-        WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
-    }
-
-    // Set the fence value for the next frame.
-    m_fenceValues[frame_index] = currentFenceValue + 1;
-}
-
-
-
-std::vector<DX12ProgramApi*> tmp;
-
-void DX12Context::Present(const Resource::Ptr& ires)
-{
-    ResourceBarrier(std::static_pointer_cast<DX12Resource>(ires), D3D12_RESOURCE_STATE_PRESENT);
-
-    commandList->Close();
-    ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
-
-    // execute the array of command lists
-    commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-    ASSERT_SUCCEEDED(swap_chain->Present(0, 0));
-
-    MoveToNextFrame();
-
-    ASSERT_SUCCEEDED(commandAllocator[frame_index]->Reset());
-
-    ASSERT_SUCCEEDED(commandList->Reset(commandAllocator[frame_index].Get(), nullptr));
-
-    if (frame_index == 0)
-    {
-        descriptor_pool->OnFrameBegin();
-       
-    }
-    for (auto & x : tmp)
-        x->OnPresent();
-}
-
-void DX12Context::DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
-{
-    current_program->ApplyBindings();
-    commandList->DrawIndexedInstanced(IndexCount, 1, StartIndexLocation, BaseVertexLocation, 0);
-}
-
-void DX12Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
-{
-    current_program->ApplyBindings();
-    commandList->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
-}
-
-void DX12Context::SetViewport(int width, int height)
-{
-    D3D12_VIEWPORT viewport; // area that output from rasterizer will be stretched to.
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
-    viewport.Width = (FLOAT)width;
-    viewport.Height = (FLOAT)height;
-    viewport.MinDepth = 0.0f;
-    viewport.MaxDepth = 1.0f;
-    commandList->RSSetViewports(1, &viewport); // set the viewports
-
-    D3D12_RECT scissorRect; // the area to draw in. pixels outside that area will not be drawn onto
-    scissorRect.left = 0;
-    scissorRect.top = 0;
-    scissorRect.right = width;
-    scissorRect.bottom = height;
-    commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
-}
-
-void DX12Context::SetScissorRect(LONG left, LONG top, LONG right, LONG bottom)
-{
-    D3D12_RECT rect = { left, top, right, bottom };
-    commandList->RSSetScissorRects(1, &rect);
 }
 
 Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
@@ -330,14 +239,27 @@ void DX12Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresour
 
     ResourceBarrier(res, D3D12_RESOURCE_STATE_COPY_DEST);
 
-    UpdateSubresources(commandList.Get(), res->default_res.Get(), upload_res.Get(), 0, DstSubresource, 1, &data);
+    UpdateSubresources(command_list.Get(), res->default_res.Get(), upload_res.Get(), 0, DstSubresource, 1, &data);
 }
 
-std::unique_ptr<ProgramApi> DX12Context::CreateProgram()
+void DX12Context::SetViewport(int width, int height)
 {
-    auto res =  std::make_unique<DX12ProgramApi>(*this);
-    tmp.push_back(res.get());
-    return res;
+    D3D12_VIEWPORT viewport;
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.Width = (FLOAT)width;
+    viewport.Height = (FLOAT)height;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    command_list->RSSetViewports(1, &viewport);
+
+    SetScissorRect(0, 0, width, height);
+}
+
+void DX12Context::SetScissorRect(LONG left, LONG top, LONG right, LONG bottom)
+{
+    D3D12_RECT rect = { left, top, right, bottom };
+    command_list->RSSetScissorRects(1, &rect);
 }
 
 void DX12Context::IASetIndexBuffer(Resource::Ptr ires, UINT SizeInBytes, DXGI_FORMAT Format)
@@ -347,7 +269,7 @@ void DX12Context::IASetIndexBuffer(Resource::Ptr ires, UINT SizeInBytes, DXGI_FO
     indexBufferView.Format = Format;
     indexBufferView.SizeInBytes = SizeInBytes;
     indexBufferView.BufferLocation = res->default_res->GetGPUVirtualAddress();
-    commandList->IASetIndexBuffer(&indexBufferView);
+    command_list->IASetIndexBuffer(&indexBufferView);
     ResourceBarrier(res, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 }
 
@@ -358,22 +280,96 @@ void DX12Context::IASetVertexBuffer(UINT slot, Resource::Ptr ires, UINT SizeInBy
     vertexBufferView.BufferLocation = res->default_res->GetGPUVirtualAddress();
     vertexBufferView.SizeInBytes = SizeInBytes;
     vertexBufferView.StrideInBytes = Stride;
-    commandList->IASetVertexBuffers(slot, 1, &vertexBufferView);
+    command_list->IASetVertexBuffers(slot, 1, &vertexBufferView);
     ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 }
 
-#include <pix_win.h>
-
 void DX12Context::BeginEvent(LPCWSTR Name)
 {
-    PIXBeginEvent(commandList.Get(), 0, Name);
+    PIXBeginEvent(command_list.Get(), 0, Name);
 }
 
 void DX12Context::EndEvent()
 {
-    PIXEndEvent(commandList.Get());
+    PIXEndEvent(command_list.Get());
+}
+
+void DX12Context::DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
+{
+    current_program->ApplyBindings();
+    command_list->DrawIndexedInstanced(IndexCount, 1, StartIndexLocation, BaseVertexLocation, 0);
+}
+
+void DX12Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
+{
+    current_program->ApplyBindings();
+    command_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
+}
+
+Resource::Ptr DX12Context::GetBackBuffer()
+{
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>();
+    ComPtr<ID3D12Resource> back_buffer;
+    ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(m_frame_index, IID_PPV_ARGS(&back_buffer)));
+    res->state = D3D12_RESOURCE_STATE_PRESENT;
+    res->default_res = back_buffer;
+    return res;
+}
+
+void DX12Context::Present(const Resource::Ptr& ires)
+{
+    ResourceBarrier(std::static_pointer_cast<DX12Resource>(ires), D3D12_RESOURCE_STATE_PRESENT);
+
+    command_list->Close();
+    ID3D12CommandList* ppCommandLists[] = { command_list.Get() };
+
+    m_command_queue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+    ASSERT_SUCCEEDED(m_swap_chain->Present(0, 0));
+
+    MoveToNextFrame();
+
+    ASSERT_SUCCEEDED(m_command_allocator[m_frame_index]->Reset());
+    ASSERT_SUCCEEDED(command_list->Reset(m_command_allocator[m_frame_index].Get(), nullptr));
+
+    if (m_frame_index == 0)
+        descriptor_pool->OnFrameBegin();
+    for (auto & x : m_created_program)
+        x.get().OnPresent();
+}
+
+void DX12Context::ResourceBarrier(const DX12Resource::Ptr& res, D3D12_RESOURCE_STATES state)
+{
+    if (res->state != state)
+        command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res->default_res.Get(), res->state, state));
+    res->state = state;
+}
+
+void DX12Context::UseProgram(DX12ProgramApi& program_api)
+{
+    current_program = &program_api;
 }
 
 void DX12Context::ResizeBackBuffer(int width, int height)
 {
+}
+
+void DX12Context::MoveToNextFrame()
+{
+    // Schedule a Signal command in the queue.
+    const UINT64 currentFenceValue = m_fence_values[m_frame_index];
+    ASSERT_SUCCEEDED(m_command_queue->Signal(m_fence.Get(), currentFenceValue));
+
+    // Update the frame index.
+    m_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
+
+    // If the next frame is not ready to be rendered yet, wait until it is ready.
+    if (m_fence->GetCompletedValue() < m_fence_values[m_frame_index])
+    {
+        ASSERT_SUCCEEDED(m_fence->SetEventOnCompletion(m_fence_values[m_frame_index], m_fence_event));
+        WaitForSingleObjectEx(m_fence_event, INFINITE, FALSE);
+    }
+
+    // Set the fence value for the next frame.
+    m_fence_values[m_frame_index] = currentFenceValue + 1;
 }

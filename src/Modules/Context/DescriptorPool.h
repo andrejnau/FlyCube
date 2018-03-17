@@ -1,17 +1,15 @@
 #pragma once
 
-#include <d3dcompiler.h>
-#include <d3d12.h>
-
 #include <wrl.h>
-using namespace Microsoft::WRL;
-
+#include <d3d12.h>
+#include <algorithm>
 #include <map>
+
+#include <Utilities/DXUtility.h>
 #include "Context/BaseTypes.h"
 #include "Context/Resource.h"
 
-#include <Utilities/DXUtility.h>
-#include <algorithm>
+using namespace Microsoft::WRL;
 
 class DX12Context;
 

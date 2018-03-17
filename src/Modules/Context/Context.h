@@ -1,33 +1,27 @@
 #pragma once
 
 #include <wrl.h>
-#include <GLFW/glfw3.h>
 #include <dxgiformat.h>
+#include <GLFW/glfw3.h>
 #include <memory>
-#include <Program/ProgramApi.h>
-using namespace Microsoft::WRL;
+#include <array>
 
+#include <Program/ProgramApi.h>
 #include "Context/BaseTypes.h"
 #include "Context/Resource.h"
-#include <array>
+
+using namespace Microsoft::WRL;
 
 class Context
 {
 public:
+    Context(GLFWwindow* window, int width, int height);
 
-    static constexpr size_t FrameCount = 3;
-    virtual size_t GetFrameIndex() { return 0; };
-
+    virtual std::unique_ptr<ProgramApi> CreateProgram() = 0;
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) = 0;
     virtual Resource::Ptr CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride) = 0;
     virtual void UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void *pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch) = 0;
-    
-    Context(GLFWwindow* window, int width, int height);
-    virtual Resource::Ptr GetBackBuffer() = 0;
-    virtual void Present(const Resource::Ptr& ires) = 0;
-    virtual void DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation) = 0;
-    virtual void Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ) = 0;
-    virtual void OnResize(int width, int height);
+
     virtual void SetViewport(int width, int height) = 0;
     virtual void SetScissorRect(LONG left, LONG top, LONG right, LONG bottom) = 0;
 
@@ -37,14 +31,24 @@ public:
     virtual void BeginEvent(LPCWSTR Name) = 0;
     virtual void EndEvent() = 0;
 
-    GLFWwindow* window;
+    virtual void DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation) = 0;
+    virtual void Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ) = 0;
 
-    virtual std::unique_ptr<ProgramApi> CreateProgram() = 0;
+    virtual Resource::Ptr GetBackBuffer() = 0;
+    virtual void Present(const Resource::Ptr& ires) = 0;
+
+    void OnResize(int width, int height);
+    size_t GetFrameIndex() const;
+    GLFWwindow* GetWindow();
+
+    static constexpr size_t FrameCount = 3;
   
 protected:
     virtual void ResizeBackBuffer(int width, int height) = 0;
     int m_width;
     int m_height;
+    GLFWwindow* m_window;
+    uint32_t m_frame_index = 0;
 };
 
 template <typename T>

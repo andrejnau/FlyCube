@@ -9,7 +9,7 @@ void DX11ProgramApi::SetMaxEvents(size_t) {}
 
 void DX11ProgramApi::UseProgram()
 {
-    m_context.current_program = this;
+    m_context.UseProgram(*this);
     m_context.device_context->VSSetShader(vshader.Get(), nullptr, 0);
     m_context.device_context->GSSetShader(gshader.Get(), nullptr, 0);
     m_context.device_context->DSSetShader(nullptr, nullptr, 0);

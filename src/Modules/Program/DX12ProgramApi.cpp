@@ -39,12 +39,12 @@ void DX12ProgramApi::SetMaxEvents(size_t count)
 
 void DX12ProgramApi::UseProgram()
 {
+    m_context.UseProgram(*this);
     m_changed_binding = true;
-    m_context.current_program = this;
-    m_context.commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_context.command_list->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     SetRootSignature(m_root_signature.Get());
     if (m_pso)
-        m_context.commandList->SetPipelineState(m_pso.Get());
+        m_context.command_list->SetPipelineState(m_pso.Get());
 }
 
 void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& blob)
@@ -179,7 +179,7 @@ void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
     if (it == m_heap_ranges.end())
         return;
     auto& range = it->second;
-    m_context.commandList->ClearRenderTargetView(range.GetCpuHandle(), ColorRGBA, 0, nullptr);
+    m_context.command_list->ClearRenderTargetView(range.GetCpuHandle(), ColorRGBA, 0, nullptr);
 }
 
 void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
@@ -188,7 +188,7 @@ void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stenc
     if (it == m_heap_ranges.end())
         return;
     auto& range = it->second;
-    m_context.commandList->ClearDepthStencilView(range.GetCpuHandle(), (D3D12_CLEAR_FLAGS)ClearFlags, Depth, Stencil, 0, nullptr);
+    m_context.command_list->ClearDepthStencilView(range.GetCpuHandle(), (D3D12_CLEAR_FLAGS)ClearFlags, Depth, Stencil, 0, nullptr);
 }
 
 DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
@@ -464,9 +464,9 @@ DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
 void DX12ProgramApi::SetRootSignature(ID3D12RootSignature * pRootSignature)
 {
     if (m_blob_map.count(ShaderType::kCompute))
-        m_context.commandList->SetComputeRootSignature(pRootSignature);
+        m_context.command_list->SetComputeRootSignature(pRootSignature);
     else
-        m_context.commandList->SetGraphicsRootSignature(pRootSignature);
+        m_context.command_list->SetGraphicsRootSignature(pRootSignature);
 }
 
 void DX12ProgramApi::SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor)
@@ -474,9 +474,9 @@ void DX12ProgramApi::SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_D
     if (RootParameterIndex == -1)
         return;
     if (m_blob_map.count(ShaderType::kCompute))
-        m_context.commandList->SetComputeRootDescriptorTable(RootParameterIndex, BaseDescriptor);
+        m_context.command_list->SetComputeRootDescriptorTable(RootParameterIndex, BaseDescriptor);
     else
-        m_context.commandList->SetGraphicsRootDescriptorTable(RootParameterIndex, BaseDescriptor);
+        m_context.command_list->SetGraphicsRootDescriptorTable(RootParameterIndex, BaseDescriptor);
 }
 
 void DX12ProgramApi::SetRootConstantBufferView(UINT RootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS BufferLocation)
@@ -484,9 +484,9 @@ void DX12ProgramApi::SetRootConstantBufferView(UINT RootParameterIndex, D3D12_GP
     if (RootParameterIndex == -1)
         return;
     if (m_blob_map.count(ShaderType::kCompute))
-        m_context.commandList->SetComputeRootConstantBufferView(RootParameterIndex, BufferLocation);
+        m_context.command_list->SetComputeRootConstantBufferView(RootParameterIndex, BufferLocation);
     else
-        m_context.commandList->SetGraphicsRootConstantBufferView(RootParameterIndex, BufferLocation);
+        m_context.command_list->SetGraphicsRootConstantBufferView(RootParameterIndex, BufferLocation);
 }
 
 std::vector<D3D12_INPUT_ELEMENT_DESC> DX12ProgramApi::GetInputLayout(ComPtr<ID3D12ShaderReflection> reflector)
@@ -586,7 +586,7 @@ void DX12ProgramApi::CreateGraphicsPSO()
         m_pso_desc.RasterizerState.DepthBias = 4096;
 
     ASSERT_SUCCEEDED(m_context.device->CreateGraphicsPipelineState(&m_pso_desc, IID_PPV_ARGS(&m_pso)));
-    m_context.commandList->SetPipelineState(m_pso.Get());
+    m_context.command_list->SetPipelineState(m_pso.Get());
 }
 
 void DX12ProgramApi::CreateComputePSO()
@@ -596,7 +596,7 @@ void DX12ProgramApi::CreateComputePSO()
         m_compute_pso_desc.pRootSignature = m_root_signature.Get();
         ASSERT_SUCCEEDED(m_context.device->CreateComputePipelineState(&m_compute_pso_desc, IID_PPV_ARGS(&m_compute_pso)));
     }
-    m_context.commandList->SetPipelineState(m_compute_pso.Get());
+    m_context.command_list->SetPipelineState(m_compute_pso.Get());
     m_compute_pso->SetName(L"m_compute_pso");
 }
 
@@ -651,7 +651,7 @@ void DX12ProgramApi::ApplyBindings()
         descriptor_heaps[descriptor_count++] = res_heap.GetHeap().Get();
     if (sampler_heap.GetSize())
         descriptor_heaps[descriptor_count++] = sampler_heap.GetHeap().Get();
-    m_context.commandList->SetDescriptorHeaps(descriptor_count, descriptor_heaps);
+    m_context.command_list->SetDescriptorHeaps(descriptor_count, descriptor_heaps);
 
     for (auto & x : m_heap_ranges)
     {
@@ -968,5 +968,5 @@ void DX12ProgramApi::OMSetRenderTargets()
         om_dsv = it->second.GetCpuHandle();
     }
 
-    m_context.commandList->OMSetRenderTargets(om_rtv.size(), om_rtv.data(), FALSE, &om_dsv);
+    m_context.command_list->OMSetRenderTargets(om_rtv.size(), om_rtv.data(), FALSE, &om_dsv);
 }

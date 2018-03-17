@@ -1,10 +1,15 @@
 set(target Context)
 
 set(headers
+    BaseTypes.h
     Context.h
-    DX11Context.h
-    DX12Context.h
     ContextSelector.h
+    DescriptorPool.h
+    DX11Context.h
+    DX11Resource.h
+    DX12Context.h
+    DX12Resource.h
+    Resource.h
 )
 
 set(sources
@@ -23,11 +28,11 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
-    Utilities
-    d3dcompiler
     d3d11
     d3d12
+    d3dcompiler
     dxgi
+    Utilities
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

@@ -1,9 +1,9 @@
 #include "Context/DX11Context.h"
-#include <Utilities/DXUtility.h>
-#include <GLFW/glfw3.h>
+
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
-#include <dxgiformat.h>
+
+#include <Utilities/DXUtility.h>
 #include <Program/DX11ProgramApi.h>
 
 DX11Context::DX11Context(GLFWwindow* window, int width, int height)
@@ -33,7 +33,7 @@ DX11Context::DX11Context(GLFWwindow* window, int width, int height)
 
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
     ASSERT_SUCCEEDED(dxgi_factory->CreateSwapChainForHwnd(device.Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
-    tmp_swap_chain.As(&swap_chain);
+    tmp_swap_chain.As(&m_swap_chain);
 
     device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -46,57 +46,9 @@ DX11Context::DX11Context(GLFWwindow* window, int width, int height)
     device_context->RSSetState(rasterizer_state.Get());
 }
 
-Resource::Ptr DX11Context::GetBackBuffer()
+std::unique_ptr<ProgramApi> DX11Context::CreateProgram()
 {
-    DX11Resource::Ptr res = std::make_shared<DX11Resource>();
-
-    ComPtr<ID3D11Texture2D> back_buffer;
-    ASSERT_SUCCEEDED(swap_chain->GetBuffer(0, IID_PPV_ARGS(&back_buffer)));
-    res->resource = back_buffer;
-
-    return res;
-}
-
-void DX11Context::ResizeBackBuffer(int width, int height)
-{
-    DXGI_SWAP_CHAIN_DESC desc = {};
-    ASSERT_SUCCEEDED(swap_chain->GetDesc(&desc));
-    ASSERT_SUCCEEDED(swap_chain->ResizeBuffers(1, width, height, desc.BufferDesc.Format, desc.Flags));
-}
-
-void DX11Context::Present(const Resource::Ptr&)
-{
-    ASSERT_SUCCEEDED(swap_chain->Present(0, 0));
-}
-
-void DX11Context::DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
-{
-    current_program->ApplyBindings();
-    device_context->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
-}
-
-void DX11Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
-{
-    current_program->ApplyBindings();
-    device_context->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
-}
-
-void DX11Context::SetViewport(int width, int height)
-{
-    D3D11_VIEWPORT viewport = {};
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
-    viewport.Width = width;
-    viewport.Height = height;
-    viewport.MinDepth = 0.0f;
-    viewport.MaxDepth = 1.0f;
-    device_context->RSSetViewports(1, &viewport);
-}
-
-void DX11Context::SetScissorRect(LONG left, LONG top, LONG right, LONG bottom)
-{
-    D3D11_RECT rect = { left, top, right, bottom };
-    device_context->RSSetScissorRects(1, &rect);
+    return std::make_unique<DX11ProgramApi>(*this);
 }
 
 Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
@@ -133,15 +85,10 @@ Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format,
     return res;
 }
 
-std::unique_ptr<ProgramApi> DX11Context::CreateProgram()
-{
-    return std::make_unique<DX11ProgramApi>(*this);
-}
-
 Resource::Ptr DX11Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride)
 {
     if (buffer_size == 0)
-        return DX12Resource::Ptr();
+        return DX11Resource::Ptr();
 
     DX11Resource::Ptr res = std::make_shared<DX11Resource>();
 
@@ -170,6 +117,30 @@ Resource::Ptr DX11Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, si
     return res;
 }
 
+void DX11Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)
+{
+    auto res = std::static_pointer_cast<DX11Resource>(ires);
+    device_context->UpdateSubresource(res->resource.Get(), DstSubresource, nullptr, pSrcData, SrcRowPitch, SrcDepthPitch);
+}
+
+void DX11Context::SetViewport(int width, int height)
+{
+    D3D11_VIEWPORT viewport = {};
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.Width = width;
+    viewport.Height = height;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    device_context->RSSetViewports(1, &viewport);
+}
+
+void DX11Context::SetScissorRect(LONG left, LONG top, LONG right, LONG bottom)
+{
+    D3D11_RECT rect = { left, top, right, bottom };
+    device_context->RSSetScissorRects(1, &rect);
+}
+
 void DX11Context::IASetIndexBuffer(Resource::Ptr ires, UINT SizeInBytes, DXGI_FORMAT Format)
 {
     auto res = std::static_pointer_cast<DX11Resource>(ires);
@@ -187,12 +158,6 @@ void DX11Context::IASetVertexBuffer(UINT slot, Resource::Ptr ires, UINT SizeInBy
     device_context->IASetVertexBuffers(slot, 1, buf.GetAddressOf(), &Stride, &offset);
 }
 
-void DX11Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)
-{
-    auto res = std::static_pointer_cast<DX11Resource>(ires);
-    device_context->UpdateSubresource(res->resource.Get(), DstSubresource, nullptr, pSrcData, SrcRowPitch, SrcDepthPitch);
-}
-
 void DX11Context::BeginEvent(LPCWSTR Name)
 {
     perf->BeginEvent(Name);
@@ -201,4 +166,44 @@ void DX11Context::BeginEvent(LPCWSTR Name)
 void DX11Context::EndEvent()
 {
     perf->EndEvent();
+}
+
+void DX11Context::DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
+{
+    current_program->ApplyBindings();
+    device_context->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
+}
+
+void DX11Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
+{
+    current_program->ApplyBindings();
+    device_context->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
+}
+
+Resource::Ptr DX11Context::GetBackBuffer()
+{
+    DX11Resource::Ptr res = std::make_shared<DX11Resource>();
+
+    ComPtr<ID3D11Texture2D> back_buffer;
+    ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(0, IID_PPV_ARGS(&back_buffer)));
+    res->resource = back_buffer;
+
+    return res;
+}
+
+void DX11Context::Present(const Resource::Ptr&)
+{
+    ASSERT_SUCCEEDED(m_swap_chain->Present(0, 0));
+}
+
+void DX11Context::UseProgram(DX11ProgramApi& program_api)
+{
+    current_program = &program_api;
+}
+
+void DX11Context::ResizeBackBuffer(int width, int height)
+{
+    DXGI_SWAP_CHAIN_DESC desc = {};
+    ASSERT_SUCCEEDED(m_swap_chain->GetDesc(&desc));
+    ASSERT_SUCCEEDED(m_swap_chain->ResizeBuffers(1, width, height, desc.BufferDesc.Format, desc.Flags));
 }
