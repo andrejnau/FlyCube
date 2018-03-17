@@ -7,88 +7,48 @@
 #include <Utilities/DXUtility.h>
 #include <Utilities/State.h>
 #include <Program/DX12ProgramApi.h>
-
-// Note that Windows 10 Creator Update SDK is required for enabling Shader Model 6 feature.
-static HRESULT EnableExperimentalShaderModels()
-{
-    static const GUID D3D12ExperimentalShaderModelsID = { /* 76f5573e-f13a-40f5-b297-81ce9e18933f */
-        0x76f5573e,
-        0xf13a,
-        0x40f5,
-    { 0xb2, 0x97, 0x81, 0xce, 0x9e, 0x18, 0x93, 0x3f }
-    };
-
-    return D3D12EnableExperimentalFeatures(1, &D3D12ExperimentalShaderModelsID, nullptr, nullptr);
-}
+#include "Context/DXGIUtility.h"
 
 DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     : Context(window, width, height)
 {
     auto& state = CurState<bool>::Instance().state;
     if (state["DXIL"])
-        EnableExperimentalShaderModels();
+    {
+        static const GUID D3D12ExperimentalShaderModelsID = { /* 76f5573e-f13a-40f5-b297-81ce9e18933f */
+            0x76f5573e,
+            0xf13a,
+            0x40f5,
+        { 0xb2, 0x97, 0x81, 0xce, 0x9e, 0x18, 0x93, 0x3f }
+        };
+        ASSERT_SUCCEEDED(D3D12EnableExperimentalFeatures(1, &D3D12ExperimentalShaderModelsID, nullptr, nullptr));
+    }
 
 #if defined(_DEBUG)
-    // Enable the D3D12 debug layer.
+    ComPtr<ID3D12Debug> debug_controller;
+    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller))))
     {
-        ComPtr<ID3D12Debug> debugController;
-        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
-        {
-            debugController->EnableDebugLayer();
-        }
+        debug_controller->EnableDebugLayer();
+    }
+
+    ComPtr<ID3D12InfoQueue> info_queue;
+    if (SUCCEEDED(device.As(&info_queue)))
+    {
+        info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+        info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
     }
 #endif
 
     ComPtr<IDXGIFactory4> dxgi_factory;
     ASSERT_SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&dxgi_factory)));
 
-    auto GetHardwareAdapter = [&](ComPtr<IDXGIFactory4> dxgiFactory) -> ComPtr<IDXGIAdapter1>
-    {
-        ComPtr<IDXGIAdapter1> adapter; // adapters are the graphics card (this includes the embedded graphics on the motherboard)
-        size_t cnt = 0;
-        for (UINT adapterIndex = 0; DXGI_ERROR_NOT_FOUND != dxgiFactory->EnumAdapters1(adapterIndex, &adapter); ++adapterIndex)
-        {
-            DXGI_ADAPTER_DESC1 desc;
-            adapter->GetDesc1(&desc);
-
-            if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
-            {
-                // Don't select the Basic Render Driver adapter.
-                continue;
-            }
-
-            if (++cnt < 1)
-                continue;
-
-            // Check to see if the adapter supports Direct3D 12, but don't create the
-            // actual device yet.
-            if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_1, _uuidof(ID3D12Device), nullptr)))
-                return adapter;
-        }
-        return nullptr;
-    };
-
     ComPtr<IDXGIAdapter1> adapter = GetHardwareAdapter(dxgi_factory.Get());
-    ASSERT(adapter != nullptr);
     ASSERT_SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&device)));
 
-    D3D12_COMMAND_QUEUE_DESC cqDesc = {}; // we will be using all the default values
-    ASSERT_SUCCEEDED(device->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&m_command_queue))); // create the command queue
+    D3D12_COMMAND_QUEUE_DESC cq_desc = {};
+    ASSERT_SUCCEEDED(device->CreateCommandQueue(&cq_desc, IID_PPV_ARGS(&m_command_queue)));
 
-    ASSERT_SUCCEEDED(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&dxgi_factory)));
-
-    DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
-    swap_chain_desc.Width = width;
-    swap_chain_desc.Height = height;
-    swap_chain_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    swap_chain_desc.SampleDesc.Count = 1;
-    swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swap_chain_desc.BufferCount = FrameCount;
-    swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-
-    ComPtr<IDXGISwapChain1> tmp_swap_chain;
-    ASSERT_SUCCEEDED(dxgi_factory->CreateSwapChainForHwnd(m_command_queue.Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
-    tmp_swap_chain.As(&m_swap_chain);
+    m_swap_chain = CreateSwapChain(m_command_queue, dxgi_factory, glfwGetWin32Window(window), width, height, FrameCount);
     m_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
 
     for (size_t i = 0; i < FrameCount; ++i)
@@ -98,22 +58,10 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
 
     ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_command_allocator[m_frame_index].Get(), nullptr, IID_PPV_ARGS(&command_list)));
 
-    {
-        ASSERT_SUCCEEDED(device->CreateFence(m_fence_values[m_frame_index], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
-        m_fence_values[m_frame_index]++;
-        m_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    }
+    ASSERT_SUCCEEDED(device->CreateFence(m_fence_values[m_frame_index], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
+    m_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
-#if defined(_DEBUG)
-     ComPtr<ID3D12InfoQueue> d3dInfoQueue;
-     if (SUCCEEDED(device.As(&d3dInfoQueue)))
-     {
-         d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-         d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-     }
-#endif
-
-     descriptor_pool.reset(new DescriptorPool(*this));
+    descriptor_pool.reset(new DescriptorPool(*this));
 }
 
 std::unique_ptr<ProgramApi> DX12Context::CreateProgram()
@@ -165,7 +113,7 @@ Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format,
     else if (bind_flag & BindFlag::kDsv)
     {
         clear_value.DepthStencil.Depth = 1.0f;
-        clear_value.DepthStencil.Stencil = 0.0f;
+        clear_value.DepthStencil.Stencil = 0;
         if (format == DXGI_FORMAT_R32_TYPELESS)
             clear_value.Format = DXGI_FORMAT_D32_FLOAT;
         p_clear_value = &clear_value;
@@ -296,13 +244,13 @@ void DX12Context::EndEvent()
 
 void DX12Context::DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
 {
-    current_program->ApplyBindings();
+    m_current_program->ApplyBindings();
     command_list->DrawIndexedInstanced(IndexCount, 1, StartIndexLocation, BaseVertexLocation, 0);
 }
 
 void DX12Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
 {
-    current_program->ApplyBindings();
+    m_current_program->ApplyBindings();
     command_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
@@ -347,7 +295,7 @@ void DX12Context::ResourceBarrier(const DX12Resource::Ptr& res, D3D12_RESOURCE_S
 
 void DX12Context::UseProgram(DX12ProgramApi& program_api)
 {
-    current_program = &program_api;
+    m_current_program = &program_api;
 }
 
 void DX12Context::ResizeBackBuffer(int width, int height)
@@ -357,8 +305,8 @@ void DX12Context::ResizeBackBuffer(int width, int height)
 void DX12Context::MoveToNextFrame()
 {
     // Schedule a Signal command in the queue.
-    const UINT64 currentFenceValue = m_fence_values[m_frame_index];
-    ASSERT_SUCCEEDED(m_command_queue->Signal(m_fence.Get(), currentFenceValue));
+    const uint64_t current_fence_value = m_fence_values[m_frame_index];
+    ASSERT_SUCCEEDED(m_command_queue->Signal(m_fence.Get(), current_fence_value));
 
     // Update the frame index.
     m_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
@@ -371,5 +319,5 @@ void DX12Context::MoveToNextFrame()
     }
 
     // Set the fence value for the next frame.
-    m_fence_values[m_frame_index] = currentFenceValue + 1;
+    m_fence_values[m_frame_index] = current_fence_value + 1;
 }

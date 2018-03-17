@@ -5,35 +5,37 @@
 
 #include <Utilities/DXUtility.h>
 #include <Program/DX11ProgramApi.h>
+#include "Context/DXGIUtility.h"
 
 DX11Context::DX11Context(GLFWwindow* window, int width, int height)
     : Context(window, width, height)
 {
     DWORD create_device_flags = 0;
-#if 1
+#if defined(_DEBUG)
     create_device_flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-    ASSERT_SUCCEEDED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, create_device_flags, nullptr, 0,
-        D3D11_SDK_VERSION, &device, nullptr, &device_context));
+    ComPtr<IDXGIFactory4> dxgi_factory;
+    ASSERT_SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&dxgi_factory)));
+    ComPtr<IDXGIAdapter1> adapter = GetHardwareAdapter(dxgi_factory.Get());
+    D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_11_1;
+
+    ASSERT_SUCCEEDED(D3D11CreateDevice(
+        adapter.Get(),
+        D3D_DRIVER_TYPE_UNKNOWN,
+        nullptr,
+        create_device_flags,
+        &feature_level,
+        1,
+        D3D11_SDK_VERSION,
+        &device,
+        nullptr,
+        &device_context));
+
+    m_swap_chain = CreateSwapChain(device, dxgi_factory, glfwGetWin32Window(window), width, height, FrameCount);
 
     device_context.As(&perf);
 
-    ComPtr<IDXGIFactory4> dxgi_factory;
-    ASSERT_SUCCEEDED(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&dxgi_factory)));
-
-    DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
-    swap_chain_desc.Width = width;
-    swap_chain_desc.Height = height;
-    swap_chain_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    swap_chain_desc.SampleDesc.Count = 1;
-    swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swap_chain_desc.BufferCount = 5;
-    swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-
-    ComPtr<IDXGISwapChain1> tmp_swap_chain;
-    ASSERT_SUCCEEDED(dxgi_factory->CreateSwapChainForHwnd(device.Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
-    tmp_swap_chain.As(&m_swap_chain);
 
     device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -170,13 +172,13 @@ void DX11Context::EndEvent()
 
 void DX11Context::DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
 {
-    current_program->ApplyBindings();
+    m_current_program->ApplyBindings();
     device_context->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 
 void DX11Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
 {
-    current_program->ApplyBindings();
+    m_current_program->ApplyBindings();
     device_context->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
@@ -198,7 +200,7 @@ void DX11Context::Present(const Resource::Ptr&)
 
 void DX11Context::UseProgram(DX11ProgramApi& program_api)
 {
-    current_program = &program_api;
+    m_current_program = &program_api;
 }
 
 void DX11Context::ResizeBackBuffer(int width, int height)

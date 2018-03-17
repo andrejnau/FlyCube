@@ -4,7 +4,7 @@ template <typename T>
 class SingleTon
 {
 public:
-    static T & Instance()
+    static T& Instance()
     {
         static T instance;
         return instance;

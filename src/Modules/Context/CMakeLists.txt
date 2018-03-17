@@ -9,6 +9,7 @@ set(headers
     DX11Resource.h
     DX12Context.h
     DX12Resource.h
+    DXGIUtility.h
     Resource.h
 )
 
@@ -17,6 +18,7 @@ set(sources
     DescriptorPool.cpp
     DX11Context.cpp
     DX12Context.cpp
+    DXGIUtility.cpp
 )
 
 add_library(${target} ${headers} ${sources})

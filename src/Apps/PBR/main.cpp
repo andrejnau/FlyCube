@@ -94,7 +94,7 @@ public:
         float y_width = (m_model.bound_box.y_max - m_model.bound_box.y_min);
         float x_width = (m_model.bound_box.y_max - m_model.bound_box.y_min);
         float model_width = (z_width + y_width + x_width) / 3.0f;
-        float scale = 0.1;// *256.0f / std::max(z_width, x_width);
+        float scale = 0.1f;// *256.0f / std::max(z_width, x_width);
         model_width *= scale;
 
         float offset_x = (m_model.bound_box.x_max + m_model.bound_box.x_min) / 2.0f;

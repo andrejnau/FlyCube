@@ -51,11 +51,11 @@ private:
 
     ComPtr<ID3D12Fence> m_fence;
     HANDLE m_fence_event = nullptr;
-    uint32_t m_fence_values[FrameCount] = {};
+    uint64_t m_fence_values[FrameCount] = {};
     ComPtr<IDXGISwapChain3> m_swap_chain;
     ComPtr<ID3D12CommandQueue> m_command_queue;
     ComPtr<ID3D12CommandAllocator> m_command_allocator[FrameCount];
 
-    DX12ProgramApi* current_program = nullptr;
+    DX12ProgramApi* m_current_program = nullptr;
     std::vector<std::reference_wrapper<DX12ProgramApi>> m_created_program;
 };

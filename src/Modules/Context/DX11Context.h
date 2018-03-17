@@ -44,6 +44,6 @@ public:
 private:
     virtual void ResizeBackBuffer(int width, int height) override;
     ComPtr<ID3DUserDefinedAnnotation> perf;
-    DX11ProgramApi* current_program = nullptr;
+    DX11ProgramApi* m_current_program = nullptr;
     ComPtr<IDXGISwapChain3> m_swap_chain;
 };
