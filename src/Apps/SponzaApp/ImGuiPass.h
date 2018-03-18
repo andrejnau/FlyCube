@@ -1,11 +1,11 @@
 #pragma once
 
+#include <wrl.h>
+#include <imgui.h>
+
 #include <Scene/SceneBase.h>
 #include <Context/DX11Context.h>
 #include <Geometry/Geometry.h>
-#include <d3d11.h>
-#include <wrl.h>
-#include <imgui.h>
 #include <ProgramRef/ImGuiPassPS.h>
 #include <ProgramRef/ImGuiPassVS.h>
 
@@ -25,13 +25,7 @@ public:
     {
     } output;
 
-    void RenderDrawLists(ImDrawData * draw_data);
-
-    void CreateFontsTexture();
-
-    bool InitImGui();
-
-    ImGuiPass(Context& DX11Context, const Input& input, int width, int height);
+    ImGuiPass(Context& context, const Input& input, int width, int height);
     ~ImGuiPass();
 
     virtual void OnUpdate() override;
@@ -45,17 +39,15 @@ public:
     virtual void OnInputChar(unsigned int ch) override;
 
 private:
-    Context & m_context;
+    void CreateFontsTexture();
+    void InitKey();
+
+    Context& m_context;
     Input m_input;
     int m_width;
     int m_height;
 
-    // Data
-    INT64                    m_time = 0;
-    INT64                    m_ticks_per_second = 0;
-
     Resource::Ptr m_font_texture_view;
-
     Program<ImGuiPassPS, ImGuiPassVS> m_program;
     PerFrameData<std::unique_ptr<IAVertexBuffer>> m_positions_buffer;
     PerFrameData<std::unique_ptr<IAVertexBuffer>> m_texcoords_buffer;

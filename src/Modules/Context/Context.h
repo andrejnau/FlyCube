@@ -52,4 +52,24 @@ protected:
 };
 
 template <typename T>
-using PerFrameData = std::array<T, Context::FrameCount>;
+class PerFrameData
+{
+public:
+    PerFrameData(Context& context)
+        : m_context(context)
+    {
+    }
+
+    T& get()
+    {
+        return m_data[m_context.GetFrameIndex()];
+    }
+
+    T& operator[](size_t pos)
+    {
+        return m_data[pos];
+    }
+private:
+    Context& m_context;
+    std::array<T, Context::FrameCount> m_data;
+};

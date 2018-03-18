@@ -303,6 +303,11 @@ void DX12Context::UseProgram(DX12ProgramApi& program_api)
     m_current_program = &program_api;
 }
 
+DescriptorPool& DX12Context::GetDescriptorPool()
+{
+    return *descriptor_pool[m_frame_index];
+}
+
 void DX12Context::ResizeBackBuffer(int width, int height)
 {
 }
