@@ -34,11 +34,11 @@ public:
     virtual void OnModifySettings(const Settings & settings) override;
 
 private:
+    void CreateSizeDependentResources();
+
     Settings m_settings;
     Context& m_context;
     Input m_input;
-    int m_width;
-    int m_height;
     Program<ShadowPassVS, ShadowPassGS, ShadowPassPS> m_program;
 };
 

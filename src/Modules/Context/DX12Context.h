@@ -17,6 +17,7 @@ class DX12Context : public Context
 {
 public:
     DX12Context(GLFWwindow* window, int width, int height);
+    ~DX12Context();
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) override;
@@ -38,10 +39,13 @@ public:
     virtual Resource::Ptr GetBackBuffer() override;
     virtual void Present(const Resource::Ptr& ires) override;
 
+    virtual void OnDestroy() override;
+
     void ResourceBarrier(const DX12Resource::Ptr& res, D3D12_RESOURCE_STATES state);
     void UseProgram(DX12ProgramApi& program_api);
 
     DescriptorPool& GetDescriptorPool();
+    void QueryOnDelete(ComPtr<IUnknown> res);
 
     ComPtr<ID3D12GraphicsCommandList> command_list;
     ComPtr<ID3D12Device> device;
@@ -49,6 +53,7 @@ public:
 
 private:
     virtual void ResizeBackBuffer(int width, int height) override;
+    void WaitForGpu();
     void MoveToNextFrame();
 
     ComPtr<ID3D12Fence> m_fence;
@@ -57,6 +62,7 @@ private:
     ComPtr<IDXGISwapChain3> m_swap_chain;
     ComPtr<ID3D12CommandQueue> m_command_queue;
     ComPtr<ID3D12CommandAllocator> m_command_allocator[FrameCount];
+    std::vector<ComPtr<IUnknown>> m_deletion_queue[FrameCount];
 
     DX12ProgramApi* m_current_program = nullptr;
     std::vector<std::reference_wrapper<DX12ProgramApi>> m_created_program;

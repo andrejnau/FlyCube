@@ -100,6 +100,8 @@ void ComputeLuminance::OnRender()
 
 void ComputeLuminance::OnResize(int width, int height)
 {
+    m_width = width;
+    m_height = height;
     CreateBuffers();
 }
 

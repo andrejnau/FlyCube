@@ -29,8 +29,11 @@ DX11Scene::DX11Scene(ApiType type, GLFWwindow* window, int width, int height)
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(75.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     CreateRT();
+}
 
-    m_camera.SetViewport(m_width, m_height);
+DX11Scene::~DX11Scene()
+{
+    m_context.OnDestroy();
 }
 
 IScene::Ptr DX11Scene::Create(ApiType api_type, GLFWwindow* window, int width, int height)
@@ -67,6 +70,7 @@ void DX11Scene::OnUpdate()
 void DX11Scene::OnRender()
 {
     m_render_target_view = m_context.GetBackBuffer();
+    m_camera.SetViewport(m_width, m_height);
 
     m_context.BeginEvent(L"Geometry Pass");
     m_geometry_pass.OnRender();
@@ -111,11 +115,12 @@ void DX11Scene::OnResize(int width, int height)
     m_context.OnResize(width, height);
 
     CreateRT();
-    m_camera.SetViewport(m_width, m_height);
 
     m_geometry_pass.OnResize(width, height);
     m_shadow_pass.OnResize(width, height);
+    m_ssao_pass.OnResize(width, height);
     m_light_pass.OnResize(width, height);
+    m_compute_luminance.OnResize(width, height);
     m_imgui_pass.OnResize(width, height);
 }
 

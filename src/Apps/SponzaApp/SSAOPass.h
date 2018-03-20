@@ -36,6 +36,7 @@ public:
 
 private:
     void SetDefines(Program<SSAOPassPS, SSAOPassVS>& program);
+    void CreateSizeDependentResources();
 
     Settings m_settings;
     Context& m_context;

@@ -11,7 +11,7 @@ GeometryPass::GeometryPass(Context& context, const Input& input, int width, int 
     , m_height(height)
     , m_program(context)
 {
-    InitGBuffers();
+    CreateSizeDependentResources();
 }
 
 void GeometryPass::OnUpdate()
@@ -101,12 +101,9 @@ void GeometryPass::OnRender()
 
 void GeometryPass::OnResize(int width, int height)
 {
-    if (width == m_width && height == m_height)
-        return;
-
     m_width = width;
     m_height = height;
-    InitGBuffers();
+    CreateSizeDependentResources();
 }
 
 void GeometryPass::OnModifySettings(const Settings& settings)
@@ -115,11 +112,11 @@ void GeometryPass::OnModifySettings(const Settings& settings)
     m_settings = settings;
     if (prev.msaa_count != settings.msaa_count)
     {
-        InitGBuffers();
+        CreateSizeDependentResources();
     }
 }
 
-void GeometryPass::InitGBuffers()
+void GeometryPass::CreateSizeDependentResources()
 {
     output.position = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);
     output.normal = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);

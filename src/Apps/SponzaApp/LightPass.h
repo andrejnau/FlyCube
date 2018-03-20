@@ -32,8 +32,6 @@ public:
         Resource::Ptr rtv;
     } output;
 
-    void SetDefines(Program<LightPassPS, LightPassVS>& program);
-
     LightPass(Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
@@ -42,6 +40,9 @@ public:
     virtual void OnModifySettings(const Settings & settings) override;
 
 private:
+    void CreateSizeDependentResources();
+    void SetDefines(Program<LightPassPS, LightPassVS>& program);
+
     Settings m_settings;
     Context& m_context;
     Input m_input;

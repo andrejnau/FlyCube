@@ -19,9 +19,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
     , m_program(context, std::bind(&SSAOPass::SetDefines, this, std::placeholders::_1))
     , m_program_blur(context)
 {
-    output.srv = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
-    output.srv_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
-    m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
+    CreateSizeDependentResources();
 
     std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
     std::default_random_engine generator;
@@ -112,6 +110,11 @@ void SSAOPass::OnResize(int width, int height)
 {
     m_width = width;
     m_height = height;
+    CreateSizeDependentResources();
+}
+
+void SSAOPass::CreateSizeDependentResources()
+{
     output.srv = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
     output.srv_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
     m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);

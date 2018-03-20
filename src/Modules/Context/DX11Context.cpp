@@ -196,5 +196,5 @@ void DX11Context::ResizeBackBuffer(int width, int height)
 {
     DXGI_SWAP_CHAIN_DESC desc = {};
     ASSERT_SUCCEEDED(m_swap_chain->GetDesc(&desc));
-    ASSERT_SUCCEEDED(m_swap_chain->ResizeBuffers(1, width, height, desc.BufferDesc.Format, desc.Flags));
+    ASSERT_SUCCEEDED(m_swap_chain->ResizeBuffers(FrameCount, width, height, desc.BufferDesc.Format, desc.Flags));
 }

@@ -6,11 +6,9 @@
 ShadowPass::ShadowPass(Context& context, const Input& input, int width, int height)
     : m_context(context)
     , m_input(input)
-    , m_width(width)
-    , m_height(height)
     , m_program(context)
 {
-    output.srv = m_context.CreateTexture(BindFlag::kDsv | BindFlag::kSrv, DXGI_FORMAT_R32_TYPELESS, 1, m_settings.s_size, m_settings.s_size, 6);
+    CreateSizeDependentResources();
 }
 
 void ShadowPass::OnUpdate()
@@ -99,12 +97,17 @@ void ShadowPass::OnResize(int width, int height)
 {
 }
 
+void ShadowPass::CreateSizeDependentResources()
+{
+    output.srv = m_context.CreateTexture(BindFlag::kDsv | BindFlag::kSrv, DXGI_FORMAT_R32_TYPELESS, 1, m_settings.s_size, m_settings.s_size, 6);
+}
+
 void ShadowPass::OnModifySettings(const Settings& settings)
 {
     Settings prev = m_settings;
     m_settings = settings;
     if (prev.s_size != settings.s_size)
     {
-        output.srv = m_context.CreateTexture(BindFlag::kDsv | BindFlag::kSrv, DXGI_FORMAT_R32_TYPELESS, 1, m_settings.s_size, m_settings.s_size, 6);
+        CreateSizeDependentResources();
     }
 }

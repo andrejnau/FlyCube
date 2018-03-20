@@ -27,6 +27,7 @@ class DX11Scene : public SceneBase
 {
 public:
     DX11Scene(ApiType type, GLFWwindow* window, int width, int height);
+    ~DX11Scene();
 
     static IScene::Ptr Create(ApiType api_type, GLFWwindow* window, int width, int height);
 
@@ -44,15 +45,17 @@ public:
 private:
     void CreateRT();
 
+    int m_width;
+    int m_height;
+
+    std::unique_ptr<Context> m_context_ptr;
+    Context& m_context;
+
     Resource::Ptr m_render_target_view;
     Resource::Ptr m_depth_stencil_view;
 
     glm::vec3 light_pos;
 
-    int m_width;
-    int m_height;
-    std::unique_ptr<Context> m_context_ptr;
-    Context& m_context;
     SceneModels m_scene_list;
     Model m_model_square;
     GeometryPass m_geometry_pass;

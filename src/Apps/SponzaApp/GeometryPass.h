@@ -42,7 +42,7 @@ private:
     int m_height;
     Program<GeometryPassPS, GeometryPassVS> m_program;
 
-    void InitGBuffers();
+    void CreateSizeDependentResources();
 
     Resource::Ptr m_depth_stencil;
     Settings m_settings;

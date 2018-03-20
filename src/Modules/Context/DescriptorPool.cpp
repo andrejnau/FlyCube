@@ -83,18 +83,23 @@ DescriptorPoolByType::DescriptorPoolByType(DX12Context& context, D3D12_DESCRIPTO
 {
 }
 
-DescriptorByResource DescriptorPoolByType::GetDescriptor(size_t bind_id, const ID3D12Resource* res)
+DescriptorByResource DescriptorPoolByType::GetDescriptor(size_t bind_id, DX12Resource::Ptr& res)
 {
     bool exist = true;
-    auto it = m_descriptors.find({ bind_id, res });
-    if (it == m_descriptors.end())
+    auto it = res->descriptors.find(bind_id);
+    if (it == res->descriptors.end())
     {
         exist = false;
-        it = m_descriptors.emplace(std::piecewise_construct,
-            std::forward_as_tuple(bind_id, res),
+        it = res->descriptors.emplace(std::piecewise_construct,
+            std::forward_as_tuple(bind_id),
             std::forward_as_tuple(m_heap_alloc.Allocate(1))).first;
     }
     return { it->second, exist };
+}
+
+DescriptorHeapRange DescriptorPoolByType::AllocateDescriptor()
+{
+    return m_heap_alloc.Allocate(1);
 }
 
 DescriptorPool::DescriptorPool(DX12Context& context)
@@ -108,10 +113,16 @@ DescriptorPool::DescriptorPool(DX12Context& context)
 {
 }
 
-DescriptorByResource DescriptorPool::GetDescriptor(ResourceType res_type, size_t bind_id, const ID3D12Resource* res)
+DescriptorByResource DescriptorPool::GetDescriptor(ResourceType res_type, size_t bind_id, DX12Resource::Ptr& res)
 {
     DescriptorPoolByType& pool = SelectHeap(res_type);
     return pool.GetDescriptor(bind_id, res);
+}
+
+DescriptorHeapRange DescriptorPool::AllocateDescriptor(ResourceType res_type)
+{
+    DescriptorPoolByType& pool = SelectHeap(res_type);
+    return pool.AllocateDescriptor();
 }
 
 void DescriptorPool::OnFrameBegin()

@@ -70,6 +70,12 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
 #endif
 }
 
+DX12Context::~DX12Context()
+{
+    WaitForGpu();
+    CloseHandle(m_fence_event);
+}
+
 std::unique_ptr<ProgramApi> DX12Context::CreateProgram()
 {
     auto res = std::make_unique<DX12ProgramApi>(*this);
@@ -79,7 +85,7 @@ std::unique_ptr<ProgramApi> DX12Context::CreateProgram()
 
 Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
-    DX12Resource::Ptr res = std::make_shared<DX12Resource>();
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>(*this);
 
     D3D12_RESOURCE_DESC desc = {};
     desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -141,7 +147,7 @@ Resource::Ptr DX12Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, si
     if (buffer_size == 0)
         return DX12Resource::Ptr();
 
-    DX12Resource::Ptr res = std::make_shared<DX12Resource>();
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>(*this);
 
     if (bind_flag & BindFlag::kCbv)
         buffer_size = (buffer_size + 255) & ~255;
@@ -262,7 +268,7 @@ void DX12Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT 
 
 Resource::Ptr DX12Context::GetBackBuffer()
 {
-    DX12Resource::Ptr res = std::make_shared<DX12Resource>();
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>(*this);
     ComPtr<ID3D12Resource> back_buffer;
     ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(m_frame_index, IID_PPV_ARGS(&back_buffer)));
     res->state = D3D12_RESOURCE_STATE_PRESENT;
@@ -287,8 +293,14 @@ void DX12Context::Present(const Resource::Ptr& ires)
     ASSERT_SUCCEEDED(command_list->Reset(m_command_allocator[m_frame_index].Get(), nullptr));
 
     descriptor_pool[m_frame_index]->OnFrameBegin();
+    m_deletion_queue[m_frame_index].clear();
     for (auto & x : m_created_program)
         x.get().OnPresent();
+}
+
+void DX12Context::OnDestroy()
+{
+    WaitForGpu();
 }
 
 void DX12Context::ResourceBarrier(const DX12Resource::Ptr& res, D3D12_RESOURCE_STATES state)
@@ -308,8 +320,37 @@ DescriptorPool& DX12Context::GetDescriptorPool()
     return *descriptor_pool[m_frame_index];
 }
 
+void DX12Context::QueryOnDelete(ComPtr<IUnknown> res)
+{
+    m_deletion_queue[m_frame_index].push_back(res);
+}
+
 void DX12Context::ResizeBackBuffer(int width, int height)
 {
+    WaitForGpu();
+    for (size_t i = 0; i < FrameCount; ++i)
+    {
+        m_fence_values[i] = m_fence_values[m_frame_index];
+        descriptor_pool[i]->OnFrameBegin();
+        m_deletion_queue[i].clear();
+    }
+    DXGI_SWAP_CHAIN_DESC desc = {};
+    m_swap_chain->GetDesc(&desc);
+    ASSERT_SUCCEEDED(m_swap_chain->ResizeBuffers(FrameCount, width, height, desc.BufferDesc.Format, desc.Flags));
+    m_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
+}
+
+void DX12Context::WaitForGpu()
+{
+    // Schedule a Signal command in the queue.
+    ASSERT_SUCCEEDED(m_command_queue->Signal(m_fence.Get(), m_fence_values[m_frame_index]));
+
+    // Wait until the fence has been processed.
+    ASSERT_SUCCEEDED(m_fence->SetEventOnCompletion(m_fence_values[m_frame_index], m_fence_event));
+    WaitForSingleObjectEx(m_fence_event, INFINITE, FALSE);
+
+    // Increment the fence value for the current frame.
+    ++m_fence_values[m_frame_index];
 }
 
 void DX12Context::MoveToNextFrame()

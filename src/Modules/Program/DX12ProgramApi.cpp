@@ -125,7 +125,7 @@ void DX12ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32
         std::forward_as_tuple(CreateUAV(type, name, slot, res)));
 }
 
-void DX12ProgramApi::AttachCBV(ShaderType type, uint32_t slot, const ComPtr<ID3D12Resource>& res)
+void DX12ProgramApi::AttachCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& res)
 {
     auto it = m_heap_ranges.find({ type, ResourceType::kCbv, slot });
     if (it != m_heap_ranges.end())
@@ -287,7 +287,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
     else
         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res->default_res.Get());
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res);
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -358,7 +358,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res->default_res.Get());
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res);
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -393,26 +393,25 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
     return descriptor.handle;
 }
 
-DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, const ComPtr<ID3D12Resource>& res)
+DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& res)
 {
-    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res.Get());
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res);
 
     if (descriptor.exist)
         return descriptor.handle;
 
     D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
-    desc.BufferLocation = res->GetGPUVirtualAddress();
-    desc.SizeInBytes = (res->GetDesc().Width + 255) & ~255;
+    desc.BufferLocation = res->default_res->GetGPUVirtualAddress();
+    desc.SizeInBytes = (res->default_res->GetDesc().Width + 255) & ~255;
 
     m_context.device->CreateConstantBufferView(&desc, descriptor.handle.GetCpuHandle());
 
     return descriptor.handle;
 }
 
-ComPtr<ID3D12Resource> DX12ProgramApi::CreateCBuffer(size_t buffer_size)
+DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
 {
-    ComPtr<ID3D12Resource> res;
-    ComPtr<ID3D12Resource> buffer;
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>(m_context);
     buffer_size = (buffer_size + 255) & ~255;
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
     m_context.device->CreateCommittedResource(
@@ -421,13 +420,13 @@ ComPtr<ID3D12Resource> DX12ProgramApi::CreateCBuffer(size_t buffer_size)
         &desc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
-        IID_PPV_ARGS(&res));
+        IID_PPV_ARGS(&res->default_res));
     return res;
 }
 
 DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
 {
-    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kSampler, GetBindingId(m_program_id, type, ResourceType::kSampler, slot), nullptr);
+    auto handle = m_context.GetDescriptorPool().AllocateDescriptor(ResourceType::kSampler);
 
     D3D12_SAMPLER_DESC sampler_desc = {};
 
@@ -475,16 +474,16 @@ DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot
     sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
     sampler_desc.MaxAnisotropy = 1;
 
-    m_context.device->CreateSampler(&sampler_desc, descriptor.handle.GetCpuHandle());
+    m_context.device->CreateSampler(&sampler_desc, handle.GetCpuHandle());
 
-    return descriptor.handle;
+    return handle;
 }
 
 DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr& ires)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res->default_res.Get());
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -511,7 +510,7 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
-    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res->default_res.Get());
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
@@ -698,9 +697,9 @@ void DX12ProgramApi::ApplyBindings()
         {
             CD3DX12_RANGE range(0, 0);
             char* cbvGPUAddress = nullptr;
-            ASSERT_SUCCEEDED(res->Map(0, &range, reinterpret_cast<void**>(&cbvGPUAddress)));
+            ASSERT_SUCCEEDED(res->default_res->Map(0, &range, reinterpret_cast<void**>(&cbvGPUAddress)));
             memcpy(cbvGPUAddress, buffer_data.data(), buffer_data.size());
-            res->Unmap(0, &range);
+            res->default_res->Unmap(0, &range);
             m_changed_binding = true;
         }
 
@@ -789,7 +788,7 @@ void DX12ProgramApi::ApplyBindings()
             {
                 auto& shader_type = std::get<0>(x.first);
                 auto& res = m_cbv_buffer.get()[{shader_type, slot}][m_cbv_offset.get()[{shader_type, slot}]];
-                SetRootConstantBufferView(x.second.root_param_index + slot, res->GetGPUVirtualAddress());
+                SetRootConstantBufferView(x.second.root_param_index + slot, res->default_res->GetGPUVirtualAddress());
             }
         }
     }

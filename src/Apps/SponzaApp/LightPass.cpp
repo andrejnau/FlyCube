@@ -13,8 +13,7 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     m_input.camera.SetCameraYaw(-178.0f);
     m_input.camera.SetCameraYaw(-1.75f);
 
-    output.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
-    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
+    CreateSizeDependentResources();
 }
 
 void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
@@ -82,7 +81,11 @@ void LightPass::OnResize(int width, int height)
 {
     m_width = width;
     m_height = height;
+    CreateSizeDependentResources();
+}
 
+void LightPass::CreateSizeDependentResources()
+{
     output.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
     m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
 }

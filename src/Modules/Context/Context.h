@@ -16,6 +16,7 @@ class Context
 {
 public:
     Context(GLFWwindow* window, int width, int height);
+    virtual ~Context() {}
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() = 0;
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) = 0;
@@ -36,6 +37,8 @@ public:
 
     virtual Resource::Ptr GetBackBuffer() = 0;
     virtual void Present(const Resource::Ptr& ires) = 0;
+
+    virtual void OnDestroy() {}
 
     void OnResize(int width, int height);
     size_t GetFrameIndex() const;

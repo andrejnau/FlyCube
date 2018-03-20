@@ -18,6 +18,7 @@ set(sources
     DescriptorPool.cpp
     DX11Context.cpp
     DX12Context.cpp
+    DX12Resource.cpp
     DXGIUtility.cpp
 )
 
