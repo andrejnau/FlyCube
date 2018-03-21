@@ -63,6 +63,7 @@ private:
 
     std::map<std::tuple<ShaderType, ResourceType, uint32_t>, DescriptorHeapRange> m_heap_ranges;
     std::map<ShaderType, ComPtr<ID3DBlob>> m_blob_map;
+    bool m_is_compute = false;
 
     D3D12_ROOT_DESCRIPTOR_TABLE DescriptorTable;
     D3D12_ROOT_CONSTANTS Constants;

@@ -67,6 +67,7 @@ void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& bl
         break;
     case ShaderType::kCompute:
         m_compute_pso_desc.CS = ShaderBytecode;
+        m_is_compute = true;
         break;
     case ShaderType::kGeometry:
         m_pso_desc.GS = ShaderBytecode;
@@ -79,56 +80,53 @@ void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& bl
 
 void DX12ProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res)
 {
-    auto it = m_heap_ranges.find({ type, ResourceType::kSrv, slot });
-    if (it != m_heap_ranges.end())
-        m_heap_ranges.erase(it);
-    else if (!res)
-        return;
-
     m_changed_binding = true;
-
-    if (!res)
-        return;
-
-    m_heap_ranges.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, ResourceType::kSrv, slot),
-        std::forward_as_tuple(CreateSrv(type, name, slot, res)));
+    auto handle = CreateSrv(type, name, slot, res);
+    auto it = m_heap_ranges.find({ type, ResourceType::kSrv, slot });
+    if (it == m_heap_ranges.end())
+    {
+        m_heap_ranges.emplace(std::piecewise_construct,
+            std::forward_as_tuple(type, ResourceType::kSrv, slot),
+            std::forward_as_tuple(handle));
+    }
+    else
+    {
+        it->second = handle;
+    }
 }
 
 void DX12ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr& res)
 {
-    auto it = m_heap_ranges.find({ type, ResourceType::kUav, slot });
-    if (it != m_heap_ranges.end())
-        m_heap_ranges.erase(it);
-    else if (!res)
-        return;
-
     m_changed_binding = true;
-
-    if (!res)
-        return;
-
-    m_heap_ranges.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, ResourceType::kUav, slot),
-        std::forward_as_tuple(CreateUAV(type, name, slot, res)));
+    auto handle = CreateUAV(type, name, slot, res);
+    auto it = m_heap_ranges.find({ type, ResourceType::kUav, slot });
+    if (it == m_heap_ranges.end())
+    {
+        m_heap_ranges.emplace(std::piecewise_construct,
+            std::forward_as_tuple(type, ResourceType::kUav, slot),
+            std::forward_as_tuple(handle));
+    }
+    else
+    {
+        it->second = handle;
+    }
 }
 
 void DX12ProgramApi::AttachCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& res)
 {
-    auto it = m_heap_ranges.find({ type, ResourceType::kCbv, slot });
-    if (it != m_heap_ranges.end())
-        m_heap_ranges.erase(it);
-    else if (!res)
-        return;
-
     m_changed_binding = true;
-
-    if (!res)
-        return;
-
-    m_heap_ranges.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, ResourceType::kCbv, slot),
-        std::forward_as_tuple(CreateCBV(type, slot, res)));
+    auto handle = CreateCBV(type, slot, res);
+    auto it = m_heap_ranges.find({ type, ResourceType::kCbv, slot });
+    if (it == m_heap_ranges.end())
+    {
+        m_heap_ranges.emplace(std::piecewise_construct,
+            std::forward_as_tuple(type, ResourceType::kCbv, slot),
+            std::forward_as_tuple(handle));
+    }
+    else
+    {
+        it->second = handle;
+    }
 }
 
 void DX12ProgramApi::AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buffer)
@@ -140,41 +138,53 @@ void DX12ProgramApi::AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buf
 
 void DX12ProgramApi::AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
 {
-    auto it = m_heap_ranges.find({ type, ResourceType::kSampler, slot });
-    if (it != m_heap_ranges.end())
-        m_heap_ranges.erase(it);
-
     m_changed_binding = true;
-
-    m_heap_ranges.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, ResourceType::kSampler, slot),
-        std::forward_as_tuple(CreateSampler(type, slot, desc)));
+    auto handle = CreateSampler(type, slot, desc);
+    auto it = m_heap_ranges.find({ type, ResourceType::kSampler, slot });
+    if (it == m_heap_ranges.end())
+    {
+        m_heap_ranges.emplace(std::piecewise_construct,
+            std::forward_as_tuple(type, ResourceType::kSampler, slot),
+            std::forward_as_tuple(handle));
+    }
+    else
+    {
+        it->second = handle;
+    }
 }
 
 void DX12ProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& ires)
 {
-    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kRtv, slot });
-    if (it != m_heap_ranges.end())
-        m_heap_ranges.erase(it);
-
     m_changed_om = true;
-
-    m_heap_ranges.emplace(std::piecewise_construct,
-        std::forward_as_tuple(ShaderType::kPixel, ResourceType::kRtv, slot),
-        std::forward_as_tuple(CreateRTV(slot, ires)));
+    auto handle = CreateRTV(slot, ires);
+    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kRtv, slot });
+    if (it == m_heap_ranges.end())
+    {
+        m_heap_ranges.emplace(std::piecewise_construct,
+            std::forward_as_tuple(ShaderType::kPixel, ResourceType::kRtv, slot),
+            std::forward_as_tuple(handle));
+    }
+    else
+    {
+        it->second = handle;
+    }
 }
 
 void DX12ProgramApi::AttachDSV(const Resource::Ptr& ires)
 {
-    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kDsv, 0 });
-    if (it != m_heap_ranges.end())
-        m_heap_ranges.erase(it);
-
     m_changed_om = true;
-
-    m_heap_ranges.emplace(std::piecewise_construct,
-        std::forward_as_tuple(ShaderType::kPixel, ResourceType::kDsv, 0),
-        std::forward_as_tuple(CreateDSV(ires)));
+    auto handle = CreateDSV(ires);
+    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kDsv, 0 });
+    if (it == m_heap_ranges.end())
+    {
+        m_heap_ranges.emplace(std::piecewise_construct,
+            std::forward_as_tuple(ShaderType::kPixel, ResourceType::kDsv, 0),
+            std::forward_as_tuple(handle));
+    }
+    else
+    {
+        it->second = handle;
+    }
 }
 
 void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
@@ -268,6 +278,9 @@ void DX12ProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
 
 DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
 {
+    if (!ires)
+        return m_context.GetDescriptorPool().GetEmptyDescriptor(ResourceType::kSrv);
+
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
     if (type == ShaderType::kPixel)
@@ -342,6 +355,9 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
 
 DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & ires)
 {
+    if (!ires)
+        return m_context.GetDescriptorPool().GetEmptyDescriptor(ResourceType::kUav);
+
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -383,6 +399,9 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
 
 DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& res)
 {
+    if (!res)
+        return m_context.GetDescriptorPool().GetEmptyDescriptor(ResourceType::kCbv);
+
     auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, type, ResourceType::kCbv, slot }, res);
 
     if (descriptor.exist)
@@ -469,6 +488,9 @@ DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot
 
 DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr& ires)
 {
+    if (!ires)
+        return m_context.GetDescriptorPool().GetEmptyDescriptor(ResourceType::kRtv);
+
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
     auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot }, res);
@@ -497,6 +519,9 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 
 DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
 {
+    if (!ires)
+        return m_context.GetDescriptorPool().GetEmptyDescriptor(ResourceType::kDsv);
+
     auto res = std::static_pointer_cast<DX12Resource>(ires);
     auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0 }, res);
 
@@ -537,7 +562,7 @@ DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
 
 void DX12ProgramApi::SetRootSignature(ID3D12RootSignature * pRootSignature)
 {
-    if (m_blob_map.count(ShaderType::kCompute))
+    if (m_is_compute)
         m_context.command_list->SetComputeRootSignature(pRootSignature);
     else
         m_context.command_list->SetGraphicsRootSignature(pRootSignature);
@@ -547,7 +572,7 @@ void DX12ProgramApi::SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_D
 {
     if (RootParameterIndex == -1)
         return;
-    if (m_blob_map.count(ShaderType::kCompute))
+    if (m_is_compute)
         m_context.command_list->SetComputeRootDescriptorTable(RootParameterIndex, BaseDescriptor);
     else
         m_context.command_list->SetGraphicsRootDescriptorTable(RootParameterIndex, BaseDescriptor);
@@ -557,7 +582,7 @@ void DX12ProgramApi::SetRootConstantBufferView(UINT RootParameterIndex, D3D12_GP
 {
     if (RootParameterIndex == -1)
         return;
-    if (m_blob_map.count(ShaderType::kCompute))
+    if (m_is_compute)
         m_context.command_list->SetComputeRootConstantBufferView(RootParameterIndex, BufferLocation);
     else
         m_context.command_list->SetGraphicsRootConstantBufferView(RootParameterIndex, BufferLocation);
@@ -664,7 +689,7 @@ void DX12ProgramApi::CreateComputePSO()
 
 void DX12ProgramApi::ApplyBindings()
 {
-    if (m_blob_map.count(ShaderType::kCompute))
+    if (m_is_compute)
         CreateComputePSO();
     else
         CreateGraphicsPSO();
@@ -698,7 +723,10 @@ void DX12ProgramApi::ApplyBindings()
     }
 
     if (m_changed_om)
+    {
         OMSetRenderTargets();
+        m_changed_om = false;
+    }
 
     if (!m_changed_binding)
         return;

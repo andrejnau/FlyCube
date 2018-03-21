@@ -31,7 +31,7 @@ public:
     }
 
 private:
-    ComPtr<ID3D12DescriptorHeap>& m_heap;
+    std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> m_heap;
     size_t m_offset;
     size_t m_size;
     size_t m_increment_size;
@@ -66,6 +66,7 @@ struct DescriptorPoolByType
 public:
     DescriptorPoolByType(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type);
     DescriptorByResource GetDescriptor(const BindKey& bind_key, DX12Resource::Ptr& res);
+    DescriptorHeapRange GetEmptyDescriptor();
     DescriptorHeapRange AllocateDescriptor();
 
 private:
@@ -78,6 +79,7 @@ class DescriptorPool
 public:
     DescriptorPool(DX12Context& context);
     DescriptorByResource GetDescriptor(const BindKey& bind_key, DX12Resource::Ptr& res);
+    DescriptorHeapRange GetEmptyDescriptor(ResourceType res_type);
     DescriptorHeapRange AllocateDescriptor(ResourceType res_type);
     void OnFrameBegin();
     void ReqFrameDescription(ResourceType res_type, size_t count);

@@ -16,7 +16,7 @@ DescriptorHeapRange::DescriptorHeapRange(ComPtr<ID3D12DescriptorHeap>& heap, siz
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapRange::GetCpuHandle(size_t offset) const
 {
     return CD3DX12_CPU_DESCRIPTOR_HANDLE(
-        m_heap->GetCPUDescriptorHandleForHeapStart(),
+        m_heap.get()->GetCPUDescriptorHandleForHeapStart(),
         m_offset + offset,
         m_increment_size);
 }
@@ -24,7 +24,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapRange::GetCpuHandle(size_t offset) con
 D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapRange::GetGpuHandle(size_t offset) const
 {
     return CD3DX12_GPU_DESCRIPTOR_HANDLE(
-        m_heap->GetGPUDescriptorHandleForHeapStart(),
+        m_heap.get()->GetGPUDescriptorHandleForHeapStart(),
         m_offset + offset,
         m_increment_size);
 }
@@ -97,6 +97,12 @@ DescriptorByResource DescriptorPoolByType::GetDescriptor(const BindKey& bind_key
     return { it->second, exist };
 }
 
+DescriptorHeapRange DescriptorPoolByType::GetEmptyDescriptor()
+{
+    static auto empty = AllocateDescriptor();
+    return empty;
+}
+
 DescriptorHeapRange DescriptorPoolByType::AllocateDescriptor()
 {
     return m_heap_alloc.Allocate(1);
@@ -117,6 +123,12 @@ DescriptorByResource DescriptorPool::GetDescriptor(const BindKey& bind_key, DX12
 {
     DescriptorPoolByType& pool = SelectHeap(std::get<ResourceType>(bind_key));
     return pool.GetDescriptor(bind_key, res);
+}
+
+DescriptorHeapRange DescriptorPool::GetEmptyDescriptor(ResourceType res_type)
+{
+    DescriptorPoolByType& pool = SelectHeap(res_type);
+    return pool.GetEmptyDescriptor();
 }
 
 DescriptorHeapRange DescriptorPool::AllocateDescriptor(ResourceType res_type)
