@@ -207,7 +207,7 @@ void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stenc
 
 void DX12ProgramApi::SetRasterizeState(const RasterizerDesc& desc)
 {
-    m_changed_pso_desc = true;
+    auto prev = m_pso_desc.RasterizerState;
     switch (desc.fill_mode)
     {
     case FillMode::kWireframe:
@@ -232,11 +232,14 @@ void DX12ProgramApi::SetRasterizeState(const RasterizerDesc& desc)
     }
 
     m_pso_desc.RasterizerState.DepthBias = desc.DepthBias;
+
+    m_changed_pso_desc = memcmp(&prev, &m_pso_desc.RasterizerState, sizeof(prev)) == 0;
 }
 
 void DX12ProgramApi::SetBlendState(const BlendDesc& desc)
 {
-    m_changed_pso_desc = true;
+    auto prev = m_pso_desc.BlendState;
+
     auto& rt_desc = m_pso_desc.BlendState.RenderTarget[0];
 
     auto convert = [](Blend type)
@@ -269,10 +272,13 @@ void DX12ProgramApi::SetBlendState(const BlendDesc& desc)
     rt_desc.SrcBlendAlpha = convert(desc.blend_src_alpha);
     rt_desc.DestBlendAlpha = convert(desc.blend_dest_apha);
     rt_desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+    m_changed_pso_desc = memcmp(&prev, &m_pso_desc.BlendState, sizeof(prev)) == 0;
 }
 
 void DX12ProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
 {
+    m_changed_pso_desc = m_pso_desc.DepthStencilState.DepthEnable != desc.depth_enable;
     m_pso_desc.DepthStencilState.DepthEnable = desc.depth_enable;
 }
 
