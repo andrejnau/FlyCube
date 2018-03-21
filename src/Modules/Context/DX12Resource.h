@@ -4,6 +4,7 @@
 #include <map>
 
 #include "Context/Resource.h"
+#include "Context/BaseTypes.h"
 
 class DescriptorHeapRange;
 class DX12Context;
@@ -14,7 +15,7 @@ public:
     using Ptr = std::shared_ptr<DX12Resource>;
     ComPtr<ID3D12Resource> default_res;
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
-    std::map<size_t, DescriptorHeapRange> descriptors;
+    std::map<BindKey, DescriptorHeapRange> descriptors;
     size_t stride = 0;
 
     DX12Resource(DX12Context& context);

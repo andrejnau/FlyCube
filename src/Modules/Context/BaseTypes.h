@@ -99,3 +99,13 @@ struct DepthStencilDesc
 {
     bool depth_enable;
 };
+
+enum class ShaderType
+{
+    kVertex,
+    kPixel,
+    kCompute,
+    kGeometry
+};
+
+using BindKey = std::tuple<size_t /*program_id*/, ShaderType /*shader_type*/, ResourceType /*res_type*/, uint32_t /*slot*/>;

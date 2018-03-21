@@ -1,14 +1,11 @@
 #pragma once
 
-#include "Program/ShaderType.h"
-#include <memory>
-
-#include <Program/ShaderType.h>
 #include <Context/BaseTypes.h>
 #include <Context/Resource.h>
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
 #include <map>
+#include <memory>
 #include <vector>
 
 #include <d3dcompiler.h>

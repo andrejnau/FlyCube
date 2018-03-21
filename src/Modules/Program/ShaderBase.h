@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Program/ShaderType.h>
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
 #include <Utilities/State.h>

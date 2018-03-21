@@ -60,6 +60,7 @@ private:
     size_t m_num_uav = 0;
     size_t m_num_rtv = 0;
     size_t m_num_sampler = 0;
+
     std::map<std::tuple<ShaderType, ResourceType, uint32_t>, DescriptorHeapRange> m_heap_ranges;
     std::map<ShaderType, ComPtr<ID3DBlob>> m_blob_map;
 

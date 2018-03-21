@@ -8,18 +8,6 @@ size_t GenId()
     return ++id;
 }
 
-size_t GetBindingId(size_t program_id, ShaderType shader_type, ResourceType res_type, uint32_t slot)
-{
-    static std::map<std::tuple<size_t, ShaderType, ResourceType, uint32_t>, size_t> binding_id;
-    auto it = binding_id.find({ program_id, shader_type, res_type, slot });
-    if (it != binding_id.end())
-        return it->second;
-
-    return binding_id.emplace(std::piecewise_construct,
-        std::forward_as_tuple(program_id, shader_type, res_type, slot),
-        std::forward_as_tuple(GenId())).first->second;
-}
-
 DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     : m_context(context)
     , m_program_id(GenId())
@@ -89,7 +77,7 @@ void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& bl
     ParseShaders();
 }
 
-void DX12ProgramApi::AttachSRV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr& res)
+void DX12ProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res)
 {
     auto it = m_heap_ranges.find({ type, ResourceType::kSrv, slot });
     if (it != m_heap_ranges.end())
@@ -287,7 +275,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
     else
         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kSrv, GetBindingId(m_program_id, type, ResourceType::kSrv, slot), res);
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, type, ResourceType::kSrv, slot }, res);
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -358,7 +346,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kUav, GetBindingId(m_program_id, type, ResourceType::kUav, slot), res);
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, type, ResourceType::kUav, slot }, res);
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -395,7 +383,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
 
 DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& res)
 {
-    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kCbv, GetBindingId(m_program_id, type, ResourceType::kCbv, slot), res);
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, type, ResourceType::kCbv, slot }, res);
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -483,7 +471,7 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
-    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kRtv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot), res);
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot }, res);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -510,7 +498,7 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
-    auto descriptor = m_context.GetDescriptorPool().GetDescriptor(ResourceType::kDsv, GetBindingId(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0), res);
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0 }, res);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
@@ -1026,13 +1014,12 @@ void DX12ProgramApi::OnPresent()
 
 void DX12ProgramApi::OMSetRenderTargets()
 {
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv(m_num_rtv);
     for (uint32_t slot = 0; slot < m_num_rtv; ++slot)
     {
         auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kRtv, slot });
-        om_rtv.emplace_back();
         if (it != m_heap_ranges.end())
-            om_rtv.back() = it->second.GetCpuHandle();
+            om_rtv[slot] = it->second.GetCpuHandle();
     }
 
     D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = {};
