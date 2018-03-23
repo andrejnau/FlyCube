@@ -4,8 +4,10 @@
 
 #include "Context/DX12Context.h"
 
-DescriptorHeapRange::DescriptorHeapRange(ComPtr<ID3D12DescriptorHeap>& heap, size_t offset, size_t size, size_t increment_size, D3D12_DESCRIPTOR_HEAP_TYPE type)
+DescriptorHeapRange::DescriptorHeapRange(ComPtr<ID3D12DescriptorHeap>& heap, D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE& gpu_handle, size_t offset, size_t size, size_t increment_size, D3D12_DESCRIPTOR_HEAP_TYPE type)
     : m_heap(heap)
+    , m_cpu_handle(cpu_handle)
+    , m_gpu_handle(gpu_handle)
     , m_offset(offset)
     , m_size(size)
     , m_increment_size(increment_size)
@@ -16,7 +18,7 @@ DescriptorHeapRange::DescriptorHeapRange(ComPtr<ID3D12DescriptorHeap>& heap, siz
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapRange::GetCpuHandle(size_t offset) const
 {
     return CD3DX12_CPU_DESCRIPTOR_HANDLE(
-        m_heap.get()->GetCPUDescriptorHandleForHeapStart(),
+        m_cpu_handle,
         m_offset + offset,
         m_increment_size);
 }
@@ -24,7 +26,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapRange::GetCpuHandle(size_t offset) con
 D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapRange::GetGpuHandle(size_t offset) const
 {
     return CD3DX12_GPU_DESCRIPTOR_HANDLE(
-        m_heap.get()->GetGPUDescriptorHandleForHeapStart(),
+        m_gpu_handle,
         m_offset + offset,
         m_increment_size);
 }
@@ -46,7 +48,7 @@ DescriptorHeapRange DescriptorHeapAllocator::Allocate(size_t count)
         ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
     }
     m_offset += count;
-    return DescriptorHeapRange(m_heap, m_offset - count, count, m_context.device->GetDescriptorHandleIncrementSize(m_type), m_type);
+    return DescriptorHeapRange(m_heap, m_cpu_handle, m_gpu_handle, m_offset - count, count, m_context.device->GetDescriptorHandleIncrementSize(m_type), m_type);
 }
 
 void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
@@ -70,6 +72,8 @@ void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
     }
     m_size = heap_desc.NumDescriptors;
     m_heap = heap;
+    m_cpu_handle = m_heap->GetCPUDescriptorHandleForHeapStart();
+    m_gpu_handle = m_heap->GetGPUDescriptorHandleForHeapStart();
 }
 
 void DescriptorHeapAllocator::ResetHeap()
