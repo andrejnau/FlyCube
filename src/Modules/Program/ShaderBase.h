@@ -36,8 +36,7 @@ protected:
     ComPtr<ID3DBlob> CompileShader() const
     {
         decltype(&::D3DCompileFromFile) _D3DCompileFromFile = &::D3DCompileFromFile;
-        auto& state = CurState<bool>::Instance().state;
-        if (state["DXIL"])
+        if (CurState::Instance().DXIL)
             _D3DCompileFromFile = (decltype(&::D3DCompileFromFile))GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DCompileFromFile");
 
         ComPtr<ID3DBlob> shader_buffer;

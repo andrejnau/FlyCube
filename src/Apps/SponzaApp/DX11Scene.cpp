@@ -51,8 +51,7 @@ void DX11Scene::OnUpdate()
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = end;
 
-    auto& state = CurState<bool>::Instance().state;
-    if (state["pause"])
+    if (CurState::Instance().pause)
         angle += elapsed / 2e6f;
 
     float light_r = 2.5;
@@ -138,22 +137,13 @@ void DX11Scene::OnKey(int key, int action)
         m_keys[key] = false;
 
     if (key == GLFW_KEY_N && action == GLFW_PRESS)
-    {
-        auto & state = CurState<bool>::Instance().state;
-        state["disable_norm"] = !state["disable_norm"];
-    }
+        CurState::Instance().disable_norm ^= true;
 
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        auto & state = CurState<bool>::Instance().state;
-        state["pause"] = !state["pause"];
-    }
+        CurState::Instance().pause ^= true;
 
     if (key == GLFW_KEY_J && action == GLFW_PRESS)
-    {
-        auto & state = CurState<bool>::Instance().state;
-        state["no_shadow_discard"] = !state["no_shadow_discard"];
-    }
+        CurState::Instance().no_shadow_discard ^= true;
 }
 
 void DX11Scene::OnMouse(bool first_event, double xpos, double ypos)

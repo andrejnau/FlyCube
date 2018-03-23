@@ -14,8 +14,7 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     , m_cbv_buffer(context)
     , m_cbv_offset(context)
 {
-    auto& state = CurState<bool>::Instance().state;
-    if (state["DXIL"])
+    if (CurState::Instance().DXIL)
         _D3DReflect = (decltype(&::D3DReflect))GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DReflect");
 
     m_pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -279,7 +278,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
     if (!ires)
         return m_context.GetDescriptorPool().GetEmptyDescriptor(ResourceType::kSrv);
 
-    auto res = std::static_pointer_cast<DX12Resource>(ires);
+    DX12Resource& res = static_cast<DX12Resource&>(*ires);
 
     if (type == ShaderType::kPixel)
         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -297,7 +296,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
     D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
     ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
 
-    D3D12_RESOURCE_DESC desc = res->default_res->GetDesc();
+    D3D12_RESOURCE_DESC desc = res.default_res->GetDesc();
 
     switch (res_desc.Dimension)
     {
@@ -307,10 +306,10 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
         srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         srv_desc.Format = DXGI_FORMAT_UNKNOWN;
         srv_desc.Buffer.FirstElement = 0;
-        srv_desc.Buffer.NumElements = desc.Width / res->stride;
-        srv_desc.Buffer.StructureByteStride = res->stride;
+        srv_desc.Buffer.NumElements = desc.Width / res.stride;
+        srv_desc.Buffer.StructureByteStride = res.stride;
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
+        m_context.device->CreateShaderResourceView(res.default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
 
         break;
     }
@@ -321,7 +320,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
         srv_desc.Format = desc.Format;
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         srv_desc.Texture2D.MipLevels = desc.MipLevels;
-        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
+        m_context.device->CreateShaderResourceView(res.default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
         break;
     }
     case D3D_SRV_DIMENSION_TEXTURE2DMS:
@@ -330,7 +329,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
         srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         srv_desc.Format = desc.Format;
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
-        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
+        m_context.device->CreateShaderResourceView(res.default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
         break;
     }
     case D3D_SRV_DIMENSION_TEXTURECUBE:
@@ -340,7 +339,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
         srv_desc.Format = DXGI_FORMAT_R32_FLOAT; // TODO tex_dec.Format;
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
         srv_desc.TextureCube.MipLevels = desc.MipLevels;
-        m_context.device->CreateShaderResourceView(res->default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
+        m_context.device->CreateShaderResourceView(res.default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
         break;
     }
     default:
@@ -356,7 +355,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
     if (!ires)
         return m_context.GetDescriptorPool().GetEmptyDescriptor(ResourceType::kUav);
 
-    auto res = std::static_pointer_cast<DX12Resource>(ires);
+    DX12Resource& res = static_cast<DX12Resource&>(*ires);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
@@ -371,7 +370,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
     D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
     ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
 
-    D3D12_RESOURCE_DESC desc = res->default_res->GetDesc();
+    D3D12_RESOURCE_DESC desc = res.default_res->GetDesc();
 
     switch (res_desc.Dimension)
     {
@@ -381,9 +380,9 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
         uav_desc.Format = DXGI_FORMAT_UNKNOWN;
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
         uav_desc.Buffer.FirstElement = 0;
-        uav_desc.Buffer.NumElements = desc.Width / res->stride;
-        uav_desc.Buffer.StructureByteStride = res->stride;
-        m_context.device->CreateUnorderedAccessView(res->default_res.Get(), nullptr, &uav_desc, descriptor.handle.GetCpuHandle());
+        uav_desc.Buffer.NumElements = desc.Width / res.stride;
+        uav_desc.Buffer.StructureByteStride = res.stride;
+        m_context.device->CreateUnorderedAccessView(res.default_res.Get(), nullptr, &uav_desc, descriptor.handle.GetCpuHandle());
 
         break;
     }
@@ -395,10 +394,12 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
     return descriptor.handle;
 }
 
-DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& res)
+DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& ires)
 {
-    if (!res)
+    if (!ires)
         return m_context.GetDescriptorPool().GetEmptyDescriptor(ResourceType::kCbv);
+
+    DX12Resource& res = static_cast<DX12Resource&>(*ires);
 
     auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, type, ResourceType::kCbv, slot }, res);
 
@@ -406,8 +407,8 @@ DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, DX
         return descriptor.handle;
 
     D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
-    desc.BufferLocation = res->default_res->GetGPUVirtualAddress();
-    desc.SizeInBytes = (res->default_res->GetDesc().Width + 255) & ~255;
+    desc.BufferLocation = res.default_res->GetGPUVirtualAddress();
+    desc.SizeInBytes = (res.default_res->GetDesc().Width + 255) & ~255;
 
     m_context.device->CreateConstantBufferView(&desc, descriptor.handle.GetCpuHandle());
 
@@ -489,19 +490,19 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
     if (!ires)
         return m_context.GetDescriptorPool().GetEmptyDescriptor(ResourceType::kRtv);
 
-    auto res = std::static_pointer_cast<DX12Resource>(ires);
+    DX12Resource& res = static_cast<DX12Resource&>(*ires);
 
     auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot }, res);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-    m_pso_desc_cache(m_pso_desc.RTVFormats[slot]) = res->default_res->GetDesc().Format;
-    m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = res->default_res->GetDesc().SampleDesc.Count;
+    m_pso_desc_cache(m_pso_desc.RTVFormats[slot]) = res.default_res->GetDesc().Format;
+    m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = res.default_res->GetDesc().SampleDesc.Count;
 
     if (descriptor.exist)
         return descriptor.handle;
 
-    m_context.device->CreateRenderTargetView(res->default_res.Get(), nullptr, descriptor.handle.GetCpuHandle());
+    m_context.device->CreateRenderTargetView(res.default_res.Get(), nullptr, descriptor.handle.GetCpuHandle());
 
     return descriptor.handle;
 }
@@ -511,12 +512,12 @@ DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
     if (!ires)
         return m_context.GetDescriptorPool().GetEmptyDescriptor(ResourceType::kDsv);
 
-    auto res = std::static_pointer_cast<DX12Resource>(ires);
+    DX12Resource& res = static_cast<DX12Resource&>(*ires);
     auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0 }, res);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
-    auto desc = res->default_res->GetDesc();
+    auto desc = res.default_res->GetDesc();
 
     DXGI_FORMAT format = desc.Format;
     if (format == DXGI_FORMAT_R32_TYPELESS)
@@ -527,15 +528,15 @@ DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
         dsv_desc.Texture2DArray.ArraySize = desc.DepthOrArraySize;
         if (!descriptor.exist)
-            m_context.device->CreateDepthStencilView(res->default_res.Get(), &dsv_desc, descriptor.handle.GetCpuHandle());
+            m_context.device->CreateDepthStencilView(res.default_res.Get(), &dsv_desc, descriptor.handle.GetCpuHandle());
     }
     else if (!descriptor.exist)
     {
-        m_context.device->CreateDepthStencilView(res->default_res.Get(), nullptr, descriptor.handle.GetCpuHandle());
+        m_context.device->CreateDepthStencilView(res.default_res.Get(), nullptr, descriptor.handle.GetCpuHandle());
     }
 
     m_pso_desc_cache(m_pso_desc.DSVFormat) = format;
-    m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = res->default_res->GetDesc().SampleDesc.Count;
+    m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = res.default_res->GetDesc().SampleDesc.Count;
 
     return descriptor.handle;
 }

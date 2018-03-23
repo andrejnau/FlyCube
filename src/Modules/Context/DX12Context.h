@@ -42,6 +42,7 @@ public:
     virtual void OnDestroy() override;
 
     void ResourceBarrier(const DX12Resource::Ptr& res, D3D12_RESOURCE_STATES state);
+    void ResourceBarrier(DX12Resource& res, D3D12_RESOURCE_STATES state);
     void UseProgram(DX12ProgramApi& program_api);
 
     DescriptorPool& GetDescriptorPool();

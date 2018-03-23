@@ -66,11 +66,7 @@ public:
             m_keys[key] = false;
 
         if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-        {
-            auto & state = CurState<bool>::Instance().state;
-            state["pause"] = !state["pause"];
-        }
-
+            CurState::Instance().pause ^= true;
     }
 
     virtual void OnUpdate() override
@@ -85,9 +81,7 @@ public:
         int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         start = std::chrono::system_clock::now();
 
-        auto& state = CurState<bool>::Instance().state;
-
-        if (state["pause"])
+        if (CurState::Instance().pause)
             angle += elapsed / 2e6f;
 
         float z_width = (m_model.bound_box.z_max - m_model.bound_box.z_min);

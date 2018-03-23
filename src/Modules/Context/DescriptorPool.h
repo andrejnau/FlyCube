@@ -65,7 +65,7 @@ struct DescriptorPoolByType
 {
 public:
     DescriptorPoolByType(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type);
-    DescriptorByResource GetDescriptor(const BindKey& bind_key, DX12Resource::Ptr& res);
+    DescriptorByResource GetDescriptor(const BindKey& bind_key, DX12Resource& res);
     DescriptorHeapRange GetEmptyDescriptor();
     DescriptorHeapRange AllocateDescriptor();
 
@@ -78,7 +78,7 @@ class DescriptorPool
 {
 public:
     DescriptorPool(DX12Context& context);
-    DescriptorByResource GetDescriptor(const BindKey& bind_key, DX12Resource::Ptr& res);
+    DescriptorByResource GetDescriptor(const BindKey& bind_key, DX12Resource& res);
     DescriptorHeapRange GetEmptyDescriptor(ResourceType res_type);
     DescriptorHeapRange AllocateDescriptor(ResourceType res_type);
     void OnFrameBegin();

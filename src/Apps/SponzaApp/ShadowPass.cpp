@@ -58,7 +58,6 @@ void ShadowPass::OnRender()
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_program.ps.om.dsv.Attach(output.srv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    auto& state = CurState<bool>::Instance().state;
     for (auto& model : m_input.scene_list)
     {
         m_program.vs.cbuffer.Params.World = glm::transpose(model.matrix);
@@ -83,7 +82,7 @@ void ShadowPass::OnRender()
         {
             auto& material = model.GetMaterial(range.id);
 
-            if (!state["no_shadow_discard"])
+            if (!CurState::Instance().no_shadow_discard)
                 m_program.ps.srv.alphaMap.Attach(material.texture.alpha);
             else
                 m_program.ps.srv.alphaMap.Attach();

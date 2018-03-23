@@ -37,7 +37,7 @@ private:
     void AttachCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& res);
     DescriptorHeapRange CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
     DescriptorHeapRange CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
-    DescriptorHeapRange CreateCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& res);
+    DescriptorHeapRange CreateCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& ires);
     DescriptorHeapRange CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc);
     DescriptorHeapRange CreateRTV(uint32_t slot, const Resource::Ptr& ires);
     DescriptorHeapRange CreateDSV(const Resource::Ptr& ires);

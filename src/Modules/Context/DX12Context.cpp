@@ -12,8 +12,7 @@
 DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     : Context(window, width, height)
 {
-    auto& state = CurState<bool>::Instance().state;
-    if (state["DXIL"])
+    if (CurState::Instance().DXIL)
     {
         static const GUID D3D12ExperimentalShaderModelsID = { /* 76f5573e-f13a-40f5-b297-81ce9e18933f */
             0x76f5573e,
@@ -305,9 +304,14 @@ void DX12Context::OnDestroy()
 
 void DX12Context::ResourceBarrier(const DX12Resource::Ptr& res, D3D12_RESOURCE_STATES state)
 {
-    if (res->state != state)
-        command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res->default_res.Get(), res->state, state));
-    res->state = state;
+    ResourceBarrier(*res, state);
+}
+
+void DX12Context::ResourceBarrier(DX12Resource& res, D3D12_RESOURCE_STATES state)
+{
+    if (res.state != state)
+        command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res.default_res.Get(), res.state, state));
+    res.state = state;
 }
 
 void DX12Context::UseProgram(DX12ProgramApi& program_api)

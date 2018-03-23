@@ -3,19 +3,16 @@
 #include <Utilities/DXUtility.h>
 #include <gli/gli.hpp>
 #include <SOIL.h>
-#include <Utilities/State.h>
 
 using namespace Microsoft::WRL;
 
 Resource::Ptr CreateSRVFromFile(Context& context, TextureInfo& texture)
 {
-    auto& state = CurState<bool>::Instance().state;
-    if (state["DepthBias"])
-        return {};  // Generate MipMaps is not yet supported
+    return {};  // Generate MipMaps is not yet supported
 
     int width = 0;
     int height = 0;
-    unsigned char *image = SOIL_load_image(texture.path.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
+    unsigned char* image = SOIL_load_image(texture.path.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
     if (!image)
         return {};
 

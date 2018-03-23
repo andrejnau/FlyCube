@@ -24,11 +24,9 @@ int main(int argc, char *argv[])
         break;
     }
 
-    auto& state = CurState<bool>::Instance().state;
-    state["DepthBias"] = true;
     if (0 && type == ApiType::kDX12 && LoadLibraryA("d3dcompiler_dxc_bridge.dll"))
     {
-        state["DXIL"] = true;
+        CurState::Instance().DXIL = true;
         title += " with Shader Model 6.0";
     }
 

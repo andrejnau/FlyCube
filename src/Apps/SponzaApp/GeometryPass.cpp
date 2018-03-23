@@ -51,7 +51,6 @@ void GeometryPass::OnRender()
     m_program.ps.om.rtv4.Attach(output.specular).Clear(color);
     m_program.ps.om.dsv.Attach(m_depth_stencil).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    auto& state = CurState<bool>::Instance().state;
     for (auto& model : m_input.scene_list)
     {
         m_program.vs.cbuffer.ConstantBuf.model = glm::transpose(model.matrix);
@@ -78,7 +77,7 @@ void GeometryPass::OnRender()
         {
             auto& material = model.GetMaterial(range.id);
 
-            if (!state["disable_norm"])
+            if (!CurState::Instance().disable_norm)
                 m_program.ps.srv.normalMap.Attach(material.texture.normal);
             else
                 m_program.ps.srv.normalMap.Attach();

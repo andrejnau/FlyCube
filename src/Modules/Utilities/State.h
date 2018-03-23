@@ -3,8 +3,10 @@
 #include "Utilities/Singleton.h"
 #include <map>
 
-template<typename T>
-struct CurState : public SingleTon < CurState<T> >
+struct CurState : public SingleTon<CurState>
 {
-    std::map<std::string, T> state;
+    bool DXIL = false;
+    bool pause = false;
+    bool no_shadow_discard = false;
+    bool disable_norm = false;
 };
