@@ -74,7 +74,7 @@ void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& bl
         break;
     }
 
-    m_changed_pso_desc = true;
+    m_pso_desc_cache = true;
     ParseShaders();
 }
 
@@ -207,39 +207,34 @@ void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stenc
 
 void DX12ProgramApi::SetRasterizeState(const RasterizerDesc& desc)
 {
-    auto prev = m_pso_desc.RasterizerState;
     switch (desc.fill_mode)
     {
     case FillMode::kWireframe:
-        m_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+        m_pso_desc_cache(m_pso_desc.RasterizerState.FillMode) = D3D12_FILL_MODE_WIREFRAME;
         break;
     case FillMode::kSolid:
-        m_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        m_pso_desc_cache(m_pso_desc.RasterizerState.FillMode) = D3D12_FILL_MODE_SOLID;
         break;
     }
 
     switch (desc.cull_mode)
     {
     case CullMode::kNone:
-        m_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        m_pso_desc_cache(m_pso_desc.RasterizerState.CullMode) = D3D12_CULL_MODE_NONE;
         break;
     case CullMode::kFront:
-        m_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+        m_pso_desc_cache(m_pso_desc.RasterizerState.CullMode) = D3D12_CULL_MODE_FRONT;
         break;
     case CullMode::kBack:
-        m_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+        m_pso_desc_cache(m_pso_desc.RasterizerState.CullMode) = D3D12_CULL_MODE_BACK;
         break;
     }
 
-    m_pso_desc.RasterizerState.DepthBias = desc.DepthBias;
-
-    m_changed_pso_desc = memcmp(&prev, &m_pso_desc.RasterizerState, sizeof(prev)) == 0;
+    m_pso_desc_cache(m_pso_desc.RasterizerState.DepthBias) = desc.DepthBias;
 }
 
 void DX12ProgramApi::SetBlendState(const BlendDesc& desc)
 {
-    auto prev = m_pso_desc.BlendState;
-
     auto& rt_desc = m_pso_desc.BlendState.RenderTarget[0];
 
     auto convert = [](Blend type)
@@ -264,22 +259,19 @@ void DX12ProgramApi::SetBlendState(const BlendDesc& desc)
         }
     };
 
-    rt_desc.BlendEnable = desc.blend_enable;
-    rt_desc.BlendOp = convert_op(desc.blend_op);
-    rt_desc.SrcBlend = convert(desc.blend_src);
-    rt_desc.DestBlend = convert(desc.blend_dest);
-    rt_desc.BlendOpAlpha = convert_op(desc.blend_op_alpha);
-    rt_desc.SrcBlendAlpha = convert(desc.blend_src_alpha);
-    rt_desc.DestBlendAlpha = convert(desc.blend_dest_apha);
-    rt_desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-    m_changed_pso_desc = memcmp(&prev, &m_pso_desc.BlendState, sizeof(prev)) == 0;
+    m_pso_desc_cache(rt_desc.BlendEnable) = desc.blend_enable;
+    m_pso_desc_cache(rt_desc.BlendOp) = convert_op(desc.blend_op);
+    m_pso_desc_cache(rt_desc.SrcBlend) = convert(desc.blend_src);
+    m_pso_desc_cache(rt_desc.DestBlend) = convert(desc.blend_dest);
+    m_pso_desc_cache(rt_desc.BlendOpAlpha) = convert_op(desc.blend_op_alpha);
+    m_pso_desc_cache(rt_desc.SrcBlendAlpha) = convert(desc.blend_src_alpha);
+    m_pso_desc_cache(rt_desc.DestBlendAlpha) = convert(desc.blend_dest_apha);
+    m_pso_desc_cache(rt_desc.RenderTargetWriteMask) = D3D12_COLOR_WRITE_ENABLE_ALL;
 }
 
 void DX12ProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
 {
-    m_changed_pso_desc = m_pso_desc.DepthStencilState.DepthEnable != desc.depth_enable;
-    m_pso_desc.DepthStencilState.DepthEnable = desc.depth_enable;
+    m_pso_desc_cache(m_pso_desc.DepthStencilState.DepthEnable) = desc.depth_enable;
 }
 
 DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
@@ -503,17 +495,8 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-    if (m_pso_desc.RTVFormats[slot] != res->default_res->GetDesc().Format)
-    {
-        m_pso_desc.RTVFormats[slot] = res->default_res->GetDesc().Format;
-        m_changed_pso_desc = true;
-    }
-
-    if (m_pso_desc.SampleDesc.Count != res->default_res->GetDesc().SampleDesc.Count)
-    {
-        m_pso_desc.SampleDesc = res->default_res->GetDesc().SampleDesc;
-        m_changed_pso_desc = true;
-    }
+    m_pso_desc_cache(m_pso_desc.RTVFormats[slot]) = res->default_res->GetDesc().Format;
+    m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = res->default_res->GetDesc().SampleDesc.Count;
 
     if (descriptor.exist)
         return descriptor.handle;
@@ -551,17 +534,8 @@ DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
         m_context.device->CreateDepthStencilView(res->default_res.Get(), nullptr, descriptor.handle.GetCpuHandle());
     }
 
-    if (m_pso_desc.DSVFormat != format)
-    {
-        m_pso_desc.DSVFormat = format;
-        m_changed_pso_desc = true;
-    }
-
-    if (m_pso_desc.SampleDesc.Count != res->default_res->GetDesc().SampleDesc.Count)
-    {
-        m_pso_desc.SampleDesc = res->default_res->GetDesc().SampleDesc;
-        m_changed_pso_desc = true;
-    }
+    m_pso_desc_cache(m_pso_desc.DSVFormat) = format;
+    m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = res->default_res->GetDesc().SampleDesc.Count;
 
     return descriptor.handle;
 }
@@ -656,9 +630,9 @@ std::vector<D3D12_INPUT_ELEMENT_DESC> DX12ProgramApi::GetInputLayout(ComPtr<ID3D
 
 void DX12ProgramApi::CreateGraphicsPSO()
 {
-    if (!m_changed_pso_desc)
+    if (!m_pso_desc_cache)
         return;
-    m_changed_pso_desc = false; 
+    m_pso_desc_cache = false;
 
     m_pso_desc.InputLayout.NumElements = m_input_layout.size();
     m_pso_desc.InputLayout.pInputElementDescs = m_input_layout.data();

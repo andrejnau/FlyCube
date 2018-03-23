@@ -93,7 +93,54 @@ private:
     PerFrameData<std::map<std::tuple<ShaderType, size_t>, std::vector<DX12Resource::Ptr>>> m_cbv_buffer;
     PerFrameData<std::map<std::tuple<ShaderType, size_t>, size_t>> m_cbv_offset;
     ComPtr<ID3D12RootSignature> m_root_signature;
-    bool m_changed_pso_desc = false;
+
+    class DiffAccumulator
+    {
+    public:
+        template<typename T>
+        class AssignmentProxy
+        {
+        public:
+            AssignmentProxy(T& dst, bool& has_changed)
+                : m_dst(dst)
+                , m_has_changed(has_changed)
+            {
+            }
+
+            template<typename U>
+            void operator=(const U& src)
+            {
+                m_has_changed |= m_dst == src;
+                m_dst = src;
+            }
+        private:
+            T& m_dst;
+            bool& m_has_changed;
+        };
+ 
+        template<typename T>
+        DiffAccumulator::AssignmentProxy<T> operator()(T& dst)
+        {
+            return AssignmentProxy<T>(dst, m_has_changed);
+        }
+
+        DiffAccumulator& operator=(const bool& val)
+        {
+            m_has_changed = val;
+            return *this;
+        }
+
+        operator bool()
+        {
+            return m_has_changed;
+        }
+
+    private:
+        bool m_has_changed = false;
+    };
+
+    DiffAccumulator m_pso_desc_cache;
+
     bool m_changed_binding = false;
     bool m_changed_om = false;
     D3D12_GRAPHICS_PIPELINE_STATE_DESC m_pso_desc = {};
