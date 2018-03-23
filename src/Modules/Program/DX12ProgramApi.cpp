@@ -668,13 +668,8 @@ void DX12ProgramApi::CreateComputePSO()
     m_context.command_list->SetPipelineState(m_current_pso.Get());
 }
 
-void DX12ProgramApi::ApplyBindings()
+void DX12ProgramApi::UpdateCBuffers()
 {
-    if (m_is_compute)
-        CreateComputePSO();
-    else
-        CreateGraphicsPSO();
-
     for (auto &x : m_cbv_layout)
     {
         BufferLayout& buffer = x.second;
@@ -702,6 +697,16 @@ void DX12ProgramApi::ApplyBindings()
             AttachCBV(std::get<0>(x.first), std::get<1>(x.first), res);
         }
     }
+}
+
+void DX12ProgramApi::ApplyBindings()
+{
+    if (m_is_compute)
+        CreateComputePSO();
+    else
+        CreateGraphicsPSO();
+
+    UpdateCBuffers();
 
     if (m_changed_om)
     {

@@ -49,6 +49,7 @@ private:
     std::vector<D3D12_INPUT_ELEMENT_DESC> GetInputLayout(ComPtr<ID3D12ShaderReflection> reflector);
     void CreateGraphicsPSO();
     void CreateComputePSO();
+    void UpdateCBuffers();
     void ParseShaders();
     void OMSetRenderTargets();
 
