@@ -85,7 +85,7 @@ void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
     heap_desc.Flags = m_flags;
     heap_desc.Type = m_type;
     ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&heap)));
-    if (m_size > 0)
+    if (m_size > 0 && m_flags != D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
     {
         m_context.device->CopyDescriptorsSimple(
             m_size,
@@ -99,7 +99,7 @@ void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
     m_cpu_handle = m_heap->GetCPUDescriptorHandleForHeapStart();
     m_gpu_handle = m_heap->GetGPUDescriptorHandleForHeapStart();
     if (m_flags == D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
-        m_copied_handle.resize(m_size);
+        m_copied_handle.assign(m_size, {});
 }
 
 void DescriptorHeapAllocator::ResetHeap()
