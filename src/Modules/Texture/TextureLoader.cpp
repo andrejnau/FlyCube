@@ -8,7 +8,7 @@ using namespace Microsoft::WRL;
 
 Resource::Ptr CreateSRVFromFile(Context& context, TextureInfo& texture)
 {
-    return {};  // Generate MipMaps is not yet supported
+    //return {};  // Generate MipMaps is not yet supported
 
     int width = 0;
     int height = 0;

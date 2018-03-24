@@ -224,5 +224,5 @@ int main(int argc, char *argv[])
         title = "[DX12] testApp";
         break;
     }
-    return AppBox(Scene::Create, type, title, 1920, 1080).Run();
+    return AppBox(Scene::Create, type, title, 1280, 720).Run();
 }
