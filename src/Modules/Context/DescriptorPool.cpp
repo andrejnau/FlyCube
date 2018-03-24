@@ -4,15 +4,38 @@
 
 #include "Context/DX12Context.h"
 
-DescriptorHeapRange::DescriptorHeapRange(ComPtr<ID3D12DescriptorHeap>& heap, D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE& gpu_handle, size_t offset, size_t size, size_t increment_size, D3D12_DESCRIPTOR_HEAP_TYPE type)
-    : m_heap(heap)
+DescriptorHeapRange::DescriptorHeapRange(
+    DX12Context& context,
+    ComPtr<ID3D12DescriptorHeap>& heap,
+    D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle,
+    D3D12_GPU_DESCRIPTOR_HANDLE& gpu_handle,
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>& copied_handle,
+    size_t offset,
+    size_t size,
+    size_t increment_size,
+    D3D12_DESCRIPTOR_HEAP_TYPE type)
+    : m_context(context)
+    , m_heap(heap)
     , m_cpu_handle(cpu_handle)
     , m_gpu_handle(gpu_handle)
+    , m_copied_handle(copied_handle)
     , m_offset(offset)
     , m_size(size)
     , m_increment_size(increment_size)
     , m_type(type)
 {
+}
+
+void DescriptorHeapRange::CopyCpuHandle(size_t dst_offset, D3D12_CPU_DESCRIPTOR_HANDLE handle)
+{
+    if (m_copied_handle.get()[m_offset + dst_offset].ptr == handle.ptr)
+        return;
+    D3D12_CPU_DESCRIPTOR_HANDLE self = GetCpuHandle(dst_offset);
+    m_context.get().device->CopyDescriptors(
+        1, &self, nullptr,
+        1, &handle, nullptr,
+        m_type);
+    m_copied_handle.get()[m_offset + dst_offset].ptr = handle.ptr;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapRange::GetCpuHandle(size_t offset) const
@@ -48,7 +71,7 @@ DescriptorHeapRange DescriptorHeapAllocator::Allocate(size_t count)
         ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
     }
     m_offset += count;
-    return DescriptorHeapRange(m_heap, m_cpu_handle, m_gpu_handle, m_offset - count, count, m_context.device->GetDescriptorHandleIncrementSize(m_type), m_type);
+    return DescriptorHeapRange(m_context, m_heap, m_cpu_handle, m_gpu_handle, m_copied_handle, m_offset - count, count, m_context.device->GetDescriptorHandleIncrementSize(m_type), m_type);
 }
 
 void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
@@ -62,7 +85,7 @@ void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
     heap_desc.Flags = m_flags;
     heap_desc.Type = m_type;
     ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&heap)));
-    if (m_size > 0 && m_flags != D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
+    if (m_size > 0)
     {
         m_context.device->CopyDescriptorsSimple(
             m_size,
@@ -70,10 +93,13 @@ void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
             m_heap->GetCPUDescriptorHandleForHeapStart(),
             m_type);
     }
+    
     m_size = heap_desc.NumDescriptors;
     m_heap = heap;
     m_cpu_handle = m_heap->GetCPUDescriptorHandleForHeapStart();
     m_gpu_handle = m_heap->GetGPUDescriptorHandleForHeapStart();
+    if (m_flags == D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
+        m_copied_handle.resize(m_size);
 }
 
 void DescriptorHeapAllocator::ResetHeap()

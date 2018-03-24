@@ -432,7 +432,14 @@ DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
 
 DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
 {
-    auto handle = m_context.GetDescriptorPool().AllocateDescriptor(ResourceType::kSampler);
+    auto it = m_sample_cache_range.find({ type, slot });
+    if (it == m_sample_cache_range.end())
+    {
+        it = m_sample_cache_range.emplace(std::piecewise_construct,
+            std::forward_as_tuple(type, slot),
+            std::forward_as_tuple(m_context.GetDescriptorPool().AllocateDescriptor(ResourceType::kSampler))).first;
+    }
+    auto& handle = it->second;
 
     D3D12_SAMPLER_DESC sampler_desc = {};
 
@@ -699,6 +706,11 @@ void DX12ProgramApi::UpdateCBuffers()
     }
 }
 
+void DX12ProgramApi::CopyDescriptors(DescriptorHeapRange& dst_range, size_t dst_offset, DescriptorHeapRange& src, size_t src_offset)
+{
+    dst_range.CopyCpuHandle(dst_offset, src.GetCpuHandle(src_offset));
+}
+
 void DX12ProgramApi::ApplyBindings()
 {
     if (m_is_compute)
@@ -760,14 +772,7 @@ void DX12ProgramApi::ApplyBindings()
         if (is_rtv_dsv)
             continue;
 
-        D3D12_CPU_DESCRIPTOR_HANDLE view_handle = x.second.GetCpuHandle();
-
-        D3D12_CPU_DESCRIPTOR_HANDLE binding_handle = heap_range.get().GetCpuHandle(m_binding_layout[{std::get<0>(x.first), range_type}].table.heap_offset + std::get<2>(x.first));
-
-        m_context.device->CopyDescriptors(
-            1, &binding_handle, nullptr,
-            1, &view_handle, nullptr,
-            heap_type);
+        CopyDescriptors(heap_range.get(), m_binding_layout[{std::get<0>(x.first), range_type}].table.heap_offset + std::get<2>(x.first), x.second, 0);
     }
 
     for (auto &x : m_binding_layout)

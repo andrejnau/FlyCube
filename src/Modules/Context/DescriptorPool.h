@@ -16,7 +16,17 @@ class DX12Context;
 class DescriptorHeapRange
 {
 public:
-    DescriptorHeapRange(ComPtr<ID3D12DescriptorHeap>& heap, D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE& gpu_handle, size_t offset, size_t size, size_t increment_size, D3D12_DESCRIPTOR_HEAP_TYPE type);
+    DescriptorHeapRange(
+        DX12Context& context,
+        ComPtr<ID3D12DescriptorHeap>& heap,
+        D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle,
+        D3D12_GPU_DESCRIPTOR_HANDLE& gpu_handle,
+        std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>& copied_handle,
+        size_t offset,
+        size_t size,
+        size_t increment_size,
+        D3D12_DESCRIPTOR_HEAP_TYPE type);
+    void CopyCpuHandle(size_t dst_offset, D3D12_CPU_DESCRIPTOR_HANDLE handle);
     D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(size_t offset = 0) const;
     D3D12_GPU_DESCRIPTOR_HANDLE GetGpuHandle(size_t offset = 0) const;
 
@@ -31,9 +41,11 @@ public:
     }
 
 private:
+    std::reference_wrapper<DX12Context> m_context;
     std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> m_heap;
     std::reference_wrapper<D3D12_CPU_DESCRIPTOR_HANDLE> m_cpu_handle;
     std::reference_wrapper<D3D12_GPU_DESCRIPTOR_HANDLE> m_gpu_handle;
+    std::reference_wrapper<std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>> m_copied_handle;
     size_t m_offset;
     size_t m_size;
     size_t m_increment_size;
@@ -57,6 +69,7 @@ private:
     ComPtr<ID3D12DescriptorHeap> m_heap;
     D3D12_CPU_DESCRIPTOR_HANDLE m_cpu_handle;
     D3D12_GPU_DESCRIPTOR_HANDLE m_gpu_handle;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_copied_handle;
 };
 
 struct DescriptorByResource
