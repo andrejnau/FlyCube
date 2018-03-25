@@ -12,7 +12,7 @@ DescriptorHeapRange::DescriptorHeapRange(
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>& copied_handle,
     size_t offset,
     size_t size,
-    size_t increment_size,
+    uint32_t increment_size,
     D3D12_DESCRIPTOR_HEAP_TYPE type)
     : m_context(context)
     , m_heap(heap)
@@ -42,7 +42,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapRange::GetCpuHandle(size_t offset) con
 {
     return CD3DX12_CPU_DESCRIPTOR_HANDLE(
         m_cpu_handle,
-        m_offset + offset,
+        static_cast<INT>(m_offset + offset),
         m_increment_size);
 }
 
@@ -50,7 +50,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapRange::GetGpuHandle(size_t offset) con
 {
     return CD3DX12_GPU_DESCRIPTOR_HANDLE(
         m_gpu_handle,
-        m_offset + offset,
+        static_cast<INT>(m_offset + offset),
         m_increment_size);
 }
 
@@ -81,14 +81,14 @@ void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
 
     ComPtr<ID3D12DescriptorHeap> heap;
     D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-    heap_desc.NumDescriptors = req_size;
+    heap_desc.NumDescriptors = static_cast<UINT>(req_size);
     heap_desc.Flags = m_flags;
     heap_desc.Type = m_type;
     ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&heap)));
     if (m_size > 0 && m_flags != D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
     {
         m_context.device->CopyDescriptorsSimple(
-            m_size,
+            static_cast<UINT>(m_size),
             heap->GetCPUDescriptorHandleForHeapStart(),
             m_heap->GetCPUDescriptorHandleForHeapStart(),
             m_type);

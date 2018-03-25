@@ -141,7 +141,7 @@ Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format,
     return res;
 }
 
-Resource::Ptr DX12Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride)
+Resource::Ptr DX12Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride)
 {
     if (buffer_size == 0)
         return DX12Resource::Ptr();
@@ -174,7 +174,7 @@ Resource::Ptr DX12Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, si
     return res;
 }
 
-void DX12Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)
+void DX12Context::UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubresource, const void * pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
 
@@ -201,7 +201,7 @@ void DX12Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresour
     UpdateSubresources(command_list.Get(), res->default_res.Get(), upload_res.Get(), 0, DstSubresource, 1, &data);
 }
 
-void DX12Context::SetViewport(int width, int height)
+void DX12Context::SetViewport(float width, float height)
 {
     D3D12_VIEWPORT viewport;
     viewport.TopLeftX = 0;
@@ -212,16 +212,16 @@ void DX12Context::SetViewport(int width, int height)
     viewport.MaxDepth = 1.0f;
     command_list->RSSetViewports(1, &viewport);
 
-    SetScissorRect(0, 0, width, height);
+    SetScissorRect(0, 0, static_cast<int32_t>(width), static_cast<int32_t>(height));
 }
 
-void DX12Context::SetScissorRect(LONG left, LONG top, LONG right, LONG bottom)
+void DX12Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom)
 {
     D3D12_RECT rect = { left, top, right, bottom };
     command_list->RSSetScissorRects(1, &rect);
 }
 
-void DX12Context::IASetIndexBuffer(Resource::Ptr ires, UINT SizeInBytes, DXGI_FORMAT Format)
+void DX12Context::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, DXGI_FORMAT Format)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
     D3D12_INDEX_BUFFER_VIEW indexBufferView = {};
@@ -232,7 +232,7 @@ void DX12Context::IASetIndexBuffer(Resource::Ptr ires, UINT SizeInBytes, DXGI_FO
     ResourceBarrier(res, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 }
 
-void DX12Context::IASetVertexBuffer(UINT slot, Resource::Ptr ires, UINT SizeInBytes, UINT Stride)
+void DX12Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t SizeInBytes, uint32_t Stride)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView = {};
@@ -253,13 +253,13 @@ void DX12Context::EndEvent()
     PIXEndEvent(command_list.Get());
 }
 
-void DX12Context::DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
+void DX12Context::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
     m_current_program->ApplyBindings();
     command_list->DrawIndexedInstanced(IndexCount, 1, StartIndexLocation, BaseVertexLocation, 0);
 }
 
-void DX12Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
+void DX12Context::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
 {
     m_current_program->ApplyBindings();
     command_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);

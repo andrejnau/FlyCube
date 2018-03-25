@@ -12,6 +12,6 @@ public:
 
     virtual void SetName(const std::string& name) override
     {
-        resource->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
+        resource->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(name.size()), name.c_str());
     }
 };

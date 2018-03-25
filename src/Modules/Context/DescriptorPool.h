@@ -24,7 +24,7 @@ public:
         std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>& copied_handle,
         size_t offset,
         size_t size,
-        size_t increment_size,
+        uint32_t increment_size,
         D3D12_DESCRIPTOR_HEAP_TYPE type);
     void CopyCpuHandle(size_t dst_offset, D3D12_CPU_DESCRIPTOR_HANDLE handle);
     D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(size_t offset = 0) const;
@@ -48,7 +48,7 @@ private:
     std::reference_wrapper<std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>> m_copied_handle;
     size_t m_offset;
     size_t m_size;
-    size_t m_increment_size;
+    uint32_t m_increment_size;
     D3D12_DESCRIPTOR_HEAP_TYPE m_type;
 };
 

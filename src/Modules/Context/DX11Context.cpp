@@ -76,7 +76,7 @@ Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format,
     return res;
 }
 
-Resource::Ptr DX11Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, size_t stride)
+Resource::Ptr DX11Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride)
 {
     if (buffer_size == 0)
         return DX11Resource::Ptr();
@@ -108,13 +108,13 @@ Resource::Ptr DX11Context::CreateBuffer(uint32_t bind_flag, UINT buffer_size, si
     return res;
 }
 
-void DX11Context::UpdateSubresource(const Resource::Ptr& ires, UINT DstSubresource, const void * pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)
+void DX11Context::UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubresource, const void * pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch)
 {
     auto res = std::static_pointer_cast<DX11Resource>(ires);
     device_context->UpdateSubresource(res->resource.Get(), DstSubresource, nullptr, pSrcData, SrcRowPitch, SrcDepthPitch);
 }
 
-void DX11Context::SetViewport(int width, int height)
+void DX11Context::SetViewport(float width, float height)
 {
     D3D11_VIEWPORT viewport = {};
     viewport.TopLeftX = 0;
@@ -126,13 +126,13 @@ void DX11Context::SetViewport(int width, int height)
     device_context->RSSetViewports(1, &viewport);
 }
 
-void DX11Context::SetScissorRect(LONG left, LONG top, LONG right, LONG bottom)
+void DX11Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom)
 {
     D3D11_RECT rect = { left, top, right, bottom };
     device_context->RSSetScissorRects(1, &rect);
 }
 
-void DX11Context::IASetIndexBuffer(Resource::Ptr ires, UINT SizeInBytes, DXGI_FORMAT Format)
+void DX11Context::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, DXGI_FORMAT Format)
 {
     auto res = std::static_pointer_cast<DX11Resource>(ires);
     ComPtr<ID3D11Buffer> buf;
@@ -140,12 +140,12 @@ void DX11Context::IASetIndexBuffer(Resource::Ptr ires, UINT SizeInBytes, DXGI_FO
     device_context->IASetIndexBuffer(buf.Get(), Format, 0);
 }
 
-void DX11Context::IASetVertexBuffer(UINT slot, Resource::Ptr ires, UINT SizeInBytes, UINT Stride)
+void DX11Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t SizeInBytes, uint32_t Stride)
 {
     auto res = std::static_pointer_cast<DX11Resource>(ires);
     ComPtr<ID3D11Buffer> buf;
     res->resource.As(&buf);
-    UINT offset = 0;
+    uint32_t offset = 0;
     device_context->IASetVertexBuffers(slot, 1, buf.GetAddressOf(), &Stride, &offset);
 }
 
@@ -159,13 +159,13 @@ void DX11Context::EndEvent()
     perf->EndEvent();
 }
 
-void DX11Context::DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
+void DX11Context::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
     m_current_program->ApplyBindings();
     device_context->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 
-void DX11Context::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
+void DX11Context::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
 {
     m_current_program->ApplyBindings();
     device_context->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
