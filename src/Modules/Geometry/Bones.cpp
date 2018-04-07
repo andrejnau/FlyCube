@@ -16,7 +16,7 @@ void Bones::ProcessMesh(const aiMesh* mesh, IMesh& cur_mesh)
         std::string bone_name(mesh->mBones[i]->mName.data);
         if (bone_mapping.find(bone_name) == bone_mapping.end())
         {
-            bone_index = bone_mapping.size();
+            bone_index = static_cast<uint32_t>(bone_mapping.size());
             bone_mapping[bone_name] = bone_index;
             if (bone_index >= bone_offset.size())
             {
@@ -42,8 +42,8 @@ void Bones::ProcessMesh(const aiMesh* mesh, IMesh& cur_mesh)
     cur_mesh.bones_count.resize(per_vertex_bone_info.size());
     for (uint32_t vertex_id = 0; vertex_id < per_vertex_bone_info.size(); ++vertex_id)
     {
-        cur_mesh.bones_offset[vertex_id] = bone_info.size();
-        cur_mesh.bones_count[vertex_id] = per_vertex_bone_info[vertex_id].size();
+        cur_mesh.bones_offset[vertex_id] = static_cast<uint32_t>(bone_info.size());
+        cur_mesh.bones_count[vertex_id] = static_cast<uint32_t>(per_vertex_bone_info[vertex_id].size());
         std::copy(per_vertex_bone_info[vertex_id].begin(), per_vertex_bone_info[vertex_id].end(), back_inserter(bone_info));
     }
 }
@@ -51,7 +51,7 @@ void Bones::ProcessMesh(const aiMesh* mesh, IMesh& cur_mesh)
 Resource::Ptr Bones::GetBonesInfo(Context& context)
 {
     if (!bones_info_srv)
-        bones_info_srv = context.CreateBuffer(BindFlag::kSrv, bone_info.size()* sizeof(BoneInfo), sizeof(BoneInfo));
+        bones_info_srv = context.CreateBuffer(BindFlag::kSrv, static_cast<uint32_t>(bone_info.size() * sizeof(BoneInfo)), sizeof(BoneInfo));
     if (!bone_info.empty())
         context.UpdateSubresource(bones_info_srv, 0, bone_info.data(), 0, 0);
     return bones_info_srv;
@@ -60,7 +60,7 @@ Resource::Ptr Bones::GetBonesInfo(Context& context)
 Resource::Ptr Bones::GetBone(Context& context)
 {
     if (!bone_srv)
-        bone_srv = context.CreateBuffer(BindFlag::kSrv, bone.size()* sizeof(glm::mat4), sizeof(glm::mat4));
+        bone_srv = context.CreateBuffer(BindFlag::kSrv, static_cast<uint32_t>(bone.size() * sizeof(glm::mat4)), sizeof(glm::mat4));
     if (!bone.empty())
         context.UpdateSubresource(bone_srv, 0, bone.data(), 0, 0);
     return bone_srv;

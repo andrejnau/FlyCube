@@ -59,11 +59,11 @@ private:
 private:
     decltype(&::D3DReflect) _D3DReflect = &::D3DReflect;
 
-    size_t m_num_cbv = 0;
-    size_t m_num_srv = 0;
-    size_t m_num_uav = 0;
-    size_t m_num_rtv = 0;
-    size_t m_num_sampler = 0;
+    uint32_t m_num_cbv = 0;
+    uint32_t m_num_srv = 0;
+    uint32_t m_num_uav = 0;
+    uint32_t m_num_rtv = 0;
+    uint32_t m_num_sampler = 0;
 
     std::map<std::tuple<ShaderType, ResourceType, uint32_t>, DescriptorHeapRange> m_heap_ranges;
     std::map<ShaderType, ComPtr<ID3DBlob>> m_blob_map;
@@ -76,7 +76,7 @@ private:
     struct BindingLayout
     {
         D3D12_ROOT_PARAMETER_TYPE type;
-        size_t root_param_index;
+        uint32_t root_param_index;
         union
         {
             struct
@@ -93,9 +93,9 @@ private:
     };
 
     std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE>, BindingLayout> m_binding_layout;
-    std::map<std::tuple<ShaderType, size_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
-    PerFrameData<std::map<std::tuple<ShaderType, size_t>, std::vector<DX12Resource::Ptr>>> m_cbv_buffer;
-    PerFrameData<std::map<std::tuple<ShaderType, size_t>, size_t>> m_cbv_offset;
+    std::map<std::tuple<ShaderType, uint32_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
+    PerFrameData<std::map<std::tuple<ShaderType, uint32_t>, std::vector<DX12Resource::Ptr>>> m_cbv_buffer;
+    PerFrameData<std::map<std::tuple<ShaderType, uint32_t>, size_t>> m_cbv_offset;
     ComPtr<ID3D12RootSignature> m_root_signature;
 
     class DiffAccumulator
@@ -114,7 +114,7 @@ private:
             template<typename U>
             void operator=(const U& src)
             {
-                m_has_changed |= m_dst == src;
+                m_has_changed |= m_dst == static_cast<T>(src);
                 m_dst = src;
             }
         private:

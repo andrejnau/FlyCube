@@ -26,9 +26,9 @@ MergedMesh::MergedMesh(const std::vector<IMesh>& meshes)
     {
         ranges.emplace_back();
         ranges.back().id = id++;
-        ranges.back().index_count = mesh.indices.size();
-        ranges.back().start_index_location = indices.size();
-        ranges.back().base_vertex_location = cur_size;
+        ranges.back().index_count = static_cast<uint32_t>(mesh.indices.size());
+        ranges.back().start_index_location = static_cast<uint32_t>(indices.size());
+        ranges.back().base_vertex_location = static_cast<int32_t>(cur_size);
 
         size_t max_size = 0;
         max_size = std::max(max_size, mesh.positions.size());

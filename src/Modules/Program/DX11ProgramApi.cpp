@@ -40,7 +40,7 @@ void DX11ProgramApi::AttachCBuffer(ShaderType type, UINT slot, BufferLayout & bu
 {
     m_cbv_buffer.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, slot),
-        std::forward_as_tuple(m_context.CreateBuffer(BindFlag::kCbv, buffer_layout.GetBuffer().size(), 0)));
+        std::forward_as_tuple(m_context.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_layout.GetBuffer().size()), 0)));
     m_cbv_layout.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, slot),
         std::forward_as_tuple(buffer_layout));
@@ -66,7 +66,7 @@ void DX11ProgramApi::ApplyBindings()
         rtv_ptr.emplace_back(rtv.Get());
     }
     ComPtr<ID3D11DepthStencilView> dsv = m_dsv.Get();
-    m_context.device_context->OMSetRenderTargets(rtv_ptr.size(), rtv_ptr.data(), dsv.Get());
+    m_context.device_context->OMSetRenderTargets(static_cast<uint32_t>(rtv_ptr.size()), rtv_ptr.data(), dsv.Get());
 }
 
 void DX11ProgramApi::CreateInputLayout()
@@ -129,7 +129,10 @@ void DX11ProgramApi::CreateInputLayout()
         input_layout_desc.push_back(layout);
     }
 
-    ASSERT_SUCCEEDED(m_context.device->CreateInputLayout(input_layout_desc.data(), input_layout_desc.size(), m_blob_map[ShaderType::kVertex]->GetBufferPointer(),
+    ASSERT_SUCCEEDED(m_context.device->CreateInputLayout(
+        input_layout_desc.data(),
+        static_cast<uint32_t>(input_layout_desc.size()),
+        m_blob_map[ShaderType::kVertex]->GetBufferPointer(),
         m_blob_map[ShaderType::kVertex]->GetBufferSize(), &input_layout));
 }
 
@@ -324,6 +327,7 @@ void DX11ProgramApi::SetBlendState(const BlendDesc& desc)
         case Blend::kInvSrcAlpha:
             return D3D11_BLEND_INV_SRC_ALPHA;
         }
+        return static_cast<D3D11_BLEND>(0);
     };
 
     auto convert_op = [](BlendOp type)
@@ -333,6 +337,7 @@ void DX11ProgramApi::SetBlendState(const BlendDesc& desc)
         case BlendOp::kAdd:
             return D3D11_BLEND_OP_ADD;
         }
+        return static_cast<D3D11_BLEND_OP>(0);
     };
 
     rt_desc.BlendEnable = desc.blend_enable;

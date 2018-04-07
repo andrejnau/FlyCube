@@ -15,23 +15,23 @@ public:
         , m_offset(0)
         , m_size(v.size() * sizeof(v.front()))
     {
-        m_buffer = m_context.CreateBuffer(BindFlag::kVbv, v.size() * sizeof(v.front()), 0);
+        m_buffer = m_context.CreateBuffer(BindFlag::kVbv, static_cast<uint32_t>(v.size() * sizeof(v.front())), 0);
         if (m_buffer)
             m_context.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
 
-    void BindToSlot(UINT slot)
+    void BindToSlot(uint32_t slot)
     {
         if (m_buffer)
-            m_context.IASetVertexBuffer(slot, m_buffer, m_size, m_stride);
+            m_context.IASetVertexBuffer(slot, m_buffer, static_cast<uint32_t>(m_size), static_cast<uint32_t>(m_stride));
     }
 
 private:
     Context & m_context;
     Resource::Ptr m_buffer;
-    UINT m_stride;
-    UINT m_offset;
-    UINT m_size;
+    size_t m_stride;
+    size_t m_offset;
+    size_t m_size;
 };
 
 class IAIndexBuffer
@@ -44,7 +44,7 @@ public:
         , m_offset(0)
         , m_size(v.size() * sizeof(v.front()))
     {
-        m_buffer = m_context.CreateBuffer(BindFlag::kIbv, m_size, 0);
+        m_buffer = m_context.CreateBuffer(BindFlag::kIbv, static_cast<uint32_t>(m_size), 0);
         if (m_buffer)
             m_context.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
@@ -52,13 +52,13 @@ public:
     void Bind()
     {
         if (m_buffer)
-            m_context.IASetIndexBuffer(m_buffer, m_size, m_format);
+            m_context.IASetIndexBuffer(m_buffer, static_cast<uint32_t>(m_size), m_format);
     }
 
 private:
     Context & m_context;
     Resource::Ptr m_buffer;
-    UINT m_offset;
-    UINT m_size;
+    size_t m_offset;
+    size_t m_size;
     DXGI_FORMAT m_format;
 };

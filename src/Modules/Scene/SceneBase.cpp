@@ -6,8 +6,8 @@
 
 void SceneBase::UpdateCameraMovement()
 {
-    double currentFrame = glfwGetTime();
-    m_delta_time = (float)(currentFrame - m_last_frame);
+    float currentFrame = static_cast<float>(glfwGetTime());
+    m_delta_time = currentFrame - m_last_frame;
     m_last_frame = currentFrame;
 
     if (m_keys[GLFW_KEY_W])

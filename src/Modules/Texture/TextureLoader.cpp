@@ -34,8 +34,8 @@ Resource::Ptr CreateSRVFromFileDDS(Context& context, TextureInfo& texture)
     gli::texture Texture = gli::load(texture.path);
     auto tex_format = gli::dx().translate(Texture.format());
     DXGI_FORMAT format = static_cast<DXGI_FORMAT>(tex_format.DXGIFormat.DDS);
-    int width = Texture.extent(0).x;
-    int height = Texture.extent(0).y;
+    uint32_t width = Texture.extent(0).x;
+    uint32_t height = Texture.extent(0).y;
     size_t mip_levels = Texture.levels();
 
     Resource::Ptr res = context.CreateTexture(BindFlag::kSrv, format, 1, width, height, 1, mip_levels);

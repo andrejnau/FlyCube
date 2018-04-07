@@ -8,9 +8,9 @@
 struct MeshRange
 {
     size_t id = 0;
-    UINT index_count = 0;
-    UINT start_index_location = 0;
-    INT base_vertex_location = 0;
+    uint32_t index_count = 0;
+    uint32_t start_index_location = 0;
+    int32_t base_vertex_location = 0;
 };
 
 class MergedMesh

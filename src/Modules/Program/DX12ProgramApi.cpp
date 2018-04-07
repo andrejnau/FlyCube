@@ -247,6 +247,7 @@ void DX12ProgramApi::SetBlendState(const BlendDesc& desc)
         case Blend::kInvSrcAlpha:
             return D3D12_BLEND_INV_SRC_ALPHA;
         }
+        return static_cast<D3D12_BLEND>(0);
     };
 
     auto convert_op = [](BlendOp type)
@@ -256,6 +257,7 @@ void DX12ProgramApi::SetBlendState(const BlendDesc& desc)
         case BlendOp::kAdd:
             return D3D12_BLEND_OP_ADD;
         }
+        return static_cast<D3D12_BLEND_OP>(0);
     };
 
     m_pso_desc_cache(rt_desc.BlendEnable) = desc.blend_enable;
@@ -306,7 +308,7 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
         srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         srv_desc.Format = DXGI_FORMAT_UNKNOWN;
         srv_desc.Buffer.FirstElement = 0;
-        srv_desc.Buffer.NumElements = desc.Width / res.stride;
+        srv_desc.Buffer.NumElements = static_cast<UINT>(desc.Width / res.stride);
         srv_desc.Buffer.StructureByteStride = res.stride;
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
         m_context.device->CreateShaderResourceView(res.default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
@@ -380,7 +382,7 @@ DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string
         uav_desc.Format = DXGI_FORMAT_UNKNOWN;
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
         uav_desc.Buffer.FirstElement = 0;
-        uav_desc.Buffer.NumElements = desc.Width / res.stride;
+        uav_desc.Buffer.NumElements = static_cast<UINT>(desc.Width / res.stride);
         uav_desc.Buffer.StructureByteStride = res.stride;
         m_context.device->CreateUnorderedAccessView(res.default_res.Get(), nullptr, &uav_desc, descriptor.handle.GetCpuHandle());
 
@@ -642,7 +644,7 @@ void DX12ProgramApi::CreateGraphicsPSO()
         return;
     m_pso_desc_cache = false;
 
-    m_pso_desc.InputLayout.NumElements = m_input_layout.size();
+    m_pso_desc.InputLayout.NumElements = static_cast<UINT>(m_input_layout.size());
     m_pso_desc.InputLayout.pInputElementDescs = m_input_layout.data();
     m_pso_desc.pRootSignature = m_root_signature.Get();
     m_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -734,7 +736,7 @@ void DX12ProgramApi::ApplyBindings()
     DescriptorHeapRange sampler_heap = m_context.GetDescriptorPool().Allocate(ResourceType::kSampler, m_num_sampler);
 
     ID3D12DescriptorHeap* descriptor_heaps[2] = {};
-    size_t descriptor_count = 0;
+    uint32_t descriptor_count = 0;
     if (res_heap.GetSize())
         descriptor_heaps[descriptor_count++] = res_heap.GetHeap().Get();
     if (sampler_heap.GetSize())
@@ -791,7 +793,7 @@ void DX12ProgramApi::ApplyBindings()
         }
         else if (x.second.type == D3D12_ROOT_PARAMETER_TYPE_CBV)
         {
-            for (size_t slot = 0; slot < x.second.view.root_param_num; ++slot)
+            for (uint32_t slot = 0; slot < x.second.view.root_param_num; ++slot)
             {
                 auto& shader_type = std::get<0>(x.first);
                 auto& res = m_cbv_buffer.get()[{shader_type, slot}][m_cbv_offset.get()[{shader_type, slot}]];
@@ -816,10 +818,10 @@ void DX12ProgramApi::ParseShaders()
     std::deque<std::array<D3D12_DESCRIPTOR_RANGE, 4>> descriptor_table_ranges;
     for (auto& shader_blob : m_blob_map)
     {
-        size_t num_cbv = 0;
-        size_t num_srv = 0;
-        size_t num_uav = 0;
-        size_t num_sampler = 0;
+        uint32_t num_cbv = 0;
+        uint32_t num_srv = 0;
+        uint32_t num_uav = 0;
+        uint32_t num_sampler = 0;
 
         ComPtr<ID3D12ShaderReflection> reflector;
         _D3DReflect(shader_blob.second->GetBufferPointer(), shader_blob.second->GetBufferSize(), IID_PPV_ARGS(&reflector));
@@ -834,22 +836,22 @@ void DX12ProgramApi::ParseShaders()
             switch (res_desc.Type)
             {
             case D3D_SIT_SAMPLER:
-                num_sampler = std::max<size_t>(num_sampler, res_desc.BindPoint + res_desc.BindCount);
+                num_sampler = std::max<uint32_t>(num_sampler, res_desc.BindPoint + res_desc.BindCount);
                 res_type = ResourceType::kSampler;
                 break;
             case D3D_SIT_CBUFFER:
-                num_cbv = std::max<size_t>(num_cbv, res_desc.BindPoint + res_desc.BindCount);
+                num_cbv = std::max<uint32_t>(num_cbv, res_desc.BindPoint + res_desc.BindCount);
                 res_type = ResourceType::kCbv;
                 break;
             case D3D_SIT_TBUFFER:
             case D3D_SIT_TEXTURE:
             case D3D_SIT_STRUCTURED:
             case D3D_SIT_BYTEADDRESS:
-                num_srv = std::max<size_t>(num_srv, res_desc.BindPoint + res_desc.BindCount);
+                num_srv = std::max<uint32_t>(num_srv, res_desc.BindPoint + res_desc.BindCount);
                 res_type = ResourceType::kSrv;
                 break;
             default:
-                num_uav = std::max<size_t>(num_uav, res_desc.BindPoint + res_desc.BindCount);
+                num_uav = std::max<uint32_t>(num_uav, res_desc.BindPoint + res_desc.BindCount);
                 res_type = ResourceType::kUav;
                 break;
             }
@@ -861,7 +863,7 @@ void DX12ProgramApi::ParseShaders()
             {
                 D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
                 reflector->GetOutputParameterDesc(i, &param_desc);
-                m_num_rtv = std::max<size_t>(m_num_rtv, param_desc.Register + 1);
+                m_num_rtv = std::max<uint32_t>(m_num_rtv, param_desc.Register + 1);
             }
         }
 
@@ -916,7 +918,7 @@ void DX12ProgramApi::ParseShaders()
             m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER}].root_param_index = -1;
 
         descriptor_table_ranges.emplace_back();
-        size_t index = 0;
+        uint32_t index = 0;
 
         if (((num_srv + num_uav) > 0) || (m_use_cbv_table && num_cbv > 0))
         {
@@ -954,10 +956,10 @@ void DX12ProgramApi::ParseShaders()
             descriptorTableTexture.NumDescriptorRanges = index;
             descriptorTableTexture.pDescriptorRanges = &descriptor_table_ranges.back()[0];
 
-            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SRV}].root_param_index = root_parameters.size();
-            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_UAV}].root_param_index = root_parameters.size();
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SRV}].root_param_index = static_cast<uint32_t>(root_parameters.size());
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_UAV}].root_param_index = static_cast<uint32_t>(root_parameters.size());
             if (m_use_cbv_table)
-                m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].root_param_index = root_parameters.size();
+                m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].root_param_index = static_cast<uint32_t>(root_parameters.size());
 
             root_parameters.emplace_back();
             root_parameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -967,9 +969,9 @@ void DX12ProgramApi::ParseShaders()
 
         if (!m_use_cbv_table && num_cbv > 0)
         {
-            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].root_param_index = root_parameters.size();
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].root_param_index = static_cast<uint32_t>(root_parameters.size());
 
-            for (size_t j = 0; j < num_cbv; ++j)
+            for (uint32_t j = 0; j < num_cbv; ++j)
             {
                 root_parameters.emplace_back();
                 root_parameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -990,7 +992,7 @@ void DX12ProgramApi::ParseShaders()
             descriptorTableSampler.NumDescriptorRanges = 1;
             descriptorTableSampler.pDescriptorRanges = &descriptor_table_ranges.back()[index];
 
-            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER}].root_param_index = root_parameters.size();
+            m_binding_layout[{shader_blob.first, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER}].root_param_index = static_cast<uint32_t>(root_parameters.size());
 
             root_parameters.emplace_back();
             root_parameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -1013,7 +1015,7 @@ void DX12ProgramApi::ParseShaders()
         D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
 
     CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-    rootSignatureDesc.Init(root_parameters.size(),
+    rootSignatureDesc.Init(static_cast<UINT>(root_parameters.size()),
         root_parameters.data(),
         0,
         nullptr,
@@ -1049,5 +1051,5 @@ void DX12ProgramApi::OMSetRenderTargets()
         om_dsv = it->second.GetCpuHandle();
         om_dsv_ptr = &om_dsv;
     }
-    m_context.command_list->OMSetRenderTargets(om_rtv.size(), om_rtv.data(), FALSE, om_dsv_ptr);
+    m_context.command_list->OMSetRenderTargets(static_cast<UINT>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv_ptr);
 }

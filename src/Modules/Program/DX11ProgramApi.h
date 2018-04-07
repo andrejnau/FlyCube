@@ -78,8 +78,8 @@ private:
     std::vector<ComPtr<ID3D11RenderTargetView>> m_rtvs;
     ComPtr<ID3D11DepthStencilView> m_dsv;
 
-    std::map<std::tuple<ShaderType, size_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
-    std::map<std::tuple<ShaderType, size_t>, Resource::Ptr> m_cbv_buffer;
+    std::map<std::tuple<ShaderType, uint32_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
+    std::map<std::tuple<ShaderType, uint32_t>, Resource::Ptr> m_cbv_buffer;
     std::map<ShaderType, ComPtr<ID3DBlob>> m_blob_map;
     ComPtr<ID3D11InputLayout> input_layout;
     ComPtr<ID3D11VertexShader> vshader;

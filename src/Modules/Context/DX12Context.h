@@ -33,7 +33,7 @@ public:
     virtual void BeginEvent(LPCWSTR Name) override;
     virtual void EndEvent() override;
 
-    virtual void DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, INT BaseVertexLocation) override;
+    virtual void DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation) override;
     virtual void Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ) override;
 
     virtual Resource::Ptr GetBackBuffer() override;
