@@ -1,5 +1,6 @@
 #include "Program/DX12ProgramApi.h"
 #include "Program/BufferLayout.h"
+#include "Texture/DXGIFormatHelper.h"
 #include <Utilities/State.h>
 
 size_t GenId()
@@ -319,9 +320,15 @@ DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string
     {
         D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
         srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        srv_desc.Format = desc.Format;
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         srv_desc.Texture2D.MipLevels = desc.MipLevels;
+        srv_desc.Format = desc.Format;
+        switch (res_desc.ReturnType)
+        {
+        case D3D_RETURN_TYPE_FLOAT:
+            srv_desc.Format = FloatFromTypeless(srv_desc.Format);
+            break;
+        }
         m_context.device->CreateShaderResourceView(res.default_res.Get(), &srv_desc, descriptor.handle.GetCpuHandle());
         break;
     }
@@ -505,13 +512,44 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-    m_pso_desc_cache(m_pso_desc.RTVFormats[slot]) = res.default_res->GetDesc().Format;
+    D3D12_RESOURCE_DESC desc = res.default_res->GetDesc();
+
+    ComPtr<ID3D12ShaderReflection> reflector;
+    _D3DReflect(m_blob_map[ShaderType::kPixel]->GetBufferPointer(), m_blob_map[ShaderType::kPixel]->GetBufferSize(), IID_PPV_ARGS(&reflector));
+
+    D3D12_SIGNATURE_PARAMETER_DESC res_desc = {};
+    ASSERT_SUCCEEDED(reflector->GetOutputParameterDesc(slot, &res_desc));
+
+    DXGI_FORMAT format = desc.Format;
+    switch (res_desc.ComponentType)
+    {
+    case D3D_REGISTER_COMPONENT_FLOAT32:
+        format = FloatFromTypeless(desc.Format);
+        break;
+    }
+
+    if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+        format = DXGI_FORMAT_R32_FLOAT;
+
+    m_pso_desc_cache(m_pso_desc.RTVFormats[slot]) = format;
     m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = res.default_res->GetDesc().SampleDesc.Count;
 
     if (descriptor.exist)
         return descriptor.handle;
 
-    m_context.device->CreateRenderTargetView(res.default_res.Get(), nullptr, descriptor.handle.GetCpuHandle());
+    D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
+    rtv_desc.Format = format;
+
+    if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+    {
+        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_BUFFER;
+        rtv_desc.Buffer.NumElements = 1;
+    }
+    else
+    {
+        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+    }
+    m_context.device->CreateRenderTargetView(res.default_res.Get(), &rtv_desc, descriptor.handle.GetCpuHandle());
 
     return descriptor.handle;
 }
@@ -527,25 +565,27 @@ DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
     auto desc = res.default_res->GetDesc();
-
-    DXGI_FORMAT format = desc.Format;
-    if (format == DXGI_FORMAT_R32_TYPELESS)
-    {
-        format = DXGI_FORMAT_D32_FLOAT;
-        D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
-        dsv_desc.Format = format;
-        dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
-        dsv_desc.Texture2DArray.ArraySize = desc.DepthOrArraySize;
-        if (!descriptor.exist)
-            m_context.device->CreateDepthStencilView(res.default_res.Get(), &dsv_desc, descriptor.handle.GetCpuHandle());
-    }
-    else if (!descriptor.exist)
-    {
-        m_context.device->CreateDepthStencilView(res.default_res.Get(), nullptr, descriptor.handle.GetCpuHandle());
-    }
+    DXGI_FORMAT format = DepthStencilFromTypeless(desc.Format);
 
     m_pso_desc_cache(m_pso_desc.DSVFormat) = format;
     m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = res.default_res->GetDesc().SampleDesc.Count;
+
+    if (descriptor.exist)
+        return descriptor.handle;
+   
+    D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
+    dsv_desc.Format = format;
+    if (desc.DepthOrArraySize > 1)
+    {
+        dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+        dsv_desc.Texture2DArray.ArraySize = desc.DepthOrArraySize;
+    }
+    else
+    {
+        dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    }
+
+     m_context.device->CreateDepthStencilView(res.default_res.Get(), &dsv_desc, descriptor.handle.GetCpuHandle());
 
     return descriptor.handle;
 }

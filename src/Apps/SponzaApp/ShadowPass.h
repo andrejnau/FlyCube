@@ -40,5 +40,6 @@ private:
     Context& m_context;
     Input m_input;
     Program<ShadowPassVS, ShadowPassGS, ShadowPassPS> m_program;
+    Resource::Ptr m_buffer;
 };
 

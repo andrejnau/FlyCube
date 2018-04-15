@@ -295,3 +295,47 @@ void GetSurfaceInfo(
         *outNumRows = numRows;
     }
 }
+
+DXGI_FORMAT FloatFromTypeless(DXGI_FORMAT format)
+{
+    switch (format)
+    {
+    case DXGI_FORMAT_R32G32B32A32_TYPELESS:
+        return DXGI_FORMAT_R32G32B32A32_FLOAT;
+    default:
+        return format;
+    }
+}
+
+DXGI_FORMAT UintFromTypeless(DXGI_FORMAT format)
+{
+    switch (format)
+    {
+    case DXGI_FORMAT_R32G32B32A32_TYPELESS:
+        return DXGI_FORMAT_R32G32B32A32_UINT;
+    default:
+        return format;
+    }
+}
+
+DXGI_FORMAT SintFromTypeless(DXGI_FORMAT format)
+{
+    switch (format)
+    {
+    case DXGI_FORMAT_R32G32B32A32_TYPELESS:
+        return DXGI_FORMAT_R32G32B32A32_SINT;
+    default:
+        return format;
+    }
+}
+
+DXGI_FORMAT DepthStencilFromTypeless(DXGI_FORMAT format)
+{
+    switch (format)
+    {
+    case DXGI_FORMAT_R32_TYPELESS:
+        return DXGI_FORMAT_D32_FLOAT;
+    default:
+        return format;
+    }
+}
