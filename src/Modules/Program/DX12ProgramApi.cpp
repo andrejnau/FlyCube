@@ -547,7 +547,10 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
     }
     else
     {
-        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+        if (desc.SampleDesc.Count > 1)
+            rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+        else
+            rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
     }
     m_context.device->CreateRenderTargetView(res.default_res.Get(), &rtv_desc, descriptor.handle.GetCpuHandle());
 
@@ -582,7 +585,10 @@ DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires)
     }
     else
     {
-        dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+        if (desc.SampleDesc.Count > 1)
+            dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+        else
+            dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
     }
 
      m_context.device->CreateDepthStencilView(res.default_res.Get(), &dsv_desc, descriptor.handle.GetCpuHandle());
