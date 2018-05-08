@@ -9,6 +9,7 @@ AppBox::AppBox(const CreateSample& create_sample, ApiType api_type, const std::s
     , m_window(nullptr)
     , m_width(width)
     , m_height(height)
+    , m_exit(false)
 {
     if (!glfwInit())
         return;
@@ -40,6 +41,9 @@ int AppBox::Run()
     while (!glfwWindowShouldClose(m_window))
     {
         glfwPollEvents();
+
+        if (m_exit)
+            break;
 
         m_sample->OnUpdate();
         m_sample->OnRender();
@@ -132,7 +136,7 @@ void AppBox::OnKey(GLFWwindow* window, int key, int scancode, int action, int mo
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        exit(EXIT_SUCCESS);
+        self->m_exit = true;
 
     if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
     {

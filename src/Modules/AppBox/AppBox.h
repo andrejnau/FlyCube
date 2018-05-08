@@ -31,4 +31,5 @@ private:
     GLFWwindow* m_window;
     int m_width;
     int m_height;
+    bool m_exit;
 };
