@@ -262,8 +262,14 @@ void ModelLoader::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std:
         aiString texture_name;
         mat->GetTexture(type, i, &texture_name);
         std::string texture_path = m_directory + "/" + texture_name.C_Str();
-        if(!std::ifstream(texture_path).good())
-            continue;
+        if (!std::ifstream(texture_path).good())
+        {
+            texture_path = texture_path.substr(0, texture_path.rfind('.')) + ".dds";
+            if (!std::ifstream(texture_path).good())
+            {
+                continue;
+            }
+        }
 
         TextureInfo texture;
         texture.type = type;

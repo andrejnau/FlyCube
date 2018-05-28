@@ -20,6 +20,9 @@ DX11Context::DX11Context(GLFWwindow* window, int width, int height)
     ComPtr<IDXGIAdapter1> adapter = GetHardwareAdapter(dxgi_factory.Get());
     D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_11_1;
 
+    ComPtr<ID3D11Device> tmp_device;
+    ComPtr<ID3D11DeviceContext> tmp_device_context;
+
     ASSERT_SUCCEEDED(D3D11CreateDevice(
         adapter.Get(),
         D3D_DRIVER_TYPE_UNKNOWN,
@@ -28,13 +31,24 @@ DX11Context::DX11Context(GLFWwindow* window, int width, int height)
         &feature_level,
         1,
         D3D11_SDK_VERSION,
-        &device,
+        &tmp_device,
         nullptr,
-        &device_context));
+        &tmp_device_context));
+    tmp_device.As(&device);
+    tmp_device_context.As(&device_context);
 
     m_swap_chain = CreateSwapChain(device, dxgi_factory, glfwGetWin32Window(window), width, height, FrameCount);
 
     device_context.As(&perf);
+
+#if defined(_DEBUG)
+    ComPtr<ID3D11InfoQueue> info_queue;
+    if (SUCCEEDED(device.As(&info_queue)))
+    {
+        info_queue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+        info_queue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+    }
+#endif
 }
 
 std::unique_ptr<ProgramApi> DX11Context::CreateProgram()
@@ -64,6 +78,11 @@ Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format,
     if (depth > 1)
         desc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 
+    if (!(bind_flag & BindFlag::kDsv) && (bind_flag & BindFlag::kSrv))
+    {
+        desc.MiscFlags |= D3D11_RESOURCE_MISC_TILED;
+    }
+
     uint32_t quality = 0;
     device->CheckMultisampleQualityLevels(desc.Format, msaa_count, &quality);
     desc.SampleDesc.Count = msaa_count;
@@ -73,6 +92,106 @@ Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format,
     ASSERT_SUCCEEDED(device->CreateTexture2D(&desc, nullptr, &texture));
     res->resource = texture;
 
+    if ((bind_flag & BindFlag::kDsv))
+        return res;
+
+    if (!(bind_flag & BindFlag::kSrv))
+        return res;
+
+    UINT pNumTilesForEntireResource = {};
+    D3D11_PACKED_MIP_DESC pPackedMipDesc = {};
+    D3D11_TILE_SHAPE pStandardTileShapeForNonPackedMips = {};
+    UINT pNumSubresourceTilings = mip_levels;
+    std::vector<D3D11_SUBRESOURCE_TILING> pSubresourceTilingsForNonPackedMips(pNumSubresourceTilings);
+    device->GetResourceTiling(texture.Get(), &pNumTilesForEntireResource, &pPackedMipDesc, &pStandardTileShapeForNonPackedMips,
+        &pNumSubresourceTilings, 0, pSubresourceTilingsForNonPackedMips.data());
+
+    ComPtr<ID3D11Buffer> tile_pool;
+    D3D11_BUFFER_DESC buf_desc = {};
+    buf_desc.Usage = D3D11_USAGE_DEFAULT;
+    buf_desc.ByteWidth = 64 * 1024 * (pNumTilesForEntireResource+10);
+    buf_desc.MiscFlags = D3D11_RESOURCE_MISC_TILE_POOL;
+
+    ASSERT_SUCCEEDED(device->CreateBuffer(&buf_desc, nullptr, &tile_pool));
+    res->tile_pool.push_back(tile_pool);
+
+    UINT start = 0;
+    if (!(bind_flag & BindFlag::kRtv))
+    {
+        for (UINT i = 0; i < pPackedMipDesc.NumStandardMips; ++i)
+        {
+            for (int x = 0; x < pSubresourceTilingsForNonPackedMips[i].WidthInTiles; ++x)
+            {
+                for (int y = 0; y < pSubresourceTilingsForNonPackedMips[i].HeightInTiles; ++y)
+                {
+                    for (int z = 0; z < pSubresourceTilingsForNonPackedMips[i].DepthInTiles; ++z)
+                    {
+                        D3D11_TILED_RESOURCE_COORDINATE coord = { x, y, z, i };
+                        D3D11_TILE_REGION_SIZE reg_size = {};
+                        reg_size.NumTiles = 1;
+                        ASSERT_SUCCEEDED(device_context->UpdateTileMappings(
+                            texture.Get(),
+                            1,
+                            &coord,
+                            &reg_size,
+                            tile_pool.Get(),
+                            1,
+                            nullptr,
+                            &start,
+                            nullptr,
+                            0
+                        ));
+
+                        start += reg_size.NumTiles;
+                    }
+                }
+            }
+        }
+
+        if (pPackedMipDesc.NumPackedMips > 0)
+        {
+            D3D11_TILED_RESOURCE_COORDINATE coord = { 0, 0, 0, pPackedMipDesc.NumStandardMips };
+            D3D11_TILE_REGION_SIZE reg_size = {};
+            reg_size.NumTiles = pPackedMipDesc.NumTilesForPackedMips;
+
+            ASSERT_SUCCEEDED(device_context->UpdateTileMappings(
+                texture.Get(),
+                1,
+                &coord,
+                &reg_size,
+                tile_pool.Get(),
+                1,
+                nullptr,
+                &start,
+                nullptr,
+                0
+            ));
+
+            start += reg_size.NumTiles;
+        }
+    }
+    else
+    {
+        D3D11_TILED_RESOURCE_COORDINATE coord = { 0, 0, 0, 0 };
+        D3D11_TILE_REGION_SIZE reg_size = {};
+        reg_size.bUseBox = true;
+        reg_size.Width = pSubresourceTilingsForNonPackedMips[0].WidthInTiles;
+        reg_size.Height = pSubresourceTilingsForNonPackedMips[0].HeightInTiles;
+        reg_size.Depth = pSubresourceTilingsForNonPackedMips[0].DepthInTiles;
+        reg_size.NumTiles = reg_size.Width * reg_size.Height * reg_size.Depth;
+        ASSERT_SUCCEEDED(device_context->UpdateTileMappings(
+            texture.Get(),
+            1,
+            &coord,
+            &reg_size,
+            tile_pool.Get(),
+            1,
+            nullptr,
+            &start,
+            nullptr,
+            0
+        ));
+    }
     return res;
 }
 
@@ -112,6 +231,7 @@ void DX11Context::UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubre
 {
     auto res = std::static_pointer_cast<DX11Resource>(ires);
     device_context->UpdateSubresource(res->resource.Get(), DstSubresource, nullptr, pSrcData, SrcRowPitch, SrcDepthPitch);
+    int b = 0;
 }
 
 void DX11Context::SetViewport(float width, float height)

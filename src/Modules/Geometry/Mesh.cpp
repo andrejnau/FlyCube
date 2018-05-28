@@ -93,7 +93,7 @@ IAMergedMesh::IAMergedMesh(Context & context, std::vector<IMesh>& meshes)
     m_data.reset();
 }
 
-Material::Material(Context & context, const IMesh::Material & material, std::vector<TextureInfo>& textures)
+Material::Material(Context& context, const IMesh::Material& material, std::vector<TextureInfo>& textures)
     : IMesh::Material(material)
 {
     static std::map<std::string, Resource::Ptr> tex_cache;

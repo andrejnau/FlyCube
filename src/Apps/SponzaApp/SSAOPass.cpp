@@ -37,17 +37,17 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
         m_program.ps.cbuffer.SSAOBuffer.samples[i] = glm::vec4(sample, 1.0f);
     }
 
-    std::vector<glm::vec3> ssaoNoise;
+    std::vector<glm::vec4> ssaoNoise;
     for (uint32_t i = 0; i < 16; i++)
     {
-        glm::vec3 noise(randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator) * 2.0f - 1.0f, 0.0f);
+        glm::vec4 noise(randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator) * 2.0f - 1.0f, 0.0f, 0.0f);
         ssaoNoise.push_back(noise);
     }
 
-    m_noise_texture = context.CreateTexture(BindFlag::kSrv, DXGI_FORMAT_R32G32B32_FLOAT, 1, 4, 4, 1);
+    m_noise_texture = context.CreateTexture(BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 4, 4, 1);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
-    GetSurfaceInfo(4, 4, DXGI_FORMAT_R32G32B32_FLOAT, &num_bytes, &row_bytes, nullptr);
+    GetSurfaceInfo(4, 4, DXGI_FORMAT_R32G32B32A32_FLOAT, &num_bytes, &row_bytes, nullptr);
     context.UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
 }
 

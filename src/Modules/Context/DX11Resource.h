@@ -9,6 +9,7 @@ class DX11Resource : public Resource
 public:
     using Ptr = std::shared_ptr<DX11Resource>;
     ComPtr<ID3D11Resource> resource;
+    std::vector<ComPtr<ID3D11Buffer>> tile_pool;
 
     virtual void SetName(const std::string& name) override
     {

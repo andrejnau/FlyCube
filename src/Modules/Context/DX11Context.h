@@ -1,6 +1,6 @@
 #pragma once
 
-#include <d3d11_1.h>
+#include <d3d11_4.h>
 #include <dxgi1_4.h>
 #include <wrl.h>
 
@@ -38,8 +38,8 @@ public:
 
     void UseProgram(DX11ProgramApi& program_api);
 
-    ComPtr<ID3D11Device> device;
-    ComPtr<ID3D11DeviceContext> device_context;
+    ComPtr<ID3D11Device4> device;
+    ComPtr<ID3D11DeviceContext4> device_context;
 
 private:
     virtual void ResizeBackBuffer(int width, int height) override;
