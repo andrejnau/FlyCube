@@ -4,6 +4,7 @@
 #include "Geometry/IMesh.h"
 #include "Geometry/IABuffer.h"
 #include <Texture/TextureLoader.h>
+#include <Texture/TextureCache.h>
 
 struct MeshRange
 {
@@ -31,7 +32,7 @@ public:
 class Material : public IMesh::Material
 {
 public:
-    Material(Context& context, const IMesh::Material& material, std::vector<TextureInfo>& textures);
+    Material(TextureCache& cache, const IMesh::Material& material, std::vector<TextureInfo>& textures);
 
     struct
     {

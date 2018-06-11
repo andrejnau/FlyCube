@@ -4,11 +4,13 @@ set(headers
     TextureLoader.h
     TextureInfo.h
     DXGIFormatHelper.h
+    TextureCache.h
 )
 
 set(sources
     TextureLoader.cpp
     DXGIFormatHelper.cpp
+    TextureCache.cpp
 )
 
 add_library(${target} ${headers} ${sources})

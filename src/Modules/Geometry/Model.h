@@ -3,6 +3,7 @@
 #include "Geometry/Mesh.h"
 #include "Geometry/Bones.h"
 #include "Geometry/ModelLoader.h"
+#include <Texture/TextureCache.h>
 
 struct BoundBox
 {
@@ -39,6 +40,7 @@ private:
 
 public:
     IAMergedMesh ia;
+    TextureCache m_cache;
     std::vector<Material> materials;
     BoundBox bound_box;
 };

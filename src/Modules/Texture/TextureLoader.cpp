@@ -6,13 +6,13 @@
 
 using namespace Microsoft::WRL;
 
-Resource::Ptr CreateSRVFromFile(Context& context, TextureInfo& texture)
+Resource::Ptr CreateSRVFromFile(Context& context, const std::string& path)
 {
     //return {};  // Generate MipMaps is not yet supported
 
     int width = 0;
     int height = 0;
-    unsigned char* image = SOIL_load_image(texture.path.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
+    unsigned char* image = SOIL_load_image(path.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
     if (!image)
         return {};
 
@@ -29,9 +29,9 @@ Resource::Ptr CreateSRVFromFile(Context& context, TextureInfo& texture)
     return res;
 }
 
-Resource::Ptr CreateSRVFromFileDDS(Context& context, TextureInfo& texture)
+Resource::Ptr CreateSRVFromFileDDS(Context& context, const std::string& path)
 {
-    gli::texture Texture = gli::load(texture.path);
+    gli::texture Texture = gli::load(path);
     auto tex_format = gli::dx().translate(Texture.format());
     DXGI_FORMAT format = static_cast<DXGI_FORMAT>(tex_format.DXGIFormat.DDS);
     uint32_t width = Texture.extent(0).x;
@@ -51,10 +51,10 @@ Resource::Ptr CreateSRVFromFileDDS(Context& context, TextureInfo& texture)
     return res;
 }
 
-Resource::Ptr CreateTexture(Context& context, TextureInfo & texture)
+Resource::Ptr CreateTexture(Context& context, const std::string& path)
 {
-    if (texture.path.find(".dds") != -1)
-        return CreateSRVFromFileDDS(context, texture);
+    if (path.find(".dds") != -1)
+        return CreateSRVFromFileDDS(context, path);
     else
-        return CreateSRVFromFile(context, texture);
+        return CreateSRVFromFile(context, path);
 }

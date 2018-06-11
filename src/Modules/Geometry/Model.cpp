@@ -4,10 +4,11 @@ Model::Model(Context& context, const std::string& file, uint32_t flags)
     : m_context(context)
     , m_model_loader(std::make_unique<ModelLoader>(file, (aiPostProcessSteps)flags, *this))
     , ia(context, meshes)
+    , m_cache(context)
 {
     for (auto & mesh : meshes)
     {
-        materials.emplace_back(context, mesh.material, mesh.textures);
+        materials.emplace_back(m_cache, mesh.material, mesh.textures);
 
         for (auto & pos : mesh.positions)
         {

@@ -93,17 +93,12 @@ IAMergedMesh::IAMergedMesh(Context & context, std::vector<IMesh>& meshes)
     m_data.reset();
 }
 
-Material::Material(Context& context, const IMesh::Material& material, std::vector<TextureInfo>& textures)
+Material::Material(TextureCache& cache, const IMesh::Material& material, std::vector<TextureInfo>& textures)
     : IMesh::Material(material)
 {
-    static std::map<std::string, Resource::Ptr> tex_cache;
     for (size_t i = 0; i < textures.size(); ++i)
     {
-        auto it = tex_cache.find(textures[i].path);
-        if (it == tex_cache.end())
-            it = tex_cache.emplace(textures[i].path, CreateTexture(context, textures[i])).first;
-
-        auto& tex = it->second;
+        auto tex = cache.Load(textures[i].path);
         switch (textures[i].type)
         {
         case aiTextureType_AMBIENT:

@@ -5,4 +5,4 @@
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
-Resource::Ptr CreateTexture(Context& context, TextureInfo & texture);
+Resource::Ptr CreateTexture(Context& context, const std::string& path);
