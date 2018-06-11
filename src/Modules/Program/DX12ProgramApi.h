@@ -34,6 +34,8 @@ public:
     void OnPresent();
 
 private:
+    void SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const DescriptorHeapRange& handle);
+
     void AttachCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& res);
     DescriptorHeapRange CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
     DescriptorHeapRange CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);

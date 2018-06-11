@@ -81,29 +81,22 @@ void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& bl
 void DX12ProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res)
 {
     m_changed_binding = true;
-    auto handle = CreateSrv(type, name, slot, res);
-    auto it = m_heap_ranges.find({ type, ResourceType::kSrv, slot });
-    if (it == m_heap_ranges.end())
-    {
-        m_heap_ranges.emplace(std::piecewise_construct,
-            std::forward_as_tuple(type, ResourceType::kSrv, slot),
-            std::forward_as_tuple(handle));
-    }
-    else
-    {
-        it->second = handle;
-    }
+    SetBinding(type, ResourceType::kSrv, slot, CreateSrv(type, name, slot, res));
 }
 
 void DX12ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr& res)
 {
     m_changed_binding = true;
-    auto handle = CreateUAV(type, name, slot, res);
-    auto it = m_heap_ranges.find({ type, ResourceType::kUav, slot });
+    SetBinding(type, ResourceType::kUav, slot, CreateUAV(type, name, slot, res));
+}
+
+void DX12ProgramApi::SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const DescriptorHeapRange& handle)
+{
+    auto it = m_heap_ranges.find({ shader_type, res_type, slot });
     if (it == m_heap_ranges.end())
     {
         m_heap_ranges.emplace(std::piecewise_construct,
-            std::forward_as_tuple(type, ResourceType::kUav, slot),
+            std::forward_as_tuple(shader_type, res_type, slot),
             std::forward_as_tuple(handle));
     }
     else
@@ -115,18 +108,7 @@ void DX12ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32
 void DX12ProgramApi::AttachCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& res)
 {
     m_changed_binding = true;
-    auto handle = CreateCBV(type, slot, res);
-    auto it = m_heap_ranges.find({ type, ResourceType::kCbv, slot });
-    if (it == m_heap_ranges.end())
-    {
-        m_heap_ranges.emplace(std::piecewise_construct,
-            std::forward_as_tuple(type, ResourceType::kCbv, slot),
-            std::forward_as_tuple(handle));
-    }
-    else
-    {
-        it->second = handle;
-    }
+    SetBinding(type, ResourceType::kCbv, slot, CreateCBV(type, slot, res));
 }
 
 void DX12ProgramApi::AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buffer)
@@ -139,52 +121,20 @@ void DX12ProgramApi::AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buf
 void DX12ProgramApi::AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
 {
     m_changed_binding = true;
-    auto handle = CreateSampler(type, slot, desc);
-    auto it = m_heap_ranges.find({ type, ResourceType::kSampler, slot });
-    if (it == m_heap_ranges.end())
-    {
-        m_heap_ranges.emplace(std::piecewise_construct,
-            std::forward_as_tuple(type, ResourceType::kSampler, slot),
-            std::forward_as_tuple(handle));
-    }
-    else
-    {
-        it->second = handle;
-    }
+    SetBinding(type, ResourceType::kSampler, slot, CreateSampler(type, slot, desc));
 }
 
 void DX12ProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& ires)
 {
     m_changed_om = true;
-    auto handle = CreateRTV(slot, ires);
-    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kRtv, slot });
-    if (it == m_heap_ranges.end())
-    {
-        m_heap_ranges.emplace(std::piecewise_construct,
-            std::forward_as_tuple(ShaderType::kPixel, ResourceType::kRtv, slot),
-            std::forward_as_tuple(handle));
-    }
-    else
-    {
-        it->second = handle;
-    }
+    SetBinding(ShaderType::kPixel, ResourceType::kRtv, slot, CreateRTV(slot, ires));
 }
 
 void DX12ProgramApi::AttachDSV(const Resource::Ptr& ires)
 {
     m_changed_om = true;
     auto handle = CreateDSV(ires);
-    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kDsv, 0 });
-    if (it == m_heap_ranges.end())
-    {
-        m_heap_ranges.emplace(std::piecewise_construct,
-            std::forward_as_tuple(ShaderType::kPixel, ResourceType::kDsv, 0),
-            std::forward_as_tuple(handle));
-    }
-    else
-    {
-        it->second = handle;
-    }
+    SetBinding(ShaderType::kPixel, ResourceType::kDsv, 0, CreateDSV(ires));
 }
 
 void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
