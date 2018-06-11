@@ -33,47 +33,8 @@ private:
     void AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires);
     ComPtr<ID3D11ShaderResourceView> CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
     ComPtr<ID3D11UnorderedAccessView> CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
-
-    ComPtr<ID3D11DepthStencilView> CreateDsv(const Resource::Ptr& ires)
-    {
-        ComPtr<ID3D11DepthStencilView> dsv;
-        if (!ires)
-            return dsv;
-
-        auto res = std::static_pointer_cast<DX11Resource>(ires);
-
-        ComPtr<ID3D11Texture2D> tex;
-        res->resource.As(&tex);
-
-        D3D11_TEXTURE2D_DESC tex_dec = {};
-        tex->GetDesc(&tex_dec);
-
-        if (tex_dec.Format == DXGI_FORMAT_R32_TYPELESS) // TODO
-        {
-            D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
-            dsv_desc.Format = DXGI_FORMAT_D32_FLOAT;
-            dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-            dsv_desc.Texture2DArray.ArraySize = tex_dec.ArraySize;
-            ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(tex.Get(), &dsv_desc, &dsv));
-        }
-        else
-        {
-            ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(tex.Get(), nullptr, &dsv));
-        }
-        return dsv;
-    }
-
-    ComPtr<ID3D11RenderTargetView> CreateRtv(const Resource::Ptr& ires)
-    {
-        auto res = std::static_pointer_cast<DX11Resource>(ires);
-
-        ComPtr<ID3D11RenderTargetView> rtv;
-        if (!ires)
-            return rtv;
-
-        ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(res->resource.Get(), nullptr, &rtv));
-        return rtv;
-    }
+    ComPtr<ID3D11DepthStencilView> CreateDsv(const Resource::Ptr& ires);
+    ComPtr<ID3D11RenderTargetView> CreateRtv(const Resource::Ptr& ires);
 
     std::vector<ComPtr<ID3D11RenderTargetView>> m_rtvs;
     ComPtr<ID3D11DepthStencilView> m_dsv;
