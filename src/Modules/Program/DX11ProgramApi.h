@@ -34,7 +34,7 @@ private:
     ComPtr<ID3D11ShaderResourceView> CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
     ComPtr<ID3D11UnorderedAccessView> CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
     ComPtr<ID3D11DepthStencilView> CreateDsv(const Resource::Ptr& ires);
-    ComPtr<ID3D11RenderTargetView> CreateRtv(const Resource::Ptr& ires);
+    ComPtr<ID3D11RenderTargetView> CreateRtv(uint32_t slot, const Resource::Ptr& ires);
 
     std::vector<ComPtr<ID3D11RenderTargetView>> m_rtvs;
     ComPtr<ID3D11DepthStencilView> m_dsv;
@@ -48,4 +48,5 @@ private:
     ComPtr<ID3D11ComputeShader> cshader;
     ComPtr<ID3D11GeometryShader> gshader;
     DX11Context& m_context;
+    size_t m_program_id;
 };

@@ -11,6 +11,11 @@ public:
     ComPtr<ID3D11Resource> resource;
     std::vector<ComPtr<ID3D11Buffer>> tile_pool;
 
+    std::map<BindKey, ComPtr<ID3D11ShaderResourceView>> srv;
+    std::map<BindKey, ComPtr<ID3D11UnorderedAccessView>> uav;
+    std::map<BindKey, ComPtr<ID3D11RenderTargetView>> rtv;
+    std::map<BindKey, ComPtr<ID3D11DepthStencilView>> dsv;
+
     virtual void SetName(const std::string& name) override
     {
         resource->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(name.size()), name.c_str());

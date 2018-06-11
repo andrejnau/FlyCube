@@ -78,10 +78,10 @@ Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format,
     if (depth > 1)
         desc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 
-    if (!(bind_flag & BindFlag::kDsv) && (bind_flag & BindFlag::kSrv))
+    /*if (!(bind_flag & BindFlag::kDsv) && (bind_flag & BindFlag::kSrv))
     {
         desc.MiscFlags |= D3D11_RESOURCE_MISC_TILED;
-    }
+    }*/
 
     uint32_t quality = 0;
     device->CheckMultisampleQualityLevels(desc.Format, msaa_count, &quality);
@@ -92,8 +92,8 @@ Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format,
     ASSERT_SUCCEEDED(device->CreateTexture2D(&desc, nullptr, &texture));
     res->resource = texture;
 
-    if ((bind_flag & BindFlag::kDsv))
-        return res;
+    // if ((bind_flag & BindFlag::kDsv))
+    return res;
 
     if (!(bind_flag & BindFlag::kSrv))
         return res;

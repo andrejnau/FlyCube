@@ -3,7 +3,7 @@
 #include "Texture/DXGIFormatHelper.h"
 #include <Utilities/State.h>
 
-size_t GenId()
+static size_t GenId()
 {
     static size_t id = 0;
     return ++id;

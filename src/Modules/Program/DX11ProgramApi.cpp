@@ -1,7 +1,14 @@
 #include "DX11ProgramApi.h"
 
+static size_t GenId()
+{
+    static size_t id = 0;
+    return ++id;
+}
+
 DX11ProgramApi::DX11ProgramApi(DX11Context & context)
     : m_context(context)
+    , m_program_id(GenId())
 {
 }
 
@@ -259,7 +266,7 @@ void DX11ProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& ires)
 {
     if (m_rtvs.size() >= slot)
         m_rtvs.resize(slot + 1);
-    m_rtvs[slot] = CreateRtv(ires);
+    m_rtvs[slot] = CreateRtv(slot, ires);
 }
 
 void DX11ProgramApi::AttachDSV(const Resource::Ptr& ires)
@@ -397,6 +404,10 @@ ComPtr<ID3D11ShaderResourceView> DX11ProgramApi::CreateSrv(ShaderType type, cons
         return srv;
 
     auto res = std::static_pointer_cast<DX11Resource>(ires);
+    BindKey key = { m_program_id, type, ResourceType::kSrv, slot };
+    auto it = res->srv.find(key);
+    if (it != res->srv.end())
+        return it->second;
 
     ComPtr<ID3D11ShaderReflection> reflector;
     D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
@@ -467,6 +478,9 @@ ComPtr<ID3D11ShaderResourceView> DX11ProgramApi::CreateSrv(ShaderType type, cons
         assert(false);
         break;
     }
+
+    res->srv.emplace(key, srv);
+
     return srv;
 }
 
@@ -478,8 +492,10 @@ ComPtr<ID3D11UnorderedAccessView> DX11ProgramApi::CreateUAV(ShaderType type, con
 
     auto res = std::static_pointer_cast<DX11Resource>(ires);
 
-    if (!res)
-        return uav;
+    BindKey key = { m_program_id, type, ResourceType::kUav, slot };
+    auto it = res->uav.find(key);
+    if (it != res->uav.end())
+        return it->second;
 
     ComPtr<ID3D11ShaderReflection> reflector;
     D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
@@ -511,6 +527,9 @@ ComPtr<ID3D11UnorderedAccessView> DX11ProgramApi::CreateUAV(ShaderType type, con
         assert(false);
         break;
     }
+
+    res->uav.emplace(key, uav);
+
     return uav;
 }
 
@@ -521,6 +540,11 @@ ComPtr<ID3D11DepthStencilView> DX11ProgramApi::CreateDsv(const Resource::Ptr& ir
         return dsv;
 
     auto res = std::static_pointer_cast<DX11Resource>(ires);
+
+    BindKey key = { m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0 };
+    auto it = res->dsv.find(key);
+    if (it != res->dsv.end())
+        return it->second;
 
     ComPtr<ID3D11Texture2D> tex;
     res->resource.As(&tex);
@@ -540,10 +564,13 @@ ComPtr<ID3D11DepthStencilView> DX11ProgramApi::CreateDsv(const Resource::Ptr& ir
     {
         ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(tex.Get(), nullptr, &dsv));
     }
+
+    res->dsv.emplace(key, dsv);
+
     return dsv;
 }
 
-ComPtr<ID3D11RenderTargetView> DX11ProgramApi::CreateRtv(const Resource::Ptr& ires)
+ComPtr<ID3D11RenderTargetView> DX11ProgramApi::CreateRtv(uint32_t slot, const Resource::Ptr& ires)
 {
     auto res = std::static_pointer_cast<DX11Resource>(ires);
 
@@ -551,7 +578,15 @@ ComPtr<ID3D11RenderTargetView> DX11ProgramApi::CreateRtv(const Resource::Ptr& ir
     if (!ires)
         return rtv;
 
+    BindKey key = { m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot };
+    auto it = res->rtv.find(key);
+    if (it != res->rtv.end())
+        return it->second;
+
     ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(res->resource.Get(), nullptr, &rtv));
+
+    res->rtv.emplace(key, rtv);
+
     return rtv;
 }
 
