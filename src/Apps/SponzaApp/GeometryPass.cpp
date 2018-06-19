@@ -77,21 +77,14 @@ void GeometryPass::OnRender()
         {
             auto& material = model.GetMaterial(range.id);
 
-            if (!CurState::Instance().disable_norm)
-                m_program.ps.srv.normalMap.Attach(material.texture.normal);
-            else
-                m_program.ps.srv.normalMap.Attach();
+            m_program.ps.cbuffer.Material.use_normal_mapping = !!material.texture.normal && !CurState::Instance().disable_norm;
 
+            m_program.ps.srv.normalMap.Attach(material.texture.normal);
             m_program.ps.srv.alphaMap.Attach(material.texture.alpha);
             m_program.ps.srv.ambientMap.Attach(material.texture.diffuse);
             m_program.ps.srv.diffuseMap.Attach(material.texture.diffuse);
             m_program.ps.srv.specularMap.Attach(material.texture.specular);
             m_program.ps.srv.shininessMap.Attach(material.texture.shininess);
-
-            m_program.ps.cbuffer.Material.material_ambient = material.amb;
-            m_program.ps.cbuffer.Material.material_diffuse = material.dif;
-            m_program.ps.cbuffer.Material.material_specular = material.spec;
-            m_program.ps.cbuffer.Material.material_shininess = material.shininess;
 
             m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }

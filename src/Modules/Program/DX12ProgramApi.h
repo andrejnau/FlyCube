@@ -2,6 +2,7 @@
 
 #include <Context/DX12Context.h>
 #include "Program/ProgramApi.h"
+#include "Program/ShaderBase.h"
 #include <algorithm>
 #include <deque>
 #include <array>
@@ -16,9 +17,10 @@ public:
     DX12ProgramApi(DX12Context& context);
 
     virtual void SetMaxEvents(size_t count) override;
+    virtual void LinkProgram() override;
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
-    virtual void OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& blob) override;
+    virtual void CompileShader(const ShaderBase& shader) override;
     virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
     virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
     virtual void AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buffer) override;
@@ -191,7 +193,7 @@ private:
     ComPtr<ID3D12ShaderReflection> m_input_layout_reflector;
     std::map<std::tuple<ShaderType, uint32_t>, DescriptorHeapRange> m_sample_cache_range;
 
-    const bool m_use_cbv_table = false;
+    const bool m_use_cbv_table = true;
 
     DX12Context& m_context;
     size_t m_program_id;

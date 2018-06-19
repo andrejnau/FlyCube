@@ -2,6 +2,7 @@
 #include "Program/BufferLayout.h"
 #include "Texture/DXGIFormatHelper.h"
 #include <Utilities/State.h>
+#include "Program/DXProgram.h"
 
 static size_t GenId()
 {
@@ -37,6 +38,10 @@ void DX12ProgramApi::SetMaxEvents(size_t count)
     m_context.GetDescriptorPool().ReqFrameDescription(ResourceType::kSampler, m_num_sampler * count);
 }
 
+void DX12ProgramApi::LinkProgram()
+{
+}
+
 void DX12ProgramApi::UseProgram()
 {
     m_context.UseProgram(*this);
@@ -47,13 +52,14 @@ void DX12ProgramApi::UseProgram()
         m_context.command_list->SetPipelineState(m_current_pso.Get());
 }
 
-void DX12ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& blob)
+void DX12ProgramApi::CompileShader(const ShaderBase& shader)
 {
-    m_blob_map[type] = blob;
+    auto blob = Compile(shader);
+    m_blob_map[shader.type] = blob;
     D3D12_SHADER_BYTECODE ShaderBytecode = {};
     ShaderBytecode.BytecodeLength = blob->GetBufferSize();
     ShaderBytecode.pShaderBytecode = blob->GetBufferPointer();
-    switch (type)
+    switch (shader.type)
     {
     case ShaderType::kVertex:
     {
@@ -462,15 +468,15 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-    D3D12_RESOURCE_DESC desc = res.default_res->GetDesc();
+    D3D12_RESOURCE_DESC& desc = res.desc;
+    DXGI_FORMAT format = desc.Format;
 
-    ComPtr<ID3D12ShaderReflection> reflector;
+    /*ComPtr<ID3D12ShaderReflection> reflector;
     _D3DReflect(m_blob_map[ShaderType::kPixel]->GetBufferPointer(), m_blob_map[ShaderType::kPixel]->GetBufferSize(), IID_PPV_ARGS(&reflector));
 
     D3D12_SIGNATURE_PARAMETER_DESC res_desc = {};
     ASSERT_SUCCEEDED(reflector->GetOutputParameterDesc(slot, &res_desc));
 
-    DXGI_FORMAT format = desc.Format;
     switch (res_desc.ComponentType)
     {
     case D3D_REGISTER_COMPONENT_FLOAT32:
@@ -479,10 +485,10 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
     }
 
     if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
-        format = DXGI_FORMAT_R32_FLOAT;
+        format = DXGI_FORMAT_R32_FLOAT;*/
 
     m_pso_desc_cache(m_pso_desc.RTVFormats[slot]) = format;
-    m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = res.default_res->GetDesc().SampleDesc.Count;
+    m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = desc.SampleDesc.Count;
 
     if (descriptor.exist)
         return descriptor.handle;

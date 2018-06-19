@@ -127,4 +127,15 @@ Material::Material(TextureCache& cache, const IMesh::Material& material, std::ve
             break;
         }
     }
+
+    if (!texture.ambient)
+        texture.ambient = cache.CreateTextuteStab(glm::vec4(material.amb, 0.0));
+    if (!texture.diffuse)
+        texture.diffuse = cache.CreateTextuteStab(glm::vec4(material.dif, 0.0));
+    if (!texture.specular)
+        texture.specular = cache.CreateTextuteStab(glm::vec4(material.spec, 0.0));
+    if (!texture.shininess)
+        texture.shininess = cache.CreateTextuteStab(glm::vec4(material.shininess, 0.0, 0.0, 0.0));
+    if (!texture.alpha)
+        texture.alpha = cache.CreateTextuteStab(glm::vec4(1.0));
 }

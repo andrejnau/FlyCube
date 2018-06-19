@@ -36,6 +36,8 @@ public:
     virtual void DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation) override;
     virtual void Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ) override;
 
+    void InitBackBuffers();
+
     virtual Resource::Ptr GetBackBuffer() override;
     virtual void Present(const Resource::Ptr& ires) override;
 
@@ -67,4 +69,5 @@ private:
 
     DX12ProgramApi* m_current_program = nullptr;
     std::vector<std::reference_wrapper<DX12ProgramApi>> m_created_program;
+    Resource::Ptr m_back_buffers[FrameCount];
 };

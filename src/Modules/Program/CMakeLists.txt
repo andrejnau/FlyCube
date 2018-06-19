@@ -7,6 +7,7 @@ set(headers
     Program.h
     ProgramApi.h
     ShaderBase.h
+    DXProgram.h
 )
 
 set(sources

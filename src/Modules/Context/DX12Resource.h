@@ -17,6 +17,7 @@ public:
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
     std::map<BindKey, DescriptorHeapRange> descriptors;
     uint32_t stride = 0;
+    D3D12_RESOURCE_DESC desc = {};
 
     DX12Resource(DX12Context& context);
     ~DX12Resource();

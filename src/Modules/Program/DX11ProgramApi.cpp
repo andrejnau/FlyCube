@@ -1,4 +1,5 @@
-#include "DX11ProgramApi.h"
+#include "Program/DX11ProgramApi.h"
+#include "Program/DXProgram.h"
 
 static size_t GenId()
 {
@@ -13,6 +14,10 @@ DX11ProgramApi::DX11ProgramApi(DX11Context & context)
 }
 
 void DX11ProgramApi::SetMaxEvents(size_t) {}
+
+void DX11ProgramApi::LinkProgram()
+{
+}
 
 void DX11ProgramApi::UseProgram()
 {
@@ -143,10 +148,11 @@ void DX11ProgramApi::CreateInputLayout()
         m_blob_map[ShaderType::kVertex]->GetBufferSize(), &input_layout));
 }
 
-void DX11ProgramApi::OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& blob)
+void DX11ProgramApi::CompileShader(const ShaderBase& shader)
 {
-    m_blob_map[type] = blob;
-    switch (type)
+    auto blob = Compile(shader);
+    m_blob_map[shader.type] = blob;
+    switch (shader.type)
     {
     case ShaderType::kVertex:
         ASSERT_SUCCEEDED(m_context.device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &vshader));

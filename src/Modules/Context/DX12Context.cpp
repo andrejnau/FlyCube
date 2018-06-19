@@ -42,6 +42,7 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
 
     m_swap_chain = CreateSwapChain(m_command_queue, dxgi_factory, glfwGetWin32Window(window), width, height, FrameCount);
     m_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
+    InitBackBuffers();
 
     for (size_t i = 0; i < FrameCount; ++i)
     {
@@ -137,6 +138,7 @@ Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format,
         res->state,
         p_clear_value,
         IID_PPV_ARGS(&res->default_res)));
+    res->desc = desc;
 
     return res;
 }
@@ -170,7 +172,7 @@ Resource::Ptr DX12Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size
         res->state,
         nullptr,
         IID_PPV_ARGS(&res->default_res));
-
+    res->desc = desc;
     return res;
 }
 
@@ -265,14 +267,23 @@ void DX12Context::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCount
     command_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
+void DX12Context::InitBackBuffers()
+{
+    for (size_t i = 0; i < FrameCount; ++i)
+    {
+        DX12Resource::Ptr res = std::make_shared<DX12Resource>(*this);
+        ComPtr<ID3D12Resource> back_buffer;
+        ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
+        res->state = D3D12_RESOURCE_STATE_PRESENT;
+        res->default_res = back_buffer;
+        res->desc = back_buffer->GetDesc();
+        m_back_buffers[i] = res;
+    }
+}
+
 Resource::Ptr DX12Context::GetBackBuffer()
 {
-    DX12Resource::Ptr res = std::make_shared<DX12Resource>(*this);
-    ComPtr<ID3D12Resource> back_buffer;
-    ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(m_frame_index, IID_PPV_ARGS(&back_buffer)));
-    res->state = D3D12_RESOURCE_STATE_PRESENT;
-    res->default_res = back_buffer;
-    return res;
+    return m_back_buffers[m_frame_index];   
 }
 
 void DX12Context::Present(const Resource::Ptr& ires)
@@ -337,11 +348,13 @@ void DX12Context::ResizeBackBuffer(int width, int height)
         m_fence_values[i] = m_fence_values[m_frame_index];
         descriptor_pool[i]->OnFrameBegin();
         m_deletion_queue[i].clear();
+        m_back_buffers[i].reset();
     }
     DXGI_SWAP_CHAIN_DESC desc = {};
     m_swap_chain->GetDesc(&desc);
     ASSERT_SUCCEEDED(m_swap_chain->ResizeBuffers(FrameCount, width, height, desc.BufferDesc.Format, desc.Flags));
     m_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
+    InitBackBuffers();
 }
 
 void DX12Context::WaitForGpu()

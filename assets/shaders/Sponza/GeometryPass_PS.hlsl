@@ -18,10 +18,7 @@ SamplerState g_sampler;
 
 cbuffer Material
 {
-    float3 material_ambient;
-    float3 material_diffuse;
-    float3 material_specular;
-    float material_shininess;
+    bool use_normal_mapping;
 };
 
 cbuffer Light
@@ -61,54 +58,31 @@ float3 CalcBumpedNormal(VS_OUTPUT input)
     return normal;
 }
 
-bool HasTexture(Texture2D _texture)
-{
-    uint width, height;
-    _texture.GetDimensions(width, height);
-    return width > 0 && height > 0;
-}
-
 PS_OUT main(VS_OUTPUT input)
 {
-    if (HasTexture(alphaMap))
-    {
-        if (getTexture(alphaMap, g_sampler, input.texCoord).r < 0.5)
-            discard;
-    }
+    if (getTexture(alphaMap, g_sampler, input.texCoord).r < 0.5)
+        discard;
 
     PS_OUT output;
     output.gPosition = float4(input.fragPos.xyz, 1);
 
-    if (HasTexture(normalMap))
+    if (use_normal_mapping)
         output.gNormal.rgb = CalcBumpedNormal(input);
     else
         output.gNormal.rgb = normalize(input.normal);
     output.gNormal.a = 1.0;
 
     output.gAmbient.rgb = light_ambient;
-    if (HasTexture(ambientMap))
-        output.gAmbient.rgb *= getTexture(ambientMap, g_sampler, input.texCoord, true).rgb;
-    else
-        output.gAmbient.rgb *= material_ambient;
+    output.gAmbient.rgb *= getTexture(ambientMap, g_sampler, input.texCoord, true).rgb;
     output.gAmbient.a = 1.0;
 
     output.gDiffuse.rgb = light_diffuse;
-    if (HasTexture(diffuseMap))
-        output.gDiffuse.rgb *= getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
-    else
-        output.gDiffuse.rgb *= material_diffuse;
+    output.gDiffuse.rgb *= getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
     output.gDiffuse.a = 1.0;
 
     output.gSpecular.rgb = light_specular;
-    if (HasTexture(specularMap))
-        output.gSpecular.rgb *= getTexture(specularMap, g_sampler, input.texCoord, true).rgb;
-    else
-        output.gSpecular.rgb *= material_specular;
-
-    if (HasTexture(shininessMap))
-        output.gSpecular.a = getTexture(shininessMap, g_sampler, input.texCoord, false).r;
-    else
-        output.gSpecular.a = material_shininess;
+    output.gSpecular.rgb *= getTexture(specularMap, g_sampler, input.texCoord, true).rgb;
+    output.gSpecular.a = getTexture(shininessMap, g_sampler, input.texCoord, false).r;
 
     return output;
 }

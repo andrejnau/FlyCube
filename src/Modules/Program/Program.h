@@ -292,6 +292,7 @@ private:
         {
             shader.UpdateShader();
         });
+        m_program_base->LinkProgram();
     }
 
     std::unique_ptr<ProgramApi> m_program_base;

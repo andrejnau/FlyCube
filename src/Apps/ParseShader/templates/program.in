@@ -72,7 +72,7 @@ public:
 {{/Samplers}}    } sampler;
 
     {{ShaderName}}(ProgramApi& program_api)
-        : ShaderBase("{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
+        : ShaderBase(type, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
         , program_api(program_api)
         , cbuffer{}
         , srv(program_api)
@@ -85,8 +85,7 @@ public:
 
     virtual void UpdateShader() override
     {
-        m_shader_buffer = CompileShader();
-        program_api.OnCompileShader(type, m_shader_buffer);
+        program_api.CompileShader(*this);
     }
 
     virtual void UseShader() override

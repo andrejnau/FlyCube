@@ -2,6 +2,7 @@
 
 #include <Context/DX11Context.h>
 #include "Program/ProgramApi.h"
+#include "Program/ShaderBase.h"
 #include "Program/BufferLayout.h"
 
 class DX11ProgramApi : public ProgramApi
@@ -10,9 +11,10 @@ public:
     DX11ProgramApi(DX11Context& context);
 
     virtual void SetMaxEvents(size_t) override;
+    virtual void LinkProgram() override;
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
-    virtual void OnCompileShader(ShaderType type, const ComPtr<ID3DBlob>& blob) override;
+    virtual void CompileShader(const ShaderBase& shader) override;
     virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
     virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
     virtual void AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buffer_layout) override;
