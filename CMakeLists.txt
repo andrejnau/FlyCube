@@ -20,4 +20,6 @@ include(${project_root}/cmake/3rdparty/gl.cmake)
 include(${project_root}/cmake/3rdparty/mustache.cmake)
 include(${project_root}/cmake/3rdparty/imgui.cmake)
 
+find_package(Vulkan REQUIRED)
+
 add_subdirectory(src)

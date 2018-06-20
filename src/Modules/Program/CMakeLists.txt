@@ -8,11 +8,13 @@ set(headers
     ProgramApi.h
     ShaderBase.h
     DXProgram.h
+    VKProgramApi.h
 )
 
 set(sources
     DX11ProgramApi.cpp
     DX12ProgramApi.cpp
+    VKProgramApi.cpp
 )
 
 add_library(${target} ${headers} ${sources})
@@ -21,12 +23,14 @@ target_include_directories(${target}
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
         "${project_root}/3rdparty/d3dx12"
+        ${Vulkan_INCLUDE_DIR}
 )
 
 target_link_libraries(${target}
     d3d11
     d3dcompiler
     Utilities
+    ${Vulkan_LIBRARIES}
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")
