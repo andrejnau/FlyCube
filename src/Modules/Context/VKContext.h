@@ -40,4 +40,8 @@ public:
     std::vector<VkImage> m_images;
     VkCommandPool m_cmd_pool;
     std::vector<VkCommandBuffer> m_cmd_bufs;
+    std::vector<VkImageView> m_image_views;
+    uint32_t presentQueueFamily = 0;
+    VkSemaphore imageAvailableSemaphore;
+    VkSemaphore renderingFinishedSemaphore;
 };

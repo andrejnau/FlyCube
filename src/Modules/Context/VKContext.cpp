@@ -117,6 +117,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
         }
         ++graphicsFamily;
     }
+    presentQueueFamily = graphicsFamily;
 
     VkDeviceQueueCreateInfo queueCreateInfo = {};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -232,7 +233,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     VkSwapchainCreateInfoKHR swapChainCreateInfo = {};
     swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     swapChainCreateInfo.surface = m_surface;
-    swapChainCreateInfo.minImageCount = 3;
+    swapChainCreateInfo.minImageCount = FrameCount;
     swapChainCreateInfo.imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
     swapChainCreateInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     swapChainCreateInfo.imageExtent = surfaceResolution;
@@ -267,10 +268,89 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     cmdBufAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
     res = vkAllocateCommandBuffers(m_device, &cmdBufAllocInfo, m_cmd_bufs.data());
+
+    m_image_views.resize(m_images.size());
+    for (size_t i = 0; i < m_images.size(); ++i)
+    {
+        VkImageViewCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = m_images[i];
+        createInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+        vkCreateImageView(m_device, &createInfo, nullptr, &m_image_views[i]);
+    }
+
     int b = 0;
 
 
-   
+    VkSemaphoreCreateInfo createInfoSemaphore = {};
+    createInfoSemaphore.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    vkCreateSemaphore(m_device, &createInfoSemaphore, nullptr, &imageAvailableSemaphore);
+    vkCreateSemaphore(m_device, &createInfoSemaphore, nullptr, &renderingFinishedSemaphore);
+
+
+
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+
+    VkClearColorValue clearColor = { 164.0f / 256.0f, 30.0f / 256.0f, 34.0f / 256.0f, 0.0f };
+    VkClearValue clearValue = {};
+    clearValue.color = clearColor;
+
+    VkImageSubresourceRange imageRange = {};
+    imageRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageRange.levelCount = 1;
+    imageRange.layerCount = 1;
+
+    for (uint32_t i = 0; i < FrameCount; ++i)
+    {
+        VkResult res = vkBeginCommandBuffer(m_cmd_bufs[i], &beginInfo);
+
+        VkImageMemoryBarrier presentToClearBarrier = {};
+        presentToClearBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        presentToClearBarrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        presentToClearBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        presentToClearBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        presentToClearBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        presentToClearBarrier.srcQueueFamilyIndex = presentQueueFamily;
+        presentToClearBarrier.dstQueueFamilyIndex = presentQueueFamily;
+        presentToClearBarrier.image = m_images[i];
+        presentToClearBarrier.subresourceRange = imageRange;
+
+        // Change layout of image to be optimal for presenting
+        VkImageMemoryBarrier clearToPresentBarrier = {};
+        clearToPresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        clearToPresentBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        clearToPresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        clearToPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        clearToPresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        clearToPresentBarrier.srcQueueFamilyIndex = presentQueueFamily;
+        clearToPresentBarrier.dstQueueFamilyIndex = presentQueueFamily;
+        clearToPresentBarrier.image = m_images[i];
+        clearToPresentBarrier.subresourceRange = imageRange;
+
+
+        vkCmdPipelineBarrier(m_cmd_bufs[i], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &presentToClearBarrier);
+
+        vkCmdClearColorImage(m_cmd_bufs[i], m_images[i], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearColor, 1, &imageRange);
+
+
+        vkCmdPipelineBarrier(m_cmd_bufs[i], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &clearToPresentBarrier);
+
+        res = vkEndCommandBuffer(m_cmd_bufs[i]);
+    }
 }
 
 std::unique_ptr<ProgramApi> VKContext::CreateProgram()
@@ -318,50 +398,6 @@ void VKContext::EndEvent()
 
 void VKContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-
-    VkClearColorValue clearColor = { 164.0f / 256.0f, 30.0f / 256.0f, 34.0f / 256.0f, 0.0f };
-    VkClearValue clearValue = {};
-    clearValue.color = clearColor;
-
-    VkImageSubresourceRange imageRange = {};
-    imageRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageRange.levelCount = 1;
-    imageRange.layerCount = 1;
-
-    VkResult res = vkBeginCommandBuffer(m_cmd_bufs[m_frame_index], &beginInfo);
-
-
-    VkImageMemoryBarrier layoutTransitionBarrier = {};
-    layoutTransitionBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    layoutTransitionBarrier.srcAccessMask = 0;
-    layoutTransitionBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-    layoutTransitionBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    layoutTransitionBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    layoutTransitionBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    layoutTransitionBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    layoutTransitionBarrier.image = m_images[m_frame_index];
-    VkImageSubresourceRange resourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-    layoutTransitionBarrier.subresourceRange = resourceRange;
-
-   /* vkCmdPipelineBarrier(m_cmd_bufs[m_frame_index],
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-        0,
-        0, NULL,
-        0, NULL,
-        1, &layoutTransitionBarrier);*/
-
-    vkCmdClearColorImage(m_cmd_bufs[m_frame_index], m_images[m_frame_index], VK_IMAGE_LAYOUT_GENERAL, &clearColor, 1, &imageRange);
-
-
-
-    res = vkEndCommandBuffer(m_cmd_bufs[m_frame_index]);
-
 }
 
 void VKContext::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
@@ -375,13 +411,19 @@ Resource::Ptr VKContext::GetBackBuffer()
 
 void VKContext::Present(const Resource::Ptr & ires)
 {
-    VkResult res = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, nullptr, nullptr, &m_frame_index);
+    VkResult res = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageAvailableSemaphore, nullptr, &m_frame_index);
 
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &m_cmd_bufs[m_frame_index];
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
+    VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    submitInfo.pWaitDstStageMask = &waitDstStageMask;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &renderingFinishedSemaphore;
 
      res = vkQueueSubmit(m_queue, 1, &submitInfo, nullptr);
 
@@ -391,6 +433,8 @@ void VKContext::Present(const Resource::Ptr & ires)
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &m_swapchain;
     presentInfo.pImageIndices = &m_frame_index;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &renderingFinishedSemaphore;
 
     res = vkQueuePresentKHR(m_queue, &presentInfo);
 }
