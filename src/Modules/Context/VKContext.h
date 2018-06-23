@@ -44,4 +44,13 @@ public:
     uint32_t presentQueueFamily = 0;
     VkSemaphore imageAvailableSemaphore;
     VkSemaphore renderingFinishedSemaphore;
+
+    VkRenderPass renderPass;
+    std::vector<VkFramebuffer> swapChainFramebuffers;
+    VkExtent2D swapChainExtent;
+    VkPipeline graphicsPipeline;
+    VkFence renderFence;
+
+
+
 };
