@@ -26,7 +26,8 @@ public:
             m_context.IASetVertexBuffer(slot, m_buffer, static_cast<uint32_t>(m_size), static_cast<uint32_t>(m_stride));
     }
 
-private:
+// FIX ME
+// private:
     Context & m_context;
     Resource::Ptr m_buffer;
     size_t m_stride;

@@ -4,7 +4,10 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vk_sdk_platform.h>
 #include "VKContext.h"
+#include "VKResource.h"
 #include <Program/VKProgramApi.h>
+#include <Geometry/IABuffer.h>
+#include <glm/glm.hpp>
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
     VkDebugReportFlagsEXT       flags,
@@ -170,6 +173,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     }
 
     auto device = physicalDevice;
+    m_physical_device = device;
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
@@ -369,7 +373,43 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
 
 
+    std::vector<glm::vec2> position =
+    {
+        { 0.0f, -0.5f },
+        { 0.5f, 0.5f },
+        { -0.5f, 0.5f }
+    };
 
+    std::vector<glm::vec3> colors = {
+        { 1.0f, 0.0f, 0.0f },
+        { 0.0f, 1.0f, 0.0f },
+        { 0.0f, 0.0f, 1.0f }
+    };
+
+    m_positions_buffer.reset(new IAVertexBuffer(*this, position));
+    m_colors_buffer.reset(new IAVertexBuffer(*this, colors));
+
+    VkVertexInputBindingDescription bindingDescription[2] = {};
+    bindingDescription[0].binding = 0;
+    bindingDescription[0].stride = sizeof(glm::vec2);
+    bindingDescription[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    bindingDescription[1].binding = 1;
+    bindingDescription[1].stride = sizeof(glm::vec3);
+    bindingDescription[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+
+    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = {};
+
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[0].offset = 0;
+
+    attributeDescriptions[1].binding = 1;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[1].offset = 0;
 
 
     swapChainExtent = { 1u*width ,1u*height };
@@ -380,8 +420,11 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+
+    vertexInputInfo.vertexBindingDescriptionCount = 2;
+    vertexInputInfo.pVertexBindingDescriptions = bindingDescription;
+    vertexInputInfo.vertexAttributeDescriptionCount = attributeDescriptions.size();
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -577,13 +620,67 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, u
     return Resource::Ptr();
 }
 
+uint32_t VKContext::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(m_physical_device, &memProperties);
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    throw std::runtime_error("failed to find suitable memory type!");
+}
+
 Resource::Ptr VKContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride)
 {
-    return Resource::Ptr();
+    VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = buffer_size;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (bind_flag & BindFlag::kVbv)
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    else
+        return Resource::Ptr();
+
+    VKResource::Ptr res = std::make_shared<VKResource>();
+
+    vkCreateBuffer(m_device, &bufferInfo, nullptr, &res->buf);
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(m_device, res->buf, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+
+    if (vkAllocateMemory(m_device, &allocInfo, nullptr, &res->bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate vertex buffer memory!");
+    }
+
+    vkBindBufferMemory(m_device, res->buf, res->bufferMemory, 0);
+    res->buffer_size = buffer_size;
+
+    return res;
 }
 
 void VKContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubresource, const void * pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch)
 {
+    if (!ires)
+        return;
+    auto res = std::static_pointer_cast<VKResource>(ires);
+
+    if (!res->bufferMemory)
+        return;
+
+    void* data;
+    vkMapMemory(m_device, res->bufferMemory, 0, res->buffer_size, 0, &data);
+    memcpy(data, pSrcData, (size_t)res->buffer_size);
+    vkUnmapMemory(m_device, res->bufferMemory);
 }
 
 void VKContext::SetViewport(float width, float height)
@@ -629,6 +726,8 @@ void VKContext::Present(const Resource::Ptr & ires)
     vkResetFences(m_device, 1, &renderFence);
 
      vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageAvailableSemaphore, nullptr, &m_frame_index);
+
+
 
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -694,6 +793,16 @@ void VKContext::Present(const Resource::Ptr & ires)
     vkCmdBeginRenderPass(m_cmd_bufs[m_frame_index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(m_cmd_bufs[m_frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+
+    {
+        VKResource::Ptr res_pos = std::static_pointer_cast<VKResource>(m_positions_buffer->m_buffer);
+        VKResource::Ptr res_color = std::static_pointer_cast<VKResource>(m_colors_buffer->m_buffer);
+
+        VkBuffer vertexBuffers[] = { res_pos->buf,  res_color->buf };
+        VkDeviceSize offsets[] = { 0,0 };
+        vkCmdBindVertexBuffers(m_cmd_bufs[m_frame_index], 0, 2, vertexBuffers, offsets);
+    }
 
     vkCmdDraw(m_cmd_bufs[m_frame_index], 3, 1, 0, 0);
 

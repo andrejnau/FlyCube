@@ -3,7 +3,7 @@
 #include "Context/Context.h"
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
-
+#include <Geometry/IABuffer.h>
 
 class VKContext : public Context
 {
@@ -12,6 +12,7 @@ public:
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) override;
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     virtual Resource::Ptr CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride) override;
     virtual void UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubresource, const void *pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch) override;
 
@@ -34,6 +35,7 @@ public:
 
     VkInstance m_instance;
     VkDevice m_device;
+    VkPhysicalDevice m_physical_device;
     VkSurfaceKHR m_surface;
     VkQueue m_queue;
     VkSwapchainKHR m_swapchain;
@@ -50,7 +52,8 @@ public:
     VkExtent2D swapChainExtent;
     VkPipeline graphicsPipeline;
     VkFence renderFence;
-
+    std::unique_ptr<IAVertexBuffer> m_positions_buffer;
+    std::unique_ptr<IAVertexBuffer> m_colors_buffer;
 
 
 };
