@@ -54,6 +54,5 @@ public:
     VkFence renderFence;
     std::unique_ptr<IAVertexBuffer> m_positions_buffer;
     std::unique_ptr<IAVertexBuffer> m_colors_buffer;
-
-
+    std::unique_ptr<IAIndexBuffer> m_indices_buffer;
 };

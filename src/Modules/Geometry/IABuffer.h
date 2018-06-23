@@ -26,8 +26,7 @@ public:
             m_context.IASetVertexBuffer(slot, m_buffer, static_cast<uint32_t>(m_size), static_cast<uint32_t>(m_stride));
     }
 
-// FIX ME
-// private:
+private:
     Context & m_context;
     Resource::Ptr m_buffer;
     size_t m_stride;
@@ -43,7 +42,9 @@ public:
         : m_context(context)
         , m_format(format)
         , m_offset(0)
-        , m_size(v.size() * sizeof(v.front()))
+        , m_count(v.size())
+        , m_size(m_count * sizeof(v.front()))
+
     {
         m_buffer = m_context.CreateBuffer(BindFlag::kIbv, static_cast<uint32_t>(m_size), 0);
         if (m_buffer)
@@ -56,10 +57,16 @@ public:
             m_context.IASetIndexBuffer(m_buffer, static_cast<uint32_t>(m_size), m_format);
     }
 
+    size_t Count() const
+    {
+        return m_count;
+    }
+
 private:
     Context & m_context;
     Resource::Ptr m_buffer;
     size_t m_offset;
+    size_t m_count;
     size_t m_size;
     DXGI_FORMAT m_format;
 };

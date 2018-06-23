@@ -345,6 +345,11 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     m_image_views.resize(m_images.size());
     for (size_t i = 0; i < m_images.size(); ++i)
     {
+        VkCommandBufferBeginInfo beginInfo = {};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+        VkResult res = vkBeginCommandBuffer(m_cmd_bufs[i], &beginInfo);
+
         VkImageViewCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         createInfo.image = m_images[i];
@@ -388,6 +393,12 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
     m_positions_buffer.reset(new IAVertexBuffer(*this, position));
     m_colors_buffer.reset(new IAVertexBuffer(*this, colors));
+
+    const std::vector<uint16_t> indices = {
+        0, 1, 2,
+    };
+
+    m_indices_buffer.reset(new IAIndexBuffer(*this, indices, DXGI_FORMAT_R16_UINT));
 
     VkVertexInputBindingDescription bindingDescription[2] = {};
     bindingDescription[0].binding = 0;
@@ -642,6 +653,8 @@ Resource::Ptr VKContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, 
 
     if (bind_flag & BindFlag::kVbv)
         bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    else if(bind_flag & BindFlag::kIbv)
+        bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     else
         return Resource::Ptr();
 
@@ -691,12 +704,18 @@ void VKContext::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t
 {
 }
 
-void VKContext::IASetIndexBuffer(Resource::Ptr res, uint32_t SizeInBytes, DXGI_FORMAT Format)
+void VKContext::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, DXGI_FORMAT Format)
 {
+    VKResource::Ptr res = std::static_pointer_cast<VKResource>(ires);
+    vkCmdBindIndexBuffer(m_cmd_bufs[m_frame_index], res->buf, 0, VK_INDEX_TYPE_UINT16);
 }
 
-void VKContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr res, uint32_t SizeInBytes, uint32_t Stride)
+void VKContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t SizeInBytes, uint32_t Stride)
 {
+    VKResource::Ptr res = std::static_pointer_cast<VKResource>(ires);
+    VkBuffer vertexBuffers[] = { res->buf };
+    VkDeviceSize offsets[] = { 0 };
+    vkCmdBindVertexBuffers(m_cmd_bufs[m_frame_index], slot, 1, vertexBuffers, offsets);
 }
 
 void VKContext::BeginEvent(LPCWSTR Name)
@@ -722,16 +741,13 @@ Resource::Ptr VKContext::GetBackBuffer()
 
 void VKContext::Present(const Resource::Ptr & ires)
 {
-    vkWaitForFences(m_device, 1, &renderFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(m_device, 1, &renderFence);
+  
 
      vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageAvailableSemaphore, nullptr, &m_frame_index);
 
 
 
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+  
 
 
     VkClearColorValue clearColor = { 164.0f / 256.0f, 30.0f / 256.0f, 34.0f / 256.0f, 0.0f };
@@ -743,7 +759,6 @@ void VKContext::Present(const Resource::Ptr & ires)
     imageRange.levelCount = 1;
     imageRange.layerCount = 1;
 
-    VkResult res = vkBeginCommandBuffer(m_cmd_bufs[m_frame_index], &beginInfo);
 
     VkImageMemoryBarrier presentToClearBarrier = {};
     presentToClearBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -795,23 +810,18 @@ void VKContext::Present(const Resource::Ptr & ires)
     vkCmdBindPipeline(m_cmd_bufs[m_frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
 
-    {
-        VKResource::Ptr res_pos = std::static_pointer_cast<VKResource>(m_positions_buffer->m_buffer);
-        VKResource::Ptr res_color = std::static_pointer_cast<VKResource>(m_colors_buffer->m_buffer);
+    m_positions_buffer->BindToSlot(0);
+    m_colors_buffer->BindToSlot(1);
+    m_indices_buffer->Bind();
 
-        VkBuffer vertexBuffers[] = { res_pos->buf,  res_color->buf };
-        VkDeviceSize offsets[] = { 0,0 };
-        vkCmdBindVertexBuffers(m_cmd_bufs[m_frame_index], 0, 2, vertexBuffers, offsets);
-    }
-
-    vkCmdDraw(m_cmd_bufs[m_frame_index], 3, 1, 0, 0);
+    vkCmdDrawIndexed(m_cmd_bufs[m_frame_index], m_indices_buffer->Count(), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(m_cmd_bufs[m_frame_index]);
 
 
 
 
-    res = vkEndCommandBuffer(m_cmd_bufs[m_frame_index]);
+    auto res = vkEndCommandBuffer(m_cmd_bufs[m_frame_index]);
 
 
 
@@ -842,6 +852,17 @@ void VKContext::Present(const Resource::Ptr & ires)
     presentInfo.pWaitSemaphores = &renderingFinishedSemaphore;
 
     res = vkQueuePresentKHR(m_queue, &presentInfo);
+
+
+    vkWaitForFences(m_device, 1, &renderFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(m_device, 1, &renderFence);
+
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    res = vkBeginCommandBuffer(m_cmd_bufs[m_frame_index], &beginInfo);
+
+ 
 }
 
 void VKContext::ResizeBackBuffer(int width, int height)
