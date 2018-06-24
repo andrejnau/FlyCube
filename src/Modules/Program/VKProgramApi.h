@@ -28,7 +28,16 @@ public:
     virtual void SetDepthStencilState(const DepthStencilDesc& desc) override;
 
 private:
+
+    void CreateInputLayout(
+        const std::vector<uint32_t>& spirv_binary,
+        std::vector<VkVertexInputBindingDescription>& binding_desc,
+        std::vector<VkVertexInputAttributeDescription>& attribute_desc);
+
     VKContext & m_context;
+    std::map<ShaderType, std::vector<uint8_t>> m_spirv;
     std::map<ShaderType, VkShaderModule> m_shaders;
     std::map<ShaderType, std::string> m_shaders_info;
+
+    VkPipeline graphicsPipeline;
 };

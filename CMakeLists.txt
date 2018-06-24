@@ -19,7 +19,7 @@ include(${project_root}/cmake/3rdparty/gli.cmake)
 include(${project_root}/cmake/3rdparty/gl.cmake)
 include(${project_root}/cmake/3rdparty/mustache.cmake)
 include(${project_root}/cmake/3rdparty/imgui.cmake)
-
-find_package(Vulkan REQUIRED)
+include(${project_root}/cmake/3rdparty/spirv-cross.cmake)
+include(${project_root}/cmake/3rdparty/vulkan.cmake)
 
 add_subdirectory(src)

@@ -426,7 +426,36 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     swapChainExtent = { 1u*width ,1u*height };
 
 
-    VkPipelineLayout pipelineLayout;
+
+
+    VkDescriptorSetLayoutBinding uboLayoutBinding = {};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &uboLayoutBinding;
+
+    VkDescriptorSetLayout descriptorSetLayout;
+    if (vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+
+    VkDescriptorSetLayout setLayouts[] = { descriptorSetLayout };
+
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = setLayouts;
+    pipelineLayoutInfo.pushConstantRangeCount = 0;
+
+    res = vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &pipelineLayout);
 
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
@@ -490,14 +519,6 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     colorBlending.blendConstants[1] = 0.0f;
     colorBlending.blendConstants[2] = 0.0f;
     colorBlending.blendConstants[3] = 0.0f;
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-
-    res = vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &pipelineLayout);
-
 
     VkAttachmentDescription colorAttachment = {};
     colorAttachment.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -618,7 +639,67 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     vkCreateFence(m_device, &fenceCreateInfo, NULL, &renderFence);
 
+
+    struct UniformBufferObject {
+        glm::mat4 model = glm::mat4(1);
+        glm::mat4 view = glm::mat4(1);
+        glm::mat4 proj = glm::mat4(1);
+    } cbv_val;
+
+    auto cbv = CreateBuffer(BindFlag::kCbv, sizeof(UniformBufferObject), 0);
+    UpdateSubresource(cbv, 0, &cbv_val, 0, 0);
+
+
+    VkDescriptorPoolSize poolSize = {};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = 1;
+
+    VkDescriptorPool descriptorPool;
+    if (vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+
+
+    VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
+    VkDescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = layouts;
+
+    if (vkAllocateDescriptorSets(m_device, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor set!");
+    }
+
+
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = std::static_pointer_cast<VKResource>(cbv)->buf;
+    bufferInfo.offset = 0;
+    bufferInfo.range = sizeof(UniformBufferObject);
+
+    VkWriteDescriptorSet descriptorWrite = {};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = descriptorSet;
+    descriptorWrite.dstBinding = 0;
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrite.descriptorCount = 1;
+
+    descriptorWrite.pBufferInfo = &bufferInfo;
+    descriptorWrite.pImageInfo = nullptr; // Optional
+    descriptorWrite.pTexelBufferView = nullptr; // Optional
+
+    vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
+
+
     int bb = 0;
+
 }
 
 std::unique_ptr<ProgramApi> VKContext::CreateProgram()
@@ -655,6 +736,8 @@ Resource::Ptr VKContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, 
         bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     else if(bind_flag & BindFlag::kIbv)
         bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    else if (bind_flag & BindFlag::kCbv)
+        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     else
         return Resource::Ptr();
 
@@ -728,6 +811,8 @@ void VKContext::EndEvent()
 
 void VKContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
+    // m_current_program->ApplyBindings();
+   // vkCmdDrawIndexed(m_cmd_bufs[m_frame_index], m_indices_buffer->Count(), 1, StartIndexLocation, BaseVertexLocation, 0);
 }
 
 void VKContext::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
@@ -814,18 +899,13 @@ void VKContext::Present(const Resource::Ptr & ires)
     m_colors_buffer->BindToSlot(1);
     m_indices_buffer->Bind();
 
+    vkCmdBindDescriptorSets(m_cmd_bufs[m_frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+
     vkCmdDrawIndexed(m_cmd_bufs[m_frame_index], m_indices_buffer->Count(), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(m_cmd_bufs[m_frame_index]);
 
-
-
-
     auto res = vkEndCommandBuffer(m_cmd_bufs[m_frame_index]);
-
-
-
-
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -838,10 +918,7 @@ void VKContext::Present(const Resource::Ptr & ires)
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &renderingFinishedSemaphore;
 
-     res = vkQueueSubmit(m_queue, 1, &submitInfo, renderFence);
-
-   
-
+    res = vkQueueSubmit(m_queue, 1, &submitInfo, renderFence);
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
