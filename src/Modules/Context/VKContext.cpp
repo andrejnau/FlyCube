@@ -8,6 +8,7 @@
 #include <Program/VKProgramApi.h>
 #include <Geometry/IABuffer.h>
 #include <glm/glm.hpp>
+#include <gli/gli.hpp>
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
     VkDebugReportFlagsEXT       flags,
@@ -200,6 +201,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     queueCreateInfo.pQueuePriorities = &queuePriority;
 
     VkPhysicalDeviceFeatures deviceFeatures = {};
+    deviceFeatures.textureCompressionBC = true;
 
     VkDeviceCreateInfo createInfo2 = {};
     createInfo2.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -709,7 +711,78 @@ std::unique_ptr<ProgramApi> VKContext::CreateProgram()
 
 Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
-    return Resource::Ptr();
+    VKResource::Ptr res = std::make_shared<VKResource>();
+
+    auto createImage = [this](int width, int height, int depth, int mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+        VkImage& image, VkDeviceMemory& imageMemory, size_t size)
+    {
+        VkImageCreateInfo imageInfo = {};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width = width;
+        imageInfo.extent.height = height;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = mip_levels;
+        imageInfo.arrayLayers = depth;
+        imageInfo.format = format;
+        imageInfo.tiling = tiling;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+        imageInfo.usage = usage;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateImage(m_device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create image!");
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetImageMemoryRequirements(m_device, image, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+        if (vkAllocateMemory(m_device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate image memory!");
+        }
+
+        vkBindImageMemory(m_device, image, imageMemory, 0);
+
+        size = allocInfo.allocationSize;
+    };
+
+    createImage(
+        width,
+        height,
+        depth,
+        mip_levels,
+        static_cast<VkFormat>(gli::dx().find(gli::dx::D3DFMT_DX10, static_cast<gli::dx::dxgi_format_dds>(format))),
+        VK_IMAGE_TILING_LINEAR,
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        res->tmp_image,
+        res->tmp_image_memory, res->buffer_size);
+
+    res->size.height = height;
+    res->size.width = width;
+
+
+    createImage(
+        width,
+        height,
+        depth,
+        mip_levels,
+        static_cast<VkFormat>(gli::dx().find(gli::dx::D3DFMT_DX10, static_cast<gli::dx::dxgi_format_dds>(format))),
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        res->image,
+        res->image_memory,
+        res->buffer_size
+    );
+
+    return res;
 }
 
 uint32_t VKContext::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
@@ -770,13 +843,49 @@ void VKContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubres
         return;
     auto res = std::static_pointer_cast<VKResource>(ires);
 
-    if (!res->bufferMemory)
-        return;
+    if (res->bufferMemory)
+    {
+        void* data;
+        vkMapMemory(m_device, res->bufferMemory, 0, res->buffer_size, 0, &data);
+        memcpy(data, pSrcData, (size_t)res->buffer_size);
+        vkUnmapMemory(m_device, res->bufferMemory);
+    }
 
-    void* data;
-    vkMapMemory(m_device, res->bufferMemory, 0, res->buffer_size, 0, &data);
-    memcpy(data, pSrcData, (size_t)res->buffer_size);
-    vkUnmapMemory(m_device, res->bufferMemory);
+    if (res->tmp_image)
+    {
+        void* data;
+        vkMapMemory(m_device, res->tmp_image_memory, 0, res->buffer_size, 0, &data);
+
+        VkImageSubresource subresource = {};
+        subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresource.mipLevel = DstSubresource;
+        subresource.arrayLayer = 0;
+
+        VkSubresourceLayout stagingImageLayout = {};
+        vkGetImageSubresourceLayout(m_device, res->tmp_image, &subresource, &stagingImageLayout);
+
+        if (stagingImageLayout.rowPitch == SrcRowPitch) {
+            memcpy(data, pSrcData, (size_t)stagingImageLayout.size);
+        }
+        else
+        {
+            uint8_t* dataBytes = reinterpret_cast<uint8_t*>(data);
+            const uint8_t* pixels = reinterpret_cast<const uint8_t*>(pSrcData);
+
+
+            for (int y = 0; y < res->size.height; ++y) 
+            {
+                memcpy(
+                    &dataBytes[y * stagingImageLayout.rowPitch],
+                    pixels + y * SrcRowPitch,
+                    SrcRowPitch
+                );
+            }
+
+        }
+
+        vkUnmapMemory(m_device, res->tmp_image_memory);
+    }
 }
 
 void VKContext::SetViewport(float width, float height)
