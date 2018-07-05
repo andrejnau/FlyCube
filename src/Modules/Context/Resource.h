@@ -15,4 +15,10 @@ public:
     virtual ~Resource() = default;
     virtual void SetName(const std::string& name) = 0;
     using Ptr = std::shared_ptr<Resource>;
+
+    template<typename T>
+    T& Query()
+    {
+        return static_cast<T&>(*this);
+    }
 };

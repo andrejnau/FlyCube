@@ -7,6 +7,7 @@
 #include "VKResource.h"
 #include <Program/VKProgramApi.h>
 #include <Geometry/IABuffer.h>
+#include <Texture/TextureLoader.h>
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
 
@@ -379,30 +380,40 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     vkCreateSemaphore(m_device, &createInfoSemaphore, nullptr, &renderingFinishedSemaphore);
 
 
-
     std::vector<glm::vec2> position =
     {
-        { 0.0f, -0.5f },
-        { 0.5f, 0.5f },
-        { -0.5f, 0.5f }
+         { -0.5f, -0.5f },
+         { 0.5f, -0.5f },
+         { 0.5f, 0.5f },
+         { -0.5f, 0.5f }
     };
 
     std::vector<glm::vec3> colors = {
         { 1.0f, 0.0f, 0.0f },
         { 0.0f, 1.0f, 0.0f },
-        { 0.0f, 0.0f, 1.0f }
+        { 0.0f, 0.0f, 1.0f },
+        { 1.0f, 1.0f, 1.0f },
+    };
+
+    std::vector<glm::vec2> texcoords = {
+        { 0.0f, 0.0f },
+        { 1.0f, 0.0f },
+        { 1.0f, 1.0f },
+        { 0.0f, 1.0f }
     };
 
     m_positions_buffer.reset(new IAVertexBuffer(*this, position));
     m_colors_buffer.reset(new IAVertexBuffer(*this, colors));
+    m_tex_coords_buffer.reset(new IAVertexBuffer(*this, texcoords));
 
     const std::vector<uint16_t> indices = {
         0, 1, 2,
+        2, 3, 0
     };
 
     m_indices_buffer.reset(new IAIndexBuffer(*this, indices, DXGI_FORMAT_R16_UINT));
 
-    VkVertexInputBindingDescription bindingDescription[2] = {};
+    VkVertexInputBindingDescription bindingDescription[3] = {};
     bindingDescription[0].binding = 0;
     bindingDescription[0].stride = sizeof(glm::vec2);
     bindingDescription[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -411,8 +422,12 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     bindingDescription[1].stride = sizeof(glm::vec3);
     bindingDescription[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
+    bindingDescription[2].binding = 2;
+    bindingDescription[2].stride = sizeof(glm::vec2);
+    bindingDescription[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = {};
+
+    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = {};
 
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
@@ -425,9 +440,13 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     attributeDescriptions[1].offset = 0;
 
 
+    attributeDescriptions[2].binding = 2;
+    attributeDescriptions[2].location = 2;
+    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[2].offset = 0;
+
+
     swapChainExtent = { 1u*width ,1u*height };
-
-
 
 
     VkDescriptorSetLayoutBinding uboLayoutBinding = {};
@@ -438,10 +457,19 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
 
+    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+    samplerLayoutBinding.binding = 1;
+    samplerLayoutBinding.descriptorCount = 1;
+    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.pImmutableSamplers = nullptr;
+    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &uboLayoutBinding;
+    layoutInfo.bindingCount = bindings.size();
+    layoutInfo.pBindings = bindings.data();
 
     VkDescriptorSetLayout descriptorSetLayout;
     if (vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
@@ -463,7 +491,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    vertexInputInfo.vertexBindingDescriptionCount = 2;
+    vertexInputInfo.vertexBindingDescriptionCount = 3;
     vertexInputInfo.pVertexBindingDescriptions = bindingDescription;
     vertexInputInfo.vertexAttributeDescriptionCount = attributeDescriptions.size();
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
@@ -652,14 +680,63 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     UpdateSubresource(cbv, 0, &cbv_val, 0, 0);
 
 
-    VkDescriptorPoolSize poolSize = {};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = 1;
+    {
+        int bb = 0;
+
+        m_texture = ::CreateTexture(*this, GetAssetFullPath("\\model\\sponza\\textures_raw\\sponza_fabric_blue_diff.dds"));
+        auto vk_image = m_texture->Query<VKResource>();
+
+
+        VkImageViewCreateInfo viewInfo = {};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = vk_image.image;
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = vk_image.format;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(m_device, &viewInfo, nullptr, &m_srv) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create texture image view!");
+        }
+
+
+        VkSamplerCreateInfo samplerInfo = {};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.anisotropyEnable = VK_TRUE;
+        samplerInfo.maxAnisotropy = 16;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = 0.0f;
+
+        if (vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create texture sampler!");
+        }
+    }
+
+
+    std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[0].descriptorCount = 1;
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[1].descriptorCount = 1;
 
     VkDescriptorPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.poolSizeCount = poolSizes.size();
+    poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = 1;
 
     VkDescriptorPool descriptorPool;
@@ -685,22 +762,33 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     bufferInfo.offset = 0;
     bufferInfo.range = sizeof(UniformBufferObject);
 
-    VkWriteDescriptorSet descriptorWrite = {};
-    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrite.dstSet = descriptorSet;
-    descriptorWrite.dstBinding = 0;
-    descriptorWrite.dstArrayElement = 0;
-    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorWrite.descriptorCount = 1;
+    VkDescriptorImageInfo imageInfo = {};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = m_srv;
+    imageInfo.sampler = m_sampler;
 
-    descriptorWrite.pBufferInfo = &bufferInfo;
-    descriptorWrite.pImageInfo = nullptr; // Optional
-    descriptorWrite.pTexelBufferView = nullptr; // Optional
+    std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
 
-    vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
+    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[0].dstSet = descriptorSet;
+    descriptorWrites[0].dstBinding = 0;
+    descriptorWrites[0].dstArrayElement = 0;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrites[0].descriptorCount = 1;
+    descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[1].dstSet = descriptorSet;
+    descriptorWrites[1].dstBinding = 1;
+    descriptorWrites[1].dstArrayElement = 0;
+    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[1].descriptorCount = 1;
+    descriptorWrites[1].pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 
 
-    int bb = 0;
+
 
 }
 
@@ -766,7 +854,8 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, u
 
     res->size.height = height;
     res->size.width = width;
-
+    res->format = static_cast<VkFormat>(gli::dx().find(gli::dx::D3DFMT_DX10, static_cast<gli::dx::dxgi_format_dds>(format)));
+    res->levelCount = mip_levels;
 
     createImage(
         width,
@@ -873,7 +962,7 @@ void VKContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubres
             const uint8_t* pixels = reinterpret_cast<const uint8_t*>(pSrcData);
 
 
-            for (int y = 0; y < res->size.height; ++y) 
+            for (int y = 0; y < (res->size.height >> DstSubresource); ++y)
             {
                 memcpy(
                     &dataBytes[y * stagingImageLayout.rowPitch],
@@ -939,7 +1028,78 @@ void VKContext::Present(const Resource::Ptr & ires)
 
      vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageAvailableSemaphore, nullptr, &m_frame_index);
 
+     auto transitionImageLayout = [&](VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+     {
+         VkImageMemoryBarrier barrier = {};
+         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+         barrier.oldLayout = oldLayout;
+         barrier.newLayout = newLayout;
+         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+         barrier.image = image;
+         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+         barrier.subresourceRange.baseMipLevel = 0;
+         barrier.subresourceRange.levelCount = 1;
+         barrier.subresourceRange.baseArrayLayer = 0;
+         barrier.subresourceRange.layerCount = 1;
 
+         if (oldLayout == VK_IMAGE_LAYOUT_PREINITIALIZED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+             barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+             barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+         }
+         else if (oldLayout == VK_IMAGE_LAYOUT_PREINITIALIZED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+             barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+             barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+         }
+         else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+         }
+         else {
+             throw std::invalid_argument("unsupported layout transition!");
+         }
+
+         vkCmdPipelineBarrier(
+             m_cmd_bufs[m_frame_index],
+             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+             0,
+             0, nullptr,
+             0, nullptr,
+             1, &barrier
+         );
+     };
+
+     {
+         VkImageSubresourceLayers subResource = {};
+         subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+         subResource.baseArrayLayer = 0;
+         subResource.mipLevel = 0;
+         subResource.layerCount = 1;
+
+         VkImageCopy region = {};
+         region.srcSubresource = subResource;
+         region.dstSubresource = subResource;
+         region.srcOffset = { 0, 0, 0 };
+         region.dstOffset = { 0, 0, 0 };
+         region.extent.width = 1024;
+         region.extent.height = 1024;
+         region.extent.depth = 1;
+
+
+         auto& img = m_texture->Query<VKResource>();
+
+         transitionImageLayout(img.tmp_image, img.format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+         transitionImageLayout(img.image, img.format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+         vkCmdCopyImage(
+             m_cmd_bufs[m_frame_index],
+             img.tmp_image,  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+             img.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+             1, &region
+         );
+
+         transitionImageLayout(img.image, img.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+     }
 
   
 
@@ -1006,6 +1166,7 @@ void VKContext::Present(const Resource::Ptr & ires)
 
     m_positions_buffer->BindToSlot(0);
     m_colors_buffer->BindToSlot(1);
+    m_tex_coords_buffer->BindToSlot(2);
     m_indices_buffer->Bind();
 
     vkCmdBindDescriptorSets(m_cmd_bufs[m_frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);

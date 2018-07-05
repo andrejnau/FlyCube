@@ -16,7 +16,9 @@ public:
 
     VkDeviceMemory image_memory;
 
-    VkExtent2D size;
+    VkExtent2D size = {};
+    VkFormat format;
+    size_t levelCount = 0;
 
     virtual void SetName(const std::string& name) override
     {

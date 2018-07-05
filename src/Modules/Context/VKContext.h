@@ -54,7 +54,12 @@ public:
     VkFence renderFence;
     std::unique_ptr<IAVertexBuffer> m_positions_buffer;
     std::unique_ptr<IAVertexBuffer> m_colors_buffer;
+    std::unique_ptr<IAVertexBuffer> m_tex_coords_buffer;
     std::unique_ptr<IAIndexBuffer> m_indices_buffer;
     VkDescriptorSet descriptorSet;
     VkPipelineLayout pipelineLayout;
+    Resource::Ptr m_texture;
+
+    VkImageView m_srv;
+    VkSampler m_sampler;
 };
