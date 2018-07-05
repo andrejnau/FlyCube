@@ -111,20 +111,6 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
         VK_KHR_WIN32_SURFACE_EXTENSION_NAME
     };
 
-    const char* pInstLayers[] = {
-        "VK_LAYER_LUNARG_standard_validation"
-    };
-
-    VkInstanceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledExtensionCount = _countof(pInstExt);
-    createInfo.ppEnabledExtensionNames = pInstExt;
-    createInfo.enabledLayerCount = _countof(pInstLayers);
-    createInfo.ppEnabledLayerNames = pInstLayers;
-
-    VkResult result = vkCreateInstance(&createInfo, nullptr, &m_instance);
-
 
     uint32_t layerCount = 0;
     vkEnumerateInstanceLayerProperties(&layerCount, NULL);
@@ -134,12 +120,25 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     std::vector<VkLayerProperties> layersAvailable(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, layersAvailable.data());
 
-    bool foundValidation = false;
+    std::vector<const char*> pInstLayers;
+
     for (int i = 0; i < layerCount; ++i) {
         if (strcmp(layersAvailable[i].layerName, "VK_LAYER_LUNARG_standard_validation") == 0) {
-            foundValidation = true;
+            pInstLayers.push_back("VK_LAYER_LUNARG_standard_validation");
         }
     }
+
+    VkInstanceCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
+    createInfo.enabledExtensionCount = _countof(pInstExt);
+    createInfo.ppEnabledExtensionNames = pInstExt;
+    createInfo.enabledLayerCount = pInstLayers.size();
+    createInfo.ppEnabledLayerNames = pInstLayers.data();
+
+    VkResult result = vkCreateInstance(&createInfo, nullptr, &m_instance);
+
+
 
 #if 1
     VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
