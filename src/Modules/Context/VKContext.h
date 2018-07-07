@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #include <Geometry/IABuffer.h>
+#include <assimp/postprocess.h>
 
 struct VKProgramApi;
 class VKContext : public Context
@@ -12,6 +13,7 @@ public:
     VKContext(GLFWwindow* window, int width, int height);
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
+    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) override;
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     virtual Resource::Ptr CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride) override;
@@ -35,6 +37,19 @@ public:
 
     virtual void ResizeBackBuffer(int width, int height) override;
 
+    virtual uint32_t GetWorkaroundAssimpFlags() override
+    {
+        return ~aiProcess_FlipWindingOrder;
+    }
+
+    virtual glm::mat4 GetClipMatrix() override
+    {
+        return  glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
+            +0.0f, -1.0f, 0.0f, 0.0f,
+            +0.0f, 0.0f, 0.5f, 0.0f,
+            +0.0f, 0.0f, 0.5f, 1.0f);
+    }
+
     void UseProgram(VKProgramApi& program_api);
     VKProgramApi* m_current_program = nullptr;
 
@@ -51,19 +66,8 @@ public:
     uint32_t presentQueueFamily = 0;
     VkSemaphore imageAvailableSemaphore;
     VkSemaphore renderingFinishedSemaphore;
-
-    VkRenderPass renderPass;
-    std::vector<VkFramebuffer> swapChainFramebuffers;
-    VkExtent2D swapChainExtent;
-    VkPipeline graphicsPipeline;
     VkFence renderFence;
-    std::unique_ptr<IAVertexBuffer> m_positions_buffer;
-    std::unique_ptr<IAVertexBuffer> m_colors_buffer;
-    std::unique_ptr<IAVertexBuffer> m_tex_coords_buffer;
-    std::unique_ptr<IAIndexBuffer> m_indices_buffer;
-    VkDescriptorSet descriptorSet;
-    VkPipelineLayout pipelineLayout;
-    Resource::Ptr m_texture;
+ 
 
     VkImageView m_srv;
     VkSampler m_sampler;

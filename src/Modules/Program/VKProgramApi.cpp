@@ -6,6 +6,7 @@
 
 VKProgramApi::VKProgramApi(VKContext& context)
     : m_context(context)
+    , m_descriptor_sets(context)
 {
 }
 
@@ -78,34 +79,31 @@ void VKProgramApi::CreateGrPipiLine()
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     VkExtent2D swapChainExtent = { 1280, 720 };
-    VkViewport viewport = {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = (float)swapChainExtent.width;
-    viewport.height = (float)swapChainExtent.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    VkRect2D scissor = {};
-    scissor.offset = { 0, 0 };
-    scissor.extent = swapChainExtent;
 
     VkPipelineViewportStateCreateInfo viewportState = {};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1;
-    viewportState.pViewports = &viewport;
     viewportState.scissorCount = 1;
-    viewportState.pScissors = &scissor;
 
     VkPipelineRasterizationStateCreateInfo rasterizer = {};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterizer.depthBiasEnable = VK_FALSE;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = VK_FALSE;
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(m_rtv.size() - 1, colorBlendAttachment);
+
+    VkPipelineColorBlendStateCreateInfo colorBlending = {};
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable = VK_FALSE;
+    colorBlending.logicOp = VK_LOGIC_OP_COPY;
+    colorBlending.attachmentCount = colorBlendAttachments.size();
+    colorBlending.pAttachments = colorBlendAttachments.data();
 
     VkPipelineMultisampleStateCreateInfo multisampling = {};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -116,13 +114,9 @@ void VKProgramApi::CreateGrPipiLine()
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_TRUE;
     depthStencil.depthWriteEnable = VK_TRUE;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
     depthStencil.stencilTestEnable = VK_FALSE;
-
-    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_FALSE;
 
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = shaderStageCreateInfo.size();
@@ -134,6 +128,7 @@ void VKProgramApi::CreateGrPipiLine()
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pDepthStencilState = &depthStencil;
+    pipelineInfo.pColorBlendState = &colorBlending;
 
     pipelineInfo.layout = m_pipeline_layout;
 
@@ -141,6 +136,18 @@ void VKProgramApi::CreateGrPipiLine()
     pipelineInfo.subpass = 0;
 
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+
+
+    std::vector<VkDynamicState> dynamicStateEnables = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR
+    };
+    VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
+    pipelineDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    pipelineDynamicStateCreateInfo.pDynamicStates = dynamicStateEnables.data();
+    pipelineDynamicStateCreateInfo.dynamicStateCount = dynamicStateEnables.size();
+
+    pipelineInfo.pDynamicState = &pipelineDynamicStateCreateInfo;
 
     if (vkCreateGraphicsPipelines(m_context.m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to vkCreateGraphicsPipelines");
@@ -186,8 +193,9 @@ void VKProgramApi::ApplyBindings()
     CreateGrPipiLine();
 
     vkCmdBindPipeline(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
     vkCmdBindDescriptorSets(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 
-        m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
+        m_descriptor_sets.get().size(), m_descriptor_sets.get().data(), 0, nullptr);
 
     {
         VkFramebufferCreateInfo framebufferInfo = {};
@@ -215,9 +223,18 @@ void VKProgramApi::RenderPassBegin()
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = m_rtv_size[0];
 
-    VkClearValue clearColor2 = { 1.0f, 0.0f, 0.0f, 1.0f };
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor2;
+    VkClearColorValue clearColor = { 0.0f, 0.2f, 0.4f, 1.0f };
+    std::vector<VkClearValue> clearValues(m_rtv.size() - 1);
+    for (int i = 0; i < clearValues.size(); ++i)
+    {
+        clearValues[i].color = clearColor;
+    }
+    clearValues.emplace_back();
+    clearValues.back().depthStencil = { 1.0f, 0 };
+
+    renderPassInfo.clearValueCount = clearValues.size();
+    renderPassInfo.pClearValues = clearValues.data();
+
     vkCmdBeginRenderPass(m_context.m_cmd_bufs[m_context.GetFrameIndex()], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
@@ -278,6 +295,7 @@ std::vector<uint8_t> VKProgramApi::hlsl2spirv(const ShaderBase& shader)
     std::string cmd = "C:\\VulkanSDK\\1.1.73.0\\Bin\\glslangValidator.exe";
     cmd += " --auto-map-bindings --hlsl-iomap ";
     cmd += " --resource-set-binding " + std::to_string(GetSetNumByShaderType(shader.type)) + " ";
+    cmd += " -g ";
     cmd += " -e ";
     cmd += shader.entrypoint;
     cmd += " -S ";
@@ -510,26 +528,31 @@ void VKProgramApi::ParseShaders()
         pool_size.descriptorCount = it.second;
     }
 
-    VkDescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = pool_sizes.size();
-    poolInfo.pPoolSizes = pool_sizes.data();
-    poolInfo.maxSets = descriptor_set_layouts.size();
+  
+    for (int i = 0; i < m_context.FrameCount; ++i)
+    {
+        VkDescriptorPoolCreateInfo poolInfo = {};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount = pool_sizes.size();
+        poolInfo.pPoolSizes = pool_sizes.data();
+        poolInfo.maxSets = descriptor_set_layouts.size();
 
-    VkDescriptorPool descriptorPool;
-    if (vkCreateDescriptorPool(m_context.m_device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
+        VkDescriptorPool descriptorPool;
+        if (vkCreateDescriptorPool(m_context.m_device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor pool!");
+        }
 
 
-    VkDescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = descriptor_set_layouts.size();
-    allocInfo.pSetLayouts = descriptor_set_layouts.data();
-    m_descriptor_sets.resize(allocInfo.descriptorSetCount);
-    if (vkAllocateDescriptorSets(m_context.m_device, &allocInfo, m_descriptor_sets.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate descriptor set!");
+        VkDescriptorSetAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = descriptorPool;
+        allocInfo.descriptorSetCount = descriptor_set_layouts.size();
+        allocInfo.pSetLayouts = descriptor_set_layouts.data();
+
+        m_descriptor_sets[i].resize(allocInfo.descriptorSetCount);
+        if (vkAllocateDescriptorSets(m_context.m_device, &allocInfo, m_descriptor_sets[i].data()) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate descriptor set!");
+        }
     }
 }
 
@@ -583,7 +606,7 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
         auto& descriptorWrite = descriptorWrites.back();
 
         descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = m_descriptor_sets[GetSetNumByShaderType(type)];
+        descriptorWrite.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
         descriptorWrite.dstBinding = ref_res.binding;
         descriptorWrite.dstArrayElement = 0;
         descriptorWrite.descriptorType = ref_res.descriptor_type;
@@ -594,36 +617,39 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
     }
     case spv::Dim::DimCube:
     {
-        VkImageViewCreateInfo viewInfo = {};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = res.image;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-        viewInfo.format = res.format;
-        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 6;
+        if (0)
+        {
+            VkImageViewCreateInfo viewInfo = {};
+            viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            viewInfo.image = res.image;
+            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+            viewInfo.format = res.format;
+            viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            viewInfo.subresourceRange.baseMipLevel = 0;
+            viewInfo.subresourceRange.levelCount = 1;
+            viewInfo.subresourceRange.baseArrayLayer = 0;
+            viewInfo.subresourceRange.layerCount = 6;
 
-        VkImageView srv;
-        if (vkCreateImageView(m_context.m_device, &viewInfo, nullptr, &srv) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture image view!");
+            VkImageView srv;
+            if (vkCreateImageView(m_context.m_device, &viewInfo, nullptr, &srv) != VK_SUCCESS) {
+                throw std::runtime_error("failed to create texture image view!");
+            }
+
+            VkDescriptorImageInfo imageInfo = {};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = srv;
+
+            descriptorWrites.emplace_back();
+            auto& descriptorWrite = descriptorWrites.back();
+
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
+            descriptorWrite.dstBinding = ref_res.binding;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = ref_res.descriptor_type;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pImageInfo = &imageInfo;
         }
-
-        VkDescriptorImageInfo imageInfo = {};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = srv;
-
-        descriptorWrites.emplace_back();
-        auto& descriptorWrite = descriptorWrites.back();
-
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = m_descriptor_sets[GetSetNumByShaderType(type)];
-        descriptorWrite.dstBinding = ref_res.binding;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = ref_res.descriptor_type;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pImageInfo = &imageInfo;
 
         break;
     }
@@ -639,7 +665,7 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
         auto& descriptorWrite = descriptorWrites.back();
 
         descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = m_descriptor_sets[GetSetNumByShaderType(type)];
+        descriptorWrite.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
         descriptorWrite.dstBinding = ref_res.binding;
         descriptorWrite.dstArrayElement = 0;
         descriptorWrite.descriptorType = ref_res.descriptor_type;
@@ -680,6 +706,50 @@ void VKProgramApi::AttachCBuffer(ShaderType type, const std::string& name, UINT 
 
 void VKProgramApi::AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc & desc)
 {
+    VkSamplerCreateInfo samplerInfo = {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = 16;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+
+    if (vkCreateSampler(m_context.m_device, &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture sampler!");
+    }
+
+    {
+        VkWriteDescriptorSet descriptor_writes = {};
+
+        VkDescriptorImageInfo samplerInfo = {};
+        samplerInfo.sampler = m_sampler;
+
+        ShaderRef& shader_ref = m_shader_ref.find(type)->second;
+        auto ref_res = shader_ref.resources["g_sampler"];
+
+        // Populate with info about our sampler
+        descriptor_writes = {};
+        descriptor_writes.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes.pNext = NULL;
+        descriptor_writes.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
+        descriptor_writes.descriptorCount = 1;
+        descriptor_writes.descriptorType = ref_res.descriptor_type;
+        descriptor_writes.pImageInfo = &samplerInfo;
+        descriptor_writes.dstArrayElement = 0;
+        descriptor_writes.dstBinding = ref_res.binding;
+
+        vkUpdateDescriptorSets(m_context.m_device, 1, &descriptor_writes, 0, nullptr);
+    }
 }
 
 void VKProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr & ires)
@@ -729,6 +799,11 @@ void VKProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr & ires)
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
 }
 
+bool hasStencilComponent(VkFormat format) {
+    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
+
 void VKProgramApi::AttachDSV(const Resource::Ptr & ires)
 {
     if (!ires)
@@ -736,7 +811,7 @@ void VKProgramApi::AttachDSV(const Resource::Ptr & ires)
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
-    m_context.transitionImageLayout(res.image, {}, res.image_layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    m_context.transitionImageLayout(res.image, res.format, res.image_layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     res.image_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkImageView rtv;
@@ -750,6 +825,8 @@ void VKProgramApi::AttachDSV(const Resource::Ptr & ires)
     createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
     createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
     createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    if (hasStencilComponent)
+        createInfo.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
     createInfo.subresourceRange.baseMipLevel = 0;
     createInfo.subresourceRange.levelCount = 1;
     createInfo.subresourceRange.baseArrayLayer = 0;
@@ -762,20 +839,15 @@ void VKProgramApi::AttachDSV(const Resource::Ptr & ires)
     m_depth_attachment.format = res.format;
     m_depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     m_depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    m_depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    m_depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    m_depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    m_depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    m_depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    m_depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
     m_depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     m_depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference& depthAttachmentReference = m_color_attachments_ref.back();
     depthAttachmentReference.attachment = m_color_attachments.size() - 1;
     depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-
-
-
-
 }
 
 void VKProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
@@ -901,7 +973,7 @@ void VKProgramApi::AttachCBV(ShaderType type, const std::string& in_name, uint32
     auto& descriptorWrite = descriptorWrites.back();
 
     descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrite.dstSet = m_descriptor_sets[GetSetNumByShaderType(type)];
+    descriptorWrite.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
     descriptorWrite.dstBinding = ref_res.binding;
     descriptorWrite.dstArrayElement = 0;
     descriptorWrite.descriptorType = ref_res.descriptor_type;

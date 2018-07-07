@@ -58,7 +58,7 @@ private:
 
     VkPipeline graphicsPipeline;
     VkPipelineLayout m_pipeline_layout;
-    std::vector<VkDescriptorSet> m_descriptor_sets;
+    PerFrameData<std::vector<VkDescriptorSet>> m_descriptor_sets;
 
     std::map<ShaderType, size_t> m_shader_type2set;
 
@@ -102,4 +102,6 @@ private:
     VkFramebuffer m_framebuffer;
     std::vector<VkImageView> m_rtv;
     std::vector<VkExtent2D> m_rtv_size;
+
+    VkSampler m_sampler;
 };

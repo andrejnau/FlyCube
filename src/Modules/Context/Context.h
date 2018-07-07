@@ -9,6 +9,7 @@
 #include <Program/ProgramApi.h>
 #include "Context/BaseTypes.h"
 #include "Context/Resource.h"
+#include <glm/glm.hpp>
 
 using namespace Microsoft::WRL;
 
@@ -43,6 +44,9 @@ public:
     void OnResize(int width, int height);
     size_t GetFrameIndex() const;
     GLFWwindow* GetWindow();
+
+    virtual uint32_t GetWorkaroundAssimpFlags();
+    virtual glm::mat4 GetClipMatrix();
 
     static constexpr size_t FrameCount = 3;
   

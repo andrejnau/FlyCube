@@ -24,6 +24,7 @@ cbuffer ConstantBuf
     float4x4 projection;
     float4x4 normalMatrix;
     float4x4 normalMatrixView;
+    float4x4 clip_matrix;
 };
 
 struct VS_OUTPUT
@@ -61,7 +62,7 @@ VS_OUTPUT main(VS_INPUT vs_in)
     float4 pos = mul(float4(vs_in.pos, 1.0), transform);
     float4 worldPos = mul(pos, model);
     vs_out.fragPos = worldPos.xyz;
-    vs_out.pos = mul(worldPos, mul(view, projection));
+    vs_out.pos = mul(worldPos, mul(view, mul(projection, clip_matrix)));
     vs_out.texCoord = vs_in.texCoord;
     vs_out.normal = mul(mul(vs_in.normal, transform), (float3x3)normalMatrix);
     vs_out.tangent = mul(mul(vs_in.tangent, transform), (float3x3)normalMatrix);
