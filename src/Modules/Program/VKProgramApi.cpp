@@ -35,7 +35,6 @@ void VKProgramApi::LinkProgram()
         return;
 
     ParseShaders();
-    std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfo;
     for (auto & shader : m_shaders_info)
     {
         shaderStageCreateInfo.emplace_back();
@@ -47,8 +46,6 @@ void VKProgramApi::LinkProgram()
         shaderStageCreateInfo.back().pSpecializationInfo = NULL;
     }
 
-    std::vector<VkVertexInputBindingDescription> binding_desc;
-    std::vector<VkVertexInputAttributeDescription> attribute_desc;
     if (m_spirv.count(ShaderType::kVertex))
     {
         auto& spirv = m_spirv[ShaderType::kVertex];
@@ -56,7 +53,17 @@ void VKProgramApi::LinkProgram()
         std::vector<uint32_t> spirv32((uint32_t*)spirv.data(), ((uint32_t*)spirv.data()) + spirv.size() / 4);
         CreateInputLayout(spirv32, binding_desc, attribute_desc);
     }
+    if (m_spirv.count(ShaderType::kPixel))
+    {
+        auto& spirv = m_spirv[ShaderType::kPixel];
+        assert(spirv.size() % 4 == 0);
+        std::vector<uint32_t> spirv32((uint32_t*)spirv.data(), ((uint32_t*)spirv.data()) + spirv.size() / 4);
+        CreateRenderPass(spirv32);
+    }
+}
 
+void VKProgramApi::CreateGrPipiLine()
+{
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
@@ -97,7 +104,7 @@ void VKProgramApi::LinkProgram()
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
 
     VkPipelineMultisampleStateCreateInfo multisampling = {};
@@ -105,57 +112,18 @@ void VKProgramApi::LinkProgram()
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+    VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.stencilTestEnable = VK_FALSE;
+
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
 
-    VkPipelineColorBlendStateCreateInfo colorBlending = {};
-    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
-
-       //
-    VkAttachmentDescription colorAttachment = {};
-    colorAttachment.format = VK_FORMAT_R8G8B8A8_UNORM;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-
-    VkAttachmentReference colorAttachmentRef = {};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription subPass = {};
-    subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-    subPass.colorAttachmentCount = 1;
-    subPass.pColorAttachments = &colorAttachmentRef;
-
-    VkRenderPassCreateInfo renderPassInfo = {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subPass;
-
-    VkRenderPass renderPass;
-    auto re2s = vkCreateRenderPass(m_context.m_device, &renderPassInfo, nullptr, &renderPass);
-    //
-
-    VkGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = shaderStageCreateInfo.size();
     pipelineInfo.pStages = shaderStageCreateInfo.data();
@@ -165,9 +133,7 @@ void VKProgramApi::LinkProgram()
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = nullptr; // Optional
-    pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDynamicState = nullptr; // Optional
+    pipelineInfo.pDepthStencilState = &depthStencil;
 
     pipelineInfo.layout = m_pipeline_layout;
 
@@ -175,13 +141,10 @@ void VKProgramApi::LinkProgram()
     pipelineInfo.subpass = 0;
 
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-    pipelineInfo.basePipelineIndex = -1; // Optional
-
 
     if (vkCreateGraphicsPipelines(m_context.m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to vkCreateGraphicsPipelines");
     }
-    int b = 0;
 }
 
 void VKProgramApi::UseProgram()
@@ -203,10 +166,66 @@ void VKProgramApi::ApplyBindings()
         AttachCBV(std::get<0>(x.first), std::get<2>(x.first), std::get<1>(x.first), res);
     }
 
+   
+
+    VkSubpassDescription subPass = {};
+    subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subPass.colorAttachmentCount = m_color_attachments_ref.size() - 1;
+    subPass.pColorAttachments = m_color_attachments_ref.data();
+    subPass.pDepthStencilAttachment = &m_color_attachments_ref.back();
+
+    VkRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = m_color_attachments.size();
+    renderPassInfo.pAttachments = m_color_attachments.data();
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subPass;
+
+    vkCreateRenderPass(m_context.m_device, &renderPassInfo, nullptr, &renderPass);
+
+    CreateGrPipiLine();
+
     vkCmdBindPipeline(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
     vkCmdBindDescriptorSets(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 
         m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
+
+    {
+        VkFramebufferCreateInfo framebufferInfo = {};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.attachmentCount = m_rtv.size();
+        framebufferInfo.pAttachments = m_rtv.data();
+        framebufferInfo.width = m_rtv_size[0].width;
+        framebufferInfo.height = m_rtv_size[0].height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(m_context.m_device, &framebufferInfo, nullptr, &m_framebuffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create framebuffer!");
+        }
+    }
 }
+
+void VKProgramApi::RenderPassBegin()
+{
+    VkRenderPassBeginInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.framebuffer = m_framebuffer;
+
+    renderPassInfo.renderArea.offset = { 0, 0 };
+    renderPassInfo.renderArea.extent = m_rtv_size[0];
+
+    VkClearValue clearColor2 = { 1.0f, 0.0f, 0.0f, 1.0f };
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor2;
+    vkCmdBeginRenderPass(m_context.m_cmd_bufs[m_context.GetFrameIndex()], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void VKProgramApi::RenderPassEnd()
+{
+    vkCmdEndRenderPass(m_context.m_cmd_bufs[m_context.GetFrameIndex()]);
+}
+
 
 std::vector<uint8_t> readFile(const char* filename)
 {
@@ -423,6 +442,7 @@ void VKProgramApi::ParseShader(ShaderType shader_type, const std::vector<uint32_
     print_resources(compiler, " storage_buffers ", resources.storage_buffers);
     print_resources(compiler, " separate_images ", resources.separate_images);
     print_resources(compiler, " separate_samplers ", resources.separate_samplers);
+    print_resources(compiler, " stage_outputs ", resources.stage_outputs);
 }
 
 size_t VKProgramApi::GetSetNumByShaderType(ShaderType type)
@@ -520,6 +540,8 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
+ 
+
     ShaderRef& shader_ref = m_shader_ref.find(type)->second;
     auto ref_res = shader_ref.resources[name];
 
@@ -532,6 +554,7 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
     if (res_type.basetype == spirv_cross::SPIRType::BaseType::Struct)
         dim = spv::Dim::DimBuffer;
 
+    bool is_buffer = false;
     switch (dim)
     {
     case spv::Dim::Dim2D:
@@ -606,6 +629,7 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
     }
     case spv::Dim::DimBuffer:
     {
+        is_buffer = true;
         VkDescriptorBufferInfo bufferInfo = {};
         bufferInfo.buffer = res.buf;
         bufferInfo.offset = 0;
@@ -627,6 +651,12 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
     default:
         throw std::runtime_error("failed!");
         break;
+    }
+
+    if (!is_buffer)
+    {
+        m_context.transitionImageLayout(res.image, {}, res.image_layout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        res.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
 
     if (!descriptorWrites.empty())
@@ -654,10 +684,98 @@ void VKProgramApi::AttachSampler(ShaderType type, uint32_t slot, const SamplerDe
 
 void VKProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr & ires)
 {
+    if (!ires)
+        return;
+
+    VKResource& res = static_cast<VKResource&>(*ires);
+
+    m_context.transitionImageLayout(res.image, {}, res.image_layout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    res.image_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkImageView rtv;
+    VkImageViewCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    createInfo.image = res.image;
+    createInfo.format = res.format;
+    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    createInfo.subresourceRange.baseMipLevel = 0;
+    createInfo.subresourceRange.levelCount = 1;
+    createInfo.subresourceRange.baseArrayLayer = 0;
+    createInfo.subresourceRange.layerCount = 1;
+    vkCreateImageView(m_context.m_device, &createInfo, nullptr, &rtv);
+    m_rtv[slot] = rtv;
+    m_rtv_size[slot] = res.size;
+ 
+
+    VkAttachmentDescription& colorAttachment = m_color_attachments[slot];
+    colorAttachment.format = res.format;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference& colorAttachmentRef = m_color_attachments_ref[slot];
+    colorAttachmentRef.attachment = slot;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
 }
 
 void VKProgramApi::AttachDSV(const Resource::Ptr & ires)
 {
+    if (!ires)
+        return;
+
+    VKResource& res = static_cast<VKResource&>(*ires);
+
+    m_context.transitionImageLayout(res.image, {}, res.image_layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    res.image_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkImageView rtv;
+    VkImageViewCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    createInfo.image = res.image;
+    createInfo.format = res.format;
+    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    createInfo.subresourceRange.baseMipLevel = 0;
+    createInfo.subresourceRange.levelCount = 1;
+    createInfo.subresourceRange.baseArrayLayer = 0;
+    createInfo.subresourceRange.layerCount = 1;
+    vkCreateImageView(m_context.m_device, &createInfo, nullptr, &rtv);
+    m_rtv.back() = rtv;
+    m_rtv_size.back() = res.size;
+
+    auto& m_depth_attachment = m_color_attachments.back();
+    m_depth_attachment.format = res.format;
+    m_depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    m_depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    m_depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    m_depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    m_depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    m_depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    m_depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference& depthAttachmentReference = m_color_attachments_ref.back();
+    depthAttachmentReference.attachment = m_color_attachments.size() - 1;
+    depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+
+
+
+
 }
 
 void VKProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
@@ -739,6 +857,23 @@ void VKProgramApi::CreateInputLayout(
                 attribute.format = VK_FORMAT_R32G32B32A32_SINT;
         }
     }
+}
+
+void VKProgramApi::CreateRenderPass(const std::vector<uint32_t>& spirv_binary)
+{
+    spirv_cross::CompilerHLSL compiler(std::move(spirv_binary));
+    spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+    for (auto& resource : resources.stage_outputs)
+    {
+        auto &type = compiler.get_type(resource.base_type_id);
+        size_t location = compiler.get_decoration(resource.id, spv::DecorationLocation);
+        m_num_rtv = std::max(m_num_rtv, location + 1);
+    }
+
+    m_color_attachments.resize(m_num_rtv + 1);
+    m_color_attachments_ref.resize(m_num_rtv + 1);
+    m_rtv.resize(m_num_rtv + 1);
+    m_rtv_size.resize(m_num_rtv + 1);
 }
 
 void VKProgramApi::AttachCBV(ShaderType type, const std::string& in_name, uint32_t slot, const Resource::Ptr & ires)

@@ -16,8 +16,11 @@ public:
     virtual void SetMaxEvents(size_t) override;
     VkShaderStageFlagBits ShaderType2Bit(ShaderType type);
     virtual void LinkProgram() override;
+    void CreateGrPipiLine();
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
+    void RenderPassBegin();
+    void RenderPassEnd();
     std::vector<uint8_t> hlsl2spirv(const ShaderBase & shader);
     virtual void CompileShader(const ShaderBase& shader) override;
     void ParseShader(ShaderType type, const std::vector<uint32_t>& spirv_binary, std::vector<VkDescriptorSetLayoutBinding>& bindings);
@@ -41,6 +44,8 @@ private:
         const std::vector<uint32_t>& spirv_binary,
         std::vector<VkVertexInputBindingDescription>& binding_desc,
         std::vector<VkVertexInputAttributeDescription>& attribute_desc);
+
+    void CreateRenderPass(const std::vector<uint32_t>& spirv_binary);
 
     void AttachCBV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
 
@@ -81,4 +86,20 @@ private:
 
     std::map<std::tuple<ShaderType, uint32_t, std::string>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
     std::map<std::tuple<ShaderType, uint32_t, std::string>, Resource::Ptr> m_cbv_buffer;
+
+    size_t m_num_rtv = 0;
+
+    
+    std::vector<VkAttachmentDescription> m_color_attachments;
+    std::vector<VkAttachmentReference> m_color_attachments_ref;
+    VkRenderPass renderPass;
+
+    VkGraphicsPipelineCreateInfo pipelineInfo = {};
+
+    std::vector<VkVertexInputBindingDescription> binding_desc;
+    std::vector<VkVertexInputAttributeDescription> attribute_desc;
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfo;
+    VkFramebuffer m_framebuffer;
+    std::vector<VkImageView> m_rtv;
+    std::vector<VkExtent2D> m_rtv_size;
 };

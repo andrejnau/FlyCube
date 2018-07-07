@@ -14,6 +14,8 @@ public:
     VkDeviceMemory bufferMemory = VK_NULL_HANDLE;
     uint32_t buffer_size = 0;
 
+    VkImageLayout image_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
     VkDeviceMemory image_memory;
 
     VkExtent2D size = {};
