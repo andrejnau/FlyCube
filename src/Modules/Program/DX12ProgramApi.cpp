@@ -117,7 +117,7 @@ void DX12ProgramApi::AttachCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr
     SetBinding(type, ResourceType::kCbv, slot, CreateCBV(type, slot, res));
 }
 
-void DX12ProgramApi::AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buffer)
+void DX12ProgramApi::AttachCBuffer(ShaderType type, const std::string& name, UINT slot, BufferLayout& buffer)
 {
     m_cbv_layout.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, slot),

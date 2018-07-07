@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 #include <Geometry/IABuffer.h>
 
+struct VKProgramApi;
 class VKContext : public Context
 {
 public:
@@ -32,6 +33,9 @@ public:
     virtual void Present(const Resource::Ptr& ires) override;
 
     virtual void ResizeBackBuffer(int width, int height) override;
+
+    void UseProgram(VKProgramApi& program_api);
+    VKProgramApi* m_current_program = nullptr;
 
     VkInstance m_instance;
     VkDevice m_device;

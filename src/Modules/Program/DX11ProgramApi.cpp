@@ -48,7 +48,7 @@ void DX11ProgramApi::UseProgram()
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void DX11ProgramApi::AttachCBuffer(ShaderType type, UINT slot, BufferLayout & buffer_layout)
+void DX11ProgramApi::AttachCBuffer(ShaderType type, const std::string& name, UINT slot, BufferLayout & buffer_layout)
 {
     m_cbv_buffer.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, slot),

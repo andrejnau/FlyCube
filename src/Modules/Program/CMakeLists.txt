@@ -31,7 +31,6 @@ target_link_libraries(${target}
     d3dcompiler
     Utilities
 	spirv-cross-core
-	spirv-cross-glsl
 	spirv-cross-hlsl
     ${Vulkan_LIBRARIES}
 )

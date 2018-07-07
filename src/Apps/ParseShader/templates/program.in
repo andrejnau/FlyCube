@@ -90,7 +90,7 @@ public:
 
     virtual void UseShader() override
     {
-        {{#CBuffers}}program_api.AttachCBuffer(type, {{BufferIndex}}, cbuffer_impl.{{BufferName}});
+        {{#CBuffers}}program_api.AttachCBuffer(type, "{{BufferName}}", {{BufferIndex}}, cbuffer_impl.{{BufferName}});
         {{/CBuffers}}
     } 
  

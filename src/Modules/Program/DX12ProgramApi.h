@@ -23,7 +23,7 @@ public:
     virtual void CompileShader(const ShaderBase& shader) override;
     virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
     virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
-    virtual void AttachCBuffer(ShaderType type, UINT slot, BufferLayout& buffer) override;
+    virtual void AttachCBuffer(ShaderType type, const std::string& name, UINT slot, BufferLayout& buffer) override;
     virtual void AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc) override;
     virtual void AttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
     virtual void AttachDSV(const Resource::Ptr& ires) override;

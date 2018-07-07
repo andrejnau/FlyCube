@@ -202,6 +202,8 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
     VkPhysicalDeviceFeatures deviceFeatures = {};
     deviceFeatures.textureCompressionBC = true;
+    deviceFeatures.vertexPipelineStoresAndAtomics = true;
+    
 
     VkDeviceCreateInfo createInfo2 = {};
     createInfo2.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -899,6 +901,8 @@ Resource::Ptr VKContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, 
         bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     else if (bind_flag & BindFlag::kCbv)
         bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    else if (bind_flag & BindFlag::kSrv)
+        bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     else
         return Resource::Ptr();
 
@@ -974,6 +978,83 @@ void VKContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubres
 
         vkUnmapMemory(m_device, res->tmp_image_memory);
     }
+
+
+    if (res && res->image)
+    {
+        auto transitionImageLayout = [&](VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+        {
+            VkImageMemoryBarrier barrier = {};
+            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            barrier.oldLayout = oldLayout;
+            barrier.newLayout = newLayout;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.image = image;
+            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            barrier.subresourceRange.baseMipLevel = 0;
+            barrier.subresourceRange.levelCount = 1;
+            barrier.subresourceRange.baseArrayLayer = 0;
+            barrier.subresourceRange.layerCount = 1;
+
+            if (oldLayout == VK_IMAGE_LAYOUT_PREINITIALIZED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+                barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            }
+            else if (oldLayout == VK_IMAGE_LAYOUT_PREINITIALIZED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+                barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            }
+            else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+                barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            }
+            else {
+                throw std::invalid_argument("unsupported layout transition!");
+            }
+
+            vkCmdPipelineBarrier(
+                m_cmd_bufs[m_frame_index],
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier
+            );
+        };
+
+        {
+            VkImageSubresourceLayers subResource = {};
+            subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            subResource.baseArrayLayer = 0;
+            subResource.mipLevel = DstSubresource;
+            subResource.layerCount = 1;
+
+            VkImageCopy region = {};
+            region.srcSubresource = subResource;
+            region.dstSubresource = subResource;
+            region.srcOffset = { 0, 0, 0 };
+            region.dstOffset = { 0, 0, 0 };
+            region.extent.width = (res->size.width >> DstSubresource);
+            region.extent.height = (res->size.height >> DstSubresource);
+            region.extent.depth = 1;
+
+
+            auto& img = res->Query<VKResource>();
+
+            transitionImageLayout(img.tmp_image, img.format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+            transitionImageLayout(img.image, img.format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+            vkCmdCopyImage(
+                m_cmd_bufs[m_frame_index],
+                img.tmp_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                img.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1, &region
+            );
+
+            transitionImageLayout(img.image, img.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        }
+    }
 }
 
 void VKContext::SetViewport(float width, float height)
@@ -1008,8 +1089,8 @@ void VKContext::EndEvent()
 
 void VKContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
-    // m_current_program->ApplyBindings();
-   // vkCmdDrawIndexed(m_cmd_bufs[m_frame_index], m_indices_buffer->Count(), 1, StartIndexLocation, BaseVertexLocation, 0);
+    m_current_program->ApplyBindings();
+    vkCmdDrawIndexed(m_cmd_bufs[m_frame_index], IndexCount, 1, StartIndexLocation, BaseVertexLocation, 0);
 }
 
 void VKContext::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
@@ -1026,7 +1107,7 @@ void VKContext::Present(const Resource::Ptr & ires)
   
 
      vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageAvailableSemaphore, nullptr, &m_frame_index);
-
+#if 0
      auto transitionImageLayout = [&](VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
      {
          VkImageMemoryBarrier barrier = {};
@@ -1099,9 +1180,7 @@ void VKContext::Present(const Resource::Ptr & ires)
 
          transitionImageLayout(img.image, img.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
      }
-
-  
-
+#endif
 
     VkClearColorValue clearColor = { 164.0f / 256.0f, 30.0f / 256.0f, 34.0f / 256.0f, 0.0f };
     VkClearValue clearValue = {};
@@ -1213,4 +1292,9 @@ void VKContext::Present(const Resource::Ptr & ires)
 
 void VKContext::ResizeBackBuffer(int width, int height)
 {
+}
+
+void VKContext::UseProgram(VKProgramApi & program_api)
+{
+    m_current_program = &program_api;
 }
