@@ -264,10 +264,6 @@ public:
     void UseProgram()
     {
         m_program_base->UseProgram();
-        EnumerateShader<Args...>([&](ShaderBase& shader)
-        {
-            shader.UseShader();
-        });
     }
 
     void SetRasterizeState(const RasterizerDesc& desc)

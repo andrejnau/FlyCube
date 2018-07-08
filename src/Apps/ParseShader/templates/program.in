@@ -81,6 +81,8 @@ public:
         , sampler(program_api)
         , cbuffer_impl(*this)
     {
+        {{#CBuffers}}program_api.AttachCBuffer(type, "{{BufferName}}", {{BufferIndex}}, cbuffer_impl.{{BufferName}});
+        {{/CBuffers}}
     }
 
     virtual void UpdateShader() override
@@ -88,13 +90,7 @@ public:
         program_api.CompileShader(*this);
     }
 
-    virtual void UseShader() override
-    {
-        {{#CBuffers}}program_api.AttachCBuffer(type, "{{BufferName}}", {{BufferIndex}}, cbuffer_impl.{{BufferName}});
-        {{/CBuffers}}
-    } 
- 
- private:
+private:
     class CBufferImpl
     {
     public:
