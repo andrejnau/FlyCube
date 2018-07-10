@@ -9,18 +9,27 @@ class TextureCache
 public:
     TextureCache(Context& context);
     Resource::Ptr Load(const std::string& path);
-
-    Resource::Ptr CreateTextuteStab(glm::vec4& val)
-    {
-        Resource::Ptr tex = m_context.CreateTexture(BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 1, 1, 1);
-        size_t num_bytes = 0;
-        size_t row_bytes = 0;
-        GetSurfaceInfo(1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, &num_bytes, &row_bytes, nullptr);
-        m_context.UpdateSubresource(tex, 0, &val, row_bytes, num_bytes);
-        return tex;
-    }
+    Resource::Ptr CreateTextuteStab(glm::vec4& val);
 
 private:
     Context& m_context;
     std::map<std::string, Resource::Ptr> m_cache;
+
+    struct glm_key
+    {
+        glm_key(glm::vec4 val) : val(val) {}
+        bool operator<(const glm_key& oth) const
+        {
+            for (size_t i = 0; i < val.length(); ++i)
+            {
+                if (val[i] == oth.val[i])
+                    continue;
+                return val[i] < oth.val[i];
+            }
+            return false;
+        }
+        glm::vec4 val;
+    };
+
+    std::map<glm_key, Resource::Ptr> m_stub_cache;
 };
