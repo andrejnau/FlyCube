@@ -22,6 +22,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
     void*                       pUserData)
 {
     std::string msg(pMessage);
+    if (msg.find("is being used in draw but has not been updated"))
+        return VK_FALSE;
     printf("%s\n", pMessage);
     return VK_FALSE;
 }
@@ -69,9 +71,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
     VkResult result = vkCreateInstance(&createInfo, nullptr, &m_instance);
 
-
-
-#if 1
+#if defined(_DEBUG)
     VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
     callbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
     callbackCreateInfo.pNext = NULL;
@@ -340,31 +340,19 @@ VkFormat VKContext::findSupportedFormat(const std::vector<VkFormat>& candidates,
 
 Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
-    {
-        auto fm = findSupportedFormat(
-            { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-            VK_IMAGE_TILING_OPTIMAL,
-            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-        );
-    }
-
     VKResource::Ptr res = std::make_shared<VKResource>();
+    res->res_type = VKResource::Type::kImage;
 
-    if (bind_flag & BindFlag::kDsv)
-    {
-        if (format == DXGI_FORMAT_R32_TYPELESS)
-            format = DXGI_FORMAT_D32_FLOAT;
-    }
-    DXGI_FORMAT dxformat = format;
-    auto createImage = [this, dxformat](int width, int height, int depth, int mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+    if (bind_flag & BindFlag::kDsv &&format == DXGI_FORMAT_R32_TYPELESS)
+        format = DXGI_FORMAT_D32_FLOAT;
+
+    VkFormat vk_format = static_cast<VkFormat>(gli::dx().find(gli::dx::D3DFMT_DX10, static_cast<gli::dx::dxgi_format_dds>(format)));
+    if (vk_format == VK_FORMAT_D24_UNORM_S8_UINT)
+        vk_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+
+    auto createImage = [this](int width, int height, int depth, int mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
         VkImage& image, VkDeviceMemory& imageMemory, uint32_t& size)
     {
-
-        if (format == -1)
-            int b = 0;
-
-        if (format == VK_FORMAT_D24_UNORM_S8_UINT)
-            format = VK_FORMAT_D32_SFLOAT_S8_UINT;
         VkImageCreateInfo imageInfo = {};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 
@@ -404,37 +392,10 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, u
 
         size = allocInfo.allocationSize;
     };
-
-
-    if (bind_flag & BindFlag::kSrv)
-    {
-        createImage(
-            width,
-            height,
-            depth,
-            mip_levels,
-            static_cast<VkFormat>(gli::dx().find(gli::dx::D3DFMT_DX10, static_cast<gli::dx::dxgi_format_dds>(format))),
-            VK_IMAGE_TILING_LINEAR,
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            res->tmp_image,
-            res->tmp_image_memory, res->buffer_size);
-    }
-
-    res->size.height = height;
-    res->size.width = width;
-    res->format = static_cast<VkFormat>(gli::dx().find(gli::dx::D3DFMT_DX10, static_cast<gli::dx::dxgi_format_dds>(format)));
-    if (res->format == VK_FORMAT_D24_UNORM_S8_UINT)
-        res->format = VK_FORMAT_D32_SFLOAT_S8_UINT;
-    res->levelCount = mip_levels;
-
-    VkImageTiling taling = VK_IMAGE_TILING_OPTIMAL;
+    
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     if (bind_flag & BindFlag::kDsv)
-    {
         usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        taling = VK_IMAGE_TILING_LINEAR;
-    }
     if (bind_flag & BindFlag::kSrv)
         usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
     if (bind_flag & BindFlag::kRtv)
@@ -448,14 +409,19 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, u
         height,
         depth,
         mip_levels,
-        static_cast<VkFormat>(gli::dx().find(gli::dx::D3DFMT_DX10, static_cast<gli::dx::dxgi_format_dds>(format))),
+        vk_format,
         VK_IMAGE_TILING_OPTIMAL,
         usage,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        res->image,
-        res->image_memory,
+        res->image.res,
+        res->image.memory,
         tmp
     );
+
+    res->image.size.height = height;
+    res->image.size.width = width;
+    res->image.format = vk_format;
+    res->image.level_count = mip_levels;
 
     return res;
 }
@@ -475,6 +441,9 @@ uint32_t VKContext::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags pr
 
 Resource::Ptr VKContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride)
 {
+    if (buffer_size == 0)
+        return VKResource::Ptr();
+
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = buffer_size;
@@ -482,21 +451,22 @@ Resource::Ptr VKContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, 
 
     if (bind_flag & BindFlag::kVbv)
         bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    else if(bind_flag & BindFlag::kIbv)
+    else if (bind_flag & BindFlag::kIbv)
         bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     else if (bind_flag & BindFlag::kCbv)
         bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     else if (bind_flag & BindFlag::kSrv)
         bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     else
-        return Resource::Ptr();
+        bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
     VKResource::Ptr res = std::make_shared<VKResource>();
+    res->res_type = VKResource::Type::kBuffer;
 
-    vkCreateBuffer(m_device, &bufferInfo, nullptr, &res->buf);
+    vkCreateBuffer(m_device, &bufferInfo, nullptr, &res->buffer.res);
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(m_device, res->buf, &memRequirements);
+    vkGetBufferMemoryRequirements(m_device, res->buffer.res, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -504,12 +474,12 @@ Resource::Ptr VKContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, 
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 
-    if (vkAllocateMemory(m_device, &allocInfo, nullptr, &res->bufferMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(m_device, &allocInfo, nullptr, &res->buffer.memory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate vertex buffer memory!");
     }
 
-    vkBindBufferMemory(m_device, res->buf, res->bufferMemory, 0);
-    res->buffer_size = buffer_size;
+    vkBindBufferMemory(m_device, res->buffer.res, res->buffer.memory, 0);
+    res->buffer.size = buffer_size;
 
     return res;
 }
@@ -658,86 +628,99 @@ void VKContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubres
         return;
     auto res = std::static_pointer_cast<VKResource>(ires);
 
-    if (res->bufferMemory)
+    if (res->res_type == VKResource::Type::kBuffer)
     {
         void* data;
-        vkMapMemory(m_device, res->bufferMemory, 0, res->buffer_size, 0, &data);
-        memcpy(data, pSrcData, (size_t)res->buffer_size);
-        vkUnmapMemory(m_device, res->bufferMemory);
+        vkMapMemory(m_device, res->buffer.memory, 0, res->buffer.size, 0, &data);
+        memcpy(data, pSrcData, (size_t)res->buffer.size);
+        vkUnmapMemory(m_device, res->buffer.memory);
     }
-
-    if (res->tmp_image)
+    else if (res->res_type == VKResource::Type::kImage)
     {
-        void* data;
-        vkMapMemory(m_device, res->tmp_image_memory, 0, res->buffer_size, 0, &data);
+        auto staging = res->GetUploadResource(DstSubresource);
+        if (!staging || staging->res_type == VKResource::Type::kUnknown)
+            staging = std::static_pointer_cast<VKResource>(CreateBuffer(0, SrcDepthPitch, 0));
+        UpdateSubresource(staging, 0, pSrcData, SrcRowPitch, SrcDepthPitch);
 
-        VkImageSubresource subresource = {};
-        subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        subresource.mipLevel = DstSubresource;
-        subresource.arrayLayer = 0;
+        // Setup buffer copy regions for each mip level
+        std::vector<VkBufferImageCopy> bufferCopyRegions;
+        uint32_t offset = 0;
 
-        VkSubresourceLayout stagingImageLayout = {};
-        vkGetImageSubresourceLayout(m_device, res->tmp_image, &subresource, &stagingImageLayout);
+        VkBufferImageCopy bufferCopyRegion = {};
+        bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        bufferCopyRegion.imageSubresource.mipLevel = DstSubresource;
+        bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
+        bufferCopyRegion.imageSubresource.layerCount = 1;
+        bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(res->image.size.width >> DstSubresource);
+        bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(res->image.size.height >> DstSubresource);
+        bufferCopyRegion.imageExtent.depth = 1;
 
-        if (stagingImageLayout.rowPitch == SrcRowPitch) {
-            memcpy(data, pSrcData, (size_t)stagingImageLayout.size);
-        }
-        else
-        {
-            uint8_t* dataBytes = reinterpret_cast<uint8_t*>(data);
-            const uint8_t* pixels = reinterpret_cast<const uint8_t*>(pSrcData);
+        bufferCopyRegions.push_back(bufferCopyRegion);
 
+        // The sub resource range describes the regions of the image that will be transitioned using the memory barriers below
+        VkImageSubresourceRange subresourceRange = {};
+        // Image only contains color data
+        subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        // Start at first mip level
+        subresourceRange.baseMipLevel = DstSubresource;
+        // We will transition on all mip levels
+        subresourceRange.levelCount = 1;
+        // The 2D texture only has one layer
+        subresourceRange.layerCount = 1;
 
-            for (int y = 0; y < (res->size.height >> DstSubresource); ++y)
-            {
-                memcpy(
-                    &dataBytes[y * stagingImageLayout.rowPitch],
-                    pixels + y * SrcRowPitch,
-                    SrcRowPitch
-                );
-            }
+        // Transition the texture image layout to transfer target, so we can safely copy our buffer data to it.
+        VkImageMemoryBarrier imageMemoryBarrier{};
+        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageMemoryBarrier.image = res->image.res;
+        imageMemoryBarrier.subresourceRange = subresourceRange;
+        imageMemoryBarrier.srcAccessMask = 0;
+        imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
-        }
+        // Insert a memory dependency at the proper pipeline stages that will execute the image layout transition 
+        // Source pipeline stage is host write/read exection (VK_PIPELINE_STAGE_HOST_BIT)
+        // Destination pipeline stage is copy command exection (VK_PIPELINE_STAGE_TRANSFER_BIT)
+        vkCmdPipelineBarrier(
+            m_cmd_bufs[m_frame_index],
+            VK_PIPELINE_STAGE_HOST_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &imageMemoryBarrier);
 
-        vkUnmapMemory(m_device, res->tmp_image_memory);
-    }
+        // Copy mip levels from staging buffer
+        vkCmdCopyBufferToImage(
+            m_cmd_bufs[m_frame_index],
+            staging->buffer.res,
+            res->image.res,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            static_cast<uint32_t>(bufferCopyRegions.size()),
+            bufferCopyRegions.data());
 
+        // Once the data has been uploaded we transfer to the texture image to the shader read layout, so it can be sampled from
+        imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    if (res && res->image)
-    {
-      
+        // Insert a memory dependency at the proper pipeline stages that will execute the image layout transition 
+        // Source pipeline stage stage is copy command exection (VK_PIPELINE_STAGE_TRANSFER_BIT)
+        // Destination pipeline stage fragment shader access (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+        vkCmdPipelineBarrier(
+            m_cmd_bufs[m_frame_index],
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &imageMemoryBarrier);
 
-        {
-            VkImageSubresourceLayers subResource = {};
-            subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            subResource.baseArrayLayer = 0;
-            subResource.mipLevel = DstSubresource;
-            subResource.layerCount = 1;
-
-            VkImageCopy region = {};
-            region.srcSubresource = subResource;
-            region.dstSubresource = subResource;
-            region.srcOffset = { 0, 0, 0 };
-            region.dstOffset = { 0, 0, 0 };
-            region.extent.width = (res->size.width >> DstSubresource);
-            region.extent.height = (res->size.height >> DstSubresource);
-            region.extent.depth = 1;
-
-
-            auto& img = res->Query<VKResource>();
-
-            transitionImageLayout(img.tmp_image, img.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-            transitionImageLayout(img.image, img.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
-            vkCmdCopyImage(
-                m_cmd_bufs[m_frame_index],
-                img.tmp_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                img.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1, &region
-            );
-
-            transitionImageLayout(img.image, img.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        }
+        // Store current layout for later reuse
+        res->image.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
 }
 
@@ -780,13 +763,13 @@ void VKContext::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, DXGI_
         break;
     }
 
-    vkCmdBindIndexBuffer(m_cmd_bufs[m_frame_index], res->buf, 0, index_type);
+    vkCmdBindIndexBuffer(m_cmd_bufs[m_frame_index], res->buffer.res, 0, index_type);
 }
 
 void VKContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t SizeInBytes, uint32_t Stride)
 {
     VKResource::Ptr res = std::static_pointer_cast<VKResource>(ires);
-    VkBuffer vertexBuffers[] = { res->buf };
+    VkBuffer vertexBuffers[] = { res->buffer.res };
     VkDeviceSize offsets[] = { 0 };
     vkCmdBindVertexBuffers(m_cmd_bufs[m_frame_index], slot, 1, vertexBuffers, offsets);
 }
@@ -814,10 +797,10 @@ void VKContext::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY,
 Resource::Ptr VKContext::GetBackBuffer()
 {
     VKResource::Ptr res = std::make_shared<VKResource>();
-    res->image = m_images[m_frame_index];
-    res->format = VK_FORMAT_R8G8B8A8_UNORM;
-    res->size = { 1u * m_width, 1u * m_height };
-    res->levelCount = -1;
+    res->image.res = m_images[m_frame_index];
+    res->image.format = VK_FORMAT_R8G8B8A8_UNORM;
+    res->image.size = { 1u * m_width, 1u * m_height };
+    res->res_type = VKResource::Type::kImage;
     return res;
 }
 

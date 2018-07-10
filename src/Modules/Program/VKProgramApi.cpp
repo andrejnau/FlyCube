@@ -173,8 +173,6 @@ void VKProgramApi::ApplyBindings()
         AttachCBV(std::get<0>(x.first), std::get<2>(x.first), std::get<1>(x.first), res);
     }
 
-   
-
     VkSubpassDescription subPass = {};
     subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subPass.colorAttachmentCount = m_color_attachments_ref.size() - 1;
@@ -584,12 +582,12 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
     {
         VkImageViewCreateInfo viewInfo = {};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = res.image;
+        viewInfo.image = res.image.res;
         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = res.format;
+        viewInfo.format = res.image.format;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.levelCount = res.image.level_count;
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
@@ -621,9 +619,9 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
         {
             VkImageViewCreateInfo viewInfo = {};
             viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            viewInfo.image = res.image;
+            viewInfo.image = res.image.res;
             viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-            viewInfo.format = res.format;
+            viewInfo.format = res.image.format;
             viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             viewInfo.subresourceRange.baseMipLevel = 0;
             viewInfo.subresourceRange.levelCount = 1;
@@ -657,7 +655,7 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
     {
         is_buffer = true;
         VkDescriptorBufferInfo bufferInfo = {};
-        bufferInfo.buffer = res.buf;
+        bufferInfo.buffer = res.buffer.res;
         bufferInfo.offset = 0;
         bufferInfo.range = VK_WHOLE_SIZE;
 
@@ -681,8 +679,8 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
 
     if (!is_buffer)
     {
-        m_context.transitionImageLayout(res.image, {}, res.image_layout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        res.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        m_context.transitionImageLayout(res.image.res, {}, res.image.layout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        res.image.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
 
     if (!descriptorWrites.empty())
@@ -759,14 +757,14 @@ void VKProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr & ires)
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
-    m_context.transitionImageLayout(res.image, {}, res.image_layout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    res.image_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    m_context.transitionImageLayout(res.image.res, {}, res.image.layout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    res.image.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkImageView rtv;
     VkImageViewCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.image = res.image;
-    createInfo.format = res.format;
+    createInfo.image = res.image.res;
+    createInfo.format = res.image.format;
     createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
     createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -779,11 +777,11 @@ void VKProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr & ires)
     createInfo.subresourceRange.layerCount = 1;
     vkCreateImageView(m_context.m_device, &createInfo, nullptr, &rtv);
     m_rtv[slot] = rtv;
-    m_rtv_size[slot] = res.size;
+    m_rtv_size[slot] = res.image.size;
  
 
     VkAttachmentDescription& colorAttachment = m_color_attachments[slot];
-    colorAttachment.format = res.format;
+    colorAttachment.format = res.image.format;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -811,14 +809,14 @@ void VKProgramApi::AttachDSV(const Resource::Ptr & ires)
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
-    m_context.transitionImageLayout(res.image, res.format, res.image_layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    res.image_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    m_context.transitionImageLayout(res.image.res, res.image.format, res.image.layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    res.image.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkImageView rtv;
     VkImageViewCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.image = res.image;
-    createInfo.format = res.format;
+    createInfo.image = res.image.res;
+    createInfo.format = res.image.format;
     createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
     createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -833,10 +831,10 @@ void VKProgramApi::AttachDSV(const Resource::Ptr & ires)
     createInfo.subresourceRange.layerCount = 1;
     vkCreateImageView(m_context.m_device, &createInfo, nullptr, &rtv);
     m_rtv.back() = rtv;
-    m_rtv_size.back() = res.size;
+    m_rtv_size.back() = res.image.size;
 
     auto& m_depth_attachment = m_color_attachments.back();
-    m_depth_attachment.format = res.format;
+    m_depth_attachment.format = res.image.format;
     m_depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     m_depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     m_depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -965,7 +963,7 @@ void VKProgramApi::AttachCBV(ShaderType type, const std::string& in_name, uint32
     std::vector<VkWriteDescriptorSet> descriptorWrites;
 
     VkDescriptorBufferInfo bufferInfo = {};
-    bufferInfo.buffer = res.buf;
+    bufferInfo.buffer = res.buffer.res;
     bufferInfo.offset = 0;
     bufferInfo.range = VK_WHOLE_SIZE;
 
