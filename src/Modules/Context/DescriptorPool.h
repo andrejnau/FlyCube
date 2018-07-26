@@ -78,19 +78,6 @@ struct DescriptorByResource
     bool exist;
 };
 
-struct DescriptorPoolByType
-{
-public:
-    DescriptorPoolByType(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type);
-    DescriptorByResource GetDescriptor(const BindKey& bind_key, DX12Resource& res);
-    DescriptorHeapRange GetEmptyDescriptor();
-    DescriptorHeapRange AllocateDescriptor();
-
-private:
-    DX12Context& m_context;
-    DescriptorHeapAllocator m_heap_alloc;
-};
-
 class DescriptorPool
 {
 public:
@@ -103,13 +90,13 @@ public:
     DescriptorHeapRange Allocate(ResourceType res_type, size_t count);
 
 private:
-    DescriptorPoolByType& SelectHeap(ResourceType res_type);
+    DescriptorHeapAllocator& SelectHeap(ResourceType res_type);
 
     DX12Context& m_context;
-    DescriptorPoolByType m_resource;
-    DescriptorPoolByType m_sampler;
-    DescriptorPoolByType m_rtv;
-    DescriptorPoolByType m_dsv;
+    DescriptorHeapAllocator m_resource;
+    DescriptorHeapAllocator m_sampler;
+    DescriptorHeapAllocator m_rtv;
+    DescriptorHeapAllocator m_dsv;
     DescriptorHeapAllocator m_shader_resource;
     DescriptorHeapAllocator m_shader_sampler;
     size_t m_need_resources = 0;

@@ -107,43 +107,12 @@ void DescriptorHeapAllocator::ResetHeap()
     m_offset = 0;
 }
 
-DescriptorPoolByType::DescriptorPoolByType(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type)
-    : m_context(context)
-    , m_heap_alloc(context, type, D3D12_DESCRIPTOR_HEAP_FLAG_NONE)
-{
-}
-
-DescriptorByResource DescriptorPoolByType::GetDescriptor(const BindKey& bind_key, DX12Resource& res)
-{
-    bool exist = true;
-    auto it = res.descriptors.find(bind_key);
-    if (it == res.descriptors.end())
-    {
-        exist = false;
-        it = res.descriptors.emplace(std::piecewise_construct,
-            std::forward_as_tuple(bind_key),
-            std::forward_as_tuple(m_heap_alloc.Allocate(1))).first;
-    }
-    return { it->second, exist };
-}
-
-DescriptorHeapRange DescriptorPoolByType::GetEmptyDescriptor()
-{
-    static auto empty = AllocateDescriptor();
-    return empty;
-}
-
-DescriptorHeapRange DescriptorPoolByType::AllocateDescriptor()
-{
-    return m_heap_alloc.Allocate(1);
-}
-
 DescriptorPool::DescriptorPool(DX12Context& context)
     : m_context(context)
-    , m_resource(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
-    , m_sampler(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)
-    , m_rtv(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
-    , m_dsv(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
+    , m_resource(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_NONE)
+    , m_sampler(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, D3D12_DESCRIPTOR_HEAP_FLAG_NONE)
+    , m_rtv(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, D3D12_DESCRIPTOR_HEAP_FLAG_NONE)
+    , m_dsv(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, D3D12_DESCRIPTOR_HEAP_FLAG_NONE)
     , m_shader_resource(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
     , m_shader_sampler(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
 {
@@ -151,20 +120,33 @@ DescriptorPool::DescriptorPool(DX12Context& context)
 
 DescriptorByResource DescriptorPool::GetDescriptor(const BindKey& bind_key, DX12Resource& res)
 {
-    DescriptorPoolByType& pool = SelectHeap(std::get<ResourceType>(bind_key));
-    return pool.GetDescriptor(bind_key, res);
+    DescriptorHeapAllocator& pool = SelectHeap(std::get<ResourceType>(bind_key));
+    bool exist = true;
+    auto it = res.descriptors.find(bind_key);
+    if (it == res.descriptors.end())
+    {
+        exist = false;
+        it = res.descriptors.emplace(std::piecewise_construct,
+            std::forward_as_tuple(bind_key),
+            std::forward_as_tuple(pool.Allocate(1))).first;
+    }
+    return { it->second, exist };
 }
 
 DescriptorHeapRange DescriptorPool::GetEmptyDescriptor(ResourceType res_type)
 {
-    DescriptorPoolByType& pool = SelectHeap(res_type);
-    return pool.GetEmptyDescriptor();
+    DescriptorHeapAllocator& pool = SelectHeap(res_type);
+    static std::map<ResourceType, DescriptorHeapRange> empty_handles;
+    auto it = empty_handles.find(res_type);
+    if (it == empty_handles.end())
+        it = empty_handles.emplace(res_type, pool.Allocate(1)).first;
+    return it->second;
 }
 
 DescriptorHeapRange DescriptorPool::AllocateDescriptor(ResourceType res_type)
 {
-    DescriptorPoolByType& pool = SelectHeap(res_type);
-    return pool.AllocateDescriptor();
+    DescriptorHeapAllocator& pool = SelectHeap(res_type);
+    return pool.Allocate(1);
 }
 
 void DescriptorPool::OnFrameBegin()
@@ -206,7 +188,7 @@ DescriptorHeapRange DescriptorPool::Allocate(ResourceType res_type, size_t count
     }
 }
 
-DescriptorPoolByType& DescriptorPool::SelectHeap(ResourceType res_type)
+DescriptorHeapAllocator& DescriptorPool::SelectHeap(ResourceType res_type)
 {
     switch (res_type)
     {
