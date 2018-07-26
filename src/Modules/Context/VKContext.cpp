@@ -21,6 +21,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
     const char*                 pMessage,
     void*                       pUserData)
 {
+#if !defined(_DEBUG)
+    return VK_FALSE;
+#endif
+
     std::string msg(pMessage);
     //if (msg.find("is being used in draw but has not been updated"))
    //     return VK_FALSE;
@@ -71,7 +75,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
     VkResult result = vkCreateInstance(&createInfo, nullptr, &m_instance);
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) || 1
     VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
     callbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
     callbackCreateInfo.pNext = NULL;

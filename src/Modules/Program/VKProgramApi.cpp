@@ -301,6 +301,7 @@ std::vector<uint8_t> VKProgramApi::hlsl2spirv(const ShaderBase& shader)
     std::string cmd = "C:\\VulkanSDK\\1.1.73.0\\Bin\\glslangValidator.exe";
     cmd += " --auto-map-bindings --hlsl-iomap ";
     cmd += " --resource-set-binding " + std::to_string(GetSetNumByShaderType(shader.type)) + " ";
+    cmd += " --invert-y ";
     cmd += " -g ";
     cmd += " -e ";
     cmd += shader.entrypoint;

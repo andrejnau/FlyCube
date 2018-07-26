@@ -21,7 +21,6 @@ void GeometryPass::OnUpdate()
     
     m_program.vs.cbuffer.ConstantBuf.view = glm::transpose(view);
     m_program.vs.cbuffer.ConstantBuf.projection = glm::transpose(projection);
-    m_program.vs.cbuffer.ConstantBuf.clip_matrix = glm::transpose(m_context.GetClipMatrix());
     m_program.ps.cbuffer.Light.light_ambient = glm::vec3(m_settings.light_ambient);
     m_program.ps.cbuffer.Light.light_diffuse = glm::vec3(m_settings.light_diffuse);
     m_program.ps.cbuffer.Light.light_specular = glm::vec3(m_settings.light_specular);

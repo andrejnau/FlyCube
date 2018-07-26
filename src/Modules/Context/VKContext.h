@@ -37,19 +37,6 @@ public:
 
     virtual void ResizeBackBuffer(int width, int height) override;
 
-    virtual uint32_t GetWorkaroundAssimpFlags() override
-    {
-        return ~aiProcess_FlipWindingOrder;
-    }
-
-    virtual glm::mat4 GetClipMatrix() override
-    {
-        return  glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
-            +0.0f, -1.0f, 0.0f, 0.0f,
-            +0.0f, 0.0f, 0.5f, 0.0f,
-            +0.0f, 0.0f, 0.5f, 1.0f);
-    }
-
     void UseProgram(VKProgramApi& program_api);
     VKProgramApi* m_current_program = nullptr;
 

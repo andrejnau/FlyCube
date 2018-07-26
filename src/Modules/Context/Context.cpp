@@ -23,13 +23,3 @@ GLFWwindow* Context::GetWindow()
 {
     return m_window;
 }
-
-uint32_t Context::GetWorkaroundAssimpFlags()
-{
-    return ~0;
-}
-
-glm::mat4 Context::GetClipMatrix()
-{
-    return glm::mat4(1);
-}

@@ -13,7 +13,7 @@ DX11Scene::DX11Scene(ApiType type, GLFWwindow* window, int width, int height)
     , m_height(height)
     , m_context_ptr(CreateContext(type, window, m_width, m_height))
     , m_context(*m_context_ptr)
-    , m_model_square(m_context, "model/square.obj", m_context.GetWorkaroundAssimpFlags())
+    , m_model_square(m_context, "model/square.obj")
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
     , m_shadow_pass(m_context, { m_scene_list, m_camera, light_pos }, width, height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
@@ -21,10 +21,13 @@ DX11Scene::DX11Scene(ApiType type, GLFWwindow* window, int width, int height)
     , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
     , m_imgui_pass(m_context, { m_render_target_view, *this }, width, height)
 {
+    if (type != ApiType::kVulkan)
+    {
 #if !defined(_DEBUG)
-    m_scene_list.emplace_back(m_context, "model/sponza/sponza.obj");
-    m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f));
+        m_scene_list.emplace_back(m_context, "model/sponza/sponza.obj");
+        m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f));
 #endif
+    }
     m_scene_list.emplace_back(m_context, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(75.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
