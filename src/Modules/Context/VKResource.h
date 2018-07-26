@@ -3,6 +3,10 @@
 #include <vulkan/vulkan.h>
 #include "Context/Resource.h"
 
+class VKDescriptorHeapRange;
+
+using VKBindKey = std::tuple<size_t /*program_id*/, ShaderType /*shader_type*/, VkDescriptorType /*res_type*/, uint32_t /*slot*/>;
+
 class VKResource : public Resource
 {
 public:
@@ -33,6 +37,8 @@ public:
     };
 
     Type res_type = Type::kUnknown;
+
+    std::map<VKBindKey, VKDescriptorHeapRange> descriptors;
 
     VKResource::Ptr GetUploadResource(size_t subresource)
     {

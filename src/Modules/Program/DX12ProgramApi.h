@@ -11,7 +11,9 @@
 
 #include "Context/DescriptorPool.h"
 
-class DX12ProgramApi : public ProgramApi
+#include "CommonProgramApi.h"
+
+class DX12ProgramApi : public CommonProgramApi
 {
 public:
     DX12ProgramApi(DX12Context& context);
@@ -21,12 +23,6 @@ public:
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
     virtual void CompileShader(const ShaderBase& shader) override;
-    virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
-    virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
-    virtual void AttachCBuffer(ShaderType type, const std::string& name, UINT slot, BufferLayout& buffer) override;
-    virtual void AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc) override;
-    virtual void AttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void AttachDSV(const Resource::Ptr& ires) override;
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
     virtual void SetRasterizeState(const RasterizerDesc& desc) override;
@@ -36,16 +32,14 @@ public:
     void OnPresent();
 
 private:
-    void SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const DescriptorHeapRange& handle);
-
-    void AttachCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& res);
-    DescriptorHeapRange CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
-    DescriptorHeapRange CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
-    DescriptorHeapRange CreateCBV(ShaderType type, uint32_t slot, DX12Resource::Ptr& ires);
-    DescriptorHeapRange CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc);
-    DescriptorHeapRange CreateRTV(uint32_t slot, const Resource::Ptr& ires);
-    DescriptorHeapRange CreateDSV(const Resource::Ptr& ires);
     DX12Resource::Ptr CreateCBuffer(size_t buffer_size);
+
+    virtual DescriptorHeapRange CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
+    virtual DescriptorHeapRange CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
+    virtual DescriptorHeapRange CreateCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
+    virtual DescriptorHeapRange CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc, DescriptorHeapRange& handle) override;
+    virtual DescriptorHeapRange CreateRTV(uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
+    virtual DescriptorHeapRange CreateDSV(const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
 
     void SetRootSignature(ID3D12RootSignature* pRootSignature);
     void SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor);
@@ -69,7 +63,6 @@ private:
     uint32_t m_num_rtv = 0;
     uint32_t m_num_sampler = 0;
 
-    std::map<std::tuple<ShaderType, ResourceType, uint32_t>, DescriptorHeapRange> m_heap_ranges;
     std::map<ShaderType, ComPtr<ID3DBlob>> m_blob_map;
     bool m_is_compute = false;
 
@@ -97,7 +90,6 @@ private:
     };
 
     std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE>, BindingLayout> m_binding_layout;
-    std::map<std::tuple<ShaderType, uint32_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
     PerFrameData<std::map<std::tuple<ShaderType, uint32_t>, std::vector<DX12Resource::Ptr>>> m_cbv_buffer;
     PerFrameData<std::map<std::tuple<ShaderType, uint32_t>, size_t>> m_cbv_offset;
     ComPtr<ID3D12RootSignature> m_root_signature;
@@ -148,9 +140,7 @@ private:
     };
 
     DiffAccumulator m_pso_desc_cache;
-
-    bool m_changed_binding = false;
-    bool m_changed_om = false;
+     
     D3D12_GRAPHICS_PIPELINE_STATE_DESC m_pso_desc = {};
     D3D12_COMPUTE_PIPELINE_STATE_DESC m_compute_pso_desc = {};
 
@@ -191,10 +181,6 @@ private:
 
     std::vector<D3D12_INPUT_ELEMENT_DESC> m_input_layout;
     ComPtr<ID3D12ShaderReflection> m_input_layout_reflector;
-    std::map<std::tuple<ShaderType, uint32_t>, DescriptorHeapRange> m_sample_cache_range;
 
     const bool m_use_cbv_table = true;
-
-    DX12Context& m_context;
-    size_t m_program_id;
 };

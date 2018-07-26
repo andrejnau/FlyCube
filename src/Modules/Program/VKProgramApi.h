@@ -8,6 +8,8 @@
 #include <spirv_cross.hpp>
 #include <spirv_hlsl.hpp>
 
+#include "VkDescriptorPool.h"
+
 class VKProgramApi : public ProgramApi
 {
 public:
@@ -104,4 +106,6 @@ private:
     std::vector<VkExtent2D> m_rtv_size;
 
     VkSampler m_sampler;
+    VKDescriptorManager m_descriptor_pool;
+    size_t m_program_id;
 };

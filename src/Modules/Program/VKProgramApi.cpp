@@ -4,9 +4,17 @@
 #include <utility>
 #include <Context/VKResource.h>
 
+static size_t GenId()
+{
+    static size_t id = 0;
+    return ++id;
+}
+
 VKProgramApi::VKProgramApi(VKContext& context)
     : m_context(context)
     , m_descriptor_sets(context)
+    , m_descriptor_pool(context)
+    , m_program_id(GenId())
 {
 }
 
@@ -570,6 +578,8 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
     auto &res_type = shader_ref.compiler.get_type(ref_res.res.base_type_id);
 
     std::vector<VkWriteDescriptorSet> descriptorWrites;
+    std::vector<VkCopyDescriptorSet> descriptorCopies;
+    
 
     auto dim = res_type.image.dim;
     if (res_type.basetype == spirv_cross::SPIRType::BaseType::Struct)
@@ -600,16 +610,27 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = srv;
         
+        auto handle = m_descriptor_pool.GetDescriptor({ m_program_id, type, ref_res.descriptor_type, slot }, res);
+
         descriptorWrites.emplace_back();
         auto& descriptorWrite = descriptorWrites.back();
 
         descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
-        descriptorWrite.dstBinding = ref_res.binding;
+        descriptorWrite.dstSet = handle.handle.m_descriptor_set;
+        descriptorWrite.dstBinding = handle.handle.m_offset;
         descriptorWrite.dstArrayElement = 0;
         descriptorWrite.descriptorType = ref_res.descriptor_type;
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pImageInfo = &imageInfo;
+
+        descriptorCopies.emplace_back();
+        auto& descriptorCopy = descriptorCopies.back();
+        descriptorCopy.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+        descriptorCopy.srcSet = handle.handle.m_descriptor_set;
+        descriptorCopy.srcBinding = handle.handle.m_offset;
+        descriptorCopy.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
+        descriptorCopy.dstBinding = ref_res.binding;
+        descriptorCopy.descriptorCount = 1;
 
         break;
     }
@@ -684,7 +705,7 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
     }
 
     if (!descriptorWrites.empty())
-        vkUpdateDescriptorSets(m_context.m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+        vkUpdateDescriptorSets(m_context.m_device, descriptorWrites.size(), descriptorWrites.data(), descriptorCopies.size(), descriptorCopies.data());
 
 }
 
