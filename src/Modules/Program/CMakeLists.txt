@@ -12,6 +12,9 @@ set(headers
     VkDescriptorPool.h
     CommonProgramApi.h
     CommonProgramApi.cpp
+    DX12ViewCreater.h
+    DX12ViewCreater.cpp
+	IShaderBlobProvider.h
 )
 
 set(sources

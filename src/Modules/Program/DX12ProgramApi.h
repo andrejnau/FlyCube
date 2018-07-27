@@ -12,8 +12,12 @@
 #include "Context/DescriptorPool.h"
 
 #include "CommonProgramApi.h"
+#include "IShaderBlobProvider.h"
+#include "DX12ViewCreater.h"
 
-class DX12ProgramApi : public CommonProgramApi
+class DX12ProgramApi
+    : public CommonProgramApi
+    , public IShaderBlobProvider
 {
 public:
     DX12ProgramApi(DX12Context& context);
@@ -28,6 +32,8 @@ public:
     virtual void SetRasterizeState(const RasterizerDesc& desc) override;
     virtual void SetBlendState(const BlendDesc& desc) override;
     virtual void SetDepthStencilState(const DepthStencilDesc& desc) override;
+
+    virtual ShaderBlob GetBlobByType(ShaderType type) const override;
 
     void OnPresent();
 
@@ -183,4 +189,5 @@ private:
     ComPtr<ID3D12ShaderReflection> m_input_layout_reflector;
 
     const bool m_use_cbv_table = true;
+    DX12ViewCreater m_view_creater;
 };
