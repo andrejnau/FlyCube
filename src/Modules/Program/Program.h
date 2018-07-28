@@ -66,21 +66,23 @@ private:
 class SamplerBinding
 {
 public:
-    SamplerBinding(ProgramApi& program_api, ShaderType shader_type, uint32_t slot)
+    SamplerBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
         : m_program_api(program_api)
         , m_shader_type(shader_type)
+        , m_name(name)
         , m_slot(slot)
     {
     }
 
-    void Attach(const SamplerDesc& desc)
+    void Attach(const Resource::Ptr& ires = {})
     {
-        m_program_api.AttachSampler(m_shader_type, m_slot, desc);
+        m_program_api.AttachSampler(m_shader_type, m_name, m_slot, ires);
     }
 
 private:
     ProgramApi& m_program_api;
     ShaderType m_shader_type;
+    std::string m_name;
     uint32_t m_slot;
 };
 

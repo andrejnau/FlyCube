@@ -41,5 +41,6 @@ private:
     Input m_input;
     Program<ShadowPassVS, ShadowPassGS, ShadowPassPS> m_program;
     Resource::Ptr m_buffer;
+    Resource::Ptr m_sampler;
 };
 

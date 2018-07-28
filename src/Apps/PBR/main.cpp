@@ -34,6 +34,10 @@ public:
         , m_model(m_context, "model/export3dcoat/export3dcoat.obj")
     {
         InitRT();
+        m_sampler = m_context.CreateSampler({
+            SamplerFilter::kAnisotropic,
+            SamplerTextureAddressMode::kWrap,
+            SamplerComparisonFunc::kNever });
     }
 
     static IScene::Ptr Create(ApiType api_type, GLFWwindow* window, int width, int height)
@@ -141,10 +145,7 @@ public:
 
         m_program.UseProgram();
 
-        m_program.ps.sampler.g_sampler.Attach({
-            SamplerFilter::kAnisotropic,
-            SamplerTextureAddressMode::kWrap,
-            SamplerComparisonFunc::kNever });
+        m_program.ps.sampler.g_sampler.Attach(m_sampler);
 
         float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
         m_program.ps.om.rtv0.Attach(m_render_target_view).Clear(color);
@@ -193,6 +194,7 @@ private:
 
     Resource::Ptr m_render_target_view;
     Resource::Ptr m_depth_stencil_view;
+    Resource::Ptr m_sampler;
 
     int m_width;
     int m_height;

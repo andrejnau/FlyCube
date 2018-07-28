@@ -12,7 +12,7 @@ public:
     void CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle);
     void CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const DX12Resource& ires, DescriptorHeapRange& handle);
     void CreateCBV(ShaderType type, uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle);
-    void CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc, DescriptorHeapRange& handle);
+    void CreateSampler(ShaderType type, uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle);
     void CreateRTV(uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle);
     void CreateDSV(const DX12Resource& res, DescriptorHeapRange& handle);
 

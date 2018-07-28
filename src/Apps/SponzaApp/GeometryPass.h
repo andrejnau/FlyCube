@@ -45,5 +45,6 @@ private:
     void CreateSizeDependentResources();
 
     Resource::Ptr m_depth_stencil;
+    Resource::Ptr m_sampler;
     Settings m_settings;
 };

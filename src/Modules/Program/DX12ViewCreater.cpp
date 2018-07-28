@@ -132,56 +132,9 @@ void DX12ViewCreater::CreateCBV(ShaderType type, uint32_t slot, const DX12Resour
     handle.SetInit();
 }
 
-void DX12ViewCreater::CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc, DescriptorHeapRange& handle)
+void DX12ViewCreater::CreateSampler(ShaderType type, uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle)
 {
-    D3D12_SAMPLER_DESC sampler_desc = {};
-
-    switch (desc.filter)
-    {
-    case SamplerFilter::kAnisotropic:
-        sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
-        break;
-    case SamplerFilter::kMinMagMipLinear:
-        sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-        break;
-    case SamplerFilter::kComparisonMinMagMipLinear:
-        sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-        break;
-    }
-
-    switch (desc.mode)
-    {
-    case SamplerTextureAddressMode::kWrap:
-        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        break;
-    case SamplerTextureAddressMode::kClamp:
-        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        break;
-    }
-
-    switch (desc.func)
-    {
-    case SamplerComparisonFunc::kNever:
-        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-        break;
-    case SamplerComparisonFunc::kAlways:
-        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-        break;
-    case SamplerComparisonFunc::kLess:
-        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS;
-        break;
-    }
-
-    sampler_desc.MinLOD = 0;
-    sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
-    sampler_desc.MaxAnisotropy = 1;
-
-    m_context.device->CreateSampler(&sampler_desc, handle.GetCpuHandle());
-
+    m_context.device->CreateSampler(&res.sampler_desc, handle.GetCpuHandle());
     handle.SetInit();
 }
 

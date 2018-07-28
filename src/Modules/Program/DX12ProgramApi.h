@@ -43,7 +43,7 @@ private:
     virtual DescriptorHeapRange CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
     virtual DescriptorHeapRange CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
     virtual DescriptorHeapRange CreateCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
-    virtual DescriptorHeapRange CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc, DescriptorHeapRange& handle) override;
+    virtual DescriptorHeapRange CreateSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
     virtual DescriptorHeapRange CreateRTV(uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
     virtual DescriptorHeapRange CreateDSV(const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
 

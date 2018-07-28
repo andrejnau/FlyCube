@@ -9,6 +9,10 @@ ShadowPass::ShadowPass(Context& context, const Input& input, int width, int heig
     , m_program(context)
 {
     CreateSizeDependentResources();
+    m_sampler = m_context.CreateSampler({
+        SamplerFilter::kAnisotropic,
+        SamplerTextureAddressMode::kWrap,
+        SamplerComparisonFunc::kNever });
 }
 
 void ShadowPass::OnUpdate()
@@ -50,10 +54,7 @@ void ShadowPass::OnRender()
 
     m_program.UseProgram();
 
-    m_program.ps.sampler.g_sampler.Attach({
-        SamplerFilter::kAnisotropic,
-        SamplerTextureAddressMode::kWrap,
-        SamplerComparisonFunc::kNever });
+    m_program.ps.sampler.g_sampler.Attach(m_sampler);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_program.ps.om.dsv.Attach(output.srv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);

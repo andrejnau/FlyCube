@@ -237,9 +237,12 @@ DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
     return res;
 }
 
-DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc, DescriptorHeapRange& handle)
+DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle)
 {
-    m_view_creater.CreateSampler(type, slot, desc, handle);
+    if (!ires)
+        return handle;
+    DX12Resource& res = static_cast<DX12Resource&>(*ires);
+    m_view_creater.CreateSampler(type, slot, res, handle);
     return handle;
 }
 

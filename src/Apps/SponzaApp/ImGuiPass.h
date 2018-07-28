@@ -53,4 +53,5 @@ private:
     PerFrameData<std::unique_ptr<IAVertexBuffer>> m_texcoords_buffer;
     PerFrameData<std::unique_ptr<IAVertexBuffer>> m_colors_buffer;
     PerFrameData<std::unique_ptr<IAIndexBuffer>> m_indices_buffer;
+    Resource::Ptr m_sampler;
 };

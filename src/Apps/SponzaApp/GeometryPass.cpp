@@ -12,6 +12,10 @@ GeometryPass::GeometryPass(Context& context, const Input& input, int width, int 
     , m_program(context)
 {
     CreateSizeDependentResources();
+    m_sampler = m_context.CreateSampler({
+        SamplerFilter::kAnisotropic,
+        SamplerTextureAddressMode::kWrap,
+        SamplerComparisonFunc::kNever });
 }
 
 void GeometryPass::OnUpdate()
@@ -38,10 +42,7 @@ void GeometryPass::OnRender()
 
     m_program.UseProgram();
 
-    m_program.ps.sampler.g_sampler.Attach({
-        SamplerFilter::kAnisotropic,
-        SamplerTextureAddressMode::kWrap,
-        SamplerComparisonFunc::kNever});
+    m_program.ps.sampler.g_sampler.Attach(m_sampler);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_program.ps.om.rtv0.Attach(output.position).Clear(color);

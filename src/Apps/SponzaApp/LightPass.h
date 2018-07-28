@@ -50,4 +50,6 @@ private:
     int m_height;
     Program<LightPassPS, LightPassVS> m_program;
     Resource::Ptr m_depth_stencil_view;
+    Resource::Ptr m_sampler;
+    Resource::Ptr m_compare_sampler;
 };

@@ -30,8 +30,8 @@ public:
     void ParseShaders();
     virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
     virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
-    virtual void AttachCBuffer(ShaderType type, const std::string& name, UINT slot, BufferLayout& buffer_layout) override;
-    virtual void AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc) override;
+    virtual void AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer_layout) override;
+    virtual void AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
     virtual void AttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
     virtual void AttachDSV(const Resource::Ptr& ires) override;
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
@@ -105,7 +105,6 @@ private:
     std::vector<VkImageView> m_rtv;
     std::vector<VkExtent2D> m_rtv_size;
 
-    VkSampler m_sampler;
     VKDescriptorManager m_descriptor_pool;
     size_t m_program_id;
 };

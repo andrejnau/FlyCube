@@ -14,6 +14,15 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     m_input.camera.SetCameraYaw(-1.75f);
 
     CreateSizeDependentResources();
+    m_sampler = m_context.CreateSampler({
+        SamplerFilter::kAnisotropic,
+        SamplerTextureAddressMode::kWrap,
+        SamplerComparisonFunc::kNever });
+
+    m_compare_sampler = m_context.CreateSampler({
+        SamplerFilter::kComparisonMinMagMipLinear,
+        SamplerTextureAddressMode::kClamp,
+        SamplerComparisonFunc::kLess });
 }
 
 void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
@@ -45,15 +54,9 @@ void LightPass::OnRender()
 
     m_program.UseProgram();
 
-    m_program.ps.sampler.g_sampler.Attach({
-        SamplerFilter::kAnisotropic,
-        SamplerTextureAddressMode::kWrap,
-        SamplerComparisonFunc::kNever });
+    m_program.ps.sampler.g_sampler.Attach(m_sampler);
 
-    m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach({
-        SamplerFilter::kComparisonMinMagMipLinear,
-        SamplerTextureAddressMode::kClamp,
-        SamplerComparisonFunc::kLess });
+    m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_compare_sampler);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_program.ps.om.rtv0.Attach(output.rtv).Clear(color);

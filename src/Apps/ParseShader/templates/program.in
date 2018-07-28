@@ -64,7 +64,7 @@ public:
     struct Sampler
     {
         Sampler(ProgramApi& program_api)
-{{#Samplers}}            {{Separator}} {{Name}}(program_api, type, {{Slot}})
+{{#Samplers}}            {{Separator}} {{Name}}(program_api, type, "{{Name}}", {{Slot}})
 {{/Samplers}}        {
         }
 

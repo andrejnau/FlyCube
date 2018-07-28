@@ -29,11 +29,17 @@ public:
         uint32_t size = 0;
     } buffer;
 
+    struct Sampler
+    {
+        VkSampler res;
+    } sampler;
+
     enum class Type
     {
         kUnknown,
         kBuffer,
-        kImage
+        kImage,
+        kSampler
     };
 
     Type res_type = Type::kUnknown;

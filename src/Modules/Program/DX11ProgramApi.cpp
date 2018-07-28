@@ -48,7 +48,7 @@ void DX11ProgramApi::UseProgram()
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void DX11ProgramApi::AttachCBuffer(ShaderType type, const std::string& name, UINT slot, BufferLayout & buffer_layout)
+void DX11ProgramApi::AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout & buffer_layout)
 {
     m_cbv_buffer.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, slot),
@@ -199,73 +199,15 @@ void DX11ProgramApi::Attach(ShaderType type, uint32_t slot, ComPtr<ID3D11Sampler
     }
 }
 
-void DX11ProgramApi::AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc & desc)
+void DX11ProgramApi::AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
 {
     ComPtr<ID3D11SamplerState> sampler;
-
-    D3D11_SAMPLER_DESC sampler_desc = {};
-
-    switch (desc.filter)
+    if (ires)
     {
-    case SamplerFilter::kAnisotropic:
-        sampler_desc.Filter = D3D11_FILTER_ANISOTROPIC;
-        break;
-    case SamplerFilter::kMinMagMipLinear:
-        sampler_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-        break;
-    case SamplerFilter::kComparisonMinMagMipLinear:
-        sampler_desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-        break;
+        DX11Resource& res = static_cast<DX11Resource&>(*ires);
+        sampler = res.sampler;
     }
-
-    switch (desc.mode)
-    {
-    case SamplerTextureAddressMode::kWrap:
-        sampler_desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-        sampler_desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-        sampler_desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-        break;
-    case SamplerTextureAddressMode::kClamp:
-        sampler_desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-        sampler_desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-        sampler_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-        break;
-    }
-
-    switch (desc.func)
-    {
-    case SamplerComparisonFunc::kNever:
-        sampler_desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-        break;
-    case SamplerComparisonFunc::kAlways:
-        sampler_desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-        break;
-    case SamplerComparisonFunc::kLess:
-        sampler_desc.ComparisonFunc = D3D11_COMPARISON_LESS;
-        break;
-    }
-
-    sampler_desc.MinLOD = 0;
-    sampler_desc.MaxLOD = D3D11_FLOAT32_MAX;
-    sampler_desc.MaxAnisotropy = 1;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateSamplerState(&sampler_desc, &sampler));
-
-    switch (type)
-    {
-    case ShaderType::kVertex:
-        m_context.device_context->VSSetSamplers(slot, 1, sampler.GetAddressOf());
-        break;
-    case ShaderType::kPixel:
-        m_context.device_context->PSSetSamplers(slot, 1, sampler.GetAddressOf());
-        break;
-    case ShaderType::kCompute:
-        m_context.device_context->CSSetSamplers(slot, 1, sampler.GetAddressOf());
-        break;
-    case ShaderType::kGeometry:
-        m_context.device_context->GSSetSamplers(slot, 1, sampler.GetAddressOf());
-        break;
-    }
+    Attach(type, slot, sampler);
 }
 
 void DX11ProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& ires)

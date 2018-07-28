@@ -16,6 +16,8 @@ public:
     std::map<BindKey, ComPtr<ID3D11RenderTargetView>> rtv;
     std::map<BindKey, ComPtr<ID3D11DepthStencilView>> dsv;
 
+    ComPtr<ID3D11SamplerState> sampler;
+
     virtual void SetName(const std::string& name) override
     {
         resource->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(name.size()), name.c_str());

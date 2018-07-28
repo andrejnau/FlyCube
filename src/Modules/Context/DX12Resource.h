@@ -19,6 +19,8 @@ public:
     uint32_t stride = 0;
     D3D12_RESOURCE_DESC desc = {};
 
+    D3D12_SAMPLER_DESC sampler_desc = {};
+
     DX12Resource(DX12Context& context);
     ~DX12Resource();
 

@@ -40,25 +40,17 @@ void CommonProgramApi::AttachCBV(ShaderType type, uint32_t slot, const Resource:
     SetBinding(type, ResourceType::kCbv, slot, CreateCBV(type, slot, res, GetDescriptor(type, ResourceType::kCbv, slot, res)));
 }
 
-void CommonProgramApi::AttachCBuffer(ShaderType type, const std::string& name, UINT slot, BufferLayout& buffer)
+void CommonProgramApi::AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer)
 {
     m_cbv_layout.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, slot),
         std::forward_as_tuple(buffer));
 }
 
-void CommonProgramApi::AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc& desc)
+void CommonProgramApi::AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
 {
     m_changed_binding = true;
-    auto it = m_sample_cache_range.find({ type, slot });
-    if (it == m_sample_cache_range.end())
-    {
-        it = m_sample_cache_range.emplace(std::piecewise_construct,
-            std::forward_as_tuple(type, slot),
-            std::forward_as_tuple(m_context.GetDescriptorPool().AllocateDescriptor(ResourceType::kSampler))).first;
-    }
-    auto& handle = it->second;
-    SetBinding(type, ResourceType::kSampler, slot, CreateSampler(type, slot, desc, handle));
+    SetBinding(type, ResourceType::kSampler, slot, CreateSampler(type, slot, ires, GetDescriptor(type, ResourceType::kSampler, slot, ires)));
 }
 
 void CommonProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& ires)

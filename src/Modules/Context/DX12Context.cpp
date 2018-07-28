@@ -176,6 +176,59 @@ Resource::Ptr DX12Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size
     return res;
 }
 
+Resource::Ptr DX12Context::CreateSampler(const SamplerDesc & desc)
+{
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>(*this);
+
+    D3D12_SAMPLER_DESC& sampler_desc = res->sampler_desc;
+
+    switch (desc.filter)
+    {
+    case SamplerFilter::kAnisotropic:
+        sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
+        break;
+    case SamplerFilter::kMinMagMipLinear:
+        sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        break;
+    case SamplerFilter::kComparisonMinMagMipLinear:
+        sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+        break;
+    }
+
+    switch (desc.mode)
+    {
+    case SamplerTextureAddressMode::kWrap:
+        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        break;
+    case SamplerTextureAddressMode::kClamp:
+        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        break;
+    }
+
+    switch (desc.func)
+    {
+    case SamplerComparisonFunc::kNever:
+        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        break;
+    case SamplerComparisonFunc::kAlways:
+        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+        break;
+    case SamplerComparisonFunc::kLess:
+        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS;
+        break;
+    }
+
+    sampler_desc.MinLOD = 0;
+    sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
+    sampler_desc.MaxAnisotropy = 1;
+
+    return res;
+}
+
 void DX12Context::UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubresource, const void * pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);

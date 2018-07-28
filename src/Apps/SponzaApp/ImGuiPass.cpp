@@ -25,6 +25,10 @@ ImGuiPass::ImGuiPass(Context& context, const Input& input, int width, int height
 
     InitKey();
     CreateFontsTexture();
+    m_sampler = m_context.CreateSampler({
+        SamplerFilter::kMinMagMipLinear,
+        SamplerTextureAddressMode::kWrap,
+        SamplerComparisonFunc::kAlways });
 }
 
 ImGuiPass::~ImGuiPass()
@@ -100,10 +104,7 @@ void ImGuiPass::OnRender()
     m_texcoords_buffer.get()->BindToSlot(m_program.vs.ia.TEXCOORD);
     m_colors_buffer.get()->BindToSlot(m_program.vs.ia.COLOR);
 
-    m_program.ps.sampler.sampler0.Attach({
-        SamplerFilter::kMinMagMipLinear,
-        SamplerTextureAddressMode::kWrap,
-        SamplerComparisonFunc::kAlways });
+    m_program.ps.sampler.sampler0.Attach(m_sampler);
 
     m_program.SetBlendState({
         true,

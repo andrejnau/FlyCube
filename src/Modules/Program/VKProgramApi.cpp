@@ -714,7 +714,7 @@ void VKProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32_t
 {
 }
 
-void VKProgramApi::AttachCBuffer(ShaderType type, const std::string& name, UINT slot, BufferLayout & buffer_layout)
+void VKProgramApi::AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout & buffer_layout)
 {
     m_cbv_buffer.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, slot, name),
@@ -724,35 +724,18 @@ void VKProgramApi::AttachCBuffer(ShaderType type, const std::string& name, UINT 
         std::forward_as_tuple(buffer_layout));
 }
 
-void VKProgramApi::AttachSampler(ShaderType type, uint32_t slot, const SamplerDesc & desc)
+void VKProgramApi::AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
 {
-    VkSamplerCreateInfo samplerInfo = {};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.anisotropyEnable = VK_TRUE;
-    samplerInfo.maxAnisotropy = 16;
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 0.0f;
+    if (!ires)
+        return;
 
-    if (vkCreateSampler(m_context.m_device, &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture sampler!");
-    }
+    VKResource& res = static_cast<VKResource&>(*ires);
 
     {
         VkWriteDescriptorSet descriptor_writes = {};
 
         VkDescriptorImageInfo samplerInfo = {};
-        samplerInfo.sampler = m_sampler;
+        samplerInfo.sampler = res.sampler.res;
 
         ShaderRef& shader_ref = m_shader_ref.find(type)->second;
         auto ref_res = shader_ref.resources["g_sampler"];
