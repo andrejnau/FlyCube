@@ -8,7 +8,6 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     : CommonProgramApi(context)
     , m_cbv_buffer(context)
     , m_cbv_offset(context)
-    , m_view_creater(m_context, *this)
 {
     if (CurState::Instance().DXIL)
         _D3DReflect = (decltype(&::D3DReflect))GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DReflect");
@@ -176,50 +175,31 @@ ShaderBlob DX12ProgramApi::GetBlobByType(ShaderType type) const
     return { (uint8_t*)it->second->GetBufferPointer(), it->second->GetBufferSize() };
 }
 
-DescriptorHeapRange DX12ProgramApi::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle)
+void DX12ProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
 {
+    m_changed_binding = true;
     if (!ires)
-        return handle;
+        return;
 
     DX12Resource& res = static_cast<DX12Resource&>(*ires);
-
     if (type == ShaderType::kPixel)
         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     else
         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-
-    m_view_creater.CreateSrv(type, name, slot, res, handle);
-
-    return handle;
 }
 
-DescriptorHeapRange DX12ProgramApi::CreateUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & ires, DescriptorHeapRange& handle)
+void DX12ProgramApi::OnAttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & ires)
 {
+    m_changed_binding = true;
     if (!ires)
-        return handle;
-
+        return;
     DX12Resource& res = static_cast<DX12Resource&>(*ires);
-
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-
-    if (handle.IsInit())
-        return handle;
-
-    m_view_creater.CreateUAV(type, name, slot, res, handle);
-
-    return handle;
 }
 
-DescriptorHeapRange DX12ProgramApi::CreateCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle)
+void DX12ProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
 {
-    if (!ires || handle.IsInit())
-        return handle;
-
-    DX12Resource& res = static_cast<DX12Resource&>(*ires);
-
-    m_view_creater.CreateCBV(type, slot, res, handle);
-
-    return handle;
+    m_changed_binding = true;
 }
 
 DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
@@ -237,17 +217,14 @@ DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
     return res;
 }
 
-DescriptorHeapRange DX12ProgramApi::CreateSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle)
+void DX12ProgramApi::OnAttachSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
 {
-    if (!ires)
-        return handle;
-    DX12Resource& res = static_cast<DX12Resource&>(*ires);
-    m_view_creater.CreateSampler(type, slot, res, handle);
-    return handle;
+    m_changed_binding = true;
 }
 
-DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle)
+void DX12ProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr& ires)
 {
+    m_changed_om = true;
     DX12Resource& res = static_cast<DX12Resource&>(*ires);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -273,13 +250,11 @@ DescriptorHeapRange DX12ProgramApi::CreateRTV(uint32_t slot, const Resource::Ptr
 
     m_pso_desc_cache(m_pso_desc.RTVFormats[slot]) = format;
     m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = desc.SampleDesc.Count;
-
-    m_view_creater.CreateRTV(slot, res, handle);
-    return handle;
 }
 
-DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires, DescriptorHeapRange& handle)
+void DX12ProgramApi::OnAttachDSV(const Resource::Ptr& ires)
 {
+    m_changed_om = true;
     DX12Resource& res = static_cast<DX12Resource&>(*ires);
 
     m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_DEPTH_WRITE);
@@ -289,9 +264,6 @@ DescriptorHeapRange DX12ProgramApi::CreateDSV(const Resource::Ptr& ires, Descrip
 
     m_pso_desc_cache(m_pso_desc.DSVFormat) = format;
     m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = res.default_res->GetDesc().SampleDesc.Count;
-
-    m_view_creater.CreateDSV(res, handle);
-    return handle;
 }
 
 void DX12ProgramApi::SetRootSignature(ID3D12RootSignature * pRootSignature)

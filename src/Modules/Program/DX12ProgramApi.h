@@ -17,7 +17,6 @@
 
 class DX12ProgramApi
     : public CommonProgramApi
-    , public IShaderBlobProvider
 {
 public:
     DX12ProgramApi(DX12Context& context);
@@ -40,12 +39,12 @@ public:
 private:
     DX12Resource::Ptr CreateCBuffer(size_t buffer_size);
 
-    virtual DescriptorHeapRange CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
-    virtual DescriptorHeapRange CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
-    virtual DescriptorHeapRange CreateCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
-    virtual DescriptorHeapRange CreateSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
-    virtual DescriptorHeapRange CreateRTV(uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
-    virtual DescriptorHeapRange CreateDSV(const Resource::Ptr& ires, DescriptorHeapRange& handle) override;
+    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachDSV(const Resource::Ptr& ires) override;
 
     void SetRootSignature(ID3D12RootSignature* pRootSignature);
     void SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor);
@@ -189,5 +188,6 @@ private:
     ComPtr<ID3D12ShaderReflection> m_input_layout_reflector;
 
     const bool m_use_cbv_table = true;
-    DX12ViewCreater m_view_creater;
+    bool m_changed_binding = false;
+    bool m_changed_om = false;
 };

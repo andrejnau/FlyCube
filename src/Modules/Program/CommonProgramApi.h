@@ -8,10 +8,14 @@
 #include <array>
 #include <set>
 #include <unordered_map>
+#include <functional>
 
 #include "Context/DescriptorPool.h"
+#include "DX12ViewCreater.h"
 
-class CommonProgramApi : public ProgramApi
+class CommonProgramApi
+    : public ProgramApi
+    , public IShaderBlobProvider
 {
 public:
     CommonProgramApi(DX12Context& context);
@@ -25,22 +29,20 @@ public:
     virtual void AttachDSV(const Resource::Ptr& ires) override;
 
 protected:
-    virtual DescriptorHeapRange CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) = 0;
-    virtual DescriptorHeapRange CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) = 0;
-    virtual DescriptorHeapRange CreateCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) = 0;
-    virtual DescriptorHeapRange CreateSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) = 0;
-    virtual DescriptorHeapRange CreateRTV(uint32_t slot, const Resource::Ptr& ires, DescriptorHeapRange& handle) = 0;
-    virtual DescriptorHeapRange CreateDSV(const Resource::Ptr& ires, DescriptorHeapRange& handle) = 0;
+    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) = 0;
+    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) = 0;
+    virtual void OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires) = 0;
+    virtual void OnAttachSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires) = 0;
+    virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) = 0;
+    virtual void OnAttachDSV(const Resource::Ptr& ires) = 0;
 
     void SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const DescriptorHeapRange& handle);
-    DescriptorHeapRange GetDescriptor(ShaderType shader_type, ResourceType res_type, uint32_t slot, const Resource::Ptr& res);
-    
+    DescriptorHeapRange GetDescriptor(ShaderType shader_type, const std::string& name, ResourceType res_type, uint32_t slot, const Resource::Ptr& ires);
 
     std::map<std::tuple<ShaderType, ResourceType, uint32_t>, DescriptorHeapRange> m_heap_ranges;
     std::map<std::tuple<ShaderType, uint32_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
 
     DX12Context& m_context;
     size_t m_program_id;
-    bool m_changed_binding = false;
-    bool m_changed_om = false;
+    DX12ViewCreater m_view_creater;
 };

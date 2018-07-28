@@ -40,23 +40,12 @@ public:
         return m_size;
     }
 
-    void SetInit()
-    {
-        *m_is_init = true;
-    }
-
-    bool IsInit() const
-    {
-        return *m_is_init;
-    }
-
 private:
     std::reference_wrapper<DX12Context> m_context;
     std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> m_heap;
     std::reference_wrapper<D3D12_CPU_DESCRIPTOR_HANDLE> m_cpu_handle;
     std::reference_wrapper<D3D12_GPU_DESCRIPTOR_HANDLE> m_gpu_handle;
     std::reference_wrapper<std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>> m_copied_handle;
-    std::shared_ptr<bool> m_is_init = std::make_shared<bool>(false);
     size_t m_offset;
     size_t m_size;
     uint32_t m_increment_size;
@@ -83,11 +72,17 @@ private:
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_copied_handle;
 };
 
+struct DescriptorByResource
+{
+    DescriptorHeapRange handle;
+    bool exist;
+};
+
 class DescriptorPool
 {
 public:
     DescriptorPool(DX12Context& context);
-    DescriptorHeapRange GetDescriptor(const BindKey& bind_key, DX12Resource& res);
+    DescriptorByResource GetDescriptor(const BindKey& bind_key, DX12Resource& res);
     DescriptorHeapRange GetEmptyDescriptor(ResourceType res_type);
     DescriptorHeapRange AllocateDescriptor(ResourceType res_type);
     void OnFrameBegin();

@@ -9,35 +9,39 @@ static size_t GenId()
 CommonProgramApi::CommonProgramApi(DX12Context& context)
     : m_context(context)
     , m_program_id(GenId())
+    , m_view_creater(m_context, *this)
 {
 }
 
-DescriptorHeapRange CommonProgramApi::GetDescriptor(ShaderType shader_type, ResourceType res_type, uint32_t slot, const Resource::Ptr& ires)
+DescriptorHeapRange CommonProgramApi::GetDescriptor(ShaderType shader_type, const std::string& name, ResourceType res_type, uint32_t slot, const Resource::Ptr& ires)
 {
     if (!ires)
         return m_context.GetDescriptorPool().GetEmptyDescriptor(res_type);
 
     DX12Resource& res = static_cast<DX12Resource&>(*ires);
+    auto descriptor = m_context.GetDescriptorPool().GetDescriptor({ m_program_id, shader_type, res_type, slot }, res);
+    if (!descriptor.exist)
+        m_view_creater.CreateView(shader_type, name, res_type, slot, *ires, descriptor.handle);
 
-    return m_context.GetDescriptorPool().GetDescriptor({ m_program_id, shader_type, res_type, slot }, res);
+    return descriptor.handle;
 }
 
 void CommonProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res)
 {
-    m_changed_binding = true;
-    SetBinding(type, ResourceType::kSrv, slot, CreateSrv(type, name, slot, res, GetDescriptor(type, ResourceType::kSrv, slot, res)));
+    SetBinding(type, ResourceType::kSrv, slot, GetDescriptor(type, name, ResourceType::kSrv, slot, res));
+    OnAttachSRV(type, name, slot, res);
 }
 
 void CommonProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr& res)
 {
-    m_changed_binding = true;
-    SetBinding(type, ResourceType::kUav, slot, CreateUAV(type, name, slot, res, GetDescriptor(type, ResourceType::kUav, slot, res)));
+    SetBinding(type, ResourceType::kUav, slot, GetDescriptor(type, name, ResourceType::kUav, slot, res));
+    OnAttachUAV(type, name, slot, res);
 }
 
 void CommonProgramApi::AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr & res)
 {
-    m_changed_binding = true;
-    SetBinding(type, ResourceType::kCbv, slot, CreateCBV(type, slot, res, GetDescriptor(type, ResourceType::kCbv, slot, res)));
+    SetBinding(type, ResourceType::kCbv, slot, GetDescriptor(type, "", ResourceType::kCbv, slot, res));
+    OnAttachCBV(type, slot, res);
 }
 
 void CommonProgramApi::AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer)
@@ -47,22 +51,22 @@ void CommonProgramApi::AttachCBuffer(ShaderType type, const std::string& name, u
         std::forward_as_tuple(buffer));
 }
 
-void CommonProgramApi::AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
+void CommonProgramApi::AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res)
 {
-    m_changed_binding = true;
-    SetBinding(type, ResourceType::kSampler, slot, CreateSampler(type, slot, ires, GetDescriptor(type, ResourceType::kSampler, slot, ires)));
+    SetBinding(type, ResourceType::kSampler, slot, GetDescriptor(type, "", ResourceType::kSampler, slot, res));
+    OnAttachSampler(type, slot, res);
 }
 
-void CommonProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& ires)
+void CommonProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& res)
 {
-    m_changed_om = true;
-    SetBinding(ShaderType::kPixel, ResourceType::kRtv, slot, CreateRTV(slot, ires, GetDescriptor(ShaderType::kPixel, ResourceType::kRtv, slot, ires)));
+    SetBinding(ShaderType::kPixel, ResourceType::kRtv, slot, GetDescriptor(ShaderType::kPixel, "", ResourceType::kRtv, slot, res));
+    OnAttachRTV(slot, res);
 }
 
-void CommonProgramApi::AttachDSV(const Resource::Ptr& ires)
+void CommonProgramApi::AttachDSV(const Resource::Ptr& res)
 {
-    m_changed_om = true;
-    SetBinding(ShaderType::kPixel, ResourceType::kDsv, 0, CreateDSV(ires, GetDescriptor(ShaderType::kPixel, ResourceType::kDsv, 0, ires)));
+    SetBinding(ShaderType::kPixel, ResourceType::kDsv, 0, GetDescriptor(ShaderType::kPixel, "", ResourceType::kDsv, 0, res));
+    OnAttachDSV(res);
 }
 
 void CommonProgramApi::SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const DescriptorHeapRange& handle)

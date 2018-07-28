@@ -118,7 +118,7 @@ DescriptorPool::DescriptorPool(DX12Context& context)
 {
 }
 
-DescriptorHeapRange DescriptorPool::GetDescriptor(const BindKey& bind_key, DX12Resource& res)
+DescriptorByResource DescriptorPool::GetDescriptor(const BindKey& bind_key, DX12Resource& res)
 {
     DescriptorHeapAllocator& pool = SelectHeap(std::get<ResourceType>(bind_key));
     bool exist = true;
@@ -130,7 +130,7 @@ DescriptorHeapRange DescriptorPool::GetDescriptor(const BindKey& bind_key, DX12R
             std::forward_as_tuple(bind_key),
             std::forward_as_tuple(pool.Allocate(1))).first;
     }
-    return it->second;
+    return { it->second, exist };
 }
 
 DescriptorHeapRange DescriptorPool::GetEmptyDescriptor(ResourceType res_type)
