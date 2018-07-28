@@ -54,8 +54,6 @@ private:
     void CreateComputePSO();
     void UpdateCBuffers();
     void CopyDescriptors(DescriptorHeapRange & dst_range, size_t dst_offset, DescriptorHeapRange & src, size_t src_offset);
-    void CopyDescriptors(D3D12_CPU_DESCRIPTOR_HANDLE & view_handle, D3D12_CPU_DESCRIPTOR_HANDLE & binding_handle, D3D12_DESCRIPTOR_HEAP_TYPE & heap_type);
-    void CopyDescriptors(D3D12_CPU_DESCRIPTOR_HANDLE view_handle, D3D12_CPU_DESCRIPTOR_HANDLE binding_handle);
     void ParseShaders();
     void OMSetRenderTargets();
 
