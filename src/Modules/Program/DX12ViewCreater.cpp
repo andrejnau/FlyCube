@@ -1,6 +1,7 @@
 #include "DX12ViewCreater.h"
 #include <Utilities/State.h>
 #include <Texture/DXGIFormatHelper.h>
+#include <memory>
 
 DX12ViewCreater::DX12ViewCreater(DX12Context& context, const IShaderBlobProvider& shader_provider)
     : m_context(context)
@@ -10,9 +11,30 @@ DX12ViewCreater::DX12ViewCreater(DX12Context& context, const IShaderBlobProvider
         _D3DReflect = (decltype(&::D3DReflect))GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DReflect");
 }
 
-void DX12ViewCreater::CreateView(ShaderType shader_type, const std::string& name, ResourceType res_type, uint32_t slot, const Resource& ires, DescriptorHeapRange& handle)
+DescriptorHeapRange::Ptr DX12ViewCreater::GetEmptyDescriptor(ResourceType res_type)
 {
-    auto& res = static_cast<const DX12Resource&>(ires);
+    static std::map<ResourceType, View::Ptr> empty_handles;
+    auto it = empty_handles.find(res_type);
+    if (it == empty_handles.end())
+        it = empty_handles.emplace(res_type, m_context.GetDescriptorPool().AllocateDescriptor(res_type)).first;
+    return std::static_pointer_cast<DescriptorHeapRange>(it->second);
+}
+
+DescriptorHeapRange::Ptr DX12ViewCreater::GetView(ShaderType shader_type, const std::string& name, ResourceType res_type, uint32_t slot, const Resource::Ptr& ires)
+{
+    if (!ires)
+        return GetEmptyDescriptor(res_type);
+
+    DX12Resource& res = static_cast<DX12Resource&>(*ires);
+
+    View::Ptr& view = ires->GetView({ m_shader_provider.GetProgramId(), shader_type, res_type, slot });
+    if (view)
+        return std::static_pointer_cast<DescriptorHeapRange>(view);
+
+    view = m_context.GetDescriptorPool().AllocateDescriptor(res_type);
+
+    DescriptorHeapRange& handle = static_cast<DescriptorHeapRange&>(*view);
+
     switch (res_type)
     {
     case ResourceType::kSrv:
@@ -34,6 +56,8 @@ void DX12ViewCreater::CreateView(ShaderType shader_type, const std::string& name
         CreateDSV(res, handle);
         break;
     }
+
+    return std::static_pointer_cast<DescriptorHeapRange>(view);
 }
 
 void DX12ViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle)

@@ -27,6 +27,7 @@ public:
     virtual void AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
     virtual void AttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
     virtual void AttachDSV(const Resource::Ptr& ires) override;
+    virtual size_t GetProgramId() const override;
 
 protected:
     virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) = 0;
@@ -36,8 +37,8 @@ protected:
     virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) = 0;
     virtual void OnAttachDSV(const Resource::Ptr& ires) = 0;
 
-    void SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const DescriptorHeapRange& handle);
-    DescriptorHeapRange GetDescriptor(ShaderType shader_type, const std::string& name, ResourceType res_type, uint32_t slot, const Resource::Ptr& ires);
+    void SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const DescriptorHeapRange::Ptr& view);
+    void Attach(ShaderType type, const std::string& name, ResourceType res_type, uint32_t slot, const Resource::Ptr& res);
 
     std::map<std::tuple<ShaderType, ResourceType, uint32_t>, DescriptorHeapRange> m_heap_ranges;
     std::map<std::tuple<ShaderType, uint32_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;

@@ -63,7 +63,7 @@ DescriptorHeapAllocator::DescriptorHeapAllocator(DX12Context& context, D3D12_DES
 {
 }
 
-DescriptorHeapRange DescriptorHeapAllocator::Allocate(size_t count)
+DescriptorHeapRange::Ptr DescriptorHeapAllocator::Allocate(size_t count)
 {
     if (m_offset + count > m_size)
     {
@@ -71,7 +71,7 @@ DescriptorHeapRange DescriptorHeapAllocator::Allocate(size_t count)
         ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
     }
     m_offset += count;
-    return DescriptorHeapRange(m_context, m_heap, m_cpu_handle, m_gpu_handle, m_copied_handle, m_offset - count, count, m_context.device->GetDescriptorHandleIncrementSize(m_type), m_type);
+    return std::make_shared<DescriptorHeapRange>(m_context, m_heap, m_cpu_handle, m_gpu_handle, m_copied_handle, m_offset - count, count, m_context.device->GetDescriptorHandleIncrementSize(m_type), m_type);
 }
 
 void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
@@ -118,32 +118,7 @@ DescriptorPool::DescriptorPool(DX12Context& context)
 {
 }
 
-DescriptorByResource DescriptorPool::GetDescriptor(const BindKey& bind_key, DX12Resource& res)
-{
-    DescriptorHeapAllocator& pool = SelectHeap(std::get<ResourceType>(bind_key));
-    bool exist = true;
-    auto it = res.descriptors.find(bind_key);
-    if (it == res.descriptors.end())
-    {
-        exist = false;
-        it = res.descriptors.emplace(std::piecewise_construct,
-            std::forward_as_tuple(bind_key),
-            std::forward_as_tuple(pool.Allocate(1))).first;
-    }
-    return { it->second, exist };
-}
-
-DescriptorHeapRange DescriptorPool::GetEmptyDescriptor(ResourceType res_type)
-{
-    DescriptorHeapAllocator& pool = SelectHeap(res_type);
-    static std::map<ResourceType, DescriptorHeapRange> empty_handles;
-    auto it = empty_handles.find(res_type);
-    if (it == empty_handles.end())
-        it = empty_handles.emplace(res_type, pool.Allocate(1)).first;
-    return it->second;
-}
-
-DescriptorHeapRange DescriptorPool::AllocateDescriptor(ResourceType res_type)
+DescriptorHeapRange::Ptr DescriptorPool::AllocateDescriptor(ResourceType res_type)
 {
     DescriptorHeapAllocator& pool = SelectHeap(res_type);
     return pool.Allocate(1);
@@ -182,9 +157,9 @@ DescriptorHeapRange DescriptorPool::Allocate(ResourceType res_type, size_t count
     switch (res_type)
     {
     case ResourceType::kSampler:
-        return m_shader_sampler.Allocate(count);
+        return *m_shader_sampler.Allocate(count);
     default:
-        return m_shader_resource.Allocate(count);
+        return *m_shader_resource.Allocate(count);
     }
 }
 

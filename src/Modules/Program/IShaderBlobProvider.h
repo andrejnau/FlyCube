@@ -17,4 +17,5 @@ class IShaderBlobProvider
 {
 public:
     virtual ShaderBlob GetBlobByType(ShaderType type) const = 0;
+    virtual size_t GetProgramId() const = 0;
 };

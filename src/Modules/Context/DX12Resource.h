@@ -6,7 +6,6 @@
 #include "Context/Resource.h"
 #include "Context/BaseTypes.h"
 
-class DescriptorHeapRange;
 class DX12Context;
 
 class DX12Resource : public Resource
@@ -15,7 +14,6 @@ public:
     using Ptr = std::shared_ptr<DX12Resource>;
     ComPtr<ID3D12Resource> default_res;
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
-    std::map<BindKey, DescriptorHeapRange> descriptors;
     uint32_t stride = 0;
     D3D12_RESOURCE_DESC desc = {};
 

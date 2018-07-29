@@ -12,6 +12,13 @@ set(headers
     DXGIUtility.h
     Resource.h
     VKContext.h
+    View.h
+    DX11View.h
+    DX11View.cpp
+    DX12View.h
+    DX12View.cpp
+    VKView.h
+    VKView.cpp
 )
 
 set(sources

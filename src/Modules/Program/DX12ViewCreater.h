@@ -2,6 +2,7 @@
 
 #include <Context/DX12Context.h>
 #include <Context/DX12Resource.h>
+#include <Context/View.h>
 #include "IShaderBlobProvider.h"
 
 class DX12ViewCreater
@@ -9,9 +10,11 @@ class DX12ViewCreater
 public:
     DX12ViewCreater(DX12Context& context, const IShaderBlobProvider& shader_provider);
 
-    void CreateView(ShaderType shader_type, const std::string& name, ResourceType res_type, uint32_t slot, const Resource& ires, DescriptorHeapRange& handle);
+    DescriptorHeapRange::Ptr GetView(ShaderType shader_type, const std::string& name, ResourceType res_type, uint32_t slot, const Resource::Ptr& ires);
 
 private:
+    DescriptorHeapRange::Ptr GetEmptyDescriptor(ResourceType res_type);
+
     void CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle);
     void CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const DX12Resource& ires, DescriptorHeapRange& handle);
     void CreateCBV(ShaderType type, uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle);

@@ -4,18 +4,21 @@
 #include <d3d12.h>
 #include <algorithm>
 #include <map>
+#include <memory>
 
 #include <Utilities/DXUtility.h>
 #include "Context/BaseTypes.h"
 #include "Context/DX12Resource.h"
+#include "Context/View.h"
 
 using namespace Microsoft::WRL;
 
 class DX12Context;
 
-class DescriptorHeapRange
+class DescriptorHeapRange : public View
 {
 public:
+    using Ptr = std::shared_ptr<DescriptorHeapRange>;
     DescriptorHeapRange(
         DX12Context& context,
         ComPtr<ID3D12DescriptorHeap>& heap,
@@ -56,7 +59,7 @@ class DescriptorHeapAllocator
 {
 public:
     DescriptorHeapAllocator(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags);
-    DescriptorHeapRange Allocate(size_t count);
+    DescriptorHeapRange::Ptr Allocate(size_t count);
     void ResizeHeap(size_t req_size);
     void ResetHeap();
 
@@ -72,19 +75,11 @@ private:
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_copied_handle;
 };
 
-struct DescriptorByResource
-{
-    DescriptorHeapRange handle;
-    bool exist;
-};
-
 class DescriptorPool
 {
 public:
     DescriptorPool(DX12Context& context);
-    DescriptorByResource GetDescriptor(const BindKey& bind_key, DX12Resource& res);
-    DescriptorHeapRange GetEmptyDescriptor(ResourceType res_type);
-    DescriptorHeapRange AllocateDescriptor(ResourceType res_type);
+    DescriptorHeapRange::Ptr AllocateDescriptor(ResourceType res_type);
     void OnFrameBegin();
     void ReqFrameDescription(ResourceType res_type, size_t count);
     DescriptorHeapRange Allocate(ResourceType res_type, size_t count);
