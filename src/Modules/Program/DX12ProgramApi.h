@@ -54,8 +54,8 @@ private:
     void CreateComputePSO();
     void UpdateCBuffers();
     void CopyDescriptor(DescriptorHeapRange & dst_range, size_t dst_offset, const D3D12_CPU_DESCRIPTOR_HANDLE& src_cpu_handle);
-    DescriptorHeapRange::Ptr FindView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key);
-    DescriptorHeapRange::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr & res);
+    DX12View::Ptr FindView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key);
+    DX12View::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr & res);
     void ParseShaders();
     void OMSetRenderTargets();
 

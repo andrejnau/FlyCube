@@ -11,16 +11,16 @@ DX12ViewCreater::DX12ViewCreater(DX12Context& context, const IShaderBlobProvider
         _D3DReflect = (decltype(&::D3DReflect))GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DReflect");
 }
 
-DescriptorHeapRange::Ptr DX12ViewCreater::GetEmptyDescriptor(ResourceType res_type)
+DX12View::Ptr DX12ViewCreater::GetEmptyDescriptor(ResourceType res_type)
 {
     static std::map<ResourceType, View::Ptr> empty_handles;
     auto it = empty_handles.find(res_type);
     if (it == empty_handles.end())
-        it = empty_handles.emplace(res_type, m_context.GetDescriptorPool().AllocateDescriptor(res_type)).first;
-    return std::static_pointer_cast<DescriptorHeapRange>(it->second);
+        it = empty_handles.emplace(res_type, m_context.m_view_pool.AllocateDescriptor(res_type)).first;
+    return std::static_pointer_cast<DX12View>(it->second);
 }
 
-DescriptorHeapRange::Ptr DX12ViewCreater::GetView(ShaderType shader_type, const std::string& name, ResourceType res_type, uint32_t slot, const Resource::Ptr& ires)
+DX12View::Ptr DX12ViewCreater::GetView(uint32_t m_program_id, ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& ires)
 {
     if (!ires)
         return GetEmptyDescriptor(res_type);
@@ -29,11 +29,11 @@ DescriptorHeapRange::Ptr DX12ViewCreater::GetView(ShaderType shader_type, const 
 
     View::Ptr& view = ires->GetView({ m_shader_provider.GetProgramId(), shader_type, res_type, slot });
     if (view)
-        return std::static_pointer_cast<DescriptorHeapRange>(view);
+        return std::static_pointer_cast<DX12View>(view);
 
-    view = m_context.GetDescriptorPool().AllocateDescriptor(res_type);
+    view = m_context.m_view_pool.AllocateDescriptor(res_type);
 
-    DescriptorHeapRange& handle = static_cast<DescriptorHeapRange&>(*view);
+    DX12View& handle = static_cast<DX12View&>(*view);
 
     switch (res_type)
     {
@@ -57,10 +57,10 @@ DescriptorHeapRange::Ptr DX12ViewCreater::GetView(ShaderType shader_type, const 
         break;
     }
 
-    return std::static_pointer_cast<DescriptorHeapRange>(view);
+    return std::static_pointer_cast<DX12View>(view);
 }
 
-void DX12ViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle)
+void DX12ViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const DX12Resource& res, DX12View& handle)
 {
     ComPtr<ID3D12ShaderReflection> reflector;
     auto shader_blob = m_shader_provider.GetBlobByType(type);
@@ -127,7 +127,7 @@ void DX12ViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32
     }
 }
 
-void DX12ViewCreater::CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle)
+void DX12ViewCreater::CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const DX12Resource& res, DX12View& handle)
 {
     ComPtr<ID3D12ShaderReflection> reflector;
     auto shader_blob = m_shader_provider.GetBlobByType(type);
@@ -158,7 +158,7 @@ void DX12ViewCreater::CreateUAV(ShaderType type, const std::string& name, uint32
     }
 }
 
-void DX12ViewCreater::CreateCBV(ShaderType type, uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle)
+void DX12ViewCreater::CreateCBV(ShaderType type, uint32_t slot, const DX12Resource& res, DX12View& handle)
 {
     D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
     desc.BufferLocation = res.default_res->GetGPUVirtualAddress();
@@ -166,12 +166,12 @@ void DX12ViewCreater::CreateCBV(ShaderType type, uint32_t slot, const DX12Resour
     m_context.device->CreateConstantBufferView(&desc, handle.GetCpuHandle());
 }
 
-void DX12ViewCreater::CreateSampler(ShaderType type, uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle)
+void DX12ViewCreater::CreateSampler(ShaderType type, uint32_t slot, const DX12Resource& res, DX12View& handle)
 {
     m_context.device->CreateSampler(&res.sampler_desc, handle.GetCpuHandle());
 }
 
-void DX12ViewCreater::CreateRTV(uint32_t slot, const DX12Resource& res, DescriptorHeapRange& handle)
+void DX12ViewCreater::CreateRTV(uint32_t slot, const DX12Resource& res, DX12View& handle)
 {
     const D3D12_RESOURCE_DESC& desc = res.desc;
     DXGI_FORMAT format = desc.Format;
@@ -194,7 +194,7 @@ void DX12ViewCreater::CreateRTV(uint32_t slot, const DX12Resource& res, Descript
     m_context.device->CreateRenderTargetView(res.default_res.Get(), &rtv_desc, handle.GetCpuHandle());
 }
 
-void DX12ViewCreater::CreateDSV(const DX12Resource& res, DescriptorHeapRange& handle)
+void DX12ViewCreater::CreateDSV(const DX12Resource& res, DX12View& handle)
 {
     auto desc = res.default_res->GetDesc();
     DXGI_FORMAT format = DepthStencilFromTypeless(desc.Format);

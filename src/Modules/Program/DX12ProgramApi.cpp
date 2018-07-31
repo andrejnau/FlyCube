@@ -428,7 +428,7 @@ void DX12ProgramApi::CopyDescriptor(DescriptorHeapRange& dst_range, size_t dst_o
     dst_range.CopyCpuHandle(dst_offset, src_cpu_handle);
 }
 
-DescriptorHeapRange::Ptr DX12ProgramApi::FindView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key)
+DX12View::Ptr DX12ProgramApi::FindView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key)
 {
     auto it = m_heap_ranges.find(key);
     if (it == m_heap_ranges.end())
@@ -436,9 +436,9 @@ DescriptorHeapRange::Ptr DX12ProgramApi::FindView(const std::tuple<ShaderType, R
     return GetView(key, it->second);
 }
 
-DescriptorHeapRange::Ptr DX12ProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr& res)
+DX12View::Ptr DX12ProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr& res)
 {
-    return m_view_creater.GetView(std::get<ShaderType>(key), std::get<std::string>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), res);
+    return m_view_creater.GetView(m_program_id, std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), std::get<std::string>(key), res);
 }
 
 void DX12ProgramApi::ApplyBindings()
