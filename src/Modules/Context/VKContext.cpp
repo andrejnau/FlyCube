@@ -513,7 +513,7 @@ Resource::Ptr VKContext::CreateSampler(const SamplerDesc & desc)
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 0.0f;
+    samplerInfo.maxLod = D3D12_FLOAT32_MAX;
 
     if (vkCreateSampler(m_device, &samplerInfo, nullptr, &res->sampler.res) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");

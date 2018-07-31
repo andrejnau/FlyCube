@@ -43,7 +43,7 @@ void CommonProgramApi::AttachCBuffer(ShaderType type, const std::string& name, u
 
 void CommonProgramApi::AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res)
 {
-    Attach(type, "", ResourceType::kSampler, slot, res);
+    Attach(type, name, ResourceType::kSampler, slot, res);
 }
 
 void CommonProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& res)
