@@ -190,5 +190,6 @@ private:
     const bool m_use_cbv_table = true;
     bool m_changed_binding = false;
     bool m_changed_om = false;
+    DX12Context& m_context;
     DX12ViewCreater m_view_creater;
 };

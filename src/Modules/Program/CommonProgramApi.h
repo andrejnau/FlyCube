@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Context/DX12Context.h>
 #include "Program/ProgramApi.h"
 #include "Program/ShaderBase.h"
 #include <algorithm>
@@ -10,7 +9,8 @@
 #include <unordered_map>
 #include <functional>
 
-#include "Context/DescriptorPool.h"
+#include "Context/DX12View.h"
+#include "Context/BaseTypes.h"
 #include "DX12ViewCreater.h"
 
 class CommonProgramApi
@@ -18,11 +18,11 @@ class CommonProgramApi
     , public IShaderBlobProvider
 {
 public:
-    CommonProgramApi(DX12Context& context);
+    CommonProgramApi();
 
     virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
     virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
-    virtual void AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& res);
+    virtual void AttachCBV(ShaderType type, uint32_t slot, const std::string& name, const Resource::Ptr& res);
     virtual void AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer) override;
     virtual void AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
     virtual void AttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
@@ -42,7 +42,7 @@ protected:
 
     std::map<std::tuple<ShaderType, ResourceType, uint32_t, std::string>, Resource::Ptr> m_heap_ranges;
     std::map<std::tuple<ShaderType, uint32_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
+    std::map<std::tuple<ShaderType, uint32_t>, std::string> m_cbv_name;
 
-    DX12Context& m_context;
     size_t m_program_id;
 };

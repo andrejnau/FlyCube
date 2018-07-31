@@ -28,7 +28,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
     std::string msg(pMessage);
     //if (msg.find("is being used in draw but has not been updated"))
    //     return VK_FALSE;
-    printf("%s\n", pMessage);
+   // printf("%s\n", pMessage);
     return VK_FALSE;
 }
 

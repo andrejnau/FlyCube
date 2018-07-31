@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Context/BaseTypes.h>
+#include <set>
 
 struct ShaderBlob
 {
@@ -18,4 +19,8 @@ class IShaderBlobProvider
 public:
     virtual ShaderBlob GetBlobByType(ShaderType type) const = 0;
     virtual size_t GetProgramId() const = 0;
+    virtual std::set<ShaderType> GetShaderTypes() const
+    {
+        return {};
+    }
 };

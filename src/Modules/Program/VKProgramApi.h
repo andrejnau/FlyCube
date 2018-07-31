@@ -9,8 +9,10 @@
 #include <spirv_hlsl.hpp>
 
 #include "VkDescriptorPool.h"
+#include "Program/CommonProgramApi.h"
+#include "Program/VKViewCreater.h"
 
-class VKProgramApi : public ProgramApi
+class VKProgramApi : public CommonProgramApi
 {
 public:
     VKProgramApi(VKContext& context);
@@ -28,12 +30,25 @@ public:
     void ParseShader(ShaderType type, const std::vector<uint32_t>& spirv_binary, std::vector<VkDescriptorSetLayoutBinding>& bindings);
     size_t GetSetNumByShaderType(ShaderType type);
     void ParseShaders();
-    virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
-    virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
-    virtual void AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer_layout) override;
-    virtual void AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
-    virtual void AttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void AttachDSV(const Resource::Ptr& ires) override;
+
+    virtual ShaderBlob GetBlobByType(ShaderType type) const override;
+    virtual std::set<ShaderType> GetShaderTypes() const override
+    {
+        std::set<ShaderType> res;
+        for (auto & spirv_it : m_spirv)
+            res.insert(spirv_it.first);
+        return res;
+    }
+
+    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer) override;
+    virtual void OnAttachSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachDSV(const Resource::Ptr& ires) override;
+
+
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
     virtual void SetRasterizeState(const RasterizerDesc& desc) override;
@@ -86,8 +101,7 @@ private:
 
     std::map<ShaderType, ShaderRef> m_shader_ref;
 
-    std::map<std::tuple<ShaderType, uint32_t, std::string>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
-    std::map<std::tuple<ShaderType, uint32_t, std::string>, Resource::Ptr> m_cbv_buffer;
+    std::map<std::tuple<ShaderType, uint32_t>, Resource::Ptr> m_cbv_buffer;
 
     size_t m_num_rtv = 0;
 
@@ -106,5 +120,5 @@ private:
     std::vector<VkExtent2D> m_rtv_size;
 
     VKDescriptorManager m_descriptor_pool;
-    size_t m_program_id;
+    VKViewCreater m_view_creater;
 };

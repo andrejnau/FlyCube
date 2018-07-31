@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <tuple>
 
 enum class SamplerFilter
 {
@@ -68,7 +69,7 @@ struct RasterizerDesc
 {
     FillMode fill_mode;
     CullMode cull_mode;
-    INT DepthBias = 0;
+    int32_t DepthBias = 0;
 };
 
 

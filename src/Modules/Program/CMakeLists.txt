@@ -15,6 +15,8 @@ set(headers
     DX12ViewCreater.h
     DX12ViewCreater.cpp
 	IShaderBlobProvider.h
+    VKViewCreater.h
+    VKViewCreater.cpp
 )
 
 set(sources

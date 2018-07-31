@@ -5,9 +5,9 @@
 #include "Program/DXProgram.h"
 
 DX12ProgramApi::DX12ProgramApi(DX12Context& context)
-    : CommonProgramApi(context)
-    , m_cbv_buffer(context)
+    : m_cbv_buffer(context)
     , m_cbv_offset(context)
+    , m_context(context)
     , m_view_creater(m_context, *this)
 {
     if (CurState::Instance().DXIL)
@@ -418,7 +418,7 @@ void DX12ProgramApi::UpdateCBuffers()
 
         if (m_use_cbv_table)
         {
-            AttachCBV(std::get<0>(x.first), std::get<1>(x.first), res);
+            AttachCBV(std::get<0>(x.first), std::get<1>(x.first), "", res);
         }
     }
 }

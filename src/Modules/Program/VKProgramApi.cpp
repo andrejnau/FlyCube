@@ -4,17 +4,11 @@
 #include <utility>
 #include <Context/VKResource.h>
 
-static size_t GenId()
-{
-    static size_t id = 0;
-    return ++id;
-}
-
 VKProgramApi::VKProgramApi(VKContext& context)
     : m_context(context)
     , m_descriptor_sets(context)
     , m_descriptor_pool(context)
-    , m_program_id(GenId())
+    , m_view_creater(context, *this)
 {
 }
 
@@ -44,6 +38,8 @@ void VKProgramApi::LinkProgram()
         return;
 
     ParseShaders();
+    m_view_creater.OnLinkProgram();
+
     for (auto & shader : m_shaders_info)
     {
         shaderStageCreateInfo.emplace_back();
@@ -178,7 +174,7 @@ void VKProgramApi::ApplyBindings()
             m_context.UpdateSubresource(res, 0, buffer.GetBuffer().data(), 0, 0);
         }
 
-        AttachCBV(std::get<0>(x.first), std::get<2>(x.first), std::get<1>(x.first), res);
+        AttachCBV(std::get<0>(x.first), m_cbv_name[x.first], std::get<1>(x.first), res);
     }
 
     VkSubpassDescription subPass = {};
@@ -563,7 +559,17 @@ void VKProgramApi::ParseShaders()
     }
 }
 
-void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
+ShaderBlob VKProgramApi::GetBlobByType(ShaderType type) const
+{
+    auto it = m_spirv.find(type);
+    if (it == m_spirv.end())
+        return {};
+
+    return { it->second.data(), it->second.size() };
+    return ShaderBlob();
+}
+
+void VKProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
 {
     if (!ires)
         return;
@@ -710,21 +716,23 @@ void VKProgramApi::AttachSRV(ShaderType type, const std::string& name, uint32_t 
 
 }
 
-void VKProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
+void VKProgramApi::OnAttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
+{
+}
+
+void VKProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr & ires)
 {
 }
 
 void VKProgramApi::AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout & buffer_layout)
 {
+    CommonProgramApi::AttachCBuffer(type, name, slot, buffer_layout);
     m_cbv_buffer.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, slot, name),
+        std::forward_as_tuple(type, slot),
         std::forward_as_tuple(m_context.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_layout.GetBuffer().size()), 0)));
-    m_cbv_layout.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, slot, name),
-        std::forward_as_tuple(buffer_layout));
 }
 
-void VKProgramApi::AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
+void VKProgramApi::OnAttachSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
 {
     if (!ires)
         return;
@@ -755,7 +763,7 @@ void VKProgramApi::AttachSampler(ShaderType type, const std::string& name, uint3
     }
 }
 
-void VKProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr & ires)
+void VKProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
 {
     if (!ires)
         return;
@@ -807,7 +815,7 @@ bool hasStencilComponent(VkFormat format) {
 }
 
 
-void VKProgramApi::AttachDSV(const Resource::Ptr & ires)
+void VKProgramApi::OnAttachDSV(const Resource::Ptr & ires)
 {
     if (!ires)
         return;

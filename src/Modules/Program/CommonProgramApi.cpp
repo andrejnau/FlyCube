@@ -6,9 +6,8 @@ static size_t GenId()
     return ++id;
 }
 
-CommonProgramApi::CommonProgramApi(DX12Context& context)
-    : m_context(context)
-    , m_program_id(GenId())
+CommonProgramApi::CommonProgramApi()
+    : m_program_id(GenId())
 {
 }
 
@@ -27,9 +26,9 @@ void CommonProgramApi::AttachUAV(ShaderType type, const std::string & name, uint
     Attach(type, name, ResourceType::kUav, slot, res);
 }
 
-void CommonProgramApi::AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr & res)
+void CommonProgramApi::AttachCBV(ShaderType type, uint32_t slot, const std::string& name, const Resource::Ptr & res)
 {
-    Attach(type, "", ResourceType::kCbv, slot, res);
+    Attach(type, name, ResourceType::kCbv, slot, res);
 }
 
 void CommonProgramApi::AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer)
@@ -37,6 +36,9 @@ void CommonProgramApi::AttachCBuffer(ShaderType type, const std::string& name, u
     m_cbv_layout.emplace(std::piecewise_construct,
         std::forward_as_tuple(type, slot),
         std::forward_as_tuple(buffer));
+    m_cbv_name.emplace(std::piecewise_construct,
+        std::forward_as_tuple(type, slot),
+        std::forward_as_tuple(name));
 }
 
 void CommonProgramApi::AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res)
