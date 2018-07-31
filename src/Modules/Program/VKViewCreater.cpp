@@ -64,7 +64,6 @@ void VKViewCreater::ParseShader(ShaderType shader_type, const std::vector<uint32
     generate_bindings(resources.storage_images, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 }
 
-
 VKView::Ptr VKViewCreater::GetEmptyDescriptor(ResourceType res_type)
 {
     static std::map<ResourceType, VKView::Ptr> empty_handles;

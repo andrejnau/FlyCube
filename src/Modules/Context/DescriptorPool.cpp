@@ -54,24 +54,32 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapRange::GetGpuHandle(size_t offset) con
         m_increment_size);
 }
 
-DescriptorHeapAllocator::DescriptorHeapAllocator(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
+const ComPtr<ID3D12DescriptorHeap>& DescriptorHeapRange::GetHeap() const
+{
+    return m_heap;
+}
+
+size_t DescriptorHeapRange::GetSize() const
+{
+    return m_size;
+}
+
+DescriptorHeapAllocator::DescriptorHeapAllocator(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type)
     : m_context(context)
     , m_type(type)
-    , m_flags(flags)
     , m_offset(0)
     , m_size(0)
 {
 }
 
-DescriptorHeapRange::Ptr DescriptorHeapAllocator::Allocate(size_t count)
+DescriptorHeapRange DescriptorHeapAllocator::Allocate(size_t count)
 {
     if (m_offset + count > m_size)
     {
-        assert(!(m_size > 0 && m_flags == D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE));
         ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
     }
     m_offset += count;
-    return std::make_shared<DescriptorHeapRange>(m_context, m_heap, m_cpu_handle, m_gpu_handle, m_copied_handle, m_offset - count, count, m_context.device->GetDescriptorHandleIncrementSize(m_type), m_type);
+    return DescriptorHeapRange(m_context, m_heap, m_cpu_handle, m_gpu_handle, m_copied_handle, m_offset - count, count, m_context.device->GetDescriptorHandleIncrementSize(m_type), m_type);
 }
 
 void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
@@ -79,27 +87,21 @@ void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
     if (m_size >= req_size)
         return;
 
+    if (m_size > 0)
+        throw std::runtime_error("illegal allocate in the middle of the frame");
+
     ComPtr<ID3D12DescriptorHeap> heap;
     D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
     heap_desc.NumDescriptors = static_cast<UINT>(req_size);
-    heap_desc.Flags = m_flags;
+    heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     heap_desc.Type = m_type;
     ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&heap)));
-    if (m_size > 0 && m_flags != D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
-    {
-        m_context.device->CopyDescriptorsSimple(
-            static_cast<UINT>(m_size),
-            heap->GetCPUDescriptorHandleForHeapStart(),
-            m_heap->GetCPUDescriptorHandleForHeapStart(),
-            m_type);
-    }
     
     m_size = heap_desc.NumDescriptors;
     m_heap = heap;
     m_cpu_handle = m_heap->GetCPUDescriptorHandleForHeapStart();
     m_gpu_handle = m_heap->GetGPUDescriptorHandleForHeapStart();
-    if (m_flags == D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
-        m_copied_handle.assign(m_size, {});
+    m_copied_handle.assign(m_size, {});
 }
 
 void DescriptorHeapAllocator::ResetHeap()
@@ -109,19 +111,9 @@ void DescriptorHeapAllocator::ResetHeap()
 
 DescriptorPool::DescriptorPool(DX12Context& context)
     : m_context(context)
-    , m_resource(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_NONE)
-    , m_sampler(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, D3D12_DESCRIPTOR_HEAP_FLAG_NONE)
-    , m_rtv(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, D3D12_DESCRIPTOR_HEAP_FLAG_NONE)
-    , m_dsv(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, D3D12_DESCRIPTOR_HEAP_FLAG_NONE)
-    , m_shader_resource(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
-    , m_shader_sampler(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
+    , m_shader_resource(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+    , m_shader_sampler(m_context, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)
 {
-}
-
-DescriptorHeapRange::Ptr DescriptorPool::AllocateDescriptor(ResourceType res_type)
-{
-    DescriptorHeapAllocator& pool = SelectHeap(res_type);
-    return pool.Allocate(1);
 }
 
 void DescriptorPool::OnFrameBegin()
@@ -157,29 +149,8 @@ DescriptorHeapRange DescriptorPool::Allocate(ResourceType res_type, size_t count
     switch (res_type)
     {
     case ResourceType::kSampler:
-        return *m_shader_sampler.Allocate(count);
+        return m_shader_sampler.Allocate(count);
     default:
-        return *m_shader_resource.Allocate(count);
-    }
-}
-
-DescriptorHeapAllocator& DescriptorPool::SelectHeap(ResourceType res_type)
-{
-    switch (res_type)
-    {
-    case ResourceType::kSrv:
-    case ResourceType::kUav:
-    case ResourceType::kCbv:
-        return m_resource;
-    case ResourceType::kSampler:
-        return m_sampler;
-    case ResourceType::kRtv:
-        return m_rtv;
-    case ResourceType::kDsv:
-        return m_dsv;
-    default:
-    {
-        throw "fatal failure";
-    }
+        return m_shader_resource.Allocate(count);
     }
 }

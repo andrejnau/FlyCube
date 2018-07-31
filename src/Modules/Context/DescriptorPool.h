@@ -30,20 +30,15 @@ public:
         uint32_t increment_size,
         D3D12_DESCRIPTOR_HEAP_TYPE type);
     void CopyCpuHandle(size_t dst_offset, D3D12_CPU_DESCRIPTOR_HANDLE handle);
-    D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(size_t offset = 0) const;
     D3D12_GPU_DESCRIPTOR_HANDLE GetGpuHandle(size_t offset = 0) const;
 
-    const ComPtr<ID3D12DescriptorHeap>& GetHeap() const
-    {
-        return m_heap;
-    }
+    const ComPtr<ID3D12DescriptorHeap>& GetHeap() const;
 
-    size_t GetSize() const
-    {
-        return m_size;
-    }
+    size_t GetSize() const;
 
 private:
+    D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(size_t offset = 0) const;
+
     std::reference_wrapper<DX12Context> m_context;
     std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> m_heap;
     std::reference_wrapper<D3D12_CPU_DESCRIPTOR_HANDLE> m_cpu_handle;
@@ -58,15 +53,14 @@ private:
 class DescriptorHeapAllocator
 {
 public:
-    DescriptorHeapAllocator(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags);
-    DescriptorHeapRange::Ptr Allocate(size_t count);
+    DescriptorHeapAllocator(DX12Context& context, D3D12_DESCRIPTOR_HEAP_TYPE type);
+    DescriptorHeapRange Allocate(size_t count);
     void ResizeHeap(size_t req_size);
     void ResetHeap();
 
 private:
     DX12Context& m_context;
     D3D12_DESCRIPTOR_HEAP_TYPE m_type;
-    D3D12_DESCRIPTOR_HEAP_FLAGS m_flags;
     size_t m_offset;
     size_t m_size;
     ComPtr<ID3D12DescriptorHeap> m_heap;
@@ -79,19 +73,12 @@ class DescriptorPool
 {
 public:
     DescriptorPool(DX12Context& context);
-    DescriptorHeapRange::Ptr AllocateDescriptor(ResourceType res_type);
     void OnFrameBegin();
     void ReqFrameDescription(ResourceType res_type, size_t count);
     DescriptorHeapRange Allocate(ResourceType res_type, size_t count);
 
 private:
-    DescriptorHeapAllocator& SelectHeap(ResourceType res_type);
-
     DX12Context& m_context;
-    DescriptorHeapAllocator m_resource;
-    DescriptorHeapAllocator m_sampler;
-    DescriptorHeapAllocator m_rtv;
-    DescriptorHeapAllocator m_dsv;
     DescriptorHeapAllocator m_shader_resource;
     DescriptorHeapAllocator m_shader_sampler;
     size_t m_need_resources = 0;
