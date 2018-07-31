@@ -3,6 +3,7 @@
 #include <vector>
 #include <utility>
 #include <Context/VKResource.h>
+#include <Context/VKView.h>
 
 VKProgramApi::VKProgramApi(VKContext& context)
     : m_context(context)
@@ -585,8 +586,6 @@ void VKProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_
     auto &res_type = shader_ref.compiler.get_type(ref_res.res.base_type_id);
 
     std::vector<VkWriteDescriptorSet> descriptorWrites;
-    std::vector<VkCopyDescriptorSet> descriptorCopies;
-    
 
     auto dim = res_type.image.dim;
     if (res_type.basetype == spirv_cross::SPIRType::BaseType::Struct)
@@ -597,86 +596,27 @@ void VKProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_
     {
     case spv::Dim::Dim2D:
     {
-        VkImageViewCreateInfo viewInfo = {};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = res.image.res;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = res.image.format;
-        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = res.image.level_count;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
-
-        VkImageView srv;
-        if (vkCreateImageView(m_context.m_device, &viewInfo, nullptr, &srv) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture image view!");
-        }
+        VKView::Ptr view = m_view_creater.GetView(m_program_id, type, ResourceType::kSrv, slot, name, ires);
 
         VkDescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = srv;
+        imageInfo.imageView = view->srv;
         
-        auto handle = m_descriptor_pool.GetDescriptor({ m_program_id, type, ref_res.descriptor_type, slot }, res);
-
         descriptorWrites.emplace_back();
         auto& descriptorWrite = descriptorWrites.back();
 
         descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = handle.handle.m_descriptor_set;
-        descriptorWrite.dstBinding = handle.handle.m_offset;
+        descriptorWrite.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
+        descriptorWrite.dstBinding = ref_res.binding;
         descriptorWrite.dstArrayElement = 0;
         descriptorWrite.descriptorType = ref_res.descriptor_type;
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pImageInfo = &imageInfo;
 
-        descriptorCopies.emplace_back();
-        auto& descriptorCopy = descriptorCopies.back();
-        descriptorCopy.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-        descriptorCopy.srcSet = handle.handle.m_descriptor_set;
-        descriptorCopy.srcBinding = handle.handle.m_offset;
-        descriptorCopy.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
-        descriptorCopy.dstBinding = ref_res.binding;
-        descriptorCopy.descriptorCount = 1;
-
         break;
     }
     case spv::Dim::DimCube:
     {
-        if (0)
-        {
-            VkImageViewCreateInfo viewInfo = {};
-            viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            viewInfo.image = res.image.res;
-            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-            viewInfo.format = res.image.format;
-            viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            viewInfo.subresourceRange.baseMipLevel = 0;
-            viewInfo.subresourceRange.levelCount = 1;
-            viewInfo.subresourceRange.baseArrayLayer = 0;
-            viewInfo.subresourceRange.layerCount = 6;
-
-            VkImageView srv;
-            if (vkCreateImageView(m_context.m_device, &viewInfo, nullptr, &srv) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create texture image view!");
-            }
-
-            VkDescriptorImageInfo imageInfo = {};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = srv;
-
-            descriptorWrites.emplace_back();
-            auto& descriptorWrite = descriptorWrites.back();
-
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
-            descriptorWrite.dstBinding = ref_res.binding;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = ref_res.descriptor_type;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pImageInfo = &imageInfo;
-        }
-
         break;
     }
     case spv::Dim::DimBuffer:
@@ -712,8 +652,7 @@ void VKProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_
     }
 
     if (!descriptorWrites.empty())
-        vkUpdateDescriptorSets(m_context.m_device, descriptorWrites.size(), descriptorWrites.data(), descriptorCopies.size(), descriptorCopies.data());
-
+        vkUpdateDescriptorSets(m_context.m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 }
 
 void VKProgramApi::OnAttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
@@ -773,26 +712,10 @@ void VKProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
     m_context.transitionImageLayout(res.image.res, {}, res.image.layout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     res.image.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkImageView rtv;
-    VkImageViewCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.image = res.image.res;
-    createInfo.format = res.image.format;
-    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    createInfo.subresourceRange.baseMipLevel = 0;
-    createInfo.subresourceRange.levelCount = 1;
-    createInfo.subresourceRange.baseArrayLayer = 0;
-    createInfo.subresourceRange.layerCount = 1;
-    vkCreateImageView(m_context.m_device, &createInfo, nullptr, &rtv);
-    m_rtv[slot] = rtv;
+    VKView::Ptr view = m_view_creater.GetView(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot, "", ires);
+    m_rtv[slot] = view->rtv;
     m_rtv_size[slot] = res.image.size;
  
-
     VkAttachmentDescription& colorAttachment = m_color_attachments[slot];
     colorAttachment.format = res.image.format;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -810,11 +733,6 @@ void VKProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
 }
 
-bool hasStencilComponent(VkFormat format) {
-    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
-}
-
-
 void VKProgramApi::OnAttachDSV(const Resource::Ptr & ires)
 {
     if (!ires)
@@ -825,25 +743,9 @@ void VKProgramApi::OnAttachDSV(const Resource::Ptr & ires)
     m_context.transitionImageLayout(res.image.res, res.image.format, res.image.layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     res.image.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkImageView rtv;
-    VkImageViewCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.image = res.image.res;
-    createInfo.format = res.image.format;
-    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    if (hasStencilComponent)
-        createInfo.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-    createInfo.subresourceRange.baseMipLevel = 0;
-    createInfo.subresourceRange.levelCount = 1;
-    createInfo.subresourceRange.baseArrayLayer = 0;
-    createInfo.subresourceRange.layerCount = 1;
-    vkCreateImageView(m_context.m_device, &createInfo, nullptr, &rtv);
-    m_rtv.back() = rtv;
+    VKView::Ptr view = m_view_creater.GetView(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0, "", ires);
+
+    m_rtv.back() = view->dsv;
     m_rtv_size.back() = res.image.size;
 
     auto& m_depth_attachment = m_color_attachments.back();
@@ -880,8 +782,6 @@ void VKProgramApi::SetBlendState(const BlendDesc & desc)
 void VKProgramApi::SetDepthStencilState(const DepthStencilDesc & desc)
 {
 }
-
-
 
 void VKProgramApi::CreateInputLayout(
     const std::vector<uint32_t>& spirv_binary,
