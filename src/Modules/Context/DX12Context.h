@@ -55,6 +55,8 @@ public:
     ComPtr<ID3D12Device> device;
     std::unique_ptr<DescriptorPool> descriptor_pool[FrameCount];
 
+    DX12ViewPool m_view_pool;
+
 private:
     virtual void ResizeBackBuffer(int width, int height) override;
     void WaitForGpu();

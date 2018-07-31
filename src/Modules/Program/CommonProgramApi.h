@@ -37,13 +37,12 @@ protected:
     virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) = 0;
     virtual void OnAttachDSV(const Resource::Ptr& ires) = 0;
 
-    void SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const DescriptorHeapRange::Ptr& view);
+    void SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res);
     void Attach(ShaderType type, const std::string& name, ResourceType res_type, uint32_t slot, const Resource::Ptr& res);
 
-    std::map<std::tuple<ShaderType, ResourceType, uint32_t>, DescriptorHeapRange> m_heap_ranges;
+    std::map<std::tuple<ShaderType, ResourceType, uint32_t, std::string>, Resource::Ptr> m_heap_ranges;
     std::map<std::tuple<ShaderType, uint32_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
 
     DX12Context& m_context;
     size_t m_program_id;
-    DX12ViewCreater m_view_creater;
 };

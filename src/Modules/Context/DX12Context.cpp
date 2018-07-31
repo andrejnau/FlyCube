@@ -11,6 +11,7 @@
 
 DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     : Context(window, width, height)
+    , m_view_pool(*this)
 {
     if (CurState::Instance().DXIL)
     {

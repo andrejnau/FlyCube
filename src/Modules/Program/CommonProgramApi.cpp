@@ -9,7 +9,6 @@ static size_t GenId()
 CommonProgramApi::CommonProgramApi(DX12Context& context)
     : m_context(context)
     , m_program_id(GenId())
-    , m_view_creater(m_context, *this)
 {
 }
 
@@ -55,24 +54,24 @@ void CommonProgramApi::AttachDSV(const Resource::Ptr& res)
     Attach(ShaderType::kPixel, "", ResourceType::kDsv, 0, res);
 }
 
-void CommonProgramApi::SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const DescriptorHeapRange::Ptr& view)
+void CommonProgramApi::SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res)
 {
-    auto it = m_heap_ranges.find({ shader_type, res_type, slot });
+    auto it = m_heap_ranges.find({ shader_type, res_type, slot, name });
     if (it == m_heap_ranges.end())
     {
         m_heap_ranges.emplace(std::piecewise_construct,
-            std::forward_as_tuple(shader_type, res_type, slot),
-            std::forward_as_tuple(*view));
+            std::forward_as_tuple(shader_type, res_type, slot, name),
+            std::forward_as_tuple(res));
     }
     else
     {
-        it->second = *view;
+        it->second = res;
     }
 }
 
 void CommonProgramApi::Attach(ShaderType type, const std::string& name, ResourceType res_type, uint32_t slot, const Resource::Ptr& res)
 {
-    SetBinding(type, res_type, slot, m_view_creater.GetView(type, name, res_type, slot, res));
+    SetBinding(type, res_type, slot, name, res);
     switch (res_type)
     {
     case ResourceType::kSrv:

@@ -8,6 +8,7 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     : CommonProgramApi(context)
     , m_cbv_buffer(context)
     , m_cbv_offset(context)
+    , m_view_creater(m_context, *this)
 {
     if (CurState::Instance().DXIL)
         _D3DReflect = (decltype(&::D3DReflect))GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DReflect");
@@ -79,20 +80,18 @@ void DX12ProgramApi::CompileShader(const ShaderBase& shader)
 
 void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
 {
-    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kRtv, slot });
-    if (it == m_heap_ranges.end())
+    auto& view = FindView({ ShaderType::kPixel, ResourceType::kRtv, slot, "" });
+    if (!view)
         return;
-    auto& range = it->second;
-    m_context.command_list->ClearRenderTargetView(range.GetCpuHandle(), ColorRGBA, 0, nullptr);
+    m_context.command_list->ClearRenderTargetView(view->GetCpuHandle(), ColorRGBA, 0, nullptr);
 }
 
 void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
 {
-    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kDsv, 0 });
-    if (it == m_heap_ranges.end())
+    auto& view = FindView({ ShaderType::kPixel, ResourceType::kDsv, 0, "" });
+    if (!view)
         return;
-    auto& range = it->second;
-    m_context.command_list->ClearDepthStencilView(range.GetCpuHandle(), (D3D12_CLEAR_FLAGS)ClearFlags, Depth, Stencil, 0, nullptr);
+    m_context.command_list->ClearDepthStencilView(view->GetCpuHandle(), (D3D12_CLEAR_FLAGS)ClearFlags, Depth, Stencil, 0, nullptr);
 }
 
 void DX12ProgramApi::SetRasterizeState(const RasterizerDesc& desc)
@@ -424,9 +423,22 @@ void DX12ProgramApi::UpdateCBuffers()
     }
 }
 
-void DX12ProgramApi::CopyDescriptors(DescriptorHeapRange& dst_range, size_t dst_offset, DescriptorHeapRange& src, size_t src_offset)
+void DX12ProgramApi::CopyDescriptor(DescriptorHeapRange& dst_range, size_t dst_offset, const D3D12_CPU_DESCRIPTOR_HANDLE& src_cpu_handle)
 {
-    dst_range.CopyCpuHandle(dst_offset, src.GetCpuHandle(src_offset));
+    dst_range.CopyCpuHandle(dst_offset, src_cpu_handle);
+}
+
+DescriptorHeapRange::Ptr DX12ProgramApi::FindView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key)
+{
+    auto it = m_heap_ranges.find(key);
+    if (it == m_heap_ranges.end())
+        return {};
+    return GetView(key, it->second);
+}
+
+DescriptorHeapRange::Ptr DX12ProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr& res)
+{
+    return m_view_creater.GetView(std::get<ShaderType>(key), std::get<std::string>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), res);
 }
 
 void DX12ProgramApi::ApplyBindings()
@@ -490,7 +502,9 @@ void DX12ProgramApi::ApplyBindings()
         if (is_rtv_dsv)
             continue;
 
-        CopyDescriptors(heap_range.get(), m_binding_layout[{std::get<0>(x.first), range_type}].table.heap_offset + std::get<2>(x.first), x.second, 0);
+        auto& view = GetView(x.first, x.second);
+
+        CopyDescriptor(heap_range.get(), m_binding_layout[{std::get<0>(x.first), range_type}].table.heap_offset + std::get<2>(x.first), view->GetCpuHandle());
     }
 
     for (auto &x : m_binding_layout)
@@ -754,17 +768,17 @@ void DX12ProgramApi::OMSetRenderTargets()
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv(m_num_rtv);
     for (uint32_t slot = 0; slot < m_num_rtv; ++slot)
     {
-        auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kRtv, slot });
-        if (it != m_heap_ranges.end())
-            om_rtv[slot] = it->second.GetCpuHandle();
+        auto& view = FindView({ ShaderType::kPixel, ResourceType::kRtv, slot, "" });
+        if (view)
+            om_rtv[slot] = view->GetCpuHandle();
     }
 
     D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = {};
     D3D12_CPU_DESCRIPTOR_HANDLE* om_dsv_ptr = nullptr;
-    auto it = m_heap_ranges.find({ ShaderType::kPixel, ResourceType::kDsv, 0 });
-    if (it != m_heap_ranges.end())
+    auto view = FindView({ ShaderType::kPixel, ResourceType::kDsv, 0, "" });
+    if (view)
     {
-        om_dsv = it->second.GetCpuHandle();
+        om_dsv = view->GetCpuHandle();
         om_dsv_ptr = &om_dsv;
     }
     m_context.command_list->OMSetRenderTargets(static_cast<UINT>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv_ptr);

@@ -53,7 +53,9 @@ private:
     void CreateGraphicsPSO();
     void CreateComputePSO();
     void UpdateCBuffers();
-    void CopyDescriptors(DescriptorHeapRange & dst_range, size_t dst_offset, DescriptorHeapRange & src, size_t src_offset);
+    void CopyDescriptor(DescriptorHeapRange & dst_range, size_t dst_offset, const D3D12_CPU_DESCRIPTOR_HANDLE& src_cpu_handle);
+    DescriptorHeapRange::Ptr FindView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key);
+    DescriptorHeapRange::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr & res);
     void ParseShaders();
     void OMSetRenderTargets();
 
@@ -188,4 +190,5 @@ private:
     const bool m_use_cbv_table = true;
     bool m_changed_binding = false;
     bool m_changed_om = false;
+    DX12ViewCreater m_view_creater;
 };
