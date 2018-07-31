@@ -824,9 +824,7 @@ void VKContext::EndEvent()
 void VKContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
     m_current_program->ApplyBindings();
-    m_current_program->RenderPassBegin();
     vkCmdDrawIndexed(m_cmd_bufs[m_frame_index], IndexCount, 1, StartIndexLocation, BaseVertexLocation, 0);
-    m_current_program->RenderPassEnd();
 }
 
 void VKContext::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
@@ -845,6 +843,8 @@ Resource::Ptr VKContext::GetBackBuffer()
 
 void VKContext::Present(const Resource::Ptr & ires)
 {
+    m_current_program->OnPresent();
+
     vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageAvailableSemaphore, nullptr, &m_frame_index);
 
     transitionImageLayout(m_images[m_frame_index], {}, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);

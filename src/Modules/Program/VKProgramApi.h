@@ -32,6 +32,8 @@ public:
     size_t GetSetNumByShaderType(ShaderType type);
     void ParseShaders();
 
+    void OnPresent();
+
     virtual ShaderBlob GetBlobByType(ShaderType type) const override;
     virtual std::set<ShaderType> GetShaderTypes() const override
     {
@@ -108,7 +110,7 @@ private:
     
     std::vector<VkAttachmentDescription> m_color_attachments;
     std::vector<VkAttachmentReference> m_color_attachments_ref;
-    VkRenderPass renderPass;
+    VkRenderPass renderPass = VK_NULL_HANDLE;
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
 
@@ -121,4 +123,6 @@ private:
 
     VKViewCreater m_view_creater;
     std::map<VkDescriptorType, size_t> descriptor_count;
+    bool m_changed_om = false;
+    bool m_is_open_render_pass = false;
 };

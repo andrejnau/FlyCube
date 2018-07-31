@@ -181,20 +181,40 @@ void VKProgramApi::ApplyBindings()
         AttachCBV(std::get<0>(x.first), std::get<1>(x.first), m_cbv_name[x.first], res);
     }
 
-    VkSubpassDescription subPass = {};
-    subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subPass.colorAttachmentCount = m_color_attachments_ref.size() - 1;
-    subPass.pColorAttachments = m_color_attachments_ref.data();
-    subPass.pDepthStencilAttachment = &m_color_attachments_ref.back();
+    if (m_changed_om)
+    {
+        VkSubpassDescription subPass = {};
+        subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subPass.colorAttachmentCount = m_color_attachments_ref.size() - 1;
+        subPass.pColorAttachments = m_color_attachments_ref.data();
+        subPass.pDepthStencilAttachment = &m_color_attachments_ref.back();
 
-    VkRenderPassCreateInfo renderPassInfo = {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = m_color_attachments.size();
-    renderPassInfo.pAttachments = m_color_attachments.data();
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subPass;
+        VkRenderPassCreateInfo renderPassInfo = {};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        renderPassInfo.attachmentCount = m_color_attachments.size();
+        renderPassInfo.pAttachments = m_color_attachments.data();
+        renderPassInfo.subpassCount = 1;
+        renderPassInfo.pSubpasses = &subPass;
 
-    vkCreateRenderPass(m_context.m_device, &renderPassInfo, nullptr, &renderPass);
+        vkCreateRenderPass(m_context.m_device, &renderPassInfo, nullptr, &renderPass);
+
+        VkFramebufferCreateInfo framebufferInfo = {};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.attachmentCount = m_rtv.size();
+        if (!m_rtv.back())
+            --framebufferInfo.attachmentCount;
+        framebufferInfo.pAttachments = m_rtv.data();
+        framebufferInfo.width = m_rtv_size[0].width;
+        framebufferInfo.height = m_rtv_size[0].height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(m_context.m_device, &framebufferInfo, nullptr, &m_framebuffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create framebuffer!");
+        }
+        RenderPassBegin();
+        m_changed_om = false;
+    }
 
     CreateGrPipiLine();
 
@@ -212,23 +232,7 @@ void VKProgramApi::ApplyBindings()
 
     vkCmdBindDescriptorSets(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 
         m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
-
-    {
-        VkFramebufferCreateInfo framebufferInfo = {};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPass;
-        framebufferInfo.attachmentCount = m_rtv.size();
-        framebufferInfo.pAttachments = m_rtv.data();
-        framebufferInfo.width = m_rtv_size[0].width;
-        framebufferInfo.height = m_rtv_size[0].height;
-        framebufferInfo.layers = 1;
-
-        if (vkCreateFramebuffer(m_context.m_device, &framebufferInfo, nullptr, &m_framebuffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer!");
-        }
-    }
-
-
+    
     ///////////////////
 
     std::vector<VkWriteDescriptorSet> descriptorWrites;
@@ -246,7 +250,7 @@ void VKProgramApi::ApplyBindings()
             break;
         }
 
-        if (is_rtv_dsv)
+        if (is_rtv_dsv || !x.second)
             continue;
 
         auto& view = GetView(x.first, x.second);
@@ -326,6 +330,8 @@ VKView::Ptr VKProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uin
 
 void VKProgramApi::RenderPassBegin()
 {
+    if (m_is_open_render_pass)
+        RenderPassEnd();
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPass;
@@ -340,20 +346,26 @@ void VKProgramApi::RenderPassBegin()
     {
         clearValues[i].color = clearColor;
     }
-    clearValues.emplace_back();
-    clearValues.back().depthStencil = { 1.0f, 0 };
+    if (m_rtv.back())
+    {
+        clearValues.emplace_back();
+        clearValues.back().depthStencil = { 1.0f, 0 };
+    }
 
     renderPassInfo.clearValueCount = clearValues.size();
     renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(m_context.m_cmd_bufs[m_context.GetFrameIndex()], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    m_is_open_render_pass = true;
 }
 
 void VKProgramApi::RenderPassEnd()
 {
+    if (!m_is_open_render_pass)
+        return;
     vkCmdEndRenderPass(m_context.m_cmd_bufs[m_context.GetFrameIndex()]);
+    m_is_open_render_pass = false;
 }
-
 
 std::vector<uint8_t> readFile(const char* filename)
 {
@@ -628,6 +640,12 @@ void VKProgramApi::ParseShaders()
     }
 }
 
+void VKProgramApi::OnPresent()
+{
+    RenderPassEnd();
+    m_changed_om = true;
+}
+
 ShaderBlob VKProgramApi::GetBlobByType(ShaderType type) const
 {
     auto it = m_spirv.find(type);
@@ -674,6 +692,7 @@ void VKProgramApi::OnAttachSampler(ShaderType type, uint32_t slot, const Resourc
 
 void VKProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
 {
+    m_changed_om = true;
     if (!ires)
         return;
 
@@ -705,6 +724,8 @@ void VKProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
 
 void VKProgramApi::OnAttachDSV(const Resource::Ptr & ires)
 {
+    m_changed_om = true;
+
     if (!ires)
         return;
 

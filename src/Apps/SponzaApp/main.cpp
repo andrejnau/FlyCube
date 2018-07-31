@@ -12,6 +12,8 @@ int main(int argc, char *argv[])
             type = ApiType::kDX11;
         else if (arg == "--dx12")
             type = ApiType::kDX12;
+        else if (arg == "--vk")
+            type = ApiType::kVulkan;
     }
     std::string title;
     switch (type)
@@ -21,6 +23,9 @@ int main(int argc, char *argv[])
         break;
     case ApiType::kDX12:
         title = "[DX12] testApp";
+        break;
+    case ApiType::kVulkan:
+        title = "[Vulkan] testApp";
         break;
     }
 
