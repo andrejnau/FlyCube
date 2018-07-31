@@ -7,14 +7,17 @@
 
 VKProgramApi::VKProgramApi(VKContext& context)
     : m_context(context)
-    , m_descriptor_sets(context)
-    , m_descriptor_pool(context)
     , m_view_creater(context, *this)
 {
 }
 
-void VKProgramApi::SetMaxEvents(size_t)
+void VKProgramApi::SetMaxEvents(size_t count)
 {
+    m_context.GetDescriptorPool().ReqFrameDescriptionDrawCalls(count);
+    for (auto& it : descriptor_count)
+    {
+        m_context.GetDescriptorPool().ReqFrameDescription(it.first, count * it.second);
+    }
 }
 
 VkShaderStageFlagBits VKProgramApi::ShaderType2Bit(ShaderType type)
@@ -175,7 +178,7 @@ void VKProgramApi::ApplyBindings()
             m_context.UpdateSubresource(res, 0, buffer.GetBuffer().data(), 0, 0);
         }
 
-        AttachCBV(std::get<0>(x.first), m_cbv_name[x.first], std::get<1>(x.first), res);
+        AttachCBV(std::get<0>(x.first), std::get<1>(x.first), m_cbv_name[x.first], res);
     }
 
     VkSubpassDescription subPass = {};
@@ -197,8 +200,18 @@ void VKProgramApi::ApplyBindings()
 
     vkCmdBindPipeline(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
+    if (!m_descriptor_sets.empty())
+    {
+        m_descriptor_sets.clear();
+    }
+
+    for (auto & x : m_descriptor_set_layouts)
+    {
+        m_descriptor_sets.emplace_back(m_context.GetDescriptorPool().AllocateDescriptorSet(x));
+    }
+
     vkCmdBindDescriptorSets(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 
-        m_descriptor_sets.get().size(), m_descriptor_sets.get().data(), 0, nullptr);
+        m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
 
     {
         VkFramebufferCreateInfo framebufferInfo = {};
@@ -214,6 +227,101 @@ void VKProgramApi::ApplyBindings()
             throw std::runtime_error("failed to create framebuffer!");
         }
     }
+
+
+    ///////////////////
+
+    std::vector<VkWriteDescriptorSet> descriptorWrites;
+    std::list<VkDescriptorImageInfo> list_image_info;
+    std::list<VkDescriptorBufferInfo> list_buffer_info;
+    
+    for (auto & x : m_heap_ranges)
+    {
+        bool is_rtv_dsv = false;
+        switch (std::get<1>(x.first))
+        {
+        case ResourceType::kRtv:
+        case ResourceType::kDsv:
+            is_rtv_dsv = true;
+            break;
+        }
+
+        if (is_rtv_dsv)
+            continue;
+
+        auto& view = GetView(x.first, x.second);
+        ShaderType shader_type = std::get<ShaderType>(x.first);
+        ShaderRef& shader_ref = m_shader_ref.find(shader_type)->second;
+        std::string name = std::get<std::string>(x.first);
+        if (name == "$Globals")
+            name = "_Global";
+        auto ref_res = shader_ref.resources[name];
+        VKResource& res = static_cast<VKResource&>(*x.second);
+
+        VkWriteDescriptorSet descriptorWrite = {};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_descriptor_sets[GetSetNumByShaderType(shader_type)];
+        descriptorWrite.dstBinding = ref_res.binding;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = ref_res.descriptor_type;
+        descriptorWrite.descriptorCount = 1;
+
+        switch (ref_res.descriptor_type)
+        {
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        {
+            if (view->srv)
+            {
+                list_image_info.emplace_back();
+                VkDescriptorImageInfo& imageInfo = list_image_info.back();
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageInfo.imageView = view->srv;
+                descriptorWrite.pImageInfo = &imageInfo;
+            }
+            else
+            {
+                // empty descriptor or something else
+                int todo = 0;
+            }
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        {
+            list_buffer_info.emplace_back();
+            VkDescriptorBufferInfo& bufferInfo = list_buffer_info.back();
+            bufferInfo.buffer = res.buffer.res;
+            bufferInfo.offset = 0;
+            bufferInfo.range = VK_WHOLE_SIZE;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+        {
+            list_image_info.emplace_back();
+            VkDescriptorImageInfo& imageInfo = list_image_info.back();
+            imageInfo.sampler = res.sampler.res;
+            descriptorWrite.pImageInfo = &imageInfo;
+            break;
+        }
+        default:
+        {
+            int b = 0;
+            break;
+        }
+        }
+
+        if (descriptorWrite.pImageInfo || descriptorWrite.pBufferInfo)
+            descriptorWrites.push_back(descriptorWrite);
+    }
+
+    if (!descriptorWrites.empty())
+        vkUpdateDescriptorSets(m_context.m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+}
+
+VKView::Ptr VKProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr& res)
+{
+    return m_view_creater.GetView(m_program_id, std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), std::get<std::string>(key), res);
 }
 
 void VKProgramApi::RenderPassBegin()
@@ -478,9 +586,6 @@ size_t VKProgramApi::GetSetNumByShaderType(ShaderType type)
 
 void VKProgramApi::ParseShaders()
 {
-    std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
-
-    std::map<VkDescriptorType, size_t> descriptor_count;
     for (auto & spirv_it : m_spirv)
     {
         auto& spirv = spirv_it.second;
@@ -497,12 +602,12 @@ void VKProgramApi::ParseShaders()
         layout_info.pBindings = bindings.data();
 
         int set_num = GetSetNumByShaderType(spirv_it.first);
-        if (descriptor_set_layouts.size() <= set_num)
+        if (m_descriptor_set_layouts.size() <= set_num)
         {
-            descriptor_set_layouts.resize(set_num + 1);
+            m_descriptor_set_layouts.resize(set_num + 1);
         }
 
-        VkDescriptorSetLayout& descriptor_set_layout = descriptor_set_layouts[set_num];
+        VkDescriptorSetLayout& descriptor_set_layout = m_descriptor_set_layouts[set_num];
         if (vkCreateDescriptorSetLayout(m_context.m_device, &layout_info, nullptr, &descriptor_set_layout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor set layout!");
         }
@@ -515,48 +620,11 @@ void VKProgramApi::ParseShaders()
 
     VkPipelineLayoutCreateInfo pipeline_layout_info = {};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_info.setLayoutCount = descriptor_set_layouts.size();
-    pipeline_layout_info.pSetLayouts = descriptor_set_layouts.data();
+    pipeline_layout_info.setLayoutCount = m_descriptor_set_layouts.size();
+    pipeline_layout_info.pSetLayouts = m_descriptor_set_layouts.data();
 
     if (vkCreatePipelineLayout(m_context.m_device, &pipeline_layout_info, nullptr, &m_pipeline_layout) != VK_SUCCESS) {
         throw std::runtime_error("failed to vkCreatePipelineLayout");
-    }
-
-    std::vector<VkDescriptorPoolSize> pool_sizes;
-
-    for (auto& it : descriptor_count)
-    {
-        pool_sizes.emplace_back();
-        VkDescriptorPoolSize& pool_size = pool_sizes.back();
-        pool_size.type = it.first;
-        pool_size.descriptorCount = it.second;
-    }
-
-  
-    for (int i = 0; i < m_context.FrameCount; ++i)
-    {
-        VkDescriptorPoolCreateInfo poolInfo = {};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = pool_sizes.size();
-        poolInfo.pPoolSizes = pool_sizes.data();
-        poolInfo.maxSets = descriptor_set_layouts.size();
-
-        VkDescriptorPool descriptorPool;
-        if (vkCreateDescriptorPool(m_context.m_device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create descriptor pool!");
-        }
-
-
-        VkDescriptorSetAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = descriptorPool;
-        allocInfo.descriptorSetCount = descriptor_set_layouts.size();
-        allocInfo.pSetLayouts = descriptor_set_layouts.data();
-
-        m_descriptor_sets[i].resize(allocInfo.descriptorSetCount);
-        if (vkAllocateDescriptorSets(m_context.m_device, &allocInfo, m_descriptor_sets[i].data()) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate descriptor set!");
-        }
     }
 }
 
@@ -577,82 +645,11 @@ void VKProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
- 
-
-    ShaderRef& shader_ref = m_shader_ref.find(type)->second;
-    auto ref_res = shader_ref.resources[name];
-
- 
-    auto &res_type = shader_ref.compiler.get_type(ref_res.res.base_type_id);
-
-    std::vector<VkWriteDescriptorSet> descriptorWrites;
-
-    auto dim = res_type.image.dim;
-    if (res_type.basetype == spirv_cross::SPIRType::BaseType::Struct)
-        dim = spv::Dim::DimBuffer;
-
-    bool is_buffer = false;
-    switch (dim)
-    {
-    case spv::Dim::Dim2D:
-    {
-        VKView::Ptr view = m_view_creater.GetView(m_program_id, type, ResourceType::kSrv, slot, name, ires);
-
-        VkDescriptorImageInfo imageInfo = {};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = view->srv;
-        
-        descriptorWrites.emplace_back();
-        auto& descriptorWrite = descriptorWrites.back();
-
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
-        descriptorWrite.dstBinding = ref_res.binding;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = ref_res.descriptor_type;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pImageInfo = &imageInfo;
-
-        break;
-    }
-    case spv::Dim::DimCube:
-    {
-        break;
-    }
-    case spv::Dim::DimBuffer:
-    {
-        is_buffer = true;
-        VkDescriptorBufferInfo bufferInfo = {};
-        bufferInfo.buffer = res.buffer.res;
-        bufferInfo.offset = 0;
-        bufferInfo.range = VK_WHOLE_SIZE;
-
-        descriptorWrites.emplace_back();
-        auto& descriptorWrite = descriptorWrites.back();
-
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
-        descriptorWrite.dstBinding = ref_res.binding;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = ref_res.descriptor_type;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
-
-        break;
-    }
-    default:
-        throw std::runtime_error("failed!");
-        break;
-    }
-
-    if (!is_buffer)
+    if (res.res_type == VKResource::Type::kImage)
     {
         m_context.transitionImageLayout(res.image.res, {}, res.image.layout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         res.image.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
-
-    if (!descriptorWrites.empty())
-        vkUpdateDescriptorSets(m_context.m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 }
 
 void VKProgramApi::OnAttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
@@ -673,33 +670,6 @@ void VKProgramApi::AttachCBuffer(ShaderType type, const std::string& name, uint3
 
 void VKProgramApi::OnAttachSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
 {
-    if (!ires)
-        return;
-
-    VKResource& res = static_cast<VKResource&>(*ires);
-
-    {
-        VkWriteDescriptorSet descriptor_writes = {};
-
-        VkDescriptorImageInfo samplerInfo = {};
-        samplerInfo.sampler = res.sampler.res;
-
-        ShaderRef& shader_ref = m_shader_ref.find(type)->second;
-        auto ref_res = shader_ref.resources["g_sampler"];
-
-        // Populate with info about our sampler
-        descriptor_writes = {};
-        descriptor_writes.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes.pNext = NULL;
-        descriptor_writes.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
-        descriptor_writes.descriptorCount = 1;
-        descriptor_writes.descriptorType = ref_res.descriptor_type;
-        descriptor_writes.pImageInfo = &samplerInfo;
-        descriptor_writes.dstArrayElement = 0;
-        descriptor_writes.dstBinding = ref_res.binding;
-
-        vkUpdateDescriptorSets(m_context.m_device, 1, &descriptor_writes, 0, nullptr);
-    }
 }
 
 void VKProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
@@ -857,40 +827,4 @@ void VKProgramApi::CreateRenderPass(const std::vector<uint32_t>& spirv_binary)
     m_color_attachments_ref.resize(m_num_rtv + 1);
     m_rtv.resize(m_num_rtv + 1);
     m_rtv_size.resize(m_num_rtv + 1);
-}
-
-void VKProgramApi::AttachCBV(ShaderType type, const std::string& in_name, uint32_t slot, const Resource::Ptr & ires)
-{
-    if (!ires)
-        return;
-
-    std::string name = in_name;
-    if (name == "$Globals")
-        name = "_Global";
-
-    VKResource& res = static_cast<VKResource&>(*ires);
-
-    ShaderRef& shader_ref = m_shader_ref.find(type)->second;
-    auto ref_res = shader_ref.resources[name];
-
-    std::vector<VkWriteDescriptorSet> descriptorWrites;
-
-    VkDescriptorBufferInfo bufferInfo = {};
-    bufferInfo.buffer = res.buffer.res;
-    bufferInfo.offset = 0;
-    bufferInfo.range = VK_WHOLE_SIZE;
-
-    descriptorWrites.emplace_back();
-    auto& descriptorWrite = descriptorWrites.back();
-
-    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrite.dstSet = m_descriptor_sets.get()[GetSetNumByShaderType(type)];
-    descriptorWrite.dstBinding = ref_res.binding;
-    descriptorWrite.dstArrayElement = 0;
-    descriptorWrite.descriptorType = ref_res.descriptor_type;
-    descriptorWrite.descriptorCount = 1;
-    descriptorWrite.pBufferInfo = &bufferInfo;
-
-    if (!descriptorWrites.empty())
-        vkUpdateDescriptorSets(m_context.m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 }

@@ -118,7 +118,6 @@ void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t
     ShaderRef& shader_ref = m_shader_ref.find(type)->second;
     auto ref_res = shader_ref.resources[name];
 
-
     auto &res_type = shader_ref.compiler.get_type(ref_res.res.base_type_id);
 
     auto dim = res_type.image.dim;
@@ -169,8 +168,10 @@ void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t
         break;
     }
     default:
-        throw std::runtime_error("failed!");
+    {
+        bool todo = true;
         break;
+    }
     }
 }
 

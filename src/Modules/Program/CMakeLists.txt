@@ -9,7 +9,6 @@ set(headers
     ShaderBase.h
     DXProgram.h
     VKProgramApi.h
-    VkDescriptorPool.h
     CommonProgramApi.h
     CommonProgramApi.cpp
     DX12ViewCreater.h

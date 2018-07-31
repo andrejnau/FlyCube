@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Context/Context.h"
+#include "Context/VKDescriptorPool.h"
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #include <Geometry/IABuffer.h>
@@ -55,8 +56,7 @@ public:
     VkSemaphore imageAvailableSemaphore;
     VkSemaphore renderingFinishedSemaphore;
     VkFence renderFence;
- 
 
-    VkImageView m_srv;
-    VkSampler m_sampler;
+    VKDescriptorPool& GetDescriptorPool();
+    std::unique_ptr<VKDescriptorPool> descriptor_pool[FrameCount];
 };

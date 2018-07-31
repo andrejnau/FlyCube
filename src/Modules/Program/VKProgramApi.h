@@ -8,7 +8,7 @@
 #include <spirv_cross.hpp>
 #include <spirv_hlsl.hpp>
 
-#include "VkDescriptorPool.h"
+#include "Context/VkDescriptorPool.h"
 #include "Program/CommonProgramApi.h"
 #include "Program/VKViewCreater.h"
 
@@ -23,6 +23,7 @@ public:
     void CreateGrPipiLine();
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
+    VKView::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr & res);
     void RenderPassBegin();
     void RenderPassEnd();
     std::vector<uint8_t> hlsl2spirv(const ShaderBase & shader);
@@ -64,8 +65,6 @@ private:
 
     void CreateRenderPass(const std::vector<uint32_t>& spirv_binary);
 
-    void AttachCBV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
-
     VKContext & m_context;
     std::map<ShaderType, std::vector<uint8_t>> m_spirv;
     std::map<ShaderType, VkShaderModule> m_shaders;
@@ -75,8 +74,9 @@ private:
 
     VkPipeline graphicsPipeline;
     VkPipelineLayout m_pipeline_layout;
-    PerFrameData<std::vector<VkDescriptorSet>> m_descriptor_sets;
+    std::vector<VkDescriptorSetLayout> m_descriptor_set_layouts;
 
+    std::vector<VkDescriptorSet> m_descriptor_sets;
     std::map<ShaderType, size_t> m_shader_type2set;
 
     struct ShaderRef
@@ -119,6 +119,6 @@ private:
     std::vector<VkImageView> m_rtv;
     std::vector<VkExtent2D> m_rtv_size;
 
-    VKDescriptorManager m_descriptor_pool;
     VKViewCreater m_view_creater;
+    std::map<VkDescriptorType, size_t> descriptor_count;
 };

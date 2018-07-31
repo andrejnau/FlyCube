@@ -44,8 +44,6 @@ public:
 
     Type res_type = Type::kUnknown;
 
-    std::map<VKBindKey, VKDescriptorHeapRange> descriptors;
-
     VKResource::Ptr GetUploadResource(size_t subresource)
     {
         if (subresource >= m_upload_res.size())

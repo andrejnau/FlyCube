@@ -26,9 +26,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
 #endif
 
     std::string msg(pMessage);
-    //if (msg.find("is being used in draw but has not been updated"))
-   //     return VK_FALSE;
-   // printf("%s\n", pMessage);
+    if (msg.find("is being used in draw but has not been updated"))
+        return VK_FALSE;
+    printf("%s\n", pMessage);
     return VK_FALSE;
 }
 
@@ -319,6 +319,11 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     VkFenceCreateInfo fenceCreateInfo = {};
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     vkCreateFence(m_device, &fenceCreateInfo, NULL, &renderFence);
+
+    for (size_t i = 0; i < FrameCount; ++i)
+    {
+        descriptor_pool[i].reset(new VKDescriptorPool(*this));
+    }
 }
 
 std::unique_ptr<ProgramApi> VKContext::CreateProgram()
@@ -877,6 +882,8 @@ void VKContext::Present(const Resource::Ptr & ires)
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     res = vkBeginCommandBuffer(m_cmd_bufs[m_frame_index], &beginInfo);
+
+    descriptor_pool[m_frame_index]->OnFrameBegin();
 }
 
 void VKContext::ResizeBackBuffer(int width, int height)
@@ -886,4 +893,9 @@ void VKContext::ResizeBackBuffer(int width, int height)
 void VKContext::UseProgram(VKProgramApi & program_api)
 {
     m_current_program = &program_api;
+}
+
+VKDescriptorPool& VKContext::GetDescriptorPool()
+{
+    return *descriptor_pool[m_frame_index];
 }

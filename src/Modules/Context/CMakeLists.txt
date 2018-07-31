@@ -19,6 +19,8 @@ set(headers
     DX12View.cpp
     VKView.h
     VKView.cpp
+    VKDescriptorPool.h
+    VKDescriptorPool.cpp
 )
 
 set(sources
