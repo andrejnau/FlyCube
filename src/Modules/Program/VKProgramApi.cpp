@@ -426,7 +426,7 @@ std::vector<uint8_t> VKProgramApi::hlsl2spirv(const ShaderBase& shader)
     glsl_name = glsl_name.replace(glsl_name.find(".hlsl"), 5, ".glsl");
     std::string spirv_path = get_tmp_file("SponzaApp.spirv");
 
-    std::string cmd = "C:\\VulkanSDK\\1.1.73.0\\Bin\\glslangValidator.exe";
+    std::string cmd = "C:\\VulkanSDK\\1.1.77.0\\Bin\\glslangValidator.exe";
     cmd += " --auto-map-bindings --hlsl-iomap ";
     cmd += " --resource-set-binding " + std::to_string(GetSetNumByShaderType(shader.type)) + " ";
     cmd += " --invert-y ";
