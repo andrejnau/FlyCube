@@ -7,6 +7,8 @@
 
 VKProgramApi::VKProgramApi(VKContext& context)
     : m_context(context)
+    , m_cbv_buffer(context)
+    , m_cbv_offset(context)
     , m_view_creater(context, *this)
 {
 }
@@ -172,8 +174,16 @@ void VKProgramApi::ApplyBindings()
     for (auto &x : m_cbv_layout)
     {
         BufferLayout& buffer = x.second;
-        auto& res = m_cbv_buffer[x.first];
-        if (buffer.SyncData())
+        auto& buffer_data = buffer.GetBuffer();
+        bool change_buffer = buffer.SyncData();
+        change_buffer = change_buffer || !m_cbv_offset.get().count(x.first);
+        if (change_buffer && m_cbv_offset.get().count(x.first))
+            ++m_cbv_offset.get()[x.first];
+        if (m_cbv_offset.get()[x.first] >= m_cbv_buffer.get()[x.first].size())
+            m_cbv_buffer.get()[x.first].push_back(m_context.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_data.size()), 0));
+
+        auto& res = m_cbv_buffer.get()[x.first][m_cbv_offset.get()[x.first]];
+        if (change_buffer)
         {
             m_context.UpdateSubresource(res, 0, buffer.GetBuffer().data(), 0, 0);
         }
@@ -645,6 +655,7 @@ void VKProgramApi::ParseShaders()
 
 void VKProgramApi::OnPresent()
 {
+    m_cbv_offset.get().clear();
     RenderPassEnd();
     m_changed_om = true;
 }
@@ -679,14 +690,6 @@ void VKProgramApi::OnAttachUAV(ShaderType type, const std::string & name, uint32
 
 void VKProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr & ires)
 {
-}
-
-void VKProgramApi::AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout & buffer_layout)
-{
-    CommonProgramApi::AttachCBuffer(type, name, slot, buffer_layout);
-    m_cbv_buffer.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, slot),
-        std::forward_as_tuple(m_context.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_layout.GetBuffer().size()), 0)));
 }
 
 void VKProgramApi::OnAttachSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires)

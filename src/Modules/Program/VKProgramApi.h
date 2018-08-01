@@ -46,7 +46,6 @@ public:
     virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer) override;
     virtual void OnAttachSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachDSV(const Resource::Ptr& ires) override;
@@ -103,7 +102,8 @@ private:
 
     std::map<ShaderType, ShaderRef> m_shader_ref;
 
-    std::map<std::tuple<ShaderType, uint32_t>, Resource::Ptr> m_cbv_buffer;
+    PerFrameData<std::map<std::tuple<ShaderType, uint32_t>, std::vector<Resource::Ptr>>> m_cbv_buffer;
+    PerFrameData<std::map<std::tuple<ShaderType, uint32_t>, size_t>> m_cbv_offset;
 
     size_t m_num_rtv = 0;
 
