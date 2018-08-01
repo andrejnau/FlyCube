@@ -24,8 +24,6 @@ public:
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
     VKView::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr & res);
-    void RenderPassBegin();
-    void RenderPassEnd();
     std::vector<uint8_t> hlsl2spirv(const ShaderBase & shader);
     virtual void CompileShader(const ShaderBase& shader) override;
     void ParseShader(ShaderType type, const std::vector<uint32_t>& spirv_binary, std::vector<VkDescriptorSetLayoutBinding>& bindings);
@@ -33,6 +31,18 @@ public:
     void ParseShaders();
 
     void OnPresent();
+
+    VkRenderPass GetRenderPass() const
+    {
+        return renderPass;
+    }
+
+    VkFramebuffer GetFramebuffer() const
+    {
+        return m_framebuffer;
+    }
+
+    void RenderPassBegin();
 
     virtual ShaderBlob GetBlobByType(ShaderType type) const override;
     virtual std::set<ShaderType> GetShaderTypes() const override
@@ -124,5 +134,4 @@ private:
     VKViewCreater m_view_creater;
     std::map<VkDescriptorType, size_t> descriptor_count;
     bool m_changed_om = false;
-    bool m_is_open_render_pass = false;
 };

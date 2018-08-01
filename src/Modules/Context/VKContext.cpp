@@ -26,8 +26,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
 #endif
 
     std::string msg(pMessage);
-    if (msg.find("is being used in draw but has not been updated"))
+    if (objectType == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT)
         return VK_FALSE;
+
     printf("%s\n", pMessage);
     return VK_FALSE;
 }
@@ -527,6 +528,20 @@ static bool hasStencilComponent(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
+static bool is_depth(VkFormat format)
+{
+    switch (format)
+    {
+    case VK_FORMAT_D32_SFLOAT_S8_UINT:
+    case VK_FORMAT_D24_UNORM_S8_UINT:
+    case VK_FORMAT_D32_SFLOAT:
+        return true;
+    default:
+        return false;
+        break;
+    }
+}
+
 void VKContext::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
     if (oldLayout == newLayout)
@@ -539,7 +554,7 @@ void VKContext::transitionImageLayout(VkImage image, VkFormat format, VkImageLay
     imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imageMemoryBarrier.image = image;
 
-    if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+    if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL || is_depth(format)) {
         imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
         if (hasStencilComponent(format)) {
@@ -824,6 +839,18 @@ void VKContext::EndEvent()
 void VKContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
     m_current_program->ApplyBindings();
+
+    auto rp = m_current_program->GetRenderPass();
+    auto fb = m_current_program->GetFramebuffer();
+    if (rp != m_render_pass || fb != m_framebuffer)
+    {
+        if (m_is_open_render_pass)
+            vkCmdEndRenderPass(m_cmd_bufs[GetFrameIndex()]);
+        m_render_pass = rp;
+        m_framebuffer = fb;
+        m_current_program->RenderPassBegin();
+        m_is_open_render_pass = true;
+    }
     vkCmdDrawIndexed(m_cmd_bufs[m_frame_index], IndexCount, 1, StartIndexLocation, BaseVertexLocation, 0);
 }
 
@@ -843,6 +870,12 @@ Resource::Ptr VKContext::GetBackBuffer()
 
 void VKContext::Present(const Resource::Ptr & ires)
 {
+    if (m_is_open_render_pass)
+    {
+        vkCmdEndRenderPass(m_cmd_bufs[GetFrameIndex()]);
+        m_is_open_render_pass = false;
+    }
+
     m_current_program->OnPresent();
 
     vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageAvailableSemaphore, nullptr, &m_frame_index);
@@ -892,6 +925,14 @@ void VKContext::ResizeBackBuffer(int width, int height)
 
 void VKContext::UseProgram(VKProgramApi & program_api)
 {
+    if (m_current_program != &program_api)
+    {
+        if (m_is_open_render_pass)
+        {
+            vkCmdEndRenderPass(m_cmd_bufs[GetFrameIndex()]);
+            m_is_open_render_pass = false;
+        }
+    }
     m_current_program = &program_api;
 }
 

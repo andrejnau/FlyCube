@@ -73,7 +73,8 @@ void LightPass::OnRender()
         m_program.ps.srv.gAmbient.Attach(m_input.geometry_pass.ambient);
         m_program.ps.srv.gDiffuse.Attach(m_input.geometry_pass.diffuse);
         m_program.ps.srv.gSpecular.Attach(m_input.geometry_pass.specular);
-        m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
+        if (m_settings.use_shadow)
+            m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
         m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
 
         m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);

@@ -1,10 +1,12 @@
 #include "DX11Scene.h"
 #include <AppBox/AppBox.h>
 #include <Utilities/State.h>
+#include <WinConsole/WinConsole.h>
 
 int main(int argc, char *argv[])
 {
-    ApiType type = ApiType::kDX12;
+    WinConsole cmd; 
+    ApiType type = ApiType::kVulkan;
     for (int i = 1; i < argc; ++i)
     {
         std::string arg(argv[i]);

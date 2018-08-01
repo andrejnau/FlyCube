@@ -221,7 +221,6 @@ void VKProgramApi::ApplyBindings()
         if (vkCreateFramebuffer(m_context.m_device, &framebufferInfo, nullptr, &m_framebuffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer!");
         }
-        RenderPassBegin();
         m_changed_om = false;
         CreateGrPipiLine();
     }
@@ -341,8 +340,6 @@ VKView::Ptr VKProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uin
 
 void VKProgramApi::RenderPassBegin()
 {
-    if (m_is_open_render_pass)
-        RenderPassEnd();
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPass;
@@ -367,15 +364,6 @@ void VKProgramApi::RenderPassBegin()
     renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(m_context.m_cmd_bufs[m_context.GetFrameIndex()], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    m_is_open_render_pass = true;
-}
-
-void VKProgramApi::RenderPassEnd()
-{
-    if (!m_is_open_render_pass)
-        return;
-    vkCmdEndRenderPass(m_context.m_cmd_bufs[m_context.GetFrameIndex()]);
-    m_is_open_render_pass = false;
 }
 
 std::vector<uint8_t> readFile(const char* filename)
@@ -654,7 +642,6 @@ void VKProgramApi::ParseShaders()
 void VKProgramApi::OnPresent()
 {
     m_cbv_offset.get().clear();
-    RenderPassEnd();
     m_changed_om = true;
 }
 
@@ -677,7 +664,7 @@ void VKProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_
 
     if (res.res_type == VKResource::Type::kImage)
     {
-        m_context.transitionImageLayout(res.image.res, {}, res.image.layout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        m_context.transitionImageLayout(res.image.res, res.image.format, res.image.layout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         res.image.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
 }
