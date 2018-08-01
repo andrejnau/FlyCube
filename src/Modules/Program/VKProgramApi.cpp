@@ -147,7 +147,6 @@ void VKProgramApi::CreateGrPipiLine()
 
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-
     std::vector<VkDynamicState> dynamicStateEnables = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR
@@ -224,9 +223,8 @@ void VKProgramApi::ApplyBindings()
         }
         RenderPassBegin();
         m_changed_om = false;
+        CreateGrPipiLine();
     }
-
-    CreateGrPipiLine();
 
     vkCmdBindPipeline(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
