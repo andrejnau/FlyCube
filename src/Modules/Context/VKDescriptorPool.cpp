@@ -63,4 +63,6 @@ void VKDescriptorPool::ReqFrameDescription(VkDescriptorType type, size_t count)
 void VKDescriptorPool::OnFrameBegin()
 {
     first_frame_alloc = true;
+    m_max_descriptor_sets = 0;
+    m_size_by_type.clear();
 }
