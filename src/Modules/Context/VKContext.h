@@ -67,4 +67,6 @@ public:
     VkRenderPass m_render_pass = VK_NULL_HANDLE;
     VkFramebuffer m_framebuffer = VK_NULL_HANDLE;
     bool m_is_open_render_pass = false;
+
+    std::vector<std::reference_wrapper<VKProgramApi>> m_created_program;
 };

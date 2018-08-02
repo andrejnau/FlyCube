@@ -309,7 +309,9 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
 std::unique_ptr<ProgramApi> VKContext::CreateProgram()
 {
-    return std::make_unique<VKProgramApi>(*this);
+    auto res = std::make_unique<VKProgramApi>(*this);
+    m_created_program.push_back(*res.get());
+    return res;
 }
 
 VkFormat VKContext::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
@@ -916,7 +918,8 @@ void VKContext::Present(const Resource::Ptr& ires)
     OpenCommandBuffer();
 
     descriptor_pool[m_frame_index]->OnFrameBegin();
-    m_current_program->OnPresent();
+    for (auto & x : m_created_program)
+        x.get().OnPresent();
 }
 
 void VKContext::ResizeBackBuffer(int width, int height)
