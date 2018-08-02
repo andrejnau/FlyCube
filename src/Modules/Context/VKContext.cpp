@@ -11,6 +11,19 @@
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
 
+bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& message)
+{
+    switch (object_type)
+    {
+    case VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT:
+    case VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT:
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
     VkDebugReportFlagsEXT       flags,
     VkDebugReportObjectTypeEXT  objectType,
@@ -21,8 +34,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
     const char*                 pMessage,
     void*                       pUserData)
 {
-    std::string msg(pMessage);
-    if (objectType == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT)
+    if (SkipIt(objectType, pMessage))
         return VK_FALSE;
 
     printf("%s\n", pMessage);
@@ -168,6 +180,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
         int b = 0;
     }
 
+    VkColorSpaceKHR colorSpace;
     VkExtent2D surfaceResolution;
     {
         uint32_t formatCount = 0;
@@ -179,14 +192,12 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
         // If the format list includes just one entry of VK_FORMAT_UNDEFINED, the surface has
         // no preferred format. Otherwise, at least one supported format will be returned.
-        VkFormat colorFormat;
         if (formatCount == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED) {
-            colorFormat = VK_FORMAT_B8G8R8_UNORM;
+            m_swapchain_color_format = VK_FORMAT_B8G8R8_UNORM;
         }
         else {
-            colorFormat = surfaceFormats[0].format;
+            m_swapchain_color_format = surfaceFormats[0].format;
         }
-        VkColorSpaceKHR colorSpace;
         colorSpace = surfaceFormats[0].colorSpace;
 
 
@@ -239,14 +250,12 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     }
 
 
-
-
     VkSwapchainCreateInfoKHR swapChainCreateInfo = {};
     swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     swapChainCreateInfo.surface = m_surface;
     swapChainCreateInfo.minImageCount = FrameCount;
-    swapChainCreateInfo.imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
-    swapChainCreateInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+    swapChainCreateInfo.imageFormat = m_swapchain_color_format;
+    swapChainCreateInfo.imageColorSpace = colorSpace;
     swapChainCreateInfo.imageExtent = surfaceResolution;
     swapChainCreateInfo.imageArrayLayers = 1;
     swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -833,9 +842,10 @@ Resource::Ptr VKContext::GetBackBuffer()
 {
     VKResource::Ptr res = std::make_shared<VKResource>();
     res->image.res = m_images[m_frame_index];
-    res->image.format = VK_FORMAT_R8G8B8A8_UNORM;
+    res->image.format = m_swapchain_color_format;
     res->image.size = { 1u * m_width, 1u * m_height };
     res->res_type = VKResource::Type::kImage;
+    res->image.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     return res;
 }
 
@@ -867,7 +877,11 @@ void VKContext::Submit()
 
     auto res = vkQueueSubmit(m_queue, 1, &submitInfo, m_fence);
 
-    vkWaitForFences(m_device, 1, &m_fence, VK_TRUE, UINT64_MAX);
+    res = vkWaitForFences(m_device, 1, &m_fence, VK_TRUE, UINT64_MAX);
+    if (res != VK_SUCCESS)
+    {
+        throw std::runtime_error("vkWaitForFences");
+    }
     vkResetFences(m_device, 1, &m_fence);
 }
 

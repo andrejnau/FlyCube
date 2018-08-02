@@ -59,6 +59,7 @@ public:
     VkSemaphore imageAvailableSemaphore;
     VkSemaphore renderingFinishedSemaphore;
     VkFence m_fence;
+    VkFormat m_swapchain_color_format;
 
     VKDescriptorPool& GetDescriptorPool();
     std::unique_ptr<VKDescriptorPool> descriptor_pool[FrameCount];
