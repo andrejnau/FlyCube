@@ -21,10 +21,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
     const char*                 pMessage,
     void*                       pUserData)
 {
-#if !defined(_DEBUG)
-    return VK_FALSE;
-#endif
-
     std::string msg(pMessage);
     if (objectType == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT)
         return VK_FALSE;
@@ -80,9 +76,10 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
     callbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
     callbackCreateInfo.pNext = NULL;
-    callbackCreateInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
-        VK_DEBUG_REPORT_WARNING_BIT_EXT |
-        VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+    callbackCreateInfo.flags = VK_DEBUG_REPORT_WARNING_BIT_EXT |
+                               VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
+                               VK_DEBUG_REPORT_ERROR_BIT_EXT |
+                               VK_DEBUG_REPORT_DEBUG_BIT_EXT;
     callbackCreateInfo.pfnCallback = &MyDebugReportCallback;
     callbackCreateInfo.pUserData = NULL;
 
@@ -283,34 +280,6 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
     res = vkAllocateCommandBuffers(m_device, &cmdBufAllocInfo, m_cmd_bufs.data());
 
-    m_image_views.resize(m_images.size());
-    for (size_t i = 0; i < m_images.size(); ++i)
-    {
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-        VkResult res = vkBeginCommandBuffer(m_cmd_bufs[i], &beginInfo);
-
-        VkImageViewCreateInfo createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image = m_images[i];
-        createInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        createInfo.subresourceRange.baseMipLevel = 0;
-        createInfo.subresourceRange.levelCount = 1;
-        createInfo.subresourceRange.baseArrayLayer = 0;
-        createInfo.subresourceRange.layerCount = 1;
-        vkCreateImageView(m_device, &createInfo, nullptr, &m_image_views[i]);
-    }
-
-    int b = 0;
-
-
     VkSemaphoreCreateInfo createInfoSemaphore = {};
     createInfoSemaphore.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -319,12 +288,14 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
     VkFenceCreateInfo fenceCreateInfo = {};
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    vkCreateFence(m_device, &fenceCreateInfo, NULL, &renderFence);
+    vkCreateFence(m_device, &fenceCreateInfo, NULL, &m_fence);
 
     for (size_t i = 0; i < FrameCount; ++i)
     {
         descriptor_pool[i].reset(new VKDescriptorPool(*this));
     }
+
+    OpenCommandBuffer();
 }
 
 std::unique_ptr<ProgramApi> VKContext::CreateProgram()
@@ -868,7 +839,7 @@ Resource::Ptr VKContext::GetBackBuffer()
     return res;
 }
 
-void VKContext::Present(const Resource::Ptr & ires)
+void VKContext::CloseCommandBuffer()
 {
     if (m_is_open_render_pass)
     {
@@ -876,14 +847,13 @@ void VKContext::Present(const Resource::Ptr & ires)
         m_is_open_render_pass = false;
     }
 
-    m_current_program->OnPresent();
-
-    vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageAvailableSemaphore, nullptr, &m_frame_index);
-
     transitionImageLayout(m_images[m_frame_index], {}, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     auto res = vkEndCommandBuffer(m_cmd_bufs[m_frame_index]);
+}
 
+void VKContext::Submit()
+{
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
@@ -895,8 +865,14 @@ void VKContext::Present(const Resource::Ptr & ires)
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &renderingFinishedSemaphore;
 
-    res = vkQueueSubmit(m_queue, 1, &submitInfo, renderFence);
+    auto res = vkQueueSubmit(m_queue, 1, &submitInfo, m_fence);
 
+    vkWaitForFences(m_device, 1, &m_fence, VK_TRUE, UINT64_MAX);
+    vkResetFences(m_device, 1, &m_fence);
+}
+
+void VKContext::SwapBuffers()
+{
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.swapchainCount = 1;
@@ -905,18 +881,28 @@ void VKContext::Present(const Resource::Ptr & ires)
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = &renderingFinishedSemaphore;
 
-    res = vkQueuePresentKHR(m_queue, &presentInfo);
+    auto res = vkQueuePresentKHR(m_queue, &presentInfo);
+}
 
-
-    vkWaitForFences(m_device, 1, &renderFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(m_device, 1, &renderFence);
+void VKContext::OpenCommandBuffer()
+{
+    vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageAvailableSemaphore, nullptr, &m_frame_index);
 
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    res = vkBeginCommandBuffer(m_cmd_bufs[m_frame_index], &beginInfo);
+    auto res = vkBeginCommandBuffer(m_cmd_bufs[m_frame_index], &beginInfo);
+}
+
+void VKContext::Present(const Resource::Ptr& ires)
+{
+    CloseCommandBuffer();
+    Submit();
+    SwapBuffers();
+    OpenCommandBuffer();
 
     descriptor_pool[m_frame_index]->OnFrameBegin();
+    m_current_program->OnPresent();
 }
 
 void VKContext::ResizeBackBuffer(int width, int height)

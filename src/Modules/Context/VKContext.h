@@ -35,6 +35,10 @@ public:
     virtual void Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ) override;
 
     virtual Resource::Ptr GetBackBuffer() override;
+    void CloseCommandBuffer();
+    void Submit();
+    void SwapBuffers();
+    void OpenCommandBuffer();
     virtual void Present(const Resource::Ptr& ires) override;
 
     virtual void ResizeBackBuffer(int width, int height) override;
@@ -51,11 +55,10 @@ public:
     std::vector<VkImage> m_images;
     VkCommandPool m_cmd_pool;
     std::vector<VkCommandBuffer> m_cmd_bufs;
-    std::vector<VkImageView> m_image_views;
     uint32_t presentQueueFamily = 0;
     VkSemaphore imageAvailableSemaphore;
     VkSemaphore renderingFinishedSemaphore;
-    VkFence renderFence;
+    VkFence m_fence;
 
     VKDescriptorPool& GetDescriptorPool();
     std::unique_ptr<VKDescriptorPool> descriptor_pool[FrameCount];
