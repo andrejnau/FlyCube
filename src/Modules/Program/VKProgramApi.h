@@ -34,7 +34,7 @@ public:
 
     VkRenderPass GetRenderPass() const
     {
-        return renderPass;
+        return m_render_pass;
     }
 
     VkFramebuffer GetFramebuffer() const
@@ -120,7 +120,7 @@ private:
     
     std::vector<VkAttachmentDescription> m_color_attachments;
     std::vector<VkAttachmentReference> m_color_attachments_ref;
-    VkRenderPass renderPass = VK_NULL_HANDLE;
+    VkRenderPass m_render_pass = VK_NULL_HANDLE;
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
 
@@ -134,4 +134,38 @@ private:
     VKViewCreater m_view_creater;
     std::map<VkDescriptorType, size_t> descriptor_count;
     bool m_changed_om = false;
+    DepthStencilDesc m_depth_stencil_desc;
+
+    class ClearCache
+    {
+    public:
+        VkClearColorValue& GetColor(uint32_t slot)
+        {
+            if (slot >= color.size())
+                color.resize(slot + 1);
+            return color[slot];
+        }
+
+        VkClearDepthStencilValue& GetDepth()
+        {
+            return depth_stencil;
+        }
+
+        VkAttachmentLoadOp& GetColorLoadOp(uint32_t slot)
+        {
+            if (slot >= color_load_op.size())
+                color_load_op.resize(slot + 1);
+            return color_load_op[slot];
+        }
+
+        VkAttachmentLoadOp& GetDepthLoadOp()
+        {
+            return depth_load_op;
+        }
+    private:
+        std::vector<VkClearColorValue> color;
+        VkClearDepthStencilValue depth_stencil;
+        std::vector<VkAttachmentLoadOp> color_load_op;
+        VkAttachmentLoadOp depth_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
+    } m_clear_cache;
 };

@@ -11,6 +11,7 @@ VKProgramApi::VKProgramApi(VKContext& context)
     , m_cbv_offset(context)
     , m_view_creater(context, *this)
 {
+    m_depth_stencil_desc.depth_enable = true;
 }
 
 void VKProgramApi::SetMaxEvents(size_t count)
@@ -88,8 +89,6 @@ void VKProgramApi::CreateGrPipiLine()
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-    VkExtent2D swapChainExtent = { 1280, 720 };
-
     VkPipelineViewportStateCreateInfo viewportState = {};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1;
@@ -122,8 +121,8 @@ void VKProgramApi::CreateGrPipiLine()
 
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = VK_TRUE;
-    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthTestEnable = m_depth_stencil_desc.depth_enable;
+    depthStencil.depthWriteEnable = m_depth_stencil_desc.depth_enable;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
     depthStencil.stencilTestEnable = VK_FALSE;
@@ -142,7 +141,7 @@ void VKProgramApi::CreateGrPipiLine()
 
     pipelineInfo.layout = m_pipeline_layout;
 
-    pipelineInfo.renderPass = renderPass;
+    pipelineInfo.renderPass = m_render_pass;
     pipelineInfo.subpass = 0;
 
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -192,24 +191,36 @@ void VKProgramApi::ApplyBindings()
 
     if (m_changed_om)
     {
+        for (int i = 0; i < m_color_attachments.size() - 1; ++i)
+        {
+            m_color_attachments[i].loadOp = m_clear_cache.GetColorLoadOp(i);
+            m_clear_cache.GetColorLoadOp(i) = VK_ATTACHMENT_LOAD_OP_LOAD;
+        }
+        if (m_rtv.back())
+            m_color_attachments.back().loadOp = m_clear_cache.GetDepthLoadOp();
+        m_clear_cache.GetDepthLoadOp() = VK_ATTACHMENT_LOAD_OP_LOAD;
         VkSubpassDescription subPass = {};
         subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subPass.colorAttachmentCount = m_color_attachments_ref.size() - 1;
         subPass.pColorAttachments = m_color_attachments_ref.data();
         subPass.pDepthStencilAttachment = &m_color_attachments_ref.back();
+        if (!m_rtv.back())
+            subPass.pDepthStencilAttachment = nullptr;
 
         VkRenderPassCreateInfo renderPassInfo = {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         renderPassInfo.attachmentCount = m_color_attachments.size();
+        if (!m_rtv.back())
+            --renderPassInfo.attachmentCount;
         renderPassInfo.pAttachments = m_color_attachments.data();
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subPass;
 
-        vkCreateRenderPass(m_context.m_device, &renderPassInfo, nullptr, &renderPass);
+        vkCreateRenderPass(m_context.m_device, &renderPassInfo, nullptr, &m_render_pass);
 
         VkFramebufferCreateInfo framebufferInfo = {};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.renderPass = m_render_pass;
         framebufferInfo.attachmentCount = m_rtv.size();
         if (!m_rtv.back())
             --framebufferInfo.attachmentCount;
@@ -342,22 +353,21 @@ void VKProgramApi::RenderPassBegin()
 {
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.renderPass = m_render_pass;
     renderPassInfo.framebuffer = m_framebuffer;
 
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = m_rtv_size[0];
 
-    VkClearColorValue clearColor = { 0.0f, 0.2f, 0.4f, 1.0f };
     std::vector<VkClearValue> clearValues(m_rtv.size() - 1);
-    for (int i = 0; i < clearValues.size(); ++i)
+    for (int i = 0; i < m_rtv.size() - 1; ++i)
     {
-        clearValues[i].color = clearColor;
+        clearValues[i].color = m_clear_cache.GetColor(i);
     }
     if (m_rtv.back())
     {
         clearValues.emplace_back();
-        clearValues.back().depthStencil = { 1.0f, 0 };
+        clearValues.back().depthStencil = m_clear_cache.GetDepth();
     }
 
     renderPassInfo.clearValueCount = clearValues.size();
@@ -747,10 +757,18 @@ void VKProgramApi::OnAttachDSV(const Resource::Ptr & ires)
 
 void VKProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
 {
+    auto& clear_color = m_clear_cache.GetColor(slot);
+    clear_color.float32[0] = ColorRGBA[0];
+    clear_color.float32[1] = ColorRGBA[1];
+    clear_color.float32[2] = ColorRGBA[2];
+    clear_color.float32[3] = ColorRGBA[3];
+    m_clear_cache.GetColorLoadOp(slot) = VK_ATTACHMENT_LOAD_OP_CLEAR;
 }
 
 void VKProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
 {
+    m_clear_cache.GetDepth() = { Depth, Stencil };
+    m_clear_cache.GetDepthLoadOp() = VK_ATTACHMENT_LOAD_OP_CLEAR;
 }
 
 void VKProgramApi::SetRasterizeState(const RasterizerDesc & desc)
@@ -761,8 +779,9 @@ void VKProgramApi::SetBlendState(const BlendDesc & desc)
 {
 }
 
-void VKProgramApi::SetDepthStencilState(const DepthStencilDesc & desc)
+void VKProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
 {
+    m_depth_stencil_desc = desc;
 }
 
 void VKProgramApi::CreateInputLayout(

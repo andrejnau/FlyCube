@@ -847,7 +847,7 @@ Resource::Ptr VKContext::GetBackBuffer()
     res->image.format = m_swapchain_color_format;
     res->image.size = { 1u * m_width, 1u * m_height };
     res->res_type = VKResource::Type::kImage;
-    res->image.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    res->image.layout = VK_IMAGE_LAYOUT_UNDEFINED;
     return res;
 }
 
