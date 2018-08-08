@@ -75,9 +75,7 @@ DescriptorHeapAllocator::DescriptorHeapAllocator(DX12Context& context, D3D12_DES
 DescriptorHeapRange DescriptorHeapAllocator::Allocate(size_t count)
 {
     if (m_offset + count > m_size)
-    {
-        ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
-    }
+        throw std::runtime_error("illegal allocate in the middle of the frame");
     m_offset += count;
     return DescriptorHeapRange(m_context, m_heap, m_cpu_handle, m_gpu_handle, m_copied_handle, m_offset - count, count, m_context.device->GetDescriptorHandleIncrementSize(m_type), m_type);
 }
@@ -86,9 +84,6 @@ void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
 {
     if (m_size >= req_size)
         return;
-
-    if (m_size > 0)
-        throw std::runtime_error("illegal allocate in the middle of the frame");
 
     ComPtr<ID3D12DescriptorHeap> heap;
     D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};

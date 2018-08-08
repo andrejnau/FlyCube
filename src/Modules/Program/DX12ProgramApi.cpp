@@ -418,7 +418,7 @@ void DX12ProgramApi::UpdateCBuffers()
 
         if (m_use_cbv_table)
         {
-            AttachCBV(std::get<0>(x.first), std::get<1>(x.first), "", res);
+            Attach(std::get<0>(x.first), ResourceType::kCbv, std::get<1>(x.first), "", res);
         }
     }
 }

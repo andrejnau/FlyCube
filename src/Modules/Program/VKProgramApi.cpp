@@ -186,7 +186,7 @@ void VKProgramApi::ApplyBindings()
             m_context.UpdateSubresource(res, 0, buffer.GetBuffer().data(), 0, 0);
         }
 
-        AttachCBV(std::get<0>(x.first), std::get<1>(x.first), m_cbv_name[x.first], res);
+        Attach(std::get<0>(x.first), ResourceType::kCbv, std::get<1>(x.first), m_cbv_name[x.first], res);
     }
 
     if (m_changed_om)

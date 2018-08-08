@@ -170,17 +170,42 @@ void DX11ProgramApi::CompileShader(const ShaderBase& shader)
     }
 }
 
+void DX11ProgramApi::Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res)
+{
+    switch (res_type)
+    {
+    case ResourceType::kSrv:
+        AttachSRV(shader_type, name, slot, res);
+        break;
+    case ResourceType::kUav:
+        AttachUAV(shader_type, name, slot, res);
+        break;
+    case ResourceType::kCbv:
+        AttachCBV(shader_type, slot, res);
+        break;
+    case ResourceType::kSampler:
+        AttachSampler(shader_type, name, slot, res);
+        break;
+    case ResourceType::kRtv:
+        AttachRTV(slot, res);
+        break;
+    case ResourceType::kDsv:
+        AttachDSV(res);
+        break;
+    }
+}
+
 void DX11ProgramApi::AttachSRV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
 {
-    Attach(type, slot, CreateSrv(type, name, slot, res));
+    AttachView(type, slot, CreateSrv(type, name, slot, res));
 }
 
 void DX11ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
 {
-    Attach(type, slot, CreateUAV(type, name, slot, res));
+    AttachView(type, slot, CreateUAV(type, name, slot, res));
 }
 
-void DX11ProgramApi::Attach(ShaderType type, uint32_t slot, ComPtr<ID3D11SamplerState>& sampler)
+void DX11ProgramApi::AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11SamplerState>& sampler)
 {
     switch (type)
     {
@@ -207,7 +232,7 @@ void DX11ProgramApi::AttachSampler(ShaderType type, const std::string& name, uin
         DX11Resource& res = static_cast<DX11Resource&>(*ires);
         sampler = res.sampler;
     }
-    Attach(type, slot, sampler);
+    AttachView(type, slot, sampler);
 }
 
 void DX11ProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& ires)
@@ -538,7 +563,7 @@ ComPtr<ID3D11RenderTargetView> DX11ProgramApi::CreateRtv(uint32_t slot, const Re
     return rtv;
 }
 
-void DX11ProgramApi::Attach(ShaderType type, uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav)
+void DX11ProgramApi::AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav)
 {
     switch (type)
     {
@@ -548,7 +573,7 @@ void DX11ProgramApi::Attach(ShaderType type, uint32_t slot, ComPtr<ID3D11Unorder
     }
 }
 
-void DX11ProgramApi::Attach(ShaderType type, uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv)
+void DX11ProgramApi::AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv)
 {
     switch (type)
     {

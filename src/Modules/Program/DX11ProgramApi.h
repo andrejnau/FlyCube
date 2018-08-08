@@ -15,12 +15,9 @@ public:
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
     virtual void CompileShader(const ShaderBase& shader) override;
-    virtual void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
-    virtual void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res) override;
     virtual void AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer_layout) override;
-    virtual void AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void AttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void AttachDSV(const Resource::Ptr& ires) override;
+    virtual void Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res) override;
+
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
     virtual void SetRasterizeState(const RasterizerDesc& desc) override;
@@ -29,10 +26,18 @@ public:
 
 private:
     void CreateInputLayout();
-    void Attach(ShaderType type, uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv);
-    void Attach(ShaderType type, uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav);
-    void Attach(ShaderType type, uint32_t slot, ComPtr<ID3D11SamplerState>& sampler);
+
+    void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res);
+    void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res);
+    void AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
+    void AttachRTV(uint32_t slot, const Resource::Ptr& ires);
+    void AttachDSV(const Resource::Ptr& ires);
+
+    void AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv);
+    void AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav);
+    void AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11SamplerState>& sampler);
     void AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires);
+
     ComPtr<ID3D11ShaderResourceView> CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
     ComPtr<ID3D11UnorderedAccessView> CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
     ComPtr<ID3D11DepthStencilView> CreateDsv(const Resource::Ptr& ires);
