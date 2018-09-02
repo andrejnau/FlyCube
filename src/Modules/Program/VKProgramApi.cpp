@@ -247,12 +247,7 @@ void VKProgramApi::ApplyBindings()
     {
         m_descriptor_sets.emplace_back(m_context.GetDescriptorPool().AllocateDescriptorSet(x));
     }
-
-    vkCmdBindDescriptorSets(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 
-        m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
-    
-    ///////////////////
-
+   
     std::vector<VkWriteDescriptorSet> descriptorWrites;
     std::list<VkDescriptorImageInfo> list_image_info;
     std::list<VkDescriptorBufferInfo> list_buffer_info;
@@ -342,6 +337,9 @@ void VKProgramApi::ApplyBindings()
 
     if (!descriptorWrites.empty())
         vkUpdateDescriptorSets(m_context.m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+
+    vkCmdBindDescriptorSets(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0,
+        m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
 }
 
 VKView::Ptr VKProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr& res)
@@ -424,7 +422,7 @@ std::vector<uint8_t> VKProgramApi::hlsl2spirv(const ShaderBase& shader)
     glsl_name = glsl_name.replace(glsl_name.find(".hlsl"), 5, ".glsl");
     std::string spirv_path = get_tmp_file("SponzaApp.spirv");
 
-    std::string cmd = "C:\\VulkanSDK\\1.1.77.0\\Bin\\glslangValidator.exe";
+    std::string cmd = "C:\\VulkanSDK\\1.1.82.1\\Bin\\glslangValidator.exe";
     cmd += " --auto-map-bindings --hlsl-iomap ";
     cmd += " --resource-set-binding " + std::to_string(GetSetNumByShaderType(shader.type)) + " ";
     cmd += " --invert-y ";
