@@ -42,7 +42,7 @@ private:
     virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void OnAttachSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachDSV(const Resource::Ptr& ires) override;
 

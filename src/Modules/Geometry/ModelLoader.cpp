@@ -24,7 +24,7 @@ std::string ModelLoader::SplitFilename(const std::string& str)
 
 void ModelLoader::LoadModel(aiPostProcessSteps flags)
 {
-    const aiScene* scene = m_import.ReadFile(m_path, flags& (aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes |  aiProcess_CalcTangentSpace));
+    const aiScene* scene = m_import.ReadFile(m_path, flags & (aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes |  aiProcess_CalcTangentSpace));
     assert(scene && scene->mFlags != AI_SCENE_FLAGS_INCOMPLETE && scene->mRootNode);
     m_model.GetBones().LoadModel(scene);
     ProcessNode(scene->mRootNode, scene);

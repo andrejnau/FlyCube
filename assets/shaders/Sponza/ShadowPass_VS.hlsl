@@ -1,4 +1,4 @@
-cbuffer Params
+cbuffer VSParams
 {
     float4x4 World;
 };

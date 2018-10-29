@@ -6,7 +6,6 @@
 #include <Geometry/IABuffer.h>
 #include <Program/DX11ProgramApi.h>
 #include <Texture/DXGIFormatHelper.h>
-#include "SponzaApp/ImGuiSettings.h"
 #include "SponzaApp/ImGuiStateBackup.h"
 
 ImGuiPass::ImGuiPass(Context& context, const Input& input, int width, int height)
@@ -19,6 +18,7 @@ ImGuiPass::ImGuiPass(Context& context, const Input& input, int width, int height
     , m_texcoords_buffer(context)
     , m_colors_buffer(context)
     , m_indices_buffer(context)
+    , m_settings(m_input.root_scene)
 {
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)width, (float)height);
@@ -41,8 +41,7 @@ void ImGuiPass::OnUpdate()
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         return;
 
-    static ImGuiSettings settings;
-    settings.NewFrame(m_input.root_scene);
+    m_settings.NewFrame();
 
     ImGui::Render();
 
@@ -148,16 +147,23 @@ void ImGuiPass::OnResize(int width, int height)
 
 void ImGuiPass::OnKey(int key, int action)
 {
-    ImGuiIO& io = ImGui::GetIO();
-    if (action == GLFW_PRESS)
-        io.KeysDown[key] = true;
-    if (action == GLFW_RELEASE)
-        io.KeysDown[key] = false;
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        if (action == GLFW_PRESS)
+            io.KeysDown[key] = true;
+        if (action == GLFW_RELEASE)
+            io.KeysDown[key] = false;
 
-    io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
-    io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
-    io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
-    io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+        io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+        io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+        io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+        io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+    }
+    else
+    {
+        m_settings.OnKey(key, action);
+    }
 }
 
 void ImGuiPass::OnMouse(bool first, double xpos, double ypos)

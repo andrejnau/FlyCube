@@ -28,9 +28,9 @@ void ShadowPass::OnUpdate()
 
     glm::vec3 position = m_input.light_pos;
 
-    m_program.gs.cbuffer.Params.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.s_near, m_settings.s_far));
+    m_program.gs.cbuffer.GSParams.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.s_near, m_settings.s_far));
 
-    std::array<glm::mat4, 6>& view = m_program.gs.cbuffer.Params.View;
+    std::array<glm::mat4, 6>& view = m_program.gs.cbuffer.GSParams.View;
     view[0] = glm::transpose(glm::lookAt(position, position + Right, Up));
     view[1] = glm::transpose(glm::lookAt(position, position + Left, Up));
     view[2] = glm::transpose(glm::lookAt(position, position + Up, BackwardRH));
@@ -61,7 +61,7 @@ void ShadowPass::OnRender()
 
     for (auto& model : m_input.scene_list)
     {
-        m_program.vs.cbuffer.Params.World = glm::transpose(model.matrix);
+        m_program.vs.cbuffer.VSParams.World = glm::transpose(model.matrix);
 
         model.bones.UpdateAnimation(glfwGetTime());
 

@@ -216,7 +216,7 @@ DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
     return res;
 }
 
-void DX12ProgramApi::OnAttachSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
+void DX12ProgramApi::OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
 {
     m_changed_binding = true;
 }

@@ -31,7 +31,7 @@ void ComputeLuminance::GetLum2DPassCS(size_t buf_id, uint32_t thread_group_x, ui
     m_HDRLum2DPassCS.UseProgram();
 
     m_HDRLum2DPassCS.cs.uav.result.Attach(m_use_res[buf_id]);
-    m_HDRLum2DPassCS.cs.srv.input.Attach(m_input.hdr_res);
+    m_HDRLum2DPassCS.cs.srv.data.Attach(m_input.hdr_res);
     m_context.Dispatch(thread_group_x, thread_group_y, 1);
 }
 
@@ -40,7 +40,7 @@ void ComputeLuminance::GetLum1DPassCS(size_t buf_id, uint32_t input_buffer_size,
     m_HDRLum1DPassCS.cs.cbuffer.cbv.bufferSize = input_buffer_size;
     m_HDRLum1DPassCS.UseProgram();
 
-    m_HDRLum1DPassCS.cs.srv.input.Attach(m_use_res[buf_id - 1]);
+    m_HDRLum1DPassCS.cs.srv.data.Attach(m_use_res[buf_id - 1]);
     m_HDRLum1DPassCS.cs.uav.result.Attach(m_use_res[buf_id]);
 
     m_context.Dispatch(thread_group_x, 1, 1);

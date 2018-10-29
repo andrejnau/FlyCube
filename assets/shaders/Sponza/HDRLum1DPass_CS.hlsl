@@ -1,4 +1,4 @@
-StructuredBuffer<float> input;
+StructuredBuffer<float> data;
 RWStructuredBuffer<float> result;
 
 cbuffer cbv
@@ -14,7 +14,7 @@ groupshared float accum[numthread];
 void main(uint3 threadId : SV_DispatchthreadId, uint groupId : SV_GroupIndex, uint3 dispatchId : SV_GroupID)
 {
     if (threadId.x < bufferSize)
-        accum[groupId] = input[threadId.x];
+        accum[groupId] = data[threadId.x];
     else
         accum[groupId] = 0;
 

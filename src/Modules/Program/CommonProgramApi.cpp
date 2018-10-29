@@ -56,7 +56,7 @@ void CommonProgramApi::Attach(ShaderType shader_type, ResourceType res_type, uin
         OnAttachCBV(shader_type, slot, res);
         break;
     case ResourceType::kSampler:
-        OnAttachSampler(shader_type, slot, res);
+        OnAttachSampler(shader_type, name, slot, res);
         break;
     case ResourceType::kRtv:
         OnAttachRTV(slot, res);

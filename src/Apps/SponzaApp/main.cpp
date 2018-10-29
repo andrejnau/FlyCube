@@ -6,7 +6,7 @@
 int main(int argc, char *argv[])
 {
     WinConsole cmd; 
-    ApiType type = ApiType::kVulkan;
+    ApiType type = ApiType::kOpenGL;
     for (int i = 1; i < argc; ++i)
     {
         std::string arg(argv[i]);
@@ -16,7 +16,10 @@ int main(int argc, char *argv[])
             type = ApiType::kDX12;
         else if (arg == "--vk")
             type = ApiType::kVulkan;
+        else if (arg == "--gl")
+            type = ApiType::kOpenGL;
     }
+
     std::string title;
     switch (type)
     {
@@ -29,12 +32,9 @@ int main(int argc, char *argv[])
     case ApiType::kVulkan:
         title = "[Vulkan] testApp";
         break;
-    }
-
-    if (0 && type == ApiType::kDX12 && LoadLibraryA("d3dcompiler_dxc_bridge.dll"))
-    {
-        CurState::Instance().DXIL = true;
-        title += " with Shader Model 6.0";
+    case ApiType::kOpenGL:
+        title = "[OpenGL] testApp";
+        break;
     }
 
     return AppBox(DX11Scene::Create, type, title, 1280, 720).Run();

@@ -1,4 +1,4 @@
-cbuffer Params
+cbuffer GSParams
 {
     float4x4 View[6];
     float4x4 Projection;

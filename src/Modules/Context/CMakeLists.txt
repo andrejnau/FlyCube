@@ -20,7 +20,7 @@ set(headers
     VKView.h
     VKView.cpp
     VKDescriptorPool.h
-    VKDescriptorPool.cpp
+    GLContext.h
 )
 
 set(sources
@@ -31,6 +31,8 @@ set(sources
     DX12Resource.cpp
     DXGIUtility.cpp
     VKContext.cpp
+    VKDescriptorPool.cpp
+    GLContext.cpp
 )
 
 add_library(${target} ${headers} ${sources})
@@ -51,6 +53,7 @@ target_link_libraries(${target}
 	spirv-cross-core
 	spirv-cross-hlsl
     ${Vulkan_LIBRARIES}
+	glLoadGen
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

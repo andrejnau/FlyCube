@@ -3,7 +3,8 @@
 class ImGuiSettings
 {
 public:
-    ImGuiSettings()
+    ImGuiSettings(IModifySettings& listener)
+        : listener(listener)
     {
         for (uint32_t i = 2; i <= 8; i *= 2)
         {
@@ -14,7 +15,7 @@ public:
         }
     }
 
-    void NewFrame(IModifySettings& listener)
+    void NewFrame()
     {
         bool modify_settings = false;
         ImGui::NewFrame();
@@ -107,7 +108,15 @@ public:
             listener.OnModifySettings(settings);
     }
 
+    void OnKey(int key, int action)
+    {
+        if (key == GLFW_KEY_O && action == GLFW_PRESS)
+            settings.use_occlusion ^= true;
+        listener.OnModifySettings(settings);
+    }
+
 private:
+    IModifySettings& listener;
     Settings settings;
     int msaa_idx = 0;
     std::vector<uint32_t> msaa = { 1 };

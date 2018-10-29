@@ -34,6 +34,7 @@ set(headers
     ${include_path}/SSAOPass.h
     ${include_path}/ComputeLuminance.h
     ${include_path}/DX11Scene.h
+    ${include_path}/ImGuiSettings.h
 )
 
 set(sources

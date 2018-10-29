@@ -685,7 +685,7 @@ void VKProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const Resource::P
 {
 }
 
-void VKProgramApi::OnAttachSampler(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
+void VKProgramApi::OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
 {
 }
 

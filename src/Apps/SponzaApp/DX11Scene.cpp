@@ -125,11 +125,9 @@ void DX11Scene::OnResize(int width, int height)
 
 void DX11Scene::OnKey(int key, int action)
 {
+    m_imgui_pass.OnKey(key, action);
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
-    {
-        m_imgui_pass.OnKey(key, action);
         return;
-    }
 
     if (action == GLFW_PRESS)
         m_keys[key] = true;

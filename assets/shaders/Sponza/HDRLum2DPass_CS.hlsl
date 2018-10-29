@@ -1,4 +1,4 @@
-Texture2D<float4> input;
+Texture2D<float4> data;
 RWStructuredBuffer<float> result;
 
 cbuffer cbv
@@ -13,7 +13,7 @@ groupshared float accum[numthread * numthread];
 [numthreads(numthread, numthread, 1)]
 void main(uint3 threadId : SV_DispatchthreadId, uint groupId : SV_GroupIndex, uint3 dispatchId : SV_GroupID)
 {
-    float3 color = input.Load(uint3(threadId.xy, 0)).rgb;
+    float3 color = data.Load(uint3(threadId.xy, 0)).rgb;
     float lum = dot(color, float3(0.2126f, 0.7152f, 0.0722f));
     float log_lum = log(lum + 0.00001f);
     accum[groupId] = log_lum;

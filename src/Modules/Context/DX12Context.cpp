@@ -13,8 +13,10 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     : Context(window, width, height)
     , m_view_pool(*this)
 {
-    if (CurState::Instance().DXIL)
+#if 0
+    if (LoadLibraryA("d3dcompiler_dxc_bridge.dll"))
     {
+        CurState::Instance().DXIL = true;
         static const GUID D3D12ExperimentalShaderModelsID = { /* 76f5573e-f13a-40f5-b297-81ce9e18933f */
             0x76f5573e,
             0xf13a,
@@ -23,6 +25,7 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
         };
         ASSERT_SUCCEEDED(D3D12EnableExperimentalFeatures(1, &D3D12ExperimentalShaderModelsID, nullptr, nullptr));
     }
+#endif
 
 #if defined(_DEBUG)
     ComPtr<ID3D12Debug> debug_controller;

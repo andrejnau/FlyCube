@@ -1,14 +1,7 @@
 #pragma once
 
 #include <memory>
-
-enum class ApiType
-{
-    kOpenGL,
-    kVulkan,
-    kDX11,
-    kDX12
-};
+#include "ApiType.h"
 
 class Settings
 {

@@ -3,6 +3,7 @@ set(target Scene)
 set(headers
     IScene.h
     SceneBase.h
+	ApiType.h
 )
 
 set(sources

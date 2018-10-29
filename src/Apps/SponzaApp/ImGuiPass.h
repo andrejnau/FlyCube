@@ -8,6 +8,7 @@
 #include <Geometry/Geometry.h>
 #include <ProgramRef/ImGuiPassPS.h>
 #include <ProgramRef/ImGuiPassVS.h>
+#include "SponzaApp/ImGuiSettings.h"
 
 using namespace Microsoft::WRL;
 
@@ -54,4 +55,5 @@ private:
     PerFrameData<std::unique_ptr<IAVertexBuffer>> m_colors_buffer;
     PerFrameData<std::unique_ptr<IAIndexBuffer>> m_indices_buffer;
     Resource::Ptr m_sampler;
+    ImGuiSettings m_settings;
 };
