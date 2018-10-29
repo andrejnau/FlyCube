@@ -112,6 +112,8 @@ public:
     {
         if (key == GLFW_KEY_O && action == GLFW_PRESS)
             settings.use_occlusion ^= true;
+        if (key == GLFW_KEY_M && action == GLFW_PRESS)
+            settings.use_shadow ^= true;
         listener.OnModifySettings(settings);
     }
 
