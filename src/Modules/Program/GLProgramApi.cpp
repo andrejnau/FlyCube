@@ -167,6 +167,10 @@ void GLProgramApi::UseProgram()
     glUseProgram(m_program);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebuffer);
     glDrawBuffers(m_attachments.size(), m_attachments.data());
+    if (m_is_enabled_blend)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
    
     m_context.UseProgram(*this);
 }
@@ -582,6 +586,41 @@ void GLProgramApi::SetRasterizeState(const RasterizerDesc & desc)
 
 void GLProgramApi::SetBlendState(const BlendDesc & desc)
 {
+    auto convert = [](Blend type)
+    {
+        switch (type)
+        {
+        case Blend::kZero:
+            return GL_ZERO;
+        case Blend::kSrcAlpha:
+            return GL_SRC_ALPHA;
+        case Blend::kInvSrcAlpha:
+            return GL_ONE_MINUS_SRC_ALPHA;
+        }
+        return 0;
+    };
+
+    auto convert_op = [](BlendOp type)
+    {
+        switch (type)
+        {
+        case BlendOp::kAdd:
+            return GL_FUNC_ADD;
+        }
+        return 0;
+    };
+
+    m_is_enabled_blend = desc.blend_enable;
+    if (m_is_enabled_blend)
+    {
+        glEnable(GL_BLEND);
+        glBlendEquationSeparate(convert_op(desc.blend_op), convert_op(desc.blend_op_alpha));
+        glBlendFuncSeparate(convert(desc.blend_src), convert(desc.blend_dest), convert(desc.blend_src_alpha), convert(desc.blend_dest_apha));
+    }
+    else
+    {
+        glDisable(GL_BLEND);
+    }
 }
 
 void GLProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
