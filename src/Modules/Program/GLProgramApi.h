@@ -65,6 +65,5 @@ private:
     std::map<std::string, GLuint> m_cbv_bindings;
     std::map<std::string, std::pair<GLint, GLint>> m_texture_loc;
     std::set<std::string> m_samplers;
-    std::vector<GLuint> m_attachments;
     bool m_is_enabled_blend = false;
 };

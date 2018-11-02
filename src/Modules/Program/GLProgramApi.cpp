@@ -166,7 +166,6 @@ void GLProgramApi::UseProgram()
 {
     glUseProgram(m_program);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebuffer);
-    glDrawBuffers(m_attachments.size(), m_attachments.data());
     if (m_is_enabled_blend)
         glEnable(GL_BLEND);
     else
@@ -470,10 +469,11 @@ void GLProgramApi::ParseShadersOuput()
 
     std::vector<GLenum> properties = { GL_NAME_LENGTH };
     std::vector<GLint> values(properties.size());
+    std::vector<GLuint> attachments;
 
     for (GLint i = 0; i < numActiveAttribs; ++i)
     {
-        m_attachments.push_back(GL_COLOR_ATTACHMENT0 + i);
+        attachments.push_back(GL_COLOR_ATTACHMENT0 + i);
         glGetProgramResourceiv(m_program, GL_PROGRAM_OUTPUT, i, properties.size(),
             properties.data(), values.size(), nullptr, values.data());
 
@@ -483,6 +483,7 @@ void GLProgramApi::ParseShadersOuput()
         glGetProgramResourceName(m_program, GL_PROGRAM_OUTPUT, i, nameData.size(), nullptr, &nameData[0]);
         std::string name((char*)&nameData[0], nameData.size() - 1);
     }
+    glNamedFramebufferDrawBuffers(m_framebuffer, attachments.size(), attachments.data());
 }
 
 void GLProgramApi::OnPresent()
