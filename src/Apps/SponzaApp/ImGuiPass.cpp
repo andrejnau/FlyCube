@@ -78,7 +78,7 @@ void ImGuiPass::OnUpdate()
     m_positions_buffer.get().reset(new IAVertexBuffer(m_context, positions));
     m_texcoords_buffer.get().reset(new IAVertexBuffer(m_context, texcoords));
     m_colors_buffer.get().reset(new IAVertexBuffer(m_context, colors));
-    m_indices_buffer.get().reset(new IAIndexBuffer(m_context, indices, DXGI_FORMAT_R32_UINT));
+    m_indices_buffer.get().reset(new IAIndexBuffer(m_context, indices, gli::format::FORMAT_R32_UINT_PACK32));
 
     m_program.SetMaxEvents(cnt);
 }
@@ -200,10 +200,10 @@ void ImGuiPass::CreateFontsTexture()
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
-    m_font_texture_view = m_context.CreateTexture(BindFlag::kSrv, DXGI_FORMAT_R8G8B8A8_UNORM, 1, width, height);
+    m_font_texture_view = m_context.CreateTexture(BindFlag::kSrv, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, width, height);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
-    GetSurfaceInfo(width, height, DXGI_FORMAT_R8G8B8A8_UNORM, &num_bytes, &row_bytes, nullptr);
+    GetSurfaceInfo(width, height, gli::format::FORMAT_RGBA8_UNORM_PACK8, &num_bytes, &row_bytes, nullptr);
     m_context.UpdateSubresource(m_font_texture_view, 0, pixels, row_bytes, num_bytes);
 
     // Store our identifier

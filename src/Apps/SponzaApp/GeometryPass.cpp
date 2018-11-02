@@ -111,10 +111,10 @@ void GeometryPass::OnModifySettings(const Settings& settings)
 
 void GeometryPass::CreateSizeDependentResources()
 {
-    output.position = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);
-    output.normal = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);
-    output.ambient = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);
-    output.diffuse = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);
-    output.specular = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, m_settings.msaa_count, m_width, m_height, 1);
-    m_depth_stencil = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), DXGI_FORMAT_D24_UNORM_S8_UINT, m_settings.msaa_count, m_width, m_height, 1);
+    output.position = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.normal = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.ambient = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.diffuse = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.specular = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    m_depth_stencil = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
 }

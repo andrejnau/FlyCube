@@ -330,15 +330,12 @@ VkFormat VKContext::findSupportedFormat(const std::vector<VkFormat>& candidates,
     throw std::runtime_error("failed to find supported format!");
 }
 
-Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
+Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
     VKResource::Ptr res = std::make_shared<VKResource>();
     res->res_type = VKResource::Type::kImage;
 
-    if (bind_flag & BindFlag::kDsv &&format == DXGI_FORMAT_R32_TYPELESS)
-        format = DXGI_FORMAT_D32_FLOAT;
-
-    VkFormat vk_format = static_cast<VkFormat>(gli::dx().find(gli::dx::D3DFMT_DX10, static_cast<gli::dx::dxgi_format_dds>(format)));
+    VkFormat vk_format = static_cast<VkFormat>(format);
     if (vk_format == VK_FORMAT_D24_UNORM_S8_UINT)
         vk_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
@@ -782,10 +779,10 @@ void VKContext::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t
     vkCmdSetScissor(m_cmd_bufs[m_frame_index], 0, 1, &rect2D);
 }
 
-void VKContext::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, DXGI_FORMAT Format)
+void VKContext::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, gli::format Format)
 {
     VKResource::Ptr res = std::static_pointer_cast<VKResource>(ires);
-    auto format = static_cast<VkFormat>(gli::dx().find(gli::dx::D3DFMT_DX10, static_cast<gli::dx::dxgi_format_dds>(Format)));
+    VkFormat format = static_cast<VkFormat>(Format);
     VkIndexType index_type = {};
     switch (format)
     {

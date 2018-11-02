@@ -16,7 +16,7 @@ Resource::Ptr CreateSRVFromFile(Context& context, const std::string& path)
     if (!image)
         return {};
 
-    DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    gli::format format = gli::format::FORMAT_RGBA8_UNORM_PACK8;
     Resource::Ptr res = context.CreateTexture(BindFlag::kSrv, format, 1, width, height);
 
     size_t num_bytes;
@@ -32,8 +32,7 @@ Resource::Ptr CreateSRVFromFile(Context& context, const std::string& path)
 Resource::Ptr CreateSRVFromFileDDS(Context& context, const std::string& path)
 {
     gli::texture Texture = gli::load(path);
-    auto tex_format = gli::dx().translate(Texture.format());
-    DXGI_FORMAT format = static_cast<DXGI_FORMAT>(tex_format.DXGIFormat.DDS);
+    auto format = Texture.format();
     uint32_t width = Texture.extent(0).x;
     uint32_t height = Texture.extent(0).y;
     size_t mip_levels = Texture.levels();

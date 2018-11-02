@@ -44,10 +44,10 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
         ssaoNoise.push_back(noise);
     }
 
-    m_noise_texture = context.CreateTexture(BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 4, 4, 1);
+    m_noise_texture = context.CreateTexture(BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 4, 4, 1);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
-    GetSurfaceInfo(4, 4, DXGI_FORMAT_R32G32B32A32_FLOAT, &num_bytes, &row_bytes, nullptr);
+    GetSurfaceInfo(4, 4, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, &num_bytes, &row_bytes, nullptr);
     context.UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
 }
 
@@ -115,9 +115,9 @@ void SSAOPass::OnResize(int width, int height)
 
 void SSAOPass::CreateSizeDependentResources()
 {
-    output.srv = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
-    output.srv_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
-    m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
+    output.srv = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    output.srv_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
 }
 
 void SSAOPass::OnModifySettings(const Settings& settings)

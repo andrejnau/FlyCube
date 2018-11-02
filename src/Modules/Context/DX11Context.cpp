@@ -56,8 +56,12 @@ std::unique_ptr<ProgramApi> DX11Context::CreateProgram()
     return std::make_unique<DX11ProgramApi>(*this);
 }
 
-Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
+Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, gli::format Format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
+    DXGI_FORMAT format = static_cast<DXGI_FORMAT>(gli::dx().translate(Format).DXGIFormat.DDS);
+    if (bind_flag & BindFlag::kSrv && format == DXGI_FORMAT_D32_FLOAT)
+        format = DXGI_FORMAT_R32_TYPELESS;
+
     DX11Resource::Ptr res = std::make_shared<DX11Resource>();
 
     D3D11_TEXTURE2D_DESC desc = {};
@@ -307,12 +311,14 @@ void DX11Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32
     device_context->RSSetScissorRects(1, &rect);
 }
 
-void DX11Context::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, DXGI_FORMAT Format)
+void DX11Context::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, gli::format Format)
 {
+    DXGI_FORMAT format = static_cast<DXGI_FORMAT>(gli::dx().translate(Format).DXGIFormat.DDS);
+
     auto res = std::static_pointer_cast<DX11Resource>(ires);
     ComPtr<ID3D11Buffer> buf;
     res->resource.As(&buf);
-    device_context->IASetIndexBuffer(buf.Get(), Format, 0);
+    device_context->IASetIndexBuffer(buf.Get(), format, 0);
 }
 
 void DX11Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t SizeInBytes, uint32_t Stride)

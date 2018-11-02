@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gli/gli.hpp>
 #include <dxgiformat.h>
 #include <sal.h>
 
@@ -9,7 +10,7 @@
 void GetSurfaceInfo(
     _In_ size_t width,
     _In_ size_t height,
-    _In_ DXGI_FORMAT fmt,
+    _In_ gli::format format,
     _Out_opt_ size_t* outNumBytes,
     _Out_opt_ size_t* outRowBytes,
     _Out_opt_ size_t* outNumRows);

@@ -87,8 +87,12 @@ std::unique_ptr<ProgramApi> DX12Context::CreateProgram()
     return res;
 }
 
-Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
+Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, gli::format Format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
+    DXGI_FORMAT format = static_cast<DXGI_FORMAT>(gli::dx().translate(Format).DXGIFormat.DDS);
+    if (bind_flag & BindFlag::kSrv && format == DXGI_FORMAT_D32_FLOAT)
+        format = DXGI_FORMAT_R32_TYPELESS;
+
     DX12Resource::Ptr res = std::make_shared<DX12Resource>(*this);
 
     D3D12_RESOURCE_DESC desc = {};
@@ -280,11 +284,13 @@ void DX12Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32
     command_list->RSSetScissorRects(1, &rect);
 }
 
-void DX12Context::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, DXGI_FORMAT Format)
+void DX12Context::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, gli::format Format)
 {
+    DXGI_FORMAT format = static_cast<DXGI_FORMAT>(gli::dx().translate(Format).DXGIFormat.DDS);
+
     auto res = std::static_pointer_cast<DX12Resource>(ires);
     D3D12_INDEX_BUFFER_VIEW indexBufferView = {};
-    indexBufferView.Format = Format;
+    indexBufferView.Format = format;
     indexBufferView.SizeInBytes = SizeInBytes;
     indexBufferView.BufferLocation = res->default_res->GetGPUVirtualAddress();
     command_list->IASetIndexBuffer(&indexBufferView);

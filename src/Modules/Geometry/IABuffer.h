@@ -38,7 +38,7 @@ class IAIndexBuffer
 {
 public:
     template<typename T>
-    IAIndexBuffer(Context& context, const std::vector<T>& v, DXGI_FORMAT format)
+    IAIndexBuffer(Context& context, const std::vector<T>& v, gli::format format)
         : m_context(context)
         , m_format(format)
         , m_offset(0)
@@ -68,5 +68,5 @@ private:
     size_t m_offset;
     size_t m_count;
     size_t m_size;
-    DXGI_FORMAT m_format;
+    gli::format m_format;
 };

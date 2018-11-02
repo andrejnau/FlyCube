@@ -99,7 +99,7 @@ void ShadowPass::OnResize(int width, int height)
 
 void ShadowPass::CreateSizeDependentResources()
 {
-    output.srv = m_context.CreateTexture(BindFlag::kDsv | BindFlag::kSrv, DXGI_FORMAT_R32_TYPELESS, 1, m_settings.s_size, m_settings.s_size, 6);
+    output.srv = m_context.CreateTexture(BindFlag::kDsv | BindFlag::kSrv, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_settings.s_size, m_settings.s_size, 6);
     m_buffer = m_context.CreateBuffer((BindFlag)(BindFlag::kRtv), sizeof(float) * m_settings.s_size * m_settings.s_size, 0);
 }
 

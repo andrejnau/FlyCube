@@ -15,7 +15,7 @@ public:
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
     VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-    virtual Resource::Ptr CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) override;
+    virtual Resource::Ptr CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) override;
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     virtual Resource::Ptr CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride) override;
     virtual Resource::Ptr CreateSampler(const SamplerDesc& desc) override;
@@ -25,7 +25,7 @@ public:
     virtual void SetViewport(float width, float height) override;
     virtual void SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom) override;
 
-    virtual void IASetIndexBuffer(Resource::Ptr res, uint32_t SizeInBytes, DXGI_FORMAT Format) override;
+    virtual void IASetIndexBuffer(Resource::Ptr res, uint32_t SizeInBytes, gli::format Format) override;
     virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res, uint32_t SizeInBytes, uint32_t Stride) override;
 
     virtual void BeginEvent(LPCWSTR Name) override;

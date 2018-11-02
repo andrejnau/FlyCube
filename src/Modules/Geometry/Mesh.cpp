@@ -87,7 +87,7 @@ IAMergedMesh::IAMergedMesh(Context & context, std::vector<IMesh>& meshes)
     , tangents(context, m_data->tangents)
     , bones_offset(context, m_data->bones_offset)
     , bones_count(context, m_data->bones_count)
-    , indices(context, m_data->indices, DXGI_FORMAT_R32_UINT)
+    , indices(context, m_data->indices, gli::format::FORMAT_R32_UINT_PACK32)
     , ranges(std::move(m_data->ranges))
 {
     m_data.reset();

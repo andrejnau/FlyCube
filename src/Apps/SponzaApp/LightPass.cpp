@@ -90,8 +90,8 @@ void LightPass::OnResize(int width, int height)
 
 void LightPass::CreateSizeDependentResources()
 {
-    output.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, m_width, m_height, 1);
-    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, m_width, m_height, 1);
+    output.rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
 }
 
 void LightPass::OnModifySettings(const Settings& settings)

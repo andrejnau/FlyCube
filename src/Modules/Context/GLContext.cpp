@@ -35,7 +35,7 @@ GLContext::GLContext(GLFWwindow* window, int width, int height)
     }
 
     
-    m_final_texture = CreateTexture(0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, m_width, m_height);
+    m_final_texture = CreateTexture(0, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, m_width, m_height);
     glCreateFramebuffers(1, &m_final_framebuffer);
     GLResource& res = static_cast<GLResource&>(*m_final_texture);
     glNamedFramebufferTexture(m_final_framebuffer, GL_COLOR_ATTACHMENT0, res.texture, 0);
@@ -49,18 +49,13 @@ std::unique_ptr<ProgramApi> GLContext::CreateProgram()
     return std::make_unique<GLProgramApi>(*this);
 }
 
-Resource::Ptr GLContext::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
+Resource::Ptr GLContext::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
     GLResource::Ptr res = std::make_shared<GLResource>();
 
-    if (bind_flag & BindFlag::kDsv &&format == DXGI_FORMAT_R32_TYPELESS)
-        format = DXGI_FORMAT_D32_FLOAT;
-
-    gli::format gli_format = gli::dx().find(gli::dx::D3DFMT_DX10, static_cast<gli::dx::dxgi_format_dds>(format));
-
     gli::gl GL(gli::gl::PROFILE_GL32);
-    gli::swizzles swizzle = { gli::SWIZZLE_RED, gli::SWIZZLE_GREEN, gli::SWIZZLE_BLUE, gli::SWIZZLE_ALPHA };
-    gli::gl::format gl_format = GL.translate(gli_format, swizzle);
+    gli::swizzles swizzle(gli::SWIZZLE_RED, gli::SWIZZLE_GREEN, gli::SWIZZLE_BLUE, gli::SWIZZLE_ALPHA);
+    gli::gl::format gl_format = GL.translate(format, swizzle);
 
     if (depth == 6)
         glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &res->texture);
@@ -75,7 +70,7 @@ Resource::Ptr GLContext::CreateTexture(uint32_t bind_flag, DXGI_FORMAT format, u
     res->image.level_count = mip_levels;
     res->image.width = width;
     res->image.height = height;
-    res->image.is_compressed = gli::is_compressed(gli_format);
+    res->image.is_compressed = gli::is_compressed(format);
 
     return res;
 }
@@ -128,8 +123,13 @@ void GLContext::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t
 {
 }
 
-void GLContext::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, DXGI_FORMAT Format)
+void GLContext::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, gli::format Format)
 {
+    gli::gl GL(gli::gl::PROFILE_GL32);
+    gli::swizzles swizzle(gli::SWIZZLE_RED, gli::SWIZZLE_GREEN, gli::SWIZZLE_BLUE, gli::SWIZZLE_ALPHA);
+    gli::gl::format gl_format = GL.translate(Format, swizzle);
+    m_ibo_type = gl_format.Type;
+    m_ibo_size = gli::block_size(Format);
     GLResource& res = static_cast<GLResource&>(*ires);
     glVertexArrayElementBuffer(m_current_program->m_vao, res.buffer);
 }
@@ -151,7 +151,7 @@ void GLContext::EndEvent()
 void GLContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
     m_current_program->ApplyBindings();
-    glDrawElementsBaseVertex(GL_TRIANGLES, IndexCount, GL_UNSIGNED_INT, (void*)(StartIndexLocation * 4), BaseVertexLocation);
+    glDrawElementsBaseVertex(GL_TRIANGLES, IndexCount, m_ibo_type, (void*)(m_ibo_size * StartIndexLocation), BaseVertexLocation);
 }
 
 void GLContext::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)

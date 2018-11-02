@@ -170,11 +170,13 @@ size_t BitsPerPixel(_In_ DXGI_FORMAT fmt)
 void GetSurfaceInfo(
     _In_ size_t width,
     _In_ size_t height,
-    _In_ DXGI_FORMAT fmt,
+    _In_ gli::format format,
     _Out_opt_ size_t* outNumBytes,
     _Out_opt_ size_t* outRowBytes,
     _Out_opt_ size_t* outNumRows)
 {
+    DXGI_FORMAT fmt = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
+
     size_t numBytes = 0;
     size_t rowBytes = 0;
     size_t numRows = 0;
