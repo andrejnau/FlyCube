@@ -10,6 +10,12 @@
 
 static void APIENTRY gl_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *msg, const void *data)
 {
+    switch (type)
+    {
+    case GL_DEBUG_TYPE_PUSH_GROUP:
+    case GL_DEBUG_TYPE_POP_GROUP:
+        return;
+    }
     std::cout << "debug call: " << msg << std::endl;
 }
 
