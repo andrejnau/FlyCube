@@ -16,7 +16,7 @@ VKProgramApi::VKProgramApi(VKContext& context)
 
 void VKProgramApi::SetMaxEvents(size_t count)
 {
-    m_context.GetDescriptorPool().ReqFrameDescriptionDrawCalls(count);
+    m_context.GetDescriptorPool().ReqFrameDescriptionDrawCalls(count * m_descriptor_set_layouts.size(), GetProgramId());
     for (auto& it : descriptor_count)
     {
         m_context.GetDescriptorPool().ReqFrameDescription(it.first, count * it.second);
@@ -245,7 +245,7 @@ void VKProgramApi::ApplyBindings()
 
     for (auto & x : m_descriptor_set_layouts)
     {
-        m_descriptor_sets.emplace_back(m_context.GetDescriptorPool().AllocateDescriptorSet(x));
+        m_descriptor_sets.emplace_back(m_context.GetDescriptorPool().AllocateDescriptorSet(x, GetProgramId()));
     }
    
     std::vector<VkWriteDescriptorSet> descriptorWrites;
@@ -321,6 +321,14 @@ void VKProgramApi::ApplyBindings()
             list_image_info.emplace_back();
             VkDescriptorImageInfo& imageInfo = list_image_info.back();
             imageInfo.sampler = res.sampler.res;
+            descriptorWrite.pImageInfo = &imageInfo;
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        {
+            list_image_info.emplace_back();
+            VkDescriptorImageInfo& imageInfo = list_image_info.back();
+            imageInfo.imageView = view->srv;
             descriptorWrite.pImageInfo = &imageInfo;
             break;
         }
@@ -589,6 +597,7 @@ void VKProgramApi::ParseShader(ShaderType shader_type, const std::vector<uint32_
     print_resources(compiler, " stage_inputs ", resources.stage_inputs);
     print_resources(compiler, " uniform_buffers ", resources.uniform_buffers);
     print_resources(compiler, " storage_buffers ", resources.storage_buffers);
+    print_resources(compiler, " storage_images ", resources.storage_images);
     print_resources(compiler, " separate_images ", resources.separate_images);
     print_resources(compiler, " separate_samplers ", resources.separate_samplers);
     print_resources(compiler, " stage_outputs ", resources.stage_outputs);

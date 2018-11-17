@@ -139,6 +139,9 @@ Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, gli::format Format,
         p_clear_value = &clear_value;
     }
 
+    if (bind_flag & BindFlag::kUav)
+        p_clear_value = nullptr;
+
     ASSERT_SUCCEEDED(device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
         D3D12_HEAP_FLAG_NONE,

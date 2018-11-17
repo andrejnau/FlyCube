@@ -152,6 +152,15 @@ void DX12ViewCreater::CreateUAV(ShaderType type, const std::string& name, uint32
 
         break;
     }
+    case D3D_SRV_DIMENSION_TEXTURE2D:
+    {
+        D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+        uav_desc.Format = desc.Format;
+        uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+        m_context.device->CreateUnorderedAccessView(res.default_res.Get(), nullptr, &uav_desc, handle.GetCpuHandle());
+
+        break;
+    }
     default:
         assert(false);
         break;

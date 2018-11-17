@@ -78,6 +78,8 @@ Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, gli::format Format,
         desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
     if (bind_flag & BindFlag::kSrv)
         desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+    if (bind_flag & BindFlag::kUav)
+        desc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
 
     if (depth > 1)
         desc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;

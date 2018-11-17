@@ -142,10 +142,13 @@ void GLContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t Si
 
 void GLContext::BeginEvent(LPCWSTR Name)
 {
+    std::string name = wstring_to_utf8(Name);
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, name.c_str());
 }
 
 void GLContext::EndEvent()
 {
+    glPopDebugGroup();
 }
 
 void GLContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)

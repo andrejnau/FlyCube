@@ -7,7 +7,9 @@ struct VS_OUTPUT
 Texture2D ssaoInput;
 SamplerState g_sampler : register(s0);
 
-float4 main(VS_OUTPUT input) : SV_TARGET
+RWTexture2D<float4> out_uav;
+
+void main(VS_OUTPUT input)
 {
     float2 dim;
     ssaoInput.GetDimensions(dim.x, dim.y);
@@ -23,5 +25,6 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         }
     }
     result /= (4.0 * 4.0);
-    return float4(result, result, result, 0);
+    uint2 tex_coord = dim * input.texCoord.xy;
+    out_uav[tex_coord] = float4(result, result, result, 0);
 }

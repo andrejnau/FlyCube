@@ -78,7 +78,7 @@ void DX11ProgramApi::ApplyBindings()
         rtv_ptr.emplace_back(rtv.Get());
     }
     ComPtr<ID3D11DepthStencilView> dsv = m_dsv.Get();
-    m_context.device_context->OMSetRenderTargets(static_cast<uint32_t>(rtv_ptr.size()), rtv_ptr.data(), dsv.Get());
+    m_context.device_context->OMSetRenderTargetsAndUnorderedAccessViews(static_cast<uint32_t>(rtv_ptr.size()), rtv_ptr.data(), dsv.Get(), 0, D3D11_KEEP_UNORDERED_ACCESS_VIEWS, nullptr, nullptr);
 }
 
 void DX11ProgramApi::CreateInputLayout()
@@ -496,6 +496,19 @@ ComPtr<ID3D11UnorderedAccessView> DX11ProgramApi::CreateUAV(ShaderType type, con
         m_context.device->CreateUnorderedAccessView(buf.Get(), &uav_desc, &uav);
         break;
     }
+    case D3D_SRV_DIMENSION_TEXTURE2D:
+    {
+        ComPtr<ID3D11Texture2D> tex;
+        res->resource.As(&tex);
+        D3D11_TEXTURE2D_DESC tex_decs = {};
+        tex->GetDesc(&tex_decs);
+
+        D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+        uav_desc.Format = tex_decs.Format;
+        uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+        m_context.device->CreateUnorderedAccessView(tex.Get(), &uav_desc, &uav);
+        break;
+    }
     default:
         assert(false);
         break;
@@ -569,6 +582,9 @@ void DX11ProgramApi::AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11Uno
     {
     case ShaderType::kCompute:
         m_context.device_context->CSSetUnorderedAccessViews(slot, 1, uav.GetAddressOf(), nullptr);
+        break;
+    case ShaderType::kPixel:
+        m_context.device_context->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, slot, 1, uav.GetAddressOf(), nullptr);
         break;
     }
 }

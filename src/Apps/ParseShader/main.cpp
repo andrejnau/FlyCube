@@ -225,6 +225,11 @@ private:
                 break;  
             }
             case D3D_SIT_UAV_RWSTRUCTURED:
+            case D3D_SIT_UAV_RWTYPED:
+            case D3D_SIT_UAV_RWBYTEADDRESS:
+            case D3D_SIT_UAV_APPEND_STRUCTURED:
+            case D3D_SIT_UAV_CONSUME_STRUCTURED:
+            case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
             {
                 mustache::data tuav;
                 tuav.set("Name", res_desc.Name);

@@ -546,7 +546,7 @@ void GLProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint32_
     {
         GLint loc = glGetProgramResourceLocation(m_program, GL_UNIFORM, name.c_str());
         glProgramUniform1i(m_program, loc, slot);
-        glBindImageTexture(slot, res.texture, 0, false, 1, GL_READ_ONLY, res.image.int_format);
+        glBindImageTexture(slot, res.texture, 0, false, 0, GL_READ_WRITE, res.image.int_format);
     }
 }
 

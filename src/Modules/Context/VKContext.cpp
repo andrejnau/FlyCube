@@ -159,7 +159,8 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     createInfo2.pEnabledFeatures = &deviceFeatures;
 
     const char* pDevExt[] = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_EXT_DEBUG_MARKER_EXTENSION_NAME
     };
 
     createInfo2.enabledExtensionCount = _countof(pDevExt);
@@ -809,10 +810,18 @@ void VKContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t Si
 
 void VKContext::BeginEvent(LPCWSTR Name)
 {
+    std::string name = wstring_to_utf8(Name);
+    static decltype(&vkCmdDebugMarkerBeginEXT) vkCmdDebugMarkerBeginEXT_fn = decltype(&vkCmdDebugMarkerBeginEXT)(vkGetDeviceProcAddr(m_device, "vkCmdDebugMarkerBeginEXT"));
+    VkDebugMarkerMarkerInfoEXT markerInfo = {};
+    markerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT;
+    markerInfo.pMarkerName = name.c_str();
+    vkCmdDebugMarkerBeginEXT_fn(m_cmd_bufs[m_frame_index], &markerInfo);
 }
 
 void VKContext::EndEvent()
 {
+    static decltype(&vkCmdDebugMarkerEndEXT) vkCmdDebugMarkerEndEXTT_fn = decltype(&vkCmdDebugMarkerEndEXT)(vkGetDeviceProcAddr(m_device, "vkCmdDebugMarkerEndEXT"));
+    vkCmdDebugMarkerEndEXTT_fn(m_cmd_bufs[m_frame_index]);
 }
 
 void VKContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)

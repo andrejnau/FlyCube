@@ -93,7 +93,7 @@ void SSAOPass::OnRender()
     }
 
     m_program_blur.UseProgram();
-    m_program_blur.ps.om.rtv0.Attach(output.srv_blur).Clear(color);
+    m_program_blur.ps.uav.out_uav.Attach(output.srv_blur);
     m_program_blur.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_input.model.ia.indices.Bind();
@@ -116,7 +116,7 @@ void SSAOPass::OnResize(int width, int height)
 void SSAOPass::CreateSizeDependentResources()
 {
     output.srv = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    output.srv_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    output.srv_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
     m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
 }
 

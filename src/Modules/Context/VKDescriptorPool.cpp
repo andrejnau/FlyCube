@@ -28,12 +28,17 @@ void VKDescriptorPool::ResizeHeap()
     }
 }
 
-VkDescriptorSet VKDescriptorPool::AllocateDescriptorSet(VkDescriptorSetLayout & set_layout)
+VkDescriptorSet VKDescriptorPool::AllocateDescriptorSet(VkDescriptorSetLayout & set_layout, size_t prog_id)
 {
     if (first_frame_alloc)
     {
         ResizeHeap();
         first_frame_alloc = false;
+    }
+
+    if (++m_cur_descriptor_sets_by_prog[prog_id] > m_max_descriptor_sets_by_prog[prog_id])
+    {
+        throw std::runtime_error("out of range");
     }
 
     VkDescriptorSetAllocateInfo allocInfo = {};
@@ -50,9 +55,10 @@ VkDescriptorSet VKDescriptorPool::AllocateDescriptorSet(VkDescriptorSetLayout & 
     return m_descriptor_set;
 }
 
-void VKDescriptorPool::ReqFrameDescriptionDrawCalls(size_t count)
+void VKDescriptorPool::ReqFrameDescriptionDrawCalls(size_t count, size_t prog_id)
 {
     m_max_descriptor_sets += count;
+    m_max_descriptor_sets_by_prog[prog_id] += count;
 }
 
 void VKDescriptorPool::ReqFrameDescription(VkDescriptorType type, size_t count)
@@ -64,5 +70,7 @@ void VKDescriptorPool::OnFrameBegin()
 {
     first_frame_alloc = true;
     m_max_descriptor_sets = 0;
+    m_max_descriptor_sets_by_prog.clear();
+    m_cur_descriptor_sets_by_prog.clear();
     m_size_by_type.clear();
 }

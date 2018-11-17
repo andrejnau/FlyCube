@@ -177,6 +177,39 @@ void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t
 
 void VKViewCreater::CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const VKResource& res, VKView& handle)
 {
+    ShaderRef& shader_ref = m_shader_ref.find(type)->second;
+    auto ref_res = shader_ref.resources[name];
+
+    auto &res_type = shader_ref.compiler.get_type(ref_res.res.base_type_id);
+
+    auto dim = res_type.image.dim;
+
+    switch (dim)
+    {
+    case spv::Dim::Dim2D:
+    {
+        VkImageViewCreateInfo viewInfo = {};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = res.image.res;
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = res.image.format;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = res.image.level_count;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(m_context.m_device, &viewInfo, nullptr, &handle.srv) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create texture image view!");
+        }
+        break;
+    }
+    default:
+    {
+        bool todo = true;
+        break;
+    }
+    }
 }
 
 void VKViewCreater::CreateCBV(ShaderType type, uint32_t slot, const VKResource& res, VKView& handle)
