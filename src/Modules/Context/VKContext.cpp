@@ -687,8 +687,8 @@ void VKContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubres
         bufferCopyRegion.imageSubresource.mipLevel = DstSubresource;
         bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
         bufferCopyRegion.imageSubresource.layerCount = 1;
-        bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(res->image.size.width >> DstSubresource);
-        bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(res->image.size.height >> DstSubresource);
+        bufferCopyRegion.imageExtent.width = std::max(1u, static_cast<uint32_t>(res->image.size.width >> DstSubresource));
+        bufferCopyRegion.imageExtent.height = std::max(1u, static_cast<uint32_t>(res->image.size.height >> DstSubresource));
         bufferCopyRegion.imageExtent.depth = 1;
 
         bufferCopyRegions.push_back(bufferCopyRegion);

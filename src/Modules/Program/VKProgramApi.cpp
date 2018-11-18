@@ -669,7 +669,7 @@ void VKProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.initialLayout = res.image.layout;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     msaa_count = res.image.msaa_count;
@@ -703,7 +703,7 @@ void VKProgramApi::OnAttachDSV(const Resource::Ptr & ires)
     m_depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     m_depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     m_depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-    m_depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    m_depth_attachment.initialLayout = res.image.layout;
     m_depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     msaa_count = res.image.msaa_count;
