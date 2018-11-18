@@ -63,12 +63,20 @@ Resource::Ptr GLContext::CreateTexture(uint32_t bind_flag, gli::format format, u
     gli::swizzles swizzle(gli::SWIZZLE_RED, gli::SWIZZLE_GREEN, gli::SWIZZLE_BLUE, gli::SWIZZLE_ALPHA);
     gli::gl::format gl_format = GL.translate(format, swizzle);
 
-    if (depth == 6)
-        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &res->texture);
-    else
-        glCreateTextures(GL_TEXTURE_2D, 1, &res->texture);
+    if (msaa_count == 1)
+    {
+        if (depth == 6)
+            glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &res->texture);
+        else
+            glCreateTextures(GL_TEXTURE_2D, 1, &res->texture);
 
-    glTextureStorage2D(res->texture, mip_levels, gl_format.Internal, width, height);
+        glTextureStorage2D(res->texture, mip_levels, gl_format.Internal, width, height);
+    }
+    else
+    {
+        glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &res->texture);
+        glTextureStorage2DMultisample(res->texture, msaa_count, gl_format.Internal, width, height, GL_FALSE);
+    }
 
     res->image.int_format = gl_format.Internal;
     res->image.format = gl_format.External;

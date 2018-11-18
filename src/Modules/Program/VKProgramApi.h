@@ -168,4 +168,6 @@ private:
         std::vector<VkAttachmentLoadOp> color_load_op;
         VkAttachmentLoadOp depth_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
     } m_clear_cache;
+
+    size_t msaa_count = 1;
 };

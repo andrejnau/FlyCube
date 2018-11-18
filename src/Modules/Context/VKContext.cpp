@@ -150,6 +150,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     deviceFeatures.vertexPipelineStoresAndAtomics = true;
     deviceFeatures.samplerAnisotropy = true;
     deviceFeatures.fragmentStoresAndAtomics = true;
+    deviceFeatures.sampleRateShading = true;
     
     VkDeviceCreateInfo createInfo2 = {};
     createInfo2.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -340,7 +341,7 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, gli::format format, u
     if (vk_format == VK_FORMAT_D24_UNORM_S8_UINT)
         vk_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
-    auto createImage = [this](int width, int height, int depth, int mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+    auto createImage = [this, msaa_count](int width, int height, int depth, int mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
         VkImage& image, VkDeviceMemory& imageMemory, uint32_t& size)
     {
         VkImageCreateInfo imageInfo = {};
@@ -356,7 +357,7 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, gli::format format, u
         imageInfo.tiling = tiling;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
         imageInfo.usage = usage;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.samples = (VkSampleCountFlagBits)msaa_count;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         if (depth == 6)
@@ -412,6 +413,7 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, gli::format format, u
     res->image.size.width = width;
     res->image.format = vk_format;
     res->image.level_count = mip_levels;
+    res->image.msaa_count = msaa_count;
 
     return res;
 }

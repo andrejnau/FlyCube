@@ -20,6 +20,7 @@ public:
         VkFormat format = VK_FORMAT_UNDEFINED;
         VkExtent2D size = {};
         size_t level_count = 0;
+        size_t msaa_count = 1;
     } image;
 
     struct Buffer

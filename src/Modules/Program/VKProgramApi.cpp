@@ -112,8 +112,8 @@ void VKProgramApi::CreateGrPipiLine()
 
     VkPipelineMultisampleStateCreateInfo multisampling = {};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampling.rasterizationSamples = (VkSampleCountFlagBits)msaa_count;
+    multisampling.sampleShadingEnable = multisampling.rasterizationSamples != VK_SAMPLE_COUNT_1_BIT;
 
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -629,15 +629,15 @@ void VKProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
  
     VkAttachmentDescription& colorAttachment = m_color_attachments[slot];
     colorAttachment.format = res.image.format;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.samples = (VkSampleCountFlagBits)res.image.msaa_count;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    msaa_count = res.image.msaa_count;
 
     VkAttachmentReference& colorAttachmentRef = m_color_attachments_ref[slot];
     colorAttachmentRef.attachment = slot;
@@ -663,13 +663,15 @@ void VKProgramApi::OnAttachDSV(const Resource::Ptr & ires)
 
     auto& m_depth_attachment = m_color_attachments.back();
     m_depth_attachment.format = res.image.format;
-    m_depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    m_depth_attachment.samples = (VkSampleCountFlagBits)res.image.msaa_count;
     m_depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     m_depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     m_depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     m_depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
     m_depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     m_depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    msaa_count = res.image.msaa_count;
 
     VkAttachmentReference& depthAttachmentReference = m_color_attachments_ref.back();
     depthAttachmentReference.attachment = m_color_attachments.size() - 1;
