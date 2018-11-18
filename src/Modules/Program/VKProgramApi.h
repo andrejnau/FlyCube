@@ -170,4 +170,5 @@ private:
     } m_clear_cache;
 
     size_t msaa_count = 1;
+    BlendDesc m_blend_desc;
 };

@@ -100,13 +100,48 @@ void VKProgramApi::CreateGrPipiLine()
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_FALSE;
+    colorBlendAttachment.blendEnable = m_blend_desc.blend_enable;
+
+    if (colorBlendAttachment.blendEnable)
+    {
+        auto convert = [](Blend type)
+        {
+            switch (type)
+            {
+            case Blend::kZero:
+                return VK_BLEND_FACTOR_ZERO;
+            case Blend::kSrcAlpha:
+                return VK_BLEND_FACTOR_SRC_ALPHA;
+            case Blend::kInvSrcAlpha:
+                return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+            }
+            throw std::runtime_error("unsupported");
+        };
+
+        auto convert_op = [](BlendOp type)
+        {
+            switch (type)
+            {
+            case BlendOp::kAdd:
+                return VK_BLEND_OP_ADD;
+            }
+            throw std::runtime_error("unsupported");
+        };
+
+        colorBlendAttachment.srcColorBlendFactor = convert(m_blend_desc.blend_src);
+        colorBlendAttachment.dstColorBlendFactor = convert(m_blend_desc.blend_dest);
+        colorBlendAttachment.colorBlendOp = convert_op(m_blend_desc.blend_op);
+        colorBlendAttachment.srcAlphaBlendFactor = convert(m_blend_desc.blend_src_alpha);
+        colorBlendAttachment.dstAlphaBlendFactor = convert(m_blend_desc.blend_dest_apha);
+        colorBlendAttachment.alphaBlendOp = convert_op(m_blend_desc.blend_op_alpha);
+    }
+
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(m_rtv.size() - 1, colorBlendAttachment);
 
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
+    colorBlending.logicOp = VK_LOGIC_OP_AND;
     colorBlending.attachmentCount = colorBlendAttachments.size();
     colorBlending.pAttachments = colorBlendAttachments.data();
 
@@ -698,13 +733,16 @@ void VKProgramApi::SetRasterizeState(const RasterizerDesc & desc)
 {
 }
 
-void VKProgramApi::SetBlendState(const BlendDesc & desc)
+void VKProgramApi::SetBlendState(const BlendDesc& desc)
 {
+    m_blend_desc = desc;
+    m_changed_om = true;
 }
 
 void VKProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
 {
     m_depth_stencil_desc = desc;
+    m_changed_om = true;
 }
 
 void VKProgramApi::CreateInputLayout(

@@ -87,7 +87,7 @@ enum class BlendOp
 
 struct BlendDesc
 {
-    bool blend_enable;
+    bool blend_enable = false;
     Blend blend_src;
     Blend blend_dest;
     BlendOp blend_op;
