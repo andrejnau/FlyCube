@@ -4,6 +4,8 @@
 #include <utility>
 #include <Context/VKResource.h>
 #include <Context/VKView.h>
+#include <Shader/SpirvCompiler.h>
+#include <iostream>
 
 VKProgramApi::VKProgramApi(VKContext& context)
     : m_context(context)
@@ -60,17 +62,11 @@ void VKProgramApi::LinkProgram()
 
     if (m_spirv.count(ShaderType::kVertex))
     {
-        auto& spirv = m_spirv[ShaderType::kVertex];
-        assert(spirv.size() % 4 == 0);
-        std::vector<uint32_t> spirv32((uint32_t*)spirv.data(), ((uint32_t*)spirv.data()) + spirv.size() / 4);
-        CreateInputLayout(spirv32, binding_desc, attribute_desc);
+        CreateInputLayout(m_spirv[ShaderType::kVertex], binding_desc, attribute_desc);
     }
     if (m_spirv.count(ShaderType::kPixel))
     {
-        auto& spirv = m_spirv[ShaderType::kPixel];
-        assert(spirv.size() % 4 == 0);
-        std::vector<uint32_t> spirv32((uint32_t*)spirv.data(), ((uint32_t*)spirv.data()) + spirv.size() / 4);
-        CreateRenderPass(spirv32);
+        CreateRenderPass(m_spirv[ShaderType::kPixel]);
     }
 }
 
@@ -382,107 +378,27 @@ void VKProgramApi::RenderPassBegin()
     vkCmdBeginRenderPass(m_context.m_cmd_bufs[m_context.GetFrameIndex()], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-std::vector<uint8_t> readFile(const char* filename)
-{
-    // open the file:
-    std::streampos fileSize;
-    std::ifstream file(filename, std::ios::binary);
-
-    // get its size:
-    file.seekg(0, std::ios::end);
-    fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    // read the data:
-    std::vector<unsigned char> fileData(fileSize);
-    file.read((char*)&fileData[0], fileSize);
-    return fileData;
-}
-
-std::string get_tmp_file(const std::string& prefix)
-{
-    char tmpdir[MAX_PATH] = {};
-    GetTempPathA(MAX_PATH, tmpdir);
-    return tmpdir + prefix;
-}
-
-std::vector<uint8_t> VKProgramApi::hlsl2spirv(const ShaderBase& shader)
-{
-    std::string shader_type;
-    switch (shader.type)
-    {
-    case ShaderType::kPixel:
-        shader_type = "frag";
-        break;
-    case ShaderType::kVertex:
-        shader_type = "vert";
-        break;
-    case ShaderType::kGeometry:
-        shader_type = "geom";
-        break;
-    case ShaderType::kCompute:
-        shader_type = "comp";
-        break;
-    }
-
-    std::string glsl_name = shader.shader_path;
-    glsl_name = glsl_name.substr(glsl_name.find_last_of("\\/")+1);
-    glsl_name = glsl_name.replace(glsl_name.find(".hlsl"), 5, ".glsl");
-    std::string spirv_path = get_tmp_file("SponzaApp.spirv");
-
-    std::string cmd = "C:\\VulkanSDK\\1.1.82.1\\Bin\\glslangValidator.exe";
-    cmd += " --auto-map-bindings --hlsl-iomap ";
-    cmd += " --resource-set-binding " + std::to_string(GetSetNumByShaderType(shader.type)) + " ";
-    cmd += " --invert-y ";
-    cmd += " -g ";
-    cmd += " -e ";
-    cmd += shader.entrypoint;
-    cmd += " -S ";
-    cmd += shader_type;
-    cmd += " -V -D ";
-    cmd += GetAssetFullPath(shader.shader_path);
-    cmd += " -o ";
-    cmd += spirv_path;
-
-    for (auto &x : shader.define)
-    {
-        cmd += " -D" + x.first + "=" + x.second;
-    }
-
-    DeleteFileA(spirv_path.c_str());
-    system(cmd.c_str());
-
-    auto res = readFile(spirv_path.c_str());
-
-    DeleteFileA(spirv_path.c_str());
-    return res;
-}
-
 void VKProgramApi::CompileShader(const ShaderBase& shader)
 {
-    auto spirv = hlsl2spirv(shader);
+    SpirvOption option;
+    option.auto_map_bindings = true;
+    option.hlsl_iomap = true;
+    option.invert_y = true;
+    option.resource_set_binding = GetSetNumByShaderType(shader.type);
+    auto spirv = SpirvCompile(shader, option);
     m_spirv[shader.type] = spirv;
 
     VkShaderModuleCreateInfo vertexShaderCreationInfo = {};
     vertexShaderCreationInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    vertexShaderCreationInfo.codeSize = spirv.size();
-    vertexShaderCreationInfo.pCode = (uint32_t *)spirv.data();
+    vertexShaderCreationInfo.codeSize = sizeof(uint32_t) * spirv.size();
+    vertexShaderCreationInfo.pCode = spirv.data();
 
     VkShaderModule shaderModule;
     auto result = vkCreateShaderModule(m_context.m_device, &vertexShaderCreationInfo, nullptr, &shaderModule);
-    if (result)
-    {
-        int b = 0;
-    }
     m_shaders[shader.type] = shaderModule;
     m_shaders_info[shader.type] = shader.entrypoint;
     m_shaders_info2[shader.type] = &shader;
-
- 
-
 }
-
-#include <iostream>
 
 static void print_resources(const spirv_cross::Compiler &compiler, const char *tag, const std::vector<spirv_cross::Resource> &resources)
 {
@@ -617,12 +533,10 @@ void VKProgramApi::ParseShaders()
     for (auto & spirv_it : m_spirv)
     {
         auto& spirv = spirv_it.second;
-        assert(spirv.size() % 4 == 0);
-        std::vector<uint32_t> spirv32((uint32_t*)spirv.data(), ((uint32_t*)spirv.data()) + spirv.size() / 4);
         std::cout << std::endl << m_shaders_info2[spirv_it.first]->shader_path << std::endl;
 
         std::vector<VkDescriptorSetLayoutBinding> bindings;
-        ParseShader(spirv_it.first, spirv32, bindings);
+        ParseShader(spirv_it.first, spirv, bindings);
 
         VkDescriptorSetLayoutCreateInfo layout_info = {};
         layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -668,7 +582,7 @@ ShaderBlob VKProgramApi::GetBlobByType(ShaderType type) const
     if (it == m_spirv.end())
         return {};
 
-    return { it->second.data(), it->second.size() };
+    return { (uint8_t*)it->second.data(), sizeof(uint32_t) * it->second.size() };
     return ShaderBlob();
 }
 

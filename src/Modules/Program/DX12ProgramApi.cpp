@@ -2,7 +2,7 @@
 #include "Program/BufferLayout.h"
 #include "Texture/DXGIFormatHelper.h"
 #include <Utilities/State.h>
-#include "Program/DXProgram.h"
+#include <Shader/DXCompiler.h>
 
 DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     : m_cbv_buffer(context)
@@ -48,7 +48,7 @@ void DX12ProgramApi::UseProgram()
 
 void DX12ProgramApi::CompileShader(const ShaderBase& shader)
 {
-    auto blob = Compile(shader);
+    auto blob = DXCompile(shader);
     m_blob_map[shader.type] = blob;
     D3D12_SHADER_BYTECODE ShaderBytecode = {};
     ShaderBytecode.BytecodeLength = blob->GetBufferSize();

@@ -1,17 +1,6 @@
-#pragma once
+#include "Shader/DXCompiler.h"
 
-#include "Program/ShaderBase.h"
-#include <Utilities/FileUtility.h> 
-#include <Utilities/DXUtility.h> 
-#include <Utilities/State.h>
-
-#include <d3dcompiler.h> 
-#include <wrl.h> 
-#include <assert.h> 
-
-using namespace Microsoft::WRL;
-
-static ComPtr<ID3DBlob> Compile(const ShaderBase& shader)
+ComPtr<ID3DBlob> DXCompile(const ShaderBase& shader)
 {
     decltype(&::D3DCompileFromFile) _D3DCompileFromFile = &::D3DCompileFromFile;
     if (CurState::Instance().DXIL)

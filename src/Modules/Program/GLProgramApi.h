@@ -2,7 +2,7 @@
 
 #include <Context/GLContext.h>
 #include "Program/ProgramApi.h"
-#include "Program/ShaderBase.h"
+#include <Shader/ShaderBase.h>
 #include "Program/BufferLayout.h"
 
 #include <spirv_cross.hpp>
@@ -21,7 +21,6 @@ public:
     virtual void LinkProgram() override;
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
-    std::vector<uint8_t> hlsl2spirv(const ShaderBase & shader);
     virtual void CompileShader(const ShaderBase& shader) override;
     void ParseShader(ShaderType type, const std::vector<uint32_t>& spirv_binary, std::vector<VkDescriptorSetLayoutBinding>& bindings);
     void ParseShaders();

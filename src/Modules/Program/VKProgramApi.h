@@ -2,8 +2,8 @@
 
 #include <Context/VKContext.h>
 #include "Program/ProgramApi.h"
-#include "Program/ShaderBase.h"
 #include "Program/BufferLayout.h"
+#include <Shader/ShaderBase.h>
 
 #include <spirv_cross.hpp>
 #include <spirv_hlsl.hpp>
@@ -77,7 +77,7 @@ private:
     void CreateRenderPass(const std::vector<uint32_t>& spirv_binary);
 
     VKContext & m_context;
-    std::map<ShaderType, std::vector<uint8_t>> m_spirv;
+    std::map<ShaderType, std::vector<uint32_t>> m_spirv;
     std::map<ShaderType, VkShaderModule> m_shaders;
     std::map<ShaderType, std::string> m_shaders_info;
     std::map<ShaderType, const ShaderBase*> m_shaders_info2;

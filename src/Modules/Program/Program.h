@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
-#include <Program/ShaderBase.h>
+#include <Shader/ShaderBase.h>
 #include <Program/ProgramApi.h>
 #include "Program/BufferLayout.h"
 

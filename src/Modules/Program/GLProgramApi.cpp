@@ -4,6 +4,7 @@
 #include <utility>
 #include <Context/GLResource.h>
 #include <Context/VKView.h>
+#include <Shader/GLSLConverter.h>
 
 #include <glLoadGen/gl.h>
 
@@ -202,95 +203,9 @@ void GLProgramApi::ApplyBindings()
     }
 }
 
-static std::vector<uint8_t> readFile(const char* filename)
-{
-    // open the file:
-    std::streampos fileSize;
-    std::ifstream file(filename, std::ios::binary);
-
-    // get its size:
-    file.seekg(0, std::ios::end);
-    fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    // read the data:
-    std::vector<unsigned char> fileData(fileSize);
-    file.read((char*)&fileData[0], fileSize);
-    return fileData;
-}
-
-static std::string get_tmp_file(const std::string& prefix)
-{
-    char tmpdir[MAX_PATH] = {};
-    GetTempPathA(MAX_PATH, tmpdir);
-    return tmpdir + prefix;
-}
-
-std::vector<uint8_t> GLProgramApi::hlsl2spirv(const ShaderBase& shader)
-{
-    std::string shader_type;
-    switch (shader.type)
-    {
-    case ShaderType::kPixel:
-        shader_type = "frag";
-        break;
-    case ShaderType::kVertex:
-        shader_type = "vert";
-        break;
-    case ShaderType::kGeometry:
-        shader_type = "geom";
-        break;
-    case ShaderType::kCompute:
-        shader_type = "comp";
-        break;
-    }
-
-    std::string glsl_name = shader.shader_path;
-    glsl_name = glsl_name.substr(glsl_name.find_last_of("\\/")+1);
-    glsl_name = glsl_name.replace(glsl_name.find(".hlsl"), 5, ".glsl");
-    std::string spirv_path = get_tmp_file("SponzaApp.spirv");
-    std::string glsl_path = get_tmp_file("SponzaApp.glsl");
-
-    std::string cmd = "C:\\VulkanSDK\\1.1.82.1\\Bin\\glslangValidator.exe";
-  ///  cmd += " --auto-map-bindings --hlsl-iomap ";
-    cmd += " --invert-y ";
-    cmd += " -g ";
-    cmd += " -e ";
-    cmd += shader.entrypoint;
-    cmd += " -S ";
-    cmd += shader_type;
-    cmd += " -V -D ";
-    cmd += GetAssetFullPath(shader.shader_path);
-    cmd += " -o ";
-    cmd += spirv_path;
-
-    for (auto &x : shader.define)
-    {
-        cmd += " -D" + x.first + "=" + x.second;
-    }
-
-    DeleteFileA(spirv_path.c_str());
-    system(cmd.c_str());
-
-    cmd = "C:\\VulkanSDK\\1.1.82.1\\Bin\\spirv-cross.exe";
-    cmd += " --version 450 ";
-    cmd += spirv_path;
-    cmd += " --output " + glsl_path;
-
-    DeleteFileA(glsl_path.c_str());
-    system(cmd.c_str());
-
-    auto res = readFile(glsl_path.c_str());
-
-    DeleteFileA(glsl_path.c_str());
-    DeleteFileA(spirv_path.c_str());
-    return res;
-}
-
 void GLProgramApi::CompileShader(const ShaderBase& shader)
 {
-    auto spirv = hlsl2spirv(shader);
-    std::string source(spirv.begin(), spirv.end());
+    std::string source = GetGLSLShader(shader);
     m_src[shader.type] = source;
 }
 

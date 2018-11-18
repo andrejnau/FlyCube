@@ -1,5 +1,5 @@
 #include "Program/DX11ProgramApi.h"
-#include "Program/DXProgram.h"
+#include <Shader/DXCompiler.h>
 
 static size_t GenId()
 {
@@ -150,7 +150,7 @@ void DX11ProgramApi::CreateInputLayout()
 
 void DX11ProgramApi::CompileShader(const ShaderBase& shader)
 {
-    auto blob = Compile(shader);
+    auto blob = DXCompile(shader);
     m_blob_map[shader.type] = blob;
     switch (shader.type)
     {

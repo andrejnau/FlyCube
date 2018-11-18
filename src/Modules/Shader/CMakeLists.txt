@@ -1,27 +1,16 @@
-set(target Program)
+set(target Shader)
 
 set(headers
-    BufferLayout.h
-    DX11ProgramApi.h
-    DX12ProgramApi.h
-    Program.h
-    ProgramApi.h
-    VKProgramApi.h
-    CommonProgramApi.h
-    DX12ViewCreater.h
-	IShaderBlobProvider.h
-    VKViewCreater.h
-    GLProgramApi.h
+    ShaderBase.h
+    DXCompiler.h
+    SpirvCompiler.h
+    GLSLConverter.h
 )
 
 set(sources
-    DX11ProgramApi.cpp
-    DX12ProgramApi.cpp
-    VKProgramApi.cpp
-    GLProgramApi.cpp
-    VKViewCreater.cpp
-    CommonProgramApi.cpp
-    DX12ViewCreater.cpp
+    DXCompiler.cpp
+    SpirvCompiler.cpp
+    GLSLConverter.cpp
 )
 
 add_library(${target} ${headers} ${sources})
@@ -41,7 +30,6 @@ target_link_libraries(${target}
 	spirv-cross-hlsl
     ${Vulkan_LIBRARIES}
 	glLoadGen
-	Shader
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")
