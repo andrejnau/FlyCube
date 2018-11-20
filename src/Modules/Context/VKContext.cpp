@@ -10,6 +10,7 @@
 #include <Texture/TextureLoader.h>
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
+#include <Utilities/VKUtility.h>
 
 bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& message)
 {
@@ -41,63 +42,76 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
     return VK_FALSE;
 }
 
-VKContext::VKContext(GLFWwindow* window, int width, int height)
-    : Context(window, width, height)
+VkInstance CreateInstance()
 {
-    VkApplicationInfo appInfo = {};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Hello Triangle";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    uint32_t layer_count = 0;
+    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+    std::vector<VkLayerProperties> layers(layer_count);
+    vkEnumerateInstanceLayerProperties(&layer_count, layers.data());
 
-    const char* pInstExt[] = {
+    std::set<std::string> req_layers = {
+        "VK_LAYER_LUNARG_standard_validation"
+    };
+    std::vector<const char*> found_layers;
+    for (const auto& layer : layers)
+    {
+        if (req_layers.count(layer.layerName))
+            found_layers.push_back(layer.layerName);
+    }
+    
+    uint32_t extension_count = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
+    std::vector<VkExtensionProperties> extensions(extension_count);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
+
+    std::set<std::string> req_extension = {
         VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
         VK_KHR_SURFACE_EXTENSION_NAME,
         VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
     };
-
-    uint32_t layerCount = 0;
-    vkEnumerateInstanceLayerProperties(&layerCount, NULL);
-
-    assert(layerCount != 0, "Failed to find any layer in your system.");
-
-    std::vector<VkLayerProperties> layersAvailable(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, layersAvailable.data());
-
-    std::vector<const char*> pInstLayers;
-
-    for (int i = 0; i < layerCount; ++i) {
-        if (strcmp(layersAvailable[i].layerName, "VK_LAYER_LUNARG_standard_validation") == 0) {
-            pInstLayers.push_back("VK_LAYER_LUNARG_standard_validation");
-        }
+    std::vector<const char*> found_extension;
+    for (const auto& extension : extensions)
+    {
+        if (req_extension.count(extension.extensionName))
+            found_extension.push_back(extension.extensionName);
     }
 
-    VkInstanceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledExtensionCount = _countof(pInstExt);
-    createInfo.ppEnabledExtensionNames = pInstExt;
-    createInfo.enabledLayerCount = pInstLayers.size();
-    createInfo.ppEnabledLayerNames = pInstLayers.data();
+    VkApplicationInfo app_info = {};
+    app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    app_info.apiVersion = VK_API_VERSION_1_0;
 
-    VkResult result = vkCreateInstance(&createInfo, nullptr, &m_instance);
+    VkInstanceCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    create_info.pApplicationInfo = &app_info;
+    create_info.enabledLayerCount = found_layers.size();
+    create_info.ppEnabledLayerNames = found_layers.data();
+    create_info.enabledExtensionCount = found_extension.size();
+    create_info.ppEnabledExtensionNames = found_extension.data();
+
+    VkInstance instance = VK_NULL_HANDLE;
+    ASSERT_SUCCEEDED(vkCreateInstance(&create_info, nullptr, &instance));
+    return instance;
+}
+
+VKContext::VKContext(GLFWwindow* window, int width, int height)
+    : Context(window, width, height)
+{
+    m_instance = CreateInstance();
 
 #if defined(_DEBUG) || 1
     VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
     callbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-    callbackCreateInfo.pNext = NULL;
+    callbackCreateInfo.pNext = nullptr;
     callbackCreateInfo.flags = VK_DEBUG_REPORT_WARNING_BIT_EXT |
                                VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
                                VK_DEBUG_REPORT_ERROR_BIT_EXT |
                                VK_DEBUG_REPORT_DEBUG_BIT_EXT;
     callbackCreateInfo.pfnCallback = &MyDebugReportCallback;
-    callbackCreateInfo.pUserData = NULL;
+    callbackCreateInfo.pUserData = nullptr;
 
     PFN_vkCreateDebugReportCallbackEXT my_vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugReportCallbackEXT");
     VkDebugReportCallbackEXT callback;
-    auto res2 = my_vkCreateDebugReportCallbackEXT(m_instance, &callbackCreateInfo, NULL, &callback);
+    auto res2 = my_vkCreateDebugReportCallbackEXT(m_instance, &callbackCreateInfo, nullptr, &callback);
 #endif
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -113,9 +127,12 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
         vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-            deviceFeatures.geometryShader)
+        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ||
+            deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+        {
             physicalDevice = device;
+            break;
+        }
     }
 
     auto device = physicalDevice;
@@ -164,7 +181,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
         VK_EXT_DEBUG_MARKER_EXTENSION_NAME
     };
 
-    createInfo2.enabledExtensionCount = _countof(pDevExt);
+    createInfo2.enabledExtensionCount = std::size(pDevExt);
     createInfo2.ppEnabledExtensionNames = pDevExt;
 
     if (vkCreateDevice(physicalDevice, &createInfo2, nullptr, &m_device) != VK_SUCCESS) {
@@ -187,7 +204,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     {
         uint32_t formatCount = 0;
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface,
-            &formatCount, NULL);
+            &formatCount, nullptr);
         std::vector<VkSurfaceFormatKHR> surfaceFormats(formatCount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface,
             &formatCount, surfaceFormats.data());
@@ -237,7 +254,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
         uint32_t presentModeCount = 0;
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface,
-            &presentModeCount, NULL);
+            &presentModeCount, nullptr);
         std::vector<VkPresentModeKHR> presentModes(presentModeCount);
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface,
             &presentModeCount, presentModes.data());
@@ -299,7 +316,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
 
     VkFenceCreateInfo fenceCreateInfo = {};
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    vkCreateFence(m_device, &fenceCreateInfo, NULL, &m_fence);
+    vkCreateFence(m_device, &fenceCreateInfo, nullptr, &m_fence);
 
     for (size_t i = 0; i < FrameCount; ++i)
     {
