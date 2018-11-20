@@ -18,6 +18,10 @@
 #include <cstdarg>
 #include <Windows.h>
 
+#ifndef CUSTOM_FAILED
+    #define CUSTOM_FAILED FAILED
+#endif
+
 namespace DXUtility
 {
     inline void Print(const char* msg) { OutputDebugStringA(msg); }
@@ -103,15 +107,18 @@ namespace DXUtility
 			__debugbreak(); \
 		}
 
-#define ASSERT_SUCCEEDED( hr, ... ) \
-		if (FAILED(hr)) { \
-			DXUtility::Print("\nHRESULT failed in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
-			DXUtility::PrintSubMessage("hr = 0x%08X", hr); \
-			DXUtility::PrintSubMessage(__VA_ARGS__); \
-			DXUtility::Print("\n"); \
-			__debugbreak(); \
-		}
-
+#define ASSERT_SUCCEEDED( expr, ... ) \
+        { \
+            auto hr = expr; \
+            if (CUSTOM_FAILED(hr)) { \
+                \
+                    DXUtility::Print("\nHRESULT failed in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
+                    DXUtility::PrintSubMessage("hr = 0x%08X", hr); \
+                    DXUtility::PrintSubMessage(__VA_ARGS__); \
+                    DXUtility::Print("\n"); \
+                    __debugbreak(); \
+            } \
+        }
 
 #define WARN_ONCE_IF( isTrue, ... ) \
 	{ \
@@ -137,4 +144,4 @@ namespace DXUtility
 
 #endif
 
-#define BreakIfFailed( hr ) if (FAILED(hr)) __debugbreak()
+#define BreakIfFailed( hr ) if (CUSTOM_FAILED(hr)) __debugbreak()
