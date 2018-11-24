@@ -11,6 +11,11 @@ struct VKProgramApi;
 class VKContext : public Context
 {
 public:
+    void CreateInstance();
+    void SelectQueueFamilyIndex();
+    void CreateDevice();
+    void CreateSwapchain(int width, int height);
+    void SelectPhysicalDevice();
     VKContext(GLFWwindow* window, int width, int height);
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
@@ -46,20 +51,21 @@ public:
     void UseProgram(VKProgramApi& program_api);
     VKProgramApi* m_current_program = nullptr;
 
-    VkInstance m_instance;
-    VkDevice m_device;
-    VkPhysicalDevice m_physical_device;
-    VkSurfaceKHR m_surface;
-    VkQueue m_queue;
-    VkSwapchainKHR m_swapchain;
+
+    VkInstance m_instance = VK_NULL_HANDLE;
+    VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
+    uint32_t m_queue_family_index = 0;
+    VkDevice m_device = VK_NULL_HANDLE;
+    VkQueue m_queue = VK_NULL_HANDLE;
+    VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+    VkFormat m_swapchain_color_format = VK_FORMAT_B8G8R8_UNORM;
+    VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
     std::vector<VkImage> m_images;
-    VkCommandPool m_cmd_pool;
+    VkCommandPool m_cmd_pool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> m_cmd_bufs;
-    uint32_t presentQueueFamily = 0;
-    VkSemaphore imageAvailableSemaphore;
-    VkSemaphore renderingFinishedSemaphore;
-    VkFence m_fence;
-    VkFormat m_swapchain_color_format;
+    VkSemaphore m_image_available_semaphore = VK_NULL_HANDLE;
+    VkSemaphore m_rendering_finished_semaphore = VK_NULL_HANDLE;
+    VkFence m_fence = VK_NULL_HANDLE;;
 
     VKDescriptorPool& GetDescriptorPool();
     std::unique_ptr<VKDescriptorPool> descriptor_pool[FrameCount];
