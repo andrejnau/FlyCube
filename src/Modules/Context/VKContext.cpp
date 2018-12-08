@@ -218,6 +218,10 @@ void VKContext::CreateSwapchain(int width, int height)
     ASSERT(surface_capabilities.currentExtent.width == width);
     ASSERT(surface_capabilities.currentExtent.height == height);
 
+    VkBool32 is_supported_surface = VK_FALSE;
+    vkGetPhysicalDeviceSurfaceSupportKHR(m_physical_device, m_queue_family_index, m_surface, &is_supported_surface);
+    ASSERT(is_supported_surface);
+
     VkSwapchainCreateInfoKHR swap_chain_create_info = {};
     swap_chain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     swap_chain_create_info.surface = m_surface;

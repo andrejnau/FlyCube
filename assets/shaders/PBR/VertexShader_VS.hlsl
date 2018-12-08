@@ -4,7 +4,6 @@ struct VS_INPUT
     float3 normal : NORMAL;
     float2 texCoord: TEXCOORD;
     float3 tangent: TANGENT;
-    float3 bitangent: BITANGENT;
 };
 
 struct VS_OUTPUT
@@ -14,7 +13,6 @@ struct VS_OUTPUT
     float3 normal : NORMAL;
     float2 texCoord: TEXCOORD;
     float3 tangent: TANGENT;
-    float3 bitangent: BITANGENT;
     float3 lightPos : POSITION_LIGHT;
     float3 viewPos : POSITION_VIEW;
 };
@@ -46,6 +44,5 @@ VS_OUTPUT main(VS_INPUT input)
 
     output.normal = normalize(mul(input.normal, model));
     output.tangent = normalize(mul(input.tangent, model));
-    output.bitangent = normalize(mul(input.bitangent, model));
     return output;
 }

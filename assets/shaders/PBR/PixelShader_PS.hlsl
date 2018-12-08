@@ -5,7 +5,6 @@ struct VS_OUTPUT
     float3 normal : NORMAL;
     float2 texCoord: TEXCOORD;
     float3 tangent: TANGENT;
-    float3 bitangent: BITANGENT;
     float3 lightPos : POSITION_LIGHT;
     float3 viewPos : POSITION_VIEW;
 };
@@ -19,7 +18,7 @@ Texture2D metalnessMap;
 Texture2D aoMap;
 Texture2D alphaMap;
 
-SamplerState g_sampler : register(s0);
+SamplerState g_sampler;
 
 float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, bool _need_gamma = false)
 {
