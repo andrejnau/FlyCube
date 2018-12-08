@@ -88,8 +88,9 @@ void VKContext::CreateInstance()
 
     std::set<std::string> req_extension = {
         VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
-        VK_KHR_SURFACE_EXTENSION_NAME,      
-        VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+        VK_KHR_SURFACE_EXTENSION_NAME,
+        VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+        VK_EXT_DEBUG_UTILS_EXTENSION_NAME
     };
     std::vector<const char*> found_extension;
     for (const auto& extension : extensions)
@@ -173,6 +174,7 @@ void VKContext::CreateDevice()
     device_features.samplerAnisotropy = true;
     device_features.fragmentStoresAndAtomics = true;
     device_features.sampleRateShading = true;
+    device_features.geometryShader = true;
 
     uint32_t extension_count = 0;
     ASSERT_SUCCEEDED(vkEnumerateDeviceExtensionProperties(m_physical_device, nullptr, &extension_count, nullptr));
@@ -790,22 +792,23 @@ void VKContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t Si
     vkCmdBindVertexBuffers(m_cmd_bufs[m_frame_index], slot, 1, vertexBuffers, offsets);
 }
 
-void VKContext::BeginEvent(LPCWSTR Name)
+void VKContext::BeginEvent(const std::string& name)
 {
-    return;
-    std::string name = wstring_to_utf8(Name);
-    static decltype(&vkCmdDebugMarkerBeginEXT) vkCmdDebugMarkerBeginEXT_fn = decltype(&vkCmdDebugMarkerBeginEXT)(vkGetDeviceProcAddr(m_device, "vkCmdDebugMarkerBeginEXT"));
-    VkDebugMarkerMarkerInfoEXT markerInfo = {};
-    markerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT;
-    markerInfo.pMarkerName = name.c_str();
-    vkCmdDebugMarkerBeginEXT_fn(m_cmd_bufs[m_frame_index], &markerInfo);
+    static decltype(&vkCmdBeginDebugUtilsLabelEXT) vkCmdBeginDebugUtilsLabelEXT_fn = decltype(&vkCmdBeginDebugUtilsLabelEXT)(vkGetDeviceProcAddr(m_device, "vkCmdBeginDebugUtilsLabelEXT"));
+    if (!vkCmdBeginDebugUtilsLabelEXT_fn)
+        return;
+    VkDebugUtilsLabelEXT label = {};
+    label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+    label.pLabelName = name.c_str();
+    vkCmdBeginDebugUtilsLabelEXT_fn(m_cmd_bufs[m_frame_index], &label);
 }
 
 void VKContext::EndEvent()
 {
-    return;
-    static decltype(&vkCmdDebugMarkerEndEXT) vkCmdDebugMarkerEndEXTT_fn = decltype(&vkCmdDebugMarkerEndEXT)(vkGetDeviceProcAddr(m_device, "vkCmdDebugMarkerEndEXT"));
-    vkCmdDebugMarkerEndEXTT_fn(m_cmd_bufs[m_frame_index]);
+    static decltype(&vkCmdEndDebugUtilsLabelEXT) vkCmdEndDebugUtilsLabelEXT_fn = decltype(&vkCmdEndDebugUtilsLabelEXT)(vkGetDeviceProcAddr(m_device, "vkCmdEndDebugUtilsLabelEXT"));
+    if (!vkCmdEndDebugUtilsLabelEXT_fn)
+        return;
+    vkCmdEndDebugUtilsLabelEXT_fn(m_cmd_bufs[m_frame_index]);
 }
 
 void VKContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)

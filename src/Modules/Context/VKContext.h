@@ -33,7 +33,7 @@ public:
     virtual void IASetIndexBuffer(Resource::Ptr res, uint32_t SizeInBytes, gli::format Format) override;
     virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res, uint32_t SizeInBytes, uint32_t Stride) override;
 
-    virtual void BeginEvent(LPCWSTR Name) override;
+    virtual void BeginEvent(const std::string& name) override;
     virtual void EndEvent() override;
 
     virtual void DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation) override;

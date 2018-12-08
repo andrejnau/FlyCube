@@ -332,9 +332,10 @@ void DX11Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t 
     device_context->IASetVertexBuffers(slot, 1, buf.GetAddressOf(), &Stride, &offset);
 }
 
-void DX11Context::BeginEvent(LPCWSTR Name)
+void DX11Context::BeginEvent(const std::string& name)
 {
-    perf->BeginEvent(Name);
+    std::wstring wname = utf8_to_wstring(name);
+    perf->BeginEvent(wname.c_str());
 }
 
 void DX11Context::EndEvent()

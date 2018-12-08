@@ -71,29 +71,29 @@ void DX11Scene::OnRender()
     m_render_target_view = m_context.GetBackBuffer();
     m_camera.SetViewport(m_width, m_height);
 
-    m_context.BeginEvent(L"Geometry Pass");
+    m_context.BeginEvent("Geometry Pass");
     m_geometry_pass.OnRender();
     m_context.EndEvent();
 
-    m_context.BeginEvent(L"Shadow Pass");
+    m_context.BeginEvent("Shadow Pass");
     m_shadow_pass.OnRender();
     m_context.EndEvent();
 
-    m_context.BeginEvent(L"SSAO Pass");
+    m_context.BeginEvent("SSAO Pass");
     m_ssao_pass.OnRender();
     m_context.EndEvent();
 
-    m_context.BeginEvent(L"Light Pass");
+    m_context.BeginEvent("Light Pass");
     m_light_pass.OnRender();
     m_context.EndEvent();
 
-    m_context.BeginEvent(L"HDR Pass");
+    m_context.BeginEvent("HDR Pass");
     m_compute_luminance.OnRender();
     m_context.EndEvent();
 
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        m_context.BeginEvent(L"ImGui Pass");
+        m_context.BeginEvent("ImGui Pass");
         m_imgui_pass.OnRender();
         m_context.EndEvent();
     }

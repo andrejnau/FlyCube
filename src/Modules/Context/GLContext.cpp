@@ -154,9 +154,8 @@ void GLContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t Si
     glVertexArrayVertexBuffer(m_current_program->m_vao, slot, res.buffer, 0, Stride);
 }
 
-void GLContext::BeginEvent(LPCWSTR Name)
+void GLContext::BeginEvent(const std::string& name)
 {
-    std::string name = wstring_to_utf8(Name);
     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, name.c_str());
 }
 

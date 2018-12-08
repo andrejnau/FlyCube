@@ -32,7 +32,7 @@ public:
     virtual void IASetIndexBuffer(Resource::Ptr res, uint32_t SizeInBytes, gli::format Format) = 0;
     virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res, uint32_t SizeInBytes, uint32_t Stride) = 0;
 
-    virtual void BeginEvent(LPCWSTR Name) = 0;
+    virtual void BeginEvent(const std::string& name) = 0;
     virtual void EndEvent() = 0;
 
     virtual void DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation) = 0;

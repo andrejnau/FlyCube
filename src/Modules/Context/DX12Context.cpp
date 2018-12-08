@@ -6,6 +6,7 @@
 
 #include <Utilities/DXUtility.h>
 #include <Utilities/State.h>
+#include <Utilities/FileUtility.h>
 #include <Program/DX12ProgramApi.h>
 #include "Context/DXGIUtility.h"
 
@@ -311,9 +312,10 @@ void DX12Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t 
     ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 }
 
-void DX12Context::BeginEvent(LPCWSTR Name)
+void DX12Context::BeginEvent(const std::string& name)
 {
-    PIXBeginEvent(command_list.Get(), 0, Name);
+    std::wstring wname = utf8_to_wstring(name);
+    PIXBeginEvent(command_list.Get(), 0, wname.c_str());
 }
 
 void DX12Context::EndEvent()
