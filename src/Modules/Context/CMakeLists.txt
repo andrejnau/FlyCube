@@ -54,6 +54,7 @@ target_link_libraries(${target}
 	spirv-cross-hlsl
     ${Vulkan_LIBRARIES}
 	glLoadGen
+    pix3
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

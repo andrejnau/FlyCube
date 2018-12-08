@@ -21,5 +21,6 @@ include(${project_root}/cmake/3rdparty/mustache.cmake)
 include(${project_root}/cmake/3rdparty/imgui.cmake)
 include(${project_root}/cmake/3rdparty/spirv-cross.cmake)
 include(${project_root}/cmake/3rdparty/vulkan.cmake)
+include(${project_root}/cmake/3rdparty/pix3.cmake)
 
 add_subdirectory(src)

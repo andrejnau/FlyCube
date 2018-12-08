@@ -1,6 +1,6 @@
 #include "Context/DX12Context.h"
 
-#include <pix_win.h>
+#include <WinPixEventRuntime/pix3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
