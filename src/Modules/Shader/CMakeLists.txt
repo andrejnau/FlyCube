@@ -26,10 +26,10 @@ target_link_libraries(${target}
     d3d11
     d3dcompiler
     Utilities
-	spirv-cross-core
-	spirv-cross-hlsl
+    spirv-cross-core
+    spirv-cross-hlsl
     ${Vulkan_LIBRARIES}
-	glLoadGen
+    glLoadGen
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

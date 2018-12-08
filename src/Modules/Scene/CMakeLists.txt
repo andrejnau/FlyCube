@@ -3,7 +3,7 @@ set(target Scene)
 set(headers
     IScene.h
     SceneBase.h
-	ApiType.h
+    ApiType.h
     Settings.h
 )
 

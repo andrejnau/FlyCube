@@ -9,7 +9,7 @@ set(headers
     VKProgramApi.h
     CommonProgramApi.h
     DX12ViewCreater.h
-	IShaderBlobProvider.h
+    IShaderBlobProvider.h
     VKViewCreater.h
     GLProgramApi.h
 )
@@ -37,11 +37,11 @@ target_link_libraries(${target}
     d3d11
     d3dcompiler
     Utilities
-	spirv-cross-core
-	spirv-cross-hlsl
+    spirv-cross-core
+    spirv-cross-hlsl
     ${Vulkan_LIBRARIES}
-	glLoadGen
-	Shader
+    glLoadGen
+    Shader
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

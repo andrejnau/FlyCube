@@ -94,18 +94,18 @@ namespace DXUtility
 #define DEBUGPRINT( msg, ... ) do {} while(0)
 #define ASSERT_SUCCEEDED( hr, ... ) (void)(hr)
 
-#else	// !RELEASE
+#else    // !RELEASE
 
 #define STRINGIFY(x) #x
 #define STRINGIFY_BUILTIN(x) STRINGIFY(x)
 #define ASSERT( isFalse, ... ) \
-		if (!(bool)(isFalse)) { \
-			DXUtility::Print("\nAssertion failed in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
-			DXUtility::PrintSubMessage("\'" #isFalse "\' is false"); \
-			DXUtility::PrintSubMessage(__VA_ARGS__); \
-			DXUtility::Print("\n"); \
-			__debugbreak(); \
-		}
+        if (!(bool)(isFalse)) { \
+            DXUtility::Print("\nAssertion failed in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
+            DXUtility::PrintSubMessage("\'" #isFalse "\' is false"); \
+            DXUtility::PrintSubMessage(__VA_ARGS__); \
+            DXUtility::Print("\n"); \
+            __debugbreak(); \
+        }
 
 #define ASSERT_SUCCEEDED( expr, ... ) \
         { \
@@ -121,26 +121,26 @@ namespace DXUtility
         }
 
 #define WARN_ONCE_IF( isTrue, ... ) \
-	{ \
-		static bool s_TriggeredWarning = false; \
-		if ((bool)(isTrue) && !s_TriggeredWarning) { \
-			s_TriggeredWarning = true; \
-			DXUtility::Print("\nWarning issued in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
-			DXUtility::PrintSubMessage("\'" #isTrue "\' is true"); \
-			DXUtility::PrintSubMessage(__VA_ARGS__); \
-			DXUtility::Print("\n"); \
-		} \
-	}
+    { \
+        static bool s_TriggeredWarning = false; \
+        if ((bool)(isTrue) && !s_TriggeredWarning) { \
+            s_TriggeredWarning = true; \
+            DXUtility::Print("\nWarning issued in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
+            DXUtility::PrintSubMessage("\'" #isTrue "\' is true"); \
+            DXUtility::PrintSubMessage(__VA_ARGS__); \
+            DXUtility::Print("\n"); \
+        } \
+    }
 
 #define WARN_ONCE_IF_NOT( isTrue, ... ) WARN_ONCE_IF(!(isTrue), __VA_ARGS__)
 
 #define ERROR( ... ) \
-		DXUtility::Print("\nError reported in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
-		DXUtility::PrintSubMessage(__VA_ARGS__); \
-		DXUtility::Print("\n");
+        DXUtility::Print("\nError reported in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
+        DXUtility::PrintSubMessage(__VA_ARGS__); \
+        DXUtility::Print("\n");
 
 #define DEBUGPRINT( msg, ... ) \
-	DXUtility::Printf( msg "\n", ##__VA_ARGS__ );
+    DXUtility::Printf( msg "\n", ##__VA_ARGS__ );
 
 #endif
 
