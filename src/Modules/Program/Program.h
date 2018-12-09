@@ -268,6 +268,11 @@ public:
         m_program_base->UseProgram();
     }
 
+    void LinkProgram()
+    {
+        m_program_base->LinkProgram();
+    }
+
     void SetRasterizeState(const RasterizerDesc& desc)
     {
         m_program_base->SetRasterizeState(desc);

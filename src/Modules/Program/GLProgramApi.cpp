@@ -146,6 +146,9 @@ void replace(std::string& str, const std::string& from, const std::string& to)
 
 void GLProgramApi::LinkProgram()
 {
+    m_texture_loc.clear();
+    m_cbv_bindings.clear();
+
     ShaderUtility::ShaderVector shaders;
 
     for (auto shader : m_src)
@@ -432,7 +435,8 @@ void GLProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_
             if (it != m_texture_loc.end())
             {
                 loc = it->second;
-                sampler = &static_cast<GLResource&>(*x.second);
+                if (x.second)
+                    sampler = &static_cast<GLResource&>(*x.second);
                 break;
             }
         }

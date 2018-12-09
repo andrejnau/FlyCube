@@ -102,5 +102,6 @@ void LightPass::OnModifySettings(const Settings& settings)
     {
         m_program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
         m_program.ps.UpdateShader();
+        m_program.LinkProgram();
     }
 }
