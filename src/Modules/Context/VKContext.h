@@ -24,7 +24,8 @@ public:
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     virtual Resource::Ptr CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride) override;
     virtual Resource::Ptr CreateSampler(const SamplerDesc& desc) override;
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transitionImageLayout(VKResource::Image& image, VkImageLayout newLayout);
+    VkImageAspectFlags GetAspectFlags(VkFormat format);
     virtual void UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubresource, const void *pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch) override;
 
     virtual void SetViewport(float width, float height) override;
@@ -73,6 +74,7 @@ public:
     VkRenderPass m_render_pass = VK_NULL_HANDLE;
     VkFramebuffer m_framebuffer = VK_NULL_HANDLE;
     bool m_is_open_render_pass = false;
+    VKResource::Ptr m_final_rt;
 
     std::vector<std::reference_wrapper<VKProgramApi>> m_created_program;
 };

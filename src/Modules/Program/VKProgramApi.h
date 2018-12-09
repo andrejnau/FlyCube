@@ -129,7 +129,7 @@ private:
     std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfo;
     VkFramebuffer m_framebuffer;
     std::vector<VkImageView> m_rtv;
-    std::vector<VkExtent2D> m_rtv_size;
+    std::vector<std::pair<VkExtent2D, uint32_t>> m_rtv_size;
 
     VKViewCreater m_view_creater;
     std::map<VkDescriptorType, size_t> descriptor_count;

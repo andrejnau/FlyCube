@@ -396,7 +396,8 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, gli::format format, u
     res->image.format = vk_format;
     res->image.level_count = mip_levels;
     res->image.msaa_count = msaa_count;
-
+    res->image.array_layers = depth;
+   
     return res;
 }
 
@@ -480,6 +481,48 @@ Resource::Ptr VKContext::CreateSampler(const SamplerDesc & desc)
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = D3D12_FLOAT32_MAX;
 
+    /*switch (desc.filter)
+    {
+    case SamplerFilter::kAnisotropic:
+        sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
+        break;
+    case SamplerFilter::kMinMagMipLinear:
+        sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        break;
+    case SamplerFilter::kComparisonMinMagMipLinear:
+        sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+        break;
+    }*/
+
+    switch (desc.mode)
+    {
+    case SamplerTextureAddressMode::kWrap:
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        break;
+    case SamplerTextureAddressMode::kClamp:
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        break;
+    }
+
+    switch (desc.func)
+    {
+    case SamplerComparisonFunc::kNever:
+        samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
+        break;
+    case SamplerComparisonFunc::kAlways:
+        samplerInfo.compareEnable = true;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        break;
+    case SamplerComparisonFunc::kLess:
+        samplerInfo.compareEnable = true;
+        samplerInfo.compareOp = VK_COMPARE_OP_LESS;
+        break;
+    }
+
     if (vkCreateSampler(m_device, &samplerInfo, nullptr, &res->sampler.res) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
@@ -492,53 +535,42 @@ static bool hasStencilComponent(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-static bool is_depth(VkFormat format)
+VkImageAspectFlags VKContext::GetAspectFlags(VkFormat format)
 {
     switch (format)
     {
     case VK_FORMAT_D32_SFLOAT_S8_UINT:
     case VK_FORMAT_D24_UNORM_S8_UINT:
+        return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     case VK_FORMAT_D32_SFLOAT:
-        return true;
+        return VK_IMAGE_ASPECT_DEPTH_BIT;
     default:
-        return false;
-        break;
+        return VK_IMAGE_ASPECT_COLOR_BIT;
     }
 }
 
-void VKContext::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+void VKContext::transitionImageLayout(VKResource::Image& image, VkImageLayout newLayout)
 {
-    if (oldLayout == newLayout)
+    if (image.layout == newLayout)
         return;
     VkImageMemoryBarrier imageMemoryBarrier = {};
     imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    imageMemoryBarrier.oldLayout = oldLayout;
+    imageMemoryBarrier.oldLayout = image.layout;
     imageMemoryBarrier.newLayout = newLayout;
     imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    imageMemoryBarrier.image = image;
-
-    if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL || is_depth(format)) {
-        imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-        if (hasStencilComponent(format)) {
-            imageMemoryBarrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-        }
-    }
-    else {
-        imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    }
-
+    imageMemoryBarrier.image = image.res;
+    imageMemoryBarrier.subresourceRange.aspectMask = GetAspectFlags(image.format);
     imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
     imageMemoryBarrier.subresourceRange.levelCount = 1;
     imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-    imageMemoryBarrier.subresourceRange.layerCount = 1;
+    imageMemoryBarrier.subresourceRange.layerCount = image.array_layers;
 
 
     // Source layouts (old)
     // Source access mask controls actions that have to be finished on the old layout
     // before it will be transitioned to the new layout
-    switch (oldLayout)
+    switch (image.layout)
     {
     case VK_IMAGE_LAYOUT_UNDEFINED:
         // Image layout is undefined (or does not matter)
@@ -638,6 +670,8 @@ void VKContext::transitionImageLayout(VkImage image, VkFormat format, VkImageLay
         0, nullptr,
         1, &imageMemoryBarrier
     );
+
+    image.layout = newLayout;
 };
 
 void VKContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubresource, const void * pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch)
@@ -841,6 +875,7 @@ Resource::Ptr VKContext::GetBackBuffer()
     res->image.size = { 1u * m_width, 1u * m_height };
     res->res_type = VKResource::Type::kImage;
     res->image.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    m_final_rt = res;
     return res;
 }
 
@@ -852,7 +887,7 @@ void VKContext::CloseCommandBuffer()
         m_is_open_render_pass = false;
     }
 
-    transitionImageLayout(m_images[m_frame_index], {}, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    transitionImageLayout(m_final_rt->image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     auto res = vkEndCommandBuffer(m_cmd_bufs[m_frame_index]);
 }

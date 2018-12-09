@@ -138,7 +138,7 @@ void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = res.image.level_count;
         viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
+        viewInfo.subresourceRange.layerCount = res.image.array_layers;
 
         if (vkCreateImageView(m_context.m_device, &viewInfo, nullptr, &handle.srv) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture image view!");
@@ -147,23 +147,20 @@ void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t
     }
     case spv::Dim::DimCube:
     {
-        if (0)
-        {
-            VkImageViewCreateInfo viewInfo = {};
-            viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            viewInfo.image = res.image.res;
-            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-            viewInfo.format = res.image.format;
-            viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            viewInfo.subresourceRange.baseMipLevel = 0;
-            viewInfo.subresourceRange.levelCount = 1;
-            viewInfo.subresourceRange.baseArrayLayer = 0;
-            viewInfo.subresourceRange.layerCount = 6;
+        VkImageViewCreateInfo viewInfo = {};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = res.image.res;
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+        viewInfo.format = res.image.format;
+        viewInfo.subresourceRange.aspectMask = m_context.GetAspectFlags(res.image.format);
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = res.image.array_layers;
 
-            if (vkCreateImageView(m_context.m_device, &viewInfo, nullptr, &handle.srv) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create texture image view!");
-            }
-          }
+        if (vkCreateImageView(m_context.m_device, &viewInfo, nullptr, &handle.srv) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create texture image view!");
+        }
 
         break;
     }
@@ -249,7 +246,10 @@ void VKViewCreater::CreateDSV(const VKResource& res, VKView& handle)
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     createInfo.image = res.image.res;
     createInfo.format = res.image.format;
-    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    if (res.image.array_layers == 6)
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+    else
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
     createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
     createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -260,6 +260,6 @@ void VKViewCreater::CreateDSV(const VKResource& res, VKView& handle)
     createInfo.subresourceRange.baseMipLevel = 0;
     createInfo.subresourceRange.levelCount = 1;
     createInfo.subresourceRange.baseArrayLayer = 0;
-    createInfo.subresourceRange.layerCount = 1;
+    createInfo.subresourceRange.layerCount = res.image.array_layers;
     vkCreateImageView(m_context.m_device, &createInfo, nullptr, &handle.dsv);
 }

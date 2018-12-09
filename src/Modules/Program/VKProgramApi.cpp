@@ -256,9 +256,9 @@ void VKProgramApi::ApplyBindings()
         if (!m_rtv.back())
             --framebufferInfo.attachmentCount;
         framebufferInfo.pAttachments = m_rtv.data();
-        framebufferInfo.width = m_rtv_size[0].width;
-        framebufferInfo.height = m_rtv_size[0].height;
-        framebufferInfo.layers = 1;
+        framebufferInfo.width = m_rtv_size[0].first.width;
+        framebufferInfo.height = m_rtv_size[0].first.height;
+        framebufferInfo.layers = m_rtv_size[0].second;
 
         if (vkCreateFramebuffer(m_context.m_device, &framebufferInfo, nullptr, &m_framebuffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer!");
@@ -394,7 +394,7 @@ void VKProgramApi::RenderPassBegin()
     renderPassInfo.framebuffer = m_framebuffer;
 
     renderPassInfo.renderArea.offset = { 0, 0 };
-    renderPassInfo.renderArea.extent = m_rtv_size[0];
+    renderPassInfo.renderArea.extent = m_rtv_size[0].first;
 
     std::vector<VkClearValue> clearValues(m_rtv.size() - 1);
     for (int i = 0; i < m_rtv.size() - 1; ++i)
@@ -629,10 +629,7 @@ void VKProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_
     VKResource& res = static_cast<VKResource&>(*ires);
 
     if (res.res_type == VKResource::Type::kImage)
-    {
-        m_context.transitionImageLayout(res.image.res, res.image.format, res.image.layout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        res.image.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    }
+        m_context.transitionImageLayout(res.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void VKProgramApi::OnAttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
@@ -655,12 +652,11 @@ void VKProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
-    m_context.transitionImageLayout(res.image.res, {}, res.image.layout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    res.image.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    m_context.transitionImageLayout(res.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     VKView::Ptr view = m_view_creater.GetView(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot, "", ires);
     m_rtv[slot] = view->rtv;
-    m_rtv_size[slot] = res.image.size;
+    m_rtv_size[slot] = { res.image.size, res.image.array_layers };
  
     VkAttachmentDescription& colorAttachment = m_color_attachments[slot];
     colorAttachment.format = res.image.format;
@@ -688,13 +684,12 @@ void VKProgramApi::OnAttachDSV(const Resource::Ptr & ires)
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
-    m_context.transitionImageLayout(res.image.res, res.image.format, res.image.layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    res.image.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    m_context.transitionImageLayout(res.image, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     VKView::Ptr view = m_view_creater.GetView(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0, "", ires);
 
     m_rtv.back() = view->dsv;
-    m_rtv_size.back() = res.image.size;
+    m_rtv_size.back() = { res.image.size, res.image.array_layers };
 
     auto& m_depth_attachment = m_color_attachments.back();
     m_depth_attachment.format = res.image.format;

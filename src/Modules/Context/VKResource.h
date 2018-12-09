@@ -21,6 +21,7 @@ public:
         VkExtent2D size = {};
         size_t level_count = 0;
         size_t msaa_count = 1;
+        size_t array_layers = 1;
     } image;
 
     struct Buffer
