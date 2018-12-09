@@ -8,7 +8,7 @@ Settings::Settings()
     s_near = 0.5f;
     s_far = 1024.0f;
     s_size = 3072;
-    use_shadow = false;
+    use_shadow = true;
     use_tone_mapping = false;
     use_occlusion = true;
     use_blinn = false;

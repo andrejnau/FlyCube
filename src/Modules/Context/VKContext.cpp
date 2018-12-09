@@ -57,7 +57,12 @@ private:
         if (SkipIt(objectType, pMessage))
             return VK_FALSE;
 
-        printf("%s\n", pMessage);
+        static constexpr size_t errors_limit = 10;
+        static size_t cnt = 0;
+        if (++cnt <= errors_limit)
+            printf("%s\n", pMessage);
+        if (cnt == errors_limit)
+            printf("too much error messages");
         return VK_FALSE;
     }
 

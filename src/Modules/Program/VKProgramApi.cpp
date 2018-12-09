@@ -97,6 +97,8 @@ void VKProgramApi::CreateGrPipiLine()
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.depthBiasEnable = m_rasterizer_desc.DepthBias != 0;
+    rasterizer.depthBiasConstantFactor = m_rasterizer_desc.DepthBias;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -419,6 +421,8 @@ void VKProgramApi::CompileShader(const ShaderBase& shader)
     option.auto_map_bindings = true;
     option.hlsl_iomap = true;
     option.invert_y = true;
+    if (m_shader_types.count(ShaderType::kGeometry) && shader.type == ShaderType::kVertex)
+        option.invert_y = false;
     option.resource_set_binding = GetSetNumByShaderType(shader.type);
     auto spirv = SpirvCompile(shader, option);
     m_spirv[shader.type] = spirv;
@@ -724,8 +728,10 @@ void VKProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil
     m_clear_cache.GetDepthLoadOp() = VK_ATTACHMENT_LOAD_OP_CLEAR;
 }
 
-void VKProgramApi::SetRasterizeState(const RasterizerDesc & desc)
+void VKProgramApi::SetRasterizeState(const RasterizerDesc& desc)
 {
+    m_rasterizer_desc = desc;
+    m_changed_om = true;
 }
 
 void VKProgramApi::SetBlendState(const BlendDesc& desc)

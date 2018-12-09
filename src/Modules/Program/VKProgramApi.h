@@ -171,4 +171,5 @@ private:
 
     size_t msaa_count = 1;
     BlendDesc m_blend_desc;
+    RasterizerDesc m_rasterizer_desc;
 };

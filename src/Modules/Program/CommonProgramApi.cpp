@@ -16,6 +16,11 @@ size_t CommonProgramApi::GetProgramId() const
     return m_program_id;
 }
 
+void CommonProgramApi::AddAvailableShaderType(ShaderType type)
+{
+    m_shader_types.insert(type);
+}
+
 void CommonProgramApi::AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer)
 {
     m_cbv_layout.emplace(std::piecewise_construct,

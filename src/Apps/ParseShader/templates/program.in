@@ -81,6 +81,7 @@ public:
         , sampler(program_api)
         , cbuffer_impl(*this)
     {
+        program_api.AddAvailableShaderType(type);
         {{#CBuffers}}program_api.AttachCBuffer(type, "{{BufferName}}", {{BufferIndex}}, cbuffer_impl.{{BufferName}});
         {{/CBuffers}}
     }

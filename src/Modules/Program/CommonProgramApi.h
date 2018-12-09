@@ -20,6 +20,7 @@ class CommonProgramApi
 public:
     CommonProgramApi();
 
+    virtual void AddAvailableShaderType(ShaderType type) override;
     virtual void AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer) override;
     virtual void Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res) override;
     virtual size_t GetProgramId() const override;
@@ -39,4 +40,5 @@ protected:
     std::map<std::tuple<ShaderType, uint32_t>, std::string> m_cbv_name;
 
     size_t m_program_id;
+    std::set<ShaderType> m_shader_types;
 };

@@ -125,7 +125,8 @@ std::string MakeCommandLine(const ShaderBase& shader, const SpirvOption& option,
         cmd += " --hlsl-iomap ";
     if (option.resource_set_binding != -1)
         cmd += " --resource-set-binding " + std::to_string(option.resource_set_binding) + " ";
-    cmd += " --invert-y ";
+    if (option.invert_y)
+        cmd += " --invert-y ";
     cmd += " -g ";
     cmd += " -e ";
     cmd += shader.entrypoint;
