@@ -20,7 +20,9 @@ public:
     virtual void SetMaxEvents(size_t) override;
     VkShaderStageFlagBits ShaderType2Bit(ShaderType type);
     virtual void LinkProgram() override;
-    void CreateGrPipiLine();
+    void CreateGrPipeLine();
+    void CreateComputePipeLine();
+    void CreatePipeLine();
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
     VKView::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr & res);
@@ -83,7 +85,7 @@ private:
     std::map<ShaderType, const ShaderBase*> m_shaders_info2;
     
 
-    VkPipeline graphicsPipeline;
+    VkPipeline graphicsPipeline = VK_NULL_HANDLE;
     VkPipelineLayout m_pipeline_layout;
     std::vector<VkDescriptorSetLayout> m_descriptor_set_layouts;
 
@@ -133,7 +135,7 @@ private:
 
     VKViewCreater m_view_creater;
     std::map<VkDescriptorType, size_t> descriptor_count;
-    bool m_changed_om = false;
+    bool m_changed_om = true;
     DepthStencilDesc m_depth_stencil_desc;
 
     class ClearCache
@@ -172,4 +174,5 @@ private:
     size_t msaa_count = 1;
     BlendDesc m_blend_desc;
     RasterizerDesc m_rasterizer_desc;
+    bool m_is_compute = false;
 };

@@ -870,6 +870,8 @@ void VKContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, in
 
 void VKContext::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
 {
+    m_current_program->ApplyBindings();
+    vkCmdDispatch(m_cmd_bufs[m_frame_index], ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
 Resource::Ptr VKContext::GetBackBuffer()

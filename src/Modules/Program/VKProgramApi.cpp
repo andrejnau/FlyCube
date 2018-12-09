@@ -6,6 +6,7 @@
 #include <Context/VKView.h>
 #include <Shader/SpirvCompiler.h>
 #include <iostream>
+#include <Utilities/VKUtility.h>
 
 VKProgramApi::VKProgramApi(VKContext& context)
     : m_context(context)
@@ -43,9 +44,6 @@ VkShaderStageFlagBits VKProgramApi::ShaderType2Bit(ShaderType type)
 
 void VKProgramApi::LinkProgram()
 {
-    if (m_shaders_info.count(ShaderType::kCompute))
-        return;
-
     ParseShaders();
     m_view_creater.OnLinkProgram();
 
@@ -70,7 +68,7 @@ void VKProgramApi::LinkProgram()
     }
 }
 
-void VKProgramApi::CreateGrPipiLine()
+void VKProgramApi::CreateGrPipeLine()
 {
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -195,6 +193,23 @@ void VKProgramApi::CreateGrPipiLine()
     }
 }
 
+void VKProgramApi::CreateComputePipeLine()
+{
+    VkComputePipelineCreateInfo pipeline_info = {};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipeline_info.stage = shaderStageCreateInfo.front();
+    pipeline_info.layout = m_pipeline_layout;
+    ASSERT_SUCCEEDED(vkCreateComputePipelines(m_context.m_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphicsPipeline));
+}
+
+void VKProgramApi::CreatePipeLine()
+{
+    if (m_is_compute)
+        CreateComputePipeLine();
+    else
+        CreateGrPipeLine();
+}
+
 void VKProgramApi::UseProgram()
 {
     m_context.UseProgram(*this);
@@ -224,52 +239,58 @@ void VKProgramApi::ApplyBindings()
 
     if (m_changed_om)
     {
-        for (int i = 0; i < m_color_attachments.size() - 1; ++i)
+        if (!m_is_compute)
         {
-            m_color_attachments[i].loadOp = m_clear_cache.GetColorLoadOp(i);
-            m_clear_cache.GetColorLoadOp(i) = VK_ATTACHMENT_LOAD_OP_LOAD;
-        }
-        if (m_rtv.back())
-            m_color_attachments.back().loadOp = m_clear_cache.GetDepthLoadOp();
-        m_clear_cache.GetDepthLoadOp() = VK_ATTACHMENT_LOAD_OP_LOAD;
-        VkSubpassDescription subPass = {};
-        subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subPass.colorAttachmentCount = m_color_attachments_ref.size() - 1;
-        subPass.pColorAttachments = m_color_attachments_ref.data();
-        subPass.pDepthStencilAttachment = &m_color_attachments_ref.back();
-        if (!m_rtv.back())
-            subPass.pDepthStencilAttachment = nullptr;
+            for (int i = 0; i < m_color_attachments.size() - 1; ++i)
+            {
+                m_color_attachments[i].loadOp = m_clear_cache.GetColorLoadOp(i);
+                m_clear_cache.GetColorLoadOp(i) = VK_ATTACHMENT_LOAD_OP_LOAD;
+            }
+            if (m_rtv.back())
+                m_color_attachments.back().loadOp = m_clear_cache.GetDepthLoadOp();
+            m_clear_cache.GetDepthLoadOp() = VK_ATTACHMENT_LOAD_OP_LOAD;
+            VkSubpassDescription subPass = {};
+            subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+            subPass.colorAttachmentCount = m_color_attachments_ref.size() - 1;
+            subPass.pColorAttachments = m_color_attachments_ref.data();
+            subPass.pDepthStencilAttachment = &m_color_attachments_ref.back();
+            if (!m_rtv.back())
+                subPass.pDepthStencilAttachment = nullptr;
 
-        VkRenderPassCreateInfo renderPassInfo = {};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = m_color_attachments.size();
-        if (!m_rtv.back())
-            --renderPassInfo.attachmentCount;
-        renderPassInfo.pAttachments = m_color_attachments.data();
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subPass;
+            VkRenderPassCreateInfo renderPassInfo = {};
+            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+            renderPassInfo.attachmentCount = m_color_attachments.size();
+            if (!m_rtv.back())
+                --renderPassInfo.attachmentCount;
+            renderPassInfo.pAttachments = m_color_attachments.data();
+            renderPassInfo.subpassCount = 1;
+            renderPassInfo.pSubpasses = &subPass;
 
-        vkCreateRenderPass(m_context.m_device, &renderPassInfo, nullptr, &m_render_pass);
+            vkCreateRenderPass(m_context.m_device, &renderPassInfo, nullptr, &m_render_pass);
 
-        VkFramebufferCreateInfo framebufferInfo = {};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = m_render_pass;
-        framebufferInfo.attachmentCount = m_rtv.size();
-        if (!m_rtv.back())
-            --framebufferInfo.attachmentCount;
-        framebufferInfo.pAttachments = m_rtv.data();
-        framebufferInfo.width = m_rtv_size[0].first.width;
-        framebufferInfo.height = m_rtv_size[0].first.height;
-        framebufferInfo.layers = m_rtv_size[0].second;
+            VkFramebufferCreateInfo framebufferInfo = {};
+            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebufferInfo.renderPass = m_render_pass;
+            framebufferInfo.attachmentCount = m_rtv.size();
+            if (!m_rtv.back())
+                --framebufferInfo.attachmentCount;
+            framebufferInfo.pAttachments = m_rtv.data();
+            framebufferInfo.width = m_rtv_size[0].first.width;
+            framebufferInfo.height = m_rtv_size[0].first.height;
+            framebufferInfo.layers = m_rtv_size[0].second;
 
-        if (vkCreateFramebuffer(m_context.m_device, &framebufferInfo, nullptr, &m_framebuffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer!");
+            if (vkCreateFramebuffer(m_context.m_device, &framebufferInfo, nullptr, &m_framebuffer) != VK_SUCCESS) {
+                throw std::runtime_error("failed to create framebuffer!");
+            }
         }
         m_changed_om = false;
-        CreateGrPipiLine();
+        CreatePipeLine();
     }
 
-    vkCmdBindPipeline(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+    if (m_is_compute)
+        vkCmdBindPipeline(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_COMPUTE, graphicsPipeline);
+    else
+        vkCmdBindPipeline(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
     if (!m_descriptor_sets.empty())
     {
@@ -379,8 +400,12 @@ void VKProgramApi::ApplyBindings()
     if (!descriptorWrites.empty())
         vkUpdateDescriptorSets(m_context.m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 
-    vkCmdBindDescriptorSets(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0,
-        m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
+    if (m_is_compute)
+        vkCmdBindDescriptorSets(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline_layout, 0,
+            m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
+    else
+        vkCmdBindDescriptorSets(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0,
+            m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
 }
 
 VKView::Ptr VKProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr& res)
@@ -417,6 +442,8 @@ void VKProgramApi::RenderPassBegin()
 
 void VKProgramApi::CompileShader(const ShaderBase& shader)
 {
+    if (shader.type == ShaderType::kCompute)
+        m_is_compute = true;
     SpirvOption option;
     option.auto_map_bindings = true;
     option.hlsl_iomap = true;

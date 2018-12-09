@@ -9,7 +9,7 @@ Settings::Settings()
     s_far = 1024.0f;
     s_size = 3072;
     use_shadow = true;
-    use_tone_mapping = false;
+    use_tone_mapping = true;
     use_occlusion = true;
     use_blinn = false;
     light_ambient = 0.2f;
