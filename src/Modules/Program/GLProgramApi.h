@@ -63,6 +63,6 @@ private:
     std::map<std::tuple<ShaderType, uint32_t>, Resource::Ptr> m_cbv_buffer;
     std::map<std::string, GLuint> m_cbv_bindings;
     std::map<std::string, std::pair<GLint, GLint>> m_texture_loc;
-    std::set<std::string> m_samplers;
+    std::map<std::string, Resource::Ptr> m_samplers;
     bool m_is_enabled_blend = false;
 };

@@ -31,6 +31,8 @@ public:
         kSampler
     };
 
+    SamplerDesc sampler;
+
     Type res_type = Type::kUnknown;
 
     virtual void SetName(const std::string& name) override

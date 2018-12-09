@@ -102,9 +102,11 @@ Resource::Ptr GLContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, 
     return res;
 }
 
-Resource::Ptr GLContext::CreateSampler(const SamplerDesc & desc)
+Resource::Ptr GLContext::CreateSampler(const SamplerDesc& desc)
 {
-    return {};
+    GLResource::Ptr res = std::make_shared<GLResource>();
+    res->sampler = desc;
+    return res;
 }
 
 void GLContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubresource, const void * pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch)

@@ -110,7 +110,7 @@ GLProgramApi::GLProgramApi(GLContext& context)
     glCreateFramebuffers(1, &m_framebuffer);
     glCreateVertexArrays(1, &m_vao);
 
-    m_samplers.insert("SPIRV_Cross_DummySampler");
+    m_samplers.emplace("SPIRV_Cross_DummySampler", GLResource::Ptr{});
 }
 
 void GLProgramApi::SetMaxEvents(size_t count)
@@ -424,13 +424,15 @@ void GLProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_
     else
     {
         std::pair<GLint, GLint> loc = { -1, -1 };
+        GLResource* sampler = nullptr;
         for (auto &x : m_samplers)
         {
-            std::string glsl_name = "SPIRV_Cross_Combined" + name + x;
+            std::string glsl_name = "SPIRV_Cross_Combined" + name + x.first;
             auto it = m_texture_loc.find(glsl_name);
             if (it != m_texture_loc.end())
             {
                 loc = it->second;
+                sampler = &static_cast<GLResource&>(*x.second);
                 break;
             }
         }
@@ -438,6 +440,16 @@ void GLProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_
         {
             glProgramUniform1i(m_program, loc.second, loc.first);
             glBindTextureUnit(loc.first, res.texture);
+            if (sampler && sampler->sampler.func == SamplerComparisonFunc::kLess)
+            {
+                glTextureParameteri(res.texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTextureParameteri(res.texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTextureParameteri(res.texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+                glTextureParameteri(res.texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+                GLfloat border[4] = { 1.0, 1.0, 1.0, 1.0 };
+                glTextureParameterfv(res.texture, GL_TEXTURE_BORDER_COLOR, border);
+                glTextureParameteri(res.texture, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+            }
         }
         else
         {
@@ -471,7 +483,7 @@ void GLProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const Resource::P
 
 void GLProgramApi::OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
 {
-    m_samplers.insert(name);
+    m_samplers[name] = ires;
 }
 
 void GLProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
