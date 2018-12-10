@@ -1,4 +1,4 @@
-﻿#include "GLProgramApi.h"
+#include "GLProgramApi.h"
 
 #include <vector>
 #include <utility>
@@ -208,7 +208,10 @@ void GLProgramApi::ApplyBindings()
 
 void GLProgramApi::CompileShader(const ShaderBase& shader)
 {
-    std::string source = GetGLSLShader(shader);
+    SpirvOption option = {};
+    if (m_shader_types.count(ShaderType::kGeometry) && shader.type == ShaderType::kVertex)
+        option.invert_y = false;
+    std::string source = GetGLSLShader(shader, option);
     m_src[shader.type] = source;
 }
 

@@ -12,4 +12,4 @@ struct SpirvOption
     uint32_t resource_set_binding = -1;
 };
 
-std::vector<uint32_t> SpirvCompile(const ShaderBase& shader, const SpirvOption& option = SpirvOption());
+std::vector<uint32_t> SpirvCompile(const ShaderBase& shader, const SpirvOption& option);

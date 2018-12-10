@@ -2,9 +2,9 @@
 #include "Shader/SpirvCompiler.h"
 #include <spirv_glsl.hpp>
 
-std::string GetGLSLShader(const ShaderBase& shader)
+std::string GetGLSLShader(const ShaderBase& shader, const SpirvOption& option)
 {
-    std::vector<uint32_t> spirv_binary = SpirvCompile(shader);
+    std::vector<uint32_t> spirv_binary = SpirvCompile(shader, option);
     spirv_cross::CompilerGLSL glsl(std::move(spirv_binary));
     
     spirv_cross::CompilerGLSL::Options options;
