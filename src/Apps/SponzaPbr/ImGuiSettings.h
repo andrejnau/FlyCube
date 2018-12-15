@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Settings.h"
+#include <imgui.h>
+#include <string>
+#include <vector>
 
 class ImGuiSettings
 {
@@ -39,27 +42,12 @@ public:
             modify_settings = true;
         }
 
-        if (ImGui::SliderFloat("s_near", &settings.s_near, 0.1f, 8.0f, "%.3f"))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::SliderFloat("s_far", &settings.s_far, 0.1f, 1024.0f, "%.3f"))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::SliderInt("s_size", &settings.s_size, 512, 4096))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("use_shadow", &settings.use_shadow))
-        {
-            modify_settings = true;
-        }
-
         if (ImGui::Checkbox("Tone mapping", &settings.use_tone_mapping))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("use simple hdr", &settings.use_simple_hdr))
         {
             modify_settings = true;
         }
@@ -69,7 +57,12 @@ public:
             modify_settings = true;
         }
 
-        if (ImGui::Checkbox("use_blinn", &settings.use_blinn))
+        if (ImGui::Checkbox("use white ligth", &settings.use_white_ligth))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("enable diffuse for metal", &settings.enable_diffuse_for_metal))
         {
             modify_settings = true;
         }
@@ -89,21 +82,6 @@ public:
             modify_settings = true;
         }
 
-        if (ImGui::SliderFloat("light_ambient", &settings.light_ambient, 0, 2))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::SliderFloat("light_diffuse", &settings.light_diffuse, 0, 2))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::SliderFloat("light_specular", &settings.light_specular, 0, 2))
-        {
-            modify_settings = true;
-        }
-
         ImGui::End();
 
         if (modify_settings)
@@ -114,8 +92,6 @@ public:
     {
         if (key == GLFW_KEY_O && action == GLFW_PRESS)
             settings.use_occlusion ^= true;
-        if (key == GLFW_KEY_M && action == GLFW_PRESS)
-            settings.use_shadow ^= true;
         listener.OnModifySettings(settings);
     }
 

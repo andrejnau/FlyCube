@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GeometryPass.h"
-#include "ShadowPass.h"
 #include "SSAOPass.h"
 #include "Settings.h"
 
@@ -21,7 +20,6 @@ public:
     struct Input
     {
         GeometryPass::Output& geometry_pass;
-        ShadowPass::Output& shadow_pass;
         SSAOPass::Output& ssao_pass;
         Model& model;
         Camera& camera;
@@ -52,5 +50,4 @@ private:
     Program<LightPassPS, LightPassVS> m_program;
     Resource::Ptr m_depth_stencil_view;
     Resource::Ptr m_sampler;
-    Resource::Ptr m_compare_sampler;
 };

@@ -17,18 +17,17 @@
 #include "GeometryPass.h"
 #include "LightPass.h"
 #include "ImGuiPass.h"
-#include "ShadowPass.h"
 #include "SSAOPass.h"
 #include "ComputeLuminance.h"
 #include "Settings.h"
 
 using namespace Microsoft::WRL;
 
-class DX11Scene : public SceneBase, public IModifySettings
+class Scene : public SceneBase, public IModifySettings
 {
 public:
-    DX11Scene(ApiType type, GLFWwindow* window, int width, int height);
-    ~DX11Scene();
+    Scene(ApiType type, GLFWwindow* window, int width, int height);
+    ~Scene();
 
     static IScene::Ptr Create(ApiType api_type, GLFWwindow* window, int width, int height);
 
@@ -60,7 +59,6 @@ private:
     SceneModels m_scene_list;
     Model m_model_square;
     GeometryPass m_geometry_pass;
-    ShadowPass m_shadow_pass;
     SSAOPass m_ssao_pass;
     LightPass m_light_pass;
     ComputeLuminance m_compute_luminance;

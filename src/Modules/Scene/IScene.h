@@ -2,7 +2,6 @@
 
 #include <memory>
 #include "ApiType.h"
-#include "Settings.h"
 
 class IPass
 {
@@ -27,7 +26,6 @@ public:
 class IScene
     : public IPass
     , public IInput
-    , public IModifySettings
 {
 public:
     using Ptr = std::unique_ptr<IScene>;

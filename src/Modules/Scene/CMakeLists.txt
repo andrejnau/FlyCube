@@ -4,12 +4,10 @@ set(headers
     IScene.h
     SceneBase.h
     ApiType.h
-    Settings.h
 )
 
 set(sources
     SceneBase.cpp
-    Settings.cpp
 )
 
 add_library(${target} ${headers} ${sources})

@@ -24,9 +24,9 @@ public:
     {
         Resource::Ptr position;
         Resource::Ptr normal;
-        Resource::Ptr ambient;
-        Resource::Ptr diffuse;
-        Resource::Ptr specular;
+        Resource::Ptr albedo;
+        Resource::Ptr roughness;
+        Resource::Ptr metalness;
     } output;
 
     GeometryPass(Context& context, const Input& input, int width, int height);

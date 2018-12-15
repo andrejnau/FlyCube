@@ -30,3 +30,4 @@ class IModifySettings
 public:
     virtual void OnModifySettings(const Settings& settings) {}
 };
+  
