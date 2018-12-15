@@ -190,14 +190,18 @@ void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<T
 {
     static std::pair<std::string, aiTextureType> texture_types[] = {
         { "_albedo",    aiTextureType_DIFFUSE   },
+        { "_Albedo",    aiTextureType_DIFFUSE   },
         { "_diff",      aiTextureType_DIFFUSE   },
         { "_diffuse",   aiTextureType_DIFFUSE   },
         { "_nmap",      aiTextureType_HEIGHT    },
         { "_normal",    aiTextureType_HEIGHT    },
+        { "_Normal",    aiTextureType_HEIGHT    },
         { "_rough",     aiTextureType_SHININESS },
         { "_roughness", aiTextureType_SHININESS },
+        { "_Roughness", aiTextureType_SHININESS },
         { "_metalness", aiTextureType_EMISSIVE  },
         { "_metallic",  aiTextureType_EMISSIVE  },
+        { "_Metallic",  aiTextureType_EMISSIVE  },
         { "_ao",        aiTextureType_LIGHTMAP  },
         { "_mask",      aiTextureType_OPACITY   },
         { "_opacity",   aiTextureType_OPACITY   },

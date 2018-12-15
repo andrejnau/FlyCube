@@ -2,7 +2,7 @@ set(target SponzaApp)
 
 function(gen_shaders_ref shaders shaders_ref)
     set(template ${project_root}/src/Apps/ParseShader/templates/program.in)
-    set(output_dir ${CMAKE_BINARY_DIR}/gen/ProgramRef)
+    set(output_dir ${CMAKE_BINARY_DIR}/gen/${target}/ProgramRef)
     foreach(full_shader_path ${shaders})
         get_filename_component(shader_name ${full_shader_path} NAME_WE)
         string(REPLACE "_" "" shader_name ${shader_name})
@@ -106,7 +106,7 @@ set_target_properties(${target} PROPERTIES
 target_include_directories(${target}
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
-        ${CMAKE_BINARY_DIR}/gen
+        ${CMAKE_BINARY_DIR}/gen/${target}
 )
 
 target_link_libraries(${target}

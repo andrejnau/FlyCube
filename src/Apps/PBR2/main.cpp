@@ -74,15 +74,43 @@ public:
     {
         UpdateCameraMovement();
 
+        static float angle = 0.0f;
+        static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+        std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+        int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        start = end;
+
+        if (CurState::Instance().pause)
+            angle += elapsed / 2e6f;
+
+        float light_r = 2.5;
+        glm::vec3 light_pos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
+
         glm::vec3 cameraPosition = m_camera.GetCameraPos();
+
+        m_program.ps.cbuffer.light.viewPos = glm::vec4(cameraPosition, 0.0);
+        int i = 0;
+        for (int x = -13; x <= 13; ++x)
+        {
+            int q = 1;
+            for (int z = -1; z <= 1; ++z)
+            {
+                if (i < std::size(m_program.ps.cbuffer.light.light_pos))
+                {
+                    m_program.ps.cbuffer.light.light_pos[i] = glm::vec4(x, 1.5, z - 0.33, 0);
+                    float black = 0.0;
+                    m_program.ps.cbuffer.light.light_color[i] = glm::vec4(q == 1 ? 1 : black, q == 2 ? 1 : black, q == 3 ? 1 : black, 0.0);
+                    ++i;
+                    ++q;
+                }
+            }
+        }
 
         glm::mat4 projection, view, model;
         m_camera.GetMatrix(projection, view, model);
 
         m_program.vs.cbuffer.ConstantBuf.view = glm::transpose(view);
-        m_program.vs.cbuffer.ConstantBuf.projection = glm::transpose(projection);
-        m_program.vs.cbuffer.ConstantBuf.lightPos = glm::vec4(cameraPosition, 0.0);
-        m_program.vs.cbuffer.ConstantBuf.viewPos = glm::vec4(cameraPosition, 0.0);
+        m_program.vs.cbuffer.ConstantBuf.projection = glm::transpose(projection);        
 
         size_t cnt = 0;
         for (auto& model : m_scene_list)
@@ -120,8 +148,8 @@ public:
                 auto& material = model.GetMaterial(range.id);
 
                 m_program.ps.srv.normalMap.Attach(material.texture.normal);
-                m_program.ps.srv.diffuseMap.Attach(material.texture.diffuse);
-                m_program.ps.srv.glossMap.Attach(material.texture.shininess);
+                m_program.ps.srv.albedoMap.Attach(material.texture.diffuse);
+                m_program.ps.srv.roughnessMap.Attach(material.texture.shininess);
                 m_program.ps.srv.metalnessMap.Attach(material.texture.metalness);
                 m_program.ps.srv.aoMap.Attach(material.texture.ao);
                 m_program.ps.srv.alphaMap.Attach(material.texture.alpha);
@@ -167,7 +195,7 @@ private:
 int main(int argc, char *argv[])
 {
     WinConsole cmd;
-    ApiType type = ApiType::kVulkan;
+    ApiType type = ApiType::kDX11;
     for (int i = 1; i < argc; ++i)
     {
         std::string arg(argv[i]);

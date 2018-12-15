@@ -5,20 +5,25 @@ struct VS_OUTPUT
     float3 normal : NORMAL;
     float2 texCoord: TEXCOORD;
     float3 tangent: TANGENT;
-    float3 lightPos : POSITION_LIGHT;
-    float3 viewPos : POSITION_VIEW;
 };
 
-Texture2D diffuseMap : register(t0);
-Texture2D normalMap : register(t1);
-Texture2D specularMap : register(t2);
-Texture2D glossMap : register(t3);
-Texture2D ambientMap : register(t4);
+Texture2D albedoMap;
+Texture2D normalMap;
+Texture2D roughnessMap;
 Texture2D metalnessMap;
 Texture2D aoMap;
 Texture2D alphaMap;
 
 SamplerState g_sampler;
+
+#define LIGHT_COUNT 90
+
+cbuffer light
+{
+    float4 light_color[LIGHT_COUNT];
+    float4 light_pos[LIGHT_COUNT];
+    float4 viewPos;
+};
 
 float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, bool _need_gamma = false)
 {
@@ -28,53 +33,45 @@ float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, b
     return _color;
 }
 
-float4 BaseLighting(VS_OUTPUT input)
+// ----------------------------------------------------------------------------
+float GeometrySchlickGGX(float NdotV, float roughness)
 {
-    float3 N = normalize(input.normal);
-    float3 T = normalize(input.tangent);
-    T = normalize(T - dot(T, N) * N);
-    float3 B = normalize(cross(T, N));
-    float3x3 tbn = float3x3(T, B, N);
-    float3 normal = normalMap.Sample(g_sampler, input.texCoord).rgb;
-    normal = normalize(2.0 * normal - 1.0);
-    input.normal = normalize(mul(normal, tbn));
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
 
-    // Ambient
-    float3 ambient = getTexture(ambientMap, g_sampler, input.texCoord, true).rgb;
+    float nom = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
 
-    // Diffuse
-    float3 lightDir = normalize(input.lightPos - input.fragPos);
-    float diff = saturate(dot(input.normal, lightDir));
-    float3 diffuse_base = getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
-    float3 diffuse = diffuse_base * diff;
+    return nom / denom;
+}
+// ----------------------------------------------------------------------------
+float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
 
-    // Specular
-    float3 viewDir = normalize(input.viewPos - input.fragPos);
-    float3 reflectDir = reflect(-lightDir, input.normal);
-    float reflectivity = getTexture(glossMap, g_sampler, input.texCoord).r;
-    float spec = pow(saturate(dot(viewDir, reflectDir)), reflectivity * 1024.0);
-    float3 specular_base = 0.5;
-    float3 specular = specular_base * spec;
-
-    float4 _color = float4(ambient + diffuse + specular, 1.0);
-    return float4(pow(abs(_color.rgb), 1 / 2.2), _color.a);
+    return ggx1 * ggx2;
 }
 
-float GGX_PartialGeometry(float cosThetaN, float alpha)
-{
-    float cosTheta_sqr = saturate(cosThetaN*cosThetaN);
-    float tan2 = (1 - cosTheta_sqr) / cosTheta_sqr;
-    float GP = 2 / (1 + sqrt(1 + alpha * alpha * tan2));
-    return GP;
-}
 static const float PI = acos(-1.0);
 
-float GGX_Distribution(float cosThetaNH, float alpha) {
-    float alpha2 = alpha * alpha;
-    float NH_sqr = saturate(cosThetaNH * cosThetaNH);
-    float den = NH_sqr * alpha2 + (1.0 - NH_sqr);
-    return alpha2 / (PI * den * den);
+
+float DistributionGGX(float3 N, float3 H, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+
+    float nom = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+
+    return nom / denom;
 }
+
 bool is;
 bool is2;
 
@@ -93,39 +90,43 @@ float3 NoramlMap(VS_OUTPUT input)
 struct Material_pbr
 {
     float roughness;
+    float metallic;
     float3 albedo;
     float3 f0;
 };
 
-float3 FresnelSchlick(float3 F0, float cosTheta) {
-    return F0 + (1.0 - F0) * pow(1.0 - saturate(cosTheta), 5.0);
+float3 fresnelSchlick(float cosTheta, float3 F0)
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-float3 CookTorrance_GGX(float3 n, float3 l, float3 v, Material_pbr m) {
+float3 CookTorrance_GGX(VS_OUTPUT input, float3 n, float3 v, Material_pbr m, int i)
+{
     n = normalize(n);
     v = normalize(v);
-    l = normalize(l);
+    float3 l = normalize(light_pos[i] - input.fragPos);
     float3 h = normalize(v + l);
-    //precompute dots
-    float NL = dot(n, l);
-    if (NL <= 0.0) return 0.0;
-    float NV = dot(n, v);
-    if (NV <= 0.0) return 0.0;
-    float NH = dot(n, h);
-    float HV = dot(h, v);
 
-    //precompute roughness square
-    float roug_sqr = m.roughness*m.roughness;
+    float distance = length(light_pos[i] - input.fragPos);
+    float attenuation = 1.0 / (distance * distance);
+    float3 radiance = light_color[i] * attenuation;
 
-    //calc coefficients
-    float G = GGX_PartialGeometry(NV, roug_sqr) * GGX_PartialGeometry(NL, roug_sqr);
-    float D = GGX_Distribution(NH, roug_sqr);
-    float3 F = FresnelSchlick(m.f0, HV);
+    // Cook-Torrance BRDF
+    float NDF = DistributionGGX(n, h, m.roughness);
+    float G = GeometrySmith(n, v, l, m.roughness);
+    float3 F = fresnelSchlick(max(dot(h, v), 0.0), m.f0);
 
-    //mix
-    float3 specK = G * D*F*0.25 / (NV + 0.001);
-    float3 diffK = saturate(1.0 - F);
-    return max(0.0, m.albedo*diffK*NL / PI + 5 * specK);
+    float3 nominator = NDF * G * F;
+    float denominator = 4 * max(dot(n, v), 0.0) * max(dot(n, l), 0.0) + 0.001;
+    float3 specular = nominator / denominator;
+
+    float3 kS = F;
+    float3 kD = 1.0 - kS;
+    kD *= 1.0 - m.metallic;
+
+    float NdotL = max(dot(n, l), 0.0);
+
+    return (kD * m.albedo / PI + specular) * radiance * NdotL;
 }
 
 bool HasTexture(Texture2D _texture)
@@ -143,13 +144,12 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             discard;
     }
 
-    float3 V = normalize(input.viewPos - input.fragPos);
-    float3 L = normalize(input.lightPos - input.fragPos);
+    float3 V = normalize(viewPos - input.fragPos);
     float3 N = NoramlMap(input);
 
-    float3 albedo = getTexture(diffuseMap, g_sampler, input.texCoord, true).rgb;
+    float3 albedo = getTexture(albedoMap, g_sampler, input.texCoord, true).rgb;
     float metallic = getTexture(metalnessMap, g_sampler, input.texCoord).r;
-    float roughness = getTexture(glossMap, g_sampler, input.texCoord).r;
+    float roughness = getTexture(roughnessMap, g_sampler, input.texCoord).r;
 
     float ao = 1;
     if (HasTexture(aoMap))
@@ -158,11 +158,20 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     Material_pbr m;
     m.roughness = roughness;
     m.albedo = albedo;
-    float3 F0 = 0;
-    m.f0 = lerp(F0, albedo, metallic); 
-   
-    float3 _color = CookTorrance_GGX(N, L, V, m) + 0.2 * albedo * ao;
-     _color = _color / (_color + 1);
+    m.metallic = metallic;
+    float3 F0 = 0.04;
+    m.f0 = lerp(F0, albedo, metallic);
 
+    float3 _color = 0;
+    [unroll]
+    for (int i = 0; i < LIGHT_COUNT; ++i)
+    {
+        _color += CookTorrance_GGX(input, N, V, m, i);
+    }
+
+    float3 ambient = 0.03 * albedo * ao;
+    _color += ambient;
+
+    _color = _color / (_color + 1.0);
     return float4(pow(abs(_color.rgb), 1 / 2.2), 1.0);
 }
