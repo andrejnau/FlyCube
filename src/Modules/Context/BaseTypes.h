@@ -96,9 +96,17 @@ struct BlendDesc
     BlendOp blend_op_alpha;
 };
 
+
+enum class DepthComparison
+{
+    kLess,
+    kLessEqual
+};
+
 struct DepthStencilDesc
 {
     bool depth_enable;
+    DepthComparison func = DepthComparison::kLess;
 };
 
 enum class ShaderType

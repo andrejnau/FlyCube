@@ -67,6 +67,21 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("use IBL ambient", &settings.use_IBL_ambient))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("skip sponza model", &settings.skip_sponza_model))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("only ambientl", &settings.only_ambient))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::SliderInt("ssao_scale", &settings.ssao_scale, 1, 8))
         {
             modify_settings = true;

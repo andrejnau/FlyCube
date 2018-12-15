@@ -41,16 +41,22 @@ void GeometryPass::OnRender()
 
     m_program.ps.sampler.g_sampler.Attach(m_sampler);
 
-    float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_program.ps.om.rtv0.Attach(output.position).Clear(color);
     m_program.ps.om.rtv1.Attach(output.normal).Clear(color);
     m_program.ps.om.rtv2.Attach(output.albedo).Clear(color);
     m_program.ps.om.rtv3.Attach(output.roughness).Clear(color);
     m_program.ps.om.rtv4.Attach(output.metalness).Clear(color);
-    m_program.ps.om.dsv.Attach(m_depth_stencil).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program.ps.om.dsv.Attach(output.dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+    bool skiped = false;
     for (auto& model : m_input.scene_list)
     {
+        if (!skiped && m_settings.skip_sponza_model)
+        {
+            skiped = true;
+            continue;
+        }
         m_program.vs.cbuffer.ConstantBuf.model = glm::transpose(model.matrix);
         m_program.vs.cbuffer.ConstantBuf.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model.matrix)));
         m_program.vs.cbuffer.ConstantBuf.normalMatrixView = glm::transpose(glm::transpose(glm::inverse(m_input.camera.GetViewMatrix() * model.matrix)));
@@ -112,5 +118,5 @@ void GeometryPass::CreateSizeDependentResources()
     output.albedo = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
     output.roughness = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_R32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
     output.metalness = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_R32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    m_depth_stencil = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.dsv = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
 }

@@ -27,6 +27,7 @@ public:
         Resource::Ptr albedo;
         Resource::Ptr roughness;
         Resource::Ptr metalness;
+        Resource::Ptr dsv;
     } output;
 
     GeometryPass(Context& context, const Input& input, int width, int height);
@@ -45,7 +46,6 @@ private:
 
     void CreateSizeDependentResources();
 
-    Resource::Ptr m_depth_stencil;
     Resource::Ptr m_sampler;
     Settings m_settings;
 };

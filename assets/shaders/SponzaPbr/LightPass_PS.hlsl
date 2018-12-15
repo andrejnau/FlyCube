@@ -20,6 +20,7 @@ TEXTURE_TYPE gAlbedo;
 TEXTURE_TYPE gRoughness;
 TEXTURE_TYPE gMetalness;
 Texture2D gSSAO;
+TextureCube irradianceMap;
 
 SamplerState g_sampler : register(s0);
 
@@ -38,6 +39,8 @@ cbuffer Settings
 {
     bool use_ssaa;
     bool enable_diffuse_for_metal;
+    bool use_IBL_ambient;
+    bool only_ambient;
 };
 
 float4 getTexture(TEXTURE_TYPE _texture, float2 _tex_coord, int ss_index, bool _need_gamma = false)
@@ -161,7 +164,25 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             lighting += CookTorrance_GGX(fragPos, normal, V, m, i);
         }
 
-        float3 ambient = 0.03 * albedo * ao;
+        float3 ambient = 0;
+        if (use_IBL_ambient)
+        {
+            // ambient lighting (we now use IBL as the ambient term)
+            float3 kS = FresnelSchlick(max(dot(normal, V), 0.0), m.f0);
+            float3 kD = 1.0 - kS;
+            kD *= 1.0 - metallic;
+            float3 irradiance = irradianceMap.Sample(g_sampler, normal).rbg;
+            float3 diffuse = irradiance * albedo;
+            ambient = (kD * diffuse) * ao;
+        }
+        else
+        {
+            ambient = 0.03 * albedo * ao;
+        }
+
+        if (only_ambient)
+            lighting = 0;
+
         lighting += ambient;
     }
     lighting /= SAMPLE_COUNT;

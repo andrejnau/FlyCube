@@ -15,6 +15,9 @@ public:
     bool use_occlusion;
     bool use_white_ligth;
     bool enable_diffuse_for_metal;
+    bool only_ambient;
+    bool use_IBL_ambient;
+    bool skip_sponza_model;
     int ssao_scale;
     float Exposure;
     float White;

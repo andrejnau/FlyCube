@@ -115,7 +115,11 @@ void DX12ViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32
     {
         D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
         srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        srv_desc.Format = DXGI_FORMAT_R32_FLOAT; // TODO tex_dec.Format;
+        srv_desc.Format = desc.Format;
+        if (srv_desc.Format == DXGI_FORMAT_R32_TYPELESS)
+        {
+            srv_desc.Format = DepthStencilFromTypeless(srv_desc.Format);
+        }
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
         srv_desc.TextureCube.MipLevels = desc.MipLevels;
         m_context.device->CreateShaderResourceView(res.default_res.Get(), &srv_desc, handle.GetCpuHandle());
@@ -188,17 +192,25 @@ void DX12ViewCreater::CreateRTV(uint32_t slot, const DX12Resource& res, DX12View
     D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
     rtv_desc.Format = format;
 
-    if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+    if (desc.DepthOrArraySize > 1)
     {
-        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_BUFFER;
-        rtv_desc.Buffer.NumElements = 1;
+        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+        rtv_desc.Texture2DArray.ArraySize = desc.DepthOrArraySize;
     }
     else
     {
-        if (desc.SampleDesc.Count > 1)
-            rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+        if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+        {
+            rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_BUFFER;
+            rtv_desc.Buffer.NumElements = 1;
+        }
         else
-            rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+        {
+            if (desc.SampleDesc.Count > 1)
+                rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+            else
+                rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+        }
     }
     m_context.device->CreateRenderTargetView(res.default_res.Get(), &rtv_desc, handle.GetCpuHandle());
 }

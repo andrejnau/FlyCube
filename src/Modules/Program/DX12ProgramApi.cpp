@@ -19,7 +19,7 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     CD3DX12_DEPTH_STENCIL_DESC depth_stencil_desc(D3D12_DEFAULT);
     depth_stencil_desc.DepthEnable = true;
     depth_stencil_desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-    depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
     depth_stencil_desc.StencilEnable = FALSE;
     m_pso_desc.DepthStencilState = depth_stencil_desc;
 }
@@ -163,6 +163,10 @@ void DX12ProgramApi::SetBlendState(const BlendDesc& desc)
 void DX12ProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
 {
     m_pso_desc_cache(m_pso_desc.DepthStencilState.DepthEnable) = desc.depth_enable;
+    if (desc.func == DepthComparison::kLess)
+        m_pso_desc_cache(m_pso_desc.DepthStencilState.DepthFunc) = D3D12_COMPARISON_FUNC_LESS;
+    else if (desc.func == DepthComparison::kLessEqual)
+        m_pso_desc_cache(m_pso_desc.DepthStencilState.DepthFunc) = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 }
 
 ShaderBlob DX12ProgramApi::GetBlobByType(ShaderType type) const

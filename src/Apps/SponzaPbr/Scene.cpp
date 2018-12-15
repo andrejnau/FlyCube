@@ -14,9 +14,12 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
     , m_context_ptr(CreateContext(type, window, m_width, m_height))
     , m_context(*m_context_ptr)
     , m_model_square(m_context, "model/square.obj")
+    , m_model_cube(m_context, "model/cube.obj", ~aiProcess_FlipWindingOrder)
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
-    , m_light_pass(m_context, { m_geometry_pass.output, m_ssao_pass.output, m_model_square, m_camera, light_pos }, width, height)
+    , m_irradiance_conversion(m_context, { m_model_cube, m_equirectangular_environment }, width, height)
+    , m_light_pass(m_context, { m_geometry_pass.output, m_ssao_pass.output, m_model_square, m_camera, m_irradiance_conversion.output.irradince }, width, height)
+    , m_background_pass(m_context, { m_model_cube, m_camera, m_irradiance_conversion.output.environment, m_light_pass.output.rtv, m_geometry_pass.output.dsv }, width, height)
     , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
     , m_imgui_pass(m_context, { m_render_target_view, *this }, width, height)
 {
@@ -26,6 +29,8 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 75.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     CreateRT();
+
+    m_equirectangular_environment = CreateTexture(m_context, GetAssetFullPath("model/newport_loft.dds"));
 }
 
 Scene::~Scene()
@@ -42,23 +47,13 @@ void Scene::OnUpdate()
 {
     UpdateCameraMovement();
 
-    static float angle = 0.0f;
-    static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-    std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-    int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    start = end;
-
-    if (CurState::Instance().pause)
-        angle += elapsed / 2e6f;
-
-    float light_r = 2.5;
-    light_pos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
-
     m_imgui_pass.OnUpdate();
 
     m_geometry_pass.OnUpdate();
     m_ssao_pass.OnUpdate();
+    m_irradiance_conversion.OnUpdate();
     m_light_pass.OnUpdate();
+    m_background_pass.OnUpdate();
     m_compute_luminance.OnUpdate();
 }
 
@@ -75,8 +70,16 @@ void Scene::OnRender()
     m_ssao_pass.OnRender();
     m_context.EndEvent();
 
+    m_context.BeginEvent("Irradiance Conversion Pass");
+    m_irradiance_conversion.OnRender();
+    m_context.EndEvent();
+
     m_context.BeginEvent("Light Pass");
     m_light_pass.OnRender();
+    m_context.EndEvent();
+
+    m_context.BeginEvent("Background Pass");
+    m_background_pass.OnRender();
     m_context.EndEvent();
 
     m_context.BeginEvent("HDR Pass");

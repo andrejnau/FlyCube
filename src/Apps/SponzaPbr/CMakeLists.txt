@@ -31,6 +31,8 @@ set(headers
     ${include_path}/LightPass.h
     ${include_path}/ImGuiPass.h
     ${include_path}/SSAOPass.h
+    ${include_path}/IrradianceConversion.h
+    ${include_path}/BackgroundPass.h
     ${include_path}/ComputeLuminance.h
     ${include_path}/Scene.h
     ${include_path}/ImGuiSettings.h
@@ -42,6 +44,8 @@ set(sources
     ${source_path}/LightPass.cpp
     ${source_path}/ImGuiPass.cpp
     ${source_path}/SSAOPass.cpp
+    ${source_path}/IrradianceConversion.cpp
+    ${source_path}/BackgroundPass.cpp
     ${source_path}/ComputeLuminance.cpp
     ${source_path}/Scene.cpp
     ${source_path}/Settings.cpp
@@ -55,6 +59,9 @@ set(pixel_shaders
     ${shaders_path}/HDRApply_PS.hlsl
     ${shaders_path}/SSAOPass_PS.hlsl
     ${shaders_path}/SSAOBlurPass_PS.hlsl
+    ${shaders_path}/Equirectangular2Cubemap_PS.hlsl
+    ${shaders_path}/IrradianceConvolution_PS.hlsl
+    ${shaders_path}/Background_PS.hlsl
 )
 
 set(vertex_shaders
@@ -63,6 +70,8 @@ set(vertex_shaders
     ${shaders_path}/ImGuiPass_VS.hlsl
     ${shaders_path}/HDRApply_VS.hlsl
     ${shaders_path}/SSAOPass_VS.hlsl
+    ${shaders_path}/Cubemap_VS.hlsl
+    ${shaders_path}/Background_VS.hlsl
 )
 
 set(geometry_shaders

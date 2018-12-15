@@ -20,6 +20,8 @@
 #include "SSAOPass.h"
 #include "ComputeLuminance.h"
 #include "Settings.h"
+#include "IrradianceConversion.h"
+#include "BackgroundPass.h"
 
 using namespace Microsoft::WRL;
 
@@ -53,14 +55,16 @@ private:
 
     Resource::Ptr m_render_target_view;
     Resource::Ptr m_depth_stencil_view;
-
-    glm::vec3 light_pos;
+    Resource::Ptr m_equirectangular_environment;
 
     SceneModels m_scene_list;
     Model m_model_square;
+    Model m_model_cube;
     GeometryPass m_geometry_pass;
     SSAOPass m_ssao_pass;
+    IrradianceConversion m_irradiance_conversion;
     LightPass m_light_pass;
+    BackgroundPass m_background_pass;
     ComputeLuminance m_compute_luminance;
     ImGuiPass m_imgui_pass;
 };

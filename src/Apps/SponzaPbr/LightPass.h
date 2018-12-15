@@ -23,7 +23,7 @@ public:
         SSAOPass::Output& ssao_pass;
         Model& model;
         Camera& camera;
-        glm::vec3& light_pos;
+        Resource::Ptr& irradince;
     };
 
     struct Output
