@@ -47,7 +47,7 @@ void LightPass::OnUpdate()
                 float color = 0.0;
                 if (m_settings.use_white_ligth)
                     color = 1;
-                m_program.ps.cbuffer.Light.light_color[i] = glm::vec4(q == 1 ? 1 : color, q == 2 ? 1 : color, q == 3 ? 1 : color, 0.0);
+                m_program.ps.cbuffer.Light.light_color[i] = m_settings.light_power * glm::vec4(q == 1 ? 1 : color, q == 2 ? 1 : color, q == 3 ? 1 : color, 0.0);
                 ++i;
                 ++q;
             }

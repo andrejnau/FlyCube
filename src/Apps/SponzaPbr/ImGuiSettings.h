@@ -52,6 +52,11 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("use simple hdr 2", &settings.use_simple_hdr2))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::Checkbox("use_occlusion", &settings.use_occlusion))
         {
             modify_settings = true;
@@ -78,6 +83,16 @@ public:
         }
 
         if (ImGui::Checkbox("only ambientl", &settings.only_ambient))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("irradiance conversion every frame", &settings.irradiance_conversion_every_frame))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::SliderFloat("light power", &settings.light_power, 0.01, 100, "%.3f", 2))
         {
             modify_settings = true;
         }

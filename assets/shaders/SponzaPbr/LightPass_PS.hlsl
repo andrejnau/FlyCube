@@ -141,11 +141,11 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     for (uint i = 0; i < SAMPLE_COUNT; ++i)
     {
         float3 fragPos = getTexture(gPosition, input.texcoord, i).rgb;
-        float3 normal = getTexture(gNormal, input.texcoord, i).rgb;
+        float3 normal = normalize(getTexture(gNormal, input.texcoord, i).rgb);
         float3 albedo = getTexture(gAlbedo, input.texcoord, i).rgb;
         float roughness = getTexture(gRoughness, input.texcoord, i).r;
         float metallic = getTexture(gMetalness, input.texcoord, i).r;
-        float ao = gSSAO.Sample(g_sampler, input.texcoord, i).r;
+        float ao = gSSAO.Sample(g_sampler, input.texcoord).r;
         ao = pow(ao, 2.2);
         if (!use_ssaa)
             ao = 1.0;
@@ -171,7 +171,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             float3 kS = FresnelSchlick(max(dot(normal, V), 0.0), m.f0);
             float3 kD = 1.0 - kS;
             kD *= 1.0 - metallic;
-            float3 irradiance = irradianceMap.Sample(g_sampler, normal).rbg;
+            float3 irradiance = irradianceMap.Sample(g_sampler, normal).rgb;
             float3 diffuse = irradiance * albedo;
             ambient = (kD * diffuse) * ao;
         }

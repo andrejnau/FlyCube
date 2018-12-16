@@ -59,6 +59,7 @@ void ComputeLuminance::Draw(size_t buf_id)
     else
         m_HDRApply.ps.cbuffer.cbv.use_tone_mapping = false;
     m_HDRApply.ps.cbuffer.cbv.use_simple_hdr = m_settings.use_simple_hdr;
+    m_HDRApply.ps.cbuffer.cbv.use_simple_hdr2 = m_settings.use_simple_hdr2;
 
     m_HDRApply.UseProgram();
 

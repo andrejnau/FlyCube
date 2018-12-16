@@ -191,6 +191,8 @@ void Scene::OnModifySettings(const Settings& settings)
     m_light_pass.OnModifySettings(settings);
     m_compute_luminance.OnModifySettings(settings);
     m_ssao_pass.OnModifySettings(settings);
+    m_irradiance_conversion.OnModifySettings(settings);
+    m_background_pass.OnModifySettings(settings);
 }
 
 void Scene::CreateRT()

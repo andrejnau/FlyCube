@@ -31,10 +31,13 @@ void IrradianceConversion::OnUpdate()
 void IrradianceConversion::OnRender()
 {
     static bool is = false;
-    if (!is)
+    if (!is || m_settings.irradiance_conversion_every_frame)
     {
         DrawEquirectangular2Cubemap();
-        DrawIrradianceConvolution();
+        if (m_input.is_ref)
+            DrawIrradianceConvolution();
+        else
+            output.irradince = output.environment;
         is = true;
     }
 }

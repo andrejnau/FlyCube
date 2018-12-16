@@ -19,6 +19,7 @@ public:
     {
         Model& model;
         Resource::Ptr& hdr;
+        bool is_ref = true;
     };
 
     struct Output
