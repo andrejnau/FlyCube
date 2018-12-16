@@ -11,6 +11,7 @@ IrradianceConversion::IrradianceConversion(Context& context, const Input& input,
     , m_program_equirectangular2cubemap(context)
     , m_program_irradiance_convolution(context)
     , m_program_prefilter(context)
+    , m_program_brdf(context)
 {
     CreateSizeDependentResources();
 
@@ -50,6 +51,9 @@ void IrradianceConversion::OnRender()
             output.irradince = output.environment;
         m_context.BeginEvent("DrawPrefilter");
         DrawPrefilter();
+        m_context.EndEvent();
+        m_context.BeginEvent("DrawBRDF");
+        DrawBRDF();
         m_context.EndEvent();
         is = true;
     }
@@ -211,6 +215,26 @@ void IrradianceConversion::DrawPrefilter()
     }
 }
 
+void IrradianceConversion::DrawBRDF()
+{
+    m_context.SetViewport(m_brdf_size, m_brdf_size);
+
+    m_program_brdf.UseProgram();
+
+    float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    m_program_brdf.ps.om.rtv0.Attach(output.brdf).Clear(color);
+    m_program_brdf.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+    m_input.square_model.ia.indices.Bind();
+    m_input.square_model.ia.positions.BindToSlot(m_program_brdf.vs.ia.POSITION);
+    m_input.square_model.ia.texcoords.BindToSlot(m_program_brdf.vs.ia.TEXCOORD);
+
+    for (auto& range : m_input.square_model.ia.ranges)
+    {
+        m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+    }
+}
+
 void IrradianceConversion::OnResize(int width, int height)
 {
     m_width = width;
@@ -223,6 +247,7 @@ void IrradianceConversion::CreateSizeDependentResources()
     output.environment = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6);
     output.irradince = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_irradince_texture_size, m_irradince_texture_size, 6);
     output.prefilter = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6, log2(m_prefilter_texture_size));
+    output.brdf = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RG32_SFLOAT_PACK32, 1, m_brdf_size, m_brdf_size, 1);
     m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 1);
 }
 

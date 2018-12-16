@@ -87,6 +87,7 @@ void LightPass::OnRender()
         m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
         m_program.ps.srv.irradianceMap.Attach(m_input.irradiance_pass.irradince);
         m_program.ps.srv.prefilterMap.Attach(m_input.irradiance_pass.prefilter);
+        m_program.ps.srv.brdfLUT.Attach(m_input.irradiance_pass.brdf);
 
         m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }

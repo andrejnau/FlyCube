@@ -63,6 +63,7 @@ set(pixel_shaders
     ${shaders_path}/IrradianceConvolution_PS.hlsl
     ${shaders_path}/Background_PS.hlsl
     ${shaders_path}/Prefilter_PS.hlsl
+    ${shaders_path}/BRDF_PS.hlsl
 )
 
 set(vertex_shaders
@@ -73,6 +74,7 @@ set(vertex_shaders
     ${shaders_path}/SSAOPass_VS.hlsl
     ${shaders_path}/Cubemap_VS.hlsl
     ${shaders_path}/Background_VS.hlsl
+    ${shaders_path}/BRDF_VS.hlsl
 )
 
 set(geometry_shaders
