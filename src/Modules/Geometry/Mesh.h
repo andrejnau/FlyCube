@@ -38,8 +38,10 @@ public:
     {
         Resource::Ptr ambient;
         Resource::Ptr diffuse;
+        Resource::Ptr albedo;
         Resource::Ptr specular;
         Resource::Ptr shininess;
+        Resource::Ptr roughness;
         Resource::Ptr normal;
         Resource::Ptr alpha;
         Resource::Ptr metalness;

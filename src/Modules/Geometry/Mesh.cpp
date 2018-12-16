@@ -106,12 +106,11 @@ Material::Material(TextureCache& cache, const IMesh::Material& material, std::ve
             break;
         case aiTextureType_DIFFUSE:
             texture.diffuse = tex;
+            texture.albedo = tex;
             break;
         case aiTextureType_SPECULAR:
             texture.specular = tex;
-            break;
-        case aiTextureType_SHININESS:
-            texture.shininess = tex;
+            texture.roughness = tex;
             break;
         case aiTextureType_HEIGHT:
             texture.normal = tex;
@@ -119,8 +118,9 @@ Material::Material(TextureCache& cache, const IMesh::Material& material, std::ve
         case aiTextureType_OPACITY:
             texture.alpha = tex;
             break;
-        case aiTextureType_EMISSIVE:
+        case aiTextureType_SHININESS:
             texture.metalness = tex;
+            texture.shininess = tex;
             break;
         case aiTextureType_LIGHTMAP:
             texture.ao = tex;
@@ -138,4 +138,6 @@ Material::Material(TextureCache& cache, const IMesh::Material& material, std::ve
         texture.shininess = cache.CreateTextuteStab(glm::vec4(material.shininess, 0.0, 0.0, 0.0));
     if (!texture.alpha)
         texture.alpha = cache.CreateTextuteStab(glm::vec4(1.0));
+    if (!texture.ao)
+        texture.ao = cache.CreateTextuteStab(glm::vec4(1.0));
 }

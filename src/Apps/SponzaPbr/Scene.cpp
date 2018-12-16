@@ -28,6 +28,23 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
     m_scene_list.emplace_back(m_context, "model/export3dcoat/export3dcoat.obj");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 75.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
+    std::string hdr_tests[] =
+    {
+        "gold",
+        "grass",
+        "plastic",
+        "rusted_iron",
+        "wall",
+    };
+
+    float x = 300;
+    for (const auto& test : hdr_tests)
+    {
+        m_scene_list.emplace_back(m_context, "model/pbr_test/" + test + "/sphere.obj");
+        m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f)) *glm::translate(glm::vec3(x, 1500, 0.0f));
+        x += 50;
+    }
+
     CreateRT();
 
     m_equirectangular_environment = CreateTexture(m_context, GetAssetFullPath("model/newport_loft.dds"));

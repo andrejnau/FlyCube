@@ -17,8 +17,7 @@ struct VS_OUTPUT
 TEXTURE_TYPE gPosition;
 TEXTURE_TYPE gNormal;
 TEXTURE_TYPE gAlbedo;
-TEXTURE_TYPE gRoughness;
-TEXTURE_TYPE gMetalness;
+TEXTURE_TYPE gMaterial;
 Texture2D gSSAO;
 TextureCube irradianceMap;
 TextureCube prefilterMap;
@@ -39,11 +38,13 @@ cbuffer Light
 
 cbuffer Settings
 {
-    bool use_ssaa;
+    bool use_ao;
+    bool use_ssao;
     bool enable_diffuse_for_metal;
     bool use_IBL_diffuse;
     bool use_IBL_specular;
     bool only_ambient;
+    bool swap_y_for_brdf;
 };
 
 float4 getTexture(TEXTURE_TYPE _texture, float2 _tex_coord, int ss_index, bool _need_gamma = false)
@@ -151,18 +152,22 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         float3 fragPos = getTexture(gPosition, input.texcoord, i).rgb;
         float3 normal = normalize(getTexture(gNormal, input.texcoord, i).rgb);
         float3 albedo = getTexture(gAlbedo, input.texcoord, i).rgb;
-        float roughness = getTexture(gRoughness, input.texcoord, i).r;
-        float metallic = getTexture(gMetalness, input.texcoord, i).r;
-        float ao = gSSAO.Sample(g_sampler, input.texcoord).r;
-        ao = pow(ao, 2.2);
-        if (!use_ssaa)
-            ao = 1.0;
+        float roughness = getTexture(gMaterial, input.texcoord, i).r;
+        float metallic = getTexture(gMaterial, input.texcoord, i).g;
+
+        float ao = 1;
+        if (use_ao)
+            ao = getTexture(gMaterial, input.texcoord, i).b;
+        if (use_ssao)
+            ao += gSSAO.Sample(g_sampler, input.texcoord).r;
+        if (use_ao && use_ssao);
+            ao /= 2;
 
         Material m;
         m.albedo = albedo;
         m.roughness = roughness;
         m.metallic = metallic;
-        m.f0 = lerp(0, albedo, metallic);
+        m.f0 = lerp(0.04, albedo, metallic);
 
         float3 V = normalize(viewPos - fragPos);
         float3 R = reflect(-V, normal);
@@ -192,7 +197,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
             const float MAX_REFLECTION_LOD = 4.0;
             float3 prefilteredColor = prefilterMap.SampleLevel(g_sampler, R, roughness * MAX_REFLECTION_LOD).rgb;
-            float2 brdf = brdfLUT.Sample(g_sampler, float2(max(dot(normal, V), 0.0), roughness)).rg;
+            float2 brdf = brdfLUT.Sample(g_sampler, float2(max(dot(normal, V), 0.0), swap_y_for_brdf ? 1 - roughness : roughness)).rg;
             float3 specular = prefilteredColor * (F * brdf.x + brdf.y);
             ambient += specular;
         }

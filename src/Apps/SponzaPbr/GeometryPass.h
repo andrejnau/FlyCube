@@ -25,8 +25,7 @@ public:
         Resource::Ptr position;
         Resource::Ptr normal;
         Resource::Ptr albedo;
-        Resource::Ptr roughness;
-        Resource::Ptr metalness;
+        Resource::Ptr material;
         Resource::Ptr dsv;
     } output;
 

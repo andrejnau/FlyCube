@@ -57,7 +57,12 @@ public:
             modify_settings = true;
         }
 
-        if (ImGui::Checkbox("use_occlusion", &settings.use_occlusion))
+        if (ImGui::Checkbox("use model ao", &settings.use_ao))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("use ssao", &settings.use_ssao))
         {
             modify_settings = true;
         }
@@ -82,6 +87,11 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("swap y for brdf", &settings.swap_y_for_brdf))
+        {
+            modify_settings = true;
+        }
+        
         if (ImGui::Checkbox("skip sponza model", &settings.skip_sponza_model))
         {
             modify_settings = true;
@@ -126,7 +136,7 @@ public:
     void OnKey(int key, int action)
     {
         if (key == GLFW_KEY_O && action == GLFW_PRESS)
-            settings.use_occlusion ^= true;
+            settings.use_ssao ^= true;
         listener.OnModifySettings(settings);
     }
 

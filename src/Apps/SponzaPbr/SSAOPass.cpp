@@ -69,7 +69,7 @@ void SSAOPass::OnUpdate()
 
 void SSAOPass::OnRender()
 {
-    if (!m_settings.use_occlusion)
+    if (!m_settings.use_ssao)
         return;
 
     m_context.SetViewport(m_width, m_height);

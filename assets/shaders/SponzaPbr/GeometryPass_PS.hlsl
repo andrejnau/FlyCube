@@ -11,6 +11,7 @@ Texture2D albedoMap;
 Texture2D normalMap;
 Texture2D roughnessMap;
 Texture2D metalnessMap;
+Texture2D aoMap;
 Texture2D alphaMap;
 
 SamplerState g_sampler;
@@ -33,8 +34,7 @@ struct PS_OUT
     float4 gPosition : SV_Target0;
     float4 gNormal   : SV_Target1;
     float4 gAlbedo   : SV_Target2;
-    float gRoughness : SV_Target3;
-    float gMetalness : SV_Target4;
+    float4 gMaterial : SV_Target3;
 };
 
 float3 CalcBumpedNormal(VS_OUTPUT input)
@@ -65,8 +65,10 @@ PS_OUT main(VS_OUTPUT input)
     output.gNormal.a = 1.0;
 
     output.gAlbedo = float4(getTexture(albedoMap, g_sampler, input.texCoord, true).rgb, 1.0);
-    output.gRoughness = getTexture(roughnessMap, g_sampler, input.texCoord).r;
-    output.gMetalness = getTexture(metalnessMap, g_sampler, input.texCoord).r;
+    output.gMaterial.r = getTexture(roughnessMap, g_sampler, input.texCoord).r;
+    output.gMaterial.g = getTexture(metalnessMap, g_sampler, input.texCoord).r;
+    output.gMaterial.b = getTexture(aoMap, g_sampler, input.texCoord).r;
+    output.gMaterial.a = 1.0;
 
     return output;
 }

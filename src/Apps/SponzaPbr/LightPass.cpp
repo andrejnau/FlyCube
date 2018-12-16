@@ -30,11 +30,13 @@ void LightPass::OnUpdate()
     glm::vec3 cameraPosition = m_input.camera.GetCameraPos();
 
     m_program.ps.cbuffer.Light.viewPos = glm::vec4(cameraPosition, 0.0);
-    m_program.ps.cbuffer.Settings.use_ssaa = m_settings.use_occlusion;
+    m_program.ps.cbuffer.Settings.use_ssao = m_settings.use_ssao;
+    m_program.ps.cbuffer.Settings.use_ao = m_settings.use_ao;
     m_program.ps.cbuffer.Settings.enable_diffuse_for_metal = m_settings.enable_diffuse_for_metal;
     m_program.ps.cbuffer.Settings.use_IBL_diffuse = m_settings.use_IBL_diffuse;
     m_program.ps.cbuffer.Settings.use_IBL_specular = m_settings.use_IBL_specular;
     m_program.ps.cbuffer.Settings.only_ambient = m_settings.only_ambient;
+    m_program.ps.cbuffer.Settings.swap_y_for_brdf = m_settings.swap_y_for_brdf;
     
     int i = 0;
     for (int x = -13; x <= 13; ++x)
@@ -82,8 +84,7 @@ void LightPass::OnRender()
         m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position);
         m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal);
         m_program.ps.srv.gAlbedo.Attach(m_input.geometry_pass.albedo);
-        m_program.ps.srv.gRoughness.Attach(m_input.geometry_pass.roughness);
-        m_program.ps.srv.gMetalness.Attach(m_input.geometry_pass.metalness);
+        m_program.ps.srv.gMaterial.Attach(m_input.geometry_pass.material);
         m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
         m_program.ps.srv.irradianceMap.Attach(m_input.irradiance_pass.irradince);
         m_program.ps.srv.prefilterMap.Attach(m_input.irradiance_pass.prefilter);

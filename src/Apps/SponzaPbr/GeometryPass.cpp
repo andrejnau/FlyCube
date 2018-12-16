@@ -45,8 +45,7 @@ void GeometryPass::OnRender()
     m_program.ps.om.rtv0.Attach(output.position).Clear(color);
     m_program.ps.om.rtv1.Attach(output.normal).Clear(color);
     m_program.ps.om.rtv2.Attach(output.albedo).Clear(color);
-    m_program.ps.om.rtv3.Attach(output.roughness).Clear(color);
-    m_program.ps.om.rtv4.Attach(output.metalness).Clear(color);
+    m_program.ps.om.rtv3.Attach(output.material).Clear(color);
     m_program.ps.om.dsv.Attach(output.dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     bool skiped = false;
@@ -82,11 +81,12 @@ void GeometryPass::OnRender()
             auto& material = model.GetMaterial(range.id);
 
             m_program.ps.cbuffer.Settings.use_normal_mapping = !!material.texture.normal && !CurState::Instance().disable_norm;
-
+            
             m_program.ps.srv.normalMap.Attach(material.texture.normal);
-            m_program.ps.srv.albedoMap.Attach(material.texture.diffuse);
-            m_program.ps.srv.roughnessMap.Attach(material.texture.shininess);
+            m_program.ps.srv.albedoMap.Attach(material.texture.albedo);
+            m_program.ps.srv.roughnessMap.Attach(material.texture.roughness);
             m_program.ps.srv.metalnessMap.Attach(material.texture.metalness);
+            m_program.ps.srv.aoMap.Attach(material.texture.ao);
             m_program.ps.srv.alphaMap.Attach(material.texture.alpha);
 
             m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
@@ -116,7 +116,6 @@ void GeometryPass::CreateSizeDependentResources()
     output.position = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
     output.normal = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
     output.albedo = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    output.roughness = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_R32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    output.metalness = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_R32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.material = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
     output.dsv = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
 }
