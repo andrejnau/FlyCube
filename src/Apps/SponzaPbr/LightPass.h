@@ -2,6 +2,7 @@
 
 #include "GeometryPass.h"
 #include "SSAOPass.h"
+#include "IrradianceConversion.h"
 #include "Settings.h"
 
 #include <Scene/SceneBase.h>
@@ -23,7 +24,7 @@ public:
         SSAOPass::Output& ssao_pass;
         Model& model;
         Camera& camera;
-        Resource::Ptr& irradince;
+        IrradianceConversion::Output& irradiance_pass;
     };
 
     struct Output

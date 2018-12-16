@@ -31,24 +31,25 @@ void CommonProgramApi::AttachCBuffer(ShaderType type, const std::string& name, u
         std::forward_as_tuple(name));
 }
 
-void CommonProgramApi::SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res)
+void CommonProgramApi::SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, ViewId view_id, const std::string& name, const Resource::Ptr& res)
 {
-    auto it = m_heap_ranges.find({ shader_type, res_type, slot, name });
+    auto it = m_heap_ranges.find({ shader_type, res_type, slot, view_id, name });
     if (it == m_heap_ranges.end())
     {
         m_heap_ranges.emplace(std::piecewise_construct,
-            std::forward_as_tuple(shader_type, res_type, slot, name),
+            std::forward_as_tuple(shader_type, res_type, slot, view_id, name),
             std::forward_as_tuple(res));
     }
     else
     {
         it->second = res;
     }
+    m_active_view[{ shader_type, res_type, slot, name }] = view_id;
 }
 
-void CommonProgramApi::Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res)
+void CommonProgramApi::Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, ViewId view_id, const std::string& name, const Resource::Ptr& res)
 {
-    SetBinding(shader_type, res_type, slot, name, res);
+    SetBinding(shader_type, res_type, slot, view_id, name, res);
     switch (res_type)
     {
     case ResourceType::kSrv:

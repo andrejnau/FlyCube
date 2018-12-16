@@ -7,6 +7,7 @@
 #include <ProgramRef/CubemapVS.h>
 #include <ProgramRef/Equirectangular2CubemapPS.h>
 #include <ProgramRef/IrradianceConvolutionPS.h>
+#include <ProgramRef/PrefilterPS.h>
 #include <d3d11.h>
 #include <wrl.h>
 
@@ -26,6 +27,7 @@ public:
     {
         Resource::Ptr environment;
         Resource::Ptr irradince;
+        Resource::Ptr prefilter;
     } output;
 
     IrradianceConversion(Context& context, const Input& input, int width, int height);
@@ -38,6 +40,7 @@ public:
 private:
     void DrawEquirectangular2Cubemap();
     void DrawIrradianceConvolution();
+    void DrawPrefilter();
     void CreateSizeDependentResources();
 
     Settings m_settings;
@@ -49,6 +52,8 @@ private:
     Resource::Ptr m_depth_stencil_view;
     Program<CubemapVS, Equirectangular2CubemapPS> m_program_equirectangular2cubemap;
     Program<CubemapVS, IrradianceConvolutionPS> m_program_irradiance_convolution;
+    Program<CubemapVS, PrefilterPS> m_program_prefilter;
     size_t m_texture_size = 512;
     size_t m_irradince_texture_size = 32;
+    size_t m_prefilter_texture_size = 32;
 };

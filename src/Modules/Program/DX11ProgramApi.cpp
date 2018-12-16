@@ -170,7 +170,7 @@ void DX11ProgramApi::CompileShader(const ShaderBase& shader)
     }
 }
 
-void DX11ProgramApi::Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res)
+void DX11ProgramApi::Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, ViewId view_id, const std::string& name, const Resource::Ptr& res)
 {
     switch (res_type)
     {
@@ -377,7 +377,7 @@ ComPtr<ID3D11ShaderResourceView> DX11ProgramApi::CreateSrv(ShaderType type, cons
         return srv;
 
     auto res = std::static_pointer_cast<DX11Resource>(ires);
-    BindKey key = { m_program_id, type, ResourceType::kSrv, slot };
+    BindKey key = { m_program_id, type, ResourceType::kSrv, slot, {} };
     auto it = res->srv.find(key);
     if (it != res->srv.end())
         return it->second;
@@ -465,7 +465,7 @@ ComPtr<ID3D11UnorderedAccessView> DX11ProgramApi::CreateUAV(ShaderType type, con
 
     auto res = std::static_pointer_cast<DX11Resource>(ires);
 
-    BindKey key = { m_program_id, type, ResourceType::kUav, slot };
+    BindKey key = { m_program_id, type, ResourceType::kUav, slot, {} };
     auto it = res->uav.find(key);
     if (it != res->uav.end())
         return it->second;
@@ -527,7 +527,7 @@ ComPtr<ID3D11DepthStencilView> DX11ProgramApi::CreateDsv(const Resource::Ptr& ir
 
     auto res = std::static_pointer_cast<DX11Resource>(ires);
 
-    BindKey key = { m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0 };
+    BindKey key = { m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0, {} };
     auto it = res->dsv.find(key);
     if (it != res->dsv.end())
         return it->second;
@@ -564,7 +564,7 @@ ComPtr<ID3D11RenderTargetView> DX11ProgramApi::CreateRtv(uint32_t slot, const Re
     if (!ires)
         return rtv;
 
-    BindKey key = { m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot };
+    BindKey key = { m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot, {} };
     auto it = res->rtv.find(key);
     if (it != res->rtv.end())
         return it->second;

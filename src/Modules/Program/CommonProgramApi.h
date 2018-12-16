@@ -22,7 +22,7 @@ public:
 
     virtual void AddAvailableShaderType(ShaderType type) override;
     virtual void AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer) override;
-    virtual void Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res) override;
+    virtual void Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, ViewId view_id, const std::string& name, const Resource::Ptr& res) override;
     virtual size_t GetProgramId() const override;
 
 protected:
@@ -33,9 +33,10 @@ protected:
     virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) = 0;
     virtual void OnAttachDSV(const Resource::Ptr& ires) = 0;
 
-    void SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res);
+    void SetBinding(ShaderType shader_type, ResourceType res_type, uint32_t slot, ViewId view_id, const std::string& name, const Resource::Ptr& res);
 
-    std::map<std::tuple<ShaderType, ResourceType, uint32_t, std::string>, Resource::Ptr> m_heap_ranges;
+    std::map<std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>, Resource::Ptr> m_heap_ranges;
+    std::map<std::tuple<ShaderType, ResourceType, uint32_t, std::string>, ViewId> m_active_view;
     std::map<std::tuple<ShaderType, uint32_t>, std::reference_wrapper<BufferLayout>> m_cbv_layout;
     std::map<std::tuple<ShaderType, uint32_t>, std::string> m_cbv_name;
 

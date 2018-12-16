@@ -40,6 +40,15 @@ enum class ResourceType
     kDsv
 };
 
+struct ViewId
+{
+    size_t value;
+    bool operator< (const ViewId& oth) const
+    {
+        return value < oth.value;
+    }
+};
+
 enum BindFlag
 {
     kRtv = 1 << 1,
@@ -117,4 +126,4 @@ enum class ShaderType
     kGeometry
 };
 
-using BindKey = std::tuple<size_t /*program_id*/, ShaderType /*shader_type*/, ResourceType /*res_type*/, uint32_t /*slot*/>;
+using BindKey = std::tuple<size_t /*program_id*/, ShaderType /*shader_type*/, ResourceType /*res_type*/, uint32_t /*slot*/, ViewId /*view_id*/>;

@@ -20,14 +20,14 @@ DX12View::Ptr DX12ViewCreater::GetEmptyDescriptor(ResourceType res_type)
     return std::static_pointer_cast<DX12View>(it->second);
 }
 
-DX12View::Ptr DX12ViewCreater::GetView(uint32_t m_program_id, ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& ires)
+DX12View::Ptr DX12ViewCreater::GetView(uint32_t m_program_id, ShaderType shader_type, ResourceType res_type, uint32_t slot, ViewId view_id, const std::string& name, const Resource::Ptr& ires)
 {
     if (!ires)
         return GetEmptyDescriptor(res_type);
 
     DX12Resource& res = static_cast<DX12Resource&>(*ires);
 
-    View::Ptr& view = ires->GetView({ m_shader_provider.GetProgramId(), shader_type, res_type, slot });
+    View::Ptr& view = ires->GetView({ m_shader_provider.GetProgramId(), shader_type, res_type, slot, view_id });
     if (view)
         return std::static_pointer_cast<DX12View>(view);
 
@@ -50,7 +50,7 @@ DX12View::Ptr DX12ViewCreater::GetView(uint32_t m_program_id, ShaderType shader_
         CreateSampler(shader_type, slot, res, handle);
         break;
     case ResourceType::kRtv:
-        CreateRTV(slot, res, handle);
+        CreateRTV(slot, view_id, res, handle);
         break;
     case ResourceType::kDsv:
         CreateDSV(res, handle);
@@ -184,7 +184,7 @@ void DX12ViewCreater::CreateSampler(ShaderType type, uint32_t slot, const DX12Re
     m_context.device->CreateSampler(&res.sampler_desc, handle.GetCpuHandle());
 }
 
-void DX12ViewCreater::CreateRTV(uint32_t slot, const DX12Resource& res, DX12View& handle)
+void DX12ViewCreater::CreateRTV(uint32_t slot, ViewId view_id, const DX12Resource& res, DX12View& handle)
 {
     const D3D12_RESOURCE_DESC& desc = res.desc;
     DXGI_FORMAT format = desc.Format;
@@ -196,6 +196,7 @@ void DX12ViewCreater::CreateRTV(uint32_t slot, const DX12Resource& res, DX12View
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
         rtv_desc.Texture2DArray.ArraySize = desc.DepthOrArraySize;
+        rtv_desc.Texture2DArray.MipSlice = res.GetRtvCustomViewSetting(view_id).level;
     }
     else
     {

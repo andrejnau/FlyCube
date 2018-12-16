@@ -21,6 +21,8 @@ TEXTURE_TYPE gRoughness;
 TEXTURE_TYPE gMetalness;
 Texture2D gSSAO;
 TextureCube irradianceMap;
+TextureCube prefilterMap;
+Texture2D brdfLUT;
 
 SamplerState g_sampler : register(s0);
 
@@ -39,7 +41,8 @@ cbuffer Settings
 {
     bool use_ssaa;
     bool enable_diffuse_for_metal;
-    bool use_IBL_ambient;
+    bool use_IBL_diffuse;
+    bool use_IBL_specular;
     bool only_ambient;
 };
 
@@ -105,6 +108,11 @@ float3 FresnelSchlick(float cosTheta, float3 F0)
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
+float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
+{
+    return F0 + (max((float3)(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
 float3 CookTorrance_GGX(float3 fragPos, float3 n, float3 v, Material m, int i)
 {
     n = normalize(n);
@@ -157,6 +165,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         m.f0 = lerp(0, albedo, metallic);
 
         float3 V = normalize(viewPos - fragPos);
+        float3 R = reflect(-V, normal);
 
         [unroll]
         for (int i = 0; i < LIGHT_COUNT; ++i)
@@ -164,26 +173,37 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             lighting += CookTorrance_GGX(fragPos, normal, V, m, i);
         }
 
-        float3 ambient = 0;
-        if (use_IBL_ambient)
+        float3 F = FresnelSchlickRoughness(max(dot(normal, V), 0.0), m.f0, roughness);
+
+        float3 ambient = 0;      
+        if (use_IBL_diffuse)
         {
             // ambient lighting (we now use IBL as the ambient term)
-            float3 kS = FresnelSchlick(max(dot(normal, V), 0.0), m.f0);
+            float3 kS = F;
             float3 kD = 1.0 - kS;
             kD *= 1.0 - metallic;
             float3 irradiance = irradianceMap.Sample(g_sampler, normal).rgb;
             float3 diffuse = irradiance * albedo;
-            ambient = (kD * diffuse) * ao;
+            ambient = (kD * diffuse);
         }
-        else
+
+        if (use_IBL_specular)
         {
-            ambient = 0.03 * albedo * ao;
+            // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
+            const float MAX_REFLECTION_LOD = 4.0;
+            float3 prefilteredColor = prefilterMap.SampleLevel(g_sampler, R, roughness * MAX_REFLECTION_LOD).rgb;
+            float2 brdf = brdfLUT.Sample(g_sampler, float2(max(dot(normal, V), 0.0), roughness)).rg;
+            float3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+            ambient += specular;
         }
+
+        if (!use_IBL_diffuse && !use_IBL_specular)
+            ambient = 0.03 * albedo;
 
         if (only_ambient)
             lighting = 0;
 
-        lighting += ambient;
+        lighting += ambient * ao;
     }
     lighting /= SAMPLE_COUNT;
 

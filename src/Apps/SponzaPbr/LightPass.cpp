@@ -32,7 +32,8 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.Light.viewPos = glm::vec4(cameraPosition, 0.0);
     m_program.ps.cbuffer.Settings.use_ssaa = m_settings.use_occlusion;
     m_program.ps.cbuffer.Settings.enable_diffuse_for_metal = m_settings.enable_diffuse_for_metal;
-    m_program.ps.cbuffer.Settings.use_IBL_ambient = m_settings.use_IBL_ambient;
+    m_program.ps.cbuffer.Settings.use_IBL_diffuse = m_settings.use_IBL_diffuse;
+    m_program.ps.cbuffer.Settings.use_IBL_specular = m_settings.use_IBL_specular;
     m_program.ps.cbuffer.Settings.only_ambient = m_settings.only_ambient;
     
     int i = 0;
@@ -84,7 +85,8 @@ void LightPass::OnRender()
         m_program.ps.srv.gRoughness.Attach(m_input.geometry_pass.roughness);
         m_program.ps.srv.gMetalness.Attach(m_input.geometry_pass.metalness);
         m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
-        m_program.ps.srv.irradianceMap.Attach(m_input.irradince);
+        m_program.ps.srv.irradianceMap.Attach(m_input.irradiance_pass.irradince);
+        m_program.ps.srv.prefilterMap.Attach(m_input.irradiance_pass.prefilter);
 
         m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }

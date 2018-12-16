@@ -17,7 +17,8 @@ public:
     bool use_white_ligth;
     bool enable_diffuse_for_metal;
     bool only_ambient;
-    bool use_IBL_ambient;
+    bool use_IBL_diffuse;
+    bool use_IBL_specular;
     bool skip_sponza_model;
     bool irradiance_conversion_every_frame;
     float light_power;

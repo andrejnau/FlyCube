@@ -25,8 +25,7 @@ public:
     void CreatePipeLine();
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
-    VKView::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr & res);
-    std::vector<uint8_t> hlsl2spirv(const ShaderBase & shader);
+    VKView::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>& key, const Resource::Ptr & res);
     virtual void CompileShader(const ShaderBase& shader) override;
     void ParseShader(ShaderType type, const std::vector<uint32_t>& spirv_binary, std::vector<VkDescriptorSetLayoutBinding>& bindings);
     size_t GetSetNumByShaderType(ShaderType type);

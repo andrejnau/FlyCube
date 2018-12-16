@@ -234,7 +234,7 @@ void VKProgramApi::ApplyBindings()
             m_context.UpdateSubresource(res, 0, buffer.GetBuffer().data(), 0, 0);
         }
 
-        Attach(std::get<0>(x.first), ResourceType::kCbv, std::get<1>(x.first), m_cbv_name[x.first], res);
+        Attach(std::get<0>(x.first), ResourceType::kCbv, std::get<1>(x.first), {}, m_cbv_name[x.first], res);
     }
 
     if (m_changed_om)
@@ -408,9 +408,9 @@ void VKProgramApi::ApplyBindings()
             m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
 }
 
-VKView::Ptr VKProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr& res)
+VKView::Ptr VKProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>& key, const Resource::Ptr& res)
 {
-    return m_view_creater.GetView(m_program_id, std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), std::get<std::string>(key), res);
+    return m_view_creater.GetView(m_program_id, std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), std::get<ViewId>(key), std::get<std::string>(key), res);
 }
 
 void VKProgramApi::RenderPassBegin()
@@ -685,7 +685,7 @@ void VKProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
 
     m_context.transitionImageLayout(res.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-    VKView::Ptr view = m_view_creater.GetView(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot, "", ires);
+    VKView::Ptr view = m_view_creater.GetView(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot, {}, "", ires);
     m_rtv[slot] = view->rtv;
     m_rtv_size[slot] = { res.image.size, res.image.array_layers };
  
@@ -717,7 +717,7 @@ void VKProgramApi::OnAttachDSV(const Resource::Ptr & ires)
 
     m_context.transitionImageLayout(res.image, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    VKView::Ptr view = m_view_creater.GetView(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0, "", ires);
+    VKView::Ptr view = m_view_creater.GetView(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0, {}, "", ires);
 
     m_rtv.back() = view->dsv;
     m_rtv_size.back() = { res.image.size, res.image.array_layers };

@@ -27,7 +27,7 @@ public:
     virtual void ApplyBindings() = 0;
     virtual void CompileShader(const ShaderBase& shader) = 0;
     virtual void AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer) = 0;
-    virtual void Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res) = 0;
+    virtual void Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, ViewId view_id, const std::string& name, const Resource::Ptr& res) = 0;
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) = 0;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) = 0;
     virtual void SetRasterizeState(const RasterizerDesc& desc) = 0;

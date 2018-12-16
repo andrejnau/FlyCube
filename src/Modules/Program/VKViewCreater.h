@@ -21,7 +21,7 @@ public:
 
     void ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary);
 
-    VKView::Ptr GetView(uint32_t program_id, ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& ires);
+    VKView::Ptr GetView(uint32_t program_id, ShaderType shader_type, ResourceType res_type, uint32_t slot, ViewId view_id, const std::string& name, const Resource::Ptr& ires);
 
 private:
     VKView::Ptr GetEmptyDescriptor(ResourceType res_type);

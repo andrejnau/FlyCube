@@ -72,7 +72,12 @@ public:
             modify_settings = true;
         }
 
-        if (ImGui::Checkbox("use IBL ambient", &settings.use_IBL_ambient))
+        if (ImGui::Checkbox("use IBL diffuse", &settings.use_IBL_diffuse))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("use IBL specular", &settings.use_IBL_specular))
         {
             modify_settings = true;
         }

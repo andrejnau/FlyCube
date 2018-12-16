@@ -11,7 +11,8 @@ Settings::Settings()
     use_occlusion = true;
     use_white_ligth = false;
     enable_diffuse_for_metal = false;
-    use_IBL_ambient = false;
+    use_IBL_diffuse = false;
+    use_IBL_specular = false;
     skip_sponza_model = false;
     only_ambient = false;
     irradiance_conversion_every_frame = false;

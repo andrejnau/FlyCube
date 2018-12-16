@@ -62,6 +62,7 @@ set(pixel_shaders
     ${shaders_path}/Equirectangular2Cubemap_PS.hlsl
     ${shaders_path}/IrradianceConvolution_PS.hlsl
     ${shaders_path}/Background_PS.hlsl
+    ${shaders_path}/Prefilter_PS.hlsl
 )
 
 set(vertex_shaders

@@ -16,7 +16,7 @@ public:
     virtual void ApplyBindings() override;
     virtual void CompileShader(const ShaderBase& shader) override;
     virtual void AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer_layout) override;
-    virtual void Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name, const Resource::Ptr& res) override;
+    virtual void Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, ViewId view_id, const std::string& name, const Resource::Ptr& res) override;
 
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;

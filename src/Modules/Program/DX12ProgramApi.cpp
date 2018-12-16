@@ -422,7 +422,7 @@ void DX12ProgramApi::UpdateCBuffers()
 
         if (m_use_cbv_table)
         {
-            Attach(std::get<0>(x.first), ResourceType::kCbv, std::get<1>(x.first), "", res);
+            Attach(std::get<0>(x.first), ResourceType::kCbv, std::get<1>(x.first), {}, "", res);
         }
     }
 }
@@ -434,15 +434,17 @@ void DX12ProgramApi::CopyDescriptor(DescriptorHeapRange& dst_range, size_t dst_o
 
 DX12View::Ptr DX12ProgramApi::FindView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key)
 {
-    auto it = m_heap_ranges.find(key);
+    auto view_id = m_active_view[key];
+    auto full_key = std::make_tuple(std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), view_id, std::get<std::string>(key));
+    auto it = m_heap_ranges.find(full_key);
     if (it == m_heap_ranges.end())
         return {};
-    return GetView(key, it->second);
+    return GetView(full_key, it->second);
 }
 
-DX12View::Ptr DX12ProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key, const Resource::Ptr& res)
+DX12View::Ptr DX12ProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>& key, const Resource::Ptr& res)
 {
-    return m_view_creater.GetView(m_program_id, std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), std::get<std::string>(key), res);
+    return m_view_creater.GetView(m_program_id, std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), std::get<ViewId>(key), std::get<std::string>(key), res);
 }
 
 void DX12ProgramApi::ApplyBindings()
