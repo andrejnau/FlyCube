@@ -24,6 +24,7 @@ TextureCube prefilterMap;
 Texture2D brdfLUT;
 
 SamplerState g_sampler : register(s0);
+SamplerState brdf_sampler : register(s1);
 
 static const float PI = acos(-1.0);
 
@@ -195,9 +196,10 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         if (use_IBL_specular)
         {
             // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
-            const float MAX_REFLECTION_LOD = 4.0;
-            float3 prefilteredColor = prefilterMap.SampleLevel(g_sampler, R, roughness * MAX_REFLECTION_LOD).rgb;
-            float2 brdf = brdfLUT.Sample(g_sampler, float2(max(dot(normal, V), 0.0), swap_y_for_brdf ? 1 - roughness : roughness)).rg;
+            uint width, height, levels;
+            prefilterMap.GetDimensions(0, width, height, levels);
+            float3 prefilteredColor = prefilterMap.SampleLevel(g_sampler, R, roughness * levels).rgb;
+            float2 brdf = brdfLUT.Sample(brdf_sampler, float2(max(dot(normal, V), 0.0), swap_y_for_brdf ? 1 - roughness : roughness)).rg;
             float3 specular = prefilteredColor * (F * brdf.x + brdf.y);
             ambient += specular;
         }

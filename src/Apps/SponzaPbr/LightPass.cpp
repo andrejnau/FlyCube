@@ -18,6 +18,11 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
         SamplerComparisonFunc::kNever });
+
+    m_sampler_brdf = m_context.CreateSampler({
+        SamplerFilter::kMinMagMipLinear,
+        SamplerTextureAddressMode::kClamp,
+        SamplerComparisonFunc::kNever });
 }
 
 void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
@@ -70,6 +75,7 @@ void LightPass::OnRender()
     m_program.UseProgram();
 
     m_program.ps.sampler.g_sampler.Attach(m_sampler);
+    m_program.ps.sampler.brdf_sampler.Attach(m_sampler_brdf);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_program.ps.om.rtv0.Attach(output.rtv).Clear(color);
