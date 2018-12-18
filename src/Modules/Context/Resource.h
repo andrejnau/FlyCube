@@ -29,18 +29,18 @@ public:
         return it->second;
     }
 
-    struct RtvSettings
+    struct Settings
     {
         size_t level = 0;
-        bool operator<(const RtvSettings& oth) const
+        bool operator<(const Settings& oth) const
         {
             return level < oth.level;
         }
     };
 
-    ViewId GetRtvCustomViewId(size_t level)
+    ViewId GetCustomViewId(size_t level)
     {
-        RtvSettings custom_view = { level };
+        Settings custom_view = { level };
         auto it = m_rtv_view_settings.find(custom_view);
         if (it == m_rtv_view_settings.end())
         {
@@ -50,11 +50,11 @@ public:
         return it->second;
     }
 
-    const RtvSettings& GetRtvCustomViewSetting(ViewId id) const
+    const Settings& GetCustomViewSetting(ViewId id) const
     {
         if (id.value - 1 >= m_rtv_view_settings_data.size())
         {
-            static RtvSettings empty;
+            static Settings empty;
             return empty;
         }
         return m_rtv_view_settings_data[id.value - 1];
@@ -62,6 +62,6 @@ public:
 
 private:
     std::map<BindKey, View::Ptr> views;
-    std::map<RtvSettings, ViewId> m_rtv_view_settings;
-    std::vector<RtvSettings> m_rtv_view_settings_data;
+    std::map<Settings, ViewId> m_rtv_view_settings;
+    std::vector<Settings> m_rtv_view_settings_data;
 };

@@ -28,9 +28,12 @@ public:
     {
     }
 
-    void Attach(const Resource::Ptr& ires = {})
+    void Attach(const Resource::Ptr& ires = {}, size_t level = 0)
     {
-        m_program_api.Attach(m_shader_type, ResourceType::kSrv, m_slot, {}, m_name, ires);
+        ViewId view_id = {};
+        if (ires)
+            view_id = ires->GetCustomViewId(level);
+        m_program_api.Attach(m_shader_type, ResourceType::kSrv, m_slot, view_id, m_name, ires);
     }
 
 private:
@@ -51,9 +54,12 @@ public:
     {
     }
 
-    void Attach(const Resource::Ptr& ires = {})
+    void Attach(const Resource::Ptr& ires = {}, size_t level = 0)
     {
-        m_program_api.Attach(m_shader_type, ResourceType::kUav, m_slot, {}, m_name, ires);
+        ViewId view_id = {};
+        if (ires)
+            view_id = ires->GetCustomViewId(level);
+        m_program_api.Attach(m_shader_type, ResourceType::kUav, m_slot, view_id, m_name, ires);
     }
 
 private:
@@ -99,7 +105,7 @@ public:
     {
         ViewId view_id = {};
         if (ires)
-            view_id = ires->GetRtvCustomViewId(level);
+            view_id = ires->GetCustomViewId(level);
         m_program_api.Attach(ShaderType::kPixel, ResourceType::kRtv, m_slot, view_id, "", ires);
         return *this;
     }

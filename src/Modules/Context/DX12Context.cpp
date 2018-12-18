@@ -112,11 +112,11 @@ Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, gli::format Format,
     desc.SampleDesc.Quality = ms_check_desc.NumQualityLevels - 1;
 
     if (bind_flag & BindFlag::kRtv)
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     if (bind_flag & BindFlag::kDsv)
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     if (bind_flag & BindFlag::kUav)
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
     res->state = D3D12_RESOURCE_STATE_COPY_DEST;
 

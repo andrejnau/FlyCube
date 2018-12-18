@@ -12,6 +12,7 @@ IrradianceConversion::IrradianceConversion(Context& context, const Input& input,
     , m_program_irradiance_convolution(context)
     , m_program_prefilter(context)
     , m_program_brdf(context)
+    , m_program_downsample(context)
 {
     CreateSizeDependentResources();
 
@@ -31,6 +32,8 @@ void IrradianceConversion::OnUpdate()
 
     m_program_prefilter.vs.cbuffer.ConstantBuf.projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f));
     m_program_prefilter.SetMaxEvents(log2(m_prefilter_texture_size) * 6 * m_input.model.meshes.size());
+
+    m_program_downsample.SetMaxEvents(m_texture_mips - 1);
 }
 
 void IrradianceConversion::OnRender()
@@ -41,20 +44,19 @@ void IrradianceConversion::OnRender()
         m_context.BeginEvent("DrawEquirectangular2Cubemap");
         DrawEquirectangular2Cubemap();
         m_context.EndEvent();
-        if (m_input.is_ref)
-        {
-            m_context.BeginEvent("DrawIrradianceConvolution");
-            DrawIrradianceConvolution();
-            m_context.EndEvent();
-        }
-        else
-            output.irradince = output.environment;
+
+        m_context.BeginEvent("DrawIrradianceConvolution");
+        DrawIrradianceConvolution();
+        m_context.EndEvent();
+     
         m_context.BeginEvent("DrawPrefilter");
         DrawPrefilter();
         m_context.EndEvent();
+
         m_context.BeginEvent("DrawBRDF");
         DrawBRDF();
         m_context.EndEvent();
+
         is = true;
     }
 }
@@ -105,6 +107,14 @@ void IrradianceConversion::DrawEquirectangular2Cubemap()
         {
             m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
+    }
+
+    m_program_downsample.UseProgram();
+    for (size_t i = 1; i < m_texture_mips; ++i)
+    {
+        m_program_downsample.cs.srv.inputTexture.Attach(output.environment, i - 1);
+        m_program_downsample.cs.uav.outputTexture.Attach(output.environment, i);
+        m_context.Dispatch((m_texture_size >> i) / 8, (m_texture_size >> i) / 8, 6);
     }
 }
 
@@ -244,7 +254,15 @@ void IrradianceConversion::OnResize(int width, int height)
 
 void IrradianceConversion::CreateSizeDependentResources()
 {
-    output.environment = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6);
+    m_texture_mips = 0;
+    for (size_t i = 0; ; ++i)
+    {
+        if ((m_texture_size >> i) % 8 != 0)
+            break;
+        ++m_texture_mips;
+    }
+
+    output.environment = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6, m_texture_mips);
     output.irradince = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_irradince_texture_size, m_irradince_texture_size, 6);
     output.prefilter = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6, log2(m_prefilter_texture_size));
     output.brdf = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RG32_SFLOAT_PACK32, 1, m_brdf_size, m_brdf_size, 1);

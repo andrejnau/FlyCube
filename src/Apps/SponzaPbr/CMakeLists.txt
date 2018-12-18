@@ -83,6 +83,7 @@ set(geometry_shaders
 set(compute_shaders
     ${shaders_path}/HDRLum1DPass_CS.hlsl
     ${shaders_path}/HDRLum2DPass_CS.hlsl
+    ${shaders_path}/DownSample_CS.hlsl
 )
 
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)

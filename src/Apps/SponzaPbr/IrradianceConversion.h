@@ -10,6 +10,7 @@
 #include <ProgramRef/PrefilterPS.h>
 #include <ProgramRef/BRDFPS.h>
 #include <ProgramRef/BRDFVS.h>
+#include <ProgramRef/DownSampleCS.h>
 #include <d3d11.h>
 #include <wrl.h>
 
@@ -23,7 +24,6 @@ public:
         Model& model;
         Model& square_model;
         Resource::Ptr& hdr;
-        bool is_ref = true;
     };
 
     struct Output
@@ -59,7 +59,9 @@ private:
     Program<CubemapVS, IrradianceConvolutionPS> m_program_irradiance_convolution;
     Program<CubemapVS, PrefilterPS> m_program_prefilter;
     Program<BRDFVS, BRDFPS> m_program_brdf;
+    Program<DownSampleCS> m_program_downsample;
     size_t m_texture_size = 512;
+    size_t m_texture_mips = 0;
     size_t m_irradince_texture_size = 32;
     size_t m_prefilter_texture_size = 128;
     size_t m_brdf_size = 512;

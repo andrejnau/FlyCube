@@ -16,8 +16,8 @@ public:
 private:
     DX12View::Ptr GetEmptyDescriptor(ResourceType res_type);
 
-    void CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const DX12Resource& res, DX12View& handle);
-    void CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const DX12Resource& ires, DX12View& handle);
+    void CreateSrv(ShaderType type, const std::string& name, uint32_t slot, ViewId view_id, const DX12Resource& res, DX12View& handle);
+    void CreateUAV(ShaderType type, const std::string& name, uint32_t slot, ViewId view_id, const DX12Resource& ires, DX12View& handle);
     void CreateCBV(ShaderType type, uint32_t slot, const DX12Resource& res, DX12View& handle);
     void CreateSampler(ShaderType type, uint32_t slot, const DX12Resource& res, DX12View& handle);
     void CreateRTV(uint32_t slot, ViewId view_id, const DX12Resource& res, DX12View& handle);
