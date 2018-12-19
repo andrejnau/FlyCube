@@ -20,7 +20,9 @@ public:
     bool use_IBL_diffuse;
     bool use_IBL_specular;
     bool skip_sponza_model;
+    bool light_in_camera;
     bool irradiance_conversion_every_frame;
+    float ambient_power;
     float light_power;
     int ssao_scale;
     float Exposure;

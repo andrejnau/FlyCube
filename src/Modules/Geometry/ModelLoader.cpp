@@ -192,6 +192,7 @@ void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<T
         { "albedo",     aiTextureType_DIFFUSE   },
         { "_albedo",    aiTextureType_DIFFUSE   },
         { "_Albedo",    aiTextureType_DIFFUSE   },
+        { "_color",     aiTextureType_DIFFUSE   },
         { "_diff",      aiTextureType_DIFFUSE   },
         { "_diffuse",   aiTextureType_DIFFUSE   },
         { "_nmap",      aiTextureType_HEIGHT    },
@@ -210,6 +211,7 @@ void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<T
         { "_mask",      aiTextureType_OPACITY   },
         { "_opacity",   aiTextureType_OPACITY   },
         { "_spec",      aiTextureType_SPECULAR  },
+        { "_gloss",     aiTextureType_EMISSIVE  },
     };
     std::set<aiTextureType> used;
     for (auto& cur_texture : textures)

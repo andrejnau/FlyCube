@@ -9,6 +9,7 @@ struct VS_OUTPUT
 
 Texture2D albedoMap;
 Texture2D normalMap;
+Texture2D glossMap;
 Texture2D roughnessMap;
 Texture2D metalnessMap;
 Texture2D aoMap;
@@ -19,6 +20,7 @@ SamplerState g_sampler;
 cbuffer Settings
 {
     bool use_normal_mapping;
+    bool use_gloss_instead_of_roughness;
 };
 
 float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, bool _need_gamma = false)
@@ -65,7 +67,10 @@ PS_OUT main(VS_OUTPUT input)
     output.gNormal.a = 1.0;
 
     output.gAlbedo = float4(getTexture(albedoMap, g_sampler, input.texCoord, true).rgb, 1.0);
-    output.gMaterial.r = getTexture(roughnessMap, g_sampler, input.texCoord).r;
+    if (use_gloss_instead_of_roughness)
+        output.gMaterial.r = 1.0 - getTexture(glossMap, g_sampler, input.texCoord).r;
+    else
+        output.gMaterial.r = getTexture(roughnessMap, g_sampler, input.texCoord).r;
     output.gMaterial.g = getTexture(metalnessMap, g_sampler, input.texCoord).r;
     output.gMaterial.b = getTexture(aoMap, g_sampler, input.texCoord).r;
     output.gMaterial.a = 1.0;

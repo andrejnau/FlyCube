@@ -32,30 +32,43 @@ void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
 
 void LightPass::OnUpdate()
 {
-    glm::vec3 cameraPosition = m_input.camera.GetCameraPos();
+    glm::vec3 camera_position = m_input.camera.GetCameraPos();
 
-    m_program.ps.cbuffer.Light.viewPos = glm::vec4(cameraPosition, 0.0);
+    m_program.ps.cbuffer.Light.viewPos = glm::vec4(camera_position, 0.0);
     m_program.ps.cbuffer.Settings.use_ssao = m_settings.use_ssao;
     m_program.ps.cbuffer.Settings.use_ao = m_settings.use_ao;
     m_program.ps.cbuffer.Settings.use_IBL_diffuse = m_settings.use_IBL_diffuse;
     m_program.ps.cbuffer.Settings.use_IBL_specular = m_settings.use_IBL_specular;
     m_program.ps.cbuffer.Settings.only_ambient = m_settings.only_ambient;
-    
-    int i = 0;
-    for (int x = -13; x <= 13; ++x)
+    m_program.ps.cbuffer.Settings.ambient_power = m_settings.ambient_power;
+
+    if (m_settings.light_in_camera)
     {
-        int q = 1;
-        for (int z = -1; z <= 1; ++z)
+        m_program.ps.cbuffer.Light.light_pos[0] = glm::vec4(camera_position, 0);
+        m_program.ps.cbuffer.Light.light_color[0] = m_settings.light_power * glm::vec4(1, 1, 1, 0.0);
+        for (size_t i = 1; i < std::size(m_program.ps.cbuffer.Light.light_pos); ++i)
         {
-            if (i < std::size(m_program.ps.cbuffer.Light.light_pos))
+            m_program.ps.cbuffer.Light.light_color[i] = glm::vec4(0);
+        }
+    }
+    else
+    {
+        int i = 0;
+        for (int x = -13; x <= 13; ++x)
+        {
+            int q = 1;
+            for (int z = -1; z <= 1; ++z)
             {
-                m_program.ps.cbuffer.Light.light_pos[i] = glm::vec4(x, 1.5, z - 0.33, 0);
-                float color = 0.0;
-                if (m_settings.use_white_ligth)
-                    color = 1;
-                m_program.ps.cbuffer.Light.light_color[i] = m_settings.light_power * glm::vec4(q == 1 ? 1 : color, q == 2 ? 1 : color, q == 3 ? 1 : color, 0.0);
-                ++i;
-                ++q;
+                if (i < std::size(m_program.ps.cbuffer.Light.light_pos))
+                {
+                    m_program.ps.cbuffer.Light.light_pos[i] = glm::vec4(x, 1.5, z - 0.33, 0);
+                    float color = 0.0;
+                    if (m_settings.use_white_ligth)
+                        color = 1;
+                    m_program.ps.cbuffer.Light.light_color[i] = m_settings.light_power * glm::vec4(q == 1 ? 1 : color, q == 2 ? 1 : color, q == 3 ? 1 : color, 0.0);
+                    ++i;
+                    ++q;
+                }
             }
         }
     }

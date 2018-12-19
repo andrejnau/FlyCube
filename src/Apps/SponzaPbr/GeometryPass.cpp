@@ -81,9 +81,11 @@ void GeometryPass::OnRender()
             auto& material = model.GetMaterial(range.id);
 
             m_program.ps.cbuffer.Settings.use_normal_mapping = !!material.texture.normal && !CurState::Instance().disable_norm;
+            m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.gloss && !material.texture.roughness;
             
             m_program.ps.srv.normalMap.Attach(material.texture.normal);
             m_program.ps.srv.albedoMap.Attach(material.texture.albedo);
+            m_program.ps.srv.glossMap.Attach(material.texture.gloss);
             m_program.ps.srv.roughnessMap.Attach(material.texture.roughness);
             m_program.ps.srv.metalnessMap.Attach(material.texture.metalness);
             m_program.ps.srv.aoMap.Attach(material.texture.ao);

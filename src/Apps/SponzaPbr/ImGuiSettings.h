@@ -92,7 +92,17 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("light in camera", &settings.light_in_camera))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::Checkbox("irradiance conversion every frame", &settings.irradiance_conversion_every_frame))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::SliderFloat("ambient power", &settings.ambient_power, 0.01, 100, "%.3f", 2))
         {
             modify_settings = true;
         }

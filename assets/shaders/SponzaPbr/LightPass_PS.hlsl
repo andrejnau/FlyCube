@@ -44,6 +44,7 @@ cbuffer Settings
     bool use_IBL_diffuse;
     bool use_IBL_specular;
     bool only_ambient;
+    float ambient_power;
 };
 
 float4 getTexture(TEXTURE_TYPE _texture, float2 _tex_coord, int ss_index, bool _need_gamma = false)
@@ -207,7 +208,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         if (only_ambient)
             lighting = 0;
 
-        lighting += ambient * ao;
+        lighting += ambient_power * ambient * ao;
     }
     lighting /= SAMPLE_COUNT;
 

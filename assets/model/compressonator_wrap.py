@@ -11,7 +11,7 @@ def runCmd(arg):
 def apply_compress_for_dir(compressonator, tex_path, out_dir):
     files = [f for f in os.listdir(tex_path) if os.path.isfile(os.path.join(tex_path, f))]
     for f in files:
-        if not f.lower().endswith(('.png', '.jpg', '.jpeg')):
+        if not f.lower().endswith(('.png', '.jpg', '.jpeg', '.tga')):
             continue
         print(f)
         extension = os.path.splitext(f)[1]

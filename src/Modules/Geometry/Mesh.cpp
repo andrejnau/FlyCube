@@ -125,6 +125,9 @@ Material::Material(TextureCache& cache, const IMesh::Material& material, std::ve
         case aiTextureType_LIGHTMAP:
             texture.ao = tex;
             break;
+        case aiTextureType_EMISSIVE:
+            texture.gloss = tex;
+            break;
         }
     }
 

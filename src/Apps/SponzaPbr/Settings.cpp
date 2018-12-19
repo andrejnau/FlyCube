@@ -15,7 +15,9 @@ Settings::Settings()
     use_IBL_specular = true;
     skip_sponza_model = false;
     only_ambient = false;
+    light_in_camera = false;
     irradiance_conversion_every_frame = false;
+    ambient_power = 1.0;
     light_power = 1.0;
     ssao_scale = 1;
     Exposure = 0.1f;
