@@ -37,11 +37,9 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.Light.viewPos = glm::vec4(cameraPosition, 0.0);
     m_program.ps.cbuffer.Settings.use_ssao = m_settings.use_ssao;
     m_program.ps.cbuffer.Settings.use_ao = m_settings.use_ao;
-    m_program.ps.cbuffer.Settings.enable_diffuse_for_metal = m_settings.enable_diffuse_for_metal;
     m_program.ps.cbuffer.Settings.use_IBL_diffuse = m_settings.use_IBL_diffuse;
     m_program.ps.cbuffer.Settings.use_IBL_specular = m_settings.use_IBL_specular;
     m_program.ps.cbuffer.Settings.only_ambient = m_settings.only_ambient;
-    m_program.ps.cbuffer.Settings.swap_y_for_brdf = m_settings.swap_y_for_brdf;
     
     int i = 0;
     for (int x = -13; x <= 13; ++x)

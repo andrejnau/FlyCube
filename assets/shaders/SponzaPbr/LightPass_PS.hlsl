@@ -41,11 +41,9 @@ cbuffer Settings
 {
     bool use_ao;
     bool use_ssao;
-    bool enable_diffuse_for_metal;
     bool use_IBL_diffuse;
     bool use_IBL_specular;
     bool only_ambient;
-    bool swap_y_for_brdf;
 };
 
 float4 getTexture(TEXTURE_TYPE _texture, float2 _tex_coord, int ss_index, bool _need_gamma = false)
@@ -136,8 +134,7 @@ float3 CookTorrance_GGX(float3 fragPos, float3 n, float3 v, Material m, int i)
 
     float3 kS = F;
     float3 kD = 1.0 - kS;
-    if (!enable_diffuse_for_metal)
-        kD *= 1.0 - m.metallic;
+    kD *= 1.0 - m.metallic;
 
     float NdotL = max(dot(n, l), 0.0);
 
@@ -199,7 +196,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             uint width, height, levels;
             prefilterMap.GetDimensions(0, width, height, levels);
             float3 prefilteredColor = prefilterMap.SampleLevel(g_sampler, R, roughness * levels).rgb;
-            float2 brdf = brdfLUT.Sample(brdf_sampler, float2(max(dot(normal, V), 0.0), swap_y_for_brdf ? 1 - roughness : roughness)).rg;
+            float2 brdf = brdfLUT.Sample(brdf_sampler, float2(max(dot(normal, V), 0.0), roughness)).rg;
             float3 specular = prefilteredColor * (F * brdf.x + brdf.y);
             ambient += specular;
         }

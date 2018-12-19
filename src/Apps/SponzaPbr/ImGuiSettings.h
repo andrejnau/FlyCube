@@ -72,11 +72,6 @@ public:
             modify_settings = true;
         }
 
-        if (ImGui::Checkbox("enable diffuse for metal", &settings.enable_diffuse_for_metal))
-        {
-            modify_settings = true;
-        }
-
         if (ImGui::Checkbox("use IBL diffuse", &settings.use_IBL_diffuse))
         {
             modify_settings = true;
@@ -87,11 +82,6 @@ public:
             modify_settings = true;
         }
 
-        if (ImGui::Checkbox("swap y for brdf", &settings.swap_y_for_brdf))
-        {
-            modify_settings = true;
-        }
-        
         if (ImGui::Checkbox("skip sponza model", &settings.skip_sponza_model))
         {
             modify_settings = true;

@@ -11,10 +11,8 @@ Settings::Settings()
     use_ao = true;
     use_ssao = false;
     use_white_ligth = false;
-    enable_diffuse_for_metal = false;
     use_IBL_diffuse = true;
     use_IBL_specular = true;
-    swap_y_for_brdf = true;
     skip_sponza_model = false;
     only_ambient = false;
     irradiance_conversion_every_frame = false;

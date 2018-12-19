@@ -198,6 +198,7 @@ void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<T
         { "_normal",    aiTextureType_HEIGHT    },
         { "_Normal",    aiTextureType_HEIGHT    },
         { "_rough",     aiTextureType_SPECULAR  },
+        { "roughness",  aiTextureType_SPECULAR  },
         { "_roughness", aiTextureType_SPECULAR  },
         { "_Roughness", aiTextureType_SPECULAR  },
         { "_metalness", aiTextureType_SHININESS },
