@@ -117,7 +117,7 @@ public:
             modify_settings = true;
         }
 
-        if (ImGui::SliderFloat("Exposure", &settings.Exposure, 0, 2))
+        if (ImGui::SliderFloat("Exposure", &settings.Exposure, 0, 5))
         {
             modify_settings = true;
         }

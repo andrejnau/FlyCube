@@ -196,6 +196,7 @@ void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<T
         { "_diff",      aiTextureType_DIFFUSE   },
         { "_diffuse",   aiTextureType_DIFFUSE   },
         { "_nmap",      aiTextureType_HEIGHT    },
+        { "normal",     aiTextureType_HEIGHT    },
         { "_normal",    aiTextureType_HEIGHT    },
         { "_Normal",    aiTextureType_HEIGHT    },
         { "_rough",     aiTextureType_SPECULAR  },
@@ -224,6 +225,11 @@ void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<T
         for (auto & ext : { ".dds", ".png", ".jpg" })
         {
             std::string cur_path = m_directory + "/textures/" + mat_name + "_albedo" + ext;
+            if (std::ifstream(cur_path).good())
+            {
+                textures.push_back({ aiTextureType_DIFFUSE, cur_path });
+            }
+            cur_path = m_directory + "/" + "albedo" + ext;
             if (std::ifstream(cur_path).good())
             {
                 textures.push_back({ aiTextureType_DIFFUSE, cur_path });
