@@ -97,6 +97,11 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("use spec ao by ndotv roughness", &settings.use_spec_ao_by_ndotv_roughness))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::Checkbox("irradiance conversion every frame", &settings.irradiance_conversion_every_frame))
         {
             modify_settings = true;

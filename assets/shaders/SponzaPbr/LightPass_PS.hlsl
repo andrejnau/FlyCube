@@ -44,6 +44,7 @@ cbuffer Settings
     bool use_IBL_diffuse;
     bool use_IBL_specular;
     bool only_ambient;
+    bool use_spec_ao_by_ndotv_roughness;
     float ambient_power;
 };
 
@@ -142,6 +143,13 @@ float3 CookTorrance_GGX(float3 fragPos, float3 n, float3 v, Material m, int i)
     return (kD * m.albedo / PI + specular) * radiance * NdotL;
 }
 
+float computeSpecOcclusion(float NdotV, float AO, float roughness)
+{
+    if (use_spec_ao_by_ndotv_roughness)
+        return saturate(pow(NdotV + AO, exp2(-16.0f * roughness - 1.0f)) - 1.0f + AO);
+    return AO;
+}
+
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
     float3 lighting = 0;
@@ -157,10 +165,12 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         float ao = 1;
         if (use_ao)
             ao = getTexture(gMaterial, input.texcoord, i).b;
+
+        float ssao = 1;
         if (use_ssao)
-            ao += gSSAO.Sample(g_sampler, input.texcoord).r;
-        if (use_ao && use_ssao);
-            ao /= 2;
+            ssao = gSSAO.Sample(g_sampler, input.texcoord).r;
+
+        ao = min(ao, ssao);
 
         Material m;
         m.albedo = albedo;
@@ -188,7 +198,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             kD *= 1.0 - metallic;
             float3 irradiance = irradianceMap.Sample(g_sampler, normal).rgb;
             float3 diffuse = irradiance * albedo;
-            ambient = (kD * diffuse);
+            ambient = (kD * diffuse) * ao;
         }
 
         if (use_IBL_specular)
@@ -199,16 +209,16 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             float3 prefilteredColor = prefilterMap.SampleLevel(g_sampler, R, roughness * levels).rgb;
             float2 brdf = brdfLUT.Sample(brdf_sampler, float2(max(dot(normal, V), 0.0), roughness)).rg;
             float3 specular = prefilteredColor * (F * brdf.x + brdf.y);
-            ambient += specular;
+            ambient += specular * computeSpecOcclusion(max(dot(normal, V), 0.0), ao, roughness);
         }
 
         if (!use_IBL_diffuse && !use_IBL_specular)
-            ambient = 0.03 * albedo;
+            ambient = 0.03 * albedo * ao;
 
         if (only_ambient)
             lighting = 0;
 
-        lighting += ambient_power * ambient * ao;
+        lighting += ambient_power * ambient;
     }
     lighting /= SAMPLE_COUNT;
 

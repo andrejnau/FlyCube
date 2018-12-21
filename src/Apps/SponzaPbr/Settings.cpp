@@ -16,6 +16,7 @@ Settings::Settings()
     skip_sponza_model = false;
     only_ambient = false;
     light_in_camera = false;
+    use_spec_ao_by_ndotv_roughness = true;
     irradiance_conversion_every_frame = false;
     ambient_power = 1.0;
     light_power = 1.0;
