@@ -298,13 +298,11 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             float shadow = _sampleCubeShadowPCFDisc5(L, vL);
             lighting += CookTorrance_GGX(fragPos, normal, V, m, shadow_light_pos, 1, true) * shadow;
         }
-        else
+
+        [unroll]
+        for (int i = 0; i < LIGHT_COUNT; ++i)
         {
-            [unroll]
-            for (int i = 0; i < LIGHT_COUNT; ++i)
-            {
-                lighting += CookTorrance_GGX(fragPos, normal, V, m, light_pos[i].rgb, light_color[i].rgb);
-            }
+            lighting += CookTorrance_GGX(fragPos, normal, V, m, light_pos[i].rgb, light_color[i].rgb);
         }
 
         float3 F = FresnelSchlickRoughness(max(dot(normal, V), 0.0), m.f0, roughness);

@@ -16,7 +16,7 @@ Settings::Settings()
     use_IBL_specular = false;
     skip_sponza_model = false;
     only_ambient = false;
-    light_in_camera = false;
+    light_in_camera = true;
     show_only_normal = false;
     use_flip_normal_y = false;
     use_spec_ao_by_ndotv_roughness = true;
