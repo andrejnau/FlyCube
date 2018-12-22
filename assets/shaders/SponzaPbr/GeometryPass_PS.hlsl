@@ -20,8 +20,13 @@ SamplerState g_sampler;
 cbuffer Settings
 {
     bool use_normal_mapping;
+    bool use_flip_normal_y;
     bool use_gloss_instead_of_roughness;
 };
+
+static const bool is_packed_normal = false;
+static const bool is_sun_temple = false;
+static const bool use_standard_channel_binding = true;
 
 float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, bool _need_gamma = false)
 {
@@ -47,15 +52,30 @@ float3 CalcBumpedNormal(VS_OUTPUT input)
     float3 B = normalize(cross(T, N));
     float3x3 tbn = float3x3(T, B, N);
     float3 normal = normalMap.Sample(g_sampler, input.texCoord).rgb;
+    if (use_flip_normal_y)
+        normal.y = 1 - normal.y;
     normal = normalize(2.0 * normal - 1.0);
+    if (is_packed_normal)
+    {
+        normal.z = sqrt(1 - saturate(dot(normal.xy, normal.xy)));
+        normal = normalize(normal);
+    }
     normal = normalize(mul(normal, tbn));
     return normal;
 }
 
 PS_OUT main(VS_OUTPUT input)
 {
-    if (getTexture(alphaMap, g_sampler, input.texCoord).r < 0.5)
-        discard;
+    if (use_standard_channel_binding)
+    {
+        if (getTexture(alphaMap, g_sampler, input.texCoord).r < 0.5)
+            discard;
+    }
+    else
+    {
+        if (getTexture(albedoMap, g_sampler, input.texCoord).a < 0.5)
+            discard;
+    }
 
     PS_OUT output;
     output.gPosition = float4(input.fragPos.xyz, 1);
@@ -67,11 +87,21 @@ PS_OUT main(VS_OUTPUT input)
     output.gNormal.a = 1.0;
 
     output.gAlbedo = float4(getTexture(albedoMap, g_sampler, input.texCoord, true).rgb, 1.0);
-    if (use_gloss_instead_of_roughness)
-        output.gMaterial.r = 1.0 - getTexture(glossMap, g_sampler, input.texCoord).r;
+
+    if (use_standard_channel_binding)
+    {
+        if (use_gloss_instead_of_roughness)
+            output.gMaterial.r = 1.0 - getTexture(glossMap, g_sampler, input.texCoord).r;
+        else
+            output.gMaterial.r = getTexture(roughnessMap, g_sampler, input.texCoord).r;
+        output.gMaterial.g = getTexture(metalnessMap, g_sampler, input.texCoord).r;
+    }
     else
-        output.gMaterial.r = getTexture(roughnessMap, g_sampler, input.texCoord).r;
-    output.gMaterial.g = getTexture(metalnessMap, g_sampler, input.texCoord).r;
+    {
+        output.gMaterial.r = getTexture(roughnessMap, g_sampler, input.texCoord).g;
+        output.gMaterial.g = getTexture(roughnessMap, g_sampler, input.texCoord).b;
+    }
+
     output.gMaterial.b = getTexture(aoMap, g_sampler, input.texCoord).r;
     output.gMaterial.a = 1.0;
 

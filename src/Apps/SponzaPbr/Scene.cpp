@@ -52,6 +52,11 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
         x += 50;
     }
 
+#if 0
+    m_scene_list.emplace_back(m_context, "model/SunTemple_v3/SunTemple/SunTemple.fbx");
+    m_scene_list.back().matrix = glm::scale(glm::vec3(0.01));
+#endif
+
     CreateRT();
 
     m_equirectangular_environment = CreateTexture(m_context, GetAssetFullPath("model/newport_loft.dds"));

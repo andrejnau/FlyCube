@@ -21,6 +21,8 @@ public:
     bool use_IBL_specular;
     bool skip_sponza_model;
     bool light_in_camera;
+    bool show_only_normal;
+    bool use_flip_normal_y;
     bool use_spec_ao_by_ndotv_roughness;
     bool irradiance_conversion_every_frame;
     float ambient_power;

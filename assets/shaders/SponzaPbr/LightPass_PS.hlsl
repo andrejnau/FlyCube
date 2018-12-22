@@ -45,6 +45,7 @@ cbuffer Settings
     bool use_IBL_specular;
     bool only_ambient;
     bool use_spec_ao_by_ndotv_roughness;
+    bool show_only_normal;
     float ambient_power;
 };
 
@@ -161,6 +162,12 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         float3 albedo = getTexture(gAlbedo, input.texcoord, i).rgb;
         float roughness = getTexture(gMaterial, input.texcoord, i).r;
         float metallic = getTexture(gMaterial, input.texcoord, i).g;
+
+        if (show_only_normal)
+        {
+            lighting += normal;
+            break;
+        }
 
         float ao = 1;
         if (use_ao)

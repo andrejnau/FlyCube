@@ -82,6 +82,7 @@ void GeometryPass::OnRender()
 
             m_program.ps.cbuffer.Settings.use_normal_mapping = !!material.texture.normal && !CurState::Instance().disable_norm;
             m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.gloss && !material.texture.roughness;
+            m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.use_flip_normal_y;
             
             m_program.ps.srv.normalMap.Attach(material.texture.normal);
             m_program.ps.srv.albedoMap.Attach(material.texture.albedo);

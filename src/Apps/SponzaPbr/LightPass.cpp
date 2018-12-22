@@ -42,6 +42,7 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.Settings.only_ambient = m_settings.only_ambient;
     m_program.ps.cbuffer.Settings.ambient_power = m_settings.ambient_power;
     m_program.ps.cbuffer.Settings.use_spec_ao_by_ndotv_roughness = m_settings.use_spec_ao_by_ndotv_roughness;
+    m_program.ps.cbuffer.Settings.show_only_normal = m_settings.show_only_normal;
 
     if (m_settings.light_in_camera)
     {

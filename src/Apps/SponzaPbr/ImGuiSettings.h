@@ -97,6 +97,16 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("show_only_normal", &settings.show_only_normal))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("use_flip_normal_y", &settings.use_flip_normal_y))
+        {
+            modify_settings = true;
+        }
+        
         if (ImGui::Checkbox("use spec ao by ndotv roughness", &settings.use_spec_ao_by_ndotv_roughness))
         {
             modify_settings = true;
