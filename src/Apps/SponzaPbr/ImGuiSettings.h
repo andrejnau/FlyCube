@@ -57,6 +57,11 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("use filmic hdr", &settings.use_filmic_hdr))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::Checkbox("use model ao", &settings.use_ao))
         {
             modify_settings = true;
@@ -102,6 +107,11 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("additional lights", &settings.additional_lights))
+        {
+            modify_settings = true;
+        }
+        
         if (ImGui::Checkbox("show_only_normal", &settings.show_only_normal))
         {
             modify_settings = true;

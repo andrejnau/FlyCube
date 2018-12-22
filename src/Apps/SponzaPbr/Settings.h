@@ -13,6 +13,7 @@ public:
     bool use_tone_mapping;
     bool use_simple_hdr;
     bool use_simple_hdr2;
+    bool use_filmic_hdr;
     bool use_ao;
     bool use_ssao;
     bool use_white_ligth;
@@ -21,6 +22,7 @@ public:
     bool use_IBL_specular;
     bool skip_sponza_model;
     bool light_in_camera;
+    bool additional_lights;
     bool show_only_normal;
     bool use_flip_normal_y;
     bool use_spec_ao_by_ndotv_roughness;

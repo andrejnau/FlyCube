@@ -56,18 +56,22 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.ShadowParams.use_shadow = m_settings.use_shadow;
     m_program.ps.cbuffer.ShadowParams.shadow_light_pos = m_input.light_pos;
 
+    for (size_t i = 0; i < std::size(m_program.ps.cbuffer.Light.light_pos); ++i)
+    {
+        m_program.ps.cbuffer.Light.light_pos[i] = glm::vec4(0);
+        m_program.ps.cbuffer.Light.light_color[i] = glm::vec4(0);
+    }
+
     if (m_settings.light_in_camera)
     {
         m_program.ps.cbuffer.Light.light_pos[0] = glm::vec4(camera_position, 0);
         m_program.ps.cbuffer.Light.light_color[0] = glm::vec4(1, 1, 1, 0.0);
-        for (size_t i = 1; i < std::size(m_program.ps.cbuffer.Light.light_pos); ++i)
-        {
-            m_program.ps.cbuffer.Light.light_color[i] = glm::vec4(0);
-        }
     }
-    else
+    if (m_settings.additional_lights)
     {
         int i = 0;
+        if (m_settings.light_in_camera)
+            ++i;
         for (int x = -13; x <= 13; ++x)
         {
             int q = 1;
