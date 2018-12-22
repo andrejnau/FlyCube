@@ -137,7 +137,7 @@ void DX12ViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32
         srv_desc.Format = desc.Format;
         if (srv_desc.Format == DXGI_FORMAT_R32_TYPELESS)
         {
-            srv_desc.Format = DepthStencilFromTypeless(srv_desc.Format);
+            srv_desc.Format = FloatFromTypeless(srv_desc.Format);
         }
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
         srv_desc.TextureCube.MipLevels = desc.MipLevels;

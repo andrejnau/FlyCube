@@ -67,6 +67,11 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("use shadow", &settings.use_shadow))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::Checkbox("use white ligth", &settings.use_white_ligth))
         {
             modify_settings = true;

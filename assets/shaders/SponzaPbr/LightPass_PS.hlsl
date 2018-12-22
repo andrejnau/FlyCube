@@ -22,9 +22,11 @@ Texture2D gSSAO;
 TextureCube irradianceMap;
 TextureCube prefilterMap;
 Texture2D brdfLUT;
+TextureCube<float> LightCubeShadowMap;
 
 SamplerState g_sampler : register(s0);
 SamplerState brdf_sampler : register(s1);
+SamplerComparisonState LightCubeShadowComparsionSampler : register(s2);
 
 static const float PI = acos(-1.0);
 
@@ -34,7 +36,16 @@ cbuffer Light
 {
     float4 light_color[LIGHT_COUNT];
     float4 light_pos[LIGHT_COUNT];
-    float4 viewPos;
+    float3 viewPos;
+};
+
+cbuffer ShadowParams
+{
+    float s_near;
+    float s_far;
+    float s_size;
+    bool use_shadow;
+    float3 shadow_light_pos;
 };
 
 cbuffer Settings
@@ -47,6 +58,7 @@ cbuffer Settings
     bool use_spec_ao_by_ndotv_roughness;
     bool show_only_normal;
     float ambient_power;
+    float light_power;
 };
 
 float4 getTexture(TEXTURE_TYPE _texture, float2 _tex_coord, int ss_index, bool _need_gamma = false)
@@ -71,6 +83,94 @@ struct Material
     float metallic;
     float3 f0;
 };
+
+float _vectorToDepth(float3 vec, float n, float f)
+{
+    float3 AbsVec = abs(vec);
+    float LocalZcomp = max(AbsVec.x, max(AbsVec.y, AbsVec.z));
+
+    float NormZComp = (f + n) / (f - n) - (2 * f * n) / (f - n) / LocalZcomp;
+    return NormZComp;
+}
+
+float _sampleCubeShadowHPCF(float3 L, float3 vL)
+{
+    float sD = _vectorToDepth(vL, s_near, s_far);
+    return LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, float3(L.xy, -L.z), sD).r;
+}
+
+float _sampleCubeShadowPCFSwizzle3x3(float3 L, float3 vL)
+{
+    float sD = _vectorToDepth(vL, s_near, s_far);
+
+    float3 forward = float3(L.xy, -L.z);
+    float3 right = float3(forward.z, -forward.x, forward.y);
+    right -= forward * dot(right, forward);
+    right = normalize(right);
+    float3 up = cross(right, forward);
+
+    float tapoffset = (1.0f / s_size);
+
+    right *= tapoffset;
+    up *= tapoffset;
+
+    float3 v0;
+    v0.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right - up, sD).r;
+    v0.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - up, sD).r;
+    v0.z = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + right - up, sD).r;
+
+    float3 v1;
+    v1.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right, sD).r;
+    v1.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward, sD).r;
+    v1.z = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + right, sD).r;
+
+    float3 v2;
+    v2.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right + up, sD).r;
+    v2.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + up, sD).r;
+    v2.z = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + right + up, sD).r;
+
+
+    return dot(v0 + v1 + v2, .1111111f);
+}
+
+// UE4: https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Shaders/ShadowProjectionCommon.usf
+static const float2 DiscSamples5[] =
+{
+    // 5 random points in disc with radius 2.500000
+    float2(0.000000, 2.500000),
+    float2(2.377641, 0.772542),
+    float2(1.469463, -2.022543),
+    float2(-1.469463, -2.022542),
+    float2(-2.377641, 0.772543),
+};
+
+float _sampleCubeShadowPCFDisc5(float3 L, float3 vL)
+{
+    float3 SideVector = normalize(cross(L, float3(0, 0, 1)));
+    float3 UpVector = cross(SideVector, L);
+
+    SideVector *= 1.0 / s_size;
+    UpVector *= 1.0 / s_size;
+
+    float sD = _vectorToDepth(vL, s_near, s_far);
+
+    float3 nlV = float3(L.xy, -L.z);
+
+    float totalShadow = 0;
+
+    [unroll]
+    for (int i = 0; i < 5; ++i)
+    {
+        float3 SamplePos = nlV + SideVector * DiscSamples5[i].x + UpVector * DiscSamples5[i].y;
+        totalShadow += LightCubeShadowMap.SampleCmpLevelZero(
+            LightCubeShadowComparsionSampler,
+            SamplePos,
+            sD);
+    }
+    totalShadow /= 5;
+
+    return totalShadow;
+}
 
 float GeometrySchlickGGX(float NdotV, float roughness)
 {
@@ -116,16 +216,18 @@ float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
     return F0 + (max((float3)(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-float3 CookTorrance_GGX(float3 fragPos, float3 n, float3 v, Material m, int i)
+float3 CookTorrance_GGX(float3 fragPos, float3 n, float3 v, Material m, float3 light_pos, float3 light_color, bool is_sun = false)
 {
     n = normalize(n);
     v = normalize(v);
-    float3 l = normalize(light_pos[i] - fragPos);
+    float3 l = normalize(light_pos - fragPos);
     float3 h = normalize(v + l);
 
-    float distance = length(light_pos[i] - fragPos);
+    float distance = length(light_pos - fragPos);
     float attenuation = 1.0 / (distance * distance);
-    float3 radiance = light_color[i] * attenuation;
+    if (is_sun)
+        attenuation = 1.0;
+    float3 radiance = light_power * light_color * attenuation;
 
     float NDF = DistributionGGX(n, h, m.roughness);
     float G = GeometrySmith(n, v, l, m.roughness);
@@ -147,7 +249,7 @@ float3 CookTorrance_GGX(float3 fragPos, float3 n, float3 v, Material m, int i)
 float computeSpecOcclusion(float NdotV, float AO, float roughness)
 {
     if (use_spec_ao_by_ndotv_roughness)
-        return saturate(pow(NdotV + AO, exp2(-16.0f * roughness - 1.0f)) - 1.0f + AO);
+        return saturate(pow(abs(NdotV + AO), exp2(-16.0f * roughness - 1.0f)) - 1.0f + AO);
     return AO;
 }
 
@@ -177,21 +279,32 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         if (use_ssao)
             ssao = gSSAO.Sample(g_sampler, input.texcoord).r;
 
-        ao = min(ao, ssao);
+        ao = pow(max(0, min(ao, ssao)), 2.2);
 
         Material m;
         m.albedo = albedo;
         m.roughness = roughness;
         m.metallic = metallic;
-        m.f0 = lerp(0.04, albedo, metallic);
+        const float3 Fdielectric = 0.04;
+        m.f0 = lerp(Fdielectric, albedo, metallic);
 
         float3 V = normalize(viewPos - fragPos);
         float3 R = reflect(-V, normal);
 
-        [unroll]
-        for (int i = 0; i < LIGHT_COUNT; ++i)
+        if (use_shadow)
         {
-            lighting += CookTorrance_GGX(fragPos, normal, V, m, i);
+            float3 vL = fragPos - shadow_light_pos;
+            float3 L = normalize(vL);
+            float shadow = _sampleCubeShadowPCFDisc5(L, vL);
+            lighting += CookTorrance_GGX(fragPos, normal, V, m, shadow_light_pos, 1, true) * shadow;
+        }
+        else
+        {
+            [unroll]
+            for (int i = 0; i < LIGHT_COUNT; ++i)
+            {
+                lighting += CookTorrance_GGX(fragPos, normal, V, m, light_pos[i].rgb, light_color[i].rgb);
+            }
         }
 
         float3 F = FresnelSchlickRoughness(max(dot(normal, V), 0.0), m.f0, roughness);
@@ -220,7 +333,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         }
 
         if (!use_IBL_diffuse && !use_IBL_specular)
-            ambient = 0.03 * albedo * ao;
+            ambient = albedo * ao;
 
         if (only_ambient)
             lighting = 0;

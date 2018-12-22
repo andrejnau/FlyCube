@@ -6,7 +6,7 @@
 int main(int argc, char *argv[])
 {
     WinConsole cmd; 
-    ApiType type = ApiType::kVulkan;
+    ApiType type = ApiType::kDX12;
     for (int i = 1; i < argc; ++i)
     {
         std::string arg(argv[i]);

@@ -304,6 +304,8 @@ DXGI_FORMAT FloatFromTypeless(DXGI_FORMAT format)
     {
     case DXGI_FORMAT_R32G32B32A32_TYPELESS:
         return DXGI_FORMAT_R32G32B32A32_FLOAT;
+    case DXGI_FORMAT_R32_TYPELESS:
+        return DXGI_FORMAT_R32_FLOAT;
     default:
         return format;
     }

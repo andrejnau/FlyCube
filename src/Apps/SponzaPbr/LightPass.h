@@ -2,6 +2,7 @@
 
 #include "GeometryPass.h"
 #include "SSAOPass.h"
+#include "ShadowPass.h"
 #include "IrradianceConversion.h"
 #include "Settings.h"
 
@@ -21,10 +22,12 @@ public:
     struct Input
     {
         GeometryPass::Output& geometry_pass;
+        ShadowPass::Output& shadow_pass;
         SSAOPass::Output& ssao_pass;
         Model& model;
         Camera& camera;
         IrradianceConversion::Output& irradiance_pass;
+        glm::vec3& light_pos;
     };
 
     struct Output
@@ -52,4 +55,5 @@ private:
     Resource::Ptr m_depth_stencil_view;
     Resource::Ptr m_sampler;
     Resource::Ptr m_sampler_brdf;
+    Resource::Ptr m_compare_sampler;
 };

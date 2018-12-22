@@ -16,9 +16,10 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
     , m_model_square(m_context, "model/square.obj")
     , m_model_cube(m_context, "model/cube.obj", ~aiProcess_FlipWindingOrder)
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
+    , m_shadow_pass(m_context, { m_scene_list, m_camera, m_light_pos }, width, height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
     , m_irradiance_conversion(m_context, { m_model_cube, m_model_square, m_equirectangular_environment }, width, height)
-    , m_light_pass(m_context, { m_geometry_pass.output, m_ssao_pass.output, m_model_square, m_camera, m_irradiance_conversion.output }, width, height)
+    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, m_irradiance_conversion.output, m_light_pos }, width, height)
     , m_background_pass(m_context, { m_model_cube, m_camera, m_irradiance_conversion.output.environment, m_light_pass.output.rtv, m_geometry_pass.output.dsv }, width, height)
     , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
     , m_imgui_pass(m_context, { m_render_target_view, *this }, width, height)
@@ -26,30 +27,33 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
     m_scene_list.emplace_back(m_context, "model/sponza_pbr/sponza.obj");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f));
    
-    m_scene_list.emplace_back(m_context, "model/export3dcoat/export3dcoat.obj");
-    m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 75.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    m_scene_list.emplace_back(m_context, "model/knight-artorias/Artorias.obj");
-    m_scene_list.back().matrix = glm::scale(glm::vec3(0.1)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    m_scene_list.emplace_back(m_context, "model/drakefire-pistol/drakefire_pistol.obj");
-    m_scene_list.back().matrix = glm::scale(glm::vec3(0.5)) * glm::translate(glm::vec3(0.0f, 25.0f, 0.0f));
-
-    std::string hdr_tests[] =
+    if (false)
     {
-        "gold",
-        "grass",
-        "plastic",
-        "rusted_iron",
-        "wall",
-    };
+        m_scene_list.emplace_back(m_context, "model/export3dcoat/export3dcoat.obj");
+        m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 75.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    float x = 300;
-    for (const auto& test : hdr_tests)
-    {
-        m_scene_list.emplace_back(m_context, "model/pbr_test/" + test + "/sphere.obj");
-        m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f)) *glm::translate(glm::vec3(x, 1500, 0.0f));
-        x += 50;
+        m_scene_list.emplace_back(m_context, "model/knight-artorias/Artorias.obj");
+        m_scene_list.back().matrix = glm::scale(glm::vec3(0.1)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        m_scene_list.emplace_back(m_context, "model/drakefire-pistol/drakefire_pistol.obj");
+        m_scene_list.back().matrix = glm::scale(glm::vec3(0.5)) * glm::translate(glm::vec3(0.0f, 25.0f, 0.0f));
+
+        std::string hdr_tests[] =
+        {
+            "gold",
+            "grass",
+            "plastic",
+            "rusted_iron",
+            "wall",
+        };
+
+        float x = 300;
+        for (const auto& test : hdr_tests)
+        {
+            m_scene_list.emplace_back(m_context, "model/pbr_test/" + test + "/sphere.obj");
+            m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f)) *glm::translate(glm::vec3(x, 1500, 0.0f));
+            x += 50;
+        }
     }
 
 #if 0
@@ -59,7 +63,7 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
 
     CreateRT();
 
-    m_equirectangular_environment = CreateTexture(m_context, GetAssetFullPath("model/newport_loft.dds"));
+    m_equirectangular_environment = CreateTexture(m_context, GetAssetFullPath("model/skybox.dds"));
 }
 
 Scene::~Scene()
@@ -76,9 +80,22 @@ void Scene::OnUpdate()
 {
     UpdateCameraMovement();
 
+    static float angle = 0.0f;
+    static std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+    std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+    int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    start = end;
+
+    if (CurState::Instance().pause)
+        angle += elapsed / 2e6f;
+
+    float light_r = 2.5;
+    m_light_pos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
+
     m_imgui_pass.OnUpdate();
 
     m_geometry_pass.OnUpdate();
+    m_shadow_pass.OnUpdate();
     m_ssao_pass.OnUpdate();
     m_irradiance_conversion.OnUpdate();
     m_light_pass.OnUpdate();
@@ -93,6 +110,10 @@ void Scene::OnRender()
 
     m_context.BeginEvent("Geometry Pass");
     m_geometry_pass.OnRender();
+    m_context.EndEvent();
+
+    m_context.BeginEvent("Shadow Pass");
+    m_shadow_pass.OnRender();
     m_context.EndEvent();
 
     m_context.BeginEvent("SSAO Pass");
@@ -140,6 +161,7 @@ void Scene::OnResize(int width, int height)
     CreateRT();
 
     m_geometry_pass.OnResize(width, height);
+    m_shadow_pass.OnResize(width, height);
     m_ssao_pass.OnResize(width, height);
     m_light_pass.OnResize(width, height);
     m_compute_luminance.OnResize(width, height);
@@ -217,6 +239,7 @@ void Scene::OnInputChar(unsigned int ch)
 void Scene::OnModifySettings(const Settings& settings)
 {
     m_geometry_pass.OnModifySettings(settings);
+    m_shadow_pass.OnModifySettings(settings);
     m_light_pass.OnModifySettings(settings);
     m_compute_luminance.OnModifySettings(settings);
     m_ssao_pass.OnModifySettings(settings);

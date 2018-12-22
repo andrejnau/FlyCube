@@ -30,6 +30,10 @@ public:
     int ssao_scale;
     float Exposure;
     float White;
+    float s_near;
+    float s_far;
+    float s_size;
+    bool use_shadow;
 };
 
 class IModifySettings

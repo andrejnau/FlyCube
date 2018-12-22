@@ -23,6 +23,11 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
         SamplerFilter::kMinMagMipLinear,
         SamplerTextureAddressMode::kClamp,
         SamplerComparisonFunc::kNever });
+
+    m_compare_sampler = m_context.CreateSampler({
+        SamplerFilter::kComparisonMinMagMipLinear,
+        SamplerTextureAddressMode::kClamp,
+        SamplerComparisonFunc::kLess });
 }
 
 void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
@@ -41,13 +46,20 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.Settings.use_IBL_specular = m_settings.use_IBL_specular;
     m_program.ps.cbuffer.Settings.only_ambient = m_settings.only_ambient;
     m_program.ps.cbuffer.Settings.ambient_power = m_settings.ambient_power;
+    m_program.ps.cbuffer.Settings.light_power = m_settings.light_power;
     m_program.ps.cbuffer.Settings.use_spec_ao_by_ndotv_roughness = m_settings.use_spec_ao_by_ndotv_roughness;
     m_program.ps.cbuffer.Settings.show_only_normal = m_settings.show_only_normal;
+
+    m_program.ps.cbuffer.ShadowParams.s_near = m_settings.s_near;
+    m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;
+    m_program.ps.cbuffer.ShadowParams.s_size = m_settings.s_size;
+    m_program.ps.cbuffer.ShadowParams.use_shadow = m_settings.use_shadow;
+    m_program.ps.cbuffer.ShadowParams.shadow_light_pos = m_input.light_pos;
 
     if (m_settings.light_in_camera)
     {
         m_program.ps.cbuffer.Light.light_pos[0] = glm::vec4(camera_position, 0);
-        m_program.ps.cbuffer.Light.light_color[0] = m_settings.light_power * glm::vec4(1, 1, 1, 0.0);
+        m_program.ps.cbuffer.Light.light_color[0] = glm::vec4(1, 1, 1, 0.0);
         for (size_t i = 1; i < std::size(m_program.ps.cbuffer.Light.light_pos); ++i)
         {
             m_program.ps.cbuffer.Light.light_color[i] = glm::vec4(0);
@@ -67,7 +79,7 @@ void LightPass::OnUpdate()
                     float color = 0.0;
                     if (m_settings.use_white_ligth)
                         color = 1;
-                    m_program.ps.cbuffer.Light.light_color[i] = m_settings.light_power * glm::vec4(q == 1 ? 1 : color, q == 2 ? 1 : color, q == 3 ? 1 : color, 0.0);
+                    m_program.ps.cbuffer.Light.light_color[i] = glm::vec4(q == 1 ? 1 : color, q == 2 ? 1 : color, q == 3 ? 1 : color, 0.0);
                     ++i;
                     ++q;
                 }
@@ -89,6 +101,7 @@ void LightPass::OnRender()
 
     m_program.ps.sampler.g_sampler.Attach(m_sampler);
     m_program.ps.sampler.brdf_sampler.Attach(m_sampler_brdf);
+    m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_compare_sampler);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_program.ps.om.rtv0.Attach(output.rtv).Clear(color);
@@ -108,6 +121,8 @@ void LightPass::OnRender()
         m_program.ps.srv.irradianceMap.Attach(m_input.irradiance_pass.irradince);
         m_program.ps.srv.prefilterMap.Attach(m_input.irradiance_pass.prefilter);
         m_program.ps.srv.brdfLUT.Attach(m_input.irradiance_pass.brdf);
+        if (m_settings.use_shadow)
+            m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
 
         m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
