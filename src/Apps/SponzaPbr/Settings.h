@@ -10,10 +10,11 @@ public:
     uint32_t msaa_count;
     int width;
     int height;
+    bool use_reinhard_tone_operator;
     bool use_tone_mapping;
-    bool use_simple_hdr;
-    bool use_simple_hdr2;
+    bool use_white_balance;
     bool use_filmic_hdr;
+    bool use_avg_lum;
     bool use_ao;
     bool use_ssao;
     bool use_white_ligth;
@@ -34,8 +35,8 @@ public:
     float ambient_power;
     float light_power;
     int ssao_scale;
-    float Exposure;
-    float White;
+    float exposure;
+    float white;
     float s_near;
     float s_far;
     float s_size;

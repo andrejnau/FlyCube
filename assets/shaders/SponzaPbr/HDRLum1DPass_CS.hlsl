@@ -17,16 +17,16 @@ void main(uint3 threadId : SV_DispatchthreadId, uint groupId : SV_GroupIndex, ui
         accum[groupId] = data[threadId.x];
     else
         accum[groupId] = 0;
-
+    GroupMemoryBarrierWithGroupSync();
+    [unroll]
     for (uint block_size = numthread / 2; block_size >= 1; block_size >>= 1)
     {
-        GroupMemoryBarrierWithGroupSync();
         if (groupId < block_size)
         {
             accum[groupId] += accum[groupId + block_size];
         }
+        GroupMemoryBarrierWithGroupSync();
     }
-
     if (groupId == 0)
     {
         result[dispatchId.x] = accum[0];

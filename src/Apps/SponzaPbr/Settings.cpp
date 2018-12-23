@@ -6,10 +6,11 @@ Settings::Settings()
     msaa_count = 1;
     width = 1280;
     height = 720;
-    use_tone_mapping = false;
-    use_simple_hdr = false;
-    use_simple_hdr2 = false;
+    use_reinhard_tone_operator = false;
+    use_tone_mapping = true;
+    use_white_balance = true;
     use_filmic_hdr = true;
+    use_avg_lum = false;
     use_ao = true;
     use_ssao = true;
     use_white_ligth = true;
@@ -30,8 +31,8 @@ Settings::Settings()
     ambient_power = 0.01;
     light_power = 1.0;// acos(-1.0);
     ssao_scale = 1;
-    Exposure = 1;
-    White = 1;
+    exposure = 1;
+    white = 1;
     s_near = 0.5;
     s_far = 1024.0;
     s_size = 3072;

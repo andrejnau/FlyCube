@@ -42,22 +42,27 @@ public:
             modify_settings = true;
         }
 
+        if (ImGui::Checkbox("use_reinhard_tone_operator", &settings.use_reinhard_tone_operator))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::Checkbox("Tone mapping", &settings.use_tone_mapping))
         {
             modify_settings = true;
         }
 
-        if (ImGui::Checkbox("use simple hdr", &settings.use_simple_hdr))
+        if (ImGui::Checkbox("use_white_balance", &settings.use_white_balance))
         {
             modify_settings = true;
         }
 
-        if (ImGui::Checkbox("use simple hdr 2", &settings.use_simple_hdr2))
+        if (ImGui::Checkbox("use_filmic_hdr", &settings.use_filmic_hdr))
         {
             modify_settings = true;
         }
 
-        if (ImGui::Checkbox("use filmic hdr", &settings.use_filmic_hdr))
+        if (ImGui::Checkbox("use_avg_lum", &settings.use_avg_lum))
         {
             modify_settings = true;
         }
@@ -152,7 +157,7 @@ public:
             modify_settings = true;
         }
 
-        if (ImGui::SliderFloat("ambient power", &settings.ambient_power, 0.01, 100, "%.3f", 2))
+        if (ImGui::SliderFloat("ambient power", &settings.ambient_power, 0.01, 10, "%.3f", 2))
         {
             modify_settings = true;
         }
@@ -167,12 +172,12 @@ public:
             modify_settings = true;
         }
 
-        if (ImGui::SliderFloat("Exposure", &settings.Exposure, 0, 5))
+        if (ImGui::SliderFloat("Exposure", &settings.exposure, 0, 5))
         {
             modify_settings = true;
         }
 
-        if (ImGui::SliderFloat("White", &settings.White, 0, 5))
+        if (ImGui::SliderFloat("White", &settings.white, 0, 5))
         {
             modify_settings = true;
         }

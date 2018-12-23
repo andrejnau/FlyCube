@@ -50,17 +50,13 @@ void ComputeLuminance::GetLum1DPassCS(size_t buf_id, uint32_t input_buffer_size,
 
 void ComputeLuminance::Draw(size_t buf_id)
 {
-    m_HDRApply.ps.cbuffer.cbv.dim = glm::uvec2(m_width, m_height);
-    m_HDRApply.ps.cbuffer.$Globals.Exposure = m_settings.Exposure;
-    m_HDRApply.ps.cbuffer.$Globals.White = m_settings.White;
-
-    if (!m_use_res.empty())
-        m_HDRApply.ps.cbuffer.cbv.use_tone_mapping = m_settings.use_tone_mapping;
-    else
-        m_HDRApply.ps.cbuffer.cbv.use_tone_mapping = false;
-    m_HDRApply.ps.cbuffer.cbv.use_simple_hdr = m_settings.use_simple_hdr;
-    m_HDRApply.ps.cbuffer.cbv.use_simple_hdr2 = m_settings.use_simple_hdr2;
-    m_HDRApply.ps.cbuffer.cbv.use_filmic_hdr = m_settings.use_filmic_hdr;
+    m_HDRApply.ps.cbuffer.HDRSetting.use_reinhard_tone_operator = m_settings.use_reinhard_tone_operator;
+    m_HDRApply.ps.cbuffer.HDRSetting.use_tone_mapping = m_settings.use_tone_mapping;
+    m_HDRApply.ps.cbuffer.HDRSetting.use_white_balance = m_settings.use_white_balance;
+    m_HDRApply.ps.cbuffer.HDRSetting.use_filmic_hdr = m_settings.use_filmic_hdr;
+    m_HDRApply.ps.cbuffer.HDRSetting.use_avg_lum = m_settings.use_avg_lum && !m_use_res.empty();
+    m_HDRApply.ps.cbuffer.HDRSetting.exposure = m_settings.exposure;
+    m_HDRApply.ps.cbuffer.HDRSetting.white = m_settings.white;
 
     m_HDRApply.UseProgram();
 
