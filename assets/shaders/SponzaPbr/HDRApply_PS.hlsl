@@ -32,9 +32,6 @@ float3 ACESFitted(float3 color)
 
     color = mul(ACESOutputMat, color);
 
-    // Clamp to [0, 1]
-    color = saturate(color);
-
     return color;
 }
 
@@ -91,7 +88,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     }
     else if (use_filmic_hdr)
     {
-        color = ACESFitted(color);
+        color = ACESFitted(Exposure * color) / ACESFitted(White);
     }
     else if (use_tone_mapping)
     {

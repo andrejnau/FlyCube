@@ -56,9 +56,13 @@ cbuffer Settings
     bool use_IBL_specular;
     bool only_ambient;
     bool use_spec_ao_by_ndotv_roughness;
-    bool show_only_normal;
     float ambient_power;
     float light_power;
+    bool show_only_albedo;
+    bool show_only_normal;
+    bool show_only_roughness;
+    bool show_only_metalness;
+    bool show_only_ao;
 };
 
 float4 getTexture(TEXTURE_TYPE _texture, float2 _tex_coord, int ss_index, bool _need_gamma = false)
@@ -265,12 +269,6 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         float roughness = getTexture(gMaterial, input.texcoord, i).r;
         float metallic = getTexture(gMaterial, input.texcoord, i).g;
 
-        if (show_only_normal)
-        {
-            lighting += normal;
-            break;
-        }
-
         float ao = 1;
         if (use_ao)
             ao = getTexture(gMaterial, input.texcoord, i).b;
@@ -280,6 +278,32 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             ssao = gSSAO.Sample(g_sampler, input.texcoord).r;
 
         ao = pow(max(0, min(ao, ssao)), 2.2);
+
+        if (show_only_albedo)
+        {
+            lighting += albedo;
+            continue;
+        }
+        else if (show_only_normal)
+        {
+            lighting += normal;
+            continue;
+        }
+        else if (show_only_roughness)
+        {
+            lighting += roughness;
+            continue;
+        }
+        else if (show_only_metalness)
+        {
+            lighting += metallic;
+            continue;
+        }
+        else if (show_only_ao)
+        {
+            lighting += ao;
+            continue;
+        }
 
         Material m;
         m.albedo = albedo;

@@ -23,7 +23,11 @@ public:
     bool skip_sponza_model;
     bool light_in_camera;
     bool additional_lights;
+    bool show_only_albedo;
     bool show_only_normal;
+    bool show_only_roughness;
+    bool show_only_metalness;
+    bool show_only_ao;
     bool use_flip_normal_y;
     bool use_spec_ao_by_ndotv_roughness;
     bool irradiance_conversion_every_frame;

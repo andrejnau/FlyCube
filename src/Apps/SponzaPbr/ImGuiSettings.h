@@ -112,7 +112,27 @@ public:
             modify_settings = true;
         }
         
+        if (ImGui::Checkbox("show_only_albedo", &settings.show_only_albedo))
+        {
+            modify_settings = true;
+        }
+
         if (ImGui::Checkbox("show_only_normal", &settings.show_only_normal))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("show_only_roughness", &settings.show_only_roughness))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("show_only_metalness", &settings.show_only_metalness))
+        {
+            modify_settings = true;
+        }
+
+        if (ImGui::Checkbox("show_only_ao", &settings.show_only_ao))
         {
             modify_settings = true;
         }
