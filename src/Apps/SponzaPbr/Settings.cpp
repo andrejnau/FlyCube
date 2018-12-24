@@ -30,11 +30,13 @@ Settings::Settings()
     irradiance_conversion_every_frame = false;
     ambient_power = 0.01;
     light_power = 1.0;// acos(-1.0);
-    ssao_scale = 1;
     exposure = 1;
     white = 1;
     s_near = 0.5;
     s_far = 1024.0;
     s_size = 3072;
     use_shadow = false;
+    normal_mapping = true;
+    shadow_discard = true;
+    dynamic_sun_position = false;
 }

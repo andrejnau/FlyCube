@@ -204,7 +204,8 @@ void IrradianceConversion::DrawPrefilter()
     {
         m_context.BeginEvent(std::string("DrawPrefilter: mip " + std::to_string(mip)).c_str());
         m_context.SetViewport(m_prefilter_texture_size >> mip, m_prefilter_texture_size >> mip);
-        m_program_prefilter.ps.cbuffer.$Globals.roughness = (float)mip / (float)(max_mip_levels - 1);
+        m_program_prefilter.ps.cbuffer.Settings.roughness = (float)mip / (float)(max_mip_levels - 1);
+        m_program_prefilter.ps.cbuffer.Settings.resolution = m_prefilter_texture_size;
         float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
         m_program_prefilter.ps.om.rtv0.Attach(output.prefilter, mip).Clear(color);
 

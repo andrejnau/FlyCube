@@ -86,7 +86,7 @@ void Scene::OnUpdate()
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = end;
 
-    if (CurState::Instance().pause)
+    if (m_settings.dynamic_sun_position)
         angle += elapsed / 2e6f;
 
     float light_r = 2.5;
@@ -178,15 +178,6 @@ void Scene::OnKey(int key, int action)
         m_keys[key] = true;
     else if (action == GLFW_RELEASE)
         m_keys[key] = false;
-
-    if (key == GLFW_KEY_N && action == GLFW_PRESS)
-        CurState::Instance().disable_norm ^= true;
-
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-        CurState::Instance().pause ^= true;
-
-    if (key == GLFW_KEY_J && action == GLFW_PRESS)
-        CurState::Instance().no_shadow_discard ^= true;
 }
 
 void Scene::OnMouse(bool first_event, double xpos, double ypos)
@@ -238,6 +229,7 @@ void Scene::OnInputChar(unsigned int ch)
 
 void Scene::OnModifySettings(const Settings& settings)
 {
+    m_settings = settings;
     m_geometry_pass.OnModifySettings(settings);
     m_shadow_pass.OnModifySettings(settings);
     m_light_pass.OnModifySettings(settings);

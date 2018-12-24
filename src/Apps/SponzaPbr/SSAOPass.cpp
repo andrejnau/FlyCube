@@ -61,7 +61,6 @@ void SSAOPass::OnUpdate()
     m_program.ps.cbuffer.SSAOBuffer.projection = glm::transpose(projection);
     m_program.ps.cbuffer.SSAOBuffer.view = glm::transpose(view);
     m_program.ps.cbuffer.SSAOBuffer.viewInverse = glm::transpose(glm::transpose(glm::inverse(m_input.camera.GetViewMatrix())));
-    m_program.ps.cbuffer.SSAOBuffer.ssao_scale = m_settings.ssao_scale;
 
     m_program.SetMaxEvents(m_input.model.meshes.size());
     m_program_blur.SetMaxEvents(m_input.model.meshes.size());

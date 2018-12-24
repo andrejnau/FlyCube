@@ -71,4 +71,5 @@ private:
     BackgroundPass m_background_pass;
     ComputeLuminance m_compute_luminance;
     ImGuiPass m_imgui_pass;
+    Settings m_settings;
 };

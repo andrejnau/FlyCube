@@ -15,190 +15,162 @@ public:
         {
             msaa_str.push_back("x" + std::to_string(i));
             msaa.push_back(i);
-            if (i == settings.msaa_count)
-                msaa_idx = msaa.size() - 1;
         }
+
+        add_combo("MSAA", msaa_str, msaa, settings.msaa_count);
+        add_checkbox("use_reinhard_tone_operator", settings.use_reinhard_tone_operator);
+        add_checkbox("Tone mapping", settings.use_tone_mapping);
+        add_checkbox("use_white_balance", settings.use_white_balance);
+        add_checkbox("use_filmic_hdr", settings.use_filmic_hdr);
+        add_checkbox("use_avg_lum", settings.use_avg_lum);
+        add_checkbox("use model ao", settings.use_ao);
+        add_checkbox("use ssao", settings.use_ssao);
+        add_checkbox("use shadow", settings.use_shadow);
+        add_checkbox("use white ligth", settings.use_white_ligth);
+        add_checkbox("use IBL diffuse", settings.use_IBL_diffuse);
+        add_checkbox("use IBL specular", settings.use_IBL_specular);
+        add_checkbox("skip sponza model", settings.skip_sponza_model);
+        add_checkbox("only ambientl", settings.only_ambient);
+        add_checkbox("light in camera", settings.light_in_camera);
+        add_checkbox("additional lights", settings.additional_lights);
+        add_checkbox("show_only_albedo", settings.show_only_albedo);
+        add_checkbox("show_only_normal", settings.show_only_normal);
+        add_checkbox("show_only_roughness", settings.show_only_roughness);
+        add_checkbox("show_only_metalness", settings.show_only_metalness);
+        add_checkbox("show_only_ao", settings.show_only_ao);
+        add_checkbox("use_flip_normal_y", settings.use_flip_normal_y);
+        add_checkbox("use spec ao by ndotv roughness", settings.use_spec_ao_by_ndotv_roughness);
+        add_checkbox("irradiance conversion every frame", settings.irradiance_conversion_every_frame);
+        add_slider("ambient power", settings.ambient_power, 0.01, 10, true);
+        add_slider("light power", settings.light_power, 0.01, 10, true);
+        add_slider("Exposure", settings.exposure, 0, 5);
+        add_slider("White", settings.white, 0, 5);
+        add_checkbox("normal_mapping", settings.normal_mapping).BindKey(GLFW_KEY_N);
+        add_checkbox("shadow_discard", settings.shadow_discard).BindKey(GLFW_KEY_J);
+        add_checkbox("dynamic_sun_position", settings.dynamic_sun_position).BindKey(GLFW_KEY_SPACE);
     }
 
     void NewFrame()
     {
-        bool modify_settings = false;
+        bool has_changed = false;
+
         ImGui::NewFrame();
-
         ImGui::Begin("Settings");
-
-        static auto fn = [](void* data, int idx, const char** out_text) -> bool
+        for (const auto& fn : m_items)
         {
-            if (!data || !out_text)
-                return false;
-            const auto& self = *(ImGuiSettings*)data;
-            *out_text = self.msaa_str[idx].c_str();
-            return true;
-        };
-
-        if (ImGui::Combo("MSAA", &msaa_idx, fn, this, msaa_str.size()))
-        {
-            settings.msaa_count = msaa[msaa_idx];
-            modify_settings = true;
+            has_changed |= fn();
         }
-
-        if (ImGui::Checkbox("use_reinhard_tone_operator", &settings.use_reinhard_tone_operator))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("Tone mapping", &settings.use_tone_mapping))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("use_white_balance", &settings.use_white_balance))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("use_filmic_hdr", &settings.use_filmic_hdr))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("use_avg_lum", &settings.use_avg_lum))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("use model ao", &settings.use_ao))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("use ssao", &settings.use_ssao))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("use shadow", &settings.use_shadow))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("use white ligth", &settings.use_white_ligth))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("use IBL diffuse", &settings.use_IBL_diffuse))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("use IBL specular", &settings.use_IBL_specular))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("skip sponza model", &settings.skip_sponza_model))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("only ambientl", &settings.only_ambient))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("light in camera", &settings.light_in_camera))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("additional lights", &settings.additional_lights))
-        {
-            modify_settings = true;
-        }
-        
-        if (ImGui::Checkbox("show_only_albedo", &settings.show_only_albedo))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("show_only_normal", &settings.show_only_normal))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("show_only_roughness", &settings.show_only_roughness))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("show_only_metalness", &settings.show_only_metalness))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("show_only_ao", &settings.show_only_ao))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("use_flip_normal_y", &settings.use_flip_normal_y))
-        {
-            modify_settings = true;
-        }
-        
-        if (ImGui::Checkbox("use spec ao by ndotv roughness", &settings.use_spec_ao_by_ndotv_roughness))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::Checkbox("irradiance conversion every frame", &settings.irradiance_conversion_every_frame))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::SliderFloat("ambient power", &settings.ambient_power, 0.01, 10, "%.3f", 2))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::SliderFloat("light power", &settings.light_power, 0.01, 100, "%.3f", 2))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::SliderInt("ssao_scale", &settings.ssao_scale, 1, 8))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::SliderFloat("Exposure", &settings.exposure, 0, 5))
-        {
-            modify_settings = true;
-        }
-
-        if (ImGui::SliderFloat("White", &settings.white, 0, 5))
-        {
-            modify_settings = true;
-        }
-
         ImGui::End();
 
-        if (modify_settings)
+        if (has_changed)
             listener.OnModifySettings(settings);
     }
 
     void OnKey(int key, int action)
     {
-        if (key == GLFW_KEY_O && action == GLFW_PRESS)
-            settings.use_ssao ^= true;
-        listener.OnModifySettings(settings);
+        if (action != GLFW_PRESS)
+            return;
+        bool has_changes = false;
+        for (auto &hotkey : m_hotkeys)
+        {
+            has_changes |= hotkey.OnKey(key);
+        }
+        if (has_changes)
+            listener.OnModifySettings(settings);
+    }
+
+private:
+    template<typename T>
+    void add_combo(const std::string& label, const std::vector<std::string>& items, const std::vector<T>& items_data, T& value)
+    {
+        int index = 0;
+        for (size_t i = 0; i < items_data.size(); ++i)
+        {
+            if (items_data[i] == value)
+                index = static_cast<int>(i);
+        }
+        struct Capture
+        {
+            const std::vector<std::string>& items;
+        } capture = { items };
+        auto fn = [](void* data, int index, const char** text) -> bool
+        {
+            if (!data || !text || index < 0)
+                return false;
+            Capture& capture = *static_cast<Capture*>(data);
+            if (index >= capture.items.size())
+                return false;
+            *text = capture.items[index].c_str();
+            return true;
+        };
+        m_items.push_back([index, capture, label, fn, &items, &items_data, &value]() mutable {
+            if (ImGui::Combo(label.c_str(), &index, fn, &capture, items.size()))
+            {
+                value = items_data[index];
+                return true;
+            }
+            return false;
+        });
+    }
+
+    class HotKey
+    {
+    public:
+        HotKey(bool& value)
+            : m_value(value)
+        {
+        }
+
+        void BindKey(int key)
+        {
+            m_key = key;
+        }
+
+        bool OnKey(int key)
+        {
+            if (m_key == key)
+            {
+                m_value = !m_value;
+                return true;
+            }
+            return false;
+        }
+
+    private:
+        int m_key = -1;
+        bool& m_value;
+    };
+
+    HotKey& add_checkbox(const std::string& label, bool& value)
+    {
+        m_items.push_back([=, &value]() {
+            return ImGui::Checkbox(label.c_str(), &value);
+        });
+        m_hotkeys.emplace_back(value);
+        return m_hotkeys.back();
+    }
+
+    void add_slider(const std::string& label, float& value, float min, float max, bool linear = true)
+    {
+        if (linear)
+        {
+            m_items.push_back([=, &value]() {
+                return ImGui::SliderFloat(label.c_str(), &value, min, max);
+            });
+        }
+        else
+        {
+            m_items.push_back([=, &value]() {
+                return ImGui::SliderFloat(label.c_str(), &value, min, max, "%.3f", 2);
+            });
+        }
     }
 
 private:
     IModifySettings& listener;
     Settings settings;
-    int msaa_idx = 0;
     std::vector<uint32_t> msaa = { 1 };
     std::vector<std::string> msaa_str = { "Off" };
+    std::vector<std::function<bool(void)>> m_items;
+    std::vector<HotKey> m_hotkeys;
 };

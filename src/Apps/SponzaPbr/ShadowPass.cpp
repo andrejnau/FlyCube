@@ -83,7 +83,7 @@ void ShadowPass::OnRender()
         {
             auto& material = model.GetMaterial(range.id);
 
-            if (!CurState::Instance().no_shadow_discard)
+            if (m_settings.shadow_discard)
                 m_program.ps.srv.alphaMap.Attach(material.texture.alpha);
             else
                 m_program.ps.srv.alphaMap.Attach();

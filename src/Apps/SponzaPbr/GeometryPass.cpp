@@ -80,7 +80,7 @@ void GeometryPass::OnRender()
         {
             auto& material = model.GetMaterial(range.id);
 
-            m_program.ps.cbuffer.Settings.use_normal_mapping = !!material.texture.normal && !CurState::Instance().disable_norm;
+            m_program.ps.cbuffer.Settings.use_normal_mapping = material.texture.normal && m_settings.normal_mapping;
             m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.gloss && !material.texture.roughness;
             m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.use_flip_normal_y;
             

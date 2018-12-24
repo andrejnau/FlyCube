@@ -34,13 +34,15 @@ public:
     bool irradiance_conversion_every_frame;
     float ambient_power;
     float light_power;
-    int ssao_scale;
     float exposure;
     float white;
     float s_near;
     float s_far;
     float s_size;
     bool use_shadow;
+    bool normal_mapping;
+    bool shadow_discard;
+    bool dynamic_sun_position;
 };
 
 class IModifySettings

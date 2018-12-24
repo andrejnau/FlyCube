@@ -260,7 +260,6 @@ float computeSpecOcclusion(float NdotV, float AO, float roughness)
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
     float3 lighting = 0;
-    [unroll]
     for (uint i = 0; i < SAMPLE_COUNT; ++i)
     {
         float3 fragPos = getTexture(gPosition, input.texcoord, i).rgb;

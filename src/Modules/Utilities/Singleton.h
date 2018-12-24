@@ -1,7 +1,7 @@
 #pragma once
 
 template <typename T>
-class SingleTon
+class Singleton
 {
 public:
     static T& Instance()
@@ -10,8 +10,8 @@ public:
         return instance;
     }
 protected:
-    SingleTon() = default;
-    virtual ~SingleTon() = default;
-    SingleTon(const SingleTon&) = delete;
-    SingleTon& operator=(const SingleTon&) = delete;
+    Singleton() = default;
+    virtual ~Singleton() = default;
+    Singleton(const Singleton&) = delete;
+    Singleton& operator=(const Singleton&) = delete;
 };
