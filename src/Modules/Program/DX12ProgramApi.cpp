@@ -26,10 +26,6 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
 
 void DX12ProgramApi::SetMaxEvents(size_t count)
 {
-    m_context.GetDescriptorPool().ReqFrameDescription(ResourceType::kCbv, m_num_cbv * count);
-    m_context.GetDescriptorPool().ReqFrameDescription(ResourceType::kSrv, m_num_srv * count);
-    m_context.GetDescriptorPool().ReqFrameDescription(ResourceType::kUav, m_num_uav * count);
-    m_context.GetDescriptorPool().ReqFrameDescription(ResourceType::kSampler, m_num_sampler);
 }
 
 void DX12ProgramApi::LinkProgram()
@@ -466,16 +462,43 @@ void DX12ProgramApi::ApplyBindings()
         return;
     m_changed_binding = false;
 
-    DescriptorHeapRange res_heap = m_context.GetDescriptorPool().Allocate(ResourceType::kSrv, m_num_cbv + m_num_srv + m_num_uav);
-
-    if (!m_sampler_heap.count(m_context.GetFrameIndex()))
+    m_heap_cache;
+    std::map<std::string, Resource::Ptr> heap_cache_key;
+    std::map<std::string, Resource::Ptr> heap_sampler_cache_key;
+    for (auto & x : m_heap_ranges)
     {
-        m_sampler_heap.emplace(m_context.GetFrameIndex(), m_context.GetDescriptorPool().Allocate(ResourceType::kSampler, m_num_sampler));
+        switch (std::get<1>(x.first))
+        {
+        case ResourceType::kRtv:
+        case ResourceType::kDsv:
+            continue;
+        }
+        if (std::get<1>(x.first) == ResourceType::kSampler)
+        {
+            heap_sampler_cache_key[std::get<std::string>(x.first)] = x.second;
+        }
+        else
+        {
+            heap_cache_key[std::get<std::string>(x.first)] = x.second;
+        }
     }
-    DescriptorHeapRange& sampler_heap = m_sampler_heap.find(m_context.GetFrameIndex())->second;
-    bool need_copy_sampler = m_sampler_frame_index != m_context.GetFrameIndex();
-    m_sampler_frame_index = m_context.GetFrameIndex();
-  
+
+    auto res_range_it = m_heap_cache.find(heap_cache_key);
+    if (res_range_it == m_heap_cache.end())
+    {
+        DescriptorHeapRange res_heap = m_context.GetDescriptorPool().Allocate(ResourceType::kSrv, m_num_cbv + m_num_srv + m_num_uav);
+        res_range_it = m_heap_cache.emplace(heap_cache_key, res_heap).first;
+    }
+    DescriptorHeapRange& res_heap = res_range_it->second;
+
+    auto sampler_range_it = m_heap_cache.find(heap_sampler_cache_key);
+    if (sampler_range_it == m_heap_cache.end())
+    {
+        DescriptorHeapRange res_heap = m_context.GetDescriptorPool().Allocate(ResourceType::kSampler, m_num_sampler);
+        sampler_range_it = m_heap_cache.emplace(heap_sampler_cache_key, res_heap).first;
+    }
+    DescriptorHeapRange& sampler_heap = sampler_range_it->second;
+
     ID3D12DescriptorHeap* descriptor_heaps[2] = {};
     uint32_t descriptor_count = 0;
     if (res_heap.GetSize())
@@ -512,8 +535,6 @@ void DX12ProgramApi::ApplyBindings()
             break;
         }
 
-        if (std::get<1>(x.first) == ResourceType::kSampler && !need_copy_sampler)
-            continue;
         if (is_rtv_dsv)
             continue;
 

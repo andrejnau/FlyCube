@@ -192,6 +192,5 @@ private:
     bool m_changed_om = false;
     DX12Context& m_context;
     DX12ViewCreater m_view_creater;
-    std::map<size_t, DescriptorHeapRange> m_sampler_heap;
-    size_t m_sampler_frame_index = -1;
+    std::map<std::map<std::string, Resource::Ptr>, DescriptorHeapRange> m_heap_cache;
 };

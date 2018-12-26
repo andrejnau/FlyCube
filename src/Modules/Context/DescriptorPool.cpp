@@ -75,7 +75,7 @@ DescriptorHeapAllocator::DescriptorHeapAllocator(DX12Context& context, D3D12_DES
 DescriptorHeapRange DescriptorHeapAllocator::Allocate(size_t count)
 {
     if (m_offset + count > m_size)
-        throw std::runtime_error("illegal allocate in the middle of the frame");
+        ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
     m_offset += count;
     return DescriptorHeapRange(m_context, m_heap, m_cpu_handle, m_gpu_handle, m_copied_handle, m_offset - count, count, m_context.device->GetDescriptorHandleIncrementSize(m_type), m_type);
 }
@@ -91,6 +91,8 @@ void DescriptorHeapAllocator::ResizeHeap(size_t req_size)
     heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     heap_desc.Type = m_type;
     ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&heap)));
+
+    m_context.QueryOnDelete(m_heap);
     
     m_size = heap_desc.NumDescriptors;
     m_heap = heap;
