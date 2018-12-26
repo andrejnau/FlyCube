@@ -53,7 +53,7 @@ public:
 
     ComPtr<ID3D12GraphicsCommandList> command_list;
     ComPtr<ID3D12Device> device;
-    std::unique_ptr<DescriptorPool> descriptor_pool[FrameCount];
+    std::unique_ptr<DescriptorPool> descriptor_pool;
 
     DX12ViewPool m_view_pool;
 

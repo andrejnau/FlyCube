@@ -73,15 +73,10 @@ class DescriptorPool
 {
 public:
     DescriptorPool(DX12Context& context);
-    void OnFrameBegin();
-    void ReqFrameDescription(ResourceType res_type, size_t count);
     DescriptorHeapRange Allocate(ResourceType res_type, size_t count);
 
 private:
     DX12Context& m_context;
     DescriptorHeapAllocator m_shader_resource;
     DescriptorHeapAllocator m_shader_sampler;
-    size_t m_need_resources = 0;
-    size_t m_need_samplers = 0;
-    bool first_frame_alloc = true;
 };

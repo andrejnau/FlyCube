@@ -113,36 +113,8 @@ DescriptorPool::DescriptorPool(DX12Context& context)
 {
 }
 
-void DescriptorPool::OnFrameBegin()
-{
-    m_shader_resource.ResetHeap();
-    m_shader_sampler.ResetHeap();
-    m_need_resources = 0;
-    m_need_samplers = 0;
-    first_frame_alloc = true;
-}
-
-void DescriptorPool::ReqFrameDescription(ResourceType res_type, size_t count)
-{
-    switch (res_type)
-    {
-    case ResourceType::kSampler:
-        m_need_samplers += count;
-        break;
-    default:
-        m_need_resources += count;
-    }
-}
-
 DescriptorHeapRange DescriptorPool::Allocate(ResourceType res_type, size_t count)
 {
-    if (first_frame_alloc)
-    {
-        m_shader_sampler.ResizeHeap(m_need_samplers);
-        m_shader_resource.ResizeHeap(m_need_resources);
-        first_frame_alloc = false;
-    }
-
     switch (res_type)
     {
     case ResourceType::kSampler:

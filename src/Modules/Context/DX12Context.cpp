@@ -59,11 +59,7 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     ASSERT_SUCCEEDED(device->CreateFence(m_fence_values[m_frame_index], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
     ++m_fence_values[m_frame_index];
     m_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-
-    for (size_t i = 0; i < FrameCount; ++i)
-    {
-        descriptor_pool[i].reset(new DescriptorPool(*this));
-    }
+    descriptor_pool.reset(new DescriptorPool(*this));
 
 #if defined(_DEBUG)
     ComPtr<ID3D12InfoQueue> info_queue;
@@ -370,7 +366,6 @@ void DX12Context::Present(const Resource::Ptr& ires)
     ASSERT_SUCCEEDED(m_command_allocator[m_frame_index]->Reset());
     ASSERT_SUCCEEDED(command_list->Reset(m_command_allocator[m_frame_index].Get(), nullptr));
 
-    descriptor_pool[m_frame_index]->OnFrameBegin();
     m_deletion_queue[m_frame_index].clear();
     for (auto & x : m_created_program)
         x.get().OnPresent();
@@ -400,7 +395,7 @@ void DX12Context::UseProgram(DX12ProgramApi& program_api)
 
 DescriptorPool& DX12Context::GetDescriptorPool()
 {
-    return *descriptor_pool[m_frame_index];
+    return *descriptor_pool;
 }
 
 void DX12Context::QueryOnDelete(ComPtr<IUnknown> res)
@@ -414,7 +409,6 @@ void DX12Context::ResizeBackBuffer(int width, int height)
     for (size_t i = 0; i < FrameCount; ++i)
     {
         m_fence_values[i] = m_fence_values[m_frame_index];
-        descriptor_pool[i]->OnFrameBegin();
         m_deletion_queue[i].clear();
         m_back_buffers[i].reset();
     }
