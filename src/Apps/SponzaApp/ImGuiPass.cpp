@@ -52,7 +52,6 @@ void ImGuiPass::OnUpdate()
     std::vector<glm::vec4> colors;
     std::vector<uint32_t> indices;
 
-    int cnt = 0;
     for (int i = 0; i < draw_data->CmdListsCount; ++i)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[i];
@@ -69,18 +68,12 @@ void ImGuiPass::OnUpdate()
         {
             indices.push_back(cmd_list->IdxBuffer.Data[j]);
         }
-        for (int j = 0; j < cmd_list->CmdBuffer.Size; ++j)
-        {
-            ++cnt;
-        }
     }
 
     m_positions_buffer.get().reset(new IAVertexBuffer(m_context, positions));
     m_texcoords_buffer.get().reset(new IAVertexBuffer(m_context, texcoords));
     m_colors_buffer.get().reset(new IAVertexBuffer(m_context, colors));
     m_indices_buffer.get().reset(new IAIndexBuffer(m_context, indices, gli::format::FORMAT_R32_UINT_PACK32));
-
-    m_program.SetMaxEvents(cnt);
 }
 
 void ImGuiPass::OnRender()

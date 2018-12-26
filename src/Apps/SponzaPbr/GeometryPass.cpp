@@ -25,12 +25,6 @@ void GeometryPass::OnUpdate()
     
     m_program.vs.cbuffer.ConstantBuf.view = glm::transpose(view);
     m_program.vs.cbuffer.ConstantBuf.projection = glm::transpose(projection);
-
-    size_t cnt = 0;
-    for (auto& model : m_input.scene_list)
-        for (auto& cur_mesh : model.ia.ranges)
-            ++cnt;
-    m_program.SetMaxEvents(cnt);
 }
 
 void GeometryPass::OnRender()

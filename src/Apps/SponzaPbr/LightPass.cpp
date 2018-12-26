@@ -95,11 +95,6 @@ void LightPass::OnUpdate()
             }
         }
     }
-
-    size_t cnt = 0;
-    for (auto& cur_mesh : m_input.model.ia.ranges)
-        ++cnt;
-    m_program.SetMaxEvents(cnt);
 }
 
 void LightPass::OnRender()

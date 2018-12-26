@@ -21,7 +21,6 @@ class DX12ProgramApi
 public:
     DX12ProgramApi(DX12Context& context);
 
-    virtual void SetMaxEvents(size_t count) override;
     virtual void LinkProgram() override;
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;

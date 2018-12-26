@@ -17,15 +17,6 @@ VKProgramApi::VKProgramApi(VKContext& context)
     m_depth_stencil_desc.depth_enable = true;
 }
 
-void VKProgramApi::SetMaxEvents(size_t count)
-{
-    m_context.GetDescriptorPool().ReqFrameDescriptionDrawCalls(count * m_descriptor_set_layouts.size(), GetProgramId());
-    for (auto& it : descriptor_count)
-    {
-        m_context.GetDescriptorPool().ReqFrameDescription(it.first, count * it.second);
-    }
-}
-
 VkShaderStageFlagBits VKProgramApi::ShaderType2Bit(ShaderType type)
 {
     switch (type)
@@ -297,9 +288,9 @@ void VKProgramApi::ApplyBindings()
         m_descriptor_sets.clear();
     }
 
-    for (auto & x : m_descriptor_set_layouts)
+    for (size_t i = 0; i < m_descriptor_set_layouts.size(); ++i)
     {
-        m_descriptor_sets.emplace_back(m_context.GetDescriptorPool().AllocateDescriptorSet(x, GetProgramId()));
+        m_descriptor_sets.emplace_back(m_context.GetDescriptorPool().AllocateDescriptorSet(m_descriptor_set_layouts[i], m_descriptor_count_by_set[i]));
     }
    
     std::vector<VkWriteDescriptorSet> descriptorWrites;
@@ -613,6 +604,7 @@ void VKProgramApi::ParseShaders()
         if (m_descriptor_set_layouts.size() <= set_num)
         {
             m_descriptor_set_layouts.resize(set_num + 1);
+            m_descriptor_count_by_set.resize(set_num + 1);
         }
 
         VkDescriptorSetLayout& descriptor_set_layout = m_descriptor_set_layouts[set_num];
@@ -622,7 +614,7 @@ void VKProgramApi::ParseShaders()
 
         for (auto & binding : bindings)
         {
-            descriptor_count[binding.descriptorType] += binding.descriptorCount;
+            m_descriptor_count_by_set[set_num][binding.descriptorType] += binding.descriptorCount;
         }
     }
 

@@ -24,10 +24,6 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     m_pso_desc.DepthStencilState = depth_stencil_desc;
 }
 
-void DX12ProgramApi::SetMaxEvents(size_t count)
-{
-}
-
 void DX12ProgramApi::LinkProgram()
 {
 }

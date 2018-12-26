@@ -17,7 +17,6 @@ class GLProgramApi : public CommonProgramApi
 public:
     GLProgramApi(GLContext& context);
 
-    virtual void SetMaxEvents(size_t) override;
     virtual void LinkProgram() override;
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;

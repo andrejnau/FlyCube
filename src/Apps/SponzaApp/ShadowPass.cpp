@@ -37,12 +37,6 @@ void ShadowPass::OnUpdate()
     view[3] = glm::transpose(glm::lookAt(position, position + Down, ForwardRH));
     view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
     view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
-
-    size_t cnt = 0;
-    for (auto& model : m_input.scene_list)
-        for (auto& cur_mesh : model.ia.ranges)
-            ++cnt;
-    m_program.SetMaxEvents(cnt);
 }
 
 void ShadowPass::OnRender()

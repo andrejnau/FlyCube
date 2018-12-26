@@ -17,7 +17,6 @@ class VKProgramApi : public CommonProgramApi
 public:
     VKProgramApi(VKContext& context);
 
-    virtual void SetMaxEvents(size_t) override;
     VkShaderStageFlagBits ShaderType2Bit(ShaderType type);
     virtual void LinkProgram() override;
     void CreateGrPipeLine();
@@ -87,6 +86,7 @@ private:
     VkPipeline graphicsPipeline = VK_NULL_HANDLE;
     VkPipelineLayout m_pipeline_layout;
     std::vector<VkDescriptorSetLayout> m_descriptor_set_layouts;
+    std::vector<std::map<VkDescriptorType, size_t>> m_descriptor_count_by_set;
 
     std::vector<VkDescriptorSet> m_descriptor_sets;
     std::map<ShaderType, size_t> m_shader_type2set;
@@ -133,7 +133,6 @@ private:
     std::vector<std::pair<VkExtent2D, uint32_t>> m_rtv_size;
 
     VKViewCreater m_view_creater;
-    std::map<VkDescriptorType, size_t> descriptor_count;
     bool m_changed_om = true;
     DepthStencilDesc m_depth_stencil_desc;
 

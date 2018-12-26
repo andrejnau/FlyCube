@@ -17,12 +17,6 @@ ComputeLuminance::ComputeLuminance(Context& context, const Input& input, int wid
 
 void ComputeLuminance::OnUpdate()
 {
-    m_HDRLum2DPassCS.SetMaxEvents(1);
-    m_HDRLum1DPassCS.SetMaxEvents(2);
-    int cnt = 0;
-    for (auto& cur_mesh : m_input.model.ia.ranges)
-        ++cnt;
-    m_HDRApply.SetMaxEvents(cnt);
 }
 
 void ComputeLuminance::GetLum2DPassCS(size_t buf_id, uint32_t thread_group_x, uint32_t thread_group_y)

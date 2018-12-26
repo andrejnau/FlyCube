@@ -13,8 +13,6 @@ DX11ProgramApi::DX11ProgramApi(DX11Context & context)
 {
 }
 
-void DX11ProgramApi::SetMaxEvents(size_t) {}
-
 void DX11ProgramApi::LinkProgram()
 {
 }

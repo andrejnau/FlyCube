@@ -83,12 +83,6 @@ public:
         m_program.vs.cbuffer.ConstantBuf.projection = glm::transpose(projection);
         m_program.vs.cbuffer.ConstantBuf.lightPos = glm::vec4(cameraPosition, 0.0);
         m_program.vs.cbuffer.ConstantBuf.viewPos = glm::vec4(cameraPosition, 0.0);
-
-        size_t cnt = 0;
-        for (auto& model : m_scene_list)
-            for (auto& cur_mesh : model.ia.ranges)
-                ++cnt;
-        m_program.SetMaxEvents(cnt);
     }
 
     virtual void OnRender() override

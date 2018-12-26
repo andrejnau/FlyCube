@@ -41,11 +41,6 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.ShadowParams.s_size = m_settings.s_size;
     m_program.ps.cbuffer.ShadowParams.use_shadow = m_settings.use_shadow;
     m_program.ps.cbuffer.ShadowParams.use_occlusion = m_settings.use_occlusion;
-
-    size_t cnt = 0;
-    for (auto& cur_mesh : m_input.model.ia.ranges)
-        ++cnt;
-    m_program.SetMaxEvents(cnt);
 }
 
 void LightPass::OnRender()

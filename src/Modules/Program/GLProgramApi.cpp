@@ -113,10 +113,6 @@ GLProgramApi::GLProgramApi(GLContext& context)
     m_samplers.emplace("SPIRV_Cross_DummySampler", GLResource::Ptr{});
 }
 
-void GLProgramApi::SetMaxEvents(size_t count)
-{
-}
-
 GLenum GetGLProgTagret(ShaderType type)
 {
     switch (type)

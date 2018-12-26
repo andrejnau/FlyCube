@@ -6,10 +6,10 @@ VKDescriptorPool::VKDescriptorPool(VKContext & context)
 {
 }
 
-void VKDescriptorPool::ResizeHeap()
+void VKDescriptorPool::ResizeHeap(const std::map<VkDescriptorType, size_t>& count)
 {
     std::vector<VkDescriptorPoolSize> pool_sizes;
-    for (auto & x : m_size_by_type)
+    for (auto & x : count)
     {
         pool_sizes.emplace_back();
         VkDescriptorPoolSize& pool_size = pool_sizes.back();
@@ -21,25 +21,16 @@ void VKDescriptorPool::ResizeHeap()
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = pool_sizes.size();
     poolInfo.pPoolSizes = pool_sizes.data();
-    poolInfo.maxSets = m_max_descriptor_sets;
+    poolInfo.maxSets = 1;
 
     if (vkCreateDescriptorPool(m_context.m_device, &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
     }
 }
 
-VkDescriptorSet VKDescriptorPool::AllocateDescriptorSet(VkDescriptorSetLayout & set_layout, size_t prog_id)
+VkDescriptorSet VKDescriptorPool::AllocateDescriptorSet(VkDescriptorSetLayout & set_layout, const std::map<VkDescriptorType, size_t>& count)
 {
-    if (first_frame_alloc)
-    {
-        ResizeHeap();
-        first_frame_alloc = false;
-    }
-
-    if (++m_cur_descriptor_sets_by_prog[prog_id] > m_max_descriptor_sets_by_prog[prog_id])
-    {
-        throw std::runtime_error("out of range");
-    }
+    ResizeHeap(count);
 
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -55,22 +46,6 @@ VkDescriptorSet VKDescriptorPool::AllocateDescriptorSet(VkDescriptorSetLayout & 
     return m_descriptor_set;
 }
 
-void VKDescriptorPool::ReqFrameDescriptionDrawCalls(size_t count, size_t prog_id)
-{
-    m_max_descriptor_sets += count;
-    m_max_descriptor_sets_by_prog[prog_id] += count;
-}
-
-void VKDescriptorPool::ReqFrameDescription(VkDescriptorType type, size_t count)
-{
-    m_size_by_type[type] += count;
-}
-
 void VKDescriptorPool::OnFrameBegin()
 {
-    first_frame_alloc = true;
-    m_max_descriptor_sets = 0;
-    m_max_descriptor_sets_by_prog.clear();
-    m_cur_descriptor_sets_by_prog.clear();
-    m_size_by_type.clear();
 }

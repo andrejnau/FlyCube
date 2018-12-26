@@ -28,12 +28,6 @@ void GeometryPass::OnUpdate()
     m_program.ps.cbuffer.Light.light_ambient = glm::vec3(m_settings.light_ambient);
     m_program.ps.cbuffer.Light.light_diffuse = glm::vec3(m_settings.light_diffuse);
     m_program.ps.cbuffer.Light.light_specular = glm::vec3(m_settings.light_specular);
-
-    size_t cnt = 0;
-    for (auto& model : m_input.scene_list)
-        for (auto& cur_mesh : model.ia.ranges)
-            ++cnt;
-    m_program.SetMaxEvents(cnt);
 }
 
 void GeometryPass::OnRender()

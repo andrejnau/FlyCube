@@ -21,7 +21,6 @@ class ProgramApi
 {
 public:
     virtual void AddAvailableShaderType(ShaderType type) {}
-    virtual void SetMaxEvents(size_t count) = 0;
     virtual void LinkProgram() = 0;
     virtual void UseProgram() = 0;
     virtual void ApplyBindings() = 0;

@@ -25,17 +25,8 @@ IrradianceConversion::IrradianceConversion(Context& context, const Input& input,
 void IrradianceConversion::OnUpdate()
 {
     m_program_equirectangular2cubemap.vs.cbuffer.ConstantBuf.projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f));
-    m_program_equirectangular2cubemap.SetMaxEvents(6 * m_input.model.meshes.size());
-
     m_program_irradiance_convolution.vs.cbuffer.ConstantBuf.projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f));
-    m_program_irradiance_convolution.SetMaxEvents(6 * m_input.model.meshes.size());
-
     m_program_prefilter.vs.cbuffer.ConstantBuf.projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f));
-    m_program_prefilter.SetMaxEvents(log2(m_prefilter_texture_size) * 6 * m_input.model.meshes.size());
-
-    m_program_downsample.SetMaxEvents(m_texture_mips - 1);
-
-    m_program_brdf.SetMaxEvents(6 * m_input.model.meshes.size());
 }
 
 void IrradianceConversion::OnRender()

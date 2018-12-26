@@ -10,7 +10,6 @@ class DX11ProgramApi : public ProgramApi
 public:
     DX11ProgramApi(DX11Context& context);
 
-    virtual void SetMaxEvents(size_t) override;
     virtual void LinkProgram() override;
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;

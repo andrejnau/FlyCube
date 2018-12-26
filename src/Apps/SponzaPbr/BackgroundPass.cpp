@@ -22,7 +22,6 @@ void BackgroundPass::OnUpdate()
 {
     m_program.vs.cbuffer.ConstantBuf.projection = glm::transpose(m_input.camera.GetProjectionMatrix());
     m_program.vs.cbuffer.ConstantBuf.view = glm::transpose(m_input.camera.GetViewMatrix());
-    m_program.SetMaxEvents(m_input.model.meshes.size());
 }
 
 void BackgroundPass::OnRender()

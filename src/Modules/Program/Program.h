@@ -242,11 +242,6 @@ public:
         UpdateShaders();
     }
 
-    void SetMaxEvents(size_t count)
-    {
-        m_program_base->SetMaxEvents(count);
-    }
-
     template<typename Setup>
     Program(Context& context, const Setup& setup)
         : Program(context.CreateProgram())
