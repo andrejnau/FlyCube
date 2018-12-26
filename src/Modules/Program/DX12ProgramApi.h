@@ -191,5 +191,5 @@ private:
     bool m_changed_om = false;
     DX12Context& m_context;
     DX12ViewCreater m_view_creater;
-    std::map<std::map<std::string, Resource::Ptr>, DescriptorHeapRange> m_heap_cache;
+    std::map<std::map<std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>, Resource::Ptr>, DescriptorHeapRange> m_heap_cache;
 };

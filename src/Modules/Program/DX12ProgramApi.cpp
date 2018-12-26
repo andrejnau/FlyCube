@@ -458,9 +458,8 @@ void DX12ProgramApi::ApplyBindings()
         return;
     m_changed_binding = false;
 
-    m_heap_cache;
-    std::map<std::string, Resource::Ptr> heap_cache_key;
-    std::map<std::string, Resource::Ptr> heap_sampler_cache_key;
+    std::map<std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>, Resource::Ptr> heap_cache_key;
+    std::map<std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>, Resource::Ptr> heap_sampler_cache_key;
     for (auto & x : m_heap_ranges)
     {
         switch (std::get<1>(x.first))
@@ -471,11 +470,11 @@ void DX12ProgramApi::ApplyBindings()
         }
         if (std::get<1>(x.first) == ResourceType::kSampler)
         {
-            heap_sampler_cache_key[std::get<std::string>(x.first)] = x.second;
+            heap_sampler_cache_key[x.first] = x.second;
         }
         else
         {
-            heap_cache_key[std::get<std::string>(x.first)] = x.second;
+            heap_cache_key[x.first] = x.second;
         }
     }
 
