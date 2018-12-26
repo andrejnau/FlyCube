@@ -1,5 +1,5 @@
-Texture2DArray inputTexture : register(t0);
-RWTexture2DArray<float4> outputTexture : register(u0);
+Texture2DArray inputTexture;
+RWTexture2DArray<float4> outputTexture;
 
 [numthreads(8, 8, 1)]
 void main(uint3 ThreadID : SV_DispatchThreadID)

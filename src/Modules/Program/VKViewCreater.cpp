@@ -232,7 +232,7 @@ void VKViewCreater::CreateRTV(uint32_t slot, const VKResource& res, VKView& hand
     createInfo.subresourceRange.baseMipLevel = 0;
     createInfo.subresourceRange.levelCount = 1;
     createInfo.subresourceRange.baseArrayLayer = 0;
-    createInfo.subresourceRange.layerCount = 1;
+    createInfo.subresourceRange.layerCount = res.image.array_layers;
     vkCreateImageView(m_context.m_device, &createInfo, nullptr, &handle.rtv);
 }
 

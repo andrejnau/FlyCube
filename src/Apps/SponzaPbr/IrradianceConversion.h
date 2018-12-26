@@ -54,7 +54,10 @@ private:
     int m_width;
     int m_height;
     Resource::Ptr m_sampler;
-    Resource::Ptr m_depth_stencil_view;
+    Resource::Ptr m_depth_stencil_view_environment;
+    Resource::Ptr m_depth_stencil_view_irradince;
+    Resource::Ptr m_depth_stencil_view_prefilter;
+    Resource::Ptr m_depth_stencil_view_brdf;
     Program<CubemapVS, Equirectangular2CubemapPS> m_program_equirectangular2cubemap;
     Program<CubemapVS, IrradianceConvolutionPS> m_program_irradiance_convolution;
     Program<CubemapVS, PrefilterPS> m_program_prefilter;

@@ -34,6 +34,8 @@ void IrradianceConversion::OnUpdate()
     m_program_prefilter.SetMaxEvents(log2(m_prefilter_texture_size) * 6 * m_input.model.meshes.size());
 
     m_program_downsample.SetMaxEvents(m_texture_mips - 1);
+
+    m_program_brdf.SetMaxEvents(6 * m_input.model.meshes.size());
 }
 
 void IrradianceConversion::OnRender()
@@ -71,7 +73,7 @@ void IrradianceConversion::DrawEquirectangular2Cubemap()
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_program_equirectangular2cubemap.ps.om.rtv0.Attach(output.environment).Clear(color);
-    decltype(auto) depth_out = m_program_equirectangular2cubemap.ps.om.dsv.Attach(m_depth_stencil_view);
+    decltype(auto) depth_out = m_program_equirectangular2cubemap.ps.om.dsv.Attach(m_depth_stencil_view_environment);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program_equirectangular2cubemap.vs.ia.POSITION);
@@ -128,7 +130,7 @@ void IrradianceConversion::DrawIrradianceConvolution()
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_program_irradiance_convolution.ps.om.rtv0.Attach(output.irradince).Clear(color);
-    decltype(auto) depth_out = m_program_irradiance_convolution.ps.om.dsv.Attach(m_depth_stencil_view);
+    decltype(auto) depth_out = m_program_irradiance_convolution.ps.om.dsv.Attach(m_depth_stencil_view_irradince);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program_irradiance_convolution.vs.ia.POSITION);
@@ -173,7 +175,7 @@ void IrradianceConversion::DrawPrefilter()
 
     m_program_prefilter.ps.sampler.g_sampler.Attach(m_sampler);
 
-    decltype(auto) depth_out = m_program_prefilter.ps.om.dsv.Attach(m_depth_stencil_view);
+    decltype(auto) depth_out = m_program_prefilter.ps.om.dsv.Attach(m_depth_stencil_view_prefilter);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program_prefilter.vs.ia.POSITION);
@@ -234,7 +236,7 @@ void IrradianceConversion::DrawBRDF()
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_program_brdf.ps.om.rtv0.Attach(output.brdf).Clear(color);
-    m_program_brdf.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program_brdf.ps.om.dsv.Attach(m_depth_stencil_view_brdf).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_input.square_model.ia.indices.Bind();
     m_input.square_model.ia.positions.BindToSlot(m_program_brdf.vs.ia.POSITION);
@@ -267,7 +269,11 @@ void IrradianceConversion::CreateSizeDependentResources()
     output.irradince = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_irradince_texture_size, m_irradince_texture_size, 6);
     output.prefilter = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6, log2(m_prefilter_texture_size));
     output.brdf = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RG32_SFLOAT_PACK32, 1, m_brdf_size, m_brdf_size, 1);
-    m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 1);
+   
+    m_depth_stencil_view_environment = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6, m_texture_mips);
+    m_depth_stencil_view_irradince = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_irradince_texture_size, m_irradince_texture_size, 6);
+    m_depth_stencil_view_prefilter = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6, log2(m_prefilter_texture_size));
+    m_depth_stencil_view_brdf = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_texture_size, m_brdf_size, 1);
 }
 
 void IrradianceConversion::OnModifySettings(const Settings& settings)

@@ -186,7 +186,8 @@ void VKContext::CreateDevice()
     std::vector<VkExtensionProperties> extensions(extension_count);
     ASSERT_SUCCEEDED(vkEnumerateDeviceExtensionProperties(m_physical_device, nullptr, &extension_count, extensions.data()));
     std::set<std::string> req_extension = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME
     };
     std::vector<const char*> found_extension;
     for (const auto& extension : extensions)
