@@ -58,7 +58,8 @@ bool SkipMesh(aiMesh* mesh, const aiScene* scene)
     if (!mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS)
         return false;
     static std::set<std::string> q = {
-        "16___Default"
+        "16___Default",
+        "Ground_SG"
     };
     return q.count(std::string(name.C_Str()));
 }

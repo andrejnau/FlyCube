@@ -6,6 +6,7 @@ Settings::Settings()
     msaa_count = 1;
     width = 1280;
     height = 720;
+    gamma_correction = true;
     use_reinhard_tone_operator = false;
     use_tone_mapping = true;
     use_white_balance = true;
@@ -25,6 +26,7 @@ Settings::Settings()
     show_only_roughness = false;
     show_only_metalness = false;
     show_only_ao = false;
+    use_f0_with_roughness = false;
     use_flip_normal_y = false;
     use_spec_ao_by_ndotv_roughness = true;
     irradiance_conversion_every_frame = false;

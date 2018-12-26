@@ -53,6 +53,7 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.Settings.show_only_roughness = m_settings.show_only_roughness;
     m_program.ps.cbuffer.Settings.show_only_metalness = m_settings.show_only_metalness;
     m_program.ps.cbuffer.Settings.show_only_ao = m_settings.show_only_ao;
+    m_program.ps.cbuffer.Settings.use_f0_with_roughness = m_settings.use_f0_with_roughness;
 
     m_program.ps.cbuffer.ShadowParams.s_near = m_settings.s_near;
     m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;

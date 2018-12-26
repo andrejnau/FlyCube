@@ -50,6 +50,7 @@ void ComputeLuminance::GetLum1DPassCS(size_t buf_id, uint32_t input_buffer_size,
 
 void ComputeLuminance::Draw(size_t buf_id)
 {
+    m_HDRApply.ps.cbuffer.HDRSetting.gamma_correction = m_settings.gamma_correction;
     m_HDRApply.ps.cbuffer.HDRSetting.use_reinhard_tone_operator = m_settings.use_reinhard_tone_operator;
     m_HDRApply.ps.cbuffer.HDRSetting.use_tone_mapping = m_settings.use_tone_mapping;
     m_HDRApply.ps.cbuffer.HDRSetting.use_white_balance = m_settings.use_white_balance;

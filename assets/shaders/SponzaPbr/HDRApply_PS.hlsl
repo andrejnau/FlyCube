@@ -60,6 +60,7 @@ Texture2D hdr_input;
 
 cbuffer HDRSetting
 {
+    bool gamma_correction;
     bool use_reinhard_tone_operator;
     bool use_tone_mapping;
     bool use_white_balance;
@@ -71,7 +72,10 @@ cbuffer HDRSetting
 
 float4 LinearTosRGBA(float3 color)
 {
-    return float4(pow(abs(color), 1 / 2.2), 1.0);
+    if (gamma_correction)
+        return float4(pow(abs(color), 1 / 2.2), 1.0);
+    else
+        return float4(color, 1.0);
 }
 
 float4 main(VS_OUTPUT input) : SV_TARGET

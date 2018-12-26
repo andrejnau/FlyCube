@@ -18,6 +18,7 @@ public:
         }
 
         add_combo("MSAA", msaa_str, msaa, settings.msaa_count);
+        add_checkbox("gamma correction", settings.gamma_correction);
         add_checkbox("use_reinhard_tone_operator", settings.use_reinhard_tone_operator);
         add_checkbox("Tone mapping", settings.use_tone_mapping);
         add_checkbox("use_white_balance", settings.use_white_balance);
@@ -38,6 +39,7 @@ public:
         add_checkbox("show_only_roughness", settings.show_only_roughness);
         add_checkbox("show_only_metalness", settings.show_only_metalness);
         add_checkbox("show_only_ao", settings.show_only_ao);
+        add_checkbox("use_f0_with_roughness", settings.use_f0_with_roughness);
         add_checkbox("use_flip_normal_y", settings.use_flip_normal_y);
         add_checkbox("use spec ao by ndotv roughness", settings.use_spec_ao_by_ndotv_roughness);
         add_checkbox("irradiance conversion every frame", settings.irradiance_conversion_every_frame);
@@ -104,7 +106,7 @@ private:
             return true;
         };
         m_items.push_back([index, capture, label, fn, &items, &items_data, &value]() mutable {
-            if (ImGui::Combo(label.c_str(), &index, fn, &capture, items.size()))
+            if (ImGui::Combo(label.c_str(), &index, fn, &capture, static_cast<int>(items.size())))
             {
                 value = items_data[index];
                 return true;

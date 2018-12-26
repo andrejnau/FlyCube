@@ -63,6 +63,7 @@ cbuffer Settings
     bool show_only_roughness;
     bool show_only_metalness;
     bool show_only_ao;
+    bool use_f0_with_roughness;
 };
 
 float4 getTexture(TEXTURE_TYPE _texture, float2 _tex_coord, int ss_index, bool _need_gamma = false)
@@ -328,13 +329,11 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             lighting += CookTorrance_GGX(fragPos, normal, V, m, light_pos[i].rgb, light_color[i].rgb);
         }
 
-        float3 F = FresnelSchlickRoughness(max(dot(normal, V), 0.0), m.f0, roughness);
-
         float3 ambient = 0;      
         if (use_IBL_diffuse)
         {
             // ambient lighting (we now use IBL as the ambient term)
-            float3 kS = F;
+            float3 kS = FresnelSchlickRoughness(max(dot(normal, V), 0.0), m.f0, roughness);
             float3 kD = 1.0 - kS;
             kD *= 1.0 - metallic;
             float3 irradiance = irradianceMap.Sample(g_sampler, normal).rgb;
@@ -344,6 +343,9 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 
         if (use_IBL_specular)
         {
+            float3 F = m.f0;
+            if (use_f0_with_roughness)
+                F = FresnelSchlickRoughness(max(dot(normal, V), 0.0), m.f0, roughness);
             // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
             uint width, height, levels;
             prefilterMap.GetDimensions(0, width, height, levels);
@@ -354,7 +356,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         }
 
         if (!use_IBL_diffuse && !use_IBL_specular)
-            ambient = albedo * ao;
+            ambient = albedo * ao * 0.1;
 
         if (only_ambient)
             lighting = 0;

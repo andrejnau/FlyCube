@@ -10,6 +10,7 @@ public:
     uint32_t msaa_count;
     int width;
     int height;
+    bool gamma_correction;
     bool use_reinhard_tone_operator;
     bool use_tone_mapping;
     bool use_white_balance;
@@ -29,6 +30,7 @@ public:
     bool show_only_roughness;
     bool show_only_metalness;
     bool show_only_ao;
+    bool use_f0_with_roughness;
     bool use_flip_normal_y;
     bool use_spec_ao_by_ndotv_roughness;
     bool irradiance_conversion_every_frame;
