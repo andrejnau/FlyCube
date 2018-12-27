@@ -36,17 +36,13 @@ public:
 
     struct
     {
-        Resource::Ptr ambient;
-        Resource::Ptr diffuse;
         Resource::Ptr albedo;
-        Resource::Ptr specular;
-        Resource::Ptr shininess;
-        Resource::Ptr roughness;
-        Resource::Ptr gloss;
         Resource::Ptr normal;
-        Resource::Ptr alpha;
+        Resource::Ptr roughness;
+        Resource::Ptr glossiness;
         Resource::Ptr metalness;
-        Resource::Ptr ao;
+        Resource::Ptr occlusion;
+        Resource::Ptr opacity;
     } texture;
 };
 

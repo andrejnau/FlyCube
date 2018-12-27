@@ -101,46 +101,38 @@ Material::Material(TextureCache& cache, const IMesh::Material& material, std::ve
         auto tex = cache.Load(textures[i].path);
         switch (textures[i].type)
         {
-        case aiTextureType_AMBIENT:
-            texture.ambient = tex;
-            break;
-        case aiTextureType_DIFFUSE:
-            texture.diffuse = tex;
+        case TextureType::kAlbedo:
             texture.albedo = tex;
             break;
-        case aiTextureType_SPECULAR:
-            texture.specular = tex;
-            texture.roughness = tex;
-            break;
-        case aiTextureType_HEIGHT:
+        case TextureType::kNormal:
             texture.normal = tex;
             break;
-        case aiTextureType_OPACITY:
-            texture.alpha = tex;
+        case TextureType::kRoughness:
+            texture.roughness = tex;
             break;
-        case aiTextureType_SHININESS:
+        case TextureType::kGlossiness:
+            texture.glossiness = tex;
+            break;
+        case TextureType::kMetalness:
             texture.metalness = tex;
-            texture.shininess = tex;
             break;
-        case aiTextureType_LIGHTMAP:
-            texture.ao = tex;
+        case TextureType::kOcclusion:
+            texture.occlusion = tex;
             break;
-        case aiTextureType_EMISSIVE:
-            texture.gloss = tex;
+        case TextureType::kOpacity:
+            texture.opacity = tex;
             break;
         }
     }
 
-    if (!texture.ambient)
-        texture.ambient = cache.CreateTextuteStab(glm::vec4(material.amb, 0.0));
-    if (!texture.diffuse)
-        texture.diffuse = cache.CreateTextuteStab(glm::vec4(material.dif, 0.0));
-    if (!texture.specular)
-        texture.specular = cache.CreateTextuteStab(glm::vec4(material.spec, 0.0));
-    if (!texture.shininess)
-        texture.shininess = cache.CreateTextuteStab(glm::vec4(material.shininess, 0.0, 0.0, 0.0));
-    if (!texture.alpha)
-        texture.alpha = cache.CreateTextuteStab(glm::vec4(1.0));
-    if (!texture.ao)
-        texture.ao = cache.CreateTextuteStab(glm::vec4(1.0));
+    if (!texture.albedo)
+        texture.albedo = cache.CreateTextuteStab(glm::vec4(0.0));
+    if (!texture.roughness && !texture.glossiness)
+        texture.roughness = cache.CreateTextuteStab(glm::vec4(1.0));
+    if (!texture.metalness)
+        texture.metalness = cache.CreateTextuteStab(glm::vec4(0.0));
+    if (!texture.occlusion)
+        texture.occlusion = cache.CreateTextuteStab(glm::vec4(1.0));
+    if (!texture.opacity)
+        texture.opacity = cache.CreateTextuteStab(glm::vec4(1.0));
 }

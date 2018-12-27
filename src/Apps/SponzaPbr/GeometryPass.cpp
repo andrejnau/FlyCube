@@ -75,16 +75,16 @@ void GeometryPass::OnRender()
             auto& material = model.GetMaterial(range.id);
 
             m_program.ps.cbuffer.Settings.use_normal_mapping = material.texture.normal && m_settings.normal_mapping;
-            m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.gloss && !material.texture.roughness;
+            m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.glossiness && !material.texture.roughness;
             m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.use_flip_normal_y;
             
             m_program.ps.srv.normalMap.Attach(material.texture.normal);
             m_program.ps.srv.albedoMap.Attach(material.texture.albedo);
-            m_program.ps.srv.glossMap.Attach(material.texture.gloss);
+            m_program.ps.srv.glossMap.Attach(material.texture.glossiness);
             m_program.ps.srv.roughnessMap.Attach(material.texture.roughness);
             m_program.ps.srv.metalnessMap.Attach(material.texture.metalness);
-            m_program.ps.srv.aoMap.Attach(material.texture.ao);
-            m_program.ps.srv.alphaMap.Attach(material.texture.alpha);
+            m_program.ps.srv.aoMap.Attach(material.texture.occlusion);
+            m_program.ps.srv.alphaMap.Attach(material.texture.opacity);
 
             m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }

@@ -136,32 +136,21 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     if (mesh->mMaterialIndex >= 0)
     {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
-        aiColor4D amb;
-        if (mat->Get(AI_MATKEY_COLOR_AMBIENT, amb) == AI_SUCCESS)
-            cur_mesh.material.amb = glm::vec3(aiColor4DToVec4(amb));
-
-        aiColor4D dif;
-        if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, dif) == AI_SUCCESS)
-            cur_mesh.material.dif = glm::vec3(aiColor4DToVec4(dif));
-
-        aiColor4D spec;
-        if (mat->Get(AI_MATKEY_COLOR_SPECULAR, spec) == AI_SUCCESS)
-            cur_mesh.material.spec = glm::vec3(aiColor4DToVec4(spec));
-
-        float shininess;
-        if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
-            cur_mesh.material.shininess = shininess;
-
         aiString name;
         if (mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS)
             cur_mesh.material.name = name.C_Str();
 
         std::vector<TextureInfo> textures;
-        LoadMaterialTextures(mat, aiTextureType_AMBIENT, textures);
-        LoadMaterialTextures(mat, aiTextureType_DIFFUSE, textures);
-        LoadMaterialTextures(mat, aiTextureType_SPECULAR, textures);
-        LoadMaterialTextures(mat, aiTextureType_HEIGHT, textures);
-        LoadMaterialTextures(mat, aiTextureType_OPACITY, textures);
+        // map_Kd
+        LoadMaterialTextures(mat, aiTextureType_DIFFUSE, TextureType::kAlbedo, textures);
+        // map_bump
+        LoadMaterialTextures(mat, aiTextureType_NORMALS, TextureType::kNormal, textures);
+        // map_Ns
+        LoadMaterialTextures(mat, aiTextureType_SHININESS, TextureType::kRoughness, textures);
+        // map_Ks
+        LoadMaterialTextures(mat, aiTextureType_SPECULAR, TextureType::kMetalness, textures);
+        // map_d
+        LoadMaterialTextures(mat, aiTextureType_OPACITY, TextureType::kOpacity, textures);
 
         FindSimilarTextures(cur_mesh.material.name, textures);
 
@@ -189,53 +178,51 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
 void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<TextureInfo>& textures)
 {
-    static std::pair<std::string, aiTextureType> texture_types[] = {
-        { "albedo",     aiTextureType_DIFFUSE   },
-        { "_albedo",    aiTextureType_DIFFUSE   },
-        { "_Albedo",    aiTextureType_DIFFUSE   },
-        { "_color",     aiTextureType_DIFFUSE   },
-        { "_diff",      aiTextureType_DIFFUSE   },
-        { "_diffuse",   aiTextureType_DIFFUSE   },
-        { "_BaseColor", aiTextureType_DIFFUSE   },
-        { "_nmap",      aiTextureType_HEIGHT    },
-        { "normal",     aiTextureType_HEIGHT    },
-        { "_normal",    aiTextureType_HEIGHT    },
-        { "_Normal",    aiTextureType_HEIGHT    },
-        { "_rough",     aiTextureType_SPECULAR  },
-        { "roughness",  aiTextureType_SPECULAR  },
-        { "_roughness", aiTextureType_SPECULAR  },
-        { "_Roughness", aiTextureType_SPECULAR  },
-        { "_metalness", aiTextureType_SHININESS },
-        { "_metallic",  aiTextureType_SHININESS },
-        { "metallic",   aiTextureType_SHININESS },
-        { "_Metallic",  aiTextureType_SHININESS },
-        { "_ao",        aiTextureType_LIGHTMAP  },
-        { "ao",         aiTextureType_LIGHTMAP  },
-        { "_mask",      aiTextureType_OPACITY   },
-        { "_opacity",   aiTextureType_OPACITY   },
-        { "_spec",      aiTextureType_SPECULAR  },
-        { "_Specular",  aiTextureType_SPECULAR  },
-        { "_gloss",     aiTextureType_EMISSIVE  },
+    static std::pair<std::string, TextureType> texture_types[] = {
+        { "albedo",     TextureType::kAlbedo     },
+        { "_albedo",    TextureType::kAlbedo     },
+        { "_Albedo",    TextureType::kAlbedo     },
+        { "_color",     TextureType::kAlbedo     },
+        { "_diff",      TextureType::kAlbedo     },
+        { "_diffuse",   TextureType::kAlbedo     },
+        { "_BaseColor", TextureType::kAlbedo     },
+        { "_nmap",      TextureType::kNormal     },
+        { "normal",     TextureType::kNormal     },
+        { "_normal",    TextureType::kNormal     },
+        { "_Normal",    TextureType::kNormal     },
+        { "_rough",     TextureType::kRoughness  },
+        { "roughness",  TextureType::kRoughness  },
+        { "_roughness", TextureType::kRoughness  },
+        { "_Roughness", TextureType::kRoughness  },
+        { "_gloss",     TextureType::kGlossiness },
+        { "_metalness", TextureType::kMetalness  },
+        { "_metallic",  TextureType::kMetalness  },
+        { "metallic",   TextureType::kMetalness  },
+        { "_Metallic",  TextureType::kMetalness  },   
+        { "_ao",        TextureType::kOcclusion  },
+        { "ao",         TextureType::kOcclusion  },
+        { "_mask",      TextureType::kOpacity    },
+        { "_opacity",   TextureType::kOpacity    },
     };
-    std::set<aiTextureType> used;
+    std::set<TextureType> used;
     for (auto& cur_texture : textures)
     {
         used.insert(cur_texture.type);
     }
 
-    if (!used.count(aiTextureType_DIFFUSE))
+    if (!used.count(TextureType::kAlbedo))
     {
         for (auto & ext : { ".dds", ".png", ".jpg" })
         {
             std::string cur_path = m_directory + "/textures/" + mat_name + "_albedo" + ext;
             if (std::ifstream(cur_path).good())
             {
-                textures.push_back({ aiTextureType_DIFFUSE, cur_path });
+                textures.push_back({ TextureType::kAlbedo, cur_path });
             }
             cur_path = m_directory + "/" + "albedo" + ext;
             if (std::ifstream(cur_path).good())
             {
-                textures.push_back({ aiTextureType_DIFFUSE, cur_path });
+                textures.push_back({ TextureType::kAlbedo, cur_path });
             }
         }
     }
@@ -274,12 +261,12 @@ void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<T
     textures.insert(textures.end(), added_textures.begin(), added_textures.end());
 }
 
-void ModelLoader::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::vector<TextureInfo>& textures)
+void ModelLoader::LoadMaterialTextures(aiMaterial* mat, aiTextureType aitype, TextureType type, std::vector<TextureInfo>& textures)
 {
-    for (uint32_t i = 0; i < mat->GetTextureCount(type); ++i)
+    for (uint32_t i = 0; i < mat->GetTextureCount(aitype); ++i)
     {
         aiString texture_name;
-        mat->GetTexture(type, i, &texture_name);
+        mat->GetTexture(aitype, i, &texture_name);
         std::string texture_path = m_directory + "/" + texture_name.C_Str();
         if (!std::ifstream(texture_path).good())
         {

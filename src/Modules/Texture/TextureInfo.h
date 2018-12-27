@@ -1,10 +1,20 @@
 #pragma once
 
-#include <assimp/material.h>
 #include <string>
+
+enum class TextureType
+{
+    kAlbedo,
+    kNormal,
+    kRoughness,
+    kGlossiness,
+    kMetalness,
+    kOcclusion,
+    kOpacity,
+};
 
 struct TextureInfo
 {
-    aiTextureType type;
+    TextureType type;
     std::string path;
 };

@@ -9,10 +9,6 @@ struct IMesh
 {
     struct Material
     {
-        glm::vec3 amb = glm::vec3(0.0, 0.0, 0.0);
-        glm::vec3 dif = glm::vec3(1.0, 1.0, 1.0);
-        glm::vec3 spec = glm::vec3(1.0, 1.0, 1.0);
-        float shininess = 32.0;
         std::string name;
     } material;
 

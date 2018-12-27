@@ -7,6 +7,6 @@ Ka 0.00000 0.00000 0.00000
 Ks 1.00000 1.00000 1.00000
 Ke 0.00000e+0 0.00000e+0 0.00000e+0
 map_Kd albedo.dds
-map_Ks roughness.dds
-map_Ns metallic.dds
+map_Ns roughness.dds
+map_Ks metallic.dds
 map_bump normal.dds
