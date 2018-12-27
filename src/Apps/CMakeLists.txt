@@ -1,5 +1,2 @@
 add_subdirectory(ParseShader)
-add_subdirectory(SponzaApp)
-add_subdirectory(PBR)
-add_subdirectory(PBR2)
 add_subdirectory(SponzaPbr)
