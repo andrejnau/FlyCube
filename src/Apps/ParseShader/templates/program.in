@@ -81,8 +81,13 @@ public:
         , sampler(program_api)
         , cbuffer_impl(*this)
     {
-        program_api.AddAvailableShaderType(type);
-        {{#CBuffers}}program_api.AttachCBuffer(type, "{{BufferName}}", {{BufferIndex}}, cbuffer_impl.{{BufferName}});
+        program_api.AddAvailableShaderType(type);      
+        {{#CBuffers}}
+        {
+            BindKey bind_key = { program_api.GetProgramId(), type, ResourceType::kCbv, {{BufferIndex}} };
+            program_api.SetCBufferLayout(bind_key, cbuffer_impl.{{BufferName}});
+            program_api.SetBindingName(bind_key, "{{BufferName}}");
+        }
         {{/CBuffers}}
     }
 

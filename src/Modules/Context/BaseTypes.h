@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <tuple>
+#include <string>
 
 enum class SamplerFilter
 {
@@ -38,15 +39,6 @@ enum class ResourceType
     kSampler,
     kRtv,
     kDsv
-};
-
-struct ViewId
-{
-    size_t value;
-    bool operator< (const ViewId& oth) const
-    {
-        return value < oth.value;
-    }
 };
 
 enum BindFlag
@@ -126,4 +118,22 @@ enum class ShaderType
     kGeometry
 };
 
-using BindKey = std::tuple<size_t /*program_id*/, ShaderType /*shader_type*/, ResourceType /*res_type*/, uint32_t /*slot*/, ViewId /*view_id*/>;
+struct BindKey
+{
+    size_t program_id;
+    ShaderType shader_type;
+    ResourceType res_type;
+    uint32_t slot;
+
+private:
+    auto MakeTie() const
+    {
+        return std::tie(program_id, shader_type, res_type, slot);
+    }
+
+public:
+    bool operator< (const BindKey& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
+};

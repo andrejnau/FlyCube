@@ -17,130 +17,81 @@
 
 using namespace Microsoft::WRL;
 
-class SRVBinding
+template<typename T>
+class Binding
+{
+public:
+    Binding(ProgramApi& program_api, ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name)
+        : m_program_api(program_api)
+        , m_key{ program_api.GetProgramId(), shader_type, res_type, slot }
+    {
+        m_program_api.SetBindingName(m_key, name);
+    }
+
+    T& Attach(const Resource::Ptr& ires = {}, const ViewDesc& view_desc = {})
+    {
+        m_program_api.Attach(m_key, view_desc, ires);
+        return static_cast<T&>(*this);
+    }
+
+protected:
+    ProgramApi& m_program_api;
+    BindKey m_key;
+};
+
+class SRVBinding : public Binding<SRVBinding>
 {
 public:    
     SRVBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
-        : m_program_api(program_api)
-        , m_shader_type(shader_type)
-        , m_name(name)
-        , m_slot(slot)
+        : Binding(program_api, shader_type, ResourceType::kSrv, slot, name)
     {
     }
-
-    void Attach(const Resource::Ptr& ires = {}, size_t level = 0)
-    {
-        ViewId view_id = {};
-        if (ires)
-            view_id = ires->GetCustomViewId(level);
-        m_program_api.Attach(m_shader_type, ResourceType::kSrv, m_slot, view_id, m_name, ires);
-    }
-
-private:
-    ProgramApi& m_program_api;
-    ShaderType m_shader_type;
-    std::string m_name;
-    uint32_t m_slot;
 };
 
-class UAVBinding
+class UAVBinding : public Binding<UAVBinding>
 {
 public:
     UAVBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
-        : m_program_api(program_api)
-        , m_shader_type(shader_type)
-        , m_name(name)
-        , m_slot(slot)
+        : Binding(program_api, shader_type, ResourceType::kUav, slot, name)
     {
     }
-
-    void Attach(const Resource::Ptr& ires = {}, size_t level = 0)
-    {
-        ViewId view_id = {};
-        if (ires)
-            view_id = ires->GetCustomViewId(level);
-        m_program_api.Attach(m_shader_type, ResourceType::kUav, m_slot, view_id, m_name, ires);
-    }
-
-private:
-    ProgramApi& m_program_api;
-    ShaderType m_shader_type;
-    std::string m_name;
-    uint32_t m_slot;
 };
 
-class SamplerBinding
+class SamplerBinding : public Binding<SamplerBinding>
 {
 public:
     SamplerBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
-        : m_program_api(program_api)
-        , m_shader_type(shader_type)
-        , m_name(name)
-        , m_slot(slot)
+        : Binding(program_api, shader_type, ResourceType::kSampler, slot, name)
     {
     }
-
-    void Attach(const Resource::Ptr& ires = {})
-    {
-        m_program_api.Attach(m_shader_type, ResourceType::kSampler, m_slot, {}, m_name, ires);
-    }
-
-private:
-    ProgramApi& m_program_api;
-    ShaderType m_shader_type;
-    std::string m_name;
-    uint32_t m_slot;
 };
 
-class RTVBinding
+class RTVBinding : public Binding<RTVBinding>
 {
 public:
     RTVBinding(ProgramApi& program_api, uint32_t slot)
-        : m_program_api(program_api)
-        , m_slot(slot)
+        : Binding(program_api, ShaderType::kPixel, ResourceType::kRtv, slot, "")
     {
-    }
-
-    RTVBinding& Attach(const Resource::Ptr& ires = {}, size_t level = 0)
-    {
-        ViewId view_id = {};
-        if (ires)
-            view_id = ires->GetCustomViewId(level);
-        m_program_api.Attach(ShaderType::kPixel, ResourceType::kRtv, m_slot, view_id, "", ires);
-        return *this;
     }
 
     void Clear(const FLOAT ColorRGBA[4])
     {
-        m_program_api.ClearRenderTarget(m_slot, ColorRGBA);
+        m_program_api.ClearRenderTarget(m_key.slot, ColorRGBA);
     }
-
-private:
-    ProgramApi& m_program_api;
-    uint32_t m_slot;
 };
 
-class DSVBinding
+class DSVBinding : public Binding<DSVBinding>
 {
 public:
     DSVBinding(ProgramApi& program_api)
-        : m_program_api(program_api)
+        : Binding(program_api, ShaderType::kPixel, ResourceType::kDsv, 0, "")
     {
-    }
-
-    DSVBinding& Attach(const Resource::Ptr& ires = {})
-    {
-        m_program_api.Attach(ShaderType::kPixel, ResourceType::kDsv, 0, {}, "", ires);
-        return *this;
     }
 
     void Clear(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
     {
         m_program_api.ClearDepthStencil(ClearFlags, Depth, Stencil);
     }
-
-private:
-    ProgramApi& m_program_api;
 };
 
 template<ShaderType, typename T> class ShaderHolderImpl {};

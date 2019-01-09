@@ -9,9 +9,8 @@
 #include <Utilities/VKUtility.h>
 
 VKProgramApi::VKProgramApi(VKContext& context)
-    : m_context(context)
-    , m_cbv_buffer(context)
-    , m_cbv_offset(context)
+    : CommonProgramApi(context)
+    , m_context(context)
     , m_view_creater(context, *this)
 {
     m_depth_stencil_desc.depth_enable = true;
@@ -208,25 +207,7 @@ void VKProgramApi::UseProgram()
 
 void VKProgramApi::ApplyBindings()
 {
-    for (auto &x : m_cbv_layout)
-    {
-        BufferLayout& buffer = x.second;
-        auto& buffer_data = buffer.GetBuffer();
-        bool change_buffer = buffer.SyncData();
-        change_buffer = change_buffer || !m_cbv_offset.get().count(x.first);
-        if (change_buffer && m_cbv_offset.get().count(x.first))
-            ++m_cbv_offset.get()[x.first];
-        if (m_cbv_offset.get()[x.first] >= m_cbv_buffer.get()[x.first].size())
-            m_cbv_buffer.get()[x.first].push_back(m_context.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_data.size()), 0));
-
-        auto& res = m_cbv_buffer.get()[x.first][m_cbv_offset.get()[x.first]];
-        if (change_buffer)
-        {
-            m_context.UpdateSubresource(res, 0, buffer.GetBuffer().data(), 0, 0);
-        }
-
-        Attach(std::get<0>(x.first), ResourceType::kCbv, std::get<1>(x.first), {}, m_cbv_name[x.first], res);
-    }
+    UpdateCBuffers();
 
     if (m_changed_om)
     {
@@ -297,10 +278,10 @@ void VKProgramApi::ApplyBindings()
     std::list<VkDescriptorImageInfo> list_image_info;
     std::list<VkDescriptorBufferInfo> list_buffer_info;
     
-    for (auto & x : m_heap_ranges)
+    for (auto& x : m_bound_resources)
     {
         bool is_rtv_dsv = false;
-        switch (std::get<1>(x.first))
+        switch (x.first.res_type)
         {
         case ResourceType::kRtv:
         case ResourceType::kDsv:
@@ -308,20 +289,20 @@ void VKProgramApi::ApplyBindings()
             break;
         }
 
-        if (is_rtv_dsv || !x.second)
+        if (is_rtv_dsv || !x.second.res)
             continue;
 
-        auto& view = GetView(x.first, x.second);
-        ShaderType shader_type = std::get<ShaderType>(x.first);
+        auto& view = static_cast<VKView&>(*x.second.view);
+        ShaderType shader_type = x.first.shader_type;
         ShaderRef& shader_ref = m_shader_ref.find(shader_type)->second;
-        std::string name = std::get<std::string>(x.first);
+        std::string name = GetBindingName(x.first);
         if (name == "$Globals")
             name = "_Global";
 
         if (!shader_ref.resources.count(name))
             throw std::runtime_error("failed to find resource reflection");
         auto ref_res = shader_ref.resources[name];
-        VKResource& res = static_cast<VKResource&>(*x.second);
+        VKResource& res = static_cast<VKResource&>(*x.second.res);
 
         VkWriteDescriptorSet descriptorWrite = {};
         descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -335,12 +316,12 @@ void VKProgramApi::ApplyBindings()
         {
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
         {
-            if (view->srv)
+            if (view.srv)
             {
                 list_image_info.emplace_back();
                 VkDescriptorImageInfo& imageInfo = list_image_info.back();
                 imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                imageInfo.imageView = view->srv;
+                imageInfo.imageView = view.srv;
                 descriptorWrite.pImageInfo = &imageInfo;
             }
             else
@@ -373,7 +354,7 @@ void VKProgramApi::ApplyBindings()
         {
             list_image_info.emplace_back();
             VkDescriptorImageInfo& imageInfo = list_image_info.back();
-            imageInfo.imageView = view->srv;
+            imageInfo.imageView = view.srv;
             descriptorWrite.pImageInfo = &imageInfo;
             break;
         }
@@ -399,9 +380,14 @@ void VKProgramApi::ApplyBindings()
             m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
 }
 
-VKView::Ptr VKProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>& key, const Resource::Ptr& res)
+VKView::Ptr VKProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, size_t, std::string>& key, const Resource::Ptr& res)
 {
-    return m_view_creater.GetView(m_program_id, std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), std::get<ViewId>(key), std::get<std::string>(key), res);
+    return m_view_creater.GetView(m_program_id, std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), std::get<size_t>(key), std::get<std::string>(key), res);
+}
+
+View::Ptr VKProgramApi::CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res)
+{
+    return m_view_creater.GetView(m_program_id, bind_key.shader_type, bind_key.res_type, bind_key.slot, view_desc, GetBindingName(bind_key), res);
 }
 
 void VKProgramApi::RenderPassBegin()

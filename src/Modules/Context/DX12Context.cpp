@@ -170,16 +170,32 @@ Resource::Ptr DX12Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size
     if (bind_flag & BindFlag::kUav)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
+    res->bind_flag = bind_flag;
+    res->buffer_size = buffer_size;
     res->stride = stride;
     res->state = D3D12_RESOURCE_STATE_COPY_DEST;
 
-    device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &desc,
-        res->state,
-        nullptr,
-        IID_PPV_ARGS(&res->default_res));
+    if (bind_flag & BindFlag::kCbv)
+    {
+        res->state = D3D12_RESOURCE_STATE_GENERIC_READ;
+        device->CreateCommittedResource(
+            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+            D3D12_HEAP_FLAG_NONE,
+            &desc,
+            res->state,
+            nullptr,
+            IID_PPV_ARGS(&res->default_res));
+    }
+    else
+    {
+        device->CreateCommittedResource(
+            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+            D3D12_HEAP_FLAG_NONE,
+            &desc,
+            res->state,
+            nullptr,
+            IID_PPV_ARGS(&res->default_res));
+    }
     res->desc = desc;
     return res;
 }
@@ -240,6 +256,16 @@ Resource::Ptr DX12Context::CreateSampler(const SamplerDesc & desc)
 void DX12Context::UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubresource, const void * pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
+
+    if (res->bind_flag & BindFlag::kCbv)
+    {
+        CD3DX12_RANGE range(0, 0);
+        char* cbvGPUAddress = nullptr;
+        ASSERT_SUCCEEDED(res->default_res->Map(0, &range, reinterpret_cast<void**>(&cbvGPUAddress)));
+        memcpy(cbvGPUAddress, pSrcData, res->buffer_size);
+        res->default_res->Unmap(0, &range);
+        return;
+    }
 
     auto& upload_res = res->GetUploadResource(DstSubresource);
     if (!upload_res)

@@ -105,7 +105,8 @@ namespace ShaderUtility
 } // ShaderUtility
 
 GLProgramApi::GLProgramApi(GLContext& context)
-    : m_context(context)
+    : CommonProgramApi(context)
+    , m_context(context)
 {
     glCreateFramebuffers(1, &m_framebuffer);
     glCreateVertexArrays(1, &m_vao);
@@ -183,16 +184,16 @@ void GLProgramApi::ApplyBindings()
 
     for (auto &x : m_cbv_layout)
     {
-        BufferLayout& buffer = x.second;
-        auto& res = m_cbv_buffer[x.first];
-        if (buffer.SyncData())
+        BufferLayout& buffer_layout = x.second;
+        auto& res = m_cbv_buffer[{x.first.shader_type, x.first.slot}];
+        if (buffer_layout.SyncData())
         {
-            m_context.UpdateSubresource(res, 0, buffer.GetBuffer().data(), buffer.GetBuffer().size(), 0);
+            m_context.UpdateSubresource(res, 0, buffer_layout.GetBuffer().data(), buffer_layout.GetBuffer().size(), 0);
         }
 
         GLResource& gl_res = static_cast<GLResource&>(*res);
 
-        std::string name = m_cbv_name[x.first];
+        std::string name = GetBindingName(x.first);
         if (name == "$Globals")
             name = "_Global";
 
@@ -558,11 +559,11 @@ void GLProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
 {
 }
 
-void GLProgramApi::AttachCBuffer(ShaderType type, const std::string & name, uint32_t slot, BufferLayout & buffer_layout)
+void GLProgramApi::SetCBufferLayout(const BindKey& bind_key, BufferLayout& buffer_layout)
 {
-    CommonProgramApi::AttachCBuffer(type, name, slot, buffer_layout);
+    CommonProgramApi::SetCBufferLayout(bind_key, buffer_layout);
 
     m_cbv_buffer.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, slot),
+        std::forward_as_tuple(bind_key.shader_type, bind_key.slot),
         std::forward_as_tuple(m_context.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_layout.GetBuffer().size()), 0)));
 }

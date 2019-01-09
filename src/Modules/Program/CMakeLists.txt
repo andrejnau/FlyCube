@@ -8,6 +8,7 @@ set(headers
     ProgramApi.h
     VKProgramApi.h
     CommonProgramApi.h
+    DX11ViewCreater.h
     DX12ViewCreater.h
     IShaderBlobProvider.h
     VKViewCreater.h
@@ -15,12 +16,14 @@ set(headers
 )
 
 set(sources
+    ProgramApi.cpp
     DX11ProgramApi.cpp
     DX12ProgramApi.cpp
     VKProgramApi.cpp
     GLProgramApi.cpp
     VKViewCreater.cpp
     CommonProgramApi.cpp
+    DX11ViewCreater.cpp
     DX12ViewCreater.cpp
 )
 

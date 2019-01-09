@@ -51,10 +51,10 @@ private:
     std::vector<D3D12_INPUT_ELEMENT_DESC> GetInputLayout(ComPtr<ID3D12ShaderReflection> reflector);
     void CreateGraphicsPSO();
     void CreateComputePSO();
-    void UpdateCBuffers();
-    void CopyDescriptor(DescriptorHeapRange & dst_range, size_t dst_offset, const D3D12_CPU_DESCRIPTOR_HANDLE& src_cpu_handle);
-    DX12View::Ptr FindView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key);
-    DX12View::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>& key, const Resource::Ptr & res);
+    void CopyDescriptor(DescriptorHeapRange & dst_range, size_t dst_offset, const View::Ptr& view);
+    DX12View* ConvertView(const View::Ptr& view);
+    View::Ptr CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override;
+    
     void ParseShaders();
     void OMSetRenderTargets();
 
@@ -94,8 +94,6 @@ private:
     };
 
     std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE>, BindingLayout> m_binding_layout;
-    PerFrameData<std::map<std::tuple<ShaderType, uint32_t>, std::vector<DX12Resource::Ptr>>> m_cbv_buffer;
-    PerFrameData<std::map<std::tuple<ShaderType, uint32_t>, size_t>> m_cbv_offset;
     ComPtr<ID3D12RootSignature> m_root_signature;
 
     class DiffAccumulator
@@ -191,5 +189,5 @@ private:
     bool m_changed_om = false;
     DX12Context& m_context;
     DX12ViewCreater m_view_creater;
-    std::map<std::map<std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>, Resource::Ptr>, DescriptorHeapRange> m_heap_cache;
+    std::map<std::map<BindKey, View::Ptr>, DescriptorHeapRange> m_heap_cache;
 };

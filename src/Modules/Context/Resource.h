@@ -12,6 +12,21 @@
 
 using namespace Microsoft::WRL;
 
+struct ViewDesc
+{
+    ViewDesc() = default;
+    ViewDesc(size_t level)
+        : level(level)
+    {
+    }
+
+    size_t level = 0;
+    bool operator<(const ViewDesc& oth) const
+    {
+        return level < oth.level;
+    }
+};
+
 class Resource
 {
 public:
@@ -19,49 +34,15 @@ public:
     virtual void SetName(const std::string& name) = 0;
     using Ptr = std::shared_ptr<Resource>;
 
-    View::Ptr& GetView(const BindKey& bind_key)
+    View::Ptr& GetView(const BindKey& view_key, const ViewDesc& view_desc)
     {
-        auto it = views.find(bind_key);
+        std::pair<BindKey, ViewDesc> key = { view_key, view_desc };
+        auto it = views.find(key);
         if (it == views.end())
-        {
-            it = views.emplace(std::piecewise_construct, std::forward_as_tuple(bind_key), std::forward_as_tuple(View::Ptr())).first;
-        }
+            it = views.emplace(std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple(View::Ptr())).first;
         return it->second;
-    }
-
-    struct Settings
-    {
-        size_t level = 0;
-        bool operator<(const Settings& oth) const
-        {
-            return level < oth.level;
-        }
-    };
-
-    ViewId GetCustomViewId(size_t level)
-    {
-        Settings custom_view = { level };
-        auto it = m_rtv_view_settings.find(custom_view);
-        if (it == m_rtv_view_settings.end())
-        {
-            m_rtv_view_settings_data.emplace_back(custom_view);
-            it = m_rtv_view_settings.emplace(std::piecewise_construct, std::forward_as_tuple(custom_view), std::forward_as_tuple(ViewId{ m_rtv_view_settings_data.size() })).first;
-        }
-        return it->second;
-    }
-
-    const Settings& GetCustomViewSetting(ViewId id) const
-    {
-        if (id.value - 1 >= m_rtv_view_settings_data.size())
-        {
-            static Settings empty;
-            return empty;
-        }
-        return m_rtv_view_settings_data[id.value - 1];
     }
 
 private:
-    std::map<BindKey, View::Ptr> views;
-    std::map<Settings, ViewId> m_rtv_view_settings;
-    std::vector<Settings> m_rtv_view_settings_data;
+    std::map<std::pair<BindKey, ViewDesc>, View::Ptr> views;
 };

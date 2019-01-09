@@ -43,16 +43,20 @@ public:
     virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachDSV(const Resource::Ptr& ires) override;
 
-
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
     virtual void SetRasterizeState(const RasterizerDesc& desc) override;
     virtual void SetBlendState(const BlendDesc& desc) override;
     virtual void SetDepthStencilState(const DepthStencilDesc& desc) override;
 
+    virtual View::Ptr CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override
+    {
+        return {};
+    }
+
     GLuint m_vao;
 
-    virtual void AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout& buffer) override;
+    virtual void SetCBufferLayout(const BindKey& bind_key, BufferLayout& buffer_layout) override;
 
 private:
     GLContext & m_context;

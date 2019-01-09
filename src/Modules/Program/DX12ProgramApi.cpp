@@ -5,8 +5,7 @@
 #include <Shader/DXCompiler.h>
 
 DX12ProgramApi::DX12ProgramApi(DX12Context& context)
-    : m_cbv_buffer(context)
-    , m_cbv_offset(context)
+    : CommonProgramApi(context)
     , m_context(context)
     , m_view_creater(m_context, *this)
 {
@@ -72,18 +71,18 @@ void DX12ProgramApi::CompileShader(const ShaderBase& shader)
 
 void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
 {
-    auto& view = FindView({ ShaderType::kPixel, ResourceType::kRtv, slot, "" });
+    auto& view = FindView(ShaderType::kPixel, ResourceType::kRtv, slot);
     if (!view)
         return;
-    m_context.command_list->ClearRenderTargetView(view->GetCpuHandle(), ColorRGBA, 0, nullptr);
+    m_context.command_list->ClearRenderTargetView(ConvertView(view)->GetCpuHandle(), ColorRGBA, 0, nullptr);
 }
 
 void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
 {
-    auto& view = FindView({ ShaderType::kPixel, ResourceType::kDsv, 0, "" });
+    auto& view = FindView(ShaderType::kPixel, ResourceType::kDsv, 0);
     if (!view)
         return;
-    m_context.command_list->ClearDepthStencilView(view->GetCpuHandle(), (D3D12_CLEAR_FLAGS)ClearFlags, Depth, Stencil, 0, nullptr);
+    m_context.command_list->ClearDepthStencilView(ConvertView(view)->GetCpuHandle(), (D3D12_CLEAR_FLAGS)ClearFlags, Depth, Stencil, 0, nullptr);
 }
 
 void DX12ProgramApi::SetRasterizeState(const RasterizerDesc& desc)
@@ -195,6 +194,10 @@ void DX12ProgramApi::OnAttachUAV(ShaderType type, const std::string & name, uint
 void DX12ProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
 {
     m_changed_binding = true;
+    /*if (!ires)
+        return;
+    DX12Resource& res = static_cast<DX12Resource&>(*ires);
+    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);*/
 }
 
 DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
@@ -388,55 +391,25 @@ void DX12ProgramApi::CreateComputePSO()
     m_context.command_list->SetPipelineState(m_current_pso.Get());
 }
 
-void DX12ProgramApi::UpdateCBuffers()
+void DX12ProgramApi::CopyDescriptor(DescriptorHeapRange& dst_range, size_t dst_offset, const View::Ptr& view)
 {
-    for (auto &x : m_cbv_layout)
+    if (view)
     {
-        BufferLayout& buffer = x.second;
-        auto& buffer_data = buffer.GetBuffer();
-        bool change_buffer = buffer.SyncData();
-        change_buffer = change_buffer || !m_cbv_offset.get().count(x.first);
-        if (change_buffer && m_cbv_offset.get().count(x.first))
-            ++m_cbv_offset.get()[x.first];
-        if (m_cbv_offset.get()[x.first] >= m_cbv_buffer.get()[x.first].size())
-            m_cbv_buffer.get()[x.first].push_back(CreateCBuffer(buffer_data.size()));
-
-        auto& res = m_cbv_buffer.get()[x.first][m_cbv_offset.get()[x.first]];
-        if (change_buffer)
-        {
-            CD3DX12_RANGE range(0, 0);
-            char* cbvGPUAddress = nullptr;
-            ASSERT_SUCCEEDED(res->default_res->Map(0, &range, reinterpret_cast<void**>(&cbvGPUAddress)));
-            memcpy(cbvGPUAddress, buffer_data.data(), buffer_data.size());
-            res->default_res->Unmap(0, &range);
-            m_changed_binding = true;
-        }
-
-        if (m_use_cbv_table)
-        {
-            Attach(std::get<0>(x.first), ResourceType::kCbv, std::get<1>(x.first), {}, "", res);
-        }
+        D3D12_CPU_DESCRIPTOR_HANDLE& src_cpu_handle = static_cast<DX12View&>(*view).GetCpuHandle();
+        dst_range.CopyCpuHandle(dst_offset, src_cpu_handle);
     }
 }
 
-void DX12ProgramApi::CopyDescriptor(DescriptorHeapRange& dst_range, size_t dst_offset, const D3D12_CPU_DESCRIPTOR_HANDLE& src_cpu_handle)
+DX12View* DX12ProgramApi::ConvertView(const View::Ptr& view)
 {
-    dst_range.CopyCpuHandle(dst_offset, src_cpu_handle);
+    if (!view)
+        return nullptr;
+    return &static_cast<DX12View&>(*view);
 }
 
-DX12View::Ptr DX12ProgramApi::FindView(const std::tuple<ShaderType, ResourceType, uint32_t, std::string>& key)
+View::Ptr DX12ProgramApi::CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res)
 {
-    auto view_id = m_active_view[key];
-    auto full_key = std::make_tuple(std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), view_id, std::get<std::string>(key));
-    auto it = m_heap_ranges.find(full_key);
-    if (it == m_heap_ranges.end())
-        return {};
-    return GetView(full_key, it->second);
-}
-
-DX12View::Ptr DX12ProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>& key, const Resource::Ptr& res)
-{
-    return m_view_creater.GetView(m_program_id, std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), std::get<ViewId>(key), std::get<std::string>(key), res);
+    return m_view_creater.GetView(bind_key, view_desc, GetBindingName(bind_key), res);
 }
 
 void DX12ProgramApi::ApplyBindings()
@@ -458,97 +431,105 @@ void DX12ProgramApi::ApplyBindings()
         return;
     m_changed_binding = false;
 
-    std::map<std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>, Resource::Ptr> heap_cache_key;
-    std::map<std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>, Resource::Ptr> heap_sampler_cache_key;
-    for (auto & x : m_heap_ranges)
+    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, size_t> descriptor_requests = {
+        { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_num_cbv + m_num_srv + m_num_uav },
+        { D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, m_num_sampler }
+    };
+    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::map<BindKey, View::Ptr>> descriptor_cache;
+    for (auto& x : m_bound_resources)
     {
-        switch (std::get<1>(x.first))
+        const BindKey& bind_key = x.first;
+        switch (bind_key.res_type)
         {
-        case ResourceType::kRtv:
-        case ResourceType::kDsv:
-            continue;
-        }
-        if (std::get<1>(x.first) == ResourceType::kSampler)
-        {
-            heap_sampler_cache_key[x.first] = x.second;
-        }
-        else
-        {
-            heap_cache_key[x.first] = x.second;
+        case ResourceType::kCbv:
+        case ResourceType::kSrv:
+        case ResourceType::kUav:
+            descriptor_cache[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV][bind_key] = x.second.view;
+            break;
+        case ResourceType::kSampler:
+            descriptor_cache[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER][bind_key] = x.second.view;
+            break;
         }
     }
 
-    auto res_range_it = m_heap_cache.find(heap_cache_key);
-    if (res_range_it == m_heap_cache.end())
+    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::pair<bool, std::reference_wrapper<DescriptorHeapRange>>> descriptor_ranges;
+    std::vector<ID3D12DescriptorHeap*> descriptor_heaps(descriptor_cache.size());
+    size_t descriptor_index = 0;
+    for (auto& x : descriptor_cache)
     {
-        DescriptorHeapRange res_heap = m_context.GetDescriptorPool().Allocate(ResourceType::kSrv, m_num_cbv + m_num_srv + m_num_uav);
-        res_range_it = m_heap_cache.emplace(heap_cache_key, res_heap).first;
+        auto it = m_heap_cache.find(x.second);
+        bool initialized = true;
+        if (it == m_heap_cache.end())
+        {
+            it = m_heap_cache.emplace(x.second, m_context.GetDescriptorPool().Allocate(x.first, descriptor_requests[x.first])).first;
+            initialized = false;
+        }
+        DescriptorHeapRange& heap_range = it->second;
+        descriptor_ranges.emplace(std::piecewise_construct,
+            std::forward_as_tuple(x.first),
+            std::forward_as_tuple(initialized, heap_range));
+        if (heap_range.GetSize() > 0)
+        {
+            descriptor_heaps[descriptor_index++] = heap_range.GetHeap().Get();
+        }
     }
-    DescriptorHeapRange& res_heap = res_range_it->second;
 
-    auto sampler_range_it = m_heap_cache.find(heap_sampler_cache_key);
-    if (sampler_range_it == m_heap_cache.end())
-    {
-        DescriptorHeapRange res_heap = m_context.GetDescriptorPool().Allocate(ResourceType::kSampler, m_num_sampler);
-        sampler_range_it = m_heap_cache.emplace(heap_sampler_cache_key, res_heap).first;
-    }
-    DescriptorHeapRange& sampler_heap = sampler_range_it->second;
+    if (descriptor_heaps.size())
+        m_context.command_list->SetDescriptorHeaps(descriptor_heaps.size(), descriptor_heaps.data());
 
-    ID3D12DescriptorHeap* descriptor_heaps[2] = {};
-    uint32_t descriptor_count = 0;
-    if (res_heap.GetSize())
-        descriptor_heaps[descriptor_count++] = res_heap.GetHeap().Get();
-    if (sampler_heap.GetSize())
-        descriptor_heaps[descriptor_count++] = sampler_heap.GetHeap().Get();
-    m_context.command_list->SetDescriptorHeaps(descriptor_count, descriptor_heaps);
-
-    for (auto & x : m_heap_ranges)
+    for (auto& x : m_bound_resources)
     {
         D3D12_DESCRIPTOR_RANGE_TYPE range_type;
-        D3D12_DESCRIPTOR_HEAP_TYPE heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        std::reference_wrapper<DescriptorHeapRange> heap_range = res_heap;
-        bool is_rtv_dsv = false;
-        switch (std::get<1>(x.first))
+        D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
+        const BindKey& bind_key = x.first;
+        switch (bind_key.res_type)
         {
         case ResourceType::kSrv:
             range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
             break;
         case ResourceType::kUav:
             range_type = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
             break;
         case ResourceType::kCbv:
             range_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
             break;
         case ResourceType::kSampler:
             range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
             heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-            heap_range = std::ref(sampler_heap);
             break;
         case ResourceType::kRtv:
         case ResourceType::kDsv:
-            is_rtv_dsv = true;
-            break;
+            continue;
         }
 
-        if (is_rtv_dsv)
+        auto& descriptor_range = descriptor_ranges.find(heap_type)->second;
+
+        if (descriptor_range.first)
             continue;
 
-        auto& view = GetView(x.first, x.second);
-
-        CopyDescriptor(heap_range.get(), m_binding_layout[{std::get<0>(x.first), range_type}].table.heap_offset + std::get<2>(x.first), view->GetCpuHandle());
+        CopyDescriptor(descriptor_range.second.get(), m_binding_layout[{bind_key.shader_type, range_type}].table.heap_offset + bind_key.slot, x.second.view);
     }
 
     for (auto &x : m_binding_layout)
     {
         if (x.second.type == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
         {
-            std::reference_wrapper<DescriptorHeapRange> heap_range = res_heap;
+            D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
             switch (std::get<1>(x.first))
             {
             case D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER:
-                heap_range = std::ref(sampler_heap);
+                heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+                break;
+            default:
+                heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
                 break;
             }
+            if (!descriptor_ranges.count(heap_type))
+                continue;
+            std::reference_wrapper<DescriptorHeapRange> heap_range = descriptor_ranges.find(heap_type)->second.second;
             if (x.second.root_param_index != -1)
                 SetRootDescriptorTable(x.second.root_param_index, heap_range.get().GetGpuHandle(x.second.table.root_param_heap_offset));
         }
@@ -557,8 +538,10 @@ void DX12ProgramApi::ApplyBindings()
             for (uint32_t slot = 0; slot < x.second.view.root_param_num; ++slot)
             {
                 auto& shader_type = std::get<0>(x.first);
-                auto& res = m_cbv_buffer.get()[{shader_type, slot}][m_cbv_offset.get()[{shader_type, slot}]];
-                SetRootConstantBufferView(x.second.root_param_index + slot, res->default_res->GetGPUVirtualAddress());
+                BindKey bind_key = { m_program_id, shader_type, ResourceType::kCbv, slot };
+                auto& ires = m_cbv_buffer.get()[bind_key][m_cbv_offset.get()[bind_key]];
+                DX12Resource& res = static_cast<DX12Resource&>(*ires);
+                SetRootConstantBufferView(x.second.root_param_index + slot, res.default_res->GetGPUVirtualAddress());
             }
         }
     }
@@ -799,17 +782,17 @@ void DX12ProgramApi::OMSetRenderTargets()
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv(m_num_rtv);
     for (uint32_t slot = 0; slot < m_num_rtv; ++slot)
     {
-        auto& view = FindView({ ShaderType::kPixel, ResourceType::kRtv, slot, "" });
+        auto& view = FindView(ShaderType::kPixel, ResourceType::kRtv, slot);
         if (view)
-            om_rtv[slot] = view->GetCpuHandle();
+            om_rtv[slot] = ConvertView(view)->GetCpuHandle();
     }
 
     D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = {};
     D3D12_CPU_DESCRIPTOR_HANDLE* om_dsv_ptr = nullptr;
-    auto view = FindView({ ShaderType::kPixel, ResourceType::kDsv, 0, "" });
+    auto view = FindView(ShaderType::kPixel, ResourceType::kDsv, 0);
     if (view)
     {
-        om_dsv = view->GetCpuHandle();
+        om_dsv = ConvertView(view)->GetCpuHandle();
         om_dsv_ptr = &om_dsv;
     }
     m_context.command_list->OMSetRenderTargets(static_cast<UINT>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv_ptr);

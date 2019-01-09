@@ -1,15 +1,10 @@
 #include "Program/DX11ProgramApi.h"
 #include <Shader/DXCompiler.h>
 
-static size_t GenId()
-{
-    static size_t id = 0;
-    return ++id;
-}
-
-DX11ProgramApi::DX11ProgramApi(DX11Context & context)
-    : m_context(context)
-    , m_program_id(GenId())
+DX11ProgramApi::DX11ProgramApi(DX11Context& context)
+    : CommonProgramApi(context)
+    , m_context(context)
+    , m_view_creater(context, *this)
 {
 }
 
@@ -46,30 +41,10 @@ void DX11ProgramApi::UseProgram()
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void DX11ProgramApi::AttachCBuffer(ShaderType type, const std::string& name, uint32_t slot, BufferLayout & buffer_layout)
-{
-    m_cbv_buffer.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, slot),
-        std::forward_as_tuple(m_context.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_layout.GetBuffer().size()), 0)));
-    m_cbv_layout.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, slot),
-        std::forward_as_tuple(buffer_layout));
-}
-
 void DX11ProgramApi::ApplyBindings()
 {
-    for (auto &x : m_cbv_layout)
-    {
-        BufferLayout& buffer = x.second;
-        auto& res = m_cbv_buffer[x.first];
-        if (buffer.SyncData())
-        {
-            m_context.UpdateSubresource(res, 0, buffer.GetBuffer().data(), 0, 0);
-        }
-
-        AttachCBV(std::get<0>(x.first), std::get<1>(x.first), res);
-    }
-
+    UpdateCBuffers();
+    
     std::vector<ID3D11RenderTargetView*> rtv_ptr;
     for (auto & rtv : m_rtvs)
     {
@@ -168,24 +143,25 @@ void DX11ProgramApi::CompileShader(const ShaderBase& shader)
     }
 }
 
-void DX11ProgramApi::Attach(ShaderType shader_type, ResourceType res_type, uint32_t slot, ViewId view_id, const std::string& name, const Resource::Ptr& res)
+void DX11ProgramApi::Attach(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res)
 {
-    switch (res_type)
+    auto name = GetBindingName(bind_key);
+    switch (bind_key.res_type)
     {
     case ResourceType::kSrv:
-        AttachSRV(shader_type, name, slot, res);
+        AttachSRV(bind_key.shader_type, name, bind_key.slot, res);
         break;
     case ResourceType::kUav:
-        AttachUAV(shader_type, name, slot, res);
+        AttachUAV(bind_key.shader_type, name, bind_key.slot, res);
         break;
     case ResourceType::kCbv:
-        AttachCBV(shader_type, slot, res);
+        AttachCBV(bind_key.shader_type, bind_key.slot, res);
         break;
     case ResourceType::kSampler:
-        AttachSampler(shader_type, name, slot, res);
+        AttachSampler(bind_key.shader_type, name, bind_key.slot, res);
         break;
     case ResourceType::kRtv:
-        AttachRTV(slot, res);
+        AttachRTV(bind_key.slot, res);
         break;
     case ResourceType::kDsv:
         AttachDSV(res);
@@ -195,12 +171,12 @@ void DX11ProgramApi::Attach(ShaderType shader_type, ResourceType res_type, uint3
 
 void DX11ProgramApi::AttachSRV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
 {
-    AttachView(type, slot, CreateSrv(type, name, slot, res));
+    AttachView(type, slot, m_view_creater.CreateSrv(type, name, slot, res));
 }
 
 void DX11ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
 {
-    AttachView(type, slot, CreateUAV(type, name, slot, res));
+    AttachView(type, slot, m_view_creater.CreateUAV(type, name, slot, res));
 }
 
 void DX11ProgramApi::AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11SamplerState>& sampler)
@@ -237,12 +213,12 @@ void DX11ProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& ires)
 {
     if (m_rtvs.size() >= slot)
         m_rtvs.resize(slot + 1);
-    m_rtvs[slot] = CreateRtv(slot, ires);
+    m_rtvs[slot] = m_view_creater.CreateRtv(slot, ires);
 }
 
 void DX11ProgramApi::AttachDSV(const Resource::Ptr& ires)
 {
-    m_dsv = CreateDsv(ires);
+    m_dsv = m_view_creater.CreateDsv(ires);
 }
 
 void DX11ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
@@ -365,213 +341,6 @@ void DX11ProgramApi::AttachCBV(ShaderType type, uint32_t slot, const Resource::P
         m_context.device_context->GSSetConstantBuffers(slot, 1, buf.GetAddressOf());
         break;
     }
-}
-
-ComPtr<ID3D11ShaderResourceView> DX11ProgramApi::CreateSrv(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & ires)
-{
-    ComPtr<ID3D11ShaderResourceView> srv;
-
-    if (!ires)
-        return srv;
-
-    auto res = std::static_pointer_cast<DX11Resource>(ires);
-    BindKey key = { m_program_id, type, ResourceType::kSrv, slot, {} };
-    auto it = res->srv.find(key);
-    if (it != res->srv.end())
-        return it->second;
-
-    ComPtr<ID3D11ShaderReflection> reflector;
-    D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
-
-    D3D11_SHADER_INPUT_BIND_DESC res_desc = {};
-    ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
-
-    D3D11_RESOURCE_DIMENSION dim = {};
-    res->resource->GetType(&dim);
-
-    switch (res_desc.Dimension)
-    {
-    case D3D_SRV_DIMENSION_BUFFER:
-    {
-        ComPtr<ID3D11Buffer> buf;
-        res->resource.As(&buf);
-        D3D11_BUFFER_DESC buf_dec = {};
-        buf->GetDesc(&buf_dec);
-
-        D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-        srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-        srv_desc.Buffer.FirstElement = 0;
-        srv_desc.Buffer.NumElements = buf_dec.ByteWidth / buf_dec.StructureByteStride;
-        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-
-        ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(buf.Get(), &srv_desc, &srv));
-        break;
-    }
-    case D3D_SRV_DIMENSION_TEXTURE2D:
-    {
-        ComPtr<ID3D11Texture2D> tex;
-        res->resource.As(&tex);
-        D3D11_TEXTURE2D_DESC tex_dec = {};
-        tex->GetDesc(&tex_dec);
-        D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-        srv_desc.Format = tex_dec.Format;
-        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-        srv_desc.Texture2D.MipLevels = tex_dec.MipLevels;
-        ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(tex.Get(), &srv_desc, &srv));
-        break;
-    }
-    case D3D_SRV_DIMENSION_TEXTURE2DMS:
-    {
-        ComPtr<ID3D11Texture2D> tex;
-        res->resource.As(&tex);
-        D3D11_TEXTURE2D_DESC tex_dec = {};
-        tex->GetDesc(&tex_dec);
-        D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-        srv_desc.Format = tex_dec.Format;
-        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
-        ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(tex.Get(), &srv_desc, &srv));
-        break;
-    }
-    case D3D_SRV_DIMENSION_TEXTURECUBE:
-    {
-        ComPtr<ID3D11Texture2D> tex;
-        res->resource.As(&tex);
-        D3D11_TEXTURE2D_DESC tex_dec = {};
-        tex->GetDesc(&tex_dec);
-        D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-        srv_desc.Format = DXGI_FORMAT_R32_FLOAT; // TODO tex_dec.Format;
-        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-        srv_desc.TextureCube.MipLevels = tex_dec.MipLevels;
-        ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(tex.Get(), &srv_desc, &srv));
-        break;
-    }
-    default:
-        assert(false);
-        break;
-    }
-
-    res->srv.emplace(key, srv);
-
-    return srv;
-}
-
-ComPtr<ID3D11UnorderedAccessView> DX11ProgramApi::CreateUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & ires)
-{
-    ComPtr<ID3D11UnorderedAccessView> uav;
-    if (!ires)
-        return uav;
-
-    auto res = std::static_pointer_cast<DX11Resource>(ires);
-
-    BindKey key = { m_program_id, type, ResourceType::kUav, slot, {} };
-    auto it = res->uav.find(key);
-    if (it != res->uav.end())
-        return it->second;
-
-    ComPtr<ID3D11ShaderReflection> reflector;
-    D3DReflect(m_blob_map[type]->GetBufferPointer(), m_blob_map[type]->GetBufferSize(), IID_PPV_ARGS(&reflector));
-
-    D3D11_SHADER_INPUT_BIND_DESC res_desc = {};
-    ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &res_desc));
-
-    D3D11_RESOURCE_DIMENSION dim = {};
-    res->resource->GetType(&dim);
-
-    switch (res_desc.Dimension)
-    {
-    case D3D_SRV_DIMENSION_BUFFER:
-    {
-        ComPtr<ID3D11Buffer> buf;
-        res->resource.As(&buf);
-        D3D11_BUFFER_DESC buf_dec = {};
-        buf->GetDesc(&buf_dec);
-
-        D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
-        uav_desc.Format = DXGI_FORMAT_UNKNOWN;
-        uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-        uav_desc.Buffer.FirstElement = 0;
-        uav_desc.Buffer.NumElements = buf_dec.ByteWidth / buf_dec.StructureByteStride;
-        m_context.device->CreateUnorderedAccessView(buf.Get(), &uav_desc, &uav);
-        break;
-    }
-    case D3D_SRV_DIMENSION_TEXTURE2D:
-    {
-        ComPtr<ID3D11Texture2D> tex;
-        res->resource.As(&tex);
-        D3D11_TEXTURE2D_DESC tex_decs = {};
-        tex->GetDesc(&tex_decs);
-
-        D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
-        uav_desc.Format = tex_decs.Format;
-        uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
-        m_context.device->CreateUnorderedAccessView(tex.Get(), &uav_desc, &uav);
-        break;
-    }
-    default:
-        assert(false);
-        break;
-    }
-
-    res->uav.emplace(key, uav);
-
-    return uav;
-}
-
-ComPtr<ID3D11DepthStencilView> DX11ProgramApi::CreateDsv(const Resource::Ptr& ires)
-{
-    ComPtr<ID3D11DepthStencilView> dsv;
-    if (!ires)
-        return dsv;
-
-    auto res = std::static_pointer_cast<DX11Resource>(ires);
-
-    BindKey key = { m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0, {} };
-    auto it = res->dsv.find(key);
-    if (it != res->dsv.end())
-        return it->second;
-
-    ComPtr<ID3D11Texture2D> tex;
-    res->resource.As(&tex);
-
-    D3D11_TEXTURE2D_DESC tex_dec = {};
-    tex->GetDesc(&tex_dec);
-
-    if (tex_dec.Format == DXGI_FORMAT_R32_TYPELESS) // TODO
-    {
-        D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
-        dsv_desc.Format = DXGI_FORMAT_D32_FLOAT;
-        dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-        dsv_desc.Texture2DArray.ArraySize = tex_dec.ArraySize;
-        ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(tex.Get(), &dsv_desc, &dsv));
-    }
-    else
-    {
-        ASSERT_SUCCEEDED(m_context.device->CreateDepthStencilView(tex.Get(), nullptr, &dsv));
-    }
-
-    res->dsv.emplace(key, dsv);
-
-    return dsv;
-}
-
-ComPtr<ID3D11RenderTargetView> DX11ProgramApi::CreateRtv(uint32_t slot, const Resource::Ptr& ires)
-{
-    auto res = std::static_pointer_cast<DX11Resource>(ires);
-
-    ComPtr<ID3D11RenderTargetView> rtv;
-    if (!ires)
-        return rtv;
-
-    BindKey key = { m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot, {} };
-    auto it = res->rtv.find(key);
-    if (it != res->rtv.end())
-        return it->second;
-
-    ASSERT_SUCCEEDED(m_context.device->CreateRenderTargetView(res->resource.Get(), nullptr, &rtv));
-
-    res->rtv.emplace(key, rtv);
-
-    return rtv;
 }
 
 void DX11ProgramApi::AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav)

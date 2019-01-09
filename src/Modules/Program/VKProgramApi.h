@@ -24,7 +24,8 @@ public:
     void CreatePipeLine();
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
-    VKView::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, ViewId, std::string>& key, const Resource::Ptr & res);
+    VKView::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, size_t, std::string>& key, const Resource::Ptr & res);
+    virtual View::Ptr CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override;
     virtual void CompileShader(const ShaderBase& shader) override;
     void ParseShader(ShaderType type, const std::vector<uint32_t>& spirv_binary, std::vector<VkDescriptorSetLayoutBinding>& bindings);
     size_t GetSetNumByShaderType(ShaderType type);
@@ -113,11 +114,7 @@ private:
 
     std::map<ShaderType, ShaderRef> m_shader_ref;
 
-    PerFrameData<std::map<std::tuple<ShaderType, uint32_t>, std::vector<Resource::Ptr>>> m_cbv_buffer;
-    PerFrameData<std::map<std::tuple<ShaderType, uint32_t>, size_t>> m_cbv_offset;
-
     size_t m_num_rtv = 0;
-
     
     std::vector<VkAttachmentDescription> m_color_attachments;
     std::vector<VkAttachmentReference> m_color_attachments_ref;

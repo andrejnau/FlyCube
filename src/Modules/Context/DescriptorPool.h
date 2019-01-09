@@ -24,7 +24,8 @@ public:
         ComPtr<ID3D12DescriptorHeap>& heap,
         D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle,
         D3D12_GPU_DESCRIPTOR_HANDLE& gpu_handle,
-        std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>& copied_handle,
+        ComPtr<ID3D12DescriptorHeap>& heap_readable,
+        D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle_readable,
         size_t offset,
         size_t size,
         uint32_t increment_size,
@@ -37,13 +38,14 @@ public:
     size_t GetSize() const;
 
 private:
-    D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(size_t offset = 0) const;
+    D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(D3D12_CPU_DESCRIPTOR_HANDLE handle, size_t offset = 0) const;
 
     std::reference_wrapper<DX12Context> m_context;
     std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> m_heap;
     std::reference_wrapper<D3D12_CPU_DESCRIPTOR_HANDLE> m_cpu_handle;
     std::reference_wrapper<D3D12_GPU_DESCRIPTOR_HANDLE> m_gpu_handle;
-    std::reference_wrapper<std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>> m_copied_handle;
+    std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> m_heap_readable;
+    std::reference_wrapper<D3D12_CPU_DESCRIPTOR_HANDLE> m_cpu_handle_readable;
     size_t m_offset;
     size_t m_size;
     uint32_t m_increment_size;
@@ -66,14 +68,15 @@ private:
     ComPtr<ID3D12DescriptorHeap> m_heap;
     D3D12_CPU_DESCRIPTOR_HANDLE m_cpu_handle;
     D3D12_GPU_DESCRIPTOR_HANDLE m_gpu_handle;
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_copied_handle;
+    ComPtr<ID3D12DescriptorHeap> m_heap_readable;
+    D3D12_CPU_DESCRIPTOR_HANDLE m_cpu_handle_readable;
 };
 
 class DescriptorPool
 {
 public:
     DescriptorPool(DX12Context& context);
-    DescriptorHeapRange Allocate(ResourceType res_type, size_t count);
+    DescriptorHeapRange Allocate(D3D12_DESCRIPTOR_HEAP_TYPE descriptor_type, size_t count);
 
 private:
     DX12Context& m_context;

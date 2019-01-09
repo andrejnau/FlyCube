@@ -15,6 +15,8 @@ public:
     using Ptr = std::shared_ptr<DX12Resource>;
     ComPtr<ID3D12Resource> default_res;
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
+    uint32_t bind_flag = 0;
+    uint32_t buffer_size = 0;
     uint32_t stride = 0;
     D3D12_RESOURCE_DESC desc = {};
 

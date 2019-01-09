@@ -73,14 +73,14 @@ VKView::Ptr VKViewCreater::GetEmptyDescriptor(ResourceType res_type)
     return std::static_pointer_cast<VKView>(it->second);
 }
 
-VKView::Ptr VKViewCreater::GetView(uint32_t m_program_id, ShaderType shader_type, ResourceType res_type, uint32_t slot, ViewId view_id, const std::string& name, const Resource::Ptr& ires)
+VKView::Ptr VKViewCreater::GetView(uint32_t m_program_id, ShaderType shader_type, ResourceType res_type, uint32_t slot, const ViewDesc& view_desc, const std::string& name, const Resource::Ptr& ires)
 {
     if (!ires)
         return GetEmptyDescriptor(res_type);
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
-    View::Ptr& view = ires->GetView({ m_shader_provider.GetProgramId(), shader_type, res_type, slot, view_id });
+    View::Ptr& view = ires->GetView({m_program_id, shader_type, res_type, slot}, view_desc);
     if (view)
         return std::static_pointer_cast<VKView>(view);
 
