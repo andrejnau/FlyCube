@@ -27,9 +27,9 @@ public:
         Model& model;
         Camera& camera;
         glm::vec3& light_pos;
-        Resource::Ptr irradince;
-        Resource::Ptr prefilter;
-        Resource::Ptr brdf;
+        Resource::Ptr& irradince;
+        Resource::Ptr& prefilter;
+        Resource::Ptr& brdf;
     };
 
     struct Output

@@ -11,7 +11,6 @@ IBLCompute::IBLCompute(Context& context, const Input& input, int width, int heig
     , m_width(width)
     , m_height(height)
 {
-    CreateSizeDependentResources();
     m_sampler = m_context.CreateSampler({
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
@@ -26,27 +25,27 @@ void IBLCompute::OnRender()
 {
     m_context.SetViewport(m_size, m_size);
 
-    m_program.UseProgram();
-
-    m_program.ps.sampler.g_sampler.Attach(m_sampler);
-
-    glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 Down = glm::vec3(0.0f, -1.0f, 0.0f);
-    glm::vec3 Left = glm::vec3(-1.0f, 0.0f, 0.0f);
-    glm::vec3 Right = glm::vec3(1.0f, 0.0f, 0.0f);
-    glm::vec3 ForwardRH = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 ForwardLH = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 BackwardRH = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 BackwardLH = glm::vec3(0.0f, 0.0f, -1.0f);
-
-    m_program.gs.cbuffer.GSParams.Projection = glm::transpose(m_input.camera.GetProjectionMatrix());
-
-    float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-
     for (auto& ibl_model : m_input.scene_list)
     {
         if (!ibl_model.ibl_request)
             continue;
+
+        m_program.UseProgram();
+
+        m_program.ps.sampler.g_sampler.Attach(m_sampler);
+
+        glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 Down = glm::vec3(0.0f, -1.0f, 0.0f);
+        glm::vec3 Left = glm::vec3(-1.0f, 0.0f, 0.0f);
+        glm::vec3 Right = glm::vec3(1.0f, 0.0f, 0.0f);
+        glm::vec3 ForwardRH = glm::vec3(0.0f, 0.0f, -1.0f);
+        glm::vec3 ForwardLH = glm::vec3(0.0f, 0.0f, 1.0f);
+        glm::vec3 BackwardRH = glm::vec3(0.0f, 0.0f, 1.0f);
+        glm::vec3 BackwardLH = glm::vec3(0.0f, 0.0f, -1.0f);
+
+        m_program.gs.cbuffer.GSParams.Projection = glm::transpose(m_input.camera.GetProjectionMatrix());
+
+        float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
 
         glm::vec3 position = ibl_model.matrix * glm::vec4(ibl_model.model_center, 1.0);
         std::array<glm::mat4, 6>& view = m_program.gs.cbuffer.GSParams.View;
@@ -69,10 +68,16 @@ void IBLCompute::OnRender()
             }
             ibl_model.ibl_rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav,
                 gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_size, m_size, 6, texture_mips);
+
+            ibl_model.ibl_dsv = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_size, m_size, 6);
+        }
+        else
+        {
+            continue;
         }
 
         m_program.ps.om.rtv0.Attach(ibl_model.ibl_rtv).Clear(color);
-        m_program.ps.om.dsv.Attach(m_dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+        m_program.ps.om.dsv.Attach(ibl_model.ibl_dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
         for (auto& model : m_input.scene_list)
         {
@@ -123,7 +128,7 @@ void IBLCompute::OnRender()
         {
             m_program_downsample.cs.srv.inputTexture.Attach(ibl_model.ibl_rtv, i - 1);
             m_program_downsample.cs.uav.outputTexture.Attach(ibl_model.ibl_rtv, i);
-            m_context.Dispatch((texture_mips >> i) / 8, (texture_mips >> i) / 8, 6);
+            m_context.Dispatch((m_size >> i) / 8, (m_size >> i) / 8, 6);
         }
     }
 }
@@ -132,17 +137,7 @@ void IBLCompute::OnResize(int width, int height)
 {
 }
 
-void IBLCompute::CreateSizeDependentResources()
-{
-    m_dsv = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_size, m_size, 6);
-}
-
 void IBLCompute::OnModifySettings(const Settings& settings)
 {
-    Settings prev = m_settings;
     m_settings = settings;
-    if (prev.s_size != settings.s_size)
-    {
-        CreateSizeDependentResources();
-    }
 }

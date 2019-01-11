@@ -3,6 +3,7 @@ struct VS_OUTPUT
     float4 pos      : SV_POSITION;
     float3 fragPos  : POSITION;
     float3 texcoord : TEXCOORD;
+    uint RTIndex    : SV_RenderTargetArrayIndex;
 };
 
 TextureCube environmentMap;

@@ -22,8 +22,6 @@ public:
     {
         SceneModels& scene_list;
         Camera& camera;
-        Model& cube_model;
-        Model& square_model;
     };
 
     struct Output
@@ -38,8 +36,6 @@ public:
     virtual void OnModifySettings(const Settings & settings) override;
 
 private:
-    void CreateSizeDependentResources();
-
     Settings m_settings;
     Context& m_context;
     Input m_input;

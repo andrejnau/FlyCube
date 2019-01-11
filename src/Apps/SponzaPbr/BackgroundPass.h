@@ -21,6 +21,7 @@ public:
         Resource::Ptr& environment;
         Resource::Ptr& rtv;
         Resource::Ptr& dsv;
+        size_t faces = 1;
     };
 
     struct Output
@@ -37,8 +38,6 @@ public:
     virtual void OnModifySettings(const Settings & settings) override;
 
 private:
-    void CreateSizeDependentResources();
-
     Settings m_settings;
     Context& m_context;
     Input m_input;

@@ -22,7 +22,7 @@ cbuffer Settings
     bool use_normal_mapping;
     bool use_flip_normal_y;
     bool use_gloss_instead_of_roughness;
-    float ibl_source;
+    int ibl_source;
 };
 
 static const bool is_packed_normal = false;

@@ -268,7 +268,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         float3 albedo = getTexture(gAlbedo, input.texcoord, i).rgb;
         float roughness = getTexture(gMaterial, input.texcoord, i).r;
         float metallic = getTexture(gMaterial, input.texcoord, i).g;
-        uint ibl_probe_index = getTexture(gMaterial, input.texcoord, i).a;
+        int ibl_probe_index = getTexture(gMaterial, input.texcoord, i).a;
 
         float ao = 1;
         if (use_ao)
@@ -331,7 +331,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         }
 
         float3 ambient = 0;      
-        if (use_IBL_diffuse)
+        if (use_IBL_diffuse && ibl_probe_index != -1)
         {
             // ambient lighting (we now use IBL as the ambient term)
             float3 kS = FresnelSchlickRoughness(max(dot(normal, V), 0.0), m.f0, roughness);
@@ -342,7 +342,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             ambient = (kD * diffuse) * ao;
         }
 
-        if (use_IBL_specular)
+        if (use_IBL_specular && ibl_probe_index != -1)
         {
             float3 F = m.f0;
             if (use_f0_with_roughness)
@@ -356,8 +356,8 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             ambient += specular * computeSpecOcclusion(max(dot(normal, V), 0.0), ao, roughness);
         }
 
-        if (!use_IBL_diffuse && !use_IBL_specular)
-            ambient = albedo * ao * 0.1;
+        if (!use_IBL_diffuse && !use_IBL_specular || ibl_probe_index == -1)
+            ambient = albedo * ao / 4;
 
         if (only_ambient)
             lighting = 0;

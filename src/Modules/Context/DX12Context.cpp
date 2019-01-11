@@ -28,7 +28,7 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     }
 #endif
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) || 1
     ComPtr<ID3D12Debug> debug_controller;
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller))))
     {

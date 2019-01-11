@@ -71,9 +71,10 @@ private:
     SSAOPass m_ssao_pass;
     BRDFGen m_brdf;
     Equirectangular2Cubemap m_equirectangular2cubemap;
-    std::vector<std::unique_ptr<IrradianceConversion>> m_irradiance_conversion;
     IBLCompute m_ibl_compute;
     size_t m_ibl_count = 1;
+    std::vector<std::unique_ptr<BackgroundPass>> m_ibl_compute_skybox;
+    std::vector<std::unique_ptr<IrradianceConversion>> m_irradiance_conversion;
     Resource::Ptr m_irradince;
     Resource::Ptr m_prefilter;
     Resource::Ptr m_depth_stencil_view_irradince;
@@ -83,6 +84,6 @@ private:
     ComputeLuminance m_compute_luminance;
     ImGuiPass m_imgui_pass;
     Settings m_settings;
-    size_t m_irradince_texture_size = 32;
-    size_t m_prefilter_texture_size = 128;
+    size_t m_irradince_texture_size = 16;
+    size_t m_prefilter_texture_size = 64;
 };
