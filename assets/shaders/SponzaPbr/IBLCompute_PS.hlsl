@@ -1,10 +1,11 @@
-struct VS_OUTPUT
+struct GeometryOutput
 {
     float4 pos       : SV_POSITION;
     float3 fragPos   : POSITION;
     float3 normal    : NORMAL;
     float3 tangent   : TANGENT;
     float2 texCoord  : TEXCOORD;
+    uint RTIndex     : SV_RenderTargetArrayIndex;
 };
 
 Texture2D albedoMap;
@@ -22,7 +23,6 @@ cbuffer Settings
     bool use_normal_mapping;
     bool use_flip_normal_y;
     bool use_gloss_instead_of_roughness;
-    float ibl_source;
 };
 
 static const bool is_packed_normal = false;
@@ -39,13 +39,10 @@ float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, b
 
 struct PS_OUT
 {
-    float4 gPosition : SV_Target0;
-    float4 gNormal   : SV_Target1;
-    float4 gAlbedo   : SV_Target2;
-    float4 gMaterial : SV_Target3;
+    float4 gAlbedo   : SV_Target0;
 };
 
-float3 CalcBumpedNormal(VS_OUTPUT input)
+float3 CalcBumpedNormal(GeometryOutput input)
 {
     float3 N = normalize(input.normal);
     float3 T = normalize(input.tangent);
@@ -65,7 +62,7 @@ float3 CalcBumpedNormal(VS_OUTPUT input)
     return normal;
 }
 
-PS_OUT main(VS_OUTPUT input)
+PS_OUT main(GeometryOutput input)
 {
     if (use_standard_channel_binding)
     {
@@ -79,17 +76,17 @@ PS_OUT main(VS_OUTPUT input)
     }
 
     PS_OUT output;
-    output.gPosition = float4(input.fragPos.xyz, 1);
+   /* output.gPosition = float4(input.fragPos.xyz, 1);
 
     if (use_normal_mapping)
         output.gNormal.rgb = CalcBumpedNormal(input);
     else
         output.gNormal.rgb = normalize(input.normal);
-    output.gNormal.a = 1.0;
+    output.gNormal.a = 1.0;*/
 
     output.gAlbedo = float4(getTexture(albedoMap, g_sampler, input.texCoord, true).rgb, 1.0);
 
-    if (use_standard_channel_binding)
+   /* if (use_standard_channel_binding)
     {
         if (use_gloss_instead_of_roughness)
             output.gMaterial.r = 1.0 - getTexture(glossMap, g_sampler, input.texCoord).r;
@@ -104,7 +101,7 @@ PS_OUT main(VS_OUTPUT input)
     }
 
     output.gMaterial.b = getTexture(aoMap, g_sampler, input.texCoord).r;
-    output.gMaterial.a = ibl_source;
+    output.gMaterial.a = 1.0;*/
 
     return output;
 }

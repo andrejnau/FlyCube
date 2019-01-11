@@ -18,9 +18,12 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
     , m_shadow_pass(m_context, { m_scene_list, m_camera, m_light_pos }, width, height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
-    , m_irradiance_conversion(m_context, { m_model_cube, m_model_square, m_equirectangular_environment }, width, height)
-    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, m_irradiance_conversion.output, m_light_pos }, width, height)
-    , m_background_pass(m_context, { m_model_cube, m_camera, m_irradiance_conversion.output.environment, m_light_pass.output.rtv, m_geometry_pass.output.dsv }, width, height)
+    , m_brdf(m_context, { m_model_square }, width, height)
+    , m_equirectangular2cubemap(m_context, { m_model_cube, m_equirectangular_environment }, width, height)
+    , m_ibl_compute(m_context, { m_scene_list, m_camera, m_model_cube, m_model_square }, width, height)
+    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, m_light_pos,
+        m_irradince, m_prefilter, m_brdf.output.brdf }, width, height)
+    , m_background_pass(m_context, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, m_light_pass.output.rtv, m_geometry_pass.output.dsv }, width, height)
     , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
     , m_imgui_pass(m_context, { m_render_target_view, *this }, width, height)
 {
@@ -34,9 +37,6 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
         m_scene_list.emplace_back(m_context, "model/export3dcoat/export3dcoat.obj");
         m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 75.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        m_scene_list.emplace_back(m_context, "model/knight-artorias/Artorias.obj");
-        m_scene_list.back().matrix = glm::scale(glm::vec3(0.1)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
         std::string hdr_tests[] =
         {
             "gold",
@@ -47,11 +47,17 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
         };
 
         float x = 300;
+        bool first = true;
         for (const auto& test : hdr_tests)
         {
             m_scene_list.emplace_back(m_context, "model/pbr_test/" + test + "/sphere.obj");
-            m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f)) *glm::translate(glm::vec3(x, 1500, 0.0f));
+            m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f)) * glm::translate(glm::vec3(x, 500, 0.0f));
+            m_scene_list.back().ibl_request = first;
+            first = false;
             x += 50;
+
+            if (m_scene_list.back().ibl_request)
+                ++m_ibl_count;
         }
     }
 
@@ -63,6 +69,24 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
     CreateRT();
 
     m_equirectangular_environment = CreateTexture(m_context, GetAssetFullPath("model/skybox.dds"));
+
+    size_t layer = 0;
+    {
+        IrradianceConversion::Target irradince{ m_irradince, m_depth_stencil_view_irradince, layer, m_irradince_texture_size };
+        IrradianceConversion::Target prefilter{ m_prefilter, m_depth_stencil_view_prefilter, layer, m_prefilter_texture_size };
+        m_irradiance_conversion.emplace_back(new IrradianceConversion(m_context, { m_model_square, m_equirectangular2cubemap.output.environment, irradince, prefilter }, width, height));
+    }
+
+    for (auto& model : m_scene_list)
+    {
+        if (!model.ibl_request)
+            continue;
+
+        model.ibl_source = ++layer;
+        IrradianceConversion::Target irradince{ m_irradince, m_depth_stencil_view_irradince, model.ibl_source, m_irradince_texture_size };
+        IrradianceConversion::Target prefilter{ m_prefilter, m_depth_stencil_view_prefilter, model.ibl_source, m_prefilter_texture_size };
+        m_irradiance_conversion.emplace_back(new IrradianceConversion(m_context, { m_model_square, model.ibl_rtv, irradince, prefilter }, width, height));
+    }
 }
 
 Scene::~Scene()
@@ -96,7 +120,13 @@ void Scene::OnUpdate()
     m_geometry_pass.OnUpdate();
     m_shadow_pass.OnUpdate();
     m_ssao_pass.OnUpdate();
-    m_irradiance_conversion.OnUpdate();
+    m_brdf.OnUpdate();
+    m_equirectangular2cubemap.OnUpdate();
+    for (auto& x : m_irradiance_conversion)
+    {
+        x->OnUpdate();
+    }
+    m_ibl_compute.OnUpdate();
     m_light_pass.OnUpdate();
     m_background_pass.OnUpdate();
     m_compute_luminance.OnUpdate();
@@ -119,8 +149,23 @@ void Scene::OnRender()
     m_ssao_pass.OnRender();
     m_context.EndEvent();
 
+    m_context.BeginEvent("brdf Pass");
+    m_brdf.OnRender();
+    m_context.EndEvent();
+
+    m_context.BeginEvent("equirectangular to cubemap Pass");
+    m_equirectangular2cubemap.OnRender();
+    m_context.EndEvent();
+
     m_context.BeginEvent("Irradiance Conversion Pass");
-    m_irradiance_conversion.OnRender();
+    for (auto& x : m_irradiance_conversion)
+    {
+        x->OnRender();
+    }
+    m_context.EndEvent();
+
+    m_context.BeginEvent("IBLCompute");
+    m_ibl_compute.OnRender();
     m_context.EndEvent();
 
     m_context.BeginEvent("Light Pass");
@@ -162,6 +207,7 @@ void Scene::OnResize(int width, int height)
     m_geometry_pass.OnResize(width, height);
     m_shadow_pass.OnResize(width, height);
     m_ssao_pass.OnResize(width, height);
+    m_ibl_compute.OnResize(width, height);
     m_light_pass.OnResize(width, height);
     m_compute_luminance.OnResize(width, height);
     m_imgui_pass.OnResize(width, height);
@@ -231,14 +277,28 @@ void Scene::OnModifySettings(const Settings& settings)
     m_settings = settings;
     m_geometry_pass.OnModifySettings(settings);
     m_shadow_pass.OnModifySettings(settings);
+    m_ibl_compute.OnModifySettings(settings);
     m_light_pass.OnModifySettings(settings);
     m_compute_luminance.OnModifySettings(settings);
     m_ssao_pass.OnModifySettings(settings);
-    m_irradiance_conversion.OnModifySettings(settings);
+    m_brdf.OnModifySettings(settings);
+    m_equirectangular2cubemap.OnModifySettings(settings);
+    for (auto& x : m_irradiance_conversion)
+    {
+        x->OnModifySettings(settings);
+    }
     m_background_pass.OnModifySettings(settings);
 }
 
 void Scene::CreateRT()
 {
     m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
+
+    m_irradince = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 
+        m_irradince_texture_size, m_irradince_texture_size, 6 * m_ibl_count);
+    m_prefilter = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 
+        m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count, log2(m_prefilter_texture_size));
+
+    m_depth_stencil_view_irradince = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_irradince_texture_size, m_irradince_texture_size, 6 * m_ibl_count);
+    m_depth_stencil_view_prefilter = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count);
 }

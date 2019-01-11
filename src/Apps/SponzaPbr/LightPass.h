@@ -26,8 +26,10 @@ public:
         SSAOPass::Output& ssao_pass;
         Model& model;
         Camera& camera;
-        IrradianceConversion::Output& irradiance_pass;
         glm::vec3& light_pos;
+        Resource::Ptr irradince;
+        Resource::Ptr prefilter;
+        Resource::Ptr brdf;
     };
 
     struct Output

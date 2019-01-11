@@ -33,8 +33,11 @@ set(headers
     ${include_path}/SSAOPass.h
     ${include_path}/ShadowPass.h
     ${include_path}/IrradianceConversion.h
+    ${include_path}/Equirectangular2Cubemap.h
+    ${include_path}/BRDFGen.h
     ${include_path}/BackgroundPass.h
     ${include_path}/ComputeLuminance.h
+    ${include_path}/IBLCompute.h
     ${include_path}/Scene.h
     ${include_path}/ImGuiSettings.h
     ${include_path}/Settings.h
@@ -47,8 +50,11 @@ set(sources
     ${source_path}/SSAOPass.cpp
     ${source_path}/ShadowPass.cpp
     ${source_path}/IrradianceConversion.cpp
+    ${source_path}/Equirectangular2Cubemap.cpp
+    ${source_path}/BRDFGen.cpp
     ${source_path}/BackgroundPass.cpp
     ${source_path}/ComputeLuminance.cpp
+    ${source_path}/IBLCompute.cpp
     ${source_path}/Scene.cpp
     ${source_path}/Settings.cpp
     ${source_path}/Main.cpp
@@ -67,6 +73,7 @@ set(pixel_shaders
     ${shaders_path}/Prefilter_PS.hlsl
     ${shaders_path}/BRDF_PS.hlsl
     ${shaders_path}/ShadowPass_PS.hlsl
+    ${shaders_path}/IBLCompute_PS.hlsl
 )
 
 set(vertex_shaders
@@ -79,10 +86,12 @@ set(vertex_shaders
     ${shaders_path}/Background_VS.hlsl
     ${shaders_path}/BRDF_VS.hlsl
     ${shaders_path}/ShadowPass_VS.hlsl
+    ${shaders_path}/IBLCompute_VS.hlsl
 )
 
 set(geometry_shaders
     ${shaders_path}/ShadowPass_GS.hlsl
+    ${shaders_path}/IBLCompute_GS.hlsl
 )
 
 set(compute_shaders

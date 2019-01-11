@@ -144,6 +144,21 @@ void DX12ViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32
         m_context.device->CreateShaderResourceView(res.default_res.Get(), &srv_desc, handle.GetCpuHandle());
         break;
     }
+    case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
+    {
+        D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+        srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srv_desc.Format = desc.Format;
+        if (srv_desc.Format == DXGI_FORMAT_R32_TYPELESS)
+        {
+            srv_desc.Format = FloatFromTypeless(srv_desc.Format);
+        }
+        srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
+        srv_desc.TextureCubeArray.MipLevels = desc.MipLevels;
+        srv_desc.TextureCubeArray.NumCubes = desc.DepthOrArraySize / 6;
+        m_context.device->CreateShaderResourceView(res.default_res.Get(), &srv_desc, handle.GetCpuHandle());
+        break;
+    }
     default:
         assert(false);
         break;

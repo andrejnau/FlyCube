@@ -28,6 +28,15 @@ public:
     Bones bones;
 
     glm::mat4 matrix;
+    bool ibl_request = false;
+    size_t ibl_source = 0;
+    Resource::Ptr ibl_rtv;
+
+    struct Output
+    {
+        Resource::Ptr irradince;
+        Resource::Ptr prefilter;
+    } ibl;
 
     const Material& GetMaterial(size_t range_id) const
     {
@@ -43,4 +52,5 @@ public:
     TextureCache m_cache;
     std::vector<Material> materials;
     BoundBox bound_box;
+    glm::vec3 model_center;
 };

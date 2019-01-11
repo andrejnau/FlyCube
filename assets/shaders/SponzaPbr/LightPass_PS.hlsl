@@ -19,8 +19,8 @@ TEXTURE_TYPE gNormal;
 TEXTURE_TYPE gAlbedo;
 TEXTURE_TYPE gMaterial;
 Texture2D gSSAO;
-TextureCube irradianceMap;
-TextureCube prefilterMap;
+TextureCubeArray irradianceMap;
+TextureCubeArray prefilterMap;
 Texture2D brdfLUT;
 TextureCube<float> LightCubeShadowMap;
 
@@ -268,6 +268,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         float3 albedo = getTexture(gAlbedo, input.texcoord, i).rgb;
         float roughness = getTexture(gMaterial, input.texcoord, i).r;
         float metallic = getTexture(gMaterial, input.texcoord, i).g;
+        uint ibl_probe_index = getTexture(gMaterial, input.texcoord, i).a;
 
         float ao = 1;
         if (use_ao)
@@ -336,7 +337,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             float3 kS = FresnelSchlickRoughness(max(dot(normal, V), 0.0), m.f0, roughness);
             float3 kD = 1.0 - kS;
             kD *= 1.0 - metallic;
-            float3 irradiance = irradianceMap.Sample(g_sampler, normal).rgb;
+            float3 irradiance = irradianceMap.Sample(g_sampler, float4(normal, ibl_probe_index)).rgb;
             float3 diffuse = irradiance * albedo;
             ambient = (kD * diffuse) * ao;
         }
@@ -347,9 +348,9 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             if (use_f0_with_roughness)
                 F = FresnelSchlickRoughness(max(dot(normal, V), 0.0), m.f0, roughness);
             // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
-            uint width, height, levels;
-            prefilterMap.GetDimensions(0, width, height, levels);
-            float3 prefilteredColor = prefilterMap.SampleLevel(g_sampler, R, roughness * levels).rgb;
+            uint width, height, layers, levels;
+            prefilterMap.GetDimensions(0, width, height, layers, levels);
+            float3 prefilteredColor = prefilterMap.SampleLevel(g_sampler, float4(R, ibl_probe_index), roughness * levels).rgb;
             float2 brdf = brdfLUT.Sample(brdf_sampler, float2(max(dot(normal, V), 0.0), roughness)).rg;
             float3 specular = prefilteredColor * (F * brdf.x + brdf.y);
             ambient += specular * computeSpecOcclusion(max(dot(normal, V), 0.0), ao, roughness);

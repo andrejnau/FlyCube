@@ -5,37 +5,30 @@
 #include <Context/DX11Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/CubemapVS.h>
+#include <ProgramRef/Equirectangular2CubemapPS.h>
 #include <ProgramRef/IrradianceConvolutionPS.h>
 #include <ProgramRef/PrefilterPS.h>
+#include <ProgramRef/DownSampleCS.h>
 #include <d3d11.h>
 #include <wrl.h>
 
 using namespace Microsoft::WRL;
 
-class IrradianceConversion : public IPass, public IModifySettings
+class Equirectangular2Cubemap : public IPass, public IModifySettings
 {
 public:
-    struct Target
-    {
-        Resource::Ptr& res;
-        Resource::Ptr& dsv;
-        size_t layer;
-        size_t size;
-    };
-
     struct Input
     {
         Model& model;
-        Resource::Ptr& environment;
-        Target irradince;
-        Target prefilter;
+        Resource::Ptr& hdr;
     };
 
     struct Output
     {
+        Resource::Ptr environment;
     } output;
 
-    IrradianceConversion(Context& context, const Input& input, int width, int height);
+    Equirectangular2Cubemap(Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
@@ -43,8 +36,7 @@ public:
     virtual void OnModifySettings(const Settings & settings) override;
 
 private:
-    void DrawIrradianceConvolution();
-    void DrawPrefilter();
+    void DrawEquirectangular2Cubemap();
     void CreateSizeDependentResources();
 
     Settings m_settings;
@@ -53,6 +45,13 @@ private:
     int m_width;
     int m_height;
     Resource::Ptr m_sampler;
-    Program<CubemapVS, IrradianceConvolutionPS> m_program_irradiance_convolution;
-    Program<CubemapVS, PrefilterPS> m_program_prefilter;
+    Resource::Ptr m_dsv;
+    Program<CubemapVS, Equirectangular2CubemapPS> m_program_equirectangular2cubemap;
+    Program<DownSampleCS> m_program_downsample;
+    size_t m_texture_size = 512;
+    size_t m_texture_mips = 0;
+// TODO
+public:
+    size_t m_irradince_texture_size = 32;
+    size_t m_prefilter_texture_size = 128;
 };

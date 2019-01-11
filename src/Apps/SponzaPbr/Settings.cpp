@@ -15,8 +15,8 @@ Settings::Settings()
     use_ao = true;
     use_ssao = false;
     use_white_ligth = true;
-    use_IBL_diffuse = false;
-    use_IBL_specular = false;
+    use_IBL_diffuse = true;
+    use_IBL_specular = true;
     skip_sponza_model = false;
     only_ambient = false;
     light_in_camera = false;

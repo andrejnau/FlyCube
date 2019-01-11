@@ -122,9 +122,9 @@ void LightPass::OnRender()
         m_program.ps.srv.gAlbedo.Attach(m_input.geometry_pass.albedo);
         m_program.ps.srv.gMaterial.Attach(m_input.geometry_pass.material);
         m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
-        m_program.ps.srv.irradianceMap.Attach(m_input.irradiance_pass.irradince);
-        m_program.ps.srv.prefilterMap.Attach(m_input.irradiance_pass.prefilter);
-        m_program.ps.srv.brdfLUT.Attach(m_input.irradiance_pass.brdf);
+        m_program.ps.srv.irradianceMap.Attach(m_input.irradince);
+        m_program.ps.srv.prefilterMap.Attach(m_input.prefilter);
+        m_program.ps.srv.brdfLUT.Attach(m_input.brdf);
         if (m_settings.use_shadow)
             m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
 
