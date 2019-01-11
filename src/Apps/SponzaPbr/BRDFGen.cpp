@@ -18,8 +18,7 @@ void BRDFGen::OnUpdate()
 
 void BRDFGen::OnRender()
 {
-    static bool is = false;
-    if (!is || m_settings.irradiance_conversion_every_frame)
+    if (!is)
     {
         m_context.BeginEvent("DrawBRDF");
         DrawBRDF();

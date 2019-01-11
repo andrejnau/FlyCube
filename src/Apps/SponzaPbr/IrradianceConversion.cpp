@@ -27,7 +27,6 @@ void IrradianceConversion::OnUpdate()
 
 void IrradianceConversion::OnRender()
 {
-    static bool is = false;
     if (!is || m_settings.irradiance_conversion_every_frame)
     {
         m_context.BeginEvent("DrawIrradianceConvolution");
@@ -51,7 +50,7 @@ void IrradianceConversion::DrawIrradianceConvolution()
     m_program_irradiance_convolution.ps.sampler.g_sampler.Attach(m_sampler);
 
     float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_program_irradiance_convolution.ps.om.rtv0.Attach(m_input.irradince.res).Clear(color);
+    m_program_irradiance_convolution.ps.om.rtv0.Attach(m_input.irradince.res);
     m_program_irradiance_convolution.ps.om.dsv.Attach(m_input.irradince.dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_input.model.ia.indices.Bind();
@@ -130,7 +129,7 @@ void IrradianceConversion::DrawPrefilter()
         m_program_prefilter.ps.cbuffer.Settings.roughness = (float)mip / (float)(max_mip_levels - 1);
         m_program_prefilter.ps.cbuffer.Settings.resolution = m_input.prefilter.size;
         float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-        m_program_prefilter.ps.om.rtv0.Attach(m_input.prefilter.res, mip).Clear(color);
+        m_program_prefilter.ps.om.rtv0.Attach(m_input.prefilter.res, mip);
         depth_out.Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
         for (uint32_t i = 0; i < 6; ++i)

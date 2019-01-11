@@ -122,11 +122,11 @@ void Scene::OnUpdate()
     m_ssao_pass.OnUpdate();
     m_brdf.OnUpdate();
     m_equirectangular2cubemap.OnUpdate();
+    m_ibl_compute.OnUpdate();
     for (auto& x : m_irradiance_conversion)
     {
         x->OnUpdate();
     }
-    m_ibl_compute.OnUpdate();
     m_light_pass.OnUpdate();
     m_background_pass.OnUpdate();
     m_compute_luminance.OnUpdate();
@@ -157,15 +157,15 @@ void Scene::OnRender()
     m_equirectangular2cubemap.OnRender();
     m_context.EndEvent();
 
+    m_context.BeginEvent("IBLCompute");
+    m_ibl_compute.OnRender();
+    m_context.EndEvent();
+
     m_context.BeginEvent("Irradiance Conversion Pass");
     for (auto& x : m_irradiance_conversion)
     {
         x->OnRender();
     }
-    m_context.EndEvent();
-
-    m_context.BeginEvent("IBLCompute");
-    m_ibl_compute.OnRender();
     m_context.EndEvent();
 
     m_context.BeginEvent("Light Pass");

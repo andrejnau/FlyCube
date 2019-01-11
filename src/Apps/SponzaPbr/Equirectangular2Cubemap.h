@@ -50,8 +50,5 @@ private:
     Program<DownSampleCS> m_program_downsample;
     size_t m_texture_size = 512;
     size_t m_texture_mips = 0;
-// TODO
-public:
-    size_t m_irradince_texture_size = 32;
-    size_t m_prefilter_texture_size = 128;
+    bool is = false;
 };

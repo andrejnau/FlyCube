@@ -40,4 +40,5 @@ private:
     Resource::Ptr m_dsv;
     Program<BRDFVS, BRDFPS> m_program;
     size_t m_size = 512;
+    bool is = false;
 };

@@ -55,4 +55,5 @@ private:
     Resource::Ptr m_sampler;
     Program<CubemapVS, IrradianceConvolutionPS> m_program_irradiance_convolution;
     Program<CubemapVS, PrefilterPS> m_program_prefilter;
+    bool is = false;
 };

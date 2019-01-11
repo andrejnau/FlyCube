@@ -26,7 +26,6 @@ void Equirectangular2Cubemap::OnUpdate()
 
 void Equirectangular2Cubemap::OnRender()
 {
-    static bool is = false;
     if (!is || m_settings.irradiance_conversion_every_frame)
     {
         m_context.BeginEvent("DrawEquirectangular2Cubemap");
