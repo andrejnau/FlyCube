@@ -73,7 +73,6 @@ private:
     Equirectangular2Cubemap m_equirectangular2cubemap;
     IBLCompute m_ibl_compute;
     size_t m_ibl_count = 1;
-    std::vector<std::unique_ptr<BackgroundPass>> m_ibl_compute_skybox;
     std::vector<std::unique_ptr<IrradianceConversion>> m_irradiance_conversion;
     Resource::Ptr m_irradince;
     Resource::Ptr m_prefilter;

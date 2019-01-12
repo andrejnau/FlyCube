@@ -5,10 +5,9 @@ struct VS_INPUT
 
 struct VS_OUTPUT
 {
-    float4 pos      : SV_POSITION;
-    float3 fragPos  : POSITION;
-    float3 texcoord : TEXCOORD;
-    uint RTIndex    : SV_RenderTargetArrayIndex;
+    float4 pos     : SV_POSITION;
+    float3 fragPos : POSITION;
+    uint RTIndex   : SV_RenderTargetArrayIndex;
 };
 
 cbuffer ConstantBuf
@@ -22,8 +21,7 @@ VS_OUTPUT main(VS_INPUT input)
 {
     VS_OUTPUT vs_out;
     vs_out.fragPos = input.pos;
-    vs_out.pos = mul(float4(input.pos, 1.0), mul((float3x3)view, projection)).xyww;
-    vs_out.texcoord = normalize(input.pos);
     vs_out.RTIndex = face;
+    vs_out.pos = mul(float4(input.pos, 1.0), mul((float3x3)view, projection)).xyww;
     return vs_out;
 }

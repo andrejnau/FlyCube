@@ -20,7 +20,7 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
     , m_brdf(m_context, { m_model_square }, width, height)
     , m_equirectangular2cubemap(m_context, { m_model_cube, m_equirectangular_environment }, width, height)
-    , m_ibl_compute(m_context, { m_scene_list, m_camera }, width, height)
+    , m_ibl_compute(m_context, { m_scene_list, m_camera, m_model_cube, m_equirectangular2cubemap.output.environment }, width, height)
     , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, m_light_pos,
         m_irradince, m_prefilter, m_brdf.output.brdf }, width, height)
     , m_background_pass(m_context, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, m_light_pass.output.rtv, m_geometry_pass.output.dsv }, width, height)
@@ -84,8 +84,6 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
         if (!model.ibl_request)
             continue;
 
-        m_ibl_compute_skybox.emplace_back(new BackgroundPass(m_context, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, model.ibl_rtv, model.ibl_dsv, 6 }, width, height));
-
         model.ibl_source = ++layer;
         IrradianceConversion::Target irradince{ m_irradince, m_depth_stencil_view_irradince, model.ibl_source, m_irradince_texture_size };
         IrradianceConversion::Target prefilter{ m_prefilter, m_depth_stencil_view_prefilter, model.ibl_source, m_prefilter_texture_size };
@@ -127,10 +125,6 @@ void Scene::OnUpdate()
     m_brdf.OnUpdate();
     m_equirectangular2cubemap.OnUpdate();
     m_ibl_compute.OnUpdate();
-    for (auto& x : m_ibl_compute_skybox)
-    {
-        x->OnUpdate();
-    }
     for (auto& x : m_irradiance_conversion)
     {
         x->OnUpdate();
@@ -167,10 +161,6 @@ void Scene::OnRender()
 
     m_context.BeginEvent("IBLCompute");
     m_ibl_compute.OnRender();
-    for (auto& x : m_ibl_compute_skybox)
-    {
-        x->OnRender();
-    }
     m_context.EndEvent();
 
     m_context.BeginEvent("Irradiance Conversion Pass");

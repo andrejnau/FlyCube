@@ -9,6 +9,8 @@
 #include <ProgramRef/IBLComputeGS.h>
 #include <ProgramRef/IBLComputePS.h>
 #include <ProgramRef/DownSampleCS.h>
+#include <ProgramRef/BackgroundPS.h>
+#include <ProgramRef/BackgroundVS.h>
 #include <d3d11.h>
 #include <wrl.h>
 #include "Settings.h"
@@ -22,6 +24,8 @@ public:
     {
         SceneModels& scene_list;
         Camera& camera;
+        Model& model_cube;
+        Resource::Ptr& environment;
     };
 
     struct Output
@@ -40,6 +44,7 @@ private:
     Context& m_context;
     Input m_input;
     Program<IBLComputeVS, IBLComputeGS, IBLComputePS> m_program;
+    Program<BackgroundVS, BackgroundPS> m_program_backgroud;
     Program<DownSampleCS> m_program_downsample;
     Resource::Ptr m_dsv;
     Resource::Ptr m_sampler;

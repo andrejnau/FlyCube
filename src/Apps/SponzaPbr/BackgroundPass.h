@@ -21,7 +21,6 @@ public:
         Resource::Ptr& environment;
         Resource::Ptr& rtv;
         Resource::Ptr& dsv;
-        size_t faces = 1;
     };
 
     struct Output

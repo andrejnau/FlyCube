@@ -7,6 +7,7 @@ IBLCompute::IBLCompute(Context& context, const Input& input, int width, int heig
     : m_context(context)
     , m_input(input)
     , m_program(context)
+    , m_program_backgroud(context)
     , m_program_downsample(context)
     , m_width(width)
     , m_height(height)
@@ -43,7 +44,7 @@ void IBLCompute::OnRender()
         glm::vec3 BackwardRH = glm::vec3(0.0f, 0.0f, 1.0f);
         glm::vec3 BackwardLH = glm::vec3(0.0f, 0.0f, -1.0f);
 
-        m_program.gs.cbuffer.GSParams.Projection = glm::transpose(m_input.camera.GetProjectionMatrix());
+        m_program.gs.cbuffer.GSParams.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.s_near, m_settings.s_far));
 
         float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
 
@@ -120,6 +121,55 @@ void IBLCompute::OnRender()
                 m_program.ps.srv.alphaMap.Attach(material.texture.opacity);
 
                 m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            }
+        }
+
+        {
+            m_program_backgroud.UseProgram();
+
+            m_program_backgroud.SetDepthStencilState({ true, DepthComparison::kLessEqual });
+
+            m_program_backgroud.ps.sampler.g_sampler.Attach(m_sampler);
+
+            m_program_backgroud.ps.om.rtv0.Attach(ibl_model.ibl_rtv);
+            m_program_backgroud.ps.om.dsv.Attach(ibl_model.ibl_dsv);
+
+            m_input.model_cube.ia.indices.Bind();
+            m_input.model_cube.ia.positions.BindToSlot(m_program_backgroud.vs.ia.POSITION);
+
+            m_program_backgroud.ps.srv.environmentMap.Attach(m_input.environment);
+
+            glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
+            glm::vec3 Down = glm::vec3(0.0f, -1.0f, 0.0f);
+            glm::vec3 Left = glm::vec3(-1.0f, 0.0f, 0.0f);
+            glm::vec3 Right = glm::vec3(1.0f, 0.0f, 0.0f);
+            glm::vec3 ForwardRH = glm::vec3(0.0f, 0.0f, -1.0f);
+            glm::vec3 ForwardLH = glm::vec3(0.0f, 0.0f, 1.0f);
+            glm::vec3 BackwardRH = glm::vec3(0.0f, 0.0f, 1.0f);
+            glm::vec3 BackwardLH = glm::vec3(0.0f, 0.0f, -1.0f);
+
+            glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+
+            glm::mat4 capture_views[] =
+            {
+                glm::lookAt(position, position + Right, Up),
+                glm::lookAt(position, position + Left, Up),
+                glm::lookAt(position, position + Up, BackwardRH),
+                glm::lookAt(position, position + Down, ForwardRH),
+                glm::lookAt(position, position + BackwardLH, Up),
+                glm::lookAt(position, position + ForwardLH, Up)
+            };
+
+            for (uint32_t i = 0; i < 6; ++i)
+            {
+                m_program_backgroud.vs.cbuffer.ConstantBuf.face = i;
+                m_program_backgroud.vs.cbuffer.ConstantBuf.view = glm::transpose(capture_views[i]);
+                m_program_backgroud.vs.cbuffer.ConstantBuf.projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.s_near, m_settings.s_far));
+
+                for (auto& range : m_input.model_cube.ia.ranges)
+                {
+                    m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+                }
             }
         }
 
