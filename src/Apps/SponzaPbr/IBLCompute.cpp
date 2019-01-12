@@ -16,10 +16,26 @@ IBLCompute::IBLCompute(Context& context, const Input& input, int width, int heig
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
         SamplerComparisonFunc::kNever });
+
+    m_compare_sampler = m_context.CreateSampler({
+        SamplerFilter::kComparisonMinMagMipLinear,
+        SamplerTextureAddressMode::kClamp,
+        SamplerComparisonFunc::kLess });
 }
 
 void IBLCompute::OnUpdate()
 {
+    glm::vec3 camera_position = m_input.camera.GetCameraPos();
+    m_program.ps.cbuffer.Light.viewPos = glm::vec4(camera_position, 0.0);
+
+    m_program.ps.cbuffer.ShadowParams.s_near = m_settings.s_near;
+    m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;
+    m_program.ps.cbuffer.ShadowParams.s_size = m_settings.s_size;
+    m_program.ps.cbuffer.ShadowParams.use_shadow = m_settings.use_shadow;
+    m_program.ps.cbuffer.ShadowParams.shadow_light_pos = m_input.light_pos;
+
+    m_program.ps.cbuffer.Settings.ambient_power = m_settings.ambient_power;
+    m_program.ps.cbuffer.Settings.light_power = m_settings.light_power;
 }
 
 void IBLCompute::OnRender()
@@ -108,17 +124,17 @@ void IBLCompute::OnRender()
             {
                 auto& material = model.GetMaterial(range.id);
 
-                /*m_program.ps.cbuffer.Settings.use_normal_mapping = material.texture.normal && m_settings.normal_mapping;
+                m_program.ps.cbuffer.Settings.use_normal_mapping = material.texture.normal && m_settings.normal_mapping;
                 m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.glossiness && !material.texture.roughness;
-                m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.use_flip_normal_y;*/
+                m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.use_flip_normal_y;
 
-                //m_program.ps.srv.normalMap.Attach(material.texture.normal);
+                m_program.ps.srv.normalMap.Attach(material.texture.normal);
                 m_program.ps.srv.albedoMap.Attach(material.texture.albedo);
-               /*m_program.ps.srv.glossMap.Attach(material.texture.glossiness);
                 m_program.ps.srv.roughnessMap.Attach(material.texture.roughness);
                 m_program.ps.srv.metalnessMap.Attach(material.texture.metalness);
-                m_program.ps.srv.aoMap.Attach(material.texture.occlusion);*/
+                m_program.ps.srv.aoMap.Attach(material.texture.occlusion);
                 m_program.ps.srv.alphaMap.Attach(material.texture.opacity);
+                m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
 
                 m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
             }
@@ -130,6 +146,7 @@ void IBLCompute::OnRender()
             m_program_backgroud.SetDepthStencilState({ true, DepthComparison::kLessEqual });
 
             m_program_backgroud.ps.sampler.g_sampler.Attach(m_sampler);
+            m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_compare_sampler);
 
             m_program_backgroud.ps.om.rtv0.Attach(ibl_model.ibl_rtv);
             m_program_backgroud.ps.om.dsv.Attach(ibl_model.ibl_dsv);

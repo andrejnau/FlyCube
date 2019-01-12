@@ -1,3 +1,202 @@
+TextureCube<float> LightCubeShadowMap;
+
+SamplerComparisonState LightCubeShadowComparsionSampler : register(s2);
+
+static const float PI = acos(-1.0);
+
+cbuffer Light
+{
+    float3 viewPos;
+};
+
+cbuffer ShadowParams
+{
+    float s_near;
+    float s_far;
+    float s_size;
+    bool use_shadow;
+    float3 shadow_light_pos;
+};
+
+cbuffer Settings
+{
+    float ambient_power;
+    float light_power;
+    bool use_normal_mapping;
+    bool use_flip_normal_y;
+    bool use_gloss_instead_of_roughness;
+};
+
+struct Material
+{
+    float3 albedo;
+    float roughness;
+    float metallic;
+    float3 f0;
+};
+
+float _vectorToDepth(float3 vec, float n, float f)
+{
+    float3 AbsVec = abs(vec);
+    float LocalZcomp = max(AbsVec.x, max(AbsVec.y, AbsVec.z));
+
+    float NormZComp = (f + n) / (f - n) - (2 * f * n) / (f - n) / LocalZcomp;
+    return NormZComp;
+}
+
+float _sampleCubeShadowHPCF(float3 L, float3 vL)
+{
+    float sD = _vectorToDepth(vL, s_near, s_far);
+    return LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, float3(L.xy, -L.z), sD).r;
+}
+
+float _sampleCubeShadowPCFSwizzle3x3(float3 L, float3 vL)
+{
+    float sD = _vectorToDepth(vL, s_near, s_far);
+
+    float3 forward = float3(L.xy, -L.z);
+    float3 right = float3(forward.z, -forward.x, forward.y);
+    right -= forward * dot(right, forward);
+    right = normalize(right);
+    float3 up = cross(right, forward);
+
+    float tapoffset = (1.0f / s_size);
+
+    right *= tapoffset;
+    up *= tapoffset;
+
+    float3 v0;
+    v0.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right - up, sD).r;
+    v0.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - up, sD).r;
+    v0.z = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + right - up, sD).r;
+
+    float3 v1;
+    v1.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right, sD).r;
+    v1.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward, sD).r;
+    v1.z = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + right, sD).r;
+
+    float3 v2;
+    v2.x = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward - right + up, sD).r;
+    v2.y = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + up, sD).r;
+    v2.z = LightCubeShadowMap.SampleCmpLevelZero(LightCubeShadowComparsionSampler, forward + right + up, sD).r;
+
+
+    return dot(v0 + v1 + v2, .1111111f);
+}
+
+// UE4: https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Shaders/ShadowProjectionCommon.usf
+static const float2 DiscSamples5[] =
+{
+    // 5 random points in disc with radius 2.500000
+    float2(0.000000, 2.500000),
+    float2(2.377641, 0.772542),
+    float2(1.469463, -2.022543),
+    float2(-1.469463, -2.022542),
+    float2(-2.377641, 0.772543),
+};
+
+float _sampleCubeShadowPCFDisc5(float3 L, float3 vL)
+{
+    float3 SideVector = normalize(cross(L, float3(0, 0, 1)));
+    float3 UpVector = cross(SideVector, L);
+
+    SideVector *= 1.0 / s_size;
+    UpVector *= 1.0 / s_size;
+
+    float sD = _vectorToDepth(vL, s_near, s_far);
+
+    float3 nlV = float3(L.xy, -L.z);
+
+    float totalShadow = 0;
+
+    [unroll]
+    for (int i = 0; i < 5; ++i)
+    {
+        float3 SamplePos = nlV + SideVector * DiscSamples5[i].x + UpVector * DiscSamples5[i].y;
+        totalShadow += LightCubeShadowMap.SampleCmpLevelZero(
+            LightCubeShadowComparsionSampler,
+            SamplePos,
+            sD);
+    }
+    totalShadow /= 5;
+
+    return totalShadow;
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+
+    float nom = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+
+    return nom / denom;
+}
+
+float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+    return ggx1 * ggx2;
+}
+
+float DistributionGGX(float3 N, float3 H, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+
+    float nom = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+
+    return nom / denom;
+}
+
+float3 FresnelSchlick(float cosTheta, float3 F0)
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
+{
+    return F0 + (max((float3)(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float3 CookTorrance_GGX(float3 fragPos, float3 n, float3 v, Material m, float3 light_pos, float3 light_color, bool is_sun = false)
+{
+    n = normalize(n);
+    v = normalize(v);
+    float3 l = normalize(light_pos - fragPos);
+    float3 h = normalize(v + l);
+
+    float distance = length(light_pos - fragPos);
+    float attenuation = 1.0 / (distance * distance);
+    if (is_sun)
+        attenuation = 1.0;
+    float3 radiance = light_power * light_color * attenuation;
+
+    float NDF = DistributionGGX(n, h, m.roughness);
+    float G = GeometrySmith(n, v, l, m.roughness);
+    float3 F = FresnelSchlick(max(dot(h, v), 0.0), m.f0);
+
+    float3 nominator = NDF * G * F;
+    float denominator = 4 * max(dot(n, v), 0.0) * max(dot(n, l), 0.0) + 0.001;
+    float3 specular = nominator / denominator;
+
+    float3 kS = F;
+    float3 kD = 1.0 - kS;
+    kD *= 1.0 - m.metallic;
+
+    float NdotL = max(dot(n, l), 0.0);
+
+    return (kD * m.albedo / PI + specular) * radiance * NdotL;
+}
+
 struct GeometryOutput
 {
     float4 pos       : SV_POSITION;
@@ -17,13 +216,6 @@ Texture2D aoMap;
 Texture2D alphaMap;
 
 SamplerState g_sampler;
-
-cbuffer Settings
-{
-    bool use_normal_mapping;
-    bool use_flip_normal_y;
-    bool use_gloss_instead_of_roughness;
-};
 
 static const bool is_packed_normal = false;
 static const bool is_sun_temple = false;
@@ -62,46 +254,40 @@ float3 CalcBumpedNormal(GeometryOutput input)
     return normal;
 }
 
-PS_OUT main(GeometryOutput input)
+float4 main(GeometryOutput input) : SV_TARGET
 {
-    if (use_standard_channel_binding)
-    {
-        if (getTexture(alphaMap, g_sampler, input.texCoord).r < 0.5)
-            discard;
-    }
-    else
-    {
-        if (getTexture(albedoMap, g_sampler, input.texCoord).a < 0.5)
-            discard;
-    }
+    float3 lighting = 0;
 
-    PS_OUT output;
-   /* output.gPosition = float4(input.fragPos.xyz, 1);
+    if (getTexture(alphaMap, g_sampler, input.texCoord).r < 0.5)
+        discard;
 
-    if (use_normal_mapping)
-        output.gNormal.rgb = CalcBumpedNormal(input);
-    else
-        output.gNormal.rgb = normalize(input.normal);
-    output.gNormal.a = 1.0;*/
+    float3 fragPos = input.fragPos.xyz;
+    float3 normal = CalcBumpedNormal(input);
+    float3 albedo = getTexture(albedoMap, g_sampler, input.texCoord, true).rgb;
+    float roughness = getTexture(roughnessMap, g_sampler, input.texCoord).r;
+    float metallic = getTexture(metalnessMap, g_sampler, input.texCoord).r;
 
-    output.gAlbedo = float4(getTexture(albedoMap, g_sampler, input.texCoord, true).rgb, 1.0);
+    float ao = pow(getTexture(aoMap, g_sampler, input.texCoord).r, 2.2);
 
-   /* if (use_standard_channel_binding)
+    Material m;
+    m.albedo = albedo;
+    m.roughness = roughness;
+    m.metallic = metallic;
+    const float3 Fdielectric = 0.04;
+    m.f0 = lerp(Fdielectric, albedo, metallic);
+
+    float3 V = normalize(viewPos - fragPos);
+    float3 R = reflect(-V, normal);
+
+    if (use_shadow)
     {
-        if (use_gloss_instead_of_roughness)
-            output.gMaterial.r = 1.0 - getTexture(glossMap, g_sampler, input.texCoord).r;
-        else
-            output.gMaterial.r = getTexture(roughnessMap, g_sampler, input.texCoord).r;
-        output.gMaterial.g = getTexture(metalnessMap, g_sampler, input.texCoord).r;
-    }
-    else
-    {
-        output.gMaterial.r = getTexture(roughnessMap, g_sampler, input.texCoord).g;
-        output.gMaterial.g = getTexture(roughnessMap, g_sampler, input.texCoord).b;
+        float3 vL = fragPos - shadow_light_pos;
+        float3 L = normalize(vL);
+        float shadow = _sampleCubeShadowPCFDisc5(L, vL);
+        lighting += CookTorrance_GGX(fragPos, normal, V, m, shadow_light_pos, 1, true) * shadow;
     }
 
-    output.gMaterial.b = getTexture(aoMap, g_sampler, input.texCoord).r;
-    output.gMaterial.a = 1.0;*/
+    lighting += ambient_power * albedo * ao / 4;
 
-    return output;
+    return float4(lighting, 1.0);
 }

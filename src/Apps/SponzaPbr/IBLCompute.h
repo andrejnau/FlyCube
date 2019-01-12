@@ -14,6 +14,7 @@
 #include <d3d11.h>
 #include <wrl.h>
 #include "Settings.h"
+#include "ShadowPass.h"
 
 using namespace Microsoft::WRL;
 
@@ -22,8 +23,10 @@ class IBLCompute : public IPass, public IModifySettings
 public:
     struct Input
     {
+        ShadowPass::Output& shadow_pass;
         SceneModels& scene_list;
         Camera& camera;
+        glm::vec3& light_pos;
         Model& model_cube;
         Resource::Ptr& environment;
     };
@@ -48,6 +51,7 @@ private:
     Program<DownSampleCS> m_program_downsample;
     Resource::Ptr m_dsv;
     Resource::Ptr m_sampler;
+    Resource::Ptr m_compare_sampler;
     size_t m_size = 512;
     int m_width;
     int m_height;

@@ -20,7 +20,7 @@ Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
     , m_brdf(m_context, { m_model_square }, width, height)
     , m_equirectangular2cubemap(m_context, { m_model_cube, m_equirectangular_environment }, width, height)
-    , m_ibl_compute(m_context, { m_scene_list, m_camera, m_model_cube, m_equirectangular2cubemap.output.environment }, width, height)
+    , m_ibl_compute(m_context, { m_shadow_pass.output, m_scene_list, m_camera, m_light_pos, m_model_cube, m_equirectangular2cubemap.output.environment }, width, height)
     , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, m_light_pos,
         m_irradince, m_prefilter, m_brdf.output.brdf }, width, height)
     , m_background_pass(m_context, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, m_light_pass.output.rtv, m_geometry_pass.output.dsv }, width, height)
