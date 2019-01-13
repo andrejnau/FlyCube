@@ -74,6 +74,7 @@ set(pixel_shaders
     ${shaders_path}/BRDF_PS.hlsl
     ${shaders_path}/ShadowPass_PS.hlsl
     ${shaders_path}/IBLCompute_PS.hlsl
+    ${shaders_path}/IBLComputePrePass_PS.hlsl
 )
 
 set(vertex_shaders

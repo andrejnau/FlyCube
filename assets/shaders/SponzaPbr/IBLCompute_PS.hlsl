@@ -4,8 +4,13 @@ SamplerComparisonState LightCubeShadowComparsionSampler : register(s2);
 
 static const float PI = acos(-1.0);
 
+#define LIGHT_COUNT 90
+
 cbuffer Light
 {
+    bool use_light;
+    float4 light_color[LIGHT_COUNT];
+    float4 light_pos[LIGHT_COUNT];
     float3 viewPos;
 };
 
@@ -285,6 +290,16 @@ float4 main(GeometryOutput input) : SV_TARGET
         float3 L = normalize(vL);
         float shadow = _sampleCubeShadowPCFDisc5(L, vL);
         lighting += CookTorrance_GGX(fragPos, normal, V, m, shadow_light_pos, 1, true) * shadow;
+    }
+
+    if (use_light)
+    {
+        [unroll]
+
+        for (int i = 0; i < LIGHT_COUNT; ++i)
+        {
+            lighting += CookTorrance_GGX(fragPos, normal, V, m, light_pos[i].rgb, light_color[i].rgb);
+        }
     }
 
     lighting += ambient_power * albedo * ao / 4;

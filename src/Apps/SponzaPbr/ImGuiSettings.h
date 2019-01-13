@@ -28,6 +28,11 @@ public:
         add_checkbox("use ssao", settings.use_ssao);
         add_checkbox("use shadow", settings.use_shadow);
         add_checkbox("use white ligth", settings.use_white_ligth);
+        m_use_IBL = settings.use_IBL_diffuse | settings.use_IBL_specular;
+        add_checkbox("use IBL", m_use_IBL, [this]()
+        {
+            settings.use_IBL_diffuse = settings.use_IBL_specular = m_use_IBL;
+        });
         add_checkbox("use IBL diffuse", settings.use_IBL_diffuse);
         add_checkbox("use IBL specular", settings.use_IBL_specular);
         add_checkbox("skip sponza model", settings.skip_sponza_model);
@@ -152,6 +157,19 @@ private:
         return m_hotkeys.back();
     }
 
+    template<typename Fn>
+    HotKey& add_checkbox(const std::string& label, bool& value, Fn&& fn)
+    {
+        m_items.push_back([=, &value]() {
+            bool res = ImGui::Checkbox(label.c_str(), &value);
+            if (res)
+                fn();
+            return res;
+        });
+        m_hotkeys.emplace_back(value);
+        return m_hotkeys.back();
+    }
+
     void add_slider(const std::string& label, float& value, float min, float max, bool linear = true)
     {
         if (linear)
@@ -175,4 +193,5 @@ private:
     std::vector<std::string> msaa_str = { "Off" };
     std::vector<std::function<bool(void)>> m_items;
     std::vector<HotKey> m_hotkeys;
+    bool m_use_IBL = false;
 };

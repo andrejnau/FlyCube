@@ -84,5 +84,5 @@ private:
     ImGuiPass m_imgui_pass;
     Settings m_settings;
     size_t m_irradince_texture_size = 16;
-    size_t m_prefilter_texture_size = 64;
+    size_t m_prefilter_texture_size = 512;
 };

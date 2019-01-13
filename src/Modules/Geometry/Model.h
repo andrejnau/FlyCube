@@ -29,7 +29,7 @@ public:
 
     glm::mat4 matrix;
     bool ibl_request = false;
-    int32_t ibl_source = -1;
+    int32_t ibl_source = 0;
     Resource::Ptr ibl_rtv;
     Resource::Ptr ibl_dsv;
 

@@ -8,6 +8,7 @@
 #include <ProgramRef/IBLComputeVS.h>
 #include <ProgramRef/IBLComputeGS.h>
 #include <ProgramRef/IBLComputePS.h>
+#include <ProgramRef/IBLComputePrePassPS.h>
 #include <ProgramRef/DownSampleCS.h>
 #include <ProgramRef/BackgroundPS.h>
 #include <ProgramRef/BackgroundVS.h>
@@ -43,10 +44,15 @@ public:
     virtual void OnModifySettings(const Settings & settings) override;
 
 private:
+    void DrawPrePass(Model& ibl_model);
+    void Draw(Model& ibl_model);
+    void DrawBackgroud(Model& ibl_model);
+    void DrawDownSample(Model& ibl_model, size_t texture_mips);
     Settings m_settings;
     Context& m_context;
     Input m_input;
     Program<IBLComputeVS, IBLComputeGS, IBLComputePS> m_program;
+    Program<IBLComputeVS, IBLComputeGS, IBLComputePrePassPS> m_program_pre_pass;
     Program<BackgroundVS, BackgroundPS> m_program_backgroud;
     Program<DownSampleCS> m_program_downsample;
     Resource::Ptr m_dsv;
@@ -55,4 +61,5 @@ private:
     size_t m_size = 512;
     int m_width;
     int m_height;
+    bool m_use_pre_pass = true;
 };
