@@ -4,6 +4,31 @@
 #include <vector>
 #include <set>
 
+#include <assimp/DefaultIOStream.h>
+#include <assimp/DefaultIOSystem.h>
+#include <assimp/../../code/MemoryIOWrapper.h>
+
+class MyIOSystem : public Assimp::DefaultIOSystem
+{
+public:
+    Assimp::IOStream* Open(const char* strFile, const char* strMode) override
+    {
+        FILE* file = fopen(strFile, strMode);
+        if (file == nullptr)
+            return nullptr;
+
+        fseek(file, 0, SEEK_END);
+        long size = ftell(file);
+        fseek(file, 0, SEEK_SET);
+
+        std::unique_ptr<uint8_t[]> buf(new uint8_t[size]);
+        fread(buf.get(), sizeof(uint8_t), size, file);
+        fclose(file);
+
+        return new Assimp::MemoryIOStream(buf.release(), size, true);
+    }
+};
+
 glm::vec3 aiVector3DToVec3(const aiVector3D& x)
 {
     return glm::vec3(x.x, x.y, x.z);
@@ -14,6 +39,7 @@ ModelLoader::ModelLoader(const std::string& file, aiPostProcessSteps flags, IMod
     , m_directory(SplitFilename(m_path))
     , m_model(model)
 {
+    m_import.SetIOHandler(new MyIOSystem());
     LoadModel(flags);
 }
 
