@@ -4,6 +4,7 @@
 #include <locale>
 #include <string>
 #include <fstream>
+#include <Windows.h>
 
 inline std::wstring utf8_to_wstring(const std::string &str)
 {
@@ -33,4 +34,17 @@ inline std::string GetAssetFullPath(const std::string& assetName)
 inline std::wstring GetAssetFullPathW(const std::string& assetName)
 {
     return GetAssetFullPath(utf8_to_wstring(assetName));
+}
+
+inline std::string GetExecutablePath()
+{
+    char buf[MAX_PATH + 1];
+    GetModuleFileNameA(nullptr, buf, sizeof(buf));
+    return buf;
+}
+
+inline std::string GetExecutableDir()
+{
+    auto path = GetExecutablePath();
+    return path.substr(0, path.find_last_of("\\/"));
 }

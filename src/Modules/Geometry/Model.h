@@ -27,7 +27,7 @@ public:
     std::vector<IMesh> meshes;
     Bones bones;
 
-    glm::mat4 matrix;
+    glm::mat4 matrix = glm::mat4(1);
     bool ibl_request = false;
     int32_t ibl_source = 0;
     Resource::Ptr ibl_rtv;

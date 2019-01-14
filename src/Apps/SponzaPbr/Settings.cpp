@@ -13,7 +13,7 @@ Settings::Settings()
     use_filmic_hdr = false;
     use_avg_lum = false;
     use_ao = true;
-    use_ssao = true;
+    use_ssao = false;
     use_white_ligth = true;
     use_IBL_diffuse = true;
     use_IBL_specular = true;

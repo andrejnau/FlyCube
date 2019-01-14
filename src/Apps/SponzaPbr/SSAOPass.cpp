@@ -130,5 +130,6 @@ void SSAOPass::OnModifySettings(const Settings& settings)
 
 void SSAOPass::SetDefines(Program<SSAOPassPS, SSAOPassVS>& program)
 {
-    program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+    if (m_settings.msaa_count != 1)
+        program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
 }

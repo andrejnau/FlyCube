@@ -32,7 +32,8 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
 
 void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
 {
-    program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+    if (m_settings.msaa_count != 1)
+        program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
 }
 
 void LightPass::OnUpdate()
