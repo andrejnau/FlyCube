@@ -23,8 +23,5 @@ class IShaderBlobProvider
 public:
     virtual size_t GetProgramId() const = 0;
     virtual ShaderBlob GetBlobByType(ShaderType type) const = 0;
-    virtual std::set<ShaderType> GetShaderTypes() const
-    {
-        return {};
-    }
+    virtual std::set<ShaderType> GetShaderTypes() const = 0;
 };

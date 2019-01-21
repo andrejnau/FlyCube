@@ -57,7 +57,11 @@ private:
         if (SkipIt(objectType, pMessage))
             return VK_FALSE;
 
+#if defined(_DEBUG)
+        static constexpr size_t errors_limit = 100;
+#else
         static constexpr size_t errors_limit = 10;
+#endif
         static size_t cnt = 0;
         if (++cnt <= errors_limit)
             printf("%s\n", pMessage);
@@ -180,6 +184,7 @@ void VKContext::CreateDevice()
     device_features.fragmentStoresAndAtomics = true;
     device_features.sampleRateShading = true;
     device_features.geometryShader = true;
+    device_features.imageCubeArray = true;
 
     uint32_t extension_count = 0;
     ASSERT_SUCCEEDED(vkEnumerateDeviceExtensionProperties(m_physical_device, nullptr, &extension_count, nullptr));
@@ -348,7 +353,7 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, gli::format format, u
         imageInfo.samples = (VkSampleCountFlagBits)msaa_count;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (depth == 6)
+        if (depth % 6 == 0)
             imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
         if (vkCreateImage(m_device, &imageInfo, nullptr, &image) != VK_SUCCESS) {

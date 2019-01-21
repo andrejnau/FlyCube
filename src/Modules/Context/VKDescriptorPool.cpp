@@ -30,6 +30,9 @@ void VKDescriptorPool::ResizeHeap(const std::map<VkDescriptorType, size_t>& coun
 
 VkDescriptorSet VKDescriptorPool::AllocateDescriptorSet(VkDescriptorSetLayout & set_layout, const std::map<VkDescriptorType, size_t>& count)
 {
+    if (count.empty())
+        return VK_NULL_HANDLE;
+
     ResizeHeap(count);
 
     VkDescriptorSetAllocateInfo allocInfo = {};

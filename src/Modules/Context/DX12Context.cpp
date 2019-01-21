@@ -122,8 +122,8 @@ Resource::Ptr DX12Context::CreateTexture(uint32_t bind_flag, gli::format Format,
     if (bind_flag & BindFlag::kRtv)
     {
         clear_value.Color[0] = 0.0f;
-        clear_value.Color[1] = 0.2f;
-        clear_value.Color[2] = 0.4f;
+        clear_value.Color[1] = 0.0f;
+        clear_value.Color[2] = 0.0f;
         clear_value.Color[3] = 1.0f;
         p_clear_value = &clear_value;
     }

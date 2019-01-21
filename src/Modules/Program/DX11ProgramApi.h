@@ -27,16 +27,24 @@ public:
 private:
     void CreateInputLayout();
 
-    void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res);
-    void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& res);
+    void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& res);
+    void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& res);
     void AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
-    void AttachRTV(uint32_t slot, const Resource::Ptr& ires);
-    void AttachDSV(const Resource::Ptr& ires);
+    void AttachRTV(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires);
+    void AttachDSV(const ViewDesc& view_desc, const Resource::Ptr& ires);
 
     void AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv);
     void AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav);
     void AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11SamplerState>& sampler);
     void AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires);
+
+    virtual std::set<ShaderType> GetShaderTypes() const override
+    {
+        std::set<ShaderType> res;
+        for (const auto& x : m_blob_map)
+            res.insert(x.first);
+        return res;
+    }
 
     virtual ShaderBlob GetBlobByType(ShaderType type) const override
     {

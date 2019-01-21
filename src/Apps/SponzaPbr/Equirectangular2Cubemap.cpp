@@ -44,7 +44,7 @@ void Equirectangular2Cubemap::DrawEquirectangular2Cubemap()
 
     m_program_equirectangular2cubemap.ps.sampler.g_sampler.Attach(m_sampler);
 
-    float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_program_equirectangular2cubemap.ps.om.rtv0.Attach(output.environment).Clear(color);
     m_program_equirectangular2cubemap.ps.om.dsv.Attach(m_dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 

@@ -31,6 +31,14 @@ public:
     virtual void SetBlendState(const BlendDesc& desc) override;
     virtual void SetDepthStencilState(const DepthStencilDesc& desc) override;
 
+    virtual std::set<ShaderType> GetShaderTypes() const override
+    {
+        std::set<ShaderType> res;
+        for (const auto& x : m_blob_map)
+            res.insert(x.first);
+        return res;
+    }
+
     virtual ShaderBlob GetBlobByType(ShaderType type) const override;
 
     void OnPresent();

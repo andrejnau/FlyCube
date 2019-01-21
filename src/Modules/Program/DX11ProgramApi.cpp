@@ -149,10 +149,10 @@ void DX11ProgramApi::Attach(const BindKey& bind_key, const ViewDesc& view_desc, 
     switch (bind_key.res_type)
     {
     case ResourceType::kSrv:
-        AttachSRV(bind_key.shader_type, name, bind_key.slot, res);
+        AttachSRV(bind_key.shader_type, name, bind_key.slot, view_desc, res);
         break;
     case ResourceType::kUav:
-        AttachUAV(bind_key.shader_type, name, bind_key.slot, res);
+        AttachUAV(bind_key.shader_type, name, bind_key.slot, view_desc, res);
         break;
     case ResourceType::kCbv:
         AttachCBV(bind_key.shader_type, bind_key.slot, res);
@@ -161,22 +161,22 @@ void DX11ProgramApi::Attach(const BindKey& bind_key, const ViewDesc& view_desc, 
         AttachSampler(bind_key.shader_type, name, bind_key.slot, res);
         break;
     case ResourceType::kRtv:
-        AttachRTV(bind_key.slot, res);
+        AttachRTV(bind_key.slot, view_desc, res);
         break;
     case ResourceType::kDsv:
-        AttachDSV(res);
+        AttachDSV(view_desc, res);
         break;
     }
 }
 
-void DX11ProgramApi::AttachSRV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
+void DX11ProgramApi::AttachSRV(ShaderType type, const std::string & name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr & res)
 {
-    AttachView(type, slot, m_view_creater.CreateSrv(type, name, slot, res));
+    AttachView(type, slot, m_view_creater.CreateSrv(type, name, slot, view_desc, res));
 }
 
-void DX11ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
+void DX11ProgramApi::AttachUAV(ShaderType type, const std::string & name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr & res)
 {
-    AttachView(type, slot, m_view_creater.CreateUAV(type, name, slot, res));
+    AttachView(type, slot, m_view_creater.CreateUAV(type, name, slot, view_desc, res));
 }
 
 void DX11ProgramApi::AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11SamplerState>& sampler)
@@ -209,16 +209,16 @@ void DX11ProgramApi::AttachSampler(ShaderType type, const std::string& name, uin
     AttachView(type, slot, sampler);
 }
 
-void DX11ProgramApi::AttachRTV(uint32_t slot, const Resource::Ptr& ires)
+void DX11ProgramApi::AttachRTV(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
     if (m_rtvs.size() >= slot)
         m_rtvs.resize(slot + 1);
-    m_rtvs[slot] = m_view_creater.CreateRtv(slot, ires);
+    m_rtvs[slot] = m_view_creater.CreateRtv(slot, view_desc, ires);
 }
 
-void DX11ProgramApi::AttachDSV(const Resource::Ptr& ires)
+void DX11ProgramApi::AttachDSV(const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
-    m_dsv = m_view_creater.CreateDsv(ires);
+    m_dsv = m_view_creater.CreateDsv(view_desc, ires);
 }
 
 void DX11ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
@@ -313,7 +313,13 @@ void DX11ProgramApi::SetBlendState(const BlendDesc& desc)
 void DX11ProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
 {
     D3D11_DEPTH_STENCIL_DESC depth_stencil_desc = {};
+    depth_stencil_desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    depth_stencil_desc.StencilEnable = false;
     depth_stencil_desc.DepthEnable = desc.depth_enable;
+    if (desc.func == DepthComparison::kLess)
+        depth_stencil_desc.DepthFunc = D3D11_COMPARISON_LESS;
+    else if (desc.func == DepthComparison::kLessEqual)
+        depth_stencil_desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
     ComPtr<ID3D11DepthStencilState> depth_stencil_state;
     m_context.device->CreateDepthStencilState(&depth_stencil_desc, &depth_stencil_state);
     m_context.device_context->OMSetDepthStencilState(depth_stencil_state.Get(), 0);

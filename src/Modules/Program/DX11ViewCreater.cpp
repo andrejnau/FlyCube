@@ -8,14 +8,15 @@ DX11ViewCreater::DX11ViewCreater(DX11Context& context, const IShaderBlobProvider
     , m_shader_provider(shader_provider)
     , m_program_id(shader_provider.GetProgramId())
 {
+}
+
+ComPtr<ID3D11ShaderResourceView> DX11ViewCreater::CreateSrv(ShaderType type, const std::string & name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr & ires)
+{
     for (auto& type : m_shader_provider.GetShaderTypes())
     {
         m_blob_map.emplace(type, m_shader_provider.GetBlobByType(type));
     }
-}
 
-ComPtr<ID3D11ShaderResourceView> DX11ViewCreater::CreateSrv(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & ires)
-{
     ComPtr<ID3D11ShaderResourceView> srv;
 
     if (!ires)
@@ -86,10 +87,53 @@ ComPtr<ID3D11ShaderResourceView> DX11ViewCreater::CreateSrv(ShaderType type, con
         D3D11_TEXTURE2D_DESC tex_dec = {};
         tex->GetDesc(&tex_dec);
         D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-        srv_desc.Format = DXGI_FORMAT_R32_FLOAT; // TODO tex_dec.Format;
+        srv_desc.Format = tex_dec.Format;
+        if (srv_desc.Format == DXGI_FORMAT_R32_TYPELESS)
+        {
+            srv_desc.Format = FloatFromTypeless(srv_desc.Format);
+        }
         srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
         srv_desc.TextureCube.MipLevels = tex_dec.MipLevels;
         ASSERT_SUCCEEDED(m_context.device->CreateShaderResourceView(tex.Get(), &srv_desc, &srv));
+        break;
+    }
+    case D3D_SRV_DIMENSION_TEXTURE2DARRAY:
+    {
+        ComPtr<ID3D11Texture2D> tex;
+        res->resource.As(&tex);
+        D3D11_TEXTURE2D_DESC desc = {};
+        tex->GetDesc(&desc);
+        D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+        srv_desc.Format = desc.Format;
+        srv_desc.Texture2DArray.MostDetailedMip = view_desc.level;
+        srv_desc.Texture2DArray.MipLevels = desc.MipLevels - srv_desc.Texture2D.MostDetailedMip;
+        srv_desc.Texture2DArray.ArraySize = desc.ArraySize;
+        switch (res_desc.ReturnType)
+        {
+        case D3D_RETURN_TYPE_FLOAT:
+            srv_desc.Format = FloatFromTypeless(srv_desc.Format);
+            break;
+        }
+        m_context.device->CreateShaderResourceView(tex.Get(), &srv_desc, &srv);
+        break;
+    }
+    case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
+    {
+        ComPtr<ID3D11Texture2D> tex;
+        res->resource.As(&tex);
+        D3D11_TEXTURE2D_DESC desc = {};
+        tex->GetDesc(&desc);
+        D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+        srv_desc.Format = desc.Format;
+        if (srv_desc.Format == DXGI_FORMAT_R32_TYPELESS)
+        {
+            srv_desc.Format = FloatFromTypeless(srv_desc.Format);
+        }
+        srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+        srv_desc.TextureCubeArray.MipLevels = desc.MipLevels;
+        srv_desc.TextureCubeArray.NumCubes = desc.ArraySize / 6;
+        m_context.device->CreateShaderResourceView(tex.Get(), &srv_desc, &srv);
         break;
     }
     default:
@@ -102,8 +146,13 @@ ComPtr<ID3D11ShaderResourceView> DX11ViewCreater::CreateSrv(ShaderType type, con
     return srv;
 }
 
-ComPtr<ID3D11UnorderedAccessView> DX11ViewCreater::CreateUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & ires)
+ComPtr<ID3D11UnorderedAccessView> DX11ViewCreater::CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
+    for (auto& type : m_shader_provider.GetShaderTypes())
+    {
+        m_blob_map.emplace(type, m_shader_provider.GetBlobByType(type));
+    }
+
     ComPtr<ID3D11UnorderedAccessView> uav;
     if (!ires)
         return uav;
@@ -154,6 +203,21 @@ ComPtr<ID3D11UnorderedAccessView> DX11ViewCreater::CreateUAV(ShaderType type, co
         m_context.device->CreateUnorderedAccessView(tex.Get(), &uav_desc, &uav);
         break;
     }
+    case D3D_SRV_DIMENSION_TEXTURE2DARRAY:
+    {
+        ComPtr<ID3D11Texture2D> tex;
+        res->resource.As(&tex);
+        D3D11_TEXTURE2D_DESC desc = {};
+        tex->GetDesc(&desc);
+
+        D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+        uav_desc.Format = desc.Format;
+        uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+        uav_desc.Texture2DArray.MipSlice = view_desc.level;
+        uav_desc.Texture2DArray.ArraySize = desc.ArraySize;
+        m_context.device->CreateUnorderedAccessView(tex.Get(), &uav_desc, &uav);
+        break;
+    }
     default:
         assert(false);
         break;
@@ -164,8 +228,13 @@ ComPtr<ID3D11UnorderedAccessView> DX11ViewCreater::CreateUAV(ShaderType type, co
     return uav;
 }
 
-ComPtr<ID3D11DepthStencilView> DX11ViewCreater::CreateDsv(const Resource::Ptr& ires)
+ComPtr<ID3D11DepthStencilView> DX11ViewCreater::CreateDsv(const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
+    for (auto& type : m_shader_provider.GetShaderTypes())
+    {
+        m_blob_map.emplace(type, m_shader_provider.GetBlobByType(type));
+    }
+
     ComPtr<ID3D11DepthStencilView> dsv;
     if (!ires)
         return dsv;
@@ -201,8 +270,13 @@ ComPtr<ID3D11DepthStencilView> DX11ViewCreater::CreateDsv(const Resource::Ptr& i
     return dsv;
 }
 
-ComPtr<ID3D11RenderTargetView> DX11ViewCreater::CreateRtv(uint32_t slot, const Resource::Ptr& ires)
+ComPtr<ID3D11RenderTargetView> DX11ViewCreater::CreateRtv(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
+    for (auto& type : m_shader_provider.GetShaderTypes())
+    {
+        m_blob_map.emplace(type, m_shader_provider.GetBlobByType(type));
+    }
+
     auto res = std::static_pointer_cast<DX11Resource>(ires);
 
     ComPtr<ID3D11RenderTargetView> rtv;

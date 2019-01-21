@@ -86,15 +86,15 @@ void IBLCompute::OnRender()
             continue;
 
         size_t texture_mips = 0;
+        for (size_t i = 0; ; ++i)
+        {
+            if ((m_size >> i) % 8 != 0)
+                break;
+            ++texture_mips;
+        }
 
         if (!ibl_model.ibl_rtv)
         {
-            for (size_t i = 0; ; ++i)
-            {
-                if ((m_size >> i) % 8 != 0)
-                    break;
-                ++texture_mips;
-            }
             ibl_model.ibl_rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav,
                 gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_size, m_size, 6, texture_mips);
 
@@ -179,6 +179,7 @@ void IBLCompute::Draw(Model& ibl_model)
     m_program.UseProgram();
 
     m_program.ps.sampler.g_sampler.Attach(m_sampler);
+    m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_compare_sampler);
 
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 Down = glm::vec3(0.0f, -1.0f, 0.0f);
@@ -191,7 +192,7 @@ void IBLCompute::Draw(Model& ibl_model)
 
     m_program.gs.cbuffer.GSParams.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.s_near, m_settings.s_far));
 
-    float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     glm::vec3 position = ibl_model.matrix * glm::vec4(ibl_model.model_center, 1.0);
     std::array<glm::mat4, 6>& view = m_program.gs.cbuffer.GSParams.View;
@@ -265,7 +266,6 @@ void IBLCompute::DrawBackgroud(Model& ibl_model)
     m_program_backgroud.SetDepthStencilState({ true, DepthComparison::kLessEqual });
 
     m_program_backgroud.ps.sampler.g_sampler.Attach(m_sampler);
-    m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_compare_sampler);
 
     m_program_backgroud.ps.om.rtv0.Attach(ibl_model.ibl_rtv);
     m_program_backgroud.ps.om.dsv.Attach(ibl_model.ibl_dsv);
