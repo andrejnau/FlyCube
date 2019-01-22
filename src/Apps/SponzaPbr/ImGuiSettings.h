@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <string>
 #include <vector>
+#include <Utilities/State.h>
 
 class ImGuiSettings
 {
@@ -63,6 +64,9 @@ public:
 
         ImGui::NewFrame();
         ImGui::Begin("Settings");
+
+        ImGui::Text("%s", CurState::Instance().gpu_name.c_str());
+
         for (const auto& fn : m_items)
         {
             has_changed |= fn();

@@ -1,15 +1,30 @@
 #include "Context/DXGIUtility.h"
+#include <Utilities/State.h>
+#include <Utilities/FileUtility.h>
 
 ComPtr<IDXGIAdapter1> GetHardwareAdapter(const ComPtr<IDXGIFactory4>& dxgi_factory)
 {
+    ComPtr<IDXGIFactory6> dxgi_factory6;
+    dxgi_factory.As(&dxgi_factory6);
+
+    auto NextAdapted = [&](UINT adapter_index, ComPtr<IDXGIAdapter1>& adapter)
+    {
+        if (dxgi_factory6)
+            return dxgi_factory6->EnumAdapterByGpuPreference(adapter_index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter));
+        else
+            return dxgi_factory->EnumAdapters1(adapter_index, &adapter);
+    };
+
     ComPtr<IDXGIAdapter1> adapter;
-    for (UINT adapterIndex = 0; DXGI_ERROR_NOT_FOUND != dxgi_factory->EnumAdapters1(adapterIndex, &adapter); ++adapterIndex)
+    for (UINT adapter_index = 0; DXGI_ERROR_NOT_FOUND != NextAdapted(adapter_index, adapter); ++adapter_index)
     {
         DXGI_ADAPTER_DESC1 desc = {};
         adapter->GetDesc1(&desc);
 
         if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
             continue;
+
+        CurState::Instance().gpu_name = wstring_to_utf8(desc.Description);
 
         return adapter;
     }
