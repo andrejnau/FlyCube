@@ -303,5 +303,5 @@ void Scene::CreateRT()
         m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count, log2(m_prefilter_texture_size));
 
     m_depth_stencil_view_irradince = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_irradince_texture_size, m_irradince_texture_size, 6 * m_ibl_count);
-    m_depth_stencil_view_prefilter = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count);
+    m_depth_stencil_view_prefilter = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count, log2(m_prefilter_texture_size));
 }

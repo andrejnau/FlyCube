@@ -12,12 +12,14 @@ class DX11ViewCreater
 public:
     DX11ViewCreater(DX11Context& context, const IShaderBlobProvider& shader_provider);
 
+    DX11View::Ptr GetView(const BindKey& bind_key, const ViewDesc& view_desc, const std::string& name, const Resource::Ptr& ires);
+
+private:
     ComPtr<ID3D11ShaderResourceView> CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires);
     ComPtr<ID3D11UnorderedAccessView> CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires);
     ComPtr<ID3D11DepthStencilView> CreateDsv(const ViewDesc& view_desc, const Resource::Ptr& ires);
     ComPtr<ID3D11RenderTargetView> CreateRtv(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires);
 
-private:
     decltype(&::D3DReflect) _D3DReflect = &::D3DReflect;
     DX11Context& m_context;
     const IShaderBlobProvider& m_shader_provider;

@@ -16,7 +16,6 @@ public:
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
     virtual void CompileShader(const ShaderBase& shader) override;
-    virtual void Attach(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override;
 
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
@@ -27,16 +26,10 @@ public:
 private:
     void CreateInputLayout();
 
-    void AttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& res);
-    void AttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& res);
-    void AttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires);
-    void AttachRTV(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires);
-    void AttachDSV(const ViewDesc& view_desc, const Resource::Ptr& ires);
-
     void AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv);
     void AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11UnorderedAccessView>& uav);
     void AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11SamplerState>& sampler);
-    void AttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires);
+    void AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11Resource>& res);
 
     virtual std::set<ShaderType> GetShaderTypes() const override
     {
@@ -61,10 +54,11 @@ private:
     virtual void OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override {}
     virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) override {}
     virtual void OnAttachDSV(const Resource::Ptr& ires) override {}
-    virtual View::Ptr CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override { return {}; }
 
-    std::vector<ComPtr<ID3D11RenderTargetView>> m_rtvs;
-    ComPtr<ID3D11DepthStencilView> m_dsv;
+    virtual View::Ptr CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override
+    {
+        return m_view_creater.GetView(bind_key, view_desc, GetBindingName(bind_key), res);
+    }
 
     std::map<ShaderType, ComPtr<ID3DBlob>> m_blob_map;
     ComPtr<ID3D11InputLayout> input_layout;

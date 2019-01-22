@@ -53,7 +53,7 @@ DX12View::Ptr DX12ViewCreater::GetView(const BindKey& bind_key, const ViewDesc& 
         CreateRTV(bind_key.slot, view_desc, res, handle);
         break;
     case ResourceType::kDsv:
-        CreateDSV(res, handle);
+        CreateDSV(view_desc, res, handle);
         break;
     }
 
@@ -267,7 +267,7 @@ void DX12ViewCreater::CreateRTV(uint32_t slot, const ViewDesc& view_desc, const 
     m_context.device->CreateRenderTargetView(res.default_res.Get(), &rtv_desc, handle.GetCpuHandle());
 }
 
-void DX12ViewCreater::CreateDSV(const DX12Resource& res, DX12View& handle)
+void DX12ViewCreater::CreateDSV(const ViewDesc& view_desc, const DX12Resource& res, DX12View& handle)
 {
     auto desc = res.default_res->GetDesc();
     DXGI_FORMAT format = DepthStencilFromTypeless(desc.Format);
@@ -278,13 +278,17 @@ void DX12ViewCreater::CreateDSV(const DX12Resource& res, DX12View& handle)
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
         dsv_desc.Texture2DArray.ArraySize = desc.DepthOrArraySize;
+        dsv_desc.Texture2DArray.MipSlice = view_desc.level;
     }
     else
     {
         if (desc.SampleDesc.Count > 1)
             dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
         else
+        {
             dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+            dsv_desc.Texture2D.MipSlice = view_desc.level;
+        }
     }
 
     m_context.device->CreateDepthStencilView(res.default_res.Get(), &dsv_desc, handle.GetCpuHandle());
