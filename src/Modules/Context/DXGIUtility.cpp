@@ -26,6 +26,7 @@ ComPtr<IDXGISwapChain3> CreateSwapChain(const ComPtr<IUnknown>& device, const Co
     swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swap_chain_desc.BufferCount = FrameCount;
     swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    swap_chain_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
     ComPtr<IDXGISwapChain3> swap_chain;
     ComPtr<IDXGISwapChain1> tmp_swap_chain;

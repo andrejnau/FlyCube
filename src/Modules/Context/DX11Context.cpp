@@ -368,7 +368,7 @@ Resource::Ptr DX11Context::GetBackBuffer()
 
 void DX11Context::Present(const Resource::Ptr&)
 {
-    ASSERT_SUCCEEDED(m_swap_chain->Present(0, 0));
+    ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
 }
 
 void DX11Context::UseProgram(DX11ProgramApi& program_api)

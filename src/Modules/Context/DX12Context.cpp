@@ -385,7 +385,7 @@ void DX12Context::Present(const Resource::Ptr& ires)
 
     m_command_queue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-    ASSERT_SUCCEEDED(m_swap_chain->Present(0, 0));
+    ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
 
     MoveToNextFrame();
 
