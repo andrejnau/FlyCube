@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glLoadGen/gl.h>
-#include "Context/Resource.h"
+#include "Resource/Resource.h"
 
 class GLResource : public Resource
 {

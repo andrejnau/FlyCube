@@ -3,7 +3,7 @@
 #include <map>
 #include <algorithm>
 #include <stdint.h>
-#include <Context/VKResource.h>
+#include <Resource/VKResource.h>
 #include <Context/View.h>
 
 #include <Context/VKContext.h>

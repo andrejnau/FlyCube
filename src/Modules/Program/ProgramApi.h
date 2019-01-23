@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Context/BaseTypes.h>
-#include <Context/Resource.h>
+#include <Resource/Resource.h>
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
 #include <map>

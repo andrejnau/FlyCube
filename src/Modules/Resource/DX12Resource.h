@@ -3,7 +3,7 @@
 #include <d3d12.h>
 #include <map>
 
-#include "Context/Resource.h"
+#include "Resource/Resource.h"
 #include "Context/BaseTypes.h"
 #include "Context/DX12View.h"
 

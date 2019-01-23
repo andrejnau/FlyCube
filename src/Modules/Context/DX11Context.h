@@ -5,7 +5,7 @@
 #include <wrl.h>
 
 #include "Context/Context.h"
-#include "Context/DX11Resource.h"
+#include <Resource/DX11Resource.h>
 
 using namespace Microsoft::WRL;
 

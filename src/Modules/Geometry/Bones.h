@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Geometry/Mesh.h"
-#include <Context/Resource.h>
+#include <Resource/Resource.h>
 #include <assimp/scene.h>
 #include <vector>
 #include <glm/glm.hpp>

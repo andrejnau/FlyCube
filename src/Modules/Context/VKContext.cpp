@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vk_sdk_platform.h>
 #include "VKContext.h"
-#include "VKResource.h"
+#include <Resource/VKResource.h>
 #include <Program/VKProgramApi.h>
 #include <Geometry/IABuffer.h>
 #include <Texture/TextureLoader.h>

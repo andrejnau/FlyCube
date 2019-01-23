@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <utility>
-#include <Context/GLResource.h>
+#include <Resource/GLResource.h>
 #include <Context/VKView.h>
 #include <Shader/GLSLConverter.h>
 

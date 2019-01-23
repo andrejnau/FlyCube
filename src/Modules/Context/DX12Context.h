@@ -7,7 +7,7 @@
 
 #include "Context/Context.h"
 #include "Context/DescriptorPool.h"
-#include "Context/DX12Resource.h"
+#include <Resource/DX12Resource.h>
 
 using namespace Microsoft::WRL;
 

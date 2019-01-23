@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <utility>
-#include <Context/VKResource.h>
+#include <Resource/VKResource.h>
 #include <Context/VKView.h>
 #include <Shader/SpirvCompiler.h>
 #include <iostream>

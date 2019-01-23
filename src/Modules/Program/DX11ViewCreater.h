@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Context/DX11Context.h>
-#include <Context/DX11Resource.h>
+#include <Resource/DX11Resource.h>
 #include <Context/View.h>
 #include <Context/DX11View.h>
 #include <Context/DescriptorPool.h>

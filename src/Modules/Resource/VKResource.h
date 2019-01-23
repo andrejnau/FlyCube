@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include "Context/Resource.h"
+#include "Resource/Resource.h"
 
 class VKDescriptorHeapRange;
 

@@ -2,7 +2,7 @@
 
 #include <map>
 #include <algorithm>
-#include <Context/VKResource.h>
+#include <Resource/VKResource.h>
 
 class VKContext;
 

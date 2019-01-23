@@ -8,7 +8,7 @@
 
 #include <Program/ProgramApi.h>
 #include "Context/BaseTypes.h"
-#include "Context/Resource.h"
+#include <Resource/Resource.h>
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
 

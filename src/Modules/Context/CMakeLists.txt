@@ -6,11 +6,8 @@ set(headers
     ContextSelector.h
     DescriptorPool.h
     DX11Context.h
-    DX11Resource.h
     DX12Context.h
-    DX12Resource.h
     DXGIUtility.h
-    Resource.h
     VKContext.h
     View.h
     DX11View.h
@@ -28,7 +25,6 @@ set(sources
     DescriptorPool.cpp
     DX11Context.cpp
     DX12Context.cpp
-    DX12Resource.cpp
     DXGIUtility.cpp
     VKContext.cpp
     VKDescriptorPool.cpp
@@ -55,6 +51,7 @@ target_link_libraries(${target}
     ${Vulkan_LIBRARIES}
     glLoadGen
     pix3
+    Resource
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

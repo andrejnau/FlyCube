@@ -2,7 +2,7 @@
 
 #include <d3d11.h>
 
-#include "Context/Resource.h"
+#include "Resource/Resource.h"
 
 class DX11Resource : public Resource
 {

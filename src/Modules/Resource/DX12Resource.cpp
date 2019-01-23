@@ -1,4 +1,4 @@
-#include "Context/DX12Resource.h"
+#include "Resource/DX12Resource.h"
 #include "Context/DX12Context.h"
 
 DX12Resource::DX12Resource(DX12Context& context)

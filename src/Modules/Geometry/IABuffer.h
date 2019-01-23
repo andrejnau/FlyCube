@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Context/Context.h>
-#include <Context/Resource.h>
+#include <Resource/Resource.h>
 #include <vector>
 #include <dxgiformat.h>
 

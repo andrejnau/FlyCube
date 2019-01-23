@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Context/DX12Context.h>
-#include <Context/DX12Resource.h>
+#include <Resource/DX12Resource.h>
 #include <Context/View.h>
 #include <Context/DescriptorPool.h>
 #include "IShaderBlobProvider.h"
