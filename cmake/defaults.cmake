@@ -6,12 +6,14 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 option(BUILD_SHARED_LIBS "Build package with shared libraries." OFF)
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
     set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} /MP")
     add_definitions(-DUNICODE -D_UNICODE)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     add_definitions(-DNOMINMAX)
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 endif()
