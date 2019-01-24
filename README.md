@@ -19,7 +19,7 @@
   * Tone mapping
 
 ## Engine API example
-```
+```cpp
 program.UseProgram();
 
 scene.ia.indices.Bind();
