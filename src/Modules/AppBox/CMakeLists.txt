@@ -13,6 +13,7 @@ add_library(${target} ${headers} ${sources})
 target_link_libraries(${target}
     glfw
     ${Vulkan_LIBRARIES}
+	Context
 )
 
 target_include_directories(${target}

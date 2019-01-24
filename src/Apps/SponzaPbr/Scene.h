@@ -32,10 +32,10 @@ using namespace Microsoft::WRL;
 class Scene : public SceneBase, public IModifySettings
 {
 public:
-    Scene(ApiType type, GLFWwindow* window, int width, int height);
+    Scene(Context& context, int width, int height);
     ~Scene();
 
-    static IScene::Ptr Create(ApiType api_type, GLFWwindow* window, int width, int height);
+    static IScene::Ptr Create(Context& context, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender() override;
@@ -51,11 +51,10 @@ public:
 private:
     void CreateRT();
 
+    Context& m_context;
+
     int m_width;
     int m_height;
-
-    std::unique_ptr<Context> m_context_ptr;
-    Context& m_context;
 
     Resource::Ptr m_render_target_view;
     Resource::Ptr m_depth_stencil_view;

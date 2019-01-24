@@ -8,11 +8,10 @@
 #include <glm/gtx/transform.hpp>
 #include <Context/ContextSelector.h>
 
-Scene::Scene(ApiType type, GLFWwindow* window, int width, int height)
-    : m_width(width)
+Scene::Scene(Context& context, int width, int height)
+    : m_context(context)
+    , m_width(width)
     , m_height(height)
-    , m_context_ptr(CreateContext(type, window, m_width, m_height))
-    , m_context(*m_context_ptr)
     , m_model_square(m_context, "model/square.obj")
     , m_model_cube(m_context, "model/cube.obj", ~aiProcess_FlipWindingOrder)
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
@@ -97,9 +96,9 @@ Scene::~Scene()
     m_context.OnDestroy();
 }
 
-IScene::Ptr Scene::Create(ApiType api_type, GLFWwindow* window, int width, int height)
+IScene::Ptr Scene::Create(Context& context, int width, int height)
 {
-    return std::make_unique<Scene>(api_type, window, width, height);
+    return std::make_unique<Scene>(context, width, height);
 }
 
 void Scene::OnUpdate()

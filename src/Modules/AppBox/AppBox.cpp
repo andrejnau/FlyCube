@@ -1,6 +1,7 @@
 #include "AppBox/AppBox.h"
 #include <GLFW/glfw3.h>
 #include <sstream>
+#include <Context/ContextSelector.h>
 
 AppBox::AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height)
     : m_create_sample(create_sample)
@@ -34,7 +35,8 @@ int AppBox::Run()
     if (!m_window)
         return EXIT_FAILURE;
 
-    m_sample = m_create_sample(m_api_type, m_window, m_width, m_height);
+    m_context = CreateContext(m_api_type, m_window, m_width, m_height);
+    m_sample = m_create_sample(*m_context, m_width, m_height);
 
     int frame_number = 0;
     double last_time = glfwGetTime();
