@@ -2,8 +2,8 @@
 
 #include <Context/VKContext.h>
 #include <Resource/VKResource.h>
-#include <Context/View.h>
-#include <Context/VKView.h>
+#include <View/View.h>
+#include <View/VKView.h>
 #include <Context/DescriptorPool.h>
 #include "IShaderBlobProvider.h"
 

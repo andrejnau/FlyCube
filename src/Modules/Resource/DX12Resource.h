@@ -5,7 +5,7 @@
 
 #include "Resource/Resource.h"
 #include "Context/BaseTypes.h"
-#include "Context/DX12View.h"
+#include <View/DX12View.h>
 
 class DX12Context;
 

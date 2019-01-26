@@ -9,13 +9,6 @@ set(headers
     DX12Context.h
     DXGIUtility.h
     VKContext.h
-    View.h
-    DX11View.h
-    DX11View.cpp
-    DX12View.h
-    DX12View.cpp
-    VKView.h
-    VKView.cpp
     VKDescriptorPool.h
     GLContext.h
 )
@@ -53,6 +46,7 @@ target_link_libraries(${target}
     glLoadGen
     pix3
     Resource
+    View
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

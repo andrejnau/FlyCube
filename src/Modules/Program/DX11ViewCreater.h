@@ -2,8 +2,8 @@
 
 #include <Context/DX11Context.h>
 #include <Resource/DX11Resource.h>
-#include <Context/View.h>
-#include <Context/DX11View.h>
+#include <View/View.h>
+#include <View/DX11View.h>
 #include <Context/DescriptorPool.h>
 #include "IShaderBlobProvider.h"
 

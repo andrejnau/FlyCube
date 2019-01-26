@@ -1,15 +1,16 @@
-set(target Resource)
+set(target View)
 
 set(headers
-    DX11Resource.h
-    DX12Resource.h
-    GLResource.h
-    Resource.h
-    VKResource.h
+    DX11View.h
+    DX12View.h
+    View.h
+    VKView.h 
 )
 
 set(sources
-    DX12Resource.cpp
+    DX11View.cpp
+    DX12View.cpp
+    VKView.cpp
 )
 
 add_library(${target} ${headers} ${sources})

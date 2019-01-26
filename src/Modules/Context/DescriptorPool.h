@@ -9,7 +9,7 @@
 #include <Utilities/DXUtility.h>
 #include "Context/BaseTypes.h"
 #include <Resource/DX12Resource.h>
-#include "Context/View.h"
+#include <View/View.h>
 
 using namespace Microsoft::WRL;
 
