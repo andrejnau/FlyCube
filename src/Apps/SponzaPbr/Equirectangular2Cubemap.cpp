@@ -86,7 +86,7 @@ void Equirectangular2Cubemap::DrawEquirectangular2Cubemap()
     m_program_downsample.UseProgram();
     for (size_t i = 1; i < m_texture_mips; ++i)
     {
-        m_program_downsample.cs.srv.inputTexture.Attach(output.environment, i - 1);
+        m_program_downsample.cs.srv.inputTexture.Attach(output.environment, {i - 1, 1});
         m_program_downsample.cs.uav.outputTexture.Attach(output.environment, i);
         m_context.Dispatch((m_texture_size >> i) / 8, (m_texture_size >> i) / 8, 6);
     }

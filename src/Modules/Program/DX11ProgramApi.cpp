@@ -12,16 +12,8 @@ void DX11ProgramApi::LinkProgram()
 {
 }
 
-void DX11ProgramApi::UseProgram()
+void DX11ProgramApi::ClearBindings()
 {
-    m_context.UseProgram(*this);
-    m_context.device_context->VSSetShader(vshader.Get(), nullptr, 0);
-    m_context.device_context->GSSetShader(gshader.Get(), nullptr, 0);
-    m_context.device_context->DSSetShader(nullptr, nullptr, 0);
-    m_context.device_context->HSSetShader(nullptr, nullptr, 0);
-    m_context.device_context->PSSetShader(pshader.Get(), nullptr, 0);
-    m_context.device_context->CSSetShader(cshader.Get(), nullptr, 0);
-
     ID3D11ShaderResourceView* empty_srv[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {};
     m_context.device_context->VSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, empty_srv);
     m_context.device_context->GSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, empty_srv);
@@ -36,13 +28,27 @@ void DX11ProgramApi::UseProgram()
     ID3D11RenderTargetView* empty_rtv[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
     ID3D11DepthStencilView* empty_dsv = nullptr;
     m_context.device_context->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, empty_rtv, empty_dsv);
+}
+
+void DX11ProgramApi::UseProgram()
+{
+    m_context.UseProgram(*this);
+    m_context.device_context->VSSetShader(vshader.Get(), nullptr, 0);
+    m_context.device_context->GSSetShader(gshader.Get(), nullptr, 0);
+    m_context.device_context->DSSetShader(nullptr, nullptr, 0);
+    m_context.device_context->HSSetShader(nullptr, nullptr, 0);
+    m_context.device_context->PSSetShader(pshader.Get(), nullptr, 0);
+    m_context.device_context->CSSetShader(cshader.Get(), nullptr, 0);
 
     m_context.device_context->IASetInputLayout(input_layout.Get());
     m_context.device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    ClearBindings();
 }
 
 void DX11ProgramApi::ApplyBindings()
 {
+    ClearBindings();
     UpdateCBuffers();
 
     std::vector<ID3D11RenderTargetView*> rtvs;

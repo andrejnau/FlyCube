@@ -15,10 +15,10 @@ public:
     DX11View::Ptr GetView(const BindKey& bind_key, const ViewDesc& view_desc, const std::string& name, const Resource::Ptr& ires);
 
 private:
-    ComPtr<ID3D11ShaderResourceView> CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires);
-    ComPtr<ID3D11UnorderedAccessView> CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires);
-    ComPtr<ID3D11DepthStencilView> CreateDsv(const ViewDesc& view_desc, const Resource::Ptr& ires);
-    ComPtr<ID3D11RenderTargetView> CreateRtv(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires);
+    void CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const DX11Resource::Ptr& res, ComPtr<ID3D11ShaderResourceView>& srv);
+    void CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const DX11Resource::Ptr& res, ComPtr<ID3D11UnorderedAccessView>& uav);
+    void CreateDsv(const ViewDesc& view_desc, const DX11Resource::Ptr& res, ComPtr<ID3D11DepthStencilView>& rtv);
+    void CreateRtv(uint32_t slot, const ViewDesc& view_desc, const DX11Resource::Ptr& res, ComPtr<ID3D11RenderTargetView>& dsv);
 
     decltype(&::D3DReflect) _D3DReflect = &::D3DReflect;
     DX11Context& m_context;

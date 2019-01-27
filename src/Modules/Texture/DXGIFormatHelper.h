@@ -15,6 +15,7 @@ void GetSurfaceInfo(
     _Out_opt_ size_t* outRowBytes,
     _Out_opt_ size_t* outNumRows);
 
+bool IsTypeless(DXGI_FORMAT format);
 DXGI_FORMAT FloatFromTypeless(DXGI_FORMAT format);
 DXGI_FORMAT UintFromTypeless(DXGI_FORMAT format);
 DXGI_FORMAT SintFromTypeless(DXGI_FORMAT format);

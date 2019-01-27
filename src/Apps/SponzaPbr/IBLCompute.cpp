@@ -314,7 +314,7 @@ void IBLCompute::DrawDownSample(Model & ibl_model, size_t texture_mips)
     m_program_downsample.UseProgram();
     for (size_t i = 1; i < texture_mips; ++i)
     {
-        m_program_downsample.cs.srv.inputTexture.Attach(ibl_model.ibl_rtv, i - 1);
+        m_program_downsample.cs.srv.inputTexture.Attach(ibl_model.ibl_rtv, {i - 1, 1});
         m_program_downsample.cs.uav.outputTexture.Attach(ibl_model.ibl_rtv, i);
         m_context.Dispatch((m_size >> i) / 8, (m_size >> i) / 8, 6);
     }

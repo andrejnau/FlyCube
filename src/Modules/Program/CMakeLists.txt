@@ -13,6 +13,8 @@ set(headers
     IShaderBlobProvider.h
     VKViewCreater.h
     GLProgramApi.h
+    DX11ViewDescCreater.h
+    DX12ViewDescCreater.h
 )
 
 set(sources
@@ -25,6 +27,8 @@ set(sources
     CommonProgramApi.cpp
     DX11ViewCreater.cpp
     DX12ViewCreater.cpp
+    DX11ViewDescCreater.cpp
+    DX12ViewDescCreater.cpp
 )
 
 add_library(${target} ${headers} ${sources})

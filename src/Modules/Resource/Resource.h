@@ -15,12 +15,14 @@ using namespace Microsoft::WRL;
 struct ViewDesc
 {
     ViewDesc() = default;
-    ViewDesc(size_t level)
+    ViewDesc(size_t level, size_t count = -1)
         : level(level)
+        , count(count)
     {
     }
 
     size_t level = 0;
+    size_t count = -1;
     bool operator<(const ViewDesc& oth) const
     {
         return level < oth.level;

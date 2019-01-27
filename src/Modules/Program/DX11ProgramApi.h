@@ -24,6 +24,7 @@ public:
     virtual void SetDepthStencilState(const DepthStencilDesc& desc) override;
 
 private:
+    void ClearBindings();
     void CreateInputLayout();
 
     void AttachView(ShaderType type, uint32_t slot, ComPtr<ID3D11ShaderResourceView>& srv);
