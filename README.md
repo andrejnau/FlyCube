@@ -1,4 +1,7 @@
 # FlyCube
+
+<img src="./screenshots/sponza.png" width="512px">
+
 * Engine
   * Rendering backend
       * DirectX 11
