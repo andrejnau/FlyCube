@@ -1,6 +1,6 @@
 # FlyCube
 
-<img src="./screenshots/sponza.png" width="512px">
+![sponza.png](screenshots/sponza.png)
 
 * Engine
   * Rendering backend
