@@ -14,6 +14,15 @@ public:
     AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height);
     ~AppBox();
     int Run();
+
+    struct MonitorDesc
+    {
+        int width;
+        int height;
+    };
+
+    static MonitorDesc GetPrimaryMonitorDesc();
+
 private:
     void InitWindow();
     void SetWindowToCenter();

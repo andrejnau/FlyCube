@@ -75,6 +75,13 @@ int AppBox::Run()
     return EXIT_SUCCESS;
 }
 
+AppBox::MonitorDesc AppBox::GetPrimaryMonitorDesc()
+{
+    glfwInit();
+    auto monitor_desc = *glfwGetVideoMode(glfwGetPrimaryMonitor());
+    return { monitor_desc.width, monitor_desc.height };
+}
+
 void AppBox::InitWindow()
 {
     if (m_api_type == ApiType::kOpenGL)

@@ -37,5 +37,6 @@ int main(int argc, char *argv[])
         break;
     }
 
-    return AppBox(Scene::Create, type, title, 1280, 720).Run();
+    auto monitor_desc = AppBox::GetPrimaryMonitorDesc();
+    return AppBox(Scene::Create, type, title, monitor_desc.width / 1.5, monitor_desc.height / 1.5).Run();
 }
