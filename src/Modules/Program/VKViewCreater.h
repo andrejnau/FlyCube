@@ -26,12 +26,8 @@ public:
 private:
     VKView::Ptr GetEmptyDescriptor(ResourceType res_type);
 
-    void CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const VKResource& res, VKView& handle);
-    void CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const VKResource& ires, VKView& handle);
-    void CreateCBV(ShaderType type, uint32_t slot, const VKResource& res, VKView& handle);
-    void CreateSampler(ShaderType type, uint32_t slot, const VKResource& res, VKView& handle);
-    void CreateRTV(uint32_t slot, const VKResource& res, VKView& handle);
-    void CreateDSV(const VKResource& res, VKView& handle);
+    void CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const VKResource& res, VKView& handle);
+    void CreateRTV(uint32_t slot, const ViewDesc& view_desc, const VKResource& res, VKView& handle);
 
     VKContext& m_context;
     const IShaderBlobProvider& m_shader_provider;

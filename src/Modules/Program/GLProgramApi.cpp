@@ -413,7 +413,7 @@ ShaderBlob GLProgramApi::GetBlobByType(ShaderType type) const
     return {};
 }
 
-void GLProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
+void GLProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
     if (!ires)
         return;
@@ -462,7 +462,7 @@ void GLProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_
     }
 }
 
-void GLProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr & ires)
+void GLProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr & ires)
 {
     if (!ires)
         return;
@@ -490,13 +490,13 @@ void GLProgramApi::OnAttachSampler(ShaderType type, const std::string& name, uin
     m_samplers[name] = ires;
 }
 
-void GLProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
+void GLProgramApi::OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr & ires)
 {
     GLResource& res = static_cast<GLResource&>(*ires);
     glNamedFramebufferTexture(m_framebuffer, GL_COLOR_ATTACHMENT0 + slot, res.texture, 0);
 }
 
-void GLProgramApi::OnAttachDSV(const Resource::Ptr & ires)
+void GLProgramApi::OnAttachDSV(const ViewDesc& view_desc, const Resource::Ptr & ires)
 {
     GLResource& res = static_cast<GLResource&>(*ires);
     glNamedFramebufferTexture(m_framebuffer, GL_DEPTH_ATTACHMENT, res.texture, 0);

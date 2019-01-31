@@ -17,6 +17,15 @@ void VKDescriptorPool::ResizeHeap(const std::map<VkDescriptorType, size_t>& coun
         pool_size.descriptorCount = x.second;
     }
 
+    // TODO: fix me
+    if (count.empty())
+    {
+        pool_sizes.emplace_back();
+        VkDescriptorPoolSize& pool_size = pool_sizes.back();
+        pool_size.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+        pool_size.descriptorCount = 1;
+    }
+
     VkDescriptorPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = pool_sizes.size();
@@ -30,9 +39,6 @@ void VKDescriptorPool::ResizeHeap(const std::map<VkDescriptorType, size_t>& coun
 
 VkDescriptorSet VKDescriptorPool::AllocateDescriptorSet(VkDescriptorSetLayout & set_layout, const std::map<VkDescriptorType, size_t>& count)
 {
-    if (count.empty())
-        return VK_NULL_HANDLE;
-
     ResizeHeap(count);
 
     VkDescriptorSetAllocateInfo allocInfo = {};

@@ -126,7 +126,7 @@ void VKProgramApi::CreateGrPipeLine()
         colorBlendAttachment.alphaBlendOp = convert_op(m_blend_desc.blend_op_alpha);
     }
 
-    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(m_rtv.size() - 1, colorBlendAttachment);
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(m_attachment_views.size() - 1, colorBlendAttachment);
 
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -213,40 +213,69 @@ void VKProgramApi::ApplyBindings()
     {
         if (!m_is_compute)
         {
-            for (int i = 0; i < m_color_attachments.size() - 1; ++i)
+            for (int i = 0; i < m_attachment_descriptions.size() - 1; ++i)
             {
-                m_color_attachments[i].loadOp = m_clear_cache.GetColorLoadOp(i);
+                m_attachment_descriptions[i].loadOp = m_clear_cache.GetColorLoadOp(i);
                 m_clear_cache.GetColorLoadOp(i) = VK_ATTACHMENT_LOAD_OP_LOAD;
             }
-            if (m_rtv.back())
-                m_color_attachments.back().loadOp = m_clear_cache.GetDepthLoadOp();
+            if (m_attachment_views.back())
+                m_attachment_descriptions.back().loadOp = m_clear_cache.GetDepthLoadOp();
             m_clear_cache.GetDepthLoadOp() = VK_ATTACHMENT_LOAD_OP_LOAD;
             VkSubpassDescription subPass = {};
             subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-            subPass.colorAttachmentCount = m_color_attachments_ref.size() - 1;
-            subPass.pColorAttachments = m_color_attachments_ref.data();
-            subPass.pDepthStencilAttachment = &m_color_attachments_ref.back();
-            if (!m_rtv.back())
+            subPass.colorAttachmentCount = m_attachment_references.size() - 1;
+            subPass.pColorAttachments = m_attachment_references.data();
+            subPass.pDepthStencilAttachment = &m_attachment_references.back();
+            if (!m_attachment_views.back())
                 subPass.pDepthStencilAttachment = nullptr;
 
             VkRenderPassCreateInfo renderPassInfo = {};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-            renderPassInfo.attachmentCount = m_color_attachments.size();
-            if (!m_rtv.back())
+            renderPassInfo.attachmentCount = m_attachment_descriptions.size();
+            if (!m_attachment_views.back())
                 --renderPassInfo.attachmentCount;
-            renderPassInfo.pAttachments = m_color_attachments.data();
+            renderPassInfo.pAttachments = m_attachment_descriptions.data();
             renderPassInfo.subpassCount = 1;
             renderPassInfo.pSubpasses = &subPass;
+
+           VkAccessFlags AccessMask =
+                VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+                VK_ACCESS_INDEX_READ_BIT |
+                VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+                VK_ACCESS_UNIFORM_READ_BIT |
+                VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+                VK_ACCESS_SHADER_READ_BIT |
+                VK_ACCESS_SHADER_WRITE_BIT |
+                VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                VK_ACCESS_TRANSFER_READ_BIT |
+                VK_ACCESS_TRANSFER_WRITE_BIT |
+                VK_ACCESS_HOST_READ_BIT |
+                VK_ACCESS_HOST_WRITE_BIT |
+                VK_ACCESS_MEMORY_READ_BIT |
+                VK_ACCESS_MEMORY_WRITE_BIT;
+
+            VkSubpassDependency self_dependencie = {};
+            self_dependencie.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            self_dependencie.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            self_dependencie.srcAccessMask = AccessMask;
+            self_dependencie.dstAccessMask = AccessMask;
+            self_dependencie.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+            renderPassInfo.dependencyCount = 1;
+            renderPassInfo.pDependencies = &self_dependencie;
 
             vkCreateRenderPass(m_context.m_device, &renderPassInfo, nullptr, &m_render_pass);
 
             VkFramebufferCreateInfo framebufferInfo = {};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             framebufferInfo.renderPass = m_render_pass;
-            framebufferInfo.attachmentCount = m_rtv.size();
-            if (!m_rtv.back())
+            framebufferInfo.attachmentCount = m_attachment_views.size();
+            if (!m_attachment_views.back())
                 --framebufferInfo.attachmentCount;
-            framebufferInfo.pAttachments = m_rtv.data();
+            framebufferInfo.pAttachments = m_attachment_views.data();
             framebufferInfo.width = m_rtv_size[0].first.width;
             framebufferInfo.height = m_rtv_size[0].first.height;
             framebufferInfo.layers = m_rtv_size[0].second;
@@ -314,55 +343,50 @@ void VKProgramApi::ApplyBindings()
 
         switch (ref_res.descriptor_type)
         {
-        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-        {
-            if (view.srv)
-            {
-                list_image_info.emplace_back();
-                VkDescriptorImageInfo& imageInfo = list_image_info.back();
-                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                imageInfo.imageView = view.srv;
-                descriptorWrite.pImageInfo = &imageInfo;
-            }
-            else
-            {
-                // empty descriptor or something else
-                int todo = 0;
-            }
-            break;
-        }
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-        {
-            list_buffer_info.emplace_back();
-            VkDescriptorBufferInfo& bufferInfo = list_buffer_info.back();
-            bufferInfo.buffer = res.buffer.res;
-            bufferInfo.offset = 0;
-            bufferInfo.range = VK_WHOLE_SIZE;
-            descriptorWrite.pBufferInfo = &bufferInfo;
-            break;
-        }
         case VK_DESCRIPTOR_TYPE_SAMPLER:
         {
             list_image_info.emplace_back();
-            VkDescriptorImageInfo& imageInfo = list_image_info.back();
-            imageInfo.sampler = res.sampler.res;
-            descriptorWrite.pImageInfo = &imageInfo;
+            VkDescriptorImageInfo& image_info = list_image_info.back();
+            image_info.sampler = res.sampler.res;
+            descriptorWrite.pImageInfo = &image_info;
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        {
+            list_image_info.emplace_back();
+            VkDescriptorImageInfo& image_info = list_image_info.back();
+            image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            image_info.imageView = view.srv;
+            descriptorWrite.pImageInfo = &image_info;
             break;
         }
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
         {
             list_image_info.emplace_back();
-            VkDescriptorImageInfo& imageInfo = list_image_info.back();
-            imageInfo.imageView = view.srv;
-            descriptorWrite.pImageInfo = &imageInfo;
+            VkDescriptorImageInfo& image_info = list_image_info.back();
+            image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+            image_info.imageView = view.srv;
+            descriptorWrite.pImageInfo = &image_info;
             break;
         }
-        default:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
         {
-            int b = 0;
+            list_buffer_info.emplace_back();
+            VkDescriptorBufferInfo& buffer_info = list_buffer_info.back();
+            buffer_info.buffer = res.buffer.res;
+            buffer_info.offset = 0;
+            buffer_info.range = VK_WHOLE_SIZE;
+            descriptorWrite.pBufferInfo = &buffer_info;
             break;
         }
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+        default:
+            ASSERT(false);
+            break;
         }
 
         if (descriptorWrite.pImageInfo || descriptorWrite.pBufferInfo)
@@ -380,11 +404,6 @@ void VKProgramApi::ApplyBindings()
             m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
 }
 
-VKView::Ptr VKProgramApi::GetView(const std::tuple<ShaderType, ResourceType, uint32_t, size_t, std::string>& key, const Resource::Ptr& res)
-{
-    return m_view_creater.GetView(m_program_id, std::get<ShaderType>(key), std::get<ResourceType>(key), std::get<uint32_t>(key), std::get<size_t>(key), std::get<std::string>(key), res);
-}
-
 View::Ptr VKProgramApi::CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res)
 {
     return m_view_creater.GetView(m_program_id, bind_key.shader_type, bind_key.res_type, bind_key.slot, view_desc, GetBindingName(bind_key), res);
@@ -400,12 +419,12 @@ void VKProgramApi::RenderPassBegin()
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = m_rtv_size[0].first;
 
-    std::vector<VkClearValue> clearValues(m_rtv.size() - 1);
-    for (int i = 0; i < m_rtv.size() - 1; ++i)
+    std::vector<VkClearValue> clearValues(m_attachment_views.size() - 1);
+    for (int i = 0; i < m_attachment_views.size() - 1; ++i)
     {
         clearValues[i].color = m_clear_cache.GetColor(i);
     }
-    if (m_rtv.back())
+    if (m_attachment_views.back())
     {
         clearValues.emplace_back();
         clearValues.back().depthStencil = m_clear_cache.GetDepth();
@@ -630,19 +649,26 @@ ShaderBlob VKProgramApi::GetBlobByType(ShaderType type) const
     return ShaderBlob();
 }
 
-void VKProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
+void VKProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
     if (!ires)
         return;
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
-    if (res.res_type == VKResource::Type::kImage)
-        m_context.transitionImageLayout(res.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    if (res.image.res != VK_NULL_HANDLE)
+        m_context.TransitionImageLayout(res.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, view_desc);
 }
 
-void VKProgramApi::OnAttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & res)
+void VKProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
+    if (!ires)
+        return;
+
+    VKResource& res = static_cast<VKResource&>(*ires);
+
+    if (res.image.res != VK_NULL_HANDLE)
+        m_context.TransitionImageLayout(res.image, VK_IMAGE_LAYOUT_GENERAL, view_desc);
 }
 
 void VKProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr & ires)
@@ -653,67 +679,85 @@ void VKProgramApi::OnAttachSampler(ShaderType type, const std::string& name, uin
 {
 }
 
-void VKProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr & ires)
+VKView* ConvertView(const View::Ptr& view)
+{
+    if (!view)
+        return nullptr;
+    return &static_cast<VKView&>(*view);
+}
+
+void VKProgramApi::OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr & ires)
 {
     m_changed_om = true;
+    if (m_context.m_is_open_render_pass)
+    {
+        vkCmdEndRenderPass(m_context.m_cmd_bufs[m_context.GetFrameIndex()]);
+        m_context.m_is_open_render_pass = false;
+    }
+
     if (!ires)
         return;
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
-    m_context.transitionImageLayout(res.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    m_context.TransitionImageLayout(res.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, view_desc);
 
-    VKView::Ptr view = m_view_creater.GetView(m_program_id, ShaderType::kPixel, ResourceType::kRtv, slot, {}, "", ires);
-    m_rtv[slot] = view->rtv;
-    m_rtv_size[slot] = { res.image.size, res.image.array_layers };
+    auto view = ConvertView(FindView(ShaderType::kPixel, ResourceType::kRtv, slot));
+    m_attachment_views[slot] = view->om;
+    m_rtv_size[slot] = { { res.image.size.width >> view_desc.level, res.image.size.height >> view_desc.level}, res.image.array_layers };
  
-    VkAttachmentDescription& colorAttachment = m_color_attachments[slot];
+    VkAttachmentDescription& colorAttachment = m_attachment_descriptions[slot];
     colorAttachment.format = res.image.format;
     colorAttachment.samples = (VkSampleCountFlagBits)res.image.msaa_count;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = res.image.layout;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     msaa_count = res.image.msaa_count;
 
-    VkAttachmentReference& colorAttachmentRef = m_color_attachments_ref[slot];
+    VkAttachmentReference& colorAttachmentRef = m_attachment_references[slot];
     colorAttachmentRef.attachment = slot;
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
 }
 
-void VKProgramApi::OnAttachDSV(const Resource::Ptr & ires)
+void VKProgramApi::OnAttachDSV(const ViewDesc& view_desc, const Resource::Ptr & ires)
 {
     m_changed_om = true;
+    if (m_context.m_is_open_render_pass)
+    {
+        vkCmdEndRenderPass(m_context.m_cmd_bufs[m_context.GetFrameIndex()]);
+        m_context.m_is_open_render_pass = false;
+    }
 
     if (!ires)
         return;
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
-    m_context.transitionImageLayout(res.image, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    m_context.TransitionImageLayout(res.image, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, view_desc);
 
-    VKView::Ptr view = m_view_creater.GetView(m_program_id, ShaderType::kPixel, ResourceType::kDsv, 0, {}, "", ires);
+    auto view = ConvertView(FindView(ShaderType::kPixel, ResourceType::kDsv, 0));
 
-    m_rtv.back() = view->dsv;
-    m_rtv_size.back() = { res.image.size, res.image.array_layers };
+    m_attachment_views.back() = view->om;
+    m_rtv_size.back() = { { res.image.size.width >> view_desc.level, (res.image.size.height >> view_desc.level)}, res.image.array_layers };
 
-    auto& m_depth_attachment = m_color_attachments.back();
+    auto& m_depth_attachment = m_attachment_descriptions.back();
     m_depth_attachment.format = res.image.format;
     m_depth_attachment.samples = (VkSampleCountFlagBits)res.image.msaa_count;
     m_depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     m_depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     m_depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     m_depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-    m_depth_attachment.initialLayout = res.image.layout;
+    m_depth_attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     m_depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     msaa_count = res.image.msaa_count;
 
-    VkAttachmentReference& depthAttachmentReference = m_color_attachments_ref.back();
-    depthAttachmentReference.attachment = m_color_attachments.size() - 1;
+    VkAttachmentReference& depthAttachmentReference = m_attachment_references.back();
+    depthAttachmentReference.attachment = m_attachment_descriptions.size() - 1;
     depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 }
 
@@ -821,8 +865,8 @@ void VKProgramApi::CreateRenderPass(const std::vector<uint32_t>& spirv_binary)
         m_num_rtv = std::max(m_num_rtv, location + 1);
     }
 
-    m_color_attachments.resize(m_num_rtv + 1);
-    m_color_attachments_ref.resize(m_num_rtv + 1);
-    m_rtv.resize(m_num_rtv + 1);
+    m_attachment_descriptions.resize(m_num_rtv + 1);
+    m_attachment_references.resize(m_num_rtv + 1);
+    m_attachment_views.resize(m_num_rtv + 1);
     m_rtv_size.resize(m_num_rtv + 1);
 }

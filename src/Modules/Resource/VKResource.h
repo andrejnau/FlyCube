@@ -7,6 +7,12 @@ class VKDescriptorHeapRange;
 
 using VKBindKey = std::tuple<size_t /*program_id*/, ShaderType /*shader_type*/, VkDescriptorType /*res_type*/, uint32_t /*slot*/>;
 
+static bool operator<(const VkImageSubresourceRange& lhs, const VkImageSubresourceRange& rhs)
+{
+    return std::tie(lhs.aspectMask, lhs.baseArrayLayer, lhs.baseMipLevel, lhs.layerCount, lhs.levelCount) <
+        std::tie(rhs.aspectMask, rhs.baseArrayLayer, rhs.baseMipLevel, rhs.layerCount, rhs.levelCount);
+}
+
 class VKResource : public Resource
 {
 public:
@@ -16,10 +22,11 @@ public:
     {
         VkImage res = VK_NULL_HANDLE;
         VkDeviceMemory memory = VK_NULL_HANDLE;
-        VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+      
+        std::map<VkImageSubresourceRange, VkImageLayout> layout;
         VkFormat format = VK_FORMAT_UNDEFINED;
         VkExtent2D size = {};
-        size_t level_count = 0;
+        size_t level_count = 1;
         size_t msaa_count = 1;
         size_t array_layers = 1;
     } image;

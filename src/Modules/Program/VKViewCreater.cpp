@@ -80,186 +80,106 @@ VKView::Ptr VKViewCreater::GetView(uint32_t m_program_id, ShaderType shader_type
 
     VKResource& res = static_cast<VKResource&>(*ires);
 
-    View::Ptr& view = ires->GetView({m_program_id, shader_type, res_type, slot}, view_desc);
-    if (view)
-        return std::static_pointer_cast<VKView>(view);
+    View::Ptr& iview = ires->GetView({m_program_id, shader_type, res_type, slot}, view_desc);
+    if (iview)
+        return std::static_pointer_cast<VKView>(iview);
 
-    view = CreateView();
-
-    VKView& handle = static_cast<VKView&>(*view);
+    VKView::Ptr view = CreateView();
+    iview = view;
 
     switch (res_type)
     {
     case ResourceType::kSrv:
-        CreateSrv(shader_type, name, slot, res, handle);
-        break;
     case ResourceType::kUav:
-        CreateUAV(shader_type, name, slot, res, handle);
-        break;
-    case ResourceType::kCbv:
-        CreateCBV(shader_type, slot, res, handle);
-        break;
-    case ResourceType::kSampler:
-        CreateSampler(shader_type, slot, res, handle);
+        CreateSrv(shader_type, name, slot, view_desc, res, *view);
         break;
     case ResourceType::kRtv:
-        CreateRTV(slot, res, handle);
-        break;
     case ResourceType::kDsv:
-        CreateDSV(res, handle);
+        CreateRTV(slot, view_desc, res, *view);
         break;
     }
 
-    return std::static_pointer_cast<VKView>(view);
+    return view;
 }
 
-void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const VKResource& res, VKView& handle)
+void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const VKResource& res, VKView& handle)
 {
     ShaderRef& shader_ref = m_shader_ref.find(type)->second;
-    auto ref_res = shader_ref.resources[name];
+    auto& ref_res = shader_ref.resources[name];
+    auto& res_type = shader_ref.compiler.get_type(ref_res.res.type_id);
+    auto& dim = res_type.image.dim;
 
-    auto &res_type = shader_ref.compiler.get_type(ref_res.res.base_type_id);
-
-    auto dim = res_type.image.dim;
     if (res_type.basetype == spirv_cross::SPIRType::BaseType::Struct)
-        dim = spv::Dim::DimBuffer;
+        return;
 
-    bool is_buffer = false;
+    VkImageViewCreateInfo view_info = {};
+    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_info.image = res.image.res;
+    view_info.format = res.image.format;
+    view_info.subresourceRange.aspectMask = m_context.GetAspectFlags(view_info.format);
+    view_info.subresourceRange.baseMipLevel = view_desc.level;
+    if (view_desc.count == -1)
+        view_info.subresourceRange.levelCount = res.image.level_count - view_info.subresourceRange.baseMipLevel;
+    else
+        view_info.subresourceRange.levelCount = view_desc.count;
+    view_info.subresourceRange.baseArrayLayer = 0;
+    view_info.subresourceRange.layerCount = res.image.array_layers;
+
     switch (dim)
     {
+    case spv::Dim::Dim1D:
+    {
+        if (res_type.image.arrayed)
+            view_info.viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+        else
+            view_info.viewType = VK_IMAGE_VIEW_TYPE_1D;
+        break;
+    }
     case spv::Dim::Dim2D:
     {
-        VkImageViewCreateInfo viewInfo = {};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = res.image.res;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = res.image.format;
-        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = res.image.level_count;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = res.image.array_layers;
-
-        if (vkCreateImageView(m_context.m_device, &viewInfo, nullptr, &handle.srv) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture image view!");
-        }
+        if (res_type.image.arrayed)
+            view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        else
+            view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        break;
+    }
+    case spv::Dim::Dim3D:
+    {
+        view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
         break;
     }
     case spv::Dim::DimCube:
     {
-        VkImageViewCreateInfo viewInfo = {};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = res.image.res;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-        viewInfo.format = res.image.format;
-        viewInfo.subresourceRange.aspectMask = m_context.GetAspectFlags(res.image.format);
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = res.image.array_layers;
-
-        if (vkCreateImageView(m_context.m_device, &viewInfo, nullptr, &handle.srv) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture image view!");
-        }
-
+        if (res_type.image.arrayed)
+            view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+        else
+            view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
         break;
-    }
+    }   
     default:
     {
-        bool todo = true;
+        ASSERT(false);
         break;
     }
     }
+    ASSERT_SUCCEEDED(vkCreateImageView(m_context.m_device, &view_info, nullptr, &handle.srv));
 }
 
-void VKViewCreater::CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const VKResource& res, VKView& handle)
+void VKViewCreater::CreateRTV(uint32_t slot, const ViewDesc& view_desc, const VKResource& res, VKView& handle)
 {
-    ShaderRef& shader_ref = m_shader_ref.find(type)->second;
-    auto ref_res = shader_ref.resources[name];
-
-    auto &res_type = shader_ref.compiler.get_type(ref_res.res.base_type_id);
-
-    auto dim = res_type.image.dim;
-
-    switch (dim)
-    {
-    case spv::Dim::Dim2D:
-    {
-        VkImageViewCreateInfo viewInfo = {};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = res.image.res;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = res.image.format;
-        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = res.image.level_count;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
-
-        if (vkCreateImageView(m_context.m_device, &viewInfo, nullptr, &handle.srv) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture image view!");
-        }
-        break;
-    }
-    default:
-    {
-        bool todo = true;
-        break;
-    }
-    }
-}
-
-void VKViewCreater::CreateCBV(ShaderType type, uint32_t slot, const VKResource& res, VKView& handle)
-{
-}
-
-void VKViewCreater::CreateSampler(ShaderType type, uint32_t slot, const VKResource& res, VKView& handle)
-{
-}
-
-void VKViewCreater::CreateRTV(uint32_t slot, const VKResource& res, VKView& handle)
-{
-    VkImageViewCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.image = res.image.res;
-    createInfo.format = res.image.format;
-    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    createInfo.subresourceRange.baseMipLevel = 0;
-    createInfo.subresourceRange.levelCount = 1;
-    createInfo.subresourceRange.baseArrayLayer = 0;
-    createInfo.subresourceRange.layerCount = res.image.array_layers;
-    vkCreateImageView(m_context.m_device, &createInfo, nullptr, &handle.rtv);
-}
-
-static bool hasStencilComponent(VkFormat format) {
-    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
-}
-
-void VKViewCreater::CreateDSV(const VKResource& res, VKView& handle)
-{
-    VkImageViewCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.image = res.image.res;
-    createInfo.format = res.image.format;
-    if (res.image.array_layers == 6)
-        createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+    VkImageViewCreateInfo view_info = {};
+    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_info.image = res.image.res;
+    view_info.format = res.image.format;
+    if (res.image.array_layers > 1)
+        view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     else
-        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    if (hasStencilComponent(res.image.format))
-        createInfo.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-    createInfo.subresourceRange.baseMipLevel = 0;
-    createInfo.subresourceRange.levelCount = 1;
-    createInfo.subresourceRange.baseArrayLayer = 0;
-    createInfo.subresourceRange.layerCount = res.image.array_layers;
-    vkCreateImageView(m_context.m_device, &createInfo, nullptr, &handle.dsv);
+        view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.subresourceRange.aspectMask = m_context.GetAspectFlags(view_info.format);
+    view_info.subresourceRange.baseMipLevel = view_desc.level;
+    view_info.subresourceRange.levelCount = 1;
+    view_info.subresourceRange.baseArrayLayer = 0;
+    view_info.subresourceRange.layerCount = res.image.array_layers;
+
+    ASSERT_SUCCEEDED(vkCreateImageView(m_context.m_device, &view_info, nullptr, &handle.om));
 }

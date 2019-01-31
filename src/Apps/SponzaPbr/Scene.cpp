@@ -51,6 +51,8 @@ Scene::Scene(Context& context, int width, int height)
             m_scene_list.emplace_back(m_context, "model/pbr_test/" + test.first + "/sphere.obj");
             m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f)) * glm::translate(glm::vec3(x, 500, 0.0f));
             m_scene_list.back().ibl_request = test.second;
+            if (!test.second)
+                m_scene_list.back().ibl_source = 0;
             x += 50;
         }
     }

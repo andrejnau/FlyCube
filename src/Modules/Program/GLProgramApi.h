@@ -36,12 +36,12 @@ public:
         return res;
     }
 
-    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) override;
+    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) override;
     virtual void OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void OnAttachDSV(const Resource::Ptr& ires) override;
+    virtual void OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) override;
+    virtual void OnAttachDSV(const ViewDesc& view_desc, const Resource::Ptr& ires) override;
 
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;

@@ -46,12 +46,12 @@ public:
 private:
     DX12Resource::Ptr CreateCBuffer(size_t buffer_size);
 
-    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) override;
+    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) override;
     virtual void OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void OnAttachDSV(const Resource::Ptr& ires) override;
+    virtual void OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) override;
+    virtual void OnAttachDSV(const ViewDesc& view_desc, const Resource::Ptr& ires) override;
 
     void SetRootSignature(ID3D12RootSignature* pRootSignature);
     void SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor);

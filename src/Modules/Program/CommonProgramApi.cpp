@@ -38,10 +38,10 @@ void CommonProgramApi::Attach(const BindKey& bind_key, const ViewDesc& view_desc
     switch (bind_key.res_type)
     {
     case ResourceType::kSrv:
-        OnAttachSRV(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, res);
+        OnAttachSRV(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, view_desc, res);
         break;
     case ResourceType::kUav:
-        OnAttachUAV(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, res);
+        OnAttachUAV(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, view_desc, res);
         break;
     case ResourceType::kCbv:
         OnAttachCBV(bind_key.shader_type, bind_key.slot, res);
@@ -50,10 +50,10 @@ void CommonProgramApi::Attach(const BindKey& bind_key, const ViewDesc& view_desc
         OnAttachSampler(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, res);
         break;
     case ResourceType::kRtv:
-        OnAttachRTV(bind_key.slot, res);
+        OnAttachRTV(bind_key.slot, view_desc,res);
         break;
     case ResourceType::kDsv:
-        OnAttachDSV(res);
+        OnAttachDSV(view_desc, res);
         break;
     }
 }

@@ -1,7 +1,7 @@
 struct VS_OUTPUT
 {
     float4 pos      : SV_POSITION;
-    float3 texcoord : TEXCOORD;
+    float2 texcoord : TEXCOORD;
 };
 
 // https://github.com/JoeyDeVries/LearnOpenGL/blob/master/src/6.pbr/2.2.2.ibl_specular_textured/2.2.2.brdf.fs

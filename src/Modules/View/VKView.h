@@ -14,6 +14,5 @@ class VKView : public View
 public:
     using Ptr = std::shared_ptr<VKView>;
     VkImageView srv;
-    VkImageView rtv;
-    VkImageView dsv;
+    VkImageView om;
 };

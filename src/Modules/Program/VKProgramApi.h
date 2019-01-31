@@ -24,7 +24,6 @@ public:
     void CreatePipeLine();
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
-    VKView::Ptr GetView(const std::tuple<ShaderType, ResourceType, uint32_t, size_t, std::string>& key, const Resource::Ptr & res);
     virtual View::Ptr CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override;
     virtual void CompileShader(const ShaderBase& shader) override;
     void ParseShader(ShaderType type, const std::vector<uint32_t>& spirv_binary, std::vector<VkDescriptorSetLayoutBinding>& bindings);
@@ -54,12 +53,12 @@ public:
         return res;
     }
 
-    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
+    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) override;
+    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) override;
     virtual void OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires) override;
     virtual void OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) override;
-    virtual void OnAttachDSV(const Resource::Ptr& ires) override;
+    virtual void OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) override;
+    virtual void OnAttachDSV(const ViewDesc& view_desc, const Resource::Ptr& ires) override;
 
 
     virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
@@ -116,8 +115,8 @@ private:
 
     size_t m_num_rtv = 0;
     
-    std::vector<VkAttachmentDescription> m_color_attachments;
-    std::vector<VkAttachmentReference> m_color_attachments_ref;
+    std::vector<VkAttachmentDescription> m_attachment_descriptions;
+    std::vector<VkAttachmentReference> m_attachment_references;
     VkRenderPass m_render_pass = VK_NULL_HANDLE;
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -126,8 +125,8 @@ private:
     std::vector<VkVertexInputAttributeDescription> attribute_desc;
     std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfo;
     VkFramebuffer m_framebuffer;
-    std::vector<VkImageView> m_rtv;
-    std::vector<std::pair<VkExtent2D, uint32_t>> m_rtv_size;
+    std::vector<VkImageView> m_attachment_views;
+    std::vector<std::pair<VkExtent2D, size_t>> m_rtv_size;
 
     VKViewCreater m_view_creater;
     bool m_changed_om = true;

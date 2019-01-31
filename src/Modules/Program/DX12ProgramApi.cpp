@@ -169,7 +169,7 @@ ShaderBlob DX12ProgramApi::GetBlobByType(ShaderType type) const
     return { (uint8_t*)it->second->GetBufferPointer(), it->second->GetBufferSize() };
 }
 
-void DX12ProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires)
+void DX12ProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
     m_changed_binding = true;
     if (!ires)
@@ -182,7 +182,7 @@ void DX12ProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint3
         m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 }
 
-void DX12ProgramApi::OnAttachUAV(ShaderType type, const std::string & name, uint32_t slot, const Resource::Ptr & ires)
+void DX12ProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
     m_changed_binding = true;
     if (!ires)
@@ -220,7 +220,7 @@ void DX12ProgramApi::OnAttachSampler(ShaderType type, const std::string& name, u
     m_changed_binding = true;
 }
 
-void DX12ProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr& ires)
+void DX12ProgramApi::OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
     m_changed_om = true;
     DX12Resource& res = static_cast<DX12Resource&>(*ires);
@@ -250,7 +250,7 @@ void DX12ProgramApi::OnAttachRTV(uint32_t slot, const Resource::Ptr& ires)
     m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = desc.SampleDesc.Count;
 }
 
-void DX12ProgramApi::OnAttachDSV(const Resource::Ptr& ires)
+void DX12ProgramApi::OnAttachDSV(const ViewDesc& view_desc, const Resource::Ptr& ires)
 {
     m_changed_om = true;
     DX12Resource& res = static_cast<DX12Resource&>(*ires);

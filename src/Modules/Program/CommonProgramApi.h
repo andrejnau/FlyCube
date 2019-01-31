@@ -30,12 +30,12 @@ public:
     virtual void Attach(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override;
 
 protected:
-    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) = 0;
-    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) = 0;
+    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) = 0;
+    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) = 0;
     virtual void OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires) = 0;
     virtual void OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) = 0;
-    virtual void OnAttachRTV(uint32_t slot, const Resource::Ptr& ires) = 0;
-    virtual void OnAttachDSV(const Resource::Ptr& ires) = 0;
+    virtual void OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) = 0;
+    virtual void OnAttachDSV(const ViewDesc& view_desc, const Resource::Ptr& ires) = 0;
 
     virtual View::Ptr CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) = 0;
     View::Ptr FindView(ShaderType shader_type, ResourceType res_type, uint32_t slot);
