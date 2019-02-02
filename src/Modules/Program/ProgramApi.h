@@ -32,7 +32,7 @@ public:
     virtual void CompileShader(const ShaderBase& shader) = 0;
     virtual void SetCBufferLayout(const BindKey& bind_key, BufferLayout& buffer_layout) = 0;
     virtual void Attach(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) = 0;
-    virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) = 0;
+    virtual void ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color) = 0;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) = 0;
     virtual void SetRasterizeState(const RasterizerDesc& desc) = 0;
     virtual void SetBlendState(const BlendDesc& desc) = 0;

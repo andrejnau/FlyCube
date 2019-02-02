@@ -10,6 +10,7 @@ public:
     using Ptr = std::shared_ptr<DX11Resource>;
     ComPtr<ID3D11Resource> resource;
     std::vector<ComPtr<ID3D11Buffer>> tile_pool;
+    UINT stride = 0;
 
     ComPtr<ID3D11SamplerState> sampler;
 

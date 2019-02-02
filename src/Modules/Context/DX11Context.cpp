@@ -7,8 +7,8 @@
 #include <Program/DX11ProgramApi.h>
 #include "Context/DXGIUtility.h"
 
-DX11Context::DX11Context(GLFWwindow* window, int width, int height)
-    : Context(window, width, height)
+DX11Context::DX11Context(GLFWwindow* window)
+    : Context(window)
 {
     DWORD create_device_flags = 0;
 #if defined(_DEBUG)
@@ -37,7 +37,7 @@ DX11Context::DX11Context(GLFWwindow* window, int width, int height)
     tmp_device.As(&device);
     tmp_device_context.As(&device_context);
 
-    m_swap_chain = CreateSwapChain(device, dxgi_factory, glfwGetWin32Window(window), width, height, FrameCount);
+    m_swap_chain = CreateSwapChain(device, dxgi_factory, glfwGetWin32Window(window), m_width, m_height, FrameCount);
 
     device_context.As(&perf);
 
@@ -222,13 +222,20 @@ Resource::Ptr DX11Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size
     if (bind_flag & BindFlag::kSrv)
         desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
     if (bind_flag & BindFlag::kVbv)
+    {
         desc.BindFlags |= D3D11_BIND_VERTEX_BUFFER;
+        desc.MiscFlags &= ~D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    }
     if (bind_flag & BindFlag::kIbv)
+    {
         desc.BindFlags |= D3D11_BIND_INDEX_BUFFER;
+        desc.MiscFlags &= ~D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    }
 
     ComPtr<ID3D11Buffer> buffer;
     ASSERT_SUCCEEDED(device->CreateBuffer(&desc, nullptr, &buffer));
     res->resource = buffer;
+    res->stride = stride;
 
     return res;
 }
@@ -313,7 +320,7 @@ void DX11Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32
     device_context->RSSetScissorRects(1, &rect);
 }
 
-void DX11Context::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, gli::format Format)
+void DX11Context::IASetIndexBuffer(Resource::Ptr ires, gli::format Format)
 {
     DXGI_FORMAT format = static_cast<DXGI_FORMAT>(gli::dx().translate(Format).DXGIFormat.DDS);
 
@@ -323,13 +330,13 @@ void DX11Context::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, gli
     device_context->IASetIndexBuffer(buf.Get(), format, 0);
 }
 
-void DX11Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t SizeInBytes, uint32_t Stride)
+void DX11Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires)
 {
     auto res = std::static_pointer_cast<DX11Resource>(ires);
     ComPtr<ID3D11Buffer> buf;
     res->resource.As(&buf);
     uint32_t offset = 0;
-    device_context->IASetVertexBuffers(slot, 1, buf.GetAddressOf(), &Stride, &offset);
+    device_context->IASetVertexBuffers(slot, 1, buf.GetAddressOf(), &res->stride, &offset);
 }
 
 void DX11Context::BeginEvent(const std::string& name)
@@ -366,7 +373,7 @@ Resource::Ptr DX11Context::GetBackBuffer()
     return res;
 }
 
-void DX11Context::Present(const Resource::Ptr&)
+void DX11Context::Present()
 {
     ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
 }

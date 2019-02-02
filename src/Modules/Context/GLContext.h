@@ -11,7 +11,7 @@ class GLProgramApi;
 class GLContext : public Context
 {
 public:
-    GLContext(GLFWwindow* window, int width, int height);
+    GLContext(GLFWwindow* window);
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) override;
@@ -22,8 +22,8 @@ public:
     virtual void SetViewport(float width, float height) override;
     virtual void SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom) override;
 
-    virtual void IASetIndexBuffer(Resource::Ptr res, uint32_t SizeInBytes, gli::format Format) override;
-    virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res, uint32_t SizeInBytes, uint32_t Stride) override;
+    virtual void IASetIndexBuffer(Resource::Ptr res, gli::format Format) override;
+    virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res) override;
 
     virtual void BeginEvent(const std::string& name) override;
     virtual void EndEvent() override;
@@ -32,7 +32,7 @@ public:
     virtual void Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ) override;
 
     virtual Resource::Ptr GetBackBuffer() override;
-    virtual void Present(const Resource::Ptr& ires) override;
+    virtual void Present() override;
 
     virtual void ResizeBackBuffer(int width, int height) override;
 

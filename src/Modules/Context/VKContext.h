@@ -16,7 +16,7 @@ public:
     void CreateDevice();
     void CreateSwapchain(int width, int height);
     void SelectPhysicalDevice();
-    VKContext(GLFWwindow* window, int width, int height);
+    VKContext(GLFWwindow* window);
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
     VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
@@ -31,8 +31,8 @@ public:
     virtual void SetViewport(float width, float height) override;
     virtual void SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom) override;
 
-    virtual void IASetIndexBuffer(Resource::Ptr res, uint32_t SizeInBytes, gli::format Format) override;
-    virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res, uint32_t SizeInBytes, uint32_t Stride) override;
+    virtual void IASetIndexBuffer(Resource::Ptr res, gli::format Format) override;
+    virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res) override;
 
     virtual void BeginEvent(const std::string& name) override;
     virtual void EndEvent() override;
@@ -45,7 +45,7 @@ public:
     void Submit();
     void SwapBuffers();
     void OpenCommandBuffer();
-    virtual void Present(const Resource::Ptr& ires) override;
+    virtual void Present() override;
 
     virtual void ResizeBackBuffer(int width, int height) override;
 

@@ -7,9 +7,9 @@ class IPass
 {
 public:
     virtual ~IPass() = default;
-    virtual void OnUpdate() = 0;
+    virtual void OnUpdate() {}
     virtual void OnRender() = 0;
-    virtual void OnResize(int width, int height) = 0;
+    virtual void OnResize(int width, int height) {}
 };
 
 class IInput

@@ -17,7 +17,7 @@ public:
     virtual void ApplyBindings() override;
     virtual void CompileShader(const ShaderBase& shader) override;
 
-    virtual void ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4]) override;
+    virtual void ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color) override;
     virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
     virtual void SetRasterizeState(const RasterizerDesc& desc) override;
     virtual void SetBlendState(const BlendDesc& desc) override;

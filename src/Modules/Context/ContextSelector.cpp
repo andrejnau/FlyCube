@@ -4,18 +4,18 @@
 #include "Context/VKContext.h"
 #include "Context/GLContext.h"
 
-std::unique_ptr<Context> CreateContext(ApiType type, GLFWwindow* window, int width, int height)
+std::unique_ptr<Context> CreateContext(ApiType type, GLFWwindow* window)
 {
     switch (type)
     {
     case ApiType::kDX11:
-        return std::make_unique<DX11Context>(window, width, height);
+        return std::make_unique<DX11Context>(window);
     case ApiType::kDX12:
-        return std::make_unique<DX12Context>(window, width, height);
+        return std::make_unique<DX12Context>(window);
     case ApiType::kVulkan:
-        return std::make_unique<VKContext>(window, width, height);
+        return std::make_unique<VKContext>(window);
     case ApiType::kOpenGL:
-        return std::make_unique<GLContext>(window, width, height);
+        return std::make_unique<GLContext>(window);
     }
     return nullptr;
 }

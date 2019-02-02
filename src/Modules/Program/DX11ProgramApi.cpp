@@ -203,12 +203,12 @@ DX11View* ConvertView(const View::Ptr& view)
     return &static_cast<DX11View&>(*view);
 }
 
-void DX11ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
+void DX11ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)
 {
     auto view = ConvertView(FindView(ShaderType::kPixel, ResourceType::kRtv, slot));
     if (!view)
         return;
-    m_context.device_context->ClearRenderTargetView(view->rtv.Get(), ColorRGBA);
+    m_context.device_context->ClearRenderTargetView(view->rtv.Get(), color.data());
 }
 
 void DX11ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)

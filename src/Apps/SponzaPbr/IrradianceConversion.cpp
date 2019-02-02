@@ -49,7 +49,7 @@ void IrradianceConversion::DrawIrradianceConvolution()
 
     m_program_irradiance_convolution.ps.sampler.g_sampler.Attach(m_sampler);
 
-    float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_program_irradiance_convolution.ps.om.rtv0.Attach(m_input.irradince.res);
     m_program_irradiance_convolution.ps.om.dsv.Attach(m_input.irradince.dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
@@ -126,7 +126,7 @@ void IrradianceConversion::DrawPrefilter()
         m_context.SetViewport(m_input.prefilter.size >> mip, m_input.prefilter.size >> mip);
         m_program_prefilter.ps.cbuffer.Settings.roughness = (float)mip / (float)(max_mip_levels - 1);
         m_program_prefilter.ps.cbuffer.Settings.resolution = m_input.prefilter.size;
-        float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
         m_program_prefilter.ps.om.rtv0.Attach(m_input.prefilter.res, mip);
         m_program_prefilter.ps.om.dsv.Attach(m_input.prefilter.dsv, mip).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 

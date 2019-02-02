@@ -55,7 +55,7 @@ void ComputeLuminance::Draw(size_t buf_id)
 
     m_HDRApply.UseProgram();
 
-    float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_HDRApply.ps.om.rtv0.Attach(m_input.rtv).Clear(color);
     m_HDRApply.ps.om.dsv.Attach(m_input.dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 

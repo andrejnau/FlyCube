@@ -69,12 +69,12 @@ void DX12ProgramApi::CompileShader(const ShaderBase& shader)
     ParseShaders();
 }
 
-void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
+void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)
 {
     auto& view = FindView(ShaderType::kPixel, ResourceType::kRtv, slot);
     if (!view)
         return;
-    m_context.command_list->ClearRenderTargetView(ConvertView(view)->GetCpuHandle(), ColorRGBA, 0, nullptr);
+    m_context.command_list->ClearRenderTargetView(ConvertView(view)->GetCpuHandle(), color.data(), 0, nullptr);
 }
 
 void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)

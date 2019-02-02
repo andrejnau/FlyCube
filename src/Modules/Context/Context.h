@@ -17,7 +17,7 @@ using namespace Microsoft::WRL;
 class Context
 {
 public:
-    Context(GLFWwindow* window, int width, int height);
+    Context(GLFWwindow* window);
     virtual ~Context() {}
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() = 0;
@@ -29,8 +29,8 @@ public:
     virtual void SetViewport(float width, float height) = 0;
     virtual void SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom) = 0;
 
-    virtual void IASetIndexBuffer(Resource::Ptr res, uint32_t SizeInBytes, gli::format Format) = 0;
-    virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res, uint32_t SizeInBytes, uint32_t Stride) = 0;
+    virtual void IASetIndexBuffer(Resource::Ptr res, gli::format Format) = 0;
+    virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res) = 0;
 
     virtual void BeginEvent(const std::string& name) = 0;
     virtual void EndEvent() = 0;
@@ -39,7 +39,7 @@ public:
     virtual void Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ) = 0;
 
     virtual Resource::Ptr GetBackBuffer() = 0;
-    virtual void Present(const Resource::Ptr& ires) = 0;
+    virtual void Present() = 0;
 
     virtual void OnDestroy() {}
 

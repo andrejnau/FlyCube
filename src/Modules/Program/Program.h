@@ -74,9 +74,9 @@ public:
     {
     }
 
-    void Clear(const FLOAT ColorRGBA[4])
+    void Clear(const std::array<float, 4>& color)
     {
-        m_program_api.ClearRenderTarget(m_key.slot, ColorRGBA);
+        m_program_api.ClearRenderTarget(m_key.slot, color);
     }
 };
 

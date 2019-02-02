@@ -761,13 +761,13 @@ void VKProgramApi::OnAttachDSV(const ViewDesc& view_desc, const Resource::Ptr & 
     depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 }
 
-void VKProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
+void VKProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)
 {
     auto& clear_color = m_clear_cache.GetColor(slot);
-    clear_color.float32[0] = ColorRGBA[0];
-    clear_color.float32[1] = ColorRGBA[1];
-    clear_color.float32[2] = ColorRGBA[2];
-    clear_color.float32[3] = ColorRGBA[3];
+    clear_color.float32[0] = color[0];
+    clear_color.float32[1] = color[1];
+    clear_color.float32[2] = color[2];
+    clear_color.float32[3] = color[3];
     m_clear_cache.GetColorLoadOp(slot) = VK_ATTACHMENT_LOAD_OP_CLEAR;
 }
 

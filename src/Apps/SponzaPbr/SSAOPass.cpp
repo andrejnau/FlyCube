@@ -72,7 +72,7 @@ void SSAOPass::OnRender()
 
     m_program.UseProgram();
 
-    float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_program.ps.om.rtv0.Attach(output.srv).Clear(color);
     m_program.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 

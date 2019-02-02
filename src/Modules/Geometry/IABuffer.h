@@ -15,7 +15,7 @@ public:
         , m_offset(0)
         , m_size(v.size() * sizeof(v.front()))
     {
-        m_buffer = m_context.CreateBuffer(BindFlag::kVbv, static_cast<uint32_t>(v.size() * sizeof(v.front())), 0);
+        m_buffer = m_context.CreateBuffer(BindFlag::kVbv, static_cast<uint32_t>(v.size() * sizeof(v.front())), static_cast<uint32_t>(m_stride));
         if (m_buffer)
             m_context.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
@@ -23,7 +23,7 @@ public:
     void BindToSlot(uint32_t slot)
     {
         if (m_buffer)
-            m_context.IASetVertexBuffer(slot, m_buffer, static_cast<uint32_t>(m_size), static_cast<uint32_t>(m_stride));
+            m_context.IASetVertexBuffer(slot, m_buffer);
     }
 
 private:
@@ -54,7 +54,7 @@ public:
     void Bind()
     {
         if (m_buffer)
-            m_context.IASetIndexBuffer(m_buffer, static_cast<uint32_t>(m_size), m_format);
+            m_context.IASetIndexBuffer(m_buffer, m_format);
     }
 
     size_t Count() const

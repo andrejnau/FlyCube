@@ -16,7 +16,7 @@ class DX12ProgramApi;
 class DX12Context : public Context
 {
 public:
-    DX12Context(GLFWwindow* window, int width, int height);
+    DX12Context(GLFWwindow* window);
     ~DX12Context();
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
@@ -28,8 +28,8 @@ public:
     virtual void SetViewport(float width, float height) override;
     virtual void SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom) override;
 
-    virtual void IASetIndexBuffer(Resource::Ptr res, uint32_t SizeInBytes, gli::format Format) override;
-    virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res, uint32_t SizeInBytes, uint32_t Stride) override;
+    virtual void IASetIndexBuffer(Resource::Ptr res, gli::format Format) override;
+    virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res) override;
 
     virtual void BeginEvent(const std::string& name) override;
     virtual void EndEvent() override;
@@ -40,7 +40,7 @@ public:
     void InitBackBuffers();
 
     virtual Resource::Ptr GetBackBuffer() override;
-    virtual void Present(const Resource::Ptr& ires) override;
+    virtual void Present() override;
 
     virtual void OnDestroy() override;
 

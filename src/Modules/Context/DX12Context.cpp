@@ -10,8 +10,8 @@
 #include <Program/DX12ProgramApi.h>
 #include "Context/DXGIUtility.h"
 
-DX12Context::DX12Context(GLFWwindow* window, int width, int height)
-    : Context(window, width, height)
+DX12Context::DX12Context(GLFWwindow* window)
+    : Context(window)
     , m_view_pool(*this)
 {
 #if 0
@@ -45,7 +45,7 @@ DX12Context::DX12Context(GLFWwindow* window, int width, int height)
     D3D12_COMMAND_QUEUE_DESC cq_desc = {};
     ASSERT_SUCCEEDED(device->CreateCommandQueue(&cq_desc, IID_PPV_ARGS(&m_command_queue)));
 
-    m_swap_chain = CreateSwapChain(m_command_queue, dxgi_factory, glfwGetWin32Window(window), width, height, FrameCount);
+    m_swap_chain = CreateSwapChain(m_command_queue, dxgi_factory, glfwGetWin32Window(window), m_width, m_height, FrameCount);
     m_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
     InitBackBuffers();
 
@@ -310,26 +310,26 @@ void DX12Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32
     command_list->RSSetScissorRects(1, &rect);
 }
 
-void DX12Context::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, gli::format Format)
+void DX12Context::IASetIndexBuffer(Resource::Ptr ires, gli::format Format)
 {
     DXGI_FORMAT format = static_cast<DXGI_FORMAT>(gli::dx().translate(Format).DXGIFormat.DDS);
 
     auto res = std::static_pointer_cast<DX12Resource>(ires);
     D3D12_INDEX_BUFFER_VIEW indexBufferView = {};
     indexBufferView.Format = format;
-    indexBufferView.SizeInBytes = SizeInBytes;
+    indexBufferView.SizeInBytes = res->desc.Width;
     indexBufferView.BufferLocation = res->default_res->GetGPUVirtualAddress();
     command_list->IASetIndexBuffer(&indexBufferView);
     ResourceBarrier(res, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 }
 
-void DX12Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t SizeInBytes, uint32_t Stride)
+void DX12Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView = {};
     vertexBufferView.BufferLocation = res->default_res->GetGPUVirtualAddress();
-    vertexBufferView.SizeInBytes = SizeInBytes;
-    vertexBufferView.StrideInBytes = Stride;
+    vertexBufferView.SizeInBytes = res->desc.Width;
+    vertexBufferView.StrideInBytes = res->stride;
     command_list->IASetVertexBuffers(slot, 1, &vertexBufferView);
     ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 }
@@ -376,9 +376,9 @@ Resource::Ptr DX12Context::GetBackBuffer()
     return m_back_buffers[m_frame_index];   
 }
 
-void DX12Context::Present(const Resource::Ptr& ires)
+void DX12Context::Present()
 {
-    ResourceBarrier(std::static_pointer_cast<DX12Resource>(ires), D3D12_RESOURCE_STATE_PRESENT);
+    ResourceBarrier(std::static_pointer_cast<DX12Resource>(GetBackBuffer()), D3D12_RESOURCE_STATE_PRESENT);
 
     command_list->Close();
     ID3D12CommandList* ppCommandLists[] = { command_list.Get() };

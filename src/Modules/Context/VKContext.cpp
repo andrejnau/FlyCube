@@ -253,8 +253,8 @@ void VKContext::CreateSwapchain(int width, int height)
     ASSERT_SUCCEEDED(vkCreateSwapchainKHR(m_device, &swap_chain_create_info, nullptr, &m_swapchain));
 }
 
-VKContext::VKContext(GLFWwindow* window, int width, int height)
-    : Context(window, width, height)
+VKContext::VKContext(GLFWwindow* window)
+    : Context(window)
 {
     CreateInstance();
     SelectPhysicalDevice();
@@ -262,7 +262,7 @@ VKContext::VKContext(GLFWwindow* window, int width, int height)
     CreateDevice();
     vkGetDeviceQueue(m_device, m_queue_family_index, 0, &m_queue);
     ASSERT_SUCCEEDED(glfwCreateWindowSurface(m_instance, window, nullptr, &m_surface));
-    CreateSwapchain(width, height);
+    CreateSwapchain(m_width, m_height);
 
     uint32_t frame_buffer_count = 0;
     ASSERT_SUCCEEDED(vkGetSwapchainImagesKHR(m_device, m_swapchain, &frame_buffer_count, nullptr));
@@ -828,7 +828,7 @@ void VKContext::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t
     vkCmdSetScissor(m_cmd_bufs[m_frame_index], 0, 1, &rect2D);
 }
 
-void VKContext::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, gli::format Format)
+void VKContext::IASetIndexBuffer(Resource::Ptr ires, gli::format Format)
 {
     VKResource::Ptr res = std::static_pointer_cast<VKResource>(ires);
     VkFormat format = static_cast<VkFormat>(Format);
@@ -848,7 +848,7 @@ void VKContext::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, gli::
     vkCmdBindIndexBuffer(m_cmd_bufs[m_frame_index], res->buffer.res, 0, index_type);
 }
 
-void VKContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t SizeInBytes, uint32_t Stride)
+void VKContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires)
 {
     VKResource::Ptr res = std::static_pointer_cast<VKResource>(ires);
     VkBuffer vertexBuffers[] = { res->buffer.res };
@@ -969,7 +969,7 @@ void VKContext::OpenCommandBuffer()
     auto res = vkBeginCommandBuffer(m_cmd_bufs[m_frame_index], &beginInfo);
 }
 
-void VKContext::Present(const Resource::Ptr& ires)
+void VKContext::Present()
 {
     CloseCommandBuffer();
     Submit();

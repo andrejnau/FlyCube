@@ -189,7 +189,7 @@ void Scene::OnRender()
         m_context.EndEvent();
     }
 
-    m_context.Present(m_render_target_view);
+    m_context.Present();
 }
 
 void Scene::OnResize(int width, int height)

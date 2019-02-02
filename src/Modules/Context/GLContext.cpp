@@ -19,8 +19,8 @@ static void APIENTRY gl_callback(GLenum source, GLenum type, GLuint id, GLenum s
     std::cout << "debug call: " << msg << std::endl;
 }
 
-GLContext::GLContext(GLFWwindow* window, int width, int height)
-    : Context(window, width, height)
+GLContext::GLContext(GLFWwindow* window)
+    : Context(window)
 {
     ogl_LoadFunctions();
 
@@ -98,6 +98,7 @@ Resource::Ptr GLContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, 
         glNamedBufferStorage(res->buffer, buffer_size, nullptr, GL_DYNAMIC_STORAGE_BIT);
     res->res_type = GLResource::Type::kBuffer;
     res->buffer_size = buffer_size;
+    res->buffer_stride = stride;
 
     return res;
 }
@@ -139,7 +140,7 @@ void GLContext::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t
 {
 }
 
-void GLContext::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, gli::format Format)
+void GLContext::IASetIndexBuffer(Resource::Ptr ires, gli::format Format)
 {
     gli::gl GL(gli::gl::PROFILE_GL32);
     gli::swizzles swizzle(gli::SWIZZLE_RED, gli::SWIZZLE_GREEN, gli::SWIZZLE_BLUE, gli::SWIZZLE_ALPHA);
@@ -150,10 +151,10 @@ void GLContext::IASetIndexBuffer(Resource::Ptr ires, uint32_t SizeInBytes, gli::
     glVertexArrayElementBuffer(m_current_program->m_vao, res.buffer);
 }
 
-void GLContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires, uint32_t SizeInBytes, uint32_t Stride)
+void GLContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires)
 {
     GLResource& res = static_cast<GLResource&>(*ires);
-    glVertexArrayVertexBuffer(m_current_program->m_vao, slot, res.buffer, 0, Stride);
+    glVertexArrayVertexBuffer(m_current_program->m_vao, slot, res.buffer, 0, res.buffer_stride);
 }
 
 void GLContext::BeginEvent(const std::string& name)
@@ -183,7 +184,7 @@ Resource::Ptr GLContext::GetBackBuffer()
     return m_final_texture;
 }
 
-void GLContext::Present(const Resource::Ptr& ires)
+void GLContext::Present()
 {
     glBlitNamedFramebuffer(m_final_framebuffer, 0, 0, 0, m_width, m_height, 0, m_height, m_width, 0, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }

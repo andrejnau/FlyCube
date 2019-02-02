@@ -35,7 +35,7 @@ void GeometryPass::OnRender()
 
     m_program.ps.sampler.g_sampler.Attach(m_sampler);
 
-    float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_program.ps.om.rtv0.Attach(output.position).Clear(color);
     m_program.ps.om.rtv1.Attach(output.normal).Clear(color);
     m_program.ps.om.rtv2.Attach(output.albedo).Clear(color);

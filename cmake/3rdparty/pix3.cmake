@@ -15,6 +15,9 @@ add_custom_command(OUTPUT ${trigger_file}
     COMMAND ${CMAKE_COMMAND} -E copy
         $<TARGET_FILE:pix3>
         $<TARGET_FILE_DIR:SponzaPbr>/$<TARGET_FILE_NAME:pix3>
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:pix3>
+        $<TARGET_FILE_DIR:Triangle>/$<TARGET_FILE_NAME:pix3>
 )
 
 add_custom_target(pix3_copy ALL DEPENDS ${trigger_file})

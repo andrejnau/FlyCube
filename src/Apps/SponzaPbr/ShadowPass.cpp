@@ -50,7 +50,7 @@ void ShadowPass::OnRender()
 
     m_program.ps.sampler.g_sampler.Attach(m_sampler);
 
-    float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_program.ps.om.dsv.Attach(output.srv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     for (auto& model : m_input.scene_list)

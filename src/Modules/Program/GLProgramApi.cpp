@@ -502,9 +502,9 @@ void GLProgramApi::OnAttachDSV(const ViewDesc& view_desc, const Resource::Ptr & 
     glNamedFramebufferTexture(m_framebuffer, GL_DEPTH_ATTACHMENT, res.texture, 0);
 }
 
-void GLProgramApi::ClearRenderTarget(uint32_t slot, const FLOAT ColorRGBA[4])
+void GLProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)
 {
-    glClearNamedFramebufferfv(m_framebuffer, GL_COLOR, slot, ColorRGBA);
+    glClearNamedFramebufferfv(m_framebuffer, GL_COLOR, slot, color.data());
 }
 
 void GLProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)

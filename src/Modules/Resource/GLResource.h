@@ -11,6 +11,7 @@ public:
     GLuint texture = 0;
     GLuint buffer = 0;
     GLuint buffer_size = 0;
+    GLuint buffer_stride = 0;
 
     struct Image
     {
