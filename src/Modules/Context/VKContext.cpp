@@ -300,6 +300,16 @@ VKContext::VKContext(GLFWwindow* window)
     }
 
     OpenCommandBuffer();
+
+    for (size_t i = 0; i < FrameCount; ++i)
+    {
+        VKResource::Ptr res = std::make_shared<VKResource>();
+        res->image.res = m_images[i];
+        res->image.format = m_swapchain_color_format;
+        res->image.size = { 1u * m_width, 1u * m_height };
+        res->res_type = VKResource::Type::kImage;
+        m_back_buffers[i] = res;
+    }
 }
 
 std::unique_ptr<ProgramApi> VKContext::CreateProgram()
@@ -901,24 +911,18 @@ void VKContext::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY,
 
 Resource::Ptr VKContext::GetBackBuffer()
 {
-    VKResource::Ptr res = std::make_shared<VKResource>();
-    res->image.res = m_images[m_frame_index];
-    res->image.format = m_swapchain_color_format;
-    res->image.size = { 1u * m_width, 1u * m_height };
-    res->res_type = VKResource::Type::kImage;
-    m_final_rt = res;
-    return res;
+    return m_back_buffers[m_frame_index];
 }
 
 void VKContext::CloseCommandBuffer()
 {
     if (m_is_open_render_pass)
     {
-        vkCmdEndRenderPass(m_cmd_bufs[GetFrameIndex()]);
+        vkCmdEndRenderPass(m_cmd_bufs[m_frame_index]);
         m_is_open_render_pass = false;
     }
 
-    TransitionImageLayout(m_final_rt->image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, {});
+    TransitionImageLayout(m_back_buffers[m_frame_index]->image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, {});
 
     auto res = vkEndCommandBuffer(m_cmd_bufs[m_frame_index]);
 }

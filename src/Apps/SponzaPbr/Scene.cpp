@@ -38,7 +38,7 @@ Scene::Scene(Context& context, int width, int height)
 
         std::pair<std::string, bool> hdr_tests[] =
         {
-            { "gold",        true  },
+            { "gold",        false },
             { "grass",       false },
             { "plastic",     false },
             { "rusted_iron", false },
