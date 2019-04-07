@@ -44,7 +44,6 @@ target_link_libraries(${target}
     spirv-cross-hlsl
     ${Vulkan_LIBRARIES}
     glLoadGen
-    pix3
     Resource
     View
 )
