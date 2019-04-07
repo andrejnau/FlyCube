@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <sstream>
 #include <Context/ContextSelector.h>
+#include <Utilities/State.h>
 
 AppBox::AppBox(int argc, char *argv[], const CreateSample& create_sample, const std::string& title)
     : m_create_sample(create_sample)
@@ -22,6 +23,8 @@ AppBox::AppBox(int argc, char *argv[], const CreateSample& create_sample, const 
             m_api_type = ApiType::kVulkan;
         else if (arg == "--gl")
             m_api_type = ApiType::kOpenGL;
+        else if (arg == "--gpu")
+            CurState::Instance().required_gpu_index = std::stoul(argv[++i]);
     }
 
     std::string api_title;

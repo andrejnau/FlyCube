@@ -16,12 +16,16 @@ ComPtr<IDXGIAdapter1> GetHardwareAdapter(const ComPtr<IDXGIFactory4>& dxgi_facto
     };
 
     ComPtr<IDXGIAdapter1> adapter;
+    uint32_t gpu_index = 0;
     for (UINT adapter_index = 0; DXGI_ERROR_NOT_FOUND != NextAdapted(adapter_index, adapter); ++adapter_index)
     {
         DXGI_ADAPTER_DESC1 desc = {};
         adapter->GetDesc1(&desc);
 
         if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+            continue;
+
+        if (CurState::Instance().required_gpu_index >= 0 && gpu_index++ != CurState::Instance().required_gpu_index)
             continue;
 
         CurState::Instance().gpu_name = wstring_to_utf8(desc.Description);

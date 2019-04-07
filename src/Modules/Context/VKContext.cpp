@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
 #include <Utilities/VKUtility.h>
+#include <Utilities/State.h>
 
 class DebugReportListener
 {
@@ -134,6 +135,7 @@ void VKContext::SelectPhysicalDevice()
     std::vector<VkPhysicalDevice> devices(device_count);
     ASSERT_SUCCEEDED(vkEnumeratePhysicalDevices(m_instance, &device_count, devices.data()));
 
+    uint32_t gpu_index = 0;
     for (const auto& device : devices)
     {
         VkPhysicalDeviceProperties device_properties;
@@ -142,7 +144,10 @@ void VKContext::SelectPhysicalDevice()
         if (device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ||
             device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
         {
+            if (CurState::Instance().required_gpu_index >= 0 && gpu_index++ != CurState::Instance().required_gpu_index)
+                continue;
             m_physical_device = device;
+            CurState::Instance().gpu_name = device_properties.deviceName;
             break;
         }
     }
