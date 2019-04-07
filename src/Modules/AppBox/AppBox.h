@@ -11,6 +11,7 @@ class AppBox
 {
 public:
     using CreateSample = std::function<IScene::Ptr(Context&, int, int)>;
+    AppBox(int argc, char *argv[], const CreateSample& create_sample, const std::string& title);
     AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height);
     ~AppBox();
     int Run();
@@ -24,6 +25,7 @@ public:
     static MonitorDesc GetPrimaryMonitorDesc();
 
 private:
+    void Init();
     void InitWindow();
     void SetWindowToCenter();
 

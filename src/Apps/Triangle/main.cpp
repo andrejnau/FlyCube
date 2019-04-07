@@ -51,37 +51,5 @@ int main(int argc, char *argv[])
     {
         return std::make_unique<Scene>(context, width, height);
     };
-    ApiType type = ApiType::kDX12;
-    for (int i = 1; i < argc; ++i)
-    {
-        std::string arg(argv[i]);
-        if (arg == "--dx11")
-            type = ApiType::kDX11;
-        else if (arg == "--dx12")
-            type = ApiType::kDX12;
-        else if (arg == "--vk")
-            type = ApiType::kVulkan;
-        else if (arg == "--gl")
-            type = ApiType::kOpenGL;
-    }
-
-    std::string title;
-    switch (type)
-    {
-    case ApiType::kDX11:
-        title = "[DX11] Triangle";
-        break;
-    case ApiType::kDX12:
-        title = "[DX12] Triangle";
-        break;
-    case ApiType::kVulkan:
-        title = "[Vulkan] Triangle";
-        break;
-    case ApiType::kOpenGL:
-        title = "[OpenGL] Triangle";
-        break;
-    }
-
-    auto monitor_desc = AppBox::GetPrimaryMonitorDesc();
-    return AppBox(creater, type, title, monitor_desc.width / 1.5, monitor_desc.height / 1.5).Run();
+    return AppBox(argc, argv, creater, "Triangle").Run();
 }

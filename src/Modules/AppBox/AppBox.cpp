@@ -3,6 +3,52 @@
 #include <sstream>
 #include <Context/ContextSelector.h>
 
+AppBox::AppBox(int argc, char *argv[], const CreateSample& create_sample, const std::string& title)
+    : m_create_sample(create_sample)
+    , m_api_type(ApiType::kDX12)
+    , m_window(nullptr)
+    , m_width(0)
+    , m_height(0)
+    , m_exit(false)
+{
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string arg(argv[i]);
+        if (arg == "--dx11")
+            m_api_type = ApiType::kDX11;
+        else if (arg == "--dx12")
+            m_api_type = ApiType::kDX12;
+        else if (arg == "--vk")
+            m_api_type = ApiType::kVulkan;
+        else if (arg == "--gl")
+            m_api_type = ApiType::kOpenGL;
+    }
+
+    std::string api_title;
+    switch (m_api_type)
+    {
+    case ApiType::kDX11:
+        api_title = "[DX11]";
+        break;
+    case ApiType::kDX12:
+        api_title = "[DX12]";
+        break;
+    case ApiType::kVulkan:
+        api_title = "[Vulkan]";
+        break;
+    case ApiType::kOpenGL:
+        api_title = "[OpenGL]";
+        break;
+    }
+    m_title = api_title + " " + title;
+
+    auto monitor_desc = GetPrimaryMonitorDesc();
+    m_width = monitor_desc.width / 1.5;
+    m_height = monitor_desc.height / 1.5;
+
+    Init();
+}
+
 AppBox::AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height)
     : m_create_sample(create_sample)
     , m_api_type(api_type)
@@ -12,11 +58,7 @@ AppBox::AppBox(const CreateSample& create_sample, ApiType api_type, const std::s
     , m_height(height)
     , m_exit(false)
 {
-    if (!glfwInit())
-        return;
-
-    InitWindow();
-    SetWindowToCenter();
+    Init();
 }
 
 AppBox::~AppBox()
@@ -80,6 +122,15 @@ AppBox::MonitorDesc AppBox::GetPrimaryMonitorDesc()
     glfwInit();
     auto monitor_desc = *glfwGetVideoMode(glfwGetPrimaryMonitor());
     return { monitor_desc.width, monitor_desc.height };
+}
+
+void AppBox::Init()
+{
+    if (!glfwInit())
+        return;
+
+    InitWindow();
+    SetWindowToCenter();
 }
 
 void AppBox::InitWindow()
