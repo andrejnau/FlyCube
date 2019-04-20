@@ -42,6 +42,7 @@ public:
     virtual ShaderBlob GetBlobByType(ShaderType type) const override;
 
     void OnPresent();
+    void DispatchRays(uint32_t width, uint32_t height, uint32_t depth);
 
 private:
     DX12Resource::Ptr CreateCBuffer(size_t buffer_size);
@@ -59,10 +60,13 @@ private:
     std::vector<D3D12_INPUT_ELEMENT_DESC> GetInputLayout(ComPtr<ID3D12ShaderReflection> reflector);
     void CreateGraphicsPSO();
     void CreateComputePSO();
+    void CreateRtPipelineState();
+    void CreateShaderTable();
     void CopyDescriptor(DescriptorHeapRange & dst_range, size_t dst_offset, const View::Ptr& view);
     DX12View* ConvertView(const View::Ptr& view);
     View::Ptr CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override;
     
+    ComPtr<ID3D12RootSignature> CreateRootSignature(const D3D12_ROOT_SIGNATURE_DESC & desc);
     void ParseShaders();
     void OMSetRenderTargets();
 
@@ -77,6 +81,7 @@ private:
 
     std::map<ShaderType, ComPtr<ID3DBlob>> m_blob_map;
     bool m_is_compute = false;
+    bool m_is_dxr = false;
 
     D3D12_ROOT_DESCRIPTOR_TABLE DescriptorTable;
     D3D12_ROOT_CONSTANTS Constants;
@@ -188,6 +193,9 @@ private:
         Hasher<D3D12_GRAPHICS_PIPELINE_STATE_DESC>, 
         EqualFn<D3D12_GRAPHICS_PIPELINE_STATE_DESC>> m_pso;
     ComPtr<ID3D12PipelineState> m_current_pso;
+    ComPtr<ID3D12StateObject> m_state_object;
+    ComPtr<ID3D12Resource> m_shader_table;
+    D3D12_DISPATCH_RAYS_DESC m_raytrace_desc = {};
 
     std::vector<D3D12_INPUT_ELEMENT_DESC> m_input_layout;
     ComPtr<ID3D12ShaderReflection> m_input_layout_reflector;

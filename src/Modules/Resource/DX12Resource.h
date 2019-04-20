@@ -25,6 +25,13 @@ public:
     DX12Resource(DX12Context& context);
     ~DX12Resource();
 
+    struct
+    {
+        DX12Resource::Ptr scratch;
+        DX12Resource::Ptr result;
+        DX12Resource::Ptr instance_desc;
+    } as;
+
     virtual void SetName(const std::string& name) override;
     ComPtr<ID3D12Resource>& GetUploadResource(size_t subresource);
 

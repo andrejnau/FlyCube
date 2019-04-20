@@ -9,6 +9,7 @@
 #include <Utilities/FileUtility.h>
 #include <View/View.h>
 #include "Context/BaseTypes.h"
+#include <gli/gli.hpp>
 
 using namespace Microsoft::WRL;
 
@@ -47,4 +48,11 @@ public:
 
 private:
     std::map<std::pair<BindKey, ViewDesc>, View::Ptr> views;
+};
+
+struct BufferDesc
+{
+    Resource::Ptr res;
+    gli::format format = gli::format::FORMAT_UNDEFINED;
+    uint32_t count = 0;
 };

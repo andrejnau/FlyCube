@@ -10,6 +10,13 @@
 #include <Program/DX12ProgramApi.h>
 #include "Context/DXGIUtility.h"
 
+bool IsDirectXRaytracingSupported(const ComPtr<ID3D12Device>& device)
+{
+    D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature = {};
+    return SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature, sizeof(feature)))
+        && feature.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
+}
+
 DX12Context::DX12Context(GLFWwindow* window)
     : Context(window)
     , m_view_pool(*this)
@@ -28,7 +35,7 @@ DX12Context::DX12Context(GLFWwindow* window)
     }
 #endif
 
-#if defined(_DEBUG) || 1
+#if defined(_DEBUG)
     ComPtr<ID3D12Debug> debug_controller;
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller))))
     {
@@ -41,6 +48,8 @@ DX12Context::DX12Context(GLFWwindow* window)
 
     ComPtr<IDXGIAdapter1> adapter = GetHardwareAdapter(dxgi_factory.Get());
     ASSERT_SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&device)));
+    device.As(&device5);
+    m_is_dxr_supported = IsDirectXRaytracingSupported(device);
 
     D3D12_COMMAND_QUEUE_DESC cq_desc = {};
     ASSERT_SUCCEEDED(device->CreateCommandQueue(&cq_desc, IID_PPV_ARGS(&m_command_queue)));
@@ -55,6 +64,7 @@ DX12Context::DX12Context(GLFWwindow* window)
     }
 
     ASSERT_SUCCEEDED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_command_allocator[m_frame_index].Get(), nullptr, IID_PPV_ARGS(&command_list)));
+    command_list.As(&command_list4);
 
     ASSERT_SUCCEEDED(device->CreateFence(m_fence_values[m_frame_index], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
     ++m_fence_values[m_frame_index];
@@ -66,7 +76,8 @@ DX12Context::DX12Context(GLFWwindow* window)
     if (SUCCEEDED(device.As(&info_queue)))
     {
         info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-        info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+        // TODO: false positives for CopyDescriptors
+        //info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
     }
 #endif
 }
@@ -163,17 +174,19 @@ Resource::Ptr DX12Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size
 
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
 
+    res->bind_flag = bind_flag;
+    res->buffer_size = buffer_size;
+    res->stride = stride;
+    res->state = D3D12_RESOURCE_STATE_COMMON;
+
     if (bind_flag & BindFlag::kRtv)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     if (bind_flag & BindFlag::kDsv)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     if (bind_flag & BindFlag::kUav)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-
-    res->bind_flag = bind_flag;
-    res->buffer_size = buffer_size;
-    res->stride = stride;
-    res->state = D3D12_RESOURCE_STATE_COPY_DEST;
+    if (bind_flag & BindFlag::KAccelerationStructure)
+        res->state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
 
     if (bind_flag & BindFlag::kCbv)
     {
@@ -253,6 +266,134 @@ Resource::Ptr DX12Context::CreateSampler(const SamplerDesc & desc)
     return res;
 }
 
+Resource::Ptr DX12Context::CreateBottomLevelAS(const BufferDesc& vertex)
+{
+    return CreateBottomLevelAS(vertex, {});
+}
+
+Resource::Ptr DX12Context::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
+{
+    auto vertex_res = std::static_pointer_cast<DX12Resource>(vertex.res);
+    auto index_res = std::static_pointer_cast<DX12Resource>(index.res);
+
+    D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
+    geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+    geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+    ASSERT(!!vertex_res);
+    geometry_desc.Triangles.VertexBuffer.StartAddress = vertex_res->default_res->GetGPUVirtualAddress();
+    geometry_desc.Triangles.VertexBuffer.StrideInBytes = gli::detail::bits_per_pixel(vertex.format) / 8;
+    geometry_desc.Triangles.VertexFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(vertex.format).DXGIFormat.DDS);
+    geometry_desc.Triangles.VertexCount = vertex.count;
+    if (index_res)
+    {
+        geometry_desc.Triangles.IndexBuffer = index_res->default_res->GetGPUVirtualAddress();
+        geometry_desc.Triangles.IndexFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(index.format).DXGIFormat.DDS);
+        geometry_desc.Triangles.IndexCount = index.count;
+    }
+
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
+    inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+    inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    inputs.NumDescs = 1;
+    inputs.pGeometryDescs = &geometry_desc;
+
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
+    device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
+
+    auto scratch = std::static_pointer_cast<DX12Resource>(CreateBuffer(kUav, info.ScratchDataSizeInBytes, 0));
+    auto result = std::static_pointer_cast<DX12Resource>(CreateBuffer(kUav | KAccelerationStructure, info.ResultDataMaxSizeInBytes, 0));
+
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
+    acceleration_structure_desc.Inputs = inputs;
+    acceleration_structure_desc.DestAccelerationStructureData = result->default_res->GetGPUVirtualAddress();
+    acceleration_structure_desc.ScratchAccelerationStructureData = scratch->default_res->GetGPUVirtualAddress();
+    command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
+
+    D3D12_RESOURCE_BARRIER uav_barrier = {};
+    uav_barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    uav_barrier.UAV.pResource = result->default_res.Get();
+    command_list4->ResourceBarrier(1, &uav_barrier);
+
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>(*this);
+    res->as.scratch = scratch;
+    res->as.result = result;
+    res->default_res = result->default_res;
+
+    return res;
+}
+
+Resource::Ptr DX12Context::CreateTopLevelAS(const std::vector<std::pair<Resource::Ptr, glm::mat4>>& geometry)
+{
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
+    inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+    inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+    inputs.NumDescs = geometry.size();
+
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
+    device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
+
+    auto scratch = std::static_pointer_cast<DX12Resource>(CreateBuffer(kUav, info.ScratchDataSizeInBytes, 0));
+    auto result = std::static_pointer_cast<DX12Resource>(CreateBuffer(kUav | KAccelerationStructure, info.ResultDataMaxSizeInBytes, 0));
+
+    auto instance_desc_res = std::static_pointer_cast<DX12Resource>(CreateBuffer(0, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * geometry.size(), 0));
+    auto& upload_res = instance_desc_res->GetUploadResource(0);
+    if (!upload_res)
+    {
+        UINT64 buffer_size = GetRequiredIntermediateSize(instance_desc_res->default_res.Get(), 0, 1);
+        device->CreateCommittedResource(
+            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+            D3D12_HEAP_FLAG_NONE,
+            &CD3DX12_RESOURCE_DESC::Buffer(buffer_size),
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&upload_res));
+    }
+
+    D3D12_RAYTRACING_INSTANCE_DESC* instance_desc = nullptr;
+    ASSERT_SUCCEEDED(upload_res->Map(0, nullptr, reinterpret_cast<void**>(&instance_desc)));
+
+    for (size_t i = 0; i < geometry.size(); ++i)
+    {
+        auto res = std::static_pointer_cast<DX12Resource>(geometry[i].first);
+
+        instance_desc[i] = {};
+        instance_desc[i].InstanceID = i;
+        instance_desc[i].AccelerationStructure = res->default_res->GetGPUVirtualAddress();
+        instance_desc[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        instance_desc[i].InstanceMask = 0xFF;
+        memcpy(instance_desc[i].Transform, &geometry[i].second, sizeof(instance_desc->Transform));
+    }
+
+    upload_res->Unmap(0, nullptr);
+
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
+    acceleration_structure_desc.Inputs = inputs;
+    acceleration_structure_desc.Inputs.InstanceDescs = upload_res->GetGPUVirtualAddress();
+    acceleration_structure_desc.DestAccelerationStructureData = result->default_res->GetGPUVirtualAddress();
+    acceleration_structure_desc.ScratchAccelerationStructureData = scratch->default_res->GetGPUVirtualAddress();
+    command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
+
+    D3D12_RESOURCE_BARRIER uav_barrier = {};
+    uav_barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    uav_barrier.UAV.pResource = result->default_res.Get();
+    command_list4->ResourceBarrier(1, &uav_barrier);
+
+    DX12Resource::Ptr res = std::make_shared<DX12Resource>(*this);
+    res->as.scratch = scratch;
+    res->as.result = result;
+    res->as.instance_desc = instance_desc_res;
+    res->default_res = result->default_res;
+
+    return res;
+}
+
+void DX12Context::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
+{
+    m_current_program->ApplyBindings();
+    m_current_program->DispatchRays(width, height, depth);
+}
+
 void DX12Context::UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubresource, const void * pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
@@ -286,8 +427,8 @@ void DX12Context::UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubre
     data.SlicePitch = SrcDepthPitch;
 
     ResourceBarrier(res, D3D12_RESOURCE_STATE_COPY_DEST);
-
     UpdateSubresources(command_list.Get(), res->default_res.Get(), upload_res.Get(), 0, DstSubresource, 1, &data);
+    ResourceBarrier(res, D3D12_RESOURCE_STATE_COMMON);
 }
 
 void DX12Context::SetViewport(float width, float height)
@@ -385,7 +526,14 @@ void DX12Context::Present()
 
     m_command_queue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-    ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
+    if (CurState::Instance().vsync)
+    {
+        ASSERT_SUCCEEDED(m_swap_chain->Present(1, 0));
+    }
+    else
+    {
+        ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
+    }
 
     MoveToNextFrame();
 
@@ -409,6 +557,8 @@ void DX12Context::ResourceBarrier(const DX12Resource::Ptr& res, D3D12_RESOURCE_S
 
 void DX12Context::ResourceBarrier(DX12Resource& res, D3D12_RESOURCE_STATES state)
 {
+    if (res.as.result)
+        return;
     if (res.state != state)
         command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res.default_res.Get(), res.state, state));
     res.state = state;

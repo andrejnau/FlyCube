@@ -51,6 +51,7 @@ enum BindFlag
     kIbv = 1 << 6,
     kVbv = 1 << 7,
     kSampler = 1 << 8,
+    KAccelerationStructure = 1 << 9,
 };
 
 enum class FillMode
@@ -115,7 +116,8 @@ enum class ShaderType
     kVertex,
     kPixel,
     kCompute,
-    kGeometry
+    kGeometry,
+    kLibrary
 };
 
 struct BindKey

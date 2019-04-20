@@ -61,24 +61,54 @@ DX12View::Ptr DX12ViewCreater::GetView(const BindKey& bind_key, const ViewDesc& 
     return std::static_pointer_cast<DX12View>(view);
 }
 
-void DX12ViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const DX12Resource& res, DX12View& handle)
+D3D12_SHADER_INPUT_BIND_DESC DX12ViewCreater::GetResourceBindingDescByName(ShaderType type, const std::string& name)
 {
+    D3D12_SHADER_INPUT_BIND_DESC binding_desc = {};
+
     ComPtr<ID3D12ShaderReflection> reflector;
     auto shader_blob = m_shader_provider.GetBlobByType(type);
     _D3DReflect(shader_blob.data, shader_blob.size, IID_PPV_ARGS(&reflector));
-    D3D12_SHADER_INPUT_BIND_DESC binding_desc = {};
-    ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &binding_desc));
+    if (reflector)
+    {
+        ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &binding_desc));
+    }
+    else
+    {
+        ComPtr<ID3D12LibraryReflection> library_reflector;
+        _D3DReflect(shader_blob.data, shader_blob.size, IID_PPV_ARGS(&library_reflector));
+        if (library_reflector)
+        {
+            D3D12_LIBRARY_DESC lib_desc = {};
+            library_reflector->GetDesc(&lib_desc);
+            for (int j = 0; j < lib_desc.FunctionCount; ++j)
+            {
+                auto reflector = library_reflector->GetFunctionByIndex(j);
+                if (SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &binding_desc)))
+                    break;
+            }
+        }
+    }
+    return binding_desc;
+}
+
+void DX12ViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const DX12Resource& res, DX12View& handle)
+{
+    D3D12_SHADER_INPUT_BIND_DESC binding_desc = GetResourceBindingDescByName(type, name);
     D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = DX12GeSRVDesc(binding_desc, view_desc, res);
-    m_context.device->CreateShaderResourceView(res.default_res.Get(), &srv_desc, handle.GetCpuHandle());
+    if (srv_desc.ViewDimension != D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE)
+    {
+        m_context.device->CreateShaderResourceView(res.default_res.Get(), &srv_desc, handle.GetCpuHandle());
+    }
+    else
+    {
+        srv_desc.RaytracingAccelerationStructure.Location = res.default_res->GetGPUVirtualAddress();
+        m_context.device->CreateShaderResourceView(nullptr, &srv_desc, handle.GetCpuHandle());
+    }
 }
 
 void DX12ViewCreater::CreateUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const DX12Resource& res, DX12View& handle)
 {
-    ComPtr<ID3D12ShaderReflection> reflector;
-    auto shader_blob = m_shader_provider.GetBlobByType(type);
-    _D3DReflect(shader_blob.data, shader_blob.size, IID_PPV_ARGS(&reflector));
-    D3D12_SHADER_INPUT_BIND_DESC binding_desc = {};
-    ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &binding_desc));
+    D3D12_SHADER_INPUT_BIND_DESC binding_desc = GetResourceBindingDescByName(type, name);
     D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = DX12GetUAVDesc(binding_desc, view_desc, res);
     m_context.device->CreateUnorderedAccessView(res.default_res.Get(), nullptr, &uav_desc, handle.GetCpuHandle());
 }

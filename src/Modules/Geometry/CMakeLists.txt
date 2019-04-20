@@ -8,6 +8,7 @@ set(headers
     Model.h
     ModelLoader.h
     Geometry.h
+	IABuffer.h
 )
 
 set(sources

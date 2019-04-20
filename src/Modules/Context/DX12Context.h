@@ -23,6 +23,9 @@ public:
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) override;
     virtual Resource::Ptr CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride) override;
     virtual Resource::Ptr CreateSampler(const SamplerDesc& desc) override;
+    virtual Resource::Ptr CreateBottomLevelAS(const BufferDesc& vertex) override;
+    virtual Resource::Ptr CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index) override;
+    virtual Resource::Ptr CreateTopLevelAS(const std::vector<std::pair<Resource::Ptr, glm::mat4>>& geometry) override;
     virtual void UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubresource, const void *pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch) override;
 
     virtual void SetViewport(float width, float height) override;
@@ -36,11 +39,14 @@ public:
 
     virtual void DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation) override;
     virtual void Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ) override;
+    virtual void DispatchRays(uint32_t width, uint32_t height, uint32_t depth) override;
 
     void InitBackBuffers();
 
     virtual Resource::Ptr GetBackBuffer() override;
     virtual void Present() override;
+
+    virtual bool IsDxrSupported() const override { return m_is_dxr_supported; }
 
     virtual void OnDestroy() override;
 
@@ -52,7 +58,9 @@ public:
     void QueryOnDelete(ComPtr<IUnknown> res);
 
     ComPtr<ID3D12GraphicsCommandList> command_list;
+    ComPtr<ID3D12GraphicsCommandList4> command_list4;
     ComPtr<ID3D12Device> device;
+    ComPtr<ID3D12Device5> device5;
     std::unique_ptr<DescriptorPool> descriptor_pool;
 
     DX12ViewPool m_view_pool;
@@ -73,4 +81,5 @@ private:
     DX12ProgramApi* m_current_program = nullptr;
     std::vector<std::reference_wrapper<DX12ProgramApi>> m_created_program;
     Resource::Ptr m_back_buffers[FrameCount];
+    bool m_is_dxr_supported = false;
 };

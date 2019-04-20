@@ -24,3 +24,18 @@ GLFWwindow* Context::GetWindow()
 {
     return m_window;
 }
+
+Resource::Ptr Context::CreateBottomLevelAS(const BufferDesc & vertex)
+{
+    return Resource::Ptr();
+}
+
+Resource::Ptr Context::CreateBottomLevelAS(const BufferDesc & vertex, const BufferDesc & index)
+{
+    return Resource::Ptr();
+}
+
+Resource::Ptr Context::CreateTopLevelAS(const std::vector<std::pair<Resource::Ptr, glm::mat4>>& geometry)
+{
+    return Resource::Ptr();
+}

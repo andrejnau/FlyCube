@@ -13,6 +13,8 @@ public:
 
     DX12View::Ptr GetView(const BindKey& bind_key, const ViewDesc& view_desc, const std::string& name, const Resource::Ptr& ires);
 
+    D3D12_SHADER_INPUT_BIND_DESC GetResourceBindingDescByName(ShaderType type, const std::string & name);
+
 private:
     DX12View::Ptr GetEmptyDescriptor(ResourceType res_type);
 

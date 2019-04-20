@@ -14,6 +14,7 @@ public:
         , m_stride(sizeof(v.front()))
         , m_offset(0)
         , m_size(v.size() * sizeof(v.front()))
+        , m_count(v.size())
     {
         m_buffer = m_context.CreateBuffer(BindFlag::kVbv, static_cast<uint32_t>(v.size() * sizeof(v.front())), static_cast<uint32_t>(m_stride));
         if (m_buffer)
@@ -26,12 +27,23 @@ public:
             m_context.IASetVertexBuffer(slot, m_buffer);
     }
 
+    Resource::Ptr GetBuffer() const
+    {
+        return m_buffer;
+    }
+
+    size_t Count() const
+    {
+        return m_count;
+    }
+
 private:
-    Context & m_context;
+    Context& m_context;
     Resource::Ptr m_buffer;
     size_t m_stride;
     size_t m_offset;
     size_t m_size;
+    size_t m_count;
 };
 
 class IAIndexBuffer
@@ -57,13 +69,18 @@ public:
             m_context.IASetIndexBuffer(m_buffer, m_format);
     }
 
+    Resource::Ptr GetBuffer() const
+    {
+        return m_buffer;
+    }
+
     size_t Count() const
     {
         return m_count;
     }
 
 private:
-    Context & m_context;
+    Context& m_context;
     Resource::Ptr m_buffer;
     size_t m_offset;
     size_t m_count;

@@ -1,5 +1,7 @@
 #include "DX12ViewDescCreater.h"
 
+static const UINT32 D3D_SIT_RTACCELERATIONSTRUCTURE = 12;
+
 D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const D3D12_SHADER_INPUT_BIND_DESC& binding_desc, const ViewDesc& view_desc, const DX12Resource& res)
 {
     D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
@@ -106,8 +108,17 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const D3D12_SHADER_INPUT_BIND_DESC
             break;
         }
         default:
-            assert(false);
+        {
+            if (binding_desc.Type == D3D_SIT_RTACCELERATIONSTRUCTURE)
+            {
+                srv_desc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+            }
+            else
+            {
+                assert(false);
+            }
             break;
+        }
         }
     }
     return srv_desc;

@@ -4,6 +4,148 @@
 #include <Utilities/State.h>
 #include <Shader/DXCompiler.h>
 
+static const WCHAR* kRayGenShader = L"ray_gen";
+static const WCHAR* kMissShader = L"miss";
+static const WCHAR* kHitGroup = L"hit_group";
+static const WCHAR* kAnyHitShader = nullptr;
+static const WCHAR* kClosestHitShader = L"closest";
+static const WCHAR* kIntersectionHitShader = nullptr;
+
+inline UINT Align(UINT size, UINT alignment)
+{
+    return (size + (alignment - 1)) & ~(alignment - 1);
+}
+
+static const UINT32 D3D_SIT_RTACCELERATIONSTRUCTURE = 12;
+
+class Subobject
+{
+public:
+    const D3D12_STATE_SUBOBJECT& GetSubobject() const
+    {
+        return m_state_subobject;
+    }
+
+protected:
+    D3D12_STATE_SUBOBJECT m_state_subobject = {};
+};
+
+class DxilLibrary : public Subobject
+{
+public:
+    DxilLibrary(ComPtr<ID3DBlob> blob, decltype(&::D3DReflect) _D3DReflect)
+    {
+        m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+        m_state_subobject.pDesc = &m_dxil_lib_desc;
+
+        ComPtr<ID3D12LibraryReflection> lib_reflector;
+        ASSERT_SUCCEEDED(_D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&lib_reflector)));
+
+        D3D12_LIBRARY_DESC lib_desc = {};
+        ASSERT_SUCCEEDED(lib_reflector->GetDesc(&lib_desc));
+
+        m_export_desc.resize(lib_desc.FunctionCount);
+        m_export_name.resize(lib_desc.FunctionCount);
+
+        m_dxil_lib_desc.DXILLibrary.pShaderBytecode = blob->GetBufferPointer();
+        m_dxil_lib_desc.DXILLibrary.BytecodeLength = blob->GetBufferSize();
+        m_dxil_lib_desc.NumExports = lib_desc.FunctionCount;
+        m_dxil_lib_desc.pExports = m_export_desc.data();
+
+        for (size_t i = 0; i < lib_desc.FunctionCount; ++i)
+        {
+            auto reflector = lib_reflector->GetFunctionByIndex(i);
+            D3D12_FUNCTION_DESC desc = {};
+            reflector->GetDesc(&desc);
+
+            std::wstring& name = m_export_name[i];
+            name = utf8_to_wstring(desc.Name);
+            name = name.substr(name.find(L"?") + 1);
+            name = name.substr(0, name.find(L"@"));
+
+            m_export_desc[i].Name = m_export_name[i].c_str();
+        }
+    }
+
+private:
+    D3D12_DXIL_LIBRARY_DESC m_dxil_lib_desc = {};
+    std::vector<D3D12_EXPORT_DESC> m_export_desc;
+    std::vector<std::wstring> m_export_name;
+};
+
+class ExportAssociation : public Subobject
+{
+public:
+    ExportAssociation(const std::vector<std::wstring>& exports, const D3D12_STATE_SUBOBJECT& subobject_to_associate)
+    {
+        for (auto& str : exports)
+        {
+            m_exports.emplace_back(str.c_str());
+        }
+
+        m_association.NumExports = m_exports.size();
+        m_association.pExports = m_exports.data();
+        m_association.pSubobjectToAssociate = &subobject_to_associate;
+
+        m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+        m_state_subobject.pDesc = &m_association;
+    }
+
+private:
+    std::vector<const wchar_t*> m_exports;
+    D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION m_association = {};
+};
+
+class ShaderConfig : public Subobject
+{
+public:
+    ShaderConfig(uint32_t max_attribute_size, uint32_t max_payload_size)
+    {
+        m_shader_config.MaxAttributeSizeInBytes = max_attribute_size;
+        m_shader_config.MaxPayloadSizeInBytes = max_payload_size;
+
+        m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
+        m_state_subobject.pDesc = &m_shader_config;
+    }
+
+private:
+    D3D12_RAYTRACING_SHADER_CONFIG m_shader_config = {};
+};
+
+class PipelineConfig : public Subobject
+{
+public:
+    PipelineConfig(uint32_t max_trace_recursion_depth)
+    {
+        config.MaxTraceRecursionDepth = max_trace_recursion_depth;
+
+        m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
+        m_state_subobject.pDesc = &config;
+    }
+
+private:
+    D3D12_RAYTRACING_PIPELINE_CONFIG config = {};
+};
+
+class HitProgram : public Subobject
+{
+public:
+    HitProgram(const wchar_t* hit_group_name, const wchar_t* any_hit, const wchar_t* closest_hit, const wchar_t* intersection_hit)
+    {
+        m_desc.AnyHitShaderImport = any_hit;
+        m_desc.ClosestHitShaderImport = closest_hit;
+        m_desc.IntersectionShaderImport = intersection_hit;
+        
+        m_desc.HitGroupExport = hit_group_name;
+
+        m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
+        m_state_subobject.pDesc = &m_desc;
+    }
+
+private:
+    D3D12_HIT_GROUP_DESC m_desc = {};
+};
+
 DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     : CommonProgramApi(context)
     , m_context(context)
@@ -35,6 +177,53 @@ void DX12ProgramApi::UseProgram()
     SetRootSignature(m_root_signature.Get());
     if (m_current_pso)
         m_context.command_list->SetPipelineState(m_current_pso.Get());
+    else if (m_state_object)
+        m_context.command_list4->SetPipelineState1(m_state_object.Get());
+}
+
+void DX12ProgramApi::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
+{
+    m_raytrace_desc.Width = width;
+    m_raytrace_desc.Height = height;
+    m_raytrace_desc.Depth = depth;
+    m_context.command_list4->DispatchRays(&m_raytrace_desc);
+}
+
+void DX12ProgramApi::CreateShaderTable()
+{
+    std::vector<std::wstring> shader_entries = { kRayGenShader, kMissShader, kHitGroup };
+
+    size_t shader_table_entry_size = Align(D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
+    shader_table_entry_size = Align(shader_table_entry_size, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+    m_context.device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(shader_table_entry_size * shader_entries.size()),
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        IID_PPV_ARGS(&m_shader_table)
+    );
+
+    uint8_t* shader_table_data = nullptr;
+    ASSERT_SUCCEEDED(m_shader_table->Map(0, nullptr, reinterpret_cast<void**>(&shader_table_data)));
+    ComPtr<ID3D12StateObjectProperties> state_ojbect_props;
+    m_state_object.As(&state_ojbect_props);
+    for (size_t i = 0; i < shader_entries.size(); ++i)
+    {
+        memcpy(shader_table_data + i * shader_table_entry_size, state_ojbect_props->GetShaderIdentifier(shader_entries[i].c_str()), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+    }
+    m_shader_table->Unmap(0, nullptr);
+
+    m_raytrace_desc.RayGenerationShaderRecord.StartAddress = m_shader_table->GetGPUVirtualAddress();
+    m_raytrace_desc.RayGenerationShaderRecord.SizeInBytes = shader_table_entry_size;
+
+    m_raytrace_desc.MissShaderTable.StartAddress = m_raytrace_desc.RayGenerationShaderRecord.StartAddress + m_raytrace_desc.RayGenerationShaderRecord.SizeInBytes;
+    m_raytrace_desc.MissShaderTable.StrideInBytes = shader_table_entry_size;
+    m_raytrace_desc.MissShaderTable.SizeInBytes = shader_table_entry_size;
+    
+    m_raytrace_desc.HitGroupTable.StartAddress = m_raytrace_desc.MissShaderTable.StartAddress + m_raytrace_desc.MissShaderTable.SizeInBytes;
+    m_raytrace_desc.HitGroupTable.StrideInBytes = shader_table_entry_size;
+    m_raytrace_desc.HitGroupTable.SizeInBytes = shader_table_entry_size;
 }
 
 void DX12ProgramApi::CompileShader(const ShaderBase& shader)
@@ -63,10 +252,20 @@ void DX12ProgramApi::CompileShader(const ShaderBase& shader)
     case ShaderType::kGeometry:
         m_pso_desc.GS = ShaderBytecode;
         break;
+    case ShaderType::kLibrary:
+        m_is_compute = true;
+        m_is_dxr = true;
+        break;
     }
 
     m_pso_desc_cache = true;
     ParseShaders();
+
+    if (m_is_dxr)
+    {
+        CreateRtPipelineState();
+        CreateShaderTable();
+    }
 }
 
 void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)
@@ -391,6 +590,55 @@ void DX12ProgramApi::CreateComputePSO()
     m_context.command_list->SetPipelineState(m_current_pso.Get());
 }
 
+void DX12ProgramApi::CreateRtPipelineState()
+{
+    size_t max_size = 16;
+    std::vector<D3D12_STATE_SUBOBJECT> subobjects;
+    subobjects.reserve(max_size);
+
+    DxilLibrary dxil_lib(m_blob_map[ShaderType::kLibrary], _D3DReflect);
+    subobjects.emplace_back(dxil_lib.GetSubobject());
+
+    subobjects.emplace_back();
+    D3D12_ROOT_SIGNATURE_DESC local_root_sign_desc = {};
+    local_root_sign_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+    ComPtr<ID3D12RootSignature> local_root_sign = CreateRootSignature(local_root_sign_desc);
+    D3D12_STATE_SUBOBJECT& local_root_sign_subobject = subobjects.back();
+    local_root_sign_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+    local_root_sign_subobject.pDesc = local_root_sign.GetAddressOf();
+
+    subobjects.emplace_back();
+    D3D12_STATE_SUBOBJECT& global_root_sign_subobject = subobjects.back();
+    global_root_sign_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+    global_root_sign_subobject.pDesc = m_root_signature.GetAddressOf();
+
+    std::vector<std::wstring> shader_entries = { kRayGenShader, kMissShader, kHitGroup };
+
+    ExportAssociation local_root_association(shader_entries, local_root_sign_subobject);
+    subobjects.emplace_back(local_root_association.GetSubobject());
+
+    ShaderConfig shader_config(sizeof(glm::vec2), sizeof(glm::vec3));
+    subobjects.emplace_back(shader_config.GetSubobject());
+
+    ExportAssociation shader_config_association(shader_entries, shader_config.GetSubobject());
+    subobjects.emplace_back(shader_config_association.GetSubobject());
+
+    PipelineConfig pipeline_config(1);
+    subobjects.emplace_back(pipeline_config.GetSubobject());
+
+    HitProgram hit_program(kHitGroup, kAnyHitShader, kClosestHitShader, kIntersectionHitShader);
+    subobjects.emplace_back(hit_program.GetSubobject());
+
+    ASSERT(subobjects.capacity() == max_size);
+
+    D3D12_STATE_OBJECT_DESC desc = {};
+    desc.NumSubobjects = subobjects.size();
+    desc.pSubobjects = subobjects.data();
+    desc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+
+    ASSERT_SUCCEEDED(m_context.device5->CreateStateObject(&desc, IID_PPV_ARGS(&m_state_object)));
+}
+
 void DX12ProgramApi::CopyDescriptor(DescriptorHeapRange& dst_range, size_t dst_offset, const View::Ptr& view)
 {
     if (view)
@@ -414,10 +662,13 @@ View::Ptr DX12ProgramApi::CreateView(const BindKey& bind_key, const ViewDesc& vi
 
 void DX12ProgramApi::ApplyBindings()
 {
-    if (m_is_compute)
-        CreateComputePSO();
-    else
-        CreateGraphicsPSO();
+    if (!m_is_dxr)
+    {
+        if (m_is_compute)
+            CreateComputePSO();
+        else
+            CreateGraphicsPSO();
+    }
 
     UpdateCBuffers();
 
@@ -547,6 +798,17 @@ void DX12ProgramApi::ApplyBindings()
     }
 }
 
+ComPtr<ID3D12RootSignature> DX12ProgramApi::CreateRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc)
+{
+    ComPtr<ID3DBlob> signature;
+    ComPtr<ID3DBlob> error_blob;
+    ComPtr<ID3D12RootSignature> root_signature;
+    ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error_blob),
+        "%s", (char*)error_blob->GetBufferPointer());
+    ASSERT_SUCCEEDED(m_context.device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&root_signature)));
+    return root_signature;
+}
+
 void DX12ProgramApi::ParseShaders()
 {
     m_num_cbv = 0;
@@ -567,51 +829,99 @@ void DX12ProgramApi::ParseShaders()
         uint32_t num_uav = 0;
         uint32_t num_sampler = 0;
 
-        ComPtr<ID3D12ShaderReflection> reflector;
-        _D3DReflect(shader_blob.second->GetBufferPointer(), shader_blob.second->GetBufferSize(), IID_PPV_ARGS(&reflector));
-
-        D3D12_SHADER_DESC desc = {};
-        reflector->GetDesc(&desc);
-        for (UINT i = 0; i < desc.BoundResources; ++i)
+        ComPtr<ID3D12ShaderReflection> shader_reflector;
+        _D3DReflect(shader_blob.second->GetBufferPointer(), shader_blob.second->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
+        if (shader_reflector)
         {
-            D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
-            ASSERT_SUCCEEDED(reflector->GetResourceBindingDesc(i, &res_desc));
-            ResourceType res_type;
-            switch (res_desc.Type)
+            D3D12_SHADER_DESC desc = {};
+            shader_reflector->GetDesc(&desc);
+            for (UINT i = 0; i < desc.BoundResources; ++i)
             {
-            case D3D_SIT_SAMPLER:
-                num_sampler = std::max<uint32_t>(num_sampler, res_desc.BindPoint + res_desc.BindCount);
-                res_type = ResourceType::kSampler;
-                break;
-            case D3D_SIT_CBUFFER:
-                num_cbv = std::max<uint32_t>(num_cbv, res_desc.BindPoint + res_desc.BindCount);
-                res_type = ResourceType::kCbv;
-                break;
-            case D3D_SIT_TBUFFER:
-            case D3D_SIT_TEXTURE:
-            case D3D_SIT_STRUCTURED:
-            case D3D_SIT_BYTEADDRESS:
-                num_srv = std::max<uint32_t>(num_srv, res_desc.BindPoint + res_desc.BindCount);
-                res_type = ResourceType::kSrv;
-                break;
-            default:
-                num_uav = std::max<uint32_t>(num_uav, res_desc.BindPoint + res_desc.BindCount);
-                res_type = ResourceType::kUav;
-                break;
+                D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
+                ASSERT_SUCCEEDED(shader_reflector->GetResourceBindingDesc(i, &res_desc));
+                ResourceType res_type;
+                switch (res_desc.Type)
+                {
+                case D3D_SIT_SAMPLER:
+                    num_sampler = std::max<uint32_t>(num_sampler, res_desc.BindPoint + res_desc.BindCount);
+                    res_type = ResourceType::kSampler;
+                    break;
+                case D3D_SIT_CBUFFER:
+                    num_cbv = std::max<uint32_t>(num_cbv, res_desc.BindPoint + res_desc.BindCount);
+                    res_type = ResourceType::kCbv;
+                    break;
+                case D3D_SIT_TBUFFER:
+                case D3D_SIT_TEXTURE:
+                case D3D_SIT_STRUCTURED:
+                case D3D_SIT_BYTEADDRESS:
+                case D3D_SIT_RTACCELERATIONSTRUCTURE:
+                    num_srv = std::max<uint32_t>(num_srv, res_desc.BindPoint + res_desc.BindCount);
+                    res_type = ResourceType::kSrv;
+                    break;
+                default:
+                    num_uav = std::max<uint32_t>(num_uav, res_desc.BindPoint + res_desc.BindCount);
+                    res_type = ResourceType::kUav;
+                    break;
+                }
+            }
+
+            if (shader_blob.first == ShaderType::kPixel)
+            {
+                for (UINT i = 0; i < desc.OutputParameters; ++i)
+                {
+                    D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
+                    shader_reflector->GetOutputParameterDesc(i, &param_desc);
+                    m_num_rtv = std::max<uint32_t>(m_num_rtv, param_desc.Register + 1);
+                }
+            }
+        }
+        else
+        {
+            ComPtr<ID3D12LibraryReflection> library_reflector;
+            _D3DReflect(shader_blob.second->GetBufferPointer(), shader_blob.second->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
+            if (library_reflector)
+            {
+                D3D12_LIBRARY_DESC lib_desc = {};
+                library_reflector->GetDesc(&lib_desc);
+                for (int j = 0; j < lib_desc.FunctionCount; ++j)
+                {
+                    auto reflector = library_reflector->GetFunctionByIndex(j);
+                    D3D12_FUNCTION_DESC desc = {};
+                    reflector->GetDesc(&desc);
+                    for (UINT i = 0; i < desc.BoundResources; ++i)
+                    {
+                        D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
+                        ASSERT_SUCCEEDED(reflector->GetResourceBindingDesc(i, &res_desc));
+                        ResourceType res_type;
+                        switch (res_desc.Type)
+                        {
+                        case D3D_SIT_SAMPLER:
+                            num_sampler = std::max<uint32_t>(num_sampler, res_desc.BindPoint + res_desc.BindCount);
+                            res_type = ResourceType::kSampler;
+                            break;
+                        case D3D_SIT_CBUFFER:
+                            num_cbv = std::max<uint32_t>(num_cbv, res_desc.BindPoint + res_desc.BindCount);
+                            res_type = ResourceType::kCbv;
+                            break;
+                        case D3D_SIT_TBUFFER:
+                        case D3D_SIT_TEXTURE:
+                        case D3D_SIT_STRUCTURED:
+                        case D3D_SIT_BYTEADDRESS:
+                        case D3D_SIT_RTACCELERATIONSTRUCTURE:
+                            num_srv = std::max<uint32_t>(num_srv, res_desc.BindPoint + res_desc.BindCount);
+                            res_type = ResourceType::kSrv;
+                            break;
+                        default:
+                            num_uav = std::max<uint32_t>(num_uav, res_desc.BindPoint + res_desc.BindCount);
+                            res_type = ResourceType::kUav;
+                            break;
+                        }
+                    }
+                }
             }
         }
 
-        if (shader_blob.first == ShaderType::kPixel)
-        {
-            for (UINT i = 0; i < desc.OutputParameters; ++i)
-            {
-                D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
-                reflector->GetOutputParameterDesc(i, &param_desc);
-                m_num_rtv = std::max<uint32_t>(m_num_rtv, param_desc.Register + 1);
-            }
-        }
-
-        D3D12_SHADER_VISIBILITY visibility;
+        D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL;
         switch (shader_blob.first)
         {
         case ShaderType::kVertex:
@@ -753,23 +1063,19 @@ void DX12ProgramApi::ParseShaders()
         m_num_sampler += num_sampler;
     }
 
-    D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+    D3D12_ROOT_SIGNATURE_FLAGS root_signature_flags =
         D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
         D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
         D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
 
-    CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-    rootSignatureDesc.Init(static_cast<UINT>(root_parameters.size()),
+    CD3DX12_ROOT_SIGNATURE_DESC root_signature_desc;
+    root_signature_desc.Init(static_cast<UINT>(root_parameters.size()),
         root_parameters.data(),
         0,
         nullptr,
-        rootSignatureFlags);
+        root_signature_flags);
 
-    ID3DBlob* signature;
-    ID3DBlob* errorBuff;
-    ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &errorBuff),
-        "%s", (char*)errorBuff->GetBufferPointer());
-    ASSERT_SUCCEEDED(m_context.device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signature)));
+    m_root_signature = CreateRootSignature(root_signature_desc);
 }
 
 void DX12ProgramApi::OnPresent()

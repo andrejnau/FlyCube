@@ -176,6 +176,26 @@ public:
     }
 };
 
+template<typename T>
+class ShaderHolderImpl<ShaderType::kLibrary, T>
+{
+public:
+    struct Api : public T
+    {
+        using T::T;
+    } lib;
+
+    T& GetApi()
+    {
+        return lib;
+    }
+
+    ShaderHolderImpl(ProgramApi& program_base)
+        : lib(program_base)
+    {
+    }
+};
+
 template<typename T> class ShaderHolder : public ShaderHolderImpl<T::type, T> { using ShaderHolderImpl::ShaderHolderImpl; };
 
 template<typename ... Args>
