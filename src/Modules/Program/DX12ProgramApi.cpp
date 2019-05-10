@@ -437,10 +437,11 @@ void DX12ProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint3
 void DX12ProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
 {
     m_changed_binding = true;
+    /* TODO: DX12Resource::default_res is upload buffer for CBV
     if (!ires)
         return;
     DX12Resource& res = static_cast<DX12Resource&>(*ires);
-    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);*/
 }
 
 DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
