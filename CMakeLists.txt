@@ -5,11 +5,13 @@ project (${PROJECT})
 
 set(project_root ${CMAKE_CURRENT_SOURCE_DIR})
 set(assets_path ${CMAKE_CURRENT_SOURCE_DIR}/assets/)
+set(sdkbin_path "C:/Program Files (x86)/Windows Kits/10/Bin/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
 
 #compiler settings
 include(${project_root}/cmake/defaults.cmake)
 
 add_definitions(-DASSETS_PATH="${assets_path}")
+add_definitions(-DSDKBIN="${sdkbin_path}")
 
 include(${project_root}/cmake/3rdparty/glfw.cmake)
 include(${project_root}/cmake/3rdparty/soil.cmake)
@@ -21,5 +23,6 @@ include(${project_root}/cmake/3rdparty/mustache.cmake)
 include(${project_root}/cmake/3rdparty/imgui.cmake)
 include(${project_root}/cmake/3rdparty/spirv-cross.cmake)
 include(${project_root}/cmake/3rdparty/vulkan.cmake)
+include(${project_root}/cmake/3rdparty/dxc.cmake)
 
 add_subdirectory(src)

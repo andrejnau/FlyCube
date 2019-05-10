@@ -1,29 +1,23 @@
 #pragma once
 
+#include "Shader/ShaderDesc.h"
+
 #include <Context/BaseTypes.h>
 #include <string>
 #include <map>
 #include <vector>
 
-class ShaderBase
-{
-protected:
-    
+class ShaderBase : public ShaderDesc
+{   
 public:
+    ShaderType type;
+
     virtual ~ShaderBase() = default;
     virtual void UpdateShader() = 0;
 
     ShaderBase(ShaderType type, const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-        : type(type)
-        , shader_path(shader_path)
-        , entrypoint(entrypoint)
-        , target(target)
+        : ShaderDesc(shader_path, entrypoint, target)
+        , type(type)
     {
     }
-
-    ShaderType type;
-    std::string shader_path;
-    std::string entrypoint;
-    std::string target;
-    std::map<std::string, std::string> define;
 };

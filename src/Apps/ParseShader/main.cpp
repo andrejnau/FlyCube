@@ -1,5 +1,7 @@
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
+#include <Shader/DXCompiler.h>
+#include <Shader/DXReflector.h>
 #include <mustache.hpp>
 #include <d3dcompiler.h>
 #include <wrl.h>
@@ -11,8 +13,6 @@
 #include <iterator>
 #include <cctype>
 #include <map>
-
-static const UINT32 D3D_SIT_RTACCELERATIONSTRUCTURE = 12; // (D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER + 1)
 
 using namespace Microsoft::WRL;
 using namespace kainjow;
@@ -54,26 +54,20 @@ public:
             m_target.replace(m_target.find("."), 1, "_");
             m_target.front() = std::tolower(m_option.type[0]);
         }
-
-        if (m_option.model.front() > '5')
-        {
-            _D3DCompileFromFile = reinterpret_cast<decltype(&D3DCompileFromFile)>(GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DCompileFromFile"));
-            _D3DReflect = reinterpret_cast<decltype(&D3DReflect)>(GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DReflect"));
-        }
     }
 
     void Parse()
     {
-        auto blob = CompileShader(m_option.shader_path, m_entrypoint, m_target);
+        auto blob = DXCompile({ m_option.shader_path, m_entrypoint, m_target });
 
         ComPtr<ID3D12ShaderReflection> shader_reflector;
-        _D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
+        DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
         if (shader_reflector)
             ParseShader(shader_reflector);
         else
         {
             ComPtr<ID3D12LibraryReflection> library_reflector;
-            _D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
+            DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
             if (library_reflector)
                 ParseLibrary(library_reflector);
         }
@@ -336,7 +330,7 @@ private:
 
         D3D12_LIBRARY_DESC lib_desc = {};
         library_reflector->GetDesc(&lib_desc);
-        for (int j = 0; j < lib_desc.FunctionCount; ++j)
+        for (UINT j = 0; j < lib_desc.FunctionCount; ++j)
         {
             auto reflector = library_reflector->GetFunctionByIndex(j);
             D3D12_FUNCTION_DESC desc = {};
@@ -391,7 +385,7 @@ private:
         mustache::data ttextures{ mustache::data::type::list };
         mustache::data tuavs{ mustache::data::type::list };
         mustache::data tsamplers{ mustache::data::type::list };
-        for (int j = 0; j < lib_desc.FunctionCount; ++j)
+        for (UINT j = 0; j < lib_desc.FunctionCount; ++j)
         {
             auto reflector = library_reflector->GetFunctionByIndex(j);
             D3D12_FUNCTION_DESC desc = {};
@@ -445,30 +439,11 @@ private:
         m_tcontext["Samplers"] = mustache::data{ tsamplers };
     }
 
-    ComPtr<ID3DBlob> CompileShader(const std::string& shader_path, const std::string& entrypoint, const std::string& target)
-    {
-        ComPtr<ID3DBlob> errors;
-        ComPtr<ID3DBlob> shader_buffer;
-        ASSERT_SUCCEEDED(_D3DCompileFromFile(
-            GetAssetFullPathW(shader_path).c_str(),
-            nullptr,
-            nullptr,
-            entrypoint.c_str(),
-            target.c_str(),
-            0,
-            0,
-            &shader_buffer,
-            &errors));
-        return shader_buffer;
-    }
-
     const Option& m_option;
     mustache::mustache m_tmpl;
     mustache::data m_tcontext;
     std::string m_target;
     std::string m_entrypoint;
-    decltype(&D3DCompileFromFile) _D3DCompileFromFile = &D3DCompileFromFile;
-    decltype(&D3DReflect) _D3DReflect = &D3DReflect;
 };
 
 class ParseCmd

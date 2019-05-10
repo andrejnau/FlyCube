@@ -82,10 +82,9 @@ private:
 int main(int argc, char *argv[])
 {
     WinConsole cmd;
-    CurState::Instance().DXIL = true;
-    auto creater = [](Context& context, int width, int height)
+    auto creater = [](auto&& ... args)
     {
-        return std::make_unique<Scene>(context, width, height);
+        return std::make_unique<Scene>(args...);
     };
     return AppBox(argc, argv, creater, "Triangle").Run();
 }

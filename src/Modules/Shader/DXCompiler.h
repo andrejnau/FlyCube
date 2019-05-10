@@ -11,4 +11,4 @@
 
 using namespace Microsoft::WRL;
 
-ComPtr<ID3DBlob> DXCompile(const ShaderBase& shader);
+ComPtr<ID3DBlob> DXCompile(const ShaderDesc& shader);

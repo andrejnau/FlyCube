@@ -20,7 +20,6 @@ private:
     void CreateDsv(const ViewDesc& view_desc, const DX11Resource::Ptr& res, ComPtr<ID3D11DepthStencilView>& rtv);
     void CreateRtv(uint32_t slot, const ViewDesc& view_desc, const DX11Resource::Ptr& res, ComPtr<ID3D11RenderTargetView>& dsv);
 
-    decltype(&::D3DReflect) _D3DReflect = &::D3DReflect;
     DX11Context& m_context;
     const IShaderBlobProvider& m_shader_provider;
     size_t m_program_id = 0;

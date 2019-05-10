@@ -25,7 +25,6 @@ private:
     void CreateCBV(ShaderType type, uint32_t slot, const DX12Resource& res, DX12View& handle);
     void CreateSampler(ShaderType type, uint32_t slot, const DX12Resource& res, DX12View& handle);
 
-    decltype(&::D3DReflect) _D3DReflect = &::D3DReflect;
     DX12Context& m_context;
     const IShaderBlobProvider& m_shader_provider;
 };

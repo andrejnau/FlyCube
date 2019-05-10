@@ -2,15 +2,20 @@ set(target Shader)
 
 set(headers
     ShaderBase.h
+	ShaderDesc.h
     DXCompiler.h
     SpirvCompiler.h
     GLSLConverter.h
+    DXReflector.h
+    DXCLoader.h
 )
 
 set(sources
     DXCompiler.cpp
     SpirvCompiler.cpp
     GLSLConverter.cpp
+    DXReflector.cpp
+    DXCLoader.cpp
 )
 
 add_library(${target} ${headers} ${sources})

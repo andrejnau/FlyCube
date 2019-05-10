@@ -13,5 +13,6 @@ add_executable(${target}
 
 target_link_libraries(${target}
     Utilities
+	Shader
     d3dcompiler
 )

@@ -1,5 +1,6 @@
 #include "DX12ViewCreater.h"
 #include <Utilities/State.h>
+#include <Shader/DXReflector.h>
 #include <Texture/DXGIFormatHelper.h>
 #include <memory>
 #include "DX12ViewDescCreater.h"
@@ -8,8 +9,6 @@ DX12ViewCreater::DX12ViewCreater(DX12Context& context, const IShaderBlobProvider
     : m_context(context)
     , m_shader_provider(shader_provider)
 {
-    if (CurState::Instance().DXIL)
-        _D3DReflect = (decltype(&::D3DReflect))GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DReflect");
 }
 
 DX12View::Ptr DX12ViewCreater::GetEmptyDescriptor(ResourceType res_type)
@@ -67,7 +66,7 @@ D3D12_SHADER_INPUT_BIND_DESC DX12ViewCreater::GetResourceBindingDescByName(Shade
 
     ComPtr<ID3D12ShaderReflection> reflector;
     auto shader_blob = m_shader_provider.GetBlobByType(type);
-    _D3DReflect(shader_blob.data, shader_blob.size, IID_PPV_ARGS(&reflector));
+    DXReflect(shader_blob.data, shader_blob.size, IID_PPV_ARGS(&reflector));
     if (reflector)
     {
         ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(name.c_str(), &binding_desc));
@@ -75,7 +74,7 @@ D3D12_SHADER_INPUT_BIND_DESC DX12ViewCreater::GetResourceBindingDescByName(Shade
     else
     {
         ComPtr<ID3D12LibraryReflection> library_reflector;
-        _D3DReflect(shader_blob.data, shader_blob.size, IID_PPV_ARGS(&library_reflector));
+        DXReflect(shader_blob.data, shader_blob.size, IID_PPV_ARGS(&library_reflector));
         if (library_reflector)
         {
             D3D12_LIBRARY_DESC lib_desc = {};
@@ -117,7 +116,7 @@ void DX12ViewCreater::CreateRTV(uint32_t slot, const ViewDesc& view_desc, const 
 {
     ComPtr<ID3D12ShaderReflection> reflector;
     auto shader_blob = m_shader_provider.GetBlobByType(ShaderType::kPixel);
-    _D3DReflect(shader_blob.data, shader_blob.size, IID_PPV_ARGS(&reflector));
+    DXReflect(shader_blob.data, shader_blob.size, IID_PPV_ARGS(&reflector));
     D3D12_SIGNATURE_PARAMETER_DESC binding_desc = {};
     reflector->GetOutputParameterDesc(slot, &binding_desc);
     D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = DX12GetRTVDesc(binding_desc, view_desc, res);

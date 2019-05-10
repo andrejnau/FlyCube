@@ -3,20 +3,16 @@
 #include "Texture/DXGIFormatHelper.h"
 #include <Utilities/State.h>
 #include <Shader/DXCompiler.h>
+#include <Shader/DXReflector.h>
+#include <d3d12shader.h>
+#include <dxc/DXIL/DxilConstants.h>
 
-static const WCHAR* kRayGenShader = L"ray_gen";
-static const WCHAR* kMissShader = L"miss";
 static const WCHAR* kHitGroup = L"hit_group";
-static const WCHAR* kAnyHitShader = nullptr;
-static const WCHAR* kClosestHitShader = L"closest";
-static const WCHAR* kIntersectionHitShader = nullptr;
 
 inline UINT Align(UINT size, UINT alignment)
 {
     return (size + (alignment - 1)) & ~(alignment - 1);
 }
-
-static const UINT32 D3D_SIT_RTACCELERATIONSTRUCTURE = 12;
 
 class Subobject
 {
@@ -30,39 +26,54 @@ protected:
     D3D12_STATE_SUBOBJECT m_state_subobject = {};
 };
 
+std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> GetEntries(ComPtr<ID3DBlob> blob)
+{
+    std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> res;
+    ComPtr<ID3D12LibraryReflection> lib_reflector;
+    ASSERT_SUCCEEDED(DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&lib_reflector)));
+
+    D3D12_LIBRARY_DESC lib_desc = {};
+    ASSERT_SUCCEEDED(lib_reflector->GetDesc(&lib_desc));
+
+    for (size_t i = 0; i < lib_desc.FunctionCount; ++i)
+    {
+        auto reflector = lib_reflector->GetFunctionByIndex(i);
+        D3D12_FUNCTION_DESC desc = {};
+        reflector->GetDesc(&desc);
+
+        hlsl::DXIL::ShaderKind type = static_cast<hlsl::DXIL::ShaderKind>(D3D12_SHVER_GET_TYPE(desc.Version));
+
+        std::wstring name = utf8_to_wstring(desc.Name);
+        name = name.substr(name.find(L"?") + 1);
+        name = name.substr(0, name.find(L"@"));
+
+        res.emplace_back(name, type);
+    }
+
+    return res;
+}
+
 class DxilLibrary : public Subobject
 {
 public:
-    DxilLibrary(ComPtr<ID3DBlob> blob, decltype(&::D3DReflect) _D3DReflect)
+    DxilLibrary(ComPtr<ID3DBlob> blob)
     {
         m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
         m_state_subobject.pDesc = &m_dxil_lib_desc;
 
-        ComPtr<ID3D12LibraryReflection> lib_reflector;
-        ASSERT_SUCCEEDED(_D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&lib_reflector)));
+        auto entries = GetEntries(blob);
 
-        D3D12_LIBRARY_DESC lib_desc = {};
-        ASSERT_SUCCEEDED(lib_reflector->GetDesc(&lib_desc));
-
-        m_export_desc.resize(lib_desc.FunctionCount);
-        m_export_name.resize(lib_desc.FunctionCount);
+        m_export_desc.resize(entries.size());
+        m_export_name.resize(entries.size());
 
         m_dxil_lib_desc.DXILLibrary.pShaderBytecode = blob->GetBufferPointer();
         m_dxil_lib_desc.DXILLibrary.BytecodeLength = blob->GetBufferSize();
-        m_dxil_lib_desc.NumExports = lib_desc.FunctionCount;
+        m_dxil_lib_desc.NumExports = entries.size();
         m_dxil_lib_desc.pExports = m_export_desc.data();
 
-        for (size_t i = 0; i < lib_desc.FunctionCount; ++i)
+        for (size_t i = 0; i < entries.size(); ++i)
         {
-            auto reflector = lib_reflector->GetFunctionByIndex(i);
-            D3D12_FUNCTION_DESC desc = {};
-            reflector->GetDesc(&desc);
-
-            std::wstring& name = m_export_name[i];
-            name = utf8_to_wstring(desc.Name);
-            name = name.substr(name.find(L"?") + 1);
-            name = name.substr(0, name.find(L"@"));
-
+            m_export_name[i] = entries[i].first;
             m_export_desc[i].Name = m_export_name[i].c_str();
         }
     }
@@ -130,11 +141,23 @@ private:
 class HitProgram : public Subobject
 {
 public:
-    HitProgram(const wchar_t* hit_group_name, const wchar_t* any_hit, const wchar_t* closest_hit, const wchar_t* intersection_hit)
+    HitProgram(const wchar_t* hit_group_name, const std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>>& entries)
     {
-        m_desc.AnyHitShaderImport = any_hit;
-        m_desc.ClosestHitShaderImport = closest_hit;
-        m_desc.IntersectionShaderImport = intersection_hit;
+        for (size_t i = 0; i < entries.size(); ++i)
+        {
+            switch (entries[i].second)
+            {
+            case hlsl::DXIL::ShaderKind::Intersection:
+                m_desc.IntersectionShaderImport = entries[i].first.c_str();
+                break;
+            case hlsl::DXIL::ShaderKind::AnyHit:
+                m_desc.AnyHitShaderImport = entries[i].first.c_str();
+                break;
+            case hlsl::DXIL::ShaderKind::ClosestHit:
+                m_desc.ClosestHitShaderImport = entries[i].first.c_str();
+                break;
+            }
+        }
         
         m_desc.HitGroupExport = hit_group_name;
 
@@ -151,9 +174,6 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     , m_context(context)
     , m_view_creater(m_context, *this)
 {
-    if (CurState::Instance().DXIL)
-        _D3DReflect = (decltype(&::D3DReflect))GetProcAddress(LoadLibraryA("d3dcompiler_dxc_bridge.dll"), "D3DReflect");
-
     m_pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     m_pso_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 
@@ -191,7 +211,32 @@ void DX12ProgramApi::DispatchRays(uint32_t width, uint32_t height, uint32_t dept
 
 void DX12ProgramApi::CreateShaderTable()
 {
-    std::vector<std::wstring> shader_entries = { kRayGenShader, kMissShader, kHitGroup };
+    auto entries = GetEntries(m_blob_map[ShaderType::kLibrary]);
+
+    std::vector<std::pair<std::wstring, std::reference_wrapper<D3D12_GPU_VIRTUAL_ADDRESS>>> shader_entries;
+    bool has_hit_group = false;
+    for (size_t i = 0; i < entries.size(); ++i)
+    {
+        switch (entries[i].second)
+        {
+        case hlsl::DXIL::ShaderKind::RayGeneration:
+            shader_entries.emplace_back(entries[i].first, m_raytrace_desc.RayGenerationShaderRecord.StartAddress);
+            break;
+        case hlsl::DXIL::ShaderKind::Miss:
+            shader_entries.emplace_back(entries[i].first, m_raytrace_desc.MissShaderTable.StartAddress);
+            break;
+        case hlsl::DXIL::ShaderKind::Intersection:
+        case hlsl::DXIL::ShaderKind::AnyHit:
+        case hlsl::DXIL::ShaderKind::ClosestHit:
+            has_hit_group = true;
+            break;
+        }
+    }
+
+    if (has_hit_group)
+    {
+        shader_entries.emplace_back(kHitGroup, m_raytrace_desc.HitGroupTable.StartAddress);
+    }
 
     size_t shader_table_entry_size = Align(D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
     shader_table_entry_size = Align(shader_table_entry_size, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
@@ -208,22 +253,21 @@ void DX12ProgramApi::CreateShaderTable()
     ASSERT_SUCCEEDED(m_shader_table->Map(0, nullptr, reinterpret_cast<void**>(&shader_table_data)));
     ComPtr<ID3D12StateObjectProperties> state_ojbect_props;
     m_state_object.As(&state_ojbect_props);
+
     for (size_t i = 0; i < shader_entries.size(); ++i)
     {
-        memcpy(shader_table_data + i * shader_table_entry_size, state_ojbect_props->GetShaderIdentifier(shader_entries[i].c_str()), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+        memcpy(shader_table_data + i * shader_table_entry_size, state_ojbect_props->GetShaderIdentifier(shader_entries[i].first.c_str()), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+        shader_entries[i].second.get() = m_shader_table->GetGPUVirtualAddress() + i * shader_table_entry_size;
     }
+
     m_shader_table->Unmap(0, nullptr);
 
-    m_raytrace_desc.RayGenerationShaderRecord.StartAddress = m_shader_table->GetGPUVirtualAddress();
     m_raytrace_desc.RayGenerationShaderRecord.SizeInBytes = shader_table_entry_size;
-
-    m_raytrace_desc.MissShaderTable.StartAddress = m_raytrace_desc.RayGenerationShaderRecord.StartAddress + m_raytrace_desc.RayGenerationShaderRecord.SizeInBytes;
-    m_raytrace_desc.MissShaderTable.StrideInBytes = shader_table_entry_size;
     m_raytrace_desc.MissShaderTable.SizeInBytes = shader_table_entry_size;
-    
-    m_raytrace_desc.HitGroupTable.StartAddress = m_raytrace_desc.MissShaderTable.StartAddress + m_raytrace_desc.MissShaderTable.SizeInBytes;
-    m_raytrace_desc.HitGroupTable.StrideInBytes = shader_table_entry_size;
     m_raytrace_desc.HitGroupTable.SizeInBytes = shader_table_entry_size;
+
+    m_raytrace_desc.MissShaderTable.StrideInBytes = shader_table_entry_size;
+    m_raytrace_desc.HitGroupTable.StrideInBytes = shader_table_entry_size;
 }
 
 void DX12ProgramApi::CompileShader(const ShaderBase& shader)
@@ -238,7 +282,7 @@ void DX12ProgramApi::CompileShader(const ShaderBase& shader)
     case ShaderType::kVertex:
     {
         m_pso_desc.VS = ShaderBytecode;
-        _D3DReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&m_input_layout_reflector));
+        DXReflect(m_blob_map[ShaderType::kVertex]->GetBufferPointer(), m_blob_map[ShaderType::kVertex]->GetBufferSize(), IID_PPV_ARGS(&m_input_layout_reflector));
         m_input_layout = GetInputLayout(m_input_layout_reflector);
         break;
     }
@@ -393,10 +437,10 @@ void DX12ProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint3
 void DX12ProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires)
 {
     m_changed_binding = true;
-    /*if (!ires)
+    if (!ires)
         return;
     DX12Resource& res = static_cast<DX12Resource&>(*ires);
-    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);*/
+    m_context.ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 }
 
 DX12Resource::Ptr DX12ProgramApi::CreateCBuffer(size_t buffer_size)
@@ -429,8 +473,8 @@ void DX12ProgramApi::OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const
     D3D12_RESOURCE_DESC& desc = res.desc;
     DXGI_FORMAT format = desc.Format;
 
-    /*ComPtr<ID3D12ShaderReflection> reflector;
-    _D3DReflect(m_blob_map[ShaderType::kPixel]->GetBufferPointer(), m_blob_map[ShaderType::kPixel]->GetBufferSize(), IID_PPV_ARGS(&reflector));
+    ComPtr<ID3D12ShaderReflection> reflector;
+    DXReflect(m_blob_map[ShaderType::kPixel]->GetBufferPointer(), m_blob_map[ShaderType::kPixel]->GetBufferSize(), IID_PPV_ARGS(&reflector));
 
     D3D12_SIGNATURE_PARAMETER_DESC res_desc = {};
     ASSERT_SUCCEEDED(reflector->GetOutputParameterDesc(slot, &res_desc));
@@ -443,7 +487,7 @@ void DX12ProgramApi::OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const
     }
 
     if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
-        format = DXGI_FORMAT_R32_FLOAT;*/
+        format = DXGI_FORMAT_R32_FLOAT;
 
     m_pso_desc_cache(m_pso_desc.RTVFormats[slot]) = format;
     m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = desc.SampleDesc.Count;
@@ -596,7 +640,30 @@ void DX12ProgramApi::CreateRtPipelineState()
     std::vector<D3D12_STATE_SUBOBJECT> subobjects;
     subobjects.reserve(max_size);
 
-    DxilLibrary dxil_lib(m_blob_map[ShaderType::kLibrary], _D3DReflect);
+    auto entries = GetEntries(m_blob_map[ShaderType::kLibrary]);
+
+    std::vector<std::wstring> shader_entries;
+    std::vector<std::wstring> hit_group;
+    for (size_t i = 0; i < entries.size(); ++i)
+    {
+        switch (entries[i].second)
+        {
+        case hlsl::DXIL::ShaderKind::RayGeneration:
+        case hlsl::DXIL::ShaderKind::Miss:
+            shader_entries.emplace_back(entries[i].first);
+            break;
+        case hlsl::DXIL::ShaderKind::Intersection:
+        case hlsl::DXIL::ShaderKind::AnyHit:
+        case hlsl::DXIL::ShaderKind::ClosestHit:
+            hit_group.emplace_back(entries[i].first);
+            break;
+        }
+    }
+
+    if (!hit_group.empty())
+        shader_entries.emplace_back(kHitGroup);
+
+    DxilLibrary dxil_lib(m_blob_map[ShaderType::kLibrary]);
     subobjects.emplace_back(dxil_lib.GetSubobject());
 
     subobjects.emplace_back();
@@ -612,8 +679,6 @@ void DX12ProgramApi::CreateRtPipelineState()
     global_root_sign_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
     global_root_sign_subobject.pDesc = m_root_signature.GetAddressOf();
 
-    std::vector<std::wstring> shader_entries = { kRayGenShader, kMissShader, kHitGroup };
-
     ExportAssociation local_root_association(shader_entries, local_root_sign_subobject);
     subobjects.emplace_back(local_root_association.GetSubobject());
 
@@ -626,7 +691,7 @@ void DX12ProgramApi::CreateRtPipelineState()
     PipelineConfig pipeline_config(1);
     subobjects.emplace_back(pipeline_config.GetSubobject());
 
-    HitProgram hit_program(kHitGroup, kAnyHitShader, kClosestHitShader, kIntersectionHitShader);
+    HitProgram hit_program(kHitGroup, entries);
     subobjects.emplace_back(hit_program.GetSubobject());
 
     ASSERT(subobjects.capacity() == max_size);
@@ -830,7 +895,7 @@ void DX12ProgramApi::ParseShaders()
         uint32_t num_sampler = 0;
 
         ComPtr<ID3D12ShaderReflection> shader_reflector;
-        _D3DReflect(shader_blob.second->GetBufferPointer(), shader_blob.second->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
+        DXReflect(shader_blob.second->GetBufferPointer(), shader_blob.second->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
         if (shader_reflector)
         {
             D3D12_SHADER_DESC desc = {};
@@ -878,7 +943,7 @@ void DX12ProgramApi::ParseShaders()
         else
         {
             ComPtr<ID3D12LibraryReflection> library_reflector;
-            _D3DReflect(shader_blob.second->GetBufferPointer(), shader_blob.second->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
+            DXReflect(shader_blob.second->GetBufferPointer(), shader_blob.second->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
             if (library_reflector)
             {
                 D3D12_LIBRARY_DESC lib_desc = {};

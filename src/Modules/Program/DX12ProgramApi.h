@@ -71,8 +71,6 @@ private:
     void OMSetRenderTargets();
 
 private:
-    decltype(&::D3DReflect) _D3DReflect = &::D3DReflect;
-
     uint32_t m_num_cbv = 0;
     uint32_t m_num_srv = 0;
     uint32_t m_num_uav = 0;
