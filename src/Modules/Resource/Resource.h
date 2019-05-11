@@ -55,4 +55,5 @@ struct BufferDesc
     Resource::Ptr res;
     gli::format format = gli::format::FORMAT_UNDEFINED;
     uint32_t count = 0;
+    uint32_t offset = 0;
 };

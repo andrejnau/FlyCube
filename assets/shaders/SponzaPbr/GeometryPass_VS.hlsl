@@ -23,7 +23,6 @@ cbuffer ConstantBuf
     float4x4 view;
     float4x4 projection;
     float4x4 normalMatrix;
-    float4x4 normalMatrixView;
 };
 
 struct VS_OUTPUT

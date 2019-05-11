@@ -27,6 +27,10 @@ public:
         add_checkbox("use_avg_lum", settings.use_avg_lum);
         add_checkbox("use model ao", settings.use_ao);
         add_checkbox("use ssao", settings.use_ssao);
+        add_checkbox("use use_rtao", settings.use_rtao);
+        add_checkbox("use use_ao_blur", settings.use_ao_blur);
+        add_slider("rtao_num_rays", settings.rtao_num_rays, 1, 128);
+        add_slider("ao radius", settings.ao_radius, 0.01, 5, false);
         add_checkbox("use shadow", settings.use_shadow);
         add_checkbox("use white ligth", settings.use_white_ligth);
         m_use_IBL = settings.use_IBL_diffuse | settings.use_IBL_specular;
@@ -188,6 +192,13 @@ private:
                 return ImGui::SliderFloat(label.c_str(), &value, min, max, "%.3f", 2);
             });
         }
+    }
+
+    void add_slider(const std::string& label, int& value, int min, int max)
+    {
+        m_items.push_back([=, &value]() {
+            return ImGui::SliderInt(label.c_str(), &value, min, max);
+            });
     }
 
 private:

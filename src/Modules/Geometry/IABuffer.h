@@ -79,6 +79,11 @@ public:
         return m_count;
     }
 
+    gli::format Format() const
+    {
+        return m_format;
+    }
+
 private:
     Context& m_context;
     Resource::Ptr m_buffer;

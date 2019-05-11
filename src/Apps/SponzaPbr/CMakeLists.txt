@@ -31,6 +31,7 @@ set(headers
     ${include_path}/LightPass.h
     ${include_path}/ImGuiPass.h
     ${include_path}/SSAOPass.h
+    ${include_path}/RayTracingAOPass.h    
     ${include_path}/ShadowPass.h
     ${include_path}/IrradianceConversion.h
     ${include_path}/Equirectangular2Cubemap.h
@@ -48,6 +49,7 @@ set(sources
     ${source_path}/LightPass.cpp
     ${source_path}/ImGuiPass.cpp
     ${source_path}/SSAOPass.cpp
+    ${source_path}/RayTracingAOPass.cpp
     ${source_path}/ShadowPass.cpp
     ${source_path}/IrradianceConversion.cpp
     ${source_path}/Equirectangular2Cubemap.cpp
@@ -101,6 +103,10 @@ set(compute_shaders
     ${shaders_path}/DownSample_CS.hlsl
 )
 
+set(lib_shaders
+    ${shaders_path}/RayTracingAO.hlsl
+)
+
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_TYPE Pixel)
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_MODEL 5.0)
@@ -117,7 +123,12 @@ set_property(SOURCE ${compute_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
 set_property(SOURCE ${compute_shaders} PROPERTY VS_SHADER_TYPE Compute)
 set_property(SOURCE ${compute_shaders} PROPERTY VS_SHADER_MODEL 5.0)
 
-set(shaders_files ${pixel_shaders} ${vertex_shaders} ${geometry_shaders} ${compute_shaders})
+set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_ENTRYPOINT " ")
+set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_TYPE Library)
+set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_MODEL 6.3)
+set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_FLAGS "/Zi")
+
+set(shaders_files ${pixel_shaders} ${vertex_shaders} ${geometry_shaders} ${compute_shaders} ${lib_shaders})
 
 gen_shaders_ref("${shaders_files}" shaders_ref)
 

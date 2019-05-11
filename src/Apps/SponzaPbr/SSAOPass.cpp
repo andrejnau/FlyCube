@@ -53,6 +53,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
 
 void SSAOPass::OnUpdate()
 {
+    m_program.ps.cbuffer.SSAOBuffer.ao_radius = m_settings.ao_radius;
     m_program.ps.cbuffer.SSAOBuffer.width = m_width;
     m_program.ps.cbuffer.SSAOBuffer.height = m_height;
 
@@ -73,14 +74,14 @@ void SSAOPass::OnRender()
     m_program.UseProgram();
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_program.ps.om.rtv0.Attach(output.srv).Clear(color);
+    m_program.ps.om.rtv0.Attach(m_ao).Clear(color);
     m_program.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    m_input.model.ia.indices.Bind();
-    m_input.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
-    m_input.model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
+    m_input.square.ia.indices.Bind();
+    m_input.square.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
+    m_input.square.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
 
-    for (auto& range : m_input.model.ia.ranges)
+    for (auto& range : m_input.square.ia.ranges)
     {
         m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position);
         m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal);
@@ -88,17 +89,26 @@ void SSAOPass::OnRender()
         m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 
-    m_program_blur.UseProgram();
-    m_program_blur.ps.uav.out_uav.Attach(output.srv_blur);
-    m_program_blur.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-    m_input.model.ia.indices.Bind();
-    m_input.model.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);
-    m_input.model.ia.texcoords.BindToSlot(m_program_blur.vs.ia.TEXCOORD);
-    for (auto& range : m_input.model.ia.ranges)
+    if (m_settings.use_ao_blur)
     {
-        m_program_blur.ps.srv.ssaoInput.Attach(output.srv);
-        m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+        m_program_blur.UseProgram();
+        m_program_blur.ps.uav.out_uav.Attach(m_ao_blur);
+        m_program_blur.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+        m_input.square.ia.indices.Bind();
+        m_input.square.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);
+        m_input.square.ia.texcoords.BindToSlot(m_program_blur.vs.ia.TEXCOORD);
+        for (auto& range : m_input.square.ia.ranges)
+        {
+            m_program_blur.ps.srv.ssaoInput.Attach(m_ao);
+            m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+        }
+
+        output.ao = m_ao_blur;
+    }
+    else
+    {
+        output.ao = m_ao;
     }
 }
 
@@ -111,8 +121,8 @@ void SSAOPass::OnResize(int width, int height)
 
 void SSAOPass::CreateSizeDependentResources()
 {
-    output.srv = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    output.srv_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_ao = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_ao_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
     m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
 }
 

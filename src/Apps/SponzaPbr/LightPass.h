@@ -2,6 +2,7 @@
 
 #include "GeometryPass.h"
 #include "SSAOPass.h"
+#include "RayTracingAOPass.h"
 #include "ShadowPass.h"
 #include "IrradianceConversion.h"
 #include "Settings.h"
@@ -24,6 +25,7 @@ public:
         GeometryPass::Output& geometry_pass;
         ShadowPass::Output& shadow_pass;
         SSAOPass::Output& ssao_pass;
+        RayTracingAOPass::Output& ray_tracing_ao_pass;
         Model& model;
         Camera& camera;
         glm::vec3& light_pos;

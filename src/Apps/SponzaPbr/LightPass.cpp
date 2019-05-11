@@ -41,7 +41,7 @@ void LightPass::OnUpdate()
     glm::vec3 camera_position = m_input.camera.GetCameraPos();
 
     m_program.ps.cbuffer.Light.viewPos = glm::vec4(camera_position, 0.0);
-    m_program.ps.cbuffer.Settings.use_ssao = m_settings.use_ssao;
+    m_program.ps.cbuffer.Settings.use_ssao = m_settings.use_ssao || m_settings.use_rtao;
     m_program.ps.cbuffer.Settings.use_ao = m_settings.use_ao;
     m_program.ps.cbuffer.Settings.use_IBL_diffuse = m_settings.use_IBL_diffuse;
     m_program.ps.cbuffer.Settings.use_IBL_specular = m_settings.use_IBL_specular;
@@ -122,7 +122,10 @@ void LightPass::OnRender()
         m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal);
         m_program.ps.srv.gAlbedo.Attach(m_input.geometry_pass.albedo);
         m_program.ps.srv.gMaterial.Attach(m_input.geometry_pass.material);
-        m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.srv_blur);
+        if (m_settings.use_rtao)
+            m_program.ps.srv.gSSAO.Attach(m_input.ray_tracing_ao_pass.ao);
+        else if (m_settings.use_ssao)
+            m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.ao);
         m_program.ps.srv.irradianceMap.Attach(m_input.irradince);
         m_program.ps.srv.prefilterMap.Attach(m_input.prefilter);
         m_program.ps.srv.brdfLUT.Attach(m_input.brdf);

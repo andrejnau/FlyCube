@@ -29,6 +29,7 @@ cbuffer SSAOBuffer
     float4 samples[KERNEL_SIZE];
     int width;
     int height;
+    float ao_radius;
 };
 
 float4 getTexture(Texture2DMS<float4> _texture, float2 _tex_coord, int ss_index)
@@ -64,7 +65,6 @@ float3 get_normal(float2 texCoord, int ss_index)
 
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
-    float radius = 0.3; 
     float bias = 0.01;
     const float2 noiseScale = float2(width, height);
     float occlusion = 0;
@@ -73,7 +73,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     {
         float3 fragPos = get_pos(input.texCoord, i);
         float3 normal = get_normal(input.texCoord, i);
-        float3 tangent = normalize(getTexture(noiseTexture, ((input.texCoord * noiseScale) % 4) / 4.0, i)).xyz;
+        float3 tangent = normalize(getTexture(noiseTexture, ((input.texCoord * noiseScale) % 4) / 4.0, i).xyz);
         tangent = normalize(tangent - dot(tangent, normal) * normal);
         float3 bitangent = normalize(cross(tangent, normal));
         float3x3 TBN = float3x3(tangent, bitangent, normal);
@@ -81,7 +81,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         {
             // get sample position
             float3 sample_pos = mul(samples[j].xyz, TBN); // from tangent to view-space
-            sample_pos = fragPos + sample_pos * radius;
+            sample_pos = fragPos + sample_pos * ao_radius;
 
             // project sample position (to sample texture) (to get position on screen/texture)
             float4 offset = float4(sample_pos, 1.0);
@@ -94,7 +94,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             float sampleDepth = get_pos(offset.xy, i).z;
 
             // range check & accumulate
-            float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
+            float rangeCheck = smoothstep(0.0, 1.0, ao_radius / abs(fragPos.z - sampleDepth));
             occlusion += (sampleDepth >= sample_pos.z + bias ? 1.0 : 0.0) * rangeCheck;
         }
     }

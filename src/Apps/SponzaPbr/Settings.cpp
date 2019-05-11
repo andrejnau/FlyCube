@@ -12,8 +12,12 @@ Settings::Settings()
     use_white_balance = true;
     use_filmic_hdr = false;
     use_avg_lum = false;
-    use_ao = true;
+    use_ao = false;
     use_ssao = false;
+    use_rtao = true;
+    use_ao_blur = true;
+    rtao_num_rays = 32;
+    ao_radius = 0.05;
     use_white_ligth = true;
     use_IBL_diffuse = true;
     use_IBL_specular = true;

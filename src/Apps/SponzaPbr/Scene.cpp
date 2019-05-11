@@ -17,11 +17,11 @@ Scene::Scene(Context& context, int width, int height)
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
     , m_shadow_pass(m_context, { m_scene_list, m_camera, m_light_pos }, width, height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
+    , m_ray_tracing_ao_pass(m_context, { m_geometry_pass.output, m_scene_list, m_model_square, m_camera }, width, height)
     , m_brdf(m_context, { m_model_square }, width, height)
     , m_equirectangular2cubemap(m_context, { m_model_cube, m_equirectangular_environment }, width, height)
     , m_ibl_compute(m_context, { m_shadow_pass.output, m_scene_list, m_camera, m_light_pos, m_model_cube, m_equirectangular2cubemap.output.environment }, width, height)
-    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_model_square, m_camera, m_light_pos,
-        m_irradince, m_prefilter, m_brdf.output.brdf }, width, height)
+    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_ray_tracing_ao_pass.output, m_model_square, m_camera, m_light_pos, m_irradince, m_prefilter, m_brdf.output.brdf }, width, height)
     , m_background_pass(m_context, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, m_light_pass.output.rtv, m_geometry_pass.output.dsv }, width, height)
     , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
     , m_imgui_pass(m_context, { m_render_target_view, *this }, width, height)
@@ -34,8 +34,11 @@ Scene::Scene(Context& context, int width, int height)
     if (true)
     {
         m_scene_list.emplace_back(m_context, "model/export3dcoat/export3dcoat.obj");
-        m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 75.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 35.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    }
 
+    if (false)
+    {
         std::pair<std::string, bool> hdr_tests[] =
         {
             { "gold",        false },
@@ -122,6 +125,7 @@ void Scene::OnUpdate()
     m_geometry_pass.OnUpdate();
     m_shadow_pass.OnUpdate();
     m_ssao_pass.OnUpdate();
+    m_ray_tracing_ao_pass.OnUpdate();
     m_brdf.OnUpdate();
     m_equirectangular2cubemap.OnUpdate();
     m_ibl_compute.OnUpdate();
@@ -149,6 +153,10 @@ void Scene::OnRender()
 
     m_context.BeginEvent("SSAO Pass");
     m_ssao_pass.OnRender();
+    m_context.EndEvent();
+
+    m_context.BeginEvent("DXR AO Pass");
+    m_ray_tracing_ao_pass.OnRender();
     m_context.EndEvent();
 
     m_context.BeginEvent("brdf Pass");
@@ -283,6 +291,7 @@ void Scene::OnModifySettings(const Settings& settings)
     m_light_pass.OnModifySettings(settings);
     m_compute_luminance.OnModifySettings(settings);
     m_ssao_pass.OnModifySettings(settings);
+    m_ray_tracing_ao_pass.OnModifySettings(settings);
     m_brdf.OnModifySettings(settings);
     m_equirectangular2cubemap.OnModifySettings(settings);
     for (auto& x : m_irradiance_conversion)

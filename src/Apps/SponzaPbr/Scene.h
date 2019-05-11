@@ -18,6 +18,7 @@
 #include "LightPass.h"
 #include "ImGuiPass.h"
 #include "SSAOPass.h"
+#include "RayTracingAOPass.h"
 #include "ComputeLuminance.h"
 #include "Settings.h"
 #include "IrradianceConversion.h"
@@ -68,6 +69,7 @@ private:
     GeometryPass m_geometry_pass;
     ShadowPass m_shadow_pass;
     SSAOPass m_ssao_pass;
+    RayTracingAOPass m_ray_tracing_ao_pass;
     BRDFGen m_brdf;
     Equirectangular2Cubemap m_equirectangular2cubemap;
     IBLCompute m_ibl_compute;

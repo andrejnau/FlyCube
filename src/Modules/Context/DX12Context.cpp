@@ -276,13 +276,16 @@ Resource::Ptr DX12Context::CreateBottomLevelAS(const BufferDesc& vertex, const B
     geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
     geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
     ASSERT(!!vertex_res);
-    geometry_desc.Triangles.VertexBuffer.StartAddress = vertex_res->default_res->GetGPUVirtualAddress();
-    geometry_desc.Triangles.VertexBuffer.StrideInBytes = gli::detail::bits_per_pixel(vertex.format) / 8;
+
+    auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
+    geometry_desc.Triangles.VertexBuffer.StartAddress = vertex_res->default_res->GetGPUVirtualAddress() + vertex.offset * vertex_stride;
+    geometry_desc.Triangles.VertexBuffer.StrideInBytes = vertex_stride;
     geometry_desc.Triangles.VertexFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(vertex.format).DXGIFormat.DDS);
     geometry_desc.Triangles.VertexCount = vertex.count;
     if (index_res)
     {
-        geometry_desc.Triangles.IndexBuffer = index_res->default_res->GetGPUVirtualAddress();
+        auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
+        geometry_desc.Triangles.IndexBuffer = index_res->default_res->GetGPUVirtualAddress() + index.offset * index_stride;
         geometry_desc.Triangles.IndexFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(index.format).DXGIFormat.DDS);
         geometry_desc.Triangles.IndexCount = index.count;
     }

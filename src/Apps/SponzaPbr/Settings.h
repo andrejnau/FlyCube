@@ -18,6 +18,10 @@ public:
     bool use_avg_lum;
     bool use_ao;
     bool use_ssao;
+    bool use_rtao;
+    bool use_ao_blur;
+    int rtao_num_rays;
+    float ao_radius;
     bool use_white_ligth;
     bool only_ambient;
     bool use_IBL_diffuse;

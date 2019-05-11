@@ -52,7 +52,6 @@ void GeometryPass::OnRender()
         }
         m_program.vs.cbuffer.ConstantBuf.model = glm::transpose(model.matrix);
         m_program.vs.cbuffer.ConstantBuf.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model.matrix)));
-        m_program.vs.cbuffer.ConstantBuf.normalMatrixView = glm::transpose(glm::transpose(glm::inverse(m_input.camera.GetViewMatrix() * model.matrix)));
         m_program.ps.cbuffer.Settings.ibl_source = model.ibl_source;
 
         model.bones.UpdateAnimation(glfwGetTime());
