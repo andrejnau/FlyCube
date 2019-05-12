@@ -12,11 +12,13 @@
   * Compile HLSL to DXBC, DXIL, SPIRV, GLSL
   * Automatically create resources binding by shader reflection
   * Directx 11 like API for all rendering backends
+  * DirectX Raytracing
 * Scene
   * Skeletal animation
   * Deferred rendering
   * Normal mapping
   * SSAO
+  * Raytracing Ambient Occlusion
   * Point shadow mapping
   * PBR rendering
   * Tone mapping
