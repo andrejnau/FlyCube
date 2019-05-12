@@ -70,12 +70,12 @@ RWTexture2D<float4> result : register(u0);
 
 struct RayPayload
 {
-    float3 value;
+    float value;
 };
 
 float ShootAmbientOcclusionRay(float3 orig, float3 dir)
 {
-    RayPayload rayPayload = { 0.0f, 0.0f, 0.0f };
+    RayPayload rayPayload = { 0.0f };
     RayDesc rayAO;
     rayAO.Origin = orig;
     rayAO.Direction = dir;

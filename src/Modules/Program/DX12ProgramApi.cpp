@@ -6,6 +6,9 @@
 #include <Shader/DXReflector.h>
 #include <d3d12shader.h>
 #include <dxc/DXIL/DxilConstants.h>
+#include <Shader/DXCLoader.h>
+#include <dxc/DxilContainer/DxilContainer.h>
+#include <dxc/DxilContainer/DxilRuntimeReflection.inl>
 
 static const WCHAR* kHitGroup = L"hit_group";
 
@@ -26,31 +29,54 @@ protected:
     D3D12_STATE_SUBOBJECT m_state_subobject = {};
 };
 
-std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> GetEntries(ComPtr<ID3DBlob> blob)
+struct ShaderInfo
 {
-    std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> res;
-    ComPtr<ID3D12LibraryReflection> lib_reflector;
-    ASSERT_SUCCEEDED(DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&lib_reflector)));
+    uint32_t max_attribute_size = 0;
+    uint32_t max_payload_size = 0;
+    std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> entries;
+};
 
-    D3D12_LIBRARY_DESC lib_desc = {};
-    ASSERT_SUCCEEDED(lib_reflector->GetDesc(&lib_desc));
+ShaderInfo GetShaderInfo(ComPtr<ID3DBlob> blob)
+{
+    ShaderInfo res;
 
-    for (size_t i = 0; i < lib_desc.FunctionCount; ++i)
+    DXCLoader loader;
+    CComPtr<IDxcBlobEncoding> source;
+    UINT shade_idx = 0;
+    ASSERT_SUCCEEDED(loader.library->CreateBlobWithEncodingOnHeapCopy(blob->GetBufferPointer(), static_cast<UINT32>(blob->GetBufferSize()), CP_ACP, &source));
+    ASSERT_SUCCEEDED(loader.reflection->Load(source));
+    uint32_t part_count = 0;
+    ASSERT_SUCCEEDED(loader.reflection->GetPartCount(&part_count));
+    for (uint32_t i = 0; i < part_count; ++i)
     {
-        auto reflector = lib_reflector->GetFunctionByIndex(i);
-        D3D12_FUNCTION_DESC desc = {};
-        reflector->GetDesc(&desc);
+        uint32_t kind = 0;
+        ASSERT_SUCCEEDED(loader.reflection->GetPartKind(i, &kind));
+        if (kind == hlsl::DxilFourCC::DFCC_RuntimeData)
+        {
+            CComPtr<IDxcBlob> part_blob;
+            loader.reflection->GetPartContent(i, &part_blob);
+            hlsl::RDAT::DxilRuntimeData context;
+            context.InitFromRDAT(part_blob->GetBufferPointer(), part_blob->GetBufferSize());
+            FunctionTableReader* func_table_reader = context.GetFunctionTableReader();
+            for (uint32_t j = 0; j < func_table_reader->GetNumFunctions(); ++j)
+            {
+                FunctionReader func_reader = func_table_reader->GetItem(j);
+                std::wstring name = utf8_to_wstring(func_reader.GetUnmangledName());
+                hlsl::DXIL::ShaderKind type = func_reader.GetShaderKind();
+                res.entries.emplace_back(name, type);
 
-        hlsl::DXIL::ShaderKind type = static_cast<hlsl::DXIL::ShaderKind>(D3D12_SHVER_GET_TYPE(desc.Version));
-
-        std::wstring name = utf8_to_wstring(desc.Name);
-        name = name.substr(name.find(L"?") + 1);
-        name = name.substr(0, name.find(L"@"));
-
-        res.emplace_back(name, type);
+                res.max_attribute_size = std::max(res.max_attribute_size, func_reader.GetAttributeSizeInBytes());
+                res.max_payload_size = std::max(res.max_payload_size, func_reader.GetPayloadSizeInBytes());
+            }
+        }
     }
 
     return res;
+}
+
+std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> GetEntries(ComPtr<ID3DBlob> blob)
+{
+    return GetShaderInfo(blob).entries;
 }
 
 class DxilLibrary : public Subobject
@@ -110,11 +136,11 @@ private:
 class ShaderConfig : public Subobject
 {
 public:
-    ShaderConfig(uint32_t max_attribute_size, uint32_t max_payload_size)
+    ShaderConfig(ComPtr<ID3DBlob> blob)
     {
-        m_shader_config.MaxAttributeSizeInBytes = max_attribute_size;
-        m_shader_config.MaxPayloadSizeInBytes = max_payload_size;
-
+        auto info = GetShaderInfo(blob);
+        m_shader_config.MaxAttributeSizeInBytes = info.max_attribute_size;
+        m_shader_config.MaxPayloadSizeInBytes = info.max_payload_size;
         m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
         m_state_subobject.pDesc = &m_shader_config;
     }
@@ -683,10 +709,10 @@ void DX12ProgramApi::CreateRtPipelineState()
     ExportAssociation local_root_association(shader_entries, local_root_sign_subobject);
     subobjects.emplace_back(local_root_association.GetSubobject());
 
-    ShaderConfig shader_config(sizeof(glm::vec2), sizeof(glm::vec3));
+    ShaderConfig shader_config(m_blob_map[ShaderType::kLibrary]);
     subobjects.emplace_back(shader_config.GetSubobject());
 
-    ExportAssociation shader_config_association(shader_entries, shader_config.GetSubobject());
+    ExportAssociation shader_config_association(shader_entries, subobjects.back());
     subobjects.emplace_back(shader_config_association.GetSubobject());
 
     PipelineConfig pipeline_config(1);
