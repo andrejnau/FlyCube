@@ -8,7 +8,6 @@ RayTracingAOPass::RayTracingAOPass(Context& context, const Input& input, int wid
     , m_raytracing_program(context)
     , m_program_blur(context)
 {
-    ASSERT(context.IsDxrSupported());
     CreateSizeDependentResources();
 }
 

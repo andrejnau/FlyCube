@@ -25,7 +25,7 @@ public:
         GeometryPass::Output& geometry_pass;
         ShadowPass::Output& shadow_pass;
         SSAOPass::Output& ssao_pass;
-        RayTracingAOPass::Output& ray_tracing_ao_pass;
+        RayTracingAOPass::Output*& ray_tracing_ao_pass;
         Model& model;
         Camera& camera;
         glm::vec3& light_pos;

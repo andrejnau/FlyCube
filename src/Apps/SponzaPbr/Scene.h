@@ -69,7 +69,8 @@ private:
     GeometryPass m_geometry_pass;
     ShadowPass m_shadow_pass;
     SSAOPass m_ssao_pass;
-    RayTracingAOPass m_ray_tracing_ao_pass;
+    RayTracingAOPass::Output* m_ray_tracing_ao_ouput = nullptr;
+    std::unique_ptr<RayTracingAOPass> m_ray_tracing_ao_pass;
     BRDFGen m_brdf;
     Equirectangular2Cubemap m_equirectangular2cubemap;
     IBLCompute m_ibl_compute;
