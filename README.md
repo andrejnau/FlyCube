@@ -20,8 +20,6 @@ FlyCube is C++ graphics API agnostic, simple Engine/Framework, Sponza viewer.
     * Constant buffers proxy for compile time access to members
   * Loading of images & 3D models based on gli, SOIL, assimp
 
-![sponza.png](screenshots/sponza.png)
-
 * Scene Features
   * Deferred rendering
   * Physically based rendering
@@ -35,6 +33,8 @@ FlyCube is C++ graphics API agnostic, simple Engine/Framework, Sponza viewer.
   * Multisample anti-aliasing
   * Tone mapping
   * Simple imgui based UI settings
+
+![sponza.png](screenshots/sponza.png)
 
 ## Engine API example
 ```cpp
