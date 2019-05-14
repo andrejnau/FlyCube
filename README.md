@@ -1,6 +1,6 @@
 # FlyCube
 
-FlyCube is C++ graphics API agnostic, simple Engine/Framework, Sponza viewer.
+C++ graphics API agnostic, simple Engine/Framework, Sponza viewer.
 
 * Supported rendering backends
   * DirectX 11
