@@ -1,27 +1,40 @@
 # FlyCube
 
+FlyCube is C++ graphics API agnostic, simple Engine/Framework, Sponza viewer.
+
+* Supported rendering backends
+  * DirectX 11
+  * DirectX 12 with DirectX Ray Tracing API
+  * Vulkan
+  * OpenGL
+
+* Supported platforms
+  * Windows 10 only
+
+* Engine Features
+  * HLSL as shading language for all backends
+    * Compilation in DXBC, DXIL, SPIRV
+    * Cross-compilation in GLSL with SPIRV-Cross
+  * Generated shader helper by shader reflection
+    * Easy to use resources binding
+    * Constant buffers proxy for compile time access to members
+  * Loading of images & 3D models based on gli, SOIL, assimp
+
 ![sponza.png](screenshots/sponza.png)
 
-* Engine
-  * Rendering backend
-      * DirectX 11
-      * DirectX 12
-      * Vulkan
-      * OpenGL
-  * Code generator for easy work constant buffers
-  * Compile HLSL to DXBC, DXIL, SPIRV, GLSL
-  * Automatically create resources binding by shader reflection
-  * Directx 11 like API for all rendering backends
-  * DirectX Raytracing
-* Scene
-  * Skeletal animation
+* Scene Features
   * Deferred rendering
+  * Physically based rendering
+  * Image based lighting
+  * Ambient occlusion
+    * Raytracing
+    * Screen space
   * Normal mapping
-  * SSAO
-  * Raytracing Ambient Occlusion
   * Point shadow mapping
-  * PBR rendering
+  * Skeletal animation
+  * Multisample anti-aliasing
   * Tone mapping
+  * Simple imgui based UI settings
 
 ## Engine API example
 ```cpp
