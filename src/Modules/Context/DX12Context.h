@@ -64,6 +64,8 @@ public:
     std::unique_ptr<DescriptorPool> descriptor_pool;
 
     DX12ViewPool m_view_pool;
+    bool m_use_render_passes = true;
+    bool m_is_open_render_pass = false;
 
 private:
     virtual void ResizeBackBuffer(int width, int height) override;

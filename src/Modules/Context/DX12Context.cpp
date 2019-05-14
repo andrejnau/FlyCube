@@ -10,13 +10,6 @@
 #include <Program/DX12ProgramApi.h>
 #include "Context/DXGIUtility.h"
 
-bool IsDirectXRaytracingSupported(const ComPtr<ID3D12Device>& device)
-{
-    D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature = {};
-    return SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature, sizeof(feature)))
-        && feature.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
-}
-
 DX12Context::DX12Context(GLFWwindow* window)
     : Context(window)
     , m_view_pool(*this)
@@ -45,7 +38,11 @@ DX12Context::DX12Context(GLFWwindow* window)
     ComPtr<IDXGIAdapter1> adapter = GetHardwareAdapter(dxgi_factory.Get());
     ASSERT_SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&device)));
     device.As(&device5);
-    m_is_dxr_supported = IsDirectXRaytracingSupported(device);
+
+    D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature_support = {};
+    ASSERT_SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support, sizeof(feature_support)));
+    m_use_render_passes = m_use_render_passes && feature_support.RenderPassesTier >= D3D12_RENDER_PASS_TIER_0;
+    m_is_dxr_supported = feature_support.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
 
     D3D12_COMMAND_QUEUE_DESC cq_desc = {};
     ASSERT_SUCCEEDED(device->CreateCommandQueue(&cq_desc, IID_PPV_ARGS(&m_command_queue)));
@@ -518,6 +515,12 @@ Resource::Ptr DX12Context::GetBackBuffer()
 
 void DX12Context::Present()
 {
+    if (m_is_open_render_pass)
+    {
+        command_list4->EndRenderPass();
+        m_is_open_render_pass = false;
+    }
+
     ResourceBarrier(std::static_pointer_cast<DX12Resource>(GetBackBuffer()), D3D12_RESOURCE_STATE_PRESENT);
 
     command_list->Close();
@@ -565,6 +568,14 @@ void DX12Context::ResourceBarrier(DX12Resource& res, D3D12_RESOURCE_STATES state
 
 void DX12Context::UseProgram(DX12ProgramApi& program_api)
 {
+    if (m_current_program != &program_api && m_use_render_passes)
+    {
+        if (m_is_open_render_pass)
+        {
+            command_list4->EndRenderPass();
+            m_is_open_render_pass = false;
+        }
+    }
     m_current_program = &program_api;
 }
 

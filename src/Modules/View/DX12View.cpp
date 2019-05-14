@@ -64,6 +64,8 @@ void DX12ViewAllocator::ResizeHeap(size_t req_size)
             m_heap->GetCPUDescriptorHandleForHeapStart(),
             m_type);
     }
+
+    m_context.QueryOnDelete(m_heap.Get());
     
     m_size = heap_desc.NumDescriptors;
     m_heap = heap;

@@ -69,6 +69,7 @@ private:
     ComPtr<ID3D12RootSignature> CreateRootSignature(const D3D12_ROOT_SIGNATURE_DESC & desc);
     void ParseShaders();
     void OMSetRenderTargets();
+    void BeginRenderPass();
 
 private:
     uint32_t m_num_cbv = 0;
@@ -204,4 +205,38 @@ private:
     DX12Context& m_context;
     DX12ViewCreater m_view_creater;
     std::map<std::map<BindKey, View::Ptr>, DescriptorHeapRange> m_heap_cache;
+
+    class ClearCache
+    {
+    public:
+        D3D12_CLEAR_VALUE& GetColor(uint32_t slot)
+        {
+            if (slot >= color.size())
+                color.resize(slot + 1);
+            return color[slot];
+        }
+
+        D3D12_CLEAR_VALUE& GetDepth()
+        {
+            return depth_stencil;
+        }
+
+        D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE& GetColorLoadOp(uint32_t slot)
+        {
+            if (slot >= color_load_op.size())
+                color_load_op.resize(slot + 1);
+            return color_load_op[slot];
+        }
+
+        D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE& GetDepthLoadOp()
+        {
+            return depth_load_op;
+        }
+
+    private:
+        std::vector<D3D12_CLEAR_VALUE> color;
+        D3D12_CLEAR_VALUE depth_stencil = {};
+        std::vector<D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE> color_load_op;
+        D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE depth_load_op = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE;
+    } m_clear_cache;
 };

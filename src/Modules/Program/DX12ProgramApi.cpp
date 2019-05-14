@@ -340,18 +340,38 @@ void DX12ProgramApi::CompileShader(const ShaderBase& shader)
 
 void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)
 {
-    auto& view = FindView(ShaderType::kPixel, ResourceType::kRtv, slot);
-    if (!view)
-        return;
-    m_context.command_list->ClearRenderTargetView(ConvertView(view)->GetCpuHandle(), color.data(), 0, nullptr);
+    if (m_context.m_is_open_render_pass)
+    {
+        auto& clear_color = m_clear_cache.GetColor(slot);
+        clear_color.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        memcpy(clear_color.Color, color.data(), sizeof(color));
+        m_clear_cache.GetColorLoadOp(slot) = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR;
+    }
+    else
+    {
+        auto& view = FindView(ShaderType::kPixel, ResourceType::kRtv, slot);
+        if (!view)
+            return;
+        m_context.command_list->ClearRenderTargetView(ConvertView(view)->GetCpuHandle(), color.data(), 0, nullptr);
+    }
 }
 
 void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
 {
-    auto& view = FindView(ShaderType::kPixel, ResourceType::kDsv, 0);
-    if (!view)
-        return;
-    m_context.command_list->ClearDepthStencilView(ConvertView(view)->GetCpuHandle(), (D3D12_CLEAR_FLAGS)ClearFlags, Depth, Stencil, 0, nullptr);
+    if (m_context.m_is_open_render_pass)
+    {
+        auto& clear_color = m_clear_cache.GetDepth();
+        clear_color.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+        clear_color.DepthStencil = { Depth, Stencil };
+        m_clear_cache.GetDepthLoadOp() = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR;
+    }
+    else
+    {
+        auto& view = FindView(ShaderType::kPixel, ResourceType::kDsv, 0);
+        if (!view)
+            return;
+        m_context.command_list->ClearDepthStencilView(ConvertView(view)->GetCpuHandle(), (D3D12_CLEAR_FLAGS)ClearFlags, Depth, Stencil, 0, nullptr);
+    }
 }
 
 void DX12ProgramApi::SetRasterizeState(const RasterizerDesc& desc)
@@ -766,7 +786,10 @@ void DX12ProgramApi::ApplyBindings()
 
     if (m_changed_om)
     {
-        OMSetRenderTargets();
+        if (m_context.m_use_render_passes)
+            BeginRenderPass();
+        else
+            OMSetRenderTargets();
         m_changed_om = false;
     }
 
@@ -1194,4 +1217,36 @@ void DX12ProgramApi::OMSetRenderTargets()
         om_dsv_ptr = &om_dsv;
     }
     m_context.command_list->OMSetRenderTargets(static_cast<UINT>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv_ptr);
+}
+
+void DX12ProgramApi::BeginRenderPass()
+{
+    if (m_context.m_is_open_render_pass)
+        m_context.command_list4->EndRenderPass();
+
+    std::vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC> om_rtv(m_num_rtv);
+    for (uint32_t slot = 0; slot < m_num_rtv; ++slot)
+    {
+        auto& view = FindView(ShaderType::kPixel, ResourceType::kRtv, slot);
+        if (view)
+        {
+            D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { m_clear_cache.GetColorLoadOp(slot), m_clear_cache.GetColor(slot) };
+            D3D12_RENDER_PASS_ENDING_ACCESS end = { D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE, {} };
+            om_rtv[slot] = { ConvertView(view)->GetCpuHandle(), begin, end };
+        }
+    }
+
+    D3D12_RENDER_PASS_DEPTH_STENCIL_DESC om_dsv = {};
+    D3D12_RENDER_PASS_DEPTH_STENCIL_DESC* om_dsv_ptr = nullptr;
+    auto view = FindView(ShaderType::kPixel, ResourceType::kDsv, 0);
+    if (view)
+    {
+        D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { m_clear_cache.GetDepthLoadOp(), m_clear_cache.GetDepth() };
+        D3D12_RENDER_PASS_ENDING_ACCESS end = { D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE, {} };
+        om_dsv = { ConvertView(view)->GetCpuHandle(), begin, begin, end, end };
+        om_dsv_ptr = &om_dsv;
+    }
+    m_context.command_list4->BeginRenderPass(static_cast<UINT>(om_rtv.size()), om_rtv.data(), om_dsv_ptr, D3D12_RENDER_PASS_FLAG_NONE);
+
+    m_context.m_is_open_render_pass = true;
 }
