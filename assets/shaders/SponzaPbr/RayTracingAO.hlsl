@@ -62,8 +62,18 @@ cbuffer Settings : register(b0)
     uint num_rays;
 };
 
-Texture2D<float4> gPosition : register(t0);
-Texture2D<float4> gNormal : register(t1);
+#ifndef SAMPLE_COUNT
+#define SAMPLE_COUNT 1
+#endif
+
+#if SAMPLE_COUNT > 1
+#define TEXTURE_TYPE Texture2DMS<float4>
+#else
+#define TEXTURE_TYPE Texture2D
+#endif
+
+TEXTURE_TYPE gPosition : register(t0);
+TEXTURE_TYPE gNormal : register(t1);
 RaytracingAccelerationStructure geometry : register(t2);
 
 RWTexture2D<float4> result : register(u0);
@@ -72,6 +82,16 @@ struct RayPayload
 {
     float value;
 };
+
+float4 GetValue(Texture2DMS<float4> tex, uint2 tex_coord, uint ss_index)
+{
+    return tex.Load(tex_coord, ss_index);
+}
+
+float4 GetValue(Texture2D tex, uint2 tex_coord, uint ss_index = 0)
+{
+    return tex[tex_coord];
+}
 
 float ShootAmbientOcclusionRay(float3 orig, float3 dir)
 {
@@ -93,21 +113,21 @@ void ray_gen()
     uint2 launch_index = DispatchRaysIndex().xy;
     uint2 launch_dim = DispatchRaysDimensions().xy;
     uint rand_seed = initRand(launch_index.x + launch_index.y * launch_dim.x, frame_index, 16);
-    float4 position = gPosition[launch_index];
-    float4 normal = gNormal[launch_index];
-
+    uint kernel_per_sample = max(1, num_rays / SAMPLE_COUNT);
     float ao = 0.0;
-    if (position.w != 0.0)
+    for (uint i = 0; i < SAMPLE_COUNT; ++i)
     {
-        for (uint i = 0; i < num_rays; ++i)
+        float4 position = GetValue(gPosition, launch_index, i);
+        float3 normal = GetValue(gNormal, launch_index, i).xyz;
+        if (position.w == 0.0)
+            continue;
+        for (uint j = i * kernel_per_sample; j < (i + 1) * kernel_per_sample; ++j)
         {
-            float3 dir = getCosHemisphereSample(rand_seed, normal.xyz);
+            float3 dir = getCosHemisphereSample(rand_seed, normal);
             ao += 1 - ShootAmbientOcclusionRay(position.xyz, dir);
         }
     }
-
-    ao = 1 - ao / num_rays;
-
+    ao = 1 - ao / (kernel_per_sample * SAMPLE_COUNT);
     result[launch_index] = float4(ao, ao, ao, 0.0);
 }
 

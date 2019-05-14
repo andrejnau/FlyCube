@@ -213,6 +213,13 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
 
 void DX12ProgramApi::LinkProgram()
 {
+    ParseShaders();
+
+    if (m_is_dxr)
+    {
+        CreateRtPipelineState();
+        CreateShaderTable();
+    }
 }
 
 void DX12ProgramApi::UseProgram()
@@ -329,13 +336,6 @@ void DX12ProgramApi::CompileShader(const ShaderBase& shader)
     }
 
     m_pso_desc_cache = true;
-    ParseShaders();
-
-    if (m_is_dxr)
-    {
-        CreateRtPipelineState();
-        CreateShaderTable();
-    }
 }
 
 void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)

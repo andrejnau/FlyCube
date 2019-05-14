@@ -5,7 +5,10 @@ RayTracingAOPass::RayTracingAOPass(Context& context, const Input& input, int wid
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_raytracing_program(context)
+    , m_raytracing_program(context, [&](auto& program)
+    {
+        program.lib.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+    })
     , m_program_blur(context)
 {
     CreateSizeDependentResources();
@@ -103,5 +106,12 @@ void RayTracingAOPass::CreateSizeDependentResources()
 
 void RayTracingAOPass::OnModifySettings(const Settings& settings)
 {
+    Settings prev = m_settings;
     m_settings = settings;
+    if (prev.msaa_count != m_settings.msaa_count)
+    {
+        m_raytracing_program.lib.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+        m_raytracing_program.lib.UpdateShader();
+        m_raytracing_program.LinkProgram();
+    }
 }
