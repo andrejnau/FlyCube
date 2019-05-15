@@ -144,7 +144,7 @@ void VKContext::SelectPhysicalDevice()
         if (device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ||
             device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
         {
-            if (CurState::Instance().required_gpu_index >= 0 && gpu_index++ != CurState::Instance().required_gpu_index)
+            if (CurState::Instance().required_gpu_index != -1 && gpu_index++ != CurState::Instance().required_gpu_index)
                 continue;
             m_physical_device = device;
             CurState::Instance().gpu_name = device_properties.deviceName;

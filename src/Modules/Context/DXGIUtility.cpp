@@ -25,7 +25,7 @@ ComPtr<IDXGIAdapter1> GetHardwareAdapter(const ComPtr<IDXGIFactory4>& dxgi_facto
         if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
             continue;
 
-        if (CurState::Instance().required_gpu_index >= 0 && gpu_index++ != CurState::Instance().required_gpu_index)
+        if (CurState::Instance().required_gpu_index != -1 && gpu_index++ != CurState::Instance().required_gpu_index)
             continue;
 
         CurState::Instance().gpu_name = wstring_to_utf8(desc.Description);
