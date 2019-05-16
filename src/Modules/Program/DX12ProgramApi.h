@@ -224,7 +224,7 @@ private:
         D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE& GetColorLoadOp(uint32_t slot)
         {
             if (slot >= color_load_op.size())
-                color_load_op.resize(slot + 1);
+                color_load_op.resize(slot + 1, D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE);
             return color_load_op[slot];
         }
 

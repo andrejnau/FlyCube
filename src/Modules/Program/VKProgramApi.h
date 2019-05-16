@@ -150,7 +150,7 @@ private:
         VkAttachmentLoadOp& GetColorLoadOp(uint32_t slot)
         {
             if (slot >= color_load_op.size())
-                color_load_op.resize(slot + 1);
+                color_load_op.resize(slot + 1, VK_ATTACHMENT_LOAD_OP_LOAD);
             return color_load_op[slot];
         }
 

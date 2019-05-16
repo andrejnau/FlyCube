@@ -340,7 +340,7 @@ void DX12ProgramApi::CompileShader(const ShaderBase& shader)
 
 void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)
 {
-    if (m_context.m_is_open_render_pass)
+    if (m_context.m_use_render_passes)
     {
         auto& clear_color = m_clear_cache.GetColor(slot);
         clear_color.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -358,7 +358,7 @@ void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>
 
 void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
 {
-    if (m_context.m_is_open_render_pass)
+    if (m_context.m_use_render_passes)
     {
         auto& clear_color = m_clear_cache.GetDepth();
         clear_color.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
