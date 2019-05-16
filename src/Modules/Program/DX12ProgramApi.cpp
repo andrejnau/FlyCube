@@ -204,7 +204,7 @@ DX12ProgramApi::DX12ProgramApi(DX12Context& context)
     m_pso_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 
     CD3DX12_DEPTH_STENCIL_DESC depth_stencil_desc(D3D12_DEFAULT);
-    depth_stencil_desc.DepthEnable = true;
+    depth_stencil_desc.DepthEnable = false;
     depth_stencil_desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
     depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
     depth_stencil_desc.StencilEnable = FALSE;
@@ -552,6 +552,7 @@ void DX12ProgramApi::OnAttachDSV(const ViewDesc& view_desc, const Resource::Ptr&
 
     m_pso_desc_cache(m_pso_desc.DSVFormat) = format;
     m_pso_desc_cache(m_pso_desc.SampleDesc.Count) = res.default_res->GetDesc().SampleDesc.Count;
+    m_pso_desc_cache(m_pso_desc.DepthStencilState.DepthEnable) = !!ires;
 }
 
 void DX12ProgramApi::SetRootSignature(ID3D12RootSignature * pRootSignature)
