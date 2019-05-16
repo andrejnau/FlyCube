@@ -69,8 +69,24 @@ DX12Context::DX12Context(GLFWwindow* window)
     if (SUCCEEDED(device.As(&info_queue)))
     {
         info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-        // TODO: false positives for CopyDescriptors
-        //info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+        info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+
+        D3D12_MESSAGE_SEVERITY severities[] =
+        {
+            D3D12_MESSAGE_SEVERITY_INFO,
+        };
+
+        D3D12_MESSAGE_ID deny_ids[] =
+        {
+            D3D12_MESSAGE_ID_COPY_DESCRIPTORS_INVALID_RANGES,
+        };
+
+        D3D12_INFO_QUEUE_FILTER filter = {};
+        filter.DenyList.NumSeverities = std::size(severities);
+        filter.DenyList.pSeverityList = severities;
+        filter.DenyList.NumIDs = std::size(deny_ids);
+        filter.DenyList.pIDList = deny_ids;
+        info_queue->PushStorageFilter(&filter);
     }
 #endif
 }
