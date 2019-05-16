@@ -785,12 +785,17 @@ void DX12ProgramApi::ApplyBindings()
 
     UpdateCBuffers();
 
-    if (m_changed_om)
+    if (!m_is_compute)
     {
         if (m_context.m_use_render_passes)
-            BeginRenderPass();
-        else
+        {
+            if (m_changed_om || !m_context.m_is_open_render_pass)
+                BeginRenderPass();
+        }
+        else if (m_changed_om)
+        {
             OMSetRenderTargets();
+        }
         m_changed_om = false;
     }
 
@@ -1248,6 +1253,10 @@ void DX12ProgramApi::BeginRenderPass()
         om_dsv_ptr = &om_dsv;
     }
     m_context.command_list4->BeginRenderPass(static_cast<UINT>(om_rtv.size()), om_rtv.data(), om_dsv_ptr, D3D12_RENDER_PASS_FLAG_NONE);
+
+    for (uint32_t slot = 0; slot < m_num_rtv; ++slot)
+        m_clear_cache.GetColorLoadOp(slot) = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE;
+    m_clear_cache.GetDepthLoadOp() = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE;
 
     m_context.m_is_open_render_pass = true;
 }

@@ -422,6 +422,12 @@ void DX12Context::UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubre
     data.RowPitch = SrcRowPitch;
     data.SlicePitch = SrcDepthPitch;
 
+    if (m_is_open_render_pass)
+    {
+        command_list4->EndRenderPass();
+        m_is_open_render_pass = false;
+    }
+
     ResourceBarrier(res, D3D12_RESOURCE_STATE_COPY_DEST);
     UpdateSubresources(command_list.Get(), res->default_res.Get(), upload_res.Get(), 0, DstSubresource, 1, &data);
     ResourceBarrier(res, D3D12_RESOURCE_STATE_COMMON);
