@@ -31,7 +31,7 @@ void RayTracingAOPass::OnUpdate()
                 BufferDesc vertex = {
                         model.ia.positions.GetBuffer(),
                         gli::format::FORMAT_RGB32_SFLOAT_PACK32,
-                        range.index_count,
+                        model.ia.positions.Count() - range.base_vertex_location,
                         range.base_vertex_location
                 };
 

@@ -269,6 +269,11 @@ Resource::Ptr DX12Context::CreateBottomLevelAS(const BufferDesc& vertex, const B
     auto vertex_res = std::static_pointer_cast<DX12Resource>(vertex.res);
     auto index_res = std::static_pointer_cast<DX12Resource>(index.res);
 
+    if (vertex_res)
+        ResourceBarrier(vertex_res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    if (index_res)
+        ResourceBarrier(index_res, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
     D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
     geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
     geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
