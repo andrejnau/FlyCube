@@ -1,3 +1,5 @@
+#include "BoneTransform.hlsli"
+
 struct VS_INPUT
 {
     float3 pos        : POSITION;
@@ -7,15 +9,6 @@ struct VS_INPUT
     uint bones_offset : BONES_OFFSET;
     uint bones_count  : BONES_COUNT;
 };
-
-struct BoneInfo
-{
-    uint bone_id;
-    float weight;
-};
-
-StructuredBuffer<BoneInfo> bone_info;
-StructuredBuffer<float4x4> gBones;
 
 cbuffer ConstantBuf
 {
@@ -37,26 +30,7 @@ struct VS_OUTPUT
 VS_OUTPUT main(VS_INPUT vs_in)
 {
     VS_OUTPUT vs_out;
-    float4x4 transform = {
-        { 0, 0, 0, 0 },
-        { 0, 0, 0, 0 },
-        { 0, 0, 0, 0 },
-        { 0, 0, 0, 0 }
-    };
-    for (uint i = 0; i < vs_in.bones_count; ++i)
-    {
-        transform += bone_info[i + vs_in.bones_offset].weight * gBones[bone_info[i + vs_in.bones_offset].bone_id];
-    }
-    if (vs_in.bones_count == 0)
-    {
-        float4x4 transform_identity = {
-            { 1, 0, 0, 0 },
-            { 0, 1, 0, 0 },
-            { 0, 0, 1, 0 },
-            { 0, 0, 0, 1 }
-        };
-        transform = transform_identity;
-    }
+    float4x4 transform = GetBoneTransform(vs_in.bones_count, vs_in.bones_offset);
     float4 pos = mul(float4(vs_in.pos, 1.0), transform);
     float4 worldPos = mul(pos, model);
     vs_out.fragPos = worldPos.xyz;

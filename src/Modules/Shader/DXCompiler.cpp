@@ -59,7 +59,7 @@ ComPtr<ID3DBlob> DXBCCompile(const ShaderDesc& shader)
     ASSERT_SUCCEEDED(D3DCompileFromFile(
         GetAssetFullPathW(shader.shader_path).c_str(),
         macro.data(),
-        nullptr,
+        D3D_COMPILE_STANDARD_FILE_INCLUDE,
         shader.entrypoint.c_str(),
         shader.target.c_str(),
         D3DCOMPILE_DEBUG,
@@ -79,13 +79,49 @@ bool IsDXCTarget(const std::string& target)
     return major_index < target.size() && isdigit(target[major_index]) && target[major_index] >= '6';
 }
 
+class IncludeHandler : public IDxcIncludeHandler
+{
+public:
+    IncludeHandler(DXCLoader& loader, const std::wstring& base_path)
+        : m_loader(loader)
+        , m_base_path(base_path)
+    {
+    }
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void **ppvObject) override { return E_NOTIMPL; }
+    ULONG STDMETHODCALLTYPE AddRef() override { return E_NOTIMPL; }
+    ULONG STDMETHODCALLTYPE Release() override { return E_NOTIMPL; }
+
+    HRESULT STDMETHODCALLTYPE LoadSource(
+        _In_ LPCWSTR pFilename,
+        _COM_Outptr_result_maybenull_ IDxcBlob **ppIncludeSource) override
+    {
+        std::wstring path = m_base_path + pFilename;
+        ComPtr<IDxcBlobEncoding> source;
+        HRESULT hr = m_loader.library->CreateBlobFromFile(
+            path.c_str(),
+            nullptr,
+            &source);
+        if (SUCCEEDED(hr) && ppIncludeSource)
+            *ppIncludeSource = source.Detach();
+        return hr;
+    }
+
+private:
+    DXCLoader& m_loader;
+    const std::wstring& m_base_path;
+};
+
 ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
 {
     DXCLoader loader;
 
-    CComPtr<IDxcBlobEncoding> source;
+    std::wstring shader_path = GetAssetFullPathW(shader.shader_path);
+    std::wstring shader_dir = shader_path.substr(0, shader_path.find_last_of(L"\\/"));
+
+    ComPtr<IDxcBlobEncoding> source;
     ASSERT_SUCCEEDED(loader.library->CreateBlobFromFile(
-        GetAssetFullPathW(shader.shader_path).c_str(),
+        shader_path.c_str(),
         nullptr,
         &source));
 
@@ -111,15 +147,16 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
             arguments.push_back(L"-fvk-invert-y");
     }
 
-    CComPtr<IDxcOperationResult> result;
+    ComPtr<IDxcOperationResult> result;
+    IncludeHandler include_handler(loader, shader_dir);
     ASSERT_SUCCEEDED(loader.compiler->Compile(
-        source,
+        source.Get(),
         L"main.hlsl",
         entrypoint.c_str(),
         target.c_str(),
         arguments.data(), static_cast<UINT32>(arguments.size()),
         defines.data(), static_cast<UINT32>(defines.size()),
-        nullptr,
+        &include_handler,
         &result
     ));
 

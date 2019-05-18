@@ -62,6 +62,10 @@ set(sources
     ${source_path}/Main.cpp
 )
 
+set(shader_headers
+    ${shaders_path}/BoneTransform.hlsli
+)
+
 set(pixel_shaders
     ${shaders_path}/GeometryPass_PS.hlsl
     ${shaders_path}/LightPass_PS.hlsl
@@ -136,10 +140,10 @@ set(shaders_files ${pixel_shaders} ${vertex_shaders} ${geometry_shaders} ${compu
 
 gen_shaders_ref("${shaders_files}" shaders_ref)
 
-source_group("Shader Files" FILES ${shaders_files})
+source_group("Shader Files" FILES ${shaders_files} ${shader_headers})
 source_group("Shader Ref Files" FILES ${shaders_ref})
 
-add_executable(${target} WIN32 ${headers} ${sources} ${shaders_files} ${shaders_ref})
+add_executable(${target} WIN32 ${headers} ${sources} ${shaders_files} ${shader_headers} ${shaders_ref})
 set_target_properties(${target} PROPERTIES
                         LINK_FLAGS "/ENTRY:mainCRTStartup")
 
