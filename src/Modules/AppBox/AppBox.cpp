@@ -25,6 +25,10 @@ AppBox::AppBox(int argc, char *argv[], const CreateSample& create_sample, const 
             m_api_type = ApiType::kOpenGL;
         else if (arg == "--gpu")
             CurState::Instance().required_gpu_index = std::stoul(argv[++i]);
+        else if (arg == "--no_vsync")
+            CurState::Instance().vsync = false;
+        else if (arg == "--force_dxil")
+            CurState::Instance().force_dxil = true;
     }
 
     std::string api_title;

@@ -31,12 +31,12 @@ private:
     std::string m_file_path;
 };
 
-bool GetBlobFromCache(const ShaderDesc& shader, ComPtr<ID3DBlob>& shader_buffer)
+bool GetBlobFromCache(const std::string& shader_path, ComPtr<ID3DBlob>& shader_buffer)
 {
-    std::string shader_name = shader.shader_path.substr(shader.shader_path.find_last_of("\\/") + 1);
+    std::string shader_name = shader_path.substr(shader_path.find_last_of("\\/") + 1);
     shader_name = shader_name.substr(0, shader_name.find(".hlsl")) + ".cso";
     FileWrap precompiled_blob(shader_name);
-    if (!precompiled_blob.IsExist() || !shader.define.empty())
+    if (!precompiled_blob.IsExist())
         return false;
     auto data = precompiled_blob.ReadFile();
     D3DCreateBlob(data.size(), &shader_buffer);
@@ -71,6 +71,14 @@ ComPtr<ID3DBlob> DXBCCompile(const ShaderDesc& shader)
     return shader_buffer;
 }
 
+bool IsDXCTarget(const std::string& target)
+{
+    size_t major_index = 3;
+    if (target.compare(0, 4, "lib_") == 0)
+        major_index = 4;
+    return major_index < target.size() && isdigit(target[major_index]) && target[major_index] >= '6';
+}
+
 ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
 {
     DXCLoader loader;
@@ -82,6 +90,9 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
         &source));
 
     std::wstring target = utf8_to_wstring(shader.target);
+    if (!IsDXCTarget(shader.target))
+        target = target[0] + std::wstring(L"s_6_0");
+
     std::wstring entrypoint = utf8_to_wstring(shader.entrypoint);
     std::vector<std::pair<std::wstring, std::wstring>> defines_store;
     std::vector<DxcDefine> defines;
@@ -132,15 +143,15 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
 
 ComPtr<ID3DBlob> DXCompile(const ShaderDesc& shader, const DXOption& option)
 {
+    bool dxc_target = IsDXCTarget(shader.target);
+    bool different_options = !shader.define.empty();
+    different_options |= CurState::Instance().force_dxil != dxc_target;
+
     ComPtr<ID3DBlob> shader_buffer;
-    if (!option.spirv && GetBlobFromCache(shader, shader_buffer))
+    if (!different_options && GetBlobFromCache(shader.shader_path, shader_buffer))
         return shader_buffer;
 
-    std::wstring target = utf8_to_wstring(shader.target);
-    size_t major_index = 3;
-    if (target.compare(0, 4, L"lib_") == 0)
-        major_index = 4;
-    if (option.spirv || major_index < target.size() && isdigit(target[major_index]) && target[major_index] >= '6')
+    if (dxc_target || option.spirv || CurState::Instance().force_dxil)
         return DXCCompile(shader, option);
     else
         return DXBCCompile(shader);
