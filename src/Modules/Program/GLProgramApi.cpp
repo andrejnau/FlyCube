@@ -3,7 +3,6 @@
 #include <vector>
 #include <utility>
 #include <Resource/GLResource.h>
-#include <View/VKView.h>
 #include <Shader/GLSLConverter.h>
 
 #include <glLoadGen/gl.h>
@@ -210,10 +209,6 @@ void GLProgramApi::CompileShader(const ShaderBase& shader)
         option.invert_y = false;
     std::string source = GetGLSLShader(shader, option);
     m_src[shader.type] = source;
-}
-
-void GLProgramApi::ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary, std::vector<VkDescriptorSetLayoutBinding>& bindings)
-{
 }
 
 GLenum AttribComponentType(GLenum type)

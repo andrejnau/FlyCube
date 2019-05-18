@@ -33,8 +33,13 @@ target_link_libraries(${target}
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
-    ${Vulkan_LIBRARIES}
     glLoadGen
 )
+
+if (VULKAN_SUPPORT)
+    target_link_libraries(${target}
+        ${Vulkan_LIBRARIES}
+    )
+endif()
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

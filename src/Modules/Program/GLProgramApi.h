@@ -8,9 +8,7 @@
 #include <spirv_cross.hpp>
 #include <spirv_hlsl.hpp>
 
-#include "Context/VkDescriptorPool.h"
 #include "Program/CommonProgramApi.h"
-#include "Program/VKViewCreater.h"
 
 class GLProgramApi : public CommonProgramApi
 {
@@ -21,7 +19,6 @@ public:
     virtual void UseProgram() override;
     virtual void ApplyBindings() override;
     virtual void CompileShader(const ShaderBase& shader) override;
-    void ParseShader(ShaderType type, const std::vector<uint32_t>& spirv_binary, std::vector<VkDescriptorSetLayoutBinding>& bindings);
     void ParseShaders();
     void ParseShadersOuput();
     void ParseVariable();

@@ -5,12 +5,18 @@ set(headers
     DX12Resource.h
     GLResource.h
     Resource.h
-    VKResource.h
 )
 
 set(sources
     DX12Resource.cpp
 )
+
+if (VULKAN_SUPPORT)
+    set(headers 
+        ${headers}
+        VKResource.h
+    )
+endif()
 
 add_library(${target} ${headers} ${sources})
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Context/Context.h"
-#include "Context/VKDescriptorPool.h"
 #include <GLFW/glfw3.h>
 #include <Geometry/IABuffer.h>
 #include <assimp/postprocess.h>

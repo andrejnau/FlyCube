@@ -8,8 +8,6 @@ set(headers
     DX11Context.h
     DX12Context.h
     DXGIUtility.h
-    VKContext.h
-    VKDescriptorPool.h
     GLContext.h
 )
 
@@ -20,10 +18,21 @@ set(sources
     DX11Context.cpp
     DX12Context.cpp
     DXGIUtility.cpp
-    VKContext.cpp
-    VKDescriptorPool.cpp
     GLContext.cpp
 )
+
+if (VULKAN_SUPPORT)
+    set(headers 
+        ${headers}
+        VKContext.h
+        VKDescriptorPool.h
+    )
+    set(sources 
+        ${sources}
+        VKContext.cpp
+        VKDescriptorPool.cpp
+    )
+endif()
 
 add_library(${target} ${headers} ${sources})
 
@@ -42,10 +51,15 @@ target_link_libraries(${target}
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
-    ${Vulkan_LIBRARIES}
     glLoadGen
     Resource
     View
 )
+
+if (VULKAN_SUPPORT)
+    target_link_libraries(${target}
+        ${Vulkan_LIBRARIES}
+    )
+endif()
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

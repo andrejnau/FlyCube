@@ -12,9 +12,14 @@ add_library(${target} ${headers} ${sources})
 
 target_link_libraries(${target}
     glfw
-    ${Vulkan_LIBRARIES}
 	Context
 )
+
+if (VULKAN_SUPPORT)
+    target_link_libraries(${target}
+        ${Vulkan_LIBRARIES}
+    )
+endif()
 
 target_include_directories(${target}
     PUBLIC
