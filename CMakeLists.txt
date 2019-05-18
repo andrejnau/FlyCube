@@ -13,7 +13,7 @@ include(${project_root}/cmake/defaults.cmake)
 add_definitions(-DASSETS_PATH="${assets_path}")
 add_definitions(-DSDKBIN="${sdkbin_path}")
 
-option(VULKAN_SUPPORT "Vulkan Support" ON)
+set(VULKAN_SUPPORT "ON")
 
 include(${project_root}/cmake/3rdparty/glfw.cmake)
 include(${project_root}/cmake/3rdparty/soil.cmake)

@@ -66,10 +66,12 @@ ComPtr<ID3DBlob> DXBCCompile(const ShaderDesc& shader)
         0,
         &shader_buffer,
         &errors));
+    if (errors)
+        OutputDebugStringA(reinterpret_cast<char*>(errors->GetBufferPointer()));
     return shader_buffer;
 }
 
-ComPtr<ID3DBlob> DXILCompile(const ShaderDesc& shader)
+ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
 {
     DXCLoader loader;
 
@@ -89,13 +91,22 @@ ComPtr<ID3DBlob> DXILCompile(const ShaderDesc& shader)
         defines.push_back({ defines_store.back().first.c_str(), defines_store.back().second.c_str() });
     }
 
+    std::vector<LPCWSTR> arguments;
+    if (option.spirv)
+    {
+        arguments.push_back(L"-spirv");
+        bool vs_or_gs = target.find(L"vs") != -1 || target.find(L"gs") != -1;
+        if (option.spirv_invert_y && vs_or_gs)
+            arguments.push_back(L"-fvk-invert-y");
+    }
+
     CComPtr<IDxcOperationResult> result;
     ASSERT_SUCCEEDED(loader.compiler->Compile(
         source,
         L"main.hlsl",
         entrypoint.c_str(),
         target.c_str(),
-        nullptr, 0,
+        arguments.data(), static_cast<UINT32>(arguments.size()),
         defines.data(), static_cast<UINT32>(defines.size()),
         nullptr,
         &result
@@ -114,22 +125,23 @@ ComPtr<ID3DBlob> DXILCompile(const ShaderDesc& shader)
     {
         ComPtr<IDxcBlobEncoding> errors;
         result->GetErrorBuffer(&errors);
+        OutputDebugStringA(reinterpret_cast<char*>(errors->GetBufferPointer()));
     }
     return shader_buffer;
 }
 
-ComPtr<ID3DBlob> DXCompile(const ShaderDesc& shader)
+ComPtr<ID3DBlob> DXCompile(const ShaderDesc& shader, const DXOption& option)
 {
     ComPtr<ID3DBlob> shader_buffer;
-    if (GetBlobFromCache(shader, shader_buffer))
+    if (!option.spirv && GetBlobFromCache(shader, shader_buffer))
         return shader_buffer;
 
     std::wstring target = utf8_to_wstring(shader.target);
     size_t major_index = 3;
     if (target.compare(0, 4, L"lib_") == 0)
         major_index = 4;
-    if (major_index < target.size() && isdigit(target[major_index]) && target[major_index] >= '6')
-        return DXILCompile(shader);
+    if (option.spirv || major_index < target.size() && isdigit(target[major_index]) && target[major_index] >= '6')
+        return DXCCompile(shader, option);
     else
         return DXBCCompile(shader);
 }

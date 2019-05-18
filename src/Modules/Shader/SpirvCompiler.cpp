@@ -1,4 +1,5 @@
 #include "Shader/SpirvCompiler.h"
+#include "Shader/DXCompiler.h"
 #include <fstream>
 #include <Windows.h>
 #include <Utilities/FileUtility.h> 
@@ -147,6 +148,17 @@ std::string MakeCommandLine(const ShaderBase& shader, const SpirvOption& option,
 
 std::vector<uint32_t> SpirvCompile(const ShaderBase& shader, const SpirvOption& option)
 {
+    if (option.use_dxc)
+    {
+        DXOption dx_option = { true, option.invert_y };
+        auto blob = DXCompile(shader, dx_option);
+        if (!blob)
+            return {};
+        auto blob_as_uint32 = reinterpret_cast<uint32_t*>(blob->GetBufferPointer());
+        std::vector<uint32_t> spirv(blob_as_uint32, blob_as_uint32 + blob->GetBufferSize() / 4);
+        return spirv;
+    }
+
     TmpSpirvFile spirv_path;
     if (!RunProcess(MakeCommandLine(shader, option, spirv_path)))
         return {};

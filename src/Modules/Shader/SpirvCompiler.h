@@ -9,7 +9,8 @@ struct SpirvOption
     bool invert_y = true;
     bool auto_map_bindings = false;
     bool hlsl_iomap = false;
-    uint32_t resource_set_binding = -1;
+    uint32_t resource_set_binding = -1u;
+    bool use_dxc = false;
 };
 
 std::vector<uint32_t> SpirvCompile(const ShaderBase& shader, const SpirvOption& option);
