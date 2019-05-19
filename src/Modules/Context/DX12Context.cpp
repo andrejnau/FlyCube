@@ -335,6 +335,7 @@ Resource::Ptr DX12Context::CreateBottomLevelAS(const BufferDesc& vertex, const B
     res->as.scratch = scratch;
     res->as.result = result;
     res->default_res = result->default_res;
+    res->state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
 
     return res;
 }
@@ -401,6 +402,7 @@ Resource::Ptr DX12Context::CreateTopLevelAS(const std::vector<std::pair<Resource
     res->as.result = result;
     res->as.instance_desc = instance_desc_res;
     res->default_res = result->default_res;
+    res->state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
 
     return res;
 }
@@ -585,7 +587,7 @@ void DX12Context::ResourceBarrier(const DX12Resource::Ptr& res, D3D12_RESOURCE_S
 
 void DX12Context::ResourceBarrier(DX12Resource& res, D3D12_RESOURCE_STATES state)
 {
-    if (res.as.result)
+    if (res.state == D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)
         return;
     if (res.state != state)
         command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res.default_res.Get(), res.state, state));
