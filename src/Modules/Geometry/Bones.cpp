@@ -66,12 +66,12 @@ Resource::Ptr Bones::GetBone(Context& context)
     return bone_srv;
 }
 
-void Bones::UpdateAnimation(float time_in_seconds)
+bool Bones::UpdateAnimation(float time_in_seconds)
 {
     if (!m_scene)
-        return;
+        return false;
     if (!m_scene->mAnimations)
-        return;
+        return false;
 
     float ticks_per_second = (float)(m_scene->mAnimations[0]->mTicksPerSecond != 0 ? m_scene->mAnimations[0]->mTicksPerSecond : 25.0f);
     float time_in_ticks = time_in_seconds* ticks_per_second;
@@ -79,6 +79,8 @@ void Bones::UpdateAnimation(float time_in_seconds)
 
     glm::mat4 identity(1.0);
     ReadNodeHeirarchy(animation_time, m_scene->mRootNode, identity);
+
+    return true;
 }
 
 glm::mat4 Bones::to_glm(const aiMatrix4x4& mat)

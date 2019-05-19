@@ -39,6 +39,7 @@ set(headers
     ${include_path}/BackgroundPass.h
     ${include_path}/ComputeLuminance.h
     ${include_path}/IBLCompute.h
+    ${include_path}/SkinningPass.h
     ${include_path}/Scene.h
     ${include_path}/ImGuiSettings.h
     ${include_path}/Settings.h
@@ -57,6 +58,7 @@ set(sources
     ${source_path}/BackgroundPass.cpp
     ${source_path}/ComputeLuminance.cpp
     ${source_path}/IBLCompute.cpp
+    ${source_path}/SkinningPass.cpp
     ${source_path}/Scene.cpp
     ${source_path}/Settings.cpp
     ${source_path}/Main.cpp
@@ -105,6 +107,7 @@ set(compute_shaders
     ${shaders_path}/HDRLum1DPass_CS.hlsl
     ${shaders_path}/HDRLum2DPass_CS.hlsl
     ${shaders_path}/DownSample_CS.hlsl
+    ${shaders_path}/Skinning_CS.hlsl
 )
 
 set(lib_shaders

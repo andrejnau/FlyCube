@@ -1,5 +1,3 @@
-#include "BoneTransform.hlsli"
-
 cbuffer VSParams
 {
     float4x4 World;
@@ -22,8 +20,7 @@ struct VertexOutput
 VertexOutput main(VertexInput input)
 {
     VertexOutput output;
-    float4x4 transform = GetBoneTransform(input.bones_count, input.bones_offset);
-    float4 worldPosition = mul(mul(float4(input.Position, 1.0), transform), World);
+    float4 worldPosition = mul(float4(input.Position, 1.0), World);
     output.pos = worldPosition;
     output.texCoord = input.texCoord;
     return output;

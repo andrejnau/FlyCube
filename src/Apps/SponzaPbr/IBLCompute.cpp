@@ -139,7 +139,7 @@ void IBLCompute::DrawPrePass(Model & ibl_model)
     view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
     view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
 
-    m_program_pre_pass.ps.om.dsv.Attach(ibl_model.ibl_dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program_pre_pass.ps.om.dsv.Attach(ibl_model.ibl_dsv).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
 
     for (auto& model : m_input.scene_list)
     {
@@ -211,7 +211,7 @@ void IBLCompute::Draw(Model& ibl_model)
     }
     else
     {
-        m_program.ps.om.dsv.Attach(ibl_model.ibl_dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+        m_program.ps.om.dsv.Attach(ibl_model.ibl_dsv).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
     }
 
     for (auto& model : m_input.scene_list)

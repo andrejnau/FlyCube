@@ -40,7 +40,7 @@ void GeometryPass::OnRender()
     m_program.ps.om.rtv1.Attach(output.normal).Clear(color);
     m_program.ps.om.rtv2.Attach(output.albedo).Clear(color);
     m_program.ps.om.rtv3.Attach(output.material).Clear(color);
-    m_program.ps.om.dsv.Attach(output.dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program.ps.om.dsv.Attach(output.dsv).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
 
     bool skiped = false;
     for (auto& model : m_input.scene_list)
@@ -54,21 +54,11 @@ void GeometryPass::OnRender()
         m_program.vs.cbuffer.ConstantBuf.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model.matrix)));
         m_program.ps.cbuffer.Settings.ibl_source = model.ibl_source;
 
-        model.bones.UpdateAnimation(glfwGetTime());
-
-        Resource::Ptr bones_info_srv = model.bones.GetBonesInfo(m_context);
-        Resource::Ptr bone_srv = model.bones.GetBone(m_context);
-            
-        m_program.vs.srv.bone_info.Attach(bones_info_srv);
-        m_program.vs.srv.gBones.Attach(bone_srv);
-
         model.ia.indices.Bind();
         model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
         model.ia.normals.BindToSlot(m_program.vs.ia.NORMAL);
         model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
         model.ia.tangents.BindToSlot(m_program.vs.ia.TANGENT);
-        model.ia.bones_offset.BindToSlot(m_program.vs.ia.BONES_OFFSET);
-        model.ia.bones_count.BindToSlot(m_program.vs.ia.BONES_COUNT);
 
         for (auto& range : model.ia.ranges)
         {
@@ -77,7 +67,7 @@ void GeometryPass::OnRender()
             m_program.ps.cbuffer.Settings.use_normal_mapping = material.texture.normal && m_settings.normal_mapping;
             m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.glossiness && !material.texture.roughness;
             m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.use_flip_normal_y;
-            
+
             m_program.ps.srv.normalMap.Attach(material.texture.normal);
             m_program.ps.srv.albedoMap.Attach(material.texture.albedo);
             m_program.ps.srv.glossMap.Attach(material.texture.glossiness);

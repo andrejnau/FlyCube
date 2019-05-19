@@ -14,6 +14,7 @@ Scene::Scene(Context& context, int width, int height)
     , m_height(height)
     , m_model_square(m_context, "model/square.obj")
     , m_model_cube(m_context, "model/cube.obj", ~aiProcess_FlipWindingOrder)
+    , m_skinning_pass(m_context, { m_scene_list }, width, height)
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
     , m_shadow_pass(m_context, { m_scene_list, m_camera, m_light_pos }, width, height)
     , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
@@ -30,15 +31,18 @@ Scene::Scene(Context& context, int width, int height)
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f));
 #endif
 
-    if (true)
-    {
+#if 1
         m_scene_list.emplace_back(m_context, "model/export3dcoat/export3dcoat.obj");
         m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 35.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         m_scene_list.back().ibl_request = true;
-    }
+#endif
 
-    if (false)
-    {
+#if 0
+        m_scene_list.emplace_back(m_context, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
+        m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(75.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+#endif
+
+#if 0
         std::pair<std::string, bool> hdr_tests[] =
         {
             { "gold",        false },
@@ -58,7 +62,7 @@ Scene::Scene(Context& context, int width, int height)
                 m_scene_list.back().ibl_source = 0;
             x += 50;
         }
-    }
+#endif
 
 #if 0
     m_scene_list.emplace_back(m_context, "local_model/SunTemple_v3/SunTemple/SunTemple.fbx");
@@ -128,6 +132,7 @@ void Scene::OnUpdate()
 
     m_imgui_pass.OnUpdate();
 
+    m_skinning_pass.OnUpdate();
     m_geometry_pass.OnUpdate();
     m_shadow_pass.OnUpdate();
     m_ssao_pass.OnUpdate();
@@ -149,6 +154,10 @@ void Scene::OnRender()
 {
     m_render_target_view = m_context.GetBackBuffer();
     m_camera.SetViewport(m_width, m_height);
+
+    m_context.BeginEvent("Skinning Pass");
+    m_skinning_pass.OnRender();
+    m_context.EndEvent();
 
     m_context.BeginEvent("Geometry Pass");
     m_geometry_pass.OnRender();
@@ -224,6 +233,7 @@ void Scene::OnResize(int width, int height)
 
     CreateRT();
 
+    m_skinning_pass.OnResize(width, height);
     m_geometry_pass.OnResize(width, height);
     m_shadow_pass.OnResize(width, height);
     m_ssao_pass.OnResize(width, height);
@@ -295,6 +305,7 @@ void Scene::OnInputChar(unsigned int ch)
 void Scene::OnModifySettings(const Settings& settings)
 {
     m_settings = settings;
+    m_skinning_pass.OnModifySettings(settings);
     m_geometry_pass.OnModifySettings(settings);
     m_shadow_pass.OnModifySettings(settings);
     m_ibl_compute.OnModifySettings(settings);

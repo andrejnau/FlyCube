@@ -54,6 +54,12 @@ enum BindFlag
     KAccelerationStructure = 1 << 9,
 };
 
+enum ClearFlag
+{
+    kDepth = 1 << 0,
+    kStencil = 1 << 1,
+};
+
 enum class FillMode
 {
     kWireframe,

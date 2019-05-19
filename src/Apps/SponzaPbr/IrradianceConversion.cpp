@@ -51,7 +51,7 @@ void IrradianceConversion::DrawIrradianceConvolution()
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_program_irradiance_convolution.ps.om.rtv0.Attach(m_input.irradince.res);
-    m_program_irradiance_convolution.ps.om.dsv.Attach(m_input.irradince.dsv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program_irradiance_convolution.ps.om.dsv.Attach(m_input.irradince.dsv).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program_irradiance_convolution.vs.ia.POSITION);
@@ -128,7 +128,7 @@ void IrradianceConversion::DrawPrefilter()
         m_program_prefilter.ps.cbuffer.Settings.resolution = m_input.prefilter.size;
         std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
         m_program_prefilter.ps.om.rtv0.Attach(m_input.prefilter.res, mip);
-        m_program_prefilter.ps.om.dsv.Attach(m_input.prefilter.dsv, mip).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+        m_program_prefilter.ps.om.dsv.Attach(m_input.prefilter.dsv, mip).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
 
         for (uint32_t i = 0; i < 6; ++i)
         {

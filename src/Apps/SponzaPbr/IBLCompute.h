@@ -3,7 +3,7 @@
 #include <vector>
 #include <memory>
 #include <Scene/SceneBase.h>
-#include <Context/DX11Context.h>
+#include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/IBLComputeVS.h>
 #include <ProgramRef/IBLComputeGS.h>

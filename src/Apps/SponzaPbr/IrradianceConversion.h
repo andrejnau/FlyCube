@@ -2,7 +2,7 @@
 
 #include "GeometryPass.h"
 #include "Settings.h"
-#include <Context/DX11Context.h>
+#include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/CubemapVS.h>
 #include <ProgramRef/IrradianceConvolutionPS.h>

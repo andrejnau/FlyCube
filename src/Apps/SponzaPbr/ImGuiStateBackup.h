@@ -1,6 +1,7 @@
 #pragma once
 
 #include <d3d11.h>
+#include <Context/DX11Context.h>
 
 struct DX11StateBackup
 {

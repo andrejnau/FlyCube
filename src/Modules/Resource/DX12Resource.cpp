@@ -9,6 +9,10 @@ DX12Resource::DX12Resource(DX12Context& context)
 DX12Resource::~DX12Resource()
 {
     m_context.QueryOnDelete(default_res.Get());
+    for (auto& upload : m_upload_res)
+    {
+        m_context.QueryOnDelete(upload.Get());
+    }
 }
 
 ComPtr<ID3D12Resource>& DX12Resource::GetUploadResource(size_t subresource)

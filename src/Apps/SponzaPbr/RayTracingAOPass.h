@@ -2,7 +2,7 @@
 
 #include "GeometryPass.h"
 #include "Settings.h"
-#include <Context/DX11Context.h>
+#include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <d3d11.h>
 #include <wrl.h>
@@ -53,5 +53,6 @@ private:
     bool m_is_initialized = false;
     Resource::Ptr m_ao;
     Resource::Ptr m_ao_blur;
+    std::vector<std::pair<Resource::Ptr, glm::mat4>> m_geometry;
 };
 

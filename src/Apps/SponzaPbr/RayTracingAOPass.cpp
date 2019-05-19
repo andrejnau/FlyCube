@@ -19,20 +19,23 @@ void RayTracingAOPass::OnUpdate()
     m_raytracing_program.lib.cbuffer.Settings.ao_radius = m_settings.ao_radius;
     m_raytracing_program.lib.cbuffer.Settings.num_rays = m_settings.rtao_num_rays;
 
-    if (!m_is_initialized)
+    auto build_geometry = [&](bool force_rebuild)
     {
-        m_raytracing_program.lib.cbuffer.Settings.frame_index = 0;
-
-        std::vector<std::pair<Resource::Ptr, glm::mat4>> geometry;
+        size_t id = 0;
+        size_t node_updated = 0;
         for (auto& model : m_input.scene_list)
         {
             for (auto& range : model.ia.ranges)
             {
+                size_t cur_id = id++;
+                if (!force_rebuild && !model.ia.positions.IsDynamic())
+                    continue;
+
                 BufferDesc vertex = {
-                        model.ia.positions.GetBuffer(),
-                        gli::format::FORMAT_RGB32_SFLOAT_PACK32,
-                        model.ia.positions.Count() - range.base_vertex_location,
-                        range.base_vertex_location
+                    model.ia.positions.IsDynamic() ? model.ia.positions.GetDynamicBuffer() : model.ia.positions.GetBuffer(),
+                    gli::format::FORMAT_RGB32_SFLOAT_PACK32,
+                    model.ia.positions.Count() - range.base_vertex_location,
+                    range.base_vertex_location
                 };
 
                 BufferDesc index = {
@@ -42,19 +45,28 @@ void RayTracingAOPass::OnUpdate()
                      range.start_index_location
                 };
 
-                m_bottom.emplace_back(m_context.CreateBottomLevelAS(vertex, index));
-                geometry.emplace_back(m_bottom.back(), glm::transpose(model.matrix));
+                if (cur_id >= m_bottom.size())
+                    m_bottom.resize(cur_id + 1);
+
+                if (cur_id >= m_geometry.size())
+                    m_geometry.resize(cur_id + 1);
+
+                m_bottom[cur_id] = m_context.CreateBottomLevelAS(vertex, index);
+                m_geometry[cur_id] = { m_bottom[cur_id], glm::transpose(model.matrix) };
+                ++node_updated;
             }
         }
+        if (node_updated)
+            m_top = m_context.CreateTopLevelAS(m_geometry);
+    };
 
-        m_top = m_context.CreateTopLevelAS(geometry);
+    build_geometry(!m_is_initialized);
 
-        m_is_initialized = true;
-    }
+    if (!m_is_initialized)
+        m_raytracing_program.lib.cbuffer.Settings.frame_index = 0;
     else
-    {
         ++m_raytracing_program.lib.cbuffer.Settings.frame_index;
-    }
+    m_is_initialized = true;
 }
 
 void RayTracingAOPass::OnRender()

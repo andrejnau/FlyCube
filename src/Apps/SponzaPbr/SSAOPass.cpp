@@ -75,7 +75,7 @@ void SSAOPass::OnRender()
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_program.ps.om.rtv0.Attach(m_ao).Clear(color);
-    m_program.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program.ps.om.dsv.Attach(m_depth_stencil_view).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
 
     m_input.square.ia.indices.Bind();
     m_input.square.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
@@ -93,7 +93,7 @@ void SSAOPass::OnRender()
     {
         m_program_blur.UseProgram();
         m_program_blur.ps.uav.out_uav.Attach(m_ao_blur);
-        m_program_blur.ps.om.dsv.Attach(m_depth_stencil_view).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+        m_program_blur.ps.om.dsv.Attach(m_depth_stencil_view).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
 
         m_input.square.ia.indices.Bind();
         m_input.square.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);

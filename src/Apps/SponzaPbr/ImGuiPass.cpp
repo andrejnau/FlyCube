@@ -83,6 +83,7 @@ void ImGuiPass::OnRender()
 
     ImDrawData* draw_data = ImGui::GetDrawData();
 
+    // TODO: remove it
     DX11StateBackup guard(dynamic_cast<DX11Context*>(&m_context));
 
     m_program.UseProgram();

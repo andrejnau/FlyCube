@@ -13,7 +13,7 @@ public:
     void ProcessMesh(const aiMesh* mesh, IMesh& cur_mesh);
     Resource::Ptr GetBonesInfo(Context& context);
     Resource::Ptr GetBone(Context& context);
-    void UpdateAnimation(float time_in_seconds);
+    bool UpdateAnimation(float time_in_seconds);
 
 private:
     void ReadNodeHeirarchy(float animation_time, const aiNode* node, const glm::mat4& parent_transform);

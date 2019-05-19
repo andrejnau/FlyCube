@@ -477,25 +477,24 @@ void DX12Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32
 void DX12Context::IASetIndexBuffer(Resource::Ptr ires, gli::format Format)
 {
     DXGI_FORMAT format = static_cast<DXGI_FORMAT>(gli::dx().translate(Format).DXGIFormat.DDS);
-
     auto res = std::static_pointer_cast<DX12Resource>(ires);
+    ResourceBarrier(res, D3D12_RESOURCE_STATE_INDEX_BUFFER);
     D3D12_INDEX_BUFFER_VIEW indexBufferView = {};
     indexBufferView.Format = format;
     indexBufferView.SizeInBytes = res->desc.Width;
     indexBufferView.BufferLocation = res->default_res->GetGPUVirtualAddress();
     command_list->IASetIndexBuffer(&indexBufferView);
-    ResourceBarrier(res, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 }
 
 void DX12Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires)
 {
     auto res = std::static_pointer_cast<DX12Resource>(ires);
+    ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView = {};
     vertexBufferView.BufferLocation = res->default_res->GetGPUVirtualAddress();
     vertexBufferView.SizeInBytes = res->desc.Width;
     vertexBufferView.StrideInBytes = res->stride;
     command_list->IASetVertexBuffers(slot, 1, &vertexBufferView);
-    ResourceBarrier(res, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 }
 
 void DX12Context::BeginEvent(const std::string& name)

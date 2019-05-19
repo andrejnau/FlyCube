@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Scene/SceneBase.h>
-#include <Context/DX11Context.h>
+#include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <d3d11.h>
 #include <DXGI1_4.h>
@@ -14,6 +14,7 @@
 #include <ProgramRef/LightPassPS.h>
 #include <ProgramRef/LightPassVS.h>
 
+#include "SkinningPass.h"
 #include "GeometryPass.h"
 #include "LightPass.h"
 #include "ImGuiPass.h"
@@ -66,6 +67,7 @@ private:
     SceneModels m_scene_list;
     Model m_model_square;
     Model m_model_cube;
+    SkinningPass m_skinning_pass;
     GeometryPass m_geometry_pass;
     ShadowPass m_shadow_pass;
     SSAOPass m_ssao_pass;

@@ -51,27 +51,17 @@ void ShadowPass::OnRender()
     m_program.ps.sampler.g_sampler.Attach(m_sampler);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_program.ps.om.dsv.Attach(output.srv).Clear(D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_program.ps.om.dsv.Attach(output.srv).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
 
     for (auto& model : m_input.scene_list)
     {
         m_program.vs.cbuffer.VSParams.World = glm::transpose(model.matrix);
-
-        model.bones.UpdateAnimation(glfwGetTime());
-
-        Resource::Ptr bones_info_srv = model.bones.GetBonesInfo(m_context);
-        Resource::Ptr bone_srv = model.bones.GetBone(m_context);
-
-        m_program.vs.srv.bone_info.Attach(bones_info_srv);
-        m_program.vs.srv.gBones.Attach(bone_srv);
 
         m_program.SetRasterizeState({ FillMode::kSolid, CullMode::kBack, 4096 });
 
         model.ia.indices.Bind();
         model.ia.positions.BindToSlot(m_program.vs.ia.SV_POSITION);
         model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
-        model.ia.bones_offset.BindToSlot(m_program.vs.ia.BONES_OFFSET);
-        model.ia.bones_count.BindToSlot(m_program.vs.ia.BONES_COUNT);
 
         for (auto& range : model.ia.ranges)
         {
