@@ -11,6 +11,7 @@ struct SpirvOption
     bool hlsl_iomap = false;
     uint32_t resource_set_binding = ~0u;
     bool use_dxc = false;
+    bool vulkan_semantics = true;
 };
 
 std::vector<uint32_t> SpirvCompile(const ShaderBase& shader, const SpirvOption& option);

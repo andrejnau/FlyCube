@@ -6,7 +6,7 @@ std::string GetGLSLShader(const ShaderBase& shader, const SpirvOption& option)
 {
     std::vector<uint32_t> spirv_binary = SpirvCompile(shader, option);
     spirv_cross::CompilerGLSL glsl(std::move(spirv_binary));
-    
+
     spirv_cross::CompilerGLSL::Options options;
     options.version = 450;
     options.es = false;
@@ -20,7 +20,5 @@ std::string GetGLSLShader(const ShaderBase& shader, const SpirvOption& option)
             glsl.get_name(remap.sampler_id)));
     }
 
-    std::string source = glsl.compile();
-
-    return source;
+    return glsl.compile();
 }

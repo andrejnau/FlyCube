@@ -3,7 +3,6 @@
 #include "GLContext.h"
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
-#include <glLoadGen/gl.h>
 #include <iostream>
 #include <Program/GLProgramApi.h>
 #include <Resource/GLResource.h>
@@ -22,7 +21,7 @@ static void APIENTRY gl_callback(GLenum source, GLenum type, GLuint id, GLenum s
 GLContext::GLContext(GLFWwindow* window)
     : Context(window)
 {
-    ogl_LoadFunctions();
+    gladLoadGL();
 
     if (glDebugMessageCallback)
     {

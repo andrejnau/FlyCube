@@ -133,7 +133,11 @@ std::string MakeCommandLine(const ShaderBase& shader, const SpirvOption& option,
     cmd += shader.entrypoint;
     cmd += " -S ";
     cmd += shader_type;
-    cmd += " -V -D ";
+    if (option.vulkan_semantics)
+        cmd += " -V ";
+    else
+        cmd += " -G ";
+    cmd += " -D ";
     cmd += GetAssetFullPath(shader.shader_path);
     cmd += " -o ";
     cmd += spirv_path.GetFilePath();

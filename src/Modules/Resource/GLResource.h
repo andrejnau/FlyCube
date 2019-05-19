@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glLoadGen/gl.h>
+#include <glad/glad.h>
 #include "Resource/Resource.h"
 
 class GLResource : public Resource

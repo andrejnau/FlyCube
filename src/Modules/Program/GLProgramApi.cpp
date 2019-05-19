@@ -4,29 +4,11 @@
 #include <utility>
 #include <Resource/GLResource.h>
 #include <Shader/GLSLConverter.h>
-
-#include <glLoadGen/gl.h>
+#include <Utilities/FileUtility.h>
 
 namespace ShaderUtility
 {
-    using ShaderVector = std::vector<std::pair<GLenum, std::string>>;
-
-    inline std::string GetAssetFullPath(const std::string &assetName)
-    {
-        std::string path = std::string(ASSETS_PATH) + assetName;
-        if (!std::ifstream(path).good())
-            path = "assets/" + assetName;
-        return path;
-    }
-
-    inline std::string GetShaderSource(const std::string &file)
-    {
-        std::ifstream stream(GetAssetFullPath(file));
-        std::string shader((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-        return shader;
-    }
-
-    inline void CheckLink(GLuint program)
+    void CheckLink(GLuint program)
     {
         std::string err;
         GLint link_ok;
@@ -41,63 +23,74 @@ namespace ShaderUtility
         }
     }
 
-    inline void CheckValidate(GLuint program)
+    void CheckValidate(GLuint program)
     {
         std::string err;
         GLint link_ok;
         glGetProgramiv(program, GL_VALIDATE_STATUS, &link_ok);
         if (!link_ok)
         {
-            GLint infoLogLength;
-            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
-            std::vector<GLchar> info_log(infoLogLength);
+            GLint info_log_length;
+            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &info_log_length);
+            std::vector<GLchar> info_log(info_log_length);
             glGetProgramInfoLog(program, info_log.size(), nullptr, info_log.data());
             err = info_log.data();
         }
     }
 
-    inline void CheckCompile(GLuint shader)
+    void CheckCompile(GLuint shader)
     {
         std::string err;
-        GLint link_ok;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &link_ok);
-        if (!link_ok)
+        GLint compile_ok;
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_ok);
+        if (!compile_ok)
         {
-            GLint infoLogLength;
-            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
-            std::vector<GLchar> info_log(infoLogLength);
+            GLint info_log_length;
+            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &info_log_length);
+            std::vector<GLchar> info_log(info_log_length);
             glGetShaderInfoLog(shader, info_log.size(), nullptr, info_log.data());
             err = info_log.data();
         }
     }
 
-    inline GLuint CreateShader(GLenum shaderType, const std::string &src)
+    GLuint CreateShader(GLenum shaderType, const std::string& src)
     {
         GLuint shader = glCreateShader(shaderType);
-        const GLchar *source[] = { src.c_str() };
+        const GLchar* source[] = { src.c_str() };
         glShaderSource(shader, 1, source, nullptr);
         glCompileShader(shader);
         CheckCompile(shader);
         return shader;
     }
 
-    inline GLuint CreateProgram(const ShaderVector &shaders)
+    GLuint CreateShader(GLenum shaderType, const SpirvDesc& spirv)
     {
-        std::vector<GLuint> shadersId;
+        GLuint shader = glCreateShader(shaderType);
+        glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.binary.data(), sizeof(uint32_t) * spirv.binary.size());
+        glSpecializeShader(shader, spirv.entrypoint.c_str(), 0, nullptr, nullptr);
+        glCompileShader(shader);
+        CheckCompile(shader);
+        return shader;
+    }
+
+    template<typename T>
+    GLuint CreateProgram(const std::map<ShaderType, T>& shaders)
+    {
+        std::vector<GLuint> shader_ids;
         for (auto & shader : shaders)
         {
-            GLuint id = CreateShader(shader.first, shader.second.c_str());
-            shadersId.push_back(id);
+            GLuint id = CreateShader(GetGLProgTagret(shader.first), shader.second);
+            shader_ids.push_back(id);
         }
 
         GLuint program = glCreateProgram();
-        for (auto & id : shadersId)
+        for (auto & id : shader_ids)
         {
             glAttachShader(program, id);
         }
 
         glLinkProgram(program);
-        CheckLink(program); 
+        CheckLink(program);
 
         return program;
     }
@@ -111,6 +104,8 @@ GLProgramApi::GLProgramApi(GLContext& context)
     glCreateVertexArrays(1, &m_vao);
 
     m_samplers.emplace("SPIRV_Cross_DummySampler", GLResource::Ptr{});
+
+    m_use_spirv = m_use_spirv && !!glSpecializeShader;
 }
 
 GLenum GetGLProgTagret(ShaderType type)
@@ -145,18 +140,12 @@ void GLProgramApi::LinkProgram()
     m_texture_loc.clear();
     m_cbv_bindings.clear();
 
-    ShaderUtility::ShaderVector shaders;
+    if (m_use_spirv)
+        m_program = ShaderUtility::CreateProgram(m_spirv);
+    else
+        m_program = ShaderUtility::CreateProgram(m_src);
 
-    for (auto shader : m_src)
-    {
-        shaders.push_back({
-            GetGLProgTagret(shader.first),
-            shader.second });
-    }
-
-    m_program = ShaderUtility::CreateProgram(shaders);
-
-    ParseShaders(); 
+    ParseShaders();
     ParseVariable();
     ParseSSBO();
     ParseShadersOuput();
@@ -207,8 +196,11 @@ void GLProgramApi::CompileShader(const ShaderBase& shader)
     SpirvOption option = {};
     if (m_shader_types.count(ShaderType::kGeometry) && shader.type == ShaderType::kVertex)
         option.invert_y = false;
-    std::string source = GetGLSLShader(shader, option);
-    m_src[shader.type] = source;
+    option.vulkan_semantics = false;
+    if (m_use_spirv)
+        m_spirv[shader.type] = { SpirvCompile(shader, option), shader.entrypoint };
+    else
+        m_src[shader.type] = GetGLSLShader(shader, option);
 }
 
 GLenum AttribComponentType(GLenum type)

@@ -10,6 +10,12 @@
 
 #include "Program/CommonProgramApi.h"
 
+struct SpirvDesc
+{
+    std::vector<uint32_t> binary;
+    std::string entrypoint;
+};
+
 class GLProgramApi : public CommonProgramApi
 {
 public:
@@ -58,6 +64,7 @@ public:
 private:
     GLContext & m_context;
     std::map<ShaderType, std::string> m_src;
+    std::map<ShaderType, SpirvDesc> m_spirv;
     GLuint m_framebuffer;
     GLuint m_program;
     std::map<std::tuple<ShaderType, uint32_t>, Resource::Ptr> m_cbv_buffer;
@@ -65,4 +72,5 @@ private:
     std::map<std::string, std::pair<GLint, GLint>> m_texture_loc;
     std::map<std::string, Resource::Ptr> m_samplers;
     bool m_is_enabled_blend = false;
+    bool m_use_spirv = true;
 };

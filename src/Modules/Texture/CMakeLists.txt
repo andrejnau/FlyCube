@@ -24,7 +24,6 @@ target_link_libraries(${target}
     SOIL
     d3d11
     dxgi
-    glLoadGen
     Utilities
 )
 

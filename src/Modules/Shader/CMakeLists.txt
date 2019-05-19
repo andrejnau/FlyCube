@@ -2,7 +2,7 @@ set(target Shader)
 
 set(headers
     ShaderBase.h
-	ShaderDesc.h
+    ShaderDesc.h
     DXCompiler.h
     SpirvCompiler.h
     GLSLConverter.h
@@ -33,7 +33,6 @@ target_link_libraries(${target}
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
-    glLoadGen
 )
 
 if (VULKAN_SUPPORT)

@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <Geometry/IABuffer.h>
 #include <assimp/postprocess.h>
-#include <glLoadGen/gl.h>
+#include <glad/glad.h>
 
 class GLProgramApi;
 class GLContext : public Context
