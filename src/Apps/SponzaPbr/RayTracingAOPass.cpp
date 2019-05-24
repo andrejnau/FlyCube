@@ -16,6 +16,13 @@ RayTracingAOPass::RayTracingAOPass(Context& context, const Input& input, int wid
 
 void RayTracingAOPass::OnUpdate()
 {
+}
+
+void RayTracingAOPass::OnRender()
+{
+    if (!m_settings.use_rtao)
+        return;
+
     m_raytracing_program.lib.cbuffer.Settings.ao_radius = m_settings.ao_radius;
     m_raytracing_program.lib.cbuffer.Settings.num_rays = m_settings.rtao_num_rays;
 
@@ -67,12 +74,6 @@ void RayTracingAOPass::OnUpdate()
     else
         ++m_raytracing_program.lib.cbuffer.Settings.frame_index;
     m_is_initialized = true;
-}
-
-void RayTracingAOPass::OnRender()
-{
-    if (!m_settings.use_rtao)
-        return;
 
     m_raytracing_program.UseProgram();
     m_raytracing_program.lib.srv.gPosition.Attach(m_input.geometry_pass.position);

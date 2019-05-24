@@ -71,6 +71,7 @@ private:
     virtual void ResizeBackBuffer(int width, int height) override;
     void WaitForGpu();
     void MoveToNextFrame();
+    void CloseRenderPass();
 
     ComPtr<ID3D12Fence> m_fence;
     HANDLE m_fence_event = nullptr;

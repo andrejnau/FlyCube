@@ -32,36 +32,36 @@ Scene::Scene(Context& context, int width, int height)
 #endif
 
 #if 1
-        m_scene_list.emplace_back(m_context, "model/export3dcoat/export3dcoat.obj");
-        m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 35.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        m_scene_list.back().ibl_request = true;
+    m_scene_list.emplace_back(m_context, "model/export3dcoat/export3dcoat.obj");
+    m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 35.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    m_scene_list.back().ibl_request = true;
+#endif
+
+#if 1
+    m_scene_list.emplace_back(m_context, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
+    m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(75.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 #endif
 
 #if 0
-        m_scene_list.emplace_back(m_context, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
-        m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(75.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-#endif
+    std::pair<std::string, bool> hdr_tests[] =
+    {
+        { "gold",        false },
+        { "grass",       false },
+        { "plastic",     false },
+        { "rusted_iron", false },
+        { "wall",        false },
+    };
 
-#if 0
-        std::pair<std::string, bool> hdr_tests[] =
-        {
-            { "gold",        false },
-            { "grass",       false },
-            { "plastic",     false },
-            { "rusted_iron", false },
-            { "wall",        false },
-        };
-
-        float x = 300;
-        for (const auto& test : hdr_tests)
-        {
-            m_scene_list.emplace_back(m_context, "model/pbr_test/" + test.first + "/sphere.obj");
-            m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f)) * glm::translate(glm::vec3(x, 500, 0.0f));
-            m_scene_list.back().ibl_request = test.second;
-            if (!test.second)
-                m_scene_list.back().ibl_source = 0;
-            x += 50;
-        }
+    float x = 300;
+    for (const auto& test : hdr_tests)
+    {
+        m_scene_list.emplace_back(m_context, "model/pbr_test/" + test.first + "/sphere.obj");
+        m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f)) * glm::translate(glm::vec3(x, 500, 0.0f));
+        m_scene_list.back().ibl_request = test.second;
+        if (!test.second)
+            m_scene_list.back().ibl_source = 0;
+        x += 50;
+    }
 #endif
 
 #if 0

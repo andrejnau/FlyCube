@@ -282,6 +282,8 @@ Resource::Ptr DX12Context::CreateBottomLevelAS(const BufferDesc& vertex)
 
 Resource::Ptr DX12Context::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
 {
+    CloseRenderPass();
+
     auto vertex_res = std::static_pointer_cast<DX12Resource>(vertex.res);
     auto index_res = std::static_pointer_cast<DX12Resource>(index.res);
 
@@ -342,6 +344,8 @@ Resource::Ptr DX12Context::CreateBottomLevelAS(const BufferDesc& vertex, const B
 
 Resource::Ptr DX12Context::CreateTopLevelAS(const std::vector<std::pair<Resource::Ptr, glm::mat4>>& geometry)
 {
+    CloseRenderPass();
+
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
@@ -445,11 +449,7 @@ void DX12Context::UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubre
     data.RowPitch = SrcRowPitch;
     data.SlicePitch = SrcDepthPitch;
 
-    if (m_is_open_render_pass)
-    {
-        command_list4->EndRenderPass();
-        m_is_open_render_pass = false;
-    }
+    CloseRenderPass();
 
     ResourceBarrier(res, D3D12_RESOURCE_STATE_COPY_DEST);
     UpdateSubresources(command_list.Get(), res->default_res.Get(), upload_res.Get(), 0, DstSubresource, 1, &data);
@@ -538,16 +538,12 @@ void DX12Context::InitBackBuffers()
 
 Resource::Ptr DX12Context::GetBackBuffer()
 {
-    return m_back_buffers[m_frame_index];   
+    return m_back_buffers[m_frame_index];
 }
 
 void DX12Context::Present()
 {
-    if (m_is_open_render_pass)
-    {
-        command_list4->EndRenderPass();
-        m_is_open_render_pass = false;
-    }
+    CloseRenderPass();
 
     ResourceBarrier(std::static_pointer_cast<DX12Resource>(GetBackBuffer()), D3D12_RESOURCE_STATE_PRESENT);
 
@@ -597,13 +593,7 @@ void DX12Context::ResourceBarrier(DX12Resource& res, D3D12_RESOURCE_STATES state
 void DX12Context::UseProgram(DX12ProgramApi& program_api)
 {
     if (m_current_program != &program_api && m_use_render_passes)
-    {
-        if (m_is_open_render_pass)
-        {
-            command_list4->EndRenderPass();
-            m_is_open_render_pass = false;
-        }
-    }
+        CloseRenderPass();
     m_current_program = &program_api;
 }
 
@@ -664,4 +654,12 @@ void DX12Context::MoveToNextFrame()
 
     // Set the fence value for the next frame.
     m_fence_values[m_frame_index] = current_fence_value + 1;
+}
+
+void DX12Context::CloseRenderPass()
+{
+    if (!m_is_open_render_pass)
+        return;
+    command_list4->EndRenderPass();
+    m_is_open_render_pass = false;
 }
