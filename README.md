@@ -49,24 +49,24 @@ int main(int argc, char* argv[])
     AppRect rect = app.GetAppRect();
     Program<PixelShaderPS, VertexShaderVS> program(context);
 
-    std::vector<uint32_t> index_values = { 0, 1, 2 };
-    Resource::Ptr indices = context.CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_values.size(), sizeof(uint32_t));
-    context.UpdateSubresource(indices, 0, index_values.data(), 0, 0);
-    std::vector<glm::vec3> position_values = {
+    std::vector<uint32_t> ibuf = { 0, 1, 2 };
+    Resource::Ptr index = context.CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * ibuf.size(), sizeof(uint32_t));
+    context.UpdateSubresource(index, 0, ibuf.data(), 0, 0);
+    std::vector<glm::vec3> pbuf = {
         glm::vec3(-0.5, -0.5, 0.0),
         glm::vec3( 0.0,  0.5, 0.0),
         glm::vec3( 0.5, -0.5, 0.0)
     };
-    Resource::Ptr positions = context.CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * position_values.size(), sizeof(glm::vec3));
-    context.UpdateSubresource(positions, 0, position_values.data(), 0, 0);
+    Resource::Ptr pos = context.CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * pbuf.size(), sizeof(glm::vec3));
+    context.UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
 
     while (!app.ShouldClose())
     {
         program.UseProgram();
         context.SetViewport(rect.width, rect.height);
         program.ps.om.rtv0.Attach(context.GetBackBuffer()).Clear({ 0.0f, 0.2f, 0.4f, 1.0f });
-        context.IASetIndexBuffer(indices, gli::format::FORMAT_R32_UINT_PACK32);
-        context.IASetVertexBuffer(program.vs.ia.POSITION, positions);
+        context.IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);
+        context.IASetVertexBuffer(program.vs.ia.POSITION, pos);
         program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
         context.DrawIndexed(3, 0, 0);
         context.Present();
