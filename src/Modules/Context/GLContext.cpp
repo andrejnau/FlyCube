@@ -186,6 +186,7 @@ Resource::Ptr GLContext::GetBackBuffer()
 void GLContext::Present()
 {
     glBlitNamedFramebuffer(m_final_framebuffer, 0, 0, 0, m_width, m_height, 0, m_height, m_width, 0, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    glfwSwapBuffers(m_window);
 }
 
 void GLContext::ResizeBackBuffer(int width, int height)

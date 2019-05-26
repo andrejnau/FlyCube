@@ -38,30 +38,39 @@ C++ graphics API agnostic, simple Engine/Framework, Sponza viewer.
 
 ## Engine API example
 ```cpp
-program.UseProgram();
+#include <AppBox/AppBox.h>
+#include <ProgramRef/PixelShaderPS.h>
+#include <ProgramRef/VertexShaderVS.h>
 
-scene.ia.indices.Bind();
-scene.ia.positions.BindToSlot(program.vs.ia.POSITION);
-scene.ia.normals.BindToSlot(program.vs.ia.NORMAL);
-scene.ia.tangents.BindToSlot(program.vs.ia.TANGENT);
-scene.ia.texcoords.BindToSlot(program.vs.ia.TEXCOORD);
-
-program.ps.om.rtv0.Attach(rtv);
-program.ps.om.dsv.Attach(dsv);
-
-program.vs.cbuffer.ConstantBuf.model = glm::transpose(model);
-program.vs.cbuffer.ConstantBuf.view = glm::transpose(view);
-program.vs.cbuffer.ConstantBuf.projection = glm::transpose(projection);
-
-for (auto& range : scene.ia.ranges)
+int main(int argc, char* argv[])
 {
-    auto& material = scene.GetMaterial(range.id);  
-    program.ps.srv.normalMap.Attach(material.texture.normal);
-    program.ps.srv.albedoMap.Attach(material.texture.albedo);
-    program.ps.srv.roughnessMap.Attach(material.texture.roughness);    
-    program.ps.srv.metalnessMap.Attach(material.texture.metalness);
-    program.ps.srv.opacityMap.Attach(material.texture.opacity);
+    AppBox app(argc, argv, "Triangle");
+    Context& context = app.GetContext();
+    AppRect rect = app.GetAppRect();
+    Program<PixelShaderPS, VertexShaderVS> program(context);
 
-    context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+    std::vector<uint32_t> index_values = { 0, 1, 2 };
+    Resource::Ptr indices = context.CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_values.size(), sizeof(uint32_t));
+    context.UpdateSubresource(indices, 0, index_values.data(), 0, 0);
+    std::vector<glm::vec3> position_values = {
+        glm::vec3(-0.5, -0.5, 0.0),
+        glm::vec3( 0.0,  0.5, 0.0),
+        glm::vec3( 0.5, -0.5, 0.0)
+    };
+    Resource::Ptr positions = context.CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * position_values.size(), sizeof(glm::vec3));
+    context.UpdateSubresource(positions, 0, position_values.data(), 0, 0);
+
+    while (!app.ShouldClose())
+    {
+        program.UseProgram();
+        context.SetViewport(rect.width, rect.height);
+        program.ps.om.rtv0.Attach(context.GetBackBuffer()).Clear({ 0.0f, 0.2f, 0.4f, 1.0f });
+        context.IASetIndexBuffer(indices, gli::format::FORMAT_R32_UINT_PACK32);
+        context.IASetVertexBuffer(program.vs.ia.POSITION, positions);
+        program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
+        context.DrawIndexed(3, 0, 0);
+        context.Present();
+        app.PollEvents();
+    }
 }
 ```

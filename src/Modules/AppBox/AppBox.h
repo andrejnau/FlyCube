@@ -7,22 +7,28 @@
 #include <memory>
 #include <Context/Context.h>
 
+struct AppRect
+{
+    int width;
+    int height;
+};
+
 class AppBox
 {
 public:
     using CreateSample = std::function<IScene::Ptr(Context&, int, int)>;
+    AppBox(int argc, char* argv[], const std::string& title);
     AppBox(int argc, char *argv[], const CreateSample& create_sample, const std::string& title);
     AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height);
     ~AppBox();
     int Run();
+    bool ShouldClose();
+    void PollEvents();
 
-    struct MonitorDesc
-    {
-        int width;
-        int height;
-    };
+    Context& GetContext();
+    AppRect GetAppRect() const;
 
-    static MonitorDesc GetPrimaryMonitorDesc();
+    static AppRect GetPrimaryMonitorRect();
 
 private:
     void Init();

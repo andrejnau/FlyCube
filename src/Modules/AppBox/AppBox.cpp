@@ -4,7 +4,12 @@
 #include <Context/ContextSelector.h>
 #include <Utilities/State.h>
 
-AppBox::AppBox(int argc, char *argv[], const CreateSample& create_sample, const std::string& title)
+AppBox::AppBox(int argc, char* argv[], const std::string& title)
+    : AppBox(argc, argv, {}, title)
+{
+}
+
+AppBox::AppBox(int argc, char* argv[], const CreateSample& create_sample, const std::string& title)
     : m_create_sample(create_sample)
     , m_api_type(ApiType::kDX12)
     , m_window(nullptr)
@@ -49,7 +54,7 @@ AppBox::AppBox(int argc, char *argv[], const CreateSample& create_sample, const 
     }
     m_title = api_title + " " + title;
 
-    auto monitor_desc = GetPrimaryMonitorDesc();
+    auto monitor_desc = GetPrimaryMonitorRect();
     m_width = monitor_desc.width / 1.5;
     m_height = monitor_desc.height / 1.5;
 
@@ -84,9 +89,6 @@ int AppBox::Run()
     if (!m_window)
         return EXIT_FAILURE;
 
-    m_context = CreateContext(m_api_type, m_window);
-    m_sample = m_create_sample(*m_context, m_width, m_height);
-
     int frame_number = 0;
     double last_time = glfwGetTime();
     while (!glfwWindowShouldClose(m_window))
@@ -96,12 +98,10 @@ int AppBox::Run()
         if (m_exit)
             break;
 
-        m_sample->OnUpdate();
-        m_sample->OnRender();
-
-        if (m_api_type == ApiType::kOpenGL)
+        if (m_sample)
         {
-            glfwSwapBuffers(m_window);
+            m_sample->OnUpdate();
+            m_sample->OnRender();
         }
 
         ++frame_number;
@@ -124,7 +124,28 @@ int AppBox::Run()
     return EXIT_SUCCESS;
 }
 
-AppBox::MonitorDesc AppBox::GetPrimaryMonitorDesc()
+bool AppBox::ShouldClose()
+{
+    return glfwWindowShouldClose(m_window) || m_exit;
+}
+
+void AppBox::PollEvents()
+{
+    glfwPollEvents();
+}
+
+Context& AppBox::GetContext()
+{
+    assert(m_context);
+    return *m_context;
+}
+
+AppRect AppBox::GetAppRect() const
+{
+    return { m_width, m_height };
+}
+
+AppRect AppBox::GetPrimaryMonitorRect()
 {
     glfwInit();
     auto monitor_desc = *glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -138,6 +159,9 @@ void AppBox::Init()
 
     InitWindow();
     SetWindowToCenter();
+    m_context = CreateContext(m_api_type, m_window);
+    if (m_create_sample)
+        m_sample = m_create_sample(*m_context, m_width, m_height);
 }
 
 void AppBox::InitWindow()
@@ -192,7 +216,8 @@ void AppBox::OnSizeChanged(GLFWwindow* window, int width, int height)
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
     self->m_width = width;
     self->m_height = height;
-    self->m_sample->OnResize(width, height);
+    if (self->m_sample)
+        self->m_sample->OnResize(width, height);
 }
 
 void AppBox::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -210,12 +235,15 @@ void AppBox::OnKey(GLFWwindow* window, int key, int scancode, int action, int mo
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
 
-    self->m_sample->OnKey(key, action);
+    if (self->m_sample)
+        self->m_sample->OnKey(key, action);
 }
 
 void AppBox::OnMouse(GLFWwindow* window, double xpos, double ypos)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
+    if (!self->m_sample)
+        return;
     static bool first_event = true;
     if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
     {
@@ -232,17 +260,23 @@ void AppBox::OnMouse(GLFWwindow* window, double xpos, double ypos)
 void AppBox::OnMouseButton(GLFWwindow* window, int button, int action, int mods)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
+    if (!self->m_sample)
+        return;
     self->m_sample->OnMouseButton(button, action);
 }
 
 void AppBox::OnScroll(GLFWwindow* window, double xoffset, double yoffset)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
+    if (!self->m_sample)
+        return;
     self->m_sample->OnScroll(xoffset, yoffset);
 }
 
 void AppBox::OnInputChar(GLFWwindow* window, unsigned int ch)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
+    if (!self->m_sample)
+        return;
     self->m_sample->OnInputChar(ch);
 }

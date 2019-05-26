@@ -3,7 +3,12 @@ struct VS_OUTPUT
     float4 pos: SV_POSITION;
 };
 
+cbuffer Settings
+{
+    float4 color;
+};
+
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
-   return float4(1, 0, 0, 1);
+   return color;
 }
