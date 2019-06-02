@@ -75,8 +75,16 @@ public:
 
     void Gen()
     {
-        std::ofstream os(m_option.output_dir + "/" + m_option.shader_name + ".h");
-        m_tmpl.render(m_tcontext, os);
+        std::ifstream is(m_option.output_dir + "/" + m_option.shader_name + ".h");
+        std::string old_content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
+        std::stringstream buf;
+        m_tmpl.render(m_tcontext, buf);
+        std::string new_content = buf.str();
+        if (new_content != old_content)
+        {
+            std::ofstream os(m_option.output_dir + "/" + m_option.shader_name + ".h");
+            os << new_content;
+        }
     }
 
 private:
@@ -167,7 +175,7 @@ private:
         m_tcontext["Entrypoint"] = m_entrypoint;
         m_tcontext["Target"] = m_target;
 
-        mustache::data tcbuffers{ mustache::data::type::list };        
+        mustache::data tcbuffers{ mustache::data::type::list };
 
         D3D12_SHADER_DESC desc = {};
         reflector->GetDesc(&desc);
