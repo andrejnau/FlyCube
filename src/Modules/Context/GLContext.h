@@ -24,6 +24,8 @@ public:
     virtual void IASetIndexBuffer(Resource::Ptr res, gli::format Format) override;
     virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res) override;
 
+    virtual void UseProgram(ProgramApi& program) override;
+
     virtual void BeginEvent(const std::string& name) override;
     virtual void EndEvent() override;
 
@@ -35,7 +37,6 @@ public:
 
     virtual void ResizeBackBuffer(int width, int height) override;
 
-    void UseProgram(GLProgramApi& program_api);
     GLProgramApi* m_current_program = nullptr;
     Resource::Ptr m_final_texture;
     GLuint m_final_framebuffer = 0;

@@ -159,8 +159,6 @@ void GLProgramApi::UseProgram()
         glEnable(GL_BLEND);
     else
         glDisable(GL_BLEND);
-   
-    m_context.UseProgram(*this);
 }
 
 void GLProgramApi::ApplyBindings()

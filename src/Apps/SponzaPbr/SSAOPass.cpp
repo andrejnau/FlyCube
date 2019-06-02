@@ -71,7 +71,7 @@ void SSAOPass::OnRender()
 
     m_context.SetViewport(m_width, m_height);
 
-    m_program.UseProgram();
+    m_context.UseProgram(m_program);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_program.ps.om.rtv0.Attach(m_ao).Clear(color);
@@ -91,7 +91,7 @@ void SSAOPass::OnRender()
 
     if (m_settings.use_ao_blur)
     {
-        m_program_blur.UseProgram();
+        m_context.UseProgram(m_program_blur);
         m_program_blur.ps.uav.out_uav.Attach(m_ao_blur);
         m_program_blur.ps.om.dsv.Attach(m_depth_stencil_view).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
 

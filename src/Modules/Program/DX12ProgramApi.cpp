@@ -224,7 +224,6 @@ void DX12ProgramApi::LinkProgram()
 
 void DX12ProgramApi::UseProgram()
 {
-    m_context.UseProgram(*this);
     m_changed_binding = true;
     m_context.command_list->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     SetRootSignature(m_root_signature.Get());

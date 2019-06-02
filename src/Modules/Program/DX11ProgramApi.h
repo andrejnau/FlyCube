@@ -13,7 +13,7 @@ public:
     DX11ProgramApi(DX11Context& context);
 
     virtual void LinkProgram() override;
-    virtual void UseProgram() override;
+    void UseProgram();
     virtual void ApplyBindings() override;
     virtual void CompileShader(const ShaderBase& shader) override;
 

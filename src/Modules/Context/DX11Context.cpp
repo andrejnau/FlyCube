@@ -339,6 +339,13 @@ void DX11Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires)
     device_context->IASetVertexBuffers(slot, 1, buf.GetAddressOf(), &res->stride, &offset);
 }
 
+void DX11Context::UseProgram(ProgramApi& program)
+{
+    auto& program_api = static_cast<DX11ProgramApi&>(program);
+    m_current_program = &program_api;
+    m_current_program->UseProgram();
+}
+
 void DX11Context::BeginEvent(const std::string& name)
 {
     std::wstring wname = utf8_to_wstring(name);
@@ -376,11 +383,6 @@ Resource::Ptr DX11Context::GetBackBuffer()
 void DX11Context::Present()
 {
     ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
-}
-
-void DX11Context::UseProgram(DX11ProgramApi& program_api)
-{
-    m_current_program = &program_api;
 }
 
 void DX11Context::ResizeBackBuffer(int width, int height)

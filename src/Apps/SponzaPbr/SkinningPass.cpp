@@ -13,7 +13,7 @@ void SkinningPass::OnUpdate()
 
 void SkinningPass::OnRender()
 {
-    m_program.UseProgram();
+    m_context.UseProgram(m_program);
 
     for (auto& model : m_input.scene_list)
     {

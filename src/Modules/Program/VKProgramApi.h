@@ -22,7 +22,7 @@ public:
     void CreateGrPipeLine();
     void CreateComputePipeLine();
     void CreatePipeLine();
-    virtual void UseProgram() override;
+    void UseProgram();
     virtual void ApplyBindings() override;
     virtual View::Ptr CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override;
     virtual void CompileShader(const ShaderBase& shader) override;

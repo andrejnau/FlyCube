@@ -22,7 +22,7 @@ void ComputeLuminance::OnUpdate()
 void ComputeLuminance::GetLum2DPassCS(size_t buf_id, uint32_t thread_group_x, uint32_t thread_group_y)
 {
     m_HDRLum2DPassCS.cs.cbuffer.cbv.dispatchSize = glm::uvec2(thread_group_x, thread_group_y);
-    m_HDRLum2DPassCS.UseProgram();
+    m_context.UseProgram(m_HDRLum2DPassCS);
 
     m_HDRLum2DPassCS.cs.uav.result.Attach(m_use_res[buf_id]);
     m_HDRLum2DPassCS.cs.srv.data.Attach(m_input.hdr_res);
@@ -32,7 +32,7 @@ void ComputeLuminance::GetLum2DPassCS(size_t buf_id, uint32_t thread_group_x, ui
 void ComputeLuminance::GetLum1DPassCS(size_t buf_id, uint32_t input_buffer_size, uint32_t thread_group_x)
 {
     m_HDRLum1DPassCS.cs.cbuffer.cbv.bufferSize = input_buffer_size;
-    m_HDRLum1DPassCS.UseProgram();
+    m_context.UseProgram(m_HDRLum1DPassCS);
 
     m_HDRLum1DPassCS.cs.srv.data.Attach(m_use_res[buf_id - 1]);
     m_HDRLum1DPassCS.cs.uav.result.Attach(m_use_res[buf_id]);
@@ -53,7 +53,7 @@ void ComputeLuminance::Draw(size_t buf_id)
     m_HDRApply.ps.cbuffer.HDRSetting.exposure = m_settings.exposure;
     m_HDRApply.ps.cbuffer.HDRSetting.white = m_settings.white;
 
-    m_HDRApply.UseProgram();
+    m_context.UseProgram(m_HDRApply);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_HDRApply.ps.om.rtv0.Attach(m_input.rtv).Clear(color);

@@ -22,7 +22,7 @@ public:
     GLProgramApi(GLContext& context);
 
     virtual void LinkProgram() override;
-    virtual void UseProgram() override;
+    void UseProgram();
     virtual void ApplyBindings() override;
     virtual void CompileShader(const ShaderBase& shader) override;
     void ParseShaders();

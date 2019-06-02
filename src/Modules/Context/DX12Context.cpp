@@ -499,6 +499,15 @@ void DX12Context::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires)
     command_list->IASetVertexBuffers(slot, 1, &vertexBufferView);
 }
 
+void DX12Context::UseProgram(ProgramApi& program)
+{
+    auto& program_api = static_cast<DX12ProgramApi&>(program);
+    if (m_current_program != &program_api && m_use_render_passes)
+        CloseRenderPass();
+    m_current_program = &program_api;
+    m_current_program->UseProgram();
+}
+
 void DX12Context::BeginEvent(const std::string& name)
 {
     std::wstring wname = utf8_to_wstring(name);
@@ -588,13 +597,6 @@ void DX12Context::ResourceBarrier(DX12Resource& res, D3D12_RESOURCE_STATES state
     if (res.state != state)
         command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res.default_res.Get(), res.state, state));
     res.state = state;
-}
-
-void DX12Context::UseProgram(DX12ProgramApi& program_api)
-{
-    if (m_current_program != &program_api && m_use_render_passes)
-        CloseRenderPass();
-    m_current_program = &program_api;
 }
 
 DescriptorPool& DX12Context::GetDescriptorPool()

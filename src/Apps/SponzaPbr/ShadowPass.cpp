@@ -46,7 +46,7 @@ void ShadowPass::OnRender()
 
     m_context.SetViewport(m_settings.s_size, m_settings.s_size);
 
-    m_program.UseProgram();
+    m_context.UseProgram(m_program);
 
     m_program.ps.sampler.g_sampler.Attach(m_sampler);
 

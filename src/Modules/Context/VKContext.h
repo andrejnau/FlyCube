@@ -31,6 +31,8 @@ public:
     virtual void SetViewport(float width, float height) override;
     virtual void SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom) override;
 
+    virtual void UseProgram(ProgramApi& program) override;
+
     virtual void IASetIndexBuffer(Resource::Ptr res, gli::format Format) override;
     virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res) override;
 
@@ -49,9 +51,7 @@ public:
 
     virtual void ResizeBackBuffer(int width, int height) override;
 
-    void UseProgram(VKProgramApi& program_api);
     VKProgramApi* m_current_program = nullptr;
-
 
     VkInstance m_instance = VK_NULL_HANDLE;
     VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;

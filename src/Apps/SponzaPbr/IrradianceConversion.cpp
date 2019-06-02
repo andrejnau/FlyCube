@@ -45,7 +45,7 @@ void IrradianceConversion::DrawIrradianceConvolution()
 {
     m_context.SetViewport(m_input.irradince.size, m_input.irradince.size);
 
-    m_program_irradiance_convolution.UseProgram();
+    m_context.UseProgram(m_program_irradiance_convolution);
 
     m_program_irradiance_convolution.ps.sampler.g_sampler.Attach(m_sampler);
 
@@ -91,7 +91,7 @@ void IrradianceConversion::DrawIrradianceConvolution()
 
 void IrradianceConversion::DrawPrefilter()
 {
-    m_program_prefilter.UseProgram();
+    m_context.UseProgram(m_program_prefilter);
 
     m_program_prefilter.ps.sampler.g_sampler.Attach(m_sampler);
 

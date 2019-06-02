@@ -115,7 +115,7 @@ void IBLCompute::OnRender()
 
 void IBLCompute::DrawPrePass(Model & ibl_model)
 {
-    m_program_pre_pass.UseProgram();
+    m_context.UseProgram(m_program_pre_pass);
 
     m_program_pre_pass.ps.sampler.g_sampler.Attach(m_sampler);
 
@@ -176,7 +176,7 @@ void IBLCompute::DrawPrePass(Model & ibl_model)
 
 void IBLCompute::Draw(Model& ibl_model)
 {
-    m_program.UseProgram();
+    m_context.UseProgram(m_program);
 
     m_program.ps.sampler.g_sampler.Attach(m_sampler);
     m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_compare_sampler);
@@ -261,7 +261,7 @@ void IBLCompute::Draw(Model& ibl_model)
 
 void IBLCompute::DrawBackgroud(Model& ibl_model)
 {
-    m_program_backgroud.UseProgram();
+    m_context.UseProgram(m_program_backgroud);
 
     m_program_backgroud.SetDepthStencilState({ true, DepthComparison::kLessEqual });
 
@@ -311,7 +311,7 @@ void IBLCompute::DrawBackgroud(Model& ibl_model)
 
 void IBLCompute::DrawDownSample(Model & ibl_model, size_t texture_mips)
 {
-    m_program_downsample.UseProgram();
+    m_context.UseProgram(m_program_downsample);
     for (size_t i = 1; i < texture_mips; ++i)
     {
         m_program_downsample.cs.srv.inputTexture.Attach(ibl_model.ibl_rtv, {i - 1, 1});

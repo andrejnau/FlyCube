@@ -843,6 +843,21 @@ void VKContext::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t
     vkCmdSetScissor(m_cmd_bufs[m_frame_index], 0, 1, &rect2D);
 }
 
+void VKContext::UseProgram(ProgramApi& program)
+{
+    auto& program_api = static_cast<VKProgramApi&>(program);
+    if (m_current_program != &program_api)
+    {
+        if (m_is_open_render_pass)
+        {
+            vkCmdEndRenderPass(m_cmd_bufs[GetFrameIndex()]);
+            m_is_open_render_pass = false;
+        }
+    }
+    m_current_program = &program_api;
+    m_current_program->UseProgram();
+}
+
 void VKContext::IASetIndexBuffer(Resource::Ptr ires, gli::format Format)
 {
     VKResource::Ptr res = std::static_pointer_cast<VKResource>(ires);
@@ -992,19 +1007,6 @@ void VKContext::Present()
 
 void VKContext::ResizeBackBuffer(int width, int height)
 {
-}
-
-void VKContext::UseProgram(VKProgramApi & program_api)
-{
-    if (m_current_program != &program_api)
-    {
-        if (m_is_open_render_pass)
-        {
-            vkCmdEndRenderPass(m_cmd_bufs[GetFrameIndex()]);
-            m_is_open_render_pass = false;
-        }
-    }
-    m_current_program = &program_api;
 }
 
 VKDescriptorPool& VKContext::GetDescriptorPool()

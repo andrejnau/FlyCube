@@ -75,7 +75,7 @@ void RayTracingAOPass::OnRender()
         ++m_raytracing_program.lib.cbuffer.Settings.frame_index;
     m_is_initialized = true;
 
-    m_raytracing_program.UseProgram();
+    m_context.UseProgram(m_raytracing_program);
     m_raytracing_program.lib.srv.gPosition.Attach(m_input.geometry_pass.position);
     m_raytracing_program.lib.srv.gNormal.Attach(m_input.geometry_pass.normal);
     m_raytracing_program.lib.srv.geometry.Attach(m_top);
@@ -84,7 +84,7 @@ void RayTracingAOPass::OnRender()
 
     if (m_settings.use_ao_blur)
     {
-        m_program_blur.UseProgram();
+        m_context.UseProgram(m_program_blur);
         m_program_blur.ps.uav.out_uav.Attach(m_ao_blur);
 
         m_input.square.ia.indices.Bind();

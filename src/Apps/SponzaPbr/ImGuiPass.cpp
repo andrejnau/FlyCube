@@ -86,7 +86,7 @@ void ImGuiPass::OnRender()
     // TODO: remove it
     DX11StateBackup guard(dynamic_cast<DX11Context*>(&m_context));
 
-    m_program.UseProgram();
+    m_context.UseProgram(m_program);
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f * m_height, 0.0f);
 

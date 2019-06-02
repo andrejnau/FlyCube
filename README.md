@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 
     while (!app.ShouldClose())
     {
-        program.UseProgram();
+        context.UseProgram(program);
         context.SetViewport(rect.width, rect.height);
         program.ps.om.rtv0.Attach(context.GetBackBuffer()).Clear({ 0.0f, 0.2f, 0.4f, 1.0f });
         context.IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);

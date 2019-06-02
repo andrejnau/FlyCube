@@ -35,6 +35,8 @@ public:
     virtual void IASetIndexBuffer(Resource::Ptr res, gli::format Format) = 0;
     virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res) = 0;
 
+    virtual void UseProgram(ProgramApi& program) = 0;
+
     virtual void BeginEvent(const std::string& name) = 0;
     virtual void EndEvent() = 0;
 

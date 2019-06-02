@@ -156,6 +156,13 @@ void GLContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires)
     glVertexArrayVertexBuffer(m_current_program->m_vao, slot, res.buffer, 0, res.buffer_stride);
 }
 
+void GLContext::UseProgram(ProgramApi& program)
+{
+    auto& program_api = static_cast<GLProgramApi&>(program);
+    m_current_program = &program_api;
+    m_current_program->UseProgram();
+}
+
 void GLContext::BeginEvent(const std::string& name)
 {
     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, name.c_str());
@@ -191,9 +198,4 @@ void GLContext::Present()
 
 void GLContext::ResizeBackBuffer(int width, int height)
 {
-}
-
-void GLContext::UseProgram(GLProgramApi & program_api)
-{
-    m_current_program = std::addressof(program_api);
 }

@@ -28,6 +28,8 @@ public:
     virtual void IASetIndexBuffer(Resource::Ptr res, gli::format Format) override;
     virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res) override;
 
+    virtual void UseProgram(ProgramApi& program) override;
+
     virtual void BeginEvent(const std::string& name) override;
     virtual void EndEvent() override;
 
@@ -36,8 +38,6 @@ public:
 
     virtual Resource::Ptr GetBackBuffer() override;
     virtual void Present() override;
-
-    void UseProgram(DX11ProgramApi& program_api);
 
     ComPtr<ID3D11Device4> device;
     ComPtr<ID3D11DeviceContext4> device_context;

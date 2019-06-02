@@ -238,11 +238,6 @@ public:
         DevNull(ApplyCallback<Args>(fn)...);
     }
 
-    void UseProgram()
-    {
-        m_program_base->UseProgram();
-    }
-
     void LinkProgram()
     {
         m_program_base->LinkProgram();
@@ -261,6 +256,11 @@ public:
     void SetDepthStencilState(const DepthStencilDesc& desc)
     {
         m_program_base->SetDepthStencilState(desc);
+    }
+
+    operator ProgramApi&()
+    {
+        return *m_program_base;
     }
 
 private:

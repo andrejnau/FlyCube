@@ -32,7 +32,6 @@ void DX11ProgramApi::ClearBindings()
 
 void DX11ProgramApi::UseProgram()
 {
-    m_context.UseProgram(*this);
     m_context.device_context->VSSetShader(vshader.Get(), nullptr, 0);
     m_context.device_context->GSSetShader(gshader.Get(), nullptr, 0);
     m_context.device_context->DSSetShader(nullptr, nullptr, 0);

@@ -40,7 +40,7 @@ void Equirectangular2Cubemap::DrawEquirectangular2Cubemap()
 {
     m_context.SetViewport(m_texture_size, m_texture_size);
 
-    m_program_equirectangular2cubemap.UseProgram();
+    m_context.UseProgram(m_program_equirectangular2cubemap);
 
     m_program_equirectangular2cubemap.ps.sampler.g_sampler.Attach(m_sampler);
 
@@ -83,7 +83,7 @@ void Equirectangular2Cubemap::DrawEquirectangular2Cubemap()
         }
     }
 
-    m_program_downsample.UseProgram();
+    m_context.UseProgram(m_program_downsample);
     for (size_t i = 1; i < m_texture_mips; ++i)
     {
         m_program_downsample.cs.srv.inputTexture.Attach(output.environment, {i - 1, 1});

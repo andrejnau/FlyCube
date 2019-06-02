@@ -27,7 +27,6 @@ public:
     const std::string& GetBindingName(const BindKey& bind_key) const;
     virtual void AddAvailableShaderType(ShaderType type) {}
     virtual void LinkProgram() = 0;
-    virtual void UseProgram() = 0;
     virtual void ApplyBindings() = 0;
     virtual void CompileShader(const ShaderBase& shader) = 0;
     virtual void SetCBufferLayout(const BindKey& bind_key, BufferLayout& buffer_layout) = 0;

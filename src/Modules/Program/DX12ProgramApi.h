@@ -22,7 +22,7 @@ public:
     DX12ProgramApi(DX12Context& context);
 
     virtual void LinkProgram() override;
-    virtual void UseProgram() override;
+    void UseProgram();
     virtual void ApplyBindings() override;
     virtual void CompileShader(const ShaderBase& shader) override;
     virtual void ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color) override;

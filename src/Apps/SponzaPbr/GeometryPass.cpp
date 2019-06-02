@@ -31,7 +31,7 @@ void GeometryPass::OnRender()
 {
     m_context.SetViewport(m_width, m_height);
 
-    m_program.UseProgram();
+    m_context.UseProgram(m_program);
 
     m_program.ps.sampler.g_sampler.Attach(m_sampler);
 

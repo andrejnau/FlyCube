@@ -202,7 +202,6 @@ void VKProgramApi::CreatePipeLine()
 
 void VKProgramApi::UseProgram()
 {
-    m_context.UseProgram(*this);
 }
 
 void VKProgramApi::ApplyBindings()

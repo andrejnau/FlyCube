@@ -44,12 +44,12 @@ public:
 
     virtual void OnRender() override
     {
-        m_raytracing_program.UseProgram();
+        m_context.UseProgram(m_raytracing_program);
         m_raytracing_program.lib.srv.geometry.Attach(m_top);
         m_raytracing_program.lib.uav.result.Attach(m_uav);
         m_context.DispatchRays(m_width, m_height, 1);
 
-        m_graphics_program.UseProgram();
+        m_context.UseProgram(m_graphics_program);
         m_context.SetViewport(m_width, m_height);
         m_graphics_program.ps.om.rtv0.Attach(m_context.GetBackBuffer());
         m_square.ia.indices.Bind();

@@ -34,6 +34,8 @@ public:
     virtual void IASetIndexBuffer(Resource::Ptr res, gli::format Format) override;
     virtual void IASetVertexBuffer(uint32_t slot, Resource::Ptr res) override;
 
+    virtual void UseProgram(ProgramApi& program) override;
+
     virtual void BeginEvent(const std::string& name) override;
     virtual void EndEvent() override;
 
@@ -52,7 +54,6 @@ public:
 
     void ResourceBarrier(const DX12Resource::Ptr& res, D3D12_RESOURCE_STATES state);
     void ResourceBarrier(DX12Resource& res, D3D12_RESOURCE_STATES state);
-    void UseProgram(DX12ProgramApi& program_api);
 
     DescriptorPool& GetDescriptorPool();
     void QueryOnDelete(ComPtr<IUnknown> res);

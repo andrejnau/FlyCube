@@ -32,7 +32,7 @@ void BRDFGen::DrawBRDF()
 {
     m_context.SetViewport(m_size, m_size);
 
-    m_program.UseProgram();
+    m_context.UseProgram(m_program);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
     m_program.ps.om.rtv0.Attach(output.brdf).Clear(color);
