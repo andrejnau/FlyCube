@@ -139,6 +139,7 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
     }
 
     std::vector<LPCWSTR> arguments;
+    arguments.push_back(L"/Zi");
     if (option.spirv)
     {
         arguments.push_back(L"-spirv");
