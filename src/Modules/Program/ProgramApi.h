@@ -2,18 +2,12 @@
 
 #include <Context/BaseTypes.h>
 #include <Resource/Resource.h>
-#include <Utilities/FileUtility.h>
-#include <Utilities/DXUtility.h>
 #include <map>
 #include <memory>
 #include <vector>
 
-#include <d3dcompiler.h>
-#include <wrl.h>
 #include <assert.h>
 #include "IShaderBlobProvider.h"
-
-using namespace Microsoft::WRL;
 
 class BufferLayout;
 class ShaderBase;
@@ -32,7 +26,7 @@ public:
     virtual void SetCBufferLayout(const BindKey& bind_key, BufferLayout& buffer_layout) = 0;
     virtual void Attach(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) = 0;
     virtual void ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color) = 0;
-    virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) = 0;
+    virtual void ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil) = 0;
     virtual void SetRasterizeState(const RasterizerDesc& desc) = 0;
     virtual void SetBlendState(const BlendDesc& desc) = 0;
     virtual void SetDepthStencilState(const DepthStencilDesc& desc) = 0;

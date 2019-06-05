@@ -40,7 +40,7 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11GeSRVDesc(const D3D11_SHADER_INPUT_BIND_DESC
             }
         }
 
-        auto setup_mips = [&](UINT& MostDetailedMip, UINT& MipLevels)
+        auto setup_mips = [&](uint32_t& MostDetailedMip, uint32_t& MipLevels)
         {
             MostDetailedMip = view_desc.level;
             if (view_desc.count == -1)

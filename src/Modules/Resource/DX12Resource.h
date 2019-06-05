@@ -7,6 +7,9 @@
 #include "Context/BaseTypes.h"
 #include <View/DX12View.h>
 
+#include <wrl.h>
+using namespace Microsoft::WRL;
+
 class DX12Context;
 
 class DX12Resource : public Resource

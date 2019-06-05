@@ -12,7 +12,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const D3D12_SHADER_INPUT_BIND_DESC
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
         srv_desc.Format = DXGI_FORMAT_UNKNOWN;
         srv_desc.Buffer.FirstElement = 0;
-        srv_desc.Buffer.NumElements = static_cast<UINT>(desc.Width / res.stride);
+        srv_desc.Buffer.NumElements = static_cast<uint32_t>(desc.Width / res.stride);
         srv_desc.Buffer.StructureByteStride = res.stride;
     }
     else
@@ -36,7 +36,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const D3D12_SHADER_INPUT_BIND_DESC
             }
         }
 
-        auto setup_mips = [&](UINT& MostDetailedMip, UINT& MipLevels)
+        auto setup_mips = [&](uint32_t& MostDetailedMip, uint32_t& MipLevels)
         {
             MostDetailedMip = view_desc.level;
             if (view_desc.count == -1)
@@ -133,7 +133,7 @@ D3D12_UNORDERED_ACCESS_VIEW_DESC DX12GetUAVDesc(const D3D12_SHADER_INPUT_BIND_DE
         uav_desc.Format = DXGI_FORMAT_UNKNOWN;
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
         uav_desc.Buffer.FirstElement = 0;
-        uav_desc.Buffer.NumElements = static_cast<UINT>(desc.Width / res.stride);
+        uav_desc.Buffer.NumElements = static_cast<uint32_t>(desc.Width / res.stride);
         uav_desc.Buffer.StructureByteStride = res.stride;
     }
     else

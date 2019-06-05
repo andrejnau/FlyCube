@@ -56,8 +56,10 @@ source_group("Shader Files" FILES ${shaders_files})
 source_group("Shader Ref Files" FILES ${shaders_ref})
 
 add_executable(${target} WIN32 ${headers} ${sources} ${shaders_files} ${shaders_ref})
-set_target_properties(${target} PROPERTIES
-                        LINK_FLAGS "/ENTRY:mainCRTStartup")
+if (WIN32)
+    set_target_properties(${target} PROPERTIES
+                            LINK_FLAGS "/ENTRY:mainCRTStartup")
+endif()
 
 target_include_directories(${target}
     PUBLIC
@@ -67,10 +69,6 @@ target_include_directories(${target}
 
 target_link_libraries(${target}
     Context
-    d3dcompiler
-    dxgi
-    d3d11
-    dxguid
     assimp
     SOIL
     AppBox

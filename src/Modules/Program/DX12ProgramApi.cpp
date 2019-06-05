@@ -12,7 +12,7 @@
 
 static const WCHAR* kHitGroup = L"hit_group";
 
-inline UINT Align(UINT size, UINT alignment)
+inline uint32_t Align(uint32_t size, uint32_t alignment)
 {
     return (size + (alignment - 1)) & ~(alignment - 1);
 }
@@ -42,7 +42,7 @@ ShaderInfo GetShaderInfo(ComPtr<ID3DBlob> blob)
 
     DXCLoader loader;
     CComPtr<IDxcBlobEncoding> source;
-    UINT shade_idx = 0;
+    uint32_t shade_idx = 0;
     ASSERT_SUCCEEDED(loader.library->CreateBlobWithEncodingOnHeapCopy(blob->GetBufferPointer(), static_cast<UINT32>(blob->GetBufferSize()), CP_ACP, &source));
     ASSERT_SUCCEEDED(loader.reflection->Load(source));
     uint32_t part_count = 0;
@@ -355,7 +355,7 @@ void DX12ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>
     }
 }
 
-void DX12ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+void DX12ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)
 {
     if (m_context.m_use_render_passes)
     {
@@ -562,7 +562,7 @@ void DX12ProgramApi::SetRootSignature(ID3D12RootSignature * pRootSignature)
         m_context.command_list->SetGraphicsRootSignature(pRootSignature);
 }
 
-void DX12ProgramApi::SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor)
+void DX12ProgramApi::SetRootDescriptorTable(uint32_t RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor)
 {
     if (RootParameterIndex == -1)
         return;
@@ -572,7 +572,7 @@ void DX12ProgramApi::SetRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_D
         m_context.command_list->SetGraphicsRootDescriptorTable(RootParameterIndex, BaseDescriptor);
 }
 
-void DX12ProgramApi::SetRootConstantBufferView(UINT RootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS BufferLocation)
+void DX12ProgramApi::SetRootConstantBufferView(uint32_t RootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS BufferLocation)
 {
     if (RootParameterIndex == -1)
         return;
@@ -588,7 +588,7 @@ std::vector<D3D12_INPUT_ELEMENT_DESC> DX12ProgramApi::GetInputLayout(ComPtr<ID3D
     reflector->GetDesc(&shader_desc);
 
     std::vector<D3D12_INPUT_ELEMENT_DESC> input_layout_desc;
-    for (UINT i = 0; i < shader_desc.InputParameters; ++i)
+    for (uint32_t i = 0; i < shader_desc.InputParameters; ++i)
     {
         D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
         reflector->GetInputParameterDesc(i, &param_desc);
@@ -648,7 +648,7 @@ void DX12ProgramApi::CreateGraphicsPSO()
         return;
     m_pso_desc_cache = false;
 
-    m_pso_desc.InputLayout.NumElements = static_cast<UINT>(m_input_layout.size());
+    m_pso_desc.InputLayout.NumElements = static_cast<uint32_t>(m_input_layout.size());
     m_pso_desc.InputLayout.pInputElementDescs = m_input_layout.data();
     m_pso_desc.pRootSignature = m_root_signature.Get();
     m_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -955,7 +955,7 @@ void DX12ProgramApi::ParseShaders()
         {
             D3D12_SHADER_DESC desc = {};
             shader_reflector->GetDesc(&desc);
-            for (UINT i = 0; i < desc.BoundResources; ++i)
+            for (uint32_t i = 0; i < desc.BoundResources; ++i)
             {
                 D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
                 ASSERT_SUCCEEDED(shader_reflector->GetResourceBindingDesc(i, &res_desc));
@@ -987,7 +987,7 @@ void DX12ProgramApi::ParseShaders()
 
             if (shader_blob.first == ShaderType::kPixel)
             {
-                for (UINT i = 0; i < desc.OutputParameters; ++i)
+                for (uint32_t i = 0; i < desc.OutputParameters; ++i)
                 {
                     D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
                     shader_reflector->GetOutputParameterDesc(i, &param_desc);
@@ -1008,7 +1008,7 @@ void DX12ProgramApi::ParseShaders()
                     auto reflector = library_reflector->GetFunctionByIndex(j);
                     D3D12_FUNCTION_DESC desc = {};
                     reflector->GetDesc(&desc);
-                    for (UINT i = 0; i < desc.BoundResources; ++i)
+                    for (uint32_t i = 0; i < desc.BoundResources; ++i)
                     {
                         D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
                         ASSERT_SUCCEEDED(reflector->GetResourceBindingDesc(i, &res_desc));
@@ -1189,7 +1189,7 @@ void DX12ProgramApi::ParseShaders()
         D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
 
     CD3DX12_ROOT_SIGNATURE_DESC root_signature_desc;
-    root_signature_desc.Init(static_cast<UINT>(root_parameters.size()),
+    root_signature_desc.Init(static_cast<uint32_t>(root_parameters.size()),
         root_parameters.data(),
         0,
         nullptr,
@@ -1221,7 +1221,7 @@ void DX12ProgramApi::OMSetRenderTargets()
         om_dsv = ConvertView(view)->GetCpuHandle();
         om_dsv_ptr = &om_dsv;
     }
-    m_context.command_list->OMSetRenderTargets(static_cast<UINT>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv_ptr);
+    m_context.command_list->OMSetRenderTargets(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv_ptr);
 }
 
 void DX12ProgramApi::BeginRenderPass()
@@ -1251,7 +1251,7 @@ void DX12ProgramApi::BeginRenderPass()
         om_dsv = { ConvertView(view)->GetCpuHandle(), begin, begin, end, end };
         om_dsv_ptr = &om_dsv;
     }
-    m_context.command_list4->BeginRenderPass(static_cast<UINT>(om_rtv.size()), om_rtv.data(), om_dsv_ptr, D3D12_RENDER_PASS_FLAG_NONE);
+    m_context.command_list4->BeginRenderPass(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), om_dsv_ptr, D3D12_RENDER_PASS_FLAG_NONE);
 
     for (uint32_t slot = 0; slot < m_num_rtv; ++slot)
         m_clear_cache.GetColorLoadOp(slot) = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE;

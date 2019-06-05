@@ -14,4 +14,4 @@ struct SpirvOption
     bool vulkan_semantics = true;
 };
 
-std::vector<uint32_t> SpirvCompile(const ShaderBase& shader, const SpirvOption& option);
+std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& option);

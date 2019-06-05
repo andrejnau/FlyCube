@@ -42,7 +42,7 @@ public:
 {{#UAVs}}       UAVBinding {{Name}};
 {{/UAVs}}    } uav;
 
-    struct
+    struct IA
     {
 {{#Inputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
 {{/Inputs}}    } ia;

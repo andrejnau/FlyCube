@@ -1,6 +1,10 @@
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
+#ifdef _WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
+#else
+#define VK_USE_PLATFORM_XLIB_KHR
+#endif
 #include <GLFW/glfw3.h>
 #include <vulkan/vk_sdk_platform.h>
 #include "VKContext.h"
@@ -99,7 +103,11 @@ void VKContext::CreateInstance()
     std::set<std::string> req_extension = {
         VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
         VK_KHR_SURFACE_EXTENSION_NAME,
+    #ifdef _WIN32
         VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+    #else
+        VK_KHR_XLIB_SURFACE_EXTENSION_NAME
+    #endif
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME
     };
     std::vector<const char*> found_extension;
@@ -505,7 +513,7 @@ Resource::Ptr VKContext::CreateSampler(const SamplerDesc & desc)
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = D3D12_FLOAT32_MAX;
+    samplerInfo.maxLod = std::numeric_limits<float>::max();
 
     /*switch (desc.filter)
     {

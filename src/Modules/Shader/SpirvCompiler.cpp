@@ -1,15 +1,18 @@
 #include "Shader/SpirvCompiler.h"
-#include "Shader/DXCompiler.h"
 #include <fstream>
-#include <Windows.h>
-#include <Utilities/FileUtility.h> 
+#include <Utilities/FileUtility.h>
 #include <cassert>
+
+#ifdef _WIN32
+#include "Shader/DXCompiler.h"
+#endif
 
 class TmpSpirvFile
 {
 public:
     TmpSpirvFile()
     {
+#ifdef _WIN32
         std::vector<char> tmp_dir(MAX_PATH + 1);
         GetTempPathA(tmp_dir.size(), tmp_dir.data());
 
@@ -28,6 +31,9 @@ public:
 
         if (m_handle == INVALID_HANDLE_VALUE)
             throw std::runtime_error("failed to call CreateFileA");
+#else
+        m_file_path = std::tmpnam(nullptr);
+#endif
     }
 
     const std::string& GetFilePath() const
@@ -37,9 +43,11 @@ public:
 
     ~TmpSpirvFile()
     {
+#ifdef _WIN32
         if (m_handle)
             CloseHandle(m_handle);
         DeleteFileA(m_file_path.c_str());
+#endif
     }
 
     std::vector<uint32_t> ReadSpirv()
@@ -59,9 +67,11 @@ public:
 
 private:
     std::string m_file_path;
+#ifdef _WIN32
     HANDLE m_handle = nullptr;
+#endif
 };
-
+#ifdef _WIN32
 bool RunProcess(std::string command_line)
 {
     STARTUPINFOA si = {};
@@ -93,11 +103,30 @@ bool RunProcess(std::string command_line)
 
     return !exit_code;
 }
-
-std::string MakeCommandLine(const ShaderBase& shader, const SpirvOption& option, const TmpSpirvFile& spirv_path)
+#else
+bool RunProcess(std::string command_line)
 {
+    system(command_line.c_str());
+    return true;
+}
+#endif
+
+std::string GetGlslangPath()
+{
+#ifdef _WIN32
     const char* vk_sdk_path = getenv("VULKAN_SDK");
     if (!vk_sdk_path)
+        return {};
+    return std::string(vk_sdk_path) + "/Bin/glslangValidator.exe";
+#else
+    return "glslangValidator";
+#endif
+}
+
+std::string MakeCommandLine(const ShaderDesc& shader, const SpirvOption& option, const TmpSpirvFile& spirv_path)
+{
+    std::string glslang_path = GetGlslangPath();
+    if (glslang_path.empty())
         return {};
 
     std::string shader_type;
@@ -119,7 +148,7 @@ std::string MakeCommandLine(const ShaderBase& shader, const SpirvOption& option,
         return {};
     }
 
-    std::string cmd = std::string(vk_sdk_path) + "/Bin/glslangValidator.exe";
+    std::string cmd = glslang_path;
     if (option.auto_map_bindings)
         cmd += " --auto-map-bindings ";
     if (option.hlsl_iomap)
@@ -138,6 +167,7 @@ std::string MakeCommandLine(const ShaderBase& shader, const SpirvOption& option,
     else
         cmd += " -G ";
     cmd += " -D ";
+    cmd += " -fhlsl_functionality1 ";
     cmd += GetAssetFullPath(shader.shader_path);
     cmd += " -o ";
     cmd += spirv_path.GetFilePath();
@@ -150,8 +180,9 @@ std::string MakeCommandLine(const ShaderBase& shader, const SpirvOption& option,
     return cmd;
 }
 
-std::vector<uint32_t> SpirvCompile(const ShaderBase& shader, const SpirvOption& option)
+std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& option)
 {
+#ifdef _WIN32
     if (option.use_dxc)
     {
         DXOption dx_option = { true, option.invert_y };
@@ -162,10 +193,10 @@ std::vector<uint32_t> SpirvCompile(const ShaderBase& shader, const SpirvOption& 
         std::vector<uint32_t> spirv(blob_as_uint32, blob_as_uint32 + blob->GetBufferSize() / 4);
         return spirv;
     }
+#endif
 
     TmpSpirvFile spirv_path;
     if (!RunProcess(MakeCommandLine(shader, option, spirv_path)))
         return {};
-
     return spirv_path.ReadSpirv();
 }

@@ -5,6 +5,7 @@
 #include <View/View.h>
 #include <Context/DescriptorPool.h>
 #include "IShaderBlobProvider.h"
+#include <d3d12shader.h>
 
 class DX12ViewCreater
 {

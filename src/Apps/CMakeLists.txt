@@ -1,4 +1,6 @@
 add_subdirectory(ParseShader)
-add_subdirectory(SponzaPbr)
 add_subdirectory(Triangle)
-add_subdirectory(DxrTriangle)
+if (WIN32)
+    add_subdirectory(SponzaPbr)
+    add_subdirectory(DxrTriangle)
+endif()

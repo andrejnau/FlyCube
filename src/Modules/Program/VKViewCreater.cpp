@@ -1,6 +1,6 @@
 #include "VKViewCreater.h"
 #include <Utilities/State.h>
-#include <Texture/DXGIFormatHelper.h>
+#include <Utilities/VKUtility.h>
 #include <memory>
 
 VKViewCreater::VKViewCreater(VKContext& context, const IShaderBlobProvider& shader_provider)
@@ -33,7 +33,7 @@ void VKViewCreater::ParseShader(ShaderType shader_type, const std::vector<uint32
     spirv_cross::CompilerHLSL& compiler = m_shader_ref.find(shader_type)->second.compiler;
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
-    auto generate_bindings = [&](const std::vector<spirv_cross::Resource>& resources, VkDescriptorType res_type)
+    auto generate_bindings = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources, VkDescriptorType res_type)
     {
         for (auto& res : resources)
         {

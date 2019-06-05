@@ -1,7 +1,5 @@
 #pragma once
 
-#include <wrl.h>
-#include <dxgiformat.h>
 #include <GLFW/glfw3.h>
 #include <memory>
 #include <array>
@@ -11,8 +9,6 @@
 #include <Resource/Resource.h>
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
-
-using namespace Microsoft::WRL;
 
 class Context
 {

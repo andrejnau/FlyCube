@@ -5,7 +5,7 @@
 
 #include <Geometry/IABuffer.h>
 #include <Program/DX11ProgramApi.h>
-#include <Texture/DXGIFormatHelper.h>
+#include <Texture/FormatHelper.h>
 #include "ImGuiStateBackup.h"
 
 ImGuiPass::ImGuiPass(Context& context, const Input& input, int width, int height)
@@ -194,7 +194,7 @@ void ImGuiPass::CreateFontsTexture()
     m_font_texture_view = m_context.CreateTexture(BindFlag::kSrv, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, width, height);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
-    GetSurfaceInfo(width, height, gli::format::FORMAT_RGBA8_UNORM_PACK8, &num_bytes, &row_bytes, nullptr);
+    GetFormatInfo(width, height, gli::format::FORMAT_RGBA8_UNORM_PACK8, num_bytes, row_bytes);
     m_context.UpdateSubresource(m_font_texture_view, 0, pixels, row_bytes, num_bytes);
 
     // Store our identifier

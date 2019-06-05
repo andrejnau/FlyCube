@@ -8,4 +8,4 @@
 using namespace Microsoft::WRL;
 
 ComPtr<IDXGIAdapter1> GetHardwareAdapter(const ComPtr<IDXGIFactory4>& dxgi_factory);
-ComPtr<IDXGISwapChain3> CreateSwapChain(const ComPtr<IUnknown>& device, const ComPtr<IDXGIFactory4>& dxgi_factory, HWND window, UINT width, UINT height, UINT FrameCount);
+ComPtr<IDXGISwapChain3> CreateSwapChain(const ComPtr<IUnknown>& device, const ComPtr<IDXGIFactory4>& dxgi_factory, HWND window, uint32_t width, uint32_t height, uint32_t FrameCount);

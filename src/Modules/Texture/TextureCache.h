@@ -1,7 +1,6 @@
 #pragma once
 
 #include "TextureLoader.h"
-#include "DXGIFormatHelper.h"
 #include <glm/glm.hpp>
 
 class TextureCache
@@ -9,7 +8,7 @@ class TextureCache
 public:
     TextureCache(Context& context);
     Resource::Ptr Load(const std::string& path);
-    Resource::Ptr CreateTextuteStab(glm::vec4& val);
+    Resource::Ptr CreateTextuteStab(const glm::vec4& val);
 
 private:
     Context& m_context;

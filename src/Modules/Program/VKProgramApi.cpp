@@ -1,6 +1,7 @@
 #include "VKProgramApi.h"
 
 #include <vector>
+#include <list>
 #include <utility>
 #include <Resource/VKResource.h>
 #include <View/VKView.h>
@@ -461,7 +462,7 @@ void VKProgramApi::CompileShader(const ShaderBase& shader)
     m_shaders_info2[shader.type] = &shader;
 }
 
-static void print_resources(const spirv_cross::Compiler &compiler, const char *tag, const std::vector<spirv_cross::Resource> &resources)
+static void print_resources(const spirv_cross::Compiler &compiler, const char *tag, const spirv_cross::SmallVector<spirv_cross::Resource> &resources)
 {
     using namespace spirv_cross;
     using namespace spv;
@@ -533,7 +534,7 @@ void VKProgramApi::ParseShader(ShaderType shader_type, const std::vector<uint32_
     spirv_cross::CompilerHLSL& compiler = m_shader_ref.find(shader_type)->second.compiler;
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
-    auto generate_bindings = [&](const std::vector<spirv_cross::Resource>& resources, VkDescriptorType res_type)
+    auto generate_bindings = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources, VkDescriptorType res_type)
     {
         for (auto& res : resources)
         {
@@ -570,7 +571,7 @@ void VKProgramApi::ParseShader(ShaderType shader_type, const std::vector<uint32_
     generate_bindings(resources.separate_samplers, VK_DESCRIPTOR_TYPE_SAMPLER);
     generate_bindings(resources.storage_buffers, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     generate_bindings(resources.storage_images, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-   
+
     print_resources(compiler, " stage_inputs ", resources.stage_inputs);
     print_resources(compiler, " uniform_buffers ", resources.uniform_buffers);
     print_resources(compiler, " storage_buffers ", resources.storage_buffers);
@@ -770,7 +771,7 @@ void VKProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& 
     m_clear_cache.GetColorLoadOp(slot) = VK_ATTACHMENT_LOAD_OP_CLEAR;
 }
 
-void VKProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+void VKProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)
 {
     m_clear_cache.GetDepth() = { Depth, Stencil };
     m_clear_cache.GetDepthLoadOp() = VK_ATTACHMENT_LOAD_OP_CLEAR;

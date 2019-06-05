@@ -62,7 +62,7 @@ public:
 
 
     virtual void ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color) override;
-    virtual void ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil) override;
+    virtual void ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil) override;
     virtual void SetRasterizeState(const RasterizerDesc& desc) override;
     virtual void SetBlendState(const BlendDesc& desc) override;
     virtual void SetDepthStencilState(const DepthStencilDesc& desc) override;
@@ -94,7 +94,7 @@ private:
     struct ShaderRef
     {
         ShaderRef(const std::vector<uint32_t>& spirv_binary)
-            : compiler(spirv_cross::CompilerHLSL(std::move(spirv_binary)))
+            : compiler(std::move(spirv_binary))
         {
         }
 

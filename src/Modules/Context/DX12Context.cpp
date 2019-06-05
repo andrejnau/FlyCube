@@ -269,7 +269,7 @@ Resource::Ptr DX12Context::CreateSampler(const SamplerDesc & desc)
     }
 
     sampler_desc.MinLOD = 0;
-    sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
+    sampler_desc.MaxLOD = std::numeric_limits<float>::max();
     sampler_desc.MaxAnisotropy = 1;
 
     return res;
@@ -461,8 +461,8 @@ void DX12Context::SetViewport(float width, float height)
     D3D12_VIEWPORT viewport;
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
-    viewport.Width = (FLOAT)width;
-    viewport.Height = (FLOAT)height;
+    viewport.Width = (float)width;
+    viewport.Height = (float)height;
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
     command_list->RSSetViewports(1, &viewport);

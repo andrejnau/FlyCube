@@ -8,7 +8,7 @@
 #include <vector>
 
 class ShaderBase : public ShaderDesc
-{   
+{
 public:
     ShaderType type;
 

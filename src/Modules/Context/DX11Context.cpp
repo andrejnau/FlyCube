@@ -4,6 +4,7 @@
 #include <GLFW/glfw3native.h>
 
 #include <Utilities/DXUtility.h>
+#include <Utilities/FileUtility.h>
 #include <Program/DX11ProgramApi.h>
 #include "Context/DXGIUtility.h"
 
@@ -104,10 +105,10 @@ Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, gli::format Format,
     if (!(bind_flag & BindFlag::kSrv))
         return res;
 
-    UINT pNumTilesForEntireResource = {};
+    uint32_t pNumTilesForEntireResource = {};
     D3D11_PACKED_MIP_DESC pPackedMipDesc = {};
     D3D11_TILE_SHAPE pStandardTileShapeForNonPackedMips = {};
-    UINT pNumSubresourceTilings = mip_levels;
+    uint32_t pNumSubresourceTilings = mip_levels;
     std::vector<D3D11_SUBRESOURCE_TILING> pSubresourceTilingsForNonPackedMips(pNumSubresourceTilings);
     device->GetResourceTiling(texture.Get(), &pNumTilesForEntireResource, &pPackedMipDesc, &pStandardTileShapeForNonPackedMips,
         &pNumSubresourceTilings, 0, pSubresourceTilingsForNonPackedMips.data());
@@ -121,10 +122,10 @@ Resource::Ptr DX11Context::CreateTexture(uint32_t bind_flag, gli::format Format,
     ASSERT_SUCCEEDED(device->CreateBuffer(&buf_desc, nullptr, &tile_pool));
     res->tile_pool.push_back(tile_pool);
 
-    UINT start = 0;
+    uint32_t start = 0;
     if (!(bind_flag & BindFlag::kRtv))
     {
-        for (UINT i = 0; i < pPackedMipDesc.NumStandardMips; ++i)
+        for (uint32_t i = 0; i < pPackedMipDesc.NumStandardMips; ++i)
         {
             for (int x = 0; x < pSubresourceTilingsForNonPackedMips[i].WidthInTiles; ++x)
             {

@@ -492,7 +492,7 @@ void GLProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& 
     glClearNamedFramebufferfv(m_framebuffer, GL_COLOR, slot, color.data());
 }
 
-void GLProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+void GLProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)
 {
     glClearNamedFramebufferfv(m_framebuffer, GL_DEPTH, 0, &Depth);
 }

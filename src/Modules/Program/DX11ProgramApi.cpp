@@ -96,7 +96,7 @@ void DX11ProgramApi::CreateInputLayout()
     reflector->GetDesc(&shader_desc);
 
     std::vector<D3D11_INPUT_ELEMENT_DESC> input_layout_desc;
-    for (UINT i = 0; i < shader_desc.InputParameters; ++i)
+    for (uint32_t i = 0; i < shader_desc.InputParameters; ++i)
     {
         D3D11_SIGNATURE_PARAMETER_DESC param_desc = {};
         reflector->GetInputParameterDesc(i, &param_desc);
@@ -210,7 +210,7 @@ void DX11ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>
     m_context.device_context->ClearRenderTargetView(view->rtv.Get(), color.data());
 }
 
-void DX11ProgramApi::ClearDepthStencil(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+void DX11ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)
 {
     auto view = ConvertView(FindView(ShaderType::kPixel, ResourceType::kDsv, 0));
     if (!view)

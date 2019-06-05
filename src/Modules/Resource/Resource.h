@@ -1,17 +1,13 @@
 #pragma once
 
-#include <wrl.h>
 #include <memory>
 #include <string>
 #include <vector>
 #include <map>
 
-#include <Utilities/FileUtility.h>
 #include <View/View.h>
 #include "Context/BaseTypes.h"
 #include <gli/gli.hpp>
-
-using namespace Microsoft::WRL;
 
 struct ViewDesc
 {

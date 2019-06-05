@@ -7,7 +7,7 @@ ComPtr<IDXGIAdapter1> GetHardwareAdapter(const ComPtr<IDXGIFactory4>& dxgi_facto
     ComPtr<IDXGIFactory6> dxgi_factory6;
     dxgi_factory.As(&dxgi_factory6);
 
-    auto NextAdapted = [&](UINT adapter_index, ComPtr<IDXGIAdapter1>& adapter)
+    auto NextAdapted = [&](uint32_t adapter_index, ComPtr<IDXGIAdapter1>& adapter)
     {
         if (dxgi_factory6)
             return dxgi_factory6->EnumAdapterByGpuPreference(adapter_index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter));
@@ -17,7 +17,7 @@ ComPtr<IDXGIAdapter1> GetHardwareAdapter(const ComPtr<IDXGIFactory4>& dxgi_facto
 
     ComPtr<IDXGIAdapter1> adapter;
     uint32_t gpu_index = 0;
-    for (UINT adapter_index = 0; DXGI_ERROR_NOT_FOUND != NextAdapted(adapter_index, adapter); ++adapter_index)
+    for (uint32_t adapter_index = 0; DXGI_ERROR_NOT_FOUND != NextAdapted(adapter_index, adapter); ++adapter_index)
     {
         DXGI_ADAPTER_DESC1 desc = {};
         adapter->GetDesc1(&desc);
@@ -35,7 +35,7 @@ ComPtr<IDXGIAdapter1> GetHardwareAdapter(const ComPtr<IDXGIFactory4>& dxgi_facto
     return nullptr;
 }
 
-ComPtr<IDXGISwapChain3> CreateSwapChain(const ComPtr<IUnknown>& device, const ComPtr<IDXGIFactory4>& dxgi_factory, HWND window, UINT width, UINT height, UINT FrameCount)
+ComPtr<IDXGISwapChain3> CreateSwapChain(const ComPtr<IUnknown>& device, const ComPtr<IDXGIFactory4>& dxgi_factory, HWND window, uint32_t width, uint32_t height, uint32_t FrameCount)
 {
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
     swap_chain_desc.Width = width;

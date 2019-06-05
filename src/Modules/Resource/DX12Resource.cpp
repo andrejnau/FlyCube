@@ -1,5 +1,6 @@
 #include "Resource/DX12Resource.h"
 #include "Context/DX12Context.h"
+#include <Utilities/FileUtility.h>
 
 DX12Resource::DX12Resource(DX12Context& context)
     : m_context(context)

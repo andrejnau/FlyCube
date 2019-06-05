@@ -53,13 +53,13 @@ void DX12ViewAllocator::ResizeHeap(size_t req_size)
 
     ComPtr<ID3D12DescriptorHeap> heap;
     D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-    heap_desc.NumDescriptors = static_cast<UINT>(req_size);
+    heap_desc.NumDescriptors = static_cast<uint32_t>(req_size);
     heap_desc.Type = m_type;
     ASSERT_SUCCEEDED(m_context.device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&heap)));
     if (m_size > 0)
     {
         m_context.device->CopyDescriptorsSimple(
-            static_cast<UINT>(m_size),
+            static_cast<uint32_t>(m_size),
             heap->GetCPUDescriptorHandleForHeapStart(),
             m_heap->GetCPUDescriptorHandleForHeapStart(),
             m_type);

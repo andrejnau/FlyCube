@@ -4,7 +4,6 @@
 #include <Resource/VKResource.h>
 #include <View/View.h>
 #include <View/VKView.h>
-#include <Context/DescriptorPool.h>
 #include "IShaderBlobProvider.h"
 
 #include <spirv_cross.hpp>
@@ -35,7 +34,7 @@ private:
     struct ShaderRef
     {
         ShaderRef(const std::vector<uint32_t>& spirv_binary)
-            : compiler(spirv_cross::CompilerHLSL(std::move(spirv_binary)))
+            : compiler(std::move(spirv_binary))
         {
         }
 

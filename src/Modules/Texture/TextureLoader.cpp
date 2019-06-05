@@ -1,10 +1,7 @@
 #include "Texture/TextureLoader.h"
-#include "Texture/DXGIFormatHelper.h"
-#include <Utilities/DXUtility.h>
+#include "Texture/FormatHelper.h"
 #include <gli/gli.hpp>
 #include <SOIL.h>
-
-using namespace Microsoft::WRL;
 
 Resource::Ptr CreateSRVFromFile(Context& context, const std::string& path)
 {
@@ -19,9 +16,9 @@ Resource::Ptr CreateSRVFromFile(Context& context, const std::string& path)
     gli::format format = gli::format::FORMAT_RGBA8_UNORM_PACK8;
     Resource::Ptr res = context.CreateTexture(BindFlag::kSrv, format, 1, width, height);
 
-    size_t num_bytes;
-    size_t row_bytes;
-    GetSurfaceInfo(width, height, format, &num_bytes, &row_bytes, nullptr);
+    size_t row_bytes = 0;
+    size_t num_bytes = 0;
+    GetFormatInfo(width, height, format, num_bytes, row_bytes);
     context.UpdateSubresource(res, 0, image, row_bytes, num_bytes);
 
     SOIL_free_image_data(image);
@@ -41,9 +38,9 @@ Resource::Ptr CreateSRVFromFileDDS(Context& context, const std::string& path)
 
     for (std::size_t level = 0; level < mip_levels; ++level)
     {
-        size_t num_bytes;
-        size_t row_bytes;
-        GetSurfaceInfo(Texture.extent(level).x, Texture.extent(level).y, format, &num_bytes, &row_bytes, nullptr);
+        size_t row_bytes = 0;
+        size_t num_bytes = 0;
+        GetFormatInfo(Texture.extent(level).x, Texture.extent(level).y, format, num_bytes, row_bytes);
         context.UpdateSubresource(res, level, Texture.data(0, 0, level), row_bytes, num_bytes);
     }
 

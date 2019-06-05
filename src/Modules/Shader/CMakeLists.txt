@@ -3,20 +3,29 @@ set(target Shader)
 set(headers
     ShaderBase.h
     ShaderDesc.h
-    DXCompiler.h
     SpirvCompiler.h
     GLSLConverter.h
-    DXReflector.h
-    DXCLoader.h
 )
 
 set(sources
-    DXCompiler.cpp
     SpirvCompiler.cpp
     GLSLConverter.cpp
-    DXReflector.cpp
-    DXCLoader.cpp
 )
+
+if (DIRECTX_SUPPORT)
+    set(headers 
+        ${headers}
+        DXCompiler.h
+        DXReflector.h
+        DXCLoader.h
+    )
+    set(sources 
+        ${sources}
+        DXCompiler.cpp
+        DXReflector.cpp
+        DXCLoader.cpp
+    )
+endif()
 
 add_library(${target} ${headers} ${sources})
 
@@ -28,8 +37,6 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
-    d3d11
-    d3dcompiler
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
@@ -38,6 +45,12 @@ target_link_libraries(${target}
 if (VULKAN_SUPPORT)
     target_link_libraries(${target}
         ${Vulkan_LIBRARIES}
+    )
+endif()
+
+if (DIRECTX_SUPPORT)
+    target_link_libraries(${target}
+        d3dcompiler
     )
 endif()
 

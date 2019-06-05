@@ -4,7 +4,7 @@
 #include <Utilities/State.h>
 #include <chrono>
 #include <random>
-#include "Texture/DXGIFormatHelper.h"
+#include "Texture/FormatHelper.h"
 
 inline float lerp(float a, float b, float f)
 {
@@ -47,7 +47,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
     m_noise_texture = context.CreateTexture(BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 4, 4, 1);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
-    GetSurfaceInfo(4, 4, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, &num_bytes, &row_bytes, nullptr);
+    GetFormatInfo(4, 4, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);
     context.UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
 }
 

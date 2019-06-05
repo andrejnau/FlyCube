@@ -1,14 +1,11 @@
 set(target View)
 
 set(headers
-    DX11View.h
-    DX12View.h
     View.h
 )
 
 set(sources
-    DX11View.cpp
-    DX12View.cpp
+    View.cpp
 )
 
 if (VULKAN_SUPPORT)
@@ -19,6 +16,19 @@ if (VULKAN_SUPPORT)
     set(sources 
         ${sources}
         VKView.cpp
+    )
+endif()
+
+if (DIRECTX_SUPPORT)
+    set(headers 
+        ${headers}
+        DX11View.h
+        DX12View.h
+    )
+    set(sources 
+        ${sources}
+        DX11View.cpp
+        DX12View.cpp
     )
 endif()
 

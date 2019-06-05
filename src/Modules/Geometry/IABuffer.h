@@ -3,7 +3,6 @@
 #include <Context/Context.h>
 #include <Resource/Resource.h>
 #include <vector>
-#include <dxgiformat.h>
 
 class IAVertexBuffer
 {

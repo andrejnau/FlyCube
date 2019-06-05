@@ -1,20 +1,30 @@
 set(target Resource)
 
 set(headers
-    DX11Resource.h
-    DX12Resource.h
     GLResource.h
     Resource.h
 )
 
 set(sources
-    DX12Resource.cpp
+    Resource.cpp
 )
 
 if (VULKAN_SUPPORT)
     set(headers 
         ${headers}
         VKResource.h
+    )
+endif()
+
+if (DIRECTX_SUPPORT)
+    set(headers 
+        ${headers}
+        DX11Resource.h
+        DX12Resource.h
+    )
+    set(sources 
+        ${sources}
+        DX12Resource.cpp
     )
 endif()
 

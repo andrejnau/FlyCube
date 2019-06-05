@@ -3,6 +3,7 @@
 #include <Texture/DXGIFormatHelper.h>
 #include <memory>
 #include "DX11ViewDescCreater.h"
+#include <d3dcompiler.h>
 
 DX11ViewCreater::DX11ViewCreater(DX11Context& context, const IShaderBlobProvider& shader_provider)
     : m_context(context)

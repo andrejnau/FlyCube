@@ -1,4 +1,5 @@
 /build*
+/linux_build*
 *.*~
 *.*.user*
 *.log

@@ -4,20 +4,12 @@ set(headers
     BaseTypes.h
     Context.h
     ContextSelector.h
-    DescriptorPool.h
-    DX11Context.h
-    DX12Context.h
-    DXGIUtility.h
     GLContext.h
 )
 
 set(sources
     Context.cpp
     ContextSelector.cpp
-    DescriptorPool.cpp
-    DX11Context.cpp
-    DX12Context.cpp
-    DXGIUtility.cpp
     GLContext.cpp
 )
 
@@ -34,6 +26,23 @@ if (VULKAN_SUPPORT)
     )
 endif()
 
+if (DIRECTX_SUPPORT)
+    set(headers 
+        ${headers}
+        DX11Context.h
+        DX12Context.h
+        DXGIUtility.h
+        DescriptorPool.h
+    )
+    set(sources 
+        ${sources}
+        DescriptorPool.cpp
+        DX11Context.cpp
+        DX12Context.cpp
+        DXGIUtility.cpp
+    )
+endif()
+
 add_library(${target} ${headers} ${sources})
 
 target_include_directories(${target}
@@ -44,21 +53,27 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
-    d3d11
-    d3d12
-    d3dcompiler
-    dxgi
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
     glad
     Resource
+    Program
     View
 )
 
 if (VULKAN_SUPPORT)
     target_link_libraries(${target}
         ${Vulkan_LIBRARIES}
+    )
+endif()
+
+if (DIRECTX_SUPPORT)
+    target_link_libraries(${target}
+        d3d11
+        d3d12
+        dxgi
+        dxguid
     )
 endif()
 

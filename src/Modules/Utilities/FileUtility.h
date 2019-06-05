@@ -4,7 +4,11 @@
 #include <locale>
 #include <string>
 #include <fstream>
+#ifdef _WIN32
 #include <Windows.h>
+#else
+#include <unistd.h>
+#endif
 
 inline std::wstring utf8_to_wstring(const std::string &str)
 {
@@ -38,9 +42,15 @@ inline std::wstring GetAssetFullPathW(const std::string& assetName)
 
 inline std::string GetExecutablePath()
 {
+#ifdef _WIN32
     char buf[MAX_PATH + 1];
     GetModuleFileNameA(nullptr, buf, sizeof(buf));
     return buf;
+#else
+    char buf[BUFSIZ];
+    readlink("/proc/self/exe", buf, sizeof(buf));
+    return buf;
+#endif
 }
 
 inline std::string GetExecutableDir()

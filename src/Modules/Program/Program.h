@@ -1,10 +1,6 @@
 ﻿#pragma once
 
-#include <Utilities/DXUtility.h>
-#include <Utilities/FileUtility.h>
 #include <Context/Context.h>
-#include <d3dcompiler.h>
-#include <wrl.h>
 #include <cstddef>
 #include <map>
 #include <string>
@@ -14,8 +10,6 @@
 #include <Shader/ShaderBase.h>
 #include <Program/ProgramApi.h>
 #include "Program/BufferLayout.h"
-
-using namespace Microsoft::WRL;
 
 template<typename T>
 class Binding
@@ -88,7 +82,7 @@ public:
     {
     }
 
-    void Clear(UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+    void Clear(uint32_t ClearFlags, float Depth, uint8_t Stencil)
     {
         m_program_api.ClearDepthStencil(ClearFlags, Depth, Stencil);
     }
@@ -196,7 +190,7 @@ public:
     }
 };
 
-template<typename T> class ShaderHolder : public ShaderHolderImpl<T::type, T> { using ShaderHolderImpl::ShaderHolderImpl; };
+template<typename T> class ShaderHolder : public ShaderHolderImpl<T::type, T> { using ShaderHolderImpl<T::type, T>::ShaderHolderImpl; };
 
 template<typename ... Args>
 class Program : public ShaderHolder<Args>...
@@ -230,12 +224,12 @@ public:
         return true;
     }
 
-    template<typename ... Args> void DevNull(Args ... args) {}
+    template<typename ... ShadowsArgs> void DevNull(ShadowsArgs ... args) {}
 
-    template<typename... Args>
+    template<typename... ShadowsArgs>
     void EnumerateShader(shader_callback fn)
     {
-        DevNull(ApplyCallback<Args>(fn)...);
+        DevNull(ApplyCallback<ShadowsArgs>(fn)...);
     }
 
     void LinkProgram()

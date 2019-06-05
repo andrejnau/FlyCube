@@ -15,7 +15,7 @@ HRESULT DXILReflect(
 
     DXCLoader loader;
     CComPtr<IDxcBlobEncoding> source;
-    UINT shade_idx = 0;
+    uint32_t shade_idx = 0;
     IFR(loader.library->CreateBlobWithEncodingOnHeapCopy(pSrcData, static_cast<UINT32>(SrcDataSize), CP_ACP, &source));
     IFR(loader.reflection->Load(source));
     IFR(loader.reflection->FindFirstPartKind(hlsl::DFCC_DXIL, &shade_idx));

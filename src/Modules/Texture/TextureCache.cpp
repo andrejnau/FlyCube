@@ -1,4 +1,5 @@
-#include "TextureCache.h"
+#include "Texture/TextureCache.h"
+#include "Texture/FormatHelper.h"
 
 TextureCache::TextureCache(Context& context)
     : m_context(context)
@@ -13,7 +14,7 @@ Resource::Ptr TextureCache::Load(const std::string& path)
     return it->second;
 }
 
-Resource::Ptr TextureCache::CreateTextuteStab(glm::vec4& val)
+Resource::Ptr TextureCache::CreateTextuteStab(const glm::vec4& val)
 {
     auto it = m_stub_cache.find(val);
     if (it != m_stub_cache.end())
@@ -21,7 +22,7 @@ Resource::Ptr TextureCache::CreateTextuteStab(glm::vec4& val)
     Resource::Ptr tex = m_context.CreateTexture(BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 1, 1, 1);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
-    GetSurfaceInfo(1, 1, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, &num_bytes, &row_bytes, nullptr);
+    GetFormatInfo(1, 1, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);
     m_context.UpdateSubresource(tex, 0, &val, row_bytes, num_bytes);
     m_stub_cache.emplace(val, tex);
     return tex;
