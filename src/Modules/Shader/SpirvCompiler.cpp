@@ -155,8 +155,16 @@ std::string MakeCommandLine(const ShaderDesc& shader, const SpirvOption& option,
         cmd += " --hlsl-iomap ";
     if (option.resource_set_binding != -1)
         cmd += " --resource-set-binding " + std::to_string(option.resource_set_binding) + " ";
-    if (option.invert_y)
-        cmd += " --invert-y ";
+
+    switch (shader.type)
+    {
+    case ShaderType::kVertex:
+    case ShaderType::kGeometry:
+        if (option.invert_y)
+            cmd += " --invert-y ";
+        break;
+    }
+
     cmd += " -g ";
     cmd += " -e ";
     cmd += shader.entrypoint;
@@ -167,7 +175,8 @@ std::string MakeCommandLine(const ShaderDesc& shader, const SpirvOption& option,
     else
         cmd += " -G ";
     cmd += " -D ";
-    cmd += " -fhlsl_functionality1 ";
+    if (option.fhlsl_functionality1)
+        cmd += " -fhlsl_functionality1 ";
     cmd += GetAssetFullPath(shader.shader_path);
     cmd += " -o ";
     cmd += spirv_path.GetFilePath();

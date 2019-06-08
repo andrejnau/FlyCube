@@ -33,6 +33,7 @@ struct SamplerDesc
 
 enum class ResourceType
 {
+    kUnknown,
     kSrv,
     kUav,
     kCbv,

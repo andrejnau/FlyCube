@@ -42,17 +42,114 @@ public:
     }
 
 private:
+    ResourceType GetResourceType(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& type, uint32_t resource_id)
+    {
+        switch (type.basetype)
+        {
+        case spirv_cross::SPIRType::SampledImage:
+        {
+            return ResourceType::kSrv;
+        }
+        case spirv_cross::SPIRType::Image:
+        {
+            if (type.image.sampled == 2 && type.image.dim != spv::DimSubpassData)
+                return ResourceType::kUav;
+            else
+                return ResourceType::kSrv;
+        }
+        case spirv_cross::SPIRType::Sampler:
+        {
+            return ResourceType::kSampler;
+        }
+        case spirv_cross::SPIRType::Struct:
+        {
+            if (type.storage == spv::StorageClassUniform || type.storage == spv::StorageClassStorageBuffer)
+            {
+                if (compiler.has_decoration(type.self, spv::DecorationBufferBlock))
+                {
+                    spirv_cross::Bitset flags = compiler.get_buffer_block_flags(resource_id);
+                    bool is_readonly = flags.get(spv::DecorationNonWritable);
+                    if (is_readonly)
+                        return ResourceType::kSrv;
+                    else
+                        return ResourceType::kUav;
+                }
+                else if (compiler.has_decoration(type.self, spv::DecorationBlock))
+                {
+                    return ResourceType::kCbv;
+                }
+            }
+            else if (type.storage == spv::StorageClassPushConstant)
+            {
+                return ResourceType::kCbv;
+            }
+            else
+            {
+                return ResourceType::kUnknown;
+            }
+        }
+        default:
+            return ResourceType::kUnknown;
+        }
+    }
+
+    std::string GenerateCppType(const spirv_cross::SPIRType& type)
+    {
+        std::string glm_type_prefix;
+        std::string base_type;
+        switch (type.basetype)
+        {
+        case spirv_cross::SPIRType::BaseType::Float:
+            base_type = "float";
+            break;
+        case spirv_cross::SPIRType::BaseType::Int:
+            base_type = "int32_t";
+            glm_type_prefix = "i";
+            break;
+        case spirv_cross::SPIRType::BaseType::UInt:
+            base_type = "uint32_t";
+            glm_type_prefix = "u";
+            break;
+        case spirv_cross::SPIRType::BaseType::Boolean:
+            base_type = "uint32_t";
+            glm_type_prefix = "b";
+            break;
+        }
+
+        std::string cpp_type;
+        if (type.vecsize > 1 && type.columns > 1)
+        {
+            // TODO: check row_major/column_major
+            cpp_type = "glm::" + glm_type_prefix + "mat" + std::to_string(type.vecsize) + "x" + std::to_string(type.columns);
+        }
+        else if (type.vecsize > 1)
+        {
+            cpp_type = "glm::" + glm_type_prefix + "vec" + std::to_string(type.vecsize);
+        }
+        else
+        {
+            cpp_type = base_type;
+        }
+
+        bool type_is_array = !type.array.empty();
+        if (type_is_array)
+            cpp_type = "std::array<" + cpp_type + ", " + std::to_string(type.array.front()) + ">";
+
+        return cpp_type;
+    }
+
     void Parse()
     {
         SpirvOption option = {};
         option.auto_map_bindings = true;
         option.hlsl_iomap = true;
+        option.fhlsl_functionality1 = true;
         spirv_cross::CompilerHLSL compiler(SpirvCompile(m_shader_desc, option));
         spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
         m_tcontext["ShaderName"] = m_shader_name;
         m_tcontext["ShaderType"] = ShaderTypeToString(m_shader_desc.type);
-        m_tcontext["ShaderPrefix"] = TargetToShaderPrefix(m_shader_desc.target);
+        m_tcontext["ShaderPrefix"] = TypeToShaderPrefix(m_shader_desc.type);
         m_tcontext["ShaderPath"] = m_shader_desc.shader_path;
         m_tcontext["Entrypoint"] = m_shader_desc.entrypoint;
         m_tcontext["Target"] = m_shader_desc.target;
@@ -62,8 +159,9 @@ private:
         for (const auto& cbuffer : resources.uniform_buffers)
         {
             auto& type = compiler.get_type(cbuffer.type_id);
-            if (type.basetype != spirv_cross::SPIRType::BaseType::Struct)
-                continue;
+            ResourceType res_type = GetResourceType(compiler, compiler.get_type(cbuffer.type_id), cbuffer.id);
+            if (res_type != ResourceType::kCbv)
+                throw std::runtime_error("wrong resource type");
 
             kainjow::mustache::data tcbuffer;
             tcbuffer.set("BufferName", cbuffer.name);
@@ -75,49 +173,14 @@ private:
 
             for (uint32_t i = 0; i < type.member_types.size(); ++i)
             {
-                auto& field_type = compiler.get_type(type.member_types[i]);
-
                 kainjow::mustache::data tvariable;
                 tvariable.set("Name", compiler.get_member_name(cbuffer.base_type_id, i));
                 tvariable.set("StartOffset", std::to_string(compiler.type_struct_member_offset(type, i)));
                 tvariable.set("VariableSize", std::to_string(compiler.get_declared_struct_member_size(type, i)));
-
-                std::string type_prefix;
-                std::string single_type;
-                std::string shader_type_to_cpp_type;
-                switch (field_type.basetype)
-                {
-                case spirv_cross::SPIRType::BaseType::Float:
-                    single_type = "float";
-                    break;
-                case spirv_cross::SPIRType::BaseType::Int:
-                    single_type = "int32_t";
-                    type_prefix = "i";
-                    break;
-                case spirv_cross::SPIRType::BaseType::UInt:
-                    single_type = "uint32_t";
-                    type_prefix = "u";
-                    break;
-                case spirv_cross::SPIRType::BaseType::Boolean:
-                    single_type = "uint32_t";
-                    type_prefix = "b";
-                    break;
-                }
-                if (field_type.columns == 1 && field_type.vecsize == 1)
-                    shader_type_to_cpp_type = single_type;
-                else if (field_type.columns == 1)
-                    shader_type_to_cpp_type = "glm::" + type_prefix + "vec" + std::to_string(field_type.vecsize);
-                else
-                    shader_type_to_cpp_type = "glm::" + type_prefix + "mat" + std::to_string(field_type.vecsize) + "x" + std::to_string(field_type.columns);
-                bool type_is_array = !field_type.array.empty();
-                if (type_is_array)
-                    shader_type_to_cpp_type = "std::array<" + shader_type_to_cpp_type + ", " + std::to_string(field_type.array[0]) + ">";
-                tvariable.set("Type", shader_type_to_cpp_type);
-
+                tvariable.set("Type", GenerateCppType(compiler.get_type(type.member_types[i])));
                 tvariables.push_back(tvariable);
             }
             tcbuffer.set("Variables", tvariables);
-
             tcbuffers.push_back(tcbuffer);
         }
         m_tcontext["CBuffers"] = kainjow::mustache::data{ tcbuffers };
@@ -128,38 +191,32 @@ private:
 
         std::set<std::string> used_names;
 
-        auto add_resources = [&](const spirv_cross::Compiler& compiler, const std::string& tag, const spirv_cross::SmallVector<spirv_cross::Resource>& resources)
+        auto add_resources = [&](const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources)
         {
             for (const auto& resource : resources)
             {
                 std::string name = compiler.get_name(resource.id);
                 if (used_names.count(name))
-                    continue;
+                    throw std::runtime_error("wrong name");
                 used_names.insert(name);
 
-                auto& type = compiler.get_type(resource.type_id);
-
-                auto is_readonly = [&]()
-                {
-                    if (type.basetype == spirv_cross::SPIRType::Image)
-                        return type.image.sampled != 2;
-
-                    spirv_cross::Bitset mask;
-                    if (compiler.has_decoration(type.self, spv::DecorationBufferBlock))
-                        mask = compiler.get_buffer_block_flags(resource.id);
-                    else
-                        mask = compiler.get_decoration_bitset(resource.id);
-                    return mask.get(spv::DecorationNonWritable);
-                };
+                ResourceType res_type = GetResourceType(compiler, compiler.get_type(resource.type_id), resource.id);
 
                 kainjow::mustache::data* tdata = nullptr;
-
-                if (tag == "separate_samplers")
-                    tdata = &tsamplers;
-                else if (is_readonly())
+                switch (res_type)
+                {
+                case ResourceType::kSrv:
                     tdata = &ttextures;
-                else
+                    break;
+                case ResourceType::kUav:
                     tdata = &tuavs;
+                    break;
+                case ResourceType::kSampler:
+                    tdata = &tsamplers;
+                    break;
+                default:
+                    throw std::runtime_error("wrong resource type");
+                }
 
                 kainjow::mustache::data tresource;
                 tresource.set("Name", name);
@@ -169,10 +226,10 @@ private:
             }
         };
 
-        add_resources(compiler, "separate_images", resources.separate_images);
-        add_resources(compiler, "storage_images", resources.storage_images);
-        add_resources(compiler, "storage_buffer", resources.storage_buffers);
-        add_resources(compiler, "separate_samplers", resources.separate_samplers);
+        add_resources(compiler, resources.separate_images);
+        add_resources(compiler, resources.storage_images);
+        add_resources(compiler, resources.storage_buffers);
+        add_resources(compiler, resources.separate_samplers);
 
         m_tcontext["Textures"] = kainjow::mustache::data{ ttextures };
         m_tcontext["UAVs"] = kainjow::mustache::data{ tuavs };
@@ -236,17 +293,21 @@ private:
         }
     }
 
-    std::string TargetToShaderPrefix(const std::string& str)
+    std::string TypeToShaderPrefix(ShaderType type)
     {
-        if (str.find("ps") == 0)
-            return "PS";
-        else if (str.find("vs") == 0)
+        switch (type)
+        {
+        case ShaderType::kVertex:
             return "VS";
-        else if (str.find("cs") == 0)
+        case ShaderType::kPixel:
+            return "PS";
+        case ShaderType::kCompute:
             return "CS";
-        else if (str.find("gs") == 0)
+        case ShaderType::kGeometry:
             return "GS";
-        return "";
+        default:
+            return "";
+        }
     }
 
     std::string ReadFile(const std::string& path)
