@@ -4,13 +4,9 @@
 #include "Settings.h"
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
-#include <d3d11.h>
-#include <wrl.h>
 #include <ProgramRef/RayTracingAO.h>
 #include <ProgramRef/SSAOPassVS.h>
 #include <ProgramRef/SSAOBlurPassPS.h>
-
-using namespace Microsoft::WRL;
 
 class RayTracingAOPass : public IPass, public IModifySettings
 {

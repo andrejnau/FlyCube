@@ -1,16 +1,12 @@
 #pragma once
 
-#include <wrl.h>
 #include <imgui.h>
-
 #include <Scene/SceneBase.h>
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/ImGuiPassPS.h>
 #include <ProgramRef/ImGuiPassVS.h>
 #include "ImGuiSettings.h"
-
-using namespace Microsoft::WRL;
 
 class ImGuiPass : public IPass
                 , public IInput

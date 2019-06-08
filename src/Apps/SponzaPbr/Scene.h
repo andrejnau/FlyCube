@@ -3,9 +3,6 @@
 #include <Scene/SceneBase.h>
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
-#include <d3d11.h>
-#include <DXGI1_4.h>
-#include <wrl.h>
 #include <string>
 
 #include <Program/Program.h>
@@ -19,7 +16,6 @@
 #include "LightPass.h"
 #include "ImGuiPass.h"
 #include "SSAOPass.h"
-#include "RayTracingAOPass.h"
 #include "ComputeLuminance.h"
 #include "Settings.h"
 #include "IrradianceConversion.h"
@@ -29,7 +25,9 @@
 #include "BRDFGen.h"
 #include "Equirectangular2Cubemap.h"
 
-using namespace Microsoft::WRL;
+#ifdef RAYTRACING_SUPPORT
+#include "RayTracingAOPass.h"
+#endif
 
 class Scene : public SceneBase, public IModifySettings
 {
@@ -71,8 +69,10 @@ private:
     GeometryPass m_geometry_pass;
     ShadowPass m_shadow_pass;
     SSAOPass m_ssao_pass;
-    RayTracingAOPass::Output* m_ray_tracing_ao_ouput = nullptr;
+    Resource::Ptr m_rtao;
+#ifdef RAYTRACING_SUPPORT
     std::unique_ptr<RayTracingAOPass> m_ray_tracing_ao_pass;
+#endif
     BRDFGen m_brdf;
     Equirectangular2Cubemap m_equirectangular2cubemap;
     IBLCompute m_ibl_compute;

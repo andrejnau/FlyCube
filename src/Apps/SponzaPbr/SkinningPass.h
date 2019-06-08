@@ -5,10 +5,6 @@
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/SkinningCS.h>
-#include <d3d11.h>
-#include <wrl.h>
-
-using namespace Microsoft::WRL;
 
 class SkinningPass : public IPass, public IModifySettings
 {

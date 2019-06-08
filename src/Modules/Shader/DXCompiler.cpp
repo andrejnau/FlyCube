@@ -146,6 +146,7 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
         bool vs_or_gs = target.find(L"vs") != -1 || target.find(L"gs") != -1;
         if (option.spirv_invert_y && vs_or_gs)
             arguments.push_back(L"-fvk-invert-y");
+        arguments.push_back(L"-fvk-use-dx-layout");
     }
 
     ComPtr<IDxcOperationResult> result;

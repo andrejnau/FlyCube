@@ -2,7 +2,6 @@
 
 #include "GeometryPass.h"
 #include "SSAOPass.h"
-#include "RayTracingAOPass.h"
 #include "ShadowPass.h"
 #include "IrradianceConversion.h"
 #include "Settings.h"
@@ -12,10 +11,6 @@
 #include <Geometry/Geometry.h>
 #include <ProgramRef/LightPassPS.h>
 #include <ProgramRef/LightPassVS.h>
-#include <d3d11.h>
-#include <wrl.h>
-
-using namespace Microsoft::WRL;
 
 class LightPass : public IPass, public IModifySettings
 {
@@ -25,7 +20,7 @@ public:
         GeometryPass::Output& geometry_pass;
         ShadowPass::Output& shadow_pass;
         SSAOPass::Output& ssao_pass;
-        RayTracingAOPass::Output*& ray_tracing_ao_pass;
+        Resource::Ptr ray_tracing_ao;
         Model& model;
         Camera& camera;
         glm::vec3& light_pos;

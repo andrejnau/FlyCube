@@ -7,10 +7,6 @@
 #include <ProgramRef/SSAOPassPS.h>
 #include <ProgramRef/SSAOPassVS.h>
 #include <ProgramRef/SSAOBlurPassPS.h>
-#include <d3d11.h>
-#include <wrl.h>
-
-using namespace Microsoft::WRL;
 
 class SSAOPass : public IPass, public IModifySettings
 {
@@ -44,7 +40,6 @@ private:
     int m_width;
     int m_height;
     Resource::Ptr m_noise_texture;
-    ComPtr<ID3D11SamplerState> m_texture_sampler;
     Resource::Ptr m_depth_stencil_view;
     Program<SSAOPassPS, SSAOPassVS> m_program;
     Program<SSAOBlurPassPS, SSAOPassVS> m_program_blur;

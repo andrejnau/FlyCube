@@ -2,6 +2,8 @@ set(target ParseShader)
 
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
 
+# TODO: add rtx support for main_linux.cpp and use it everywhere
+
 if (WIN32)
     set(sources
         ${source_path}/main.cpp

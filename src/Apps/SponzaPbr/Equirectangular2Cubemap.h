@@ -9,10 +9,6 @@
 #include <ProgramRef/IrradianceConvolutionPS.h>
 #include <ProgramRef/PrefilterPS.h>
 #include <ProgramRef/DownSampleCS.h>
-#include <d3d11.h>
-#include <wrl.h>
-
-using namespace Microsoft::WRL;
 
 class Equirectangular2Cubemap : public IPass, public IModifySettings
 {

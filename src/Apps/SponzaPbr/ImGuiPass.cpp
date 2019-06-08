@@ -4,9 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <Geometry/IABuffer.h>
-#include <Program/DX11ProgramApi.h>
 #include <Texture/FormatHelper.h>
-#include "ImGuiStateBackup.h"
 
 ImGuiPass::ImGuiPass(Context& context, const Input& input, int width, int height)
     : m_context(context)
@@ -83,9 +81,6 @@ void ImGuiPass::OnRender()
 
     ImDrawData* draw_data = ImGui::GetDrawData();
 
-    // TODO: remove it
-    DX11StateBackup guard(dynamic_cast<DX11Context*>(&m_context));
-
     m_context.UseProgram(m_program);
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f * m_height, 0.0f);
@@ -123,7 +118,7 @@ void ImGuiPass::OnRender()
         {
             const ImDrawCmd& cmd = cmd_list->CmdBuffer[j];
             m_program.ps.srv.texture0.Attach(*(Resource::Ptr*)cmd.TextureId);
-            m_context.SetScissorRect((LONG)cmd.ClipRect.x, (LONG)cmd.ClipRect.y, (LONG)cmd.ClipRect.z, (LONG)cmd.ClipRect.w);
+            m_context.SetScissorRect(cmd.ClipRect.x, cmd.ClipRect.y, cmd.ClipRect.z, cmd.ClipRect.w);
             m_context.DrawIndexed(cmd.ElemCount, idx_offset, vtx_offset);
             idx_offset += cmd.ElemCount;
         }

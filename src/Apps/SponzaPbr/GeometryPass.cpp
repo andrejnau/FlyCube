@@ -1,6 +1,5 @@
 #include "GeometryPass.h"
 
-#include <Utilities/DXUtility.h>
 #include <Utilities/State.h>
 #include <glm/gtx/transform.hpp>
 

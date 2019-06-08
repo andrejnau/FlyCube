@@ -6,10 +6,6 @@
 #include <Geometry/Geometry.h>
 #include <ProgramRef/BackgroundPS.h>
 #include <ProgramRef/BackgroundVS.h>
-#include <d3d11.h>
-#include <wrl.h>
-
-using namespace Microsoft::WRL;
 
 class BackgroundPass : public IPass, public IModifySettings
 {

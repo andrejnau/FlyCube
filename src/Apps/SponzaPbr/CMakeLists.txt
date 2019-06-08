@@ -31,7 +31,6 @@ set(headers
     ${include_path}/LightPass.h
     ${include_path}/ImGuiPass.h
     ${include_path}/SSAOPass.h
-    ${include_path}/RayTracingAOPass.h    
     ${include_path}/ShadowPass.h
     ${include_path}/IrradianceConversion.h
     ${include_path}/Equirectangular2Cubemap.h
@@ -50,7 +49,6 @@ set(sources
     ${source_path}/LightPass.cpp
     ${source_path}/ImGuiPass.cpp
     ${source_path}/SSAOPass.cpp
-    ${source_path}/RayTracingAOPass.cpp
     ${source_path}/ShadowPass.cpp
     ${source_path}/IrradianceConversion.cpp
     ${source_path}/Equirectangular2Cubemap.cpp
@@ -61,7 +59,7 @@ set(sources
     ${source_path}/SkinningPass.cpp
     ${source_path}/Scene.cpp
     ${source_path}/Settings.cpp
-    ${source_path}/Main.cpp
+    ${source_path}/main.cpp
 )
 
 set(shader_headers
@@ -110,9 +108,20 @@ set(compute_shaders
     ${shaders_path}/Skinning_CS.hlsl
 )
 
-set(lib_shaders
-    ${shaders_path}/RayTracingAO.hlsl
-)
+if (RAYTRACING_SUPPORT)
+    set(headers
+        ${headers}
+        ${include_path}/RayTracingAOPass.h
+    )
+    set(sources
+        ${sources}
+        ${source_path}/RayTracingAOPass.cpp
+    )
+    set(lib_shaders
+        ${lib_shaders}
+        ${shaders_path}/RayTracingAO.hlsl
+    )
+endif()
 
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_TYPE Pixel)
@@ -147,8 +156,10 @@ source_group("Shader Files" FILES ${shaders_files} ${shader_headers})
 source_group("Shader Ref Files" FILES ${shaders_ref})
 
 add_executable(${target} WIN32 ${headers} ${sources} ${shaders_files} ${shader_headers} ${shaders_ref})
-set_target_properties(${target} PROPERTIES
-                        LINK_FLAGS "/ENTRY:mainCRTStartup")
+if (WIN32)
+    set_target_properties(${target} PROPERTIES
+                            LINK_FLAGS "/ENTRY:mainCRTStartup")
+endif()
 
 target_include_directories(${target}
     PUBLIC

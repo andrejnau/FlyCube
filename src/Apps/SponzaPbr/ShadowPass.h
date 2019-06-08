@@ -6,11 +6,7 @@
 #include <ProgramRef/ShadowPassVS.h>
 #include <ProgramRef/ShadowPassGS.h>
 #include <ProgramRef/ShadowPassPS.h>
-#include <d3d11.h>
-#include <wrl.h>
 #include "Settings.h"
-
-using namespace Microsoft::WRL;
 
 class ShadowPass : public IPass, public IModifySettings
 {

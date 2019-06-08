@@ -11,7 +11,11 @@ AppBox::AppBox(int argc, char* argv[], const std::string& title)
 
 AppBox::AppBox(int argc, char* argv[], const CreateSample& create_sample, const std::string& title)
     : m_create_sample(create_sample)
+#ifdef WIN32
     , m_api_type(ApiType::kDX12)
+#else
+    , m_api_type(ApiType::kVulkan)
+#endif
     , m_window(nullptr)
     , m_width(0)
     , m_height(0)

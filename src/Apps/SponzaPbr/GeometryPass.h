@@ -6,10 +6,6 @@
 #include <Geometry/Geometry.h>
 #include <ProgramRef/GeometryPassPS.h>
 #include <ProgramRef/GeometryPassVS.h>
-#include <d3d11.h>
-#include <wrl.h>
-
-using namespace Microsoft::WRL;
 
 class GeometryPass : public IPass, public IModifySettings
 {

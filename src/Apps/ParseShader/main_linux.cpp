@@ -12,6 +12,7 @@
 #include <iterator>
 #include <cctype>
 #include <map>
+#include <set>
 
 class ShaderReflection
 {
@@ -35,19 +36,18 @@ public:
 
         if (new_content != old_content)
         {
-#ifdef _WIN32
-            throw std::runtime_error("different generated code");
-#else
             std::ofstream os(output_dir + "/" + m_shader_name + ".h");
             os << new_content;
-#endif
         }
     }
 
 private:
     void Parse()
     {
-        spirv_cross::CompilerHLSL compiler(SpirvCompile(m_shader_desc, {}));
+        SpirvOption option = {};
+        option.auto_map_bindings = true;
+        option.hlsl_iomap = true;
+        spirv_cross::CompilerHLSL compiler(SpirvCompile(m_shader_desc, option));
         spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
         m_tcontext["ShaderName"] = m_shader_name;
@@ -83,23 +83,35 @@ private:
                 tvariable.set("VariableSize", std::to_string(compiler.get_declared_struct_member_size(type, i)));
 
                 std::string type_prefix;
+                std::string single_type;
                 std::string shader_type_to_cpp_type;
                 switch (field_type.basetype)
                 {
+                case spirv_cross::SPIRType::BaseType::Float:
+                    single_type = "float";
+                    break;
                 case spirv_cross::SPIRType::BaseType::Int:
+                    single_type = "int32_t";
                     type_prefix = "i";
                     break;
                 case spirv_cross::SPIRType::BaseType::UInt:
+                    single_type = "uint32_t";
                     type_prefix = "u";
                     break;
                 case spirv_cross::SPIRType::BaseType::Boolean:
+                    single_type = "uint32_t";
                     type_prefix = "b";
                     break;
                 }
-                if (field_type.columns == 1)
+                if (field_type.columns == 1 && field_type.vecsize == 1)
+                    shader_type_to_cpp_type = single_type;
+                else if (field_type.columns == 1)
                     shader_type_to_cpp_type = "glm::" + type_prefix + "vec" + std::to_string(field_type.vecsize);
                 else
                     shader_type_to_cpp_type = "glm::" + type_prefix + "mat" + std::to_string(field_type.vecsize) + "x" + std::to_string(field_type.columns);
+                bool type_is_array = !field_type.array.empty();
+                if (type_is_array)
+                    shader_type_to_cpp_type = "std::array<" + shader_type_to_cpp_type + ", " + std::to_string(field_type.array[0]) + ">";
                 tvariable.set("Type", shader_type_to_cpp_type);
 
                 tvariables.push_back(tvariable);
@@ -114,23 +126,53 @@ private:
         kainjow::mustache::data tuavs{ kainjow::mustache::data::type::list };
         kainjow::mustache::data tsamplers{ kainjow::mustache::data::type::list };
 
-        auto add_resources = [](const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources, kainjow::mustache::data& tdata)
+        std::set<std::string> used_names;
+
+        auto add_resources = [&](const spirv_cross::Compiler& compiler, const std::string& tag, const spirv_cross::SmallVector<spirv_cross::Resource>& resources)
         {
             for (const auto& resource : resources)
             {
+                std::string name = compiler.get_name(resource.id);
+                if (used_names.count(name))
+                    continue;
+                used_names.insert(name);
+
+                auto& type = compiler.get_type(resource.type_id);
+
+                auto is_readonly = [&]()
+                {
+                    if (type.basetype == spirv_cross::SPIRType::Image)
+                        return type.image.sampled != 2;
+
+                    spirv_cross::Bitset mask;
+                    if (compiler.has_decoration(type.self, spv::DecorationBufferBlock))
+                        mask = compiler.get_buffer_block_flags(resource.id);
+                    else
+                        mask = compiler.get_decoration_bitset(resource.id);
+                    return mask.get(spv::DecorationNonWritable);
+                };
+
+                kainjow::mustache::data* tdata = nullptr;
+
+                if (tag == "separate_samplers")
+                    tdata = &tsamplers;
+                else if (is_readonly())
+                    tdata = &ttextures;
+                else
+                    tdata = &tuavs;
+
                 kainjow::mustache::data tresource;
-                tresource.set("Name", resource.name);
+                tresource.set("Name", name);
                 tresource.set("Slot", std::to_string(compiler.get_decoration(resource.id, spv::DecorationBinding)));
-                tresource.set("Separator", tdata.is_empty_list() ? ":" : ",");
-                tdata.push_back(tresource);
-                break;
+                tresource.set("Separator", tdata->is_empty_list() ? ":" : ",");
+                tdata->push_back(tresource);
             }
         };
 
-        add_resources(compiler, resources.separate_images, ttextures);
-        add_resources(compiler, resources.storage_images, tuavs);
-        add_resources(compiler, resources.storage_buffers, tuavs);
-        add_resources(compiler, resources.separate_samplers, tsamplers);
+        add_resources(compiler, "separate_images", resources.separate_images);
+        add_resources(compiler, "storage_images", resources.storage_images);
+        add_resources(compiler, "storage_buffer", resources.storage_buffers);
+        add_resources(compiler, "separate_samplers", resources.separate_samplers);
 
         m_tcontext["Textures"] = kainjow::mustache::data{ ttextures };
         m_tcontext["UAVs"] = kainjow::mustache::data{ tuavs };
@@ -142,7 +184,16 @@ private:
             for (const auto& resource : resources.stage_inputs)
             {
                 kainjow::mustache::data tinput;
-                tinput.set("Name", compiler.get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE));
+                std::string semantic = compiler.get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE);
+                std::string semantic_slot;
+                while (!semantic.empty() && std::isdigit(semantic.back()))
+                {
+                    semantic_slot = semantic.back() + semantic_slot;
+                    semantic.pop_back();
+                }
+                if (semantic_slot != "0")
+                    semantic += semantic_slot;
+                tinput.set("Name", semantic);
                 tinput.set("Slot", std::to_string(compiler.get_decoration(resource.id, spv::DecorationLocation)));
                 tinputs.push_back(tinput);
             }

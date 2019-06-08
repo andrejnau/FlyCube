@@ -7,10 +7,6 @@
 #include <ProgramRef/CubemapVS.h>
 #include <ProgramRef/IrradianceConvolutionPS.h>
 #include <ProgramRef/PrefilterPS.h>
-#include <d3d11.h>
-#include <wrl.h>
-
-using namespace Microsoft::WRL;
 
 class IrradianceConversion : public IPass, public IModifySettings
 {

@@ -6,10 +6,6 @@
 #include <Geometry/Geometry.h>
 #include <ProgramRef/BRDFPS.h>
 #include <ProgramRef/BRDFVS.h>
-#include <d3d11.h>
-#include <wrl.h>
-
-using namespace Microsoft::WRL;
 
 class BRDFGen : public IPass, public IModifySettings
 {

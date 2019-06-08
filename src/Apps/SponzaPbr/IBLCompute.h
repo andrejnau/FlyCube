@@ -12,12 +12,8 @@
 #include <ProgramRef/DownSampleCS.h>
 #include <ProgramRef/BackgroundPS.h>
 #include <ProgramRef/BackgroundVS.h>
-#include <d3d11.h>
-#include <wrl.h>
 #include "Settings.h"
 #include "ShadowPass.h"
-
-using namespace Microsoft::WRL;
 
 class IBLCompute : public IPass, public IModifySettings
 {

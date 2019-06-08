@@ -3,7 +3,7 @@
 #ifdef _WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
 #else
-#define VK_USE_PLATFORM_XLIB_KHR
+#define VK_USE_PLATFORM_XCB_KHR
 #endif
 #include <GLFW/glfw3.h>
 #include <vulkan/vk_sdk_platform.h>
@@ -103,12 +103,14 @@ void VKContext::CreateInstance()
     std::set<std::string> req_extension = {
         VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
         VK_KHR_SURFACE_EXTENSION_NAME,
-    #ifdef _WIN32
+    #if defined(VK_USE_PLATFORM_WIN32_KHR)
         VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-    #else
-        VK_KHR_XLIB_SURFACE_EXTENSION_NAME
+    #elif defined(VK_USE_PLATFORM_XLIB_KHR)
+        VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+    #elif defined(VK_USE_PLATFORM_XCB_KHR)
+        VK_KHR_XCB_SURFACE_EXTENSION_NAME,
     #endif
-        VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+        VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
     };
     std::vector<const char*> found_extension;
     for (const auto& extension : extensions)

@@ -122,8 +122,8 @@ void LightPass::OnRender()
         m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal);
         m_program.ps.srv.gAlbedo.Attach(m_input.geometry_pass.albedo);
         m_program.ps.srv.gMaterial.Attach(m_input.geometry_pass.material);
-        if (m_settings.use_rtao && m_input.ray_tracing_ao_pass)
-            m_program.ps.srv.gSSAO.Attach(m_input.ray_tracing_ao_pass->ao);
+        if (m_settings.use_rtao && m_input.ray_tracing_ao)
+            m_program.ps.srv.gSSAO.Attach(m_input.ray_tracing_ao);
         else if (m_settings.use_ssao)
             m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.ao);
         m_program.ps.srv.irradianceMap.Attach(m_input.irradince);

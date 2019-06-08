@@ -8,9 +8,6 @@
 #include <ProgramRef/HDRLum2DPassCS.h>
 #include <ProgramRef/HDRApplyPS.h>
 #include <ProgramRef/HDRApplyVS.h>
-#include <wrl.h>
-
-using namespace Microsoft::WRL;
 
 class ComputeLuminance : public IPass, public IModifySettings
 {
