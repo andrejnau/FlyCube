@@ -1,192 +1,121 @@
 #include "Shader/SpirvCompiler.h"
+#include <iostream>
 #include <fstream>
 #include <Utilities/FileUtility.h>
 #include <cassert>
+
+#include <shaderc.hpp>
 
 #ifdef _WIN32
 #include "Shader/DXCompiler.h"
 #endif
 
-class TmpSpirvFile
+std::string ReadShaderFile(const std::string& path)
+{
+    std::ifstream file(path);
+    return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+}
+
+class SpirvIncludeHandler : public shaderc::CompileOptions::IncluderInterface
 {
 public:
-    TmpSpirvFile()
+    SpirvIncludeHandler(const std::string& base_path)
+        : m_base_path(base_path)
     {
-#ifdef _WIN32
-        std::vector<char> tmp_dir(MAX_PATH + 1);
-        GetTempPathA(tmp_dir.size(), tmp_dir.data());
-
-        std::vector<char> tmp_file(MAX_PATH + 1);
-        GetTempFileNameA(tmp_dir.data(), "SponzaApp.spirv", 0, tmp_file.data());
-
-        m_file_path = tmp_file.data();
-
-        m_handle = CreateFileA(m_file_path.c_str(), // file name
-            GENERIC_READ,                           // open for write
-            FILE_SHARE_READ | FILE_SHARE_WRITE,     // share
-            nullptr,                                // default security
-            CREATE_ALWAYS,                          // overwrite existing
-            FILE_ATTRIBUTE_NORMAL,                  // normal file
-            nullptr);                               // no template
-
-        if (m_handle == INVALID_HANDLE_VALUE)
-            throw std::runtime_error("failed to call CreateFileA");
-#else
-        m_file_path = std::tmpnam(nullptr);
-#endif
     }
 
-    const std::string& GetFilePath() const
+    virtual shaderc_include_result* GetInclude(const char* requested_source,
+        shaderc_include_type type,
+        const char* requesting_source,
+        size_t include_depth)
     {
-        return m_file_path;
+        Data* data = new Data{};
+        data->path = m_base_path + requested_source;
+        data->source = ReadShaderFile(data->path);
+        data->res.source_name = data->path.c_str();
+        data->res.source_name_length = data->path.size();
+        data->res.content = data->source.c_str();
+        data->res.content_length = data->source.size();
+        data->res.user_data = data;
+        return &data->res;
     }
 
-    ~TmpSpirvFile()
+    virtual void ReleaseInclude(shaderc_include_result* res)
     {
-#ifdef _WIN32
-        if (m_handle)
-            CloseHandle(m_handle);
-        DeleteFileA(m_file_path.c_str());
-#endif
-    }
-
-    std::vector<uint32_t> ReadSpirv()
-    {
-        std::ifstream file(m_file_path, std::ios::binary);
-
-        file.seekg(0, std::ios::end);
-        size_t file_size = file.tellg();
-        file.seekg(0, std::ios::beg);
-
-        assert(file_size % 4 == 0);
-
-        std::vector<uint32_t> spirv((file_size + 3) / 4);
-        file.read((char*)spirv.data(), file_size);
-        return spirv;
+        delete static_cast<Data*>(res->user_data);
     }
 
 private:
-    std::string m_file_path;
-#ifdef _WIN32
-    HANDLE m_handle = nullptr;
-#endif
-};
-#ifdef _WIN32
-bool RunProcess(std::string command_line)
-{
-    STARTUPINFOA si = {};
-    si.cb = sizeof(si);
-    PROCESS_INFORMATION pi = {};
-
-    if (!CreateProcessA(nullptr, // No module name (use command line)
-        &command_line[0],        // Command line
-        nullptr,                 // Process handle not inheritable
-        nullptr,                 // Thread handle not inheritable
-        false,                   // Set handle inheritance to FALSE
-        CREATE_NO_WINDOW,        // Creation flags
-        nullptr,                 // Use parent's environment block
-        nullptr,                 // Use parent's starting directory 
-        &si,                     // Pointer to STARTUPINFO structure
-        &pi)                     // Pointer to PROCESS_INFORMATION structure
-        )
+    std::string m_base_path;
+    struct Data
     {
-        return false;
-    }
+        std::string path;
+        std::string source;
+        shaderc_include_result res;
+    };
+};
 
-    WaitForSingleObject(pi.hProcess, INFINITE);
-
-    DWORD exit_code = 0;
-    GetExitCodeProcess(pi.hProcess, &exit_code);
-
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
-
-    return !exit_code;
-}
-#else
-bool RunProcess(std::string command_line)
+std::vector<uint32_t> ShadercCompile(const ShaderDesc& shader, const SpirvOption& option)
 {
-    system(command_line.c_str());
-    return true;
-}
-#endif
-
-std::string GetGlslangPath()
-{
-#ifdef _WIN32
-    const char* vk_sdk_path = getenv("VULKAN_SDK");
-    if (!vk_sdk_path)
-        return {};
-    return std::string(vk_sdk_path) + "/Bin/glslangValidator.exe";
-#else
-    return "glslangValidator";
-#endif
-}
-
-std::string MakeCommandLine(const ShaderDesc& shader, const SpirvOption& option, const TmpSpirvFile& spirv_path)
-{
-    std::string glslang_path = GetGlslangPath();
-    if (glslang_path.empty())
-        return {};
-
-    std::string shader_type;
+    shaderc_shader_kind shader_type;
     switch (shader.type)
     {
     case ShaderType::kPixel:
-        shader_type = "frag";
+        shader_type = shaderc_fragment_shader;
         break;
     case ShaderType::kVertex:
-        shader_type = "vert";
+        shader_type = shaderc_vertex_shader;
         break;
     case ShaderType::kGeometry:
-        shader_type = "geom";
+        shader_type = shaderc_geometry_shader;
         break;
     case ShaderType::kCompute:
-        shader_type = "comp";
+        shader_type = shaderc_compute_shader;
         break;
     default:
         return {};
     }
 
-    std::string cmd = glslang_path;
-    if (option.auto_map_bindings)
-        cmd += " --auto-map-bindings ";
-    if (option.hlsl_iomap)
-        cmd += " --hlsl-iomap ";
-    if (option.resource_set_binding != -1)
-        cmd += " --resource-set-binding " + std::to_string(option.resource_set_binding) + " ";
-
+    shaderc::CompileOptions options;
+    for (const auto &x : shader.define)
+    {
+        options.AddMacroDefinition(x.first, x.second);
+    }
+    std::string shader_path = GetAssetFullPath(shader.shader_path);
+    std::string shader_dir = shader_path.substr(0, shader_path.find_last_of("\\/") + 1);
+    options.SetIncluder(std::make_unique<SpirvIncludeHandler>(shader_dir));
+    options.SetGenerateDebugInfo();
+    options.SetSourceLanguage(shaderc_source_language_hlsl);
+    options.SetAutoMapLocations(option.auto_map_bindings);
+    options.SetAutoBindUniforms(option.auto_map_bindings);
+    options.SetHlslIoMapping(option.hlsl_iomap);
+    options.SetHlslFunctionality1(option.fhlsl_functionality1);
+    options.SetOptimizationLevel(shaderc_optimization_level_performance);
+    if (option.resource_set_binding != ~0u)
+        options.SetHlslRegisterSet(std::to_string(option.resource_set_binding));
     switch (shader.type)
     {
     case ShaderType::kVertex:
     case ShaderType::kGeometry:
-        if (option.invert_y)
-            cmd += " --invert-y ";
+        options.SetInvertY(option.invert_y);
         break;
     }
-
-    cmd += " -g ";
-    cmd += " -e ";
-    cmd += shader.entrypoint;
-    cmd += " -S ";
-    cmd += shader_type;
     if (option.vulkan_semantics)
-        cmd += " -V ";
+        options.SetTargetEnvironment(shaderc_target_env_vulkan, 0);
     else
-        cmd += " -G ";
-    cmd += " -D ";
-    if (option.fhlsl_functionality1)
-        cmd += " -fhlsl_functionality1 ";
-    cmd += GetAssetFullPath(shader.shader_path);
-    cmd += " -o ";
-    cmd += spirv_path.GetFilePath();
+        options.SetTargetEnvironment(shaderc_target_env_opengl, 0);
 
-    for (auto &x : shader.define)
+    shaderc::Compiler compiler;
+    std::string source = ReadShaderFile(GetAssetFullPath(shader.shader_path));
+    shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, shader_type, shader.shader_path.c_str(), shader.entrypoint.c_str(), options);
+
+    if (module.GetCompilationStatus() != shaderc_compilation_status_success)
     {
-        cmd += " -D" + x.first + "=" + x.second;
+        std::cerr << module.GetErrorMessage() << std::endl;
+        return {};
     }
 
-    return cmd;
+    return { module.cbegin(), module.cend() };
 }
 
 std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& option)
@@ -204,8 +133,5 @@ std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& 
     }
 #endif
 
-    TmpSpirvFile spirv_path;
-    if (!RunProcess(MakeCommandLine(shader, option, spirv_path)))
-        return {};
-    return spirv_path.ReadSpirv();
+    return ShadercCompile(shader, option);
 }

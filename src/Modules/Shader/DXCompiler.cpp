@@ -117,7 +117,7 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
     DXCLoader loader;
 
     std::wstring shader_path = GetAssetFullPathW(shader.shader_path);
-    std::wstring shader_dir = shader_path.substr(0, shader_path.find_last_of(L"\\/"));
+    std::wstring shader_dir = shader_path.substr(0, shader_path.find_last_of(L"\\/") + 1);
 
     ComPtr<IDxcBlobEncoding> source;
     ASSERT_SUCCEEDED(loader.library->CreateBlobFromFile(

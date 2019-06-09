@@ -28,6 +28,8 @@ include(${project_root}/cmake/3rdparty/glad.cmake)
 include(${project_root}/cmake/3rdparty/mustache.cmake)
 include(${project_root}/cmake/3rdparty/imgui.cmake)
 include(${project_root}/cmake/3rdparty/spirv-cross.cmake)
+include(${project_root}/cmake/3rdparty/shaderc.cmake)
+
 if (VULKAN_SUPPORT)
     include(${project_root}/cmake/3rdparty/vulkan.cmake)
     add_definitions(-DVULKAN_SUPPORT)
