@@ -169,4 +169,5 @@ private:
     BlendDesc m_blend_desc;
     RasterizerDesc m_rasterizer_desc;
     bool m_is_compute = false;
+    std::map<std::map<BindKey, View::Ptr>, std::vector<VkDescriptorSet>> m_heap_cache;
 };
