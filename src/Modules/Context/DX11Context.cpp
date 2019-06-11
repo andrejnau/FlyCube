@@ -7,6 +7,7 @@
 #include <Utilities/FileUtility.h>
 #include <Program/DX11ProgramApi.h>
 #include "Context/DXGIUtility.h"
+#include <Utilities/State.h>
 
 DX11Context::DX11Context(GLFWwindow* window)
     : Context(window)
@@ -383,7 +384,14 @@ Resource::Ptr DX11Context::GetBackBuffer()
 
 void DX11Context::Present()
 {
-    ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
+    if (CurState::Instance().vsync)
+    {
+        ASSERT_SUCCEEDED(m_swap_chain->Present(1, 0));
+    }
+    else
+    {
+        ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
+    }
 }
 
 void DX11Context::ResizeBackBuffer(int width, int height)

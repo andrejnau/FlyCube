@@ -86,7 +86,9 @@ void VKContext::CreateInstance()
     ASSERT_SUCCEEDED(vkEnumerateInstanceLayerProperties(&layer_count, layers.data()));
 
     std::set<std::string> req_layers = {
+#if defined(_DEBUG)
         "VK_LAYER_LUNARG_standard_validation"
+#endif
     };
     std::vector<const char*> found_layers;
     for (const auto& layer : layers)
@@ -133,7 +135,7 @@ void VKContext::CreateInstance()
 
     ASSERT_SUCCEEDED(vkCreateInstance(&create_info, nullptr, &m_instance));
 
-#if defined(_DEBUG) || 1
+#if defined(_DEBUG)
     DebugReportListener{ m_instance };
 #endif
 }
@@ -262,7 +264,10 @@ void VKContext::CreateSwapchain(int width, int height)
     swap_chain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swap_chain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
     swap_chain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    swap_chain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    if (CurState::Instance().vsync)
+        swap_chain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    else
+        swap_chain_create_info.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
     swap_chain_create_info.clipped = true;
 
     ASSERT_SUCCEEDED(vkCreateSwapchainKHR(m_device, &swap_chain_create_info, nullptr, &m_swapchain));
