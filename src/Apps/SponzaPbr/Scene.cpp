@@ -99,7 +99,7 @@ Scene::Scene(Context& context, int width, int height)
     if (m_context.IsDxrSupported())
     {
         m_ray_tracing_ao_pass.reset(new RayTracingAOPass(m_context, { m_geometry_pass.output, m_scene_list, m_model_square, m_camera }, width, height));
-        m_ray_tracing_ao_ouput = &m_ray_tracing_ao_pass->output;
+        m_rtao = &m_ray_tracing_ao_pass->output.ao;
     }
 #endif
 }

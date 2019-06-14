@@ -16,7 +16,7 @@ add_definitions(-DSDKBIN="${sdkbin_path}")
 set(VULKAN_SUPPORT ON)
 if (WIN32)
     set(DIRECTX_SUPPORT ON)
-    #set(RAYTRACING_SUPPORT ON)
+    set(RAYTRACING_SUPPORT ON)
 endif()
 
 include(${project_root}/cmake/3rdparty/glfw.cmake)

@@ -20,7 +20,7 @@ public:
         GeometryPass::Output& geometry_pass;
         ShadowPass::Output& shadow_pass;
         SSAOPass::Output& ssao_pass;
-        Resource::Ptr ray_tracing_ao;
+        Resource::Ptr*& ray_tracing_ao;
         Model& model;
         Camera& camera;
         glm::vec3& light_pos;

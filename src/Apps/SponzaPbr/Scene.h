@@ -69,7 +69,7 @@ private:
     GeometryPass m_geometry_pass;
     ShadowPass m_shadow_pass;
     SSAOPass m_ssao_pass;
-    Resource::Ptr m_rtao;
+    Resource::Ptr* m_rtao = nullptr;
 #ifdef RAYTRACING_SUPPORT
     std::unique_ptr<RayTracingAOPass> m_ray_tracing_ao_pass;
 #endif
