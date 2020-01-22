@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utilities/Singleton.h"
+#include <string>
 #include <map>
 
 struct CurState : public Singleton<CurState>
