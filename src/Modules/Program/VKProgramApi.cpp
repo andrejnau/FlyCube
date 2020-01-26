@@ -461,6 +461,8 @@ void VKProgramApi::CompileShader(const ShaderBase& shader)
     option.auto_map_bindings = true;
     option.hlsl_iomap = true;
     option.invert_y = true;
+    if (shader.type == ShaderType::kLibrary)
+        option.use_dxc = true;
     if (m_shader_types.count(ShaderType::kGeometry) && shader.type == ShaderType::kVertex)
         option.invert_y = false;
     option.resource_set_binding = GetSetNumByShaderType(shader.type);

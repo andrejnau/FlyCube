@@ -5,6 +5,7 @@
 #include <Utilities/State.h>
 #include <Texture/DXGIFormatHelper.h>
 #include <d3d12shader.h>
+#include <Shader/DXReflector.h>
 
 D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const D3D12_SHADER_INPUT_BIND_DESC& binding_desc, const ViewDesc& view_desc, const DX12Resource& res);
 D3D12_UNORDERED_ACCESS_VIEW_DESC DX12GetUAVDesc(const D3D12_SHADER_INPUT_BIND_DESC& binding_desc, const ViewDesc& view_desc, const DX12Resource& res);

@@ -185,6 +185,7 @@ ComPtr<ID3DBlob> DXCompile(const ShaderDesc& shader, const DXOption& option)
     bool dxc_target = IsDXCTarget(shader.target);
     bool different_options = !shader.define.empty();
     different_options |= CurState::Instance().force_dxil != dxc_target;
+    different_options |= option.spirv;
 
     ComPtr<ID3DBlob> shader_buffer;
     if (!different_options && GetBlobFromCache(shader.shader_path, shader_buffer))

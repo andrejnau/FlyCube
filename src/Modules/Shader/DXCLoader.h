@@ -6,6 +6,8 @@
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
+#include <string>
+
 class DXCLoader
 {
 public:
@@ -17,5 +19,6 @@ public:
     ComPtr<IDxcCompiler> compiler;
 
 private:
+    bool Load(const std::wstring& path);
     dxc::DxcDllSupport m_dll_support;
 };
