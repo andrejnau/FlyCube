@@ -13,6 +13,25 @@ static bool operator<(const VkImageSubresourceRange& lhs, const VkImageSubresour
         std::tie(rhs.aspectMask, rhs.baseArrayLayer, rhs.baseMipLevel, rhs.layerCount, rhs.levelCount);
 }
 
+struct AccelerationStructure
+{
+    VkDeviceMemory memory;
+    VkAccelerationStructureNV accelerationStructure;
+    uint64_t handle;
+
+    VkGeometryNV geometry{};
+};
+
+struct GeometryInstance
+{
+    glm::mat3x4 transform;
+    uint32_t instanceId : 24;
+    uint32_t mask : 8;
+    uint32_t instanceOffset : 24;
+    uint32_t flags : 8;
+    uint64_t accelerationStructureHandle;
+};
+
 class VKResource : public Resource
 {
 public:
@@ -43,12 +62,17 @@ public:
         VkSampler res;
     } sampler;
 
+    AccelerationStructure bottom_as;
+    AccelerationStructure top_as;
+
     enum class Type
     {
         kUnknown,
         kBuffer,
         kImage,
-        kSampler
+        kSampler,
+        kBottomLevelAS,
+        kTopLevelAS,
     };
 
     Type res_type = Type::kUnknown;

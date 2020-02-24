@@ -18,7 +18,9 @@ public:
     VKProgramApi(VKContext& context);
 
     VkShaderStageFlagBits ShaderType2Bit(ShaderType type);
+    VkShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model);
     virtual void LinkProgram() override;
+    void CreateDRXPipeLine();
     void CreateGrPipeLine();
     void CreateComputePipeLine();
     void CreatePipeLine();
@@ -67,6 +69,8 @@ public:
     virtual void SetBlendState(const BlendDesc& desc) override;
     virtual void SetDepthStencilState(const DepthStencilDesc& desc) override;
 
+    VkBuffer shaderBindingTable;
+
 private:
 
     void CreateInputLayout(
@@ -76,12 +80,12 @@ private:
 
     void CreateRenderPass(const std::vector<uint32_t>& spirv_binary);
 
-    VKContext & m_context;
+    VKContext& m_context;
+
     std::map<ShaderType, std::vector<uint32_t>> m_spirv;
     std::map<ShaderType, VkShaderModule> m_shaders;
-    std::map<ShaderType, std::string> m_shaders_info;
     std::map<ShaderType, const ShaderBase*> m_shaders_info2;
-    
+    std::map<ShaderType, size_t> m_shader_type2set;
 
     VkPipeline graphicsPipeline = VK_NULL_HANDLE;
     VkPipelineLayout m_pipeline_layout;
@@ -89,7 +93,6 @@ private:
     std::vector<std::map<VkDescriptorType, size_t>> m_descriptor_count_by_set;
 
     std::vector<VkDescriptorSet> m_descriptor_sets;
-    std::map<ShaderType, size_t> m_shader_type2set;
 
     struct ShaderRef
     {
@@ -108,8 +111,9 @@ private:
         };
 
         std::map<std::string, ResourceRef> resources;
-    };
 
+        spirv_cross::SmallVector<spirv_cross::EntryPoint> entries;
+    };
 
     std::map<ShaderType, ShaderRef> m_shader_ref;
 
@@ -169,5 +173,6 @@ private:
     BlendDesc m_blend_desc;
     RasterizerDesc m_rasterizer_desc;
     bool m_is_compute = false;
+    bool m_is_dxr = false;
     std::map<std::map<BindKey, View::Ptr>, std::vector<VkDescriptorSet>> m_heap_cache;
 };

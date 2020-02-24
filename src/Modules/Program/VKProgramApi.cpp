@@ -9,6 +9,16 @@
 #include <iostream>
 #include <Utilities/VKUtility.h>
 
+extern PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructure;
+extern PFN_vkDestroyAccelerationStructureNV vkDestroyAccelerationStructure;
+extern PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemory;
+extern PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandle;
+extern PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirements;
+extern PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructure;
+extern PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelines;
+extern PFN_vkGetRayTracingShaderGroupHandlesNV vkGetRayTracingShaderGroupHandles;
+extern PFN_vkCmdTraceRaysNV vkCmdTraceRays;
+
 VKProgramApi::VKProgramApi(VKContext& context)
     : CommonProgramApi(context)
     , m_context(context)
@@ -29,7 +39,38 @@ VkShaderStageFlagBits VKProgramApi::ShaderType2Bit(ShaderType type)
         return VK_SHADER_STAGE_GEOMETRY_BIT;
     case ShaderType::kCompute:
         return VK_SHADER_STAGE_COMPUTE_BIT;
+    case ShaderType::kLibrary:
+        return VK_SHADER_STAGE_ALL;
     }
+    return {};
+}
+
+VkShaderStageFlagBits VKProgramApi::ExecutionModel2Bit(spv::ExecutionModel model)
+{
+    switch (model)
+    {
+    case spv::ExecutionModel::ExecutionModelVertex:
+        return VK_SHADER_STAGE_VERTEX_BIT;
+    case spv::ExecutionModel::ExecutionModelFragment:
+        return VK_SHADER_STAGE_FRAGMENT_BIT;
+    case spv::ExecutionModel::ExecutionModelGeometry:
+        return VK_SHADER_STAGE_GEOMETRY_BIT;
+    case spv::ExecutionModel::ExecutionModelGLCompute:
+        return VK_SHADER_STAGE_COMPUTE_BIT;
+    case spv::ExecutionModel::ExecutionModelRayGenerationNV:
+        return VK_SHADER_STAGE_RAYGEN_BIT_NV;
+    case spv::ExecutionModel::ExecutionModelIntersectionNV:
+        return VK_SHADER_STAGE_INTERSECTION_BIT_NV;
+    case spv::ExecutionModel::ExecutionModelAnyHitNV:
+        return VK_SHADER_STAGE_ANY_HIT_BIT_NV;
+    case spv::ExecutionModel::ExecutionModelClosestHitNV:
+        return VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+    case spv::ExecutionModel::ExecutionModelMissNV:
+        return VK_SHADER_STAGE_MISS_BIT_NV;
+    case spv::ExecutionModel::ExecutionModelCallableNV:
+        return VK_SHADER_STAGE_CALLABLE_BIT_NV;
+    }
+    assert(false);
     return {};
 }
 
@@ -38,15 +79,22 @@ void VKProgramApi::LinkProgram()
     ParseShaders();
     m_view_creater.OnLinkProgram();
 
-    for (auto & shader : m_shaders_info)
+    for (auto & shader : m_spirv)
     {
-        shaderStageCreateInfo.emplace_back();
-        shaderStageCreateInfo.back().stage = ShaderType2Bit(shader.first);
+        spirv_cross::CompilerHLSL& compiler = m_shader_ref.find(shader.first)->second.compiler;
+        m_shader_ref.find(shader.first)->second.entries = compiler.get_entry_points_and_stages();
+        auto& entry_points = m_shader_ref.find(shader.first)->second.entries;
 
-        shaderStageCreateInfo.back().sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        shaderStageCreateInfo.back().module = m_shaders[shader.first];
-        shaderStageCreateInfo.back().pName = shader.second.c_str();
-        shaderStageCreateInfo.back().pSpecializationInfo = NULL;
+        for (auto& entry_point : entry_points)
+        {
+            shaderStageCreateInfo.emplace_back();
+            shaderStageCreateInfo.back().stage = ExecutionModel2Bit(entry_point.execution_model);
+
+            shaderStageCreateInfo.back().sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            shaderStageCreateInfo.back().module = m_shaders[shader.first];
+            shaderStageCreateInfo.back().pName = entry_point.name.c_str();
+            shaderStageCreateInfo.back().pSpecializationInfo = NULL;
+        }
     }
 
     if (m_spirv.count(ShaderType::kVertex))
@@ -56,6 +104,113 @@ void VKProgramApi::LinkProgram()
     if (m_spirv.count(ShaderType::kPixel))
     {
         CreateRenderPass(m_spirv[ShaderType::kPixel]);
+    }
+}
+
+void VKProgramApi::CreateDRXPipeLine()
+{
+    std::vector<VkRayTracingShaderGroupCreateInfoNV> groups(shaderStageCreateInfo.size());
+    for (int i = 0; i < shaderStageCreateInfo.size(); ++i)
+    {
+        auto& group = groups[i];
+        group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group.generalShader = VK_SHADER_UNUSED_NV;
+        group.closestHitShader = VK_SHADER_UNUSED_NV;
+        group.anyHitShader = VK_SHADER_UNUSED_NV;
+        group.intersectionShader = VK_SHADER_UNUSED_NV;
+
+        switch (shaderStageCreateInfo[i].stage)
+        {
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
+            groups[i].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+            groups[i].closestHitShader = i;
+            break;
+        case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
+            groups[i].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+            groups[i].anyHitShader = i;
+            break;
+        case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
+            groups[i].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV;
+            groups[i].intersectionShader = i;
+            break;
+        default:
+            groups[i].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+            groups[i].generalShader = i;
+            break;
+        }
+    }
+
+    VkRayTracingPipelineCreateInfoNV rayPipelineInfo{};
+    rayPipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+    rayPipelineInfo.stageCount = static_cast<uint32_t>(shaderStageCreateInfo.size());
+    rayPipelineInfo.pStages = shaderStageCreateInfo.data();
+    rayPipelineInfo.groupCount = static_cast<uint32_t>(groups.size());
+    rayPipelineInfo.pGroups = groups.data();
+    rayPipelineInfo.maxRecursionDepth = 1;
+    rayPipelineInfo.layout = m_pipeline_layout;
+
+    ASSERT_SUCCEEDED(vkCreateRayTracingPipelines(m_context.m_device, VK_NULL_HANDLE, 1, &rayPipelineInfo, nullptr, &graphicsPipeline));
+
+
+    // Query the ray tracing properties of the current implementation, we will need them later on
+    VkPhysicalDeviceRayTracingPropertiesNV rayTracingProperties{};
+    rayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV;
+
+    VkPhysicalDeviceProperties2 deviceProps2{};
+    deviceProps2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    deviceProps2.pNext = &rayTracingProperties;
+
+    vkGetPhysicalDeviceProperties2(m_context.m_physical_device, &deviceProps2);
+
+    int GroupCount = 3;
+
+    {
+        const uint32_t sbtSize = rayTracingProperties.shaderGroupHandleSize * GroupCount;
+
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sbtSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+        vkCreateBuffer(m_context.m_device, &bufferInfo, nullptr, &shaderBindingTable);
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(m_context.m_device, shaderBindingTable, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = m_context.findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+        VkDeviceMemory memory;
+        if (vkAllocateMemory(m_context.m_device, &allocInfo, nullptr, &memory) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate vertex buffer memory!");
+        }
+
+        vkBindBufferMemory(m_context.m_device, shaderBindingTable, memory, 0);
+
+        void* datav;
+        vkMapMemory(m_context.m_device, memory, 0, bufferInfo.size, 0, &datav);
+        uint8_t* data = (uint8_t*)datav;
+
+        std::vector<uint8_t> shaderHandleStorage(sbtSize);
+
+        ASSERT_SUCCEEDED(vkGetRayTracingShaderGroupHandles(m_context.m_device, graphicsPipeline, 0, GroupCount, sbtSize, shaderHandleStorage.data()));
+
+        auto copyShaderIdentifier = [&rayTracingProperties](uint8_t* data, const uint8_t* shaderHandleStorage, uint32_t groupIndex) {
+            const uint32_t shaderGroupHandleSize = rayTracingProperties.shaderGroupHandleSize;
+            memcpy(data, shaderHandleStorage + groupIndex * shaderGroupHandleSize, shaderGroupHandleSize);
+            data += shaderGroupHandleSize;
+            return shaderGroupHandleSize;
+        };
+
+        // Copy the shader identifiers to the shader binding table
+        VkDeviceSize offset = 0;
+        for (int i = 0; i < GroupCount; ++i)
+        {
+            data += copyShaderIdentifier(data, shaderHandleStorage.data(), i);
+        }
+
+        vkUnmapMemory(m_context.m_device, memory);
     }
 }
 
@@ -195,7 +350,9 @@ void VKProgramApi::CreateComputePipeLine()
 
 void VKProgramApi::CreatePipeLine()
 {
-    if (m_is_compute)
+    if (m_is_dxr)
+        CreateDRXPipeLine();
+    else if (m_is_compute)
         CreateComputePipeLine();
     else
         CreateGrPipeLine();
@@ -288,7 +445,9 @@ void VKProgramApi::ApplyBindings()
         CreatePipeLine();
     }
 
-    if (m_is_compute)
+    if (m_is_dxr)
+        vkCmdBindPipeline(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, graphicsPipeline);
+    else if (m_is_compute)
         vkCmdBindPipeline(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_COMPUTE, graphicsPipeline);
     else
         vkCmdBindPipeline(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
@@ -320,6 +479,7 @@ void VKProgramApi::ApplyBindings()
         std::vector<VkWriteDescriptorSet> descriptorWrites;
         std::list<VkDescriptorImageInfo> list_image_info;
         std::list<VkDescriptorBufferInfo> list_buffer_info;
+        std::list<VkWriteDescriptorSetAccelerationStructureNV> list_as;
 
         for (auto& x : m_bound_resources)
         {
@@ -396,6 +556,18 @@ void VKProgramApi::ApplyBindings()
                 descriptorWrite.pBufferInfo = &buffer_info;
                 break;
             }
+            case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+            {
+                list_as.emplace_back();
+                VkWriteDescriptorSetAccelerationStructureNV& descriptorAccelerationStructureInfo = list_as.back();
+                descriptorAccelerationStructureInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+                descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
+                descriptorAccelerationStructureInfo.pAccelerationStructures = &res.top_as.accelerationStructure;
+
+                descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptorWrite.pNext = &descriptorAccelerationStructureInfo;
+                break;
+            }
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
             default:
@@ -403,7 +575,7 @@ void VKProgramApi::ApplyBindings()
                 break;
             }
 
-            if (descriptorWrite.pImageInfo || descriptorWrite.pBufferInfo)
+            if (descriptorWrite.pImageInfo || descriptorWrite.pBufferInfo || descriptorWrite.pNext)
                 descriptorWrites.push_back(descriptorWrite);
         }
 
@@ -413,7 +585,10 @@ void VKProgramApi::ApplyBindings()
     }
     m_descriptor_sets = it->second;
 
-    if (m_is_compute)
+    if (m_is_dxr)
+        vkCmdBindDescriptorSets(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, m_pipeline_layout, 0,
+            m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
+    else if (m_is_compute)
         vkCmdBindDescriptorSets(m_context.m_cmd_bufs[m_context.GetFrameIndex()], VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline_layout, 0,
             m_descriptor_sets.size(), m_descriptor_sets.data(), 0, nullptr);
     else
@@ -457,6 +632,13 @@ void VKProgramApi::CompileShader(const ShaderBase& shader)
 {
     if (shader.type == ShaderType::kCompute)
         m_is_compute = true;
+
+    if (shader.type == ShaderType::kLibrary)
+    {
+        m_is_compute = true;
+        m_is_dxr = true;
+    }
+
     SpirvOption option;
     option.auto_map_bindings = true;
     option.hlsl_iomap = true;
@@ -477,7 +659,6 @@ void VKProgramApi::CompileShader(const ShaderBase& shader)
     VkShaderModule shaderModule;
     auto result = vkCreateShaderModule(m_context.m_device, &vertexShaderCreationInfo, nullptr, &shaderModule);
     m_shaders[shader.type] = shaderModule;
-    m_shaders_info[shader.type] = shader.entrypoint;
     m_shaders_info2[shader.type] = &shader;
 }
 
@@ -590,6 +771,7 @@ void VKProgramApi::ParseShader(ShaderType shader_type, const std::vector<uint32_
     generate_bindings(resources.separate_samplers, VK_DESCRIPTOR_TYPE_SAMPLER);
     generate_bindings(resources.storage_buffers, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     generate_bindings(resources.storage_images, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    generate_bindings(resources.acceleration_structures, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
 
     print_resources(compiler, " stage_inputs ", resources.stage_inputs);
     print_resources(compiler, " uniform_buffers ", resources.uniform_buffers);
@@ -598,6 +780,7 @@ void VKProgramApi::ParseShader(ShaderType shader_type, const std::vector<uint32_
     print_resources(compiler, " separate_images ", resources.separate_images);
     print_resources(compiler, " separate_samplers ", resources.separate_samplers);
     print_resources(compiler, " stage_outputs ", resources.stage_outputs);
+    print_resources(compiler, " acceleration_structures ", resources.acceleration_structures);
 }
 
 size_t VKProgramApi::GetSetNumByShaderType(ShaderType type)

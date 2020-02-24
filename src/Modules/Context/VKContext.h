@@ -31,6 +31,9 @@ public:
     virtual void SetViewport(float width, float height) override;
     virtual void SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom) override;
 
+    virtual Resource::Ptr CreateBottomLevelAS(const BufferDesc& vertex) override;
+    virtual Resource::Ptr CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index) override;
+    virtual Resource::Ptr CreateTopLevelAS(const std::vector<std::pair<Resource::Ptr, glm::mat4>>& geometry) override;
     virtual void UseProgram(ProgramApi& program) override;
 
     virtual void IASetIndexBuffer(Resource::Ptr res, gli::format Format) override;
@@ -41,6 +44,7 @@ public:
 
     virtual void DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation) override;
     virtual void Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ) override;
+    virtual void DispatchRays(uint32_t width, uint32_t height, uint32_t depth) override;
 
     virtual Resource::Ptr GetBackBuffer() override;
     void CloseCommandBuffer();
@@ -50,6 +54,8 @@ public:
     virtual void Present() override;
 
     virtual void ResizeBackBuffer(int width, int height) override;
+
+    virtual bool IsDxrSupported() const { return true; }
 
     VKProgramApi* m_current_program = nullptr;
 

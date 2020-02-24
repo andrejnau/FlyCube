@@ -39,7 +39,7 @@ public:
         };
         m_top = m_context.CreateTopLevelAS(geometry);
 
-        m_uav = m_context.CreateTexture(BindFlag::kUav, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, m_width, m_height);
+        m_uav = m_context.CreateTexture(BindFlag::kUav | BindFlag::kSrv, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, m_width, m_height);
     }
 
     virtual void OnRender() override

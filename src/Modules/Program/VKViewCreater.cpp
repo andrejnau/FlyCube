@@ -62,6 +62,7 @@ void VKViewCreater::ParseShader(ShaderType shader_type, const std::vector<uint32
     generate_bindings(resources.separate_samplers, VK_DESCRIPTOR_TYPE_SAMPLER);
     generate_bindings(resources.storage_buffers, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     generate_bindings(resources.storage_images, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    generate_bindings(resources.acceleration_structures, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
 }
 
 VKView::Ptr VKViewCreater::GetEmptyDescriptor(ResourceType res_type)
@@ -109,7 +110,8 @@ void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t
     auto& res_type = shader_ref.compiler.get_type(ref_res.res.type_id);
     auto& dim = res_type.image.dim;
 
-    if (res_type.basetype == spirv_cross::SPIRType::BaseType::Struct)
+    if (res_type.basetype == spirv_cross::SPIRType::BaseType::Struct ||
+        res_type.basetype == spirv_cross::SPIRType::BaseType::AccelerationStructureNV)
         return;
 
     VkImageViewCreateInfo view_info = {};
