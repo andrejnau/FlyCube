@@ -503,6 +503,9 @@ void VKProgramApi::ApplyBindings()
                 name = "_Global";
 
             if (!shader_ref.resources.count(name))
+                name = "type_" + name;
+
+            if (!shader_ref.resources.count(name))
                 throw std::runtime_error("failed to find resource reflection");
             auto ref_res = shader_ref.resources[name];
             VKResource& res = static_cast<VKResource&>(*x.second.res);
