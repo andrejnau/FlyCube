@@ -920,14 +920,15 @@ Resource::Ptr VKContext::CreateBottomLevelAS(const BufferDesc& vertex, const Buf
     geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
     geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
     geometry.geometry.triangles.vertexData = vertex_res->buffer.res;
-    geometry.geometry.triangles.vertexOffset = vertex.offset;
+    geometry.geometry.triangles.vertexOffset = vertex.offset * vertex_stride;
     geometry.geometry.triangles.vertexCount = vertex.count;
     geometry.geometry.triangles.vertexStride = vertex_stride;
     geometry.geometry.triangles.vertexFormat = static_cast<VkFormat>(vertex.format);
     if (index_res)
     {
+        auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
         geometry.geometry.triangles.indexData = index_res->buffer.res;
-        geometry.geometry.triangles.indexOffset = index.offset;
+        geometry.geometry.triangles.indexOffset = index.offset * index_stride;
         geometry.geometry.triangles.indexCount = index.count;
         geometry.geometry.triangles.indexType = GetVkIndexType(index.format);
     }
