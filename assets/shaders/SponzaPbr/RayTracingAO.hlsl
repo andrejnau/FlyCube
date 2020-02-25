@@ -55,6 +55,7 @@ float3 getCosHemisphereSample(inout uint randSeed, float3 hitNorm)
 // base on https://github.com/NVIDIAGameWorks/GettingStartedWithRTXRayTracing/blob/master/05-ao/Data/Tutorial05/aoTracing.rt.hlsl
 //--------------------------------------------------------------------------------
 
+[[vk::binding(0,0)]]
 cbuffer Settings : register(b0)
 {
     float ao_radius;
@@ -72,10 +73,16 @@ cbuffer Settings : register(b0)
 #define TEXTURE_TYPE Texture2D
 #endif
 
+[[vk::binding(1,0)]]
 TEXTURE_TYPE gPosition : register(t0);
+
+[[vk::binding(2,0)]]
 TEXTURE_TYPE gNormal : register(t1);
+
+[[vk::binding(3,0)]]
 RaytracingAccelerationStructure geometry : register(t2);
 
+[[vk::binding(4,0)]]
 RWTexture2D<float4> result : register(u0);
 
 struct RayPayload
@@ -135,4 +142,10 @@ void ray_gen()
 void miss(inout RayPayload rayData)
 {
     rayData.value = 1.0f;
+}
+
+[shader("closesthit")]
+void closest(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
+{
+    payload.value = float3(1, 0, 0);
 }
