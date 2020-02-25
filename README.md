@@ -81,9 +81,14 @@ int main(int argc, char* argv[])
 python init.py
 mkdir build
 cd build
-cmake -G "Visual Studio 15 2017 Win64" ..
+cmake -G "Visual Studio 16 2019 Win64" ..
 cmake --build . --config RelWithDebInfo
 ```
+
+## Setup for Vulkan Ray Tracing
+Download latest dxc with support spirv backend from https://ci.appveyor.com/project/antiagainst/directxshadercompiler/branch/master/artifacts
+Unzip to 3rdparty/dxc-artifacts
+Copy dxil.dll from WinKits if you need DirectX12 backend too.
 
 ## SponzaPbr Settings
 Press Tab to open settings menu
