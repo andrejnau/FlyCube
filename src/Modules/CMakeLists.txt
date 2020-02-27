@@ -10,3 +10,7 @@ add_subdirectory(Texture)
 add_subdirectory(Utilities)
 add_subdirectory(View)
 add_subdirectory(WinConsole)
+
+if (VULKAN_SUPPORT)
+    add_subdirectory(VulkanExtLoader)
+endif()

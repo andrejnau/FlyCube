@@ -65,6 +65,7 @@ target_link_libraries(${target}
 if (VULKAN_SUPPORT)
     target_link_libraries(${target}
         ${Vulkan_LIBRARIES}
+        VulkanExtLoader
     )
 endif()
 

@@ -9,16 +9,6 @@
 #include <iostream>
 #include <Utilities/VKUtility.h>
 
-extern PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructure;
-extern PFN_vkDestroyAccelerationStructureNV vkDestroyAccelerationStructure;
-extern PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemory;
-extern PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandle;
-extern PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirements;
-extern PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructure;
-extern PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelines;
-extern PFN_vkGetRayTracingShaderGroupHandlesNV vkGetRayTracingShaderGroupHandles;
-extern PFN_vkCmdTraceRaysNV vkCmdTraceRays;
-
 VKProgramApi::VKProgramApi(VKContext& context)
     : CommonProgramApi(context)
     , m_context(context)
@@ -149,7 +139,7 @@ void VKProgramApi::CreateDRXPipeLine()
     rayPipelineInfo.maxRecursionDepth = 1;
     rayPipelineInfo.layout = m_pipeline_layout;
 
-    ASSERT_SUCCEEDED(vkCreateRayTracingPipelines(m_context.m_device, VK_NULL_HANDLE, 1, &rayPipelineInfo, nullptr, &graphicsPipeline));
+    ASSERT_SUCCEEDED(ext::vkCreateRayTracingPipelinesNV(m_context.m_device, VK_NULL_HANDLE, 1, &rayPipelineInfo, nullptr, &graphicsPipeline));
 
 
     // Query the ray tracing properties of the current implementation, we will need them later on
@@ -194,7 +184,7 @@ void VKProgramApi::CreateDRXPipeLine()
 
         std::vector<uint8_t> shaderHandleStorage(sbtSize);
 
-        ASSERT_SUCCEEDED(vkGetRayTracingShaderGroupHandles(m_context.m_device, graphicsPipeline, 0, GroupCount, sbtSize, shaderHandleStorage.data()));
+        ASSERT_SUCCEEDED(ext::vkGetRayTracingShaderGroupHandlesNV(m_context.m_device, graphicsPipeline, 0, GroupCount, sbtSize, shaderHandleStorage.data()));
 
         auto copyShaderIdentifier = [&rayTracingProperties](uint8_t* data, const uint8_t* shaderHandleStorage, uint32_t groupIndex) {
             const uint32_t shaderGroupHandleSize = rayTracingProperties.shaderGroupHandleSize;

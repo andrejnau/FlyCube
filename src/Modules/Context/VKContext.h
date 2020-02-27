@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 #include <Geometry/IABuffer.h>
 #include <assimp/postprocess.h>
+#include <VulkanExtLoader/VulkanExtLoader.h>
 
 struct VKProgramApi;
 class VKContext : public Context

@@ -17,16 +17,6 @@
 #include <Utilities/VKUtility.h>
 #include <Utilities/State.h>
 
-PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructure;
-PFN_vkDestroyAccelerationStructureNV vkDestroyAccelerationStructure;
-PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemory;
-PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandle;
-PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirements;
-PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructure;
-PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelines;
-PFN_vkGetRayTracingShaderGroupHandlesNV vkGetRayTracingShaderGroupHandles;
-PFN_vkCmdTraceRaysNV vkCmdTraceRays;
-
 VkIndexType GetVkIndexType(gli::format Format)
 {
     VkFormat format = static_cast<VkFormat>(Format);
@@ -46,7 +36,6 @@ class DebugReportListener
 {
 public:
     DebugReportListener(VkInstance instance)
-        : m_vkCreateDebugReportCallbackEXT(reinterpret_cast<decltype(m_vkCreateDebugReportCallbackEXT)>(vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT")))
     {
         VkDebugReportCallbackCreateInfoEXT callback_create_info = {};
         callback_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
@@ -57,7 +46,7 @@ public:
         callback_create_info.pfnCallback = &MyDebugReportCallback;
 
         VkDebugReportCallbackEXT callback;
-        ASSERT_SUCCEEDED(m_vkCreateDebugReportCallbackEXT(instance, &callback_create_info, nullptr, &callback));
+        ASSERT_SUCCEEDED(ext::vkCreateDebugReportCallbackEXT(instance, &callback_create_info, nullptr, &callback));
     }
 
 private:
@@ -100,8 +89,6 @@ private:
             printf("too much error messages");
         return VK_FALSE;
     }
-
-    decltype(&vkCreateDebugReportCallbackEXT) m_vkCreateDebugReportCallbackEXT;
 };
 
 void VKContext::CreateInstance()
@@ -161,6 +148,8 @@ void VKContext::CreateInstance()
     create_info.ppEnabledExtensionNames = found_extension.data();
 
     ASSERT_SUCCEEDED(vkCreateInstance(&create_info, nullptr, &m_instance));
+
+    LoadVkInstanceExt(m_instance);
 
 #if defined(_DEBUG)
     DebugReportListener{ m_instance };
@@ -259,17 +248,7 @@ void VKContext::CreateDevice()
 
     ASSERT_SUCCEEDED(vkCreateDevice(m_physical_device, &device_create_info, nullptr, &m_device));
 
-
-    // Get VK_NV_ray_tracing related function pointers
-    vkCreateAccelerationStructure = reinterpret_cast<PFN_vkCreateAccelerationStructureNV>(vkGetDeviceProcAddr(m_device, "vkCreateAccelerationStructureNV"));
-    vkDestroyAccelerationStructure = reinterpret_cast<PFN_vkDestroyAccelerationStructureNV>(vkGetDeviceProcAddr(m_device, "vkDestroyAccelerationStructureNV"));
-    vkBindAccelerationStructureMemory = reinterpret_cast<PFN_vkBindAccelerationStructureMemoryNV>(vkGetDeviceProcAddr(m_device, "vkBindAccelerationStructureMemoryNV"));
-    vkGetAccelerationStructureHandle = reinterpret_cast<PFN_vkGetAccelerationStructureHandleNV>(vkGetDeviceProcAddr(m_device, "vkGetAccelerationStructureHandleNV"));
-    vkGetAccelerationStructureMemoryRequirements = reinterpret_cast<PFN_vkGetAccelerationStructureMemoryRequirementsNV>(vkGetDeviceProcAddr(m_device, "vkGetAccelerationStructureMemoryRequirementsNV"));
-    vkCmdBuildAccelerationStructure = reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(vkGetDeviceProcAddr(m_device, "vkCmdBuildAccelerationStructureNV"));
-    vkCreateRayTracingPipelines = reinterpret_cast<PFN_vkCreateRayTracingPipelinesNV>(vkGetDeviceProcAddr(m_device, "vkCreateRayTracingPipelinesNV"));
-    vkGetRayTracingShaderGroupHandles = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesNV>(vkGetDeviceProcAddr(m_device, "vkGetRayTracingShaderGroupHandlesNV"));
-    vkCmdTraceRays = reinterpret_cast<PFN_vkCmdTraceRaysNV>(vkGetDeviceProcAddr(m_device, "vkCmdTraceRaysNV"));
+    LoadVkDeviceExt(m_device);
 }
 
 void VKContext::CreateSwapchain(int width, int height)
@@ -952,7 +931,7 @@ Resource::Ptr VKContext::CreateBottomLevelAS(const BufferDesc& vertex, const Buf
     VkAccelerationStructureCreateInfoNV accelerationStructureCI{};
     accelerationStructureCI.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
     accelerationStructureCI.info = accelerationStructureInfo;
-    ASSERT_SUCCEEDED(vkCreateAccelerationStructure(m_device, &accelerationStructureCI, nullptr, &bottomLevelAS.accelerationStructure));
+    ASSERT_SUCCEEDED(ext::vkCreateAccelerationStructureNV(m_device, &accelerationStructureCI, nullptr, &bottomLevelAS.accelerationStructure));
 
     VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo{};
     memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
@@ -960,7 +939,7 @@ Resource::Ptr VKContext::CreateBottomLevelAS(const BufferDesc& vertex, const Buf
     memoryRequirementsInfo.accelerationStructure = bottomLevelAS.accelerationStructure;
 
     VkMemoryRequirements2 memoryRequirements2{};
-    vkGetAccelerationStructureMemoryRequirements(m_device, &memoryRequirementsInfo, &memoryRequirements2);
+    ext::vkGetAccelerationStructureMemoryRequirementsNV(m_device, &memoryRequirementsInfo, &memoryRequirements2);
 
     VkMemoryAllocateInfo memoryAllocateInfo = {};
     memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -972,9 +951,9 @@ Resource::Ptr VKContext::CreateBottomLevelAS(const BufferDesc& vertex, const Buf
     accelerationStructureMemoryInfo.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
     accelerationStructureMemoryInfo.accelerationStructure = bottomLevelAS.accelerationStructure;
     accelerationStructureMemoryInfo.memory = bottomLevelAS.memory;
-    ASSERT_SUCCEEDED(vkBindAccelerationStructureMemory(m_device, 1, &accelerationStructureMemoryInfo));
+    ASSERT_SUCCEEDED(ext::vkBindAccelerationStructureMemoryNV(m_device, 1, &accelerationStructureMemoryInfo));
 
-    ASSERT_SUCCEEDED(vkGetAccelerationStructureHandle(m_device, bottomLevelAS.accelerationStructure, sizeof(uint64_t), &bottomLevelAS.handle));
+    ASSERT_SUCCEEDED(ext::vkGetAccelerationStructureHandleNV(m_device, bottomLevelAS.accelerationStructure, sizeof(uint64_t), &bottomLevelAS.handle));
 
     VKResource::Ptr res = std::make_shared<VKResource>();
     res->res_type = VKResource::Type::kBottomLevelAS;
@@ -996,7 +975,7 @@ Resource::Ptr VKContext::CreateTopLevelAS(const std::vector<std::pair<Resource::
     VkAccelerationStructureCreateInfoNV accelerationStructureCI{};
     accelerationStructureCI.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
     accelerationStructureCI.info = accelerationStructureInfo;
-    ASSERT_SUCCEEDED(vkCreateAccelerationStructure(m_device, &accelerationStructureCI, nullptr, &topLevelAS.accelerationStructure));
+    ASSERT_SUCCEEDED(ext::vkCreateAccelerationStructureNV(m_device, &accelerationStructureCI, nullptr, &topLevelAS.accelerationStructure));
 
     VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo{};
     memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
@@ -1004,7 +983,7 @@ Resource::Ptr VKContext::CreateTopLevelAS(const std::vector<std::pair<Resource::
     memoryRequirementsInfo.accelerationStructure = topLevelAS.accelerationStructure;
 
     VkMemoryRequirements2 memoryRequirements2{};
-    vkGetAccelerationStructureMemoryRequirements(m_device, &memoryRequirementsInfo, &memoryRequirements2);
+    ext::vkGetAccelerationStructureMemoryRequirementsNV(m_device, &memoryRequirementsInfo, &memoryRequirements2);
 
     VkMemoryAllocateInfo memoryAllocateInfo = {};
     memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -1016,9 +995,9 @@ Resource::Ptr VKContext::CreateTopLevelAS(const std::vector<std::pair<Resource::
     accelerationStructureMemoryInfo.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
     accelerationStructureMemoryInfo.accelerationStructure = topLevelAS.accelerationStructure;
     accelerationStructureMemoryInfo.memory = topLevelAS.memory;
-    ASSERT_SUCCEEDED(vkBindAccelerationStructureMemory(m_device, 1, &accelerationStructureMemoryInfo));
+    ASSERT_SUCCEEDED(ext::vkBindAccelerationStructureMemoryNV(m_device, 1, &accelerationStructureMemoryInfo));
 
-    ASSERT_SUCCEEDED(vkGetAccelerationStructureHandle(m_device, topLevelAS.accelerationStructure, sizeof(uint64_t), &topLevelAS.handle));
+    ASSERT_SUCCEEDED(ext::vkGetAccelerationStructureHandleNV(m_device, topLevelAS.accelerationStructure, sizeof(uint64_t), &topLevelAS.handle));
 
 
 
@@ -1040,14 +1019,14 @@ Resource::Ptr VKContext::CreateTopLevelAS(const std::vector<std::pair<Resource::
         memoryRequirementsInfo.accelerationStructure = res->bottom_as.accelerationStructure;
 
         VkMemoryRequirements2 memReqBLAS;
-        vkGetAccelerationStructureMemoryRequirements(m_device, &memoryRequirementsInfo, &memReqBLAS);
+        ext::vkGetAccelerationStructureMemoryRequirementsNV(m_device, &memoryRequirementsInfo, &memReqBLAS);
 
         maximumBlasSize = std::max(maximumBlasSize, memReqBLAS.memoryRequirements.size);
     }
 
     VkMemoryRequirements2 memReqTopLevelAS;
     memoryRequirementsInfo.accelerationStructure = topLevelAS.accelerationStructure;
-    vkGetAccelerationStructureMemoryRequirements(m_device, &memoryRequirementsInfo, &memReqTopLevelAS);
+    ext::vkGetAccelerationStructureMemoryRequirementsNV(m_device, &memoryRequirementsInfo, &memReqTopLevelAS);
 
     const VkDeviceSize scratchBufferSize = std::max(maximumBlasSize, memReqTopLevelAS.memoryRequirements.size);
 
@@ -1093,7 +1072,7 @@ Resource::Ptr VKContext::CreateTopLevelAS(const std::vector<std::pair<Resource::
 
         buildInfo.pGeometries = &res->bottom_as.geometry;
 
-        vkCmdBuildAccelerationStructure(
+        ext::vkCmdBuildAccelerationStructureNV(
             m_cmd_bufs[m_frame_index],
             &buildInfo,
             VK_NULL_HANDLE,
@@ -1168,7 +1147,7 @@ Resource::Ptr VKContext::CreateTopLevelAS(const std::vector<std::pair<Resource::
         vkUnmapMemory(m_device, memory);
     }
 
-    vkCmdBuildAccelerationStructure(
+    ext::vkCmdBuildAccelerationStructureNV(
         m_cmd_bufs[m_frame_index],
         &buildInfo,
         geometryInstance,
@@ -1279,7 +1258,7 @@ void VKContext::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
     VkDeviceSize bindingStride = rayTracingProperties.shaderGroupHandleSize;
 
     m_current_program->ApplyBindings();
-    vkCmdTraceRays(m_cmd_bufs[m_frame_index],
+    ext::vkCmdTraceRaysNV(m_cmd_bufs[m_frame_index],
         m_current_program->shaderBindingTable, bindingOffsetRayGenShader,
         m_current_program->shaderBindingTable, bindingOffsetMissShader, bindingStride,
         m_current_program->shaderBindingTable, bindingOffsetHitShader, bindingStride,
