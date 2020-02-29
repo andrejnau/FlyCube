@@ -1,6 +1,6 @@
 #pragma once
 
-#define CUSTOM_FAILED(hr) ((hr) != VK_SUCCESS)
+#define CUSTOM_FAILED(hr) ((static_cast<VkResult>((hr))) != VK_SUCCESS)
 #ifdef _WIN32
 #include "DXUtility.h"
 #else

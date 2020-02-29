@@ -33,7 +33,7 @@ void VKViewCreater::ParseShader(ShaderType shader_type, const std::vector<uint32
     spirv_cross::CompilerHLSL& compiler = m_shader_ref.find(shader_type)->second.compiler;
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
-    auto generate_bindings = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources, VkDescriptorType res_type)
+    auto generate_bindings = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType res_type)
     {
         for (auto& res : resources)
         {
@@ -43,13 +43,13 @@ void VKViewCreater::ParseShader(ShaderType shader_type, const std::vector<uint32
 
             if (type.basetype == spirv_cross::SPIRType::BaseType::Image && type.image.dim == spv::Dim::DimBuffer)
             {
-                if (res_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+                if (res_type == vk::DescriptorType::eSampledImage)
                 {
-                    res_type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+                    res_type = vk::DescriptorType::eUniformTexelBuffer;
                 }
-                else if (res_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+                else if (res_type == vk::DescriptorType::eStorageImage)
                 {
-                    res_type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+                    res_type = vk::DescriptorType::eStorageTexelBuffer;
                 }
             }
 
@@ -57,12 +57,12 @@ void VKViewCreater::ParseShader(ShaderType shader_type, const std::vector<uint32
         }
     };
 
-    generate_bindings(resources.uniform_buffers, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-    generate_bindings(resources.separate_images, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    generate_bindings(resources.separate_samplers, VK_DESCRIPTOR_TYPE_SAMPLER);
-    generate_bindings(resources.storage_buffers, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    generate_bindings(resources.storage_images, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-    generate_bindings(resources.acceleration_structures, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
+    generate_bindings(resources.uniform_buffers, vk::DescriptorType::eUniformBuffer);
+    generate_bindings(resources.separate_images, vk::DescriptorType::eSampledImage);
+    generate_bindings(resources.separate_samplers, vk::DescriptorType::eSampler);
+    generate_bindings(resources.storage_buffers, vk::DescriptorType::eStorageBuffer);
+    generate_bindings(resources.storage_images, vk::DescriptorType::eStorageImage);
+    generate_bindings(resources.acceleration_structures, vk::DescriptorType::eAccelerationStructureNV);
 }
 
 VKView::Ptr VKViewCreater::GetEmptyDescriptor(ResourceType res_type)
@@ -114,9 +114,8 @@ void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t
         res_type.basetype == spirv_cross::SPIRType::BaseType::AccelerationStructureNV)
         return;
 
-    VkImageViewCreateInfo view_info = {};
-    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    view_info.image = res.image.res;
+    vk::ImageViewCreateInfo view_info = {};
+    view_info.image = res.image.res.get();
     view_info.format = res.image.format;
     view_info.subresourceRange.aspectMask = m_context.GetAspectFlags(view_info.format);
     view_info.subresourceRange.baseMipLevel = view_desc.level;
@@ -132,30 +131,30 @@ void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t
     case spv::Dim::Dim1D:
     {
         if (res_type.image.arrayed)
-            view_info.viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+            view_info.viewType = vk::ImageViewType::e1DArray;
         else
-            view_info.viewType = VK_IMAGE_VIEW_TYPE_1D;
+            view_info.viewType = vk::ImageViewType::e1D;
         break;
     }
     case spv::Dim::Dim2D:
     {
         if (res_type.image.arrayed)
-            view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+            view_info.viewType = vk::ImageViewType::e2DArray;
         else
-            view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            view_info.viewType = vk::ImageViewType::e2D;
         break;
     }
     case spv::Dim::Dim3D:
     {
-        view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
+        view_info.viewType = vk::ImageViewType::e3D;
         break;
     }
     case spv::Dim::DimCube:
     {
         if (res_type.image.arrayed)
-            view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+            view_info.viewType = vk::ImageViewType::eCubeArray;
         else
-            view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+            view_info.viewType = vk::ImageViewType::eCube;
         break;
     }   
     default:
@@ -164,24 +163,23 @@ void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t
         break;
     }
     }
-    ASSERT_SUCCEEDED(vkCreateImageView(m_context.m_device, &view_info, nullptr, &handle.srv));
+    handle.srv = m_context.m_device->createImageViewUnique(view_info);
 }
 
 void VKViewCreater::CreateRTV(uint32_t slot, const ViewDesc& view_desc, const VKResource& res, VKView& handle)
 {
-    VkImageViewCreateInfo view_info = {};
-    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    view_info.image = res.image.res;
+    vk::ImageViewCreateInfo view_info = {};
+    view_info.image = res.image.res.get();
     view_info.format = res.image.format;
     if (res.image.array_layers > 1)
-        view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        view_info.viewType = vk::ImageViewType::e2DArray;
     else
-        view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        view_info.viewType = vk::ImageViewType::e2D;
     view_info.subresourceRange.aspectMask = m_context.GetAspectFlags(view_info.format);
     view_info.subresourceRange.baseMipLevel = view_desc.level;
     view_info.subresourceRange.levelCount = 1;
     view_info.subresourceRange.baseArrayLayer = 0;
     view_info.subresourceRange.layerCount = res.image.array_layers;
 
-    ASSERT_SUCCEEDED(vkCreateImageView(m_context.m_device, &view_info, nullptr, &handle.om));
+    handle.om = m_context.m_device->createImageViewUnique(view_info);
 }

@@ -43,7 +43,7 @@ private:
         struct ResourceRef
         {
             spirv_cross::Resource res;
-            VkDescriptorType descriptor_type;
+            vk::DescriptorType descriptor_type;
             uint32_t binding;
         };
 

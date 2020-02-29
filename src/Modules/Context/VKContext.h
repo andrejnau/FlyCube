@@ -1,12 +1,11 @@
 #pragma once
 
+#include <vulkan/vulkan.hpp>
 #include "Context/Context.h"
 #include "Context/VKDescriptorPool.h"
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.h>
 #include <Geometry/IABuffer.h>
 #include <assimp/postprocess.h>
-#include <VulkanExtLoader/VulkanExtLoader.h>
 
 struct VKProgramApi;
 class VKContext : public Context
@@ -20,13 +19,13 @@ public:
     VKContext(GLFWwindow* window);
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
-    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
     virtual Resource::Ptr CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1) override;
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
     virtual Resource::Ptr CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride) override;
     virtual Resource::Ptr CreateSampler(const SamplerDesc& desc) override;
-    void TransitionImageLayout(VKResource::Image& image, VkImageLayout newLayout, const ViewDesc& view_desc);
-    VkImageAspectFlags GetAspectFlags(VkFormat format);
+    void TransitionImageLayout(VKResource::Image& image, vk::ImageLayout newLayout, const ViewDesc& view_desc);
+    vk::ImageAspectFlags GetAspectFlags(vk::Format format);
     virtual void UpdateSubresource(const Resource::Ptr& ires, uint32_t DstSubresource, const void *pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch) override;
 
     virtual void SetViewport(float width, float height) override;
@@ -60,28 +59,36 @@ public:
 
     VKProgramApi* m_current_program = nullptr;
 
-    VkInstance m_instance = VK_NULL_HANDLE;
-    VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
+    vk::UniqueInstance m_instance;
+    vk::PhysicalDevice m_physical_device;
     uint32_t m_queue_family_index = 0;
-    VkDevice m_device = VK_NULL_HANDLE;
-    VkQueue m_queue = VK_NULL_HANDLE;
-    VkSurfaceKHR m_surface = VK_NULL_HANDLE;
-    VkFormat m_swapchain_color_format = VK_FORMAT_B8G8R8_UNORM;
-    VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
-    std::vector<VkImage> m_images;
-    VkCommandPool m_cmd_pool = VK_NULL_HANDLE;
-    std::vector<VkCommandBuffer> m_cmd_bufs;
-    VkSemaphore m_image_available_semaphore = VK_NULL_HANDLE;
-    VkSemaphore m_rendering_finished_semaphore = VK_NULL_HANDLE;
-    VkFence m_fence = VK_NULL_HANDLE;;
+    vk::UniqueDevice m_device;
+    vk::Queue m_queue;
+    vk::UniqueSurfaceKHR m_surface;
+    vk::Format m_swapchain_color_format = vk::Format::eB8G8R8Unorm;
+    vk::UniqueSwapchainKHR m_swapchain;
+    std::vector<vk::Image> m_images;
+    vk::UniqueCommandPool m_cmd_pool;
+    std::vector<vk::UniqueCommandBuffer> m_cmd_bufs;
+    vk::UniqueSemaphore m_image_available_semaphore;
+    vk::UniqueSemaphore m_rendering_finished_semaphore;
+    vk::UniqueFence m_fence;
 
     VKDescriptorPool& GetDescriptorPool();
     std::unique_ptr<VKDescriptorPool> descriptor_pool[FrameCount];
 
-    VkRenderPass m_render_pass = VK_NULL_HANDLE;
-    VkFramebuffer m_framebuffer = VK_NULL_HANDLE;
+    vk::RenderPass m_render_pass;
+    vk::Framebuffer m_framebuffer;
     bool m_is_open_render_pass = false;
 
     std::vector<std::reference_wrapper<VKProgramApi>> m_created_program;
     VKResource::Ptr m_back_buffers[FrameCount];
+
+    void QueryOnDelete(VKResource& res)
+    {
+        m_deletion_queue[m_frame_index].emplace_back(std::move(res));
+    }
+
+    std::vector<VKResource> m_deletion_queue[FrameCount];
 };
+

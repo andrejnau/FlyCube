@@ -6,13 +6,13 @@ VKDescriptorPool::VKDescriptorPool(VKContext & context)
 {
 }
 
-void VKDescriptorPool::ResizeHeap(const std::map<VkDescriptorType, size_t>& count)
+void VKDescriptorPool::ResizeHeap(const std::map<vk::DescriptorType, size_t>& count)
 {
-    std::vector<VkDescriptorPoolSize> pool_sizes;
+    std::vector<vk::DescriptorPoolSize> pool_sizes;
     for (auto & x : count)
     {
         pool_sizes.emplace_back();
-        VkDescriptorPoolSize& pool_size = pool_sizes.back();
+        vk::DescriptorPoolSize& pool_size = pool_sizes.back();
         pool_size.type = x.first;
         pool_size.descriptorCount = x.second;
     }
@@ -21,38 +21,34 @@ void VKDescriptorPool::ResizeHeap(const std::map<VkDescriptorType, size_t>& coun
     if (count.empty())
     {
         pool_sizes.emplace_back();
-        VkDescriptorPoolSize& pool_size = pool_sizes.back();
-        pool_size.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+        vk::DescriptorPoolSize& pool_size = pool_sizes.back();
+        pool_size.type = vk::DescriptorType::eSampler;
         pool_size.descriptorCount = 1;
     }
 
-    VkDescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    vk::DescriptorPoolCreateInfo poolInfo = {};
     poolInfo.poolSizeCount = pool_sizes.size();
     poolInfo.pPoolSizes = pool_sizes.data();
     poolInfo.maxSets = 1;
 
-    if (vkCreateDescriptorPool(m_context.m_device, &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
+    // TODO
+    if (m_descriptorPool)
+        m_descriptorPool.release();
+
+    m_descriptorPool = m_context.m_device->createDescriptorPoolUnique(poolInfo);
 }
 
-VkDescriptorSet VKDescriptorPool::AllocateDescriptorSet(VkDescriptorSetLayout & set_layout, const std::map<VkDescriptorType, size_t>& count)
+vk::UniqueDescriptorSet VKDescriptorPool::AllocateDescriptorSet(const vk::DescriptorSetLayout& set_layout, const std::map<vk::DescriptorType, size_t>& count)
 {
     ResizeHeap(count);
 
-    VkDescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = m_descriptorPool;
+    vk::DescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.descriptorPool = m_descriptorPool.get();
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &set_layout;
 
-    VkDescriptorSet m_descriptor_set;
-    if (vkAllocateDescriptorSets(m_context.m_device, &allocInfo, &m_descriptor_set) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate descriptor set!");
-    }
-
-    return m_descriptor_set;
+    auto descriptor_sets = m_context.m_device->allocateDescriptorSetsUnique(allocInfo);
+    return std::move(descriptor_sets.front());
 }
 
 void VKDescriptorPool::OnFrameBegin()

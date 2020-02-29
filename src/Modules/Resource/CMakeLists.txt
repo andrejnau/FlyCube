@@ -14,6 +14,10 @@ if (VULKAN_SUPPORT)
         ${headers}
         VKResource.h
     )
+    set(sources 
+        ${sources}
+        VKResource.cpp
+    )
 endif()
 
 if (DIRECTX_SUPPORT)

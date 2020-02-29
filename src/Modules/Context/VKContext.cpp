@@ -16,16 +16,18 @@
 #include <gli/gli.hpp>
 #include <Utilities/VKUtility.h>
 #include <Utilities/State.h>
+#include <VulkanExtLoader/VulkanExtLoader.h>
+#include <sstream>
 
-VkIndexType GetVkIndexType(gli::format Format)
+vk::IndexType GetVkIndexType(gli::format Format)
 {
-    VkFormat format = static_cast<VkFormat>(Format);
+    vk::Format format = static_cast<vk::Format>(Format);
     switch (format)
     {
-    case VK_FORMAT_R16_UINT:
-        return VK_INDEX_TYPE_UINT16;
-    case VK_FORMAT_R32_UINT:
-        return VK_INDEX_TYPE_UINT32;
+    case vk::Format::eR16Uint:
+        return vk::IndexType::eUint16;
+    case vk::Format::eR32Uint:
+        return vk::IndexType::eUint32;
     default:
         assert(false);
         return {};
@@ -35,19 +37,20 @@ VkIndexType GetVkIndexType(gli::format Format)
 class DebugReportListener
 {
 public:
-    DebugReportListener(VkInstance instance)
+    DebugReportListener(const vk::UniqueInstance& instance)
     {
-        VkDebugReportCallbackCreateInfoEXT callback_create_info = {};
-        callback_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-        callback_create_info.flags = VK_DEBUG_REPORT_WARNING_BIT_EXT |
-                                     VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
-                                     VK_DEBUG_REPORT_ERROR_BIT_EXT |
-                                     VK_DEBUG_REPORT_DEBUG_BIT_EXT;
-        callback_create_info.pfnCallback = &MyDebugReportCallback;
-
-        VkDebugReportCallbackEXT callback;
-        ASSERT_SUCCEEDED(ext::vkCreateDebugReportCallbackEXT(instance, &callback_create_info, nullptr, &callback));
+        if (!enabled)
+            return;
+        vk::DebugReportCallbackCreateInfoEXT callback_create_info = {};
+        callback_create_info.flags = vk::DebugReportFlagBitsEXT::eWarning |
+                                     vk::DebugReportFlagBitsEXT::ePerformanceWarning |
+                                     vk::DebugReportFlagBitsEXT::eError |
+                                     vk::DebugReportFlagBitsEXT::eDebug;
+        callback_create_info.pfnCallback = &DebugReportCallback;
+        m_callback = instance->createDebugReportCallbackEXT(callback_create_info);
     }
+
+    static constexpr bool enabled = true;
 
 private:
     static bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& message)
@@ -55,16 +58,14 @@ private:
         switch (object_type)
         {
         case VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT:
-       /* case VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT:
-        case VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT:
-        case VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT:*/
+        case VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT:
             return true;
         default:
             return false;
         }
     }
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL MyDebugReportCallback(
+    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
         VkDebugReportFlagsEXT       flags,
         VkDebugReportObjectTypeEXT  objectType,
         uint64_t                    object,
@@ -76,44 +77,36 @@ private:
     {
         if (SkipIt(objectType, pMessage))
             return VK_FALSE;
-
-#if defined(_DEBUG)
-        static constexpr size_t errors_limit = 1000;
-#else
-        static constexpr size_t errors_limit = 10;
+        static size_t error_count = 0;
+#ifdef _WIN32
+        if (++error_count <= 1000)
+        {
+            std::stringstream buf;
+            buf << pLayerPrefix << " " << to_string(static_cast<vk::DebugReportFlagBitsEXT>(flags)) << " " << pMessage << std::endl;
+            OutputDebugStringA(buf.str().c_str());
+        }
 #endif
-        static size_t cnt = 0;
-        if (++cnt <= errors_limit)
-            printf("%s\n", pMessage);
-        if (cnt == errors_limit)
-            printf("too much error messages");
         return VK_FALSE;
     }
+
+    vk::DebugReportCallbackEXT m_callback;
 };
 
 void VKContext::CreateInstance()
 {
-    uint32_t layer_count = 0;
-    ASSERT_SUCCEEDED(vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
-    std::vector<VkLayerProperties> layers(layer_count);
-    ASSERT_SUCCEEDED(vkEnumerateInstanceLayerProperties(&layer_count, layers.data()));
+    auto layers = vk::enumerateInstanceLayerProperties();
 
-    std::set<std::string> req_layers = {
-#if defined(_DEBUG)
-        "VK_LAYER_LUNARG_standard_validation"
-#endif
-    };
+    std::set<std::string> req_layers;
+    if (DebugReportListener::enabled)
+        req_layers.insert("VK_LAYER_LUNARG_standard_validation");
     std::vector<const char*> found_layers;
     for (const auto& layer : layers)
     {
         if (req_layers.count(layer.layerName))
             found_layers.push_back(layer.layerName);
     }
-    
-    uint32_t extension_count = 0;
-    ASSERT_SUCCEEDED(vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-    std::vector<VkExtensionProperties> extensions(extension_count);
-    ASSERT_SUCCEEDED(vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+
+    auto extensions = vk::enumerateInstanceExtensionProperties();
 
     std::set<std::string> req_extension = {
         VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
@@ -135,42 +128,34 @@ void VKContext::CreateInstance()
             found_extension.push_back(extension.extensionName);
     }
 
-    VkApplicationInfo app_info = {};
-    app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    vk::ApplicationInfo app_info = {};
     app_info.apiVersion = VK_API_VERSION_1_0;
 
-    VkInstanceCreateInfo create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    vk::InstanceCreateInfo create_info;
     create_info.pApplicationInfo = &app_info;
     create_info.enabledLayerCount = found_layers.size();
     create_info.ppEnabledLayerNames = found_layers.data();
     create_info.enabledExtensionCount = found_extension.size();
     create_info.ppEnabledExtensionNames = found_extension.data();
 
-    ASSERT_SUCCEEDED(vkCreateInstance(&create_info, nullptr, &m_instance));
+    m_instance = vk::createInstanceUnique(create_info);
 
-    LoadVkInstanceExt(m_instance);
+    LoadVkInstanceExt(m_instance.get());
 
-#if defined(_DEBUG)
     DebugReportListener{ m_instance };
-#endif
 }
 
 void VKContext::SelectPhysicalDevice()
 {
-    uint32_t device_count = 0;
-    ASSERT_SUCCEEDED(vkEnumeratePhysicalDevices(m_instance, &device_count, nullptr));
-    std::vector<VkPhysicalDevice> devices(device_count);
-    ASSERT_SUCCEEDED(vkEnumeratePhysicalDevices(m_instance, &device_count, devices.data()));
+    auto devices = m_instance->enumeratePhysicalDevices();
 
     uint32_t gpu_index = 0;
     for (const auto& device : devices)
     {
-        VkPhysicalDeviceProperties device_properties;
-        vkGetPhysicalDeviceProperties(device, &device_properties);
+        vk::PhysicalDeviceProperties device_properties = device.getProperties();
 
-        if (device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ||
-            device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+        if (device_properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
+            device_properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu)
         {
             if (CurState::Instance().required_gpu_index != -1 && gpu_index++ != CurState::Instance().required_gpu_index)
                 continue;
@@ -183,16 +168,13 @@ void VKContext::SelectPhysicalDevice()
 
 void VKContext::SelectQueueFamilyIndex()
 {
-    uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(m_physical_device, &queue_family_count, nullptr);
-    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(m_physical_device, &queue_family_count, queue_families.data());
+    auto queue_families = m_physical_device.getQueueFamilyProperties();
 
     m_queue_family_index = -1;
     for (size_t i = 0; i < queue_families.size(); ++i)
     {
         const auto& queue = queue_families[i];
-        if (queue.queueCount > 0 && queue.queueFlags & VK_QUEUE_GRAPHICS_BIT && queue.queueFlags & VK_QUEUE_COMPUTE_BIT)
+        if (queue.queueCount > 0 && queue.queueFlags & vk::QueueFlagBits::eGraphics && queue.queueFlags & vk::QueueFlagBits::eCompute)
         {
             m_queue_family_index = static_cast<uint32_t>(i);
             break;
@@ -203,26 +185,7 @@ void VKContext::SelectQueueFamilyIndex()
 
 void VKContext::CreateDevice()
 {
-    const float queue_priority = 1.0f;
-    VkDeviceQueueCreateInfo queue_create_info = {};
-    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_create_info.queueFamilyIndex = m_queue_family_index;
-    queue_create_info.queueCount = 1;
-    queue_create_info.pQueuePriorities = &queue_priority;
-
-    VkPhysicalDeviceFeatures device_features = {};
-    device_features.textureCompressionBC = true;
-    device_features.vertexPipelineStoresAndAtomics = true;
-    device_features.samplerAnisotropy = true;
-    device_features.fragmentStoresAndAtomics = true;
-    device_features.sampleRateShading = true;
-    device_features.geometryShader = true;
-    device_features.imageCubeArray = true;
-
-    uint32_t extension_count = 0;
-    ASSERT_SUCCEEDED(vkEnumerateDeviceExtensionProperties(m_physical_device, nullptr, &extension_count, nullptr));
-    std::vector<VkExtensionProperties> extensions(extension_count);
-    ASSERT_SUCCEEDED(vkEnumerateDeviceExtensionProperties(m_physical_device, nullptr, &extension_count, extensions.data()));
+    auto extensions = m_physical_device.enumerateDeviceExtensionProperties();
     std::set<std::string> req_extension = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
@@ -238,61 +201,71 @@ void VKContext::CreateDevice()
             found_extension.push_back(extension.extensionName);
     }
 
-    VkDeviceCreateInfo device_create_info = {};
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    const float queue_priority = 1.0f;
+    vk::DeviceQueueCreateInfo queue_create_info = {};
+    queue_create_info.queueFamilyIndex = m_queue_family_index;
+    queue_create_info.queueCount = 1;
+    queue_create_info.pQueuePriorities = &queue_priority;
+
+    vk::PhysicalDeviceFeatures device_features = {};
+    device_features.textureCompressionBC = true;
+    device_features.vertexPipelineStoresAndAtomics = true;
+    device_features.samplerAnisotropy = true;
+    device_features.fragmentStoresAndAtomics = true;
+    device_features.sampleRateShading = true;
+    device_features.geometryShader = true;
+    device_features.imageCubeArray = true;
+
+    vk::DeviceCreateInfo device_create_info = {};
     device_create_info.queueCreateInfoCount = 1;
     device_create_info.pQueueCreateInfos = &queue_create_info;
     device_create_info.pEnabledFeatures = &device_features;
     device_create_info.enabledExtensionCount = found_extension.size();
     device_create_info.ppEnabledExtensionNames = found_extension.data();
 
-    ASSERT_SUCCEEDED(vkCreateDevice(m_physical_device, &device_create_info, nullptr, &m_device));
+    m_device = m_physical_device.createDeviceUnique(device_create_info);
 
-    LoadVkDeviceExt(m_device);
+    LoadVkDeviceExt(m_device.get());
 }
 
 void VKContext::CreateSwapchain(int width, int height)
 {
-    uint32_t format_count = 0;
-    ASSERT_SUCCEEDED(vkGetPhysicalDeviceSurfaceFormatsKHR(m_physical_device, m_surface, &format_count, nullptr));
-    ASSERT(format_count >= 1);
-    std::vector<VkSurfaceFormatKHR> surface_formats(format_count);
-    ASSERT_SUCCEEDED(vkGetPhysicalDeviceSurfaceFormatsKHR(m_physical_device, m_surface, &format_count, surface_formats.data()));
+    auto surface_formats = m_physical_device.getSurfaceFormatsKHR(m_surface.get());
+    ASSERT(!surface_formats.empty());
 
-    if (surface_formats.front().format != VK_FORMAT_UNDEFINED)
+    if (surface_formats.front().format != vk::Format::eUndefined)
         m_swapchain_color_format = surface_formats.front().format;
 
-    VkColorSpaceKHR color_space = surface_formats.front().colorSpace;
+    vk::ColorSpaceKHR color_space = surface_formats.front().colorSpace;
 
-    VkSurfaceCapabilitiesKHR surface_capabilities = {};
-    ASSERT_SUCCEEDED(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physical_device, m_surface, &surface_capabilities));
+    vk::SurfaceCapabilitiesKHR surface_capabilities = {};
+    ASSERT_SUCCEEDED(m_physical_device.getSurfaceCapabilitiesKHR(m_surface.get(), &surface_capabilities));
 
     ASSERT(surface_capabilities.currentExtent.width == width);
     ASSERT(surface_capabilities.currentExtent.height == height);
 
-    VkBool32 is_supported_surface = VK_FALSE;
-    vkGetPhysicalDeviceSurfaceSupportKHR(m_physical_device, m_queue_family_index, m_surface, &is_supported_surface);
+    vk::Bool32 is_supported_surface = VK_FALSE;
+    m_physical_device.getSurfaceSupportKHR(m_queue_family_index, m_surface.get(), &is_supported_surface);
     ASSERT(is_supported_surface);
 
-    VkSwapchainCreateInfoKHR swap_chain_create_info = {};
-    swap_chain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swap_chain_create_info.surface = m_surface;
+    vk::SwapchainCreateInfoKHR swap_chain_create_info = {};
+    swap_chain_create_info.surface = m_surface.get();
     swap_chain_create_info.minImageCount = FrameCount;
     swap_chain_create_info.imageFormat = m_swapchain_color_format;
     swap_chain_create_info.imageColorSpace = color_space;
     swap_chain_create_info.imageExtent = surface_capabilities.currentExtent;
     swap_chain_create_info.imageArrayLayers = 1;
-    swap_chain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    swap_chain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swap_chain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    swap_chain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swap_chain_create_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
+    swap_chain_create_info.imageSharingMode = vk::SharingMode::eExclusive;
+    swap_chain_create_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
+    swap_chain_create_info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
     if (CurState::Instance().vsync)
-        swap_chain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+        swap_chain_create_info.presentMode = vk::PresentModeKHR::eFifo;
     else
-        swap_chain_create_info.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+        swap_chain_create_info.presentMode = vk::PresentModeKHR::eMailbox;
     swap_chain_create_info.clipped = true;
 
-    ASSERT_SUCCEEDED(vkCreateSwapchainKHR(m_device, &swap_chain_create_info, nullptr, &m_swapchain));
+    m_swapchain = m_device->createSwapchainKHRUnique(swap_chain_create_info);
 }
 
 VKContext::VKContext(GLFWwindow* window)
@@ -302,40 +275,39 @@ VKContext::VKContext(GLFWwindow* window)
     SelectPhysicalDevice();
     SelectQueueFamilyIndex();
     CreateDevice();
-    vkGetDeviceQueue(m_device, m_queue_family_index, 0, &m_queue);
-    ASSERT_SUCCEEDED(glfwCreateWindowSurface(m_instance, window, nullptr, &m_surface));
+
+    m_queue = m_device->getQueue(m_queue_family_index, 0);
+
+    VkSurfaceKHR surface;
+    ASSERT_SUCCEEDED(glfwCreateWindowSurface(m_instance.get(), window, nullptr, &surface));
+    vk::ObjectDestroy<vk::Instance, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE> deleter(m_instance.get());
+    m_surface = vk::UniqueSurfaceKHR(surface, deleter);
+
     CreateSwapchain(m_width, m_height);
 
-    uint32_t frame_buffer_count = 0;
-    ASSERT_SUCCEEDED(vkGetSwapchainImagesKHR(m_device, m_swapchain, &frame_buffer_count, nullptr));
-    m_images.resize(frame_buffer_count);
-    ASSERT_SUCCEEDED(vkGetSwapchainImagesKHR(m_device, m_swapchain, &frame_buffer_count, m_images.data()));
+    m_images = m_device->getSwapchainImagesKHR(m_swapchain.get());
 
-    VkCommandPoolCreateInfo cmd_pool_create_info = {};
-    cmd_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    cmd_pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    vk::CommandPoolCreateInfo cmd_pool_create_info = {};
+    cmd_pool_create_info.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
     cmd_pool_create_info.queueFamilyIndex = m_queue_family_index;
-    ASSERT_SUCCEEDED(vkCreateCommandPool(m_device, &cmd_pool_create_info, nullptr, &m_cmd_pool));
+    m_cmd_pool = m_device->createCommandPoolUnique(cmd_pool_create_info);
 
-    m_cmd_bufs.resize(frame_buffer_count);
-    VkCommandBufferAllocateInfo cmd_buf_alloc_info = {};
-    cmd_buf_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cmd_buf_alloc_info.commandPool = m_cmd_pool;
+    m_cmd_bufs.resize(m_images.size());
+    vk::CommandBufferAllocateInfo cmd_buf_alloc_info = {};
+    cmd_buf_alloc_info.commandPool = m_cmd_pool.get();
     cmd_buf_alloc_info.commandBufferCount = m_cmd_bufs.size();
-    cmd_buf_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    ASSERT_SUCCEEDED(vkAllocateCommandBuffers(m_device, &cmd_buf_alloc_info, m_cmd_bufs.data()));
+    cmd_buf_alloc_info.level = vk::CommandBufferLevel::ePrimary;
+    m_cmd_bufs = m_device->allocateCommandBuffersUnique(cmd_buf_alloc_info);
 
-    VkSemaphoreCreateInfo semaphore_create_info = {};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    vk::SemaphoreCreateInfo semaphore_create_info = {};
 
-    ASSERT_SUCCEEDED(vkCreateSemaphore(m_device, &semaphore_create_info, nullptr, &m_image_available_semaphore));
-    ASSERT_SUCCEEDED(vkCreateSemaphore(m_device, &semaphore_create_info, nullptr, &m_rendering_finished_semaphore));
+    m_image_available_semaphore = m_device->createSemaphoreUnique(semaphore_create_info);
+    m_rendering_finished_semaphore = m_device->createSemaphoreUnique(semaphore_create_info);
 
-    VkFenceCreateInfo fence_create_info = {};
-    fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    ASSERT_SUCCEEDED(vkCreateFence(m_device, &fence_create_info, nullptr, &m_fence));
+    vk::FenceCreateInfo fence_create_info = {};
+    m_fence = m_device->createFenceUnique(fence_create_info);
 
-    ASSERT(frame_buffer_count == FrameCount);
+    ASSERT(m_images.size() == FrameCount);
     for (size_t i = 0; i < FrameCount; ++i)
     {
         descriptor_pool[i].reset(new VKDescriptorPool(*this));
@@ -345,8 +317,8 @@ VKContext::VKContext(GLFWwindow* window)
 
     for (size_t i = 0; i < FrameCount; ++i)
     {
-        VKResource::Ptr res = std::make_shared<VKResource>();
-        res->image.res = m_images[i];
+        VKResource::Ptr res = std::make_shared<VKResource>(*this);
+        res->image.res = vk::UniqueImage(m_images[i]);
         res->image.format = m_swapchain_color_format;
         res->image.size = { 1u * m_width, 1u * m_height };
         res->res_type = VKResource::Type::kImage;
@@ -361,17 +333,16 @@ std::unique_ptr<ProgramApi> VKContext::CreateProgram()
     return res;
 }
 
-VkFormat VKContext::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
-    for (VkFormat format : candidates) {
-        VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(m_physical_device, format, &props);
+vk::Format VKContext::findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features)
+{
+    for (const vk::Format& format : candidates)
+    {
+        vk::FormatProperties props = m_physical_device.getFormatProperties(format);
 
-        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+        if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features) == features)
             return format;
-        }
-        else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+        else if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features) == features)
             return format;
-        }
     }
 
     throw std::runtime_error("failed to find supported format!");
@@ -379,20 +350,18 @@ VkFormat VKContext::findSupportedFormat(const std::vector<VkFormat>& candidates,
 
 Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
-    VKResource::Ptr res = std::make_shared<VKResource>();
+    VKResource::Ptr res = std::make_shared<VKResource>(*this);
     res->res_type = VKResource::Type::kImage;
 
-    VkFormat vk_format = static_cast<VkFormat>(format);
-    if (vk_format == VK_FORMAT_D24_UNORM_S8_UINT)
-        vk_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    vk::Format vk_format = static_cast<vk::Format>(format);
+    if (vk_format == vk::Format::eD24UnormS8Uint)
+        vk_format = vk::Format::eD32SfloatS8Uint;
 
-    auto createImage = [this, msaa_count](int width, int height, int depth, int mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-        VkImage& image, VkDeviceMemory& imageMemory, uint32_t& size)
+    auto createImage = [this, msaa_count](int width, int height, int depth, int mip_levels, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties,
+        vk::UniqueImage& image, vk::UniqueDeviceMemory& imageMemory, uint32_t& size)
     {
-        VkImageCreateInfo imageInfo = {};
-        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        vk::ImageCreateInfo imageInfo = {};
+        imageInfo.imageType = vk::ImageType::e2D;
         imageInfo.extent.width = width;
         imageInfo.extent.height = height;
         imageInfo.extent.depth = 1;
@@ -400,44 +369,38 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, gli::format format, u
         imageInfo.arrayLayers = depth;
         imageInfo.format = format;
         imageInfo.tiling = tiling;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.initialLayout = vk::ImageLayout::eUndefined;
         imageInfo.usage = usage;
-        imageInfo.samples = (VkSampleCountFlagBits)msaa_count;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.samples = static_cast<vk::SampleCountFlagBits>(msaa_count);
+        imageInfo.sharingMode = vk::SharingMode::eExclusive;
 
         if (depth % 6 == 0)
-            imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+            imageInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
 
-        if (vkCreateImage(m_device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create image!");
-        }
+        image = m_device->createImageUnique(imageInfo);
 
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(m_device, image, &memRequirements);
+        vk::MemoryRequirements memRequirements;
+        m_device->getImageMemoryRequirements(image.get(), &memRequirements);
 
-        VkMemoryAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        vk::MemoryAllocateInfo allocInfo = {};
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-        if (vkAllocateMemory(m_device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate image memory!");
-        }
-
-        vkBindImageMemory(m_device, image, imageMemory, 0);
+        imageMemory = m_device->allocateMemoryUnique(allocInfo);
+        m_device->bindImageMemory(image.get(), imageMemory.get(), 0);
 
         size = allocInfo.allocationSize;
     };
     
-    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eTransferDst;
     if (bind_flag & BindFlag::kDsv)
-        usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
     if (bind_flag & BindFlag::kSrv)
-        usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        usage |= vk::ImageUsageFlagBits::eSampled;
     if (bind_flag & BindFlag::kRtv)
-        usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        usage |= vk::ImageUsageFlagBits::eColorAttachment;
     if (bind_flag & BindFlag::kUav)
-        usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+        usage |= vk::ImageUsageFlagBits::eStorage;
 
     uint32_t tmp = 0;
     createImage(
@@ -446,9 +409,9 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, gli::format format, u
         depth,
         mip_levels,
         vk_format,
-        VK_IMAGE_TILING_OPTIMAL,
+        vk::ImageTiling::eOptimal,
         usage,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        vk::MemoryPropertyFlagBits::eDeviceLocal,
         res->image.res,
         res->image.memory,
         tmp
@@ -460,19 +423,19 @@ Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, gli::format format, u
     res->image.level_count = mip_levels;
     res->image.msaa_count = msaa_count;
     res->image.array_layers = depth;
-   
+
     return res;
 }
 
-uint32_t VKContext::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t VKContext::findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties)
 {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(m_physical_device, &memProperties);
+    vk::PhysicalDeviceMemoryProperties memProperties;
+    m_physical_device.getMemoryProperties(&memProperties);
 
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
+    {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
             return i;
-        }
     }
     throw std::runtime_error("failed to find suitable memory type!");
 }
@@ -482,41 +445,36 @@ Resource::Ptr VKContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, 
     if (buffer_size == 0)
         return VKResource::Ptr();
 
-    VkBufferCreateInfo bufferInfo = {};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vk::BufferCreateInfo bufferInfo = {};
     bufferInfo.size = buffer_size;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
     if (bind_flag & BindFlag::kVbv)
-        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferInfo.usage = vk::BufferUsageFlagBits::eVertexBuffer;
     else if (bind_flag & BindFlag::kIbv)
-        bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        bufferInfo.usage = vk::BufferUsageFlagBits::eIndexBuffer;
     else if (bind_flag & BindFlag::kCbv)
-        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        bufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
     else if (bind_flag & BindFlag::kSrv)
-        bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        bufferInfo.usage = vk::BufferUsageFlagBits::eStorageBuffer;
     else
-        bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
 
-    VKResource::Ptr res = std::make_shared<VKResource>();
+    VKResource::Ptr res = std::make_shared<VKResource>(*this);
     res->res_type = VKResource::Type::kBuffer;
 
-    vkCreateBuffer(m_device, &bufferInfo, nullptr, &res->buffer.res);
+    res->buffer.res = m_device->createBufferUnique(bufferInfo);
 
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(m_device, res->buffer.res, &memRequirements);
+    vk::MemoryRequirements memRequirements;
+    m_device->getBufferMemoryRequirements(res->buffer.res.get(), &memRequirements);
 
-    VkMemoryAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vk::MemoryAllocateInfo allocInfo = {};
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
+    res->buffer.memory = m_device->allocateMemoryUnique(allocInfo);
 
-    if (vkAllocateMemory(m_device, &allocInfo, nullptr, &res->buffer.memory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate vertex buffer memory!");
-    }
-
-    vkBindBufferMemory(m_device, res->buffer.res, res->buffer.memory, 0);
+    m_device->bindBufferMemory(res->buffer.res.get(), res->buffer.memory.get(), 0);
     res->buffer.size = buffer_size;
 
     return res;
@@ -524,22 +482,21 @@ Resource::Ptr VKContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, 
 
 Resource::Ptr VKContext::CreateSampler(const SamplerDesc & desc)
 {
-    VKResource::Ptr res = std::make_shared<VKResource>();
+    VKResource::Ptr res = std::make_shared<VKResource>(*this);
 
-    VkSamplerCreateInfo samplerInfo = {};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    vk::SamplerCreateInfo samplerInfo = {};
+    samplerInfo.magFilter = vk::Filter::eLinear;
+    samplerInfo.minFilter = vk::Filter::eLinear;
+    samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
     samplerInfo.anisotropyEnable = VK_TRUE;
     samplerInfo.maxAnisotropy = 16;
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.compareOp = vk::CompareOp::eAlways;
+    samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = std::numeric_limits<float>::max();
@@ -560,60 +517,58 @@ Resource::Ptr VKContext::CreateSampler(const SamplerDesc & desc)
     switch (desc.mode)
     {
     case SamplerTextureAddressMode::kWrap:
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+        samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+        samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
         break;
     case SamplerTextureAddressMode::kClamp:
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+        samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+        samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
         break;
     }
 
     switch (desc.func)
     {
     case SamplerComparisonFunc::kNever:
-        samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
+        samplerInfo.compareOp = vk::CompareOp::eNever;
         break;
     case SamplerComparisonFunc::kAlways:
         samplerInfo.compareEnable = true;
-        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.compareOp = vk::CompareOp::eAlways;
         break;
     case SamplerComparisonFunc::kLess:
         samplerInfo.compareEnable = true;
-        samplerInfo.compareOp = VK_COMPARE_OP_LESS;
+        samplerInfo.compareOp = vk::CompareOp::eLess;
         break;
     }
 
-    if (vkCreateSampler(m_device, &samplerInfo, nullptr, &res->sampler.res) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture sampler!");
-    }
+    res->sampler.res = m_device->createSamplerUnique(samplerInfo);
 
     res->res_type = VKResource::Type::kSampler;
     return res;
 }
 
-VkImageAspectFlags VKContext::GetAspectFlags(VkFormat format)
+vk::ImageAspectFlags VKContext::GetAspectFlags(vk::Format format)
 {
     switch (format)
     {
-    case VK_FORMAT_D32_SFLOAT_S8_UINT:
-    case VK_FORMAT_D24_UNORM_S8_UINT:
-        return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    case VK_FORMAT_D32_SFLOAT:
-        return VK_IMAGE_ASPECT_DEPTH_BIT;
+    case vk::Format::eD32SfloatS8Uint:
+    case vk::Format::eD24UnormS8Uint:
+        return vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
+    case vk::Format::eD32Sfloat:
+        return vk::ImageAspectFlagBits::eDepth;
     default:
-        return VK_IMAGE_ASPECT_COLOR_BIT;
+        return vk::ImageAspectFlagBits::eColor;
     }
 }
 
-void VKContext::TransitionImageLayout(VKResource::Image& image, VkImageLayout newLayout, const ViewDesc& view_desc)
+void VKContext::TransitionImageLayout(VKResource::Image& image, vk::ImageLayout newLayout, const ViewDesc& view_desc)
 {
-    VkImageSubresourceRange range = {};
+    vk::ImageSubresourceRange range = {};
     range.aspectMask = GetAspectFlags(image.format);
     range.baseMipLevel = view_desc.level;
-    if (newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+    if (newLayout == vk::ImageLayout::eColorAttachmentOptimal)
         range.levelCount = 1;
     else if (view_desc.count == -1)
         range.levelCount = image.level_count - view_desc.level;
@@ -622,13 +577,13 @@ void VKContext::TransitionImageLayout(VKResource::Image& image, VkImageLayout ne
     range.baseArrayLayer = 0;
     range.layerCount = image.array_layers;
 
-    std::vector<VkImageMemoryBarrier> image_memory_barriers;
+    std::vector<vk::ImageMemoryBarrier> image_memory_barriers;
 
     for (uint32_t i = 0; i < range.levelCount; ++i)
     {
         for (uint32_t j = 0; j < range.layerCount; ++j)
         {
-            VkImageSubresourceRange barrier_range = range;
+            vk::ImageSubresourceRange barrier_range = range;
             barrier_range.baseMipLevel = range.baseMipLevel + i;
             barrier_range.levelCount = 1;
             barrier_range.baseArrayLayer = range.baseArrayLayer + j;
@@ -638,14 +593,13 @@ void VKContext::TransitionImageLayout(VKResource::Image& image, VkImageLayout ne
                 continue;
 
             image_memory_barriers.emplace_back();
-            VkImageMemoryBarrier& imageMemoryBarrier = image_memory_barriers.back();
-            imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            vk::ImageMemoryBarrier& imageMemoryBarrier = image_memory_barriers.back();
             imageMemoryBarrier.oldLayout = image.layout[barrier_range];
 
             imageMemoryBarrier.newLayout = newLayout;
             imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageMemoryBarrier.image = image.res;
+            imageMemoryBarrier.image = image.res.get();
             imageMemoryBarrier.subresourceRange = barrier_range;
 
             // Source layouts (old)
@@ -653,48 +607,43 @@ void VKContext::TransitionImageLayout(VKResource::Image& image, VkImageLayout ne
             // before it will be transitioned to the new layout
             switch (image.layout[barrier_range])
             {
-            case VK_IMAGE_LAYOUT_UNDEFINED:
+            case vk::ImageLayout::eUndefined:
                 // Image layout is undefined (or does not matter)
                 // Only valid as initial layout
                 // No flags required, listed only for completeness
-                imageMemoryBarrier.srcAccessMask = 0;
+                imageMemoryBarrier.srcAccessMask = {};
                 break;
-
-            case VK_IMAGE_LAYOUT_PREINITIALIZED:
+            case vk::ImageLayout::ePreinitialized:
                 // Image is preinitialized
                 // Only valid as initial layout for linear images, preserves memory contents
                 // Make sure host writes have been finished
-                imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+                imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
                 break;
-
-            case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            case vk::ImageLayout::eColorAttachmentOptimal:
                 // Image is a color attachment
                 // Make sure any writes to the color buffer have been finished
-                imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
                 break;
-
-            case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            case vk::ImageLayout::eDepthAttachmentOptimal:
                 // Image is a depth/stencil attachment
                 // Make sure any writes to the depth/stencil buffer have been finished
-                imageMemoryBarrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
                 break;
-
-            case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            case vk::ImageLayout::eTransferSrcOptimal:
                 // Image is a transfer source 
                 // Make sure any reads from the image have been finished
-                imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
                 break;
-
-            case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            case vk::ImageLayout::eTransferDstOptimal:
                 // Image is a transfer destination
                 // Make sure any writes to the image have been finished
-                imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
                 break;
 
-            case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            case vk::ImageLayout::eShaderReadOnlyOptimal:
                 // Image is read by a shader
                 // Make sure any shader reads from the image have been finished
-                imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
                 break;
             default:
                 // Other source layouts aren't handled (yet)
@@ -705,38 +654,38 @@ void VKContext::TransitionImageLayout(VKResource::Image& image, VkImageLayout ne
             // Destination access mask controls the dependency for the new image layout
             switch (newLayout)
             {
-            case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            case vk::ImageLayout::eTransferDstOptimal:
                 // Image will be used as a transfer destination
                 // Make sure any writes to the image have been finished
-                imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
                 break;
 
-            case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            case vk::ImageLayout::eTransferSrcOptimal:
                 // Image will be used as a transfer source
                 // Make sure any reads from the image have been finished
-                imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
                 break;
 
-            case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            case vk::ImageLayout::eColorAttachmentOptimal:
                 // Image will be used as a color attachment
                 // Make sure any writes to the color buffer have been finished
-                imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
                 break;
 
-            case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            case vk::ImageLayout::eDepthAttachmentOptimal:
                 // Image layout will be used as a depth/stencil attachment
                 // Make sure any writes to depth/stencil buffer have been finished
-                imageMemoryBarrier.dstAccessMask = imageMemoryBarrier.dstAccessMask | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                imageMemoryBarrier.dstAccessMask = imageMemoryBarrier.dstAccessMask | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
                 break;
 
-            case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            case vk::ImageLayout::eShaderReadOnlyOptimal:
                 // Image will be read in a shader (sampler, input attachment)
                 // Make sure any writes to the image have been finished
-                if (imageMemoryBarrier.srcAccessMask == 0)
+                if (!imageMemoryBarrier.srcAccessMask)
                 {
-                    imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+                    imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eHostWrite | vk::AccessFlagBits::eTransferWrite;
                 }
-                imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
                 break;
             default:
                 // Other source layouts aren't handled (yet)
@@ -747,10 +696,9 @@ void VKContext::TransitionImageLayout(VKResource::Image& image, VkImageLayout ne
         }
     }
 
-    vkCmdPipelineBarrier(
-        m_cmd_bufs[m_frame_index],
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_DEPENDENCY_BY_REGION_BIT,
+    m_cmd_bufs[m_frame_index]->pipelineBarrier(
+        vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands,
+        vk::DependencyFlagBits::eByRegion,
         0, nullptr,
         0, nullptr,
         image_memory_barriers.size(), image_memory_barriers.data());
@@ -765,9 +713,9 @@ void VKContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubres
     if (res->res_type == VKResource::Type::kBuffer)
     {
         void* data;
-        vkMapMemory(m_device, res->buffer.memory, 0, res->buffer.size, 0, &data);
+        m_device->mapMemory(res->buffer.memory.get(), 0, res->buffer.size, {}, &data);
         memcpy(data, pSrcData, (size_t)res->buffer.size);
-        vkUnmapMemory(m_device, res->buffer.memory);
+        m_device->unmapMemory(res->buffer.memory.get());
     }
     else if (res->res_type == VKResource::Type::kImage)
     {
@@ -777,11 +725,11 @@ void VKContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubres
         UpdateSubresource(staging, 0, pSrcData, SrcRowPitch, SrcDepthPitch);
 
         // Setup buffer copy regions for each mip level
-        std::vector<VkBufferImageCopy> bufferCopyRegions;
+        std::vector<vk::BufferImageCopy> bufferCopyRegions;
         uint32_t offset = 0;
 
-        VkBufferImageCopy bufferCopyRegion = {};
-        bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        vk::BufferImageCopy bufferCopyRegion = {};
+        bufferCopyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
         bufferCopyRegion.imageSubresource.mipLevel = DstSubresource;
         bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
         bufferCopyRegion.imageSubresource.layerCount = 1;
@@ -792,9 +740,9 @@ void VKContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubres
         bufferCopyRegions.push_back(bufferCopyRegion);
 
         // The sub resource range describes the regions of the image that will be transitioned using the memory barriers below
-        VkImageSubresourceRange subresourceRange = {};
+        vk::ImageSubresourceRange subresourceRange = {};
         // Image only contains color data
-        subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         // Start at first mip level
         subresourceRange.baseMipLevel = DstSubresource;
         // We will transition on all mip levels
@@ -803,81 +751,76 @@ void VKContext::UpdateSubresource(const Resource::Ptr & ires, uint32_t DstSubres
         subresourceRange.layerCount = 1;
 
         // Transition the texture image layout to transfer target, so we can safely copy our buffer data to it.
-        VkImageMemoryBarrier imageMemoryBarrier{};
-        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        vk::ImageMemoryBarrier imageMemoryBarrier{};
         imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.image = res->image.res;
+        imageMemoryBarrier.image = res->image.res.get();
         imageMemoryBarrier.subresourceRange = subresourceRange;
-        imageMemoryBarrier.srcAccessMask = 0;
-        imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+        imageMemoryBarrier.oldLayout = vk::ImageLayout::eUndefined;
+        imageMemoryBarrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
 
         // Insert a memory dependency at the proper pipeline stages that will execute the image layout transition 
-        // Source pipeline stage is host write/read exection (VK_PIPELINE_STAGE_HOST_BIT)
-        // Destination pipeline stage is copy command exection (VK_PIPELINE_STAGE_TRANSFER_BIT)
-        vkCmdPipelineBarrier(
-            m_cmd_bufs[m_frame_index],
-            VK_PIPELINE_STAGE_HOST_BIT,
-            VK_PIPELINE_STAGE_TRANSFER_BIT,
-            0,
+        // Source pipeline stage is host write/read exection (vk::PipelineStageFlagBits::eHost)
+        // Destination pipeline stage is copy command exection (vk::PipelineStageFlagBits::eTransfer)
+        m_cmd_bufs[m_frame_index]->pipelineBarrier(
+            vk::PipelineStageFlagBits::eHost,
+            vk::PipelineStageFlagBits::eTransfer,
+            {},
             0, nullptr,
             0, nullptr,
             1, &imageMemoryBarrier);
 
         // Copy mip levels from staging buffer
-        vkCmdCopyBufferToImage(
-            m_cmd_bufs[m_frame_index],
-            staging->buffer.res,
-            res->image.res,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        m_cmd_bufs[m_frame_index]->copyBufferToImage(
+            staging->buffer.res.get(),
+            res->image.res.get(),
+            vk::ImageLayout::eTransferDstOptimal,
             static_cast<uint32_t>(bufferCopyRegions.size()),
             bufferCopyRegions.data());
 
         // Once the data has been uploaded we transfer to the texture image to the shader read layout, so it can be sampled from
-        imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+        imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+        imageMemoryBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+        imageMemoryBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
         // Insert a memory dependency at the proper pipeline stages that will execute the image layout transition 
-        // Source pipeline stage stage is copy command exection (VK_PIPELINE_STAGE_TRANSFER_BIT)
-        // Destination pipeline stage fragment shader access (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
-        vkCmdPipelineBarrier(
-            m_cmd_bufs[m_frame_index],
-            VK_PIPELINE_STAGE_TRANSFER_BIT,
-            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            0,
+        // Source pipeline stage stage is copy command exection (vk::PipelineStageFlagBits::eTransfer)
+        // Destination pipeline stage fragment shader access (vk::PipelineStageFlagBits::eFragmentShader)
+        m_cmd_bufs[m_frame_index]->pipelineBarrier(
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::PipelineStageFlagBits::eFragmentShader,
+            {},
             0, nullptr,
             0, nullptr,
             1, &imageMemoryBarrier);
 
         // Store current layout for later reuse
-        res->image.layout[subresourceRange] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        res->image.layout[subresourceRange] = vk::ImageLayout::eShaderReadOnlyOptimal;
     }
 }
 
 void VKContext::SetViewport(float width, float height)
 {
-    VkViewport viewport{};
+    vk::Viewport viewport{};
     viewport.width = width;
     viewport.height = height;
     viewport.minDepth = 0;
     viewport.maxDepth = 1.0;
-    vkCmdSetViewport(m_cmd_bufs[m_frame_index], 0, 1, &viewport);
+    m_cmd_bufs[m_frame_index]->setViewport(0, 1, &viewport);
 
     SetScissorRect(0, 0, static_cast<int32_t>(width), static_cast<int32_t>(height));
 }
 
 void VKContext::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom)
 {
-    VkRect2D rect2D{};
+    vk::Rect2D rect2D{};
     rect2D.extent.width = right;
     rect2D.extent.height = bottom;
     rect2D.offset.x = left;
     rect2D.offset.y = top;
-    vkCmdSetScissor(m_cmd_bufs[m_frame_index], 0, 1, &rect2D);
+    m_cmd_bufs[m_frame_index]->setScissor(0, 1, &rect2D);
 }
 
 Resource::Ptr VKContext::CreateBottomLevelAS(const BufferDesc& vertex)
@@ -887,216 +830,176 @@ Resource::Ptr VKContext::CreateBottomLevelAS(const BufferDesc& vertex)
 
 Resource::Ptr VKContext::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
 {
-    AccelerationStructure bottomLevelAS;
+    VKResource::Ptr res = std::make_shared<VKResource>(*this);
+    res->res_type = VKResource::Type::kBottomLevelAS;
+    AccelerationStructure& bottomLevelAS = res->bottom_as;
 
     auto vertex_res = std::static_pointer_cast<VKResource>(vertex.res);
     auto index_res = std::static_pointer_cast<VKResource>(index.res);
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
 
-    VkGeometryNV& geometry = bottomLevelAS.geometry;
-    geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
-    geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
-    geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
-    geometry.geometry.triangles.vertexData = vertex_res->buffer.res;
+    vk::GeometryNV& geometry = bottomLevelAS.geometry;
+    geometry.geometryType = vk::GeometryTypeNV::eTriangles;
+    geometry.geometry.triangles.vertexData = vertex_res->buffer.res.get();
     geometry.geometry.triangles.vertexOffset = vertex.offset * vertex_stride;
     geometry.geometry.triangles.vertexCount = vertex.count;
     geometry.geometry.triangles.vertexStride = vertex_stride;
-    geometry.geometry.triangles.vertexFormat = static_cast<VkFormat>(vertex.format);
+    geometry.geometry.triangles.vertexFormat = static_cast<vk::Format>(vertex.format);
     if (index_res)
     {
         auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
-        geometry.geometry.triangles.indexData = index_res->buffer.res;
+        geometry.geometry.triangles.indexData = index_res->buffer.res.get();
         geometry.geometry.triangles.indexOffset = index.offset * index_stride;
         geometry.geometry.triangles.indexCount = index.count;
         geometry.geometry.triangles.indexType = GetVkIndexType(index.format);
     }
     else
     {
-        geometry.geometry.triangles.indexType = VK_INDEX_TYPE_NONE_NV;
+        geometry.geometry.triangles.indexType = vk::IndexType::eNoneNV;
     }
-    geometry.geometry.triangles.transformData = VK_NULL_HANDLE;
-    geometry.geometry.triangles.transformOffset = 0;
-    geometry.geometry.aabbs = {};
-    geometry.geometry.aabbs.sType = { VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV };
-    geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
 
-    VkAccelerationStructureInfoNV accelerationStructureInfo{};
-    accelerationStructureInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
-    accelerationStructureInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
+    geometry.geometry.triangles.transformOffset = 0;
+    geometry.flags = vk::GeometryFlagBitsNV::eOpaque;
+
+    vk::AccelerationStructureInfoNV accelerationStructureInfo{};
+    accelerationStructureInfo.type = vk::AccelerationStructureTypeNV::eBottomLevel;
     accelerationStructureInfo.instanceCount = 0;
     accelerationStructureInfo.geometryCount = 1;
     accelerationStructureInfo.pGeometries = &geometry;
 
-    VkAccelerationStructureCreateInfoNV accelerationStructureCI{};
-    accelerationStructureCI.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
+    vk::AccelerationStructureCreateInfoNV accelerationStructureCI{};
     accelerationStructureCI.info = accelerationStructureInfo;
-    ASSERT_SUCCEEDED(ext::vkCreateAccelerationStructureNV(m_device, &accelerationStructureCI, nullptr, &bottomLevelAS.accelerationStructure));
+    bottomLevelAS.accelerationStructure = m_device->createAccelerationStructureNVUnique(accelerationStructureCI);
 
-    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo{};
-    memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-    memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-    memoryRequirementsInfo.accelerationStructure = bottomLevelAS.accelerationStructure;
+    vk::AccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo{};
+    memoryRequirementsInfo.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eObject;
+    memoryRequirementsInfo.accelerationStructure = bottomLevelAS.accelerationStructure.get();
 
-    VkMemoryRequirements2 memoryRequirements2{};
-    ext::vkGetAccelerationStructureMemoryRequirementsNV(m_device, &memoryRequirementsInfo, &memoryRequirements2);
+    vk::MemoryRequirements2 memoryRequirements2{};
+    m_device->getAccelerationStructureMemoryRequirementsNV(&memoryRequirementsInfo, &memoryRequirements2);
 
-    VkMemoryAllocateInfo memoryAllocateInfo = {};
-    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vk::MemoryAllocateInfo memoryAllocateInfo = {};
     memoryAllocateInfo.allocationSize = memoryRequirements2.memoryRequirements.size;
-    memoryAllocateInfo.memoryTypeIndex = findMemoryType(memoryRequirements2.memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    ASSERT_SUCCEEDED(vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &bottomLevelAS.memory));
+    memoryAllocateInfo.memoryTypeIndex = findMemoryType(memoryRequirements2.memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    bottomLevelAS.memory = m_device->allocateMemoryUnique(memoryAllocateInfo);
 
-    VkBindAccelerationStructureMemoryInfoNV accelerationStructureMemoryInfo{};
-    accelerationStructureMemoryInfo.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
-    accelerationStructureMemoryInfo.accelerationStructure = bottomLevelAS.accelerationStructure;
-    accelerationStructureMemoryInfo.memory = bottomLevelAS.memory;
-    ASSERT_SUCCEEDED(ext::vkBindAccelerationStructureMemoryNV(m_device, 1, &accelerationStructureMemoryInfo));
+    vk::BindAccelerationStructureMemoryInfoNV accelerationStructureMemoryInfo{};
+    accelerationStructureMemoryInfo.accelerationStructure = bottomLevelAS.accelerationStructure.get();
+    accelerationStructureMemoryInfo.memory = bottomLevelAS.memory.get();
+    m_device->bindAccelerationStructureMemoryNV(1, &accelerationStructureMemoryInfo);
 
-    ASSERT_SUCCEEDED(ext::vkGetAccelerationStructureHandleNV(m_device, bottomLevelAS.accelerationStructure, sizeof(uint64_t), &bottomLevelAS.handle));
-
-    VKResource::Ptr res = std::make_shared<VKResource>();
-    res->res_type = VKResource::Type::kBottomLevelAS;
-    res->bottom_as = bottomLevelAS;
+    m_device->getAccelerationStructureHandleNV(bottomLevelAS.accelerationStructure.get(), sizeof(uint64_t), &bottomLevelAS.handle);
 
     return res;
 }
 
 Resource::Ptr VKContext::CreateTopLevelAS(const std::vector<std::pair<Resource::Ptr, glm::mat4>>& geometry)
 {
-    AccelerationStructure topLevelAS;
+    VKResource::Ptr res = std::make_shared<VKResource>(*this);
+    res->res_type = VKResource::Type::kTopLevelAS;
+    AccelerationStructure& topLevelAS = res->top_as;
 
-    VkAccelerationStructureInfoNV accelerationStructureInfo{};
-    accelerationStructureInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
-    accelerationStructureInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
+    vk::AccelerationStructureInfoNV accelerationStructureInfo{};
+    accelerationStructureInfo.type = vk::AccelerationStructureTypeNV::eTopLevel;
     accelerationStructureInfo.instanceCount = geometry.size();
     accelerationStructureInfo.geometryCount = 0;
 
-    VkAccelerationStructureCreateInfoNV accelerationStructureCI{};
-    accelerationStructureCI.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
+    vk::AccelerationStructureCreateInfoNV accelerationStructureCI{};
     accelerationStructureCI.info = accelerationStructureInfo;
-    ASSERT_SUCCEEDED(ext::vkCreateAccelerationStructureNV(m_device, &accelerationStructureCI, nullptr, &topLevelAS.accelerationStructure));
+    topLevelAS.accelerationStructure = m_device->createAccelerationStructureNVUnique(accelerationStructureCI);
 
-    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo{};
-    memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-    memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-    memoryRequirementsInfo.accelerationStructure = topLevelAS.accelerationStructure;
+    vk::AccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo{};
+    memoryRequirementsInfo.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eObject;
+    memoryRequirementsInfo.accelerationStructure = topLevelAS.accelerationStructure.get();
 
-    VkMemoryRequirements2 memoryRequirements2{};
-    ext::vkGetAccelerationStructureMemoryRequirementsNV(m_device, &memoryRequirementsInfo, &memoryRequirements2);
+    vk::MemoryRequirements2 memoryRequirements2{};
+    m_device->getAccelerationStructureMemoryRequirementsNV(&memoryRequirementsInfo, &memoryRequirements2);
 
-    VkMemoryAllocateInfo memoryAllocateInfo = {};
-    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vk::MemoryAllocateInfo memoryAllocateInfo = {};
     memoryAllocateInfo.allocationSize = memoryRequirements2.memoryRequirements.size;
-    memoryAllocateInfo.memoryTypeIndex = findMemoryType(memoryRequirements2.memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    ASSERT_SUCCEEDED(vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &topLevelAS.memory));
+    memoryAllocateInfo.memoryTypeIndex = findMemoryType(memoryRequirements2.memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    topLevelAS.memory = m_device->allocateMemoryUnique(memoryAllocateInfo);
 
-    VkBindAccelerationStructureMemoryInfoNV accelerationStructureMemoryInfo{};
-    accelerationStructureMemoryInfo.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
-    accelerationStructureMemoryInfo.accelerationStructure = topLevelAS.accelerationStructure;
-    accelerationStructureMemoryInfo.memory = topLevelAS.memory;
-    ASSERT_SUCCEEDED(ext::vkBindAccelerationStructureMemoryNV(m_device, 1, &accelerationStructureMemoryInfo));
+    vk::BindAccelerationStructureMemoryInfoNV accelerationStructureMemoryInfo{};
+    accelerationStructureMemoryInfo.accelerationStructure = topLevelAS.accelerationStructure.get();
+    accelerationStructureMemoryInfo.memory = topLevelAS.memory.get();
+    ASSERT_SUCCEEDED(m_device->bindAccelerationStructureMemoryNV(1, &accelerationStructureMemoryInfo));
+    ASSERT_SUCCEEDED(m_device->getAccelerationStructureHandleNV(topLevelAS.accelerationStructure.get(), sizeof(uint64_t), &topLevelAS.handle));
 
-    ASSERT_SUCCEEDED(ext::vkGetAccelerationStructureHandleNV(m_device, topLevelAS.accelerationStructure, sizeof(uint64_t), &topLevelAS.handle));
+    memoryRequirementsInfo.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch;
 
-
-
-
-    /*
-            Build the acceleration structure
-        */
-
-        // Acceleration structure build requires some scratch space to store temporary information
-    memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-    memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
-
-    VkDeviceSize maximumBlasSize = 0;
+    vk::DeviceSize maximumBlasSize = 0;
     for (auto& mesh : geometry)
     {
         auto res = std::static_pointer_cast<VKResource>(mesh.first);
 
-        memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
-        memoryRequirementsInfo.accelerationStructure = res->bottom_as.accelerationStructure;
+        memoryRequirementsInfo.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch;
+        memoryRequirementsInfo.accelerationStructure = res->bottom_as.accelerationStructure.get();
 
-        VkMemoryRequirements2 memReqBLAS;
-        ext::vkGetAccelerationStructureMemoryRequirementsNV(m_device, &memoryRequirementsInfo, &memReqBLAS);
+        vk::MemoryRequirements2 memReqBLAS;
+        m_device->getAccelerationStructureMemoryRequirementsNV(&memoryRequirementsInfo, &memReqBLAS);
 
         maximumBlasSize = std::max(maximumBlasSize, memReqBLAS.memoryRequirements.size);
     }
 
-    VkMemoryRequirements2 memReqTopLevelAS;
-    memoryRequirementsInfo.accelerationStructure = topLevelAS.accelerationStructure;
-    ext::vkGetAccelerationStructureMemoryRequirementsNV(m_device, &memoryRequirementsInfo, &memReqTopLevelAS);
+    vk::MemoryRequirements2 memReqTopLevelAS;
+    memoryRequirementsInfo.accelerationStructure = topLevelAS.accelerationStructure.get();
+    m_device->getAccelerationStructureMemoryRequirementsNV(&memoryRequirementsInfo, &memReqTopLevelAS);
 
-    const VkDeviceSize scratchBufferSize = std::max(maximumBlasSize, memReqTopLevelAS.memoryRequirements.size);
+    const vk::DeviceSize scratchBufferSize = std::max(maximumBlasSize, memReqTopLevelAS.memoryRequirements.size);
 
 
-    VkBuffer scratchBuffer;
     {
-        VkBufferCreateInfo bufferInfo = {};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        vk::BufferCreateInfo bufferInfo = {};
         bufferInfo.size = scratchBufferSize;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferInfo.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
-        vkCreateBuffer(m_device, &bufferInfo, nullptr, &scratchBuffer);
+        bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+        bufferInfo.usage = vk::BufferUsageFlagBits::eRayTracingNV;
+        topLevelAS.scratchBuffer = m_device->createBufferUnique(bufferInfo);
 
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(m_device, scratchBuffer, &memRequirements);
+        vk::MemoryRequirements memRequirements;
+        m_device->getBufferMemoryRequirements(topLevelAS.scratchBuffer.get(), &memRequirements);
 
-        VkMemoryAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        vk::MemoryAllocateInfo allocInfo = {};
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-        VkDeviceMemory memory;
-        if (vkAllocateMemory(m_device, &allocInfo, nullptr, &memory) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate vertex buffer memory!");
-        }
+        topLevelAS.scratchmemory = m_device->allocateMemoryUnique(allocInfo);
 
-        vkBindBufferMemory(m_device, scratchBuffer, memory, 0);
+        m_device->bindBufferMemory(topLevelAS.scratchBuffer.get(), topLevelAS.scratchmemory.get(), 0);
     }
-
-    /*
-        Build bottom level acceleration structure
-    */
 
     for (auto& mesh : geometry)
     {
         auto res = std::static_pointer_cast<VKResource>(mesh.first);
         
-        VkAccelerationStructureInfoNV buildInfo{};
-        buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
-        buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
+        vk::AccelerationStructureInfoNV buildInfo{};
+        buildInfo.type = vk::AccelerationStructureTypeNV::eBottomLevel;
         buildInfo.instanceCount = 0;
         buildInfo.geometryCount = 1;
 
         buildInfo.pGeometries = &res->bottom_as.geometry;
 
-        ext::vkCmdBuildAccelerationStructureNV(
-            m_cmd_bufs[m_frame_index],
-            &buildInfo,
-            VK_NULL_HANDLE,
+        m_cmd_bufs[m_frame_index]->buildAccelerationStructureNV(
+            buildInfo,
+            {},
             0,
             VK_FALSE,
-            res->bottom_as.accelerationStructure,
-            VK_NULL_HANDLE,
-            scratchBuffer,
-            0);
+            res->bottom_as.accelerationStructure.get(),
+            {},
+            topLevelAS.scratchBuffer.get(),
+            0
+        );
     }
 
-    VkMemoryBarrier memoryBarrier = {};
-    memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    vk::MemoryBarrier memoryBarrier = {};
     memoryBarrier.pNext = nullptr;
-    memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
-    memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
-    vkCmdPipelineBarrier(m_cmd_bufs[m_frame_index], VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
+    memoryBarrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
+    memoryBarrier.dstAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
+    m_cmd_bufs[m_frame_index]->pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, 1, &memoryBarrier, 0, 0, 0, 0);
 
-    /*
-        Build top-level acceleration structure
-    */
-    VkAccelerationStructureInfoNV buildInfo{};
-    buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
-    buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
+    vk::AccelerationStructureInfoNV buildInfo{};
+    buildInfo.type = vk::AccelerationStructureTypeNV::eTopLevel;
     buildInfo.pGeometries = 0;
     buildInfo.geometryCount = 0;
     buildInfo.instanceCount = 1;
@@ -1117,52 +1020,43 @@ Resource::Ptr VKContext::CreateTopLevelAS(const std::vector<std::pair<Resource::
         instance.accelerationStructureHandle = res->bottom_as.handle;
     }
 
-    VkBuffer geometryInstance;
+ 
     {
-        VkBufferCreateInfo bufferInfo = {};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        vk::BufferCreateInfo bufferInfo = {};
         bufferInfo.size = instances.size() * sizeof(instances.back());
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferInfo.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
-        vkCreateBuffer(m_device, &bufferInfo, nullptr, &geometryInstance);
+        bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+        bufferInfo.usage = vk::BufferUsageFlagBits::eRayTracingNV;
+        topLevelAS.geometryInstance = m_device->createBufferUnique(bufferInfo);
 
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(m_device, geometryInstance, &memRequirements);
+        vk::MemoryRequirements memRequirements;
+        m_device->getBufferMemoryRequirements(topLevelAS.geometryInstance.get(), &memRequirements);
 
-        VkMemoryAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        vk::MemoryAllocateInfo allocInfo = {};
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
-        VkDeviceMemory memory;
-        if (vkAllocateMemory(m_device, &allocInfo, nullptr, &memory) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate vertex buffer memory!");
-        }
+        topLevelAS.geo_memory = m_device->allocateMemoryUnique(allocInfo);
 
-        vkBindBufferMemory(m_device, geometryInstance, memory, 0);
+        m_device->bindBufferMemory(topLevelAS.geometryInstance.get(), topLevelAS.geo_memory.get(), 0);
 
         void* data;
-        vkMapMemory(m_device, memory, 0, bufferInfo.size, 0, &data);
+        m_device->mapMemory(topLevelAS.geo_memory.get(), 0, bufferInfo.size, {}, &data);
         memcpy(data, instances.data(), (size_t)bufferInfo.size);
-        vkUnmapMemory(m_device, memory);
+        m_device->unmapMemory(topLevelAS.geo_memory.get());
     }
 
-    ext::vkCmdBuildAccelerationStructureNV(
-        m_cmd_bufs[m_frame_index],
+    m_cmd_bufs[m_frame_index]->buildAccelerationStructureNV(
         &buildInfo,
-        geometryInstance,
+        topLevelAS.geometryInstance.get(),
         0,
         VK_FALSE,
-        topLevelAS.accelerationStructure,
-        VK_NULL_HANDLE,
-        scratchBuffer,
-        0);
+        topLevelAS.accelerationStructure.get(),
+        {},
+        topLevelAS.scratchBuffer.get(),
+        0
+    );
 
-    vkCmdPipelineBarrier(m_cmd_bufs[m_frame_index], VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
-
-    VKResource::Ptr res = std::make_shared<VKResource>();
-    res->res_type = VKResource::Type::kTopLevelAS;
-    res->top_as = topLevelAS;
+    m_cmd_bufs[m_frame_index]->pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, 1, & memoryBarrier, 0, 0, 0, 0);
 
     return res;
 }
@@ -1174,7 +1068,7 @@ void VKContext::UseProgram(ProgramApi& program)
     {
         if (m_is_open_render_pass)
         {
-            vkCmdEndRenderPass(m_cmd_bufs[GetFrameIndex()]);
+            m_cmd_bufs[GetFrameIndex()]->endRenderPass();
             m_is_open_render_pass = false;
         }
     }
@@ -1185,35 +1079,28 @@ void VKContext::UseProgram(ProgramApi& program)
 void VKContext::IASetIndexBuffer(Resource::Ptr ires, gli::format Format)
 {
     VKResource::Ptr res = std::static_pointer_cast<VKResource>(ires);
-    VkIndexType index_type = GetVkIndexType(Format);
-    vkCmdBindIndexBuffer(m_cmd_bufs[m_frame_index], res->buffer.res, 0, index_type);
+    vk::IndexType index_type = GetVkIndexType(Format);
+    m_cmd_bufs[m_frame_index]->bindIndexBuffer(res->buffer.res.get(), 0, index_type);
 }
 
 void VKContext::IASetVertexBuffer(uint32_t slot, Resource::Ptr ires)
 {
     VKResource::Ptr res = std::static_pointer_cast<VKResource>(ires);
-    VkBuffer vertexBuffers[] = { res->buffer.res };
-    VkDeviceSize offsets[] = { 0 };
-    vkCmdBindVertexBuffers(m_cmd_bufs[m_frame_index], slot, 1, vertexBuffers, offsets);
+    vk::Buffer vertexBuffers[] = { res->buffer.res.get() };
+    vk::DeviceSize offsets[] = { 0 };
+    m_cmd_bufs[m_frame_index]->bindVertexBuffers(slot, 1, vertexBuffers, offsets);
 }
 
 void VKContext::BeginEvent(const std::string& name)
 {
-    static decltype(&vkCmdBeginDebugUtilsLabelEXT) vkCmdBeginDebugUtilsLabelEXT_fn = decltype(&vkCmdBeginDebugUtilsLabelEXT)(vkGetDeviceProcAddr(m_device, "vkCmdBeginDebugUtilsLabelEXT"));
-    if (!vkCmdBeginDebugUtilsLabelEXT_fn)
-        return;
-    VkDebugUtilsLabelEXT label = {};
-    label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+    vk::DebugUtilsLabelEXT label = {};
     label.pLabelName = name.c_str();
-    vkCmdBeginDebugUtilsLabelEXT_fn(m_cmd_bufs[m_frame_index], &label);
+    m_cmd_bufs[m_frame_index]->beginDebugUtilsLabelEXT(&label);
 }
 
 void VKContext::EndEvent()
 {
-    static decltype(&vkCmdEndDebugUtilsLabelEXT) vkCmdEndDebugUtilsLabelEXT_fn = decltype(&vkCmdEndDebugUtilsLabelEXT)(vkGetDeviceProcAddr(m_device, "vkCmdEndDebugUtilsLabelEXT"));
-    if (!vkCmdEndDebugUtilsLabelEXT_fn)
-        return;
-    vkCmdEndDebugUtilsLabelEXT_fn(m_cmd_bufs[m_frame_index]);
+    m_cmd_bufs[m_frame_index]->endDebugUtilsLabelEXT();
 }
 
 void VKContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
@@ -1225,44 +1112,42 @@ void VKContext::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, in
     if (rp != m_render_pass || fb != m_framebuffer)
     {
         if (m_is_open_render_pass)
-            vkCmdEndRenderPass(m_cmd_bufs[GetFrameIndex()]);
+            m_cmd_bufs[GetFrameIndex()]->endRenderPass();
         m_render_pass = rp;
         m_framebuffer = fb;
         m_current_program->RenderPassBegin();
         m_is_open_render_pass = true;
     }
-    vkCmdDrawIndexed(m_cmd_bufs[m_frame_index], IndexCount, 1, StartIndexLocation, BaseVertexLocation, 0);
+    m_cmd_bufs[m_frame_index]->drawIndexed(IndexCount, 1, StartIndexLocation, BaseVertexLocation, 0);
 }
 
 void VKContext::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
 {
     m_current_program->ApplyBindings();
-    vkCmdDispatch(m_cmd_bufs[m_frame_index], ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
+    m_cmd_bufs[m_frame_index]->dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
 void VKContext::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
 {
     // Query the ray tracing properties of the current implementation, we will need them later on
-    VkPhysicalDeviceRayTracingPropertiesNV rayTracingProperties{};
-    rayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV;
+    vk::PhysicalDeviceRayTracingPropertiesNV rayTracingProperties{};
 
-    VkPhysicalDeviceProperties2 deviceProps2{};
-    deviceProps2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    vk::PhysicalDeviceProperties2 deviceProps2{};
     deviceProps2.pNext = &rayTracingProperties;
 
-    vkGetPhysicalDeviceProperties2(m_physical_device, &deviceProps2);
+    m_physical_device.getProperties2(&deviceProps2);
 
-    VkDeviceSize bindingOffsetRayGenShader = rayTracingProperties.shaderGroupHandleSize * 0;
-    VkDeviceSize bindingOffsetMissShader = rayTracingProperties.shaderGroupHandleSize * 1;
-    VkDeviceSize bindingOffsetHitShader = rayTracingProperties.shaderGroupHandleSize * 2;
-    VkDeviceSize bindingStride = rayTracingProperties.shaderGroupHandleSize;
+    vk::DeviceSize bindingOffsetRayGenShader = rayTracingProperties.shaderGroupHandleSize * 0;
+    vk::DeviceSize bindingOffsetMissShader = rayTracingProperties.shaderGroupHandleSize * 1;
+    vk::DeviceSize bindingOffsetHitShader = rayTracingProperties.shaderGroupHandleSize * 2;
+    vk::DeviceSize bindingStride = rayTracingProperties.shaderGroupHandleSize;
 
     m_current_program->ApplyBindings();
-    ext::vkCmdTraceRaysNV(m_cmd_bufs[m_frame_index],
-        m_current_program->shaderBindingTable, bindingOffsetRayGenShader,
-        m_current_program->shaderBindingTable, bindingOffsetMissShader, bindingStride,
-        m_current_program->shaderBindingTable, bindingOffsetHitShader, bindingStride,
-        VK_NULL_HANDLE, 0, 0,
+    m_cmd_bufs[m_frame_index]->traceRaysNV(
+        m_current_program->shaderBindingTable.get(), bindingOffsetRayGenShader,
+        m_current_program->shaderBindingTable.get(), bindingOffsetMissShader, bindingStride,
+        m_current_program->shaderBindingTable.get(), bindingOffsetHitShader, bindingStride,
+        {}, 0, 0,
         width, height, depth
     );
 }
@@ -1276,59 +1161,56 @@ void VKContext::CloseCommandBuffer()
 {
     if (m_is_open_render_pass)
     {
-        vkCmdEndRenderPass(m_cmd_bufs[m_frame_index]);
+        m_cmd_bufs[m_frame_index]->endRenderPass();
         m_is_open_render_pass = false;
     }
 
-    TransitionImageLayout(m_back_buffers[m_frame_index]->image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, {});
+    TransitionImageLayout(m_back_buffers[m_frame_index]->image, vk::ImageLayout::ePresentSrcKHR, {});
 
-    auto res = vkEndCommandBuffer(m_cmd_bufs[m_frame_index]);
+    m_cmd_bufs[m_frame_index]->end();
 }
 
 void VKContext::Submit()
 {
-    VkSubmitInfo submitInfo = {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    vk::SubmitInfo submitInfo = {};
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &m_cmd_bufs[m_frame_index];
+    submitInfo.pCommandBuffers = &m_cmd_bufs[m_frame_index].get();
     submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = &m_image_available_semaphore;
-    VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    submitInfo.pWaitSemaphores = &m_image_available_semaphore.get();
+    vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eTransfer;
     submitInfo.pWaitDstStageMask = &waitDstStageMask;
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &m_rendering_finished_semaphore;
+    submitInfo.pSignalSemaphores = &m_rendering_finished_semaphore.get();
 
-    auto res = vkQueueSubmit(m_queue, 1, &submitInfo, m_fence);
+    m_queue.submit(1, &submitInfo, m_fence.get());
 
-    res = vkWaitForFences(m_device, 1, &m_fence, VK_TRUE, UINT64_MAX);
-    if (res != VK_SUCCESS)
+    auto res = m_device->waitForFences(1, &m_fence.get(), VK_TRUE, UINT64_MAX);
+    if (res != vk::Result::eSuccess)
     {
         throw std::runtime_error("vkWaitForFences");
     }
-    vkResetFences(m_device, 1, &m_fence);
+    m_device->resetFences(1, &m_fence.get());
 }
 
 void VKContext::SwapBuffers()
 {
-    VkPresentInfoKHR presentInfo = {};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    vk::PresentInfoKHR presentInfo = {};
     presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = &m_swapchain;
+    presentInfo.pSwapchains = &m_swapchain.get();
     presentInfo.pImageIndices = &m_frame_index;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &m_rendering_finished_semaphore;
+    presentInfo.pWaitSemaphores = &m_rendering_finished_semaphore.get();
 
-    auto res = vkQueuePresentKHR(m_queue, &presentInfo);
+    m_queue.presentKHR(presentInfo);
 }
 
 void VKContext::OpenCommandBuffer()
 {
-    vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, m_image_available_semaphore, nullptr, &m_frame_index);
+    m_device->acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, m_image_available_semaphore.get(), nullptr, &m_frame_index);
 
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    auto res = vkBeginCommandBuffer(m_cmd_bufs[m_frame_index], &beginInfo);
+    vk::CommandBufferBeginInfo beginInfo = {};
+    beginInfo.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
+    m_cmd_bufs[m_frame_index]->begin(beginInfo);
 }
 
 void VKContext::Present()

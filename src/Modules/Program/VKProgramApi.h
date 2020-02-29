@@ -17,8 +17,8 @@ class VKProgramApi : public CommonProgramApi
 public:
     VKProgramApi(VKContext& context);
 
-    VkShaderStageFlagBits ShaderType2Bit(ShaderType type);
-    VkShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model);
+    vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type);
+    vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model);
     virtual void LinkProgram() override;
     void CreateDRXPipeLine();
     void CreateGrPipeLine();
@@ -28,20 +28,20 @@ public:
     virtual void ApplyBindings() override;
     virtual View::Ptr CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override;
     virtual void CompileShader(const ShaderBase& shader) override;
-    void ParseShader(ShaderType type, const std::vector<uint32_t>& spirv_binary, std::vector<VkDescriptorSetLayoutBinding>& bindings);
+    void ParseShader(ShaderType type, const std::vector<uint32_t>& spirv_binary, std::vector<vk::DescriptorSetLayoutBinding>& bindings);
     size_t GetSetNumByShaderType(ShaderType type);
     void ParseShaders();
 
     void OnPresent();
 
-    VkRenderPass GetRenderPass() const
+    vk::RenderPass GetRenderPass() const
     {
-        return m_render_pass;
+        return m_render_pass.get();
     }
 
-    VkFramebuffer GetFramebuffer() const
+    vk::Framebuffer GetFramebuffer() const
     {
-        return m_framebuffer;
+        return m_framebuffer.get();
     }
 
     void RenderPassBegin();
@@ -69,30 +69,29 @@ public:
     virtual void SetBlendState(const BlendDesc& desc) override;
     virtual void SetDepthStencilState(const DepthStencilDesc& desc) override;
 
-    VkBuffer shaderBindingTable;
+    vk::UniqueBuffer shaderBindingTable;
+    vk::UniqueDeviceMemory shaderBindingTableMemory;
 
 private:
 
     void CreateInputLayout(
         const std::vector<uint32_t>& spirv_binary,
-        std::vector<VkVertexInputBindingDescription>& binding_desc,
-        std::vector<VkVertexInputAttributeDescription>& attribute_desc);
+        std::vector<vk::VertexInputBindingDescription>& binding_desc,
+        std::vector<vk::VertexInputAttributeDescription>& attribute_desc);
 
     void CreateRenderPass(const std::vector<uint32_t>& spirv_binary);
 
     VKContext& m_context;
 
     std::map<ShaderType, std::vector<uint32_t>> m_spirv;
-    std::map<ShaderType, VkShaderModule> m_shaders;
+    std::map<ShaderType, vk::UniqueShaderModule> m_shaders;
     std::map<ShaderType, const ShaderBase*> m_shaders_info2;
     std::map<ShaderType, size_t> m_shader_type2set;
 
-    VkPipeline graphicsPipeline = VK_NULL_HANDLE;
-    VkPipelineLayout m_pipeline_layout;
-    std::vector<VkDescriptorSetLayout> m_descriptor_set_layouts;
-    std::vector<std::map<VkDescriptorType, size_t>> m_descriptor_count_by_set;
-
-    std::vector<VkDescriptorSet> m_descriptor_sets;
+    vk::UniquePipeline graphicsPipeline;
+    vk::UniquePipelineLayout m_pipeline_layout;
+    std::vector<vk::UniqueDescriptorSetLayout> m_descriptor_set_layouts;
+    std::vector<std::map<vk::DescriptorType, size_t>> m_descriptor_count_by_set;
 
     struct ShaderRef
     {
@@ -106,7 +105,7 @@ private:
         struct ResourceRef
         {
             spirv_cross::Resource res;
-            VkDescriptorType descriptor_type;
+            vk::DescriptorType descriptor_type;
             uint32_t binding;
         };
 
@@ -119,18 +118,18 @@ private:
 
     size_t m_num_rtv = 0;
     
-    std::vector<VkAttachmentDescription> m_attachment_descriptions;
-    std::vector<VkAttachmentReference> m_attachment_references;
-    VkRenderPass m_render_pass = VK_NULL_HANDLE;
+    std::vector<vk::AttachmentDescription> m_attachment_descriptions;
+    std::vector<vk::AttachmentReference> m_attachment_references;
+    vk::UniqueRenderPass m_render_pass;
 
-    VkGraphicsPipelineCreateInfo pipelineInfo = {};
+    vk::GraphicsPipelineCreateInfo pipelineInfo = {};
 
-    std::vector<VkVertexInputBindingDescription> binding_desc;
-    std::vector<VkVertexInputAttributeDescription> attribute_desc;
-    std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfo;
-    VkFramebuffer m_framebuffer;
-    std::vector<VkImageView> m_attachment_views;
-    std::vector<std::pair<VkExtent2D, size_t>> m_rtv_size;
+    std::vector<vk::VertexInputBindingDescription> binding_desc;
+    std::vector<vk::VertexInputAttributeDescription> attribute_desc;
+    std::vector<vk::PipelineShaderStageCreateInfo> shaderStageCreateInfo;
+    vk::UniqueFramebuffer m_framebuffer;
+    std::vector<vk::ImageView> m_attachment_views;
+    std::vector<std::pair<vk::Extent2D, size_t>> m_rtv_size;
 
     VKViewCreater m_view_creater;
     bool m_changed_om = true;
@@ -139,34 +138,34 @@ private:
     class ClearCache
     {
     public:
-        VkClearColorValue& GetColor(uint32_t slot)
+        vk::ClearColorValue& GetColor(uint32_t slot)
         {
             if (slot >= color.size())
                 color.resize(slot + 1);
             return color[slot];
         }
 
-        VkClearDepthStencilValue& GetDepth()
+        vk::ClearDepthStencilValue& GetDepth()
         {
             return depth_stencil;
         }
 
-        VkAttachmentLoadOp& GetColorLoadOp(uint32_t slot)
+        vk::AttachmentLoadOp& GetColorLoadOp(uint32_t slot)
         {
             if (slot >= color_load_op.size())
-                color_load_op.resize(slot + 1, VK_ATTACHMENT_LOAD_OP_LOAD);
+                color_load_op.resize(slot + 1, vk::AttachmentLoadOp::eLoad);
             return color_load_op[slot];
         }
 
-        VkAttachmentLoadOp& GetDepthLoadOp()
+        vk::AttachmentLoadOp& GetDepthLoadOp()
         {
             return depth_load_op;
         }
     private:
-        std::vector<VkClearColorValue> color;
-        VkClearDepthStencilValue depth_stencil;
-        std::vector<VkAttachmentLoadOp> color_load_op;
-        VkAttachmentLoadOp depth_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
+        std::vector<vk::ClearColorValue> color;
+        vk::ClearDepthStencilValue depth_stencil;
+        std::vector<vk::AttachmentLoadOp> color_load_op;
+        vk::AttachmentLoadOp depth_load_op = vk::AttachmentLoadOp::eLoad;
     } m_clear_cache;
 
     size_t msaa_count = 1;
@@ -174,5 +173,5 @@ private:
     RasterizerDesc m_rasterizer_desc;
     bool m_is_compute = false;
     bool m_is_dxr = false;
-    std::map<std::map<BindKey, View::Ptr>, std::vector<VkDescriptorSet>> m_heap_cache;
+    std::map<std::map<BindKey, View::Ptr>, std::vector<vk::UniqueDescriptorSet>> m_heap_cache;
 };
