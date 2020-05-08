@@ -1,8 +1,9 @@
 #include "Adapter/VKAdapter.h"
 #include <Device/VKDevice.h>
 
-VKAdapter::VKAdapter(const vk::PhysicalDevice& physical_device)
-    : m_physical_device(physical_device)
+VKAdapter::VKAdapter(VKInstance& instance, const vk::PhysicalDevice& physical_device)
+    : m_instance(instance)
+    , m_physical_device(physical_device)
     , m_name(physical_device.getProperties().deviceName)
 {
 }
@@ -14,7 +15,12 @@ const std::string& VKAdapter::GetName() const
 
 std::unique_ptr<Device> VKAdapter::CreateDevice()
 {
-    return std::make_unique<VKDevice>(m_physical_device);
+    return std::make_unique<VKDevice>(*this);
+}
+
+VKInstance& VKAdapter::GetInstance()
+{
+    return m_instance;
 }
 
 vk::PhysicalDevice& VKAdapter::GetPhysicalDevice()

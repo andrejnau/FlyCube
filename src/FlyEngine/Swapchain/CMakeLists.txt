@@ -1,35 +1,35 @@
 set(headers
-    Device.h
+    Swapchain.h
 )
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKDevice.h
+        VKSwapchain.h
     )
     list(APPEND sources
-        VKDevice.cpp
+        VKSwapchain.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXDevice.h
+        DXSwapchain.h
     )
     list(APPEND sources
-        DXDevice.cpp
+        DXSwapchain.cpp
     )
 endif()
 
-add_library(Device ${headers} ${sources})
+add_library(Swapchain ${headers} ${sources})
 
-target_include_directories(Device
+target_include_directories(Swapchain
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(Device
+target_link_libraries(Swapchain
     ApiType
-    Swapchain
+    Device
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
@@ -37,27 +37,27 @@ target_link_libraries(Device
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(Swapchain
         ${Vulkan_LIBRARIES}
         VulkanExtLoader
     )
-    target_include_directories(Device
+    target_include_directories(Swapchain
         PUBLIC
             ${Vulkan_INCLUDE_DIR}
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(Swapchain
         d3d11
         d3d12
         dxgi
         dxguid
     )
-    target_include_directories(Device
+    target_include_directories(Swapchain
         PUBLIC
             "${project_root}/3rdparty/d3dx12"
     )
 endif()
 
-set_target_properties(Device PROPERTIES FOLDER "FlyEngine")
+set_target_properties(Swapchain PROPERTIES FOLDER "FlyEngine")

@@ -32,7 +32,12 @@ std::vector<std::unique_ptr<Adapter>> DXInstance::EnumerateAdapters()
         if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
             continue;
 
-        adapters.emplace_back(std::make_unique<DXAdapter>(adapter));
+        adapters.emplace_back(std::make_unique<DXAdapter>(*this, adapter));
     }
     return adapters;
+}
+
+ComPtr<IDXGIFactory4> DXInstance::GetFactory()
+{
+    return m_dxgi_factory;
 }
