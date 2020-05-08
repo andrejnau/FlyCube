@@ -10,11 +10,11 @@
 #include <Instance/VKInstance.h>
 
 struct VKProgramApi;
+class VKDevice;
+
 class VKContext : public ContextBase
 {
 public:
-    void SelectQueueFamilyIndex();
-    void CreateSwapchain(int width, int height);
     VKContext(GLFWwindow* window);
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
@@ -62,10 +62,8 @@ public:
     uint32_t m_queue_family_index = 0;
     vk::Device m_vk_device;
     vk::Queue m_queue;
-    vk::UniqueSurfaceKHR m_surface;
     vk::Format m_swapchain_color_format = vk::Format::eB8G8R8Unorm;
     vk::UniqueSwapchainKHR m_swapchain;
-    std::vector<vk::Image> m_images;
     vk::UniqueCommandPool m_cmd_pool;
     std::vector<vk::UniqueCommandBuffer> m_cmd_bufs;
     vk::UniqueSemaphore m_image_available_semaphore;
@@ -91,4 +89,5 @@ public:
 
     VKInstance& m_vk_instance;
     VKAdapter& m_vk_adapter;
+    VKDevice& m_vdevice;
 };

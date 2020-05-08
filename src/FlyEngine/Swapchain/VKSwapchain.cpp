@@ -1,18 +1,11 @@
-#define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
-#ifdef _WIN32
-#define VK_USE_PLATFORM_WIN32_KHR
-#else
-#define VK_USE_PLATFORM_XCB_KHR
-#endif
-#include <GLFW/glfw3.h>
-
 #include "Swapchain/VKSwapchain.h"
 #include <Device/VKDevice.h>
 #include <Adapter/VKAdapter.h>
 #include <Instance/VKInstance.h>
 #include <Utilities/State.h>
 #include <Utilities/VKUtility.h>
+#include <Resource/VKResource.h>
 
 VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
 {
@@ -60,4 +53,16 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
     swap_chain_create_info.clipped = true;
 
     m_swapchain = device.GetDevice().createSwapchainKHRUnique(swap_chain_create_info);
+
+    std::vector<vk::Image> m_images = device.GetDevice().getSwapchainImagesKHR(m_swapchain.get());
+
+    for (size_t i = 0; i < frame_count; ++i)
+    {
+        VKResource::Ptr res = std::make_shared<VKResource>();
+        res->image.res = vk::UniqueImage(m_images[i]);
+        res->image.format = m_swapchain_color_format;
+        res->image.size = { 1u * width, 1u * height };
+        res->res_type = VKResource::Type::kImage;
+        m_back_buffers[i] = res;
+    }
 }

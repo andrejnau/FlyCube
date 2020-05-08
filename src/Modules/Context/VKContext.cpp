@@ -35,90 +35,25 @@ vk::IndexType GetVkIndexType(gli::format Format)
     }
 }
 
-void VKContext::SelectQueueFamilyIndex()
-{
-    auto queue_families = m_physical_device.getQueueFamilyProperties();
-
-    m_queue_family_index = -1;
-    for (size_t i = 0; i < queue_families.size(); ++i)
-    {
-        const auto& queue = queue_families[i];
-        if (queue.queueCount > 0 && queue.queueFlags & vk::QueueFlagBits::eGraphics && queue.queueFlags & vk::QueueFlagBits::eCompute)
-        {
-            m_queue_family_index = static_cast<uint32_t>(i);
-            break;
-        }
-    }
-    ASSERT(m_queue_family_index != -1);
-}
-
-void VKContext::CreateSwapchain(int width, int height)
-{
-    auto surface_formats = m_physical_device.getSurfaceFormatsKHR(m_surface.get());
-    ASSERT(!surface_formats.empty());
-
-    if (surface_formats.front().format != vk::Format::eUndefined)
-        m_swapchain_color_format = surface_formats.front().format;
-
-    vk::ColorSpaceKHR color_space = surface_formats.front().colorSpace;
-
-    vk::SurfaceCapabilitiesKHR surface_capabilities = {};
-    ASSERT_SUCCEEDED(m_physical_device.getSurfaceCapabilitiesKHR(m_surface.get(), &surface_capabilities));
-
-    ASSERT(surface_capabilities.currentExtent.width == width);
-    ASSERT(surface_capabilities.currentExtent.height == height);
-
-    vk::Bool32 is_supported_surface = VK_FALSE;
-    m_physical_device.getSurfaceSupportKHR(m_queue_family_index, m_surface.get(), &is_supported_surface);
-    ASSERT(is_supported_surface);
-
-    vk::SwapchainCreateInfoKHR swap_chain_create_info = {};
-    swap_chain_create_info.surface = m_surface.get();
-    swap_chain_create_info.minImageCount = FrameCount;
-    swap_chain_create_info.imageFormat = m_swapchain_color_format;
-    swap_chain_create_info.imageColorSpace = color_space;
-    swap_chain_create_info.imageExtent = surface_capabilities.currentExtent;
-    swap_chain_create_info.imageArrayLayers = 1;
-    swap_chain_create_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
-    swap_chain_create_info.imageSharingMode = vk::SharingMode::eExclusive;
-    swap_chain_create_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
-    swap_chain_create_info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-    if (CurState::Instance().vsync)
-        swap_chain_create_info.presentMode = vk::PresentModeKHR::eFifo;
-    else
-        swap_chain_create_info.presentMode = vk::PresentModeKHR::eMailbox;
-    swap_chain_create_info.clipped = true;
-
-    m_swapchain = m_vk_device.createSwapchainKHRUnique(swap_chain_create_info);
-}
-
 VKContext::VKContext(GLFWwindow* window)
     : ContextBase(ApiType::kVulkan, window)
     , m_vk_instance(static_cast<VKInstance&>(*m_instance))
     , m_vk_adapter(static_cast<VKAdapter&>(*m_adapter))
+    , m_vdevice(static_cast<VKDevice&>(*m_device))
 {
     m_physical_device = m_vk_adapter.GetPhysicalDevice();
-    SelectQueueFamilyIndex();
+    m_queue_family_index = m_vdevice.GetQueueFamilyIndex();
 
-    m_vk_device = static_cast<VKDevice&>(*m_device).GetDevice();
+    m_vk_device = m_vdevice.GetDevice();
 
     m_queue = m_vk_device.getQueue(m_queue_family_index, 0);
-
-    VkSurfaceKHR surface;
-    ASSERT_SUCCEEDED(glfwCreateWindowSurface(m_vk_instance.GetInstance(), window, nullptr, &surface));
-    vk::ObjectDestroy<vk::Instance, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE> deleter(m_vk_instance.GetInstance());
-    m_surface = vk::UniqueSurfaceKHR(surface, deleter);
-
-    CreateSwapchain(m_width, m_height);
-
-    m_images = m_vk_device.getSwapchainImagesKHR(m_swapchain.get());
 
     vk::CommandPoolCreateInfo cmd_pool_create_info = {};
     cmd_pool_create_info.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
     cmd_pool_create_info.queueFamilyIndex = m_queue_family_index;
     m_cmd_pool = m_vk_device.createCommandPoolUnique(cmd_pool_create_info);
 
-    m_cmd_bufs.resize(m_images.size());
+    m_cmd_bufs.resize(FrameCount);
     vk::CommandBufferAllocateInfo cmd_buf_alloc_info = {};
     cmd_buf_alloc_info.commandPool = m_cmd_pool.get();
     cmd_buf_alloc_info.commandBufferCount = m_cmd_bufs.size();
@@ -133,23 +68,12 @@ VKContext::VKContext(GLFWwindow* window)
     vk::FenceCreateInfo fence_create_info = {};
     m_fence = m_vk_device.createFenceUnique(fence_create_info);
 
-    ASSERT(m_images.size() == FrameCount);
     for (size_t i = 0; i < FrameCount; ++i)
     {
         descriptor_pool[i].reset(new VKDescriptorPool(*this));
     }
 
     OpenCommandBuffer();
-
-    for (size_t i = 0; i < FrameCount; ++i)
-    {
-        VKResource::Ptr res = std::make_shared<VKResource>(*this);
-        res->image.res = vk::UniqueImage(m_images[i]);
-        res->image.format = m_swapchain_color_format;
-        res->image.size = { 1u * m_width, 1u * m_height };
-        res->res_type = VKResource::Type::kImage;
-        m_back_buffers[i] = res;
-    }
 }
 
 std::unique_ptr<ProgramApi> VKContext::CreateProgram()
@@ -176,7 +100,7 @@ vk::Format VKContext::findSupportedFormat(const std::vector<vk::Format>& candida
 
 Resource::Ptr VKContext::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
-    VKResource::Ptr res = std::make_shared<VKResource>(*this);
+    VKResource::Ptr res = std::make_shared<VKResource>();
     res->res_type = VKResource::Type::kImage;
 
     vk::Format vk_format = static_cast<vk::Format>(format);
@@ -286,7 +210,7 @@ Resource::Ptr VKContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, 
     else
         bufferInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
 
-    VKResource::Ptr res = std::make_shared<VKResource>(*this);
+    VKResource::Ptr res = std::make_shared<VKResource>();
     res->res_type = VKResource::Type::kBuffer;
 
     res->buffer.res = m_vk_device.createBufferUnique(bufferInfo);
@@ -308,7 +232,7 @@ Resource::Ptr VKContext::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, 
 
 Resource::Ptr VKContext::CreateSampler(const SamplerDesc & desc)
 {
-    VKResource::Ptr res = std::make_shared<VKResource>(*this);
+    VKResource::Ptr res = std::make_shared<VKResource>();
 
     vk::SamplerCreateInfo samplerInfo = {};
     samplerInfo.magFilter = vk::Filter::eLinear;
@@ -656,7 +580,7 @@ Resource::Ptr VKContext::CreateBottomLevelAS(const BufferDesc& vertex)
 
 Resource::Ptr VKContext::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
 {
-    VKResource::Ptr res = std::make_shared<VKResource>(*this);
+    VKResource::Ptr res = std::make_shared<VKResource>();
     res->res_type = VKResource::Type::kBottomLevelAS;
     AccelerationStructure& bottomLevelAS = res->bottom_as;
 
@@ -722,7 +646,7 @@ Resource::Ptr VKContext::CreateBottomLevelAS(const BufferDesc& vertex, const Buf
 
 Resource::Ptr VKContext::CreateTopLevelAS(const std::vector<std::pair<Resource::Ptr, glm::mat4>>& geometry)
 {
-    VKResource::Ptr res = std::make_shared<VKResource>(*this);
+    VKResource::Ptr res = std::make_shared<VKResource>();
     res->res_type = VKResource::Type::kTopLevelAS;
     AccelerationStructure& topLevelAS = res->top_as;
 

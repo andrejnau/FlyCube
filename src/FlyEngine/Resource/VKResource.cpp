@@ -1,10 +1,10 @@
 #include "Resource/VKResource.h"
 #include <Context/VKContext.h>
 
-VKResource::VKResource(VKContext& context)
+/*VKResource::VKResource(VKContext& context)
     : m_context(context)
 {
-}
+}*/
 
 VKResource::~VKResource()
 {
@@ -12,8 +12,9 @@ VKResource::~VKResource()
     if (!empty)
     {
         empty = true;
-        m_context.get().QueryOnDelete(*this);
+        //m_context.get().QueryOnDelete(*this);
     }
 }
 
+VKResource::VKResource() = default;
 VKResource::VKResource(VKResource&&) = default;

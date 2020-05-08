@@ -30,6 +30,7 @@ target_include_directories(Swapchain
 target_link_libraries(Swapchain
     ApiType
     Device
+    Resource
     Utilities
     spirv-cross-core
     spirv-cross-hlsl

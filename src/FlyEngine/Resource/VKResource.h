@@ -46,9 +46,10 @@ class VKResource
 public:
     using Ptr = std::shared_ptr<VKResource>;
 
-    std::reference_wrapper<VKContext> m_context;
+    //std::reference_wrapper<VKContext> m_context;
 
-    VKResource(VKContext& context);
+    VKResource();
+    //VKResource(VKContext& context);
     VKResource(VKResource&&);
     ~VKResource();
 
