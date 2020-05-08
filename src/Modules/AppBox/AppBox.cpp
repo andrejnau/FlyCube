@@ -149,6 +149,11 @@ AppRect AppBox::GetAppRect() const
     return { m_width, m_height };
 }
 
+GLFWwindow* AppBox::GetWindow() const
+{
+    return m_window;
+}
+
 AppRect AppBox::GetPrimaryMonitorRect()
 {
     glfwInit();

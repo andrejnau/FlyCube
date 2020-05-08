@@ -38,4 +38,4 @@ target_link_libraries(${target}
     Context
 )
 
-set_target_properties(${target} PROPERTIES FOLDER "library")
+set_target_properties(${target} PROPERTIES FOLDER "FlyEngine")

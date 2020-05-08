@@ -1,3 +1,8 @@
+#ifdef _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+#else
+#define VK_USE_PLATFORM_XCB_KHR
+#endif
 #include "Instance/VKInstance.h"
 #include <VulkanExtLoader/VulkanExtLoader.h>
 #include <Adapter/VKAdapter.h>

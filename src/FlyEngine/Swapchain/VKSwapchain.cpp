@@ -12,7 +12,7 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
     VKAdapter& adapter = device.GetAdapter();
     VKInstance& instance = adapter.GetInstance();
 
-    VkSurfaceKHR surface;
+    VkSurfaceKHR surface = 0;
     ASSERT_SUCCEEDED(glfwCreateWindowSurface(instance.GetInstance(), window, nullptr, &surface));
     vk::ObjectDestroy<vk::Instance, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE> deleter(instance.GetInstance());
     vk::UniqueSurfaceKHR m_surface = vk::UniqueSurfaceKHR(surface, deleter);
@@ -63,6 +63,6 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
         res->image.format = m_swapchain_color_format;
         res->image.size = { 1u * width, 1u * height };
         res->res_type = VKResource::Type::kImage;
-        m_back_buffers[i] = res;
+        m_back_buffers.emplace_back(res);
     }
 }

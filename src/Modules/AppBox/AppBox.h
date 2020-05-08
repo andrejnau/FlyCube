@@ -28,6 +28,7 @@ public:
 
     Context& GetContext();
     AppRect GetAppRect() const;
+    GLFWwindow* GetWindow() const;
 
     static AppRect GetPrimaryMonitorRect();
 
