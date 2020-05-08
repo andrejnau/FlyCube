@@ -139,8 +139,7 @@ void VKProgramApi::CreateDRXPipeLine()
     //TODO
     if (graphicsPipeline)
         graphicsPipeline.release();
-    graphicsPipeline = m_context.m_device->createRayTracingPipelineNVUnique({}, rayPipelineInfo);
-
+    graphicsPipeline = m_context.m_vk_device.createRayTracingPipelineNVUnique({}, rayPipelineInfo);
 
     // Query the ray tracing properties of the current implementation, we will need them later on
     vk::PhysicalDeviceRayTracingPropertiesNV rayTracingProperties{};
@@ -161,10 +160,10 @@ void VKProgramApi::CreateDRXPipeLine()
         // TODO
         if (shaderBindingTable)
             shaderBindingTable.release();
-        shaderBindingTable = m_context.m_device->createBufferUnique(bufferInfo);
+        shaderBindingTable = m_context.m_vk_device.createBufferUnique(bufferInfo);
 
         vk::MemoryRequirements memRequirements;
-        m_context.m_device->getBufferMemoryRequirements(shaderBindingTable.get(), &memRequirements);
+        m_context.m_vk_device.getBufferMemoryRequirements(shaderBindingTable.get(), &memRequirements);
 
         vk::MemoryAllocateInfo allocInfo = {};
         allocInfo.allocationSize = memRequirements.size;
@@ -173,17 +172,17 @@ void VKProgramApi::CreateDRXPipeLine()
         // TODO
         if (shaderBindingTableMemory)
             shaderBindingTableMemory.release();
-        shaderBindingTableMemory = m_context.m_device->allocateMemoryUnique(allocInfo);
+        shaderBindingTableMemory = m_context.m_vk_device.allocateMemoryUnique(allocInfo);
 
-        m_context.m_device->bindBufferMemory(shaderBindingTable.get(), shaderBindingTableMemory.get(), 0);
+        m_context.m_vk_device.bindBufferMemory(shaderBindingTable.get(), shaderBindingTableMemory.get(), 0);
 
         void* datav;
-        m_context.m_device->mapMemory(shaderBindingTableMemory.get(), 0, bufferInfo.size, {}, &datav);
+        m_context.m_vk_device.mapMemory(shaderBindingTableMemory.get(), 0, bufferInfo.size, {}, &datav);
         uint8_t* data = (uint8_t*)datav;
 
         std::vector<uint8_t> shaderHandleStorage(sbtSize);
 
-        m_context.m_device->getRayTracingShaderGroupHandlesNV(graphicsPipeline.get(), 0, GroupCount, sbtSize, shaderHandleStorage.data());
+        m_context.m_vk_device.getRayTracingShaderGroupHandlesNV(graphicsPipeline.get(), 0, GroupCount, sbtSize, shaderHandleStorage.data());
 
         auto copyShaderIdentifier = [&rayTracingProperties](uint8_t* data, const uint8_t* shaderHandleStorage, uint32_t groupIndex) {
             const uint32_t shaderGroupHandleSize = rayTracingProperties.shaderGroupHandleSize;
@@ -199,7 +198,7 @@ void VKProgramApi::CreateDRXPipeLine()
             data += copyShaderIdentifier(data, shaderHandleStorage.data(), i);
         }
 
-        m_context.m_device->unmapMemory(shaderBindingTableMemory.get());
+        m_context.m_vk_device.unmapMemory(shaderBindingTableMemory.get());
     }
 }
 
@@ -315,7 +314,7 @@ void VKProgramApi::CreateGrPipeLine()
     // TODO
     if (graphicsPipeline)
         graphicsPipeline.release();
-    graphicsPipeline = m_context.m_device->createGraphicsPipelineUnique({}, pipelineInfo);
+    graphicsPipeline = m_context.m_vk_device.createGraphicsPipelineUnique({}, pipelineInfo);
 }
 
 void VKProgramApi::CreateComputePipeLine()
@@ -326,7 +325,7 @@ void VKProgramApi::CreateComputePipeLine()
     // TODO
     if (graphicsPipeline)
         graphicsPipeline.release();
-    graphicsPipeline = m_context.m_device->createComputePipelineUnique({}, pipeline_info);
+    graphicsPipeline = m_context.m_vk_device.createComputePipelineUnique({}, pipeline_info);
 }
 
 void VKProgramApi::CreatePipeLine()
@@ -407,7 +406,7 @@ void VKProgramApi::ApplyBindings()
             // TODO
             if (m_render_pass)
                 m_render_pass.release();
-            m_render_pass = m_context.m_device->createRenderPassUnique(renderPassInfo);
+            m_render_pass = m_context.m_vk_device.createRenderPassUnique(renderPassInfo);
 
             vk::FramebufferCreateInfo framebufferInfo = {};
             framebufferInfo.renderPass = m_render_pass.get();
@@ -422,7 +421,7 @@ void VKProgramApi::ApplyBindings()
             // TODO
             if (m_framebuffer)
                 m_framebuffer.release();
-            m_framebuffer = m_context.m_device->createFramebufferUnique(framebufferInfo);
+            m_framebuffer = m_context.m_vk_device.createFramebufferUnique(framebufferInfo);
         }
         m_changed_om = false;
         CreatePipeLine();
@@ -563,7 +562,7 @@ void VKProgramApi::ApplyBindings()
         }
 
         if (!descriptorWrites.empty())
-            m_context.m_device->updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+            m_context.m_vk_device.updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
         it = m_heap_cache.emplace(descriptor_cache, std::move(descriptor_sets)).first;
     }
 
@@ -642,7 +641,7 @@ void VKProgramApi::CompileShader(const ShaderBase& shader)
     vertexShaderCreationInfo.codeSize = sizeof(uint32_t) * spirv.size();
     vertexShaderCreationInfo.pCode = spirv.data();
 
-    m_shaders[shader.type] = m_context.m_device->createShaderModuleUnique(vertexShaderCreationInfo);;
+    m_shaders[shader.type] = m_context.m_vk_device.createShaderModuleUnique(vertexShaderCreationInfo);;
     m_shaders_info2[shader.type] = &shader;
 }
 
@@ -798,7 +797,7 @@ void VKProgramApi::ParseShaders()
         }
 
         vk::UniqueDescriptorSetLayout& descriptor_set_layout = m_descriptor_set_layouts[set_num];
-        descriptor_set_layout = m_context.m_device->createDescriptorSetLayoutUnique(layout_info);
+        descriptor_set_layout = m_context.m_vk_device.createDescriptorSetLayoutUnique(layout_info);
 
         for (auto & binding : bindings)
         {
@@ -817,7 +816,7 @@ void VKProgramApi::ParseShaders()
     //TODO
     if (m_pipeline_layout)
         m_pipeline_layout.release();
-    m_pipeline_layout = m_context.m_device->createPipelineLayoutUnique(pipeline_layout_info);
+    m_pipeline_layout = m_context.m_vk_device.createPipelineLayoutUnique(pipeline_layout_info);
 }
 
 void VKProgramApi::OnPresent()

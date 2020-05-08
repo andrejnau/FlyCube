@@ -34,6 +34,7 @@ target_include_directories(${target}
 target_link_libraries(${target}
     SOIL
     Utilities
+    Context
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "library")

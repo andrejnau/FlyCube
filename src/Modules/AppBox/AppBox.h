@@ -5,6 +5,7 @@
 #include <functional>
 #include <string>
 #include <memory>
+#include <ApiType/ApiType.h>
 #include <Context/Context.h>
 
 struct AppRect

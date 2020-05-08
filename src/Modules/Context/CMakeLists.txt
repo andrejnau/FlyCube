@@ -3,12 +3,14 @@ set(target Context)
 set(headers
     BaseTypes.h
     Context.h
+    ContextBase.h
     ContextSelector.h
     GLContext.h
 )
 
 set(sources
     Context.cpp
+    ContextBase.cpp
     ContextSelector.cpp
     GLContext.cpp
 )
@@ -53,6 +55,8 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
+    ApiType
+    Instance
     Utilities
     spirv-cross-core
     spirv-cross-hlsl

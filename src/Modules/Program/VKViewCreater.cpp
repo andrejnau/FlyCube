@@ -163,7 +163,7 @@ void VKViewCreater::CreateSrv(ShaderType type, const std::string& name, uint32_t
         break;
     }
     }
-    handle.srv = m_context.m_device->createImageViewUnique(view_info);
+    handle.srv = m_context.m_vk_device.createImageViewUnique(view_info);
 }
 
 void VKViewCreater::CreateRTV(uint32_t slot, const ViewDesc& view_desc, const VKResource& res, VKView& handle)
@@ -181,5 +181,5 @@ void VKViewCreater::CreateRTV(uint32_t slot, const ViewDesc& view_desc, const VK
     view_info.subresourceRange.baseArrayLayer = 0;
     view_info.subresourceRange.layerCount = res.image.array_layers;
 
-    handle.om = m_context.m_device->createImageViewUnique(view_info);
+    handle.om = m_context.m_vk_device.createImageViewUnique(view_info);
 }

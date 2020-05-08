@@ -64,6 +64,7 @@ target_link_libraries(${target}
     spirv-cross-hlsl
     glad
     Shader
+    Context
 )
 
 if (VULKAN_SUPPORT)

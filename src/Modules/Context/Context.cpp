@@ -1,4 +1,5 @@
 #include "Context/Context.h"
+#include <Utilities/State.h>
 
 Context::Context(GLFWwindow* window)
     : m_window(window)

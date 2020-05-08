@@ -35,7 +35,7 @@ void VKDescriptorPool::ResizeHeap(const std::map<vk::DescriptorType, size_t>& co
     if (m_descriptorPool)
         m_descriptorPool.release();
 
-    m_descriptorPool = m_context.m_device->createDescriptorPoolUnique(poolInfo);
+    m_descriptorPool = m_context.m_vk_device.createDescriptorPoolUnique(poolInfo);
 }
 
 vk::UniqueDescriptorSet VKDescriptorPool::AllocateDescriptorSet(const vk::DescriptorSetLayout& set_layout, const std::map<vk::DescriptorType, size_t>& count)
@@ -47,7 +47,7 @@ vk::UniqueDescriptorSet VKDescriptorPool::AllocateDescriptorSet(const vk::Descri
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &set_layout;
 
-    auto descriptor_sets = m_context.m_device->allocateDescriptorSetsUnique(allocInfo);
+    auto descriptor_sets = m_context.m_vk_device.allocateDescriptorSetsUnique(allocInfo);
     return std::move(descriptor_sets.front());
 }
 

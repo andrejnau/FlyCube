@@ -5,7 +5,7 @@
 #include <dxgi1_4.h>
 #include <vector>
 
-#include "Context/Context.h"
+#include "Context/ContextBase.h"
 #include "Context/DescriptorPool.h"
 #include <Resource/DX12Resource.h>
 
@@ -13,7 +13,7 @@ using namespace Microsoft::WRL;
 
 class DX12ProgramApi;
 
-class DX12Context : public Context
+class DX12Context : public ContextBase
 {
 public:
     DX12Context(GLFWwindow* window);

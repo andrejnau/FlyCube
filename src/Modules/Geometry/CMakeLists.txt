@@ -27,6 +27,7 @@ target_include_directories(${target}
 
 target_link_libraries(${target}
     Utilities
+    Context
     assimp
 )
 

@@ -52,7 +52,7 @@ public:
     GLFWwindow* GetWindow();
 
     static constexpr size_t FrameCount = 3;
-  
+
 protected:
     virtual void ResizeBackBuffer(int width, int height) = 0;
     int m_width;
