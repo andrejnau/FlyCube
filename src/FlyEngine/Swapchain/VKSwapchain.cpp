@@ -8,6 +8,7 @@
 #include <Resource/VKResource.h>
 
 VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
+    : m_device(device)
 {
     VKAdapter& adapter = device.GetAdapter();
     VKInstance& instance = adapter.GetInstance();
@@ -65,6 +66,25 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
         res->res_type = VKResource::Type::kImage;
         m_back_buffers.emplace_back(res);
     }
+
+    vk::SemaphoreCreateInfo semaphore_create_info = {};
+    m_image_available_semaphore = device.GetDevice().createSemaphoreUnique(semaphore_create_info);
+}
+
+uint32_t VKSwapchain::GetCurrentBackBufferIndex()
+{
+    uint32_t buffer = 0;
+    m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, m_image_available_semaphore.get(), nullptr, &buffer);
+    return buffer;
+}
+
+Resource::Ptr VKSwapchain::GetBackBuffer(uint32_t buffer)
+{
+    return m_back_buffers[buffer];
+}
+
+void VKSwapchain::Present()
+{
 }
 
 void VKSwapchain::QueryOnDelete(VKResource res)

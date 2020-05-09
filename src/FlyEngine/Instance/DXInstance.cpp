@@ -2,10 +2,31 @@
 #include <Adapter/DXAdapter.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
+#include <d3d12.h>
 
 DXInstance::DXInstance()
 {
-    ASSERT_SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&m_dxgi_factory)));
+#if 0
+    static const GUID D3D12ExperimentalShaderModelsID = { /* 76f5573e-f13a-40f5-b297-81ce9e18933f */
+        0x76f5573e,
+        0xf13a,
+        0x40f5,
+    { 0xb2, 0x97, 0x81, 0xce, 0x9e, 0x18, 0x93, 0x3f }
+    };
+    ASSERT_SUCCEEDED(D3D12EnableExperimentalFeatures(1, &D3D12ExperimentalShaderModelsID, nullptr, nullptr));
+#endif
+
+    uint32_t flags = 0;
+#if defined(_DEBUG)
+    ComPtr<ID3D12Debug> debug_controller;
+    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller))))
+    {
+        debug_controller->EnableDebugLayer();
+    }
+    flags = DXGI_CREATE_FACTORY_DEBUG;
+#endif
+
+    ASSERT_SUCCEEDED(CreateDXGIFactory2(flags, IID_PPV_ARGS(&m_dxgi_factory)));
 }
 
 std::vector<std::unique_ptr<Adapter>> DXInstance::EnumerateAdapters()

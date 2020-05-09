@@ -1,11 +1,12 @@
 #pragma once
+#include <Resource/Resource.h>
 #include <memory>
-
-class Resource;
 
 class CommandList
 {
 public:
     virtual ~CommandList() = default;
-    virtual void Clear(std::shared_ptr<Resource> iresource, const std::array<float, 4>& color) = 0;
+    virtual void Open() = 0;
+    virtual void Close() = 0;
+    virtual void Clear(Resource::Ptr iresource, const std::array<float, 4>& color) = 0;
 };

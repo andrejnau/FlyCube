@@ -12,8 +12,10 @@ public:
     DXDevice(DXAdapter& adapter);
     std::unique_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count) override;
     std::unique_ptr<CommandList> CreateCommandList() override;
+    void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
 
     DXAdapter& GetAdapter();
+    ComPtr<ID3D12Device> GetDevice();
     ComPtr<ID3D12CommandQueue> GetCommandQueue();
 
 private:

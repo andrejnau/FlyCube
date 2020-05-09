@@ -28,6 +28,11 @@ endif()
 
 add_library(Resource ${headers} ${sources})
 
+target_include_directories(Resource
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/.."
+)
+
 if (VULKAN_SUPPORT)
     target_link_libraries(Resource
         ${Vulkan_LIBRARIES}

@@ -168,9 +168,11 @@ void AppBox::Init()
 
     InitWindow();
     SetWindowToCenter();
-    m_context = CreateContext(m_api_type, m_window);
     if (m_create_sample)
+    {
+        m_context = CreateContext(m_api_type, m_window);
         m_sample = m_create_sample(*m_context, m_width, m_height);
+    }
 }
 
 void AppBox::InitWindow()

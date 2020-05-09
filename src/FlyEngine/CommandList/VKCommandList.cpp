@@ -12,7 +12,19 @@ VKCommandList::VKCommandList(VKDevice& device)
     m_cmd_buf = std::move(cmd_bufs.front());
 }
 
-void VKCommandList::Clear(std::shared_ptr<Resource> iresource, const std::array<float, 4>& color)
+void VKCommandList::Open()
+{
+    vk::CommandBufferBeginInfo begin_info = {};
+    begin_info.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
+    m_cmd_buf->begin(begin_info);
+}
+
+void VKCommandList::Close()
+{
+    m_cmd_buf->end();
+}
+
+void VKCommandList::Clear(Resource::Ptr iresource, const std::array<float, 4>& color)
 {
     VKResource& resource = (VKResource&)*iresource;
     vk::ClearColorValue clear_color = {};
@@ -28,4 +40,9 @@ void VKCommandList::Clear(std::shared_ptr<Resource> iresource, const std::array<
     ImageSubresourceRange.baseArrayLayer = 0;
     ImageSubresourceRange.layerCount = 1;
     m_cmd_buf->clearColorImage(resource.image.res.get(), vk::ImageLayout::eTransferDstOptimal, clear_color, ImageSubresourceRange);
+}
+
+vk::CommandBuffer VKCommandList::GetCommandList()
+{
+    return m_cmd_buf.get();
 }

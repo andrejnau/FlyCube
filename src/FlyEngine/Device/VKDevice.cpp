@@ -70,6 +70,9 @@ VKDevice::VKDevice(VKAdapter& adapter)
     cmd_pool_create_info.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
     cmd_pool_create_info.queueFamilyIndex = m_queue_family_index;
     m_cmd_pool = m_device->createCommandPoolUnique(cmd_pool_create_info);
+
+    vk::FenceCreateInfo fence_create_info = {};
+    m_fence = m_device->createFenceUnique(fence_create_info);
 }
 
 std::unique_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
@@ -80,6 +83,32 @@ std::unique_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_
 std::unique_ptr<CommandList> VKDevice::CreateCommandList()
 {
     return std::make_unique<VKCommandList>(*this);
+}
+
+void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
+{
+    std::vector<vk::CommandBuffer> vk_command_lists;
+    for (auto& command_list : command_lists)
+    {
+        if (!command_list)
+            continue;
+        VKCommandList& vk_command_list = static_cast<VKCommandList&>(*command_list);
+        vk_command_lists.emplace_back(vk_command_list.GetCommandList());
+    }
+
+    vk::SubmitInfo submit_info = {};
+    submit_info.commandBufferCount = vk_command_lists.size();
+    submit_info.pCommandBuffers = vk_command_lists.data();
+    /*submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &m_image_available_semaphore.get();*/
+    vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eTransfer;
+    submit_info.pWaitDstStageMask = &waitDstStageMask;
+    submit_info.signalSemaphoreCount = 1;
+    //submit_info.pSignalSemaphores = &m_rendering_finished_semaphore.get();
+
+    m_queue.submit(1, &submit_info, m_fence.get());
+    ASSERT(m_device->waitForFences(1, &m_fence.get(), VK_TRUE, UINT64_MAX));
+    m_device->resetFences(1, &m_fence.get());
 }
 
 VKAdapter& VKDevice::GetAdapter()

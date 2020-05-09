@@ -12,9 +12,15 @@ class VKSwapchain
 {
 public:
     VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count);
+    uint32_t GetCurrentBackBufferIndex() override;
+    Resource::Ptr GetBackBuffer(uint32_t buffer) override;
+    void Present() override;
     void QueryOnDelete(VKResource res) override;
+
 private:
+    VKDevice& m_device;
     vk::Format m_swapchain_color_format = vk::Format::eB8G8R8Unorm;
     vk::UniqueSwapchainKHR m_swapchain;
     std::vector<std::shared_ptr<VKResource>> m_back_buffers;
+    vk::UniqueSemaphore m_image_available_semaphore;
 };

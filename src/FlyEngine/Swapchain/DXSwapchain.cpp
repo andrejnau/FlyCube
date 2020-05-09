@@ -3,6 +3,7 @@
 #include <Device/DXDevice.h>
 #include <Instance/DXInstance.h>
 #include <Utilities/DXUtility.h>
+#include <Utilities/State.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
@@ -22,4 +23,26 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
     ASSERT_SUCCEEDED(instance.GetFactory()->CreateSwapChainForHwnd(device.GetCommandQueue().Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
     tmp_swap_chain.As(&m_swap_chain);
+}
+
+uint32_t DXSwapchain::GetCurrentBackBufferIndex()
+{
+    return m_swap_chain->GetCurrentBackBufferIndex();
+}
+
+Resource::Ptr DXSwapchain::GetBackBuffer(uint32_t buffer)
+{
+    return {};
+}
+
+void DXSwapchain::Present()
+{
+    if (CurState::Instance().vsync)
+    {
+        ASSERT_SUCCEEDED(m_swap_chain->Present(1, 0));
+    }
+    else
+    {
+        ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
+    }
 }

@@ -11,6 +11,9 @@ class DXSwapchain : public Swapchain
 {
 public:
     DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count);
+    uint32_t GetCurrentBackBufferIndex() override;
+    Resource::Ptr GetBackBuffer(uint32_t buffer) override;
+    void Present() override;
 
 private:
     ComPtr<IDXGISwapChain3> m_swap_chain;

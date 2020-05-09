@@ -24,9 +24,27 @@ std::unique_ptr<CommandList> DXDevice::CreateCommandList()
     return std::make_unique<DXCommandList>(*this);
 }
 
+void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
+{
+    std::vector<ID3D12CommandList*> dx_command_lists;
+    for (auto& command_list : command_lists)
+    {
+        if (!command_list)
+            continue;
+        DXCommandList& dx_command_list = static_cast<DXCommandList&>(*command_list);
+        dx_command_lists.emplace_back(dx_command_list.GetCommandList().Get());
+    }
+    m_command_queue->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
+}
+
 DXAdapter& DXDevice::GetAdapter()
 {
     return m_adapter;
+}
+
+ComPtr<ID3D12Device> DXDevice::GetDevice()
+{
+    return m_device;
 }
 
 ComPtr<ID3D12CommandQueue> DXDevice::GetCommandQueue()
