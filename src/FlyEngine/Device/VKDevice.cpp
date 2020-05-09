@@ -103,11 +103,13 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     submit_info.pWaitSemaphores = &m_image_available_semaphore.get();*/
     vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eTransfer;
     submit_info.pWaitDstStageMask = &waitDstStageMask;
-    submit_info.signalSemaphoreCount = 1;
-    //submit_info.pSignalSemaphores = &m_rendering_finished_semaphore.get();
+    /*submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &m_rendering_finished_semaphore.get();*/
 
     m_queue.submit(1, &submit_info, m_fence.get());
-    ASSERT(m_device->waitForFences(1, &m_fence.get(), VK_TRUE, UINT64_MAX));
+    auto res = m_device->waitForFences(1, &m_fence.get(), VK_TRUE, UINT64_MAX);
+    if (res != vk::Result::eSuccess)
+        throw std::runtime_error("vkWaitForFences");
     m_device->resetFences(1, &m_fence.get());
 }
 
@@ -124,6 +126,11 @@ uint32_t VKDevice::GetQueueFamilyIndex()
 vk::Device VKDevice::GetDevice()
 {
     return m_device.get();
+}
+
+vk::Queue VKDevice::GetQueue()
+{
+    return m_queue;
 }
 
 vk::CommandPool VKDevice::GetCmdPool()

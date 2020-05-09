@@ -2,6 +2,7 @@
 #include <Adapter/DXAdapter.h>
 #include <Device/DXDevice.h>
 #include <Instance/DXInstance.h>
+#include <Resource/DX12Resource.h>
 #include <Utilities/DXUtility.h>
 #include <Utilities/State.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -23,6 +24,17 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
     ASSERT_SUCCEEDED(instance.GetFactory()->CreateSwapChainForHwnd(device.GetCommandQueue().Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
     tmp_swap_chain.As(&m_swap_chain);
+
+    for (size_t i = 0; i < frame_count; ++i)
+    {
+        DX12Resource::Ptr res = std::make_shared<DX12Resource>(*this);
+        ComPtr<ID3D12Resource> back_buffer;
+        ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
+        res->state = D3D12_RESOURCE_STATE_PRESENT;
+        res->default_res = back_buffer;
+        res->desc = back_buffer->GetDesc();
+        m_back_buffers.emplace_back(res);
+    }
 }
 
 uint32_t DXSwapchain::GetCurrentBackBufferIndex()
@@ -32,7 +44,7 @@ uint32_t DXSwapchain::GetCurrentBackBufferIndex()
 
 Resource::Ptr DXSwapchain::GetBackBuffer(uint32_t buffer)
 {
-    return {};
+    return m_back_buffers[buffer];
 }
 
 void DXSwapchain::Present()
@@ -45,4 +57,8 @@ void DXSwapchain::Present()
     {
         ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
     }
+}
+
+void DXSwapchain::QueryOnDelete(ComPtr<IUnknown> res)
+{
 }

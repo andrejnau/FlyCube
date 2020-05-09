@@ -12,7 +12,9 @@ public:
     DXCommandList(DXDevice& device);
     void Open() override;
     void Close() override;
-    void Clear(Resource::Ptr iresource, const std::array<float, 4>& color) override;
+    void Clear(Resource::Ptr resource, const std::array<float, 4>& color) override;
+    void ResourceBarrier(Resource::Ptr resource, ResourceState state) override;
+
     ComPtr<ID3D12GraphicsCommandList> GetCommandList();
 
 private:

@@ -1,9 +1,11 @@
 #include "CommandList/DXCommandList.h"
 #include <Device/DXDevice.h>
+#include <Resource/DX12Resource.h>
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
 #include <dxgi1_6.h>
 #include <d3d12.h>
+#include <d3dx12.h>
 
 DXCommandList::DXCommandList(DXDevice& device)
     : m_device(device)
@@ -41,9 +43,40 @@ void DXCommandList::Close()
     m_command_list->Close();
 }
 
-void DXCommandList::Clear(Resource::Ptr iresource, const std::array<float, 4>& color)
+void DXCommandList::Clear(Resource::Ptr resource, const std::array<float, 4>& color)
 {
-    m_context.command_list->ClearRenderTargetView(ConvertView(view)->GetCpuHandle(), color.data(), 0, nullptr);
+    DX12Resource& dx_resource = (DX12Resource&)*resource;
+
+    auto get_handle = [&]()
+    {
+        static std::map<void*, CD3DX12_CPU_DESCRIPTOR_HANDLE> q;
+        static std::map<void*, ComPtr<ID3D12DescriptorHeap>> w;
+        if (q.count(&resource))
+            return q[&resource];
+
+        D3D12_RESOURCE_DESC desc = dx_resource.default_res->GetDesc();
+        D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
+        rtv_desc.Format = desc.Format;
+        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+        rtv_desc.Texture2D.MipSlice = 0;
+
+        ComPtr<ID3D12DescriptorHeap> m_descriptor_heap;
+        D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+        heap_desc.NumDescriptors = 1;
+        heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+
+        ASSERT_SUCCEEDED(m_device.GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&m_descriptor_heap)));
+        CD3DX12_CPU_DESCRIPTOR_HANDLE rtv_handle(m_descriptor_heap->GetCPUDescriptorHandleForHeapStart());
+        m_device.GetDevice()->CreateRenderTargetView(dx_resource.default_res.Get(), &rtv_desc, rtv_handle);
+        w[&resource] = m_descriptor_heap;
+        return q[&resource] = rtv_handle;
+    };
+
+    m_command_list->ClearRenderTargetView(get_handle(), color.data(), 0, nullptr);
+}
+
+void DXCommandList::ResourceBarrier(Resource::Ptr resource, ResourceState state)
+{
 }
 
 ComPtr<ID3D12GraphicsCommandList> DXCommandList::GetCommandList()

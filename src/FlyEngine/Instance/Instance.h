@@ -1,4 +1,5 @@
 #pragma once
+#include "Instance/BaseTypes.h"
 #include <ApiType/ApiType.h>
 #include <Adapter/Adapter.h>
 #include <memory>

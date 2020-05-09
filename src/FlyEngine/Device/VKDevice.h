@@ -14,6 +14,7 @@ public:
     VKAdapter& GetAdapter();
     uint32_t GetQueueFamilyIndex();
     vk::Device GetDevice();
+    vk::Queue GetQueue();
     vk::CommandPool GetCmdPool();
 
 private:

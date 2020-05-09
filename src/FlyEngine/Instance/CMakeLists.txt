@@ -1,5 +1,6 @@
 list(APPEND headers
     Instance.h
+    BaseTypes.h
 )
 
 list(APPEND sources
