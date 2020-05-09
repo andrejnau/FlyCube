@@ -94,8 +94,6 @@ int AppBox::Run()
     if (!m_window)
         return EXIT_FAILURE;
 
-    int frame_number = 0;
-    double last_time = glfwGetTime();
     while (!glfwWindowShouldClose(m_window))
     {
         glfwPollEvents();
@@ -109,24 +107,29 @@ int AppBox::Run()
             m_sample->OnRender();
         }
 
-        ++frame_number;
-        double current_time = glfwGetTime();
-        double delta = current_time - last_time;
-        if (delta >= 1.0)
-        {
-            double fps = double(frame_number) / delta;
-
-            std::stringstream ss;
-            ss << m_title<< " [" << fps << " FPS]";
-
-            glfwSetWindowTitle(m_window, ss.str().c_str());
-
-            frame_number = 0;
-            last_time = current_time;
-        }
+        UpdateFps();
     }
 
     return EXIT_SUCCESS;
+}
+
+void AppBox::UpdateFps()
+{
+    ++m_frame_number;
+    double current_time = glfwGetTime();
+    double delta = current_time - m_last_time;
+    if (delta >= 1.0)
+    {
+        double fps = double(m_frame_number) / delta;
+
+        std::stringstream ss;
+        ss << m_title << " [" << fps << " FPS]";
+
+        glfwSetWindowTitle(m_window, ss.str().c_str());
+
+        m_frame_number = 0;
+        m_last_time = current_time;
+    }
 }
 
 bool AppBox::ShouldClose()

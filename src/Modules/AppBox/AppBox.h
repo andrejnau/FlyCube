@@ -30,6 +30,7 @@ public:
     Context& GetContext();
     AppRect GetAppRect() const;
     GLFWwindow* GetWindow() const;
+    void UpdateFps();
 
     static AppRect GetPrimaryMonitorRect();
 
@@ -54,4 +55,6 @@ private:
     int m_height;
     bool m_exit;
     std::unique_ptr<Context> m_context;
+    uint32_t m_frame_number = 0;
+    double m_last_time = glfwGetTime();
 };

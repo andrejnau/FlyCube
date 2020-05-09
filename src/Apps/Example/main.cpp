@@ -36,6 +36,7 @@ int main(int argc, char* argv[])
         device->ExecuteCommandLists({ command_list }, fence, { image_available_semaphore }, { rendering_finished_semaphore });
         swapchain->Present(rendering_finished_semaphore);
         app.PollEvents();
+        app.UpdateFps();
     }
-    return 0;
+    _exit(0);
 }
