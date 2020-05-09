@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include "Resource/Resource.h"
+#include "Resource/IDestroyer.h"
 
 class VKDescriptorHeapRange;
 
@@ -38,18 +39,14 @@ static bool operator<(const VkImageSubresourceRange& lhs, const VkImageSubresour
         std::tie(rhs.aspectMask, rhs.baseArrayLayer, rhs.baseMipLevel, rhs.layerCount, rhs.levelCount);
 };
 
-class VKContext;
-
 class VKResource
     : public Resource
 {
 public:
+    using Destroyer = IDestroyer<VKResource>;
     using Ptr = std::shared_ptr<VKResource>;
 
-    //std::reference_wrapper<VKContext> m_context;
-
-    VKResource();
-    //VKResource(VKContext& context);
+    VKResource(Destroyer& destroyer);
     VKResource(VKResource&&);
     ~VKResource();
 
@@ -104,6 +101,7 @@ public:
     }
 
 private:
+    std::reference_wrapper<Destroyer> m_destroyer;
     std::vector<VKResource::Ptr> m_upload_res;
     bool empty = false;
 };

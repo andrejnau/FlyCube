@@ -12,10 +12,10 @@
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
 
-class ContextBase : public Context
+class ContextFly : public Context
 {
 public:
-    ContextBase(ApiType type, GLFWwindow* window);
+    ContextFly(ApiType type, GLFWwindow* window);
 
 protected:
     std::unique_ptr<Instance> m_instance;

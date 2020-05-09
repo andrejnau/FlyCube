@@ -1,7 +1,7 @@
-#include "Context/ContextBase.h"
+#include "Context/ContextFly.h"
 #include <Utilities/State.h>
 
-ContextBase::ContextBase(ApiType type, GLFWwindow* window)
+ContextFly::ContextFly(ApiType type, GLFWwindow* window)
     : Context(window)
     , m_instance(CreateInstance(type))
 {

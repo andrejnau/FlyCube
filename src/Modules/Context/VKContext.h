@@ -1,20 +1,23 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "Context/ContextBase.h"
+#include "Context/Context.h"
 #include "Context/VKDescriptorPool.h"
 #include <GLFW/glfw3.h>
 #include <Geometry/IABuffer.h>
 #include <assimp/postprocess.h>
-#include <Adapter/VKAdapter.h>
-#include <Instance/VKInstance.h>
 
 struct VKProgramApi;
-class VKDevice;
-
-class VKContext : public ContextBase
+class VKContext
+    : public Context
+    , public VKResource::Destroyer
 {
 public:
+    void CreateInstance();
+    void SelectQueueFamilyIndex();
+    void CreateDevice();
+    void CreateSwapchain(int width, int height);
+    void SelectPhysicalDevice();
     VKContext(GLFWwindow* window);
 
     virtual std::unique_ptr<ProgramApi> CreateProgram() override;
@@ -58,12 +61,15 @@ public:
 
     VKProgramApi* m_current_program = nullptr;
 
+    vk::UniqueInstance m_instance;
     vk::PhysicalDevice m_physical_device;
     uint32_t m_queue_family_index = 0;
-    vk::Device m_vk_device;
+    vk::UniqueDevice m_device;
     vk::Queue m_queue;
+    vk::UniqueSurfaceKHR m_surface;
     vk::Format m_swapchain_color_format = vk::Format::eB8G8R8Unorm;
     vk::UniqueSwapchainKHR m_swapchain;
+    std::vector<vk::Image> m_images;
     vk::UniqueCommandPool m_cmd_pool;
     std::vector<vk::UniqueCommandBuffer> m_cmd_bufs;
     vk::UniqueSemaphore m_image_available_semaphore;
@@ -80,14 +86,11 @@ public:
     std::vector<std::reference_wrapper<VKProgramApi>> m_created_program;
     VKResource::Ptr m_back_buffers[FrameCount];
 
-    void QueryOnDelete(VKResource& res)
+    void QueryOnDelete(VKResource res) override
     {
         m_deletion_queue[m_frame_index].emplace_back(std::move(res));
     }
 
     std::vector<VKResource> m_deletion_queue[FrameCount];
-
-    VKInstance& m_vk_instance;
-    VKAdapter& m_vk_adapter;
-    VKDevice& m_vdevice;
 };
+

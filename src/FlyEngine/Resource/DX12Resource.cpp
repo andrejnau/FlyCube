@@ -2,17 +2,17 @@
 #include "Context/DX12Context.h"
 #include <Utilities/FileUtility.h>
 
-DX12Resource::DX12Resource(DX12Context& context)
-    : m_context(context)
+DX12Resource::DX12Resource(Destroyer& destroyer)
+    : m_destroyer(destroyer)
 {
 }
 
 DX12Resource::~DX12Resource()
 {
-    m_context.QueryOnDelete(default_res.Get());
+    m_destroyer.get().QueryOnDelete(default_res.Get());
     for (auto& upload : m_upload_res)
     {
-        m_context.QueryOnDelete(upload.Get());
+        m_destroyer.get().QueryOnDelete(upload.Get());
     }
 }
 

@@ -4,17 +4,17 @@
 #include <map>
 
 #include "Resource/Resource.h"
+#include "Resource/IDestroyer.h"
 #include "Context/BaseTypes.h"
 #include <View/DX12View.h>
 
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
-class DX12Context;
-
 class DX12Resource : public Resource
 {
 public:
+    using Destroyer = IDestroyer<ComPtr<IUnknown>>;
     using Ptr = std::shared_ptr<DX12Resource>;
     ComPtr<ID3D12Resource> default_res;
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
@@ -25,7 +25,7 @@ public:
 
     D3D12_SAMPLER_DESC sampler_desc = {};
 
-    DX12Resource(DX12Context& context);
+    DX12Resource(Destroyer& destroyer);
     ~DX12Resource();
 
     struct
@@ -39,6 +39,6 @@ public:
     ComPtr<ID3D12Resource>& GetUploadResource(size_t subresource);
 
 private:
-    DX12Context& m_context;
+    std::reference_wrapper<Destroyer> m_destroyer;
     std::vector<ComPtr<ID3D12Resource>> m_upload_res;
 };

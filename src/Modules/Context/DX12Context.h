@@ -5,7 +5,7 @@
 #include <dxgi1_4.h>
 #include <vector>
 
-#include "Context/ContextBase.h"
+#include "Context/Context.h"
 #include "Context/DescriptorPool.h"
 #include <Resource/DX12Resource.h>
 
@@ -13,7 +13,9 @@ using namespace Microsoft::WRL;
 
 class DX12ProgramApi;
 
-class DX12Context : public ContextBase
+class DX12Context
+    : public Context
+    , public DX12Resource::Destroyer
 {
 public:
     DX12Context(GLFWwindow* window);
@@ -56,7 +58,7 @@ public:
     void ResourceBarrier(DX12Resource& res, D3D12_RESOURCE_STATES state);
 
     DescriptorPool& GetDescriptorPool();
-    void QueryOnDelete(ComPtr<IUnknown> res);
+    void QueryOnDelete(ComPtr<IUnknown> res) override;
 
     ComPtr<ID3D12GraphicsCommandList> command_list;
     ComPtr<ID3D12GraphicsCommandList4> command_list4;

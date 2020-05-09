@@ -11,7 +11,7 @@
 #include "Context/DXGIUtility.h"
 
 DX12Context::DX12Context(GLFWwindow* window)
-    : ContextBase(ApiType::kDX12, window)
+    : Context(window)
     , m_view_pool(*this)
 {
 #if 0

@@ -1,41 +1,55 @@
-set(target Resource)
-
-set(headers
+list(APPEND headers
     GLResource.h
     Resource.h
 )
 
-set(sources
+list(APPEND sources
     Resource.cpp
 )
 
 if (VULKAN_SUPPORT)
-    set(headers 
-        ${headers}
+    list(APPEND headers
         VKResource.h
     )
-    set(sources 
-        ${sources}
+    list(APPEND sources
         VKResource.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    set(headers 
-        ${headers}
+    list(APPEND headers
         DX11Resource.h
         DX12Resource.h
     )
-    set(sources 
-        ${sources}
+    list(APPEND sources
         DX12Resource.cpp
     )
 endif()
 
-add_library(${target} ${headers} ${sources})
+add_library(Resource ${headers} ${sources})
 
-target_link_libraries(${target}
-    Context
-)
+if (VULKAN_SUPPORT)
+    target_link_libraries(Resource
+        ${Vulkan_LIBRARIES}
+        VulkanExtLoader
+    )
+    target_include_directories(Resource
+        PUBLIC
+            ${Vulkan_INCLUDE_DIR}
+    )
+endif()
 
-set_target_properties(${target} PROPERTIES FOLDER "FlyEngine")
+if (DIRECTX_SUPPORT)
+    target_link_libraries(Resource
+        d3d11
+        d3d12
+        dxgi
+        dxguid
+    )
+    target_include_directories(Resource
+        PUBLIC
+            "${project_root}/3rdparty/d3dx12"
+    )
+endif()
+
+set_target_properties(Resource PROPERTIES FOLDER "FlyEngine")
