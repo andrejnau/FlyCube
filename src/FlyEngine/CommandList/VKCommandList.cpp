@@ -26,7 +26,7 @@ void VKCommandList::Close()
 
 void VKCommandList::Clear(Resource::Ptr resource, const std::array<float, 4>& color)
 {
-    VKResource& vk_resource = (VKResource&)*resource;
+    VKResource& vk_resource = static_cast<VKResource&>(*resource);
     vk::ClearColorValue clear_color = {};
     clear_color.float32[0] = color[0];
     clear_color.float32[1] = color[1];
@@ -62,7 +62,7 @@ void VKCommandList::ResourceBarrier(Resource::Ptr resource, ResourceState state)
     ViewDesc view_desc = {};
     //
 
-    VKResource& vk_resource = (VKResource&)*resource;
+    VKResource& vk_resource = static_cast<VKResource&>(*resource);
     VKResource::Image& image = vk_resource.image;
 
     vk::ImageLayout new_layout = vk::ImageLayout::eUndefined;

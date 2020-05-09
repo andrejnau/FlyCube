@@ -2,6 +2,7 @@
 #include <Adapter/DXAdapter.h>
 #include <Swapchain/DXSwapchain.h>
 #include <CommandList/DXCommandList.h>
+#include <Fence/DXFence.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
 
@@ -50,7 +51,12 @@ std::unique_ptr<CommandList> DXDevice::CreateCommandList()
     return std::make_unique<DXCommandList>(*this);
 }
 
-void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
+std::unique_ptr<Fence> DXDevice::CreateFence()
+{
+    return std::make_unique<DXFence>(*this);
+}
+
+void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::unique_ptr<Fence>& fence)
 {
     std::vector<ID3D12CommandList*> dx_command_lists;
     for (auto& command_list : command_lists)
@@ -61,6 +67,12 @@ void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
         dx_command_lists.emplace_back(dx_command_list.GetCommandList().Get());
     }
     m_command_queue->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
+
+    if (fence)
+    {
+        DXFence& dx_fence = static_cast<DXFence&>(*fence);
+        ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), dx_fence.GetValue()));
+    }
 }
 
 DXAdapter& DXDevice::GetAdapter()

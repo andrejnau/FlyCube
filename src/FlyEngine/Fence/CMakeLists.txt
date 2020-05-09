@@ -1,37 +1,35 @@
 list(APPEND headers
-    Device.h
+    Fence.h
 )
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKDevice.h
+        VKFence.h
     )
     list(APPEND sources
-        VKDevice.cpp
+        VKFence.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXDevice.h
+        DXFence.h
     )
     list(APPEND sources
-        DXDevice.cpp
+        DXFence.cpp
     )
 endif()
 
-add_library(Device ${headers} ${sources})
+add_library(Fence ${headers} ${sources})
 
-target_include_directories(Device
+target_include_directories(Fence
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(Device
+target_link_libraries(Fence
     ApiType
-    Swapchain
-    CommandList
-    Fence
+    Device
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
@@ -39,27 +37,27 @@ target_link_libraries(Device
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(Fence
         ${Vulkan_LIBRARIES}
         VulkanExtLoader
     )
-    target_include_directories(Device
+    target_include_directories(Fence
         PUBLIC
             ${Vulkan_INCLUDE_DIR}
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(Fence
         d3d11
         d3d12
         dxgi
         dxguid
     )
-    target_include_directories(Device
+    target_include_directories(Fence
         PUBLIC
             "${project_root}/3rdparty/d3dx12"
     )
 endif()
 
-set_target_properties(Device PROPERTIES FOLDER "FlyEngine")
+set_target_properties(Fence PROPERTIES FOLDER "FlyEngine")

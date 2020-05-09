@@ -2,6 +2,7 @@
 #include <VulkanExtLoader/VulkanExtLoader.h>
 #include <Swapchain/VKSwapchain.h>
 #include <CommandList/VKCommandList.h>
+#include <Fence/VKFence.h>
 #include <Adapter/VKAdapter.h>
 #include <Utilities/VKUtility.h>
 #include <set>
@@ -70,9 +71,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
     cmd_pool_create_info.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
     cmd_pool_create_info.queueFamilyIndex = m_queue_family_index;
     m_cmd_pool = m_device->createCommandPoolUnique(cmd_pool_create_info);
-
-    vk::FenceCreateInfo fence_create_info = {};
-    m_fence = m_device->createFenceUnique(fence_create_info);
 }
 
 std::unique_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
@@ -85,7 +83,12 @@ std::unique_ptr<CommandList> VKDevice::CreateCommandList()
     return std::make_unique<VKCommandList>(*this);
 }
 
-void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
+std::unique_ptr<Fence> VKDevice::CreateFence()
+{
+    return std::make_unique<VKFence>(*this);
+}
+
+void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::unique_ptr<Fence>& fence)
 {
     std::vector<vk::CommandBuffer> vk_command_lists;
     for (auto& command_list : command_lists)
@@ -106,11 +109,13 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     /*submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &m_rendering_finished_semaphore.get();*/
 
-    m_queue.submit(1, &submit_info, m_fence.get());
-    auto res = m_device->waitForFences(1, &m_fence.get(), VK_TRUE, UINT64_MAX);
-    if (res != vk::Result::eSuccess)
-        throw std::runtime_error("vkWaitForFences");
-    m_device->resetFences(1, &m_fence.get());
+    vk::Fence fence_hande = {};
+    if (fence)
+    {
+        VKFence& vk_fence = static_cast<VKFence&>(*fence);
+        fence_hande = vk_fence.GetFence();
+    }
+    m_queue.submit(1, &submit_info, fence_hande);
 }
 
 VKAdapter& VKDevice::GetAdapter()

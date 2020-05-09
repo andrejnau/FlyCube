@@ -21,7 +21,4 @@ private:
     DXDevice& m_device;
     ComPtr<ID3D12CommandAllocator> m_command_allocator;
     ComPtr<ID3D12GraphicsCommandList> m_command_list;
-    ComPtr<ID3D12Fence> m_fence;
-    uint64_t m_fence_value = 0;
-    HANDLE m_fence_event = nullptr;
 };
