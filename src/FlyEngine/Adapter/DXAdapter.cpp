@@ -19,7 +19,7 @@ const std::string& DXAdapter::GetName() const
     return m_name;
 }
 
-std::unique_ptr<Device> DXAdapter::CreateDevice()
+std::shared_ptr<Device> DXAdapter::CreateDevice()
 {
     return std::make_unique<DXDevice>(*this);
 }

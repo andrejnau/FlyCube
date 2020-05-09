@@ -10,7 +10,7 @@ class DXAdapter : public Adapter
 public:
     DXAdapter(DXInstance& instance, const ComPtr<IDXGIAdapter1>& adapter);
     const std::string& GetName() const override;
-    std::unique_ptr<Device> CreateDevice() override;
+    std::shared_ptr<Device> CreateDevice() override;
     DXInstance& GetInstance();
     ComPtr<IDXGIAdapter1> GetAdapter();
 

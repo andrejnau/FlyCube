@@ -3,6 +3,7 @@
 #include <Swapchain/DXSwapchain.h>
 #include <CommandList/DXCommandList.h>
 #include <Fence/DXFence.h>
+#include <Semaphore/DXSemaphore.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
 
@@ -41,22 +42,28 @@ DXDevice::DXDevice(DXAdapter& adapter)
 #endif
 }
 
-std::unique_ptr<Swapchain> DXDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
+std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
 {
     return std::make_unique<DXSwapchain>(*this, window, width, height, frame_count);
 }
 
-std::unique_ptr<CommandList> DXDevice::CreateCommandList()
+std::shared_ptr<CommandList> DXDevice::CreateCommandList()
 {
     return std::make_unique<DXCommandList>(*this);
 }
 
-std::unique_ptr<Fence> DXDevice::CreateFence()
+std::shared_ptr<Fence> DXDevice::CreateFence()
 {
     return std::make_unique<DXFence>(*this);
 }
 
-void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::unique_ptr<Fence>& fence)
+std::shared_ptr<Semaphore> DXDevice::CreateGPUSemaphore()
+{
+    return std::make_unique<DXSemaphore>(*this);
+}
+
+void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence,
+                                   const std::vector<std::shared_ptr<Semaphore>>& wait_semaphores, const std::vector<std::shared_ptr<Semaphore>>& signal_semaphores)
 {
     std::vector<ID3D12CommandList*> dx_command_lists;
     for (auto& command_list : command_lists)

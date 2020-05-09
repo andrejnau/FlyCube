@@ -14,9 +14,9 @@ class DXSwapchain
 {
 public:
     DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count);
-    uint32_t GetCurrentBackBufferIndex() override;
     Resource::Ptr GetBackBuffer(uint32_t buffer) override;
-    void Present() override;
+    uint32_t NextImage(const std::shared_ptr<Semaphore>& semaphore) override;
+    void Present(const std::shared_ptr<Semaphore>& semaphore) override;
 
     void QueryOnDelete(ComPtr<IUnknown> res) override;
 

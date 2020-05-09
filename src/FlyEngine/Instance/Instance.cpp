@@ -7,7 +7,7 @@
 #endif
 #include <cassert>
 
-std::unique_ptr<Instance> CreateInstance(ApiType type)
+std::shared_ptr<Instance> CreateInstance(ApiType type)
 {
     switch (type)
     {

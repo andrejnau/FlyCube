@@ -12,7 +12,7 @@ ContextFly::ContextFly(ApiType type, GLFWwindow* window)
         if (CurState::Instance().required_gpu_index != -1 && gpu_index++ != CurState::Instance().required_gpu_index)
             continue;
         CurState::Instance().gpu_name = adapter->GetName();
-        m_adapter = std::move(adapter);
+        m_adapter = adapter;
         break;
     }
 

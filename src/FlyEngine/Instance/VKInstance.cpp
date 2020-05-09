@@ -121,9 +121,9 @@ VKInstance::VKInstance()
     static DebugReportListener listener{ m_instance };
 }
 
-std::vector<std::unique_ptr<Adapter>> VKInstance::EnumerateAdapters()
+std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
 {
-    std::vector<std::unique_ptr<Adapter>> adapters;
+    std::vector<std::shared_ptr<Adapter>> adapters;
     auto devices = m_instance->enumeratePhysicalDevices();
     for (const auto& device : devices)
     {

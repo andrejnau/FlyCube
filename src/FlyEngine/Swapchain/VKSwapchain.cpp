@@ -3,6 +3,7 @@
 #include <Device/VKDevice.h>
 #include <Adapter/VKAdapter.h>
 #include <Instance/VKInstance.h>
+#include <Semaphore/VKSemaphore.h>
 #include <Utilities/State.h>
 #include <Utilities/VKUtility.h>
 #include <Resource/VKResource.h>
@@ -66,16 +67,6 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
         res->res_type = VKResource::Type::kImage;
         m_back_buffers.emplace_back(res);
     }
-
-    vk::SemaphoreCreateInfo semaphore_create_info = {};
-    m_image_available_semaphore = device.GetDevice().createSemaphoreUnique(semaphore_create_info);
-    m_rendering_finished_semaphore = device.GetDevice().createSemaphoreUnique(semaphore_create_info);
-}
-
-uint32_t VKSwapchain::GetCurrentBackBufferIndex()
-{
-    m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, m_image_available_semaphore.get(), nullptr, &m_frame_index);
-    return m_frame_index;
 }
 
 Resource::Ptr VKSwapchain::GetBackBuffer(uint32_t buffer)
@@ -83,14 +74,25 @@ Resource::Ptr VKSwapchain::GetBackBuffer(uint32_t buffer)
     return m_back_buffers[buffer];
 }
 
-void VKSwapchain::Present()
+uint32_t VKSwapchain::NextImage(const std::shared_ptr<Semaphore>& semaphore)
+{
+    VKSemaphore& vk_semaphore = static_cast<VKSemaphore&>(*semaphore);
+    m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, vk_semaphore.GetSemaphore(), nullptr, &m_frame_index);
+    return m_frame_index;
+}
+
+void VKSwapchain::Present(const std::shared_ptr<Semaphore>& semaphore)
 {
     vk::PresentInfoKHR present_info = {};
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &m_swapchain.get();
     present_info.pImageIndices = &m_frame_index;
-    present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &m_rendering_finished_semaphore.get();
+    if (semaphore)
+    {
+        VKSemaphore& vk_semaphore = static_cast<VKSemaphore&>(*semaphore);
+        present_info.waitSemaphoreCount = 1;
+        present_info.pWaitSemaphores = &vk_semaphore.GetSemaphore();
+    }
     m_device.GetQueue().presentKHR(present_info);
 }
 

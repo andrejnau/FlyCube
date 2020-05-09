@@ -10,7 +10,7 @@ class Instance
 {
 public:
     virtual ~Instance() = default;
-    virtual std::vector<std::unique_ptr<Adapter>> EnumerateAdapters() = 0;
+    virtual std::vector<std::shared_ptr<Adapter>> EnumerateAdapters() = 0;
 };
 
-std::unique_ptr<Instance> CreateInstance(ApiType type);
+std::shared_ptr<Instance> CreateInstance(ApiType type);

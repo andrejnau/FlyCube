@@ -1,38 +1,35 @@
 list(APPEND headers
-    Device.h
+    Semaphore.h
 )
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKDevice.h
+        VKSemaphore.h
     )
     list(APPEND sources
-        VKDevice.cpp
+        VKSemaphore.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXDevice.h
+        DXSemaphore.h
     )
     list(APPEND sources
-        DXDevice.cpp
+        DXSemaphore.cpp
     )
 endif()
 
-add_library(Device ${headers} ${sources})
+add_library(Semaphore ${headers} ${sources})
 
-target_include_directories(Device
+target_include_directories(Semaphore
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(Device
+target_link_libraries(Semaphore
     ApiType
-    Swapchain
-    CommandList
-    Fence
-    Semaphore
+    Device
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
@@ -40,27 +37,27 @@ target_link_libraries(Device
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(Semaphore
         ${Vulkan_LIBRARIES}
         VulkanExtLoader
     )
-    target_include_directories(Device
+    target_include_directories(Semaphore
         PUBLIC
             ${Vulkan_INCLUDE_DIR}
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(Semaphore
         d3d11
         d3d12
         dxgi
         dxguid
     )
-    target_include_directories(Device
+    target_include_directories(Semaphore
         PUBLIC
             "${project_root}/3rdparty/d3dx12"
     )
 endif()
 
-set_target_properties(Device PROPERTIES FOLDER "FlyEngine")
+set_target_properties(Semaphore PROPERTIES FOLDER "FlyEngine")

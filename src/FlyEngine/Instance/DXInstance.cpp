@@ -29,9 +29,9 @@ DXInstance::DXInstance()
     ASSERT_SUCCEEDED(CreateDXGIFactory2(flags, IID_PPV_ARGS(&m_dxgi_factory)));
 }
 
-std::vector<std::unique_ptr<Adapter>> DXInstance::EnumerateAdapters()
+std::vector<std::shared_ptr<Adapter>> DXInstance::EnumerateAdapters()
 {
-    std::vector<std::unique_ptr<Adapter>> adapters;
+    std::vector<std::shared_ptr<Adapter>> adapters;
 
     ComPtr<IDXGIFactory6> dxgi_factory6;
     m_dxgi_factory.As(&dxgi_factory6);

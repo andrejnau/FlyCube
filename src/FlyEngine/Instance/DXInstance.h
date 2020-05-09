@@ -7,7 +7,7 @@ class DXInstance : public Instance
 {
 public:
     DXInstance();
-    std::vector<std::unique_ptr<Adapter>> EnumerateAdapters() override;
+    std::vector<std::shared_ptr<Adapter>> EnumerateAdapters() override;
     ComPtr<IDXGIFactory4> GetFactory();
 
 private:

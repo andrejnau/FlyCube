@@ -18,7 +18,7 @@ public:
     ContextFly(ApiType type, GLFWwindow* window);
 
 protected:
-    std::unique_ptr<Instance> m_instance;
-    std::unique_ptr<Adapter> m_adapter;
-    std::unique_ptr<Device> m_device;
+    std::shared_ptr<Instance> m_instance;
+    std::shared_ptr<Adapter> m_adapter;
+    std::shared_ptr<Device> m_device;
 };

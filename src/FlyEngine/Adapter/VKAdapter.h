@@ -8,7 +8,7 @@ class VKAdapter : public Adapter
 public:
     VKAdapter(VKInstance& instance, const vk::PhysicalDevice& physical_device);
     const std::string& GetName() const override;
-    std::unique_ptr<Device> CreateDevice() override;
+    std::shared_ptr<Device> CreateDevice() override;
     VKInstance& GetInstance();
     vk::PhysicalDevice& GetPhysicalDevice();
 

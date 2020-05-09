@@ -3,6 +3,7 @@
 #include <Swapchain/VKSwapchain.h>
 #include <CommandList/VKCommandList.h>
 #include <Fence/VKFence.h>
+#include <Semaphore/VKSemaphore.h>
 #include <Adapter/VKAdapter.h>
 #include <Utilities/VKUtility.h>
 #include <set>
@@ -73,22 +74,28 @@ VKDevice::VKDevice(VKAdapter& adapter)
     m_cmd_pool = m_device->createCommandPoolUnique(cmd_pool_create_info);
 }
 
-std::unique_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
+std::shared_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
 {
     return std::make_unique<VKSwapchain>(*this, window, width, height, frame_count);
 }
 
-std::unique_ptr<CommandList> VKDevice::CreateCommandList()
+std::shared_ptr<CommandList> VKDevice::CreateCommandList()
 {
     return std::make_unique<VKCommandList>(*this);
 }
 
-std::unique_ptr<Fence> VKDevice::CreateFence()
+std::shared_ptr<Fence> VKDevice::CreateFence()
 {
     return std::make_unique<VKFence>(*this);
 }
 
-void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::unique_ptr<Fence>& fence)
+std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
+{
+    return std::make_unique<VKSemaphore>(*this);
+}
+
+void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence,
+                                   const std::vector<std::shared_ptr<Semaphore>>& wait_semaphores, const std::vector<std::shared_ptr<Semaphore>>& signal_semaphores)
 {
     std::vector<vk::CommandBuffer> vk_command_lists;
     for (auto& command_list : command_lists)
@@ -102,12 +109,27 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     vk::SubmitInfo submit_info = {};
     submit_info.commandBufferCount = vk_command_lists.size();
     submit_info.pCommandBuffers = vk_command_lists.data();
-    /*submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &m_image_available_semaphore.get();*/
+
+    std::vector<vk::Semaphore> vk_wait_semaphores;
+    for (auto& wait_semaphore : wait_semaphores)
+    {
+        VKSemaphore& vk_wait_semaphore = static_cast<VKSemaphore&>(*wait_semaphore);
+        vk_wait_semaphores.emplace_back(vk_wait_semaphore.GetSemaphore());
+    }
+    submit_info.waitSemaphoreCount = vk_wait_semaphores.size();
+    submit_info.pWaitSemaphores = vk_wait_semaphores.data();
+
     vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eTransfer;
     submit_info.pWaitDstStageMask = &waitDstStageMask;
-    /*submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &m_rendering_finished_semaphore.get();*/
+
+    std::vector<vk::Semaphore> vk_signal_semaphores;
+    for (auto& signal_semaphore : signal_semaphores)
+    {
+        VKSemaphore& vk_signal_semaphore = static_cast<VKSemaphore&>(*signal_semaphore);
+        vk_signal_semaphores.emplace_back(vk_signal_semaphore.GetSemaphore());
+    }
+    submit_info.signalSemaphoreCount = vk_signal_semaphores.size();
+    submit_info.pSignalSemaphores = vk_signal_semaphores.data();
 
     vk::Fence fence_hande = {};
     if (fence)

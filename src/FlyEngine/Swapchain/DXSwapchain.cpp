@@ -37,17 +37,17 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
     }
 }
 
-uint32_t DXSwapchain::GetCurrentBackBufferIndex()
-{
-    return m_swap_chain->GetCurrentBackBufferIndex();
-}
-
 Resource::Ptr DXSwapchain::GetBackBuffer(uint32_t buffer)
 {
     return m_back_buffers[buffer];
 }
 
-void DXSwapchain::Present()
+uint32_t DXSwapchain::NextImage(const std::shared_ptr<Semaphore>& semaphore)
+{
+    return m_swap_chain->GetCurrentBackBufferIndex();
+}
+
+void DXSwapchain::Present(const std::shared_ptr<Semaphore>& semaphore)
 {
     if (CurState::Instance().vsync)
     {
