@@ -1,5 +1,6 @@
 add_subdirectory(Adapter)
 add_subdirectory(ApiType)
+add_subdirectory(CommandList)
 add_subdirectory(Device)
 add_subdirectory(Instance)
 add_subdirectory(Resource)

@@ -1,8 +1,8 @@
-set(headers
+list(APPEND headers
     Instance.h
 )
 
-set(sources
+list(APPEND sources
     Instance.cpp
 )
 

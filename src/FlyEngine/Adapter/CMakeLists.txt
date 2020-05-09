@@ -1,4 +1,4 @@
-set(headers
+list(APPEND headers
     Adapter.h
 )
 

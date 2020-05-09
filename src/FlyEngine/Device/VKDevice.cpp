@@ -1,6 +1,7 @@
 #include "Device/VKDevice.h"
 #include <VulkanExtLoader/VulkanExtLoader.h>
 #include <Swapchain/VKSwapchain.h>
+#include <CommandList/VKCommandList.h>
 #include <Adapter/VKAdapter.h>
 #include <Utilities/VKUtility.h>
 #include <set>
@@ -62,11 +63,23 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
     m_device = physical_device.createDeviceUnique(device_create_info);
     LoadVkDeviceExt(m_device.get());
+
+    m_queue = m_device->getQueue(m_queue_family_index, 0);
+
+    vk::CommandPoolCreateInfo cmd_pool_create_info = {};
+    cmd_pool_create_info.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+    cmd_pool_create_info.queueFamilyIndex = m_queue_family_index;
+    m_cmd_pool = m_device->createCommandPoolUnique(cmd_pool_create_info);
 }
 
 std::unique_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
 {
     return std::make_unique<VKSwapchain>(*this, window, width, height, frame_count);
+}
+
+std::unique_ptr<CommandList> VKDevice::CreateCommandList()
+{
+    return std::make_unique<VKCommandList>(*this);
 }
 
 VKAdapter& VKDevice::GetAdapter()
@@ -82,4 +95,9 @@ uint32_t VKDevice::GetQueueFamilyIndex()
 vk::Device VKDevice::GetDevice()
 {
     return m_device.get();
+}
+
+vk::CommandPool VKDevice::GetCmdPool()
+{
+    return m_cmd_pool.get();
 }

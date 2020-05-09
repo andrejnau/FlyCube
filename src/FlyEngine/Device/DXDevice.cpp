@@ -1,6 +1,7 @@
 #include "Device/DXDevice.h"
 #include <Adapter/DXAdapter.h>
 #include <Swapchain/DXSwapchain.h>
+#include <CommandList/DXCommandList.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
 
@@ -16,6 +17,11 @@ DXDevice::DXDevice(DXAdapter& adapter)
 std::unique_ptr<Swapchain> DXDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
 {
     return std::make_unique<DXSwapchain>(*this, window, width, height, frame_count);
+}
+
+std::unique_ptr<CommandList> DXDevice::CreateCommandList()
+{
+    return std::make_unique<DXCommandList>(*this);
 }
 
 DXAdapter& DXDevice::GetAdapter()

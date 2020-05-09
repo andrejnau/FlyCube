@@ -1,4 +1,4 @@
-set(headers
+list(APPEND headers
     Swapchain.h
 )
 
