@@ -12,6 +12,32 @@ DXDevice::DXDevice(DXAdapter& adapter)
 
     D3D12_COMMAND_QUEUE_DESC queue_desc = {};
     ASSERT_SUCCEEDED(m_device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&m_command_queue)));
+
+#if defined(_DEBUG)
+    ComPtr<ID3D12InfoQueue> info_queue;
+    if (SUCCEEDED(m_device.As(&info_queue)))
+    {
+        info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+        info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+
+        D3D12_MESSAGE_SEVERITY severities[] =
+        {
+            D3D12_MESSAGE_SEVERITY_INFO,
+        };
+
+        D3D12_MESSAGE_ID deny_ids[] =
+        {
+            D3D12_MESSAGE_ID_COPY_DESCRIPTORS_INVALID_RANGES,
+        };
+
+        D3D12_INFO_QUEUE_FILTER filter = {};
+        filter.DenyList.NumSeverities = std::size(severities);
+        filter.DenyList.pSeverityList = severities;
+        filter.DenyList.NumIDs = std::size(deny_ids);
+        filter.DenyList.pIDList = deny_ids;
+        info_queue->PushStorageFilter(&filter);
+    }
+#endif
 }
 
 std::unique_ptr<Swapchain> DXDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)

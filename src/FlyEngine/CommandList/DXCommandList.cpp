@@ -51,8 +51,8 @@ void DXCommandList::Clear(Resource::Ptr resource, const std::array<float, 4>& co
     {
         static std::map<void*, CD3DX12_CPU_DESCRIPTOR_HANDLE> q;
         static std::map<void*, ComPtr<ID3D12DescriptorHeap>> w;
-        if (q.count(&resource))
-            return q[&resource];
+        if (q.count(&dx_resource))
+            return q[&dx_resource];
 
         D3D12_RESOURCE_DESC desc = dx_resource.default_res->GetDesc();
         D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
@@ -68,8 +68,8 @@ void DXCommandList::Clear(Resource::Ptr resource, const std::array<float, 4>& co
         ASSERT_SUCCEEDED(m_device.GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&m_descriptor_heap)));
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtv_handle(m_descriptor_heap->GetCPUDescriptorHandleForHeapStart());
         m_device.GetDevice()->CreateRenderTargetView(dx_resource.default_res.Get(), &rtv_desc, rtv_handle);
-        w[&resource] = m_descriptor_heap;
-        return q[&resource] = rtv_handle;
+        w[&dx_resource] = m_descriptor_heap;
+        return q[&dx_resource] = rtv_handle;
     };
 
     m_command_list->ClearRenderTargetView(get_handle(), color.data(), 0, nullptr);
@@ -77,6 +77,32 @@ void DXCommandList::Clear(Resource::Ptr resource, const std::array<float, 4>& co
 
 void DXCommandList::ResourceBarrier(Resource::Ptr resource, ResourceState state)
 {
+    DX12Resource& dx_resource = (DX12Resource&)*resource;
+
+    D3D12_RESOURCE_STATES dx_state = {};
+
+    switch (state)
+    {
+    case ResourceState::kCommon:
+        dx_state = D3D12_RESOURCE_STATE_COMMON;
+        break;
+    case ResourceState::kPresent:
+        dx_state = D3D12_RESOURCE_STATE_PRESENT;
+        break;
+    case ResourceState::kClear:
+    case ResourceState::kRenderTarget:
+        dx_state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        break;
+    case ResourceState::kUnorderedAccess:
+        dx_state = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        break;
+    }
+
+    if (dx_resource.state == D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)
+        return;
+    if (dx_resource.state != dx_state)
+        m_command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dx_resource.default_res.Get(), dx_resource.state, dx_state));
+    dx_resource.state = dx_state;
 }
 
 ComPtr<ID3D12GraphicsCommandList> DXCommandList::GetCommandList()

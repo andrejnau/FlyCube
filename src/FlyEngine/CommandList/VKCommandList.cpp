@@ -69,6 +69,7 @@ void VKCommandList::ResourceBarrier(Resource::Ptr resource, ResourceState state)
     switch (state)
     {
     case ResourceState::kCommon:
+    case ResourceState::kClear:
         new_layout = vk::ImageLayout::eGeneral;
         break;
     case ResourceState::kPresent:

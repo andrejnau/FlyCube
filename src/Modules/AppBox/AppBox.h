@@ -19,7 +19,8 @@ class AppBox
 public:
     using CreateSample = std::function<IScene::Ptr(Context&, int, int)>;
     AppBox(int argc, char* argv[], const std::string& title);
-    AppBox(int argc, char *argv[], const CreateSample& create_sample, const std::string& title);
+    AppBox(int argc, char* argv[], const std::string& title, ApiType api_type);
+    AppBox(int argc, char *argv[], const CreateSample& create_sample, const std::string& title, ApiType api_type = ApiType::kVulkan);
     AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height);
     ~AppBox();
     int Run();

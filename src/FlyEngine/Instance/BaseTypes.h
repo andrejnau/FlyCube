@@ -7,6 +7,7 @@
 enum class ResourceState
 {
     kCommon,
+    kClear,
     kPresent,
     kRenderTarget,
     kUnorderedAccess,
