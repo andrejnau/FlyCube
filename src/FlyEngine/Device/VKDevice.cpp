@@ -28,6 +28,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     auto extensions = physical_device.enumerateDeviceExtensionProperties();
     std::set<std::string> req_extension = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
         VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
         VK_NV_RAY_TRACING_EXTENSION_NAME,
         VK_KHR_MAINTENANCE3_EXTENSION_NAME
@@ -56,7 +57,11 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.geometryShader = true;
     device_features.imageCubeArray = true;
 
+    vk::PhysicalDeviceTimelineSemaphoreFeatures device_timetine_feature = {};
+    device_timetine_feature.timelineSemaphore = true;
+
     vk::DeviceCreateInfo device_create_info = {};
+    device_create_info.pNext = &device_timetine_feature;
     device_create_info.queueCreateInfoCount = 1;
     device_create_info.pQueueCreateInfos = &queue_create_info;
     device_create_info.pEnabledFeatures = &device_features;
@@ -64,6 +69,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_create_info.ppEnabledExtensionNames = found_extension.data();
 
     m_device = physical_device.createDeviceUnique(device_create_info);
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device.get());
+
     m_queue = m_device->getQueue(m_queue_family_index, 0);
 
     vk::CommandPoolCreateInfo cmd_pool_create_info = {};
@@ -128,14 +135,21 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     }
     submit_info.signalSemaphoreCount = vk_signal_semaphores.size();
     submit_info.pSignalSemaphores = vk_signal_semaphores.data();
+    m_queue.submit(1, &submit_info, {});
 
-    vk::Fence fence_hande = {};
     if (fence)
     {
         VKFence& vk_fence = static_cast<VKFence&>(*fence);
-        fence_hande = vk_fence.GetFence();
+        vk::TimelineSemaphoreSubmitInfo timeline_info = {};
+        timeline_info.signalSemaphoreValueCount = 1;
+        timeline_info.pSignalSemaphoreValues = &vk_fence.GetValue();
+
+        vk::SubmitInfo signal_submit_info = {};
+        signal_submit_info.pNext = &timeline_info;
+        signal_submit_info.signalSemaphoreCount = 1;
+        signal_submit_info.pSignalSemaphores = &vk_fence.GetFence();
+        m_queue.submit(1, &signal_submit_info, {});
     }
-    m_queue.submit(1, &submit_info, fence_hande);
 }
 
 VKAdapter& VKDevice::GetAdapter()

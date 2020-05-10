@@ -9,17 +9,17 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 class DebugReportListener
 {
 public:
-    DebugReportListener(const vk::UniqueInstance& instance)
+    DebugReportListener(const vk::Instance& instance)
     {
         if (!enabled)
             return;
         vk::DebugReportCallbackCreateInfoEXT callback_create_info = {};
         callback_create_info.flags = vk::DebugReportFlagBitsEXT::eWarning |
-            vk::DebugReportFlagBitsEXT::ePerformanceWarning |
-            vk::DebugReportFlagBitsEXT::eError |
-            vk::DebugReportFlagBitsEXT::eDebug;
+                                     vk::DebugReportFlagBitsEXT::ePerformanceWarning |
+                                     vk::DebugReportFlagBitsEXT::eError |
+                                     vk::DebugReportFlagBitsEXT::eDebug;
         callback_create_info.pfnCallback = &DebugReportCallback;
-        m_callback = instance->createDebugReportCallbackEXT(callback_create_info);
+        m_callback = instance.createDebugReportCallbackEXTUnique(callback_create_info);
     }
 
     static constexpr bool enabled = true;
@@ -61,7 +61,7 @@ private:
         return VK_FALSE;
     }
 
-    vk::DebugReportCallbackEXT m_callback;
+    vk::UniqueDebugReportCallbackEXT m_callback;
 };
 
 VKInstance::VKInstance()
@@ -115,8 +115,7 @@ VKInstance::VKInstance()
 
     m_instance = vk::createInstanceUnique(create_info);
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance.get());
-
-    static DebugReportListener listener{ m_instance };
+    static DebugReportListener listener(m_instance.get());
 }
 
 std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()

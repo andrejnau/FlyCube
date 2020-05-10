@@ -9,9 +9,11 @@ public:
     VKFence(VKDevice& device);
     void WaitAndReset() override;
 
-    vk::Fence GetFence();
+    const vk::Semaphore& GetFence() const;
+    const uint64_t& GetValue() const;
 
 private:
     VKDevice& m_device;
-    vk::UniqueFence m_fence;
+    vk::UniqueSemaphore m_timeline_semaphore;
+    uint64_t m_fence_value = 0;
 };

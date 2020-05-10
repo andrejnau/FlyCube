@@ -27,7 +27,7 @@ ComPtr<ID3D12Fence> DXFence::GetFence()
     return m_fence;
 }
 
-uint64_t DXFence::GetValue()
+const uint64_t& DXFence::GetValue() const
 {
     return m_fence_value;
 }

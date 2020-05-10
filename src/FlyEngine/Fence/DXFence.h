@@ -13,7 +13,7 @@ public:
     void WaitAndReset() override;
 
     ComPtr<ID3D12Fence> GetFence();
-    uint64_t GetValue();
+    const uint64_t& GetValue() const;
 
 private:
     DXDevice& m_device;

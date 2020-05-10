@@ -4,20 +4,29 @@
 VKFence::VKFence(VKDevice& device)
     : m_device(device)
 {
-    vk::FenceCreateInfo fence_create_info = {};
-    fence_create_info.flags = vk::FenceCreateFlagBits::eSignaled;
-    m_fence = m_device.GetDevice().createFenceUnique(fence_create_info);
+    vk::SemaphoreTypeCreateInfo timeline_create_info = {};
+    timeline_create_info.semaphoreType = vk::SemaphoreType::eTimeline;
+    vk::SemaphoreCreateInfo create_info;
+    create_info.pNext = &timeline_create_info;
+    m_timeline_semaphore = device.GetDevice().createSemaphoreUnique(create_info);
 }
 
 void VKFence::WaitAndReset()
 {
-    auto res = m_device.GetDevice().waitForFences(1, &m_fence.get(), VK_TRUE, UINT64_MAX);
-    if (res != vk::Result::eSuccess)
-        throw std::runtime_error("vkWaitForFences");
-    m_device.GetDevice().resetFences(1, &m_fence.get());
+    vk::SemaphoreWaitInfo wait_info = {};
+    wait_info.semaphoreCount = 1;
+    wait_info.pSemaphores = &m_timeline_semaphore.get();
+    wait_info.pValues = &m_fence_value;
+    m_device.GetDevice().waitSemaphoresKHR(wait_info, UINT64_MAX);
+    ++m_fence_value;
 }
 
-vk::Fence VKFence::GetFence()
+const vk::Semaphore& VKFence::GetFence() const
 {
-    return m_fence.get();
+    return m_timeline_semaphore.get();
+}
+
+const uint64_t& VKFence::GetValue() const
+{
+    return m_fence_value;
 }
