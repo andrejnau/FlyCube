@@ -39,7 +39,6 @@ target_link_libraries(Semaphore
 if (VULKAN_SUPPORT)
     target_link_libraries(Semaphore
         ${Vulkan_LIBRARIES}
-        VulkanExtLoader
     )
     target_include_directories(Semaphore
         PUBLIC

@@ -44,7 +44,6 @@ target_link_libraries(Instance
 if (VULKAN_SUPPORT)
     target_link_libraries(Instance
         ${Vulkan_LIBRARIES}
-        VulkanExtLoader
     )
     target_include_directories(Instance
         PUBLIC

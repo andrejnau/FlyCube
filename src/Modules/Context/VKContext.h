@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
+#include <Utilities/Vulkan.h>
 #include "Context/Context.h"
 #include "Context/VKDescriptorPool.h"
 #include <GLFW/glfw3.h>

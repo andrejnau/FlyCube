@@ -1,14 +1,10 @@
-#ifdef _WIN32
-#define VK_USE_PLATFORM_WIN32_KHR
-#else
-#define VK_USE_PLATFORM_XCB_KHR
-#endif
 #include "Instance/VKInstance.h"
-#include <VulkanExtLoader/VulkanExtLoader.h>
 #include <Adapter/VKAdapter.h>
 #include <set>
 #include <string>
 #include <sstream>
+
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 class DebugReportListener
 {
@@ -70,6 +66,9 @@ private:
 
 VKInstance::VKInstance()
 {
+    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = m_dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+
     auto layers = vk::enumerateInstanceLayerProperties();
 
     std::set<std::string> req_layers;
@@ -105,7 +104,7 @@ VKInstance::VKInstance()
     }
 
     vk::ApplicationInfo app_info = {};
-    app_info.apiVersion = VK_API_VERSION_1_0;
+    app_info.apiVersion = VK_API_VERSION_1_2;
 
     vk::InstanceCreateInfo create_info;
     create_info.pApplicationInfo = &app_info;
@@ -115,8 +114,7 @@ VKInstance::VKInstance()
     create_info.ppEnabledExtensionNames = found_extension.data();
 
     m_instance = vk::createInstanceUnique(create_info);
-
-    LoadVkInstanceExt(m_instance.get());
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance.get());
 
     static DebugReportListener listener{ m_instance };
 }

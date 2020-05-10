@@ -1,12 +1,6 @@
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
-#ifdef _WIN32
-#define VK_USE_PLATFORM_WIN32_KHR
-#else
-#define VK_USE_PLATFORM_XCB_KHR
-#endif
 #include <GLFW/glfw3.h>
-#include <vulkan/vk_sdk_platform.h>
 #include "VKContext.h"
 #include <Resource/VKResource.h>
 #include <Program/VKProgramApi.h>
@@ -16,7 +10,6 @@
 #include <gli/gli.hpp>
 #include <Utilities/VKUtility.h>
 #include <Utilities/State.h>
-#include <VulkanExtLoader/VulkanExtLoader.h>
 #include <sstream>
 
 vk::IndexType GetVkIndexType(gli::format Format)
@@ -140,8 +133,6 @@ void VKContext::CreateInstance()
 
     m_instance = vk::createInstanceUnique(create_info);
 
-    LoadVkInstanceExt(m_instance.get());
-
     DebugReportListener{ m_instance };
 }
 
@@ -224,8 +215,6 @@ void VKContext::CreateDevice()
     device_create_info.ppEnabledExtensionNames = found_extension.data();
 
     m_device = m_physical_device.createDeviceUnique(device_create_info);
-
-    LoadVkDeviceExt(m_device.get());
 }
 
 void VKContext::CreateSwapchain(int width, int height)

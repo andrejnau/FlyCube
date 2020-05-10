@@ -39,7 +39,6 @@ target_link_libraries(CommandList
 if (VULKAN_SUPPORT)
     target_link_libraries(CommandList
         ${Vulkan_LIBRARIES}
-        VulkanExtLoader
     )
     target_include_directories(CommandList
         PUBLIC

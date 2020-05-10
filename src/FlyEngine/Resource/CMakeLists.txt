@@ -33,10 +33,13 @@ target_include_directories(Resource
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
+target_link_libraries(Resource
+    Utilities
+)
+
 if (VULKAN_SUPPORT)
     target_link_libraries(Resource
         ${Vulkan_LIBRARIES}
-        VulkanExtLoader
     )
     target_include_directories(Resource
         PUBLIC

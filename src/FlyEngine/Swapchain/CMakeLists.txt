@@ -40,7 +40,6 @@ target_link_libraries(Swapchain
 if (VULKAN_SUPPORT)
     target_link_libraries(Swapchain
         ${Vulkan_LIBRARIES}
-        VulkanExtLoader
     )
     target_include_directories(Swapchain
         PUBLIC

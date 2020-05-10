@@ -1,5 +1,5 @@
 #include "Fence.h"
-#include <vulkan/vulkan.hpp>
+#include <Utilities/Vulkan.h>
 
 class VKDevice;
 

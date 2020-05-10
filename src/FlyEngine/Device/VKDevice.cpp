@@ -1,7 +1,7 @@
 #include "Device/VKDevice.h"
-#include <VulkanExtLoader/VulkanExtLoader.h>
 #include <Swapchain/VKSwapchain.h>
 #include <CommandList/VKCommandList.h>
+#include <Instance/VKInstance.h>
 #include <Fence/VKFence.h>
 #include <Semaphore/VKSemaphore.h>
 #include <Adapter/VKAdapter.h>
@@ -64,8 +64,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_create_info.ppEnabledExtensionNames = found_extension.data();
 
     m_device = physical_device.createDeviceUnique(device_create_info);
-    LoadVkDeviceExt(m_device.get());
-
     m_queue = m_device->getQueue(m_queue_family_index, 0);
 
     vk::CommandPoolCreateInfo cmd_pool_create_info = {};

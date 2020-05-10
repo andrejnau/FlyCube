@@ -1,5 +1,5 @@
 #include "Instance/Instance.h"
-#include <vulkan/vulkan.hpp>
+#include <Utilities/Vulkan.h>
 
 class VKInstance : public Instance
 {
@@ -9,5 +9,6 @@ public:
     vk::Instance& GetInstance();
 
 private:
+    vk::DynamicLoader m_dl;
     vk::UniqueInstance m_instance;
 };

@@ -1,5 +1,5 @@
 #include "Semaphore.h"
-#include <vulkan/vulkan.hpp>
+#include <Utilities/Vulkan.h>
 
 class VKDevice;
 

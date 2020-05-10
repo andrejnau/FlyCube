@@ -42,7 +42,6 @@ target_link_libraries(Device
 if (VULKAN_SUPPORT)
     target_link_libraries(Device
         ${Vulkan_LIBRARIES}
-        VulkanExtLoader
     )
     target_include_directories(Device
         PUBLIC

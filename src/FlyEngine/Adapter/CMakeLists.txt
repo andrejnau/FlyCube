@@ -39,7 +39,6 @@ target_link_libraries(Adapter
 if (VULKAN_SUPPORT)
     target_link_libraries(Adapter
         ${Vulkan_LIBRARIES}
-        VulkanExtLoader
     )
     target_include_directories(Adapter
         PUBLIC

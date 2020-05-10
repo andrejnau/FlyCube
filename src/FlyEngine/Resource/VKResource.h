@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
+#include <Utilities/Vulkan.h>
 #include "Resource/Resource.h"
 #include "Resource/IDestroyer.h"
 
