@@ -595,7 +595,7 @@ void VKProgramApi::RenderPassBegin()
     renderPassInfo.renderPass = m_render_pass.get();
     renderPassInfo.framebuffer = m_framebuffer.get();
 
-    renderPassInfo.renderArea.offset = { 0, 0 };
+    renderPassInfo.renderArea.offset = vk::Offset2D(0, 0);
     renderPassInfo.renderArea.extent = m_rtv_size[0].first;
 
     std::vector<vk::ClearValue> clearValues(m_attachment_views.size() - 1);
@@ -960,7 +960,7 @@ void VKProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& 
 
 void VKProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)
 {
-    m_clear_cache.GetDepth() = { Depth, Stencil };
+    m_clear_cache.GetDepth() = vk::ClearDepthStencilValue(Depth, Stencil);
     m_clear_cache.GetDepthLoadOp() = vk::AttachmentLoadOp::eClear;
 }
 

@@ -320,7 +320,7 @@ VKContext::VKContext(GLFWwindow* window)
         VKResource::Ptr res = std::make_shared<VKResource>(*this);
         res->image.res = vk::UniqueImage(m_images[i]);
         res->image.format = m_swapchain_color_format;
-        res->image.size = { 1u * m_width, 1u * m_height };
+        res->image.size = vk::Extent2D(1u * m_width, 1u * m_height);
         res->res_type = VKResource::Type::kImage;
         m_back_buffers[i] = res;
     }
