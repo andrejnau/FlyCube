@@ -7,8 +7,7 @@ class VKFence : public Fence
 {
 public:
     VKFence(VKDevice& device);
-    void Wait() override;
-    void Reset() override;
+    void WaitAndReset() override;
 
     vk::Fence GetFence();
 

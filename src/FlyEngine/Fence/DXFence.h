@@ -10,8 +10,7 @@ class DXFence : public Fence
 {
 public:
     DXFence(DXDevice& device);
-    void Wait() override;
-    void Reset() override;
+    void WaitAndReset() override;
 
     ComPtr<ID3D12Fence> GetFence();
     uint64_t GetValue();

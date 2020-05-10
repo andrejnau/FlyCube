@@ -5,6 +5,5 @@ class Fence
 {
 public:
     virtual ~Fence() = default;
-    virtual void Wait() = 0;
-    virtual void Reset() = 0;
+    virtual void WaitAndReset() = 0;
 };

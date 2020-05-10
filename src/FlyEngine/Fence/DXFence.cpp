@@ -12,17 +12,13 @@ DXFence::DXFence(DXDevice& device)
     m_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 }
 
-void DXFence::Wait()
+void DXFence::WaitAndReset()
 {
     if (m_fence->GetCompletedValue() < m_fence_value)
     {
         ASSERT_SUCCEEDED(m_fence->SetEventOnCompletion(m_fence_value, m_fence_event));
         WaitForSingleObjectEx(m_fence_event, INFINITE, FALSE);
     }
-}
-
-void DXFence::Reset()
-{
     ++m_fence_value;
 }
 
