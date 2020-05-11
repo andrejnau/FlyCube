@@ -12,6 +12,9 @@ public:
     std::shared_ptr<CommandList> CreateCommandList() override;
     std::shared_ptr<Fence> CreateFence() override;
     std::shared_ptr<Semaphore> CreateGPUSemaphore() override;
+    std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels) override;
+    std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride) override;
+    std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) override;
     std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) override;
     void Wait(const std::shared_ptr<Semaphore>& semaphore) override;
     void Signal(const std::shared_ptr<Semaphore>& semaphore) override;
@@ -25,7 +28,10 @@ public:
     vk::ImageAspectFlags GetAspectFlags(vk::Format format) const;
 
 private:
+    uint32_t FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties);
+
     VKAdapter& m_adapter;
+    const vk::PhysicalDevice& m_physical_device;
     uint32_t m_queue_family_index = -1;
     vk::UniqueDevice m_device;
     vk::Queue m_queue;

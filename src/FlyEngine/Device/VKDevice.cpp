@@ -11,9 +11,9 @@
 
 VKDevice::VKDevice(VKAdapter& adapter)
     : m_adapter(adapter)
+    , m_physical_device(adapter.GetPhysicalDevice())
 {
-    const vk::PhysicalDevice& physical_device = adapter.GetPhysicalDevice();
-    auto queue_families = physical_device.getQueueFamilyProperties();
+    auto queue_families = m_physical_device.getQueueFamilyProperties();
 
     for (size_t i = 0; i < queue_families.size(); ++i)
     {
@@ -26,7 +26,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     }
     ASSERT(m_queue_family_index != -1);
 
-    auto extensions = physical_device.enumerateDeviceExtensionProperties();
+    auto extensions = m_physical_device.enumerateDeviceExtensionProperties();
     std::set<std::string> req_extension = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
@@ -69,7 +69,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_create_info.enabledExtensionCount = found_extension.size();
     device_create_info.ppEnabledExtensionNames = found_extension.data();
 
-    m_device = physical_device.createDeviceUnique(device_create_info);
+    m_device = m_physical_device.createDeviceUnique(device_create_info);
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device.get());
 
     m_queue = m_device->getQueue(m_queue_family_index, 0);
@@ -98,6 +98,194 @@ std::shared_ptr<Fence> VKDevice::CreateFence()
 std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
 {
     return std::make_unique<VKSemaphore>(*this);
+}
+
+std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
+{
+    std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
+    res->res_type = VKResource::Type::kImage;
+
+    vk::Format vk_format = static_cast<vk::Format>(format);
+    if (vk_format == vk::Format::eD24UnormS8Uint)
+        vk_format = vk::Format::eD32SfloatS8Uint;
+
+    auto createImage = [this, msaa_count](int width, int height, int depth, int mip_levels, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties,
+        vk::UniqueImage& image, vk::UniqueDeviceMemory& imageMemory, uint32_t& size)
+    {
+        vk::ImageCreateInfo imageInfo = {};
+        imageInfo.imageType = vk::ImageType::e2D;
+        imageInfo.extent.width = width;
+        imageInfo.extent.height = height;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = mip_levels;
+        imageInfo.arrayLayers = depth;
+        imageInfo.format = format;
+        imageInfo.tiling = tiling;
+        imageInfo.initialLayout = vk::ImageLayout::eUndefined;
+        imageInfo.usage = usage;
+        imageInfo.samples = static_cast<vk::SampleCountFlagBits>(msaa_count);
+        imageInfo.sharingMode = vk::SharingMode::eExclusive;
+
+        if (depth % 6 == 0)
+            imageInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+
+        image = m_device->createImageUnique(imageInfo);
+
+        vk::MemoryRequirements memRequirements;
+        m_device->getImageMemoryRequirements(image.get(), &memRequirements);
+
+        vk::MemoryAllocateInfo allocInfo = {};
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+        imageMemory = m_device->allocateMemoryUnique(allocInfo);
+        m_device->bindImageMemory(image.get(), imageMemory.get(), 0);
+
+        size = allocInfo.allocationSize;
+    };
+
+    vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eTransferDst;
+    if (bind_flag & BindFlag::kDsv)
+        usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+    if (bind_flag & BindFlag::kSrv)
+        usage |= vk::ImageUsageFlagBits::eSampled;
+    if (bind_flag & BindFlag::kRtv)
+        usage |= vk::ImageUsageFlagBits::eColorAttachment;
+    if (bind_flag & BindFlag::kUav)
+        usage |= vk::ImageUsageFlagBits::eStorage;
+
+    uint32_t tmp = 0;
+    createImage(
+        width,
+        height,
+        depth,
+        mip_levels,
+        vk_format,
+        vk::ImageTiling::eOptimal,
+        usage,
+        vk::MemoryPropertyFlagBits::eDeviceLocal,
+        res->image.res,
+        res->image.memory,
+        tmp
+    );
+
+    res->image.size.height = height;
+    res->image.size.width = width;
+    res->image.format = vk_format;
+    res->image.level_count = mip_levels;
+    res->image.msaa_count = msaa_count;
+    res->image.array_layers = depth;
+
+    return res;
+}
+
+std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride)
+{
+    if (buffer_size == 0)
+        return {};
+
+    vk::BufferCreateInfo bufferInfo = {};
+    bufferInfo.size = buffer_size;
+    bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+
+    if (bind_flag & BindFlag::kVbv)
+        bufferInfo.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+    else if (bind_flag & BindFlag::kIbv)
+        bufferInfo.usage = vk::BufferUsageFlagBits::eIndexBuffer;
+    else if (bind_flag & BindFlag::kCbv)
+        bufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+    else if (bind_flag & BindFlag::kSrv)
+        bufferInfo.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+    else
+        bufferInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
+
+    std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
+    res->res_type = VKResource::Type::kBuffer;
+
+    res->buffer.res = m_device->createBufferUnique(bufferInfo);
+
+    vk::MemoryRequirements memRequirements;
+    m_device->getBufferMemoryRequirements(res->buffer.res.get(), &memRequirements);
+
+    vk::MemoryAllocateInfo allocInfo = {};
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+    res->buffer.memory = m_device->allocateMemoryUnique(allocInfo);
+
+    m_device->bindBufferMemory(res->buffer.res.get(), res->buffer.memory.get(), 0);
+    res->buffer.size = buffer_size;
+
+    return res;
+}
+
+std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
+{
+    std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
+
+    vk::SamplerCreateInfo samplerInfo = {};
+    samplerInfo.magFilter = vk::Filter::eLinear;
+    samplerInfo.minFilter = vk::Filter::eLinear;
+    samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = 16;
+    samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = vk::CompareOp::eAlways;
+    samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = std::numeric_limits<float>::max();
+
+    /*switch (desc.filter)
+    {
+    case SamplerFilter::kAnisotropic:
+        sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
+        break;
+    case SamplerFilter::kMinMagMipLinear:
+        sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        break;
+    case SamplerFilter::kComparisonMinMagMipLinear:
+        sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+        break;
+    }*/
+
+    switch (desc.mode)
+    {
+    case SamplerTextureAddressMode::kWrap:
+        samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+        samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+        samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+        break;
+    case SamplerTextureAddressMode::kClamp:
+        samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+        samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+        samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+        break;
+    }
+
+    switch (desc.func)
+    {
+    case SamplerComparisonFunc::kNever:
+        samplerInfo.compareOp = vk::CompareOp::eNever;
+        break;
+    case SamplerComparisonFunc::kAlways:
+        samplerInfo.compareEnable = true;
+        samplerInfo.compareOp = vk::CompareOp::eAlways;
+        break;
+    case SamplerComparisonFunc::kLess:
+        samplerInfo.compareEnable = true;
+        samplerInfo.compareOp = vk::CompareOp::eLess;
+        break;
+    }
+
+    res->sampler.res = m_device->createSamplerUnique(samplerInfo);
+
+    res->res_type = VKResource::Type::kSampler;
+    return res;
 }
 
 std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
@@ -208,4 +396,17 @@ vk::ImageAspectFlags VKDevice::GetAspectFlags(vk::Format format) const
     default:
         return vk::ImageAspectFlagBits::eColor;
     }
+}
+
+uint32_t VKDevice::FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties)
+{
+    vk::PhysicalDeviceMemoryProperties memProperties;
+    m_physical_device.getMemoryProperties(&memProperties);
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
+    {
+        if ((type_filter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            return i;
+    }
+    throw std::runtime_error("failed to find suitable memory type!");
 }

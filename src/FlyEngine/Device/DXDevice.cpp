@@ -7,6 +7,7 @@
 #include <Semaphore/DXSemaphore.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
+#include <d3dx12.h>
 
 DXDevice::DXDevice(DXAdapter& adapter)
     : m_adapter(adapter)
@@ -62,6 +63,177 @@ std::shared_ptr<Fence> DXDevice::CreateFence()
 std::shared_ptr<Semaphore> DXDevice::CreateGPUSemaphore()
 {
     return std::make_unique<DXSemaphore>(*this);
+}
+
+std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
+{
+    DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
+    if (bind_flag & BindFlag::kSrv && format == DXGI_FORMAT_D32_FLOAT)
+        dx_format = DXGI_FORMAT_R32_TYPELESS;
+
+    std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
+
+    D3D12_RESOURCE_DESC desc = {};
+    desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    desc.Width = width;
+    desc.Height = height;
+    desc.DepthOrArraySize = depth;
+    desc.MipLevels = mip_levels;
+    desc.Format = dx_format;
+
+    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS ms_check_desc = {};
+    ms_check_desc.Format = desc.Format;
+    ms_check_desc.SampleCount = msaa_count;
+    m_device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &ms_check_desc, sizeof(ms_check_desc));
+    desc.SampleDesc.Count = msaa_count;
+    desc.SampleDesc.Quality = ms_check_desc.NumQualityLevels - 1;
+
+    if (bind_flag & BindFlag::kRtv)
+        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    if (bind_flag & BindFlag::kDsv)
+        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    if (bind_flag & BindFlag::kUav)
+        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+    res->state = D3D12_RESOURCE_STATE_COPY_DEST;
+
+    D3D12_CLEAR_VALUE* p_clear_value = nullptr;
+    D3D12_CLEAR_VALUE clear_value = {};
+    clear_value.Format = dx_format;
+    if (bind_flag & BindFlag::kRtv)
+    {
+        clear_value.Color[0] = 0.0f;
+        clear_value.Color[1] = 0.0f;
+        clear_value.Color[2] = 0.0f;
+        clear_value.Color[3] = 1.0f;
+        p_clear_value = &clear_value;
+    }
+    else if (bind_flag & BindFlag::kDsv)
+    {
+        clear_value.DepthStencil.Depth = 1.0f;
+        clear_value.DepthStencil.Stencil = 0;
+        if (format == DXGI_FORMAT_R32_TYPELESS)
+            clear_value.Format = DXGI_FORMAT_D32_FLOAT;
+        p_clear_value = &clear_value;
+    }
+
+    if (bind_flag & BindFlag::kUav)
+        p_clear_value = nullptr;
+
+    ASSERT_SUCCEEDED(m_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &desc,
+        res->state,
+        p_clear_value,
+        IID_PPV_ARGS(&res->default_res)));
+    res->desc = desc;
+
+    return res;
+}
+
+std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride)
+{
+    if (buffer_size == 0)
+        return {};
+
+    std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
+
+    if (bind_flag & BindFlag::kCbv)
+        buffer_size = (buffer_size + 255) & ~255;
+
+    auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
+
+    res->bind_flag = bind_flag;
+    res->buffer_size = buffer_size;
+    res->stride = stride;
+    res->state = D3D12_RESOURCE_STATE_COMMON;
+
+    if (bind_flag & BindFlag::kRtv)
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    if (bind_flag & BindFlag::kDsv)
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    if (bind_flag & BindFlag::kUav)
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    if (bind_flag & BindFlag::KAccelerationStructure)
+        res->state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+
+    if (bind_flag & BindFlag::kCbv)
+    {
+        res->state = D3D12_RESOURCE_STATE_GENERIC_READ;
+        m_device->CreateCommittedResource(
+            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+            D3D12_HEAP_FLAG_NONE,
+            &desc,
+            res->state,
+            nullptr,
+            IID_PPV_ARGS(&res->default_res));
+    }
+    else
+    {
+        m_device->CreateCommittedResource(
+            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+            D3D12_HEAP_FLAG_NONE,
+            &desc,
+            res->state,
+            nullptr,
+            IID_PPV_ARGS(&res->default_res));
+    }
+    res->desc = desc;
+    return res;
+}
+
+std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
+{
+    std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
+
+    D3D12_SAMPLER_DESC& sampler_desc = res->sampler_desc;
+
+    switch (desc.filter)
+    {
+    case SamplerFilter::kAnisotropic:
+        sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
+        break;
+    case SamplerFilter::kMinMagMipLinear:
+        sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        break;
+    case SamplerFilter::kComparisonMinMagMipLinear:
+        sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+        break;
+    }
+
+    switch (desc.mode)
+    {
+    case SamplerTextureAddressMode::kWrap:
+        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        break;
+    case SamplerTextureAddressMode::kClamp:
+        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        break;
+    }
+
+    switch (desc.func)
+    {
+    case SamplerComparisonFunc::kNever:
+        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        break;
+    case SamplerComparisonFunc::kAlways:
+        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+        break;
+    case SamplerComparisonFunc::kLess:
+        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS;
+        break;
+    }
+
+    sampler_desc.MinLOD = 0;
+    sampler_desc.MaxLOD = std::numeric_limits<float>::max();
+    sampler_desc.MaxAnisotropy = 1;
+
+    return res;
 }
 
 std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
