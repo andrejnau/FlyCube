@@ -1,7 +1,6 @@
 #pragma once
 #include "View/View.h"
-#include "View/ViewDesc.h"
-#include <Resource/Resource.h>
+#include <Resource/VKResource.h>
 
 class VKDevice;
 
@@ -10,7 +9,15 @@ class VKView : public View
 public:
     VKView(VKDevice& device, const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc);
     std::shared_ptr<Resource> GetResource();
+    const vk::ImageViewCreateInfo& GeViewInfo() const;
 
 private:
+    void CreateSrv(const ViewDesc& view_desc, const VKResource& res);
+    void CreateRTV(const ViewDesc& view_desc, const VKResource& res);
+
+    VKDevice& m_device;
     std::shared_ptr<Resource> m_resource;
+    vk::ImageViewCreateInfo m_view_info = {};
+    vk::UniqueImageView m_srv;
+    vk::UniqueImageView m_om;
 };

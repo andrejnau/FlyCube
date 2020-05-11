@@ -150,6 +150,15 @@ enum class ShaderType
     kLibrary
 };
 
+struct ViewDesc
+{
+    size_t level = 0;
+    size_t count = static_cast<size_t>(-1);
+    ResourceDimension dimension;
+    uint32_t stride = 0;
+    ResourceType res_type;
+};
+
 struct BindKey
 {
     size_t program_id;

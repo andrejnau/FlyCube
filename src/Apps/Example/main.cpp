@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[])
 {
-    ApiType type = ApiType::kDX12;
+    ApiType type = ApiType::kVulkan;
     AppBox app(argc, argv, "Example", type);
     std::shared_ptr<Instance> instance = CreateInstance(type);
     std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters().front());

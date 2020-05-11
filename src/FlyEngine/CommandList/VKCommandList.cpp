@@ -4,6 +4,7 @@
 #include <View/VKView.h>
 
 VKCommandList::VKCommandList(VKDevice& device)
+    : m_device(device)
 {
     vk::CommandBufferAllocateInfo cmd_buf_alloc_info = {};
     cmd_buf_alloc_info.commandPool = device.GetCmdPool();
@@ -42,35 +43,17 @@ void VKCommandList::Clear(const std::shared_ptr<View>& view, const std::array<fl
     clear_color.float32[2] = color[2];
     clear_color.float32[3] = color[3];
 
-    vk::ImageSubresourceRange ImageSubresourceRange;
-    ImageSubresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-    ImageSubresourceRange.baseMipLevel = 0;
-    ImageSubresourceRange.levelCount = 1;
-    ImageSubresourceRange.baseArrayLayer = 0;
-    ImageSubresourceRange.layerCount = 1;
+    const vk::ImageSubresourceRange& ImageSubresourceRange = vk_view.GeViewInfo().subresourceRange;
     m_cmd_buf->clearColorImage(vk_resource.image.res.get(), vk_resource.image.layout[ImageSubresourceRange], clear_color, ImageSubresourceRange);
-}
-
-vk::ImageAspectFlags GetAspectFlags(vk::Format format)
-{
-    switch (format)
-    {
-    case vk::Format::eD32SfloatS8Uint:
-    case vk::Format::eD24UnormS8Uint:
-        return vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
-    case vk::Format::eD32Sfloat:
-        return vk::ImageAspectFlagBits::eDepth;
-    default:
-        return vk::ImageAspectFlagBits::eColor;
-    }
 }
 
 void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
-    // TODO
-    ViewDesc view_desc = {};
-    //
+    return ResourceBarrier(resource, {}, state);
+}
 
+void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc, ResourceState state)
+{
     VKResource& vk_resource = static_cast<VKResource&>(*resource);
     VKResource::Image& image = vk_resource.image;
 
@@ -91,7 +74,7 @@ void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, R
     }
 
     vk::ImageSubresourceRange range = {};
-    range.aspectMask = GetAspectFlags(image.format);
+    range.aspectMask = m_device.GetAspectFlags(image.format);
     range.baseMipLevel = view_desc.level;
     if (new_layout == vk::ImageLayout::eColorAttachmentOptimal)
         range.levelCount = 1;

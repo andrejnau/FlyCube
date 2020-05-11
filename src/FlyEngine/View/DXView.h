@@ -12,13 +12,13 @@ public:
     D3D12_CPU_DESCRIPTOR_HANDLE GetHandle();
 
 private:
-    DXDevice& m_device;
-    std::shared_ptr<DXDescriptorHandle> m_handle;
-
     void CreateSrv(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
     void CreateUAV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
     void CreateRTV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
     void CreateDSV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
     void CreateCBV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
     void CreateSampler(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
+
+    DXDevice& m_device;
+    std::shared_ptr<DXDescriptorHandle> m_handle;
 };

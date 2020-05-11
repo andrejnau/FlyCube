@@ -22,6 +22,7 @@ public:
     vk::Device GetDevice();
     vk::Queue GetQueue();
     vk::CommandPool GetCmdPool();
+    vk::ImageAspectFlags GetAspectFlags(vk::Format format) const;
 
 private:
     VKAdapter& m_adapter;

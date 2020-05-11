@@ -195,3 +195,17 @@ vk::CommandPool VKDevice::GetCmdPool()
 {
     return m_cmd_pool.get();
 }
+
+vk::ImageAspectFlags VKDevice::GetAspectFlags(vk::Format format) const
+{
+    switch (format)
+    {
+    case vk::Format::eD32SfloatS8Uint:
+    case vk::Format::eD24UnormS8Uint:
+        return vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
+    case vk::Format::eD32Sfloat:
+        return vk::ImageAspectFlagBits::eDepth;
+    default:
+        return vk::ImageAspectFlagBits::eColor;
+    }
+}

@@ -1,6 +1,5 @@
 #pragma once
 #include <View/View.h>
-#include <View/ViewDesc.h>
 #include <memory>
 #include <string>
 

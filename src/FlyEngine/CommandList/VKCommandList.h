@@ -16,5 +16,8 @@ public:
     vk::CommandBuffer GetCommandList();
 
 private:
+    void ResourceBarrier(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc, ResourceState state);
+
+    VKDevice& m_device;
     vk::UniqueCommandBuffer m_cmd_buf;
 };

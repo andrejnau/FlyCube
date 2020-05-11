@@ -4,7 +4,7 @@ list(APPEND headers
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKView.h 
+        VKView.h
     )
     list(APPEND sources
         VKView.cpp
@@ -29,6 +29,7 @@ target_include_directories(View
 
 target_link_libraries(View
     Resource
+    Instance
     Utilities
 )
 
