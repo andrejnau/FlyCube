@@ -13,8 +13,16 @@ int main(int argc, char* argv[])
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), app.GetAppRect().width, app.GetAppRect().height, frame_count);
     std::vector<std::shared_ptr<CommandList>> command_lists;
     std::vector<std::shared_ptr<View>> views;
+
     std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex });
     std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
+
+    std::vector<uint32_t> index_data = { 0, 1, 2 };
+    std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_data.size(), sizeof(uint32_t));
+
+    std::vector<glm::vec3> vertex_data = { glm::vec3(-0.5, -0.5, 0.0), glm::vec3(0.0,  0.5, 0.0), glm::vec3(0.5, -0.5, 0.0) };
+    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * vertex_data.size(), sizeof(glm::vec3));
+
     for (uint32_t i = 0; i < frame_count; ++i)
     {
         ViewDesc view_desc = {};

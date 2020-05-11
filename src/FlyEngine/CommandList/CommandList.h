@@ -4,6 +4,7 @@
 #include <Instance/BaseTypes.h>
 #include <memory>
 #include <array>
+#include <gli/gli.hpp>
 
 class CommandList
 {
@@ -13,4 +14,6 @@ public:
     virtual void Close() = 0;
     virtual void Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color) = 0;
     virtual void ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state) = 0;
+    virtual void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) = 0;
+    virtual void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) = 0;
 };

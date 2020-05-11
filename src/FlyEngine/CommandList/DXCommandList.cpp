@@ -65,6 +65,27 @@ void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, R
     dx_resource.state = dx_state;
 }
 
+void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
+{
+    DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
+    DXResource& dx_resource = static_cast<DXResource&>(*resource);
+    D3D12_INDEX_BUFFER_VIEW index_buffer_view = {};
+    index_buffer_view.Format = dx_format;
+    index_buffer_view.SizeInBytes = dx_resource.desc.Width;
+    index_buffer_view.BufferLocation = dx_resource.default_res->GetGPUVirtualAddress();
+    m_command_list->IASetIndexBuffer(&index_buffer_view);
+}
+
+void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
+{
+    DXResource& dx_resource = static_cast<DXResource&>(*resource);
+    D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view = {};
+    vertex_buffer_view.BufferLocation = dx_resource.default_res->GetGPUVirtualAddress();
+    vertex_buffer_view.SizeInBytes = dx_resource.desc.Width;
+    vertex_buffer_view.StrideInBytes = dx_resource.stride;
+    m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
+}
+
 ComPtr<ID3D12GraphicsCommandList> DXCommandList::GetCommandList()
 {
     return m_command_list;

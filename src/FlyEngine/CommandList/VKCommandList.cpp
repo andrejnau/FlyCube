@@ -11,19 +11,19 @@ VKCommandList::VKCommandList(VKDevice& device)
     cmd_buf_alloc_info.commandBufferCount = 1;
     cmd_buf_alloc_info.level = vk::CommandBufferLevel::ePrimary;
     std::vector<vk::UniqueCommandBuffer> cmd_bufs = device.GetDevice().allocateCommandBuffersUnique(cmd_buf_alloc_info);
-    m_cmd_buf = std::move(cmd_bufs.front());
+    m_command_list = std::move(cmd_bufs.front());
 }
 
 void VKCommandList::Open()
 {
     vk::CommandBufferBeginInfo begin_info = {};
     begin_info.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
-    m_cmd_buf->begin(begin_info);
+    m_command_list->begin(begin_info);
 }
 
 void VKCommandList::Close()
 {
-    m_cmd_buf->end();
+    m_command_list->end();
 }
 
 void VKCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
@@ -44,12 +44,42 @@ void VKCommandList::Clear(const std::shared_ptr<View>& view, const std::array<fl
     clear_color.float32[3] = color[3];
 
     const vk::ImageSubresourceRange& ImageSubresourceRange = vk_view.GeViewInfo().subresourceRange;
-    m_cmd_buf->clearColorImage(vk_resource.image.res.get(), vk_resource.image.layout[ImageSubresourceRange], clear_color, ImageSubresourceRange);
+    m_command_list->clearColorImage(vk_resource.image.res.get(), vk_resource.image.layout[ImageSubresourceRange], clear_color, ImageSubresourceRange);
 }
 
 void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
     return ResourceBarrier(resource, {}, state);
+}
+
+vk::IndexType GetVkIndexType(gli::format format)
+{
+    vk::Format vk_format = static_cast<vk::Format>(format);
+    switch (vk_format)
+    {
+    case vk::Format::eR16Uint:
+        return vk::IndexType::eUint16;
+    case vk::Format::eR32Uint:
+        return vk::IndexType::eUint32;
+    default:
+        assert(false);
+        return {};
+    }
+}
+
+void VKCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
+{
+    VKResource& vk_resource = static_cast<VKResource&>(*resource);
+    vk::IndexType index_type = GetVkIndexType(format);
+    m_command_list->bindIndexBuffer(vk_resource.buffer.res.get(), 0, index_type);
+}
+
+void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
+{
+    VKResource& vk_resource = static_cast<VKResource&>(*resource);
+    vk::Buffer vertex_buffers[] = { vk_resource.buffer.res.get() };
+    vk::DeviceSize offsets[] = { 0 };
+    m_command_list->bindVertexBuffers(slot, 1, vertex_buffers, offsets);
 }
 
 void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc, ResourceState state)
@@ -204,7 +234,7 @@ void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, c
         }
     }
 
-    m_cmd_buf->pipelineBarrier(
+    m_command_list->pipelineBarrier(
         vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands,
         vk::DependencyFlagBits::eByRegion,
         0, nullptr,
@@ -214,5 +244,5 @@ void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, c
 
 vk::CommandBuffer VKCommandList::GetCommandList()
 {
-    return m_cmd_buf.get();
+    return m_command_list.get();
 }

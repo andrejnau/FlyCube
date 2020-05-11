@@ -15,6 +15,8 @@ public:
     void Close() override;
     void Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color) override;
     void ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state) override;
+    void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) override;
+    void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override;
 
     ComPtr<ID3D12GraphicsCommandList> GetCommandList();
 
