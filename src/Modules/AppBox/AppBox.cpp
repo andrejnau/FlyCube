@@ -118,14 +118,21 @@ void AppBox::UpdateFps()
     ++m_frame_number;
     double current_time = glfwGetTime();
     double delta = current_time - m_last_time;
-    if (delta >= 1.0)
+    double eps = 1e-6;
+    if (delta + eps > 1.0)
     {
-        double fps = double(m_frame_number) / delta;
-
-        std::stringstream ss;
-        ss << m_title << " [" << fps << " FPS]";
-
-        glfwSetWindowTitle(m_window, ss.str().c_str());
+        if (m_last_time > 0)
+        {
+            double fps = m_frame_number / delta;
+            std::stringstream buf;
+            buf << m_title << " [";
+            if (CurState::Instance().round_fps)
+                buf << static_cast<int64_t>(std::round(fps));
+            else
+                buf << fps;
+            buf << " FPS]";
+            glfwSetWindowTitle(m_window, buf.str().c_str());
+        }
 
         m_frame_number = 0;
         m_last_time = current_time;

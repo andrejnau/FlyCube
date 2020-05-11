@@ -8,6 +8,7 @@ struct CurState : public Singleton<CurState>
 
     bool vsync;
     bool force_dxil;
+    bool round_fps;
     uint32_t required_gpu_index;
     std::string gpu_name;
 };

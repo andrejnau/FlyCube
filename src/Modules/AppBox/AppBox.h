@@ -56,5 +56,5 @@ private:
     bool m_exit;
     std::unique_ptr<Context> m_context;
     uint32_t m_frame_number = 0;
-    double m_last_time = glfwGetTime();
+    double m_last_time = 0;
 };
