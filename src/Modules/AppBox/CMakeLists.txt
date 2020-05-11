@@ -12,7 +12,6 @@ add_library(${target} ${headers} ${sources})
 
 target_link_libraries(${target}
     glfw
-    Context
     ApiType
 )
 

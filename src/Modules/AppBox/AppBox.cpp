@@ -1,22 +1,10 @@
 #include "AppBox/AppBox.h"
 #include <GLFW/glfw3.h>
 #include <sstream>
-#include <Context/ContextSelector.h>
 #include <Utilities/State.h>
 
-AppBox::AppBox(int argc, char* argv[], const std::string& title)
-    : AppBox(argc, argv, {}, title)
-{
-}
-
 AppBox::AppBox(int argc, char* argv[], const std::string& title, ApiType api_type)
-    : AppBox(argc, argv, {}, title, api_type)
-{
-}
-
-AppBox::AppBox(int argc, char* argv[], const CreateSample& create_sample, const std::string& title, ApiType api_type)
-    : m_create_sample(create_sample)
-    , m_api_type(api_type)
+    : m_api_type(api_type)
     , m_window(nullptr)
     , m_width(0)
     , m_height(0)
@@ -63,18 +51,6 @@ AppBox::AppBox(int argc, char* argv[], const CreateSample& create_sample, const 
     m_width = monitor_desc.width / 1.5;
     m_height = monitor_desc.height / 1.5;
 
-    Init();
-}
-
-AppBox::AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height)
-    : m_create_sample(create_sample)
-    , m_api_type(api_type)
-    , m_title(title)
-    , m_window(nullptr)
-    , m_width(width)
-    , m_height(height)
-    , m_exit(false)
-{
     Init();
 }
 
@@ -149,12 +125,6 @@ void AppBox::PollEvents()
     glfwPollEvents();
 }
 
-Context& AppBox::GetContext()
-{
-    assert(m_context);
-    return *m_context;
-}
-
 AppRect AppBox::GetAppRect() const
 {
     return { m_width, m_height };
@@ -179,11 +149,6 @@ void AppBox::Init()
 
     InitWindow();
     SetWindowToCenter();
-    if (m_create_sample)
-    {
-        m_context = CreateContext(m_api_type, m_window);
-        m_sample = m_create_sample(*m_context, m_width, m_height);
-    }
 }
 
 void AppBox::InitWindow()

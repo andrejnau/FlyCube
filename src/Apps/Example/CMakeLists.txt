@@ -20,14 +20,6 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
-    Context
-    assimp
-    SOIL
     AppBox
-    Scene
-    Geometry
-    Utilities
-    Texture
-    Program
-    imgui
+    Instance
 )

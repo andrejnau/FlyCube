@@ -6,7 +6,6 @@
 #include <string>
 #include <memory>
 #include <ApiType/ApiType.h>
-#include <Context/Context.h>
 
 struct AppRect
 {
@@ -17,17 +16,12 @@ struct AppRect
 class AppBox
 {
 public:
-    using CreateSample = std::function<IScene::Ptr(Context&, int, int)>;
-    AppBox(int argc, char* argv[], const std::string& title);
-    AppBox(int argc, char* argv[], const std::string& title, ApiType api_type);
-    AppBox(int argc, char *argv[], const CreateSample& create_sample, const std::string& title, ApiType api_type = ApiType::kVulkan);
-    AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height);
+    AppBox(int argc, char* argv[], const std::string& title, ApiType api_type = ApiType::kVulkan);
     ~AppBox();
     int Run();
     bool ShouldClose();
     void PollEvents();
 
-    Context& GetContext();
     AppRect GetAppRect() const;
     GLFWwindow* GetWindow() const;
     void UpdateFps();
@@ -46,7 +40,6 @@ private:
     static void OnScroll(GLFWwindow* window, double xoffset, double yoffset);
     static void OnInputChar(GLFWwindow* window, unsigned int ch);
 
-    CreateSample m_create_sample;
     ApiType m_api_type;
     std::string m_title;
     IScene::Ptr m_sample;
@@ -54,7 +47,6 @@ private:
     int m_width;
     int m_height;
     bool m_exit;
-    std::unique_ptr<Context> m_context;
     uint32_t m_frame_number = 0;
     double m_last_time = 0;
 };
