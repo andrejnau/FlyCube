@@ -3,6 +3,7 @@
 #include <Swapchain/DXSwapchain.h>
 #include <CommandList/DXCommandList.h>
 #include <Fence/DXFence.h>
+#include <View/DXView.h>
 #include <Semaphore/DXSemaphore.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
@@ -61,6 +62,11 @@ std::shared_ptr<Fence> DXDevice::CreateFence()
 std::shared_ptr<Semaphore> DXDevice::CreateGPUSemaphore()
 {
     return std::make_unique<DXSemaphore>(*this);
+}
+
+std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
+{
+    return std::make_unique<DXView>(*this, resource, view_desc);
 }
 
 void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)

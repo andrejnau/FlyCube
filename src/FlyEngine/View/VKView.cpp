@@ -1,7 +1,6 @@
 #include "View/VKView.h"
-#include <Resource/VKResource.h>
+#include <Device/VKDevice.h>
 
-VKView::VKView(VKResource& resource, const ViewDesc& view_desc)
-    : m_resource(resource)
+VKView::VKView(VKDevice& device, const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
 }

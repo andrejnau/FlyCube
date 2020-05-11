@@ -4,6 +4,7 @@
 #include <Instance/VKInstance.h>
 #include <Fence/VKFence.h>
 #include <Semaphore/VKSemaphore.h>
+#include <View/VKView.h>
 #include <Adapter/VKAdapter.h>
 #include <Utilities/VKUtility.h>
 #include <set>
@@ -97,6 +98,11 @@ std::shared_ptr<Fence> VKDevice::CreateFence()
 std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
 {
     return std::make_unique<VKSemaphore>(*this);
+}
+
+std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
+{
+    return std::make_unique<VKView>(*this, resource, view_desc);
 }
 
 void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)

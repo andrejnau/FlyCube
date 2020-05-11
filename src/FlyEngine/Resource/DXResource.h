@@ -13,7 +13,6 @@ class DXResource : public Resource
 public:
     DXResource(DXDevice& device);
     void SetName(const std::string& name) override;
-    std::shared_ptr<View> CreateView(const ViewDesc& view_desc) override;
 
 //private:
     DXDevice& m_device;

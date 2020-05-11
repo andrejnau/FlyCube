@@ -13,11 +13,6 @@ void DXResource::SetName(const std::string& name)
     default_res->SetName(utf8_to_wstring(name).c_str());
 }
 
-std::shared_ptr<View> DXResource::CreateView(const ViewDesc& view_desc)
-{
-    return std::make_unique<DXView>(*this, view_desc);
-}
-
 ComPtr<ID3D12Resource>& DXResource::GetUploadResource(size_t subresource)
 {
     if (subresource >= m_upload_res.size())

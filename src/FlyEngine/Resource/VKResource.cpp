@@ -10,8 +10,3 @@ VKResource::VKResource(VKDevice& device)
 void VKResource::SetName(const std::string& name)
 {
 }
-
-std::shared_ptr<View> VKResource::CreateView(const ViewDesc& view_desc)
-{
-    return std::make_unique<VKView>(*this, view_desc);
-}

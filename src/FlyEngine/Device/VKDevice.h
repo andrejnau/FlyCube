@@ -12,6 +12,7 @@ public:
     std::shared_ptr<CommandList> CreateCommandList() override;
     std::shared_ptr<Fence> CreateFence() override;
     std::shared_ptr<Semaphore> CreateGPUSemaphore() override;
+    std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) override;
     void Wait(const std::shared_ptr<Semaphore>& semaphore) override;
     void Signal(const std::shared_ptr<Semaphore>& semaphore) override;
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence) override;

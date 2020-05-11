@@ -41,7 +41,6 @@ class VKResource : public Resource
 {
 public:
     VKResource(VKDevice& device);
-    std::shared_ptr<View> CreateView(const ViewDesc& view_desc) override;
     void SetName(const std::string& name) override;
 
     VKDevice& m_device;
