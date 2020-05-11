@@ -14,9 +14,13 @@ endif()
 if (DIRECTX_SUPPORT)
     list(APPEND headers
         DXView.h
+        DXViewCreater.h
+        DXViewDescCreater.h
     )
     list(APPEND sources
         DXView.cpp
+        DXViewCreater.cpp
+        DXViewDescCreater.cpp
     )
 endif()
 

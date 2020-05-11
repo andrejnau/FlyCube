@@ -1,6 +1,6 @@
-#include "Texture/FormatHelper.h"
+#include "Utilities/FormatHelper.h"
 #ifdef _WIN32
-#include "Texture/DXGIFormatHelper.h"
+#include "Utilities/DXGIFormatHelper.h"
 #endif
 
 void GetFormatInfo(

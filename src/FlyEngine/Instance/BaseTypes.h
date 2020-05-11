@@ -12,6 +12,20 @@ enum class ResourceState
     kUnorderedAccess,
 };
 
+enum class ResourceDimension
+{
+    kBuffer,
+    kTexture1D,
+    kTexture1DArray,
+    kTexture2D,
+    kTexture2DArray,
+    kTexture2DMS,
+    kTexture2DMSArray,
+    kTexture3D,
+    kTextureCube,
+    kTextureCubeArray
+};
+
 enum class SamplerFilter
 {
     kAnisotropic,

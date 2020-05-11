@@ -8,6 +8,10 @@ add_library(Utilities
     State.h
     VKUtility.h
     Vulkan.h
+    DXGIFormatHelper.cpp
+    DXGIFormatHelper.h
+    FormatHelper.cpp
+    FormatHelper.h
 )
 
 target_include_directories(Utilities

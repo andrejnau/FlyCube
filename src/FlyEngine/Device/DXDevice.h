@@ -1,5 +1,6 @@
 #pragma once
 #include "Device/Device.h"
+#include "Device/DXViewPool.h"
 #include <dxgi.h>
 #include <d3d12.h>
 #include <wrl.h>
@@ -22,9 +23,11 @@ public:
     DXAdapter& GetAdapter();
     ComPtr<ID3D12Device> GetDevice();
     ComPtr<ID3D12CommandQueue> GetCommandQueue();
+    DXViewPool& GetViewPool();
 
 private:
     DXAdapter& m_adapter;
     ComPtr<ID3D12Device> m_device;
     ComPtr<ID3D12CommandQueue> m_command_queue;
+    DXViewPool m_view_pool;
 };
