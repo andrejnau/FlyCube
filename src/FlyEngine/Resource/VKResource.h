@@ -1,7 +1,8 @@
 #pragma once
 #include "Resource/Resource.h"
-#include <Utilities/Vulkan.h>
 #include <glm/glm.hpp>
+#include <map>
+#include <Utilities/Vulkan.h>
 
 struct AccelerationStructure
 {
@@ -34,10 +35,17 @@ static bool operator<(const VkImageSubresourceRange& lhs, const VkImageSubresour
         std::tie(rhs.aspectMask, rhs.baseArrayLayer, rhs.baseMipLevel, rhs.layerCount, rhs.levelCount);
 };
 
-class VKResource
-    : public Resource
+class VKDevice;
+
+class VKResource : public Resource
 {
 public:
+    VKResource(VKDevice& device);
+    std::shared_ptr<View> CreateView(const ViewDesc& view_desc) override;
+    void SetName(const std::string& name) override;
+
+    VKDevice& m_device;
+
     struct Image
     {
         vk::UniqueImage res;
@@ -82,10 +90,6 @@ public:
         if (subresource >= m_upload_res.size())
             m_upload_res.resize(subresource + 1);
         return m_upload_res[subresource];
-    }
-
-    virtual void SetName(const std::string& name) override
-    {
     }
 
 private:

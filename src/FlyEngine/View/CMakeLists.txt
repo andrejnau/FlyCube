@@ -1,59 +1,58 @@
 list(APPEND headers
-    Resource.h
+    View.h
 )
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKResource.h
+        VKView.h 
     )
     list(APPEND sources
-        VKResource.cpp
+        VKView.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXResource.h
+        DXView.h
     )
     list(APPEND sources
-        DXResource.cpp
+        DXView.cpp
     )
 endif()
 
-add_library(Resource ${headers} ${sources})
+add_library(View ${headers} ${sources})
 
-target_include_directories(Resource
+target_include_directories(View
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(Resource
-    Device
-    View
+target_link_libraries(View
+    Resource
     Utilities
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(Resource
+    target_link_libraries(View
         ${Vulkan_LIBRARIES}
     )
-    target_include_directories(Resource
+    target_include_directories(View
         PUBLIC
             ${Vulkan_INCLUDE_DIR}
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(Resource
+    target_link_libraries(View
         d3d11
         d3d12
         dxgi
         dxguid
     )
-    target_include_directories(Resource
+    target_include_directories(View
         PUBLIC
             "${project_root}/3rdparty/d3dx12"
     )
 endif()
 
-set_target_properties(Resource PROPERTIES FOLDER "FlyEngine")
+set_target_properties(View PROPERTIES FOLDER "FlyEngine")

@@ -1,6 +1,8 @@
 #pragma once
 #include <Resource/Resource.h>
+#include <Instance/BaseTypes.h>
 #include <memory>
+#include <array>
 
 class CommandList
 {

@@ -60,7 +60,7 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
 
     for (size_t i = 0; i < frame_count; ++i)
     {
-        std::shared_ptr<VKResource> res = std::make_shared<VKResource>();
+        std::shared_ptr<VKResource> res = std::make_shared<VKResource>(m_device);
         res->image.res = vk::UniqueImage(m_images[i]);
         res->image.format = m_swapchain_color_format;
         res->image.size = vk::Extent2D(1u * width, 1u * height);

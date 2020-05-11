@@ -1,13 +1,22 @@
 #pragma once
 #include "Resource/Resource.h"
 #include <map>
+#include <vector>
 #include <d3d12.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
+class DXDevice;
+
 class DXResource : public Resource
 {
 public:
+    DXResource(DXDevice& device);
+    void SetName(const std::string& name) override;
+    std::shared_ptr<View> CreateView(const ViewDesc& view_desc) override;
+
+//private:
+    DXDevice& m_device;
     ComPtr<ID3D12Resource> default_res;
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
     uint32_t bind_flag = 0;
@@ -24,9 +33,7 @@ public:
         std::shared_ptr<DXResource> instance_desc;
     } as;
 
-    virtual void SetName(const std::string& name) override;
     ComPtr<ID3D12Resource>& GetUploadResource(size_t subresource);
 
-private:
     std::vector<ComPtr<ID3D12Resource>> m_upload_res;
 };

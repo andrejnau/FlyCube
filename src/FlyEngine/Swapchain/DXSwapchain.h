@@ -2,6 +2,7 @@
 #include "Swapchain/Swapchain.h"
 #include <Resource/Resource.h>
 #include <cstdint>
+#include <vector>
 #include <dxgi1_4.h>
 #include <d3d12.h>
 #include <wrl.h>

@@ -1,10 +1,8 @@
 #pragma once
-
-#include <memory>
+#include <cstdint>
 
 class View
 {
 public:
     virtual ~View() = default;
-    using Ptr = std::shared_ptr<View>;
 };

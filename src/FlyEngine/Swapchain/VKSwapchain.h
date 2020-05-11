@@ -3,6 +3,7 @@
 #include <Utilities/Vulkan.h>
 #include <Resource/VKResource.h>
 #include <memory>
+#include <vector>
 
 class VKDevice;
 
