@@ -3,6 +3,7 @@
 #include <CommandList/CommandList.h>
 #include <Fence/Fence.h>
 #include <Semaphore/Semaphore.h>
+#include <Shader/Shader.h>
 #include <memory>
 #include <vector>
 #include <GLFW/glfw3.h>
@@ -20,6 +21,7 @@ public:
     virtual std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride) = 0;
     virtual std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) = 0;
     virtual std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) = 0;
+    virtual std::shared_ptr<Shader> CompileShader(const ShaderDesc& desc) = 0;
     virtual void Wait(const std::shared_ptr<Semaphore>& semaphore) = 0;
     virtual void Signal(const std::shared_ptr<Semaphore>& semaphore) = 0;
     virtual void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence) = 0;

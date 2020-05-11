@@ -1,5 +1,6 @@
 #include <AppBox/AppBox.h>
 #include <Instance/Instance.h>
+#include <Utilities/FileUtility.h>
 
 int main(int argc, char* argv[])
 {
@@ -12,6 +13,8 @@ int main(int argc, char* argv[])
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), app.GetAppRect().width, app.GetAppRect().height, frame_count);
     std::vector<std::shared_ptr<CommandList>> command_lists;
     std::vector<std::shared_ptr<View>> views;
+    std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex });
+    std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
     for (uint32_t i = 0; i < frame_count; ++i)
     {
         ViewDesc view_desc = {};

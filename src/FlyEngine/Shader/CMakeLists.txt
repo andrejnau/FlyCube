@@ -1,15 +1,16 @@
 set(target Shader)
 
 set(headers
-    ShaderBase.h
-    ShaderDesc.h
     SpirvCompiler.h
-    GLSLConverter.h
+    Shader.h
+    DXShader.h
+    SpirvShader.h
 )
 
 set(sources
     SpirvCompiler.cpp
-    GLSLConverter.cpp
+    DXShader.cpp
+    SpirvShader.cpp
 )
 
 if (DIRECTX_SUPPORT)

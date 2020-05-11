@@ -30,6 +30,7 @@ target_include_directories(Device
 target_link_libraries(Device
     ApiType
     Swapchain
+    Shader
     CommandList
     DescriptorPool
     Fence

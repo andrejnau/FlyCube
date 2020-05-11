@@ -2,6 +2,7 @@
 #include <Adapter/DXAdapter.h>
 #include <Swapchain/DXSwapchain.h>
 #include <CommandList/DXCommandList.h>
+#include <Shader/DXShader.h>
 #include <Fence/DXFence.h>
 #include <View/DXView.h>
 #include <Semaphore/DXSemaphore.h>
@@ -239,6 +240,11 @@ std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
 std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
     return std::make_unique<DXView>(*this, resource, view_desc);
+}
+
+std::shared_ptr<Shader> DXDevice::CompileShader(const ShaderDesc& desc)
+{
+    return std::make_unique<DXShader>(desc);
 }
 
 void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)

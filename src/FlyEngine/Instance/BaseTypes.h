@@ -1,7 +1,9 @@
 #pragma once
 #include <cstdint>
+#include <cassert>
 #include <tuple>
 #include <string>
+#include <map>
 
 enum class ResourceState
 {
@@ -176,5 +178,20 @@ public:
     bool operator< (const BindKey& oth) const
     {
         return MakeTie() < oth.MakeTie();
+    }
+};
+
+struct ShaderDesc
+{
+    std::string shader_path;
+    std::string entrypoint;
+    ShaderType type;
+    std::map<std::string, std::string> define;
+
+    ShaderDesc(const std::string& shader_path, const std::string& entrypoint, ShaderType type)
+        : shader_path(shader_path)
+        , entrypoint(entrypoint)
+        , type(type)
+    {
     }
 };

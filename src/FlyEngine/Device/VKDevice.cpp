@@ -4,6 +4,7 @@
 #include <Instance/VKInstance.h>
 #include <Fence/VKFence.h>
 #include <Semaphore/VKSemaphore.h>
+#include <Shader/SpirvShader.h>
 #include <View/VKView.h>
 #include <Adapter/VKAdapter.h>
 #include <Utilities/VKUtility.h>
@@ -291,6 +292,11 @@ std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
 std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
     return std::make_unique<VKView>(*this, resource, view_desc);
+}
+
+std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)
+{
+    return std::make_unique<SpirvShader>(desc);
 }
 
 void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)

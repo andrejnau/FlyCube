@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <vector>
-#include "Shader/ShaderBase.h"
+#include <Instance/BaseTypes.h>
 
 struct SpirvOption
 {

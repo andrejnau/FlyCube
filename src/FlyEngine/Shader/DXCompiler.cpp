@@ -45,6 +45,26 @@ bool GetBlobFromCache(const std::string& shader_path, ComPtr<ID3DBlob>& shader_b
     return true;
 }
 
+static std::string GetShaderTarget(ShaderType type, const std::string& model)
+{
+    switch (type)
+    {
+    case ShaderType::kPixel:
+        return "ps_" + model;
+    case ShaderType::kVertex:
+        return "vs_" + model;
+    case ShaderType::kGeometry:
+        return "gs_" + model;
+    case ShaderType::kCompute:
+        return "cs_" + model;
+    case ShaderType::kLibrary:
+        return "lib" + model;
+    default:
+        assert(false);
+        return "";
+    }
+}
+
 ComPtr<ID3DBlob> DXBCCompile(const ShaderDesc& shader)
 {
     ComPtr<ID3DBlob> shader_buffer;
@@ -54,14 +74,14 @@ ComPtr<ID3DBlob> DXBCCompile(const ShaderDesc& shader)
         macro.push_back({ x.first.c_str(), x.second.c_str() });
     }
     macro.push_back({ nullptr, nullptr });
-
+    std::string target = GetShaderTarget(shader.type, "5_1");
     ComPtr<ID3DBlob> errors;
     ASSERT_SUCCEEDED(D3DCompileFromFile(
         GetAssetFullPathW(shader.shader_path).c_str(),
         macro.data(),
         D3D_COMPILE_STANDARD_FILE_INCLUDE,
         shader.entrypoint.c_str(),
-        shader.target.c_str(),
+        target.c_str(),
         D3DCOMPILE_DEBUG,
         0,
         &shader_buffer,
@@ -69,14 +89,6 @@ ComPtr<ID3DBlob> DXBCCompile(const ShaderDesc& shader)
     if (errors)
         OutputDebugStringA(reinterpret_cast<char*>(errors->GetBufferPointer()));
     return shader_buffer;
-}
-
-bool IsDXCTarget(const std::string& target)
-{
-    size_t major_index = 3;
-    if (target.compare(0, 4, "lib_") == 0)
-        major_index = 4;
-    return major_index < target.size() && isdigit(target[major_index]) && target[major_index] >= '6';
 }
 
 class IncludeHandler : public IDxcIncludeHandler
@@ -125,10 +137,7 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
         nullptr,
         &source));
 
-    std::wstring target = utf8_to_wstring(shader.target);
-    if (!IsDXCTarget(shader.target))
-        target = target[0] + std::wstring(L"s_6_0");
-
+    std::wstring target = utf8_to_wstring(GetShaderTarget(shader.type, "6_0"));
     std::wstring entrypoint = utf8_to_wstring(shader.entrypoint);
     std::vector<std::pair<std::wstring, std::wstring>> defines_store;
     std::vector<DxcDefine> defines;
@@ -182,7 +191,7 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
 
 ComPtr<ID3DBlob> DXCompile(const ShaderDesc& shader, const DXOption& option)
 {
-    bool dxc_target = IsDXCTarget(shader.target);
+    bool dxc_target = shader.type == ShaderType::kLibrary;
     bool different_options = !shader.define.empty();
     different_options |= CurState::Instance().force_dxil != dxc_target;
     different_options |= option.spirv;

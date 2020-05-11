@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Shader/ShaderBase.h"
 #include "Shader/SpirvCompiler.h"
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
