@@ -3,14 +3,12 @@ set(target Context)
 set(headers
     BaseTypes.h
     Context.h
-    ContextFly.h
     ContextSelector.h
     GLContext.h
 )
 
 set(sources
     Context.cpp
-    ContextFly.cpp
     ContextSelector.cpp
     GLContext.cpp
 )
