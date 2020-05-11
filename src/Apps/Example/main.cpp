@@ -17,11 +17,16 @@ int main(int argc, char* argv[])
     std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex });
     std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
 
+    std::shared_ptr<CommandList> upload_command_list = device->CreateCommandList();
+    upload_command_list->Open();
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_data.size(), sizeof(uint32_t));
-
+    upload_command_list->UpdateSubresource(index_buffer, 0, index_data.data());
     std::vector<glm::vec3> vertex_data = { glm::vec3(-0.5, -0.5, 0.0), glm::vec3(0.0,  0.5, 0.0), glm::vec3(0.5, -0.5, 0.0) };
     std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * vertex_data.size(), sizeof(glm::vec3));
+    upload_command_list->UpdateSubresource(vertex_buffer, 0, vertex_data.data());
+    upload_command_list->Close();
+    device->ExecuteCommandLists({ upload_command_list }, {});
 
     for (uint32_t i = 0; i < frame_count; ++i)
     {
@@ -32,6 +37,8 @@ int main(int argc, char* argv[])
         command_lists.emplace_back(device->CreateCommandList());
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->Open();
+        command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
+        command_list->IASetVertexBuffer(0, vertex_buffer);
         command_list->ResourceBarrier(back_buffer, ResourceState::kClear);
         command_list->Clear(back_buffer_view, { 1, 0, 1, 0 });
         command_list->ResourceBarrier(back_buffer, ResourceState::kPresent);

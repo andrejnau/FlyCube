@@ -6,6 +6,7 @@
 using namespace Microsoft::WRL;
 
 class DXDevice;
+class DXResource;
 
 class DXCommandList : public CommandList
 {
@@ -17,10 +18,13 @@ public:
     void ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state) override;
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) override;
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override;
+    void UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch) override;
 
     ComPtr<ID3D12GraphicsCommandList> GetCommandList();
 
 private:
+    void ResourceBarrier(DXResource& resource, D3D12_RESOURCE_STATES state);
+
     DXDevice& m_device;
     ComPtr<ID3D12CommandAllocator> m_command_allocator;
     ComPtr<ID3D12GraphicsCommandList> m_command_list;
