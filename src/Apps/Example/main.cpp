@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[])
 {
-    ApiType type = ApiType::kVulkan;
+    ApiType type = ApiType::kDX12;
     AppBox app(argc, argv, "Example", type);
     std::shared_ptr<Instance> instance = CreateInstance(type);
     std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters().front());
@@ -11,14 +11,18 @@ int main(int argc, char* argv[])
     uint32_t frame_count = 3;
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), app.GetAppRect().width, app.GetAppRect().height, frame_count);
     std::vector<std::shared_ptr<CommandList>> command_lists;
+    std::vector<std::shared_ptr<View>> views;
     for (uint32_t i = 0; i < frame_count; ++i)
     {
+        ViewDesc view_desc = {};
+        view_desc.res_type = ResourceType::kRtv;
+        std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
+        std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, view_desc);
         command_lists.emplace_back(device->CreateCommandList());
         std::shared_ptr<CommandList> command_list = command_lists[i];
-        std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
         command_list->Open();
         command_list->ResourceBarrier(back_buffer, ResourceState::kClear);
-        command_list->Clear(back_buffer, { 1, 0, 1, 0 });
+        command_list->Clear(back_buffer_view, { 1, 0, 1, 0 });
         command_list->ResourceBarrier(back_buffer, ResourceState::kPresent);
         command_list->Close();
     }

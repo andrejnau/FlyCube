@@ -1,6 +1,7 @@
 #include "CommandList/VKCommandList.h"
 #include <Device/VKDevice.h>
 #include <Resource/VKResource.h>
+#include <View/VKView.h>
 
 VKCommandList::VKCommandList(VKDevice& device)
 {
@@ -24,9 +25,17 @@ void VKCommandList::Close()
     m_cmd_buf->end();
 }
 
-void VKCommandList::Clear(const std::shared_ptr<Resource>& resource, const std::array<float, 4>& color)
+void VKCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
 {
+    if (!view)
+        return;
+    VKView& vk_view = static_cast<VKView&>(*view);
+
+    std::shared_ptr<Resource> resource = vk_view.GetResource();
+    if (!resource)
+        return;
     VKResource& vk_resource = static_cast<VKResource&>(*resource);
+
     vk::ClearColorValue clear_color = {};
     clear_color.float32[0] = color[0];
     clear_color.float32[1] = color[1];

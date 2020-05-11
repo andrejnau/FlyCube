@@ -1,7 +1,7 @@
 #pragma once
 #include "View/View.h"
 #include <Resource/DXResource.h>
-#include <Device/DXViewPool.h>
+#include <DescriptorPool/DXDescriptorHandle.h>
 
 class DXDevice;
 
@@ -9,6 +9,7 @@ class DXView : public View
 {
 public:
     DXView(DXDevice& device, const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc);
+    D3D12_CPU_DESCRIPTOR_HANDLE GetHandle();
 
 private:
     DXDevice& m_device;

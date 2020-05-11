@@ -1,6 +1,7 @@
 #include "CommandList/DXCommandList.h"
 #include <Device/DXDevice.h>
 #include <Resource/DXResource.h>
+#include <View/DXView.h>
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
 #include <dxgi1_6.h>
@@ -26,36 +27,12 @@ void DXCommandList::Close()
     m_command_list->Close();
 }
 
-void DXCommandList::Clear(const std::shared_ptr<Resource>& resource, const std::array<float, 4>& color)
+void DXCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
 {
-    DXResource& dx_resource = static_cast<DXResource&>(*resource);
-
-    auto get_handle = [&]()
-    {
-        static std::map<void*, CD3DX12_CPU_DESCRIPTOR_HANDLE> q;
-        static std::map<void*, ComPtr<ID3D12DescriptorHeap>> w;
-        if (q.count(&dx_resource))
-            return q[&dx_resource];
-
-        D3D12_RESOURCE_DESC desc = dx_resource.default_res->GetDesc();
-        D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
-        rtv_desc.Format = desc.Format;
-        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-        rtv_desc.Texture2D.MipSlice = 0;
-
-        ComPtr<ID3D12DescriptorHeap> m_descriptor_heap;
-        D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-        heap_desc.NumDescriptors = 1;
-        heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-
-        ASSERT_SUCCEEDED(m_device.GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&m_descriptor_heap)));
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtv_handle(m_descriptor_heap->GetCPUDescriptorHandleForHeapStart());
-        m_device.GetDevice()->CreateRenderTargetView(dx_resource.default_res.Get(), &rtv_desc, rtv_handle);
-        w[&dx_resource] = m_descriptor_heap;
-        return q[&dx_resource] = rtv_handle;
-    };
-
-    m_command_list->ClearRenderTargetView(get_handle(), color.data(), 0, nullptr);
+    if (!view)
+        return;
+    DXView& dx_view = static_cast<DXView&>(*view);
+    m_command_list->ClearRenderTargetView(dx_view.GetHandle(), color.data(), 0, nullptr);
 }
 
 void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)

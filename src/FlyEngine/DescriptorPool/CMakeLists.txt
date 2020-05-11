@@ -1,37 +1,27 @@
-list(APPEND headers
-    Device.h
-)
-
-if (VULKAN_SUPPORT)
-    list(APPEND headers
-        VKDevice.h
-    )
-    list(APPEND sources
-        VKDevice.cpp
-    )
-endif()
-
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXDevice.h
+        DXDescriptorHandle.h
+        DXDescriptorPool.h
+        DXDescriptorPoolTyped.h
     )
     list(APPEND sources
-        DXDevice.cpp
+        DXDescriptorHandle.cpp
+        DXDescriptorPool.cpp
+        DXDescriptorPoolTyped.cpp
     )
 endif()
 
-add_library(Device ${headers} ${sources})
+add_library(DescriptorPool ${headers} ${sources})
 
-target_include_directories(Device
+target_include_directories(DescriptorPool
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(Device
+target_link_libraries(DescriptorPool
     ApiType
     Swapchain
     CommandList
-    DescriptorPool
     Fence
     Semaphore
     Utilities
@@ -41,26 +31,26 @@ target_link_libraries(Device
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(DescriptorPool
         ${Vulkan_LIBRARIES}
     )
-    target_include_directories(Device
+    target_include_directories(DescriptorPool
         PUBLIC
             ${Vulkan_INCLUDE_DIR}
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(DescriptorPool
         d3d11
         d3d12
         dxgi
         dxguid
     )
-    target_include_directories(Device
+    target_include_directories(DescriptorPool
         PUBLIC
             "${project_root}/3rdparty/d3dx12"
     )
 endif()
 
-set_target_properties(Device PROPERTIES FOLDER "FlyEngine")
+set_target_properties(DescriptorPool PROPERTIES FOLDER "FlyEngine")

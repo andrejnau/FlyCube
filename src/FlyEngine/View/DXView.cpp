@@ -285,7 +285,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12GetDSVDesc(const ViewDesc& view_desc, const D3
 DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, const ViewDesc& view_desc)
     : m_device(device)
 {
-    m_handle = m_device.GetViewPool().AllocateDescriptor(view_desc.res_type);
+    m_handle = m_device.GetDescriptorPool().AllocateDescriptor(view_desc.res_type);
     if (!resource)
         return;
 
@@ -311,6 +311,11 @@ DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, con
         CreateDSV(view_desc, dx_resource, *m_handle);
         break;
     }
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DXView::GetHandle()
+{
+    return m_handle->GetCpuHandle();
 }
 
 void DXView::CreateSrv(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& m_handle)

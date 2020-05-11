@@ -32,36 +32,3 @@ private:
     uint32_t m_increment_size;
     D3D12_DESCRIPTOR_HEAP_TYPE m_type;
 };
-
-class DXViewAllocator
-{
-public:
-    DXViewAllocator(DXDevice& device, D3D12_DESCRIPTOR_HEAP_TYPE type);
-    std::shared_ptr<DXDescriptorHandle> Allocate(size_t count);
-    void ResizeHeap(size_t req_size);
-
-private:
-    DXDevice& m_device;
-    D3D12_DESCRIPTOR_HEAP_TYPE m_type;
-    size_t m_offset;
-    size_t m_size;
-    ComPtr<ID3D12DescriptorHeap> m_heap;
-    D3D12_CPU_DESCRIPTOR_HANDLE m_cpu_handle;
-    D3D12_GPU_DESCRIPTOR_HANDLE m_gpu_handle;
-};
-
-class DXViewPool
-{
-public:
-    DXViewPool(DXDevice& device);
-    std::shared_ptr<DXDescriptorHandle> AllocateDescriptor(ResourceType res_type);
-
-private:
-    DXViewAllocator& SelectHeap(ResourceType res_type);
-
-    DXDevice& m_device;
-    DXViewAllocator m_resource;
-    DXViewAllocator m_sampler;
-    DXViewAllocator m_rtv;
-    DXViewAllocator m_dsv;
-};

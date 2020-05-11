@@ -10,7 +10,7 @@
 
 DXDevice::DXDevice(DXAdapter& adapter)
     : m_adapter(adapter)
-    , m_view_pool(*this)
+    , m_descriptor_pool(*this)
 {
     ASSERT_SUCCEEDED(D3D12CreateDevice(m_adapter.GetAdapter().Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&m_device)));
 
@@ -122,7 +122,7 @@ ComPtr<ID3D12CommandQueue> DXDevice::GetCommandQueue()
     return m_command_queue;
 }
 
-DXViewPool& DXDevice::GetViewPool()
+DXDescriptorPool& DXDevice::GetDescriptorPool()
 {
-    return m_view_pool;
+    return m_descriptor_pool;
 }
