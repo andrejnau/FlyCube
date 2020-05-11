@@ -2,7 +2,7 @@
 #include <Adapter/DXAdapter.h>
 #include <Device/DXDevice.h>
 #include <Instance/DXInstance.h>
-#include <Resource/DX12Resource.h>
+#include <Resource/DXResource.h>
 #include <Utilities/DXUtility.h>
 #include <Utilities/State.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -28,7 +28,7 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
 
     for (size_t i = 0; i < frame_count; ++i)
     {
-        DX12Resource::Ptr res = std::make_shared<DX12Resource>(*this);
+        std::shared_ptr<DXResource> res = std::make_shared<DXResource>();
         ComPtr<ID3D12Resource> back_buffer;
         ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
         res->state = D3D12_RESOURCE_STATE_PRESENT;
@@ -38,7 +38,7 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
     }
 }
 
-Resource::Ptr DXSwapchain::GetBackBuffer(uint32_t buffer)
+std::shared_ptr<Resource> DXSwapchain::GetBackBuffer(uint32_t buffer)
 {
     return m_back_buffers[buffer];
 }
@@ -60,8 +60,4 @@ void DXSwapchain::Present(const std::shared_ptr<Semaphore>& semaphore)
     {
         ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
     }
-}
-
-void DXSwapchain::QueryOnDelete(ComPtr<IUnknown> res)
-{
 }

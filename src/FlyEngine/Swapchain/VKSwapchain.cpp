@@ -60,7 +60,7 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
 
     for (size_t i = 0; i < frame_count; ++i)
     {
-        VKResource::Ptr res = std::make_shared<VKResource>(*this);
+        std::shared_ptr<VKResource> res = std::make_shared<VKResource>();
         res->image.res = vk::UniqueImage(m_images[i]);
         res->image.format = m_swapchain_color_format;
         res->image.size = vk::Extent2D(1u * width, 1u * height);
@@ -69,7 +69,7 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
     }
 }
 
-Resource::Ptr VKSwapchain::GetBackBuffer(uint32_t buffer)
+std::shared_ptr<Resource> VKSwapchain::GetBackBuffer(uint32_t buffer)
 {
     return m_back_buffers[buffer];
 }
@@ -99,8 +99,4 @@ void VKSwapchain::Present(const std::shared_ptr<Semaphore>& semaphore)
         present_info.pWaitSemaphores = &vk_semaphore.GetSemaphore();
     }
     m_device.GetQueue().presentKHR(present_info);
-}
-
-void VKSwapchain::QueryOnDelete(VKResource res)
-{
 }

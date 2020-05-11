@@ -24,7 +24,7 @@ void VKCommandList::Close()
     m_cmd_buf->end();
 }
 
-void VKCommandList::Clear(Resource::Ptr resource, const std::array<float, 4>& color)
+void VKCommandList::Clear(const std::shared_ptr<Resource>& resource, const std::array<float, 4>& color)
 {
     VKResource& vk_resource = static_cast<VKResource&>(*resource);
     vk::ClearColorValue clear_color = {};
@@ -56,7 +56,7 @@ vk::ImageAspectFlags GetAspectFlags(vk::Format format)
     }
 }
 
-void VKCommandList::ResourceBarrier(Resource::Ptr resource, ResourceState state)
+void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
     // TODO
     ViewDesc view_desc = {};

@@ -1,10 +1,5 @@
 list(APPEND headers
-    GLResource.h
     Resource.h
-)
-
-list(APPEND sources
-    Resource.cpp
 )
 
 if (VULKAN_SUPPORT)
@@ -18,11 +13,10 @@ endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DX11Resource.h
-        DX12Resource.h
+        DXResource.h
     )
     list(APPEND sources
-        DX12Resource.cpp
+        DXResource.cpp
     )
 endif()
 

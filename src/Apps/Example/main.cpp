@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     {
         command_lists.emplace_back(device->CreateCommandList());
         std::shared_ptr<CommandList> command_list = command_lists[i];
-        Resource::Ptr back_buffer = swapchain->GetBackBuffer(i);
+        std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
         command_list->Open();
         command_list->ResourceBarrier(back_buffer, ResourceState::kClear);
         command_list->Clear(back_buffer, { 1, 0, 1, 0 });

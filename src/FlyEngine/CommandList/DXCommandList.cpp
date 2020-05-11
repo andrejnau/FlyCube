@@ -1,6 +1,6 @@
 #include "CommandList/DXCommandList.h"
 #include <Device/DXDevice.h>
-#include <Resource/DX12Resource.h>
+#include <Resource/DXResource.h>
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
 #include <dxgi1_6.h>
@@ -26,9 +26,9 @@ void DXCommandList::Close()
     m_command_list->Close();
 }
 
-void DXCommandList::Clear(Resource::Ptr resource, const std::array<float, 4>& color)
+void DXCommandList::Clear(const std::shared_ptr<Resource>& resource, const std::array<float, 4>& color)
 {
-    DX12Resource& dx_resource = (DX12Resource&)*resource;
+    DXResource& dx_resource = static_cast<DXResource&>(*resource);
 
     auto get_handle = [&]()
     {
@@ -58,9 +58,9 @@ void DXCommandList::Clear(Resource::Ptr resource, const std::array<float, 4>& co
     m_command_list->ClearRenderTargetView(get_handle(), color.data(), 0, nullptr);
 }
 
-void DXCommandList::ResourceBarrier(Resource::Ptr resource, ResourceState state)
+void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
-    DX12Resource& dx_resource = (DX12Resource&)*resource;
+    DXResource& dx_resource = static_cast<DXResource&>(*resource);
 
     D3D12_RESOURCE_STATES dx_state = {};
 

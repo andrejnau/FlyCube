@@ -10,8 +10,8 @@ public:
     VKCommandList(VKDevice& device);
     void Open() override;
     void Close() override;
-    void Clear(Resource::Ptr resource, const std::array<float, 4>& color) override;
-    void ResourceBarrier(Resource::Ptr resource, ResourceState state) override;
+    void Clear(const std::shared_ptr<Resource>& resource, const std::array<float, 4>& color) override;
+    void ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state) override;
 
     vk::CommandBuffer GetCommandList();
 

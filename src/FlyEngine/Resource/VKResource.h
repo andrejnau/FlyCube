@@ -1,12 +1,7 @@
 #pragma once
-
-#include <Utilities/Vulkan.h>
 #include "Resource/Resource.h"
-#include "Resource/IDestroyer.h"
-
-class VKDescriptorHeapRange;
-
-using VKBindKey = std::tuple<size_t /*program_id*/, ShaderType /*shader_type*/, VkDescriptorType /*res_type*/, uint32_t /*slot*/>;
+#include <Utilities/Vulkan.h>
+#include <glm/glm.hpp>
 
 struct AccelerationStructure
 {
@@ -43,13 +38,6 @@ class VKResource
     : public Resource
 {
 public:
-    using Destroyer = IDestroyer<VKResource>;
-    using Ptr = std::shared_ptr<VKResource>;
-
-    VKResource(Destroyer& destroyer);
-    VKResource(VKResource&&);
-    ~VKResource();
-
     struct Image
     {
         vk::UniqueImage res;
@@ -89,7 +77,7 @@ public:
 
     Type res_type = Type::kUnknown;
 
-    VKResource::Ptr GetUploadResource(size_t subresource)
+    std::shared_ptr<VKResource> GetUploadResource(size_t subresource)
     {
         if (subresource >= m_upload_res.size())
             m_upload_res.resize(subresource + 1);
@@ -101,7 +89,5 @@ public:
     }
 
 private:
-    std::reference_wrapper<Destroyer> m_destroyer;
-    std::vector<VKResource::Ptr> m_upload_res;
-    bool empty = false;
+    std::vector<std::shared_ptr<VKResource>> m_upload_res;
 };
