@@ -15,6 +15,7 @@ public:
     virtual std::shared_ptr<CommandList> CreateCommandList() = 0;
     virtual std::shared_ptr<Fence> CreateFence() = 0;
     virtual std::shared_ptr<Semaphore> CreateGPUSemaphore() = 0;
-    virtual void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence,
-                                     const std::vector<std::shared_ptr<Semaphore>>& wait_semaphores, const std::vector<std::shared_ptr<Semaphore>>& signal_semaphores) = 0;
+    virtual void Wait(const std::shared_ptr<Semaphore>& semaphore) = 0;
+    virtual void Signal(const std::shared_ptr<Semaphore>& semaphore) = 0;
+    virtual void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence) = 0;
 };

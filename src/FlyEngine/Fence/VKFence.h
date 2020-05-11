@@ -1,3 +1,4 @@
+#pragma once
 #include "Fence.h"
 #include <Utilities/Vulkan.h>
 

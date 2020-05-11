@@ -99,8 +99,39 @@ std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
     return std::make_unique<VKSemaphore>(*this);
 }
 
-void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence,
-                                   const std::vector<std::shared_ptr<Semaphore>>& wait_semaphores, const std::vector<std::shared_ptr<Semaphore>>& signal_semaphores)
+void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
+{
+    std::vector<vk::Semaphore> vk_semaphores;
+    if (semaphore)
+    {
+        VKSemaphore& vk_semaphore = static_cast<VKSemaphore&>(*semaphore);
+        vk_semaphores.emplace_back(vk_semaphore.GetSemaphore());
+    }
+    vk::SubmitInfo submit_info = {};
+    submit_info.waitSemaphoreCount = vk_semaphores.size();
+    submit_info.pWaitSemaphores = vk_semaphores.data();
+    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eTransfer;
+    submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
+    m_queue.submit(1, &submit_info, {});
+}
+
+void VKDevice::Signal(const std::shared_ptr<Semaphore>& semaphore)
+{
+    std::vector<vk::Semaphore> vk_semaphores;
+    if (semaphore)
+    {
+        VKSemaphore& vk_semaphore = static_cast<VKSemaphore&>(*semaphore);
+        vk_semaphores.emplace_back(vk_semaphore.GetSemaphore());
+    }
+    vk::SubmitInfo submit_info = {};
+    submit_info.signalSemaphoreCount = vk_semaphores.size();
+    submit_info.pSignalSemaphores = vk_semaphores.data();
+    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eTransfer;
+    submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
+    m_queue.submit(1, &submit_info, {});
+}
+
+void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence)
 {
     std::vector<vk::CommandBuffer> vk_command_lists;
     for (auto& command_list : command_lists)
@@ -115,26 +146,8 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     submit_info.commandBufferCount = vk_command_lists.size();
     submit_info.pCommandBuffers = vk_command_lists.data();
 
-    std::vector<vk::Semaphore> vk_wait_semaphores;
-    for (auto& wait_semaphore : wait_semaphores)
-    {
-        VKSemaphore& vk_wait_semaphore = static_cast<VKSemaphore&>(*wait_semaphore);
-        vk_wait_semaphores.emplace_back(vk_wait_semaphore.GetSemaphore());
-    }
-    submit_info.waitSemaphoreCount = vk_wait_semaphores.size();
-    submit_info.pWaitSemaphores = vk_wait_semaphores.data();
-
-    vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eTransfer;
-    submit_info.pWaitDstStageMask = &waitDstStageMask;
-
-    std::vector<vk::Semaphore> vk_signal_semaphores;
-    for (auto& signal_semaphore : signal_semaphores)
-    {
-        VKSemaphore& vk_signal_semaphore = static_cast<VKSemaphore&>(*signal_semaphore);
-        vk_signal_semaphores.emplace_back(vk_signal_semaphore.GetSemaphore());
-    }
-    submit_info.signalSemaphoreCount = vk_signal_semaphores.size();
-    submit_info.pSignalSemaphores = vk_signal_semaphores.data();
+    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eTransfer;
+    submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
     m_queue.submit(1, &submit_info, {});
 
     if (fence)

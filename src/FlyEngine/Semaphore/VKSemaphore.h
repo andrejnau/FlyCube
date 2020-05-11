@@ -1,3 +1,4 @@
+#pragma once
 #include "Semaphore.h"
 #include <Utilities/Vulkan.h>
 

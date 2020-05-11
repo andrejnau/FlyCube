@@ -62,8 +62,26 @@ std::shared_ptr<Semaphore> DXDevice::CreateGPUSemaphore()
     return std::make_unique<DXSemaphore>(*this);
 }
 
-void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence,
-                                   const std::vector<std::shared_ptr<Semaphore>>& wait_semaphores, const std::vector<std::shared_ptr<Semaphore>>& signal_semaphores)
+void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
+{
+    if (semaphore)
+    {
+        DXSemaphore& dx_semaphore = static_cast<DXSemaphore&>(*semaphore);
+        ASSERT_SUCCEEDED(m_command_queue->Wait(dx_semaphore.GetFence().Get(), dx_semaphore.GetValue()));
+    }
+}
+
+void DXDevice::Signal(const std::shared_ptr<Semaphore>& semaphore)
+{
+    if (semaphore)
+    {
+        DXSemaphore& dx_semaphore = static_cast<DXSemaphore&>(*semaphore);
+        dx_semaphore.Increment();
+        ASSERT_SUCCEEDED(m_command_queue->Signal(dx_semaphore.GetFence().Get(), dx_semaphore.GetValue()));
+    }
+}
+
+void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence)
 {
     std::vector<ID3D12CommandList*> dx_command_lists;
     for (auto& command_list : command_lists)

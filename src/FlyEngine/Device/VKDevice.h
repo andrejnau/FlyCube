@@ -1,3 +1,4 @@
+#pragma once
 #include "Device/Device.h"
 #include <Utilities/Vulkan.h>
 
@@ -11,8 +12,9 @@ public:
     std::shared_ptr<CommandList> CreateCommandList() override;
     std::shared_ptr<Fence> CreateFence() override;
     std::shared_ptr<Semaphore> CreateGPUSemaphore() override;
-    void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence,
-                             const std::vector<std::shared_ptr<Semaphore>>& wait_semaphores, const std::vector<std::shared_ptr<Semaphore>>& signal_semaphores) override;
+    void Wait(const std::shared_ptr<Semaphore>& semaphore) override;
+    void Signal(const std::shared_ptr<Semaphore>& semaphore) override;
+    void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence) override;
 
     VKAdapter& GetAdapter();
     uint32_t GetQueueFamilyIndex();

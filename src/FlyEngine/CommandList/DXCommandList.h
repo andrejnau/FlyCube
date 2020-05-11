@@ -1,3 +1,4 @@
+#pragma once
 #include "CommandList/CommandList.h"
 #include <dxgi.h>
 #include <d3d12.h>

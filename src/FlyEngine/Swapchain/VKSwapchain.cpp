@@ -76,8 +76,13 @@ Resource::Ptr VKSwapchain::GetBackBuffer(uint32_t buffer)
 
 uint32_t VKSwapchain::NextImage(const std::shared_ptr<Semaphore>& semaphore)
 {
-    VKSemaphore& vk_semaphore = static_cast<VKSemaphore&>(*semaphore);
-    m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, vk_semaphore.GetSemaphore(), nullptr, &m_frame_index);
+    vk::Semaphore vk_semaphore_handle = {};
+    if (semaphore)
+    {
+        VKSemaphore& vk_semaphore = static_cast<VKSemaphore&>(*semaphore);
+        vk_semaphore_handle = vk_semaphore.GetSemaphore();
+    }
+    m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, vk_semaphore_handle, nullptr, &m_frame_index);
     return m_frame_index;
 }
 

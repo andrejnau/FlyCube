@@ -1,12 +1,12 @@
+#pragma once
 #include "Semaphore/Semaphore.h"
+#include <Fence/DXFence.h>
 
-class DXDevice;
-
-class DXSemaphore : public Semaphore
+class DXSemaphore
+    : public Semaphore
+    , public DXFence
 {
 public:
-    DXSemaphore(DXDevice& device);
-
-private:
-    DXDevice& m_device;
+    using DXFence::DXFence;
+    void Increment();
 };

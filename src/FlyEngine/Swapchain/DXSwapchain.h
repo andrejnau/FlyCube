@@ -1,3 +1,4 @@
+#pragma once
 #include "Swapchain/Swapchain.h"
 #include <Resource/DX12Resource.h>
 #include <cstdint>
@@ -21,6 +22,7 @@ public:
     void QueryOnDelete(ComPtr<IUnknown> res) override;
 
 private:
+    DXDevice& m_device;
     ComPtr<IDXGISwapChain3> m_swap_chain;
     std::vector<std::shared_ptr<DX12Resource>> m_back_buffers;
 };

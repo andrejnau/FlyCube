@@ -1,3 +1,4 @@
+#pragma once
 #include "Adapter/Adapter.h"
 #include <dxgi.h>
 #include <wrl.h>

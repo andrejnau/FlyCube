@@ -1,3 +1,4 @@
+#pragma once
 #include "Fence/Fence.h"
 #include <dxgi.h>
 #include <d3d12.h>
@@ -15,7 +16,7 @@ public:
     ComPtr<ID3D12Fence> GetFence();
     const uint64_t& GetValue() const;
 
-private:
+protected:
     DXDevice& m_device;
     ComPtr<ID3D12Fence> m_fence;
     uint64_t m_fence_value = 0;

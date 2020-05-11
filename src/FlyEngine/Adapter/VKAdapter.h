@@ -1,3 +1,4 @@
+#pragma once
 #include "Adapter.h"
 #include <Utilities/Vulkan.h>
 

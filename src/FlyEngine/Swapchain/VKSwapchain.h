@@ -1,3 +1,4 @@
+#pragma once
 #include "Swapchain.h"
 #include <Utilities/Vulkan.h>
 #include <Resource/VKResource.h>

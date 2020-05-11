@@ -29,7 +29,9 @@ int main(int argc, char* argv[])
     {
         fence->WaitAndReset();
         uint32_t frame_index = swapchain->NextImage(image_available_semaphore);
-        device->ExecuteCommandLists({ command_lists[frame_index] }, fence, { image_available_semaphore }, { rendering_finished_semaphore });
+        device->Wait(image_available_semaphore);
+        device->ExecuteCommandLists({ command_lists[frame_index] }, fence);
+        device->Signal(rendering_finished_semaphore);
         swapchain->Present(rendering_finished_semaphore);
         app.PollEvents();
         app.UpdateFps();

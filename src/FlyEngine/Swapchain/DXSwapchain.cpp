@@ -9,6 +9,7 @@
 #include <GLFW/glfw3native.h>
 
 DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
+    :m_device(device)
 {
     DXInstance& instance = device.GetAdapter().GetInstance();
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
@@ -44,11 +45,13 @@ Resource::Ptr DXSwapchain::GetBackBuffer(uint32_t buffer)
 
 uint32_t DXSwapchain::NextImage(const std::shared_ptr<Semaphore>& semaphore)
 {
+    m_device.Signal(semaphore);
     return m_swap_chain->GetCurrentBackBufferIndex();
 }
 
 void DXSwapchain::Present(const std::shared_ptr<Semaphore>& semaphore)
 {
+    m_device.Wait(semaphore);
     if (CurState::Instance().vsync)
     {
         ASSERT_SUCCEEDED(m_swap_chain->Present(1, 0));
