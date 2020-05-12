@@ -4,6 +4,7 @@
 #include <View/DXView.h>
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
+#include <PipelineState/DXPipelineState.h>
 #include <dxgi1_6.h>
 #include <d3d12.h>
 #include <d3dx12.h>
@@ -29,6 +30,23 @@ void DXCommandList::Close()
 
 void DXCommandList::BindPipelineState(const std::shared_ptr<PipelineState>& state)
 {
+    DXPipelineState& dx_state = static_cast<DXPipelineState&>(*state);
+    m_command_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_command_list->SetGraphicsRootSignature(dx_state.GetRootSignature().Get());
+    m_command_list->SetPipelineState(dx_state.GetPipelineState().Get());
+
+    auto& rtvs = dx_state.GetDesc().rtvs;
+
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv(rtvs.size());
+    for (uint32_t slot = 0; slot < rtvs.size(); ++slot)
+    {
+        auto& dx_view = static_cast<DXView&>(*rtvs[slot]);
+        om_rtv[slot] = dx_view.GetHandle();
+    }
+
+    D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = {};
+    D3D12_CPU_DESCRIPTOR_HANDLE* om_dsv_ptr = nullptr;
+    m_command_list->OMSetRenderTargets(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv_ptr);
 }
 
 void DXCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
@@ -65,6 +83,21 @@ void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, R
         break;
     }
     ResourceBarrier(dx_resource, dx_state);
+}
+
+void DXCommandList::SetViewport(float width, float height)
+{
+    D3D12_VIEWPORT viewport = {};
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.Width = (float)width;
+    viewport.Height = (float)height;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    m_command_list->RSSetViewports(1, &viewport);
+
+    D3D12_RECT rect = { 0, 0, width, height };
+    m_command_list->RSSetScissorRects(1, &rect);
 }
 
 void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)

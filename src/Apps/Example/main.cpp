@@ -6,18 +6,16 @@ int main(int argc, char* argv[])
 {
     ApiType type = ApiType::kDX12;
     AppBox app(argc, argv, "Example", type);
+    AppRect rect = app.GetAppRect();
     std::shared_ptr<Instance> instance = CreateInstance(type);
     std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters().front());
     std::shared_ptr<Device> device = adapter->CreateDevice();
     uint32_t frame_count = 3;
-    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), app.GetAppRect().width, app.GetAppRect().height, frame_count);
+    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count);
 
     std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex });
     std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
-
     std::shared_ptr<PipelineProgram> program = device->CreatePipelineProgram({ vertex_shader, pixel_shader });
-    PipelineStateDesc pipeline_state_desc = { program };
-    std::shared_ptr<PipelineState> state = device->CreatePipelineState({ program });
 
     std::shared_ptr<CommandList> upload_command_list = device->CreateCommandList();
     upload_command_list->Open();
@@ -45,6 +43,7 @@ int main(int argc, char* argv[])
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->Open();
         command_list->BindPipelineState(states.back());
+        command_list->SetViewport(rect.width, rect.height);
         command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, vertex_buffer);
         command_list->ResourceBarrier(back_buffer, ResourceState::kClear);

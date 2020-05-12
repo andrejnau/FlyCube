@@ -61,6 +61,10 @@ void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, R
     return ResourceBarrier(resource, {}, state);
 }
 
+void VKCommandList::SetViewport(float width, float height)
+{
+}
+
 vk::IndexType GetVkIndexType(gli::format format)
 {
     vk::Format vk_format = static_cast<vk::Format>(format);

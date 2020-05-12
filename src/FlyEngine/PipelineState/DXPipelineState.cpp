@@ -22,6 +22,7 @@ DXPipelineState::DXPipelineState(DXDevice& device, const PipelineStateDesc& desc
     m_graphics_pso_desc.SampleMask = UINT_MAX;
     m_graphics_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     m_graphics_pso_desc.SampleDesc.Count = 1;
+    m_graphics_pso_desc.NumRenderTargets = desc.rtvs.size();
 
     DXPipelineProgram& dx_program = static_cast<DXPipelineProgram&>(*m_desc.program);
     auto shaders = dx_program.GetShaders();
@@ -36,9 +37,9 @@ DXPipelineState::DXPipelineState(DXDevice& device, const PipelineStateDesc& desc
         case ShaderType::kVertex:
         {
             m_graphics_pso_desc.VS = ShaderBytecode;
-            m_input_layout = GetInputLayout(blob);
-            m_graphics_pso_desc.InputLayout.NumElements = static_cast<uint32_t>(m_input_layout.size());
-            m_graphics_pso_desc.InputLayout.pInputElementDescs = m_input_layout.data();
+            FillInputLayout(blob);
+            m_graphics_pso_desc.InputLayout.NumElements = static_cast<uint32_t>(m_input_layout_desc.size());
+            m_graphics_pso_desc.InputLayout.pInputElementDescs = m_input_layout_desc.data();
             break;
         }
         case ShaderType::kPixel:
@@ -55,15 +56,15 @@ DXPipelineState::DXPipelineState(DXDevice& device, const PipelineStateDesc& desc
             break;
         }
     }
-
+    m_root_signature = dx_program.GetRootSignature();
     if (m_is_compute)
     {
-        m_compute_pso_desc.pRootSignature = dx_program.GetRootSignature().Get();
+        m_compute_pso_desc.pRootSignature = m_root_signature.Get();
         ASSERT_SUCCEEDED(m_device.GetDevice()->CreateComputePipelineState(&m_compute_pso_desc, IID_PPV_ARGS(&m_pipeline_state)));
     }
     else
     {
-        m_graphics_pso_desc.pRootSignature = dx_program.GetRootSignature().Get();
+        m_graphics_pso_desc.pRootSignature = m_root_signature.Get();
         ASSERT_SUCCEEDED(m_device.GetDevice()->CreateGraphicsPipelineState(&m_graphics_pso_desc, IID_PPV_ARGS(&m_pipeline_state)));
     }
 }
@@ -79,26 +80,28 @@ void DXPipelineState::FillRTVFormats()
 
 void DXPipelineState::FillDSVFormat()
 {
+    if (!m_desc.dsv)
+        return;
     auto& dx_view = static_cast<DXView&>(*m_desc.dsv);
     m_graphics_pso_desc.DSVFormat = dx_view.GetFormat();
     m_graphics_pso_desc.DepthStencilState.DepthEnable = m_graphics_pso_desc.DSVFormat != DXGI_FORMAT_UNKNOWN;
 }
 
-std::vector<D3D12_INPUT_ELEMENT_DESC> DXPipelineState::GetInputLayout(const ComPtr<ID3DBlob>& blob)
+void DXPipelineState::FillInputLayout(const ComPtr<ID3DBlob>& blob)
 {
     ComPtr<ID3D12ShaderReflection> reflector;
     DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&reflector));
     D3D12_SHADER_DESC shader_desc = {};
     reflector->GetDesc(&shader_desc);
 
-    std::vector<D3D12_INPUT_ELEMENT_DESC> input_layout_desc;
     for (uint32_t i = 0; i < shader_desc.InputParameters; ++i)
     {
         D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
         reflector->GetInputParameterDesc(i, &param_desc);
 
         D3D12_INPUT_ELEMENT_DESC layout = {};
-        layout.SemanticName = param_desc.SemanticName;
+        m_input_layout_desc_names[i] = param_desc.SemanticName;
+        layout.SemanticName = m_input_layout_desc_names[i].c_str();
         layout.SemanticIndex = param_desc.SemanticIndex;
         layout.InputSlot = i;
         layout.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
@@ -140,8 +143,21 @@ std::vector<D3D12_INPUT_ELEMENT_DESC> DXPipelineState::GetInputLayout(const ComP
             else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
                 layout.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
         }
-        input_layout_desc.push_back(layout);
+        m_input_layout_desc.push_back(layout);
     }
+}
 
-    return input_layout_desc;
+const PipelineStateDesc& DXPipelineState::GetDesc() const
+{
+    return m_desc;
+}
+
+const ComPtr<ID3D12PipelineState>& DXPipelineState::GetPipelineState() const
+{
+    return m_pipeline_state;
+}
+
+const ComPtr<ID3D12RootSignature>& DXPipelineState::GetRootSignature() const
+{
+    return m_root_signature;
 }
