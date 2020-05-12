@@ -3,7 +3,7 @@
 #include <sstream>
 #include <Utilities/State.h>
 
-AppBox::AppBox(int argc, char* argv[], const std::string& title, ApiType api_type)
+AppBox::AppBox(int argc, char* argv[], const std::string& title, ApiType& api_type)
     : m_api_type(api_type)
     , m_window(nullptr)
     , m_width(0)

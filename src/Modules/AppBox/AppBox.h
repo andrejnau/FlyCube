@@ -16,7 +16,7 @@ struct AppRect
 class AppBox
 {
 public:
-    AppBox(int argc, char* argv[], const std::string& title, ApiType api_type = ApiType::kVulkan);
+    AppBox(int argc, char* argv[], const std::string& title, ApiType& api_type);
     ~AppBox();
     int Run();
     bool ShouldClose();
@@ -40,7 +40,7 @@ private:
     static void OnScroll(GLFWwindow* window, double xoffset, double yoffset);
     static void OnInputChar(GLFWwindow* window, unsigned int ch);
 
-    ApiType m_api_type;
+    ApiType& m_api_type;
     std::string m_title;
     IScene::Ptr m_sample;
     GLFWwindow* m_window;
