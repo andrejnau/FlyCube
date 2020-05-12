@@ -4,6 +4,9 @@
 #include <tuple>
 #include <string>
 #include <map>
+#include <memory>
+#include <vector>
+#include <gli/gli.hpp>
 
 enum class ResourceState
 {
@@ -194,4 +197,14 @@ struct ShaderDesc
         , type(type)
     {
     }
+};
+
+class PipelineProgram;
+class View;
+
+struct PipelineStateDesc
+{
+    std::shared_ptr<PipelineProgram> program;
+    std::vector<std::shared_ptr<View>> rtvs;
+    std::shared_ptr<View> dsv;
 };

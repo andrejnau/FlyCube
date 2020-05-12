@@ -1,69 +1,64 @@
 list(APPEND headers
-    Device.h
+    PipelineState.h
 )
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKDevice.h
+        VKPipelineState.h
     )
     list(APPEND sources
-        VKDevice.cpp
+        VKPipelineState.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXDevice.h
+        DXPipelineState.h
     )
     list(APPEND sources
-        DXDevice.cpp
+        DXPipelineState.cpp
     )
 endif()
 
-add_library(Device ${headers} ${sources})
+add_library(PipelineState ${headers} ${sources})
 
-target_include_directories(Device
+target_include_directories(PipelineState
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(Device
+target_link_libraries(PipelineState
     ApiType
-    Swapchain
-    Shader
-    CommandList
-    PipelineProgram
-    PipelineState
-    DescriptorPool
-    Fence
-    Semaphore
+    Device
     Utilities
+    PipelineProgram
+    Shader
     spirv-cross-core
     spirv-cross-hlsl
     glad
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(PipelineState
         ${Vulkan_LIBRARIES}
     )
-    target_include_directories(Device
+    target_include_directories(PipelineState
         PUBLIC
             ${Vulkan_INCLUDE_DIR}
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(PipelineState
         d3d11
         d3d12
         dxgi
         dxguid
     )
-    target_include_directories(Device
+    target_include_directories(PipelineState
         PUBLIC
             "${project_root}/3rdparty/d3dx12"
     )
 endif()
 
-set_target_properties(Device PROPERTIES FOLDER "FlyEngine")
+set_target_properties(PipelineState PROPERTIES FOLDER "FlyEngine")

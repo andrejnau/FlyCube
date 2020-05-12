@@ -10,6 +10,7 @@ class DXView : public View
 public:
     DXView(DXDevice& device, const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc);
     D3D12_CPU_DESCRIPTOR_HANDLE GetHandle();
+    DXGI_FORMAT GetFormat() const;
 
 private:
     void CreateSrv(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
@@ -20,5 +21,6 @@ private:
     void CreateSampler(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
 
     DXDevice& m_device;
+    DXGI_FORMAT m_format = DXGI_FORMAT_UNKNOWN;
     std::shared_ptr<DXDescriptorHandle> m_handle;
 };

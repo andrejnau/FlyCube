@@ -31,6 +31,7 @@ target_link_libraries(PipelineProgram
     ApiType
     Device
     Utilities
+    Shader
     spirv-cross-core
     spirv-cross-hlsl
     glad

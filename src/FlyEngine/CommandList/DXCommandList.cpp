@@ -27,12 +27,21 @@ void DXCommandList::Close()
     m_command_list->Close();
 }
 
+void DXCommandList::BindPipelineState(const std::shared_ptr<PipelineState>& state)
+{
+}
+
 void DXCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
 {
     if (!view)
         return;
     DXView& dx_view = static_cast<DXView&>(*view);
     m_command_list->ClearRenderTargetView(dx_view.GetHandle(), color.data(), 0, nullptr);
+}
+
+void DXCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
+{
+    m_command_list->DrawIndexedInstanced(index_count, 1, start_index_location, base_vertex_location, 0);
 }
 
 void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)

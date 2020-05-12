@@ -7,14 +7,20 @@
 using namespace Microsoft::WRL;
 
 class DXDevice;
+class DXShader;
 
 class DXPipelineProgram : public PipelineProgram
 {
 public:
     DXPipelineProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders);
 
+    const std::vector<std::shared_ptr<DXShader>>& GetShaders() const;
+    const ComPtr<ID3D12RootSignature>& GetRootSignature() const;
+
 private:
     DXDevice& m_device;
+    std::vector<std::shared_ptr<DXShader>> m_shaders;
+
     const bool m_use_cbv_table = true;
     uint32_t m_num_cbv = 0;
     uint32_t m_num_srv = 0;

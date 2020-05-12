@@ -318,6 +318,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE DXView::GetHandle()
     return m_handle->GetCpuHandle();
 }
 
+DXGI_FORMAT DXView::GetFormat() const
+{
+    return m_format;
+}
+
 void DXView::CreateSrv(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& m_handle)
 {
     D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = DX12GeSRVDesc(view_desc, res.default_res->GetDesc());
@@ -341,6 +346,7 @@ void DXView::CreateUAV(const ViewDesc& view_desc, const DXResource& res, DXDescr
 void DXView::CreateRTV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& m_handle)
 {
     D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = DX12GetRTVDesc(view_desc, res.default_res->GetDesc());
+    m_format = rtv_desc.Format;
     m_device.GetDevice()->CreateRenderTargetView(res.default_res.Get(), &rtv_desc, m_handle.GetCpuHandle());
 }
 

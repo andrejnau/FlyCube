@@ -22,6 +22,7 @@ public:
     std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) override;
     std::shared_ptr<Shader> CompileShader(const ShaderDesc& desc) override;
     std::shared_ptr<PipelineProgram> CreatePipelineProgram(const std::vector<std::shared_ptr<Shader>>& shaders) override;
+    std::shared_ptr<PipelineState> CreatePipelineState(const PipelineStateDesc& desc) override;
     void Wait(const std::shared_ptr<Semaphore>& semaphore) override;
     void Signal(const std::shared_ptr<Semaphore>& semaphore) override;
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence) override;

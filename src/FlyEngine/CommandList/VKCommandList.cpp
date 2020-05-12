@@ -26,6 +26,10 @@ void VKCommandList::Close()
     m_command_list->end();
 }
 
+void VKCommandList::BindPipelineState(const std::shared_ptr<PipelineState>& state)
+{
+}
+
 void VKCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
 {
     if (!view)
@@ -45,6 +49,11 @@ void VKCommandList::Clear(const std::shared_ptr<View>& view, const std::array<fl
 
     const vk::ImageSubresourceRange& ImageSubresourceRange = vk_view.GeViewInfo().subresourceRange;
     m_command_list->clearColorImage(vk_resource.image.res.get(), vk_resource.image.layout[ImageSubresourceRange], clear_color, ImageSubresourceRange);
+}
+
+void VKCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
+{
+    m_command_list->drawIndexed(index_count, 1, start_index_location, base_vertex_location, 0);
 }
 
 void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)

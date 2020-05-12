@@ -7,16 +7,20 @@
 DXPipelineProgram::DXPipelineProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders)
     : m_device(device)
 {
+    for (auto& shader : shaders)
+    {
+        m_shaders.emplace_back(std::static_pointer_cast<DXShader>(shader));
+    }
+
     size_t num_resources = 0;
     size_t num_samplers = 0;
 
     std::vector<D3D12_ROOT_PARAMETER> root_parameters;
     std::deque<std::array<D3D12_DESCRIPTOR_RANGE, 4>> descriptor_table_ranges;
-    for (auto& shader : shaders)
+    for (auto& shader : m_shaders)
     {
-        DXShader& dx_shader = static_cast<DXShader&>(*shader);
-        ShaderType shader_type = dx_shader.GetType();
-        ComPtr<ID3DBlob> shader_blob = dx_shader.GetBlob();
+        ShaderType shader_type = shader->GetType();
+        ComPtr<ID3DBlob> shader_blob = shader->GetBlob();
         uint32_t num_cbv = 0;
         uint32_t num_srv = 0;
         uint32_t num_uav = 0;
@@ -273,4 +277,14 @@ DXPipelineProgram::DXPipelineProgram(DXDevice& device, const std::vector<std::sh
     ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&root_signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error_blob),
         "%s", (char*)error_blob->GetBufferPointer());
     ASSERT_SUCCEEDED(device.GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signature)));
+}
+
+const std::vector<std::shared_ptr<DXShader>>& DXPipelineProgram::GetShaders() const
+{
+    return m_shaders;
+}
+
+const ComPtr<ID3D12RootSignature>& DXPipelineProgram::GetRootSignature() const
+{
+    return m_root_signature;
 }

@@ -20,35 +20,6 @@ vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
     return {};
 }
 
-vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
-{
-    switch (model)
-    {
-    case spv::ExecutionModel::ExecutionModelVertex:
-        return vk::ShaderStageFlagBits::eVertex;
-    case spv::ExecutionModel::ExecutionModelFragment:
-        return vk::ShaderStageFlagBits::eFragment;
-    case spv::ExecutionModel::ExecutionModelGeometry:
-        return vk::ShaderStageFlagBits::eGeometry;
-    case spv::ExecutionModel::ExecutionModelGLCompute:
-        return vk::ShaderStageFlagBits::eCompute;
-    case spv::ExecutionModel::ExecutionModelRayGenerationNV:
-        return vk::ShaderStageFlagBits::eRaygenNV;
-    case spv::ExecutionModel::ExecutionModelIntersectionNV:
-        return vk::ShaderStageFlagBits::eIntersectionNV;
-    case spv::ExecutionModel::ExecutionModelAnyHitNV:
-        return vk::ShaderStageFlagBits::eAnyHitNV;
-    case spv::ExecutionModel::ExecutionModelClosestHitNV:
-        return vk::ShaderStageFlagBits::eClosestHitNV;
-    case spv::ExecutionModel::ExecutionModelMissNV:
-        return vk::ShaderStageFlagBits::eMissNV;
-    case spv::ExecutionModel::ExecutionModelCallableNV:
-        return vk::ShaderStageFlagBits::eCallableNV;
-    }
-    assert(false);
-    return {};
-}
-
 VKPipelineProgram::VKPipelineProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders)
     : m_device(device)
 {
@@ -85,32 +56,16 @@ VKPipelineProgram::VKPipelineProgram(VKDevice& device, const std::vector<std::sh
     if (m_pipeline_layout)
         m_pipeline_layout.release();
     m_pipeline_layout = device.GetDevice().createPipelineLayoutUnique(pipeline_layout_info);
+}
 
-    for (auto& shader : m_shaders)
-    {
-        ShaderType shader_type = shader->GetType();
-        auto& spirv = shader->GetBlob();
+const std::vector<std::shared_ptr<SpirvShader>>& VKPipelineProgram::GetShaders() const
+{
+    return m_shaders;
+}
 
-        vk::ShaderModuleCreateInfo vertexShaderCreationInfo = {};
-        vertexShaderCreationInfo.codeSize = sizeof(uint32_t) * spirv.size();
-        vertexShaderCreationInfo.pCode = spirv.data();
-
-        m_shader_modules[shader_type] = m_device.GetDevice().createShaderModuleUnique(vertexShaderCreationInfo);
-
-        spirv_cross::CompilerHLSL& compiler = m_shader_ref.find(shader_type)->second.compiler;
-        m_shader_ref.find(shader_type)->second.entries = compiler.get_entry_points_and_stages();
-        auto& entry_points = m_shader_ref.find(shader_type)->second.entries;
-
-        for (auto& entry_point : entry_points)
-        {
-            shaderStageCreateInfo.emplace_back();
-            shaderStageCreateInfo.back().stage = ExecutionModel2Bit(entry_point.execution_model);
-
-            shaderStageCreateInfo.back().module = m_shader_modules[shader_type].get();
-            shaderStageCreateInfo.back().pName = entry_point.name.c_str();
-            shaderStageCreateInfo.back().pSpecializationInfo = NULL;
-        }
-    }
+vk::PipelineLayout VKPipelineProgram::GetPipelineLayout() const
+{
+    return m_pipeline_layout.get();
 }
 
 static void print_resources(const spirv_cross::Compiler& compiler, const char* tag, const spirv_cross::SmallVector<spirv_cross::Resource>& resources)

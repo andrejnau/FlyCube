@@ -6,6 +6,7 @@
 #include <Fence/VKTimelineSemaphore.h>
 #include <Semaphore/VKSemaphore.h>
 #include <PipelineProgram/VKPipelineProgram.h>
+#include <PipelineState/VKPipelineState.h>
 #include <Shader/SpirvShader.h>
 #include <View/VKView.h>
 #include <Adapter/VKAdapter.h>
@@ -310,6 +311,11 @@ std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)
 std::shared_ptr<PipelineProgram> VKDevice::CreatePipelineProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
 {
     return std::make_unique<VKPipelineProgram>(*this, shaders);
+}
+
+std::shared_ptr<PipelineState> VKDevice::CreatePipelineState(const PipelineStateDesc& desc)
+{
+    return std::make_unique<VKPipelineState>(*this, desc);
 }
 
 void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)

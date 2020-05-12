@@ -10,7 +10,9 @@ public:
     VKCommandList(VKDevice& device);
     void Open() override;
     void Close() override;
+    void BindPipelineState(const std::shared_ptr<PipelineState>& state) override;
     void Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color) override;
+    void DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location) override;
     void ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state) override;
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) override;
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override;

@@ -7,6 +7,7 @@
 #include <View/DXView.h>
 #include <Semaphore/DXSemaphore.h>
 #include <PipelineProgram/DXPipelineProgram.h>
+#include <PipelineState/DXPipelineState.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
 #include <d3dx12.h>
@@ -251,6 +252,11 @@ std::shared_ptr<Shader> DXDevice::CompileShader(const ShaderDesc& desc)
 std::shared_ptr<PipelineProgram> DXDevice::CreatePipelineProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
 {
     return std::make_unique<DXPipelineProgram>(*this, shaders);
+}
+
+std::shared_ptr<PipelineState> DXDevice::CreatePipelineState(const PipelineStateDesc& desc)
+{
+    return std::make_unique<DXPipelineState>(*this, desc);
 }
 
 void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
