@@ -4,6 +4,7 @@
 #include <Instance/VKInstance.h>
 #include <Fence/VKFence.h>
 #include <Semaphore/VKSemaphore.h>
+#include <PipelineProgram/VKPipelineProgram.h>
 #include <Shader/SpirvShader.h>
 #include <View/VKView.h>
 #include <Adapter/VKAdapter.h>
@@ -297,6 +298,11 @@ std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& reso
 std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)
 {
     return std::make_unique<SpirvShader>(desc);
+}
+
+std::shared_ptr<PipelineProgram> VKDevice::CreatePipelineProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
+{
+    return std::make_unique<VKPipelineProgram>(*this, shaders);
 }
 
 void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)

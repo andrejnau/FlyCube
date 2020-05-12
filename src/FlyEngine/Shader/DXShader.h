@@ -9,7 +9,11 @@ class DXShader : public Shader
 {
 public:
     DXShader(const ShaderDesc& desc);
+    ShaderType GetType() const override;
+
+    ComPtr<ID3DBlob> GetBlob() const;
 
 private:
+    ShaderType m_type;
     ComPtr<ID3DBlob> m_blob;
 };

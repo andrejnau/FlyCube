@@ -17,6 +17,8 @@ int main(int argc, char* argv[])
     std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex });
     std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
 
+    std::shared_ptr<PipelineProgram> program = device->CreatePipelineProgram({ vertex_shader, pixel_shader });
+
     std::shared_ptr<CommandList> upload_command_list = device->CreateCommandList();
     upload_command_list->Open();
     std::vector<uint32_t> index_data = { 0, 1, 2 };

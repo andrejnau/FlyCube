@@ -6,6 +6,7 @@
 #include <Fence/DXFence.h>
 #include <View/DXView.h>
 #include <Semaphore/DXSemaphore.h>
+#include <PipelineProgram/DXPipelineProgram.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
 #include <d3dx12.h>
@@ -245,6 +246,11 @@ std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& reso
 std::shared_ptr<Shader> DXDevice::CompileShader(const ShaderDesc& desc)
 {
     return std::make_unique<DXShader>(desc);
+}
+
+std::shared_ptr<PipelineProgram> DXDevice::CreatePipelineProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
+{
+    return std::make_unique<DXPipelineProgram>(*this, shaders);
 }
 
 void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
