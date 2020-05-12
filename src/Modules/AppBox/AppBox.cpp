@@ -13,14 +13,10 @@ AppBox::AppBox(int argc, char* argv[], const std::string& title, ApiType& api_ty
     for (int i = 1; i < argc; ++i)
     {
         std::string arg(argv[i]);
-        if (arg == "--dx11")
-            m_api_type = ApiType::kDX11;
-        else if (arg == "--dx12")
+        if (arg == "--dx12")
             m_api_type = ApiType::kDX12;
         else if (arg == "--vk")
             m_api_type = ApiType::kVulkan;
-        else if (arg == "--gl")
-            m_api_type = ApiType::kOpenGL;
         else if (arg == "--gpu")
             CurState::Instance().required_gpu_index = std::stoul(argv[++i]);
         else if (arg == "--no_vsync")
@@ -32,17 +28,11 @@ AppBox::AppBox(int argc, char* argv[], const std::string& title, ApiType& api_ty
     std::string api_title;
     switch (m_api_type)
     {
-    case ApiType::kDX11:
-        api_title = "[DX11]";
-        break;
     case ApiType::kDX12:
         api_title = "[DX12]";
         break;
     case ApiType::kVulkan:
         api_title = "[Vulkan]";
-        break;
-    case ApiType::kOpenGL:
-        api_title = "[OpenGL]";
         break;
     }
     m_title = api_title + " " + title;
@@ -153,24 +143,11 @@ void AppBox::Init()
 
 void AppBox::InitWindow()
 {
-    if (m_api_type == ApiType::kOpenGL)
-    {
-        glfwWindowHint(GLFW_SAMPLES, 4);
-        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
-    }
-    else
-    {
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    }
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
     m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
     if (!m_window)
         return;
-
-    if (m_api_type == ApiType::kOpenGL)
-    {
-        glfwMakeContextCurrent(m_window);
-    }
 
     glfwSetWindowUserPointer(m_window, this);
     glfwSetFramebufferSizeCallback(m_window, AppBox::OnSizeChanged);
@@ -179,7 +156,6 @@ void AppBox::InitWindow()
     glfwSetMouseButtonCallback(m_window, AppBox::OnMouseButton);
     glfwSetScrollCallback(m_window, AppBox::OnScroll);
     glfwSetCharCallback(m_window, AppBox::OnInputChar);
-    
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 

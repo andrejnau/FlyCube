@@ -12,7 +12,6 @@ std::shared_ptr<Instance> CreateInstance(ApiType type)
     switch (type)
     {
 #ifdef DIRECTX_SUPPORT
-    case ApiType::kDX11:
     case ApiType::kDX12:
         return std::make_unique<DXInstance>();
 #endif
