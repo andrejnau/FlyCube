@@ -2,6 +2,7 @@
 #include <Swapchain/VKSwapchain.h>
 #include <CommandList/VKCommandList.h>
 #include <Instance/VKInstance.h>
+#include <Fence/VKFence.h>
 #include <Fence/VKTimelineSemaphore.h>
 #include <Semaphore/VKSemaphore.h>
 #include <PipelineProgram/VKPipelineProgram.h>
@@ -9,6 +10,7 @@
 #include <View/VKView.h>
 #include <Adapter/VKAdapter.h>
 #include <Utilities/VKUtility.h>
+#include <Utilities/State.h>
 #include <set>
 
 VKDevice::VKDevice(VKAdapter& adapter)
@@ -31,13 +33,15 @@ VKDevice::VKDevice(VKAdapter& adapter)
     auto extensions = m_physical_device.enumerateDeviceExtensionProperties();
     std::set<std::string> req_extension = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
         VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
         VK_NV_RAY_TRACING_EXTENSION_NAME,
         VK_KHR_MAINTENANCE3_EXTENSION_NAME
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME
     };
+    if (CurState::Instance().use_timeline_semaphore)
+        req_extension.insert(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+
     std::vector<const char*> found_extension;
     for (const auto& extension : extensions)
     {
@@ -94,7 +98,10 @@ std::shared_ptr<CommandList> VKDevice::CreateCommandList()
 
 std::shared_ptr<Fence> VKDevice::CreateFence()
 {
-    return std::make_unique<VKTimelineSemaphore>(*this);
+    if (CurState::Instance().use_timeline_semaphore)
+        return std::make_unique<VKTimelineSemaphore>(*this);
+    else
+        return std::make_unique<VKFence>(*this);
 }
 
 std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
@@ -354,9 +361,17 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
 
     vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eTransfer;
     submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
-    m_queue.submit(1, &submit_info, {});
 
-    if (fence)
+    vk::Fence handle = {};
+    if (!CurState::Instance().use_timeline_semaphore && fence)
+    {
+        VKFence& vk_fence = static_cast<VKFence&>(*fence);
+        handle = vk_fence.GetFence();
+    }
+
+    m_queue.submit(1, &submit_info, handle);
+
+    if (CurState::Instance().use_timeline_semaphore && fence)
     {
         VKTimelineSemaphore& vk_fence = static_cast<VKTimelineSemaphore&>(*fence);
         vk::TimelineSemaphoreSubmitInfo timeline_info = {};
