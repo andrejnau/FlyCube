@@ -2,7 +2,7 @@
 #include <Swapchain/VKSwapchain.h>
 #include <CommandList/VKCommandList.h>
 #include <Instance/VKInstance.h>
-#include <Fence/VKFence.h>
+#include <Fence/VKTimelineSemaphore.h>
 #include <Semaphore/VKSemaphore.h>
 #include <PipelineProgram/VKPipelineProgram.h>
 #include <Shader/SpirvShader.h>
@@ -94,7 +94,7 @@ std::shared_ptr<CommandList> VKDevice::CreateCommandList()
 
 std::shared_ptr<Fence> VKDevice::CreateFence()
 {
-    return std::make_unique<VKFence>(*this);
+    return std::make_unique<VKTimelineSemaphore>(*this);
 }
 
 std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
@@ -358,7 +358,7 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
 
     if (fence)
     {
-        VKFence& vk_fence = static_cast<VKFence&>(*fence);
+        VKTimelineSemaphore& vk_fence = static_cast<VKTimelineSemaphore&>(*fence);
         vk::TimelineSemaphoreSubmitInfo timeline_info = {};
         timeline_info.signalSemaphoreValueCount = 1;
         timeline_info.pSignalSemaphoreValues = &vk_fence.GetValue();

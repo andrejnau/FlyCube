@@ -1,7 +1,7 @@
-#include "Fence/VKFence.h"
+#include "Fence/VKTimelineSemaphore.h"
 #include <Device/VKDevice.h>
 
-VKFence::VKFence(VKDevice& device)
+VKTimelineSemaphore::VKTimelineSemaphore(VKDevice& device)
     : m_device(device)
 {
     vk::SemaphoreTypeCreateInfo timeline_create_info = {};
@@ -11,7 +11,7 @@ VKFence::VKFence(VKDevice& device)
     m_timeline_semaphore = device.GetDevice().createSemaphoreUnique(create_info);
 }
 
-void VKFence::WaitAndReset()
+void VKTimelineSemaphore::WaitAndReset()
 {
     vk::SemaphoreWaitInfo wait_info = {};
     wait_info.semaphoreCount = 1;
@@ -21,12 +21,12 @@ void VKFence::WaitAndReset()
     ++m_fence_value;
 }
 
-const vk::Semaphore& VKFence::GetFence() const
+const vk::Semaphore& VKTimelineSemaphore::GetFence() const
 {
     return m_timeline_semaphore.get();
 }
 
-const uint64_t& VKFence::GetValue() const
+const uint64_t& VKTimelineSemaphore::GetValue() const
 {
     return m_fence_value;
 }

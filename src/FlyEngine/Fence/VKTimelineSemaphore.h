@@ -4,10 +4,10 @@
 
 class VKDevice;
 
-class VKFence : public Fence
+class VKTimelineSemaphore : public Fence
 {
 public:
-    VKFence(VKDevice& device);
+    VKTimelineSemaphore(VKDevice& device);
     void WaitAndReset() override;
 
     const vk::Semaphore& GetFence() const;

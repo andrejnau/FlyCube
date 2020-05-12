@@ -4,10 +4,10 @@ list(APPEND headers
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKFence.h
+        VKTimelineSemaphore.h
     )
     list(APPEND sources
-        VKFence.cpp
+        VKTimelineSemaphore.cpp
     )
 endif()
 
