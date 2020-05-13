@@ -1,6 +1,6 @@
 #pragma once
 #include "Device/Device.h"
-#include <DescriptorPool/DXDescriptorPool.h>
+#include <CPUDescriptorPool/DXCPUDescriptorPool.h>
 #include <dxgi.h>
 #include <d3d12.h>
 #include <wrl.h>
@@ -30,11 +30,11 @@ public:
     DXAdapter& GetAdapter();
     ComPtr<ID3D12Device> GetDevice();
     ComPtr<ID3D12CommandQueue> GetCommandQueue();
-    DXDescriptorPool& GetDescriptorPool();
+    DXCPUDescriptorPool& GetCPUDescriptorPool();
 
 private:
     DXAdapter& m_adapter;
     ComPtr<ID3D12Device> m_device;
     ComPtr<ID3D12CommandQueue> m_command_queue;
-    DXDescriptorPool m_descriptor_pool;
+    DXCPUDescriptorPool m_descriptor_pool;
 };

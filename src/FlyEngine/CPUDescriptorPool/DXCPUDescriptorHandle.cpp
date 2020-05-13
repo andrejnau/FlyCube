@@ -1,8 +1,8 @@
-#include "DescriptorPool/DXDescriptorHandle.h"
+#include "CPUDescriptorPool/DXCPUDescriptorHandle.h"
 #include <Device/DXDevice.h>
 #include <d3dx12.h>
 
-DXDescriptorHandle::DXDescriptorHandle(
+DXCPUDescriptorHandle::DXCPUDescriptorHandle(
     DXDevice& device,
     ComPtr<ID3D12DescriptorHeap>& heap,
     D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle,
@@ -20,7 +20,7 @@ DXDescriptorHandle::DXDescriptorHandle(
 {
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DXDescriptorHandle::GetCpuHandle(size_t offset) const
+D3D12_CPU_DESCRIPTOR_HANDLE DXCPUDescriptorHandle::GetCpuHandle(size_t offset) const
 {
     return CD3DX12_CPU_DESCRIPTOR_HANDLE(
         m_cpu_handle,

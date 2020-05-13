@@ -34,7 +34,7 @@ target_link_libraries(Device
     CommandList
     PipelineProgram
     PipelineState
-    DescriptorPool
+    CPUDescriptorPool
     Fence
     Semaphore
     Utilities

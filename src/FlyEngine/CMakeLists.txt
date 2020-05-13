@@ -1,7 +1,7 @@
 add_subdirectory(Adapter)
 add_subdirectory(ApiType)
 add_subdirectory(CommandList)
-add_subdirectory(DescriptorPool)
+add_subdirectory(CPUDescriptorPool)
 add_subdirectory(Device)
 add_subdirectory(Fence)
 add_subdirectory(Instance)

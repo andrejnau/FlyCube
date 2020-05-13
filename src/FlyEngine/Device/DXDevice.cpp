@@ -312,7 +312,7 @@ ComPtr<ID3D12CommandQueue> DXDevice::GetCommandQueue()
     return m_command_queue;
 }
 
-DXDescriptorPool& DXDevice::GetDescriptorPool()
+DXCPUDescriptorPool& DXDevice::GetCPUDescriptorPool()
 {
     return m_descriptor_pool;
 }

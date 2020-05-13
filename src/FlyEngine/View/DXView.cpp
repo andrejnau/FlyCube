@@ -285,7 +285,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12GetDSVDesc(const ViewDesc& view_desc, const D3
 DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, const ViewDesc& view_desc)
     : m_device(device)
 {
-    m_handle = m_device.GetDescriptorPool().AllocateDescriptor(view_desc.res_type);
+    m_handle = m_device.GetCPUDescriptorPool().AllocateDescriptor(view_desc.res_type);
     if (!resource)
         return;
 
@@ -323,7 +323,7 @@ DXGI_FORMAT DXView::GetFormat() const
     return m_format;
 }
 
-void DXView::CreateSrv(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& m_handle)
+void DXView::CreateSrv(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& m_handle)
 {
     D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = DX12GeSRVDesc(view_desc, res.default_res->GetDesc());
     if (srv_desc.ViewDimension != D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE)
@@ -337,26 +337,26 @@ void DXView::CreateSrv(const ViewDesc& view_desc, const DXResource& res, DXDescr
     }
 }
 
-void DXView::CreateUAV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& m_handle)
+void DXView::CreateUAV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& m_handle)
 {
     D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = DX12GetUAVDesc(view_desc, res.default_res->GetDesc());
     m_device.GetDevice()->CreateUnorderedAccessView(res.default_res.Get(), nullptr, &uav_desc, m_handle.GetCpuHandle());
 }
 
-void DXView::CreateRTV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& m_handle)
+void DXView::CreateRTV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& m_handle)
 {
     D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = DX12GetRTVDesc(view_desc, res.default_res->GetDesc());
     m_format = rtv_desc.Format;
     m_device.GetDevice()->CreateRenderTargetView(res.default_res.Get(), &rtv_desc, m_handle.GetCpuHandle());
 }
 
-void DXView::CreateDSV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& m_handle)
+void DXView::CreateDSV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& m_handle)
 {
     D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = DX12GetDSVDesc(view_desc, res.default_res->GetDesc());
     m_device.GetDevice()->CreateDepthStencilView(res.default_res.Get(), &dsv_desc, m_handle.GetCpuHandle());
 }
 
-void DXView::CreateCBV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& m_handle)
+void DXView::CreateCBV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& m_handle)
 {
     D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
     desc.BufferLocation = res.default_res->GetGPUVirtualAddress();
@@ -364,7 +364,7 @@ void DXView::CreateCBV(const ViewDesc& view_desc, const DXResource& res, DXDescr
     m_device.GetDevice()->CreateConstantBufferView(&desc, m_handle.GetCpuHandle());
 }
 
-void DXView::CreateSampler(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& m_handle)
+void DXView::CreateSampler(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& m_handle)
 {
     m_device.GetDevice()->CreateSampler(&res.sampler_desc, m_handle.GetCpuHandle());
 }

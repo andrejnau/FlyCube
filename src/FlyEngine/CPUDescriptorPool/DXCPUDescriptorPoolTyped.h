@@ -1,5 +1,5 @@
 #pragma once
-#include "DescriptorPool/DXDescriptorHandle.h"
+#include "CPUDescriptorPool/DXCPUDescriptorHandle.h"
 #include <Instance/BaseTypes.h>
 #include <Utilities/DXUtility.h>
 #include <algorithm>
@@ -11,11 +11,11 @@ using namespace Microsoft::WRL;
 
 class DXDevice;
 
-class DXDescriptorPoolTyped
+class DXCPUDescriptorPoolTyped
 {
 public:
-    DXDescriptorPoolTyped(DXDevice& device, D3D12_DESCRIPTOR_HEAP_TYPE type);
-    std::shared_ptr<DXDescriptorHandle> Allocate(size_t count);
+    DXCPUDescriptorPoolTyped(DXDevice& device, D3D12_DESCRIPTOR_HEAP_TYPE type);
+    std::shared_ptr<DXCPUDescriptorHandle> Allocate(size_t count);
     void ResizeHeap(size_t req_size);
 
 private:

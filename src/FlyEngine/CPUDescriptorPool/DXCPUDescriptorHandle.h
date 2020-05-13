@@ -10,10 +10,10 @@ using namespace Microsoft::WRL;
 
 class DXDevice;
 
-class DXDescriptorHandle
+class DXCPUDescriptorHandle
 {
 public:
-    DXDescriptorHandle(
+    DXCPUDescriptorHandle(
         DXDevice& device,
         ComPtr<ID3D12DescriptorHeap>& heap,
         D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle,

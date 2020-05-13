@@ -1,8 +1,8 @@
-#include "DescriptorPool/DXDescriptorPool.h"
+#include "CPUDescriptorPool/DXCPUDescriptorPool.h"
 #include <Device/DXDevice.h>
 #include <d3dx12.h>
 
-DXDescriptorPool::DXDescriptorPool(DXDevice& device)
+DXCPUDescriptorPool::DXCPUDescriptorPool(DXDevice& device)
     : m_device(device)
     , m_resource(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
     , m_sampler(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)
@@ -11,13 +11,13 @@ DXDescriptorPool::DXDescriptorPool(DXDevice& device)
 {
 }
 
-std::shared_ptr<DXDescriptorHandle> DXDescriptorPool::AllocateDescriptor(ResourceType res_type)
+std::shared_ptr<DXCPUDescriptorHandle> DXCPUDescriptorPool::AllocateDescriptor(ResourceType res_type)
 {
-    DXDescriptorPoolTyped& pool = SelectHeap(res_type);
+    DXCPUDescriptorPoolTyped& pool = SelectHeap(res_type);
     return pool.Allocate(1);
 }
 
-DXDescriptorPoolTyped& DXDescriptorPool::SelectHeap(ResourceType res_type)
+DXCPUDescriptorPoolTyped& DXCPUDescriptorPool::SelectHeap(ResourceType res_type)
 {
     switch (res_type)
     {

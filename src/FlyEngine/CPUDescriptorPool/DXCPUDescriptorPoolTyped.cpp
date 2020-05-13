@@ -1,8 +1,8 @@
-#include "DescriptorPool/DXDescriptorPoolTyped.h"
+#include "CPUDescriptorPool/DXCPUDescriptorPoolTyped.h"
 #include <Device/DXDevice.h>
 #include <d3dx12.h>
 
-DXDescriptorPoolTyped::DXDescriptorPoolTyped(DXDevice& device, D3D12_DESCRIPTOR_HEAP_TYPE type)
+DXCPUDescriptorPoolTyped::DXCPUDescriptorPoolTyped(DXDevice& device, D3D12_DESCRIPTOR_HEAP_TYPE type)
     : m_device(device)
     , m_type(type)
     , m_offset(0)
@@ -10,15 +10,15 @@ DXDescriptorPoolTyped::DXDescriptorPoolTyped(DXDevice& device, D3D12_DESCRIPTOR_
 {
 }
 
-std::shared_ptr<DXDescriptorHandle> DXDescriptorPoolTyped::Allocate(size_t count)
+std::shared_ptr<DXCPUDescriptorHandle> DXCPUDescriptorPoolTyped::Allocate(size_t count)
 {
     if (m_offset + count > m_size)
         ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
     m_offset += count;
-    return std::make_shared<DXDescriptorHandle>(m_device, m_heap, m_cpu_handle, m_offset - count, count, m_device.GetDevice()->GetDescriptorHandleIncrementSize(m_type), m_type);
+    return std::make_shared<DXCPUDescriptorHandle>(m_device, m_heap, m_cpu_handle, m_offset - count, count, m_device.GetDevice()->GetDescriptorHandleIncrementSize(m_type), m_type);
 }
 
-void DXDescriptorPoolTyped::ResizeHeap(size_t req_size)
+void DXCPUDescriptorPoolTyped::ResizeHeap(size_t req_size)
 {
     if (m_size >= req_size)
         return;

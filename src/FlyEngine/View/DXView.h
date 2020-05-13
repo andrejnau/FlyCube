@@ -1,7 +1,7 @@
 #pragma once
 #include "View/View.h"
 #include <Resource/DXResource.h>
-#include <DescriptorPool/DXDescriptorHandle.h>
+#include <CPUDescriptorPool/DXCPUDescriptorHandle.h>
 
 class DXDevice;
 
@@ -13,14 +13,14 @@ public:
     DXGI_FORMAT GetFormat() const;
 
 private:
-    void CreateSrv(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
-    void CreateUAV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
-    void CreateRTV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
-    void CreateDSV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
-    void CreateCBV(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
-    void CreateSampler(const ViewDesc& view_desc, const DXResource& res, DXDescriptorHandle& handle);
+    void CreateSrv(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
+    void CreateUAV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
+    void CreateRTV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
+    void CreateDSV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
+    void CreateCBV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
+    void CreateSampler(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
 
     DXDevice& m_device;
     DXGI_FORMAT m_format = DXGI_FORMAT_UNKNOWN;
-    std::shared_ptr<DXDescriptorHandle> m_handle;
+    std::shared_ptr<DXCPUDescriptorHandle> m_handle;
 };
