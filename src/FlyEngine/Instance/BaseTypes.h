@@ -69,24 +69,30 @@ enum class ResourceType
     kDsv
 };
 
-enum BindFlag
+namespace BindFlag
 {
-    kRtv = 1 << 1,
-    kDsv = 1 << 2,
-    kSrv = 1 << 3,
-    kUav = 1 << 4,
-    kCbv = 1 << 5,
-    kIbv = 1 << 6,
-    kVbv = 1 << 7,
-    kSampler = 1 << 8,
-    KAccelerationStructure = 1 << 9,
-};
+    enum
+    {
+        kRtv = 1 << 1,
+        kDsv = 1 << 2,
+        kSrv = 1 << 3,
+        kUav = 1 << 4,
+        kCbv = 1 << 5,
+        kIbv = 1 << 6,
+        kVbv = 1 << 7,
+        kSampler = 1 << 8,
+        KAccelerationStructure = 1 << 9,
+    };
+}
 
-enum ClearFlag
+namespace ClearFlag
 {
-    kDepth = 1 << 0,
-    kStencil = 1 << 1,
-};
+    enum
+    {
+        kDepth = 1 << 0,
+        kStencil = 1 << 1,
+    };
+}
 
 enum class FillMode
 {
@@ -107,7 +113,6 @@ struct RasterizerDesc
     CullMode cull_mode;
     int32_t DepthBias = 0;
 };
-
 
 enum class Blend
 {
@@ -131,7 +136,6 @@ struct BlendDesc
     Blend blend_dest_apha;
     BlendOp blend_op_alpha;
 };
-
 
 enum class DepthComparison
 {
@@ -199,12 +203,12 @@ struct ShaderDesc
     }
 };
 
-class PipelineProgram;
+class Program;
 class View;
 
 struct PipelineStateDesc
 {
-    std::shared_ptr<PipelineProgram> program;
+    std::shared_ptr<Program> program;
     std::vector<std::shared_ptr<View>> rtvs;
     std::shared_ptr<View> dsv;
 };

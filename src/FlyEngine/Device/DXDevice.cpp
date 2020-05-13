@@ -14,7 +14,8 @@
 
 DXDevice::DXDevice(DXAdapter& adapter)
     : m_adapter(adapter)
-    , m_descriptor_pool(*this)
+    , m_cpu_descriptor_pool(*this)
+    , m_gpu_descriptor_pool(*this)
 {
     ASSERT_SUCCEEDED(D3D12CreateDevice(m_adapter.GetAdapter().Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&m_device)));
 
@@ -314,5 +315,10 @@ ComPtr<ID3D12CommandQueue> DXDevice::GetCommandQueue()
 
 DXCPUDescriptorPool& DXDevice::GetCPUDescriptorPool()
 {
-    return m_descriptor_pool;
+    return m_cpu_descriptor_pool;
+}
+
+DXGPUDescriptorPool& DXDevice::GetGPUDescriptorPool()
+{
+    return m_gpu_descriptor_pool;
 }
