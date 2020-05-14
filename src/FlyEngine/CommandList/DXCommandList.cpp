@@ -4,7 +4,7 @@
 #include <View/DXView.h>
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
-#include <PipelineState/DXPipelineState.h>
+#include <Pipeline/DXPipeline.h>
 #include <dxgi1_6.h>
 #include <d3d12.h>
 #include <d3dx12.h>
@@ -28,12 +28,12 @@ void DXCommandList::Close()
     m_command_list->Close();
 }
 
-void DXCommandList::BindPipelineState(const std::shared_ptr<PipelineState>& state)
+void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
-    DXPipelineState& dx_state = static_cast<DXPipelineState&>(*state);
+    DXPipeline& dx_state = static_cast<DXPipeline&>(*state);
     m_command_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_command_list->SetGraphicsRootSignature(dx_state.GetRootSignature().Get());
-    m_command_list->SetPipelineState(dx_state.GetPipelineState().Get());
+    m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
 
     auto& rtvs = dx_state.GetDesc().rtvs;
 

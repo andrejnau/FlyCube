@@ -32,8 +32,8 @@ target_link_libraries(Device
     Swapchain
     Shader
     CommandList
-    PipelineProgram
-    PipelineState
+    Program
+    Pipeline
     CPUDescriptorPool
     GPUDescriptorPool
     Fence

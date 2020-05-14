@@ -3,8 +3,9 @@
 #include <CommandList/CommandList.h>
 #include <Fence/Fence.h>
 #include <Semaphore/Semaphore.h>
-#include <PipelineProgram/PipelineProgram.h>
-#include <PipelineState/PipelineState.h>
+#include <Instance/BaseTypes.h>
+#include <Program/Program.h>
+#include <Pipeline/Pipeline.h>
 #include <Shader/Shader.h>
 #include <memory>
 #include <vector>
@@ -24,8 +25,8 @@ public:
     virtual std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) = 0;
     virtual std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) = 0;
     virtual std::shared_ptr<Shader> CompileShader(const ShaderDesc& desc) = 0;
-    virtual std::shared_ptr<PipelineProgram> CreatePipelineProgram(const std::vector<std::shared_ptr<Shader>>& shaders) = 0;
-    virtual std::shared_ptr<PipelineState> CreatePipelineState(const PipelineStateDesc& desc) = 0;
+    virtual std::shared_ptr<Program> CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders) = 0;
+    virtual std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
     virtual void Wait(const std::shared_ptr<Semaphore>& semaphore) = 0;
     virtual void Signal(const std::shared_ptr<Semaphore>& semaphore) = 0;
     virtual void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence) = 0;

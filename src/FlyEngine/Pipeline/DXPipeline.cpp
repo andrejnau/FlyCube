@@ -1,13 +1,13 @@
-#include "PipelineState/DXPipelineState.h"
+#include "Pipeline/DXPipeline.h"
 #include <Device/DXDevice.h>
-#include <PipelineProgram/DXPipelineProgram.h>
+#include <Program/DXProgram.h>
 #include <Shader/DXShader.h>
 #include <Shader/DXReflector.h>
 #include <View/DXView.h>
 #include <Utilities/DXGIFormatHelper.h>
 #include <d3dx12.h>
 
-DXPipelineState::DXPipelineState(DXDevice& device, const PipelineStateDesc& desc)
+DXPipeline::DXPipeline(DXDevice& device, const GraphicsPipelineDesc& desc)
     : m_device(device)
     , m_desc(desc)
 {
@@ -24,7 +24,7 @@ DXPipelineState::DXPipelineState(DXDevice& device, const PipelineStateDesc& desc
     m_graphics_pso_desc.SampleDesc.Count = 1;
     m_graphics_pso_desc.NumRenderTargets = desc.rtvs.size();
 
-    DXPipelineProgram& dx_program = static_cast<DXPipelineProgram&>(*m_desc.program);
+    DXProgram& dx_program = static_cast<DXProgram&>(*m_desc.program);
     auto shaders = dx_program.GetShaders();
     for (auto& shader : shaders)
     {
@@ -69,7 +69,7 @@ DXPipelineState::DXPipelineState(DXDevice& device, const PipelineStateDesc& desc
     }
 }
 
-void DXPipelineState::FillRTVFormats()
+void DXPipeline::FillRTVFormats()
 {
     for (size_t slot = 0; slot < m_desc.rtvs.size(); ++slot)
     {
@@ -78,7 +78,7 @@ void DXPipelineState::FillRTVFormats()
     }
 }
 
-void DXPipelineState::FillDSVFormat()
+void DXPipeline::FillDSVFormat()
 {
     if (!m_desc.dsv)
         return;
@@ -87,7 +87,7 @@ void DXPipelineState::FillDSVFormat()
     m_graphics_pso_desc.DepthStencilState.DepthEnable = m_graphics_pso_desc.DSVFormat != DXGI_FORMAT_UNKNOWN;
 }
 
-void DXPipelineState::FillInputLayout(const ComPtr<ID3DBlob>& blob)
+void DXPipeline::FillInputLayout(const ComPtr<ID3DBlob>& blob)
 {
     ComPtr<ID3D12ShaderReflection> reflector;
     DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&reflector));
@@ -147,17 +147,17 @@ void DXPipelineState::FillInputLayout(const ComPtr<ID3DBlob>& blob)
     }
 }
 
-const PipelineStateDesc& DXPipelineState::GetDesc() const
+const GraphicsPipelineDesc& DXPipeline::GetDesc() const
 {
     return m_desc;
 }
 
-const ComPtr<ID3D12PipelineState>& DXPipelineState::GetPipelineState() const
+const ComPtr<ID3D12PipelineState>& DXPipeline::GetPipeline() const
 {
     return m_pipeline_state;
 }
 
-const ComPtr<ID3D12RootSignature>& DXPipelineState::GetRootSignature() const
+const ComPtr<ID3D12RootSignature>& DXPipeline::GetRootSignature() const
 {
     return m_root_signature;
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "PipelineProgram/PipelineProgram.h"
+#include "Program/Program.h"
 #include <Shader/Shader.h>
 #include <vector>
 #include <d3d12.h>
@@ -9,10 +9,10 @@ using namespace Microsoft::WRL;
 class DXDevice;
 class DXShader;
 
-class DXPipelineProgram : public PipelineProgram
+class DXProgram : public Program
 {
 public:
-    DXPipelineProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders);
+    DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders);
 
     const std::vector<std::shared_ptr<DXShader>>& GetShaders() const;
     const ComPtr<ID3D12RootSignature>& GetRootSignature() const;

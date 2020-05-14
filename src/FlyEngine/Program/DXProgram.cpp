@@ -1,10 +1,10 @@
-#include "PipelineProgram/DXPipelineProgram.h"
+#include "Program/DXProgram.h"
 #include <Device/DXDevice.h>
 #include <Shader/DXReflector.h>
 #include <Shader/DXShader.h>
 #include <d3dx12.h>
 
-DXPipelineProgram::DXPipelineProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders)
+DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders)
     : m_device(device)
 {
     for (auto& shader : shaders)
@@ -279,12 +279,12 @@ DXPipelineProgram::DXPipelineProgram(DXDevice& device, const std::vector<std::sh
     ASSERT_SUCCEEDED(device.GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signature)));
 }
 
-const std::vector<std::shared_ptr<DXShader>>& DXPipelineProgram::GetShaders() const
+const std::vector<std::shared_ptr<DXShader>>& DXProgram::GetShaders() const
 {
     return m_shaders;
 }
 
-const ComPtr<ID3D12RootSignature>& DXPipelineProgram::GetRootSignature() const
+const ComPtr<ID3D12RootSignature>& DXProgram::GetRootSignature() const
 {
     return m_root_signature;
 }

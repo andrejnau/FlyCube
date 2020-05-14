@@ -1,5 +1,5 @@
 #pragma once
-#include "PipelineState.h"
+#include "Pipeline.h"
 #include <Instance/BaseTypes.h>
 #include <Utilities/Vulkan.h>
 #include <spirv_cross.hpp>
@@ -7,20 +7,20 @@
 
 class VKDevice;
 
-class VKPipelineState : public PipelineState
+class VKPipeline : public Pipeline
 {
 public:
-    VKPipelineState(VKDevice& device, const PipelineStateDesc& desc);
+    VKPipeline(VKDevice& device, const GraphicsPipelineDesc& desc);
 
 private:
-    void VKPipelineState::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
+    void VKPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
                                             std::vector<vk::VertexInputBindingDescription>& binding_desc,
                                             std::vector<vk::VertexInputAttributeDescription>& attribute_desc);
     void CreateGrPipeLine();
     void CreateComputePipeLine();
 
     VKDevice& m_device;
-    PipelineStateDesc m_desc;
+    GraphicsPipelineDesc m_desc;
     std::vector<vk::VertexInputBindingDescription> m_binding_desc;
     std::vector<vk::VertexInputAttributeDescription> m_attribute_desc;
     std::vector<vk::PipelineShaderStageCreateInfo> m_shader_stage_create_info;

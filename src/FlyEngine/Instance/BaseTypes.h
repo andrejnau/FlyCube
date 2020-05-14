@@ -206,7 +206,7 @@ struct ShaderDesc
 class Program;
 class View;
 
-struct PipelineStateDesc
+struct GraphicsPipelineDesc
 {
     std::shared_ptr<Program> program;
     std::vector<std::shared_ptr<View>> rtvs;

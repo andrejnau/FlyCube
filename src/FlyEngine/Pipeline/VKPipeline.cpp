@@ -1,6 +1,6 @@
-#include "PipelineState/VKPipelineState.h"
+#include "Pipeline/VKPipeline.h"
 #include <Device/VKDevice.h>
-#include <PipelineProgram/VKPipelineProgram.h>
+#include <Program/VKProgram.h>
 #include <Shader/SpirvShader.h>
 
 vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
@@ -32,11 +32,11 @@ vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
     return {};
 }
 
-VKPipelineState::VKPipelineState(VKDevice& device, const PipelineStateDesc& desc)
+VKPipeline::VKPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
     : m_device(device)
     , m_desc(desc)
 {
-    VKPipelineProgram& vk_program = static_cast<VKPipelineProgram&>(*desc.program);
+    VKProgram& vk_program = static_cast<VKProgram&>(*desc.program);
     auto shaders = vk_program.GetShaders();
     for (auto& shader : shaders)
     {
@@ -145,7 +145,7 @@ VKPipelineState::VKPipelineState(VKDevice& device, const PipelineStateDesc& desc
         CreateGrPipeLine();
 }
 
-void VKPipelineState::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
+void VKPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
                                         std::vector<vk::VertexInputBindingDescription>& m_binding_desc,
                                         std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
 {
@@ -203,9 +203,9 @@ void VKPipelineState::CreateInputLayout(const std::vector<uint32_t>& spirv_binar
     }
 }
 
-void VKPipelineState::CreateGrPipeLine()
+void VKPipeline::CreateGrPipeLine()
 {
-    VKPipelineProgram& vk_program = static_cast<VKPipelineProgram&>(*m_desc.program);
+    VKProgram& vk_program = static_cast<VKProgram&>(*m_desc.program);
 
     vk::GraphicsPipelineCreateInfo pipeline_info = {};
 
@@ -322,9 +322,9 @@ void VKPipelineState::CreateGrPipeLine()
     m_pipeline = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info);
 }
 
-void VKPipelineState::CreateComputePipeLine()
+void VKPipeline::CreateComputePipeLine()
 {
-    VKPipelineProgram& vk_program = static_cast<VKPipelineProgram&>(*m_desc.program);
+    VKProgram& vk_program = static_cast<VKProgram&>(*m_desc.program);
 
     vk::ComputePipelineCreateInfo pipeline_info = {};
     pipeline_info.stage = m_shader_stage_create_info.front();

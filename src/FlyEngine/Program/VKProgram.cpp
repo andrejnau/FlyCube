@@ -1,4 +1,4 @@
-#include "PipelineProgram/VKPipelineProgram.h"
+#include "Program/VKProgram.h"
 #include <Device/VKDevice.h>
 #include <Shader/SpirvShader.h>
 
@@ -20,7 +20,7 @@ vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
     return {};
 }
 
-VKPipelineProgram::VKPipelineProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders)
+VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders)
     : m_device(device)
 {
     for (auto& shader : shaders)
@@ -58,12 +58,12 @@ VKPipelineProgram::VKPipelineProgram(VKDevice& device, const std::vector<std::sh
     m_pipeline_layout = device.GetDevice().createPipelineLayoutUnique(pipeline_layout_info);
 }
 
-const std::vector<std::shared_ptr<SpirvShader>>& VKPipelineProgram::GetShaders() const
+const std::vector<std::shared_ptr<SpirvShader>>& VKProgram::GetShaders() const
 {
     return m_shaders;
 }
 
-vk::PipelineLayout VKPipelineProgram::GetPipelineLayout() const
+vk::PipelineLayout VKProgram::GetPipelineLayout() const
 {
     return m_pipeline_layout.get();
 }
@@ -134,7 +134,7 @@ static void print_resources(const spirv_cross::Compiler& compiler, const char* t
     fprintf(stderr, "=============\n\n");
 }
 
-void VKPipelineProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary, std::vector<vk::DescriptorSetLayoutBinding>& bindings)
+void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary, std::vector<vk::DescriptorSetLayoutBinding>& bindings)
 {
     m_shader_ref.emplace(shader_type, spirv_binary);
     spirv_cross::CompilerHLSL& compiler = m_shader_ref.find(shader_type)->second.compiler;

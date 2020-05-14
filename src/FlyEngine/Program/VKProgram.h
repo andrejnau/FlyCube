@@ -1,5 +1,5 @@
 #pragma once
-#include "PipelineProgram.h"
+#include "Program.h"
 #include <Shader/Shader.h>
 #include <Utilities/Vulkan.h>
 #include <vector>
@@ -10,10 +10,10 @@
 class VKDevice;
 class SpirvShader;
 
-class VKPipelineProgram : public PipelineProgram
+class VKProgram : public Program
 {
 public:
-    VKPipelineProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders);
+    VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders);
 
     const std::vector<std::shared_ptr<SpirvShader>>& GetShaders() const;
     vk::PipelineLayout GetPipelineLayout() const;

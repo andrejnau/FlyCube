@@ -26,7 +26,7 @@ void VKCommandList::Close()
     m_command_list->end();
 }
 
-void VKCommandList::BindPipelineState(const std::shared_ptr<PipelineState>& state)
+void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
 }
 
