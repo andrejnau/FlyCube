@@ -7,6 +7,11 @@ VKResource::VKResource(VKDevice& device)
 {
 }
 
+gli::format VKResource::GetFormat() const
+{
+    return m_format;
+}
+
 void VKResource::SetName(const std::string& name)
 {
 }

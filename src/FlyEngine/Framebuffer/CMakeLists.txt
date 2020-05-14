@@ -1,44 +1,37 @@
 list(APPEND headers
-    Device.h
+    Framebuffer.h
+    FramebufferBase.h
+)
+
+list(APPEND sources
+    FramebufferBase.cpp
 )
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKDevice.h
+        VKFramebuffer.h
     )
     list(APPEND sources
-        VKDevice.cpp
+        VKFramebuffer.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXDevice.h
-    )
-    list(APPEND sources
-        DXDevice.cpp
+        DXFramebuffer.h
     )
 endif()
 
-add_library(Device ${headers} ${sources})
+add_library(Framebuffer ${headers} ${sources})
 
-target_include_directories(Device
+target_include_directories(Framebuffer
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(Device
+target_link_libraries(Framebuffer
     ApiType
-    Swapchain
-    Shader
-    CommandList
-    Program
-    Framebuffer
-    Pipeline
-    CPUDescriptorPool
-    GPUDescriptorPool
-    Fence
-    Semaphore
+    Device
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
@@ -46,26 +39,26 @@ target_link_libraries(Device
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(Framebuffer
         ${Vulkan_LIBRARIES}
     )
-    target_include_directories(Device
+    target_include_directories(Framebuffer
         PUBLIC
             ${Vulkan_INCLUDE_DIR}
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(Framebuffer
         d3d11
         d3d12
         dxgi
         dxguid
     )
-    target_include_directories(Device
+    target_include_directories(Framebuffer
         PUBLIC
             "${project_root}/3rdparty/d3dx12"
     )
 endif()
 
-set_target_properties(Device PROPERTIES FOLDER "FlyEngine")
+set_target_properties(Framebuffer PROPERTIES FOLDER "FlyEngine")

@@ -203,12 +203,30 @@ struct ShaderDesc
     }
 };
 
+struct VertexInputDesc
+{
+    uint32_t slot = 0;
+    std::string semantic_name;
+    gli::format format = gli::format::FORMAT_UNDEFINED;
+};
+
+struct RenderTargetDesc
+{
+    uint32_t slot = 0;
+    gli::format format = gli::format::FORMAT_UNDEFINED;
+};
+
+struct DepthStencilTargetDesc
+{
+    gli::format format = gli::format::FORMAT_UNDEFINED;
+};
+
 class Program;
-class View;
 
 struct GraphicsPipelineDesc
 {
     std::shared_ptr<Program> program;
-    std::vector<std::shared_ptr<View>> rtvs;
-    std::shared_ptr<View> dsv;
+    std::vector<VertexInputDesc> input;
+    std::vector<RenderTargetDesc> rtvs;
+    DepthStencilTargetDesc dsv;
 };

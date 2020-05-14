@@ -50,40 +50,26 @@ DXPipeline::DXPipeline(DXDevice& device, const GraphicsPipelineDesc& desc)
         case ShaderType::kGeometry:
             m_graphics_pso_desc.GS = ShaderBytecode;
             break;
-        case ShaderType::kCompute:
-            m_compute_pso_desc.CS = ShaderBytecode;
-            m_is_compute = true;
-            break;
         }
     }
     m_root_signature = dx_program.GetRootSignature();
-    if (m_is_compute)
-    {
-        m_compute_pso_desc.pRootSignature = m_root_signature.Get();
-        ASSERT_SUCCEEDED(m_device.GetDevice()->CreateComputePipelineState(&m_compute_pso_desc, IID_PPV_ARGS(&m_pipeline_state)));
-    }
-    else
-    {
-        m_graphics_pso_desc.pRootSignature = m_root_signature.Get();
-        ASSERT_SUCCEEDED(m_device.GetDevice()->CreateGraphicsPipelineState(&m_graphics_pso_desc, IID_PPV_ARGS(&m_pipeline_state)));
-    }
+    m_graphics_pso_desc.pRootSignature = m_root_signature.Get();
+    ASSERT_SUCCEEDED(m_device.GetDevice()->CreateGraphicsPipelineState(&m_graphics_pso_desc, IID_PPV_ARGS(&m_pipeline_state)));
 }
 
 void DXPipeline::FillRTVFormats()
 {
-    for (size_t slot = 0; slot < m_desc.rtvs.size(); ++slot)
+    for (auto& rtv : m_desc.rtvs)
     {
-        auto& dx_view = static_cast<DXView&>(*m_desc.rtvs[slot]);
-        m_graphics_pso_desc.RTVFormats[slot] = dx_view.GetFormat();
+        m_graphics_pso_desc.RTVFormats[rtv.slot] = static_cast<DXGI_FORMAT>(gli::dx().translate(rtv.format).DXGIFormat.DDS);
     }
 }
 
 void DXPipeline::FillDSVFormat()
 {
-    if (!m_desc.dsv)
+    if (m_desc.dsv.format == gli::format::FORMAT_UNDEFINED)
         return;
-    auto& dx_view = static_cast<DXView&>(*m_desc.dsv);
-    m_graphics_pso_desc.DSVFormat = dx_view.GetFormat();
+    m_graphics_pso_desc.DSVFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(m_desc.dsv.format).DXGIFormat.DDS);
     m_graphics_pso_desc.DepthStencilState.DepthEnable = m_graphics_pso_desc.DSVFormat != DXGI_FORMAT_UNKNOWN;
 }
 

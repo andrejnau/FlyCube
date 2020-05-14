@@ -5,6 +5,7 @@
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
 #include <Pipeline/DXPipeline.h>
+#include <Framebuffer/DXFramebuffer.h>
 #include <dxgi1_6.h>
 #include <d3d12.h>
 #include <d3dx12.h>
@@ -34,8 +35,13 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
     m_command_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_command_list->SetGraphicsRootSignature(dx_state.GetRootSignature().Get());
     m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
+}
 
-    auto& rtvs = dx_state.GetDesc().rtvs;
+void DXCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
+{
+    DXFramebuffer& dx_framebuffer = static_cast<DXFramebuffer&>(*framebuffer);
+    auto& rtvs = dx_framebuffer.GetRtvs();
+    auto& dsv = dx_framebuffer.GetDsv();
 
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv(rtvs.size());
     for (uint32_t slot = 0; slot < rtvs.size(); ++slot)
@@ -46,7 +52,19 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 
     D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = {};
     D3D12_CPU_DESCRIPTOR_HANDLE* om_dsv_ptr = nullptr;
+    if (dsv)
+    {
+        auto& dx_view = static_cast<DXView&>(*dsv);
+        om_dsv = dx_view.GetHandle();
+        om_dsv_ptr = &om_dsv;
+    }
+
     m_command_list->OMSetRenderTargets(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv_ptr);
+}
+
+void DXCommandList::EndRenderPass()
+{
+
 }
 
 void DXCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)

@@ -8,6 +8,7 @@
 #include <Semaphore/DXSemaphore.h>
 #include <Program/DXProgram.h>
 #include <Pipeline/DXPipeline.h>
+#include <Framebuffer/DXFramebuffer.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
 #include <d3dx12.h>
@@ -76,6 +77,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
         dx_format = DXGI_FORMAT_R32_TYPELESS;
 
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
+    res->m_format = format;
 
     D3D12_RESOURCE_DESC desc = {};
     desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -243,6 +245,11 @@ std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
 std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
     return std::make_unique<DXView>(*this, resource, view_desc);
+}
+
+std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
+{
+    return std::make_unique<DXFramebuffer>(rtvs, dsv);
 }
 
 std::shared_ptr<Shader> DXDevice::CompileShader(const ShaderDesc& desc)

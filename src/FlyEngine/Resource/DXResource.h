@@ -12,10 +12,12 @@ class DXResource : public Resource
 {
 public:
     DXResource(DXDevice& device);
+    gli::format GetFormat() const override;
     void SetName(const std::string& name) override;
 
 //private:
     DXDevice& m_device;
+    gli::format m_format = {};
     ComPtr<ID3D12Resource> default_res;
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
     uint32_t bind_flag = 0;

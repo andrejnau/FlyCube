@@ -41,9 +41,11 @@ class VKResource : public Resource
 {
 public:
     VKResource(VKDevice& device);
+    gli::format GetFormat() const override;
     void SetName(const std::string& name) override;
 
     VKDevice& m_device;
+    gli::format m_format;
 
     struct Image
     {

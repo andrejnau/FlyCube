@@ -7,6 +7,7 @@
 #include <Semaphore/VKSemaphore.h>
 #include <Program/VKProgram.h>
 #include <Pipeline/VKPipeline.h>
+#include <Framebuffer/VKFramebuffer.h>
 #include <Shader/SpirvShader.h>
 #include <View/VKView.h>
 #include <Adapter/VKAdapter.h>
@@ -113,6 +114,7 @@ std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
 std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
+    res->m_format = format;
     res->res_type = VKResource::Type::kImage;
 
     vk::Format vk_format = static_cast<vk::Format>(format);
@@ -301,6 +303,11 @@ std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
 std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
     return std::make_unique<VKView>(*this, resource, view_desc);
+}
+
+std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
+{
+    return std::make_unique<VKFramebuffer>(rtvs, dsv);
 }
 
 std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)

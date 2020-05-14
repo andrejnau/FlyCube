@@ -3,6 +3,7 @@
 #include <View/View.h>
 #include <Pipeline/Pipeline.h>
 #include <Instance/BaseTypes.h>
+#include <Framebuffer/Framebuffer.h>
 #include <memory>
 #include <array>
 #include <gli/gli.hpp>
@@ -14,6 +15,8 @@ public:
     virtual void Open() = 0;
     virtual void Close() = 0;
     virtual void BindPipeline(const std::shared_ptr<Pipeline>& state) = 0;
+    virtual void BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer) = 0;
+    virtual void EndRenderPass() = 0;
     virtual void Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color) = 0;
     virtual void DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location) = 0;
     virtual void ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state) = 0;

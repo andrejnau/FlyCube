@@ -8,6 +8,11 @@ DXResource::DXResource(DXDevice& device)
 {
 }
 
+gli::format DXResource::GetFormat() const
+{
+    return m_format;
+}
+
 void DXResource::SetName(const std::string& name)
 {
     default_res->SetName(utf8_to_wstring(name).c_str());

@@ -31,18 +31,25 @@ int main(int argc, char* argv[])
     std::vector<std::shared_ptr<CommandList>> command_lists;
     std::vector<std::shared_ptr<View>> views;
     std::vector<std::shared_ptr<Pipeline>> pipelines;
+    std::vector<std::shared_ptr<Framebuffer>> framebuffers;
     for (uint32_t i = 0; i < frame_count; ++i)
     {
         ViewDesc view_desc = {};
         view_desc.res_type = ResourceType::kRtv;
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, view_desc);
-        pipelines.emplace_back(device->CreateGraphicsPipeline({ program, { back_buffer_view } }));
-
+        framebuffers.emplace_back(device->CreateFramebuffer({ back_buffer_view }));
+        GraphicsPipelineDesc desc = {
+            program,
+            { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32 } },
+            { { 0, back_buffer->GetFormat() } },
+        };
+        pipelines.emplace_back(device->CreateGraphicsPipeline(desc));
         command_lists.emplace_back(device->CreateCommandList());
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->Open();
         command_list->BindPipeline(pipelines.back());
+        command_list->BeginRenderPass(framebuffers.back());
         command_list->SetViewport(rect.width, rect.height);
         command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, vertex_buffer);
@@ -50,6 +57,7 @@ int main(int argc, char* argv[])
         command_list->Clear(back_buffer_view, { 1, 0, 1, 0 });
         command_list->DrawIndexed(3, 0, 0);
         command_list->ResourceBarrier(back_buffer, ResourceState::kPresent);
+        command_list->EndRenderPass();
         command_list->Close();
     }
     std::shared_ptr<Fence> fence = device->CreateFence();
