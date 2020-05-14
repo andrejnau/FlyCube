@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
         command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, vertex_buffer);
         command_list->ResourceBarrier(back_buffer, ResourceState::kClear);
-        command_list->Clear(back_buffer_view, { 1, 0, 1, 0 });
+        command_list->Clear(back_buffer_view, { 0.0, 0.2, 0.4, 1.0 });
         command_list->DrawIndexed(3, 0, 0);
         command_list->ResourceBarrier(back_buffer, ResourceState::kPresent);
         command_list->EndRenderPass();
