@@ -1,64 +1,63 @@
 list(APPEND headers
-    Program.h
+    BindingSet.h
 )
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKProgram.h
+        #VKBindingSet.h
     )
     list(APPEND sources
-        VKProgram.cpp
+        #VKBindingSet.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXProgram.h
+        DXBindingSet.h
     )
     list(APPEND sources
-        DXProgram.cpp
+        DXBindingSet.cpp
     )
 endif()
 
-add_library(Program ${headers} ${sources})
+add_library(BindingSet ${headers} ${sources})
 
-target_include_directories(Program
+target_include_directories(BindingSet
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(Program
+target_link_libraries(BindingSet
     ApiType
     Device
+    Instance
     Utilities
-    Shader
-    BindingSet
     spirv-cross-core
     spirv-cross-hlsl
     glad
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(Program
+    target_link_libraries(BindingSet
         ${Vulkan_LIBRARIES}
     )
-    target_include_directories(Program
+    target_include_directories(BindingSet
         PUBLIC
             ${Vulkan_INCLUDE_DIR}
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(Program
+    target_link_libraries(BindingSet
         d3d11
         d3d12
         dxgi
         dxguid
     )
-    target_include_directories(Program
+    target_include_directories(BindingSet
         PUBLIC
             "${project_root}/3rdparty/d3dx12"
     )
 endif()
 
-set_target_properties(Program PROPERTIES FOLDER "FlyEngine")
+set_target_properties(BindingSet PROPERTIES FOLDER "FlyEngine")

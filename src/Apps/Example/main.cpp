@@ -17,16 +17,23 @@ int main(int argc, char* argv[])
     std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
     std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
 
-    std::shared_ptr<CommandList> upload_command_list = device->CreateCommandList();
-    upload_command_list->Open();
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_data.size(), sizeof(uint32_t));
-    upload_command_list->UpdateSubresource(index_buffer, 0, index_data.data());
     std::vector<glm::vec3> vertex_data = { glm::vec3(-0.5, -0.5, 0.0), glm::vec3(0.0,  0.5, 0.0), glm::vec3(0.5, -0.5, 0.0) };
     std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * vertex_data.size(), sizeof(glm::vec3));
+    glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
+    std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kCbv, sizeof(constant_data), 0);
+
+    std::shared_ptr<CommandList> upload_command_list = device->CreateCommandList();
+    upload_command_list->Open();
+    upload_command_list->UpdateSubresource(index_buffer, 0, index_data.data());
     upload_command_list->UpdateSubresource(vertex_buffer, 0, vertex_data.data());
+    upload_command_list->UpdateSubresource(constant_buffer, 0, &constant_data);
     upload_command_list->Close();
-    device->ExecuteCommandLists({ upload_command_list }, {});
+    device->ExecuteCommandLists({ upload_command_list });
+
+    std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, { ResourceType::kCbv });
+    std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { ShaderType::kPixel, ResourceType::kCbv, "Settings", constant_buffer_view } });
 
     std::vector<std::shared_ptr<CommandList>> command_lists;
     std::vector<std::shared_ptr<View>> views;
@@ -34,10 +41,8 @@ int main(int argc, char* argv[])
     std::vector<std::shared_ptr<Framebuffer>> framebuffers;
     for (uint32_t i = 0; i < frame_count; ++i)
     {
-        ViewDesc view_desc = {};
-        view_desc.res_type = ResourceType::kRtv;
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
-        std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, view_desc);
+        std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, { ResourceType::kRtv });
         framebuffers.emplace_back(device->CreateFramebuffer({ back_buffer_view }));
         GraphicsPipelineDesc desc = {
             program,
@@ -49,6 +54,7 @@ int main(int argc, char* argv[])
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->Open();
         command_list->BindPipeline(pipelines.back());
+        command_list->BindBindingSet(binding_set);
         command_list->BeginRenderPass(framebuffers.back());
         command_list->SetViewport(rect.width, rect.height);
         command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);

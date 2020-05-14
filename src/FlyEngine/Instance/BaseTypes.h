@@ -161,24 +161,23 @@ enum class ShaderType
 
 struct ViewDesc
 {
+    ResourceType res_type;
     size_t level = 0;
     size_t count = static_cast<size_t>(-1);
     ResourceDimension dimension;
     uint32_t stride = 0;
-    ResourceType res_type;
 };
 
 struct BindKey
 {
-    size_t program_id;
-    ShaderType shader_type;
-    ResourceType res_type;
-    uint32_t slot;
+    ShaderType shader;
+    ResourceType type;
+    std::string name;
 
 private:
     auto MakeTie() const
     {
-        return std::tie(program_id, shader_type, res_type, slot);
+        return std::tie(shader, type, name);
     }
 
 public:
@@ -222,6 +221,7 @@ struct DepthStencilTargetDesc
 };
 
 class Program;
+class View;
 
 struct GraphicsPipelineDesc
 {
@@ -229,4 +229,12 @@ struct GraphicsPipelineDesc
     std::vector<VertexInputDesc> input;
     std::vector<RenderTargetDesc> rtvs;
     DepthStencilTargetDesc dsv;
+};
+
+struct BindingDesc
+{
+    ShaderType shader;
+    ResourceType type;
+    std::string name;
+    std::shared_ptr<View> view;
 };

@@ -30,6 +30,10 @@ void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
 }
 
+void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
+{
+}
+
 void VKCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
 {
 }

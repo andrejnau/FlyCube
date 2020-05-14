@@ -1,5 +1,6 @@
 add_subdirectory(Adapter)
 add_subdirectory(ApiType)
+add_subdirectory(BindingSet)
 add_subdirectory(CommandList)
 add_subdirectory(Framebuffer)
 add_subdirectory(CPUDescriptorPool)

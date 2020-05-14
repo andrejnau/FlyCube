@@ -6,6 +6,7 @@
 #include <Utilities/FileUtility.h>
 #include <Pipeline/DXPipeline.h>
 #include <Framebuffer/DXFramebuffer.h>
+#include <BindingSet/DXBindingSet.h>
 #include <dxgi1_6.h>
 #include <d3d12.h>
 #include <d3dx12.h>
@@ -35,6 +36,12 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
     m_command_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_command_list->SetGraphicsRootSignature(dx_state.GetRootSignature().Get());
     m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
+}
+
+void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
+{
+    DXBindingSet& dx_binding_set = static_cast<DXBindingSet&>(*binding_set);
+    dx_binding_set.Apply(m_command_list);
 }
 
 void DXCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)

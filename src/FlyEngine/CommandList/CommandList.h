@@ -4,6 +4,7 @@
 #include <Pipeline/Pipeline.h>
 #include <Instance/BaseTypes.h>
 #include <Framebuffer/Framebuffer.h>
+#include <BindingSet/BindingSet.h>
 #include <memory>
 #include <array>
 #include <gli/gli.hpp>
@@ -15,6 +16,7 @@ public:
     virtual void Open() = 0;
     virtual void Close() = 0;
     virtual void BindPipeline(const std::shared_ptr<Pipeline>& state) = 0;
+    virtual void BindBindingSet(const std::shared_ptr<BindingSet>& binding_set) = 0;
     virtual void BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer) = 0;
     virtual void EndRenderPass() = 0;
     virtual void Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color) = 0;

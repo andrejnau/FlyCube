@@ -58,6 +58,11 @@ VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>
     m_pipeline_layout = device.GetDevice().createPipelineLayoutUnique(pipeline_layout_info);
 }
 
+std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<BindingDesc>& bindings)
+{
+    return {};
+}
+
 const std::vector<std::shared_ptr<SpirvShader>>& VKProgram::GetShaders() const
 {
     return m_shaders;

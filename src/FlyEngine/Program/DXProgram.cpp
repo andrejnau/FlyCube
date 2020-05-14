@@ -2,6 +2,8 @@
 #include <Device/DXDevice.h>
 #include <Shader/DXReflector.h>
 #include <Shader/DXShader.h>
+#include <View/DXView.h>
+#include <BindingSet/DXBindingSet.h>
 #include <d3dx12.h>
 
 DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders)
@@ -143,17 +145,9 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
         m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV}].table.root_param_heap_offset = num_resources;
         m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV}].table.heap_offset = num_resources + num_srv;
 
-        if (m_use_cbv_table)
-        {
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].table.root_param_heap_offset = num_resources;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].table.heap_offset = num_resources + num_srv + num_uav;
-        }
-        else
-        {
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].type = D3D12_ROOT_PARAMETER_TYPE_CBV;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].view.root_param_num = num_cbv;
-        }
+        m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].table.root_param_heap_offset = num_resources;
+        m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].table.heap_offset = num_resources + num_srv + num_uav;
 
         m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER}].table.root_param_heap_offset = num_samplers;
@@ -171,7 +165,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
         descriptor_table_ranges.emplace_back();
         uint32_t index = 0;
 
-        if (((num_srv + num_uav) > 0) || (m_use_cbv_table && num_cbv > 0))
+        if ((num_srv + num_uav + num_cbv) > 0)
         {
             if (num_srv)
             {
@@ -193,7 +187,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                 ++index;
             }
 
-            if (m_use_cbv_table && num_cbv)
+            if (num_cbv)
             {
                 descriptor_table_ranges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
                 descriptor_table_ranges.back()[index].NumDescriptors = num_cbv;
@@ -209,26 +203,12 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
 
             m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV}].root_param_index = static_cast<uint32_t>(root_parameters.size());
             m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV}].root_param_index = static_cast<uint32_t>(root_parameters.size());
-            if (m_use_cbv_table)
-                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].root_param_index = static_cast<uint32_t>(root_parameters.size());
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].root_param_index = static_cast<uint32_t>(root_parameters.size());
 
             root_parameters.emplace_back();
             root_parameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
             root_parameters.back().DescriptorTable = descriptorTableTexture;
             root_parameters.back().ShaderVisibility = visibility;
-        }
-
-        if (!m_use_cbv_table && num_cbv > 0)
-        {
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV}].root_param_index = static_cast<uint32_t>(root_parameters.size());
-
-            for (uint32_t j = 0; j < num_cbv; ++j)
-            {
-                root_parameters.emplace_back();
-                root_parameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-                root_parameters.back().Descriptor.ShaderRegister = j;
-                root_parameters.back().ShaderVisibility = visibility;
-            }
         }
 
         if (num_sampler)
@@ -277,6 +257,105 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
     ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&root_signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error_blob),
         "%s", (char*)error_blob->GetBufferPointer());
     ASSERT_SUCCEEDED(device.GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signature)));
+}
+
+void CopyDescriptor(DXGPUDescriptorPoolRange& dst_range, size_t dst_offset, const std::shared_ptr<View>& view)
+{
+    if (view)
+    {
+        D3D12_CPU_DESCRIPTOR_HANDLE& src_cpu_handle = static_cast<DXView&>(*view).GetHandle();
+        dst_range.CopyCpuHandle(dst_offset, src_cpu_handle);
+    }
+}
+
+void SetRootDescriptorTable(uint32_t RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor)
+{
+}
+
+std::shared_ptr<BindingSet> DXProgram::CreateBindingSet(const std::vector<BindingDesc>& bindings)
+{
+    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, size_t> descriptor_requests = {
+       { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_num_cbv + m_num_srv + m_num_uav },
+       { D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, m_num_sampler }
+    };
+
+    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::map<BindKey, std::shared_ptr<View>>> descriptor_cache;
+    for (auto& x : bindings)
+    {
+        BindKey bind_key = { x.shader, x.type, x.name };
+        switch (x.type)
+        {
+        case ResourceType::kCbv:
+        case ResourceType::kSrv:
+        case ResourceType::kUav:
+            descriptor_cache[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV][bind_key] = x.view;
+            break;
+        case ResourceType::kSampler:
+            descriptor_cache[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER][bind_key] = x.view;
+            break;
+        }
+    }
+
+    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::pair<bool, std::reference_wrapper<DXGPUDescriptorPoolRange>>> descriptor_ranges;
+    std::vector<ID3D12DescriptorHeap*> descriptor_heaps(descriptor_cache.size());
+    size_t descriptor_index = 0;
+    for (auto& x : descriptor_cache)
+    {
+        auto it = m_heap_cache.find(x.second);
+        bool initialized = true;
+        if (it == m_heap_cache.end())
+        {
+            it = m_heap_cache.emplace(x.second, m_device.GetGPUDescriptorPool().Allocate(x.first, descriptor_requests[x.first])).first;
+            initialized = false;
+        }
+        DXGPUDescriptorPoolRange& heap_range = it->second;
+        descriptor_ranges.emplace(std::piecewise_construct,
+            std::forward_as_tuple(x.first),
+            std::forward_as_tuple(initialized, heap_range));
+        if (heap_range.GetSize() > 0)
+        {
+            descriptor_heaps[descriptor_index++] = heap_range.GetHeap().Get();
+        }
+    }
+
+    for (auto& x : bindings)
+    {
+        BindKey bind_key = { x.shader, x.type, x.name };
+        D3D12_DESCRIPTOR_RANGE_TYPE range_type;
+        D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
+        switch (x.type)
+        {
+        case ResourceType::kSrv:
+            range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+            break;
+        case ResourceType::kUav:
+            range_type = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+            break;
+        case ResourceType::kCbv:
+            range_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+            break;
+        case ResourceType::kSampler:
+            range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+            break;
+        case ResourceType::kRtv:
+        case ResourceType::kDsv:
+            continue;
+        }
+
+        auto& descriptor_range = descriptor_ranges.find(heap_type)->second;
+
+        if (descriptor_range.first)
+            continue;
+
+        uint32_t slot = 0;
+        CopyDescriptor(descriptor_range.second.get(), m_binding_layout[{bind_key.shader, range_type}].table.heap_offset + slot, x.view);
+    }
+
+    return std::make_shared<DXBindingSet>(*this, descriptor_ranges, m_binding_layout, descriptor_heaps);
 }
 
 const std::vector<std::shared_ptr<DXShader>>& DXProgram::GetShaders() const

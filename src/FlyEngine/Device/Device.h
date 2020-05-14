@@ -31,5 +31,5 @@ public:
     virtual std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
     virtual void Wait(const std::shared_ptr<Semaphore>& semaphore) = 0;
     virtual void Signal(const std::shared_ptr<Semaphore>& semaphore) = 0;
-    virtual void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence) = 0;
+    virtual void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence = {}) = 0;
 };
