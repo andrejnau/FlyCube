@@ -50,9 +50,9 @@ DXDevice::DXDevice(DXAdapter& adapter)
 #endif
 }
 
-std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
+std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
 {
-    return std::make_shared<DXSwapchain>(*this, window, width, height, frame_count);
+    return std::make_shared<DXSwapchain>(*this, window, width, height, frame_count, vsync);
 }
 
 std::shared_ptr<CommandList> DXDevice::CreateCommandList()

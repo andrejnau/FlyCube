@@ -1,7 +1,5 @@
 #include "Shader/DXReflector.h"
-
 #include "Shader/DXCLoader.h"
-#include <Utilities/State.h>
 #include <dxc/Support/Global.h>
 #include <dxc/DxilContainer/DxilContainer.h>
 

@@ -18,7 +18,7 @@ class Device : public QueryInterface
 {
 public:
     virtual ~Device() = default;
-    virtual std::shared_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count) = 0;
+    virtual std::shared_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync) = 0;
     virtual std::shared_ptr<CommandList> CreateCommandList() = 0;
     virtual std::shared_ptr<Fence> CreateFence() = 0;
     virtual std::shared_ptr<Semaphore> CreateGPUSemaphore() = 0;

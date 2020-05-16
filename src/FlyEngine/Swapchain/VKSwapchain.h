@@ -11,7 +11,7 @@ class VKSwapchain
     : public Swapchain
 {
 public:
-    VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count);
+    VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync);
     std::shared_ptr<Resource> GetBackBuffer(uint32_t buffer) override;
     uint32_t NextImage(const std::shared_ptr<Semaphore>& semaphore) override;
     void Present(const std::shared_ptr<Semaphore>& semaphore) override;

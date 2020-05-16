@@ -1,6 +1,8 @@
 #include "Shader/DXCompiler.h"
 #include "Shader/DXCLoader.h"
 
+constexpr bool g_force_dxil = false;
+
 class FileWrap
 {
 public:
@@ -193,14 +195,14 @@ ComPtr<ID3DBlob> DXCompile(const ShaderDesc& shader, const DXOption& option)
 {
     bool dxc_target = shader.type == ShaderType::kLibrary;
     bool different_options = !shader.define.empty();
-    different_options |= CurState::Instance().force_dxil != dxc_target;
+    different_options |= g_force_dxil != dxc_target;
     different_options |= option.spirv;
 
     ComPtr<ID3DBlob> shader_buffer;
     if (!different_options && GetBlobFromCache(shader.shader_path, shader_buffer))
         return shader_buffer;
 
-    if (dxc_target || option.spirv || CurState::Instance().force_dxil)
+    if (dxc_target || option.spirv || g_force_dxil)
         return DXCCompile(shader, option);
     else
         return DXBCCompile(shader);

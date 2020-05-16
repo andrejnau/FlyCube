@@ -3,7 +3,6 @@
 #include "Shader/SpirvCompiler.h"
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
-#include <Utilities/State.h>
 
 #include <d3dcompiler.h>
 #include <wrl.h>

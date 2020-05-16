@@ -12,7 +12,6 @@
 #include <View/VKView.h>
 #include <Adapter/VKAdapter.h>
 #include <Utilities/VKUtility.h>
-#include <Utilities/State.h>
 #include <set>
 
 VKDevice::VKDevice(VKAdapter& adapter)
@@ -42,7 +41,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME
     };
-    if (CurState::Instance().use_timeline_semaphore)
+    if (m_use_timeline_semaphore)
         req_extension.insert(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
 
     std::vector<const char*> found_extension;
@@ -89,9 +88,9 @@ VKDevice::VKDevice(VKAdapter& adapter)
     m_cmd_pool = m_device->createCommandPoolUnique(cmd_pool_create_info);
 }
 
-std::shared_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
+std::shared_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
 {
-    return std::make_shared<VKSwapchain>(*this, window, width, height, frame_count);
+    return std::make_shared<VKSwapchain>(*this, window, width, height, frame_count, vsync);
 }
 
 std::shared_ptr<CommandList> VKDevice::CreateCommandList()
@@ -101,7 +100,7 @@ std::shared_ptr<CommandList> VKDevice::CreateCommandList()
 
 std::shared_ptr<Fence> VKDevice::CreateFence()
 {
-    if (CurState::Instance().use_timeline_semaphore)
+    if (m_use_timeline_semaphore)
         return std::make_shared<VKTimelineSemaphore>(*this);
     else
         return std::make_shared<VKFence>(*this);
@@ -377,7 +376,7 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
 
     vk::Fence handle = {};
-    if (!CurState::Instance().use_timeline_semaphore && fence)
+    if (!m_use_timeline_semaphore && fence)
     {
         decltype(auto) vk_fence = fence->As<VKFence>();
         handle = vk_fence.GetFence();
@@ -385,7 +384,7 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
 
     m_queue.submit(1, &submit_info, handle);
 
-    if (CurState::Instance().use_timeline_semaphore && fence)
+    if (m_use_timeline_semaphore && fence)
     {
         decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
         vk::TimelineSemaphoreSubmitInfo timeline_info = {};

@@ -4,12 +4,12 @@
 #include <Instance/DXInstance.h>
 #include <Resource/DXResource.h>
 #include <Utilities/DXUtility.h>
-#include <Utilities/State.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
-DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
-    :m_device(device)
+DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+    : m_device(device)
+    , m_vsync(vsync)
 {
     DXInstance& instance = device.GetAdapter().GetInstance();
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
@@ -53,7 +53,7 @@ uint32_t DXSwapchain::NextImage(const std::shared_ptr<Semaphore>& semaphore)
 void DXSwapchain::Present(const std::shared_ptr<Semaphore>& semaphore)
 {
     m_device.Wait(semaphore);
-    if (CurState::Instance().vsync)
+    if (m_vsync)
     {
         ASSERT_SUCCEEDED(m_swap_chain->Present(1, 0));
     }

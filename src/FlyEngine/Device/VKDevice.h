@@ -9,7 +9,7 @@ class VKDevice : public Device
 {
 public:
     VKDevice(VKAdapter& adapter);
-    std::shared_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count) override;
+    std::shared_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync) override;
     std::shared_ptr<CommandList> CreateCommandList() override;
     std::shared_ptr<Fence> CreateFence() override;
     std::shared_ptr<Semaphore> CreateGPUSemaphore() override;
@@ -43,4 +43,5 @@ private:
     vk::Queue m_queue;
     vk::UniqueCommandPool m_cmd_pool;
     VKGPUDescriptorPool m_gpu_descriptor_pool;
+    const bool m_use_timeline_semaphore = false;
 };

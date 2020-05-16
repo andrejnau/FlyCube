@@ -4,11 +4,10 @@
 #include <Adapter/VKAdapter.h>
 #include <Instance/VKInstance.h>
 #include <Semaphore/VKSemaphore.h>
-#include <Utilities/State.h>
 #include <Utilities/VKUtility.h>
 #include <Resource/VKResource.h>
 
-VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
+VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
     : m_device(device)
 {
     VKAdapter& adapter = device.GetAdapter();
@@ -48,8 +47,8 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
     swap_chain_create_info.imageSharingMode = vk::SharingMode::eExclusive;
     swap_chain_create_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
     swap_chain_create_info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-    if (CurState::Instance().vsync)
-        swap_chain_create_info.presentMode = vk::PresentModeKHR::eFifo;
+    if (vsync)
+        swap_chain_create_info.presentMode = vk::PresentModeKHR::eFifoRelaxed;
     else
         swap_chain_create_info.presentMode = vk::PresentModeKHR::eMailbox;
     swap_chain_create_info.clipped = true;

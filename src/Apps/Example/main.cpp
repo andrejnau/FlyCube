@@ -1,21 +1,20 @@
 #include <AppBox/AppBox.h>
+#include <AppBox/ArgsParser.h>
 #include <Instance/Instance.h>
 #include <Utilities/FileUtility.h>
 
 int main(int argc, char* argv[])
 {
-    ApiType type = ApiType::kVulkan;
-    AppBox app(argc, argv, "Example", type);
+    Settings setting = ParseArgs(argc, argv);
+    AppBox app("Example", setting);
     AppRect rect = app.GetAppRect();
-    std::shared_ptr<Instance> instance = CreateInstance(type);
-    std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters().front());
-    std::shared_ptr<Device> device = adapter->CreateDevice();
-    uint32_t frame_count = 3;
-    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count);
 
-    std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex });
-    std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
-    std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
+    std::shared_ptr<Instance> instance = CreateInstance(setting.api_type);
+    std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[setting.required_gpu_index]);
+    std::shared_ptr<Device> device = adapter->CreateDevice();
+
+    uint32_t frame_count = 3;
+    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count, setting.vsync);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_data.size(), sizeof(uint32_t));
@@ -33,8 +32,10 @@ int main(int argc, char* argv[])
     device->ExecuteCommandLists({ upload_command_list });
 
     std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, { ResourceType::kCbv });
+    std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex });
+    std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
+    std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
     std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { ShaderType::kPixel, ResourceType::kCbv, "Settings", constant_buffer_view } });
-
     GraphicsPipelineDesc pipeline_desc = {
         program,
         { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32 } },
@@ -70,7 +71,8 @@ int main(int argc, char* argv[])
     std::shared_ptr<Fence> fence = device->CreateFence();
     std::shared_ptr<Semaphore> image_available_semaphore = device->CreateGPUSemaphore();
     std::shared_ptr<Semaphore> rendering_finished_semaphore = device->CreateGPUSemaphore();
-    while (!app.ShouldClose())
+
+    while (!app.PollEvents())
     {
         fence->WaitAndReset();
         uint32_t frame_index = swapchain->NextImage(image_available_semaphore);
@@ -78,7 +80,6 @@ int main(int argc, char* argv[])
         device->ExecuteCommandLists({ command_lists[frame_index] }, fence);
         device->Signal(rendering_finished_semaphore);
         swapchain->Present(rendering_finished_semaphore);
-        app.PollEvents();
         app.UpdateFps();
     }
     _exit(0);

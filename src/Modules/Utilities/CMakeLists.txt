@@ -4,8 +4,6 @@ add_library(Utilities
     Logger.h
     ScopeGuard.h
     Singleton.h
-    State.cpp
-    State.h
     VKUtility.h
     Vulkan.h
     DXGIFormatHelper.cpp
