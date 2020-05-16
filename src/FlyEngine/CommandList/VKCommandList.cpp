@@ -2,6 +2,8 @@
 #include <Device/VKDevice.h>
 #include <Resource/VKResource.h>
 #include <View/VKView.h>
+#include <Pipeline/VKPipeline.h>
+#include <Framebuffer/VKFramebuffer.h>
 
 VKCommandList::VKCommandList(VKDevice& device)
     : m_device(device)
@@ -28,6 +30,8 @@ void VKCommandList::Close()
 
 void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
+    decltype(auto) vk_state = state->As<VKPipeline>();
+    m_command_list->bindPipeline(vk::PipelineBindPoint::eGraphics, vk_state.GetPipeline());
 }
 
 void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
@@ -36,10 +40,17 @@ void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
 
 void VKCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
 {
+    decltype(auto) vk_framebuffer = framebuffer->As<VKFramebuffer>();
+    vk::RenderPassBeginInfo render_pass_info = {};
+    render_pass_info.renderPass = vk_framebuffer.GetRenderPass();
+    render_pass_info.framebuffer = vk_framebuffer.GetFramebuffer();
+    render_pass_info.renderArea.extent = vk_framebuffer.GetExtent();
+    m_command_list->beginRenderPass(render_pass_info, vk::SubpassContents::eInline);
 }
 
 void VKCommandList::EndRenderPass()
 {
+    m_command_list->endRenderPass();
 }
 
 void VKCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)

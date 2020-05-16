@@ -302,12 +302,12 @@ std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
 
 std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
-    return std::make_unique<VKView>(*this, resource, view_desc);
+    return std::make_unique<VKView>(*this, std::static_pointer_cast<VKResource>(resource), view_desc);
 }
 
-std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
+std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const std::shared_ptr<Pipeline>& pipeline, const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
 {
-    return std::make_unique<VKFramebuffer>(rtvs, dsv);
+    return std::make_unique<VKFramebuffer>(*this, std::static_pointer_cast<VKPipeline>(pipeline), rtvs, dsv);
 }
 
 std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)

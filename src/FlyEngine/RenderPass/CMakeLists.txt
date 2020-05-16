@@ -1,65 +1,62 @@
 list(APPEND headers
-    Pipeline.h
+    RenderPass.h
 )
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKPipeline.h
+        VKRenderPass.h
     )
     list(APPEND sources
-        VKPipeline.cpp
+        VKRenderPass.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXPipeline.h
+        DXRenderPass.h
     )
     list(APPEND sources
-        DXPipeline.cpp
+        DXRenderPass.cpp
     )
 endif()
 
-add_library(Pipeline ${headers} ${sources})
+add_library(RenderPass ${headers} ${sources})
 
-target_include_directories(Pipeline
+target_include_directories(RenderPass
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(Pipeline
+target_link_libraries(RenderPass
     ApiType
     Device
     Utilities
-    Program
-    RenderPass
-    Shader
     spirv-cross-core
     spirv-cross-hlsl
     glad
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(Pipeline
+    target_link_libraries(RenderPass
         ${Vulkan_LIBRARIES}
     )
-    target_include_directories(Pipeline
+    target_include_directories(RenderPass
         PUBLIC
             ${Vulkan_INCLUDE_DIR}
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(Pipeline
+    target_link_libraries(RenderPass
         d3d11
         d3d12
         dxgi
         dxguid
     )
-    target_include_directories(Pipeline
+    target_include_directories(RenderPass
         PUBLIC
             "${project_root}/3rdparty/d3dx12"
     )
 endif()
 
-set_target_properties(Pipeline PROPERTIES FOLDER "FlyEngine")
+set_target_properties(RenderPass PROPERTIES FOLDER "FlyEngine")

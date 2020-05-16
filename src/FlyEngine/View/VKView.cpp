@@ -2,7 +2,7 @@
 #include <Device/VKDevice.h>
 #include <Resource/VKResource.h>
 
-VKView::VKView(VKDevice& device, const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
+VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, const ViewDesc& view_desc)
     : m_device(device)
     , m_resource(resource)
 {
@@ -99,7 +99,7 @@ void VKView::CreateRTV(const ViewDesc& view_desc, const VKResource& res)
     m_om = m_device.GetDevice().createImageViewUnique(m_view_info);
 }
 
-std::shared_ptr<Resource> VKView::GetResource()
+std::shared_ptr<VKResource> VKView::GetResource()
 {
     return m_resource;
 }
@@ -107,4 +107,14 @@ std::shared_ptr<Resource> VKView::GetResource()
 const vk::ImageViewCreateInfo& VKView::GeViewInfo() const
 {
     return m_view_info;
+}
+
+vk::ImageView VKView::GetRtv() const
+{
+    return m_om.get();
+}
+
+vk::ImageView VKView::GetSrv() const
+{
+    return m_srv.get();
 }

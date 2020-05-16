@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[])
 {
-    ApiType type = ApiType::kDX12;
+    ApiType type = ApiType::kVulkan;
     AppBox app(argc, argv, "Example", type);
     AppRect rect = app.GetAppRect();
     std::shared_ptr<Instance> instance = CreateInstance(type);
@@ -35,25 +35,25 @@ int main(int argc, char* argv[])
     std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, { ResourceType::kCbv });
     std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { ShaderType::kPixel, ResourceType::kCbv, "Settings", constant_buffer_view } });
 
+    GraphicsPipelineDesc pipeline_desc = {
+        program,
+        { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32 } },
+        { { 0, swapchain->GetBackBuffer(0)->GetFormat() } },
+    };
+    std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
+
     std::vector<std::shared_ptr<CommandList>> command_lists;
     std::vector<std::shared_ptr<View>> views;
-    std::vector<std::shared_ptr<Pipeline>> pipelines;
     std::vector<std::shared_ptr<Framebuffer>> framebuffers;
     for (uint32_t i = 0; i < frame_count; ++i)
     {
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, { ResourceType::kRtv });
-        framebuffers.emplace_back(device->CreateFramebuffer({ back_buffer_view }));
-        GraphicsPipelineDesc desc = {
-            program,
-            { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32 } },
-            { { 0, back_buffer->GetFormat() } },
-        };
-        pipelines.emplace_back(device->CreateGraphicsPipeline(desc));
+        framebuffers.emplace_back(device->CreateFramebuffer(pipeline, { back_buffer_view }));
         command_lists.emplace_back(device->CreateCommandList());
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->Open();
-        command_list->BindPipeline(pipelines.back());
+        command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);
         command_list->BeginRenderPass(framebuffers.back());
         command_list->SetViewport(rect.width, rect.height);

@@ -35,6 +35,7 @@ vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
 VKPipeline::VKPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
     : m_device(device)
     , m_desc(desc)
+    , m_render_pass(device, desc.rtvs, desc.dsv)
 {
     decltype(auto) vk_program = desc.program->As<VKProgram>();
     auto shaders = vk_program.GetShaders();
@@ -47,15 +48,13 @@ VKPipeline::VKPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
         case ShaderType::kVertex:
             CreateInputLayout(blob, m_binding_desc, m_attribute_desc);
             break;
-        case ShaderType::kCompute:
-            m_is_compute = true;
         }
 
-        vk::ShaderModuleCreateInfo vertexShaderCreationInfo = {};
-        vertexShaderCreationInfo.codeSize = sizeof(uint32_t) * blob.size();
-        vertexShaderCreationInfo.pCode = blob.data();
+        vk::ShaderModuleCreateInfo shader_module_info = {};
+        shader_module_info.codeSize = sizeof(uint32_t) * blob.size();
+        shader_module_info.pCode = blob.data();
 
-        m_shader_modules[shader_type] = m_device.GetDevice().createShaderModuleUnique(vertexShaderCreationInfo);
+        m_shader_modules[shader_type] = m_device.GetDevice().createShaderModuleUnique(shader_module_info);
 
         spirv_cross::CompilerHLSL compiler(blob);
         m_entries[shader_type] = compiler.get_entry_points_and_stages();
@@ -70,79 +69,17 @@ VKPipeline::VKPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
         }
     }
 
-    /*for (size_t slot = 0; slot < desc.rtv_formats.size(); ++slot)
-    {
-        vk::AttachmentDescription& colorAttachment = m_attachment_descriptions[slot];
-        colorAttachment.format = static_cast<vk::Format>(desc.rtv_formats[slot]);
-        colorAttachment.samples = static_cast<vk::SampleCountFlagBits>(m_msaa_count);
-        colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-        colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-        colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-        colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-        colorAttachment.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
-        colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    CreateGrPipeLine();
+}
 
-        vk::AttachmentReference& colorAttachmentRef = m_attachment_references[slot];
-        colorAttachmentRef.attachment = slot;
-        colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-    }*/
+vk::Pipeline VKPipeline::GetPipeline() const
+{
+    return m_pipeline.get();
+}
 
-    {
-        for (int i = 0; i < m_attachment_descriptions.size(); ++i)
-        {
-            m_attachment_descriptions[i].loadOp =vk::AttachmentLoadOp::eLoad;
-        }
-        vk::SubpassDescription subPass = {};
-        subPass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-        subPass.colorAttachmentCount = m_attachment_references.size();
-        subPass.pColorAttachments = m_attachment_references.data();
-        //subPass.pDepthStencilAttachment = &m_attachment_references.back();
-
-        vk::RenderPassCreateInfo renderPassInfo = {};
-        renderPassInfo.attachmentCount = m_attachment_descriptions.size();
-        renderPassInfo.pAttachments = m_attachment_descriptions.data();
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subPass;
-
-        vk::AccessFlags AccessMask =
-            vk::AccessFlagBits::eIndirectCommandRead |
-            vk::AccessFlagBits::eIndexRead |
-            vk::AccessFlagBits::eVertexAttributeRead |
-            vk::AccessFlagBits::eUniformRead |
-            vk::AccessFlagBits::eInputAttachmentRead |
-            vk::AccessFlagBits::eShaderRead |
-            vk::AccessFlagBits::eShaderWrite |
-            vk::AccessFlagBits::eColorAttachmentRead |
-            vk::AccessFlagBits::eColorAttachmentWrite |
-            vk::AccessFlagBits::eDepthStencilAttachmentRead |
-            vk::AccessFlagBits::eDepthStencilAttachmentWrite |
-            vk::AccessFlagBits::eTransferRead |
-            vk::AccessFlagBits::eTransferWrite |
-            vk::AccessFlagBits::eHostRead |
-            vk::AccessFlagBits::eHostWrite |
-            vk::AccessFlagBits::eMemoryRead |
-            vk::AccessFlagBits::eMemoryWrite;
-
-        vk::SubpassDependency self_dependencie = {};
-        self_dependencie.srcStageMask = vk::PipelineStageFlagBits::eAllCommands;
-        self_dependencie.dstStageMask = vk::PipelineStageFlagBits::eAllCommands;
-        self_dependencie.srcAccessMask = AccessMask;
-        self_dependencie.dstAccessMask = AccessMask;
-        self_dependencie.dependencyFlags = vk::DependencyFlagBits::eByRegion;
-
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &self_dependencie;
-
-        // TODO
-        if (m_render_pass)
-            m_render_pass.release();
-        m_render_pass = m_device.GetDevice().createRenderPassUnique(renderPassInfo);
-    }
-
-    if (m_is_compute)
-        CreateComputePipeLine();
-    else
-        CreateGrPipeLine();
+vk::RenderPass VKPipeline::GetRenderPass() const
+{
+    return m_render_pass.GetRenderPass();
 }
 
 void VKPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
@@ -303,7 +240,7 @@ void VKPipeline::CreateGrPipeLine()
 
     pipeline_info.layout = vk_program.GetPipelineLayout();
 
-    pipeline_info.renderPass = m_render_pass.get();
+    pipeline_info.renderPass = m_render_pass.GetRenderPass();
     pipeline_info.subpass = 0;
 
     std::vector<vk::DynamicState> dynamicStateEnables = {
@@ -316,21 +253,5 @@ void VKPipeline::CreateGrPipeLine()
 
     pipeline_info.pDynamicState = &pipelineDynamicStateCreateInfo;
 
-    // TODO
-    if (m_pipeline)
-        m_pipeline.release();
     m_pipeline = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info);
-}
-
-void VKPipeline::CreateComputePipeLine()
-{
-    decltype(auto) vk_program = m_desc.program->As<VKProgram>();
-
-    vk::ComputePipelineCreateInfo pipeline_info = {};
-    pipeline_info.stage = m_shader_stage_create_info.front();
-    pipeline_info.layout = vk_program.GetPipelineLayout();
-    // TODO
-    if (m_pipeline)
-        m_pipeline.release();
-    m_pipeline = m_device.GetDevice().createComputePipelineUnique({}, pipeline_info);
 }
