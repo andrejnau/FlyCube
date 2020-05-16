@@ -1,4 +1,5 @@
 #pragma once
+#include <Instance/QueryInterface.h>
 #include <Swapchain/Swapchain.h>
 #include <CommandList/CommandList.h>
 #include <Fence/Fence.h>
@@ -13,7 +14,7 @@
 #include <GLFW/glfw3.h>
 #include <gli/gli.hpp>
 
-class Device
+class Device : public QueryInterface
 {
 public:
     virtual ~Device() = default;

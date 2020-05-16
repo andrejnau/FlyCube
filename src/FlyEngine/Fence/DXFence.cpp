@@ -31,3 +31,8 @@ const uint64_t& DXFence::GetValue() const
 {
     return m_fence_value;
 }
+
+void DXFence::Increment()
+{
+    ++m_fence_value;
+}

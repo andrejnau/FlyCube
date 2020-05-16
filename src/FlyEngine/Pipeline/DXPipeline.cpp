@@ -24,7 +24,7 @@ DXPipeline::DXPipeline(DXDevice& device, const GraphicsPipelineDesc& desc)
     m_graphics_pso_desc.SampleDesc.Count = 1;
     m_graphics_pso_desc.NumRenderTargets = desc.rtvs.size();
 
-    DXProgram& dx_program = static_cast<DXProgram&>(*m_desc.program);
+    decltype(auto) dx_program = m_desc.program->As<DXProgram>();
     auto shaders = dx_program.GetShaders();
     for (auto& shader : shaders)
     {

@@ -1,9 +1,10 @@
 #pragma once
+#include <Instance/QueryInterface.h>
 #include <Device/Device.h>
 #include <string>
 #include <memory>
 
-class Adapter
+class Adapter : public QueryInterface
 {
 public:
     virtual ~Adapter() = default;

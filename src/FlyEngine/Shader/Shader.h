@@ -1,8 +1,9 @@
 #pragma once
+#include <Instance/QueryInterface.h>
 #include <Instance/BaseTypes.h>
 #include <memory>
 
-class Shader
+class Shader : public QueryInterface
 {
 public:
     virtual ~Shader() = default;

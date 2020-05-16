@@ -36,7 +36,7 @@ VKPipeline::VKPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
     : m_device(device)
     , m_desc(desc)
 {
-    VKProgram& vk_program = static_cast<VKProgram&>(*desc.program);
+    decltype(auto) vk_program = desc.program->As<VKProgram>();
     auto shaders = vk_program.GetShaders();
     for (auto& shader : shaders)
     {
@@ -205,7 +205,7 @@ void VKPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
 
 void VKPipeline::CreateGrPipeLine()
 {
-    VKProgram& vk_program = static_cast<VKProgram&>(*m_desc.program);
+    decltype(auto) vk_program = m_desc.program->As<VKProgram>();
 
     vk::GraphicsPipelineCreateInfo pipeline_info = {};
 
@@ -324,7 +324,7 @@ void VKPipeline::CreateGrPipeLine()
 
 void VKPipeline::CreateComputePipeLine()
 {
-    VKProgram& vk_program = static_cast<VKProgram&>(*m_desc.program);
+    decltype(auto) vk_program = m_desc.program->As<VKProgram>();
 
     vk::ComputePipelineCreateInfo pipeline_info = {};
     pipeline_info.stage = m_shader_stage_create_info.front();

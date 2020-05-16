@@ -8,7 +8,7 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<Resource>& resource, cons
 {
     if (!resource)
         return;
-    VKResource& vk_resource = static_cast<VKResource&>(*resource);
+    decltype(auto) vk_resource = resource->As<VKResource>();
 
     switch (view_desc.res_type)
     {

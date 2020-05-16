@@ -46,12 +46,12 @@ void VKCommandList::Clear(const std::shared_ptr<View>& view, const std::array<fl
 {
     if (!view)
         return;
-    VKView& vk_view = static_cast<VKView&>(*view);
+    decltype(auto) vk_view = view->As<VKView>();
 
     std::shared_ptr<Resource> resource = vk_view.GetResource();
     if (!resource)
         return;
-    VKResource& vk_resource = static_cast<VKResource&>(*resource);
+    decltype(auto) vk_resource = resource->As<VKResource>();
 
     vk::ClearColorValue clear_color = {};
     clear_color.float32[0] = color[0];
@@ -94,14 +94,14 @@ vk::IndexType GetVkIndexType(gli::format format)
 
 void VKCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {
-    VKResource& vk_resource = static_cast<VKResource&>(*resource);
+    decltype(auto) vk_resource = resource->As<VKResource>();
     vk::IndexType index_type = GetVkIndexType(format);
     m_command_list->bindIndexBuffer(vk_resource.buffer.res.get(), 0, index_type);
 }
 
 void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
-    VKResource& vk_resource = static_cast<VKResource&>(*resource);
+    decltype(auto) vk_resource = resource->As<VKResource>();
     vk::Buffer vertex_buffers[] = { vk_resource.buffer.res.get() };
     vk::DeviceSize offsets[] = { 0 };
     m_command_list->bindVertexBuffers(slot, 1, vertex_buffers, offsets);
@@ -109,7 +109,7 @@ void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
 
 void VKCommandList::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
 {
-    VKResource& vk_resource = static_cast<VKResource&>(*resource);
+    decltype(auto) vk_resource = resource->As<VKResource>();
 
     if (vk_resource.res_type == VKResource::Type::kBuffer)
     {
@@ -204,7 +204,7 @@ void VKCommandList::UpdateSubresource(const std::shared_ptr<Resource>& resource,
 
 void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc, ResourceState state)
 {
-    VKResource& vk_resource = static_cast<VKResource&>(*resource);
+    decltype(auto) vk_resource = resource->As<VKResource>();
     VKResource::Image& image = vk_resource.image;
 
     vk::ImageLayout new_layout = vk::ImageLayout::eUndefined;

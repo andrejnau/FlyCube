@@ -271,8 +271,8 @@ void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
 {
     if (semaphore)
     {
-        DXSemaphore& dx_semaphore = static_cast<DXSemaphore&>(*semaphore);
-        ASSERT_SUCCEEDED(m_command_queue->Wait(dx_semaphore.GetFence().Get(), dx_semaphore.GetValue()));
+        decltype(auto) dx_fence = semaphore->As<DXSemaphore>().GetFence();
+        ASSERT_SUCCEEDED(m_command_queue->Wait(dx_fence.GetFence().Get(), dx_fence.GetValue()));
     }
 }
 
@@ -280,9 +280,9 @@ void DXDevice::Signal(const std::shared_ptr<Semaphore>& semaphore)
 {
     if (semaphore)
     {
-        DXSemaphore& dx_semaphore = static_cast<DXSemaphore&>(*semaphore);
-        dx_semaphore.Increment();
-        ASSERT_SUCCEEDED(m_command_queue->Signal(dx_semaphore.GetFence().Get(), dx_semaphore.GetValue()));
+        decltype(auto) dx_fence = semaphore->As<DXSemaphore>().GetFence();
+        dx_fence.Increment();
+        ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), dx_fence.GetValue()));
     }
 }
 
@@ -293,14 +293,14 @@ void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     {
         if (!command_list)
             continue;
-        DXCommandList& dx_command_list = static_cast<DXCommandList&>(*command_list);
+        decltype(auto) dx_command_list = command_list->As<DXCommandList>();
         dx_command_lists.emplace_back(dx_command_list.GetCommandList().Get());
     }
     m_command_queue->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
 
     if (fence)
     {
-        DXFence& dx_fence = static_cast<DXFence&>(*fence);
+        decltype(auto) dx_fence = fence->As<DXFence>();
         ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), dx_fence.GetValue()));
     }
 }

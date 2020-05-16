@@ -1,9 +1,10 @@
 #pragma once
-#include <GLFW/glfw3.h>
+#include <Instance/QueryInterface.h>
 #include <Resource/Resource.h>
 #include <Semaphore/Semaphore.h>
+#include <GLFW/glfw3.h>
 
-class Swapchain
+class Swapchain : public QueryInterface
 {
 public:
     virtual ~Swapchain() = default;

@@ -1,4 +1,5 @@
 #pragma once
+#include <Instance/QueryInterface.h>
 #include <Resource/Resource.h>
 #include <View/View.h>
 #include <Pipeline/Pipeline.h>
@@ -9,7 +10,7 @@
 #include <array>
 #include <gli/gli.hpp>
 
-class CommandList
+class CommandList : public QueryInterface
 {
 public:
     virtual ~CommandList() = default;

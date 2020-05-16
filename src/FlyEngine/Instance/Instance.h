@@ -1,4 +1,5 @@
 #pragma once
+#include "Instance/QueryInterface.h"
 #include "Instance/BaseTypes.h"
 #include <ApiType/ApiType.h>
 #include <Adapter/Adapter.h>
@@ -6,7 +7,7 @@
 #include <string>
 #include <vector>
 
-class Instance
+class Instance : public QueryInterface
 {
 public:
     virtual ~Instance() = default;

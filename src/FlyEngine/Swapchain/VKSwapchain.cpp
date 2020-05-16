@@ -80,7 +80,7 @@ uint32_t VKSwapchain::NextImage(const std::shared_ptr<Semaphore>& semaphore)
     vk::Semaphore vk_semaphore_handle = {};
     if (semaphore)
     {
-        VKSemaphore& vk_semaphore = static_cast<VKSemaphore&>(*semaphore);
+        decltype(auto) vk_semaphore = semaphore->As<VKSemaphore>();
         vk_semaphore_handle = vk_semaphore.GetSemaphore();
     }
     m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, vk_semaphore_handle, nullptr, &m_frame_index);
@@ -95,7 +95,7 @@ void VKSwapchain::Present(const std::shared_ptr<Semaphore>& semaphore)
     present_info.pImageIndices = &m_frame_index;
     if (semaphore)
     {
-        VKSemaphore& vk_semaphore = static_cast<VKSemaphore&>(*semaphore);
+        decltype(auto) vk_semaphore = semaphore->As<VKSemaphore>();
         present_info.waitSemaphoreCount = 1;
         present_info.pWaitSemaphores = &vk_semaphore.GetSemaphore();
     }

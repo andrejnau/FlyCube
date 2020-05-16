@@ -1,9 +1,10 @@
 #pragma once
+#include <Instance/QueryInterface.h>
 #include <BindingSet/BindingSet.h>
 #include <Instance/BaseTypes.h>
 #include <memory>
 
-class Program
+class Program : public QueryInterface
 {
 public:
     virtual ~Program() = default;

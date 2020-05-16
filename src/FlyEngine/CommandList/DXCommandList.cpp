@@ -32,7 +32,7 @@ void DXCommandList::Close()
 
 void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
-    DXPipeline& dx_state = static_cast<DXPipeline&>(*state);
+    decltype(auto) dx_state = state->As<DXPipeline>();
     m_command_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_command_list->SetGraphicsRootSignature(dx_state.GetRootSignature().Get());
     m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
@@ -40,20 +40,20 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 
 void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
-    DXBindingSet& dx_binding_set = static_cast<DXBindingSet&>(*binding_set);
+    decltype(auto) dx_binding_set = binding_set->As<DXBindingSet>();
     dx_binding_set.Apply(m_command_list);
 }
 
 void DXCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
 {
-    DXFramebuffer& dx_framebuffer = static_cast<DXFramebuffer&>(*framebuffer);
+    decltype(auto) dx_framebuffer = framebuffer->As<DXFramebuffer>();
     auto& rtvs = dx_framebuffer.GetRtvs();
     auto& dsv = dx_framebuffer.GetDsv();
 
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv(rtvs.size());
     for (uint32_t slot = 0; slot < rtvs.size(); ++slot)
     {
-        auto& dx_view = static_cast<DXView&>(*rtvs[slot]);
+        decltype(auto) dx_view = rtvs[slot]->As<DXView>();
         om_rtv[slot] = dx_view.GetHandle();
     }
 
@@ -61,7 +61,7 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuf
     D3D12_CPU_DESCRIPTOR_HANDLE* om_dsv_ptr = nullptr;
     if (dsv)
     {
-        auto& dx_view = static_cast<DXView&>(*dsv);
+        decltype(auto) dx_view = dsv->As<DXView>();
         om_dsv = dx_view.GetHandle();
         om_dsv_ptr = &om_dsv;
     }
@@ -78,7 +78,7 @@ void DXCommandList::Clear(const std::shared_ptr<View>& view, const std::array<fl
 {
     if (!view)
         return;
-    DXView& dx_view = static_cast<DXView&>(*view);
+    decltype(auto) dx_view = view->As<DXView>();
     m_command_list->ClearRenderTargetView(dx_view.GetHandle(), color.data(), 0, nullptr);
 }
 
@@ -89,7 +89,7 @@ void DXCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_locat
 
 void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
-    DXResource& dx_resource = static_cast<DXResource&>(*resource);
+    decltype(auto) dx_resource = resource->As<DXResource>();
     D3D12_RESOURCE_STATES dx_state = {};
     switch (state)
     {
@@ -128,7 +128,7 @@ void DXCommandList::SetViewport(float width, float height)
 void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
-    DXResource& dx_resource = static_cast<DXResource&>(*resource);
+    decltype(auto) dx_resource = resource->As<DXResource>();
     D3D12_INDEX_BUFFER_VIEW index_buffer_view = {};
     index_buffer_view.Format = dx_format;
     index_buffer_view.SizeInBytes = dx_resource.desc.Width;
@@ -138,7 +138,7 @@ void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
 
 void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
-    DXResource& dx_resource = static_cast<DXResource&>(*resource);
+    decltype(auto) dx_resource = resource->As<DXResource>();
     D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view = {};
     vertex_buffer_view.BufferLocation = dx_resource.default_res->GetGPUVirtualAddress();
     vertex_buffer_view.SizeInBytes = dx_resource.desc.Width;
@@ -148,7 +148,7 @@ void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
 
 void DXCommandList::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
 {
-    DXResource& dx_resource = static_cast<DXResource&>(*resource);
+    decltype(auto) dx_resource = resource->As<DXResource>();
 
     if (dx_resource.bind_flag & BindFlag::kCbv)
     {

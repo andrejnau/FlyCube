@@ -1,7 +1,8 @@
 #pragma once
+#include <Instance/QueryInterface.h>
 #include <cstdint>
 
-class Fence
+class Fence : public QueryInterface
 {
 public:
     virtual ~Fence() = default;

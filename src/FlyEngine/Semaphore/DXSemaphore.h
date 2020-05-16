@@ -2,11 +2,15 @@
 #include "Semaphore/Semaphore.h"
 #include <Fence/DXFence.h>
 
+class DXDevice;
+
 class DXSemaphore
     : public Semaphore
-    , public DXFence
 {
 public:
-    using DXFence::DXFence;
-    void Increment();
+    DXSemaphore(DXDevice& device);
+    DXFence& GetFence();
+
+private:
+    DXFence m_fence;
 };

@@ -330,7 +330,7 @@ void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
     std::vector<vk::Semaphore> vk_semaphores;
     if (semaphore)
     {
-        VKSemaphore& vk_semaphore = static_cast<VKSemaphore&>(*semaphore);
+        decltype(auto) vk_semaphore = semaphore->As<VKSemaphore>();
         vk_semaphores.emplace_back(vk_semaphore.GetSemaphore());
     }
     vk::SubmitInfo submit_info = {};
@@ -346,7 +346,7 @@ void VKDevice::Signal(const std::shared_ptr<Semaphore>& semaphore)
     std::vector<vk::Semaphore> vk_semaphores;
     if (semaphore)
     {
-        VKSemaphore& vk_semaphore = static_cast<VKSemaphore&>(*semaphore);
+        decltype(auto) vk_semaphore = semaphore->As<VKSemaphore>();
         vk_semaphores.emplace_back(vk_semaphore.GetSemaphore());
     }
     vk::SubmitInfo submit_info = {};
@@ -364,7 +364,7 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     {
         if (!command_list)
             continue;
-        VKCommandList& vk_command_list = static_cast<VKCommandList&>(*command_list);
+        decltype(auto) vk_command_list = command_list->As<VKCommandList>();
         vk_command_lists.emplace_back(vk_command_list.GetCommandList());
     }
 
@@ -378,7 +378,7 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     vk::Fence handle = {};
     if (!CurState::Instance().use_timeline_semaphore && fence)
     {
-        VKFence& vk_fence = static_cast<VKFence&>(*fence);
+        decltype(auto) vk_fence = fence->As<VKFence>();
         handle = vk_fence.GetFence();
     }
 
@@ -386,7 +386,7 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
 
     if (CurState::Instance().use_timeline_semaphore && fence)
     {
-        VKTimelineSemaphore& vk_fence = static_cast<VKTimelineSemaphore&>(*fence);
+        decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
         vk::TimelineSemaphoreSubmitInfo timeline_info = {};
         timeline_info.signalSemaphoreValueCount = 1;
         timeline_info.pSignalSemaphoreValues = &vk_fence.GetValue();

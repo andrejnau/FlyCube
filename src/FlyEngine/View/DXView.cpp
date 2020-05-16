@@ -289,7 +289,7 @@ DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, con
     if (!resource)
         return;
 
-    DXResource& dx_resource = static_cast<DXResource&>(*resource);
+    decltype(auto) dx_resource = resource->As<DXResource>();
     switch (view_desc.res_type)
     {
     case ResourceType::kSrv:

@@ -15,8 +15,9 @@ public:
 
     ComPtr<ID3D12Fence> GetFence();
     const uint64_t& GetValue() const;
+    void Increment();
 
-protected:
+private:
     DXDevice& m_device;
     ComPtr<ID3D12Fence> m_fence;
     uint64_t m_fence_value = 0;

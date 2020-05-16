@@ -23,7 +23,7 @@ public:
         file.seekg(0, std::ios::beg);
 
         std::vector<uint8_t> res(file_size);
-        file.read((char*)res.data(), file_size);
+        file.read(reinterpret_cast<char*>(res.data()), file_size);
         return res;
     }
 

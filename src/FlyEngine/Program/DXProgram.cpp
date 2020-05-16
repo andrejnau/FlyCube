@@ -255,7 +255,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
     ComPtr<ID3DBlob> signature;
     ComPtr<ID3DBlob> error_blob;
     ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&root_signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error_blob),
-        "%s", (char*)error_blob->GetBufferPointer());
+        "%s", static_cast<char*>(error_blob->GetBufferPointer()));
     ASSERT_SUCCEEDED(device.GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signature)));
 }
 
@@ -263,7 +263,7 @@ void CopyDescriptor(DXGPUDescriptorPoolRange& dst_range, size_t dst_offset, cons
 {
     if (view)
     {
-        D3D12_CPU_DESCRIPTOR_HANDLE& src_cpu_handle = static_cast<DXView&>(*view).GetHandle();
+        decltype(auto) src_cpu_handle = view->As<DXView>().GetHandle();
         dst_range.CopyCpuHandle(dst_offset, src_cpu_handle);
     }
 }

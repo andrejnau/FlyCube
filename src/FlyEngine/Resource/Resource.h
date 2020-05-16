@@ -1,10 +1,11 @@
 #pragma once
+#include <Instance/QueryInterface.h>
 #include <View/View.h>
 #include <memory>
 #include <string>
 #include <gli/gli.hpp>
 
-class Resource
+class Resource : public QueryInterface
 {
 public:
     virtual ~Resource() = default;

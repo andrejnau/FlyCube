@@ -1,6 +1,11 @@
 #include "Semaphore/DXSemaphore.h"
 
-void DXSemaphore::Increment()
+DXSemaphore::DXSemaphore(DXDevice& device)
+    : m_fence(device)
 {
-    ++m_fence_value;
+}
+
+DXFence& DXSemaphore::GetFence()
+{
+    return m_fence;
 }
