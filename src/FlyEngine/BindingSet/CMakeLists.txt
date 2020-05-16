@@ -4,10 +4,10 @@ list(APPEND headers
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        #VKBindingSet.h
+        VKBindingSet.h
     )
     list(APPEND sources
-        #VKBindingSet.cpp
+        VKBindingSet.cpp
     )
 endif()
 

@@ -18,6 +18,7 @@
 VKDevice::VKDevice(VKAdapter& adapter)
     : m_adapter(adapter)
     , m_physical_device(adapter.GetPhysicalDevice())
+    , m_gpu_descriptor_pool(*this)
 {
     auto queue_families = m_physical_device.getQueueFamilyProperties();
 
@@ -90,25 +91,25 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
 std::shared_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
 {
-    return std::make_unique<VKSwapchain>(*this, window, width, height, frame_count);
+    return std::make_shared<VKSwapchain>(*this, window, width, height, frame_count);
 }
 
 std::shared_ptr<CommandList> VKDevice::CreateCommandList()
 {
-    return std::make_unique<VKCommandList>(*this);
+    return std::make_shared<VKCommandList>(*this);
 }
 
 std::shared_ptr<Fence> VKDevice::CreateFence()
 {
     if (CurState::Instance().use_timeline_semaphore)
-        return std::make_unique<VKTimelineSemaphore>(*this);
+        return std::make_shared<VKTimelineSemaphore>(*this);
     else
-        return std::make_unique<VKFence>(*this);
+        return std::make_shared<VKFence>(*this);
 }
 
 std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
 {
-    return std::make_unique<VKSemaphore>(*this);
+    return std::make_shared<VKSemaphore>(*this);
 }
 
 std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
@@ -302,27 +303,27 @@ std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
 
 std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
-    return std::make_unique<VKView>(*this, std::static_pointer_cast<VKResource>(resource), view_desc);
+    return std::make_shared<VKView>(*this, std::static_pointer_cast<VKResource>(resource), view_desc);
 }
 
 std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const std::shared_ptr<Pipeline>& pipeline, const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
 {
-    return std::make_unique<VKFramebuffer>(*this, std::static_pointer_cast<VKPipeline>(pipeline), rtvs, dsv);
+    return std::make_shared<VKFramebuffer>(*this, std::static_pointer_cast<VKPipeline>(pipeline), rtvs, dsv);
 }
 
 std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)
 {
-    return std::make_unique<SpirvShader>(desc);
+    return std::make_shared<SpirvShader>(desc);
 }
 
 std::shared_ptr<Program> VKDevice::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
 {
-    return std::make_unique<VKProgram>(*this, shaders);
+    return std::make_shared<VKProgram>(*this, shaders);
 }
 
 std::shared_ptr<Pipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
 {
-    return std::make_unique<VKPipeline>(*this, desc);
+    return std::make_shared<VKPipeline>(*this, desc);
 }
 
 void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
@@ -449,4 +450,9 @@ uint32_t VKDevice::FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags 
             return i;
     }
     throw std::runtime_error("failed to find suitable memory type!");
+}
+
+VKGPUDescriptorPool& VKDevice::GetGPUDescriptorPool()
+{
+    return m_gpu_descriptor_pool;
 }

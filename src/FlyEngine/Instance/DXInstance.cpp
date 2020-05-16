@@ -53,7 +53,7 @@ std::vector<std::shared_ptr<Adapter>> DXInstance::EnumerateAdapters()
         if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
             continue;
 
-        adapters.emplace_back(std::make_unique<DXAdapter>(*this, adapter));
+        adapters.emplace_back(std::make_shared<DXAdapter>(*this, adapter));
     }
     return adapters;
 }

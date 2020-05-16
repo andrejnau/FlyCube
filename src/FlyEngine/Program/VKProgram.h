@@ -48,4 +48,6 @@ private:
     };
 
     std::map<ShaderType, ShaderRef> m_shader_ref;
+    std::map<std::map<BindKey, std::shared_ptr<View>>, std::vector<vk::UniqueDescriptorSet>> m_heap_cache;
+    std::vector<std::map<vk::DescriptorType, size_t>> m_descriptor_count_by_set;
 };

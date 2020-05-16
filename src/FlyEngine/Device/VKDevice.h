@@ -1,6 +1,7 @@
 #pragma once
 #include "Device/Device.h"
 #include <Utilities/Vulkan.h>
+#include <GPUDescriptorPool/VKGPUDescriptorPool.h>
 
 class VKAdapter;
 
@@ -30,6 +31,7 @@ public:
     vk::Queue GetQueue();
     vk::CommandPool GetCmdPool();
     vk::ImageAspectFlags GetAspectFlags(vk::Format format) const;
+    VKGPUDescriptorPool& GetGPUDescriptorPool();
 
 private:
     uint32_t FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties);
@@ -40,4 +42,5 @@ private:
     vk::UniqueDevice m_device;
     vk::Queue m_queue;
     vk::UniqueCommandPool m_cmd_pool;
+    VKGPUDescriptorPool m_gpu_descriptor_pool;
 };

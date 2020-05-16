@@ -4,6 +4,7 @@
 #include <View/VKView.h>
 #include <Pipeline/VKPipeline.h>
 #include <Framebuffer/VKFramebuffer.h>
+#include <BindingSet/VKBindingSet.h>
 
 VKCommandList::VKCommandList(VKDevice& device)
     : m_device(device)
@@ -36,6 +37,9 @@ void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 
 void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
+    decltype(auto) vk_binding_set = binding_set->As<VKBindingSet>();
+    decltype(auto) descriptor_sets = vk_binding_set.GetDescriptorSets();
+    m_command_list->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vk_binding_set.GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
 }
 
 void VKCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
@@ -86,6 +90,17 @@ void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, R
 
 void VKCommandList::SetViewport(float width, float height)
 {
+    vk::Viewport viewport = {};
+    viewport.width = width;
+    viewport.height = height;
+    viewport.minDepth = 0;
+    viewport.maxDepth = 1.0;
+    m_command_list->setViewport(0, 1, &viewport);
+
+    vk::Rect2D rect = {};
+    rect.extent.width = static_cast<int32_t>(width);
+    rect.extent.height = static_cast<int32_t>(height);
+    m_command_list->setScissor(0, 1, &rect);
 }
 
 vk::IndexType GetVkIndexType(gli::format format)

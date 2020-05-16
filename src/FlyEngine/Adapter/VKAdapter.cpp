@@ -15,7 +15,7 @@ const std::string& VKAdapter::GetName() const
 
 std::shared_ptr<Device> VKAdapter::CreateDevice()
 {
-    return std::make_unique<VKDevice>(*this);
+    return std::make_shared<VKDevice>(*this);
 }
 
 VKInstance& VKAdapter::GetInstance()

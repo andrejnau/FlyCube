@@ -1,6 +1,8 @@
 #include "Program/VKProgram.h"
 #include <Device/VKDevice.h>
 #include <Shader/SpirvShader.h>
+#include <View/VKView.h>
+#include <BindingSet/VKBindingSet.h>
 
 vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
 {
@@ -39,28 +41,182 @@ VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>
         layout_info.bindingCount = bindings.size();
         layout_info.pBindings = bindings.data();
 
-        m_descriptor_set_layouts.emplace_back();
-        vk::UniqueDescriptorSetLayout& descriptor_set_layout = m_descriptor_set_layouts.back();
+        size_t set_num = static_cast<size_t>(shader_type);
+        if (m_descriptor_set_layouts.size() <= set_num)
+        {
+            m_descriptor_set_layouts.resize(set_num + 1);
+            m_descriptor_count_by_set.resize(set_num + 1);
+        }
+
+        decltype(auto) descriptor_set_layout = m_descriptor_set_layouts[set_num];
         descriptor_set_layout = device.GetDevice().createDescriptorSetLayoutUnique(layout_info);
+
+        decltype(auto) descriptor_count = m_descriptor_count_by_set[set_num];
+        for (auto& binding : bindings)
+        {
+            descriptor_count[binding.descriptorType] += binding.descriptorCount;
+        }
     }
 
     std::vector<vk::DescriptorSetLayout> descriptor_set_layouts;
-    for (const auto& descriptor_set_layout : m_descriptor_set_layouts)
+    for (auto& descriptor_set_layout : m_descriptor_set_layouts)
+    {
+        if (!descriptor_set_layout)
+        {
+            vk::DescriptorSetLayoutCreateInfo layout_info = {};
+            descriptor_set_layout = device.GetDevice().createDescriptorSetLayoutUnique(layout_info);
+        }
+
         descriptor_set_layouts.emplace_back(descriptor_set_layout.get());
+    }
 
     vk::PipelineLayoutCreateInfo pipeline_layout_info = {};
     pipeline_layout_info.setLayoutCount = descriptor_set_layouts.size();
     pipeline_layout_info.pSetLayouts = descriptor_set_layouts.data();
 
-    //TODO
-    if (m_pipeline_layout)
-        m_pipeline_layout.release();
     m_pipeline_layout = device.GetDevice().createPipelineLayoutUnique(pipeline_layout_info);
 }
 
 std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<BindingDesc>& bindings)
 {
-    return {};
+    std::map<BindKey, std::shared_ptr<View>> descriptor_cache;
+    for (auto& x : bindings)
+    {
+        BindKey bind_key = { x.shader, x.type, x.name };
+        switch (bind_key.type)
+        {
+        case ResourceType::kCbv:
+        case ResourceType::kSrv:
+        case ResourceType::kUav:
+        case ResourceType::kSampler:
+            descriptor_cache[bind_key] = x.view;
+            break;
+        }
+    }
+
+    auto it = m_heap_cache.find(descriptor_cache);
+    if (it == m_heap_cache.end())
+    {
+        std::vector<vk::UniqueDescriptorSet> descriptor_sets;
+        for (size_t i = 0; i < m_descriptor_set_layouts.size(); ++i)
+        {
+            descriptor_sets.emplace_back(m_device.GetGPUDescriptorPool().AllocateDescriptorSet(m_descriptor_set_layouts[i].get(), m_descriptor_count_by_set[i]));
+        }
+
+        std::vector<vk::WriteDescriptorSet> descriptorWrites;
+        std::list<vk::DescriptorImageInfo> list_image_info;
+        std::list<vk::DescriptorBufferInfo> list_buffer_info;
+        std::list<vk::WriteDescriptorSetAccelerationStructureNV> list_as;
+
+        for (auto& x : bindings)
+        {
+            bool is_rtv_dsv = false;
+            switch (x.type)
+            {
+            case ResourceType::kRtv:
+            case ResourceType::kDsv:
+                is_rtv_dsv = true;
+                break;
+            }
+
+            if (is_rtv_dsv || !x.view)
+                continue;
+
+            decltype(auto) vk_view = x.view->As<VKView>();
+            ShaderType shader_type = x.shader;
+            ShaderRef& shader_ref = m_shader_ref.find(shader_type)->second;
+            std::string name = x.name;
+            if (name == "$Globals")
+                name = "_Global";
+
+            if (!shader_ref.resources.count(name))
+                name = "type_" + name;
+
+            if (!shader_ref.resources.count(name))
+                throw std::runtime_error("failed to find resource reflection");
+            auto ref_res = shader_ref.resources[name];
+            auto res = vk_view.GetResource();
+
+            vk::WriteDescriptorSet descriptorWrite = {};
+            descriptorWrite.dstSet = descriptor_sets[static_cast<size_t>(shader_type)].get();
+            descriptorWrite.dstBinding = ref_res.binding;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = ref_res.descriptor_type;
+            descriptorWrite.descriptorCount = 1;
+
+            switch (ref_res.descriptor_type)
+            {
+            case vk::DescriptorType::eSampler:
+            {
+                list_image_info.emplace_back();
+                vk::DescriptorImageInfo& image_info = list_image_info.back();
+                image_info.sampler = res->sampler.res.get();
+                descriptorWrite.pImageInfo = &image_info;
+                break;
+            }
+            case vk::DescriptorType::eSampledImage:
+            {
+                list_image_info.emplace_back();
+                vk::DescriptorImageInfo& image_info = list_image_info.back();
+                image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+                image_info.imageView = vk_view.GetSrv();
+                descriptorWrite.pImageInfo = &image_info;
+                break;
+            }
+            case vk::DescriptorType::eStorageImage:
+            {
+                list_image_info.emplace_back();
+                vk::DescriptorImageInfo& image_info = list_image_info.back();
+                image_info.imageLayout = vk::ImageLayout::eGeneral;
+                image_info.imageView = vk_view.GetSrv();
+                descriptorWrite.pImageInfo = &image_info;
+                break;
+            }
+            case vk::DescriptorType::eUniformTexelBuffer:
+            case vk::DescriptorType::eStorageTexelBuffer:
+            case vk::DescriptorType::eUniformBuffer:
+            case vk::DescriptorType::eStorageBuffer:
+            {
+                list_buffer_info.emplace_back();
+                vk::DescriptorBufferInfo& buffer_info = list_buffer_info.back();
+                buffer_info.buffer = res->buffer.res.get();
+                buffer_info.offset = 0;
+                buffer_info.range = VK_WHOLE_SIZE;
+                descriptorWrite.pBufferInfo = &buffer_info;
+                break;
+            }
+            /*case vk::DescriptorType::eAccelerationStructureNV:
+            {
+                list_as.emplace_back();
+                vk::WriteDescriptorSetAccelerationStructureNV& descriptorAccelerationStructureInfo = list_as.back();
+                descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
+                descriptorAccelerationStructureInfo.pAccelerationStructures = &res.top_as.accelerationStructure.get();
+
+                descriptorWrite.pNext = &descriptorAccelerationStructureInfo;
+                break;
+            }*/
+            case vk::DescriptorType::eUniformBufferDynamic:
+            case vk::DescriptorType::eStorageBufferDynamic:
+            default:
+                assert(false);
+                break;
+            }
+
+            if (descriptorWrite.pImageInfo || descriptorWrite.pBufferInfo || descriptorWrite.pNext)
+                descriptorWrites.push_back(descriptorWrite);
+        }
+
+        if (!descriptorWrites.empty())
+            m_device.GetDevice().updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+        it = m_heap_cache.emplace(descriptor_cache, std::move(descriptor_sets)).first;
+    }
+
+    std::vector<vk::DescriptorSet> descriptor_sets;
+    for (const auto& descriptor_set : it->second)
+    {
+        descriptor_sets.emplace_back(descriptor_set.get());
+    }
+    return std::make_shared<VKBindingSet>(descriptor_sets, m_pipeline_layout.get());
 }
 
 const std::vector<std::shared_ptr<SpirvShader>>& VKProgram::GetShaders() const

@@ -129,7 +129,7 @@ std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
         if (device_properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
             device_properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu)
         {
-            adapters.emplace_back(std::make_unique<VKAdapter>(*this, device));
+            adapters.emplace_back(std::make_shared<VKAdapter>(*this, device));
         }
     }
     return adapters;

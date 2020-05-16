@@ -52,22 +52,22 @@ DXDevice::DXDevice(DXAdapter& adapter)
 
 std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count)
 {
-    return std::make_unique<DXSwapchain>(*this, window, width, height, frame_count);
+    return std::make_shared<DXSwapchain>(*this, window, width, height, frame_count);
 }
 
 std::shared_ptr<CommandList> DXDevice::CreateCommandList()
 {
-    return std::make_unique<DXCommandList>(*this);
+    return std::make_shared<DXCommandList>(*this);
 }
 
 std::shared_ptr<Fence> DXDevice::CreateFence()
 {
-    return std::make_unique<DXFence>(*this);
+    return std::make_shared<DXFence>(*this);
 }
 
 std::shared_ptr<Semaphore> DXDevice::CreateGPUSemaphore()
 {
-    return std::make_unique<DXSemaphore>(*this);
+    return std::make_shared<DXSemaphore>(*this);
 }
 
 std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
@@ -244,27 +244,27 @@ std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
 
 std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
-    return std::make_unique<DXView>(*this, resource, view_desc);
+    return std::make_shared<DXView>(*this, resource, view_desc);
 }
 
 std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const std::shared_ptr<Pipeline>& pipeline, const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
 {
-    return std::make_unique<DXFramebuffer>(rtvs, dsv);
+    return std::make_shared<DXFramebuffer>(rtvs, dsv);
 }
 
 std::shared_ptr<Shader> DXDevice::CompileShader(const ShaderDesc& desc)
 {
-    return std::make_unique<DXShader>(desc);
+    return std::make_shared<DXShader>(desc);
 }
 
 std::shared_ptr<Program> DXDevice::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
 {
-    return std::make_unique<DXProgram>(*this, shaders);
+    return std::make_shared<DXProgram>(*this, shaders);
 }
 
 std::shared_ptr<Pipeline> DXDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
 {
-    return std::make_unique<DXPipeline>(*this, desc);
+    return std::make_shared<DXPipeline>(*this, desc);
 }
 
 void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)

@@ -53,17 +53,18 @@ int main(int argc, char* argv[])
         command_lists.emplace_back(device->CreateCommandList());
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->Open();
+        command_list->ResourceBarrier(back_buffer, ResourceState::kClear);
+        command_list->Clear(back_buffer_view, { 0.0, 0.2, 0.4, 1.0 });
+        command_list->ResourceBarrier(back_buffer, ResourceState::kRenderTarget);
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);
         command_list->BeginRenderPass(framebuffers.back());
         command_list->SetViewport(rect.width, rect.height);
         command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, vertex_buffer);
-        command_list->ResourceBarrier(back_buffer, ResourceState::kClear);
-        command_list->Clear(back_buffer_view, { 0.0, 0.2, 0.4, 1.0 });
         command_list->DrawIndexed(3, 0, 0);
-        command_list->ResourceBarrier(back_buffer, ResourceState::kPresent);
         command_list->EndRenderPass();
+        command_list->ResourceBarrier(back_buffer, ResourceState::kPresent);
         command_list->Close();
     }
     std::shared_ptr<Fence> fence = device->CreateFence();

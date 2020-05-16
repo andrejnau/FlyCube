@@ -11,6 +11,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (VULKAN_SUPPORT)
+    list(APPEND headers
+        VKGPUDescriptorPool.h
+    )
+    list(APPEND sources
+        VKGPUDescriptorPool.cpp
+    )
+endif()
+
 add_library(GPUDescriptorPool ${headers} ${sources})
 
 target_include_directories(GPUDescriptorPool

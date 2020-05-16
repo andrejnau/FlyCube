@@ -21,7 +21,7 @@ const std::string& DXAdapter::GetName() const
 
 std::shared_ptr<Device> DXAdapter::CreateDevice()
 {
-    return std::make_unique<DXDevice>(*this);
+    return std::make_shared<DXDevice>(*this);
 }
 
 DXInstance& DXAdapter::GetInstance()

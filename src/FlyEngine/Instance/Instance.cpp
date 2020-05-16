@@ -13,11 +13,11 @@ std::shared_ptr<Instance> CreateInstance(ApiType type)
     {
 #ifdef DIRECTX_SUPPORT
     case ApiType::kDX12:
-        return std::make_unique<DXInstance>();
+        return std::make_shared<DXInstance>();
 #endif
 #ifdef VULKAN_SUPPORT
     case ApiType::kVulkan:
-        return std::make_unique<VKInstance>();
+        return std::make_shared<VKInstance>();
 #endif
     }
     assert(false);
