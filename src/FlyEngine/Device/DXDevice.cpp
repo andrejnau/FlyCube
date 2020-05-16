@@ -12,6 +12,7 @@
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
 #include <d3dx12.h>
+#include <gli/dx.hpp>
 
 DXDevice::DXDevice(DXAdapter& adapter)
     : m_adapter(adapter)

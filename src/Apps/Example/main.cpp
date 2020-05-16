@@ -1,7 +1,6 @@
 #include <AppBox/AppBox.h>
 #include <AppBox/ArgsParser.h>
 #include <Instance/Instance.h>
-#include <Utilities/FileUtility.h>
 
 int main(int argc, char* argv[])
 {
@@ -39,7 +38,7 @@ int main(int argc, char* argv[])
     GraphicsPipelineDesc pipeline_desc = {
         program,
         { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32 } },
-        { { 0, swapchain->GetBackBuffer(0)->GetFormat() } },
+        { { 0, swapchain->GetFormat() } },
     };
     std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
 
@@ -68,6 +67,7 @@ int main(int argc, char* argv[])
         command_list->ResourceBarrier(back_buffer, ResourceState::kPresent);
         command_list->Close();
     }
+
     std::shared_ptr<Fence> fence = device->CreateFence();
     std::shared_ptr<Semaphore> image_available_semaphore = device->CreateGPUSemaphore();
     std::shared_ptr<Semaphore> rendering_finished_semaphore = device->CreateGPUSemaphore();

@@ -3,7 +3,7 @@
 #include <View/View.h>
 #include <memory>
 #include <string>
-#include <gli/gli.hpp>
+#include <gli/format.hpp>
 
 class Resource : public QueryInterface
 {

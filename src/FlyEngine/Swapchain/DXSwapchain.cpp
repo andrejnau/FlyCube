@@ -31,12 +31,17 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
         std::shared_ptr<DXResource> res = std::make_shared<DXResource>(m_device);
         ComPtr<ID3D12Resource> back_buffer;
         ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
-        res->m_format = gli::FORMAT_RGBA8_UNORM_PACK8;
+        res->m_format = GetFormat();
         res->state = D3D12_RESOURCE_STATE_PRESENT;
         res->default_res = back_buffer;
         res->desc = back_buffer->GetDesc();
         m_back_buffers.emplace_back(res);
     }
+}
+
+gli::format DXSwapchain::GetFormat() const
+{
+    return gli::FORMAT_RGBA8_UNORM_PACK8;
 }
 
 std::shared_ptr<Resource> DXSwapchain::GetBackBuffer(uint32_t buffer)

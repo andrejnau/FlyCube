@@ -8,7 +8,7 @@
 #include <BindingSet/BindingSet.h>
 #include <memory>
 #include <array>
-#include <gli/gli.hpp>
+#include <gli/format.hpp>
 
 class CommandList : public QueryInterface
 {

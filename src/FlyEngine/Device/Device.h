@@ -12,7 +12,7 @@
 #include <memory>
 #include <vector>
 #include <GLFW/glfw3.h>
-#include <gli/gli.hpp>
+#include <gli/format.hpp>
 
 class Device : public QueryInterface
 {

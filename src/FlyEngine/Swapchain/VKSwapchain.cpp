@@ -60,13 +60,18 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
     for (size_t i = 0; i < frame_count; ++i)
     {
         std::shared_ptr<VKResource> res = std::make_shared<VKResource>(m_device);
-        res->m_format = static_cast<gli::format>(m_swapchain_color_format);
+        res->m_format = GetFormat();
         res->image.res = vk::UniqueImage(m_images[i]);
         res->image.format = m_swapchain_color_format;
         res->image.size = vk::Extent2D(1u * width, 1u * height);
         res->res_type = VKResource::Type::kImage;
         m_back_buffers.emplace_back(res);
     }
+}
+
+gli::format VKSwapchain::GetFormat() const
+{
+    return static_cast<gli::format>(m_swapchain_color_format);
 }
 
 std::shared_ptr<Resource> VKSwapchain::GetBackBuffer(uint32_t buffer)
