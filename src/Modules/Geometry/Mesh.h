@@ -36,13 +36,13 @@ public:
 
     struct
     {
-        Resource::Ptr albedo;
-        Resource::Ptr normal;
-        Resource::Ptr roughness;
-        Resource::Ptr glossiness;
-        Resource::Ptr metalness;
-        Resource::Ptr occlusion;
-        Resource::Ptr opacity;
+        std::shared_ptr<Resource> albedo;
+        std::shared_ptr<Resource> normal;
+        std::shared_ptr<Resource> roughness;
+        std::shared_ptr<Resource> glossiness;
+        std::shared_ptr<Resource> metalness;
+        std::shared_ptr<Resource> occlusion;
+        std::shared_ptr<Resource> opacity;
     } texture;
 };
 
@@ -61,5 +61,5 @@ public:
     IAIndexBuffer indices;
     std::vector<MeshRange> ranges;
 private:
-    std::map<std::string, Resource::Ptr> m_tex_cache;
+    std::map<std::string, std::shared_ptr<Resource>> m_tex_cache;
 };

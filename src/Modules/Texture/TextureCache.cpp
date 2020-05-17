@@ -1,12 +1,12 @@
 #include "Texture/TextureCache.h"
-#include "Texture/FormatHelper.h"
+#include <Utilities/FormatHelper.h>
 
 TextureCache::TextureCache(Context& context)
     : m_context(context)
 {
 }
 
-Resource::Ptr TextureCache::Load(const std::string& path)
+std::shared_ptr<Resource> TextureCache::Load(const std::string& path)
 {
     auto it = m_cache.find(path);
     if (it == m_cache.end())
@@ -14,12 +14,12 @@ Resource::Ptr TextureCache::Load(const std::string& path)
     return it->second;
 }
 
-Resource::Ptr TextureCache::CreateTextuteStab(const glm::vec4& val)
+std::shared_ptr<Resource> TextureCache::CreateTextuteStab(const glm::vec4& val)
 {
     auto it = m_stub_cache.find(val);
     if (it != m_stub_cache.end())
         return it->second;
-    Resource::Ptr tex = m_context.CreateTexture(BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 1, 1, 1);
+    std::shared_ptr<Resource> tex = m_context.CreateTexture(BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 1, 1, 1);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(1, 1, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Context/BaseTypes.h>
+#include <Instance/BaseTypes.h>
 #include <set>
 
 struct ShaderBlob

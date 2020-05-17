@@ -1,19 +1,19 @@
 #include "CommonProgramApi.h"
-#include "Program/BufferLayout.h"
+#include "ProgramApi/BufferLayout.h"
 
 void CommonProgramApi::AddAvailableShaderType(ShaderType type)
 {
     m_shader_types.insert(type);
 }
 
-void CommonProgramApi::SetCBufferLayout(const BindKey& bind_key, BufferLayout& buffer_layout)
+void CommonProgramApi::SetCBufferLayout(const BindKeyOld& bind_key, BufferLayout& buffer_layout)
 {
     m_cbv_layout.emplace(std::piecewise_construct,
         std::forward_as_tuple(bind_key),
         std::forward_as_tuple(buffer_layout));
 }
 
-void CommonProgramApi::SetBinding(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res)
+void CommonProgramApi::SetBinding(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res)
 {
     BoundResource bound_res = { res, CreateView(bind_key, view_desc, res) };
     auto it = m_bound_resources.find(bind_key);
@@ -23,16 +23,16 @@ void CommonProgramApi::SetBinding(const BindKey& bind_key, const ViewDesc& view_
         it->second = bound_res;
 }
 
-View::Ptr CommonProgramApi::FindView(ShaderType shader_type, ResourceType res_type, uint32_t slot)
+std::shared_ptr<View> CommonProgramApi::FindView(ShaderType shader_type, ResourceType res_type, uint32_t slot)
 {
-    BindKey bind_key = { m_program_id, shader_type, res_type, slot };
+    BindKeyOld bind_key = { m_program_id, shader_type, res_type, slot };
     auto it = m_bound_resources.find(bind_key);
     if (it == m_bound_resources.end())
         return {};
     return it->second.view;
 }
 
-void CommonProgramApi::Attach(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res)
+void CommonProgramApi::Attach(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res)
 {
     SetBinding(bind_key, view_desc, res);
     switch (bind_key.res_type)

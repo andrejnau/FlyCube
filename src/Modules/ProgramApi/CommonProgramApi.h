@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Program/ProgramApi.h"
+#include "ProgramApi/ProgramApi.h"
 #include <algorithm>
 #include <deque>
 #include <array>
@@ -8,8 +8,7 @@
 #include <unordered_map>
 #include <functional>
 
-#include <Shader/ShaderBase.h>
-#include <Context/BaseTypes.h>
+#include <Instance/BaseTypes.h>
 #include <Context/Context.h>
 
 class CommonProgramApi
@@ -24,35 +23,34 @@ public:
     }
 
     virtual void AddAvailableShaderType(ShaderType type) override;
-    virtual void SetCBufferLayout(const BindKey& bind_key, BufferLayout& buffer_layout) override;
-    virtual void Attach(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) override;
+    virtual void SetCBufferLayout(const BindKeyOld& bind_key, BufferLayout& buffer_layout) override;
+    virtual void Attach(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res) override;
 
 protected:
-    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) = 0;
-    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) = 0;
-    virtual void OnAttachCBV(ShaderType type, uint32_t slot, const Resource::Ptr& ires) = 0;
-    virtual void OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const Resource::Ptr& ires) = 0;
-    virtual void OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const Resource::Ptr& ires) = 0;
-    virtual void OnAttachDSV(const ViewDesc& view_desc, const Resource::Ptr& ires) = 0;
+    virtual void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires) = 0;
+    virtual void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires) = 0;
+    virtual void OnAttachCBV(ShaderType type, uint32_t slot, const std::shared_ptr<Resource>& ires) = 0;
+    virtual void OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const std::shared_ptr<Resource>& ires) = 0;
+    virtual void OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires) = 0;
+    virtual void OnAttachDSV(const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires) = 0;
 
-    virtual View::Ptr CreateView(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res) = 0;
-    View::Ptr FindView(ShaderType shader_type, ResourceType res_type, uint32_t slot);
+    virtual std::shared_ptr<View> CreateView(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res) = 0;
+    std::shared_ptr<View> FindView(ShaderType shader_type, ResourceType res_type, uint32_t slot);
 
-    void SetBinding(const BindKey& bind_key, const ViewDesc& view_desc, const Resource::Ptr& res);
+    void SetBinding(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res);
     void UpdateCBuffers();
 
     struct BoundResource
     {
-        Resource::Ptr res;
-        View::Ptr view;
+        std::shared_ptr<Resource> res;
+        std::shared_ptr<View> view;
     };
-    std::map<BindKey, BoundResource> m_bound_resources;
-    std::map<BindKey, std::reference_wrapper<BufferLayout>> m_cbv_layout;
-    PerFrameData<std::map<BindKey, std::vector<Resource::Ptr>>> m_cbv_buffer;
-    PerFrameData<std::map<BindKey, size_t>> m_cbv_offset;
+    std::map<BindKeyOld, BoundResource> m_bound_resources;
+    std::map<BindKeyOld, std::reference_wrapper<BufferLayout>> m_cbv_layout;
+    PerFrameData<std::map<BindKeyOld, std::vector<std::shared_ptr<Resource>>>> m_cbv_buffer;
+    PerFrameData<std::map<BindKeyOld, size_t>> m_cbv_offset;
 
     std::set<ShaderType> m_shader_types;
 private:
     Context& m_context;
 };
-

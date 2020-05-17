@@ -7,12 +7,12 @@ class TextureCache
 {
 public:
     TextureCache(Context& context);
-    Resource::Ptr Load(const std::string& path);
-    Resource::Ptr CreateTextuteStab(const glm::vec4& val);
+    std::shared_ptr<Resource> Load(const std::string& path);
+    std::shared_ptr<Resource> CreateTextuteStab(const glm::vec4& val);
 
 private:
     Context& m_context;
-    std::map<std::string, Resource::Ptr> m_cache;
+    std::map<std::string, std::shared_ptr<Resource>> m_cache;
 
     struct glm_key
     {
@@ -30,5 +30,5 @@ private:
         glm::vec4 val;
     };
 
-    std::map<glm_key, Resource::Ptr> m_stub_cache;
+    std::map<glm_key, std::shared_ptr<Resource>> m_stub_cache;
 };

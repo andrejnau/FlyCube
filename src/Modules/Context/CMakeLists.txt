@@ -1,58 +1,21 @@
-set(target Context)
-
-set(headers
-    BaseTypes.h
+list(APPEND headers
     Context.h
-    ContextSelector.h
-    GLContext.h
 )
 
-set(sources
+list(APPEND sources
     Context.cpp
-    ContextSelector.cpp
-    GLContext.cpp
 )
 
-if (VULKAN_SUPPORT)
-    set(headers 
-        ${headers}
-        VKContext.h
-        VKDescriptorPool.h
-    )
-    set(sources 
-        ${sources}
-        VKContext.cpp
-        VKDescriptorPool.cpp
-    )
-endif()
+add_library(Context ${headers} ${sources})
 
-if (DIRECTX_SUPPORT)
-    set(headers 
-        ${headers}
-        DX11Context.h
-        DX12Context.h
-        DXGIUtility.h
-        DescriptorPool.h
-    )
-    set(sources 
-        ${sources}
-        DescriptorPool.cpp
-        DX11Context.cpp
-        DX12Context.cpp
-        DXGIUtility.cpp
-    )
-endif()
-
-add_library(${target} ${headers} ${sources})
-
-target_include_directories(${target}
+target_include_directories(Context
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
         "${project_root}/3rdparty/d3dx12"
         ${Vulkan_INCLUDE_DIR}
 )
 
-target_link_libraries(${target}
+target_link_libraries(Context
     ApiType
     Instance
     Utilities
@@ -65,13 +28,13 @@ target_link_libraries(${target}
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(${target}
+    target_link_libraries(Context
         ${Vulkan_LIBRARIES}
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(${target}
+    target_link_libraries(Context
         d3d11
         d3d12
         dxgi
@@ -79,4 +42,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(${target} PROPERTIES FOLDER "library")
+set_target_properties(Context PROPERTIES FOLDER "library")

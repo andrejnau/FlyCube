@@ -8,8 +8,8 @@
 #include <vector>
 #include <functional>
 #include <Shader/ShaderBase.h>
-#include <Program/ProgramApi.h>
-#include "Program/BufferLayout.h"
+#include <ProgramApi/ProgramApi.h>
+#include "ProgramApi/BufferLayout.h"
 
 template<typename T>
 class Binding
@@ -22,7 +22,7 @@ public:
         m_program_api.SetBindingName(m_key, name);
     }
 
-    T& Attach(const Resource::Ptr& ires = {}, const ViewDesc& view_desc = {})
+    T& Attach(const std::shared_ptr<Resource>& ires = {}, const ViewDesc& view_desc = {})
     {
         m_program_api.Attach(m_key, view_desc, ires);
         return static_cast<T&>(*this);
@@ -30,7 +30,7 @@ public:
 
 protected:
     ProgramApi& m_program_api;
-    BindKey m_key;
+    BindKeyOld m_key;
 };
 
 class SRVBinding : public Binding<SRVBinding>

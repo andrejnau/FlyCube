@@ -11,8 +11,8 @@ class Bones
 public:
     void LoadModel(const aiScene* scene);
     void ProcessMesh(const aiMesh* mesh, IMesh& cur_mesh);
-    Resource::Ptr GetBonesInfo(Context& context);
-    Resource::Ptr GetBone(Context& context);
+    std::shared_ptr<Resource> GetBonesInfo(Context& context);
+    std::shared_ptr<Resource> GetBone(Context& context);
     bool UpdateAnimation(float time_in_seconds);
 
 private:
@@ -37,8 +37,8 @@ private:
     std::vector<BoneInfo> bone_info;
     std::vector<glm::mat4> bone;
 
-    Resource::Ptr bones_info_srv;
-    Resource::Ptr bone_srv;
+    std::shared_ptr<Resource> bones_info_srv;
+    std::shared_ptr<Resource> bone_srv;
     std::map<std::string, uint32_t> bone_mapping;
     std::vector<glm::mat4> bone_offset;
     const aiScene* m_scene = nullptr;

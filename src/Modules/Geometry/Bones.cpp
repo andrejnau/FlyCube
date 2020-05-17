@@ -48,7 +48,7 @@ void Bones::ProcessMesh(const aiMesh* mesh, IMesh& cur_mesh)
     }
 }
 
-Resource::Ptr Bones::GetBonesInfo(Context& context)
+std::shared_ptr<Resource> Bones::GetBonesInfo(Context& context)
 {
     if (!bones_info_srv)
         bones_info_srv = context.CreateBuffer(BindFlag::kSrv, static_cast<uint32_t>(bone_info.size() * sizeof(BoneInfo)), sizeof(BoneInfo));
@@ -57,7 +57,7 @@ Resource::Ptr Bones::GetBonesInfo(Context& context)
     return bones_info_srv;
 }
 
-Resource::Ptr Bones::GetBone(Context& context)
+std::shared_ptr<Resource> Bones::GetBone(Context& context)
 {
     if (!bone_srv)
         bone_srv = context.CreateBuffer(BindFlag::kSrv, static_cast<uint32_t>(bone.size() * sizeof(glm::mat4)), sizeof(glm::mat4));

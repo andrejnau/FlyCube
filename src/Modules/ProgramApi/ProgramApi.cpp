@@ -16,12 +16,12 @@ size_t ProgramApi::GetProgramId() const
     return m_program_id;
 }
 
-void ProgramApi::SetBindingName(const BindKey& bind_key, const std::string& name)
+void ProgramApi::SetBindingName(const BindKeyOld& bind_key, const std::string& name)
 {
     m_binding_names[bind_key] = name;
 }
 
-const std::string& ProgramApi::GetBindingName(const BindKey& bind_key) const
+const std::string& ProgramApi::GetBindingName(const BindKeyOld& bind_key) const
 {
     auto it = m_binding_names.find(bind_key);
     if (it == m_binding_names.end())
