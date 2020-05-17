@@ -6,11 +6,11 @@
 
 int main(int argc, char* argv[])
 {
-    Settings setting = { ApiType::kDX12 };
-    ParseArgs(argc, argv, setting);
-    AppBox app("Triangle", setting);
+    Settings settings = { ApiType::kDX12 };
+    ParseArgs(argc, argv, settings);
+    AppBox app("Triangle", settings);
 
-    Context context(setting.api_type, app.GetWindow());
+    Context context(settings, app.GetWindow());
     AppRect rect = app.GetAppRect();
     ProgramHolder<PixelShaderPS, VertexShaderVS> program(context);
 
@@ -19,8 +19,8 @@ int main(int argc, char* argv[])
     context.UpdateSubresource(index, 0, ibuf.data(), 0, 0);
     std::vector<glm::vec3> pbuf = {
         glm::vec3(-0.5, -0.5, 0.0),
-        glm::vec3( 0.0,  0.5, 0.0),
-        glm::vec3( 0.5, -0.5, 0.0)
+        glm::vec3(0.0,  0.5, 0.0),
+        glm::vec3(0.5, -0.5, 0.0)
     };
     std::shared_ptr<Resource> pos = context.CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * pbuf.size(), sizeof(glm::vec3));
     context.UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
@@ -36,4 +36,5 @@ int main(int argc, char* argv[])
         context.DrawIndexed(3, 0, 0);
         context.Present();
     }
+    _exit(0);
 }

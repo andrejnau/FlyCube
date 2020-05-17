@@ -1,51 +1,65 @@
 #include "Context/Context.h"
 
-Context::Context(ApiType type, GLFWwindow* window)
+Context::Context(const Settings& settings, GLFWwindow* window)
     : m_window(window)
-    , m_width(0)
-    , m_height(0)
 {
     glfwGetWindowSize(window, &m_width, &m_height);
+
+    m_instance = CreateInstance(settings.api_type);
+    m_adapter = std::move(m_instance->EnumerateAdapters()[settings.required_gpu_index]);
+    m_device = m_adapter->CreateDevice();
+    m_swapchain = m_device->CreateSwapchain(window, m_width, m_height, FrameCount, settings.vsync);
+    m_command_list = m_device->CreateCommandList();
+
+    m_fence = m_device->CreateFence();
+    m_image_available_semaphore = m_device->CreateGPUSemaphore();
+    m_rendering_finished_semaphore = m_device->CreateGPUSemaphore();
+
+    m_command_list->Open();
 }
 
 std::unique_ptr<ProgramApi> Context::CreateProgram()
 {
-    return {};
+    return std::make_unique<ProgramApi>(*this);
 }
 
 std::shared_ptr<Resource> Context::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
-    return {};
+    return m_device->CreateTexture(bind_flag, format, msaa_count, width, height, depth, mip_levels);
 }
 
 std::shared_ptr<Resource> Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride)
 {
-    return {};
+    return m_device->CreateBuffer(bind_flag, buffer_size, stride);
 }
 
 std::shared_ptr<Resource> Context::CreateSampler(const SamplerDesc& desc)
 {
-    return {};
+    return m_device->CreateSampler(desc);
 }
 
-void Context::UpdateSubresource(const std::shared_ptr<Resource>& ires, uint32_t DstSubresource, const void* pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch)
+void Context::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch , uint32_t depth_pitch)
 {
+    return m_command_list->UpdateSubresource(resource, subresource, data, row_pitch, depth_pitch);
 }
 
 void Context::SetViewport(float width, float height)
 {
+    m_command_list->SetViewport(width, height);
 }
 
 void Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom)
 {
 }
 
-void Context::IASetIndexBuffer(std::shared_ptr<Resource> res, gli::format Format)
+void Context::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {
+    m_command_list->IASetIndexBuffer(resource, format);
 }
 
-void Context::IASetVertexBuffer(uint32_t slot, std::shared_ptr<Resource> res)
+void Context::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
+    m_command_list->IASetVertexBuffer(slot, resource);
 }
 
 void Context::UseProgram(ProgramApi& program)
@@ -62,6 +76,7 @@ void Context::EndEvent()
 
 void Context::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
+    m_command_list->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 
 void Context::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
@@ -74,11 +89,19 @@ void Context::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
 
 std::shared_ptr<Resource> Context::GetBackBuffer()
 {
-    return {};
+    return m_swapchain->GetBackBuffer(m_frame_index);
 }
 
 void Context::Present()
 {
+    m_command_list->Close();
+    m_fence->WaitAndReset();
+    m_frame_index = m_swapchain->NextImage(m_image_available_semaphore);
+    m_device->Wait(m_image_available_semaphore);
+    m_device->ExecuteCommandLists({ m_command_list }, {});
+    m_device->Signal(m_rendering_finished_semaphore);
+    m_swapchain->Present(m_rendering_finished_semaphore);
+    m_command_list->Open();
 }
 
 void Context::OnResize(int width, int height)
@@ -100,5 +123,4 @@ GLFWwindow* Context::GetWindow()
 
 void Context::ResizeBackBuffer(int width, int height)
 {
-
 }

@@ -4,17 +4,17 @@
 
 int main(int argc, char* argv[])
 {
-    Settings setting = { ApiType::kDX12 };
-    ParseArgs(argc, argv, setting);
-    AppBox app("Example", setting);
+    Settings settings = { ApiType::kDX12 };
+    ParseArgs(argc, argv, settings);
+    AppBox app("Example", settings);
     AppRect rect = app.GetAppRect();
 
-    std::shared_ptr<Instance> instance = CreateInstance(setting.api_type);
-    std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[setting.required_gpu_index]);
+    std::shared_ptr<Instance> instance = CreateInstance(settings.api_type);
+    std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[settings.required_gpu_index]);
     std::shared_ptr<Device> device = adapter->CreateDevice();
 
     uint32_t frame_count = 3;
-    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count, setting.vsync);
+    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count, settings.vsync);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_data.size(), sizeof(uint32_t));

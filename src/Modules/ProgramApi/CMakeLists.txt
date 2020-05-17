@@ -4,13 +4,11 @@ set(headers
     BufferLayout.h
     Program.h
     ProgramApi.h
-    CommonProgramApi.h
     IShaderBlobProvider.h
 )
 
 set(sources
     ProgramApi.cpp
-    CommonProgramApi.cpp
 )
 
 add_library(${target} ${headers} ${sources})
