@@ -38,7 +38,7 @@ public:
 
     void DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation);
     void Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ);
-    void DispatchRays(uint32_t width, uint32_t height, uint32_t depth) {}
+    void DispatchRays(uint32_t width, uint32_t height, uint32_t depth);
 
     std::shared_ptr<Resource> GetBackBuffer();
     void Present();
@@ -83,5 +83,3 @@ private:
     Context& m_context;
     std::array<T, Context::FrameCount> m_data;
 };
-
-std::unique_ptr<Context> CreateContext(ApiType type, GLFWwindow* window);

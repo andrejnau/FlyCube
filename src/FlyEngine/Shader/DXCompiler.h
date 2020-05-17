@@ -5,6 +5,7 @@
 #include <Utilities/DXUtility.h>
 
 #include <d3dcompiler.h>
+#include <d3dcommon.h>
 #include <wrl.h>
 #include <assert.h>
 

@@ -193,23 +193,23 @@ public:
 template<typename T> class ShaderHolder : public ShaderHolderImpl<T::type, T> { using ShaderHolderImpl<T::type, T>::ShaderHolderImpl; };
 
 template<typename ... Args>
-class Program : public ShaderHolder<Args>...
+class ProgramHolder : public ShaderHolder<Args>...
 {
-    Program(std::unique_ptr<ProgramApi>&& program_base)
+    ProgramHolder(std::unique_ptr<ProgramApi>&& program_base)
         : ShaderHolder<Args>(*program_base)...
         , m_program_base(std::move(program_base))
     {
     }
 public:
-    Program(Context& context)
-        : Program(context.CreateProgram())
+    ProgramHolder(Context& context)
+        : ProgramHolder(context.CreateProgram())
     {
         UpdateShaders();
     }
 
     template<typename Setup>
-    Program(Context& context, const Setup& setup)
-        : Program(context.CreateProgram())
+    ProgramHolder(Context& context, const Setup& setup)
+        : ProgramHolder(context.CreateProgram())
     {
         setup(*this);
         UpdateShaders();

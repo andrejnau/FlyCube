@@ -23,7 +23,7 @@ target_link_libraries(Context
     spirv-cross-hlsl
     glad
     Resource
-    Program
+    ProgramApi
     View
 )
 

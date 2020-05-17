@@ -1,6 +1,7 @@
 #pragma once
 
-#include <Program/Program.h>
+#include <ProgramApi/Program.h>
+#include <Shader/ShaderBase.h>
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>
@@ -84,7 +85,7 @@ public:
         program_api.AddAvailableShaderType(type);      
         {{#CBuffers}}
         {
-            BindKey bind_key = { program_api.GetProgramId(), type, ResourceType::kCbv, {{BufferIndex}} };
+            BindKeyOld bind_key = { program_api.GetProgramId(), type, ResourceType::kCbv, {{BufferIndex}} };
             program_api.SetCBufferLayout(bind_key, cbuffer_impl.{{BufferName}});
             program_api.SetBindingName(bind_key, "{{BufferName}}");
         }

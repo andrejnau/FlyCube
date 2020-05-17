@@ -2,6 +2,7 @@
 #include <Utilities/DXUtility.h>
 #include <Shader/DXCompiler.h>
 #include <Shader/DXReflector.h>
+#include <Shader/ShaderBase.h>
 #include <mustache.hpp>
 #include <d3dcompiler.h>
 #include <wrl.h>
@@ -54,11 +55,13 @@ public:
             m_target.replace(m_target.find("."), 1, "_");
             m_target.front() = std::tolower(m_option.type[0]);
         }
+
+        m_type = ShaderBase::GetShaderType(m_target);
     }
 
     void Parse()
     {
-        auto blob = DXCompile({ m_option.shader_path, m_entrypoint, m_target });
+        auto blob = DXCompile({ m_option.shader_path, m_entrypoint, m_type });
 
         ComPtr<ID3D12ShaderReflection> shader_reflector;
         DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
@@ -451,6 +454,7 @@ private:
     mustache::mustache m_tmpl;
     mustache::data m_tcontext;
     std::string m_target;
+    ShaderType m_type;
     std::string m_entrypoint;
 };
 
