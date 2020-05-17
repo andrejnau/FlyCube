@@ -13,12 +13,12 @@ public:
     DXGI_FORMAT GetFormat() const;
 
 private:
-    void CreateSrv(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
-    void CreateUAV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
-    void CreateRTV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
-    void CreateDSV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
-    void CreateCBV(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
-    void CreateSampler(const ViewDesc& view_desc, const DXResource& res, DXCPUDescriptorHandle& handle);
+    void CreateSrv(const ViewDesc& view_desc, const DXResource* res, DXCPUDescriptorHandle& handle);
+    void CreateUAV(const ViewDesc& view_desc, const DXResource* res, DXCPUDescriptorHandle& handle);
+    void CreateRTV(const ViewDesc& view_desc, const DXResource* res, DXCPUDescriptorHandle& handle);
+    void CreateDSV(const ViewDesc& view_desc, const DXResource* res, DXCPUDescriptorHandle& handle);
+    void CreateCBV(const ViewDesc& view_desc, const DXResource* res, DXCPUDescriptorHandle& handle);
+    void CreateSampler(const ViewDesc& view_desc, const DXResource* res, DXCPUDescriptorHandle& handle);
 
     DXDevice& m_device;
     DXGI_FORMAT m_format = DXGI_FORMAT_UNKNOWN;

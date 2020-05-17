@@ -52,22 +52,19 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuf
     auto& dsv = dx_framebuffer.GetDsv();
 
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv(rtvs.size());
+    auto get_handle = [](const std::shared_ptr<View>& view)
+    {
+        if (!view)
+            return D3D12_CPU_DESCRIPTOR_HANDLE{};
+        decltype(auto) dx_view = view->As<DXView>();
+        return dx_view.GetHandle();
+    };
     for (uint32_t slot = 0; slot < rtvs.size(); ++slot)
     {
-        decltype(auto) dx_view = rtvs[slot]->As<DXView>();
-        om_rtv[slot] = dx_view.GetHandle();
+        om_rtv[slot] = get_handle(rtvs[slot]);
     }
-
-    D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = {};
-    D3D12_CPU_DESCRIPTOR_HANDLE* om_dsv_ptr = nullptr;
-    if (dsv)
-    {
-        decltype(auto) dx_view = dsv->As<DXView>();
-        om_dsv = dx_view.GetHandle();
-        om_dsv_ptr = &om_dsv;
-    }
-
-    m_command_list->OMSetRenderTargets(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv_ptr);
+    D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = get_handle(dsv);
+    m_command_list->OMSetRenderTargets(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv.ptr ? &om_dsv : nullptr);
 }
 
 void DXCommandList::EndRenderPass()

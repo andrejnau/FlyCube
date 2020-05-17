@@ -27,8 +27,9 @@ VKRenderPass::VKRenderPass(VKDevice& device, const std::vector<RenderTargetDesc>
     {
         if (rtv.format == gli::FORMAT_UNDEFINED)
             continue;
-        color_attachment_references.emplace_back();
-        add_attachment(color_attachment_references.back(), rtv.format, vk::ImageLayout::eColorAttachmentOptimal);
+        if (rtv.slot >= color_attachment_references.size())
+            color_attachment_references.resize(rtv.slot + 1, { VK_ATTACHMENT_UNUSED });
+        add_attachment(color_attachment_references[rtv.slot], rtv.format, vk::ImageLayout::eColorAttachmentOptimal);
     }
 
     vk::SubpassDescription sub_pass = {};
@@ -36,7 +37,7 @@ VKRenderPass::VKRenderPass(VKDevice& device, const std::vector<RenderTargetDesc>
     sub_pass.colorAttachmentCount = color_attachment_references.size();
     sub_pass.pColorAttachments = color_attachment_references.data();
 
-    vk::AttachmentReference depth_attachment_references;
+    vk::AttachmentReference depth_attachment_references = {};
     if (dsv.format != gli::FORMAT_UNDEFINED)
     {
         add_attachment(depth_attachment_references, dsv.format, vk::ImageLayout::eDepthStencilAttachmentOptimal);

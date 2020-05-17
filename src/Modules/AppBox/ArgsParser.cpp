@@ -1,9 +1,8 @@
 #include "AppBox/ArgsParser.h"
 #include <string>
 
-Settings ParseArgs(int argc, char* argv[])
+void ParseArgs(int argc, char* argv[], Settings& settings)
 {
-    Settings settings;
     for (int i = 1; i < argc; ++i)
     {
         std::string arg(argv[i]);
@@ -18,5 +17,4 @@ Settings ParseArgs(int argc, char* argv[])
         else if (arg == "--gpu")
             settings.required_gpu_index = std::stoul(argv[++i]);
     }
-    return settings;
 }

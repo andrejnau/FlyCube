@@ -2,4 +2,4 @@
 #include "AppBox/Settings.h"
 #include <cstdint>
 
-Settings ParseArgs(int argc, char* argv[]);
+void ParseArgs(int argc, char* argv[], Settings& settings);

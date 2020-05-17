@@ -208,7 +208,12 @@ void VKPipeline::CreateGrPipeLine()
         colorBlendAttachment.alphaBlendOp = convert_op(m_blend_desc.blend_op_alpha);
     }
 
-    std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments(m_desc.rtvs.size(), colorBlendAttachment);
+    uint32_t num_slots = 0;
+    for (auto& rtv : m_desc.rtvs)
+    {
+        num_slots = std::max(num_slots, rtv.slot + 1);
+    }
+    std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments(num_slots, colorBlendAttachment);
 
     vk::PipelineColorBlendStateCreateInfo colorBlending = {};
     colorBlending.logicOpEnable = VK_FALSE;

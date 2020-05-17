@@ -22,7 +22,7 @@ DXPipeline::DXPipeline(DXDevice& device, const GraphicsPipelineDesc& desc)
     m_graphics_pso_desc.SampleMask = UINT_MAX;
     m_graphics_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     m_graphics_pso_desc.SampleDesc.Count = 1;
-    m_graphics_pso_desc.NumRenderTargets = desc.rtvs.size();
+    m_graphics_pso_desc.NumRenderTargets = 0;
 
     decltype(auto) dx_program = m_desc.program->As<DXProgram>();
     auto shaders = dx_program.GetShaders();
@@ -61,6 +61,9 @@ void DXPipeline::FillRTVFormats()
 {
     for (auto& rtv : m_desc.rtvs)
     {
+        if (rtv.format == gli::format::FORMAT_UNDEFINED)
+            continue;
+        m_graphics_pso_desc.NumRenderTargets = std::max(m_graphics_pso_desc.NumRenderTargets, rtv.slot + 1);
         m_graphics_pso_desc.RTVFormats[rtv.slot] = static_cast<DXGI_FORMAT>(gli::dx().translate(rtv.format).DXGIFormat.DDS);
     }
 }
