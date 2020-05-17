@@ -4,7 +4,7 @@
 #include <View/DXView.h>
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
-#include <Pipeline/DXPipeline.h>
+#include <Pipeline/DXGraphicsPipeline.h>
 #include <Framebuffer/DXFramebuffer.h>
 #include <BindingSet/DXBindingSet.h>
 #include <dxgi1_6.h>
@@ -33,7 +33,7 @@ void DXCommandList::Close()
 
 void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
-    decltype(auto) dx_state = state->As<DXPipeline>();
+    decltype(auto) dx_state = state->As<DXGraphicsPipeline>();
     m_command_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_command_list->SetGraphicsRootSignature(dx_state.GetRootSignature().Get());
     m_command_list->SetPipelineState(dx_state.GetPipeline().Get());

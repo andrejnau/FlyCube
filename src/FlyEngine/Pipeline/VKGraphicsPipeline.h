@@ -8,15 +8,15 @@
 
 class VKDevice;
 
-class VKPipeline : public Pipeline
+class VKGraphicsPipeline : public Pipeline
 {
 public:
-    VKPipeline(VKDevice& device, const GraphicsPipelineDesc& desc);
+    VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc);
     vk::Pipeline GetPipeline() const;
     vk::RenderPass GetRenderPass() const;
 
 private:
-    void VKPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
+    void VKGraphicsPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
                                        std::vector<vk::VertexInputBindingDescription>& binding_desc,
                                        std::vector<vk::VertexInputAttributeDescription>& attribute_desc);
     void CreateGrPipeLine();

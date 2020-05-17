@@ -4,19 +4,19 @@ list(APPEND headers
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKPipeline.h
+        VKGraphicsPipeline.h
     )
     list(APPEND sources
-        VKPipeline.cpp
+        VKGraphicsPipeline.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXPipeline.h
+        DXGraphicsPipeline.h
     )
     list(APPEND sources
-        DXPipeline.cpp
+        DXGraphicsPipeline.cpp
     )
 endif()
 

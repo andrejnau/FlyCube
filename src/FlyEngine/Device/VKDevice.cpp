@@ -6,7 +6,7 @@
 #include <Fence/VKTimelineSemaphore.h>
 #include <Semaphore/VKSemaphore.h>
 #include <Program/VKProgram.h>
-#include <Pipeline/VKPipeline.h>
+#include <Pipeline/VKGraphicsPipeline.h>
 #include <Framebuffer/VKFramebuffer.h>
 #include <Shader/SpirvShader.h>
 #include <View/VKView.h>
@@ -307,7 +307,7 @@ std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& reso
 
 std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const std::shared_ptr<Pipeline>& pipeline, const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
 {
-    return std::make_shared<VKFramebuffer>(*this, std::static_pointer_cast<VKPipeline>(pipeline), rtvs, dsv);
+    return std::make_shared<VKFramebuffer>(*this, std::static_pointer_cast<VKGraphicsPipeline>(pipeline), rtvs, dsv);
 }
 
 std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)
@@ -322,7 +322,7 @@ std::shared_ptr<Program> VKDevice::CreateProgram(const std::vector<std::shared_p
 
 std::shared_ptr<Pipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
 {
-    return std::make_shared<VKPipeline>(*this, desc);
+    return std::make_shared<VKGraphicsPipeline>(*this, desc);
 }
 
 void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)

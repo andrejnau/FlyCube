@@ -1,9 +1,9 @@
 #include "Framebuffer/VKFramebuffer.h"
 #include <Device/VKDevice.h>
 #include <View/VKView.h>
-#include <Pipeline/VKPipeline.h>
+#include <Pipeline/VKGraphicsPipeline.h>
 
-VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<VKPipeline>& pipeline, const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
+VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<VKGraphicsPipeline>& pipeline, const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
     : FramebufferBase(rtvs, dsv)
 {
     vk::FramebufferCreateInfo framebuffer_info = {};

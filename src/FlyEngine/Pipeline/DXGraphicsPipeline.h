@@ -7,10 +7,10 @@ using namespace Microsoft::WRL;
 
 class DXDevice;
 
-class DXPipeline : public Pipeline
+class DXGraphicsPipeline : public Pipeline
 {
 public:
-    DXPipeline(DXDevice& device, const GraphicsPipelineDesc& desc);
+    DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineDesc& desc);
 
     const GraphicsPipelineDesc& GetDesc() const;
     const ComPtr<ID3D12PipelineState>& GetPipeline() const;

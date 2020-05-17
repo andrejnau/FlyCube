@@ -2,7 +2,7 @@
 #include <Device/VKDevice.h>
 #include <Resource/VKResource.h>
 #include <View/VKView.h>
-#include <Pipeline/VKPipeline.h>
+#include <Pipeline/VKGraphicsPipeline.h>
 #include <Framebuffer/VKFramebuffer.h>
 #include <BindingSet/VKBindingSet.h>
 
@@ -31,7 +31,7 @@ void VKCommandList::Close()
 
 void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
-    decltype(auto) vk_state = state->As<VKPipeline>();
+    decltype(auto) vk_state = state->As<VKGraphicsPipeline>();
     m_command_list->bindPipeline(vk::PipelineBindPoint::eGraphics, vk_state.GetPipeline());
 }
 

@@ -1,4 +1,4 @@
-#include "Pipeline/VKPipeline.h"
+#include "Pipeline/VKGraphicsPipeline.h"
 #include <Device/VKDevice.h>
 #include <Program/VKProgram.h>
 #include <Shader/SpirvShader.h>
@@ -33,7 +33,7 @@ vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
     return {};
 }
 
-VKPipeline::VKPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
+VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
     : m_device(device)
     , m_desc(desc)
     , m_render_pass(device, desc.rtvs, desc.dsv)
@@ -73,17 +73,17 @@ VKPipeline::VKPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
     CreateGrPipeLine();
 }
 
-vk::Pipeline VKPipeline::GetPipeline() const
+vk::Pipeline VKGraphicsPipeline::GetPipeline() const
 {
     return m_pipeline.get();
 }
 
-vk::RenderPass VKPipeline::GetRenderPass() const
+vk::RenderPass VKGraphicsPipeline::GetRenderPass() const
 {
     return m_render_pass.GetRenderPass();
 }
 
-void VKPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
+void VKGraphicsPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
                                    std::vector<vk::VertexInputBindingDescription>& m_binding_desc,
                                    std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
 {
@@ -110,7 +110,7 @@ void VKPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
     }
 }
 
-void VKPipeline::CreateGrPipeLine()
+void VKGraphicsPipeline::CreateGrPipeLine()
 {
     decltype(auto) vk_program = m_desc.program->As<VKProgram>();
 

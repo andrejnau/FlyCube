@@ -1,4 +1,4 @@
-#include "Pipeline/DXPipeline.h"
+#include "Pipeline/DXGraphicsPipeline.h"
 #include <Device/DXDevice.h>
 #include <Program/DXProgram.h>
 #include <Shader/DXShader.h>
@@ -7,7 +7,7 @@
 #include <Utilities/DXGIFormatHelper.h>
 #include <d3dx12.h>
 
-DXPipeline::DXPipeline(DXDevice& device, const GraphicsPipelineDesc& desc)
+DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineDesc& desc)
     : m_device(device)
     , m_desc(desc)
 {
@@ -55,7 +55,7 @@ DXPipeline::DXPipeline(DXDevice& device, const GraphicsPipelineDesc& desc)
     ASSERT_SUCCEEDED(m_device.GetDevice()->CreateGraphicsPipelineState(&m_graphics_pso_desc, IID_PPV_ARGS(&m_pipeline_state)));
 }
 
-void DXPipeline::FillRTVFormats()
+void DXGraphicsPipeline::FillRTVFormats()
 {
     for (auto& rtv : m_desc.rtvs)
     {
@@ -66,7 +66,7 @@ void DXPipeline::FillRTVFormats()
     }
 }
 
-void DXPipeline::FillDSVFormat()
+void DXGraphicsPipeline::FillDSVFormat()
 {
     if (m_desc.dsv.format == gli::format::FORMAT_UNDEFINED)
         return;
@@ -74,7 +74,7 @@ void DXPipeline::FillDSVFormat()
     m_graphics_pso_desc.DepthStencilState.DepthEnable = m_graphics_pso_desc.DSVFormat != DXGI_FORMAT_UNKNOWN;
 }
 
-void DXPipeline::FillInputLayout()
+void DXGraphicsPipeline::FillInputLayout()
 {
     for (auto& vertex : m_desc.input)
     {
@@ -103,17 +103,17 @@ void DXPipeline::FillInputLayout()
     m_graphics_pso_desc.InputLayout.pInputElementDescs = m_input_layout_desc.data();
 }
 
-const GraphicsPipelineDesc& DXPipeline::GetDesc() const
+const GraphicsPipelineDesc& DXGraphicsPipeline::GetDesc() const
 {
     return m_desc;
 }
 
-const ComPtr<ID3D12PipelineState>& DXPipeline::GetPipeline() const
+const ComPtr<ID3D12PipelineState>& DXGraphicsPipeline::GetPipeline() const
 {
     return m_pipeline_state;
 }
 
-const ComPtr<ID3D12RootSignature>& DXPipeline::GetRootSignature() const
+const ComPtr<ID3D12RootSignature>& DXGraphicsPipeline::GetRootSignature() const
 {
     return m_root_signature;
 }

@@ -7,7 +7,7 @@
 #include <View/DXView.h>
 #include <Semaphore/DXSemaphore.h>
 #include <Program/DXProgram.h>
-#include <Pipeline/DXPipeline.h>
+#include <Pipeline/DXGraphicsPipeline.h>
 #include <Framebuffer/DXFramebuffer.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
@@ -265,7 +265,7 @@ std::shared_ptr<Program> DXDevice::CreateProgram(const std::vector<std::shared_p
 
 std::shared_ptr<Pipeline> DXDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
 {
-    return std::make_shared<DXPipeline>(*this, desc);
+    return std::make_shared<DXGraphicsPipeline>(*this, desc);
 }
 
 void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
