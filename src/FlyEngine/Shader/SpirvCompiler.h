@@ -12,7 +12,7 @@ struct SpirvOption
     uint32_t resource_set_binding = ~0u;
     bool use_dxc = false;
     bool vulkan_semantics = true;
-    bool fhlsl_functionality1 = false;
+    bool fhlsl_functionality1 = true;
 };
 
 std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& option);

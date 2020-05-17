@@ -19,7 +19,7 @@ public:
 private:
     void FillRTVFormats();
     void FillDSVFormat();
-    void FillInputLayout(const ComPtr<ID3DBlob>& blob);
+    void FillInputLayout();
 
     DXDevice& m_device;
     GraphicsPipelineDesc m_desc;

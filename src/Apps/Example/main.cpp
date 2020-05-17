@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_data.size(), sizeof(uint32_t));
     std::vector<glm::vec3> vertex_data = { glm::vec3(-0.5, -0.5, 0.0), glm::vec3(0.0,  0.5, 0.0), glm::vec3(0.5, -0.5, 0.0) };
-    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * vertex_data.size(), sizeof(glm::vec3));
+    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVbv, sizeof(vertex_data.front()) * vertex_data.size(), sizeof(vertex_data.front()));
     glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
     std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kCbv, sizeof(constant_data), 0);
 

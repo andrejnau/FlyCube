@@ -37,9 +37,7 @@ DXPipeline::DXPipeline(DXDevice& device, const GraphicsPipelineDesc& desc)
         case ShaderType::kVertex:
         {
             m_graphics_pso_desc.VS = ShaderBytecode;
-            FillInputLayout(blob);
-            m_graphics_pso_desc.InputLayout.NumElements = static_cast<uint32_t>(m_input_layout_desc.size());
-            m_graphics_pso_desc.InputLayout.pInputElementDescs = m_input_layout_desc.data();
+            FillInputLayout();
             break;
         }
         case ShaderType::kPixel:
@@ -76,64 +74,33 @@ void DXPipeline::FillDSVFormat()
     m_graphics_pso_desc.DepthStencilState.DepthEnable = m_graphics_pso_desc.DSVFormat != DXGI_FORMAT_UNKNOWN;
 }
 
-void DXPipeline::FillInputLayout(const ComPtr<ID3DBlob>& blob)
+void DXPipeline::FillInputLayout()
 {
-    ComPtr<ID3D12ShaderReflection> reflector;
-    DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&reflector));
-    D3D12_SHADER_DESC shader_desc = {};
-    reflector->GetDesc(&shader_desc);
-
-    for (uint32_t i = 0; i < shader_desc.InputParameters; ++i)
+    for (auto& vertex : m_desc.input)
     {
-        D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
-        reflector->GetInputParameterDesc(i, &param_desc);
-
         D3D12_INPUT_ELEMENT_DESC layout = {};
-        m_input_layout_desc_names[i] = param_desc.SemanticName;
-        layout.SemanticName = m_input_layout_desc_names[i].c_str();
-        layout.SemanticIndex = param_desc.SemanticIndex;
-        layout.InputSlot = i;
+
+        std::string semantic_name = vertex.semantic_name;
+        uint32_t semantic_slot = 0;
+        uint32_t pow = 1;
+        while (!semantic_name.empty() && std::isdigit(semantic_name.back()))
+        {
+            semantic_slot = (semantic_name.back() - '0') * pow + semantic_slot;
+            semantic_name.pop_back();
+            pow *= 10;
+        }
+        m_input_layout_desc_names[vertex.slot] = semantic_name;
+        layout.SemanticName = m_input_layout_desc_names[vertex.slot].c_str();
+        layout.SemanticIndex = semantic_slot;
+        layout.InputSlot = vertex.slot;
         layout.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
         layout.InstanceDataStepRate = 0;
-
-        if (param_desc.Mask == 1)
-        {
-            if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
-                layout.Format = DXGI_FORMAT_R32_UINT;
-            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
-                layout.Format = DXGI_FORMAT_R32_SINT;
-            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
-                layout.Format = DXGI_FORMAT_R32_FLOAT;
-        }
-        else if (param_desc.Mask <= 3)
-        {
-            if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
-                layout.Format = DXGI_FORMAT_R32G32_UINT;
-            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
-                layout.Format = DXGI_FORMAT_R32G32_SINT;
-            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
-                layout.Format = DXGI_FORMAT_R32G32_FLOAT;
-        }
-        else if (param_desc.Mask <= 7)
-        {
-            if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
-                layout.Format = DXGI_FORMAT_R32G32B32_UINT;
-            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
-                layout.Format = DXGI_FORMAT_R32G32B32_SINT;
-            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
-                layout.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-        }
-        else if (param_desc.Mask <= 15)
-        {
-            if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
-                layout.Format = DXGI_FORMAT_R32G32B32A32_UINT;
-            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
-                layout.Format = DXGI_FORMAT_R32G32B32A32_SINT;
-            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
-                layout.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-        }
+        layout.Format = static_cast<DXGI_FORMAT>(gli::dx().translate(vertex.format).DXGIFormat.DDS);
         m_input_layout_desc.push_back(layout);
     }
+
+    m_graphics_pso_desc.InputLayout.NumElements = static_cast<uint32_t>(m_input_layout_desc.size());
+    m_graphics_pso_desc.InputLayout.pInputElementDescs = m_input_layout_desc.data();
 }
 
 const GraphicsPipelineDesc& DXPipeline::GetDesc() const

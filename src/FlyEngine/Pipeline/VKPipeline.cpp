@@ -2,6 +2,7 @@
 #include <Device/VKDevice.h>
 #include <Program/VKProgram.h>
 #include <Shader/SpirvShader.h>
+#include <map>
 
 vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
 {
@@ -83,60 +84,29 @@ vk::RenderPass VKPipeline::GetRenderPass() const
 }
 
 void VKPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
-                                        std::vector<vk::VertexInputBindingDescription>& m_binding_desc,
-                                        std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
+                                   std::vector<vk::VertexInputBindingDescription>& m_binding_desc,
+                                   std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
 {
     spirv_cross::CompilerHLSL compiler(spirv_binary);
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+    std::map<std::string, uint32_t> locations;
     for (auto& resource : resources.stage_inputs)
     {
-        auto& type = compiler.get_type(resource.base_type_id);
-        unsigned location = compiler.get_decoration(resource.id, spv::DecorationLocation);
+        std::string semantic = compiler.get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE);
+        locations[semantic] = compiler.get_decoration(resource.id, spv::DecorationLocation);
+    }
 
+    for (auto& vertex : m_desc.input)
+    {
         m_binding_desc.emplace_back();
         auto& binding = m_binding_desc.back();
         m_attribute_desc.emplace_back();
         auto& attribute = m_attribute_desc.back();
-
-        attribute.binding = location;
-        attribute.location = location;
-        binding.binding = location;
+        attribute.location = locations.at(vertex.semantic_name);
+        attribute.binding = binding.binding = vertex.slot;
         binding.inputRate = vk::VertexInputRate::eVertex;
-        binding.stride = type.vecsize * type.width / 8;
-
-        if (type.basetype == spirv_cross::SPIRType::Float)
-        {
-            if (type.vecsize == 1)
-                attribute.format = vk::Format::eR32Sfloat;
-            else if (type.vecsize == 2)
-                attribute.format = vk::Format::eR32G32Sfloat;
-            else if (type.vecsize == 3)
-                attribute.format = vk::Format::eR32G32B32Sfloat;
-            else if (type.vecsize == 4)
-                attribute.format = vk::Format::eR32G32B32A32Sfloat;
-        }
-        else if (type.basetype == spirv_cross::SPIRType::UInt)
-        {
-            if (type.vecsize == 1)
-                attribute.format = vk::Format::eR32Uint;
-            else if (type.vecsize == 2)
-                attribute.format = vk::Format::eR32G32Uint;
-            else if (type.vecsize == 3)
-                attribute.format = vk::Format::eR32G32B32Uint;
-            else if (type.vecsize == 4)
-                attribute.format = vk::Format::eR32G32B32A32Uint;
-        }
-        else if (type.basetype == spirv_cross::SPIRType::Int)
-        {
-            if (type.vecsize == 1)
-                attribute.format = vk::Format::eR32Sint;
-            else if (type.vecsize == 2)
-                attribute.format = vk::Format::eR32G32Sint;
-            else if (type.vecsize == 3)
-                attribute.format = vk::Format::eR32G32B32Sint;
-            else if (type.vecsize == 4)
-                attribute.format = vk::Format::eR32G32B32A32Sint;
-        }
+        binding.stride = gli::detail::bits_per_pixel(vertex.format) / 8;
+        attribute.format = static_cast<vk::Format>(vertex.format);
     }
 }
 
