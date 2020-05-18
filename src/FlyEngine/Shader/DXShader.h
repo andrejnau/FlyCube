@@ -9,6 +9,8 @@ class DXShader : public Shader
 {
 public:
     DXShader(const ShaderDesc& desc);
+    std::vector<VertexInputDesc> GetInputLayout() const override;
+    std::vector<RenderTargetDesc> GetRenderTargets() const override;
     ShaderType GetType() const override;
 
     ComPtr<ID3DBlob> GetBlob() const;

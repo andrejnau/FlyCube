@@ -64,10 +64,12 @@ public:
     std::shared_ptr<Adapter> m_adapter;
     std::shared_ptr<Device> m_device;
     std::shared_ptr<Swapchain> m_swapchain;
+    std::vector<std::shared_ptr<CommandList>> m_command_lists;
     std::shared_ptr<CommandList> m_command_list;
     std::shared_ptr<Fence> m_fence;
     std::shared_ptr<Semaphore> m_image_available_semaphore;
     std::shared_ptr<Semaphore> m_rendering_finished_semaphore;
+    ProgramApi* m_current_program = nullptr;
 };
 
 template <typename T>

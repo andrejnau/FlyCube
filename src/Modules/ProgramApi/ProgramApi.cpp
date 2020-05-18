@@ -13,6 +13,7 @@ ProgramApi::ProgramApi(Context& context)
     , m_cbv_buffer(context.FrameCount)
     , m_cbv_offset(context.FrameCount)
     , m_program_id(GenId())
+    , m_device(*context.m_device)
 {
 }
 
@@ -54,14 +55,73 @@ void ProgramApi::AddAvailableShaderType(ShaderType type)
 
 void ProgramApi::LinkProgram()
 {
+    m_program = m_device.CreateProgram(m_shaders);
 }
 
 void ProgramApi::ApplyBindings()
 {
+    GraphicsPipelineDesc pipeline_desc = {
+        m_program,
+        m_shader_by_type.at(ShaderType::kVertex)->GetInputLayout(),
+        m_render_targets
+    };
+
+    auto it = m_pso.find(pipeline_desc);
+    if (it == m_pso.end())
+    {
+        m_pipeline = m_device.CreateGraphicsPipeline(pipeline_desc);
+        m_pso.emplace(std::piecewise_construct,
+            std::forward_as_tuple(pipeline_desc),
+            std::forward_as_tuple(m_pipeline));
+    }
+    else
+    {
+        m_pipeline = it->second;
+    }
+
+    std::vector<BindingDesc> descs;
+    for (auto& x : m_bound_resources)
+    {
+        decltype(auto) desc = descs.emplace_back();
+        desc.view = x.second.view;
+        desc.type = x.first.res_type;
+        desc.shader = x.first.shader_type;
+        desc.name = m_binding_names.at(x.first);
+    }
+
+    m_binding_set = m_program->CreateBindingSet(descs);
+    m_context.m_command_list->BindPipeline(m_pipeline);
+    m_context.m_command_list->BindBindingSet(m_binding_set);
+
+    std::vector<std::shared_ptr<View>> rtvs;
+    for (auto& render_target : m_render_targets)
+    {
+        rtvs.emplace_back(FindView(ShaderType::kPixel, ResourceType::kRtv, render_target.slot));
+    }
+
+    auto dsv = FindView(ShaderType::kPixel, ResourceType::kDsv, 0);
+    auto key = std::make_pair(rtvs, dsv);
+    auto f_it = m_framebuffers.find(key);
+    if (f_it == m_framebuffers.end())
+    {
+        m_framebuffer = m_device.CreateFramebuffer(m_pipeline, rtvs, dsv);
+        m_framebuffers.emplace(std::piecewise_construct,
+            std::forward_as_tuple(key),
+            std::forward_as_tuple(m_framebuffer));
+    }
+    else
+    {
+        m_framebuffer = f_it->second;
+    }
+    m_context.m_command_list->BeginRenderPass(m_framebuffer);
+
+    UpdateCBuffers();
 }
 
 void ProgramApi::CompileShader(const ShaderBase& shader)
 {
+    m_shaders.emplace_back(m_device.CompileShader(static_cast<ShaderDesc>(shader)));
+    m_shader_by_type[shader.type] = m_shaders.back();
 }
 
 void ProgramApi::SetCBufferLayout(const BindKeyOld& bind_key, BufferLayout& buffer_layout)
@@ -83,7 +143,9 @@ void ProgramApi::SetBinding(const BindKeyOld& bind_key, const ViewDesc& view_des
 
 std::shared_ptr<View> ProgramApi::CreateView(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res)
 {
-    return {};
+    ViewDesc desc = view_desc;
+    desc.res_type = bind_key.res_type;
+    return m_device.CreateView(res, desc);
 }
 
 std::shared_ptr<View> ProgramApi::FindView(ShaderType shader_type, ResourceType res_type, uint32_t slot)
@@ -123,6 +185,10 @@ void ProgramApi::Attach(const BindKeyOld& bind_key, const ViewDesc& view_desc, c
 
 void ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)
 {
+    auto& view = FindView(ShaderType::kPixel, ResourceType::kRtv, slot);
+    if (!view)
+        return;
+    m_context.m_command_list->Clear(view, color);
 }
 
 void ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)
@@ -164,26 +230,32 @@ void ProgramApi::UpdateCBuffers()
     }
 }
 
-void ProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires)
+void ProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
 {
 }
 
-void ProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires)
+void ProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
 {
 }
 
-void ProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const std::shared_ptr<Resource>& ires)
+void ProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
 }
 
-void ProgramApi::OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const std::shared_ptr<Resource>& ires)
+void ProgramApi::OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
 }
 
-void ProgramApi::OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires)
+void ProgramApi::OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
 {
+    if (slot >= m_render_targets.size())
+        m_render_targets.resize(slot + 1);
+    decltype(auto) render_target = m_render_targets[slot];
+    render_target.slot = slot;
+    render_target.format = resource->GetFormat();
+    m_context.m_command_list->ResourceBarrier(resource, ResourceState::kRenderTarget);
 }
 
-void ProgramApi::OnAttachDSV(const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires)
+void ProgramApi::OnAttachDSV(const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
 {
 }

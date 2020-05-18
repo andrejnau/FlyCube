@@ -7,6 +7,8 @@ class SpirvShader : public Shader
 {
 public:
     SpirvShader(const ShaderDesc& desc);
+    std::vector<VertexInputDesc> GetInputLayout() const override;
+    std::vector<RenderTargetDesc> GetRenderTargets() const override;
     ShaderType GetType() const override;
 
     const std::vector<uint32_t>& GetBlob() const;

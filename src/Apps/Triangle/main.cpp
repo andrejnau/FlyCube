@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
         program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
         context.DrawIndexed(3, 0, 0);
         context.Present();
+        app.UpdateFps();
     }
     _exit(0);
 }

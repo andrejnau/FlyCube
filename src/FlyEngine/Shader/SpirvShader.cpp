@@ -14,6 +14,16 @@ SpirvShader::SpirvShader(const ShaderDesc& desc)
     m_blob = SpirvCompile(desc, option);
 }
 
+std::vector<VertexInputDesc> SpirvShader::GetInputLayout() const
+{
+    return {};
+}
+
+std::vector<RenderTargetDesc> SpirvShader::GetRenderTargets() const
+{
+    return {};
+}
+
 ShaderType SpirvShader::GetType() const
 {
     return m_type;

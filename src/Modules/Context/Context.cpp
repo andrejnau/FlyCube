@@ -9,13 +9,15 @@ Context::Context(const Settings& settings, GLFWwindow* window)
     m_adapter = std::move(m_instance->EnumerateAdapters()[settings.required_gpu_index]);
     m_device = m_adapter->CreateDevice();
     m_swapchain = m_device->CreateSwapchain(window, m_width, m_height, FrameCount, settings.vsync);
-    m_command_list = m_device->CreateCommandList();
-
+    for (uint32_t i = 0; i < FrameCount; ++i)
+    {
+        m_command_lists.emplace_back(m_device->CreateCommandList());
+    }
     m_fence = m_device->CreateFence();
+    m_command_list = m_command_lists.front();
+    m_command_list->Open();
     m_image_available_semaphore = m_device->CreateGPUSemaphore();
     m_rendering_finished_semaphore = m_device->CreateGPUSemaphore();
-
-    m_command_list->Open();
 }
 
 std::unique_ptr<ProgramApi> Context::CreateProgram()
@@ -64,6 +66,7 @@ void Context::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& 
 
 void Context::UseProgram(ProgramApi& program)
 {
+    m_current_program = &program;
 }
 
 void Context::BeginEvent(const std::string& name)
@@ -76,6 +79,8 @@ void Context::EndEvent()
 
 void Context::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
+    if (m_current_program)
+        m_current_program->ApplyBindings();
     m_command_list->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 
@@ -94,13 +99,19 @@ std::shared_ptr<Resource> Context::GetBackBuffer()
 
 void Context::Present()
 {
+    m_command_list->ResourceBarrier(GetBackBuffer(), ResourceState::kPresent);
+
     m_command_list->Close();
-    m_fence->WaitAndReset();
-    m_frame_index = m_swapchain->NextImage(m_image_available_semaphore);
+    m_swapchain->NextImage(m_image_available_semaphore);
     m_device->Wait(m_image_available_semaphore);
-    m_device->ExecuteCommandLists({ m_command_list }, {});
+    m_device->ExecuteCommandLists({ m_command_list }, m_fence);
     m_device->Signal(m_rendering_finished_semaphore);
     m_swapchain->Present(m_rendering_finished_semaphore);
+
+    m_fence->WaitAndReset();
+    ++m_frame_index;
+    m_frame_index %= FrameCount;
+    m_command_list = m_command_lists[m_frame_index];
     m_command_list->Open();
 }
 

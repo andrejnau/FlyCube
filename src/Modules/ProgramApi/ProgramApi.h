@@ -8,8 +8,8 @@
 #include <functional>
 
 #include <Instance/BaseTypes.h>
-
-#include <Instance/BaseTypes.h>
+#include <Instance/Instance.h>
+#include <Shader/ShaderBase.h>
 #include <Resource/Resource.h>
 #include <map>
 #include <memory>
@@ -76,4 +76,45 @@ private:
 
     size_t m_program_id;
     std::map<BindKeyOld, std::string> m_binding_names;
+    Device& m_device;
+    std::vector<std::shared_ptr<Shader>> m_shaders;
+    std::map<ShaderType, std::shared_ptr<Shader>> m_shader_by_type;
+    std::shared_ptr<Program> m_program;
+    std::shared_ptr<Pipeline> m_pipeline;
+    std::shared_ptr<BindingSet> m_binding_set;
+
+    template<typename T>
+    struct Hasher
+    {
+        std::size_t operator()(const T& oid) const
+        {
+            const uint8_t* data = reinterpret_cast<const uint8_t*>(&oid);
+            auto size = sizeof(T);
+            std::size_t prime = 31;
+            std::size_t p_pow = 1;
+            std::size_t hash = 0;
+            for (size_t i = 0; i < size; ++i)
+            {
+                hash += (*data + 1ll) * p_pow;
+                p_pow *= prime;
+                ++data;
+            }
+            return hash;
+        }
+    };
+
+    template<typename T>
+    class EqualFn
+    {
+    public:
+        bool operator() (const T& t1, const T& t2) const
+        {
+            return memcmp(&t1, &t2, sizeof(T)) == 0;
+        }
+    };
+
+    std::unordered_map<GraphicsPipelineDesc, std::shared_ptr<Pipeline>, Hasher<GraphicsPipelineDesc>, EqualFn<GraphicsPipelineDesc>> m_pso;
+    std::vector<RenderTargetDesc> m_render_targets;
+    std::map<std::pair<std::vector<std::shared_ptr<View>>, std::shared_ptr<View>>, std::shared_ptr<Framebuffer>> m_framebuffers;
+    std::shared_ptr<Framebuffer> m_framebuffer;
 };
