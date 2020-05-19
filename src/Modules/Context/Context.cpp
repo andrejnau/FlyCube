@@ -66,7 +66,15 @@ void Context::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& 
 
 void Context::UseProgram(ProgramApi& program)
 {
-    m_current_program = &program;
+    if (m_current_program != &program)
+    {
+        m_current_program = &program;
+        if (m_is_open_render_pass)
+        {
+            m_command_list->EndRenderPass();
+            m_is_open_render_pass = false;
+        }
+    }
 }
 
 void Context::BeginEvent(const std::string& name)
@@ -99,16 +107,20 @@ std::shared_ptr<Resource> Context::GetBackBuffer()
 
 void Context::Present()
 {
+    if (m_is_open_render_pass)
+    {
+        m_command_list->EndRenderPass();
+        m_is_open_render_pass = false;
+    }
     m_command_list->ResourceBarrier(GetBackBuffer(), ResourceState::kPresent);
-
     m_command_list->Close();
+    m_fence->WaitAndReset();
     m_swapchain->NextImage(m_image_available_semaphore);
     m_device->Wait(m_image_available_semaphore);
     m_device->ExecuteCommandLists({ m_command_list }, m_fence);
     m_device->Signal(m_rendering_finished_semaphore);
     m_swapchain->Present(m_rendering_finished_semaphore);
 
-    m_fence->WaitAndReset();
     ++m_frame_index;
     m_frame_index %= FrameCount;
     m_command_list = m_command_lists[m_frame_index];

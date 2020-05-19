@@ -60,6 +60,8 @@ void ProgramApi::LinkProgram()
 
 void ProgramApi::ApplyBindings()
 {
+    UpdateCBuffers();
+
     GraphicsPipelineDesc pipeline_desc = {
         m_program,
         m_shader_by_type.at(ShaderType::kVertex)->GetInputLayout(),
@@ -82,6 +84,12 @@ void ProgramApi::ApplyBindings()
     std::vector<BindingDesc> descs;
     for (auto& x : m_bound_resources)
     {
+        switch (x.first.res_type)
+        {
+        case ResourceType::kRtv:
+        case ResourceType::kDsv:
+            continue;
+        }
         decltype(auto) desc = descs.emplace_back();
         desc.view = x.second.view;
         desc.type = x.first.res_type;
@@ -99,6 +107,8 @@ void ProgramApi::ApplyBindings()
         rtvs.emplace_back(FindView(ShaderType::kPixel, ResourceType::kRtv, render_target.slot));
     }
 
+    auto prev_framebuffer = m_framebuffer;
+
     auto dsv = FindView(ShaderType::kPixel, ResourceType::kDsv, 0);
     auto key = std::make_pair(rtvs, dsv);
     auto f_it = m_framebuffers.find(key);
@@ -113,9 +123,14 @@ void ProgramApi::ApplyBindings()
     {
         m_framebuffer = f_it->second;
     }
-    m_context.m_command_list->BeginRenderPass(m_framebuffer);
 
-    UpdateCBuffers();
+    if (prev_framebuffer != m_framebuffer)
+    {
+        if (m_context.m_is_open_render_pass)
+            m_context.m_command_list->EndRenderPass();
+        m_context.m_command_list->BeginRenderPass(m_framebuffer);
+        m_context.m_is_open_render_pass = true;
+    }
 }
 
 void ProgramApi::CompileShader(const ShaderBase& shader)
@@ -188,7 +203,9 @@ void ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& co
     auto& view = FindView(ShaderType::kPixel, ResourceType::kRtv, slot);
     if (!view)
         return;
+    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kClear);
     m_context.m_command_list->Clear(view, color);
+    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kRenderTarget);
 }
 
 void ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)

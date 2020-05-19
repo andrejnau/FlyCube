@@ -6,7 +6,7 @@
 
 int main(int argc, char* argv[])
 {
-    Settings settings = { ApiType::kDX12 };
+    Settings settings = { ApiType::kVulkan };
     ParseArgs(argc, argv, settings);
     AppBox app("Triangle", settings);
 

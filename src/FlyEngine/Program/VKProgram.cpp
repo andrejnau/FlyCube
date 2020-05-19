@@ -136,6 +136,7 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<Bindin
                 throw std::runtime_error("failed to find resource reflection");
             auto ref_res = shader_ref.resources[name];
             auto res = vk_view.GetResource();
+            decltype(auto) vk_res = res->As<VKResource>();
 
             vk::WriteDescriptorSet descriptorWrite = {};
             descriptorWrite.dstSet = descriptor_sets[static_cast<size_t>(shader_type)].get();
@@ -150,7 +151,7 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<Bindin
             {
                 list_image_info.emplace_back();
                 vk::DescriptorImageInfo& image_info = list_image_info.back();
-                image_info.sampler = res->sampler.res.get();
+                image_info.sampler = vk_res.sampler.res.get();
                 descriptorWrite.pImageInfo = &image_info;
                 break;
             }
@@ -179,7 +180,7 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<Bindin
             {
                 list_buffer_info.emplace_back();
                 vk::DescriptorBufferInfo& buffer_info = list_buffer_info.back();
-                buffer_info.buffer = res->buffer.res.get();
+                buffer_info.buffer = vk_res.buffer.res.get();
                 buffer_info.offset = 0;
                 buffer_info.range = VK_WHOLE_SIZE;
                 descriptorWrite.pBufferInfo = &buffer_info;

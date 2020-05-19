@@ -69,28 +69,6 @@ std::vector<VertexInputDesc> DXShader::GetInputLayout() const
     return input_layout_desc;
 }
 
-std::vector<RenderTargetDesc> DXShader::GetRenderTargets() const
-{
-    std::vector<RenderTargetDesc> render_targets;
-
-    ComPtr<ID3D12ShaderReflection> reflector;
-    DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&reflector));
-
-    D3D12_SHADER_DESC desc = {};
-    reflector->GetDesc(&desc);
-
-    for (uint32_t i = 0; i < desc.OutputParameters; ++i)
-    {
-        D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
-        reflector->GetOutputParameterDesc(i, &param_desc);
-
-        decltype(auto) render_target = render_targets.emplace_back();
-        render_target.slot = param_desc.Register;
-    }
-
-    return {};
-}
-
 ShaderType DXShader::GetType() const
 {
     return m_type;

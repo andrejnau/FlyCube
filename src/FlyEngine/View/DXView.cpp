@@ -285,6 +285,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12GetDSVDesc(const ViewDesc& view_desc, const D3
 DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, const ViewDesc& view_desc)
     : m_device(device)
 {
+    m_resource = resource;
     m_handle = m_device.GetCPUDescriptorPool().AllocateDescriptor(view_desc.res_type);
 
     DXResource* dx_resource = nullptr;
@@ -387,4 +388,9 @@ void DXView::CreateSampler(const ViewDesc& view_desc, const DXResource* res, DXC
     {
         m_device.GetDevice()->CreateSampler(&res->sampler_desc, m_handle.GetCpuHandle());
     }
+}
+
+std::shared_ptr<Resource> DXView::GetResource()
+{
+    return m_resource;
 }

@@ -13,17 +13,18 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<VKGraphicsP
         if (!view)
             return;
         decltype(auto) vk_view = view->As<VKView>();
-        decltype(auto) vk_resource = vk_view.GetResource();
-        if (!vk_resource)
+        decltype(auto) resource = vk_view.GetResource();
+        if (!resource)
             return;
         attachment_views.emplace_back(vk_view.GetRtv());
 
+        decltype(auto) vk_resource = resource->As<VKResource>();
         if (!m_extent.width || !m_extent.height)
         {
-            m_extent = { vk_resource->image.size.width, vk_resource->image.size.height };
+            m_extent = { vk_resource.image.size.width, vk_resource.image.size.height };
             framebuffer_info.width = m_extent.width;
             framebuffer_info.height = m_extent.height;
-            framebuffer_info.layers = vk_resource->image.array_layers;
+            framebuffer_info.layers = vk_resource.image.array_layers;
         }
     };
     for (auto& rtv : rtvs)
