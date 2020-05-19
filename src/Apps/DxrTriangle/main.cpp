@@ -34,7 +34,7 @@ public:
 
         m_bottom = m_context.CreateBottomLevelAS({ m_positions, gli::format::FORMAT_RGB32_SFLOAT_PACK32, 3 });
 
-        std::vector<std::pair<Resource::Ptr, glm::mat4>> geometry = {
+        std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> geometry = {
             { m_bottom, glm::mat4() },
         };
         m_top = m_context.CreateTopLevelAS(geometry);
@@ -72,11 +72,11 @@ private:
     Program<RayTracing> m_raytracing_program;
     Program<GraphicsVS, GraphicsPS> m_graphics_program;
     Model m_square;
-    Resource::Ptr m_indices;
-    Resource::Ptr m_positions;
-    Resource::Ptr m_bottom;
-    Resource::Ptr m_top;
-    Resource::Ptr m_uav;
+    std::shared_ptr<Resource> m_indices;
+    std::shared_ptr<Resource> m_positions;
+    std::shared_ptr<Resource> m_bottom;
+    std::shared_ptr<Resource> m_top;
+    std::shared_ptr<Resource> m_uav;
 };
 
 int main(int argc, char *argv[])

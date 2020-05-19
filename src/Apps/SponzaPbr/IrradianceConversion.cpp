@@ -1,7 +1,6 @@
 #include "IrradianceConversion.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
-#include <Utilities/State.h>
 
 IrradianceConversion::IrradianceConversion(Context& context, const Input& input, int width, int height)
     : m_context(context)
@@ -127,8 +126,8 @@ void IrradianceConversion::DrawPrefilter()
         m_program_prefilter.ps.cbuffer.Settings.roughness = (float)mip / (float)(max_mip_levels - 1);
         m_program_prefilter.ps.cbuffer.Settings.resolution = m_input.prefilter.size;
         std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-        m_program_prefilter.ps.om.rtv0.Attach(m_input.prefilter.res, mip);
-        m_program_prefilter.ps.om.dsv.Attach(m_input.prefilter.dsv, mip).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
+        m_program_prefilter.ps.om.rtv0.Attach(m_input.prefilter.res, { mip });
+        m_program_prefilter.ps.om.dsv.Attach(m_input.prefilter.dsv, { mip }).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
 
         for (uint32_t i = 0; i < 6; ++i)
         {
@@ -157,7 +156,7 @@ void IrradianceConversion::CreateSizeDependentResources()
 {
 }
 
-void IrradianceConversion::OnModifySettings(const Settings& settings)
+void IrradianceConversion::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     m_settings = settings;
 }

@@ -12,10 +12,10 @@
 #include <ProgramRef/DownSampleCS.h>
 #include <ProgramRef/BackgroundPS.h>
 #include <ProgramRef/BackgroundVS.h>
-#include "Settings.h"
+#include "SponzaSettings.h"
 #include "ShadowPass.h"
 
-class IBLCompute : public IPass, public IModifySettings
+class IBLCompute : public IPass, public IModifySponzaSettings
 {
 public:
     struct Input
@@ -25,7 +25,7 @@ public:
         Camera& camera;
         glm::vec3& light_pos;
         Model& model_cube;
-        Resource::Ptr& environment;
+        std::shared_ptr<Resource>& environment;
     };
 
     struct Output
@@ -37,23 +37,23 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
-    virtual void OnModifySettings(const Settings & settings) override;
+    virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
     void DrawPrePass(Model& ibl_model);
     void Draw(Model& ibl_model);
     void DrawBackgroud(Model& ibl_model);
     void DrawDownSample(Model& ibl_model, size_t texture_mips);
-    Settings m_settings;
+    SponzaSettings m_settings;
     Context& m_context;
     Input m_input;
-    Program<IBLComputeVS, IBLComputeGS, IBLComputePS> m_program;
-    Program<IBLComputeVS, IBLComputeGS, IBLComputePrePassPS> m_program_pre_pass;
-    Program<BackgroundVS, BackgroundPS> m_program_backgroud;
-    Program<DownSampleCS> m_program_downsample;
-    Resource::Ptr m_dsv;
-    Resource::Ptr m_sampler;
-    Resource::Ptr m_compare_sampler;
+    ProgramHolder<IBLComputeVS, IBLComputeGS, IBLComputePS> m_program;
+    ProgramHolder<IBLComputeVS, IBLComputeGS, IBLComputePrePassPS> m_program_pre_pass;
+    ProgramHolder<BackgroundVS, BackgroundPS> m_program_backgroud;
+    ProgramHolder<DownSampleCS> m_program_downsample;
+    std::shared_ptr<Resource> m_dsv;
+    std::shared_ptr<Resource> m_sampler;
+    std::shared_ptr<Resource> m_compare_sampler;
     size_t m_size = 512;
     int m_width;
     int m_height;

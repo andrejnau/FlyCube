@@ -72,6 +72,12 @@ void AppBox::UpdateFps()
     }
 }
 
+void AppBox::SubscribeEvents(InputEvents* input_listener, WindowEvents* window_listener)
+{
+    m_input_listener = input_listener;
+    m_window_listener = window_listener;
+}
+
 bool AppBox::PollEvents()
 {
     glfwPollEvents();

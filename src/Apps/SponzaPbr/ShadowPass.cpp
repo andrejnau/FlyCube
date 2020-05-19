@@ -1,7 +1,6 @@
 #include "ShadowPass.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
-#include <Utilities/State.h>
 
 ShadowPass::ShadowPass(Context& context, const Input& input, int width, int height)
     : m_context(context)
@@ -84,12 +83,12 @@ void ShadowPass::OnResize(int width, int height)
 void ShadowPass::CreateSizeDependentResources()
 {
     output.srv = m_context.CreateTexture(BindFlag::kDsv | BindFlag::kSrv, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_settings.s_size, m_settings.s_size, 6);
-    m_buffer = m_context.CreateBuffer((BindFlag)(BindFlag::kRtv), sizeof(float) * m_settings.s_size * m_settings.s_size, 0);
+    m_buffer = m_context.CreateBuffer(BindFlag::kRtv, sizeof(float) * m_settings.s_size * m_settings.s_size, 0);
 }
 
-void ShadowPass::OnModifySettings(const Settings& settings)
+void ShadowPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
-    Settings prev = m_settings;
+    SponzaSettings prev = m_settings;
     m_settings = settings;
     if (prev.s_size != settings.s_size)
     {

@@ -1,28 +1,28 @@
 #pragma once
 
 #include "GeometryPass.h"
-#include "Settings.h"
+#include "SponzaSettings.h"
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/BackgroundPS.h>
 #include <ProgramRef/BackgroundVS.h>
 
-class BackgroundPass : public IPass, public IModifySettings
+class BackgroundPass : public IPass, public IModifySponzaSettings
 {
 public:
     struct Input
     {
         Model& model;
         Camera& camera;
-        Resource::Ptr& environment;
-        Resource::Ptr& rtv;
-        Resource::Ptr& dsv;
+        std::shared_ptr<Resource>& environment;
+        std::shared_ptr<Resource>& rtv;
+        std::shared_ptr<Resource>& dsv;
     };
 
     struct Output
     {
-        Resource::Ptr environment;
-        Resource::Ptr irradince;
+        std::shared_ptr<Resource> environment;
+        std::shared_ptr<Resource> irradince;
     } output;
 
     BackgroundPass(Context& context, const Input& input, int width, int height);
@@ -30,14 +30,14 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
-    virtual void OnModifySettings(const Settings & settings) override;
+    virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
-    Settings m_settings;
+    SponzaSettings m_settings;
     Context& m_context;
     Input m_input;
     int m_width;
     int m_height;
-    Resource::Ptr m_sampler;
-    Program<BackgroundVS, BackgroundPS> m_program;
+    std::shared_ptr<Resource> m_sampler;
+    ProgramHolder<BackgroundVS, BackgroundPS> m_program;
 };

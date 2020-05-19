@@ -54,5 +54,5 @@ public:
 class IModifySponzaSettings
 {
 public:
-    virtual void OnModifySponzaSettings(const SponzaSettings& settings) {}
+    virtual void OnModifySponzaSettings(const SponzaSettings& SponzaSettings) {}
 };

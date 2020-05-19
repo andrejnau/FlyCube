@@ -31,7 +31,9 @@ int main(int argc, char* argv[])
     upload_command_list->Close();
     device->ExecuteCommandLists({ upload_command_list });
 
-    std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, { ResourceType::kCbv });
+    ViewDesc constant_view_desc = {};
+    constant_view_desc.res_type = ResourceType::kCbv;
+    std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, constant_view_desc);
     std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex });
     std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
     std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
@@ -49,7 +51,9 @@ int main(int argc, char* argv[])
     for (uint32_t i = 0; i < frame_count; ++i)
     {
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
-        std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, { ResourceType::kRtv });
+        ViewDesc back_buffer_view_desc = {};
+        back_buffer_view_desc.res_type = ResourceType::kRtv;
+        std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
         framebuffers.emplace_back(device->CreateFramebuffer(pipeline, { back_buffer_view }));
         command_lists.emplace_back(device->CreateCommandList());
         std::shared_ptr<CommandList> command_list = command_lists[i];

@@ -4,7 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <Geometry/IABuffer.h>
-#include <Texture/FormatHelper.h>
+#include <Utilities/FormatHelper.h>
 
 ImGuiPass::ImGuiPass(Context& context, const Input& input, int width, int height)
     : m_context(context)
@@ -117,7 +117,7 @@ void ImGuiPass::OnRender()
         for (int j = 0; j < cmd_list->CmdBuffer.Size; ++j)
         {
             const ImDrawCmd& cmd = cmd_list->CmdBuffer[j];
-            m_program.ps.srv.texture0.Attach(*(Resource::Ptr*)cmd.TextureId);
+            m_program.ps.srv.texture0.Attach(*(std::shared_ptr<Resource>*)cmd.TextureId);
             m_context.SetScissorRect(cmd.ClipRect.x, cmd.ClipRect.y, cmd.ClipRect.z, cmd.ClipRect.w);
             m_context.DrawIndexed(cmd.ElemCount, idx_offset, vtx_offset);
             idx_offset += cmd.ElemCount;

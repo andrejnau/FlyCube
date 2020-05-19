@@ -24,6 +24,7 @@ public:
     AppRect GetAppRect() const;
     GLFWwindow* GetWindow() const;
     void UpdateFps();
+    void SubscribeEvents(InputEvents* input_listener, WindowEvents* window_listener);
 
 private:
     static void OnSizeChanged(GLFWwindow* window, int width, int height);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GeometryPass.h"
-#include "Settings.h"
+#include "SponzaSettings.h"
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/CubemapVS.h>
@@ -10,18 +10,18 @@
 #include <ProgramRef/PrefilterPS.h>
 #include <ProgramRef/DownSampleCS.h>
 
-class Equirectangular2Cubemap : public IPass, public IModifySettings
+class Equirectangular2Cubemap : public IPass, public IModifySponzaSettings
 {
 public:
     struct Input
     {
         Model& model;
-        Resource::Ptr& hdr;
+        std::shared_ptr<Resource>& hdr;
     };
 
     struct Output
     {
-        Resource::Ptr environment;
+        std::shared_ptr<Resource> environment;
     } output;
 
     Equirectangular2Cubemap(Context& context, const Input& input, int width, int height);
@@ -29,21 +29,21 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
-    virtual void OnModifySettings(const Settings & settings) override;
+    virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
     void DrawEquirectangular2Cubemap();
     void CreateSizeDependentResources();
 
-    Settings m_settings;
+    SponzaSettings m_settings;
     Context& m_context;
     Input m_input;
     int m_width;
     int m_height;
-    Resource::Ptr m_sampler;
-    Resource::Ptr m_dsv;
-    Program<CubemapVS, Equirectangular2CubemapPS> m_program_equirectangular2cubemap;
-    Program<DownSampleCS> m_program_downsample;
+    std::shared_ptr<Resource> m_sampler;
+    std::shared_ptr<Resource> m_dsv;
+    ProgramHolder<CubemapVS, Equirectangular2CubemapPS> m_program_equirectangular2cubemap;
+    ProgramHolder<DownSampleCS> m_program_downsample;
     size_t m_texture_size = 512;
     size_t m_texture_mips = 0;
     bool is = false;

@@ -1,15 +1,14 @@
 #include "BRDFGen.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
-#include <Utilities/State.h>
 
 BRDFGen::BRDFGen(Context& context, const Input& input, int width, int height)
     : m_context(context)
     , m_input(input)
     , m_program(context)
 {
-    output.brdf = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RG32_SFLOAT_PACK32, 1, m_size, m_size, 1);
-    m_dsv = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_size, m_size, 1);
+    output.brdf = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, gli::format::FORMAT_RG32_SFLOAT_PACK32, 1, m_size, m_size, 1);
+    m_dsv = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_size, m_size, 1);
 }
 
 void BRDFGen::OnUpdate()
@@ -52,7 +51,7 @@ void BRDFGen::OnResize(int width, int height)
 {
 }
 
-void BRDFGen::OnModifySettings(const Settings& settings)
+void BRDFGen::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     m_settings = settings;
 }

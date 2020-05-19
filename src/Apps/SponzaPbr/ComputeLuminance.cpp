@@ -1,7 +1,6 @@
 #include "ComputeLuminance.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
-#include <Utilities/State.h>
 
 ComputeLuminance::ComputeLuminance(Context& context, const Input& input, int width, int height)
     : m_context(context)
@@ -105,19 +104,19 @@ void ComputeLuminance::CreateBuffers()
     m_thread_group_x = (m_width + 31) / 32;
     m_thread_group_y = (m_height + 31) / 32;
     uint32_t total_invoke = m_thread_group_x * m_thread_group_y;
-    Resource::Ptr buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * total_invoke, 4);
+    std::shared_ptr<Resource> buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * total_invoke, 4);
     m_use_res.push_back(buffer);
 
     for (int block_size = m_thread_group_x * m_thread_group_y; block_size > 1;)
     {
         uint32_t next_block_size = (block_size + 127) / 128;
-        Resource::Ptr buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * next_block_size, 4);
+        std::shared_ptr<Resource> buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * next_block_size, 4);
         m_use_res.push_back(buffer);
         block_size = next_block_size;
     }
 }
 
-void ComputeLuminance::OnModifySettings(const Settings& settings)
+void ComputeLuminance::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     m_settings = settings;
 }

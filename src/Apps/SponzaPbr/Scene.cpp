@@ -1,10 +1,8 @@
 #include "Scene.h"
 #include <Utilities/FileUtility.h>
-#include <Utilities/State.h>
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include <glm/gtx/transform.hpp>
-#include <Context/ContextSelector.h>
 
 Scene::Scene(Context& context, int width, int height)
     : m_context(context)
@@ -306,38 +304,38 @@ void Scene::OnInputChar(unsigned int ch)
     }
 }
 
-void Scene::OnModifySettings(const Settings& settings)
+void Scene::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     m_settings = settings;
-    m_skinning_pass.OnModifySettings(settings);
-    m_geometry_pass.OnModifySettings(settings);
-    m_shadow_pass.OnModifySettings(settings);
-    m_ibl_compute.OnModifySettings(settings);
-    m_light_pass.OnModifySettings(settings);
-    m_compute_luminance.OnModifySettings(settings);
-    m_ssao_pass.OnModifySettings(settings);
+    m_skinning_pass.OnModifySponzaSettings(settings);
+    m_geometry_pass.OnModifySponzaSettings(settings);
+    m_shadow_pass.OnModifySponzaSettings(settings);
+    m_ibl_compute.OnModifySponzaSettings(settings);
+    m_light_pass.OnModifySponzaSettings(settings);
+    m_compute_luminance.OnModifySponzaSettings(settings);
+    m_ssao_pass.OnModifySponzaSettings(settings);
 #ifdef RAYTRACING_SUPPORT
     if (m_ray_tracing_ao_pass)
-        m_ray_tracing_ao_pass->OnModifySettings(settings);
+        m_ray_tracing_ao_pass->OnModifySponzaSettings(settings);
 #endif
-    m_brdf.OnModifySettings(settings);
-    m_equirectangular2cubemap.OnModifySettings(settings);
+    m_brdf.OnModifySponzaSettings(settings);
+    m_equirectangular2cubemap.OnModifySponzaSettings(settings);
     for (auto& x : m_irradiance_conversion)
     {
-        x->OnModifySettings(settings);
+        x->OnModifySponzaSettings(settings);
     }
-    m_background_pass.OnModifySettings(settings);
+    m_background_pass.OnModifySponzaSettings(settings);
 }
 
 void Scene::CreateRT()
 {
-    m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
 
-    m_irradince = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 
+    m_irradince = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 
         m_irradince_texture_size, m_irradince_texture_size, 6 * m_ibl_count);
-    m_prefilter = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 
+    m_prefilter = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 
         m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count, log2(m_prefilter_texture_size));
 
-    m_depth_stencil_view_irradince = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_irradince_texture_size, m_irradince_texture_size, 6 * m_ibl_count);
-    m_depth_stencil_view_prefilter = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count, log2(m_prefilter_texture_size));
+    m_depth_stencil_view_irradince = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_irradince_texture_size, m_irradince_texture_size, 6 * m_ibl_count);
+    m_depth_stencil_view_prefilter = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count, log2(m_prefilter_texture_size));
 }

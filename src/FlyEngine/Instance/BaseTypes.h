@@ -161,9 +161,9 @@ enum class ShaderType
 
 struct ViewDesc
 {
-    ResourceType res_type;
     size_t level = 0;
     size_t count = static_cast<size_t>(-1);
+    ResourceType res_type;
     ResourceDimension dimension;
     uint32_t stride = 0;
 };

@@ -1,15 +1,14 @@
 #pragma once
 
-#include "Settings.h"
+#include "SponzaSettings.h"
 #include <imgui.h>
 #include <string>
 #include <vector>
-#include <Utilities/State.h>
 
 class ImGuiSettings
 {
 public:
-    ImGuiSettings(IModifySettings& listener)
+    ImGuiSettings(IModifySponzaSettings& listener)
         : listener(listener)
     {
         for (uint32_t i = 2; i <= 8; i *= 2)
@@ -67,9 +66,9 @@ public:
         bool has_changed = false;
 
         ImGui::NewFrame();
-        ImGui::Begin("Settings");
+        ImGui::Begin("SponzaSettings");
 
-        ImGui::Text("%s", CurState::Instance().gpu_name.c_str());
+        ImGui::Text("%s", "TODO"); // CurState::Instance().gpu_name.c_str());
 
         for (const auto& fn : m_items)
         {
@@ -78,7 +77,7 @@ public:
         ImGui::End();
 
         if (has_changed)
-            listener.OnModifySettings(settings);
+            listener.OnModifySponzaSettings(settings);
     }
 
     void OnKey(int key, int action)
@@ -91,7 +90,7 @@ public:
             has_changes |= hotkey.OnKey(key);
         }
         if (has_changes)
-            listener.OnModifySettings(settings);
+            listener.OnModifySponzaSettings(settings);
     }
 
 private:
@@ -202,8 +201,8 @@ private:
     }
 
 private:
-    IModifySettings& listener;
-    Settings settings;
+    IModifySponzaSettings& listener;
+    SponzaSettings settings;
     std::vector<uint32_t> msaa = { 1 };
     std::vector<std::string> msaa_str = { "Off" };
     std::vector<std::function<bool(void)>> m_items;

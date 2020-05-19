@@ -1,7 +1,6 @@
 #include "IBLCompute.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
-#include <Utilities/State.h>
 
 IBLCompute::IBLCompute(Context& context, const Input& input, int width, int height)
     : m_context(context)
@@ -151,8 +150,8 @@ void IBLCompute::DrawPrePass(Model & ibl_model)
 
         model.bones.UpdateAnimation(glfwGetTime());
 
-        Resource::Ptr bones_info_srv = model.bones.GetBonesInfo(m_context);
-        Resource::Ptr bone_srv = model.bones.GetBone(m_context);
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context);
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context);
 
         m_program_pre_pass.vs.srv.bone_info.Attach(bones_info_srv);
         m_program_pre_pass.vs.srv.gBones.Attach(bone_srv);
@@ -224,8 +223,8 @@ void IBLCompute::Draw(Model& ibl_model)
 
         model.bones.UpdateAnimation(glfwGetTime());
 
-        Resource::Ptr bones_info_srv = model.bones.GetBonesInfo(m_context);
-        Resource::Ptr bone_srv = model.bones.GetBone(m_context);
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context);
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context);
 
         m_program.vs.srv.bone_info.Attach(bones_info_srv);
         m_program.vs.srv.gBones.Attach(bone_srv);
@@ -324,7 +323,7 @@ void IBLCompute::OnResize(int width, int height)
 {
 }
 
-void IBLCompute::OnModifySettings(const Settings& settings)
+void IBLCompute::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     m_settings = settings;
 }

@@ -1,6 +1,5 @@
 #include "GeometryPass.h"
 
-#include <Utilities/State.h>
 #include <glm/gtx/transform.hpp>
 
 GeometryPass::GeometryPass(Context& context, const Input& input, int width, int height)
@@ -87,9 +86,9 @@ void GeometryPass::OnResize(int width, int height)
     CreateSizeDependentResources();
 }
 
-void GeometryPass::OnModifySettings(const Settings& settings)
+void GeometryPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
-    Settings prev = m_settings;
+    SponzaSettings prev = m_settings;
     m_settings = settings;
     if (prev.msaa_count != settings.msaa_count)
     {
@@ -99,9 +98,9 @@ void GeometryPass::OnModifySettings(const Settings& settings)
 
 void GeometryPass::CreateSizeDependentResources()
 {
-    output.position = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    output.normal = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    output.albedo = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    output.material = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    output.dsv = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.position = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.normal = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.albedo = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.material = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.dsv = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
 }

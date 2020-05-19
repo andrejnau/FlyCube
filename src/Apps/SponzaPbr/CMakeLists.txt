@@ -41,7 +41,7 @@ set(headers
     ${include_path}/SkinningPass.h
     ${include_path}/Scene.h
     ${include_path}/ImGuiSettings.h
-    ${include_path}/Settings.h
+    ${include_path}/SponzaSettings.h
 )
 
 set(sources
@@ -58,7 +58,7 @@ set(sources
     ${source_path}/IBLCompute.cpp
     ${source_path}/SkinningPass.cpp
     ${source_path}/Scene.cpp
-    ${source_path}/Settings.cpp
+    ${source_path}/SponzaSettings.cpp
     ${source_path}/main.cpp
 )
 
@@ -176,6 +176,6 @@ target_link_libraries(${target}
     Geometry
     Utilities
     Texture
-    Program
+    ProgramApi
     imgui
 )

@@ -1,10 +1,9 @@
 #include "SSAOPass.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
-#include <Utilities/State.h>
 #include <chrono>
 #include <random>
-#include "Texture/FormatHelper.h"
+#include <Utilities/FormatHelper.h>
 
 inline float lerp(float a, float b, float f)
 {
@@ -121,14 +120,14 @@ void SSAOPass::OnResize(int width, int height)
 
 void SSAOPass::CreateSizeDependentResources()
 {
-    m_ao = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    m_ao_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    m_depth_stencil_view = m_context.CreateTexture((BindFlag)(BindFlag::kDsv), gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
+    m_ao = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_ao_blur = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
 }
 
-void SSAOPass::OnModifySettings(const Settings& settings)
+void SSAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
-    Settings prev = m_settings;
+    SponzaSettings prev = m_settings;
     m_settings = settings;
     if (prev.msaa_count != m_settings.msaa_count)
     {
@@ -138,7 +137,7 @@ void SSAOPass::OnModifySettings(const Settings& settings)
     }
 }
 
-void SSAOPass::SetDefines(Program<SSAOPassPS, SSAOPassVS>& program)
+void SSAOPass::SetDefines(ProgramHolder<SSAOPassPS, SSAOPassVS>& program)
 {
     if (m_settings.msaa_count != 1)
         program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);

@@ -1,20 +1,20 @@
 #pragma once
 
 #include "GeometryPass.h"
-#include "Settings.h"
+#include "SponzaSettings.h"
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/CubemapVS.h>
 #include <ProgramRef/IrradianceConvolutionPS.h>
 #include <ProgramRef/PrefilterPS.h>
 
-class IrradianceConversion : public IPass, public IModifySettings
+class IrradianceConversion : public IPass, public IModifySponzaSettings
 {
 public:
     struct Target
     {
-        Resource::Ptr& res;
-        Resource::Ptr& dsv;
+        std::shared_ptr<Resource>& res;
+        std::shared_ptr<Resource>& dsv;
         size_t layer;
         size_t size;
     };
@@ -22,7 +22,7 @@ public:
     struct Input
     {
         Model& model;
-        Resource::Ptr& environment;
+        std::shared_ptr<Resource>& environment;
         Target irradince;
         Target prefilter;
     };
@@ -36,20 +36,20 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
-    virtual void OnModifySettings(const Settings & settings) override;
+    virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
     void DrawIrradianceConvolution();
     void DrawPrefilter();
     void CreateSizeDependentResources();
 
-    Settings m_settings;
+    SponzaSettings m_settings;
     Context& m_context;
     Input m_input;
     int m_width;
     int m_height;
-    Resource::Ptr m_sampler;
-    Program<CubemapVS, IrradianceConvolutionPS> m_program_irradiance_convolution;
-    Program<CubemapVS, PrefilterPS> m_program_prefilter;
+    std::shared_ptr<Resource> m_sampler;
+    ProgramHolder<CubemapVS, IrradianceConvolutionPS> m_program_irradiance_convolution;
+    ProgramHolder<CubemapVS, PrefilterPS> m_program_prefilter;
     bool is = false;
 };
