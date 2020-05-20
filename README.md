@@ -2,16 +2,16 @@
 
 C++ graphics API agnostic, simple Engine/Framework, Sponza viewer.
 
-* Supported rendering backends
-  * DirectX 11
+* Backends
   * DirectX 12
-  * DirectX Ray Tracing API
   * Vulkan
-  * Vulkan Ray Tracing API (initial support, checked only on triangle)
-  * OpenGL
 
-* Supported platforms
-  * Windows 10 only
+* Planned features
+  * Ray Tracing
+  * Mesh shading
+
+* Platforms
+  * Windows 10
 
 * Engine Features
   * HLSL as shading language for all backends
