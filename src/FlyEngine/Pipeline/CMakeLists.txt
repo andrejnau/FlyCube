@@ -4,9 +4,11 @@ list(APPEND headers
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
+        VKComputePipeline.h
         VKGraphicsPipeline.h
     )
     list(APPEND sources
+        VKComputePipeline.cpp
         VKGraphicsPipeline.cpp
     )
 endif()

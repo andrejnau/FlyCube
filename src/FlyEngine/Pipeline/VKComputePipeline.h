@@ -8,29 +8,23 @@
 
 class VKDevice;
 
-class VKGraphicsPipeline : public Pipeline
+class VKComputePipeline : public Pipeline
 {
 public:
-    VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc);
+    VKComputePipeline(VKDevice& device, const ComputePipelineDesc& desc);
     PipelineType GetPipelineType() const override;
 
     vk::Pipeline GetPipeline() const;
-    vk::RenderPass GetRenderPass() const;
 
 private:
-    void VKGraphicsPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
-                                       std::vector<vk::VertexInputBindingDescription>& binding_desc,
-                                       std::vector<vk::VertexInputAttributeDescription>& attribute_desc);
-    void CreateGrPipeLine();
+    void CreateComputePipeLine();
 
     VKDevice& m_device;
     vk::UniquePipeline m_pipeline;
-    GraphicsPipelineDesc m_desc;
+    ComputePipelineDesc m_desc;
     std::vector<vk::VertexInputBindingDescription> m_binding_desc;
     std::vector<vk::VertexInputAttributeDescription> m_attribute_desc;
     std::vector<vk::PipelineShaderStageCreateInfo> m_shader_stage_create_info;
     std::map<ShaderType, vk::UniqueShaderModule> m_shader_modules;
-    size_t m_msaa_count = 1;
     std::map<ShaderType, spirv_cross::SmallVector<spirv_cross::EntryPoint>> m_entries;
-    VKRenderPass m_render_pass;
 };

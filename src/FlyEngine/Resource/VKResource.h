@@ -86,7 +86,7 @@ public:
 
     Type res_type = Type::kUnknown;
 
-    std::shared_ptr<VKResource> GetUploadResource(size_t subresource)
+    std::shared_ptr<VKResource>& GetUploadResource(size_t subresource)
     {
         if (subresource >= m_upload_res.size())
             m_upload_res.resize(subresource + 1);

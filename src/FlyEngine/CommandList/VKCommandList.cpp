@@ -3,6 +3,7 @@
 #include <Resource/VKResource.h>
 #include <View/VKView.h>
 #include <Pipeline/VKGraphicsPipeline.h>
+#include <Pipeline/VKComputePipeline.h>
 #include <Framebuffer/VKFramebuffer.h>
 #include <BindingSet/VKBindingSet.h>
 
@@ -31,15 +32,31 @@ void VKCommandList::Close()
 
 void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
-    decltype(auto) vk_state = state->As<VKGraphicsPipeline>();
-    m_command_list->bindPipeline(vk::PipelineBindPoint::eGraphics, vk_state.GetPipeline());
+    auto type = state->GetPipelineType();
+    if (type == PipelineType::kGraphics)
+    {
+        decltype(auto) vk_state = state->As<VKGraphicsPipeline>();
+        m_command_list->bindPipeline(vk::PipelineBindPoint::eGraphics, vk_state.GetPipeline());
+    }
+    else if (type == PipelineType::kCompute)
+    {
+        decltype(auto) vk_state = state->As<VKComputePipeline>();
+        m_command_list->bindPipeline(vk::PipelineBindPoint::eCompute, vk_state.GetPipeline());
+    }
 }
 
 void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
     decltype(auto) vk_binding_set = binding_set->As<VKBindingSet>();
     decltype(auto) descriptor_sets = vk_binding_set.GetDescriptorSets();
-    m_command_list->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vk_binding_set.GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
+    if (vk_binding_set.IsCompute())
+    {
+        m_command_list->bindDescriptorSets(vk::PipelineBindPoint::eCompute, vk_binding_set.GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
+    }
+    else
+    {
+        m_command_list->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vk_binding_set.GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
+    }
 }
 
 void VKCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
@@ -59,10 +76,14 @@ void VKCommandList::EndRenderPass()
 
 void VKCommandList::BeginEvent(const std::string& name)
 {
+    vk::DebugUtilsLabelEXT label = {};
+    label.pLabelName = name.c_str();
+    m_command_list->beginDebugUtilsLabelEXT(&label);
 }
 
 void VKCommandList::EndEvent()
 {
+    m_command_list->endDebugUtilsLabelEXT();
 }
 
 void VKCommandList::ClearColor(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
@@ -88,6 +109,19 @@ void VKCommandList::ClearColor(const std::shared_ptr<View>& view, const std::arr
 
 void VKCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)
 {
+    if (!view)
+        return;
+    decltype(auto) vk_view = view->As<VKView>();
+
+    std::shared_ptr<Resource> resource = vk_view.GetResource();
+    if (!resource)
+        return;
+    decltype(auto) vk_resource = resource->As<VKResource>();
+
+    vk::ClearDepthStencilValue clear_color = {};
+    clear_color.depth = depth;
+    const vk::ImageSubresourceRange& ImageSubresourceRange = vk_view.GeViewInfo().subresourceRange;
+    m_command_list->clearDepthStencilImage(vk_resource.image.res.get(), vk_resource.image.layout[ImageSubresourceRange], clear_color, ImageSubresourceRange);
 }
 
 void VKCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
@@ -97,11 +131,13 @@ void VKCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_locat
 
 void VKCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
 {
+    m_command_list->dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
 void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
-    return ResourceBarrier(resource, {}, state);
+    if (resource)
+        return ResourceBarrier(resource, {}, state);
 }
 
 void VKCommandList::SetViewport(float width, float height)
@@ -162,7 +198,7 @@ void VKCommandList::UpdateSubresource(const std::shared_ptr<Resource>& resource,
     }
     else if (vk_resource.res_type == VKResource::Type::kImage)
     {
-        auto staging = vk_resource.GetUploadResource(subresource);
+        auto& staging = vk_resource.GetUploadResource(subresource);
         if (!staging || staging->res_type == VKResource::Type::kUnknown)
             staging = std::static_pointer_cast<VKResource>(m_device.CreateBuffer(0, depth_pitch, 0));
         UpdateSubresource(staging, 0, data, row_pitch, depth_pitch);
@@ -248,6 +284,8 @@ void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, c
 {
     decltype(auto) vk_resource = resource->As<VKResource>();
     VKResource::Image& image = vk_resource.image;
+    if (!image.res)
+        return;
 
     vk::ImageLayout new_layout = vk::ImageLayout::eUndefined;
     switch (state)
@@ -255,17 +293,21 @@ void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, c
     case ResourceState::kCommon:
     case ResourceState::kClearColor:
     case ResourceState::kClearDepth:
+    case ResourceState::kUnorderedAccess:
         new_layout = vk::ImageLayout::eGeneral;
         break;
     case ResourceState::kPresent:
         new_layout = vk::ImageLayout::ePresentSrcKHR;
         break;
     case ResourceState::kRenderTarget:
-    case ResourceState::kUnorderedAccess:
         new_layout = vk::ImageLayout::eColorAttachmentOptimal;
         break;
     case ResourceState::kDepthTarget:
-        new_layout = vk::ImageLayout::eColorAttachmentOptimal;
+        new_layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+        break;
+    case ResourceState::kPixelShaderResource:
+    case ResourceState::kNonPixelShaderResource:
+        new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
         break;
     }
 

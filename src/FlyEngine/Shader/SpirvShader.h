@@ -16,4 +16,5 @@ public:
 private:
     ShaderType m_type;
     std::vector<uint32_t> m_blob;
+    std::map<std::string, ResourceBindingDesc> m_resource_binding_descs;
 };

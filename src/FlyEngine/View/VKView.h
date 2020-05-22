@@ -20,6 +20,6 @@ private:
     VKDevice& m_device;
     std::shared_ptr<VKResource> m_resource;
     vk::ImageViewCreateInfo m_view_info = {};
-    vk::UniqueImageView m_srv;
-    vk::UniqueImageView m_om;
+    vk::UniqueImageView m_srv = {};
+    vk::UniqueImageView m_om = {};
 };

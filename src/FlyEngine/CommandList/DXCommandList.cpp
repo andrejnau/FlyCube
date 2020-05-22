@@ -124,6 +124,9 @@ void DXCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_grou
 
 void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
+    if (!resource)
+        return;
+
     decltype(auto) dx_resource = resource->As<DXResource>();
     D3D12_RESOURCE_STATES dx_state = {};
     switch (state)
@@ -144,6 +147,12 @@ void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, R
         break;
     case ResourceState::kUnorderedAccess:
         dx_state = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        break;
+    case ResourceState::kPixelShaderResource:
+        dx_state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        break;
+    case ResourceState::kNonPixelShaderResource:
+        dx_state = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
         break;
     }
     ResourceBarrier(dx_resource, dx_state);

@@ -4,7 +4,7 @@
 #include <Shader/SpirvShader.h>
 #include <map>
 
-vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
+static vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
 {
     switch (model)
     {
@@ -142,12 +142,12 @@ void VKGraphicsPipeline::CreateGrPipeLine()
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = vk::CullModeFlagBits::eBack;
     rasterizer.frontFace = vk::FrontFace::eClockwise;
-    rasterizer.depthBiasEnable = m_rasterizer_desc.DepthBias != 0;
-    rasterizer.depthBiasConstantFactor = m_rasterizer_desc.DepthBias;
+    rasterizer.depthBiasEnable = m_desc.rasterizer_desc.DepthBias != 0;
+    rasterizer.depthBiasConstantFactor = m_desc.rasterizer_desc.DepthBias;
 
     vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
     colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-    colorBlendAttachment.blendEnable = m_blend_desc.blend_enable;
+    colorBlendAttachment.blendEnable = m_desc.blend_desc.blend_enable;
 
     if (colorBlendAttachment.blendEnable)
     {
@@ -175,12 +175,12 @@ void VKGraphicsPipeline::CreateGrPipeLine()
             throw std::runtime_error("unsupported");
         };
 
-        colorBlendAttachment.srcColorBlendFactor = convert(m_blend_desc.blend_src);
-        colorBlendAttachment.dstColorBlendFactor = convert(m_blend_desc.blend_dest);
-        colorBlendAttachment.colorBlendOp = convert_op(m_blend_desc.blend_op);
-        colorBlendAttachment.srcAlphaBlendFactor = convert(m_blend_desc.blend_src_alpha);
-        colorBlendAttachment.dstAlphaBlendFactor = convert(m_blend_desc.blend_dest_apha);
-        colorBlendAttachment.alphaBlendOp = convert_op(m_blend_desc.blend_op_alpha);
+        colorBlendAttachment.srcColorBlendFactor = convert(m_desc.blend_desc.blend_src);
+        colorBlendAttachment.dstColorBlendFactor = convert(m_desc.blend_desc.blend_dest);
+        colorBlendAttachment.colorBlendOp = convert_op(m_desc.blend_desc.blend_op);
+        colorBlendAttachment.srcAlphaBlendFactor = convert(m_desc.blend_desc.blend_src_alpha);
+        colorBlendAttachment.dstAlphaBlendFactor = convert(m_desc.blend_desc.blend_dest_apha);
+        colorBlendAttachment.alphaBlendOp = convert_op(m_desc.blend_desc.blend_op_alpha);
     }
 
     uint32_t num_slots = 0;
@@ -201,9 +201,12 @@ void VKGraphicsPipeline::CreateGrPipeLine()
     multisampling.sampleShadingEnable = multisampling.rasterizationSamples != vk::SampleCountFlagBits::e1;
 
     vk::PipelineDepthStencilStateCreateInfo depthStencil = {};
-    depthStencil.depthTestEnable = m_depth_stencil_desc.depth_enable;
-    depthStencil.depthWriteEnable = m_depth_stencil_desc.depth_enable;
-    depthStencil.depthCompareOp = vk::CompareOp::eLessOrEqual;
+    depthStencil.depthTestEnable = m_desc.depth_desc.depth_enable;
+    depthStencil.depthWriteEnable = m_desc.depth_desc.depth_enable;
+    if (m_desc.depth_desc.func == DepthComparison::kLess)
+        depthStencil.depthCompareOp = vk::CompareOp::eLess;
+    else if (m_desc.depth_desc.func == DepthComparison::kLessEqual)
+        depthStencil.depthCompareOp = vk::CompareOp::eLessOrEqual;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
     depthStencil.stencilTestEnable = VK_FALSE;
 

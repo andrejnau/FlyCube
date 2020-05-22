@@ -16,6 +16,8 @@ enum class ResourceState
     kPresent,
     kRenderTarget,
     kDepthTarget,
+    kPixelShaderResource,
+    kNonPixelShaderResource,
     kUnorderedAccess,
 };
 
@@ -362,7 +364,7 @@ public:
 
 struct ResourceBindingDesc
 {
-    ResourceDimension dimension;
+    ResourceDimension dimension = ResourceDimension::kBuffer;
 };
 
 enum class PipelineType

@@ -7,6 +7,7 @@
 #include <Semaphore/VKSemaphore.h>
 #include <Program/VKProgram.h>
 #include <Pipeline/VKGraphicsPipeline.h>
+#include <Pipeline/VKComputePipeline.h>
 #include <Framebuffer/VKFramebuffer.h>
 #include <Shader/SpirvShader.h>
 #include <View/VKView.h>
@@ -158,7 +159,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
 
     vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eTransferDst;
     if (bind_flag & BindFlag::kDsv)
-        usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+        usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst;
     if (bind_flag & BindFlag::kSrv)
         usage |= vk::ImageUsageFlagBits::eSampled;
     if (bind_flag & BindFlag::kRtv)
@@ -327,7 +328,7 @@ std::shared_ptr<Pipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelin
 
 std::shared_ptr<Pipeline> VKDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
 {
-    return {};
+    return std::make_shared<VKComputePipeline>(*this, desc);
 }
 
 void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)

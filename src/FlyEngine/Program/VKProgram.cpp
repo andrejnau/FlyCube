@@ -136,6 +136,8 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<Bindin
                 throw std::runtime_error("failed to find resource reflection");
             auto ref_res = shader_ref.resources[name];
             auto res = vk_view.GetResource();
+            if (!res)
+                continue;
             decltype(auto) vk_res = res->As<VKResource>();
 
             vk::WriteDescriptorSet descriptorWrite = {};
@@ -161,7 +163,8 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<Bindin
                 vk::DescriptorImageInfo& image_info = list_image_info.back();
                 image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
                 image_info.imageView = vk_view.GetSrv();
-                descriptorWrite.pImageInfo = &image_info;
+                if (image_info.imageView)
+                    descriptorWrite.pImageInfo = &image_info;
                 break;
             }
             case vk::DescriptorType::eStorageImage:
@@ -170,7 +173,8 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<Bindin
                 vk::DescriptorImageInfo& image_info = list_image_info.back();
                 image_info.imageLayout = vk::ImageLayout::eGeneral;
                 image_info.imageView = vk_view.GetSrv();
-                descriptorWrite.pImageInfo = &image_info;
+                if (image_info.imageView)
+                    descriptorWrite.pImageInfo = &image_info;
                 break;
             }
             case vk::DescriptorType::eUniformTexelBuffer:
@@ -217,7 +221,7 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<Bindin
     {
         descriptor_sets.emplace_back(descriptor_set.get());
     }
-    return std::make_shared<VKBindingSet>(descriptor_sets, m_pipeline_layout.get());
+    return std::make_shared<VKBindingSet>(m_shader_ref.count(ShaderType::kCompute), descriptor_sets, m_pipeline_layout.get());
 }
 
 const std::vector<std::shared_ptr<SpirvShader>>& VKProgram::GetShaders() const

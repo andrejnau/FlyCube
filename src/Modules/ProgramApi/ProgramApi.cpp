@@ -132,6 +132,9 @@ void ProgramApi::ApplyBindings()
     m_context.m_command_list->BindPipeline(m_pipeline);
     m_context.m_command_list->BindBindingSet(m_binding_set);
 
+    if (m_shader_by_type.count(ShaderType::kCompute))
+        return;
+
     std::vector<std::shared_ptr<View>> rtvs;
     for (auto& render_target : m_graphic_pipeline_desc.rtvs)
     {
@@ -166,7 +169,10 @@ void ProgramApi::ApplyBindings()
 
 void ProgramApi::CompileShader(const ShaderBase& shader)
 {
-    m_shaders.emplace_back(m_device.CompileShader(static_cast<ShaderDesc>(shader)));
+    ShaderDesc desc = shader;
+    if (m_shader_types.count(ShaderType::kGeometry) && shader.type == ShaderType::kVertex)
+        desc.define["__INTERNAL_DO_NOT_INVERT_Y__"] = "1";
+    m_shaders.emplace_back(m_device.CompileShader(desc));
     m_shader_by_type[shader.type] = m_shaders.back();
 }
 
@@ -308,10 +314,15 @@ void ProgramApi::UpdateCBuffers()
 
 void ProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
 {
+    if (type == ShaderType::kPixel)
+        m_context.m_command_list->ResourceBarrier(resource, ResourceState::kPixelShaderResource);
+    else
+        m_context.m_command_list->ResourceBarrier(resource, ResourceState::kNonPixelShaderResource);
 }
 
 void ProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
 {
+    m_context.m_command_list->ResourceBarrier(resource, ResourceState::kUnorderedAccess);
 }
 
 void ProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const std::shared_ptr<Resource>& resource)

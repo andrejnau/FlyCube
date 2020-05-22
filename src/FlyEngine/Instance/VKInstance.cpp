@@ -19,6 +19,7 @@ public:
                                      vk::DebugReportFlagBitsEXT::eError |
                                      vk::DebugReportFlagBitsEXT::eDebug;
         callback_create_info.pfnCallback = &DebugReportCallback;
+        callback_create_info.pUserData = this;
         m_callback = instance.createDebugReportCallbackEXTUnique(callback_create_info);
     }
 
@@ -27,14 +28,28 @@ public:
 private:
     static bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& message)
     {
-        switch (object_type)
+        static std::vector<std::string> muted_warnings = {
+            "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv",
+            "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed",
+            "UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch",
+            "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout",
+            "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated",
+            "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout",
+            "VUID-vkCmdDrawIndexed-None-02720",
+            "VUID-vkCmdPipelineBarrier-oldLayout-01181",
+            "VUID-vkCmdClearDepthStencilImage-imageLayout",
+            "VUID-vkCmdClearDepthStencilImage-renderpass",
+            "VUID-vkCmdClearColorImage-imageLayout",
+            "VUID-VkFramebufferCreateInfo-pAttachments",
+            "VUID-VkRenderPassCreateInfo-pDependencies",
+            "VUID-VkDescriptorImageInfo-imageLayout"
+        };
+        for (auto& str : muted_warnings)
         {
-        case VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT:
-        case VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT:
-            return true;
-        default:
-            return false;
+            if (message.find(str) != std::string::npos)
+                return true;
         }
+        return false;
     }
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
@@ -47,21 +62,24 @@ private:
         const char* pMessage,
         void* pUserData)
     {
-        if (SkipIt(objectType, pMessage))
+        constexpr size_t error_limit = 1024;
+        DebugReportListener& self = *reinterpret_cast<DebugReportListener*>(pUserData);
+        if (self.m_error_count >= error_limit || SkipIt(objectType, pMessage))
             return VK_FALSE;
-        static size_t error_count = 0;
 #ifdef _WIN32
-        if (++error_count <= 1000)
+        if (self.m_error_count < error_limit)
         {
             std::stringstream buf;
             buf << pLayerPrefix << " " << to_string(static_cast<vk::DebugReportFlagBitsEXT>(flags)) << " " << pMessage << std::endl;
             OutputDebugStringA(buf.str().c_str());
         }
 #endif
+        ++self.m_error_count;
         return VK_FALSE;
     }
 
     vk::UniqueDebugReportCallbackEXT m_callback;
+    size_t m_error_count = 0;
 };
 
 VKInstance::VKInstance()

@@ -25,6 +25,8 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
 
 void VKView::CreateSrv(const ViewDesc& view_desc, const VKResource& res)
 {
+    if (view_desc.dimension == ResourceDimension::kBuffer)
+        return;
     m_view_info.image = res.image.res.get();
     m_view_info.format = res.image.format;
     m_view_info.subresourceRange.aspectMask = m_device.GetAspectFlags(m_view_info.format);
