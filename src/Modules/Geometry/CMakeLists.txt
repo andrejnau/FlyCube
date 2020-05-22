@@ -31,4 +31,4 @@ target_link_libraries(${target}
     assimp
 )
 
-set_target_properties(${target} PROPERTIES FOLDER "library")
+set_target_properties(${target} PROPERTIES FOLDER "Modules")

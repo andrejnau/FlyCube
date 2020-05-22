@@ -66,4 +66,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(Pipeline PROPERTIES FOLDER "FlyEngine")
+set_target_properties(Pipeline PROPERTIES FOLDER "Core")

@@ -61,4 +61,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(Fence PROPERTIES FOLDER "FlyEngine")
+set_target_properties(Fence PROPERTIES FOLDER "Core")

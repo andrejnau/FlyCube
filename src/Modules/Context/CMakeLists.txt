@@ -42,4 +42,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(Context PROPERTIES FOLDER "library")
+set_target_properties(Context PROPERTIES FOLDER "Modules")

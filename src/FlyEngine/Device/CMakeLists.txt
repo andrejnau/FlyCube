@@ -68,4 +68,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(Device PROPERTIES FOLDER "FlyEngine")
+set_target_properties(Device PROPERTIES FOLDER "Core")

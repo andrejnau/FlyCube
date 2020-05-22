@@ -35,4 +35,4 @@ if (VULKAN_SUPPORT)
     )
 endif()
 
-set_target_properties(${target} PROPERTIES FOLDER "library")
+set_target_properties(${target} PROPERTIES FOLDER "Modules")

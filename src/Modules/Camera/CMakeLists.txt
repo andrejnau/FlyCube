@@ -15,4 +15,4 @@ target_include_directories(${target}
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-set_target_properties(${target} PROPERTIES FOLDER "library")
+set_target_properties(${target} PROPERTIES FOLDER "Modules")

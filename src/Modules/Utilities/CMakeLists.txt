@@ -17,4 +17,4 @@ target_include_directories(Utilities
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-set_target_properties(Utilities PROPERTIES FOLDER "library")
+set_target_properties(Utilities PROPERTIES FOLDER "Modules")

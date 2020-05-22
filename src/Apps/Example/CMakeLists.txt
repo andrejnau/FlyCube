@@ -10,3 +10,5 @@ target_link_libraries(Example
     AppBox
     Instance
 )
+
+set_target_properties(Example PROPERTIES FOLDER "Apps")

@@ -61,4 +61,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(Program PROPERTIES FOLDER "FlyEngine")
+set_target_properties(Program PROPERTIES FOLDER "Core")

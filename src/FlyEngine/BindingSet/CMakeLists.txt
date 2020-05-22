@@ -60,4 +60,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(BindingSet PROPERTIES FOLDER "FlyEngine")
+set_target_properties(BindingSet PROPERTIES FOLDER "Core")

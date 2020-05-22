@@ -30,4 +30,4 @@ target_include_directories(AppBox
         ${Vulkan_INCLUDE_DIR}
 )
 
-set_target_properties(AppBox PROPERTIES FOLDER "library")
+set_target_properties(AppBox PROPERTIES FOLDER "Modules")

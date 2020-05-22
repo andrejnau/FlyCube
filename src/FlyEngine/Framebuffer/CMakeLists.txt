@@ -61,4 +61,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(Framebuffer PROPERTIES FOLDER "FlyEngine")
+set_target_properties(Framebuffer PROPERTIES FOLDER "Core")

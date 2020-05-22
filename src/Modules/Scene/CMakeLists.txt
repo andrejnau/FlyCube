@@ -20,4 +20,4 @@ target_link_libraries(${target}
     Camera
 )
 
-set_target_properties(${target} PROPERTIES FOLDER "library")
+set_target_properties(${target} PROPERTIES FOLDER "Modules")
