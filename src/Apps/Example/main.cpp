@@ -57,8 +57,8 @@ int main(int argc, char* argv[])
         command_lists.emplace_back(device->CreateCommandList());
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->Open();
-        command_list->ResourceBarrier(back_buffer, ResourceState::kClear);
-        command_list->Clear(back_buffer_view, { 0.0, 0.2, 0.4, 1.0 });
+        command_list->ResourceBarrier(back_buffer, ResourceState::kClearColor);
+        command_list->ClearColor(back_buffer_view, { 0.0, 0.2, 0.4, 1.0 });
         command_list->ResourceBarrier(back_buffer, ResourceState::kRenderTarget);
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);

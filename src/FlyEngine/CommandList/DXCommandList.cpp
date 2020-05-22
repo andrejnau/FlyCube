@@ -96,7 +96,7 @@ void DXCommandList::EndEvent()
     PIXEndEvent(m_command_list.Get());
 }
 
-void DXCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
+void DXCommandList::ClearColor(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
 {
     if (!view)
         return;
@@ -134,10 +134,11 @@ void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, R
     case ResourceState::kPresent:
         dx_state = D3D12_RESOURCE_STATE_PRESENT;
         break;
-    case ResourceState::kClear:
+    case ResourceState::kClearColor:
     case ResourceState::kRenderTarget:
         dx_state = D3D12_RESOURCE_STATE_RENDER_TARGET;
         break;
+    case ResourceState::kClearDepth:
     case ResourceState::kDepthTarget:
         dx_state = D3D12_RESOURCE_STATE_DEPTH_WRITE;
         break;

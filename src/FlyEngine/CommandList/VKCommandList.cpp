@@ -65,7 +65,7 @@ void VKCommandList::EndEvent()
 {
 }
 
-void VKCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
+void VKCommandList::ClearColor(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
 {
     if (!view)
         return;
@@ -253,7 +253,8 @@ void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, c
     switch (state)
     {
     case ResourceState::kCommon:
-    case ResourceState::kClear:
+    case ResourceState::kClearColor:
+    case ResourceState::kClearDepth:
         new_layout = vk::ImageLayout::eGeneral;
         break;
     case ResourceState::kPresent:
@@ -261,6 +262,9 @@ void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, c
         break;
     case ResourceState::kRenderTarget:
     case ResourceState::kUnorderedAccess:
+        new_layout = vk::ImageLayout::eColorAttachmentOptimal;
+        break;
+    case ResourceState::kDepthTarget:
         new_layout = vk::ImageLayout::eColorAttachmentOptimal;
         break;
     }

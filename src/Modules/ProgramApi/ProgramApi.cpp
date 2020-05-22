@@ -250,8 +250,8 @@ void ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& co
     auto& view = FindView(ShaderType::kPixel, ResourceType::kRtv, slot);
     if (!view)
         return;
-    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kClear);
-    m_context.m_command_list->Clear(view, color);
+    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kClearColor);
+    m_context.m_command_list->ClearColor(view, color);
     m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kRenderTarget);
 }
 
@@ -260,7 +260,7 @@ void ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Ste
     auto& view = FindView(ShaderType::kPixel, ResourceType::kDsv, 0);
     if (!view)
         return;
-    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kDepthTarget);
+    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kClearDepth);
     m_context.m_command_list->ClearDepth(view, Depth);
     m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kDepthTarget);
 }

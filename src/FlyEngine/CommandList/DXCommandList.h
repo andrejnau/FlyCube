@@ -20,7 +20,7 @@ public:
     void EndRenderPass() override;
     void BeginEvent(const std::string& name) override;
     void EndEvent() override;
-    void Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color) override;
+    void ClearColor(const std::shared_ptr<View>& view, const std::array<float, 4>& color) override;
     void ClearDepth(const std::shared_ptr<View>& view, float depth) override;
     void DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location) override;
     void Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z) override;

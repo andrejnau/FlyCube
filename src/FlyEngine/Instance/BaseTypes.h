@@ -11,7 +11,8 @@
 enum class ResourceState
 {
     kCommon,
-    kClear,
+    kClearColor,
+    kClearDepth,
     kPresent,
     kRenderTarget,
     kDepthTarget,
