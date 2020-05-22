@@ -6,8 +6,7 @@
 
 int main(int argc, char* argv[])
 {
-    Settings settings = { ApiType::kDX12 };
-    ParseArgs(argc, argv, settings);
+    Settings settings = ParseArgs(argc, argv);
     AppBox app("Triangle", settings);
 
     Context context(settings, app.GetWindow());

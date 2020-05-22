@@ -1,8 +1,10 @@
 #include "AppBox/ArgsParser.h"
 #include <string>
 
-void ParseArgs(int argc, char* argv[], Settings& settings)
+Settings ParseArgs(int argc, char* argv[])
 {
+    Settings settings;
+    settings.api_type = ApiType::kDX12;
     settings.vsync = false;
     for (int i = 1; i < argc; ++i)
     {
@@ -18,4 +20,5 @@ void ParseArgs(int argc, char* argv[], Settings& settings)
         else if (arg == "--gpu")
             settings.required_gpu_index = std::stoul(argv[++i]);
     }
+    return settings;
 }

@@ -4,8 +4,7 @@
 
 int main(int argc, char* argv[])
 {
-    Settings settings = { ApiType::kDX12 };
-    ParseArgs(argc, argv, settings);
+    Settings settings = ParseArgs(argc, argv);
     AppBox app("Example", settings);
     AppRect rect = app.GetAppRect();
 
