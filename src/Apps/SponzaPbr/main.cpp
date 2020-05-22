@@ -3,16 +3,9 @@
 #include <AppBox/ArgsParser.h>
 #include <Context/Context.h>
 
-#ifdef _WIN32
-#include <WinConsole/WinConsole.h>
-#endif
-
 int main(int argc, char *argv[])
 {
-#ifdef _WIN32
-    WinConsole cmd;
-#endif
-    Settings settings = {};
+    Settings settings = { ApiType::kDX12 };
     ParseArgs(argc, argv, settings);
     AppBox app("testApp", settings);
     AppRect rect = app.GetAppRect();

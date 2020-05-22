@@ -64,6 +64,11 @@ std::vector<VertexInputDesc> SpirvShader::GetInputLayout() const
     return input_layout_desc;
 }
 
+ResourceBindingDesc SpirvShader::GetResourceBindingDesc(const std::string& name) const
+{
+    return {};
+}
+
 ShaderType SpirvShader::GetType() const
 {
     return m_type;

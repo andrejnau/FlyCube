@@ -14,6 +14,7 @@ enum class ResourceState
     kClear,
     kPresent,
     kRenderTarget,
+    kDepthTarget,
     kUnorderedAccess,
 };
 
@@ -28,7 +29,8 @@ enum class ResourceDimension
     kTexture2DMSArray,
     kTexture3D,
     kTextureCube,
-    kTextureCubeArray
+    kTextureCubeArray,
+    kRaytracingAccelerationStructure
 };
 
 enum class SamplerFilter
@@ -166,6 +168,16 @@ struct ViewDesc
     ResourceType res_type;
     ResourceDimension dimension;
     uint32_t stride = 0;
+
+    auto MakeTie() const
+    {
+        return std::tie(level, count, res_type, dimension, stride);
+    }
+
+    bool operator< (const ViewDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
 };
 
 struct BindKey
@@ -257,4 +269,9 @@ public:
     {
         return MakeTie() < oth.MakeTie();
     }
+};
+
+struct ResourceBindingDesc
+{
+    ResourceDimension dimension;
 };

@@ -24,6 +24,7 @@ void DXCommandList::Open()
 {
     ASSERT_SUCCEEDED(m_command_allocator->Reset());
     ASSERT_SUCCEEDED(m_command_list->Reset(m_command_allocator.Get(), nullptr));
+    m_heaps.clear();
 }
 
 void DXCommandList::Close()
@@ -42,7 +43,8 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
     decltype(auto) dx_binding_set = binding_set->As<DXBindingSet>();
-    dx_binding_set.Apply(m_command_list);
+    decltype(auto) new_heaps = dx_binding_set.Apply(m_command_list);
+    m_heaps.insert(m_heaps.end(), new_heaps.begin(), new_heaps.end());
 }
 
 void DXCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
@@ -80,9 +82,22 @@ void DXCommandList::Clear(const std::shared_ptr<View>& view, const std::array<fl
     m_command_list->ClearRenderTargetView(dx_view.GetHandle(), color.data(), 0, nullptr);
 }
 
+void DXCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)
+{
+    if (!view)
+        return;
+    decltype(auto) dx_view = view->As<DXView>();
+    m_command_list->ClearDepthStencilView(dx_view.GetHandle(), D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
+}
+
 void DXCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
 {
     m_command_list->DrawIndexedInstanced(index_count, 1, start_index_location, base_vertex_location, 0);
+}
+
+void DXCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
+{
+    m_command_list->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
 void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
@@ -100,6 +115,9 @@ void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, R
     case ResourceState::kClear:
     case ResourceState::kRenderTarget:
         dx_state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        break;
+    case ResourceState::kDepthTarget:
+        dx_state = D3D12_RESOURCE_STATE_DEPTH_WRITE;
         break;
     case ResourceState::kUnorderedAccess:
         dx_state = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;

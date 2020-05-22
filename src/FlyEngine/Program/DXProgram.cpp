@@ -5,6 +5,7 @@
 #include <View/DXView.h>
 #include <BindingSet/DXBindingSet.h>
 #include <deque>
+#include <set>
 #include <d3dx12.h>
 
 DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders)
@@ -63,6 +64,8 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                     res_type = ResourceType::kUav;
                     break;
                 }
+
+                m_bind_to_slot[{shader_type, res_type, res_desc.Name }] = res_desc.BindPoint;
             }
 
             if (shader_type == ShaderType::kPixel)
@@ -116,6 +119,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                             res_type = ResourceType::kUav;
                             break;
                         }
+                        m_bind_to_slot[{shader_type, res_type, res_desc.Name }] = res_desc.BindPoint;
                     }
                 }
             }
@@ -297,26 +301,20 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSet(const std::vector<Bindin
         }
     }
 
-    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::pair<bool, std::reference_wrapper<DXGPUDescriptorPoolRange>>> descriptor_ranges;
-    std::vector<ID3D12DescriptorHeap*> descriptor_heaps(descriptor_cache.size());
-    size_t descriptor_index = 0;
+    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::reference_wrapper<DXGPUDescriptorPoolRange>> descriptor_ranges;
+    std::set<D3D12_DESCRIPTOR_HEAP_TYPE> new_descriptor_ranges;
     for (auto& x : descriptor_cache)
     {
         auto it = m_heap_cache.find(x.second);
-        bool initialized = true;
         if (it == m_heap_cache.end())
         {
             it = m_heap_cache.emplace(x.second, m_device.GetGPUDescriptorPool().Allocate(x.first, descriptor_requests[x.first])).first;
-            initialized = false;
+            new_descriptor_ranges.insert(x.first);
         }
         DXGPUDescriptorPoolRange& heap_range = it->second;
         descriptor_ranges.emplace(std::piecewise_construct,
             std::forward_as_tuple(x.first),
-            std::forward_as_tuple(initialized, heap_range));
-        if (heap_range.GetSize() > 0)
-        {
-            descriptor_heaps[descriptor_index++] = heap_range.GetHeap().Get();
-        }
+            std::forward_as_tuple(heap_range));
     }
 
     for (auto& x : bindings)
@@ -349,14 +347,14 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSet(const std::vector<Bindin
 
         auto& descriptor_range = descriptor_ranges.find(heap_type)->second;
 
-        if (descriptor_range.first)
+        if (!new_descriptor_ranges.count(heap_type))
             continue;
 
-        uint32_t slot = 0;
-        CopyDescriptor(descriptor_range.second.get(), m_binding_layout[{bind_key.shader, range_type}].table.heap_offset + slot, x.view);
+        uint32_t slot = m_bind_to_slot.at(bind_key);
+        CopyDescriptor(descriptor_range.get(), m_binding_layout[{bind_key.shader, range_type}].table.heap_offset + slot, x.view);
     }
 
-    return std::make_shared<DXBindingSet>(*this, descriptor_ranges, m_binding_layout, descriptor_heaps);
+    return std::make_shared<DXBindingSet>(*this, descriptor_ranges, m_binding_layout);
 }
 
 const std::vector<std::shared_ptr<DXShader>>& DXProgram::GetShaders() const

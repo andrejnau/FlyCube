@@ -69,6 +69,70 @@ std::vector<VertexInputDesc> DXShader::GetInputLayout() const
     return input_layout_desc;
 }
 
+ResourceBindingDesc DXShader::GetResourceBindingDesc(const std::string& name) const
+{
+    D3D12_SHADER_INPUT_BIND_DESC input_bind_desc = {};
+    if (m_type == ShaderType::kLibrary)
+    {
+        ComPtr<ID3D12LibraryReflection> library_reflector;
+        DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
+        D3D12_LIBRARY_DESC lib_desc = {};
+        library_reflector->GetDesc(&lib_desc);
+        for (uint32_t i = 0; i < lib_desc.FunctionCount; ++i)
+        {
+            auto function_reflector = library_reflector->GetFunctionByIndex(i);
+            if (SUCCEEDED(function_reflector->GetResourceBindingDescByName(name.c_str(), &input_bind_desc)))
+                break;
+        }
+    }
+    else
+    {
+        ComPtr<ID3D12ShaderReflection> shader_reflector;
+        DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
+        ASSERT_SUCCEEDED(shader_reflector->GetResourceBindingDescByName(name.c_str(), &input_bind_desc));
+    }
+
+    ResourceBindingDesc binding_desc = {};
+    switch (input_bind_desc.Dimension)
+    {
+    case D3D_SRV_DIMENSION_BUFFER:
+        binding_desc.dimension = ResourceDimension::kBuffer;
+        break;
+    case D3D_SRV_DIMENSION_TEXTURE1D:
+        binding_desc.dimension = ResourceDimension::kTexture1D;
+        break;
+    case D3D_SRV_DIMENSION_TEXTURE1DARRAY:
+        binding_desc.dimension = ResourceDimension::kTexture1DArray;
+        break;
+    case D3D_SRV_DIMENSION_TEXTURE2D:
+        binding_desc.dimension = ResourceDimension::kTexture2D;
+        break;
+    case D3D_SRV_DIMENSION_TEXTURE2DARRAY:
+        binding_desc.dimension = ResourceDimension::kTexture2DArray;
+        break;
+    case D3D_SRV_DIMENSION_TEXTURE2DMS:
+        binding_desc.dimension = ResourceDimension::kTexture2DMS;
+        break;
+    case D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:
+        binding_desc.dimension = ResourceDimension::kTexture2DMSArray;
+        break;
+    case D3D_SRV_DIMENSION_TEXTURE3D:
+        binding_desc.dimension = ResourceDimension::kTexture3D;
+        break;
+    case D3D_SRV_DIMENSION_TEXTURECUBE:
+        binding_desc.dimension = ResourceDimension::kTextureCube;
+        break;
+    case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
+        binding_desc.dimension = ResourceDimension::kTextureCubeArray;
+        break;
+    default:
+        break;
+    }
+    if (input_bind_desc.Type == D3D_SIT_RTACCELERATIONSTRUCTURE)
+        binding_desc.dimension = ResourceDimension::kRaytracingAccelerationStructure;
+    return binding_desc;
+}
+
 ShaderType DXShader::GetType() const
 {
     return m_type;

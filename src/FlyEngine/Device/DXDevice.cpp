@@ -74,7 +74,7 @@ std::shared_ptr<Semaphore> DXDevice::CreateGPUSemaphore()
 std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
-    if (bind_flag & BindFlag::kSrv && format == DXGI_FORMAT_D32_FLOAT)
+    if (bind_flag & BindFlag::kSrv && dx_format == DXGI_FORMAT_D32_FLOAT)
         dx_format = DXGI_FORMAT_R32_TYPELESS;
 
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
@@ -119,7 +119,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
     {
         clear_value.DepthStencil.Depth = 1.0f;
         clear_value.DepthStencil.Stencil = 0;
-        if (format == DXGI_FORMAT_R32_TYPELESS)
+        if (dx_format == DXGI_FORMAT_R32_TYPELESS)
             clear_value.Format = DXGI_FORMAT_D32_FLOAT;
         p_clear_value = &clear_value;
     }

@@ -32,6 +32,11 @@ std::set<ShaderType> ProgramApi::GetShaderTypes() const
     return {};
 }
 
+void ProgramApi::ProgramDetach()
+{
+    m_framebuffer.reset();
+}
+
 void ProgramApi::SetBindingName(const BindKeyOld& bind_key, const std::string& name)
 {
     m_binding_names[bind_key] = name;
@@ -65,7 +70,8 @@ void ProgramApi::ApplyBindings()
     GraphicsPipelineDesc pipeline_desc = {
         m_program,
         m_shader_by_type.at(ShaderType::kVertex)->GetInputLayout(),
-        m_render_targets
+        m_render_targets,
+        m_depth
     };
 
     auto it = m_pso.find(pipeline_desc);
@@ -158,9 +164,25 @@ void ProgramApi::SetBinding(const BindKeyOld& bind_key, const ViewDesc& view_des
 
 std::shared_ptr<View> ProgramApi::CreateView(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res)
 {
+    auto it = m_views.find({ bind_key, view_desc, res });
+    if (it != m_views.end())
+        return it->second;
+    decltype(auto) shader = m_shader_by_type.at(bind_key.shader_type);
     ViewDesc desc = view_desc;
     desc.res_type = bind_key.res_type;
-    return m_device.CreateView(res, desc);
+    switch (bind_key.res_type)
+    {
+    case ResourceType::kSrv:
+    case ResourceType::kUav:
+    {
+        ResourceBindingDesc binding_desc = shader->GetResourceBindingDesc(GetBindingName(bind_key));
+        desc.dimension = binding_desc.dimension;
+        break;
+    }
+    }
+    auto view = m_device.CreateView(res, desc);
+    m_views.emplace(std::piecewise_construct, std::forward_as_tuple(bind_key, view_desc, res), std::forward_as_tuple(view));
+    return view;
 }
 
 std::shared_ptr<View> ProgramApi::FindView(ShaderType shader_type, ResourceType res_type, uint32_t slot)
@@ -210,6 +232,12 @@ void ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& co
 
 void ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)
 {
+    auto& view = FindView(ShaderType::kPixel, ResourceType::kDsv, 0);
+    if (!view)
+        return;
+    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kDepthTarget);
+    m_context.m_command_list->ClearDepth(view, Depth);
+    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kDepthTarget);
 }
 
 void ProgramApi::SetRasterizeState(const RasterizerDesc& desc)
@@ -275,4 +303,6 @@ void ProgramApi::OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const std
 
 void ProgramApi::OnAttachDSV(const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
 {
+    m_depth.format = resource->GetFormat();
+    m_context.m_command_list->ResourceBarrier(resource, ResourceState::kDepthTarget);
 }

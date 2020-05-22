@@ -19,6 +19,8 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const ViewDesc& view_desc, const D
     else
     {
         srv_desc.Format = res_desc.Format;
+        if (srv_desc.Format == DXGI_FORMAT_R32_TYPELESS)
+            srv_desc.Format = DXGI_FORMAT_R32_FLOAT;
         /*if (IsTypeless(srv_desc.Format))
         {
             switch (binding_desc.ReturnType)
@@ -291,6 +293,7 @@ DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, con
     DXResource* dx_resource = nullptr;
     if (resource)
         dx_resource = &resource->As<DXResource>();
+
     switch (view_desc.res_type)
     {
     case ResourceType::kSrv:
@@ -324,8 +327,12 @@ DXGI_FORMAT DXView::GetFormat() const
     return m_format;
 }
 
-void DXView::CreateSrv(const ViewDesc& view_desc, const DXResource* res, DXCPUDescriptorHandle& m_handle)
+void DXView::CreateSrv(const ViewDesc& _view_desc, const DXResource* res, DXCPUDescriptorHandle& m_handle)
 {
+    if (!res)
+        return;
+    ViewDesc view_desc = _view_desc;
+    view_desc.stride = res->stride;
     D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = DX12GeSRVDesc(view_desc, res->default_res->GetDesc());
     if (srv_desc.ViewDimension != D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE)
     {
@@ -338,8 +345,12 @@ void DXView::CreateSrv(const ViewDesc& view_desc, const DXResource* res, DXCPUDe
     }
 }
 
-void DXView::CreateUAV(const ViewDesc& view_desc, const DXResource* res, DXCPUDescriptorHandle& m_handle)
+void DXView::CreateUAV(const ViewDesc& _view_desc, const DXResource* res, DXCPUDescriptorHandle& m_handle)
 {
+    if (!res)
+        return;
+    ViewDesc view_desc = _view_desc;
+    view_desc.stride = res->stride;
     D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = DX12GetUAVDesc(view_desc, res->default_res->GetDesc());
     m_device.GetDevice()->CreateUnorderedAccessView(res->default_res.Get(), nullptr, &uav_desc, m_handle.GetCpuHandle());
 }

@@ -78,9 +78,17 @@ void VKCommandList::Clear(const std::shared_ptr<View>& view, const std::array<fl
     m_command_list->clearColorImage(vk_resource.image.res.get(), vk_resource.image.layout[ImageSubresourceRange], clear_color, ImageSubresourceRange);
 }
 
+void VKCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)
+{
+}
+
 void VKCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
 {
     m_command_list->drawIndexed(index_count, 1, start_index_location, base_vertex_location, 0);
+}
+
+void VKCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
+{
 }
 
 void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)

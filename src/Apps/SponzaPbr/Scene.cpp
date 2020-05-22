@@ -22,7 +22,7 @@ Scene::Scene(Context& context, int width, int height)
     , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
     , m_imgui_pass(m_context, { m_render_target_view, *this }, width, height)
 {
-#if !defined(_DEBUG)
+#if !defined(_DEBUG) && 0
     m_scene_list.emplace_back(m_context, "model/sponza_pbr/sponza.obj");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f));
 #endif
