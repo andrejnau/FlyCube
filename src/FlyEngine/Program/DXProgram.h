@@ -52,4 +52,5 @@ private:
     std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE>, BindingLayout> m_binding_layout;
     std::map<std::map<BindKey, std::shared_ptr<View>>, DXGPUDescriptorPoolRange> m_heap_cache;
     std::map<BindKey, size_t> m_bind_to_slot;
+    bool m_is_compute = false;
 };

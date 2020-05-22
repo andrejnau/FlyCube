@@ -24,6 +24,8 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
     for (auto& shader : m_shaders)
     {
         ShaderType shader_type = shader->GetType();
+        if (shader_type == ShaderType::kCompute)
+            m_is_compute = true;
         ComPtr<ID3DBlob> shader_blob = shader->GetBlob();
         uint32_t num_cbv = 0;
         uint32_t num_srv = 0;
@@ -354,7 +356,7 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSet(const std::vector<Bindin
         CopyDescriptor(descriptor_range.get(), m_binding_layout[{bind_key.shader, range_type}].table.heap_offset + slot, x.view);
     }
 
-    return std::make_shared<DXBindingSet>(*this, descriptor_ranges, m_binding_layout);
+    return std::make_shared<DXBindingSet>(*this, m_is_compute, descriptor_ranges, m_binding_layout);
 }
 
 const std::vector<std::shared_ptr<DXShader>>& DXProgram::GetShaders() const

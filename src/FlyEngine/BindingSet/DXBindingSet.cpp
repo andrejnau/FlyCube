@@ -1,21 +1,24 @@
 #include "BindingSet/DXBindingSet.h"
 #include <GPUDescriptorPool/DXGPUDescriptorPoolRange.h>
 
-DXBindingSet::DXBindingSet(DXProgram& program,
+DXBindingSet::DXBindingSet(DXProgram& program, bool is_compute,
                            std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::reference_wrapper<DXGPUDescriptorPoolRange>> descriptor_ranges,
                            std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE>, BindingLayout> binding_layout)
-    : m_descriptor_ranges(descriptor_ranges)
+    : m_is_compute(is_compute)
+    , m_descriptor_ranges(descriptor_ranges)
     , m_binding_layout(binding_layout)
 {
 }
 
-void SetRootDescriptorTable(const ComPtr<ID3D12GraphicsCommandList>& command_list, uint32_t RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor)
+void SetRootDescriptorTable(bool is_compute, const ComPtr<ID3D12GraphicsCommandList>& command_list, uint32_t RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor)
 {
     if (RootParameterIndex == -1)
         return;
-    command_list->SetGraphicsRootDescriptorTable(RootParameterIndex, BaseDescriptor);
+    if (is_compute)
+        command_list->SetComputeRootDescriptorTable(RootParameterIndex, BaseDescriptor);
+    else
+        command_list->SetGraphicsRootDescriptorTable(RootParameterIndex, BaseDescriptor);
 }
-
 
 std::vector<ComPtr<ID3D12DescriptorHeap>> DXBindingSet::Apply(const ComPtr<ID3D12GraphicsCommandList>& command_list)
 {
@@ -50,7 +53,7 @@ std::vector<ComPtr<ID3D12DescriptorHeap>> DXBindingSet::Apply(const ComPtr<ID3D1
                 continue;
             std::reference_wrapper<DXGPUDescriptorPoolRange> heap_range = m_descriptor_ranges.find(heap_type)->second;
             if (x.second.root_param_index != -1)
-                SetRootDescriptorTable(command_list, x.second.root_param_index, heap_range.get().GetGpuHandle(x.second.table.root_param_heap_offset));
+                SetRootDescriptorTable(m_is_compute, command_list, x.second.root_param_index, heap_range.get().GetGpuHandle(x.second.table.root_param_heap_offset));
         }
     }
     return descriptor_heaps;
