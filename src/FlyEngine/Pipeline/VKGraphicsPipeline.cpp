@@ -73,6 +73,11 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     CreateGrPipeLine();
 }
 
+PipelineType VKGraphicsPipeline::GetPipelineType() const
+{
+    return PipelineType::kGraphics;
+}
+
 vk::Pipeline VKGraphicsPipeline::GetPipeline() const
 {
     return m_pipeline.get();

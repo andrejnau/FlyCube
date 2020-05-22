@@ -20,6 +20,8 @@ public:
     virtual void BindBindingSet(const std::shared_ptr<BindingSet>& binding_set) = 0;
     virtual void BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer) = 0;
     virtual void EndRenderPass() = 0;
+    virtual void BeginEvent(const std::string& name) = 0;
+    virtual void EndEvent() = 0;
     virtual void Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color) = 0;
     virtual void ClearDepth(const std::shared_ptr<View>& view, float depth) = 0;
     virtual void DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location) = 0;

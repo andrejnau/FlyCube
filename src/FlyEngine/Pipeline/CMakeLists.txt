@@ -13,9 +13,11 @@ endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
+        DXComputePipeline.h
         DXGraphicsPipeline.h
     )
     list(APPEND sources
+        DXComputePipeline.cpp
         DXGraphicsPipeline.cpp
     )
 endif()

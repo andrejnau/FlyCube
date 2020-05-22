@@ -81,10 +81,12 @@ void Context::UseProgram(ProgramApi& program)
 
 void Context::BeginEvent(const std::string& name)
 {
+    m_command_list->BeginEvent(name);
 }
 
 void Context::EndEvent()
 {
+    m_command_list->EndEvent();
 }
 
 void Context::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
@@ -96,9 +98,9 @@ void Context::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int3
 
 void Context::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
 {
-    /*if (m_current_program)
+    if (m_current_program)
         m_current_program->ApplyBindings();
-    m_command_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);*/
+    m_command_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
 void Context::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)

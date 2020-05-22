@@ -12,6 +12,8 @@ class VKGraphicsPipeline : public Pipeline
 {
 public:
     VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc);
+    PipelineType GetPipelineType() const override;
+
     vk::Pipeline GetPipeline() const;
     vk::RenderPass GetRenderPass() const;
 

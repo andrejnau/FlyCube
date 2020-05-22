@@ -111,8 +111,8 @@ enum class CullMode
 
 struct RasterizerDesc
 {
-    FillMode fill_mode;
-    CullMode cull_mode;
+    FillMode fill_mode = FillMode::kSolid;
+    CullMode cull_mode = CullMode::kBack;
     int32_t DepthBias = 0;
 };
 
@@ -147,7 +147,7 @@ enum class DepthComparison
 
 struct DepthStencilDesc
 {
-    bool depth_enable;
+    bool depth_enable = true;
     DepthComparison func = DepthComparison::kLess;
 };
 
@@ -241,6 +241,14 @@ struct GraphicsPipelineDesc
     std::vector<VertexInputDesc> input;
     std::vector<RenderTargetDesc> rtvs;
     DepthStencilTargetDesc dsv;
+    DepthStencilDesc depth_desc;
+    BlendDesc blend_desc;
+    RasterizerDesc rasterizer_desc;
+};
+
+struct ComputePipelineDesc
+{
+    std::shared_ptr<Program> program;
 };
 
 struct BindingDesc
@@ -274,4 +282,10 @@ public:
 struct ResourceBindingDesc
 {
     ResourceDimension dimension;
+};
+
+enum class PipelineType
+{
+    kGraphics,
+    kCompute,
 };

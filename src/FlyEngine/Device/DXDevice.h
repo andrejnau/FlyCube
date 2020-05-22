@@ -25,6 +25,7 @@ public:
     std::shared_ptr<Shader> CompileShader(const ShaderDesc& desc) override;
     std::shared_ptr<Program> CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders) override;
     std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
+    std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) override;
     void Wait(const std::shared_ptr<Semaphore>& semaphore) override;
     void Signal(const std::shared_ptr<Semaphore>& semaphore) override;
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence) override;

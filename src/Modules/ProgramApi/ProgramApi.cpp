@@ -67,24 +67,49 @@ void ProgramApi::ApplyBindings()
 {
     UpdateCBuffers();
 
-    GraphicsPipelineDesc pipeline_desc = {
-        m_program,
-        m_shader_by_type.at(ShaderType::kVertex)->GetInputLayout(),
-        m_render_targets,
-        m_depth
-    };
-
-    auto it = m_pso.find(pipeline_desc);
-    if (it == m_pso.end())
+    if (m_shader_by_type.count(ShaderType::kCompute))
     {
-        m_pipeline = m_device.CreateGraphicsPipeline(pipeline_desc);
-        m_pso.emplace(std::piecewise_construct,
-            std::forward_as_tuple(pipeline_desc),
-            std::forward_as_tuple(m_pipeline));
+        ComputePipelineDesc pipeline_desc = {
+           m_program,
+        };
+
+        auto it = m_compute_pso.find(pipeline_desc);
+        if (it == m_compute_pso.end())
+        {
+            m_pipeline = m_device.CreateComputePipeline(pipeline_desc);
+            m_compute_pso.emplace(std::piecewise_construct,
+                std::forward_as_tuple(pipeline_desc),
+                std::forward_as_tuple(m_pipeline));
+        }
+        else
+        {
+            m_pipeline = it->second;
+        }
     }
     else
     {
-        m_pipeline = it->second;
+        GraphicsPipelineDesc pipeline_desc = {
+            m_program,
+            m_shader_by_type.at(ShaderType::kVertex)->GetInputLayout(),
+            m_render_targets,
+            m_depth,
+            m_depth_stencil_desc,
+            m_blend_desc,
+            m_rasterizer_desc,
+        };
+
+        auto it = m_pso.find(pipeline_desc);
+        if (it == m_pso.end())
+        {
+            m_pipeline = m_device.CreateGraphicsPipeline(pipeline_desc);
+            m_pso.emplace(std::piecewise_construct,
+                std::forward_as_tuple(pipeline_desc),
+                std::forward_as_tuple(m_pipeline));
+        }
+        else
+        {
+            m_pipeline = it->second;
+        }
     }
 
     std::vector<BindingDesc> descs;
@@ -242,14 +267,17 @@ void ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Ste
 
 void ProgramApi::SetRasterizeState(const RasterizerDesc& desc)
 {
+    m_rasterizer_desc = desc;
 }
 
 void ProgramApi::SetBlendState(const BlendDesc& desc)
 {
+    m_blend_desc = desc;
 }
 
 void ProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
 {
+    m_depth_stencil_desc = desc;
 }
 
 void ProgramApi::UpdateCBuffers()

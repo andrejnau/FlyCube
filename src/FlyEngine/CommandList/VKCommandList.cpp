@@ -57,6 +57,14 @@ void VKCommandList::EndRenderPass()
     m_command_list->endRenderPass();
 }
 
+void VKCommandList::BeginEvent(const std::string& name)
+{
+}
+
+void VKCommandList::EndEvent()
+{
+}
+
 void VKCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
 {
     if (!view)

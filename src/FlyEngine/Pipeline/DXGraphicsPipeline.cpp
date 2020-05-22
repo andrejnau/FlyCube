@@ -14,15 +14,88 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     m_graphics_pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     m_graphics_pso_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
     CD3DX12_DEPTH_STENCIL_DESC depth_stencil_desc(D3D12_DEFAULT);
-    depth_stencil_desc.DepthEnable = false;
+    depth_stencil_desc.DepthEnable = desc.depth_desc.depth_enable;
     depth_stencil_desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
     depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-    depth_stencil_desc.StencilEnable = FALSE;
+    depth_stencil_desc.StencilEnable = false;
+
+    if (desc.depth_desc.func == DepthComparison::kLess)
+        depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+    else if (desc.depth_desc.func == DepthComparison::kLessEqual)
+        depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
     m_graphics_pso_desc.DepthStencilState = depth_stencil_desc;
-    m_graphics_pso_desc.SampleMask = UINT_MAX;
+    m_graphics_pso_desc.SampleMask = std::numeric_limits<uint32_t>::max();
     m_graphics_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     m_graphics_pso_desc.SampleDesc.Count = 1;
     m_graphics_pso_desc.NumRenderTargets = 0;
+
+    {
+        switch (desc.rasterizer_desc.fill_mode)
+        {
+        case FillMode::kWireframe:
+            m_graphics_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+            break;
+        case FillMode::kSolid:
+            m_graphics_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+            break;
+        }
+
+        switch (desc.rasterizer_desc.cull_mode)
+        {
+        case CullMode::kNone:
+            m_graphics_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+            break;
+        case CullMode::kFront:
+            m_graphics_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+            break;
+        case CullMode::kBack:
+            m_graphics_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+            break;
+        }
+
+        m_graphics_pso_desc.RasterizerState.DepthBias = desc.rasterizer_desc.DepthBias;
+    }
+
+
+    auto convert = [](Blend type)
+    {
+        switch (type)
+        {
+        case Blend::kZero:
+            return D3D12_BLEND_ZERO;
+        case Blend::kSrcAlpha:
+            return D3D12_BLEND_SRC_ALPHA;
+        case Blend::kInvSrcAlpha:
+            return D3D12_BLEND_INV_SRC_ALPHA;
+        }
+        return static_cast<D3D12_BLEND>(0);
+    };
+
+    auto convert_op = [](BlendOp type)
+    {
+        switch (type)
+        {
+        case BlendOp::kAdd:
+            return D3D12_BLEND_OP_ADD;
+        }
+        return static_cast<D3D12_BLEND_OP>(0);
+    };
+
+    for (auto& rtv : m_desc.rtvs)
+    {
+        if (rtv.format == gli::format::FORMAT_UNDEFINED)
+            continue;
+        decltype(auto) rt_desc = m_graphics_pso_desc.BlendState.RenderTarget[rtv.slot];
+        rt_desc.BlendEnable = desc.blend_desc.blend_enable;
+        rt_desc.BlendOp = convert_op(desc.blend_desc.blend_op);
+        rt_desc.SrcBlend = convert(desc.blend_desc.blend_src);
+        rt_desc.DestBlend = convert(desc.blend_desc.blend_dest);
+        rt_desc.BlendOpAlpha = convert_op(desc.blend_desc.blend_op_alpha);
+        rt_desc.SrcBlendAlpha = convert(desc.blend_desc.blend_src_alpha);
+        rt_desc.DestBlendAlpha = convert(desc.blend_desc.blend_dest_apha);
+        rt_desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+    }
 
     decltype(auto) dx_program = m_desc.program->As<DXProgram>();
     auto shaders = dx_program.GetShaders();
@@ -53,6 +126,11 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     m_root_signature = dx_program.GetRootSignature();
     m_graphics_pso_desc.pRootSignature = m_root_signature.Get();
     ASSERT_SUCCEEDED(m_device.GetDevice()->CreateGraphicsPipelineState(&m_graphics_pso_desc, IID_PPV_ARGS(&m_pipeline_state)));
+}
+
+PipelineType DXGraphicsPipeline::GetPipelineType() const
+{
+    return PipelineType::kGraphics;
 }
 
 void DXGraphicsPipeline::FillRTVFormats()

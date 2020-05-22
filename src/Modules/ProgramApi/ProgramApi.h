@@ -115,9 +115,13 @@ private:
     };
 
     std::unordered_map<GraphicsPipelineDesc, std::shared_ptr<Pipeline>, Hasher<GraphicsPipelineDesc>, EqualFn<GraphicsPipelineDesc>> m_pso;
+    std::unordered_map<ComputePipelineDesc, std::shared_ptr<Pipeline>, Hasher<ComputePipelineDesc>, EqualFn<ComputePipelineDesc>> m_compute_pso;
     std::vector<RenderTargetDesc> m_render_targets;
     DepthStencilTargetDesc m_depth;
     std::map<std::pair<std::vector<std::shared_ptr<View>>, std::shared_ptr<View>>, std::shared_ptr<Framebuffer>> m_framebuffers;
     std::shared_ptr<Framebuffer> m_framebuffer;
     std::map<std::tuple<BindKeyOld, ViewDesc, std::shared_ptr<Resource>>, std::shared_ptr<View>> m_views;
+    DepthStencilDesc m_depth_stencil_desc = {};
+    BlendDesc m_blend_desc = {};
+    RasterizerDesc m_rasterizer_desc = {};
 };

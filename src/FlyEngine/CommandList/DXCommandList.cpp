@@ -5,12 +5,14 @@
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
 #include <Pipeline/DXGraphicsPipeline.h>
+#include <Pipeline/DXComputePipeline.h>
 #include <Framebuffer/DXFramebuffer.h>
 #include <BindingSet/DXBindingSet.h>
 #include <dxgi1_6.h>
 #include <d3d12.h>
 #include <d3dx12.h>
 #include <gli/dx.hpp>
+#include <pix.h>
 
 DXCommandList::DXCommandList(DXDevice& device)
     : m_device(device)
@@ -34,10 +36,20 @@ void DXCommandList::Close()
 
 void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
-    decltype(auto) dx_state = state->As<DXGraphicsPipeline>();
-    m_command_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    m_command_list->SetGraphicsRootSignature(dx_state.GetRootSignature().Get());
-    m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
+    auto type = state->GetPipelineType();
+    if (type == PipelineType::kGraphics)
+    {
+        decltype(auto) dx_state = state->As<DXGraphicsPipeline>();
+        m_command_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        m_command_list->SetGraphicsRootSignature(dx_state.GetRootSignature().Get());
+        m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
+    }
+    else if (type == PipelineType::kCompute)
+    {
+        decltype(auto) dx_state = state->As<DXComputePipeline>();
+        m_command_list->SetComputeRootSignature(dx_state.GetRootSignature().Get());
+        m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
+    }
 }
 
 void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
@@ -71,7 +83,17 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuf
 
 void DXCommandList::EndRenderPass()
 {
+}
 
+void DXCommandList::BeginEvent(const std::string& name)
+{
+    std::wstring wname = utf8_to_wstring(name);
+    PIXBeginEvent(m_command_list.Get(), 0, wname.c_str());
+}
+
+void DXCommandList::EndEvent()
+{
+    PIXEndEvent(m_command_list.Get());
 }
 
 void DXCommandList::Clear(const std::shared_ptr<View>& view, const std::array<float, 4>& color)

@@ -30,6 +30,7 @@ public:
     virtual std::shared_ptr<Shader> CompileShader(const ShaderDesc& desc) = 0;
     virtual std::shared_ptr<Program> CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders) = 0;
     virtual std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
+    virtual std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) = 0;
     virtual void Wait(const std::shared_ptr<Semaphore>& semaphore) = 0;
     virtual void Signal(const std::shared_ptr<Semaphore>& semaphore) = 0;
     virtual void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence = {}) = 0;

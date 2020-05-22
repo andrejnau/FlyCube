@@ -325,6 +325,11 @@ std::shared_ptr<Pipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelin
     return std::make_shared<VKGraphicsPipeline>(*this, desc);
 }
 
+std::shared_ptr<Pipeline> VKDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
+{
+    return {};
+}
+
 void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
 {
     std::vector<vk::Semaphore> vk_semaphores;
