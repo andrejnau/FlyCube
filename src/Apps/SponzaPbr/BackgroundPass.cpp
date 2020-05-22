@@ -1,7 +1,6 @@
 #include "BackgroundPass.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
-#include <Utilities/State.h>
 
 BackgroundPass::BackgroundPass(Context& context, const Input& input, int width, int height)
     : m_context(context)
@@ -54,7 +53,7 @@ void BackgroundPass::OnResize(int width, int height)
     m_height = height;
 }
 
-void BackgroundPass::OnModifySettings(const Settings& settings)
+void BackgroundPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     m_settings = settings;
 }

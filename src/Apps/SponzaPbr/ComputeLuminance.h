@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Settings.h"
+#include "SponzaSettings.h"
 #include <Scene/SceneBase.h>
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
@@ -9,15 +9,15 @@
 #include <ProgramRef/HDRApplyPS.h>
 #include <ProgramRef/HDRApplyVS.h>
 
-class ComputeLuminance : public IPass, public IModifySettings
+class ComputeLuminance : public IPass, public IModifySponzaSettings
 {
 public:
     struct Input
     {
-        Resource::Ptr& hdr_res;
+        std::shared_ptr<Resource>& hdr_res;
         Model& model;
-        Resource::Ptr& rtv;
-        Resource::Ptr& dsv;
+        std::shared_ptr<Resource>& rtv;
+        std::shared_ptr<Resource>& dsv;
     };
 
     struct Output
@@ -29,7 +29,7 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
-    virtual void OnModifySettings(const Settings & settings) override;
+    virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
     void GetLum2DPassCS(size_t buf_id, uint32_t thread_group_x, uint32_t thread_group_y);
@@ -40,13 +40,13 @@ private:
 
     void Draw(size_t buf_id);
 
-    Settings m_settings;
+    SponzaSettings m_settings;
     Context& m_context;
     Input m_input;
     int m_width;
     int m_height;
-    Program<HDRLum1DPassCS> m_HDRLum1DPassCS;
-    Program<HDRLum2DPassCS> m_HDRLum2DPassCS;
-    Program<HDRApplyPS, HDRApplyVS> m_HDRApply;
-    std::vector<Resource::Ptr> m_use_res;
+    ProgramHolder<HDRLum1DPassCS> m_HDRLum1DPassCS;
+    ProgramHolder<HDRLum2DPassCS> m_HDRLum2DPassCS;
+    ProgramHolder<HDRApplyPS, HDRApplyVS> m_HDRApply;
+    std::vector<std::shared_ptr<Resource>> m_use_res;
 };

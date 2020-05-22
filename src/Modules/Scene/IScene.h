@@ -1,9 +1,10 @@
 #pragma once
 
 #include <memory>
-#include "ApiType.h"
+#include <AppBox/InputEvents.h>
+#include <AppBox/WindowEvents.h>
 
-class IPass
+class IPass : public WindowEvents
 {
 public:
     virtual ~IPass() = default;
@@ -12,20 +13,9 @@ public:
     virtual void OnResize(int width, int height) {}
 };
 
-class IInput
-{
-public:
-    virtual ~IInput() = default;
-    virtual void OnKey(int key, int action) {}
-    virtual void OnMouse(bool first, double xpos, double ypos) {}
-    virtual void OnMouseButton(int button, int action) {}
-    virtual void OnScroll(double xoffset, double yoffset) {}
-    virtual void OnInputChar(unsigned int ch) {}
-};
-
 class IScene
     : public IPass
-    , public IInput
+    , public InputEvents
 {
 public:
     using Ptr = std::unique_ptr<IScene>;

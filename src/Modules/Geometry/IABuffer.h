@@ -28,12 +28,12 @@ public:
             m_context.IASetVertexBuffer(slot, m_buffer);
     }
 
-    Resource::Ptr GetBuffer() const
+    std::shared_ptr<Resource> GetBuffer() const
     {
         return m_buffer;
     }
 
-    Resource::Ptr GetDynamicBuffer()
+    std::shared_ptr<Resource> GetDynamicBuffer()
     {
         if (!m_dynamic_buffer)
             m_dynamic_buffer = m_context.CreateBuffer(BindFlag::kVbv | BindFlag::kUav, static_cast<uint32_t>(m_size), static_cast<uint32_t>(m_stride));
@@ -52,8 +52,8 @@ public:
 
 private:
     Context& m_context;
-    Resource::Ptr m_buffer;
-    Resource::Ptr m_dynamic_buffer;
+    std::shared_ptr<Resource> m_buffer;
+    std::shared_ptr<Resource> m_dynamic_buffer;
     size_t m_stride;
     size_t m_offset;
     size_t m_size;
@@ -83,7 +83,7 @@ public:
             m_context.IASetIndexBuffer(m_buffer, m_format);
     }
 
-    Resource::Ptr GetBuffer() const
+    std::shared_ptr<Resource> GetBuffer() const
     {
         return m_buffer;
     }
@@ -100,7 +100,7 @@ public:
 
 private:
     Context& m_context;
-    Resource::Ptr m_buffer;
+    std::shared_ptr<Resource> m_buffer;
     size_t m_stride;
     size_t m_offset;
     size_t m_count;

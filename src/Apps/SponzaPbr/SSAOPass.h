@@ -1,14 +1,14 @@
 #pragma once
 
 #include "GeometryPass.h"
-#include "Settings.h"
+#include "SponzaSettings.h"
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/SSAOPassPS.h>
 #include <ProgramRef/SSAOPassVS.h>
 #include <ProgramRef/SSAOBlurPassPS.h>
 
-class SSAOPass : public IPass, public IModifySettings
+class SSAOPass : public IPass, public IModifySponzaSettings
 {
 public:
     struct Input
@@ -20,7 +20,7 @@ public:
 
     struct Output
     {
-        Resource::Ptr ao;
+        std::shared_ptr<Resource> ao;
     } output;
 
     SSAOPass(Context& context, const Input& input, int width, int height);
@@ -28,21 +28,21 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
-    virtual void OnModifySettings(const Settings & settings) override;
+    virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
-    void SetDefines(Program<SSAOPassPS, SSAOPassVS>& program);
+    void SetDefines(ProgramHolder<SSAOPassPS, SSAOPassVS>& program);
     void CreateSizeDependentResources();
 
-    Settings m_settings;
+    SponzaSettings m_settings;
     Context& m_context;
     Input m_input;
     int m_width;
     int m_height;
-    Resource::Ptr m_noise_texture;
-    Resource::Ptr m_depth_stencil_view;
-    Program<SSAOPassPS, SSAOPassVS> m_program;
-    Program<SSAOBlurPassPS, SSAOPassVS> m_program_blur;
-    Resource::Ptr m_ao;
-    Resource::Ptr m_ao_blur;
+    std::shared_ptr<Resource> m_noise_texture;
+    std::shared_ptr<Resource> m_depth_stencil_view;
+    ProgramHolder<SSAOPassPS, SSAOPassVS> m_program;
+    ProgramHolder<SSAOBlurPassPS, SSAOPassVS> m_program_blur;
+    std::shared_ptr<Resource> m_ao;
+    std::shared_ptr<Resource> m_ao_blur;
 };

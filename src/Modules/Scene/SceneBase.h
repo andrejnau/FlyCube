@@ -2,7 +2,6 @@
 
 #include "Scene/IScene.h"
 #include <Camera/Camera.h>
-#include <Geometry/Geometry.h>
 #include <glm/glm.hpp>
 #include <vector>
 #include <map>

@@ -117,9 +117,9 @@ void RayTracingAOPass::CreateSizeDependentResources()
     m_ao_blur = m_context.CreateTexture((BindFlag)(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav), gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
 }
 
-void RayTracingAOPass::OnModifySettings(const Settings& settings)
+void RayTracingAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
-    Settings prev = m_settings;
+    SponzaSettings prev = m_settings;
     m_settings = settings;
     if (prev.msaa_count != m_settings.msaa_count)
     {

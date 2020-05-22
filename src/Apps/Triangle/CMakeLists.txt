@@ -15,7 +15,7 @@ function(gen_shaders_ref shaders shaders_ref)
             COMMAND ${CMAKE_COMMAND} -E echo ${shader_name} ${shader_path} ${entrypoint} ${type} ${model} ${template} ${output_dir}
             COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
             COMMAND $<TARGET_FILE:ParseShader> ${shader_name} ${shader_path} ${entrypoint} ${type} ${model} ${template} ${output_dir}
-            DEPENDS ${template} "${full_shader_path}" ParseShader
+            DEPENDS ${template} "${full_shader_path}"
         )
         set(output_shaders_ref ${output_shaders_ref} ${output_file})
     endforeach()
@@ -79,3 +79,5 @@ target_link_libraries(${target}
     Program
     imgui
 )
+
+set_target_properties(${target} PROPERTIES FOLDER "Apps")

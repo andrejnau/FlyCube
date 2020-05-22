@@ -1,11 +1,12 @@
 #pragma once
-
-#include <Scene/IScene.h>
-#include <GLFW/glfw3.h>
+#include "AppBox/InputEvents.h"
+#include "AppBox/WindowEvents.h"
+#include "AppBox/Settings.h"
+#include <ApiType/ApiType.h>
 #include <functional>
 #include <string>
 #include <memory>
-#include <Context/Context.h>
+#include <GLFW/glfw3.h>
 
 struct AppRect
 {
@@ -16,39 +17,31 @@ struct AppRect
 class AppBox
 {
 public:
-    using CreateSample = std::function<IScene::Ptr(Context&, int, int)>;
-    AppBox(int argc, char* argv[], const std::string& title);
-    AppBox(int argc, char *argv[], const CreateSample& create_sample, const std::string& title);
-    AppBox(const CreateSample& create_sample, ApiType api_type, const std::string& title, int width, int height);
+    AppBox(const std::string& title, Settings setting);
     ~AppBox();
-    int Run();
-    bool ShouldClose();
-    void PollEvents();
+    bool PollEvents();
 
-    Context& GetContext();
     AppRect GetAppRect() const;
-
-    static AppRect GetPrimaryMonitorRect();
+    GLFWwindow* GetWindow() const;
+    void UpdateFps();
+    void SubscribeEvents(InputEvents* input_listener, WindowEvents* window_listener);
 
 private:
-    void Init();
-    void InitWindow();
-    void SetWindowToCenter();
-
     static void OnSizeChanged(GLFWwindow* window, int width, int height);
     static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
     static void OnMouse(GLFWwindow* window, double xpos, double ypos);
     static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
     static void OnScroll(GLFWwindow* window, double xoffset, double yoffset);
-    static void OnInputChar(GLFWwindow* window, unsigned int ch);
+    static void OnInputChar(GLFWwindow* window, uint32_t ch);
 
-    CreateSample m_create_sample;
-    ApiType m_api_type;
+    Settings m_setting;
     std::string m_title;
-    IScene::Ptr m_sample;
-    GLFWwindow* m_window;
-    int m_width;
-    int m_height;
-    bool m_exit;
-    std::unique_ptr<Context> m_context;
+    InputEvents* m_input_listener = nullptr;
+    WindowEvents* m_window_listener = nullptr;
+    GLFWwindow* m_window = nullptr;
+    int m_width = 0;
+    int m_height = 0;
+    bool m_exit_request = false;
+    uint32_t m_frame_number = 0;
+    double m_last_time = 0;
 };

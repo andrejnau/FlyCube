@@ -30,7 +30,7 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
         SamplerComparisonFunc::kLess });
 }
 
-void LightPass::SetDefines(Program<LightPassPS, LightPassVS>& program)
+void LightPass::SetDefines(ProgramHolder<LightPassPS, LightPassVS>& program)
 {
     if (m_settings.msaa_count != 1)
         program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
@@ -149,9 +149,9 @@ void LightPass::CreateSizeDependentResources()
     m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
 }
 
-void LightPass::OnModifySettings(const Settings& settings)
+void LightPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
-    Settings prev = m_settings;
+    SponzaSettings prev = m_settings;
     m_settings = settings;
     if (prev.msaa_count != m_settings.msaa_count)
     {

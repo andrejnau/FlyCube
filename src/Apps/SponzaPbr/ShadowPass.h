@@ -6,9 +6,9 @@
 #include <ProgramRef/ShadowPassVS.h>
 #include <ProgramRef/ShadowPassGS.h>
 #include <ProgramRef/ShadowPassPS.h>
-#include "Settings.h"
+#include "SponzaSettings.h"
 
-class ShadowPass : public IPass, public IModifySettings
+class ShadowPass : public IPass, public IModifySponzaSettings
 {
 public:
     struct Input
@@ -20,7 +20,7 @@ public:
 
     struct Output
     {
-        Resource::Ptr srv;
+        std::shared_ptr<Resource> srv;
     } output;
 
     ShadowPass(Context& context, const Input& input, int width, int height);
@@ -28,16 +28,16 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
-    virtual void OnModifySettings(const Settings & settings) override;
+    virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
     void CreateSizeDependentResources();
 
-    Settings m_settings;
+    SponzaSettings m_settings;
     Context& m_context;
     Input m_input;
-    Program<ShadowPassVS, ShadowPassGS, ShadowPassPS> m_program;
-    Resource::Ptr m_buffer;
-    Resource::Ptr m_sampler;
+    ProgramHolder<ShadowPassVS, ShadowPassGS, ShadowPassPS> m_program;
+    std::shared_ptr<Resource> m_buffer;
+    std::shared_ptr<Resource> m_sampler;
 };
 

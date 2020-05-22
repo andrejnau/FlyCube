@@ -20,8 +20,8 @@ void SkinningPass::OnRender()
         if (!model.bones.UpdateAnimation(glfwGetTime()))
             continue;
 
-        Resource::Ptr bones_info_srv = model.bones.GetBonesInfo(m_context);
-        Resource::Ptr bone_srv = model.bones.GetBone(m_context);
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context);
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context);
 
         m_program.cs.srv.index_buffer.Attach(model.ia.indices.GetBuffer());
 
@@ -48,7 +48,7 @@ void SkinningPass::OnRender()
     }
 }
 
-void SkinningPass::OnModifySettings(const Settings& settings)
+void SkinningPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     m_settings = settings;
 }

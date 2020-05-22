@@ -1,14 +1,14 @@
 #pragma once
 
 #include "GeometryPass.h"
-#include "Settings.h"
+#include "SponzaSettings.h"
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/RayTracingAO.h>
 #include <ProgramRef/SSAOPassVS.h>
 #include <ProgramRef/SSAOBlurPassPS.h>
 
-class RayTracingAOPass : public IPass, public IModifySettings
+class RayTracingAOPass : public IPass, public IModifySponzaSettings
 {
 public:
     struct Input
@@ -21,7 +21,7 @@ public:
 
     struct Output
     {
-        Resource::Ptr ao;
+        std::shared_ptr<Resource> ao;
     } output;
 
     RayTracingAOPass(Context& context, const Input& input, int width, int height);
@@ -29,26 +29,26 @@ public:
     virtual void OnUpdate() override;
     virtual void OnRender() override;
     virtual void OnResize(int width, int height) override;
-    virtual void OnModifySettings(const Settings & settings) override;
+    virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
     void CreateSizeDependentResources();
 
-    Settings m_settings;
+    SponzaSettings m_settings;
     Context& m_context;
     Input m_input;
     int m_width;
     int m_height;
-    Program<RayTracingAO> m_raytracing_program;
-    Program<SSAOBlurPassPS, SSAOPassVS> m_program_blur;
+    ProgramHolder<RayTracingAO> m_raytracing_program;
+    ProgramHolder<SSAOBlurPassPS, SSAOPassVS> m_program_blur;
 
-    std::vector<Resource::Ptr> m_bottom;
-    Resource::Ptr m_top;
-    Resource::Ptr m_indices;
-    Resource::Ptr m_positions;
+    std::vector<std::shared_ptr<Resource>> m_bottom;
+    std::shared_ptr<Resource> m_top;
+    std::shared_ptr<Resource> m_indices;
+    std::shared_ptr<Resource> m_positions;
     bool m_is_initialized = false;
-    Resource::Ptr m_ao;
-    Resource::Ptr m_ao_blur;
-    std::vector<std::pair<Resource::Ptr, glm::mat4>> m_geometry;
+    std::shared_ptr<Resource> m_ao;
+    std::shared_ptr<Resource> m_ao_blur;
+    std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> m_geometry;
 };
 

@@ -2,10 +2,10 @@
 
 #include <cstdint>
 
-class Settings
+class SponzaSettings
 {
 public:
-    Settings();
+    SponzaSettings();
 
     uint32_t msaa_count;
     int width;
@@ -51,8 +51,8 @@ public:
     bool dynamic_sun_position;
 };
 
-class IModifySettings
+class IModifySponzaSettings
 {
 public:
-    virtual void OnModifySettings(const Settings& settings) {}
+    virtual void OnModifySponzaSettings(const SponzaSettings& settings) {}
 };

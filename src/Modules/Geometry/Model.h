@@ -30,13 +30,13 @@ public:
     glm::mat4 matrix = glm::mat4(1);
     bool ibl_request = false;
     int32_t ibl_source = -1;
-    Resource::Ptr ibl_rtv;
-    Resource::Ptr ibl_dsv;
+    std::shared_ptr<Resource> ibl_rtv;
+    std::shared_ptr<Resource> ibl_dsv;
 
     struct Output
     {
-        Resource::Ptr irradince;
-        Resource::Ptr prefilter;
+        std::shared_ptr<Resource> irradince;
+        std::shared_ptr<Resource> prefilter;
     } ibl;
 
     const Material& GetMaterial(size_t range_id) const

@@ -1,5 +1,4 @@
 #include "Scene/SceneBase.h"
-#include <Utilities/State.h>
 #include <glm/gtx/transform.hpp>
 #include <GLFW/glfw3.h>
 #include <chrono>

@@ -2,16 +2,17 @@
 
 C++ graphics API agnostic, simple Engine/Framework, Sponza viewer.
 
-* Supported rendering backends
-  * DirectX 11
+* Backends
   * DirectX 12
-  * DirectX Ray Tracing API
   * Vulkan
-  * Vulkan Ray Tracing API (initial support, checked only on triangle)
-  * OpenGL
 
-* Supported platforms
-  * Windows 10 only
+* Planned features
+  * Ray Tracing (copy/rework from old implementation)
+  * Mesh shading (need investigation)
+  * DX11/OpenGL were available on [commit](https://github.com/andrejnau/FlyCube/tree/9756f8fae2530a635302c549694374206c886b5c), not sure if these api really needs
+
+* Platforms
+  * Windows 10
 
 * Engine Features
   * HLSL as shading language for all backends
@@ -84,11 +85,6 @@ cd build
 cmake -G "Visual Studio 16 2019 Win64" ..
 cmake --build . --config RelWithDebInfo
 ```
-
-## Setup for Vulkan Ray Tracing
-Download latest dxc with support spirv backend from https://ci.appveyor.com/project/antiagainst/directxshadercompiler/branch/master/artifacts
-Unzip to 3rdparty/dxc-artifacts
-Copy dxil.dll from WinKits if you need DirectX12 backend too.
 
 ## SponzaPbr Settings
 Press Tab to open settings menu

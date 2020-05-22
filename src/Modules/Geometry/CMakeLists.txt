@@ -27,7 +27,8 @@ target_include_directories(${target}
 
 target_link_libraries(${target}
     Utilities
+    Context
     assimp
 )
 
-set_target_properties(${target} PROPERTIES FOLDER "library")
+set_target_properties(${target} PROPERTIES FOLDER "Modules")

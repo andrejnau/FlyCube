@@ -1,30 +1,33 @@
-set(target AppBox)
-
-set(headers
+list(APPEND headers
     AppBox.h
+    ArgsParser.h
+    InputEvents.h
+    Settings.h
+    WindowEvents.h
 )
 
-set(sources
+list(APPEND sources
     AppBox.cpp
+    ArgsParser.cpp
 )
 
-add_library(${target} ${headers} ${sources})
+add_library(AppBox ${headers} ${sources})
 
-target_link_libraries(${target}
+target_link_libraries(AppBox
     glfw
-	Context
+    ApiType
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(${target}
+    target_link_libraries(AppBox
         ${Vulkan_LIBRARIES}
     )
 endif()
 
-target_include_directories(${target}
+target_include_directories(AppBox
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
         ${Vulkan_INCLUDE_DIR}
 )
 
-set_target_properties(${target} PROPERTIES FOLDER "library")
+set_target_properties(AppBox PROPERTIES FOLDER "Modules")

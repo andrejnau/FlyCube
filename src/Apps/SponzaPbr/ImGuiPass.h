@@ -9,13 +9,13 @@
 #include "ImGuiSettings.h"
 
 class ImGuiPass : public IPass
-                , public IInput
+                , public InputEvents
 {
 public:
     struct Input
     {
-        Resource::Ptr& rtv;
-        IModifySettings& root_scene;
+        std::shared_ptr<Resource>& rtv;
+        IModifySponzaSettings& root_scene;
     };
 
     struct Output
@@ -44,12 +44,12 @@ private:
     int m_width;
     int m_height;
 
-    Resource::Ptr m_font_texture_view;
-    Program<ImGuiPassPS, ImGuiPassVS> m_program;
+    std::shared_ptr<Resource> m_font_texture_view;
+    ProgramHolder<ImGuiPassPS, ImGuiPassVS> m_program;
     PerFrameData<std::unique_ptr<IAVertexBuffer>> m_positions_buffer;
     PerFrameData<std::unique_ptr<IAVertexBuffer>> m_texcoords_buffer;
     PerFrameData<std::unique_ptr<IAVertexBuffer>> m_colors_buffer;
     PerFrameData<std::unique_ptr<IAIndexBuffer>> m_indices_buffer;
-    Resource::Ptr m_sampler;
+    std::shared_ptr<Resource> m_sampler;
     ImGuiSettings m_settings;
 };

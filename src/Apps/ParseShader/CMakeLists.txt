@@ -23,3 +23,5 @@ target_link_libraries(${target}
     Utilities
     Shader
 )
+
+set_target_properties(${target} PROPERTIES FOLDER "Apps")
