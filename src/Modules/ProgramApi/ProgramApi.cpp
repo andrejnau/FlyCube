@@ -10,8 +10,7 @@ static size_t GenId()
 
 ProgramApi::ProgramApi(Context& context)
     : m_context(context)
-    , m_cbv_buffer(context.FrameCount)
-    , m_cbv_offset(context.FrameCount)
+    , m_cbv_data(context.FrameCount)
     , m_program_id(GenId())
     , m_device(*context.m_device)
 {
@@ -282,18 +281,21 @@ void ProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
 
 void ProgramApi::UpdateCBuffers()
 {
-    for (auto &x : m_cbv_layout)
+    for (auto& x : m_cbv_layout)
     {
+        decltype(auto) cbv_buffer = m_cbv_data[m_context.GetFrameIndex()].cbv_buffer;
+        decltype(auto) cbv_offset = m_cbv_data[m_context.GetFrameIndex()].cbv_offset;
         BufferLayout& buffer_layout = x.second;
+
         auto& buffer_data = buffer_layout.GetBuffer();
         bool change_buffer = buffer_layout.SyncData();
-        change_buffer = change_buffer || !m_cbv_offset[m_context.m_frame_index].count(x.first);
-        if (change_buffer && m_cbv_offset[m_context.m_frame_index].count(x.first))
-            ++m_cbv_offset[m_context.m_frame_index][x.first];
-        if (m_cbv_offset[m_context.m_frame_index][x.first] >= m_cbv_buffer[m_context.m_frame_index][x.first].size())
-            m_cbv_buffer[m_context.m_frame_index][x.first].push_back(m_context.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_data.size()), 0));
+        change_buffer = change_buffer || !cbv_offset.count(x.first);
+        if (change_buffer && cbv_offset.count(x.first))
+            ++cbv_offset[x.first];
+        if (cbv_offset[x.first] >= cbv_buffer[x.first].size())
+            cbv_buffer[x.first].push_back(m_context.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_data.size()), 0));
 
-        auto& res = m_cbv_buffer[m_context.m_frame_index][x.first][m_cbv_offset[m_context.m_frame_index][x.first]];
+        auto& res = cbv_buffer[x.first][cbv_offset[x.first]];
         if (change_buffer)
         {
             m_context.UpdateSubresource(res, 0, buffer_layout.GetBuffer().data(), 0, 0);

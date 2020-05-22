@@ -68,8 +68,14 @@ protected:
     };
     std::map<BindKeyOld, BoundResource> m_bound_resources;
     std::map<BindKeyOld, std::reference_wrapper<BufferLayout>> m_cbv_layout;
-    std::vector<std::map<BindKeyOld, std::vector<std::shared_ptr<Resource>>>> m_cbv_buffer;
-    std::vector<std::map<BindKeyOld, size_t>> m_cbv_offset;
+
+    struct CBufferData
+    {
+        std::map<BindKeyOld, std::vector<std::shared_ptr<Resource>>> cbv_buffer;
+        std::map<BindKeyOld, size_t> cbv_offset;
+    };
+
+    std::vector< CBufferData> m_cbv_data;
 
     std::set<ShaderType> m_shader_types;
 private:
