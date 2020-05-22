@@ -114,6 +114,16 @@ struct RasterizerDesc
     FillMode fill_mode = FillMode::kSolid;
     CullMode cull_mode = CullMode::kBack;
     int32_t DepthBias = 0;
+
+    auto MakeTie() const
+    {
+        return std::tie(fill_mode, cull_mode, DepthBias);
+    }
+
+    bool operator< (const RasterizerDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
 };
 
 enum class Blend
@@ -137,6 +147,16 @@ struct BlendDesc
     Blend blend_src_alpha;
     Blend blend_dest_apha;
     BlendOp blend_op_alpha;
+
+    auto MakeTie() const
+    {
+        return std::tie(blend_enable, blend_src, blend_dest, blend_op, blend_src_alpha, blend_dest_apha, blend_op_alpha);
+    }
+
+    bool operator< (const BlendDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
 };
 
 enum class DepthComparison
@@ -149,6 +169,16 @@ struct DepthStencilDesc
 {
     bool depth_enable = true;
     DepthComparison func = DepthComparison::kLess;
+
+    auto MakeTie() const
+    {
+        return std::tie(depth_enable, func);
+    }
+
+    bool operator< (const DepthStencilDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
 };
 
 enum class ShaderType
@@ -219,17 +249,47 @@ struct VertexInputDesc
     uint32_t slot = 0;
     std::string semantic_name;
     gli::format format = gli::format::FORMAT_UNDEFINED;
+
+    auto MakeTie() const
+    {
+        return std::tie(slot, semantic_name, format);
+    }
+
+    bool operator< (const VertexInputDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
 };
 
 struct RenderTargetDesc
 {
     uint32_t slot = 0;
     gli::format format = gli::format::FORMAT_UNDEFINED;
+
+    auto MakeTie() const
+    {
+        return std::tie(slot, format);
+    }
+
+    bool operator< (const RenderTargetDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
 };
 
 struct DepthStencilTargetDesc
 {
     gli::format format = gli::format::FORMAT_UNDEFINED;
+
+    auto MakeTie() const
+    {
+        return std::tie(format);
+    }
+
+    bool operator< (const DepthStencilTargetDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
 };
 
 class Program;
@@ -244,11 +304,31 @@ struct GraphicsPipelineDesc
     DepthStencilDesc depth_desc;
     BlendDesc blend_desc;
     RasterizerDesc rasterizer_desc;
+
+    auto MakeTie() const
+    {
+        return std::tie(program, input, rtvs, dsv, depth_desc, blend_desc, rasterizer_desc);
+    }
+
+    bool operator< (const GraphicsPipelineDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
 };
 
 struct ComputePipelineDesc
 {
     std::shared_ptr<Program> program;
+
+    auto MakeTie() const
+    {
+        return std::tie(program);
+    }
+
+    bool operator< (const ComputePipelineDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
 };
 
 struct BindingDesc

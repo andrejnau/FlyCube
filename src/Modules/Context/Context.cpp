@@ -20,9 +20,9 @@ Context::Context(const Settings& settings, GLFWwindow* window)
     m_rendering_finished_semaphore = m_device->CreateGPUSemaphore();
 }
 
-std::unique_ptr<ProgramApi> Context::CreateProgram()
+std::shared_ptr<ProgramApi> Context::CreateProgram()
 {
-    return std::make_unique<ProgramApi>(*this);
+    return m_created_program.emplace_back(std::make_shared<ProgramApi>(*this));
 }
 
 std::shared_ptr<Resource> Context::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
@@ -132,6 +132,9 @@ void Context::Present()
     m_frame_index %= FrameCount;
     m_command_list = m_command_lists[m_frame_index];
     m_command_list->Open();
+
+    for (auto& x : m_created_program)
+        x->OnPresent();
 }
 
 void Context::OnResize(int width, int height)

@@ -36,6 +36,11 @@ void ProgramApi::ProgramDetach()
     m_framebuffer.reset();
 }
 
+void ProgramApi::OnPresent()
+{
+    m_cbv_data[m_context.GetFrameIndex()].cbv_offset.clear();
+}
+
 void ProgramApi::SetBindingName(const BindKeyOld& bind_key, const std::string& name)
 {
     m_binding_names[bind_key] = name;
@@ -60,6 +65,16 @@ void ProgramApi::AddAvailableShaderType(ShaderType type)
 void ProgramApi::LinkProgram()
 {
     m_program = m_device.CreateProgram(m_shaders);
+
+    if (m_shader_by_type.count(ShaderType::kCompute))
+    {
+        m_compute_pipeline_desc.program = m_program;
+    }
+    else
+    {
+        m_graphic_pipeline_desc.program = m_program;
+        m_graphic_pipeline_desc.input = m_shader_by_type.at(ShaderType::kVertex)->GetInputLayout();
+    }
 }
 
 void ProgramApi::ApplyBindings()
@@ -68,16 +83,12 @@ void ProgramApi::ApplyBindings()
 
     if (m_shader_by_type.count(ShaderType::kCompute))
     {
-        ComputePipelineDesc pipeline_desc = {
-           m_program,
-        };
-
-        auto it = m_compute_pso.find(pipeline_desc);
+        auto it = m_compute_pso.find(m_compute_pipeline_desc);
         if (it == m_compute_pso.end())
         {
-            m_pipeline = m_device.CreateComputePipeline(pipeline_desc);
+            m_pipeline = m_device.CreateComputePipeline(m_compute_pipeline_desc);
             m_compute_pso.emplace(std::piecewise_construct,
-                std::forward_as_tuple(pipeline_desc),
+                std::forward_as_tuple(m_compute_pipeline_desc),
                 std::forward_as_tuple(m_pipeline));
         }
         else
@@ -87,22 +98,12 @@ void ProgramApi::ApplyBindings()
     }
     else
     {
-        GraphicsPipelineDesc pipeline_desc = {
-            m_program,
-            m_shader_by_type.at(ShaderType::kVertex)->GetInputLayout(),
-            m_render_targets,
-            m_depth,
-            m_depth_stencil_desc,
-            m_blend_desc,
-            m_rasterizer_desc,
-        };
-
-        auto it = m_pso.find(pipeline_desc);
+        auto it = m_pso.find(m_graphic_pipeline_desc);
         if (it == m_pso.end())
         {
-            m_pipeline = m_device.CreateGraphicsPipeline(pipeline_desc);
+            m_pipeline = m_device.CreateGraphicsPipeline(m_graphic_pipeline_desc);
             m_pso.emplace(std::piecewise_construct,
-                std::forward_as_tuple(pipeline_desc),
+                std::forward_as_tuple(m_graphic_pipeline_desc),
                 std::forward_as_tuple(m_pipeline));
         }
         else
@@ -132,7 +133,7 @@ void ProgramApi::ApplyBindings()
     m_context.m_command_list->BindBindingSet(m_binding_set);
 
     std::vector<std::shared_ptr<View>> rtvs;
-    for (auto& render_target : m_render_targets)
+    for (auto& render_target : m_graphic_pipeline_desc.rtvs)
     {
         rtvs.emplace_back(FindView(ShaderType::kPixel, ResourceType::kRtv, render_target.slot));
     }
@@ -266,25 +267,25 @@ void ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Ste
 
 void ProgramApi::SetRasterizeState(const RasterizerDesc& desc)
 {
-    m_rasterizer_desc = desc;
+    m_graphic_pipeline_desc.rasterizer_desc = desc;
 }
 
 void ProgramApi::SetBlendState(const BlendDesc& desc)
 {
-    m_blend_desc = desc;
+    m_graphic_pipeline_desc.blend_desc = desc;
 }
 
 void ProgramApi::SetDepthStencilState(const DepthStencilDesc& desc)
 {
-    m_depth_stencil_desc = desc;
+    m_graphic_pipeline_desc.depth_desc = desc;
 }
 
 void ProgramApi::UpdateCBuffers()
 {
     for (auto& x : m_cbv_layout)
     {
-        decltype(auto) cbv_buffer = m_cbv_data[m_context.GetFrameIndex()].cbv_buffer;
-        decltype(auto) cbv_offset = m_cbv_data[m_context.GetFrameIndex()].cbv_offset;
+        auto& cbv_buffer = m_cbv_data[m_context.GetFrameIndex()].cbv_buffer;
+        auto& cbv_offset = m_cbv_data[m_context.GetFrameIndex()].cbv_offset;
         BufferLayout& buffer_layout = x.second;
 
         auto& buffer_data = buffer_layout.GetBuffer();
@@ -323,9 +324,9 @@ void ProgramApi::OnAttachSampler(ShaderType type, const std::string& name, uint3
 
 void ProgramApi::OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
 {
-    if (slot >= m_render_targets.size())
-        m_render_targets.resize(slot + 1);
-    decltype(auto) render_target = m_render_targets[slot];
+    if (slot >= m_graphic_pipeline_desc.rtvs.size())
+        m_graphic_pipeline_desc.rtvs.resize(slot + 1);
+    decltype(auto) render_target = m_graphic_pipeline_desc.rtvs[slot];
     render_target.slot = slot;
     render_target.format = resource->GetFormat();
     m_context.m_command_list->ResourceBarrier(resource, ResourceState::kRenderTarget);
@@ -333,6 +334,6 @@ void ProgramApi::OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const std
 
 void ProgramApi::OnAttachDSV(const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
 {
-    m_depth.format = resource->GetFormat();
+    m_graphic_pipeline_desc.dsv.format = resource->GetFormat();
     m_context.m_command_list->ResourceBarrier(resource, ResourceState::kDepthTarget);
 }

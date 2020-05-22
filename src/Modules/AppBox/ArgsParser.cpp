@@ -3,6 +3,7 @@
 
 void ParseArgs(int argc, char* argv[], Settings& settings)
 {
+    settings.vsync = false;
     for (int i = 1; i < argc; ++i)
     {
         std::string arg(argv[i]);

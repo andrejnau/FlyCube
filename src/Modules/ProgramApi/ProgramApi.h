@@ -4,7 +4,6 @@
 #include <deque>
 #include <array>
 #include <set>
-#include <unordered_map>
 #include <functional>
 
 #include <Instance/BaseTypes.h>
@@ -33,6 +32,7 @@ public:
     std::set<ShaderType> GetShaderTypes() const override;
 
     void ProgramDetach();
+    void OnPresent();
     void SetBindingName(const BindKeyOld& bind_key, const std::string& name);
     const std::string& GetBindingName(const BindKeyOld& bind_key) const;
     void AddAvailableShaderType(ShaderType type);
@@ -120,14 +120,11 @@ private:
         }
     };
 
-    std::unordered_map<GraphicsPipelineDesc, std::shared_ptr<Pipeline>, Hasher<GraphicsPipelineDesc>, EqualFn<GraphicsPipelineDesc>> m_pso;
-    std::unordered_map<ComputePipelineDesc, std::shared_ptr<Pipeline>, Hasher<ComputePipelineDesc>, EqualFn<ComputePipelineDesc>> m_compute_pso;
-    std::vector<RenderTargetDesc> m_render_targets;
-    DepthStencilTargetDesc m_depth;
+    std::map<GraphicsPipelineDesc, std::shared_ptr<Pipeline>> m_pso;
+    std::map<ComputePipelineDesc, std::shared_ptr<Pipeline>> m_compute_pso;
     std::map<std::pair<std::vector<std::shared_ptr<View>>, std::shared_ptr<View>>, std::shared_ptr<Framebuffer>> m_framebuffers;
     std::shared_ptr<Framebuffer> m_framebuffer;
     std::map<std::tuple<BindKeyOld, ViewDesc, std::shared_ptr<Resource>>, std::shared_ptr<View>> m_views;
-    DepthStencilDesc m_depth_stencil_desc = {};
-    BlendDesc m_blend_desc = {};
-    RasterizerDesc m_rasterizer_desc = {};
+    ComputePipelineDesc m_compute_pipeline_desc;
+    GraphicsPipelineDesc m_graphic_pipeline_desc;
 };

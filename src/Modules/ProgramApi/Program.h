@@ -195,7 +195,7 @@ template<typename T> class ShaderHolder : public ShaderHolderImpl<T::type, T> { 
 template<typename ... Args>
 class ProgramHolder : public ShaderHolder<Args>...
 {
-    ProgramHolder(std::unique_ptr<ProgramApi>&& program_base)
+    ProgramHolder(std::shared_ptr<ProgramApi>&& program_base)
         : ShaderHolder<Args>(*program_base)...
         , m_program_base(std::move(program_base))
     {
@@ -267,5 +267,5 @@ private:
         m_program_base->LinkProgram();
     }
 
-    std::unique_ptr<ProgramApi> m_program_base;
+    std::shared_ptr<ProgramApi> m_program_base;
 };

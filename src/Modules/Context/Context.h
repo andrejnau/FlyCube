@@ -21,7 +21,7 @@ public:
     Context(const Settings& settings, GLFWwindow* window);
     ~Context() {}
 
-    std::unique_ptr<ProgramApi> CreateProgram();
+    std::shared_ptr<ProgramApi> CreateProgram();
     std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1);
     std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride);
     std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc);
@@ -71,6 +71,7 @@ public:
     std::shared_ptr<Semaphore> m_rendering_finished_semaphore;
     ProgramApi* m_current_program = nullptr;
     bool m_is_open_render_pass = false;
+    std::vector<std::shared_ptr<ProgramApi>> m_created_program;
 };
 
 template <typename T>
