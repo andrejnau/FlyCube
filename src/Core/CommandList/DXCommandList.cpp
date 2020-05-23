@@ -6,6 +6,7 @@
 #include <Utilities/FileUtility.h>
 #include <Pipeline/DXGraphicsPipeline.h>
 #include <Pipeline/DXComputePipeline.h>
+#include <Pipeline/DXRayTracingPipeline.h>
 #include <Framebuffer/DXFramebuffer.h>
 #include <BindingSet/DXBindingSet.h>
 #include <dxgi1_6.h>
@@ -27,6 +28,7 @@ void DXCommandList::Open()
     ASSERT_SUCCEEDED(m_command_allocator->Reset());
     ASSERT_SUCCEEDED(m_command_list->Reset(m_command_allocator.Get(), nullptr));
     m_heaps.clear();
+    m_state.reset();
 }
 
 void DXCommandList::Close()
@@ -50,6 +52,15 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
         m_command_list->SetComputeRootSignature(dx_state.GetRootSignature().Get());
         m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
     }
+    else if (type == PipelineType::kRayTracing)
+    {
+        decltype(auto) dx_state = state->As<DXRayTracingPipeline>();
+        ComPtr<ID3D12GraphicsCommandList4> command_list4;
+        m_command_list.As(&command_list4);
+        m_command_list->SetComputeRootSignature(dx_state.GetRootSignature().Get());
+        command_list4->SetPipelineState1(dx_state.GetPipeline().Get());
+    }
+    m_state = state;
 }
 
 void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
@@ -120,6 +131,18 @@ void DXCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_locat
 void DXCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
 {
     m_command_list->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+}
+
+void DXCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
+{
+    decltype(auto) dx_state = m_state->As<DXRayTracingPipeline>();
+    ComPtr<ID3D12GraphicsCommandList4> command_list4;
+    m_command_list.As(&command_list4);
+    D3D12_DISPATCH_RAYS_DESC raytrace_desc = dx_state.GetDispatchRaysDesc();
+    raytrace_desc.Width = width;
+    raytrace_desc.Height = height;
+    raytrace_desc.Depth = depth;
+    command_list4->DispatchRays(&raytrace_desc);
 }
 
 void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)

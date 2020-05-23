@@ -134,6 +134,10 @@ void VKCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_grou
     m_command_list->dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
+void VKCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
+{
+}
+
 void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
     if (resource)

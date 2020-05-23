@@ -346,6 +346,11 @@ std::shared_ptr<Pipeline> VKDevice::CreateComputePipeline(const ComputePipelineD
     return std::make_shared<VKComputePipeline>(*this, desc);
 }
 
+std::shared_ptr<Pipeline> VKDevice::CreateRayTracingPipeline(const RayTracingPipelineDesc& desc)
+{
+    return {};
+}
+
 std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::shared_ptr<CommandList>& command_list, const BufferDesc& vertex, const BufferDesc& index)
 {
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);

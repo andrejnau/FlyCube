@@ -9,6 +9,7 @@
 #include <Program/DXProgram.h>
 #include <Pipeline/DXGraphicsPipeline.h>
 #include <Pipeline/DXComputePipeline.h>
+#include <Pipeline/DXRayTracingPipeline.h>
 #include <Framebuffer/DXFramebuffer.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
@@ -276,6 +277,11 @@ std::shared_ptr<Pipeline> DXDevice::CreateGraphicsPipeline(const GraphicsPipelin
 std::shared_ptr<Pipeline> DXDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
 {
     return std::make_shared<DXComputePipeline>(*this, desc);
+}
+
+std::shared_ptr<Pipeline> DXDevice::CreateRayTracingPipeline(const RayTracingPipelineDesc& desc)
+{
+    return std::make_shared<DXRayTracingPipeline>(*this, desc);
 }
 
 std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::shared_ptr<CommandList>& command_list, const BufferDesc& vertex, const BufferDesc& index)

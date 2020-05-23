@@ -66,7 +66,7 @@ void ProgramApi::LinkProgram()
 {
     m_program = m_device.CreateProgram(m_shaders);
 
-    if (m_shader_by_type.count(ShaderType::kCompute))
+    if (m_shader_by_type.count(ShaderType::kCompute) || m_shader_by_type.count(ShaderType::kLibrary))
     {
         m_compute_pipeline_desc.program = m_program;
     }
@@ -87,6 +87,21 @@ void ProgramApi::ApplyBindings()
         if (it == m_compute_pso.end())
         {
             m_pipeline = m_device.CreateComputePipeline(m_compute_pipeline_desc);
+            m_compute_pso.emplace(std::piecewise_construct,
+                std::forward_as_tuple(m_compute_pipeline_desc),
+                std::forward_as_tuple(m_pipeline));
+        }
+        else
+        {
+            m_pipeline = it->second;
+        }
+    }
+    else if (m_shader_by_type.count(ShaderType::kLibrary))
+    {
+        auto it = m_compute_pso.find(m_compute_pipeline_desc);
+        if (it == m_compute_pso.end())
+        {
+            m_pipeline = m_device.CreateRayTracingPipeline(m_compute_pipeline_desc);
             m_compute_pso.emplace(std::piecewise_construct,
                 std::forward_as_tuple(m_compute_pipeline_desc),
                 std::forward_as_tuple(m_pipeline));
@@ -132,7 +147,7 @@ void ProgramApi::ApplyBindings()
     m_context.m_command_list->BindPipeline(m_pipeline);
     m_context.m_command_list->BindBindingSet(m_binding_set);
 
-    if (m_shader_by_type.count(ShaderType::kCompute))
+    if (m_shader_by_type.count(ShaderType::kCompute) || m_shader_by_type.count(ShaderType::kLibrary))
         return;
 
     std::vector<std::shared_ptr<View>> rtvs;

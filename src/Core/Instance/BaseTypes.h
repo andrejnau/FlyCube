@@ -334,6 +334,8 @@ struct ComputePipelineDesc
     }
 };
 
+using RayTracingPipelineDesc = ComputePipelineDesc;
+
 struct BindingDesc
 {
     ShaderType shader;
@@ -371,6 +373,7 @@ enum class PipelineType
 {
     kGraphics,
     kCompute,
+    kRayTracing,
 };
 
 class Resource;

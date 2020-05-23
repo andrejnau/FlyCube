@@ -115,6 +115,9 @@ void Context::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, u
 
 void Context::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
 {
+    if (m_current_program)
+        m_current_program->ApplyBindings();
+    m_command_list->DispatchRays(width, height, depth);
 }
 
 bool Context::IsDxrSupported() const

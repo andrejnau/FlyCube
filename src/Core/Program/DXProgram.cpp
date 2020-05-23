@@ -24,7 +24,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
     for (auto& shader : m_shaders)
     {
         ShaderType shader_type = shader->GetType();
-        if (shader_type == ShaderType::kCompute)
+        if (shader_type == ShaderType::kCompute || shader_type == ShaderType::kLibrary)
             m_is_compute = true;
         ComPtr<ID3DBlob> shader_blob = shader->GetBlob();
         uint32_t num_cbv = 0;
