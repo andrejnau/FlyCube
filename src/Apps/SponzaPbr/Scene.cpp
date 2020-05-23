@@ -60,11 +60,6 @@ Scene::Scene(Context& context, int width, int height)
     }
 #endif
 
-#if 0
-    m_scene_list.emplace_back(m_context, "local_model/SunTemple_v3/SunTemple/SunTemple.fbx");
-    m_scene_list.back().matrix = glm::scale(glm::vec3(0.01));
-#endif
-
     for (auto& model : m_scene_list)
     {
         if (model.ibl_request)
