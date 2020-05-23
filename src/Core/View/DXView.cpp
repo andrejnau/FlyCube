@@ -110,16 +110,14 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const ViewDesc& view_desc, const D
             srv_desc.TextureCubeArray.NumCubes = res_desc.DepthOrArraySize / 6;
             break;
         }
+        case ResourceDimension::kRaytracingAccelerationStructure:
+        {
+            srv_desc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+            break;
+        }
         default:
         {
-            /*if (binding_desc.Type == D3D_SIT_RTACCELERATIONSTRUCTURE)
-            {
-                srv_desc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
-            }
-            else
-            {
-                assert(false);
-            }*/
+            assert(false);
             break;
         }
         }

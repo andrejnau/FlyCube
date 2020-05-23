@@ -70,7 +70,7 @@ void ProgramApi::LinkProgram()
     {
         m_compute_pipeline_desc.program = m_program;
     }
-    else
+    else if (!m_shader_by_type.count(ShaderType::kLibrary))
     {
         m_graphic_pipeline_desc.program = m_program;
         m_graphic_pipeline_desc.input = m_shader_by_type.at(ShaderType::kVertex)->GetInputLayout();

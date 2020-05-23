@@ -25,6 +25,8 @@ public:
     std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1);
     std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride);
     std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc);
+    std::shared_ptr<Resource> CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index = {});
+    std::shared_ptr<Resource> CreateTopLevelAS(const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry);
     void UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch = 0, uint32_t depth_pitch = 0);
 
     void SetViewport(float width, float height);
@@ -45,9 +47,7 @@ public:
     std::shared_ptr<Resource> GetBackBuffer();
     void Present();
 
-    bool IsDxrSupported() const { return false; }
-
-    void OnDestroy() {}
+    bool IsDxrSupported() const;
 
     void OnResize(int width, int height);
     size_t GetFrameIndex() const;

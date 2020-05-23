@@ -155,7 +155,7 @@ void VKCommandList::SetViewport(float width, float height)
     m_command_list->setScissor(0, 1, &rect);
 }
 
-vk::IndexType GetVkIndexType(gli::format format)
+static vk::IndexType GetVkIndexType(gli::format format)
 {
     vk::Format vk_format = static_cast<vk::Format>(format);
     switch (vk_format)

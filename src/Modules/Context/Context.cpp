@@ -40,6 +40,16 @@ std::shared_ptr<Resource> Context::CreateSampler(const SamplerDesc& desc)
     return m_device->CreateSampler(desc);
 }
 
+std::shared_ptr<Resource> Context::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
+{
+    return m_device->CreateBottomLevelAS(m_command_list, vertex, index);
+}
+
+std::shared_ptr<Resource> Context::CreateTopLevelAS(const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry)
+{
+    return m_device->CreateTopLevelAS(m_command_list, geometry);
+}
+
 void Context::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch , uint32_t depth_pitch)
 {
     return m_command_list->UpdateSubresource(resource, subresource, data, row_pitch, depth_pitch);
@@ -105,6 +115,11 @@ void Context::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, u
 
 void Context::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
 {
+}
+
+bool Context::IsDxrSupported() const
+{
+    return m_device->IsDxrSupported();
 }
 
 std::shared_ptr<Resource> Context::GetBackBuffer()

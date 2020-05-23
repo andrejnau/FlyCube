@@ -86,7 +86,7 @@ namespace BindFlag
         kIbv = 1 << 6,
         kVbv = 1 << 7,
         kSampler = 1 << 8,
-        KAccelerationStructure = 1 << 9,
+        kAccelerationStructure = 1 << 9,
     };
 }
 
@@ -371,4 +371,14 @@ enum class PipelineType
 {
     kGraphics,
     kCompute,
+};
+
+class Resource;
+
+struct BufferDesc
+{
+    std::shared_ptr<Resource> res;
+    gli::format format = gli::format::FORMAT_UNDEFINED;
+    uint32_t count = 0;
+    uint32_t offset = 0;
 };

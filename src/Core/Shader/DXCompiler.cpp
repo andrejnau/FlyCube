@@ -60,7 +60,7 @@ static std::string GetShaderTarget(ShaderType type, const std::string& model)
     case ShaderType::kCompute:
         return "cs_" + model;
     case ShaderType::kLibrary:
-        return "lib" + model;
+        return "lib_" + model;
     default:
         assert(false);
         return "";
@@ -139,7 +139,7 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
         nullptr,
         &source));
 
-    std::wstring target = utf8_to_wstring(GetShaderTarget(shader.type, "6_0"));
+    std::wstring target = utf8_to_wstring(GetShaderTarget(shader.type, "6_3"));
     std::wstring entrypoint = utf8_to_wstring(shader.entrypoint);
     std::vector<std::pair<std::wstring, std::wstring>> defines_store;
     std::vector<DxcDefine> defines;

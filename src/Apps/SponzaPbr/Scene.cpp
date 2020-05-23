@@ -97,11 +97,6 @@ Scene::Scene(Context& context, int width, int height)
 #endif
 }
 
-Scene::~Scene()
-{
-    m_context.OnDestroy();
-}
-
 IScene::Ptr Scene::Create(Context& context, int width, int height)
 {
     return std::make_unique<Scene>(context, width, height);

@@ -33,7 +33,6 @@ class Scene : public SceneBase, public IModifySponzaSettings
 {
 public:
     Scene(Context& context, int width, int height);
-    ~Scene();
 
     static IScene::Ptr Create(Context& context, int width, int height);
 
