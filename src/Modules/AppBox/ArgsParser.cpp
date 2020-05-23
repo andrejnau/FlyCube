@@ -4,7 +4,7 @@
 Settings ParseArgs(int argc, char* argv[])
 {
     Settings settings;
-    settings.api_type = ApiType::kVulkan;
+    settings.api_type = ApiType::kDX12;
     settings.vsync = false;
     for (int i = 1; i < argc; ++i)
     {
