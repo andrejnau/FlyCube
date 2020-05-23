@@ -11,7 +11,7 @@ using namespace Microsoft::WRL;
 class DXCLoader
 {
 public:
-    DXCLoader();
+    DXCLoader(bool dxil_required = true);
     ~DXCLoader();
 
     ComPtr<IDxcLibrary> library;
@@ -19,6 +19,6 @@ public:
     ComPtr<IDxcCompiler> compiler;
 
 private:
-    bool Load(const std::wstring& path);
+    bool Load(const std::wstring& path, bool dxil_required);
     dxc::DxcDllSupport m_dll_support;
 };

@@ -6,10 +6,12 @@ if (VULKAN_SUPPORT)
     list(APPEND headers
         VKComputePipeline.h
         VKGraphicsPipeline.h
+        VKRayTracingPipeline.h
     )
     list(APPEND sources
         VKComputePipeline.cpp
         VKGraphicsPipeline.cpp
+        VKRayTracingPipeline.cpp
     )
 endif()
 

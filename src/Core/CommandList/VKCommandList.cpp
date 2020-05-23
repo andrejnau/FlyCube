@@ -1,9 +1,11 @@
 #include "CommandList/VKCommandList.h"
 #include <Device/VKDevice.h>
+#include <Adapter/VKAdapter.h>
 #include <Resource/VKResource.h>
 #include <View/VKView.h>
 #include <Pipeline/VKGraphicsPipeline.h>
 #include <Pipeline/VKComputePipeline.h>
+#include <Pipeline/VKRayTracingPipeline.h>
 #include <Framebuffer/VKFramebuffer.h>
 #include <BindingSet/VKBindingSet.h>
 
@@ -43,19 +45,30 @@ void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
         decltype(auto) vk_state = state->As<VKComputePipeline>();
         m_command_list->bindPipeline(vk::PipelineBindPoint::eCompute, vk_state.GetPipeline());
     }
+    else if (type == PipelineType::kRayTracing)
+    {
+        decltype(auto) vk_state = state->As<VKRayTracingPipeline>();
+        m_command_list->bindPipeline(vk::PipelineBindPoint::eRayTracingNV, vk_state.GetPipeline());
+    }
+    m_state = state;
 }
 
 void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
     decltype(auto) vk_binding_set = binding_set->As<VKBindingSet>();
     decltype(auto) descriptor_sets = vk_binding_set.GetDescriptorSets();
-    if (vk_binding_set.IsCompute())
+    auto type = m_state->GetPipelineType();
+    if (type == PipelineType::kGraphics)
+    {
+        m_command_list->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vk_binding_set.GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
+    }
+    else if (type == PipelineType::kCompute)
     {
         m_command_list->bindDescriptorSets(vk::PipelineBindPoint::eCompute, vk_binding_set.GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
     }
-    else
+    else if (type == PipelineType::kRayTracing)
     {
-        m_command_list->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vk_binding_set.GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
+        m_command_list->bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, vk_binding_set.GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
     }
 }
 
@@ -136,6 +149,28 @@ void VKCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_grou
 
 void VKCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
 {
+    decltype(auto) vk_state = m_state->As<VKRayTracingPipeline>();
+    auto shader_binding_table = vk_state.GetShaderBindingTable();
+
+    vk::PhysicalDeviceRayTracingPropertiesNV ray_tracing_properties{};
+
+    vk::PhysicalDeviceProperties2 device_props2{};
+    device_props2.pNext = &ray_tracing_properties;
+
+    m_device.GetAdapter().GetPhysicalDevice().getProperties2(&device_props2);
+
+    vk::DeviceSize binding_offset_ray_gen_shader = ray_tracing_properties.shaderGroupHandleSize * 0;
+    vk::DeviceSize binding_offset_miss_shader = ray_tracing_properties.shaderGroupHandleSize * 1;
+    vk::DeviceSize binding_offset_hit_shader = ray_tracing_properties.shaderGroupHandleSize * 2;
+    vk::DeviceSize binding_stride = ray_tracing_properties.shaderGroupHandleSize;
+
+    m_command_list->traceRaysNV(
+        shader_binding_table, binding_offset_ray_gen_shader,
+        shader_binding_table, binding_offset_miss_shader, binding_stride,
+        shader_binding_table, binding_offset_hit_shader, binding_stride,
+        {}, 0, 0,
+        width, height, depth
+    );
 }
 
 void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)

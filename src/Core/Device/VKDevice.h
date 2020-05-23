@@ -37,10 +37,9 @@ public:
     vk::CommandPool GetCmdPool();
     vk::ImageAspectFlags GetAspectFlags(vk::Format format) const;
     VKGPUDescriptorPool& GetGPUDescriptorPool();
-
-private:
     uint32_t FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties);
 
+private:
     VKAdapter& m_adapter;
     const vk::PhysicalDevice& m_physical_device;
     uint32_t m_queue_family_index = -1;

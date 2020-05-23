@@ -3,10 +3,10 @@
 #include <Utilities/ScopeGuard.h>
 #include <vector>
 
-DXCLoader::DXCLoader()
+DXCLoader::DXCLoader(bool dxil_required)
 {
     std::wstring custom_path = utf8_to_wstring(DXC_CUSTOM_BIN);
-    if (Load(custom_path))
+    if (Load(custom_path, dxil_required))
         return;
 
 #ifdef _WIN64
@@ -15,11 +15,14 @@ DXCLoader::DXCLoader()
     std::wstring sdk_path = utf8_to_wstring(SDKBIN) + L"/x86";
 #endif
 
-    Load(sdk_path);
+    Load(sdk_path, dxil_required);
 }
 
-bool DXCLoader::Load(const std::wstring& path)
+bool DXCLoader::Load(const std::wstring& path, bool dxil_required)
 {
+    if (dxil_required && !PathFileExistsW((path + L"/dxil.dll").c_str()))
+        return false;
+
     std::vector<wchar_t> prev_dll_dir(GetDllDirectoryW(0, nullptr));
     GetDllDirectoryW(static_cast<DWORD>(prev_dll_dir.size()), prev_dll_dir.data());
     ScopeGuard guard = [&]

@@ -78,6 +78,7 @@ SpirvShader::SpirvShader(const ShaderDesc& desc)
     add_resources(shader_resources.separate_images);
     add_resources(shader_resources.storage_images);
     add_resources(shader_resources.storage_buffers);
+    add_resources(shader_resources.acceleration_structures);
 }
 
 std::vector<VertexInputDesc> SpirvShader::GetInputLayout() const

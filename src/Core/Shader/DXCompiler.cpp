@@ -128,7 +128,7 @@ private:
 
 ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
 {
-    DXCLoader loader;
+    DXCLoader loader(!option.spirv);
 
     std::wstring shader_path = GetAssetFullPathW(shader.shader_path);
     std::wstring shader_dir = shader_path.substr(0, shader_path.find_last_of(L"\\/") + 1);
@@ -158,6 +158,8 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
         if (option.spirv_invert_y && vs_or_gs)
             arguments.push_back(L"-fvk-invert-y");
         arguments.push_back(L"-fvk-use-dx-layout");
+        arguments.push_back(L"-fspv-target-env=vulkan1.1");
+        arguments.push_back(L"-fspv-extension=SPV_NV_ray_tracing");
     }
 
     ComPtr<IDxcOperationResult> result;

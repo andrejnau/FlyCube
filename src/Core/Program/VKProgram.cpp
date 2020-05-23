@@ -190,16 +190,15 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<Bindin
                 descriptorWrite.pBufferInfo = &buffer_info;
                 break;
             }
-            /*case vk::DescriptorType::eAccelerationStructureNV:
+            case vk::DescriptorType::eAccelerationStructureNV:
             {
                 list_as.emplace_back();
                 vk::WriteDescriptorSetAccelerationStructureNV& descriptorAccelerationStructureInfo = list_as.back();
                 descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
-                descriptorAccelerationStructureInfo.pAccelerationStructures = &res.top_as.accelerationStructure.get();
-
+                descriptorAccelerationStructureInfo.pAccelerationStructures = &vk_res.top_as.accelerationStructure.get();
                 descriptorWrite.pNext = &descriptorAccelerationStructureInfo;
                 break;
-            }*/
+            }
             case vk::DescriptorType::eUniformBufferDynamic:
             case vk::DescriptorType::eStorageBufferDynamic:
             default:
@@ -221,7 +220,7 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<Bindin
     {
         descriptor_sets.emplace_back(descriptor_set.get());
     }
-    return std::make_shared<VKBindingSet>(m_shader_ref.count(ShaderType::kCompute), descriptor_sets, m_pipeline_layout.get());
+    return std::make_shared<VKBindingSet>(descriptor_sets, m_pipeline_layout.get());
 }
 
 const std::vector<std::shared_ptr<SpirvShader>>& VKProgram::GetShaders() const

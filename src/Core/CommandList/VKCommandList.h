@@ -34,4 +34,5 @@ private:
 
     VKDevice& m_device;
     vk::UniqueCommandBuffer m_command_list;
+    std::shared_ptr<Pipeline> m_state;
 };

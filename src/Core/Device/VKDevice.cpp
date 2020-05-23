@@ -8,6 +8,7 @@
 #include <Program/VKProgram.h>
 #include <Pipeline/VKGraphicsPipeline.h>
 #include <Pipeline/VKComputePipeline.h>
+#include <Pipeline/VKRayTracingPipeline.h>
 #include <Framebuffer/VKFramebuffer.h>
 #include <Shader/SpirvShader.h>
 #include <View/VKView.h>
@@ -348,7 +349,7 @@ std::shared_ptr<Pipeline> VKDevice::CreateComputePipeline(const ComputePipelineD
 
 std::shared_ptr<Pipeline> VKDevice::CreateRayTracingPipeline(const RayTracingPipelineDesc& desc)
 {
-    return {};
+    return std::make_shared<VKRayTracingPipeline>(*this, desc);
 }
 
 std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::shared_ptr<CommandList>& command_list, const BufferDesc& vertex, const BufferDesc& index)
@@ -587,7 +588,7 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
 
 bool VKDevice::IsDxrSupported() const
 {
-    return false;
+    return true;
 }
 
 void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)

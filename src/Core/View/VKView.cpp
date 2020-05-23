@@ -25,7 +25,7 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
 
 void VKView::CreateSrv(const ViewDesc& view_desc, const VKResource& res)
 {
-    if (view_desc.dimension == ResourceDimension::kBuffer)
+    if (view_desc.dimension == ResourceDimension::kBuffer || view_desc.dimension == ResourceDimension::kRaytracingAccelerationStructure)
         return;
     m_view_info.image = res.image.res.get();
     m_view_info.format = res.image.format;
