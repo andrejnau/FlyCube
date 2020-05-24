@@ -88,7 +88,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
             {
                 D3D12_LIBRARY_DESC lib_desc = {};
                 library_reflector->GetDesc(&lib_desc);
-                for (int j = 0; j < lib_desc.FunctionCount; ++j)
+                for (uint32_t j = 0; j < lib_desc.FunctionCount; ++j)
                 {
                     auto reflector = library_reflector->GetFunctionByIndex(j);
                     D3D12_FUNCTION_DESC desc = {};
@@ -289,19 +289,12 @@ size_t DXProgram::HeapSizeByType(D3D12_DESCRIPTOR_HEAP_TYPE type)
     }
 }
 
-std::shared_ptr<BindingSet> DXProgram::CreateBindingSet(const std::vector<BindingDesc>& bindings)
+std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& bindings)
 {
     BindingsByHeap bindings_by_heap;
-    for (auto& desc : bindings)
+    for (const auto& id : bindings)
     {
-        auto it = m_bindings_id.find(desc);
-        if (it == m_bindings_id.end())
-        {
-            m_bindings.emplace_back(desc);
-            size_t id = m_bindings.size() - 1;
-            it = m_bindings_id.emplace(desc, id).first;
-        }
-
+        const auto& desc = m_bindings[id];
         D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
         switch (desc.type)
         {
@@ -316,12 +309,8 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSet(const std::vector<Bindin
         default:
             assert(false);
         }
-        bindings_by_heap[heap_type].insert(it->second);
+        bindings_by_heap[heap_type].insert(id);
     }
-
-    auto binding_set_it = m_binding_set_cache.find(bindings_by_heap);
-    if (binding_set_it != m_binding_set_cache.end())
-        return binding_set_it->second;
 
     std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::reference_wrapper<DXGPUDescriptorPoolRange>> descriptor_ranges;
     for (auto& x : bindings_by_heap)
@@ -360,7 +349,7 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSet(const std::vector<Bindin
                     continue;
                 }
 
-                uint32_t slot = m_bind_to_slot.at(bind_key);
+                size_t slot = m_bind_to_slot.at(bind_key);
                 CopyDescriptor(descriptor_range, m_binding_layout[{bind_key.shader, range_type}].table.heap_offset + slot, desc.view);
             }
         }
@@ -370,9 +359,7 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSet(const std::vector<Bindin
             std::forward_as_tuple(heap_range));
     }
 
-    auto binding_set = std::make_shared<DXBindingSet>(*this, m_is_compute, descriptor_ranges, m_binding_layout);
-    m_binding_set_cache.emplace(bindings_by_heap, binding_set);
-    return binding_set;
+    return std::make_shared<DXBindingSet>(*this, m_is_compute, descriptor_ranges, m_binding_layout);
 }
 
 const std::vector<std::shared_ptr<DXShader>>& DXProgram::GetShaders() const

@@ -1,5 +1,10 @@
 list(APPEND headers
     Program.h
+    ProgramBase.h
+)
+
+list(APPEND sources
+    ProgramBase.cpp
 )
 
 if (VULKAN_SUPPORT)

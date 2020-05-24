@@ -34,6 +34,8 @@ void VKCommandList::Close()
 
 void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
+    if (state == m_state)
+        return;
     auto type = state->GetPipelineType();
     if (type == PipelineType::kGraphics)
     {
@@ -55,6 +57,8 @@ void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 
 void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
+    if (binding_set == m_binding_set)
+        return;
     decltype(auto) vk_binding_set = binding_set->As<VKBindingSet>();
     decltype(auto) descriptor_sets = vk_binding_set.GetDescriptorSets();
     auto type = m_state->GetPipelineType();
@@ -70,6 +74,7 @@ void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     {
         m_command_list->bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, vk_binding_set.GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
     }
+    m_binding_set = binding_set;
 }
 
 void VKCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
@@ -89,6 +94,8 @@ void VKCommandList::EndRenderPass()
 
 void VKCommandList::BeginEvent(const std::string& name)
 {
+    if (!m_debug_regions)
+        return;
     vk::DebugUtilsLabelEXT label = {};
     label.pLabelName = name.c_str();
     m_command_list->beginDebugUtilsLabelEXT(&label);
@@ -96,6 +103,8 @@ void VKCommandList::BeginEvent(const std::string& name)
 
 void VKCommandList::EndEvent()
 {
+    if (!m_debug_regions)
+        return;
     m_command_list->endDebugUtilsLabelEXT();
 }
 

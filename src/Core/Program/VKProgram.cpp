@@ -77,150 +77,126 @@ VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>
     m_pipeline_layout = device.GetDevice().createPipelineLayoutUnique(pipeline_layout_info);
 }
 
-std::shared_ptr<BindingSet> VKProgram::CreateBindingSet(const std::vector<BindingDesc>& bindings)
+std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& bindings)
 {
-    std::map<BindKey, std::shared_ptr<View>> descriptor_cache;
-    for (auto& x : bindings)
+    std::vector<vk::UniqueDescriptorSet> descriptor_sets;
+    for (size_t i = 0; i < m_descriptor_set_layouts.size(); ++i)
     {
-        BindKey bind_key = { x.shader, x.type, x.name };
-        switch (bind_key.type)
+        descriptor_sets.emplace_back(m_device.GetGPUDescriptorPool().AllocateDescriptorSet(m_descriptor_set_layouts[i].get(), m_descriptor_count_by_set[i]));
+    }
+
+    std::vector<vk::WriteDescriptorSet> descriptorWrites;
+    std::list<vk::DescriptorImageInfo> list_image_info;
+    std::list<vk::DescriptorBufferInfo> list_buffer_info;
+    std::list<vk::WriteDescriptorSetAccelerationStructureNV> list_as;
+
+    for (const auto& id : bindings)
+    {
+        const auto& desc = m_bindings[id];
+        bool is_rtv_dsv = false;
+        switch (desc.type)
         {
-        case ResourceType::kCbv:
-        case ResourceType::kSrv:
-        case ResourceType::kUav:
-        case ResourceType::kSampler:
-            descriptor_cache[bind_key] = x.view;
+        case ResourceType::kRtv:
+        case ResourceType::kDsv:
+            is_rtv_dsv = true;
             break;
         }
-    }
 
-    auto it = m_heap_cache.find(descriptor_cache);
-    if (it == m_heap_cache.end())
-    {
-        std::vector<vk::UniqueDescriptorSet> descriptor_sets;
-        for (size_t i = 0; i < m_descriptor_set_layouts.size(); ++i)
+        if (is_rtv_dsv || !desc.view)
+            continue;
+
+        decltype(auto) vk_view = desc.view->As<VKView>();
+        ShaderType shader_type = desc.shader;
+        ShaderRef& shader_ref = m_shader_ref.find(shader_type)->second;
+        std::string name = desc.name;
+        if (name == "$Globals")
+            name = "_Global";
+
+        if (!shader_ref.resources.count(name))
+            name = "type_" + name;
+
+        if (!shader_ref.resources.count(name))
+            throw std::runtime_error("failed to find resource reflection");
+        auto ref_res = shader_ref.resources[name];
+        auto res = vk_view.GetResource();
+        if (!res)
+            continue;
+        decltype(auto) vk_res = res->As<VKResource>();
+
+        vk::WriteDescriptorSet descriptorWrite = {};
+        descriptorWrite.dstSet = descriptor_sets[static_cast<size_t>(shader_type)].get();
+        descriptorWrite.dstBinding = ref_res.binding;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = ref_res.descriptor_type;
+        descriptorWrite.descriptorCount = 1;
+
+        switch (ref_res.descriptor_type)
         {
-            descriptor_sets.emplace_back(m_device.GetGPUDescriptorPool().AllocateDescriptorSet(m_descriptor_set_layouts[i].get(), m_descriptor_count_by_set[i]));
+        case vk::DescriptorType::eSampler:
+        {
+            list_image_info.emplace_back();
+            vk::DescriptorImageInfo& image_info = list_image_info.back();
+            image_info.sampler = vk_res.sampler.res.get();
+            descriptorWrite.pImageInfo = &image_info;
+            break;
         }
-
-        std::vector<vk::WriteDescriptorSet> descriptorWrites;
-        std::list<vk::DescriptorImageInfo> list_image_info;
-        std::list<vk::DescriptorBufferInfo> list_buffer_info;
-        std::list<vk::WriteDescriptorSetAccelerationStructureNV> list_as;
-
-        for (auto& x : bindings)
+        case vk::DescriptorType::eSampledImage:
         {
-            bool is_rtv_dsv = false;
-            switch (x.type)
-            {
-            case ResourceType::kRtv:
-            case ResourceType::kDsv:
-                is_rtv_dsv = true;
-                break;
-            }
-
-            if (is_rtv_dsv || !x.view)
-                continue;
-
-            decltype(auto) vk_view = x.view->As<VKView>();
-            ShaderType shader_type = x.shader;
-            ShaderRef& shader_ref = m_shader_ref.find(shader_type)->second;
-            std::string name = x.name;
-            if (name == "$Globals")
-                name = "_Global";
-
-            if (!shader_ref.resources.count(name))
-                name = "type_" + name;
-
-            if (!shader_ref.resources.count(name))
-                throw std::runtime_error("failed to find resource reflection");
-            auto ref_res = shader_ref.resources[name];
-            auto res = vk_view.GetResource();
-            if (!res)
-                continue;
-            decltype(auto) vk_res = res->As<VKResource>();
-
-            vk::WriteDescriptorSet descriptorWrite = {};
-            descriptorWrite.dstSet = descriptor_sets[static_cast<size_t>(shader_type)].get();
-            descriptorWrite.dstBinding = ref_res.binding;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = ref_res.descriptor_type;
-            descriptorWrite.descriptorCount = 1;
-
-            switch (ref_res.descriptor_type)
-            {
-            case vk::DescriptorType::eSampler:
-            {
-                list_image_info.emplace_back();
-                vk::DescriptorImageInfo& image_info = list_image_info.back();
-                image_info.sampler = vk_res.sampler.res.get();
+            list_image_info.emplace_back();
+            vk::DescriptorImageInfo& image_info = list_image_info.back();
+            image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            image_info.imageView = vk_view.GetSrv();
+            if (image_info.imageView)
                 descriptorWrite.pImageInfo = &image_info;
-                break;
-            }
-            case vk::DescriptorType::eSampledImage:
-            {
-                list_image_info.emplace_back();
-                vk::DescriptorImageInfo& image_info = list_image_info.back();
-                image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-                image_info.imageView = vk_view.GetSrv();
-                if (image_info.imageView)
-                    descriptorWrite.pImageInfo = &image_info;
-                break;
-            }
-            case vk::DescriptorType::eStorageImage:
-            {
-                list_image_info.emplace_back();
-                vk::DescriptorImageInfo& image_info = list_image_info.back();
-                image_info.imageLayout = vk::ImageLayout::eGeneral;
-                image_info.imageView = vk_view.GetSrv();
-                if (image_info.imageView)
-                    descriptorWrite.pImageInfo = &image_info;
-                break;
-            }
-            case vk::DescriptorType::eUniformTexelBuffer:
-            case vk::DescriptorType::eStorageTexelBuffer:
-            case vk::DescriptorType::eUniformBuffer:
-            case vk::DescriptorType::eStorageBuffer:
-            {
-                list_buffer_info.emplace_back();
-                vk::DescriptorBufferInfo& buffer_info = list_buffer_info.back();
-                buffer_info.buffer = vk_res.buffer.res.get();
-                buffer_info.offset = 0;
-                buffer_info.range = VK_WHOLE_SIZE;
-                descriptorWrite.pBufferInfo = &buffer_info;
-                break;
-            }
-            case vk::DescriptorType::eAccelerationStructureNV:
-            {
-                list_as.emplace_back();
-                vk::WriteDescriptorSetAccelerationStructureNV& descriptorAccelerationStructureInfo = list_as.back();
-                descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
-                descriptorAccelerationStructureInfo.pAccelerationStructures = &vk_res.top_as.accelerationStructure.get();
-                descriptorWrite.pNext = &descriptorAccelerationStructureInfo;
-                break;
-            }
-            case vk::DescriptorType::eUniformBufferDynamic:
-            case vk::DescriptorType::eStorageBufferDynamic:
-            default:
-                assert(false);
-                break;
-            }
-
-            if (descriptorWrite.pImageInfo || descriptorWrite.pBufferInfo || descriptorWrite.pNext)
-                descriptorWrites.push_back(descriptorWrite);
+            break;
+        }
+        case vk::DescriptorType::eStorageImage:
+        {
+            list_image_info.emplace_back();
+            vk::DescriptorImageInfo& image_info = list_image_info.back();
+            image_info.imageLayout = vk::ImageLayout::eGeneral;
+            image_info.imageView = vk_view.GetSrv();
+            if (image_info.imageView)
+                descriptorWrite.pImageInfo = &image_info;
+            break;
+        }
+        case vk::DescriptorType::eUniformTexelBuffer:
+        case vk::DescriptorType::eStorageTexelBuffer:
+        case vk::DescriptorType::eUniformBuffer:
+        case vk::DescriptorType::eStorageBuffer:
+        {
+            list_buffer_info.emplace_back();
+            vk::DescriptorBufferInfo& buffer_info = list_buffer_info.back();
+            buffer_info.buffer = vk_res.buffer.res.get();
+            buffer_info.offset = 0;
+            buffer_info.range = VK_WHOLE_SIZE;
+            descriptorWrite.pBufferInfo = &buffer_info;
+            break;
+        }
+        case vk::DescriptorType::eAccelerationStructureNV:
+        {
+            list_as.emplace_back();
+            vk::WriteDescriptorSetAccelerationStructureNV& descriptorAccelerationStructureInfo = list_as.back();
+            descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
+            descriptorAccelerationStructureInfo.pAccelerationStructures = &vk_res.top_as.accelerationStructure.get();
+            descriptorWrite.pNext = &descriptorAccelerationStructureInfo;
+            break;
+        }
+        case vk::DescriptorType::eUniformBufferDynamic:
+        case vk::DescriptorType::eStorageBufferDynamic:
+        default:
+            assert(false);
+            break;
         }
 
-        if (!descriptorWrites.empty())
-            m_device.GetDevice().updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-        it = m_heap_cache.emplace(descriptor_cache, std::move(descriptor_sets)).first;
+        if (descriptorWrite.pImageInfo || descriptorWrite.pBufferInfo || descriptorWrite.pNext)
+            descriptorWrites.push_back(descriptorWrite);
     }
 
-    std::vector<vk::DescriptorSet> descriptor_sets;
-    for (const auto& descriptor_set : it->second)
-    {
-        descriptor_sets.emplace_back(descriptor_set.get());
-    }
-    return std::make_shared<VKBindingSet>(descriptor_sets, m_pipeline_layout.get());
+    if (!descriptorWrites.empty())
+        m_device.GetDevice().updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+
+    return std::make_shared<VKBindingSet>(std::move(descriptor_sets), m_pipeline_layout.get());
 }
 
 const std::vector<std::shared_ptr<SpirvShader>>& VKProgram::GetShaders() const

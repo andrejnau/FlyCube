@@ -1,20 +1,21 @@
 #pragma once
-#include "Program.h"
+#include "ProgramBase.h"
 #include <Shader/Shader.h>
 #include <Utilities/Vulkan.h>
 #include <vector>
 #include <map>
+#include <set>
 #include <spirv_cross.hpp>
 #include <spirv_hlsl.hpp>
 
 class VKDevice;
 class SpirvShader;
 
-class VKProgram : public Program
+class VKProgram : public ProgramBase
 {
 public:
     VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders);
-    std::shared_ptr<BindingSet> CreateBindingSet(const std::vector<BindingDesc>& bindings) override;
+    std::shared_ptr<BindingSet> CreateBindingSetImpl(const BindingsKey& bindings) override;
 
     const std::vector<std::shared_ptr<SpirvShader>>& GetShaders() const;
     vk::PipelineLayout GetPipelineLayout() const;
@@ -48,6 +49,5 @@ private:
     };
 
     std::map<ShaderType, ShaderRef> m_shader_ref;
-    std::map<std::map<BindKey, std::shared_ptr<View>>, std::vector<vk::UniqueDescriptorSet>> m_heap_cache;
     std::vector<std::map<vk::DescriptorType, size_t>> m_descriptor_count_by_set;
 };
