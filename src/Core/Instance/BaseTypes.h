@@ -19,6 +19,9 @@ enum class ResourceState
     kPixelShaderResource,
     kNonPixelShaderResource,
     kUnorderedAccess,
+    kCopyDest,
+    kVertexAndConstantBuffer,
+    kIndexBuffer,
 };
 
 enum class ResourceDimension
@@ -72,6 +75,16 @@ enum class ViewType
     kSampler,
     kRtv,
     kDsv
+};
+
+enum class ResourceType
+{
+    kUnknown,
+    kBuffer,
+    kImage,
+    kSampler,
+    kBottomLevelAS,
+    kTopLevelAS,
 };
 
 namespace BindFlag
@@ -392,4 +405,40 @@ struct BufferDesc
     gli::format format = gli::format::FORMAT_UNDEFINED;
     uint32_t count = 0;
     uint32_t offset = 0;
+};
+
+enum class MemoryType
+{
+    kDefault,
+    kUpload
+};
+
+struct TextureOffset
+{
+    int32_t x;
+    int32_t y;
+    int32_t z;
+};
+
+struct TextureExtent3D
+{
+    uint32_t width;
+    uint32_t height;
+    uint32_t depth;
+};
+
+struct BufferToTextureCopyRegion
+{
+    uint64_t buffer_offset;
+    uint32_t buffer_row_pitch;
+    uint32_t texture_subresource;
+    TextureOffset texture_offset;
+    TextureExtent3D texture_extent;
+};
+
+struct BufferCopyRegion
+{
+    uint64_t src_offset;
+    uint64_t dst_offset;
+    uint64_t num_bytes;
 };

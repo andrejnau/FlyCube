@@ -23,7 +23,11 @@ public:
         m_callback = instance.createDebugReportCallbackEXTUnique(callback_create_info);
     }
 
+#if defined(_DEBUG)
+    static constexpr bool enabled = true;
+#else
     static constexpr bool enabled = false;
+#endif
 
 private:
     static bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& message)

@@ -16,19 +16,16 @@ int main(int argc, char* argv[])
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count, settings.vsync);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
-    std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_data.size(), sizeof(uint32_t));
-    std::vector<glm::vec3> vertex_data = { glm::vec3(-0.5, -0.5, 0.0), glm::vec3(0.0,  0.5, 0.0), glm::vec3(0.5, -0.5, 0.0) };
-    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVbv, sizeof(vertex_data.front()) * vertex_data.size(), sizeof(vertex_data.front()));
-    glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
-    std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kCbv, sizeof(constant_data), 0);
+    std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_data.size(), sizeof(uint32_t), MemoryType::kUpload);
+    index_buffer->UpdateUploadData(index_data.data(), 0, sizeof(index_data.front()) * index_data.size());
 
-    std::shared_ptr<CommandList> upload_command_list = device->CreateCommandList();
-    upload_command_list->Open();
-    upload_command_list->UpdateSubresource(index_buffer, 0, index_data.data());
-    upload_command_list->UpdateSubresource(vertex_buffer, 0, vertex_data.data());
-    upload_command_list->UpdateSubresource(constant_buffer, 0, &constant_data);
-    upload_command_list->Close();
-    device->ExecuteCommandLists({ upload_command_list });
+    std::vector<glm::vec3> vertex_data = { glm::vec3(-0.5, -0.5, 0.0), glm::vec3(0.0,  0.5, 0.0), glm::vec3(0.5, -0.5, 0.0) };
+    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVbv, sizeof(vertex_data.front()) * vertex_data.size(), sizeof(vertex_data.front()), MemoryType::kUpload);
+    vertex_buffer->UpdateUploadData(vertex_data.data(), 0, sizeof(vertex_data.front()) * vertex_data.size());
+
+    glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
+    std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kCbv, sizeof(constant_data), 0, MemoryType::kUpload);
+    constant_buffer->UpdateUploadData(&constant_data, 0, sizeof(constant_data));
 
     ViewDesc constant_view_desc = {};
     constant_view_desc.view_type = ViewType::kCbv;

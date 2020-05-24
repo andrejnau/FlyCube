@@ -9,12 +9,13 @@ class VKDevice : public Device
 {
 public:
     VKDevice(VKAdapter& adapter);
+    uint32_t GetTextureDataPitchAlignment() const override;
     std::shared_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync) override;
     std::shared_ptr<CommandList> CreateCommandList() override;
     std::shared_ptr<Fence> CreateFence() override;
     std::shared_ptr<Semaphore> CreateGPUSemaphore() override;
     std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels) override;
-    std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride) override;
+    std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride, MemoryType memory_type) override;
     std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) override;
     std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) override;
     std::shared_ptr<Framebuffer> CreateFramebuffer(const std::shared_ptr<Pipeline>& pipeline, const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv) override;

@@ -57,6 +57,11 @@ DXDevice::DXDevice(DXAdapter& adapter)
 #endif
 }
 
+uint32_t DXDevice::GetTextureDataPitchAlignment() const
+{
+    return D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
+}
+
 std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
 {
     return std::make_shared<DXSwapchain>(*this, window, width, height, frame_count, vsync);
@@ -84,6 +89,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
         dx_format = DXGI_FORMAT_R32_TYPELESS;
 
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
+    res->res_type = ResourceType::kImage;
     res->m_format = format;
 
     D3D12_RESOURCE_DESC desc = {};
@@ -145,7 +151,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
     return res;
 }
 
-std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride)
+std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride, MemoryType memory_type)
 {
     if (buffer_size == 0)
         return {};
@@ -161,6 +167,8 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     res->buffer_size = buffer_size;
     res->stride = stride;
     res->state = D3D12_RESOURCE_STATE_COMMON;
+    res->memory_type = memory_type;
+    res->res_type = ResourceType::kBuffer;
 
     if (bind_flag & BindFlag::kRtv)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -171,27 +179,24 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     if (bind_flag & BindFlag::kAccelerationStructure)
         res->state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
 
-    if (bind_flag & BindFlag::kCbv)
+    D3D12_HEAP_TYPE heap_type;
+    if (memory_type == MemoryType::kDefault)
     {
+        heap_type = D3D12_HEAP_TYPE_DEFAULT;
+    }
+    else if (memory_type == MemoryType::kUpload)
+    {
+        heap_type = D3D12_HEAP_TYPE_UPLOAD;
         res->state = D3D12_RESOURCE_STATE_GENERIC_READ;
-        m_device->CreateCommittedResource(
-            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-            D3D12_HEAP_FLAG_NONE,
-            &desc,
-            res->state,
-            nullptr,
-            IID_PPV_ARGS(&res->default_res));
     }
-    else
-    {
-        m_device->CreateCommittedResource(
-            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-            D3D12_HEAP_FLAG_NONE,
-            &desc,
-            res->state,
-            nullptr,
-            IID_PPV_ARGS(&res->default_res));
-    }
+
+    m_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(heap_type),
+        D3D12_HEAP_FLAG_NONE,
+        &desc,
+        res->state,
+        nullptr,
+        IID_PPV_ARGS(&res->default_res));
     res->desc = desc;
     return res;
 }
@@ -199,7 +204,6 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
 {
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
-
     D3D12_SAMPLER_DESC& sampler_desc = res->sampler_desc;
 
     switch (desc.filter)
@@ -326,8 +330,8 @@ std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::shared_ptr<Co
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
     device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
-    auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav, info.ScratchDataSizeInBytes, 0));
-    auto result = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, 0));
+    auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav, info.ScratchDataSizeInBytes, 0, MemoryType::kDefault));
+    auto result = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, 0, MemoryType::kDefault));
 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
     acceleration_structure_desc.Inputs = inputs;
@@ -365,11 +369,11 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
     device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
-    auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav, info.ScratchDataSizeInBytes, 0));
-    auto result = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, 0));
+    auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav, info.ScratchDataSizeInBytes, 0, MemoryType::kDefault));
+    auto result = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, 0, MemoryType::kDefault));
 
-    auto instance_desc_res = std::static_pointer_cast<DXResource>(CreateBuffer(0, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * geometry.size(), 0));
-    auto& upload_res = instance_desc_res->GetUploadResource(0);
+    auto instance_desc_res = std::static_pointer_cast<DXResource>(CreateBuffer(0, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * geometry.size(), 0, MemoryType::kDefault));
+    /*auto& upload_res = instance_desc_res->GetUploadResource(0);
     if (!upload_res)
     {
         UINT64 buffer_size = GetRequiredIntermediateSize(instance_desc_res->default_res.Get(), 0, 1);
@@ -397,11 +401,11 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
         memcpy(instance_desc[i].Transform, &geometry[i].second, sizeof(instance_desc->Transform));
     }
 
-    upload_res->Unmap(0, nullptr);
+    upload_res->Unmap(0, nullptr);*/
 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
     acceleration_structure_desc.Inputs = inputs;
-    acceleration_structure_desc.Inputs.InstanceDescs = upload_res->GetGPUVirtualAddress();
+   // acceleration_structure_desc.Inputs.InstanceDescs = upload_res->GetGPUVirtualAddress();
     acceleration_structure_desc.DestAccelerationStructureData = result->default_res->GetGPUVirtualAddress();
     acceleration_structure_desc.ScratchAccelerationStructureData = scratch->default_res->GetGPUVirtualAddress();
     command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);

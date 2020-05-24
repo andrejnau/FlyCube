@@ -187,7 +187,17 @@ void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, R
     case ResourceState::kNonPixelShaderResource:
         dx_state = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
         break;
+    case ResourceState::kCopyDest:
+        dx_state = D3D12_RESOURCE_STATE_COPY_DEST;
+        break;
+    case ResourceState::kVertexAndConstantBuffer:
+        dx_state = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+        break;
+    case ResourceState::kIndexBuffer:
+        dx_state = D3D12_RESOURCE_STATE_INDEX_BUFFER;
+        break;
     }
+
     ResourceBarrier(dx_resource, dx_state);
 }
 
@@ -227,41 +237,50 @@ void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
     m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
 }
 
-void DXCommandList::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
+void DXCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
+                               const std::vector<BufferCopyRegion>& regions)
 {
-    decltype(auto) dx_resource = resource->As<DXResource>();
-
-    if (dx_resource.bind_flag & BindFlag::kCbv)
+    decltype(auto) dx_src_buffer = src_buffer->As<DXResource>();
+    decltype(auto) dx_dst_buffer = dst_buffer->As<DXResource>();
+    for (const auto& region : regions)
     {
-        CD3DX12_RANGE range(0, 0);
-        char* cbvGPUAddress = nullptr;
-        ASSERT_SUCCEEDED(dx_resource.default_res->Map(0, &range, reinterpret_cast<void**>(&cbvGPUAddress)));
-        memcpy(cbvGPUAddress, data, dx_resource .buffer_size);
-        dx_resource.default_res->Unmap(0, &range);
-        return;
+        m_command_list->CopyBufferRegion(dx_dst_buffer.default_res.Get(), region.dst_offset, dx_src_buffer.default_res.Get(), region.src_offset, region.num_bytes);
     }
+}
 
-    auto& upload_res = dx_resource.GetUploadResource(subresource);
-    if (!upload_res)
+void DXCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
+                                        const std::vector<BufferToTextureCopyRegion>& regions)
+{
+    decltype(auto) dx_src_buffer = src_buffer->As<DXResource>();
+    decltype(auto) dx_dst_texture = dst_texture->As<DXResource>();
+    auto format = dst_texture->GetFormat();
+    DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
+    for (const auto& region : regions)
     {
-        UINT64 buffer_size = GetRequiredIntermediateSize(dx_resource.default_res.Get(), subresource, 1);
-        m_device.GetDevice()->CreateCommittedResource(
-            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-            D3D12_HEAP_FLAG_NONE,
-            &CD3DX12_RESOURCE_DESC::Buffer(buffer_size),
-            D3D12_RESOURCE_STATE_GENERIC_READ,
-            nullptr,
-            IID_PPV_ARGS(&upload_res));
+        D3D12_TEXTURE_COPY_LOCATION dst = {};
+        dst.pResource = dx_dst_texture.default_res.Get();
+        dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+        dst.SubresourceIndex = region.texture_subresource;
+
+        D3D12_TEXTURE_COPY_LOCATION src = {};
+        src.pResource = dx_src_buffer.default_res.Get();
+        src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+        src.PlacedFootprint.Offset = region.buffer_offset;
+        src.PlacedFootprint.Footprint.Width = region.texture_extent.width;
+        src.PlacedFootprint.Footprint.Height = region.texture_extent.height;
+        src.PlacedFootprint.Footprint.Depth = region.texture_extent.depth;
+        if (gli::is_compressed(format))
+        {
+            auto extent = gli::block_extent(format);
+            src.PlacedFootprint.Footprint.Width = std::max<uint32_t>(extent.x, src.PlacedFootprint.Footprint.Width);
+            src.PlacedFootprint.Footprint.Height = std::max<uint32_t>(extent.y, src.PlacedFootprint.Footprint.Height);
+            src.PlacedFootprint.Footprint.Depth = std::max<uint32_t>(extent.z, src.PlacedFootprint.Footprint.Depth);
+        }
+        src.PlacedFootprint.Footprint.RowPitch = region.buffer_row_pitch;
+        src.PlacedFootprint.Footprint.Format = dx_format;
+
+        m_command_list->CopyTextureRegion(&dst, region.texture_offset.x, region.texture_offset.y, region.texture_offset.z, &src, nullptr);
     }
-
-    D3D12_SUBRESOURCE_DATA subresource_data = {};
-    subresource_data.pData = data;
-    subresource_data.RowPitch = row_pitch;
-    subresource_data.SlicePitch = depth_pitch;
-
-    ResourceBarrier(dx_resource, D3D12_RESOURCE_STATE_COPY_DEST);
-    UpdateSubresources(m_command_list.Get(), dx_resource.default_res.Get(), upload_res.Get(), 0, subresource, 1, &subresource_data);
-    ResourceBarrier(dx_resource, D3D12_RESOURCE_STATE_COMMON);
 }
 
 ComPtr<ID3D12GraphicsCommandList> DXCommandList::GetCommandList()

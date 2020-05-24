@@ -105,6 +105,11 @@ VKDevice::VKDevice(VKAdapter& adapter)
     m_cmd_pool = m_device->createCommandPoolUnique(cmd_pool_create_info);
 }
 
+uint32_t VKDevice::GetTextureDataPitchAlignment() const
+{
+    return 1;
+}
+
 std::shared_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
 {
     return std::make_shared<VKSwapchain>(*this, window, width, height, frame_count, vsync);
@@ -132,7 +137,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
 {
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
     res->m_format = format;
-    res->res_type = VKResource::Type::kImage;
+    res->res_type = ResourceType::kImage;
 
     vk::Format vk_format = static_cast<vk::Format>(format);
     if (vk_format == vk::Format::eD24UnormS8Uint)
@@ -208,7 +213,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
     return res;
 }
 
-std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride)
+std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride, MemoryType memory_type)
 {
     if (buffer_size == 0)
         return {};
@@ -225,11 +230,15 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
         bufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
     else if (bind_flag & BindFlag::kSrv)
         bufferInfo.usage = vk::BufferUsageFlagBits::eStorageBuffer;
-    else
-        bufferInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
+
+    if (memory_type == MemoryType::kDefault)
+        bufferInfo.usage |= vk::BufferUsageFlagBits::eTransferDst;
+    else if (memory_type == MemoryType::kUpload)
+        bufferInfo.usage |= vk::BufferUsageFlagBits::eTransferSrc;
 
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-    res->res_type = VKResource::Type::kBuffer;
+    res->res_type = ResourceType::kBuffer;
+    res->memory_type = memory_type;
 
     res->buffer.res = m_device->createBufferUnique(bufferInfo);
 
@@ -313,7 +322,7 @@ std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
 
     res->sampler.res = m_device->createSamplerUnique(samplerInfo);
 
-    res->res_type = VKResource::Type::kSampler;
+    res->res_type = ResourceType::kSampler;
     return res;
 }
 
@@ -355,7 +364,7 @@ std::shared_ptr<Pipeline> VKDevice::CreateRayTracingPipeline(const RayTracingPip
 std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::shared_ptr<CommandList>& command_list, const BufferDesc& vertex, const BufferDesc& index)
 {
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-    res->res_type = VKResource::Type::kBottomLevelAS;
+    res->res_type = ResourceType::kBottomLevelAS;
     AccelerationStructure& bottomLevelAS = res->bottom_as;
 
     auto vertex_res = std::static_pointer_cast<VKResource>(vertex.res);
@@ -422,7 +431,7 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
 {
     decltype(auto) vk_command_list = command_list->As<VKCommandList>().GetCommandList();
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-    res->res_type = VKResource::Type::kTopLevelAS;
+    res->res_type = ResourceType::kTopLevelAS;
     AccelerationStructure& topLevelAS = res->top_as;
 
     vk::AccelerationStructureInfoNV accelerationStructureInfo{};

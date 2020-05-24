@@ -41,11 +41,21 @@ class VKResource : public Resource
 {
 public:
     VKResource(VKDevice& device);
+    ResourceType GetResourceType() const override;
     gli::format GetFormat() const override;
+    MemoryType GetMemoryType() const override;
+    uint64_t GetWidth() const override;
+    uint32_t GetHeight() const override;
+    uint16_t GetDepthOrArraySize() const override;
+    uint16_t GetMipLevels() const override;
     void SetName(const std::string& name) override;
+    void UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes) override;
+    void UpdateSubresource(uint32_t texture_subresource, uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
+                           const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices) override;
 
     VKDevice& m_device;
     gli::format m_format;
+    MemoryType memory_type = MemoryType::kDefault;
 
     struct Image
     {
@@ -74,17 +84,7 @@ public:
     AccelerationStructure bottom_as;
     AccelerationStructure top_as;
 
-    enum class Type
-    {
-        kUnknown,
-        kBuffer,
-        kImage,
-        kSampler,
-        kBottomLevelAS,
-        kTopLevelAS,
-    };
-
-    Type res_type = Type::kUnknown;
+    ResourceType res_type = ResourceType::kUnknown;
 
     std::shared_ptr<VKResource>& GetUploadResource(size_t subresource)
     {

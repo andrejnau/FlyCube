@@ -31,5 +31,8 @@ public:
     virtual void SetViewport(float width, float height) = 0;
     virtual void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) = 0;
     virtual void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) = 0;
-    virtual void UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch = 0, uint32_t depth_pitch = 0) = 0;
+    virtual void CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
+                            const std::vector<BufferCopyRegion>& regions) = 0;
+    virtual void CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
+                                     const std::vector<BufferToTextureCopyRegion>& regions) = 0;
 };

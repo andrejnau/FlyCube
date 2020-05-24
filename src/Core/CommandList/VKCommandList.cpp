@@ -233,99 +233,57 @@ void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
     m_command_list->bindVertexBuffers(slot, 1, vertex_buffers, offsets);
 }
 
-void VKCommandList::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
+void VKCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
+                               const std::vector<BufferCopyRegion>& regions)
 {
-    decltype(auto) vk_resource = resource->As<VKResource>();
-
-    if (vk_resource.res_type == VKResource::Type::kBuffer)
+    decltype(auto) vk_src_buffer = src_buffer->As<VKResource>();
+    decltype(auto) vk_dst_buffer = dst_buffer->As<VKResource>();
+    std::vector<vk::BufferCopy> vk_regions;
+    for (const auto& region : regions)
     {
-        void* dst_data = nullptr;
-        m_device.GetDevice().mapMemory(vk_resource.buffer.memory.get(), 0, vk_resource.buffer.size, {}, &dst_data);
-        memcpy(dst_data, data, static_cast<size_t>(vk_resource.buffer.size));
-        m_device.GetDevice().unmapMemory(vk_resource.buffer.memory.get());
+        vk_regions.emplace_back(region.src_offset, region.dst_offset, region.num_bytes);
     }
-    else if (vk_resource.res_type == VKResource::Type::kImage)
+    m_command_list->copyBuffer(vk_src_buffer.buffer.res.get(), vk_dst_buffer.buffer.res.get(), vk_regions);
+}
+
+void VKCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
+                                        const std::vector<BufferToTextureCopyRegion>& regions)
+{
+    decltype(auto) vk_src_buffer = src_buffer->As<VKResource>();
+    decltype(auto) vk_dst_texture = dst_texture->As<VKResource>();
+    std::vector<vk::BufferImageCopy> vk_regions;
+    auto format = dst_texture->GetFormat();
+    for (const auto& region : regions)
     {
-        auto& staging = vk_resource.GetUploadResource(subresource);
-        if (!staging || staging->res_type == VKResource::Type::kUnknown)
-            staging = std::static_pointer_cast<VKResource>(m_device.CreateBuffer(0, depth_pitch, 0));
-        UpdateSubresource(staging, 0, data, row_pitch, depth_pitch);
-
-        // Setup buffer copy regions for each mip level
-        std::vector<vk::BufferImageCopy> bufferCopyRegions;
-        uint32_t offset = 0;
-
-        vk::BufferImageCopy bufferCopyRegion = {};
-        bufferCopyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-        bufferCopyRegion.imageSubresource.mipLevel = subresource;
-        bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
-        bufferCopyRegion.imageSubresource.layerCount = 1;
-        bufferCopyRegion.imageExtent.width = std::max(1u, static_cast<uint32_t>(vk_resource.image.size.width >> subresource));
-        bufferCopyRegion.imageExtent.height = std::max(1u, static_cast<uint32_t>(vk_resource.image.size.height >> subresource));
-        bufferCopyRegion.imageExtent.depth = 1;
-
-        bufferCopyRegions.push_back(bufferCopyRegion);
-
-        // The sub resource range describes the regions of the image that will be transitioned using the memory barriers below
-        vk::ImageSubresourceRange subresourceRange = {};
-        // Image only contains color data
-        subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-        // Start at first mip level
-        subresourceRange.baseMipLevel = subresource;
-        // We will transition on all mip levels
-        subresourceRange.levelCount = 1;
-        // The 2D texture only has one layer
-        subresourceRange.layerCount = 1;
-
-        // Transition the texture image layout to transfer target, so we can safely copy our buffer data to it.
-        vk::ImageMemoryBarrier imageMemoryBarrier{};
-        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.image = vk_resource.image.res.get();
-        imageMemoryBarrier.subresourceRange = subresourceRange;
-        imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-        imageMemoryBarrier.oldLayout = vk::ImageLayout::eUndefined;
-        imageMemoryBarrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
-
-        // Insert a memory dependency at the proper pipeline stages that will execute the image layout transition 
-        // Source pipeline stage is host write/read exection (vk::PipelineStageFlagBits::eHost)
-        // Destination pipeline stage is copy command exection (vk::PipelineStageFlagBits::eTransfer)
-        m_command_list->pipelineBarrier(
-            vk::PipelineStageFlagBits::eHost,
-            vk::PipelineStageFlagBits::eTransfer,
-            {},
-            0, nullptr,
-            0, nullptr,
-            1, &imageMemoryBarrier);
-
-        // Copy mip levels from staging buffer
-        m_command_list->copyBufferToImage(
-            staging->buffer.res.get(),
-            vk_resource.image.res.get(),
-            vk::ImageLayout::eTransferDstOptimal,
-            static_cast<uint32_t>(bufferCopyRegions.size()),
-            bufferCopyRegions.data());
-
-        // Once the data has been uploaded we transfer to the texture image to the shader read layout, so it can be sampled from
-        imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-        imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-        imageMemoryBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-        imageMemoryBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-
-        // Insert a memory dependency at the proper pipeline stages that will execute the image layout transition 
-        // Source pipeline stage stage is copy command exection (vk::PipelineStageFlagBits::eTransfer)
-        // Destination pipeline stage fragment shader access (vk::PipelineStageFlagBits::eFragmentShader)
-        m_command_list->pipelineBarrier(
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::PipelineStageFlagBits::eFragmentShader,
-            {},
-            0, nullptr,
-            0, nullptr,
-            1, &imageMemoryBarrier);
-
-        // Store current layout for later reuse
-        vk_resource.image.layout[subresourceRange] = vk::ImageLayout::eShaderReadOnlyOptimal;
+        auto& vk_region = vk_regions.emplace_back();
+        vk_region.bufferOffset = region.buffer_offset;
+        if (gli::is_compressed(format))
+        {
+            auto extent = gli::block_extent(format);
+            vk_region.bufferRowLength = region.buffer_row_pitch / gli::block_size(format) * extent.x;
+            vk_region.bufferImageHeight = ((region.texture_extent.height + gli::block_extent(format).y - 1) / gli::block_extent(format).y) * extent.x;
+        }
+        else
+        {
+            vk_region.bufferRowLength = region.buffer_row_pitch / (gli::detail::bits_per_pixel(format) / 8);
+            vk_region.bufferImageHeight = region.texture_extent.height;
+        }
+        vk_region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+        vk_region.imageSubresource.mipLevel = region.texture_subresource;
+        vk_region.imageSubresource.baseArrayLayer = 0;
+        vk_region.imageSubresource.layerCount = 1;
+        vk_region.imageOffset.x = region.texture_offset.x;
+        vk_region.imageOffset.y = region.texture_offset.y;
+        vk_region.imageOffset.z = region.texture_offset.z;
+        vk_region.imageExtent.width = region.texture_extent.width;
+        vk_region.imageExtent.height = region.texture_extent.height;
+        vk_region.imageExtent.depth = region.texture_extent.depth;
     }
+    m_command_list->copyBufferToImage(
+        vk_src_buffer.buffer.res.get(),
+        vk_dst_texture.image.res.get(),
+        vk::ImageLayout::eTransferDstOptimal,
+        vk_regions);
 }
 
 void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc, ResourceState state)
@@ -356,6 +314,9 @@ void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, c
     case ResourceState::kPixelShaderResource:
     case ResourceState::kNonPixelShaderResource:
         new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        break;
+    case ResourceState::kCopyDest:
+        new_layout = vk::ImageLayout::eTransferDstOptimal;
         break;
     }
 

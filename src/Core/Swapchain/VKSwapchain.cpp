@@ -64,7 +64,7 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
         res->image.res = vk::UniqueImage(m_images[i]);
         res->image.format = m_swapchain_color_format;
         res->image.size = vk::Extent2D(1u * width, 1u * height);
-        res->res_type = VKResource::Type::kImage;
+        res->res_type = ResourceType::kImage;
         m_back_buffers.emplace_back(res);
     }
 }

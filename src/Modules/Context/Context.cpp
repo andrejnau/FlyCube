@@ -1,4 +1,5 @@
 #include "Context/Context.h"
+#include <Utilities/FormatHelper.h>
 
 Context::Context(const Settings& settings, GLFWwindow* window)
     : m_window(window)
@@ -32,7 +33,7 @@ std::shared_ptr<Resource> Context::CreateTexture(uint32_t bind_flag, gli::format
 
 std::shared_ptr<Resource> Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride)
 {
-    return m_device->CreateBuffer(bind_flag, buffer_size, stride);
+    return m_device->CreateBuffer(bind_flag, buffer_size, stride, MemoryType::kDefault);
 }
 
 std::shared_ptr<Resource> Context::CreateSampler(const SamplerDesc& desc)
@@ -52,7 +53,68 @@ std::shared_ptr<Resource> Context::CreateTopLevelAS(const std::vector<std::pair<
 
 void Context::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch , uint32_t depth_pitch)
 {
-    return m_command_list->UpdateSubresource(resource, subresource, data, row_pitch, depth_pitch);
+    switch (resource->GetMemoryType())
+    {
+    case MemoryType::kUpload:
+       return resource->UpdateUploadData(data, 0, resource->GetWidth());
+    case MemoryType::kDefault:
+        return UpdateSubresourceDefault(resource, subresource, data, row_pitch, depth_pitch);
+    }
+}
+
+inline uint32_t Align(uint32_t size, uint32_t alignment)
+{
+    return (size + (alignment - 1)) & ~(alignment - 1);
+}
+
+void Context::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
+{
+    if (m_is_open_render_pass)
+    {
+        m_command_list->EndRenderPass();
+        m_is_open_render_pass = false;
+    }
+
+    std::shared_ptr<Resource>& upload_resource = resource->GetPrivateResource(subresource);
+
+    switch (resource->GetResourceType())
+    {
+    case ResourceType::kBuffer:
+    {
+        size_t buffer_size = resource->GetWidth();
+        if (!upload_resource)
+            upload_resource = m_device->CreateBuffer(0, buffer_size, 0, MemoryType::kUpload);
+        upload_resource->UpdateUploadData(data, 0, buffer_size);
+
+        std::vector<BufferCopyRegion> regions;
+        auto& region = regions.emplace_back();
+        region.num_bytes = buffer_size;
+        m_command_list->ResourceBarrier(resource, ResourceState::kCopyDest);
+        m_command_list->CopyBuffer(upload_resource, resource, regions);
+        break;
+    }
+    case ResourceType::kImage:
+    {
+        std::vector<BufferToTextureCopyRegion> regions;
+        auto& region = regions.emplace_back();
+        region.texture_subresource = subresource;
+        region.texture_extent.width = std::max<uint32_t>(1, resource->GetWidth() >> subresource);
+        region.texture_extent.height = std::max<uint32_t>(1, resource->GetHeight() >> subresource);
+        region.texture_extent.depth = 1;
+
+        size_t num_bytes = 0, row_bytes = 0, num_rows = 0;
+        GetFormatInfo(region.texture_extent.width, region.texture_extent.height, resource->GetFormat(), num_bytes, row_bytes, num_rows, m_device->GetTextureDataPitchAlignment());
+        region.buffer_row_pitch = row_bytes;
+
+        if (!upload_resource)
+            upload_resource = m_device->CreateBuffer(0, num_bytes, 0, MemoryType::kUpload);
+        upload_resource->UpdateSubresource(subresource, 0, row_bytes, num_bytes, data, row_pitch, depth_pitch, num_rows, region.texture_extent.depth);
+
+        m_command_list->ResourceBarrier(resource, ResourceState::kCopyDest);
+        m_command_list->CopyBufferToTexture(upload_resource, resource, regions);
+        break;
+    }
+    }
 }
 
 void Context::SetViewport(float width, float height)
@@ -66,11 +128,13 @@ void Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t b
 
 void Context::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {
+    m_command_list->ResourceBarrier(resource, ResourceState::kIndexBuffer);
     m_command_list->IASetIndexBuffer(resource, format);
 }
 
 void Context::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
+    m_command_list->ResourceBarrier(resource, ResourceState::kVertexAndConstantBuffer);
     m_command_list->IASetVertexBuffer(slot, resource);
 }
 

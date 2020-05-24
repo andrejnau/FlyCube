@@ -29,7 +29,10 @@ public:
     void SetViewport(float width, float height) override;
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) override;
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override;
-    void UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch) override;
+    void CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
+                    const std::vector<BufferCopyRegion>& regions) override;
+    void CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
+                             const std::vector<BufferToTextureCopyRegion>& regions) override;
 
     ComPtr<ID3D12GraphicsCommandList> GetCommandList();
 

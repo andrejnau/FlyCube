@@ -177,6 +177,10 @@ void ProgramApi::ApplyBindings()
     {
         if (m_context.m_is_open_render_pass)
             m_context.m_command_list->EndRenderPass();
+    }
+
+    if (!m_context.m_is_open_render_pass)
+    {
         m_context.m_command_list->BeginRenderPass(m_framebuffer);
         m_context.m_is_open_render_pass = true;
     }
@@ -271,6 +275,11 @@ void ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& co
     auto& view = FindView(ShaderType::kPixel, ViewType::kRtv, slot);
     if (!view)
         return;
+    if (m_context.m_is_open_render_pass)
+    {
+        m_context.m_command_list->EndRenderPass();
+        m_context.m_is_open_render_pass = false;
+    }
     m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kClearColor);
     m_context.m_command_list->ClearColor(view, color);
     m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kRenderTarget);
@@ -281,6 +290,11 @@ void ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Ste
     auto& view = FindView(ShaderType::kPixel, ViewType::kDsv, 0);
     if (!view)
         return;
+    if (m_context.m_is_open_render_pass)
+    {
+        m_context.m_command_list->EndRenderPass();
+        m_context.m_is_open_render_pass = false;
+    }
     m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kClearDepth);
     m_context.m_command_list->ClearDepth(view, Depth);
     m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kDepthTarget);
@@ -329,6 +343,12 @@ void ProgramApi::UpdateCBuffers()
 
 void ProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
 {
+    if (m_context.m_is_open_render_pass)
+    {
+        m_context.m_command_list->EndRenderPass();
+        m_context.m_is_open_render_pass = false;
+    }
+
     if (type == ShaderType::kPixel)
         m_context.m_command_list->ResourceBarrier(resource, ResourceState::kPixelShaderResource);
     else
@@ -337,6 +357,12 @@ void ProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t 
 
 void ProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
 {
+    if (m_context.m_is_open_render_pass)
+    {
+        m_context.m_command_list->EndRenderPass();
+        m_context.m_is_open_render_pass = false;
+    }
+
     m_context.m_command_list->ResourceBarrier(resource, ResourceState::kUnorderedAccess);
 }
 
