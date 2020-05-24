@@ -29,6 +29,7 @@ void DXCommandList::Open()
     ASSERT_SUCCEEDED(m_command_list->Reset(m_command_allocator.Get(), nullptr));
     m_heaps.clear();
     m_state.reset();
+    m_binding_set.reset();
 }
 
 void DXCommandList::Close()
@@ -38,6 +39,8 @@ void DXCommandList::Close()
 
 void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
+    if (state == m_state)
+        return;
     auto type = state->GetPipelineType();
     if (type == PipelineType::kGraphics)
     {
@@ -65,9 +68,12 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 
 void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
+    if (binding_set == m_binding_set)
+        return;
     decltype(auto) dx_binding_set = binding_set->As<DXBindingSet>();
     decltype(auto) new_heaps = dx_binding_set.Apply(m_command_list);
     m_heaps.insert(m_heaps.end(), new_heaps.begin(), new_heaps.end());
+    m_binding_set = binding_set;
 }
 
 void DXCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
@@ -98,12 +104,16 @@ void DXCommandList::EndRenderPass()
 
 void DXCommandList::BeginEvent(const std::string& name)
 {
+    if (!m_debug_regions)
+        return;
     std::wstring wname = utf8_to_wstring(name);
     PIXBeginEvent(m_command_list.Get(), 0, wname.c_str());
 }
 
 void DXCommandList::EndEvent()
 {
+    if (!m_debug_regions)
+        return;
     PIXEndEvent(m_command_list.Get());
 }
 

@@ -275,43 +275,94 @@ void CopyDescriptor(DXGPUDescriptorPoolRange& dst_range, size_t dst_offset, cons
     }
 }
 
-void SetRootDescriptorTable(uint32_t RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor)
+size_t DXProgram::HeapSizeByType(D3D12_DESCRIPTOR_HEAP_TYPE type)
 {
+    switch (type)
+    {
+    case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
+        return m_num_cbv + m_num_srv + m_num_uav;
+    case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
+        return m_num_sampler;
+    default:
+        assert(false);
+        return 0;
+    }
 }
 
 std::shared_ptr<BindingSet> DXProgram::CreateBindingSet(const std::vector<BindingDesc>& bindings)
 {
-    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, size_t> descriptor_requests = {
-       { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_num_cbv + m_num_srv + m_num_uav },
-       { D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, m_num_sampler }
-    };
-
-    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::map<BindKey, std::shared_ptr<View>>> descriptor_cache;
-    for (auto& x : bindings)
+    BindingsByHeap bindings_by_heap;
+    for (auto& desc : bindings)
     {
-        BindKey bind_key = { x.shader, x.type, x.name };
-        switch (x.type)
+        auto it = m_bindings_id.find(desc);
+        if (it == m_bindings_id.end())
+        {
+            m_bindings.emplace_back(desc);
+            size_t id = m_bindings.size() - 1;
+            it = m_bindings_id.emplace(desc, id).first;
+        }
+
+        D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
+        switch (desc.type)
         {
         case ResourceType::kCbv:
         case ResourceType::kSrv:
         case ResourceType::kUav:
-            descriptor_cache[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV][bind_key] = x.view;
+            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
             break;
         case ResourceType::kSampler:
-            descriptor_cache[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER][bind_key] = x.view;
+            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
             break;
+        default:
+            assert(false);
         }
+        bindings_by_heap[heap_type].insert(it->second);
     }
 
+    auto binding_set_it = m_binding_set_cache.find(bindings_by_heap);
+    if (binding_set_it != m_binding_set_cache.end())
+        return binding_set_it->second;
+
     std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::reference_wrapper<DXGPUDescriptorPoolRange>> descriptor_ranges;
-    std::set<D3D12_DESCRIPTOR_HEAP_TYPE> new_descriptor_ranges;
-    for (auto& x : descriptor_cache)
+    for (auto& x : bindings_by_heap)
     {
         auto it = m_heap_cache.find(x.second);
         if (it == m_heap_cache.end())
         {
-            it = m_heap_cache.emplace(x.second, m_device.GetGPUDescriptorPool().Allocate(x.first, descriptor_requests[x.first])).first;
-            new_descriptor_ranges.insert(x.first);
+            it = m_heap_cache.emplace(x.second, m_device.GetGPUDescriptorPool().Allocate(x.first, HeapSizeByType(x.first))).first;
+            auto& descriptor_range = it->second;
+            for (auto& id : x.second)
+            {
+                auto& desc = m_bindings[id];
+                BindKey bind_key = { desc.shader, desc.type, desc.name };
+                D3D12_DESCRIPTOR_RANGE_TYPE range_type;
+                D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
+                switch (desc.type)
+                {
+                case ResourceType::kSrv:
+                    range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                    heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+                    break;
+                case ResourceType::kUav:
+                    range_type = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                    heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+                    break;
+                case ResourceType::kCbv:
+                    range_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                    heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+                    break;
+                case ResourceType::kSampler:
+                    range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+                    heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+                    break;
+                case ResourceType::kRtv:
+                case ResourceType::kDsv:
+                    continue;
+                }
+
+                uint32_t slot = m_bind_to_slot.at(bind_key);
+                CopyDescriptor(descriptor_range, m_binding_layout[{bind_key.shader, range_type}].table.heap_offset + slot, desc.view);
+            }
         }
         DXGPUDescriptorPoolRange& heap_range = it->second;
         descriptor_ranges.emplace(std::piecewise_construct,
@@ -319,44 +370,9 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSet(const std::vector<Bindin
             std::forward_as_tuple(heap_range));
     }
 
-    for (auto& x : bindings)
-    {
-        BindKey bind_key = { x.shader, x.type, x.name };
-        D3D12_DESCRIPTOR_RANGE_TYPE range_type;
-        D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
-        switch (x.type)
-        {
-        case ResourceType::kSrv:
-            range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-            break;
-        case ResourceType::kUav:
-            range_type = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-            break;
-        case ResourceType::kCbv:
-            range_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-            break;
-        case ResourceType::kSampler:
-            range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-            heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-            break;
-        case ResourceType::kRtv:
-        case ResourceType::kDsv:
-            continue;
-        }
-
-        auto& descriptor_range = descriptor_ranges.find(heap_type)->second;
-
-        if (!new_descriptor_ranges.count(heap_type))
-            continue;
-
-        uint32_t slot = m_bind_to_slot.at(bind_key);
-        CopyDescriptor(descriptor_range.get(), m_binding_layout[{bind_key.shader, range_type}].table.heap_offset + slot, x.view);
-    }
-
-    return std::make_shared<DXBindingSet>(*this, m_is_compute, descriptor_ranges, m_binding_layout);
+    auto binding_set = std::make_shared<DXBindingSet>(*this, m_is_compute, descriptor_ranges, m_binding_layout);
+    m_binding_set_cache.emplace(bindings_by_heap, binding_set);
+    return binding_set;
 }
 
 const std::vector<std::shared_ptr<DXShader>>& DXProgram::GetShaders() const

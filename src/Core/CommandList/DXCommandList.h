@@ -41,4 +41,6 @@ private:
     ComPtr<ID3D12GraphicsCommandList> m_command_list;
     std::vector<ComPtr<ID3D12DescriptorHeap>> m_heaps;
     std::shared_ptr<Pipeline> m_state;
+    std::shared_ptr<BindingSet> m_binding_set;
+    static constexpr bool m_debug_regions = false;
 };

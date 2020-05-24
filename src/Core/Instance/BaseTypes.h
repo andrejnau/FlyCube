@@ -342,6 +342,16 @@ struct BindingDesc
     ResourceType type;
     std::string name;
     std::shared_ptr<View> view;
+
+    auto MakeTie() const
+    {
+        return std::tie(shader, type, name, view);
+    }
+
+    bool operator< (const BindingDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
 };
 
 struct BindKeyOld
@@ -351,13 +361,11 @@ struct BindKeyOld
     ResourceType res_type;
     uint32_t slot;
 
-private:
     auto MakeTie() const
     {
         return std::tie(program_id, shader_type, res_type, slot);
     }
 
-public:
     bool operator< (const BindKeyOld& oth) const
     {
         return MakeTie() < oth.MakeTie();
