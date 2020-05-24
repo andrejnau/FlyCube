@@ -130,15 +130,15 @@ void ProgramApi::ApplyBindings()
     std::vector<BindingDesc> descs;
     for (auto& x : m_bound_resources)
     {
-        switch (x.first.res_type)
+        switch (x.first.view_type)
         {
-        case ResourceType::kRtv:
-        case ResourceType::kDsv:
+        case ViewType::kRtv:
+        case ViewType::kDsv:
             continue;
         }
         decltype(auto) desc = descs.emplace_back();
         desc.view = x.second.view;
-        desc.type = x.first.res_type;
+        desc.type = x.first.view_type;
         desc.shader = x.first.shader_type;
         desc.name = m_binding_names.at(x.first);
     }
@@ -153,12 +153,12 @@ void ProgramApi::ApplyBindings()
     std::vector<std::shared_ptr<View>> rtvs;
     for (auto& render_target : m_graphic_pipeline_desc.rtvs)
     {
-        rtvs.emplace_back(FindView(ShaderType::kPixel, ResourceType::kRtv, render_target.slot));
+        rtvs.emplace_back(FindView(ShaderType::kPixel, ViewType::kRtv, render_target.slot));
     }
 
     auto prev_framebuffer = m_framebuffer;
 
-    auto dsv = FindView(ShaderType::kPixel, ResourceType::kDsv, 0);
+    auto dsv = FindView(ShaderType::kPixel, ViewType::kDsv, 0);
     auto key = std::make_pair(rtvs, dsv);
     auto f_it = m_framebuffers.find(key);
     if (f_it == m_framebuffers.end())
@@ -215,11 +215,11 @@ std::shared_ptr<View> ProgramApi::CreateView(const BindKeyOld& bind_key, const V
         return it->second;
     decltype(auto) shader = m_shader_by_type.at(bind_key.shader_type);
     ViewDesc desc = view_desc;
-    desc.res_type = bind_key.res_type;
-    switch (bind_key.res_type)
+    desc.view_type = bind_key.view_type;
+    switch (bind_key.view_type)
     {
-    case ResourceType::kSrv:
-    case ResourceType::kUav:
+    case ViewType::kSrv:
+    case ViewType::kUav:
     {
         ResourceBindingDesc binding_desc = shader->GetResourceBindingDesc(GetBindingName(bind_key));
         desc.dimension = binding_desc.dimension;
@@ -231,9 +231,9 @@ std::shared_ptr<View> ProgramApi::CreateView(const BindKeyOld& bind_key, const V
     return view;
 }
 
-std::shared_ptr<View> ProgramApi::FindView(ShaderType shader_type, ResourceType res_type, uint32_t slot)
+std::shared_ptr<View> ProgramApi::FindView(ShaderType shader_type, ViewType view_type, uint32_t slot)
 {
-    BindKeyOld bind_key = { m_program_id, shader_type, res_type, slot };
+    BindKeyOld bind_key = { m_program_id, shader_type, view_type, slot };
     auto it = m_bound_resources.find(bind_key);
     if (it == m_bound_resources.end())
         return {};
@@ -243,24 +243,24 @@ std::shared_ptr<View> ProgramApi::FindView(ShaderType shader_type, ResourceType 
 void ProgramApi::Attach(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res)
 {
     SetBinding(bind_key, view_desc, res);
-    switch (bind_key.res_type)
+    switch (bind_key.view_type)
     {
-    case ResourceType::kSrv:
+    case ViewType::kSrv:
         OnAttachSRV(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, view_desc, res);
         break;
-    case ResourceType::kUav:
+    case ViewType::kUav:
         OnAttachUAV(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, view_desc, res);
         break;
-    case ResourceType::kCbv:
+    case ViewType::kCbv:
         OnAttachCBV(bind_key.shader_type, bind_key.slot, res);
         break;
-    case ResourceType::kSampler:
+    case ViewType::kSampler:
         OnAttachSampler(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, res);
         break;
-    case ResourceType::kRtv:
+    case ViewType::kRtv:
         OnAttachRTV(bind_key.slot, view_desc,res);
         break;
-    case ResourceType::kDsv:
+    case ViewType::kDsv:
         OnAttachDSV(view_desc, res);
         break;
     }
@@ -268,7 +268,7 @@ void ProgramApi::Attach(const BindKeyOld& bind_key, const ViewDesc& view_desc, c
 
 void ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)
 {
-    auto& view = FindView(ShaderType::kPixel, ResourceType::kRtv, slot);
+    auto& view = FindView(ShaderType::kPixel, ViewType::kRtv, slot);
     if (!view)
         return;
     m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kClearColor);
@@ -278,7 +278,7 @@ void ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& co
 
 void ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)
 {
-    auto& view = FindView(ShaderType::kPixel, ResourceType::kDsv, 0);
+    auto& view = FindView(ShaderType::kPixel, ViewType::kDsv, 0);
     if (!view)
         return;
     m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kClearDepth);

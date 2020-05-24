@@ -15,9 +15,9 @@ template<typename T>
 class Binding
 {
 public:
-    Binding(ProgramApi& program_api, ShaderType shader_type, ResourceType res_type, uint32_t slot, const std::string& name)
+    Binding(ProgramApi& program_api, ShaderType shader_type, ViewType view_type, uint32_t slot, const std::string& name)
         : m_program_api(program_api)
-        , m_key{ program_api.GetProgramId(), shader_type, res_type, slot }
+        , m_key{ program_api.GetProgramId(), shader_type, view_type, slot }
     {
         m_program_api.SetBindingName(m_key, name);
     }
@@ -37,7 +37,7 @@ class SRVBinding : public Binding<SRVBinding>
 {
 public:    
     SRVBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
-        : Binding(program_api, shader_type, ResourceType::kSrv, slot, name)
+        : Binding(program_api, shader_type, ViewType::kSrv, slot, name)
     {
     }
 };
@@ -46,7 +46,7 @@ class UAVBinding : public Binding<UAVBinding>
 {
 public:
     UAVBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
-        : Binding(program_api, shader_type, ResourceType::kUav, slot, name)
+        : Binding(program_api, shader_type, ViewType::kUav, slot, name)
     {
     }
 };
@@ -55,7 +55,7 @@ class SamplerBinding : public Binding<SamplerBinding>
 {
 public:
     SamplerBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
-        : Binding(program_api, shader_type, ResourceType::kSampler, slot, name)
+        : Binding(program_api, shader_type, ViewType::kSampler, slot, name)
     {
     }
 };
@@ -64,7 +64,7 @@ class RTVBinding : public Binding<RTVBinding>
 {
 public:
     RTVBinding(ProgramApi& program_api, uint32_t slot)
-        : Binding(program_api, ShaderType::kPixel, ResourceType::kRtv, slot, "")
+        : Binding(program_api, ShaderType::kPixel, ViewType::kRtv, slot, "")
     {
     }
 
@@ -78,7 +78,7 @@ class DSVBinding : public Binding<DSVBinding>
 {
 public:
     DSVBinding(ProgramApi& program_api)
-        : Binding(program_api, ShaderType::kPixel, ResourceType::kDsv, 0, "")
+        : Binding(program_api, ShaderType::kPixel, ViewType::kDsv, 0, "")
     {
     }
 

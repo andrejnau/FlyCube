@@ -56,7 +56,7 @@ protected:
     void OnAttachDSV(const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires);
 
     std::shared_ptr<View> CreateView(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res);
-    std::shared_ptr<View> FindView(ShaderType shader_type, ResourceType res_type, uint32_t slot);
+    std::shared_ptr<View> FindView(ShaderType shader_type, ViewType view_type, uint32_t slot);
 
     void SetBinding(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res);
     void UpdateCBuffers();

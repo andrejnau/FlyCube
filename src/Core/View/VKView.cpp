@@ -10,14 +10,14 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
         return;
     decltype(auto) vk_resource = resource->As<VKResource>();
 
-    switch (view_desc.res_type)
+    switch (view_desc.view_type)
     {
-    case ResourceType::kSrv:
-    case ResourceType::kUav:
+    case ViewType::kSrv:
+    case ViewType::kUav:
         CreateSrv(view_desc, vk_resource);
         break;
-    case ResourceType::kRtv:
-    case ResourceType::kDsv:
+    case ViewType::kRtv:
+    case ViewType::kDsv:
         CreateRTV(view_desc, vk_resource);
         break;
     }

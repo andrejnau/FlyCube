@@ -286,30 +286,30 @@ DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, con
     : m_device(device)
 {
     m_resource = resource;
-    m_handle = m_device.GetCPUDescriptorPool().AllocateDescriptor(view_desc.res_type);
+    m_handle = m_device.GetCPUDescriptorPool().AllocateDescriptor(view_desc.view_type);
 
     DXResource* dx_resource = nullptr;
     if (resource)
         dx_resource = &resource->As<DXResource>();
 
-    switch (view_desc.res_type)
+    switch (view_desc.view_type)
     {
-    case ResourceType::kSrv:
+    case ViewType::kSrv:
         CreateSrv(view_desc, dx_resource, *m_handle);
         break;
-    case ResourceType::kUav:
+    case ViewType::kUav:
         CreateUAV(view_desc, dx_resource, *m_handle);
         break;
-    case ResourceType::kCbv:
+    case ViewType::kCbv:
         CreateCBV(view_desc, dx_resource, *m_handle);
         break;
-    case ResourceType::kSampler:
+    case ViewType::kSampler:
         CreateSampler(view_desc, dx_resource, *m_handle);
         break;
-    case ResourceType::kRtv:
+    case ViewType::kRtv:
         CreateRTV(view_desc, dx_resource, *m_handle);
         break;
-    case ResourceType::kDsv:
+    case ViewType::kDsv:
         CreateDSV(view_desc, dx_resource, *m_handle);
         break;
     }

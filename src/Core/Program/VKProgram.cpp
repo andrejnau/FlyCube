@@ -96,8 +96,8 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& b
         bool is_rtv_dsv = false;
         switch (desc.type)
         {
-        case ResourceType::kRtv:
-        case ResourceType::kDsv:
+        case ViewType::kRtv:
+        case ViewType::kDsv:
             is_rtv_dsv = true;
             break;
         }

@@ -42,16 +42,16 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
             {
                 D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
                 ASSERT_SUCCEEDED(shader_reflector->GetResourceBindingDesc(i, &res_desc));
-                ResourceType res_type;
+                ViewType view_type;
                 switch (res_desc.Type)
                 {
                 case D3D_SIT_SAMPLER:
                     num_sampler = std::max<uint32_t>(num_sampler, res_desc.BindPoint + res_desc.BindCount);
-                    res_type = ResourceType::kSampler;
+                    view_type = ViewType::kSampler;
                     break;
                 case D3D_SIT_CBUFFER:
                     num_cbv = std::max<uint32_t>(num_cbv, res_desc.BindPoint + res_desc.BindCount);
-                    res_type = ResourceType::kCbv;
+                    view_type = ViewType::kCbv;
                     break;
                 case D3D_SIT_TBUFFER:
                 case D3D_SIT_TEXTURE:
@@ -59,15 +59,15 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                 case D3D_SIT_BYTEADDRESS:
                 case D3D_SIT_RTACCELERATIONSTRUCTURE:
                     num_srv = std::max<uint32_t>(num_srv, res_desc.BindPoint + res_desc.BindCount);
-                    res_type = ResourceType::kSrv;
+                    view_type = ViewType::kSrv;
                     break;
                 default:
                     num_uav = std::max<uint32_t>(num_uav, res_desc.BindPoint + res_desc.BindCount);
-                    res_type = ResourceType::kUav;
+                    view_type = ViewType::kUav;
                     break;
                 }
 
-                m_bind_to_slot[{shader_type, res_type, res_desc.Name }] = res_desc.BindPoint;
+                m_bind_to_slot[{shader_type, view_type, res_desc.Name }] = res_desc.BindPoint;
             }
 
             if (shader_type == ShaderType::kPixel)
@@ -97,16 +97,16 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                     {
                         D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
                         ASSERT_SUCCEEDED(reflector->GetResourceBindingDesc(i, &res_desc));
-                        ResourceType res_type;
+                        ViewType view_type;
                         switch (res_desc.Type)
                         {
                         case D3D_SIT_SAMPLER:
                             num_sampler = std::max<uint32_t>(num_sampler, res_desc.BindPoint + res_desc.BindCount);
-                            res_type = ResourceType::kSampler;
+                            view_type = ViewType::kSampler;
                             break;
                         case D3D_SIT_CBUFFER:
                             num_cbv = std::max<uint32_t>(num_cbv, res_desc.BindPoint + res_desc.BindCount);
-                            res_type = ResourceType::kCbv;
+                            view_type = ViewType::kCbv;
                             break;
                         case D3D_SIT_TBUFFER:
                         case D3D_SIT_TEXTURE:
@@ -114,14 +114,14 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                         case D3D_SIT_BYTEADDRESS:
                         case D3D_SIT_RTACCELERATIONSTRUCTURE:
                             num_srv = std::max<uint32_t>(num_srv, res_desc.BindPoint + res_desc.BindCount);
-                            res_type = ResourceType::kSrv;
+                            view_type = ViewType::kSrv;
                             break;
                         default:
                             num_uav = std::max<uint32_t>(num_uav, res_desc.BindPoint + res_desc.BindCount);
-                            res_type = ResourceType::kUav;
+                            view_type = ViewType::kUav;
                             break;
                         }
-                        m_bind_to_slot[{shader_type, res_type, res_desc.Name }] = res_desc.BindPoint;
+                        m_bind_to_slot[{shader_type, view_type, res_desc.Name }] = res_desc.BindPoint;
                     }
                 }
             }
@@ -298,12 +298,12 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
         D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
         switch (desc.type)
         {
-        case ResourceType::kCbv:
-        case ResourceType::kSrv:
-        case ResourceType::kUav:
+        case ViewType::kCbv:
+        case ViewType::kSrv:
+        case ViewType::kUav:
             heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
             break;
-        case ResourceType::kSampler:
+        case ViewType::kSampler:
             heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
             break;
         default:
@@ -328,24 +328,24 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
                 D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
                 switch (desc.type)
                 {
-                case ResourceType::kSrv:
+                case ViewType::kSrv:
                     range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
                     heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
                     break;
-                case ResourceType::kUav:
+                case ViewType::kUav:
                     range_type = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
                     heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
                     break;
-                case ResourceType::kCbv:
+                case ViewType::kCbv:
                     range_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
                     heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
                     break;
-                case ResourceType::kSampler:
+                case ViewType::kSampler:
                     range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
                     heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
                     break;
-                case ResourceType::kRtv:
-                case ResourceType::kDsv:
+                case ViewType::kRtv:
+                case ViewType::kDsv:
                     continue;
                 }
 

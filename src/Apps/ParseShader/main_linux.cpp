@@ -42,24 +42,24 @@ public:
     }
 
 private:
-    ResourceType GetResourceType(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& type, uint32_t resource_id)
+    ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& type, uint32_t resource_id)
     {
         switch (type.basetype)
         {
         case spirv_cross::SPIRType::SampledImage:
         {
-            return ResourceType::kSrv;
+            return ViewType::kSrv;
         }
         case spirv_cross::SPIRType::Image:
         {
             if (type.image.sampled == 2 && type.image.dim != spv::DimSubpassData)
-                return ResourceType::kUav;
+                return ViewType::kUav;
             else
-                return ResourceType::kSrv;
+                return ViewType::kSrv;
         }
         case spirv_cross::SPIRType::Sampler:
         {
-            return ResourceType::kSampler;
+            return ViewType::kSampler;
         }
         case spirv_cross::SPIRType::Struct:
         {
@@ -70,26 +70,26 @@ private:
                     spirv_cross::Bitset flags = compiler.get_buffer_block_flags(resource_id);
                     bool is_readonly = flags.get(spv::DecorationNonWritable);
                     if (is_readonly)
-                        return ResourceType::kSrv;
+                        return ViewType::kSrv;
                     else
-                        return ResourceType::kUav;
+                        return ViewType::kUav;
                 }
                 else if (compiler.has_decoration(type.self, spv::DecorationBlock))
                 {
-                    return ResourceType::kCbv;
+                    return ViewType::kCbv;
                 }
             }
             else if (type.storage == spv::StorageClassPushConstant)
             {
-                return ResourceType::kCbv;
+                return ViewType::kCbv;
             }
             else
             {
-                return ResourceType::kUnknown;
+                return ViewType::kUnknown;
             }
         }
         default:
-            return ResourceType::kUnknown;
+            return ViewType::kUnknown;
         }
     }
 
@@ -159,8 +159,8 @@ private:
         for (const auto& cbuffer : resources.uniform_buffers)
         {
             auto& type = compiler.get_type(cbuffer.type_id);
-            ResourceType res_type = GetResourceType(compiler, compiler.get_type(cbuffer.type_id), cbuffer.id);
-            if (res_type != ResourceType::kCbv)
+            ViewType view_type = GetViewType(compiler, compiler.get_type(cbuffer.type_id), cbuffer.id);
+            if (view_type != ViewType::kCbv)
                 throw std::runtime_error("wrong resource type");
 
             kainjow::mustache::data tcbuffer;
@@ -200,18 +200,18 @@ private:
                     throw std::runtime_error("wrong name");
                 used_names.insert(name);
 
-                ResourceType res_type = GetResourceType(compiler, compiler.get_type(resource.type_id), resource.id);
+                ViewType view_type = GetViewType(compiler, compiler.get_type(resource.type_id), resource.id);
 
                 kainjow::mustache::data* tdata = nullptr;
-                switch (res_type)
+                switch (view_type)
                 {
-                case ResourceType::kSrv:
+                case ViewType::kSrv:
                     tdata = &ttextures;
                     break;
-                case ResourceType::kUav:
+                case ViewType::kUav:
                     tdata = &tuavs;
                     break;
-                case ResourceType::kSampler:
+                case ViewType::kSampler:
                     tdata = &tsamplers;
                     break;
                 default:

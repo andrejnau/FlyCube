@@ -63,7 +63,7 @@ struct SamplerDesc
     SamplerComparisonFunc func;
 };
 
-enum class ResourceType
+enum class ViewType
 {
     kUnknown,
     kSrv,
@@ -198,13 +198,13 @@ struct ViewDesc
 {
     size_t level = 0;
     size_t count = static_cast<size_t>(-1);
-    ResourceType res_type;
+    ViewType view_type;
     ResourceDimension dimension;
     uint32_t stride = 0;
 
     auto MakeTie() const
     {
-        return std::tie(level, count, res_type, dimension, stride);
+        return std::tie(level, count, view_type, dimension, stride);
     }
 
     bool operator< (const ViewDesc& oth) const
@@ -216,7 +216,7 @@ struct ViewDesc
 struct BindKey
 {
     ShaderType shader;
-    ResourceType type;
+    ViewType type;
     std::string name;
 
 private:
@@ -339,7 +339,7 @@ using RayTracingPipelineDesc = ComputePipelineDesc;
 struct BindingDesc
 {
     ShaderType shader;
-    ResourceType type;
+    ViewType type;
     std::string name;
     std::shared_ptr<View> view;
 
@@ -358,12 +358,12 @@ struct BindKeyOld
 {
     size_t program_id;
     ShaderType shader_type;
-    ResourceType res_type;
+    ViewType view_type;
     uint32_t slot;
 
     auto MakeTie() const
     {
-        return std::tie(program_id, shader_type, res_type, slot);
+        return std::tie(program_id, shader_type, view_type, slot);
     }
 
     bool operator< (const BindKeyOld& oth) const
