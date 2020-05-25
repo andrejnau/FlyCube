@@ -62,11 +62,6 @@ void Context::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint3
     }
 }
 
-inline uint32_t Align(uint32_t size, uint32_t alignment)
-{
-    return (size + (alignment - 1)) & ~(alignment - 1);
-}
-
 void Context::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
 {
     if (m_is_open_render_pass)
@@ -108,7 +103,7 @@ void Context::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource
 
         if (!upload_resource)
             upload_resource = m_device->CreateBuffer(0, num_bytes, 0, MemoryType::kUpload);
-        upload_resource->UpdateSubresource(subresource, 0, row_bytes, num_bytes, data, row_pitch, depth_pitch, num_rows, region.texture_extent.depth);
+        upload_resource->UpdateSubresource(0, row_bytes, num_bytes, data, row_pitch, depth_pitch, num_rows, region.texture_extent.depth);
 
         m_command_list->ResourceBarrier(resource, ResourceState::kCopyDest);
         m_command_list->CopyBufferToTexture(upload_resource, resource, regions);

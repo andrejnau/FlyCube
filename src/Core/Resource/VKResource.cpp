@@ -48,6 +48,18 @@ void VKResource::SetName(const std::string& name)
 {
 }
 
+uint8_t* VKResource::Map()
+{
+    uint8_t* dst_data = nullptr;
+    m_device.GetDevice().mapMemory(buffer.memory.get(), 0, VK_WHOLE_SIZE, {}, reinterpret_cast<void**>(&dst_data));
+    return dst_data;
+}
+
+void VKResource::Unmap()
+{
+    m_device.GetDevice().unmapMemory(buffer.memory.get());
+}
+
 void VKResource::UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes)
 {
     void* dst_data = nullptr;
@@ -56,7 +68,7 @@ void VKResource::UpdateUploadData(const void* data, uint64_t offset, uint64_t nu
     m_device.GetDevice().unmapMemory(buffer.memory.get());
 }
 
-void VKResource::UpdateSubresource(uint32_t texture_subresource, uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
+void VKResource::UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
                                    const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices)
 {
     void* dst_data = nullptr;

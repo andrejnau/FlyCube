@@ -17,8 +17,10 @@ public:
     virtual uint16_t GetDepthOrArraySize() const = 0;
     virtual uint16_t GetMipLevels() const = 0;
     virtual void SetName(const std::string& name) = 0;
+    virtual uint8_t* Map() = 0;
+    virtual void Unmap() = 0;
     virtual void UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes) = 0;
-    virtual void UpdateSubresource(uint32_t texture_subresource, uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
+    virtual void UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
                                    const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices) = 0;
 
     void SetPrivateResource(uint64_t id, const std::shared_ptr<Resource>& resource)

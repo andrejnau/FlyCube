@@ -20,8 +20,10 @@ public:
     uint16_t GetDepthOrArraySize() const override;
     uint16_t GetMipLevels() const override;
     void SetName(const std::string& name) override;
+    uint8_t* Map() override;
+    void Unmap() override;
     void UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes) override;
-    void UpdateSubresource(uint32_t texture_subresource, uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
+    void UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
                            const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices) override;
 
 //private:

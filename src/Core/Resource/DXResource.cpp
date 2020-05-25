@@ -49,6 +49,20 @@ void DXResource::SetName(const std::string& name)
     default_res->SetName(utf8_to_wstring(name).c_str());
 }
 
+uint8_t* DXResource::Map()
+{
+    CD3DX12_RANGE range(0, 0);
+    uint8_t* dst_data = nullptr;
+    ASSERT_SUCCEEDED(default_res->Map(0, &range, reinterpret_cast<void**>(&dst_data)));
+    return dst_data;
+}
+
+void DXResource::Unmap()
+{
+    CD3DX12_RANGE range(0, 0);
+    default_res->Unmap(0, &range);
+}
+
 void DXResource::UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes)
 {
     CD3DX12_RANGE range(0, 0);
@@ -58,7 +72,7 @@ void DXResource::UpdateUploadData(const void* data, uint64_t offset, uint64_t nu
     default_res->Unmap(0, &range);
 }
 
-void DXResource::UpdateSubresource(uint32_t texture_subresource, uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
+void DXResource::UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
                                    const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices)
 {
     CD3DX12_RANGE range(0, 0);
