@@ -157,7 +157,7 @@ void DXCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth
 
 void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
-    if (!resource)
+    if (!resource || resource->GetMemoryType() != MemoryType::kDefault)
         return;
 
     decltype(auto) dx_resource = resource->As<DXResource>();
