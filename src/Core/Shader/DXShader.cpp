@@ -64,6 +64,7 @@ std::vector<VertexInputDesc> DXShader::GetInputLayout() const
             else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
                 layout.format = gli::format::FORMAT_RGBA32_SFLOAT_PACK32;
         }
+        layout.stride = gli::detail::bits_per_pixel(layout.format) / 8;
     }
 
     return input_layout_desc;

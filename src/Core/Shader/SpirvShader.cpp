@@ -126,6 +126,7 @@ std::vector<VertexInputDesc> SpirvShader::GetInputLayout() const
             else if (type.vecsize == 4)
                 layout.format = gli::format::FORMAT_RGBA32_SINT_PACK32;
         }
+        layout.stride = gli::detail::bits_per_pixel(layout.format) / 8;
     }
     return input_layout_desc;
 }

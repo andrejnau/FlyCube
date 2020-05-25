@@ -265,10 +265,11 @@ struct VertexInputDesc
     uint32_t slot = 0;
     std::string semantic_name;
     gli::format format = gli::format::FORMAT_UNDEFINED;
+    uint32_t stride = 0;
 
     auto MakeTie() const
     {
-        return std::tie(slot, semantic_name, format);
+        return std::tie(slot, semantic_name, format, stride);
     }
 
     bool operator< (const VertexInputDesc& oth) const

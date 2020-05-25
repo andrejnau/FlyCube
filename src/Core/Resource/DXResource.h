@@ -35,7 +35,6 @@ public:
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
     uint32_t bind_flag = 0;
     uint32_t buffer_size = 0;
-    uint32_t stride = 0;
     D3D12_RESOURCE_DESC desc = {};
 
     D3D12_SAMPLER_DESC sampler_desc = {};

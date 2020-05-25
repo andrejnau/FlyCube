@@ -165,7 +165,6 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
     res->bind_flag = bind_flag;
     res->buffer_size = buffer_size;
-    res->stride = stride;
     res->state = D3D12_RESOURCE_STATE_COMMON;
     res->memory_type = memory_type;
     res->res_type = ResourceType::kBuffer;

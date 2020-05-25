@@ -31,9 +31,9 @@ std::shared_ptr<Resource> Context::CreateTexture(uint32_t bind_flag, gli::format
     return m_device->CreateTexture(bind_flag, format, msaa_count, width, height, depth, mip_levels);
 }
 
-std::shared_ptr<Resource> Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride)
+std::shared_ptr<Resource> Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
 {
-    return m_device->CreateBuffer(bind_flag, buffer_size, stride, MemoryType::kDefault);
+    return m_device->CreateBuffer(bind_flag, buffer_size, 0, MemoryType::kDefault);
 }
 
 std::shared_ptr<Resource> Context::CreateSampler(const SamplerDesc& desc)
@@ -124,12 +124,16 @@ void Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t b
 void Context::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {
     m_command_list->ResourceBarrier(resource, ResourceState::kIndexBuffer);
+    if (m_current_program)
+        m_current_program->ApplyBindings();
     m_command_list->IASetIndexBuffer(resource, format);
 }
 
 void Context::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
     m_command_list->ResourceBarrier(resource, ResourceState::kVertexAndConstantBuffer);
+    if (m_current_program)
+        m_current_program->ApplyBindings();
     m_command_list->IASetVertexBuffer(slot, resource);
 }
 

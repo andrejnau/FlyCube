@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
     std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { ShaderType::kPixel, ViewType::kCbv, "Settings", constant_buffer_view } });
     GraphicsPipelineDesc pipeline_desc = {
         program,
-        { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32 } },
+        { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
         { { 0, swapchain->GetFormat() } },
     };
     std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);

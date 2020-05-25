@@ -110,7 +110,7 @@ void VKGraphicsPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_bi
         attribute.location = locations.at(vertex.semantic_name);
         attribute.binding = binding.binding = vertex.slot;
         binding.inputRate = vk::VertexInputRate::eVertex;
-        binding.stride = gli::detail::bits_per_pixel(vertex.format) / 8;
+        binding.stride = vertex.stride;
         attribute.format = static_cast<vk::Format>(vertex.format);
     }
 }

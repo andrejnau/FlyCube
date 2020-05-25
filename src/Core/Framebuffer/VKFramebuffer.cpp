@@ -21,7 +21,7 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<VKGraphicsP
         decltype(auto) vk_resource = resource->As<VKResource>();
         if (!m_extent.width || !m_extent.height)
         {
-            m_extent = { vk_resource.image.size.width, vk_resource.image.size.height };
+            m_extent = vk::Extent2D(vk_resource.image.size.width, vk_resource.image.size.height);
             framebuffer_info.width = m_extent.width;
             framebuffer_info.height = m_extent.height;
             framebuffer_info.layers = vk_resource.image.array_layers;

@@ -20,14 +20,14 @@ int main(int argc, char *argv[])
     Model square(context, "model/square.obj");
 
     std::vector<uint32_t> indices_data = { 0, 1, 2 };
-    std::shared_ptr<Resource> indices = context.CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * indices_data.size(), sizeof(uint32_t));
+    std::shared_ptr<Resource> indices = context.CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * indices_data.size());
     context.UpdateSubresource(indices, 0, indices_data.data(), 0, 0);
     std::vector<glm::vec3> positions_data = {
         glm::vec3(-0.5, -0.5, 0.0),
         glm::vec3(0.0, 0.5, 0.0),
         glm::vec3(0.5, -0.5, 0.0)
     };
-    std::shared_ptr<Resource> positions = context.CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * positions_data.size(), sizeof(glm::vec3));
+    std::shared_ptr<Resource> positions = context.CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * positions_data.size());
     context.UpdateSubresource(positions, 0, positions_data.data(), 0, 0);
 
     std::shared_ptr<Resource> bottom = context.CreateBottomLevelAS({ positions, gli::format::FORMAT_RGB32_SFLOAT_PACK32, 3 });

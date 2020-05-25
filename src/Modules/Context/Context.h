@@ -23,7 +23,7 @@ public:
 
     std::shared_ptr<ProgramApi> CreateProgram();
     std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1);
-    std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride);
+    std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size);
     std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc);
     std::shared_ptr<Resource> CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index = {});
     std::shared_ptr<Resource> CreateTopLevelAS(const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry);

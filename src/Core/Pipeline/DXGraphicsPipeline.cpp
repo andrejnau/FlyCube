@@ -123,6 +123,10 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
             break;
         }
     }
+
+    if (m_graphics_pso_desc.DepthStencilState.DepthEnable && m_graphics_pso_desc.DSVFormat == DXGI_FORMAT_UNKNOWN)
+        m_graphics_pso_desc.DepthStencilState.DepthEnable = false;
+
     m_root_signature = dx_program.GetRootSignature();
     m_graphics_pso_desc.pRootSignature = m_root_signature.Get();
     ASSERT_SUCCEEDED(m_device.GetDevice()->CreateGraphicsPipelineState(&m_graphics_pso_desc, IID_PPV_ARGS(&m_pipeline_state)));
@@ -167,6 +171,7 @@ void DXGraphicsPipeline::FillInputLayout()
             semantic_name.pop_back();
             pow *= 10;
         }
+        m_input_layout_stride[vertex.slot] = vertex.stride;
         m_input_layout_desc_names[vertex.slot] = semantic_name;
         layout.SemanticName = m_input_layout_desc_names[vertex.slot].c_str();
         layout.SemanticIndex = semantic_slot;
@@ -194,4 +199,9 @@ const ComPtr<ID3D12PipelineState>& DXGraphicsPipeline::GetPipeline() const
 const ComPtr<ID3D12RootSignature>& DXGraphicsPipeline::GetRootSignature() const
 {
     return m_root_signature;
+}
+
+uint32_t DXGraphicsPipeline::GetStrideByVertexSlot(uint32_t slot) const
+{
+    return m_input_layout_stride.at(slot);
 }

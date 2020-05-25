@@ -229,11 +229,12 @@ void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
 
 void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
+    decltype(auto) dx_state = m_state->As<DXGraphicsPipeline>();
     decltype(auto) dx_resource = resource->As<DXResource>();
     D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view = {};
     vertex_buffer_view.BufferLocation = dx_resource.default_res->GetGPUVirtualAddress();
     vertex_buffer_view.SizeInBytes = dx_resource.desc.Width;
-    vertex_buffer_view.StrideInBytes = dx_resource.stride;
+    vertex_buffer_view.StrideInBytes = dx_state.GetStrideByVertexSlot(slot);
     m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
 }
 
