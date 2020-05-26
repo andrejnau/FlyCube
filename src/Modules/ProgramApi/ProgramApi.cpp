@@ -31,6 +31,12 @@ std::set<ShaderType> ProgramApi::GetShaderTypes() const
     return {};
 }
 
+uint32_t ProgramApi::GetStrideByVertexSlot(uint32_t slot)
+{
+    assert(m_graphic_pipeline_desc.input.at(slot).slot == slot);
+    return m_graphic_pipeline_desc.input.at(slot).stride;
+}
+
 void ProgramApi::ProgramDetach()
 {
     m_framebuffer.reset();

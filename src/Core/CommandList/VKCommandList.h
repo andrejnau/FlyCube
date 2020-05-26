@@ -24,7 +24,7 @@ public:
     void ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state) override;
     void SetViewport(float width, float height) override;
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) override;
-    void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override;
+    void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride) override;
     void CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
                     const std::vector<BufferCopyRegion>& regions) override;
     void CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,

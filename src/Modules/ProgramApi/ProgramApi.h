@@ -31,6 +31,7 @@ public:
     ShaderBlob GetBlobByType(ShaderType type) const override;
     std::set<ShaderType> GetShaderTypes() const override;
 
+    uint32_t GetStrideByVertexSlot(uint32_t slot);
     void ProgramDetach();
     void OnPresent();
     void SetBindingName(const BindKeyOld& bind_key, const std::string& name);

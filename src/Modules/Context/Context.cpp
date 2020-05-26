@@ -124,17 +124,13 @@ void Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t b
 void Context::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {
     m_command_list->ResourceBarrier(resource, ResourceState::kIndexBuffer);
-    if (m_current_program)
-        m_current_program->ApplyBindings();
     m_command_list->IASetIndexBuffer(resource, format);
 }
 
 void Context::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
     m_command_list->ResourceBarrier(resource, ResourceState::kVertexAndConstantBuffer);
-    if (m_current_program)
-        m_current_program->ApplyBindings();
-    m_command_list->IASetVertexBuffer(slot, resource);
+    m_command_list->IASetVertexBuffer(slot, resource, m_current_program->GetStrideByVertexSlot(slot));
 }
 
 void Context::UseProgram(ProgramApi& program)

@@ -225,7 +225,7 @@ void VKCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
     m_command_list->bindIndexBuffer(vk_resource.buffer.res.get(), 0, index_type);
 }
 
-void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
+void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride)
 {
     decltype(auto) vk_resource = resource->As<VKResource>();
     vk::Buffer vertex_buffers[] = { vk_resource.buffer.res.get() };

@@ -227,14 +227,13 @@ void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
     m_command_list->IASetIndexBuffer(&index_buffer_view);
 }
 
-void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
+void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride)
 {
-    decltype(auto) dx_state = m_state->As<DXGraphicsPipeline>();
     decltype(auto) dx_resource = resource->As<DXResource>();
     D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view = {};
     vertex_buffer_view.BufferLocation = dx_resource.resource->GetGPUVirtualAddress();
     vertex_buffer_view.SizeInBytes = dx_resource.desc.Width;
-    vertex_buffer_view.StrideInBytes = dx_state.GetStrideByVertexSlot(slot);
+    vertex_buffer_view.StrideInBytes = stride;
     m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
 }
 
