@@ -223,7 +223,7 @@ void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
     D3D12_INDEX_BUFFER_VIEW index_buffer_view = {};
     index_buffer_view.Format = dx_format;
     index_buffer_view.SizeInBytes = dx_resource.desc.Width;
-    index_buffer_view.BufferLocation = dx_resource.default_res->GetGPUVirtualAddress();
+    index_buffer_view.BufferLocation = dx_resource.resource->GetGPUVirtualAddress();
     m_command_list->IASetIndexBuffer(&index_buffer_view);
 }
 
@@ -232,7 +232,7 @@ void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
     decltype(auto) dx_state = m_state->As<DXGraphicsPipeline>();
     decltype(auto) dx_resource = resource->As<DXResource>();
     D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view = {};
-    vertex_buffer_view.BufferLocation = dx_resource.default_res->GetGPUVirtualAddress();
+    vertex_buffer_view.BufferLocation = dx_resource.resource->GetGPUVirtualAddress();
     vertex_buffer_view.SizeInBytes = dx_resource.desc.Width;
     vertex_buffer_view.StrideInBytes = dx_state.GetStrideByVertexSlot(slot);
     m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
@@ -245,7 +245,7 @@ void DXCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, cons
     decltype(auto) dx_dst_buffer = dst_buffer->As<DXResource>();
     for (const auto& region : regions)
     {
-        m_command_list->CopyBufferRegion(dx_dst_buffer.default_res.Get(), region.dst_offset, dx_src_buffer.default_res.Get(), region.src_offset, region.num_bytes);
+        m_command_list->CopyBufferRegion(dx_dst_buffer.resource.Get(), region.dst_offset, dx_src_buffer.resource.Get(), region.src_offset, region.num_bytes);
     }
 }
 
@@ -259,12 +259,12 @@ void DXCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
     for (const auto& region : regions)
     {
         D3D12_TEXTURE_COPY_LOCATION dst = {};
-        dst.pResource = dx_dst_texture.default_res.Get();
+        dst.pResource = dx_dst_texture.resource.Get();
         dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
         dst.SubresourceIndex = region.texture_subresource;
 
         D3D12_TEXTURE_COPY_LOCATION src = {};
-        src.pResource = dx_src_buffer.default_res.Get();
+        src.pResource = dx_src_buffer.resource.Get();
         src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
         src.PlacedFootprint.Offset = region.buffer_offset;
         src.PlacedFootprint.Footprint.Width = region.texture_extent.width;
@@ -294,6 +294,6 @@ void DXCommandList::ResourceBarrier(DXResource& resource, D3D12_RESOURCE_STATES 
     if (resource.state == D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)
         return;
     if (resource.state != state)
-        m_command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource.default_res.Get(), resource.state, state));
+        m_command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource.resource.Get(), resource.state, state));
     resource.state = state;
 }

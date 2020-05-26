@@ -89,8 +89,8 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
         dx_format = DXGI_FORMAT_R32_TYPELESS;
 
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
-    res->res_type = ResourceType::kImage;
-    res->m_format = format;
+    res->resource_type = ResourceType::kImage;
+    res->format = format;
 
     D3D12_RESOURCE_DESC desc = {};
     desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -145,7 +145,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
         &desc,
         res->state,
         p_clear_value,
-        IID_PPV_ARGS(&res->default_res)));
+        IID_PPV_ARGS(&res->resource)));
     res->desc = desc;
 
     return res;
@@ -163,11 +163,9 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
 
-    res->bind_flag = bind_flag;
-    res->buffer_size = buffer_size;
     res->state = D3D12_RESOURCE_STATE_COMMON;
     res->memory_type = memory_type;
-    res->res_type = ResourceType::kBuffer;
+    res->resource_type = ResourceType::kBuffer;
 
     if (bind_flag & BindFlag::kRtv)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -195,7 +193,7 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
         &desc,
         res->state,
         nullptr,
-        IID_PPV_ARGS(&res->default_res));
+        IID_PPV_ARGS(&res->resource));
     res->desc = desc;
     return res;
 }
@@ -308,14 +306,14 @@ std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::shared_ptr<Co
     ASSERT(!!vertex_res);
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
-    geometry_desc.Triangles.VertexBuffer.StartAddress = vertex_res->default_res->GetGPUVirtualAddress() + vertex.offset * vertex_stride;
+    geometry_desc.Triangles.VertexBuffer.StartAddress = vertex_res->resource->GetGPUVirtualAddress() + vertex.offset * vertex_stride;
     geometry_desc.Triangles.VertexBuffer.StrideInBytes = vertex_stride;
     geometry_desc.Triangles.VertexFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(vertex.format).DXGIFormat.DDS);
     geometry_desc.Triangles.VertexCount = vertex.count;
     if (index_res)
     {
         auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
-        geometry_desc.Triangles.IndexBuffer = index_res->default_res->GetGPUVirtualAddress() + index.offset * index_stride;
+        geometry_desc.Triangles.IndexBuffer = index_res->resource->GetGPUVirtualAddress() + index.offset * index_stride;
         geometry_desc.Triangles.IndexFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(index.format).DXGIFormat.DDS);
         geometry_desc.Triangles.IndexCount = index.count;
     }
@@ -334,19 +332,19 @@ std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::shared_ptr<Co
 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
     acceleration_structure_desc.Inputs = inputs;
-    acceleration_structure_desc.DestAccelerationStructureData = result->default_res->GetGPUVirtualAddress();
-    acceleration_structure_desc.ScratchAccelerationStructureData = scratch->default_res->GetGPUVirtualAddress();
+    acceleration_structure_desc.DestAccelerationStructureData = result->resource->GetGPUVirtualAddress();
+    acceleration_structure_desc.ScratchAccelerationStructureData = scratch->resource->GetGPUVirtualAddress();
     command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
 
     D3D12_RESOURCE_BARRIER uav_barrier = {};
     uav_barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    uav_barrier.UAV.pResource = result->default_res.Get();
+    uav_barrier.UAV.pResource = result->resource.Get();
     command_list4->ResourceBarrier(1, &uav_barrier);
 
     auto res = std::make_shared<DXResource>(*this);
     res->as.scratch = scratch;
     res->as.result = result;
-    res->default_res = result->default_res;
+    res->resource = result->resource;
     res->state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
 
     return res;
@@ -375,14 +373,14 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     std::shared_ptr<Resource>& upload_res = instance_desc_res->GetPrivateResource(0);
     if (!upload_res)
     {
-        UINT64 buffer_size = GetRequiredIntermediateSize(instance_desc_res->default_res.Get(), 0, 1);
+        UINT64 buffer_size = GetRequiredIntermediateSize(instance_desc_res->resource.Get(), 0, 1);
         upload_res = CreateBuffer(0, buffer_size, 0, MemoryType::kUpload);
     }
 
     decltype(auto) dx_upload_res = upload_res->As<DXResource>();
 
     D3D12_RAYTRACING_INSTANCE_DESC* instance_desc = nullptr;
-    ASSERT_SUCCEEDED(dx_upload_res.default_res->Map(0, nullptr, reinterpret_cast<void**>(&instance_desc)));
+    ASSERT_SUCCEEDED(dx_upload_res.resource->Map(0, nullptr, reinterpret_cast<void**>(&instance_desc)));
 
     for (size_t i = 0; i < geometry.size(); ++i)
     {
@@ -390,31 +388,31 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
 
         instance_desc[i] = {};
         instance_desc[i].InstanceID = i;
-        instance_desc[i].AccelerationStructure = res->default_res->GetGPUVirtualAddress();
+        instance_desc[i].AccelerationStructure = res->resource->GetGPUVirtualAddress();
         instance_desc[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
         instance_desc[i].InstanceMask = 0xFF;
         memcpy(instance_desc[i].Transform, &geometry[i].second, sizeof(instance_desc->Transform));
     }
 
-    dx_upload_res.default_res->Unmap(0, nullptr);
+    dx_upload_res.resource->Unmap(0, nullptr);
 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
     acceleration_structure_desc.Inputs = inputs;
-    acceleration_structure_desc.Inputs.InstanceDescs = dx_upload_res.default_res->GetGPUVirtualAddress();
-    acceleration_structure_desc.DestAccelerationStructureData = result->default_res->GetGPUVirtualAddress();
-    acceleration_structure_desc.ScratchAccelerationStructureData = scratch->default_res->GetGPUVirtualAddress();
+    acceleration_structure_desc.Inputs.InstanceDescs = dx_upload_res.resource->GetGPUVirtualAddress();
+    acceleration_structure_desc.DestAccelerationStructureData = result->resource->GetGPUVirtualAddress();
+    acceleration_structure_desc.ScratchAccelerationStructureData = scratch->resource->GetGPUVirtualAddress();
     command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
 
     D3D12_RESOURCE_BARRIER uav_barrier = {};
     uav_barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    uav_barrier.UAV.pResource = result->default_res.Get();
+    uav_barrier.UAV.pResource = result->resource.Get();
     command_list4->ResourceBarrier(1, &uav_barrier);
 
     auto res = std::make_shared<DXResource>(*this);
     res->as.scratch = scratch;
     res->as.result = result;
     res->as.instance_desc = instance_desc_res;
-    res->default_res = result->default_res;
+    res->resource = result->resource;
     res->state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
 
     return res;

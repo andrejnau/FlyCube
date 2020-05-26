@@ -1,20 +1,15 @@
 #pragma once
-#include "Resource/Resource.h"
-#include <map>
-#include <vector>
+#include "Resource/ResourceBase.h"
 #include <d3d12.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
 class DXDevice;
 
-class DXResource : public Resource
+class DXResource : public ResourceBase
 {
 public:
     DXResource(DXDevice& device);
-    ResourceType GetResourceType() const override;
-    gli::format GetFormat() const override;
-    MemoryType GetMemoryType() const override;
     uint64_t GetWidth() const override;
     uint32_t GetHeight() const override;
     uint16_t GetDepthOrArraySize() const override;
@@ -22,21 +17,10 @@ public:
     void SetName(const std::string& name) override;
     uint8_t* Map() override;
     void Unmap() override;
-    void UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes) override;
-    void UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
-                           const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices) override;
 
-//private:
-    DXDevice& m_device;
-    MemoryType memory_type = MemoryType::kDefault;
-    ResourceType res_type = ResourceType::kUnknown;
-    gli::format m_format = {};
-    ComPtr<ID3D12Resource> default_res;
+    ComPtr<ID3D12Resource> resource;
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
-    uint32_t bind_flag = 0;
-    uint32_t buffer_size = 0;
     D3D12_RESOURCE_DESC desc = {};
-
     D3D12_SAMPLER_DESC sampler_desc = {};
 
     struct
@@ -45,4 +29,7 @@ public:
         std::shared_ptr<DXResource> result;
         std::shared_ptr<DXResource> instance_desc;
     } as;
+
+private:
+    DXDevice& m_device;
 };

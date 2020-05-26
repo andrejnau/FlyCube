@@ -1,5 +1,5 @@
 #pragma once
-#include "Resource/Resource.h"
+#include "Resource/ResourceBase.h"
 #include <glm/glm.hpp>
 #include <map>
 #include <Utilities/Vulkan.h>
@@ -29,21 +29,12 @@ struct GeometryInstance
     uint64_t accelerationStructureHandle;
 };
 
-static bool operator<(const VkImageSubresourceRange& lhs, const VkImageSubresourceRange& rhs)
-{
-    return std::tie(lhs.aspectMask, lhs.baseArrayLayer, lhs.baseMipLevel, lhs.layerCount, lhs.levelCount) <
-        std::tie(rhs.aspectMask, rhs.baseArrayLayer, rhs.baseMipLevel, rhs.layerCount, rhs.levelCount);
-};
-
 class VKDevice;
 
-class VKResource : public Resource
+class VKResource : public ResourceBase
 {
 public:
     VKResource(VKDevice& device);
-    ResourceType GetResourceType() const override;
-    gli::format GetFormat() const override;
-    MemoryType GetMemoryType() const override;
     uint64_t GetWidth() const override;
     uint32_t GetHeight() const override;
     uint16_t GetDepthOrArraySize() const override;
@@ -51,13 +42,6 @@ public:
     void SetName(const std::string& name) override;
     uint8_t* Map() override;
     void Unmap() override;
-    void UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes) override;
-    void UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
-                           const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices) override;
-
-    VKDevice& m_device;
-    gli::format m_format;
-    MemoryType memory_type = MemoryType::kDefault;
 
     struct Image
     {
@@ -86,15 +70,6 @@ public:
     AccelerationStructure bottom_as;
     AccelerationStructure top_as;
 
-    ResourceType res_type = ResourceType::kUnknown;
-
-    std::shared_ptr<VKResource>& GetUploadResource(size_t subresource)
-    {
-        if (subresource >= m_upload_res.size())
-            m_upload_res.resize(subresource + 1);
-        return m_upload_res[subresource];
-    }
-
 private:
-    std::vector<std::shared_ptr<VKResource>> m_upload_res;
+    VKDevice& m_device;
 };

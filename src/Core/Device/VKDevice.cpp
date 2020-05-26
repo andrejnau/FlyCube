@@ -136,8 +136,8 @@ std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
 std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-    res->m_format = format;
-    res->res_type = ResourceType::kImage;
+    res->format = format;
+    res->resource_type = ResourceType::kImage;
 
     vk::Format vk_format = static_cast<vk::Format>(format);
     if (vk_format == vk::Format::eD24UnormS8Uint)
@@ -237,7 +237,7 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
         bufferInfo.usage |= vk::BufferUsageFlagBits::eTransferSrc;
 
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-    res->res_type = ResourceType::kBuffer;
+    res->resource_type = ResourceType::kBuffer;
     res->memory_type = memory_type;
 
     res->buffer.res = m_device->createBufferUnique(bufferInfo);
@@ -322,7 +322,7 @@ std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
 
     res->sampler.res = m_device->createSamplerUnique(samplerInfo);
 
-    res->res_type = ResourceType::kSampler;
+    res->resource_type = ResourceType::kSampler;
     return res;
 }
 
@@ -364,7 +364,7 @@ std::shared_ptr<Pipeline> VKDevice::CreateRayTracingPipeline(const RayTracingPip
 std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::shared_ptr<CommandList>& command_list, const BufferDesc& vertex, const BufferDesc& index)
 {
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-    res->res_type = ResourceType::kBottomLevelAS;
+    res->resource_type = ResourceType::kBottomLevelAS;
     AccelerationStructure& bottomLevelAS = res->bottom_as;
 
     auto vertex_res = std::static_pointer_cast<VKResource>(vertex.res);
@@ -431,7 +431,7 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
 {
     decltype(auto) vk_command_list = command_list->As<VKCommandList>().GetCommandList();
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-    res->res_type = ResourceType::kTopLevelAS;
+    res->resource_type = ResourceType::kTopLevelAS;
     AccelerationStructure& topLevelAS = res->top_as;
 
     vk::AccelerationStructureInfoNV accelerationStructureInfo{};

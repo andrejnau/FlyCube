@@ -1,5 +1,10 @@
 list(APPEND headers
     Resource.h
+    ResourceBase.h
+)
+
+list(APPEND sources
+    ResourceBase.cpp
 )
 
 if (VULKAN_SUPPORT)
