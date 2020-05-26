@@ -85,7 +85,7 @@ public:
         program_api.AddAvailableShaderType(type);      
         {{#CBuffers}}
         {
-            BindKeyOld bind_key = { program_api.GetProgramId(), type, ViewType::kCbv, {{BufferIndex}} };
+            BindKeyOld bind_key = { program_api.GetProgramId(), type, ViewType::kConstantBuffer, {{BufferIndex}} };
             program_api.SetCBufferLayout(bind_key, cbuffer_impl.{{BufferName}});
             program_api.SetBindingName(bind_key, "{{BufferName}}");
         }

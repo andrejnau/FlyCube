@@ -94,10 +94,10 @@ void IBLCompute::OnRender()
 
         if (!ibl_model.ibl_rtv)
         {
-            ibl_model.ibl_rtv = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav,
+            ibl_model.ibl_rtv = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource | BindFlag::kUnorderedAccess,
                 gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_size, m_size, 6, texture_mips);
 
-            ibl_model.ibl_dsv = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_size, m_size, 6);
+            ibl_model.ibl_dsv = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_size, m_size, 6);
         }
         else
         {

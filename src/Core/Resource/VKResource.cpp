@@ -9,7 +9,7 @@ VKResource::VKResource(VKDevice& device)
 
 uint64_t VKResource::GetWidth() const
 {
-    if (resource_type == ResourceType::kImage)
+    if (resource_type == ResourceType::kTexture)
         return image.size.width;
     return buffer.size;
 }
@@ -39,7 +39,7 @@ void VKResource::SetName(const std::string& name)
         info.objectType = buffer.res.get().objectType;
         info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkBuffer>(buffer.res.get()));
     }
-    else if (resource_type == ResourceType::kImage)
+    else if (resource_type == ResourceType::kTexture)
     {
         info.objectType = vk::ObjectType::eBuffer;
         info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkImage>(image.res.get()));

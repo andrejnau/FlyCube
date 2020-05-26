@@ -111,13 +111,13 @@ void ComputeLuminance::CreateBuffers()
     m_thread_group_x = (m_width + 31) / 32;
     m_thread_group_y = (m_height + 31) / 32;
     uint32_t total_invoke = m_thread_group_x * m_thread_group_y;
-    std::shared_ptr<Resource> buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * total_invoke);
+    std::shared_ptr<Resource> buffer = m_context.CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kShaderResource, sizeof(float) * total_invoke);
     m_use_res.push_back(buffer);
 
     for (int block_size = m_thread_group_x * m_thread_group_y; block_size > 1;)
     {
         uint32_t next_block_size = (block_size + 127) / 128;
-        std::shared_ptr<Resource> buffer = m_context.CreateBuffer(BindFlag::kUav | BindFlag::kSrv, sizeof(float) * next_block_size);
+        std::shared_ptr<Resource> buffer = m_context.CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kShaderResource, sizeof(float) * next_block_size);
         m_use_res.push_back(buffer);
         block_size = next_block_size;
     }

@@ -14,14 +14,14 @@ int main(int argc, char* argv[])
     ProgramHolder<PixelShaderPS, VertexShaderVS> program(context);
 
     std::vector<uint32_t> ibuf = { 0, 1, 2 };
-    std::shared_ptr<Resource> index = context.CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * ibuf.size());
+    std::shared_ptr<Resource> index = context.CreateBuffer(BindFlag::kIndexBuffer, sizeof(uint32_t) * ibuf.size());
     context.UpdateSubresource(index, 0, ibuf.data(), 0, 0);
     std::vector<glm::vec3> pbuf = {
         glm::vec3(-0.5, -0.5, 0.0),
         glm::vec3(0.0,  0.5, 0.0),
         glm::vec3(0.5, -0.5, 0.0)
     };
-    std::shared_ptr<Resource> pos = context.CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * pbuf.size());
+    std::shared_ptr<Resource> pos = context.CreateBuffer(BindFlag::kVertexBuffer, sizeof(glm::vec3) * pbuf.size());
     context.UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
 
     while (!app.PollEvents())

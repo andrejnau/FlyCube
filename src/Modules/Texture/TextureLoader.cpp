@@ -14,7 +14,7 @@ std::shared_ptr<Resource> CreateSRVFromFile(Context& context, const std::string&
         return {};
 
     gli::format format = gli::format::FORMAT_RGBA8_UNORM_PACK8;
-    std::shared_ptr<Resource> res = context.CreateTexture(BindFlag::kSrv, format, 1, width, height);
+    std::shared_ptr<Resource> res = context.CreateTexture(BindFlag::kShaderResource, format, 1, width, height);
 
     size_t row_bytes = 0;
     size_t num_bytes = 0;
@@ -34,7 +34,7 @@ std::shared_ptr<Resource> CreateSRVFromFileDDS(Context& context, const std::stri
     uint32_t height = Texture.extent(0).y;
     size_t mip_levels = Texture.levels();
 
-    std::shared_ptr<Resource> res = context.CreateTexture(BindFlag::kSrv, format, 1, width, height, 1, mip_levels);
+    std::shared_ptr<Resource> res = context.CreateTexture(BindFlag::kShaderResource, format, 1, width, height, 1, mip_levels);
 
     for (std::size_t level = 0; level < mip_levels; ++level)
     {

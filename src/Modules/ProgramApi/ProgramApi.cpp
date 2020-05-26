@@ -132,8 +132,8 @@ void ProgramApi::ApplyBindings()
     {
         switch (x.first.view_type)
         {
-        case ViewType::kRtv:
-        case ViewType::kDsv:
+        case ViewType::kRenderTarget:
+        case ViewType::kDepthStencil:
             continue;
         }
         decltype(auto) desc = descs.emplace_back();
@@ -153,12 +153,12 @@ void ProgramApi::ApplyBindings()
     std::vector<std::shared_ptr<View>> rtvs;
     for (auto& render_target : m_graphic_pipeline_desc.rtvs)
     {
-        rtvs.emplace_back(FindView(ShaderType::kPixel, ViewType::kRtv, render_target.slot));
+        rtvs.emplace_back(FindView(ShaderType::kPixel, ViewType::kRenderTarget, render_target.slot));
     }
 
     auto prev_framebuffer = m_framebuffer;
 
-    auto dsv = FindView(ShaderType::kPixel, ViewType::kDsv, 0);
+    auto dsv = FindView(ShaderType::kPixel, ViewType::kDepthStencil, 0);
     auto key = std::make_pair(rtvs, dsv);
     auto f_it = m_framebuffers.find(key);
     if (f_it == m_framebuffers.end())
@@ -222,8 +222,8 @@ std::shared_ptr<View> ProgramApi::CreateView(const BindKeyOld& bind_key, const V
     desc.view_type = bind_key.view_type;
     switch (bind_key.view_type)
     {
-    case ViewType::kSrv:
-    case ViewType::kUav:
+    case ViewType::kShaderResource:
+    case ViewType::kUnorderedAccess:
     {
         ResourceBindingDesc binding_desc = shader->GetResourceBindingDesc(GetBindingName(bind_key));
         desc.dimension = binding_desc.dimension;
@@ -249,22 +249,22 @@ void ProgramApi::Attach(const BindKeyOld& bind_key, const ViewDesc& view_desc, c
     SetBinding(bind_key, view_desc, res);
     switch (bind_key.view_type)
     {
-    case ViewType::kSrv:
+    case ViewType::kShaderResource:
         OnAttachSRV(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, view_desc, res);
         break;
-    case ViewType::kUav:
+    case ViewType::kUnorderedAccess:
         OnAttachUAV(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, view_desc, res);
         break;
-    case ViewType::kCbv:
+    case ViewType::kConstantBuffer:
         OnAttachCBV(bind_key.shader_type, bind_key.slot, res);
         break;
     case ViewType::kSampler:
         OnAttachSampler(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, res);
         break;
-    case ViewType::kRtv:
+    case ViewType::kRenderTarget:
         OnAttachRTV(bind_key.slot, view_desc,res);
         break;
-    case ViewType::kDsv:
+    case ViewType::kDepthStencil:
         OnAttachDSV(view_desc, res);
         break;
     }
@@ -272,7 +272,7 @@ void ProgramApi::Attach(const BindKeyOld& bind_key, const ViewDesc& view_desc, c
 
 void ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)
 {
-    auto& view = FindView(ShaderType::kPixel, ViewType::kRtv, slot);
+    auto& view = FindView(ShaderType::kPixel, ViewType::kRenderTarget, slot);
     if (!view)
         return;
     if (m_context.m_is_open_render_pass)
@@ -287,7 +287,7 @@ void ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& co
 
 void ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)
 {
-    auto& view = FindView(ShaderType::kPixel, ViewType::kDsv, 0);
+    auto& view = FindView(ShaderType::kPixel, ViewType::kDepthStencil, 0);
     if (!view)
         return;
     if (m_context.m_is_open_render_pass)
@@ -329,7 +329,7 @@ void ProgramApi::UpdateCBuffers()
         if (change_buffer && cbv_offset.count(x.first))
             ++cbv_offset[x.first];
         if (cbv_offset[x.first] >= cbv_buffer[x.first].size())
-            cbv_buffer[x.first].push_back(m_device.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_data.size()), MemoryType::kUpload));
+            cbv_buffer[x.first].push_back(m_device.CreateBuffer(BindFlag::kConstantBuffer, static_cast<uint32_t>(buffer_data.size()), MemoryType::kUpload));
 
         auto& res = cbv_buffer[x.first][cbv_offset[x.first]];
         if (change_buffer)

@@ -13,7 +13,7 @@ public:
         , m_size(v.size() * sizeof(v.front()))
         , m_count(v.size())
     {
-        m_buffer = m_context.CreateBuffer(BindFlag::kVbv | BindFlag::kSrv, static_cast<uint32_t>(m_size));
+        m_buffer = m_context.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kShaderResource, static_cast<uint32_t>(m_size));
         if (m_buffer)
             m_context.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
@@ -34,7 +34,7 @@ public:
     std::shared_ptr<Resource> GetDynamicBuffer()
     {
         if (!m_dynamic_buffer)
-            m_dynamic_buffer = m_context.CreateBuffer(BindFlag::kVbv | BindFlag::kUav, static_cast<uint32_t>(m_size));
+            m_dynamic_buffer = m_context.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kUnorderedAccess, static_cast<uint32_t>(m_size));
         return m_dynamic_buffer;
     }
 
@@ -66,7 +66,7 @@ public:
         , m_count(v.size())
         , m_size(m_count * sizeof(v.front()))
     {
-        m_buffer = m_context.CreateBuffer(BindFlag::kIbv | BindFlag::kSrv, static_cast<uint32_t>(m_size));
+        m_buffer = m_context.CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kShaderResource, static_cast<uint32_t>(m_size));
         if (m_buffer)
             m_context.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }

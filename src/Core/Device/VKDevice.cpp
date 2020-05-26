@@ -147,7 +147,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
 {
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
     res->format = format;
-    res->resource_type = ResourceType::kImage;
+    res->resource_type = ResourceType::kTexture;
 
     vk::Format vk_format = static_cast<vk::Format>(format);
     if (vk_format == vk::Format::eD24UnormS8Uint)
@@ -189,13 +189,13 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
     };
 
     vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eTransferDst;
-    if (bind_flag & BindFlag::kDsv)
+    if (bind_flag & BindFlag::kDepthStencil)
         usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst;
-    if (bind_flag & BindFlag::kSrv)
+    if (bind_flag & BindFlag::kShaderResource)
         usage |= vk::ImageUsageFlagBits::eSampled;
-    if (bind_flag & BindFlag::kRtv)
+    if (bind_flag & BindFlag::kRenderTarget)
         usage |= vk::ImageUsageFlagBits::eColorAttachment;
-    if (bind_flag & BindFlag::kUav)
+    if (bind_flag & BindFlag::kUnorderedAccess)
         usage |= vk::ImageUsageFlagBits::eStorage;
 
     uint32_t tmp = 0;
@@ -232,13 +232,13 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     bufferInfo.size = buffer_size;
     bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
-    if (bind_flag & BindFlag::kVbv)
+    if (bind_flag & BindFlag::kVertexBuffer)
         bufferInfo.usage = vk::BufferUsageFlagBits::eVertexBuffer;
-    else if (bind_flag & BindFlag::kIbv)
+    else if (bind_flag & BindFlag::kIndexBuffer)
         bufferInfo.usage = vk::BufferUsageFlagBits::eIndexBuffer;
-    else if (bind_flag & BindFlag::kCbv)
+    else if (bind_flag & BindFlag::kConstantBuffer)
         bufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-    else if (bind_flag & BindFlag::kSrv)
+    else if (bind_flag & BindFlag::kShaderResource)
         bufferInfo.usage = vk::BufferUsageFlagBits::eStorageBuffer;
     else if (bind_flag & BindFlag::kRayTracing)
         bufferInfo.usage = vk::BufferUsageFlagBits::eRayTracingNV;

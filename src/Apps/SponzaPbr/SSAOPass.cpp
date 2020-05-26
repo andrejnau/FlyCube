@@ -43,7 +43,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
         ssaoNoise.push_back(noise);
     }
 
-    m_noise_texture = context.CreateTexture(BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 4, 4, 1);
+    m_noise_texture = context.CreateTexture(BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 4, 4, 1);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(4, 4, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);
@@ -120,9 +120,9 @@ void SSAOPass::OnResize(int width, int height)
 
 void SSAOPass::CreateSizeDependentResources()
 {
-    m_ao = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    m_ao_blur = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
+    m_ao = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_ao_blur = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
 }
 
 void SSAOPass::OnModifySponzaSettings(const SponzaSettings& settings)

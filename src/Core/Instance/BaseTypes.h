@@ -69,19 +69,19 @@ struct SamplerDesc
 enum class ViewType
 {
     kUnknown,
-    kSrv,
-    kUav,
-    kCbv,
+    kShaderResource,
+    kUnorderedAccess,
+    kConstantBuffer,
     kSampler,
-    kRtv,
-    kDsv
+    kRenderTarget,
+    kDepthStencil
 };
 
 enum class ResourceType
 {
     kUnknown,
     kBuffer,
-    kImage,
+    kTexture,
     kSampler,
     kBottomLevelAS,
     kTopLevelAS,
@@ -91,16 +91,15 @@ namespace BindFlag
 {
     enum
     {
-        kRtv = 1 << 1,
-        kDsv = 1 << 2,
-        kSrv = 1 << 3,
-        kUav = 1 << 4,
-        kCbv = 1 << 5,
-        kIbv = 1 << 6,
-        kVbv = 1 << 7,
-        kSampler = 1 << 8,
-        kAccelerationStructure = 1 << 9,
-        kRayTracing = 1 << 10,
+        kRenderTarget = 1 << 1,
+        kDepthStencil = 1 << 2,
+        kShaderResource = 1 << 3,
+        kUnorderedAccess = 1 << 4,
+        kConstantBuffer = 1 << 5,
+        kIndexBuffer = 1 << 6,
+        kVertexBuffer = 1 << 7,
+        kAccelerationStructure = 1 << 8,
+        kRayTracing = 1 << 9,
     };
 }
 

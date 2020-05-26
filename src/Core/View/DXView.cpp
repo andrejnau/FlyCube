@@ -294,22 +294,22 @@ DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, con
 
     switch (view_desc.view_type)
     {
-    case ViewType::kSrv:
+    case ViewType::kShaderResource:
         CreateSrv(view_desc, dx_resource, *m_handle);
         break;
-    case ViewType::kUav:
+    case ViewType::kUnorderedAccess:
         CreateUAV(view_desc, dx_resource, *m_handle);
         break;
-    case ViewType::kCbv:
+    case ViewType::kConstantBuffer:
         CreateCBV(view_desc, dx_resource, *m_handle);
         break;
     case ViewType::kSampler:
         CreateSampler(view_desc, dx_resource, *m_handle);
         break;
-    case ViewType::kRtv:
+    case ViewType::kRenderTarget:
         CreateRTV(view_desc, dx_resource, *m_handle);
         break;
-    case ViewType::kDsv:
+    case ViewType::kDepthStencil:
         CreateDSV(view_desc, dx_resource, *m_handle);
         break;
     }

@@ -21,15 +21,15 @@ DXCPUDescriptorPoolTyped& DXCPUDescriptorPool::SelectHeap(ViewType view_type)
 {
     switch (view_type)
     {
-    case ViewType::kSrv:
-    case ViewType::kUav:
-    case ViewType::kCbv:
+    case ViewType::kShaderResource:
+    case ViewType::kUnorderedAccess:
+    case ViewType::kConstantBuffer:
         return m_resource;
     case ViewType::kSampler:
         return m_sampler;
-    case ViewType::kRtv:
+    case ViewType::kRenderTarget:
         return m_rtv;
-    case ViewType::kDsv:
+    case ViewType::kDepthStencil:
         return m_dsv;
     default:
         throw "fatal failure";

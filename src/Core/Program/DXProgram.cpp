@@ -51,7 +51,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                     break;
                 case D3D_SIT_CBUFFER:
                     num_cbv = std::max<uint32_t>(num_cbv, res_desc.BindPoint + res_desc.BindCount);
-                    view_type = ViewType::kCbv;
+                    view_type = ViewType::kConstantBuffer;
                     break;
                 case D3D_SIT_TBUFFER:
                 case D3D_SIT_TEXTURE:
@@ -59,11 +59,11 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                 case D3D_SIT_BYTEADDRESS:
                 case D3D_SIT_RTACCELERATIONSTRUCTURE:
                     num_srv = std::max<uint32_t>(num_srv, res_desc.BindPoint + res_desc.BindCount);
-                    view_type = ViewType::kSrv;
+                    view_type = ViewType::kShaderResource;
                     break;
                 default:
                     num_uav = std::max<uint32_t>(num_uav, res_desc.BindPoint + res_desc.BindCount);
-                    view_type = ViewType::kUav;
+                    view_type = ViewType::kUnorderedAccess;
                     break;
                 }
 
@@ -106,7 +106,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                             break;
                         case D3D_SIT_CBUFFER:
                             num_cbv = std::max<uint32_t>(num_cbv, res_desc.BindPoint + res_desc.BindCount);
-                            view_type = ViewType::kCbv;
+                            view_type = ViewType::kConstantBuffer;
                             break;
                         case D3D_SIT_TBUFFER:
                         case D3D_SIT_TEXTURE:
@@ -114,11 +114,11 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                         case D3D_SIT_BYTEADDRESS:
                         case D3D_SIT_RTACCELERATIONSTRUCTURE:
                             num_srv = std::max<uint32_t>(num_srv, res_desc.BindPoint + res_desc.BindCount);
-                            view_type = ViewType::kSrv;
+                            view_type = ViewType::kShaderResource;
                             break;
                         default:
                             num_uav = std::max<uint32_t>(num_uav, res_desc.BindPoint + res_desc.BindCount);
-                            view_type = ViewType::kUav;
+                            view_type = ViewType::kUnorderedAccess;
                             break;
                         }
                         m_bind_to_slot[{shader_type, view_type, res_desc.Name }] = res_desc.BindPoint;
@@ -298,9 +298,9 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
         D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
         switch (desc.type)
         {
-        case ViewType::kCbv:
-        case ViewType::kSrv:
-        case ViewType::kUav:
+        case ViewType::kConstantBuffer:
+        case ViewType::kShaderResource:
+        case ViewType::kUnorderedAccess:
             heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
             break;
         case ViewType::kSampler:
@@ -328,15 +328,15 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
                 D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
                 switch (desc.type)
                 {
-                case ViewType::kSrv:
+                case ViewType::kShaderResource:
                     range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
                     heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
                     break;
-                case ViewType::kUav:
+                case ViewType::kUnorderedAccess:
                     range_type = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
                     heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
                     break;
-                case ViewType::kCbv:
+                case ViewType::kConstantBuffer:
                     range_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
                     heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
                     break;
@@ -344,8 +344,8 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
                     range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
                     heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
                     break;
-                case ViewType::kRtv:
-                case ViewType::kDsv:
+                case ViewType::kRenderTarget:
+                case ViewType::kDepthStencil:
                     continue;
                 }
 

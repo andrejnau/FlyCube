@@ -12,12 +12,12 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
 
     switch (view_desc.view_type)
     {
-    case ViewType::kSrv:
-    case ViewType::kUav:
+    case ViewType::kShaderResource:
+    case ViewType::kUnorderedAccess:
         CreateSrv(view_desc, vk_resource);
         break;
-    case ViewType::kRtv:
-    case ViewType::kDsv:
+    case ViewType::kRenderTarget:
+    case ViewType::kDepthStencil:
         CreateRTV(view_desc, vk_resource);
         break;
     }

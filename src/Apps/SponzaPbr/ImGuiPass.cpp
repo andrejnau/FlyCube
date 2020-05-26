@@ -186,7 +186,7 @@ void ImGuiPass::CreateFontsTexture()
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
-    m_font_texture_view = m_context.CreateTexture(BindFlag::kSrv, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, width, height);
+    m_font_texture_view = m_context.CreateTexture(BindFlag::kShaderResource, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, width, height);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(width, height, gli::format::FORMAT_RGBA8_UNORM_PACK8, num_bytes, row_bytes);

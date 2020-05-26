@@ -48,14 +48,14 @@ private:
         {
         case spirv_cross::SPIRType::SampledImage:
         {
-            return ViewType::kSrv;
+            return ViewType::kShaderResource;
         }
         case spirv_cross::SPIRType::Image:
         {
             if (type.image.sampled == 2 && type.image.dim != spv::DimSubpassData)
-                return ViewType::kUav;
+                return ViewType::kUnorderedAccess;
             else
-                return ViewType::kSrv;
+                return ViewType::kShaderResource;
         }
         case spirv_cross::SPIRType::Sampler:
         {
@@ -70,18 +70,18 @@ private:
                     spirv_cross::Bitset flags = compiler.get_buffer_block_flags(resource_id);
                     bool is_readonly = flags.get(spv::DecorationNonWritable);
                     if (is_readonly)
-                        return ViewType::kSrv;
+                        return ViewType::kShaderResource;
                     else
-                        return ViewType::kUav;
+                        return ViewType::kUnorderedAccess;
                 }
                 else if (compiler.has_decoration(type.self, spv::DecorationBlock))
                 {
-                    return ViewType::kCbv;
+                    return ViewType::kConstantBuffer;
                 }
             }
             else if (type.storage == spv::StorageClassPushConstant)
             {
-                return ViewType::kCbv;
+                return ViewType::kConstantBuffer;
             }
             else
             {
@@ -160,7 +160,7 @@ private:
         {
             auto& type = compiler.get_type(cbuffer.type_id);
             ViewType view_type = GetViewType(compiler, compiler.get_type(cbuffer.type_id), cbuffer.id);
-            if (view_type != ViewType::kCbv)
+            if (view_type != ViewType::kConstantBuffer)
                 throw std::runtime_error("wrong resource type");
 
             kainjow::mustache::data tcbuffer;
@@ -205,10 +205,10 @@ private:
                 kainjow::mustache::data* tdata = nullptr;
                 switch (view_type)
                 {
-                case ViewType::kSrv:
+                case ViewType::kShaderResource:
                     tdata = &ttextures;
                     break;
-                case ViewType::kUav:
+                case ViewType::kUnorderedAccess:
                     tdata = &tuavs;
                     break;
                 case ViewType::kSampler:

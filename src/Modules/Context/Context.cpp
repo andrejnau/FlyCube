@@ -88,7 +88,7 @@ void Context::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource
         m_command_list->CopyBuffer(upload_resource, resource, regions);
         break;
     }
-    case ResourceType::kImage:
+    case ResourceType::kTexture:
     {
         std::vector<BufferToTextureCopyRegion> regions;
         auto& region = regions.emplace_back();

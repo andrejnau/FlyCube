@@ -85,11 +85,11 @@ std::shared_ptr<Semaphore> DXDevice::CreateGPUSemaphore()
 std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
-    if (bind_flag & BindFlag::kSrv && dx_format == DXGI_FORMAT_D32_FLOAT)
+    if (bind_flag & BindFlag::kShaderResource && dx_format == DXGI_FORMAT_D32_FLOAT)
         dx_format = DXGI_FORMAT_R32_TYPELESS;
 
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
-    res->resource_type = ResourceType::kImage;
+    res->resource_type = ResourceType::kTexture;
     res->format = format;
 
     D3D12_RESOURCE_DESC desc = {};
@@ -107,11 +107,11 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
     desc.SampleDesc.Count = msaa_count;
     desc.SampleDesc.Quality = ms_check_desc.NumQualityLevels - 1;
 
-    if (bind_flag & BindFlag::kRtv)
+    if (bind_flag & BindFlag::kRenderTarget)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-    if (bind_flag & BindFlag::kDsv)
+    if (bind_flag & BindFlag::kDepthStencil)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-    if (bind_flag & BindFlag::kUav)
+    if (bind_flag & BindFlag::kUnorderedAccess)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
     res->state = D3D12_RESOURCE_STATE_COPY_DEST;
@@ -119,7 +119,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
     D3D12_CLEAR_VALUE* p_clear_value = nullptr;
     D3D12_CLEAR_VALUE clear_value = {};
     clear_value.Format = dx_format;
-    if (bind_flag & BindFlag::kRtv)
+    if (bind_flag & BindFlag::kRenderTarget)
     {
         clear_value.Color[0] = 0.0f;
         clear_value.Color[1] = 0.0f;
@@ -127,7 +127,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
         clear_value.Color[3] = 1.0f;
         p_clear_value = &clear_value;
     }
-    else if (bind_flag & BindFlag::kDsv)
+    else if (bind_flag & BindFlag::kDepthStencil)
     {
         clear_value.DepthStencil.Depth = 1.0f;
         clear_value.DepthStencil.Stencil = 0;
@@ -136,7 +136,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
         p_clear_value = &clear_value;
     }
 
-    if (bind_flag & BindFlag::kUav)
+    if (bind_flag & BindFlag::kUnorderedAccess)
         p_clear_value = nullptr;
 
     ASSERT_SUCCEEDED(m_device->CreateCommittedResource(
@@ -158,7 +158,7 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
 
-    if (bind_flag & BindFlag::kCbv)
+    if (bind_flag & BindFlag::kConstantBuffer)
         buffer_size = (buffer_size + 255) & ~255;
 
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
@@ -167,11 +167,11 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     res->memory_type = memory_type;
     res->resource_type = ResourceType::kBuffer;
 
-    if (bind_flag & BindFlag::kRtv)
+    if (bind_flag & BindFlag::kRenderTarget)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-    if (bind_flag & BindFlag::kDsv)
+    if (bind_flag & BindFlag::kDepthStencil)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-    if (bind_flag & BindFlag::kUav)
+    if (bind_flag & BindFlag::kUnorderedAccess)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     if (bind_flag & BindFlag::kAccelerationStructure)
         res->state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
@@ -327,8 +327,8 @@ std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::shared_ptr<Co
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
     device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
-    auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav, info.ScratchDataSizeInBytes, MemoryType::kDefault));
-    auto res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
+    auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess, info.ScratchDataSizeInBytes, MemoryType::kDefault));
+    auto res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
     acceleration_structure_desc.Inputs = inputs;
@@ -362,8 +362,8 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
     device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
-    auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav, info.ScratchDataSizeInBytes, MemoryType::kDefault));
-    auto res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
+    auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess, info.ScratchDataSizeInBytes, MemoryType::kDefault));
+    auto res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
 
     auto instance_desc_res = std::static_pointer_cast<DXResource>(CreateBuffer(0, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * geometry.size(), MemoryType::kDefault));
     std::shared_ptr<Resource>& upload_res = instance_desc_res->GetPrivateResource(0);

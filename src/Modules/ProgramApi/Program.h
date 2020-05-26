@@ -37,7 +37,7 @@ class SRVBinding : public Binding<SRVBinding>
 {
 public:    
     SRVBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
-        : Binding(program_api, shader_type, ViewType::kSrv, slot, name)
+        : Binding(program_api, shader_type, ViewType::kShaderResource, slot, name)
     {
     }
 };
@@ -46,7 +46,7 @@ class UAVBinding : public Binding<UAVBinding>
 {
 public:
     UAVBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
-        : Binding(program_api, shader_type, ViewType::kUav, slot, name)
+        : Binding(program_api, shader_type, ViewType::kUnorderedAccess, slot, name)
     {
     }
 };
@@ -64,7 +64,7 @@ class RTVBinding : public Binding<RTVBinding>
 {
 public:
     RTVBinding(ProgramApi& program_api, uint32_t slot)
-        : Binding(program_api, ShaderType::kPixel, ViewType::kRtv, slot, "")
+        : Binding(program_api, ShaderType::kPixel, ViewType::kRenderTarget, slot, "")
     {
     }
 
@@ -78,7 +78,7 @@ class DSVBinding : public Binding<DSVBinding>
 {
 public:
     DSVBinding(ProgramApi& program_api)
-        : Binding(program_api, ShaderType::kPixel, ViewType::kDsv, 0, "")
+        : Binding(program_api, ShaderType::kPixel, ViewType::kDepthStencil, 0, "")
     {
     }
 

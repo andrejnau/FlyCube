@@ -108,8 +108,8 @@ void Equirectangular2Cubemap::CreateSizeDependentResources()
         ++m_texture_mips;
     }
 
-    output.environment = m_context.CreateTexture(BindFlag::kRtv | BindFlag::kSrv | BindFlag::kUav, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6, m_texture_mips);
-    m_dsv = m_context.CreateTexture(BindFlag::kDsv, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6);
+    output.environment = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6, m_texture_mips);
+    m_dsv = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6);
 }
 
 void Equirectangular2Cubemap::OnModifySponzaSettings(const SponzaSettings& settings)
