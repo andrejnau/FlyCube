@@ -223,7 +223,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
     return res;
 }
 
-std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, uint32_t stride, MemoryType memory_type)
+std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, MemoryType memory_type)
 {
     if (buffer_size == 0)
         return {};
@@ -451,7 +451,7 @@ std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::shared_ptr<Co
     vk::MemoryRequirements2 memReqBLAS;
     m_device->getAccelerationStructureMemoryRequirementsNV(&memoryRequirementsInfo, &memReqBLAS);
 
-    auto scratch = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kRayTracing, memReqBLAS.memoryRequirements.size, 0, MemoryType::kDefault));
+    auto scratch = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kRayTracing, memReqBLAS.memoryRequirements.size, MemoryType::kDefault));
 
     vk::AccelerationStructureInfoNV buildInfo{};
     buildInfo.type = vk::AccelerationStructureTypeNV::eBottomLevel;
@@ -539,7 +539,7 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     }
 
 
-    auto geometry_instance_buffer = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), 0, MemoryType::kUpload));
+    auto geometry_instance_buffer = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload));
 
 
     geometry_instance_buffer->UpdateUploadData(instances.data(), 0, instances.size() * sizeof(instances.back()));
@@ -548,7 +548,7 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     memoryRequirementsInfo.accelerationStructure = topLevelAS.accelerationStructure.get();
     m_device->getAccelerationStructureMemoryRequirementsNV(&memoryRequirementsInfo, &memReqTopLevelAS);
 
-    auto scratch = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kRayTracing, memReqTopLevelAS.memoryRequirements.size, 0, MemoryType::kDefault));
+    auto scratch = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kRayTracing, memReqTopLevelAS.memoryRequirements.size, MemoryType::kDefault));
 
     vk_command_list.buildAccelerationStructureNV(
         &buildInfo,

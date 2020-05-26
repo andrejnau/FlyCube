@@ -33,7 +33,7 @@ std::shared_ptr<Resource> Context::CreateTexture(uint32_t bind_flag, gli::format
 
 std::shared_ptr<Resource> Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
 {
-    return m_device->CreateBuffer(bind_flag, buffer_size, 0, MemoryType::kDefault);
+    return m_device->CreateBuffer(bind_flag, buffer_size, MemoryType::kDefault);
 }
 
 std::shared_ptr<Resource> Context::CreateSampler(const SamplerDesc& desc)
@@ -78,7 +78,7 @@ void Context::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource
     {
         size_t buffer_size = resource->GetWidth();
         if (!upload_resource)
-            upload_resource = m_device->CreateBuffer(0, buffer_size, 0, MemoryType::kUpload);
+            upload_resource = m_device->CreateBuffer(0, buffer_size, MemoryType::kUpload);
         upload_resource->UpdateUploadData(data, 0, buffer_size);
 
         std::vector<BufferCopyRegion> regions;
@@ -102,7 +102,7 @@ void Context::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource
         region.buffer_row_pitch = row_bytes;
 
         if (!upload_resource)
-            upload_resource = m_device->CreateBuffer(0, num_bytes, 0, MemoryType::kUpload);
+            upload_resource = m_device->CreateBuffer(0, num_bytes, MemoryType::kUpload);
         upload_resource->UpdateSubresource(0, row_bytes, num_bytes, data, row_pitch, depth_pitch, num_rows, region.texture_extent.depth);
 
         m_command_list->ResourceBarrier(resource, ResourceState::kCopyDest);

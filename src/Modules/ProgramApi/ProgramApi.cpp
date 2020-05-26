@@ -329,7 +329,7 @@ void ProgramApi::UpdateCBuffers()
         if (change_buffer && cbv_offset.count(x.first))
             ++cbv_offset[x.first];
         if (cbv_offset[x.first] >= cbv_buffer[x.first].size())
-            cbv_buffer[x.first].push_back(m_device.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_data.size()), 0, MemoryType::kUpload));
+            cbv_buffer[x.first].push_back(m_device.CreateBuffer(BindFlag::kCbv, static_cast<uint32_t>(buffer_data.size()), MemoryType::kUpload));
 
         auto& res = cbv_buffer[x.first][cbv_offset[x.first]];
         if (change_buffer)

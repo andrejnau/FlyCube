@@ -16,15 +16,15 @@ int main(int argc, char* argv[])
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count, settings.vsync);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
-    std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_data.size(), sizeof(uint32_t), MemoryType::kUpload);
+    std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_data.size(), MemoryType::kUpload);
     index_buffer->UpdateUploadData(index_data.data(), 0, sizeof(index_data.front()) * index_data.size());
 
     std::vector<glm::vec3> vertex_data = { glm::vec3(-0.5, -0.5, 0.0), glm::vec3(0.0,  0.5, 0.0), glm::vec3(0.5, -0.5, 0.0) };
-    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVbv, sizeof(vertex_data.front()) * vertex_data.size(), sizeof(vertex_data.front()), MemoryType::kUpload);
+    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVbv, sizeof(vertex_data.front()) * vertex_data.size(), MemoryType::kUpload);
     vertex_buffer->UpdateUploadData(vertex_data.data(), 0, sizeof(vertex_data.front()) * vertex_data.size());
 
     glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
-    std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kCbv, sizeof(constant_data), 0, MemoryType::kUpload);
+    std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kCbv, sizeof(constant_data), MemoryType::kUpload);
     constant_buffer->UpdateUploadData(&constant_data, 0, sizeof(constant_data));
 
     ViewDesc constant_view_desc = {};
