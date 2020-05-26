@@ -100,6 +100,7 @@ namespace BindFlag
         kVbv = 1 << 7,
         kSampler = 1 << 8,
         kAccelerationStructure = 1 << 9,
+        kRayTracing = 1 << 10,
     };
 }
 

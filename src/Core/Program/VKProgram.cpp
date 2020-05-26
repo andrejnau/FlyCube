@@ -178,7 +178,7 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& b
             list_as.emplace_back();
             vk::WriteDescriptorSetAccelerationStructureNV& descriptorAccelerationStructureInfo = list_as.back();
             descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
-            descriptorAccelerationStructureInfo.pAccelerationStructures = &vk_res.top_as.accelerationStructure.get();
+            descriptorAccelerationStructureInfo.pAccelerationStructures = &vk_res.as.accelerationStructure.get();
             descriptorWrite.pNext = &descriptorAccelerationStructureInfo;
             break;
         }

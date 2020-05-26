@@ -16,6 +16,16 @@
 #include <Utilities/VKUtility.h>
 #include <set>
 
+struct GeometryInstance
+{
+    glm::mat3x4 transform;
+    uint32_t instanceId : 24;
+    uint32_t mask : 8;
+    uint32_t instanceOffset : 24;
+    uint32_t flags : 8;
+    uint64_t accelerationStructureHandle;
+};
+
 static vk::IndexType GetVkIndexType(gli::format format)
 {
     vk::Format vk_format = static_cast<vk::Format>(format);
@@ -230,6 +240,8 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
         bufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
     else if (bind_flag & BindFlag::kSrv)
         bufferInfo.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+    else if (bind_flag & BindFlag::kRayTracing)
+        bufferInfo.usage = vk::BufferUsageFlagBits::eRayTracingNV;
 
     if (memory_type == MemoryType::kDefault)
         bufferInfo.usage |= vk::BufferUsageFlagBits::eTransferDst;
@@ -247,7 +259,14 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
     vk::MemoryAllocateInfo allocInfo = {};
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+    vk::MemoryPropertyFlags properties = {};
+    if (memory_type == MemoryType::kDefault)
+        properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
+    else if (memory_type == MemoryType::kUpload)
+        properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
     res->buffer.memory = m_device->allocateMemoryUnique(allocInfo);
 
@@ -363,16 +382,18 @@ std::shared_ptr<Pipeline> VKDevice::CreateRayTracingPipeline(const RayTracingPip
 
 std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::shared_ptr<CommandList>& command_list, const BufferDesc& vertex, const BufferDesc& index)
 {
+    decltype(auto) vk_command_list = command_list->As<VKCommandList>().GetCommandList();
+
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
     res->resource_type = ResourceType::kBottomLevelAS;
-    AccelerationStructure& bottomLevelAS = res->bottom_as;
+    auto& bottomLevelAS = res->as;
 
     auto vertex_res = std::static_pointer_cast<VKResource>(vertex.res);
     auto index_res = std::static_pointer_cast<VKResource>(index.res);
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
 
-    vk::GeometryNV& geometry = bottomLevelAS.geometry;
+    vk::GeometryNV geometry = {};
     geometry.geometryType = vk::GeometryTypeNV::eTriangles;
     geometry.geometry.triangles.vertexData = vertex_res->buffer.res.get();
     geometry.geometry.triangles.vertexOffset = vertex.offset * vertex_stride;
@@ -424,6 +445,38 @@ std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::shared_ptr<Co
 
     m_device->getAccelerationStructureHandleNV(bottomLevelAS.accelerationStructure.get(), sizeof(uint64_t), &bottomLevelAS.handle);
 
+    memoryRequirementsInfo.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch;
+    memoryRequirementsInfo.accelerationStructure = bottomLevelAS.accelerationStructure.get();
+
+    vk::MemoryRequirements2 memReqBLAS;
+    m_device->getAccelerationStructureMemoryRequirementsNV(&memoryRequirementsInfo, &memReqBLAS);
+
+    auto scratch = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kRayTracing, memReqBLAS.memoryRequirements.size, 0, MemoryType::kDefault));
+
+    vk::AccelerationStructureInfoNV buildInfo{};
+    buildInfo.type = vk::AccelerationStructureTypeNV::eBottomLevel;
+    buildInfo.instanceCount = 0;
+    buildInfo.geometryCount = 1;
+    buildInfo.pGeometries = &geometry;
+
+    vk_command_list.buildAccelerationStructureNV(
+        buildInfo,
+        {},
+        0,
+        VK_FALSE,
+        bottomLevelAS.accelerationStructure.get(),
+        {},
+        scratch->buffer.res.get(),
+        0
+    );
+
+    vk::MemoryBarrier memoryBarrier = {};
+    memoryBarrier.pNext = nullptr;
+    memoryBarrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
+    memoryBarrier.dstAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
+    vk_command_list.pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, 1, &memoryBarrier, 0, 0, 0, 0);
+
+    res->GetPrivateResource(0) = scratch;
     return res;
 }
 
@@ -432,7 +485,7 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     decltype(auto) vk_command_list = command_list->As<VKCommandList>().GetCommandList();
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
     res->resource_type = ResourceType::kTopLevelAS;
-    AccelerationStructure& topLevelAS = res->top_as;
+    auto& topLevelAS = res->as;
 
     vk::AccelerationStructureInfoNV accelerationStructureInfo{};
     accelerationStructureInfo.type = vk::AccelerationStructureTypeNV::eTopLevel;
@@ -463,75 +516,6 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
 
     memoryRequirementsInfo.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch;
 
-    vk::DeviceSize maximumBlasSize = 0;
-    for (auto& mesh : geometry)
-    {
-        auto res = std::static_pointer_cast<VKResource>(mesh.first);
-
-        memoryRequirementsInfo.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch;
-        memoryRequirementsInfo.accelerationStructure = res->bottom_as.accelerationStructure.get();
-
-        vk::MemoryRequirements2 memReqBLAS;
-        m_device->getAccelerationStructureMemoryRequirementsNV(&memoryRequirementsInfo, &memReqBLAS);
-
-        maximumBlasSize = std::max(maximumBlasSize, memReqBLAS.memoryRequirements.size);
-    }
-
-    vk::MemoryRequirements2 memReqTopLevelAS;
-    memoryRequirementsInfo.accelerationStructure = topLevelAS.accelerationStructure.get();
-    m_device->getAccelerationStructureMemoryRequirementsNV(&memoryRequirementsInfo, &memReqTopLevelAS);
-
-    const vk::DeviceSize scratchBufferSize = std::max(maximumBlasSize, memReqTopLevelAS.memoryRequirements.size);
-
-
-    {
-        vk::BufferCreateInfo bufferInfo = {};
-        bufferInfo.size = scratchBufferSize;
-        bufferInfo.sharingMode = vk::SharingMode::eExclusive;
-        bufferInfo.usage = vk::BufferUsageFlagBits::eRayTracingNV;
-        topLevelAS.scratchBuffer = m_device->createBufferUnique(bufferInfo);
-
-        vk::MemoryRequirements memRequirements;
-        m_device->getBufferMemoryRequirements(topLevelAS.scratchBuffer.get(), &memRequirements);
-
-        vk::MemoryAllocateInfo allocInfo = {};
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-        topLevelAS.scratchmemory = m_device->allocateMemoryUnique(allocInfo);
-
-        m_device->bindBufferMemory(topLevelAS.scratchBuffer.get(), topLevelAS.scratchmemory.get(), 0);
-    }
-
-    for (auto& mesh : geometry)
-    {
-        auto res = std::static_pointer_cast<VKResource>(mesh.first);
-
-        vk::AccelerationStructureInfoNV buildInfo{};
-        buildInfo.type = vk::AccelerationStructureTypeNV::eBottomLevel;
-        buildInfo.instanceCount = 0;
-        buildInfo.geometryCount = 1;
-
-        buildInfo.pGeometries = &res->bottom_as.geometry;
-
-        vk_command_list.buildAccelerationStructureNV(
-            buildInfo,
-            {},
-            0,
-            VK_FALSE,
-            res->bottom_as.accelerationStructure.get(),
-            {},
-            topLevelAS.scratchBuffer.get(),
-            0
-        );
-    }
-
-    vk::MemoryBarrier memoryBarrier = {};
-    memoryBarrier.pNext = nullptr;
-    memoryBarrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
-    memoryBarrier.dstAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
-    vk_command_list.pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, 1, &memoryBarrier, 0, 0, 0, 0);
-
     vk::AccelerationStructureInfoNV buildInfo{};
     buildInfo.type = vk::AccelerationStructureTypeNV::eTopLevel;
     buildInfo.pGeometries = 0;
@@ -541,7 +525,7 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     std::vector<GeometryInstance> instances;
     for (auto& mesh : geometry)
     {
-        auto res = std::static_pointer_cast<VKResource>(mesh.first);
+        auto bottom_res = std::static_pointer_cast<VKResource>(mesh.first);
 
         instances.emplace_back();
         GeometryInstance& instance = instances.back();
@@ -551,46 +535,40 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
         instance.mask = 0xff;
         instance.instanceOffset = 0;
         instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_CULL_DISABLE_BIT_NV;
-        instance.accelerationStructureHandle = res->bottom_as.handle;
+        instance.accelerationStructureHandle = bottom_res->as.handle;
     }
 
 
-    {
-        vk::BufferCreateInfo bufferInfo = {};
-        bufferInfo.size = instances.size() * sizeof(instances.back());
-        bufferInfo.sharingMode = vk::SharingMode::eExclusive;
-        bufferInfo.usage = vk::BufferUsageFlagBits::eRayTracingNV;
-        topLevelAS.geometryInstance = m_device->createBufferUnique(bufferInfo);
+    auto geometry_instance_buffer = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), 0, MemoryType::kUpload));
 
-        vk::MemoryRequirements memRequirements;
-        m_device->getBufferMemoryRequirements(topLevelAS.geometryInstance.get(), &memRequirements);
 
-        vk::MemoryAllocateInfo allocInfo = {};
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    geometry_instance_buffer->UpdateUploadData(instances.data(), 0, instances.size() * sizeof(instances.back()));
 
-        topLevelAS.geo_memory = m_device->allocateMemoryUnique(allocInfo);
+    vk::MemoryRequirements2 memReqTopLevelAS;
+    memoryRequirementsInfo.accelerationStructure = topLevelAS.accelerationStructure.get();
+    m_device->getAccelerationStructureMemoryRequirementsNV(&memoryRequirementsInfo, &memReqTopLevelAS);
 
-        m_device->bindBufferMemory(topLevelAS.geometryInstance.get(), topLevelAS.geo_memory.get(), 0);
-
-        void* data;
-        m_device->mapMemory(topLevelAS.geo_memory.get(), 0, bufferInfo.size, {}, &data);
-        memcpy(data, instances.data(), (size_t)bufferInfo.size);
-        m_device->unmapMemory(topLevelAS.geo_memory.get());
-    }
+    auto scratch = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kRayTracing, memReqTopLevelAS.memoryRequirements.size, 0, MemoryType::kDefault));
 
     vk_command_list.buildAccelerationStructureNV(
         &buildInfo,
-        topLevelAS.geometryInstance.get(),
+        geometry_instance_buffer->buffer.res.get(),
         0,
         VK_FALSE,
         topLevelAS.accelerationStructure.get(),
         {},
-        topLevelAS.scratchBuffer.get(),
+        scratch->buffer.res.get(),
         0
     );
 
+    vk::MemoryBarrier memoryBarrier = {};
+    memoryBarrier.pNext = nullptr;
+    memoryBarrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
+    memoryBarrier.dstAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
     vk_command_list.pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, 1, &memoryBarrier, 0, 0, 0, 0);
+
+    res->GetPrivateResource(0) = scratch;
+    res->GetPrivateResource(1) = geometry_instance_buffer;
 
     return res;
 }

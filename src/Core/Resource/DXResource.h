@@ -23,13 +23,6 @@ public:
     D3D12_RESOURCE_DESC desc = {};
     D3D12_SAMPLER_DESC sampler_desc = {};
 
-    struct
-    {
-        std::shared_ptr<DXResource> scratch;
-        std::shared_ptr<DXResource> result;
-        std::shared_ptr<DXResource> instance_desc;
-    } as;
-
 private:
     DXDevice& m_device;
 };

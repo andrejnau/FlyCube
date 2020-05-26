@@ -4,29 +4,10 @@
 #include <map>
 #include <Utilities/Vulkan.h>
 
-struct AccelerationStructure
+static bool operator<(const VkImageSubresourceRange& lhs, const VkImageSubresourceRange& rhs)
 {
-    vk::UniqueDeviceMemory memory;
-    vk::UniqueAccelerationStructureNV accelerationStructure;
-    uint64_t handle;
-
-    vk::GeometryNV geometry = {};
-
-    vk::UniqueBuffer scratchBuffer;
-    vk::UniqueDeviceMemory scratchmemory;
-
-    vk::UniqueBuffer geometryInstance;
-    vk::UniqueDeviceMemory geo_memory;
-};
-
-struct GeometryInstance
-{
-    glm::mat3x4 transform;
-    uint32_t instanceId : 24;
-    uint32_t mask : 8;
-    uint32_t instanceOffset : 24;
-    uint32_t flags : 8;
-    uint64_t accelerationStructureHandle;
+    return std::tie(lhs.aspectMask, lhs.baseArrayLayer, lhs.baseMipLevel, lhs.layerCount, lhs.levelCount) <
+        std::tie(rhs.aspectMask, rhs.baseArrayLayer, rhs.baseMipLevel, rhs.layerCount, rhs.levelCount);
 };
 
 class VKDevice;
@@ -67,8 +48,12 @@ public:
         vk::UniqueSampler res;
     } sampler;
 
-    AccelerationStructure bottom_as;
-    AccelerationStructure top_as;
+    struct AccelerationStructure
+    {
+        vk::UniqueDeviceMemory memory;
+        vk::UniqueAccelerationStructureNV accelerationStructure;
+        uint64_t handle;
+    } as;
 
 private:
     VKDevice& m_device;

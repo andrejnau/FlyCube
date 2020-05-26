@@ -328,24 +328,20 @@ std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::shared_ptr<Co
     device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
     auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav, info.ScratchDataSizeInBytes, 0, MemoryType::kDefault));
-    auto result = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, 0, MemoryType::kDefault));
+    auto res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, 0, MemoryType::kDefault));
 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
     acceleration_structure_desc.Inputs = inputs;
-    acceleration_structure_desc.DestAccelerationStructureData = result->resource->GetGPUVirtualAddress();
+    acceleration_structure_desc.DestAccelerationStructureData = res->resource->GetGPUVirtualAddress();
     acceleration_structure_desc.ScratchAccelerationStructureData = scratch->resource->GetGPUVirtualAddress();
     command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
 
     D3D12_RESOURCE_BARRIER uav_barrier = {};
     uav_barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    uav_barrier.UAV.pResource = result->resource.Get();
+    uav_barrier.UAV.pResource = res->resource.Get();
     command_list4->ResourceBarrier(1, &uav_barrier);
 
-    auto res = std::make_shared<DXResource>(*this);
-    res->as.scratch = scratch;
-    res->as.result = result;
-    res->resource = result->resource;
-    res->state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+    res->GetPrivateResource(0) = scratch;
 
     return res;
 }
@@ -367,7 +363,7 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
     auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav, info.ScratchDataSizeInBytes, 0, MemoryType::kDefault));
-    auto result = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, 0, MemoryType::kDefault));
+    auto res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUav | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, 0, MemoryType::kDefault));
 
     auto instance_desc_res = std::static_pointer_cast<DXResource>(CreateBuffer(0, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * geometry.size(), 0, MemoryType::kDefault));
     std::shared_ptr<Resource>& upload_res = instance_desc_res->GetPrivateResource(0);
@@ -399,21 +395,17 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
     acceleration_structure_desc.Inputs = inputs;
     acceleration_structure_desc.Inputs.InstanceDescs = dx_upload_res.resource->GetGPUVirtualAddress();
-    acceleration_structure_desc.DestAccelerationStructureData = result->resource->GetGPUVirtualAddress();
+    acceleration_structure_desc.DestAccelerationStructureData = res->resource->GetGPUVirtualAddress();
     acceleration_structure_desc.ScratchAccelerationStructureData = scratch->resource->GetGPUVirtualAddress();
     command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
 
     D3D12_RESOURCE_BARRIER uav_barrier = {};
     uav_barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    uav_barrier.UAV.pResource = result->resource.Get();
+    uav_barrier.UAV.pResource = res->resource.Get();
     command_list4->ResourceBarrier(1, &uav_barrier);
 
-    auto res = std::make_shared<DXResource>(*this);
-    res->as.scratch = scratch;
-    res->as.result = result;
-    res->as.instance_desc = instance_desc_res;
-    res->resource = result->resource;
-    res->state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+    res->GetPrivateResource(0) = scratch;
+    res->GetPrivateResource(1) = instance_desc_res;
 
     return res;
 }
