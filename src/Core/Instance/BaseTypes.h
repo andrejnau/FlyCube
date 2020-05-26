@@ -100,6 +100,8 @@ namespace BindFlag
         kVertexBuffer = 1 << 7,
         kAccelerationStructure = 1 << 8,
         kRayTracing = 1 << 9,
+        kCopyDest = 1 << 10,
+        kCopySource = 1 << 11,
     };
 }
 

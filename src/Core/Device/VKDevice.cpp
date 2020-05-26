@@ -145,80 +145,61 @@ std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
 
 std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
+    if (format == gli::FORMAT_D24_UNORM_S8_UINT_PACK32)
+        format = gli::FORMAT_D32_SFLOAT_S8_UINT_PACK64;
+
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
     res->format = format;
     res->resource_type = ResourceType::kTexture;
+    res->image.size.height = height;
+    res->image.size.width = width;
+    res->image.format = static_cast<vk::Format>(format);
+    res->image.level_count = mip_levels;
+    res->image.msaa_count = msaa_count;
+    res->image.array_layers = depth;
 
-    vk::Format vk_format = static_cast<vk::Format>(format);
-    if (vk_format == vk::Format::eD24UnormS8Uint)
-        vk_format = vk::Format::eD32SfloatS8Uint;
-
-    auto createImage = [this, msaa_count](int width, int height, int depth, int mip_levels, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties,
-        vk::UniqueImage& image, vk::UniqueDeviceMemory& imageMemory, uint32_t& size)
-    {
-        vk::ImageCreateInfo imageInfo = {};
-        imageInfo.imageType = vk::ImageType::e2D;
-        imageInfo.extent.width = width;
-        imageInfo.extent.height = height;
-        imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = mip_levels;
-        imageInfo.arrayLayers = depth;
-        imageInfo.format = format;
-        imageInfo.tiling = tiling;
-        imageInfo.initialLayout = vk::ImageLayout::eUndefined;
-        imageInfo.usage = usage;
-        imageInfo.samples = static_cast<vk::SampleCountFlagBits>(msaa_count);
-        imageInfo.sharingMode = vk::SharingMode::eExclusive;
-
-        if (depth % 6 == 0)
-            imageInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
-
-        image = m_device->createImageUnique(imageInfo);
-
-        vk::MemoryRequirements memRequirements;
-        m_device->getImageMemoryRequirements(image.get(), &memRequirements);
-
-        vk::MemoryAllocateInfo allocInfo = {};
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-        imageMemory = m_device->allocateMemoryUnique(allocInfo);
-        m_device->bindImageMemory(image.get(), imageMemory.get(), 0);
-
-        size = allocInfo.allocationSize;
-    };
-
-    vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eTransferDst;
+    vk::ImageUsageFlags usage = {};
     if (bind_flag & BindFlag::kDepthStencil)
-        usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst;
+        usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
     if (bind_flag & BindFlag::kShaderResource)
         usage |= vk::ImageUsageFlagBits::eSampled;
     if (bind_flag & BindFlag::kRenderTarget)
         usage |= vk::ImageUsageFlagBits::eColorAttachment;
     if (bind_flag & BindFlag::kUnorderedAccess)
         usage |= vk::ImageUsageFlagBits::eStorage;
+    if (bind_flag & BindFlag::kCopyDest)
+        usage |= vk::ImageUsageFlagBits::eTransferDst;
+    if (bind_flag & BindFlag::kCopySource)
+        usage |= vk::ImageUsageFlagBits::eTransferSrc;
 
-    uint32_t tmp = 0;
-    createImage(
-        width,
-        height,
-        depth,
-        mip_levels,
-        vk_format,
-        vk::ImageTiling::eOptimal,
-        usage,
-        vk::MemoryPropertyFlagBits::eDeviceLocal,
-        res->image.res,
-        res->image.memory,
-        tmp
-    );
+    vk::ImageCreateInfo image_info = {};
+    image_info.imageType = vk::ImageType::e2D;
+    image_info.extent.width = width;
+    image_info.extent.height = height;
+    image_info.extent.depth = 1;
+    image_info.mipLevels = mip_levels;
+    image_info.arrayLayers = depth;
+    image_info.format = res->image.format;
+    image_info.tiling = vk::ImageTiling::eOptimal;
+    image_info.initialLayout = vk::ImageLayout::eUndefined;
+    image_info.usage = usage;
+    image_info.samples = static_cast<vk::SampleCountFlagBits>(msaa_count);
+    image_info.sharingMode = vk::SharingMode::eExclusive;
 
-    res->image.size.height = height;
-    res->image.size.width = width;
-    res->image.format = vk_format;
-    res->image.level_count = mip_levels;
-    res->image.msaa_count = msaa_count;
-    res->image.array_layers = depth;
+    if (image_info.arrayLayers % 6 == 0)
+        image_info.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+
+    res->image.res = m_device->createImageUnique(image_info);
+
+    vk::MemoryRequirements mem_requirements;
+    m_device->getImageMemoryRequirements(res->image.res.get(), &mem_requirements);
+
+    vk::MemoryAllocateInfo allo_iInfo = {};
+    allo_iInfo.allocationSize = mem_requirements.size;
+    allo_iInfo.memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+    res->image.memory = m_device->allocateMemoryUnique(allo_iInfo);
+    m_device->bindImageMemory(res->image.res.get(), res->image.memory.get(), 0);
 
     return res;
 }
@@ -228,50 +209,47 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     if (buffer_size == 0)
         return {};
 
-    vk::BufferCreateInfo bufferInfo = {};
-    bufferInfo.size = buffer_size;
-    bufferInfo.sharingMode = vk::SharingMode::eExclusive;
-
-    if (bind_flag & BindFlag::kVertexBuffer)
-        bufferInfo.usage = vk::BufferUsageFlagBits::eVertexBuffer;
-    else if (bind_flag & BindFlag::kIndexBuffer)
-        bufferInfo.usage = vk::BufferUsageFlagBits::eIndexBuffer;
-    else if (bind_flag & BindFlag::kConstantBuffer)
-        bufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-    else if (bind_flag & BindFlag::kShaderResource)
-        bufferInfo.usage = vk::BufferUsageFlagBits::eStorageBuffer;
-    else if (bind_flag & BindFlag::kRayTracing)
-        bufferInfo.usage = vk::BufferUsageFlagBits::eRayTracingNV;
-
-    if (memory_type == MemoryType::kDefault)
-        bufferInfo.usage |= vk::BufferUsageFlagBits::eTransferDst;
-    else if (memory_type == MemoryType::kUpload)
-        bufferInfo.usage |= vk::BufferUsageFlagBits::eTransferSrc;
-
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
     res->resource_type = ResourceType::kBuffer;
     res->memory_type = memory_type;
+    res->buffer.size = buffer_size;
 
-    res->buffer.res = m_device->createBufferUnique(bufferInfo);
+    vk::BufferCreateInfo buffer_info = {};
+    buffer_info.size = buffer_size;
+    buffer_info.sharingMode = vk::SharingMode::eExclusive;
 
-    vk::MemoryRequirements memRequirements;
-    m_device->getBufferMemoryRequirements(res->buffer.res.get(), &memRequirements);
+    if (bind_flag & BindFlag::kVertexBuffer)
+        buffer_info.usage |= vk::BufferUsageFlagBits::eVertexBuffer;
+    if (bind_flag & BindFlag::kIndexBuffer)
+        buffer_info.usage |= vk::BufferUsageFlagBits::eIndexBuffer;
+    if (bind_flag & BindFlag::kConstantBuffer)
+        buffer_info.usage |= vk::BufferUsageFlagBits::eUniformBuffer;
+    if (bind_flag & BindFlag::kShaderResource)
+        buffer_info.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
+    if (bind_flag & BindFlag::kRayTracing)
+        buffer_info.usage |= vk::BufferUsageFlagBits::eRayTracingNV;
+    if (bind_flag & BindFlag::kCopySource)
+        buffer_info.usage |= vk::BufferUsageFlagBits::eTransferSrc;
+    if (bind_flag & BindFlag::kCopyDest)
+        buffer_info.usage |= vk::BufferUsageFlagBits::eTransferDst;
 
-    vk::MemoryAllocateInfo allocInfo = {};
-    allocInfo.allocationSize = memRequirements.size;
+    res->buffer.res = m_device->createBufferUnique(buffer_info);
+
+    vk::MemoryRequirements mem_requirements;
+    m_device->getBufferMemoryRequirements(res->buffer.res.get(), &mem_requirements);
+
+    vk::MemoryAllocateInfo alloc_info = {};
+    alloc_info.allocationSize = mem_requirements.size;
 
     vk::MemoryPropertyFlags properties = {};
     if (memory_type == MemoryType::kDefault)
         properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
     else if (memory_type == MemoryType::kUpload)
         properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-
-    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-    res->buffer.memory = m_device->allocateMemoryUnique(allocInfo);
+    alloc_info.memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, properties);
+    res->buffer.memory = m_device->allocateMemoryUnique(alloc_info);
 
     m_device->bindBufferMemory(res->buffer.res.get(), res->buffer.memory.get(), 0);
-    res->buffer.size = buffer_size;
 
     return res;
 }
