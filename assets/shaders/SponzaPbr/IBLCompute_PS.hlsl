@@ -1,6 +1,6 @@
 TextureCube<float> LightCubeShadowMap;
 
-SamplerComparisonState LightCubeShadowComparsionSampler : register(s2);
+SamplerComparisonState LightCubeShadowComparsionSampler;
 
 static const float PI = acos(-1.0);
 

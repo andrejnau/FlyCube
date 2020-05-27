@@ -24,9 +24,9 @@ TextureCubeArray prefilterMap;
 Texture2D brdfLUT;
 TextureCube<float> LightCubeShadowMap;
 
-SamplerState g_sampler : register(s0);
-SamplerState brdf_sampler : register(s1);
-SamplerComparisonState LightCubeShadowComparsionSampler : register(s2);
+SamplerState g_sampler;
+SamplerState brdf_sampler;
+SamplerComparisonState LightCubeShadowComparsionSampler;
 
 static const float PI = acos(-1.0);
 

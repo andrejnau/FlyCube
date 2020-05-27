@@ -5,7 +5,7 @@ struct VS_OUTPUT
 };
 
 Texture2D ssaoInput;
-SamplerState g_sampler : register(s0);
+SamplerState g_sampler;
 
 RWTexture2D<float4> out_uav;
 

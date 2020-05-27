@@ -1,5 +1,6 @@
 #include "Shader/DXCompiler.h"
 #include "Shader/DXCLoader.h"
+#include <deque>
 
 constexpr bool g_force_dxil = false;
 
@@ -150,17 +151,24 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
     }
 
     std::vector<LPCWSTR> arguments;
+    std::deque<std::wstring> dynamic_arguments;
     arguments.push_back(L"/Zi");
     if (option.spirv)
     {
-        arguments.push_back(L"-spirv");
+        arguments.emplace_back(L"-spirv");
         bool vs_or_gs = target.find(L"vs") != -1 || target.find(L"gs") != -1;
         if (option.spirv_invert_y && vs_or_gs)
-            arguments.push_back(L"-fvk-invert-y");
-        arguments.push_back(L"-fvk-use-dx-layout");
-        arguments.push_back(L"-fspv-target-env=vulkan1.1");
-        arguments.push_back(L"-fspv-extension=SPV_NV_ray_tracing");
-        arguments.push_back(L"-fspv-extension=SPV_EXT_shader_viewport_index_layer");
+            arguments.emplace_back(L"-fvk-invert-y");
+        arguments.emplace_back(L"-fvk-use-dx-layout");
+        arguments.emplace_back(L"-fspv-target-env=vulkan1.1");
+        arguments.emplace_back(L"-fspv-extension=SPV_NV_ray_tracing");
+        arguments.emplace_back(L"-fspv-extension=SPV_EXT_shader_viewport_index_layer");
+        arguments.emplace_back(L"-fspv-extension=SPV_GOOGLE_hlsl_functionality1");
+        arguments.emplace_back(L"-fspv-extension=SPV_GOOGLE_user_type");
+        arguments.emplace_back(L"-fspv-reflect");
+        arguments.emplace_back(L"-auto-binding-space");
+        dynamic_arguments.emplace_back(std::to_wstring(static_cast<uint32_t>(shader.type)));
+        arguments.emplace_back(dynamic_arguments.back().c_str());
     }
 
     ComPtr<IDxcOperationResult> result;

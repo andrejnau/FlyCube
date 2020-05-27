@@ -92,6 +92,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.sampleRateShading = true;
     device_features.geometryShader = true;
     device_features.imageCubeArray = true;
+    device_features.shaderImageGatherExtended = true;
 
     vk::PhysicalDeviceTimelineSemaphoreFeatures device_timetine_feature = {};
     device_timetine_feature.timelineSemaphore = true;

@@ -201,12 +201,12 @@ struct DepthStencilDesc
 
 enum class ShaderType
 {
-    kLibrary,
+    kUnknown,
     kVertex,
     kPixel,
     kCompute,
     kGeometry,
-    kUnknown
+    kLibrary,
 };
 
 struct LazyViewDesc
