@@ -134,6 +134,46 @@ ResourceBindingDesc DXShader::GetResourceBindingDesc(const std::string& name) co
     return binding_desc;
 }
 
+uint32_t DXShader::GetResourceStride(const std::string& name) const
+{
+    D3D12_SHADER_INPUT_BIND_DESC input_bind_desc = {};
+
+    auto impl = [&](auto reflector) -> uint32_t
+    {
+        if (input_bind_desc.Dimension != D3D_SRV_DIMENSION_BUFFER)
+            return 0;
+        ID3D12ShaderReflectionConstantBuffer* cbuffer = reflector->GetConstantBufferByName(name.c_str());
+        if (!cbuffer)
+            return 0;
+        D3D12_SHADER_BUFFER_DESC cbdesc = {};
+        cbuffer->GetDesc(&cbdesc);
+        return cbdesc.Size;
+    };
+
+    if (m_type == ShaderType::kLibrary)
+    {
+        ComPtr<ID3D12LibraryReflection> library_reflector;
+        DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
+        D3D12_LIBRARY_DESC lib_desc = {};
+        library_reflector->GetDesc(&lib_desc);
+        for (uint32_t i = 0; i < lib_desc.FunctionCount; ++i)
+        {
+            auto function_reflector = library_reflector->GetFunctionByIndex(i);
+            if (SUCCEEDED(function_reflector->GetResourceBindingDescByName(name.c_str(), &input_bind_desc)))
+            {
+                return impl(function_reflector);
+            }
+        }
+    }
+    else
+    {
+        ComPtr<ID3D12ShaderReflection> shader_reflector;
+        DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
+        ASSERT_SUCCEEDED(shader_reflector->GetResourceBindingDescByName(name.c_str(), &input_bind_desc));
+        return impl(shader_reflector);
+    }
+}
+
 ShaderType DXShader::GetType() const
 {
     return m_type;

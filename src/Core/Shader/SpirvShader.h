@@ -9,6 +9,7 @@ public:
     SpirvShader(const ShaderDesc& desc);
     std::vector<VertexInputDesc> GetInputLayout() const override;
     ResourceBindingDesc GetResourceBindingDesc(const std::string& name) const override;
+    uint32_t GetResourceStride(const std::string& name) const override;
     ShaderType GetType() const override;
 
     const std::vector<uint32_t>& GetBlob() const;

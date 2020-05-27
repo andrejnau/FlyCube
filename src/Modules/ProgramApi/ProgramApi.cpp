@@ -204,9 +204,9 @@ void ProgramApi::SetCBufferLayout(const BindKeyOld& bind_key, BufferLayout& buff
         std::forward_as_tuple(buffer_layout));
 }
 
-void ProgramApi::SetBinding(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res)
+void ProgramApi::SetBinding(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
 {
-    BoundResource bound_res = { res, CreateView(bind_key, view_desc, res) };
+    BoundResource bound_res = { view->GetResource(), view };
     auto it = m_bound_resources.find(bind_key);
     if (it == m_bound_resources.end())
         m_bound_resources.emplace(bind_key, bound_res);
@@ -214,13 +214,14 @@ void ProgramApi::SetBinding(const BindKeyOld& bind_key, const ViewDesc& view_des
         it->second = bound_res;
 }
 
-std::shared_ptr<View> ProgramApi::CreateView(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res)
+std::shared_ptr<View> ProgramApi::CreateView(const BindKeyOld& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
 {
-    auto it = m_views.find({ bind_key, view_desc, res });
+    auto it = m_views.find({ bind_key, resource, view_desc });
     if (it != m_views.end())
         return it->second;
     decltype(auto) shader = m_shader_by_type.at(bind_key.shader_type);
-    ViewDesc desc = view_desc;
+    ViewDesc desc = {};
+    static_cast<LazyViewDesc&>(desc) = view_desc;
     desc.view_type = bind_key.view_type;
     switch (bind_key.view_type)
     {
@@ -229,11 +230,12 @@ std::shared_ptr<View> ProgramApi::CreateView(const BindKeyOld& bind_key, const V
     {
         ResourceBindingDesc binding_desc = shader->GetResourceBindingDesc(GetBindingName(bind_key));
         desc.dimension = binding_desc.dimension;
+        desc.stride = shader->GetResourceStride(GetBindingName(bind_key));
         break;
     }
     }
-    auto view = m_device.CreateView(res, desc);
-    m_views.emplace(std::piecewise_construct, std::forward_as_tuple(bind_key, view_desc, res), std::forward_as_tuple(view));
+    auto view = m_device.CreateView(resource, desc);
+    m_views.emplace(std::piecewise_construct, std::forward_as_tuple(bind_key, resource, view_desc), std::forward_as_tuple(view));
     return view;
 }
 
@@ -246,28 +248,27 @@ std::shared_ptr<View> ProgramApi::FindView(ShaderType shader_type, ViewType view
     return it->second.view;
 }
 
-void ProgramApi::Attach(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res)
+void ProgramApi::Attach(const BindKeyOld& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
 {
-    SetBinding(bind_key, view_desc, res);
+    Attach(bind_key, CreateView(bind_key, resource, view_desc));
+}
+
+void ProgramApi::Attach(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
+{
+    SetBinding(bind_key, view);
     switch (bind_key.view_type)
     {
     case ViewType::kShaderResource:
-        OnAttachSRV(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, view_desc, res);
+        OnAttachSRV(bind_key, view);
         break;
     case ViewType::kUnorderedAccess:
-        OnAttachUAV(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, view_desc, res);
-        break;
-    case ViewType::kConstantBuffer:
-        OnAttachCBV(bind_key.shader_type, bind_key.slot, res);
-        break;
-    case ViewType::kSampler:
-        OnAttachSampler(bind_key.shader_type, GetBindingName(bind_key), bind_key.slot, res);
+        OnAttachUAV(bind_key, view);
         break;
     case ViewType::kRenderTarget:
-        OnAttachRTV(bind_key.slot, view_desc,res);
+        OnAttachRTV(bind_key, view);
         break;
     case ViewType::kDepthStencil:
-        OnAttachDSV(view_desc, res);
+        OnAttachDSV(bind_key, view);
         break;
     }
 }
@@ -339,25 +340,26 @@ void ProgramApi::UpdateCBuffers()
             m_context.UpdateSubresource(res, 0, buffer_layout.GetBuffer().data(), 0, 0);
         }
 
-        Attach(x.first, {}, res);
+        Attach(x.first, res, {});
     }
 }
 
-void ProgramApi::OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
+void ProgramApi::OnAttachSRV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
 {
     if (m_context.m_is_open_render_pass)
     {
         m_context.m_command_list->EndRenderPass();
         m_context.m_is_open_render_pass = false;
     }
+    auto resource = view->GetResource();
 
-    if (type == ShaderType::kPixel)
+    if (bind_key.shader_type == ShaderType::kPixel)
         m_context.m_command_list->ResourceBarrier(resource, ResourceState::kPixelShaderResource);
     else
         m_context.m_command_list->ResourceBarrier(resource, ResourceState::kNonPixelShaderResource);
 }
 
-void ProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
+void ProgramApi::OnAttachUAV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
 {
     if (m_context.m_is_open_render_pass)
     {
@@ -365,29 +367,23 @@ void ProgramApi::OnAttachUAV(ShaderType type, const std::string& name, uint32_t 
         m_context.m_is_open_render_pass = false;
     }
 
-    m_context.m_command_list->ResourceBarrier(resource, ResourceState::kUnorderedAccess);
+    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kUnorderedAccess);
 }
 
-void ProgramApi::OnAttachCBV(ShaderType type, uint32_t slot, const std::shared_ptr<Resource>& resource)
+void ProgramApi::OnAttachRTV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
 {
-}
-
-void ProgramApi::OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const std::shared_ptr<Resource>& resource)
-{
-}
-
-void ProgramApi::OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
-{
-    if (slot >= m_graphic_pipeline_desc.rtvs.size())
-        m_graphic_pipeline_desc.rtvs.resize(slot + 1);
-    decltype(auto) render_target = m_graphic_pipeline_desc.rtvs[slot];
-    render_target.slot = slot;
+    if (bind_key.slot >= m_graphic_pipeline_desc.rtvs.size())
+        m_graphic_pipeline_desc.rtvs.resize(bind_key.slot + 1);
+    decltype(auto) render_target = m_graphic_pipeline_desc.rtvs[bind_key.slot];
+    render_target.slot = bind_key.slot;
+    auto resource = view->GetResource();
     render_target.format = resource->GetFormat();
     m_context.m_command_list->ResourceBarrier(resource, ResourceState::kRenderTarget);
 }
 
-void ProgramApi::OnAttachDSV(const ViewDesc& view_desc, const std::shared_ptr<Resource>& resource)
+void ProgramApi::OnAttachDSV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
 {
+    auto resource = view->GetResource();
     m_graphic_pipeline_desc.dsv.format = resource->GetFormat();
     m_context.m_command_list->ResourceBarrier(resource, ResourceState::kDepthTarget);
 }

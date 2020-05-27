@@ -30,7 +30,7 @@ SpirvShader::SpirvShader(const ShaderDesc& desc)
                 resource_binding_desc.dimension = ResourceDimension::kBuffer;
                 continue;
             }
-            if (res_type.basetype == spirv_cross::SPIRType::BaseType::AccelerationStructureNV)
+            if (res_type.basetype == spirv_cross::SPIRType::BaseType::AccelerationStructure)
             {
                 resource_binding_desc.dimension = ResourceDimension::kRaytracingAccelerationStructure;
                 continue;
@@ -134,6 +134,11 @@ std::vector<VertexInputDesc> SpirvShader::GetInputLayout() const
 ResourceBindingDesc SpirvShader::GetResourceBindingDesc(const std::string& name) const
 {
     return m_resource_binding_descs.at(name);
+}
+
+uint32_t SpirvShader::GetResourceStride(const std::string& name) const
+{
+    return 0;
 }
 
 ShaderType SpirvShader::GetType() const

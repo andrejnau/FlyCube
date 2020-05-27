@@ -36,26 +36,28 @@ public:
     void ApplyBindings();
     void CompileShader(const ShaderBase& shader);
     void SetCBufferLayout(const BindKeyOld& bind_key, BufferLayout& buffer_layout);
-    void Attach(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res);
+    void Attach(const BindKeyOld& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc);
     void ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color);
     void ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil);
     void SetRasterizeState(const RasterizerDesc& desc);
     void SetBlendState(const BlendDesc& desc);
     void SetDepthStencilState(const DepthStencilDesc& desc);
 
-protected:
-    void OnAttachSRV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires);
-    void OnAttachUAV(ShaderType type, const std::string& name, uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires);
-    void OnAttachCBV(ShaderType type, uint32_t slot, const std::shared_ptr<Resource>& ires);
-    void OnAttachSampler(ShaderType type, const std::string& name, uint32_t slot, const std::shared_ptr<Resource>& ires);
-    void OnAttachRTV(uint32_t slot, const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires);
-    void OnAttachDSV(const ViewDesc& view_desc, const std::shared_ptr<Resource>& ires);
+private:
+    void Attach(const BindKeyOld& bind_key, const std::shared_ptr<View>& view);
+    void OnAttachSRV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view);
+    void OnAttachUAV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view);
+    void OnAttachRTV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view);
+    void OnAttachDSV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view);
 
-    std::shared_ptr<View> CreateView(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res);
+    std::shared_ptr<View> CreateView(const BindKeyOld& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc);
     std::shared_ptr<View> FindView(ShaderType shader_type, ViewType view_type, uint32_t slot);
 
-    void SetBinding(const BindKeyOld& bind_key, const ViewDesc& view_desc, const std::shared_ptr<Resource>& res);
+    void SetBinding(const BindKeyOld& bind_key, const std::shared_ptr<View>& view);
     void UpdateCBuffers();
+
+    Context& m_context;
+    size_t m_program_id;
 
     struct BoundResource
     {
@@ -74,10 +76,7 @@ protected:
     std::vector< CBufferData> m_cbv_data;
 
     std::set<ShaderType> m_shader_types;
-private:
-    Context& m_context;
 
-    size_t m_program_id;
     std::map<BindKeyOld, std::string> m_binding_names;
     Device& m_device;
     std::vector<std::shared_ptr<Shader>> m_shaders;
@@ -90,7 +89,7 @@ private:
     std::map<ComputePipelineDesc, std::shared_ptr<Pipeline>> m_compute_pso;
     std::map<std::tuple<uint32_t, uint32_t, std::vector<std::shared_ptr<View>>, std::shared_ptr<View>>, std::shared_ptr<Framebuffer>> m_framebuffers;
     std::shared_ptr<Framebuffer> m_framebuffer;
-    std::map<std::tuple<BindKeyOld, ViewDesc, std::shared_ptr<Resource>>, std::shared_ptr<View>> m_views;
+    std::map<std::tuple<BindKeyOld, std::shared_ptr<Resource>, LazyViewDesc>, std::shared_ptr<View>> m_views;
     ComputePipelineDesc m_compute_pipeline_desc;
     GraphicsPipelineDesc m_graphic_pipeline_desc;
     uint32_t m_width = 0;

@@ -22,9 +22,9 @@ public:
         m_program_api.SetBindingName(m_key, name);
     }
 
-    T& Attach(const std::shared_ptr<Resource>& ires = {}, const ViewDesc& view_desc = {})
+    T& Attach(const std::shared_ptr<Resource>& resource = {}, const LazyViewDesc& view_desc = {})
     {
-        m_program_api.Attach(m_key, view_desc, ires);
+        m_program_api.Attach(m_key, resource, view_desc);
         return static_cast<T&>(*this);
     }
 

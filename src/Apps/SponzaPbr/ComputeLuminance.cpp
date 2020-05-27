@@ -23,9 +23,7 @@ void ComputeLuminance::GetLum2DPassCS(size_t buf_id, uint32_t thread_group_x, ui
     m_HDRLum2DPassCS.cs.cbuffer.cbv.dispatchSize = glm::uvec2(thread_group_x, thread_group_y);
     m_context.UseProgram(m_HDRLum2DPassCS);
 
-    ViewDesc view_desc = {};
-    view_desc.stride = sizeof(uint32_t);
-    m_HDRLum2DPassCS.cs.uav.result.Attach(m_use_res[buf_id], view_desc);
+    m_HDRLum2DPassCS.cs.uav.result.Attach(m_use_res[buf_id]);
     m_HDRLum2DPassCS.cs.srv.data.Attach(m_input.hdr_res);
     m_context.Dispatch(thread_group_x, thread_group_y, 1);
 }
@@ -35,10 +33,8 @@ void ComputeLuminance::GetLum1DPassCS(size_t buf_id, uint32_t input_buffer_size,
     m_HDRLum1DPassCS.cs.cbuffer.cbv.bufferSize = input_buffer_size;
     m_context.UseProgram(m_HDRLum1DPassCS);
 
-    ViewDesc view_desc = {};
-    view_desc.stride = sizeof(uint32_t);
-    m_HDRLum1DPassCS.cs.srv.data.Attach(m_use_res[buf_id - 1], view_desc);
-    m_HDRLum1DPassCS.cs.uav.result.Attach(m_use_res[buf_id], view_desc);
+    m_HDRLum1DPassCS.cs.srv.data.Attach(m_use_res[buf_id - 1]);
+    m_HDRLum1DPassCS.cs.uav.result.Attach(m_use_res[buf_id]);
 
     m_context.Dispatch(thread_group_x, 1, 1);
 
@@ -66,13 +62,10 @@ void ComputeLuminance::Draw(size_t buf_id)
     m_input.model.ia.positions.BindToSlot(m_HDRApply.vs.ia.POSITION);
     m_input.model.ia.texcoords.BindToSlot(m_HDRApply.vs.ia.TEXCOORD);
 
-    ViewDesc view_desc = {};
-    view_desc.stride = sizeof(uint32_t);
-
     for (auto& range : m_input.model.ia.ranges)
     {
         m_HDRApply.ps.srv.hdr_input.Attach(m_input.hdr_res);
-        m_HDRApply.ps.srv.lum.Attach(m_use_res[buf_id], view_desc);
+        m_HDRApply.ps.srv.lum.Attach(m_use_res[buf_id]);
         m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 }

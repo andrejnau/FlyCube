@@ -9,5 +9,6 @@ public:
     virtual ~Shader() = default;
     virtual std::vector<VertexInputDesc> GetInputLayout() const = 0;
     virtual ResourceBindingDesc GetResourceBindingDesc(const std::string& name) const = 0;
+    virtual uint32_t GetResourceStride(const std::string& name) const = 0;
     virtual ShaderType GetType() const = 0;
 };

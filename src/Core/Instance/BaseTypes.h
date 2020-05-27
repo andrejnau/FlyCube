@@ -209,10 +209,24 @@ enum class ShaderType
     kUnknown
 };
 
-struct ViewDesc
+struct LazyViewDesc
 {
     size_t level = 0;
     size_t count = static_cast<size_t>(-1);
+
+    auto MakeTie() const
+    {
+        return std::tie(level, count);
+    }
+
+    bool operator< (const LazyViewDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
+};
+
+struct ViewDesc : public LazyViewDesc
+{
     ViewType view_type;
     ResourceDimension dimension;
     uint32_t stride = 0;

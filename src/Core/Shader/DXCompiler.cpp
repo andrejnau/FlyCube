@@ -160,6 +160,7 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
         arguments.push_back(L"-fvk-use-dx-layout");
         arguments.push_back(L"-fspv-target-env=vulkan1.1");
         arguments.push_back(L"-fspv-extension=SPV_NV_ray_tracing");
+        arguments.push_back(L"-fspv-extension=SPV_EXT_shader_viewport_index_layer");
     }
 
     ComPtr<IDxcOperationResult> result;
