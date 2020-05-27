@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
         ViewDesc back_buffer_view_desc = {};
         back_buffer_view_desc.view_type = ViewType::kRenderTarget;
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
-        framebuffers.emplace_back(device->CreateFramebuffer(pipeline, { back_buffer_view }));
+        framebuffers.emplace_back(device->CreateFramebuffer(pipeline, rect.width, rect.height, { back_buffer_view }));
         command_lists.emplace_back(device->CreateCommandList());
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->Open();

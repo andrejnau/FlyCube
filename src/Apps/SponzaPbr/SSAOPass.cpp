@@ -92,7 +92,6 @@ void SSAOPass::OnRender()
     {
         m_context.UseProgram(m_program_blur);
         m_program_blur.ps.uav.out_uav.Attach(m_ao_blur);
-        m_program_blur.ps.om.dsv.Attach(m_depth_stencil_view).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
 
         m_input.square.ia.indices.Bind();
         m_input.square.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);

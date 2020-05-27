@@ -13,24 +13,19 @@
 #include <map>
 #include <memory>
 #include <vector>
-
-#include <assert.h>
-#include "IShaderBlobProvider.h"
+#include <cassert>
 
 class BufferLayout;
 class ShaderBase;
 class Context;
 
 class ProgramApi
-    : public IShaderBlobProvider
 {
 public:
     ProgramApi(Context& context);
 
-    size_t GetProgramId() const override;
-    ShaderBlob GetBlobByType(ShaderType type) const override;
-    std::set<ShaderType> GetShaderTypes() const override;
-
+    size_t GetProgramId() const;
+    void OnSetViewport(uint32_t width, uint32_t height);
     uint32_t GetStrideByVertexSlot(uint32_t slot);
     void ProgramDetach();
     void OnPresent();
@@ -91,41 +86,13 @@ private:
     std::shared_ptr<Pipeline> m_pipeline;
     std::shared_ptr<BindingSet> m_binding_set;
 
-    template<typename T>
-    struct Hasher
-    {
-        std::size_t operator()(const T& oid) const
-        {
-            const uint8_t* data = reinterpret_cast<const uint8_t*>(&oid);
-            auto size = sizeof(T);
-            std::size_t prime = 31;
-            std::size_t p_pow = 1;
-            std::size_t hash = 0;
-            for (size_t i = 0; i < size; ++i)
-            {
-                hash += (*data + 1ll) * p_pow;
-                p_pow *= prime;
-                ++data;
-            }
-            return hash;
-        }
-    };
-
-    template<typename T>
-    class EqualFn
-    {
-    public:
-        bool operator() (const T& t1, const T& t2) const
-        {
-            return memcmp(&t1, &t2, sizeof(T)) == 0;
-        }
-    };
-
     std::map<GraphicsPipelineDesc, std::shared_ptr<Pipeline>> m_pso;
     std::map<ComputePipelineDesc, std::shared_ptr<Pipeline>> m_compute_pso;
-    std::map<std::pair<std::vector<std::shared_ptr<View>>, std::shared_ptr<View>>, std::shared_ptr<Framebuffer>> m_framebuffers;
+    std::map<std::tuple<uint32_t, uint32_t, std::vector<std::shared_ptr<View>>, std::shared_ptr<View>>, std::shared_ptr<Framebuffer>> m_framebuffers;
     std::shared_ptr<Framebuffer> m_framebuffer;
     std::map<std::tuple<BindKeyOld, ViewDesc, std::shared_ptr<Resource>>, std::shared_ptr<View>> m_views;
     ComputePipelineDesc m_compute_pipeline_desc;
     GraphicsPipelineDesc m_graphic_pipeline_desc;
+    uint32_t m_width = 0;
+    uint32_t m_height = 0;
 };

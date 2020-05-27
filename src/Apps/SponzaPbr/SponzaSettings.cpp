@@ -15,7 +15,7 @@ SponzaSettings::SponzaSettings()
     use_ao = false;
     use_ssao = true;
     use_rtao = false;
-    use_ao_blur = false;
+    use_ao_blur = true;
     rtao_num_rays = 32;
     ao_radius = 0.05;
     use_white_ligth = true;

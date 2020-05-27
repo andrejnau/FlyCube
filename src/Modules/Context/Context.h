@@ -72,6 +72,8 @@ public:
     ProgramApi* m_current_program = nullptr;
     bool m_is_open_render_pass = false;
     std::vector<std::shared_ptr<ProgramApi>> m_created_program;
+    uint32_t m_viewport_width = 0;
+    uint32_t m_viewport_height = 0;
 private:
     void UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch);
 };

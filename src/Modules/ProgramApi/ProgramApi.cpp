@@ -21,14 +21,10 @@ size_t ProgramApi::GetProgramId() const
     return m_program_id;
 }
 
-ShaderBlob ProgramApi::GetBlobByType(ShaderType type) const
+void ProgramApi::OnSetViewport(uint32_t width, uint32_t height)
 {
-    return {};
-}
-
-std::set<ShaderType> ProgramApi::GetShaderTypes() const
-{
-    return {};
+    m_width = width;
+    m_height = height;
 }
 
 uint32_t ProgramApi::GetStrideByVertexSlot(uint32_t slot)
@@ -165,11 +161,11 @@ void ProgramApi::ApplyBindings()
     auto prev_framebuffer = m_framebuffer;
 
     auto dsv = FindView(ShaderType::kPixel, ViewType::kDepthStencil, 0);
-    auto key = std::make_pair(rtvs, dsv);
+    auto key = std::make_tuple(m_width, m_height, rtvs, dsv);
     auto f_it = m_framebuffers.find(key);
     if (f_it == m_framebuffers.end())
     {
-        m_framebuffer = m_device.CreateFramebuffer(m_pipeline, rtvs, dsv);
+        m_framebuffer = m_device.CreateFramebuffer(m_pipeline, m_width, m_height, rtvs, dsv);
         m_framebuffers.emplace(std::piecewise_construct,
             std::forward_as_tuple(key),
             std::forward_as_tuple(m_framebuffer));

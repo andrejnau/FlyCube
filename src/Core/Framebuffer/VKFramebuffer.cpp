@@ -3,11 +3,14 @@
 #include <View/VKView.h>
 #include <Pipeline/VKGraphicsPipeline.h>
 
-VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<VKGraphicsPipeline>& pipeline, const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
+VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<VKGraphicsPipeline>& pipeline, uint32_t width, uint32_t height,
+                             const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
     : FramebufferBase(rtvs, dsv)
+    , m_extent(width, height)
 {
     vk::FramebufferCreateInfo framebuffer_info = {};
     std::vector<vk::ImageView> attachment_views;
+    framebuffer_info.layers = 1;
     auto add_view = [&](const std::shared_ptr<View>& view)
     {
         if (!view)
@@ -20,12 +23,8 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<VKGraphicsP
 
         decltype(auto) vk_resource = resource->As<VKResource>();
         if (!m_extent.width || !m_extent.height)
-        {
             m_extent = vk::Extent2D(vk_resource.image.size.width, vk_resource.image.size.height);
-            framebuffer_info.width = m_extent.width;
-            framebuffer_info.height = m_extent.height;
-            framebuffer_info.layers = vk_resource.image.array_layers;
-        }
+        framebuffer_info.layers = std::max<uint32_t>(framebuffer_info.layers, vk_resource.image.array_layers);
     };
     for (auto& rtv : rtvs)
     {
@@ -33,12 +32,14 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<VKGraphicsP
     }
     add_view(dsv);
 
+    framebuffer_info.width = m_extent.width;
+    framebuffer_info.height = m_extent.height;
+
     m_render_pass = pipeline->GetRenderPass();
 
     framebuffer_info.renderPass = m_render_pass;
     framebuffer_info.attachmentCount = attachment_views.size();
     framebuffer_info.pAttachments = attachment_views.data();
-
     m_framebuffer = device.GetDevice().createFramebufferUnique(framebuffer_info);
 }
 

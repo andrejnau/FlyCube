@@ -4,7 +4,6 @@ set(headers
     BufferLayout.h
     Program.h
     ProgramApi.h
-    IShaderBlobProvider.h
 )
 
 set(sources

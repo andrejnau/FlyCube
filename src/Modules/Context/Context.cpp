@@ -125,6 +125,10 @@ void Context::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource
 void Context::SetViewport(float width, float height)
 {
     m_command_list->SetViewport(width, height);
+    m_viewport_width = width;
+    m_viewport_height = height;
+    if (m_current_program)
+        m_current_program->OnSetViewport(m_viewport_width, m_viewport_height);
 }
 
 void Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom)
@@ -156,6 +160,8 @@ void Context::UseProgram(ProgramApi& program)
             m_is_open_render_pass = false;
         }
     }
+    if (m_current_program)
+        m_current_program->OnSetViewport(m_viewport_width, m_viewport_height);
 }
 
 void Context::BeginEvent(const std::string& name)

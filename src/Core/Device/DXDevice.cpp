@@ -255,7 +255,8 @@ std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& reso
     return std::make_shared<DXView>(*this, resource, view_desc);
 }
 
-std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const std::shared_ptr<Pipeline>& pipeline, const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
+std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const std::shared_ptr<Pipeline>& pipeline, uint32_t width, uint32_t height,
+                                                         const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
 {
     return std::make_shared<DXFramebuffer>(rtvs, dsv);
 }

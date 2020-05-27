@@ -328,9 +328,10 @@ std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& reso
     return std::make_shared<VKView>(*this, std::static_pointer_cast<VKResource>(resource), view_desc);
 }
 
-std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const std::shared_ptr<Pipeline>& pipeline, const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
+std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const std::shared_ptr<Pipeline>& pipeline, uint32_t width, uint32_t height,
+                                                         const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
 {
-    return std::make_shared<VKFramebuffer>(*this, std::static_pointer_cast<VKGraphicsPipeline>(pipeline), rtvs, dsv);
+    return std::make_shared<VKFramebuffer>(*this, std::static_pointer_cast<VKGraphicsPipeline>(pipeline), width, height, rtvs, dsv);
 }
 
 std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)
