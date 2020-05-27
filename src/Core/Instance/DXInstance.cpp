@@ -17,14 +17,16 @@ DXInstance::DXInstance()
 #endif
 
     uint32_t flags = 0;
-#if defined(_DEBUG)
-    ComPtr<ID3D12Debug> debug_controller;
-    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller))))
+    static const bool debug_enabled = IsDebuggerPresent();
+    if (debug_enabled)
     {
-        debug_controller->EnableDebugLayer();
+        ComPtr<ID3D12Debug> debug_controller;
+        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller))))
+        {
+            debug_controller->EnableDebugLayer();
+        }
+        flags = DXGI_CREATE_FACTORY_DEBUG;
     }
-    flags = DXGI_CREATE_FACTORY_DEBUG;
-#endif
 
     ASSERT_SUCCEEDED(CreateDXGIFactory2(flags, IID_PPV_ARGS(&m_dxgi_factory)));
 }

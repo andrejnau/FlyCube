@@ -11,8 +11,6 @@ class DebugReportListener
 public:
     DebugReportListener(const vk::Instance& instance)
     {
-        if (!enabled)
-            return;
         vk::DebugReportCallbackCreateInfoEXT callback_create_info = {};
         callback_create_info.flags = vk::DebugReportFlagBitsEXT::eWarning |
                                      vk::DebugReportFlagBitsEXT::ePerformanceWarning |
@@ -22,12 +20,6 @@ public:
         callback_create_info.pUserData = this;
         m_callback = instance.createDebugReportCallbackEXTUnique(callback_create_info);
     }
-
-#if defined(_DEBUG)
-    static constexpr bool enabled = true;
-#else
-    static constexpr bool enabled = false;
-#endif
 
 private:
     static bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& message)
@@ -94,7 +86,8 @@ VKInstance::VKInstance()
     auto layers = vk::enumerateInstanceLayerProperties();
 
     std::set<std::string> req_layers;
-    if (DebugReportListener::enabled)
+    static const bool debug_enabled = IsDebuggerPresent();
+    if (debug_enabled)
         req_layers.insert("VK_LAYER_LUNARG_standard_validation");
     std::vector<const char*> found_layers;
     for (const auto& layer : layers)
@@ -137,7 +130,8 @@ VKInstance::VKInstance()
 
     m_instance = vk::createInstanceUnique(create_info);
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance.get());
-    static DebugReportListener listener(m_instance.get());
+    if (debug_enabled)
+        static auto listener = std::make_unique<DebugReportListener>(m_instance.get());
 }
 
 std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
