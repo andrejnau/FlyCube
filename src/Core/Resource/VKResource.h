@@ -51,7 +51,7 @@ public:
     struct AccelerationStructure
     {
         vk::UniqueDeviceMemory memory;
-        vk::UniqueAccelerationStructureNV accelerationStructure;
+        vk::UniqueAccelerationStructureNV acceleration_structure;
         uint64_t handle;
     } as;
 

@@ -19,9 +19,6 @@ int main(int argc, char *argv[])
     ProgramHolder<GraphicsVS, GraphicsPS> graphics_program(context);
     Model square(context, "model/square.obj");
 
-    std::vector<uint32_t> indices_data = { 0, 1, 2 };
-    std::shared_ptr<Resource> indices = context.CreateBuffer(BindFlag::kIndexBuffer, sizeof(uint32_t) * indices_data.size());
-    context.UpdateSubresource(indices, 0, indices_data.data(), 0, 0);
     std::vector<glm::vec3> positions_data = {
         glm::vec3(-0.5, -0.5, 0.0),
         glm::vec3(0.0, 0.5, 0.0),

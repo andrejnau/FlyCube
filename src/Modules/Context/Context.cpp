@@ -43,11 +43,21 @@ std::shared_ptr<Resource> Context::CreateSampler(const SamplerDesc& desc)
 
 std::shared_ptr<Resource> Context::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
 {
+    if (m_is_open_render_pass)
+    {
+        m_command_list->EndRenderPass();
+        m_is_open_render_pass = false;
+    }
     return m_device->CreateBottomLevelAS(m_command_list, vertex, index);
 }
 
 std::shared_ptr<Resource> Context::CreateTopLevelAS(const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry)
 {
+    if (m_is_open_render_pass)
+    {
+        m_command_list->EndRenderPass();
+        m_is_open_render_pass = false;
+    }
     return m_device->CreateTopLevelAS(m_command_list, geometry);
 }
 

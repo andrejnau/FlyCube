@@ -365,18 +365,11 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess, info.ScratchDataSizeInBytes, MemoryType::kDefault));
     auto res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
 
-    auto instance_desc_res = std::static_pointer_cast<DXResource>(CreateBuffer(0, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * geometry.size(), MemoryType::kDefault));
-    std::shared_ptr<Resource>& upload_res = instance_desc_res->GetPrivateResource(0);
-    if (!upload_res)
-    {
-        UINT64 buffer_size = GetRequiredIntermediateSize(instance_desc_res->resource.Get(), 0, 1);
-        upload_res = CreateBuffer(0, buffer_size, MemoryType::kUpload);
-    }
-
-    decltype(auto) dx_upload_res = upload_res->As<DXResource>();
+    auto instance_desc_res = std::static_pointer_cast<DXResource>(CreateBuffer(0, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * geometry.size(), MemoryType::kUpload));
+    decltype(auto) dx_instance_desc_res = instance_desc_res->As<DXResource>();
 
     D3D12_RAYTRACING_INSTANCE_DESC* instance_desc = nullptr;
-    ASSERT_SUCCEEDED(dx_upload_res.resource->Map(0, nullptr, reinterpret_cast<void**>(&instance_desc)));
+    ASSERT_SUCCEEDED(dx_instance_desc_res.resource->Map(0, nullptr, reinterpret_cast<void**>(&instance_desc)));
 
     for (size_t i = 0; i < geometry.size(); ++i)
     {
@@ -390,11 +383,11 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
         memcpy(instance_desc[i].Transform, &geometry[i].second, sizeof(instance_desc->Transform));
     }
 
-    dx_upload_res.resource->Unmap(0, nullptr);
+    dx_instance_desc_res.resource->Unmap(0, nullptr);
 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
     acceleration_structure_desc.Inputs = inputs;
-    acceleration_structure_desc.Inputs.InstanceDescs = dx_upload_res.resource->GetGPUVirtualAddress();
+    acceleration_structure_desc.Inputs.InstanceDescs = dx_instance_desc_res.resource->GetGPUVirtualAddress();
     acceleration_structure_desc.DestAccelerationStructureData = res->resource->GetGPUVirtualAddress();
     acceleration_structure_desc.ScratchAccelerationStructureData = scratch->resource->GetGPUVirtualAddress();
     command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);

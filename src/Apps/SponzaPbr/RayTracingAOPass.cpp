@@ -113,8 +113,8 @@ void RayTracingAOPass::OnResize(int width, int height)
 
 void RayTracingAOPass::CreateSizeDependentResources()
 {
-    m_ao = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    m_ao_blur = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_ao = m_context.CreateTexture(BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_ao_blur = m_context.CreateTexture(BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
 }
 
 void RayTracingAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
