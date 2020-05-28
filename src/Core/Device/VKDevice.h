@@ -26,7 +26,8 @@ public:
     std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) override;
     std::shared_ptr<Resource> CreateBottomLevelAS(const std::shared_ptr<CommandList>& command_list, const BufferDesc& vertex, const BufferDesc& index) override;
-    std::shared_ptr<Resource> CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list, const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry) override;
+    std::shared_ptr<Resource> CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list,
+                                               const std::shared_ptr<Resource>& instance_data, uint32_t instance_count) override;
     bool IsDxrSupported() const override;
     void Wait(const std::shared_ptr<Semaphore>& semaphore) override;
     void Signal(const std::shared_ptr<Semaphore>& semaphore) override;

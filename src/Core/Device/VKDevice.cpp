@@ -16,16 +16,6 @@
 #include <Utilities/VKUtility.h>
 #include <set>
 
-struct GeometryInstance
-{
-    glm::mat3x4 transform;
-    uint32_t instanceId : 24;
-    uint32_t mask : 8;
-    uint32_t instance_offset : 24;
-    uint32_t flags : 8;
-    uint64_t handle;
-};
-
 static vk::IndexType GetVkIndexType(gli::format format)
 {
     vk::Format vk_format = static_cast<vk::Format>(format);
@@ -460,7 +450,8 @@ std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::shared_ptr<Co
     return res;
 }
 
-std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list, const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry)
+std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list,
+                                                     const std::shared_ptr<Resource>& instance_data, uint32_t instance_count)
 {
     decltype(auto) vk_command_list = command_list->As<VKCommandList>().GetCommandList();
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
@@ -469,7 +460,7 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
 
     vk::AccelerationStructureInfoNV acceleration_structure_info = {};
     acceleration_structure_info.type = vk::AccelerationStructureTypeNV::eTopLevel;
-    acceleration_structure_info.instanceCount = geometry.size();
+    acceleration_structure_info.instanceCount = instance_count;
 
     vk::AccelerationStructureCreateInfoNV acceleration_structure_ci = {};
     acceleration_structure_ci.info = acceleration_structure_info;
@@ -495,21 +486,7 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
 
     vk::AccelerationStructureInfoNV build_info = {};
     build_info.type = vk::AccelerationStructureTypeNV::eTopLevel;
-    build_info.instanceCount = geometry.size();
-
-    std::vector<GeometryInstance> instances;
-    for (const auto& mesh : geometry)
-    {
-        auto bottom_res = std::static_pointer_cast<VKResource>(mesh.first);
-        GeometryInstance& instance = instances.emplace_back();
-        memcpy(&instance.transform, &mesh.second, sizeof(instance.transform));
-        instance.instanceId = static_cast<uint32_t>(instances.size() - 1);
-        instance.mask = 0xff;
-        instance.handle = bottom_res->as.handle;
-    }
-
-    auto geometry_instance_buffer = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload));
-    geometry_instance_buffer->UpdateUploadData(instances.data(), 0, instances.size() * sizeof(instances.back()));
+    build_info.instanceCount = instance_count;
 
     vk::MemoryRequirements2 mem_req_top_level_as = {};
     memory_requirements_info.accelerationStructure = top_level_as.acceleration_structure.get();
@@ -518,9 +495,11 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
 
     auto scratch = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kRayTracing, mem_req_top_level_as.memoryRequirements.size, MemoryType::kDefault));
 
+    decltype(auto) vk_instance_data = instance_data->As<VKResource>();
+
     vk_command_list.buildAccelerationStructureNV(
         &build_info,
-        geometry_instance_buffer->buffer.res.get(),
+        vk_instance_data.buffer.res.get(),
         0,
         VK_FALSE,
         top_level_as.acceleration_structure.get(),
@@ -536,7 +515,7 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     vk_command_list.pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, 1, &memory_barrier, 0, 0, 0, 0);
 
     res->GetPrivateResource(0) = scratch;
-    res->GetPrivateResource(1) = geometry_instance_buffer;
+    res->GetPrivateResource(1) = instance_data;
 
     return res;
 }

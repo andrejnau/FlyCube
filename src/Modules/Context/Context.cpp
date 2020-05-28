@@ -58,7 +58,20 @@ std::shared_ptr<Resource> Context::CreateTopLevelAS(const std::vector<std::pair<
         m_command_list->EndRenderPass();
         m_is_open_render_pass = false;
     }
-    return m_device->CreateTopLevelAS(m_command_list, geometry);
+    std::vector<GeometryInstance> instances;
+    for (const auto& mesh : geometry)
+    {
+        GeometryInstance& instance = instances.emplace_back();
+        memcpy(&instance.transform, &mesh.second, sizeof(instance.transform));
+        instance.instance_id = static_cast<uint32_t>(instances.size() - 1);
+        instance.instance_mask = 0xff;
+        instance.acceleration_structure_handle = mesh.first->GetAccelerationStructureHandle();
+    }
+
+    auto instance_data = m_device->CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload);
+    instance_data->UpdateUploadData(instances.data(), 0, instances.size() * sizeof(instances.back()));
+
+    return m_device->CreateTopLevelAS(m_command_list, instance_data, geometry.size());
 }
 
 void Context::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch , uint32_t depth_pitch)

@@ -459,3 +459,15 @@ struct BufferCopyRegion
     uint64_t dst_offset;
     uint64_t num_bytes;
 };
+
+struct GeometryInstance
+{
+    glm::mat3x4 transform;
+    uint32_t instance_id : 24;
+    uint32_t instance_mask : 8;
+    uint32_t instance_offset : 24;
+    uint32_t flags : 8;
+    uint64_t acceleration_structure_handle;
+};
+
+static_assert(sizeof(GeometryInstance) == 64);

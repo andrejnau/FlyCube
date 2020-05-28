@@ -29,6 +29,11 @@ uint16_t VKResource::GetMipLevels() const
     return image.level_count;
 }
 
+uint64_t VKResource::GetAccelerationStructureHandle() const
+{
+    return as.handle;
+}
+
 void VKResource::SetName(const std::string& name)
 {
     vk::DebugUtilsObjectNameInfoEXT info = {};

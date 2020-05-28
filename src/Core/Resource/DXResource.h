@@ -14,6 +14,7 @@ public:
     uint32_t GetHeight() const override;
     uint16_t GetDepthOrArraySize() const override;
     uint16_t GetMipLevels() const override;
+    uint64_t GetAccelerationStructureHandle() const override;
     void SetName(const std::string& name) override;
     uint8_t* Map() override;
     void Unmap() override;

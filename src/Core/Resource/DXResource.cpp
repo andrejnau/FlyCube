@@ -28,6 +28,11 @@ uint16_t DXResource::GetMipLevels() const
     return desc.MipLevels;
 }
 
+uint64_t DXResource::GetAccelerationStructureHandle() const
+{
+    return resource->GetGPUVirtualAddress();
+}
+
 void DXResource::SetName(const std::string& name)
 {
     resource->SetName(utf8_to_wstring(name).c_str());

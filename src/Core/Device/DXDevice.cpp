@@ -347,7 +347,8 @@ std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::shared_ptr<Co
     return res;
 }
 
-std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list, const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry)
+std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list,
+                                                     const std::shared_ptr<Resource>& instance_data, uint32_t instance_count)
 {
     ComPtr<ID3D12Device5> device5;
     m_device.As(&device5);
@@ -358,7 +359,7 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
     inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-    inputs.NumDescs = geometry.size();
+    inputs.NumDescs = instance_count;
 
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
     device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
@@ -366,29 +367,11 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess, info.ScratchDataSizeInBytes, MemoryType::kDefault));
     auto res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
 
-    auto instance_desc_res = std::static_pointer_cast<DXResource>(CreateBuffer(0, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * geometry.size(), MemoryType::kUpload));
-    decltype(auto) dx_instance_desc_res = instance_desc_res->As<DXResource>();
-
-    D3D12_RAYTRACING_INSTANCE_DESC* instance_desc = nullptr;
-    ASSERT_SUCCEEDED(dx_instance_desc_res.resource->Map(0, nullptr, reinterpret_cast<void**>(&instance_desc)));
-
-    for (size_t i = 0; i < geometry.size(); ++i)
-    {
-        auto res = std::static_pointer_cast<DXResource>(geometry[i].first);
-
-        instance_desc[i] = {};
-        instance_desc[i].InstanceID = i;
-        instance_desc[i].AccelerationStructure = res->resource->GetGPUVirtualAddress();
-        instance_desc[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-        instance_desc[i].InstanceMask = 0xFF;
-        memcpy(instance_desc[i].Transform, &geometry[i].second, sizeof(instance_desc->Transform));
-    }
-
-    dx_instance_desc_res.resource->Unmap(0, nullptr);
+    decltype(auto) dx_instance_data = instance_data->As<DXResource>();
 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
     acceleration_structure_desc.Inputs = inputs;
-    acceleration_structure_desc.Inputs.InstanceDescs = dx_instance_desc_res.resource->GetGPUVirtualAddress();
+    acceleration_structure_desc.Inputs.InstanceDescs = dx_instance_data.resource->GetGPUVirtualAddress();
     acceleration_structure_desc.DestAccelerationStructureData = res->resource->GetGPUVirtualAddress();
     acceleration_structure_desc.ScratchAccelerationStructureData = scratch->resource->GetGPUVirtualAddress();
     command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
@@ -399,7 +382,7 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
     command_list4->ResourceBarrier(1, &uav_barrier);
 
     res->GetPrivateResource(0) = scratch;
-    res->GetPrivateResource(1) = instance_desc_res;
+    res->GetPrivateResource(1) = instance_data;
 
     return res;
 }
