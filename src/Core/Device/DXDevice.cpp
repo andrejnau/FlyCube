@@ -16,12 +16,20 @@
 #include <d3dx12.h>
 #include <gli/dx.hpp>
 
+// RenderDoc UUID {A7AA6116-9C8D-4BBA-9083-B4D816B71B78}
+static const GUID IRenderDoc_uuid = {
+    0xa7aa6116, 0x9c8d, 0x4bba, {0x90, 0x83, 0xb4, 0xd8, 0x16, 0xb7, 0x1b, 0x78} };
+
 DXDevice::DXDevice(DXAdapter& adapter)
     : m_adapter(adapter)
     , m_cpu_descriptor_pool(*this)
     , m_gpu_descriptor_pool(*this)
 {
     ASSERT_SUCCEEDED(D3D12CreateDevice(m_adapter.GetAdapter().Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&m_device)));
+
+    ComPtr<IUnknown> renderdoc;
+    m_device->QueryInterface(IRenderDoc_uuid, reinterpret_cast<void**>(renderdoc.GetAddressOf()));
+    m_is_renderdoc_present = !!renderdoc;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature_support = {};
     ASSERT_SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support, sizeof(feature_support)));
@@ -453,4 +461,9 @@ DXCPUDescriptorPool& DXDevice::GetCPUDescriptorPool()
 DXGPUDescriptorPool& DXDevice::GetGPUDescriptorPool()
 {
     return m_gpu_descriptor_pool;
+}
+
+bool DXDevice::IsRenderdocPresent() const
+{
+    return m_is_renderdoc_present;
 }

@@ -42,6 +42,7 @@ public:
     ComPtr<ID3D12CommandQueue> GetCommandQueue();
     DXCPUDescriptorPool& GetCPUDescriptorPool();
     DXGPUDescriptorPool& GetGPUDescriptorPool();
+    bool IsRenderdocPresent() const;
 
 private:
     DXAdapter& m_adapter;
@@ -50,4 +51,5 @@ private:
     DXCPUDescriptorPool m_cpu_descriptor_pool;
     DXGPUDescriptorPool m_gpu_descriptor_pool;
     bool m_is_dxr_supported = false;
+    bool m_is_renderdoc_present = false;
 };

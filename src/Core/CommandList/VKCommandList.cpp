@@ -94,8 +94,6 @@ void VKCommandList::EndRenderPass()
 
 void VKCommandList::BeginEvent(const std::string& name)
 {
-    if (!m_debug_regions)
-        return;
     vk::DebugUtilsLabelEXT label = {};
     label.pLabelName = name.c_str();
     m_command_list->beginDebugUtilsLabelEXT(&label);
@@ -103,8 +101,6 @@ void VKCommandList::BeginEvent(const std::string& name)
 
 void VKCommandList::EndEvent()
 {
-    if (!m_debug_regions)
-        return;
     m_command_list->endDebugUtilsLabelEXT();
 }
 

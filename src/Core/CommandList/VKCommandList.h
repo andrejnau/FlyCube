@@ -39,5 +39,4 @@ private:
     vk::UniqueCommandBuffer m_command_list;
     std::shared_ptr<Pipeline> m_state;
     std::shared_ptr<BindingSet> m_binding_set;
-    static constexpr bool m_debug_regions = false;
 };
