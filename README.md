@@ -32,30 +32,27 @@ uint32_t frame_count = 3;
 std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count, settings.vsync);
 
 std::vector<uint32_t> index_data = { 0, 1, 2 };
-std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * index_data.size(), sizeof(uint32_t));
-std::vector<glm::vec3> vertex_data = { glm::vec3(-0.5, -0.5, 0.0), glm::vec3(0.0,  0.5, 0.0), glm::vec3(0.5, -0.5, 0.0) };
-std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVbv, sizeof(vertex_data.front()) * vertex_data.size(), sizeof(vertex_data.front()));
-glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
-std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kCbv, sizeof(constant_data), 0);
+std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIndexBuffer, sizeof(uint32_t) * index_data.size(), MemoryType::kUpload);
+index_buffer->UpdateUploadData(index_data.data(), 0, sizeof(index_data.front()) * index_data.size());
 
-std::shared_ptr<CommandList> upload_command_list = device->CreateCommandList();
-upload_command_list->Open();
-upload_command_list->UpdateSubresource(index_buffer, 0, index_data.data());
-upload_command_list->UpdateSubresource(vertex_buffer, 0, vertex_data.data());
-upload_command_list->UpdateSubresource(constant_buffer, 0, &constant_data);
-upload_command_list->Close();
-device->ExecuteCommandLists({ upload_command_list });
+std::vector<glm::vec3> vertex_data = { glm::vec3(-0.5, -0.5, 0.0), glm::vec3(0.0,  0.5, 0.0), glm::vec3(0.5, -0.5, 0.0) };
+std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVertexBuffer, sizeof(vertex_data.front()) * vertex_data.size(), MemoryType::kUpload);
+vertex_buffer->UpdateUploadData(vertex_data.data(), 0, sizeof(vertex_data.front()) * vertex_data.size());
+
+glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
+std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kConstantBuffer, sizeof(constant_data), MemoryType::kUpload);
+constant_buffer->UpdateUploadData(&constant_data, 0, sizeof(constant_data));
 
 ViewDesc constant_view_desc = {};
-constant_view_desc.res_type = ResourceType::kCbv;
+constant_view_desc.view_type = ViewType::kConstantBuffer;
 std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, constant_view_desc);
 std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex });
 std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
 std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
-std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { ShaderType::kPixel, ResourceType::kCbv, "Settings", constant_buffer_view } });
+std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { ShaderType::kPixel, ViewType::kConstantBuffer, "Settings", constant_buffer_view } });
 GraphicsPipelineDesc pipeline_desc = {
     program,
-    { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32 } },
+    { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
     { { 0, swapchain->GetFormat() } },
 };
 std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
@@ -67,9 +64,9 @@ for (uint32_t i = 0; i < frame_count; ++i)
 {
     std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
     ViewDesc back_buffer_view_desc = {};
-    back_buffer_view_desc.res_type = ResourceType::kRtv;
+    back_buffer_view_desc.view_type = ViewType::kRenderTarget;
     std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
-    framebuffers.emplace_back(device->CreateFramebuffer(pipeline, { back_buffer_view }));
+    framebuffers.emplace_back(device->CreateFramebuffer(pipeline, rect.width, rect.height, { back_buffer_view }));
     command_lists.emplace_back(device->CreateCommandList());
     std::shared_ptr<CommandList> command_list = command_lists[i];
     command_list->Open();
