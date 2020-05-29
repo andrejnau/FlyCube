@@ -20,7 +20,6 @@ public:
     void Unmap() override;
 
     ComPtr<ID3D12Resource> resource;
-    D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
     D3D12_RESOURCE_DESC desc = {};
     D3D12_SAMPLER_DESC sampler_desc = {};
 

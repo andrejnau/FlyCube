@@ -164,50 +164,45 @@ void DXCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth
     command_list4->DispatchRays(&raytrace_desc);
 }
 
-void DXCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
+void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
 {
-    if (!resource || resource->GetMemoryType() != MemoryType::kDefault)
-        return;
-
-    decltype(auto) dx_resource = resource->As<DXResource>();
-    D3D12_RESOURCE_STATES dx_state = {};
-    switch (state)
+    std::vector<D3D12_RESOURCE_BARRIER> dx_barriers;
+    for (const auto& barrier : barriers)
     {
-    case ResourceState::kCommon:
-        dx_state = D3D12_RESOURCE_STATE_COMMON;
-        break;
-    case ResourceState::kPresent:
-        dx_state = D3D12_RESOURCE_STATE_PRESENT;
-        break;
-    case ResourceState::kClearColor:
-    case ResourceState::kRenderTarget:
-        dx_state = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        break;
-    case ResourceState::kClearDepth:
-    case ResourceState::kDepthTarget:
-        dx_state = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-        break;
-    case ResourceState::kUnorderedAccess:
-        dx_state = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        break;
-    case ResourceState::kPixelShaderResource:
-        dx_state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-        break;
-    case ResourceState::kNonPixelShaderResource:
-        dx_state = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-        break;
-    case ResourceState::kCopyDest:
-        dx_state = D3D12_RESOURCE_STATE_COPY_DEST;
-        break;
-    case ResourceState::kVertexAndConstantBuffer:
-        dx_state = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-        break;
-    case ResourceState::kIndexBuffer:
-        dx_state = D3D12_RESOURCE_STATE_INDEX_BUFFER;
-        break;
-    }
+        if (!barrier.resource)
+        {
+            assert(false);
+            continue;
+        }
 
-    ResourceBarrier(dx_resource, dx_state);
+        decltype(auto) dx_resource = barrier.resource->As<DXResource>();
+        D3D12_RESOURCE_STATES dx_state_before = ConvertSate(barrier.state_before);
+        D3D12_RESOURCE_STATES dx_state_after = ConvertSate(barrier.state_after);
+        if (dx_state_before == dx_state_after)
+            continue;
+
+        assert(barrier.base_mip_level + barrier.level_count <= dx_resource.desc.MipLevels);
+        assert(barrier.base_array_layer + barrier.layer_count <= dx_resource.desc.DepthOrArraySize);
+
+        if (barrier.base_mip_level == 0 && barrier.level_count == dx_resource.desc.MipLevels &&
+            barrier.base_array_layer == 0 && barrier.layer_count == dx_resource.desc.DepthOrArraySize)
+        {
+            dx_barriers.emplace_back(CD3DX12_RESOURCE_BARRIER::Transition(dx_resource.resource.Get(), dx_state_before, dx_state_after));
+        }
+        else
+        {
+            for (uint32_t i = barrier.base_mip_level; i < barrier.base_mip_level + barrier.level_count; ++i)
+            {
+                for (uint32_t j = barrier.base_array_layer; j < barrier.base_array_layer + barrier.layer_count; ++j)
+                {
+                    uint32_t subresource = i + j * dx_resource.desc.MipLevels;
+                    dx_barriers.emplace_back(CD3DX12_RESOURCE_BARRIER::Transition(dx_resource.resource.Get(), dx_state_before, dx_state_after, subresource));
+                }
+            }
+        }
+    }
+    if (!dx_barriers.empty())
+        m_command_list->ResourceBarrier(dx_barriers.size(), dx_barriers.data());
 }
 
 void DXCommandList::SetViewport(float width, float height)
@@ -313,13 +308,4 @@ void DXCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
 ComPtr<ID3D12GraphicsCommandList> DXCommandList::GetCommandList()
 {
     return m_command_list;
-}
-
-void DXCommandList::ResourceBarrier(DXResource& resource, D3D12_RESOURCE_STATES state)
-{
-    if (resource.state == D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)
-        return;
-    if (resource.state != state)
-        m_command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource.resource.Get(), resource.state, state));
-    resource.state = state;
 }

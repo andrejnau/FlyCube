@@ -48,6 +48,10 @@ std::shared_ptr<Resource> Context::CreateBottomLevelAS(const BufferDesc& vertex,
         m_command_list->EndRenderPass();
         m_is_open_render_pass = false;
     }
+    if (vertex.res)
+        ResourceBarrier(vertex.res, ResourceState::kNonPixelShaderResource);
+    if (index.res)
+        ResourceBarrier(index.res, ResourceState::kNonPixelShaderResource);
     return m_device->CreateBottomLevelAS(m_command_list, vertex, index);
 }
 
@@ -107,7 +111,7 @@ void Context::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource
         std::vector<BufferCopyRegion> regions;
         auto& region = regions.emplace_back();
         region.num_bytes = buffer_size;
-        m_command_list->ResourceBarrier(resource, ResourceState::kCopyDest);
+        ResourceBarrier(resource, ResourceState::kCopyDest);
         m_command_list->CopyBuffer(upload_resource, resource, regions);
         break;
     }
@@ -128,7 +132,7 @@ void Context::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource
             upload_resource = m_device->CreateBuffer(BindFlag::kCopySource, num_bytes, MemoryType::kUpload);
         upload_resource->UpdateSubresource(0, row_bytes, num_bytes, data, row_pitch, depth_pitch, num_rows, region.texture_extent.depth);
 
-        m_command_list->ResourceBarrier(resource, ResourceState::kCopyDest);
+        ResourceBarrier(resource, ResourceState::kCopyDest);
         m_command_list->CopyBufferToTexture(upload_resource, resource, regions);
         break;
     }
@@ -150,13 +154,13 @@ void Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t b
 
 void Context::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {
-    m_command_list->ResourceBarrier(resource, ResourceState::kIndexBuffer);
+    ResourceBarrier(resource, ResourceState::kIndexBuffer);
     m_command_list->IASetIndexBuffer(resource, format);
 }
 
 void Context::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
-    m_command_list->ResourceBarrier(resource, ResourceState::kVertexAndConstantBuffer);
+    ResourceBarrier(resource, ResourceState::kVertexAndConstantBuffer);
     m_command_list->IASetVertexBuffer(slot, resource);
 }
 
@@ -225,7 +229,7 @@ void Context::Present()
         m_command_list->EndRenderPass();
         m_is_open_render_pass = false;
     }
-    m_command_list->ResourceBarrier(GetBackBuffer(), ResourceState::kPresent);
+    ResourceBarrier(GetBackBuffer(), ResourceState::kPresent);
     m_command_list->Close();
     m_fence->WaitAndReset();
     m_swapchain->NextImage(m_image_available_semaphore);
@@ -241,6 +245,20 @@ void Context::Present()
 
     for (auto& x : m_created_program)
         x->OnPresent();
+}
+
+void Context::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
+{
+    if (!resource)
+        return;
+    ResourceBarrierDesc barrier = {};
+    barrier.resource = resource;
+    barrier.state_before = resource->GetResourceState();
+    barrier.state_after = state;
+    barrier.level_count = resource->GetMipLevels();
+    barrier.layer_count = resource->GetDepthOrArraySize();
+    m_command_list->ResourceBarrier({ barrier });
+    resource->SetResourceState(state);
 }
 
 void Context::OnResize(int width, int height)

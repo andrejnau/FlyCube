@@ -47,6 +47,8 @@ public:
     std::shared_ptr<Resource> GetBackBuffer();
     void Present();
 
+    void ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state);
+
     bool IsDxrSupported() const;
 
     void OnResize(int width, int height);

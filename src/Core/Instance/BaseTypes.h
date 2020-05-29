@@ -11,6 +11,7 @@
 enum class ResourceState
 {
     kCommon,
+    kGenericRead,
     kClearColor,
     kClearDepth,
     kPresent,
@@ -20,8 +21,10 @@ enum class ResourceState
     kNonPixelShaderResource,
     kUnorderedAccess,
     kCopyDest,
+    kCopySource,
     kVertexAndConstantBuffer,
     kIndexBuffer,
+    kRaytracingAccelerationStructure
 };
 
 enum class ResourceDimension
@@ -471,3 +474,14 @@ struct GeometryInstance
 };
 
 static_assert(sizeof(GeometryInstance) == 64);
+
+struct ResourceBarrierDesc
+{
+    std::shared_ptr<Resource> resource;
+    ResourceState state_before;
+    ResourceState state_after;
+    uint32_t base_mip_level = 0;
+    uint32_t level_count = 1;
+    uint32_t base_array_layer = 0;
+    uint32_t layer_count = 1;
+};

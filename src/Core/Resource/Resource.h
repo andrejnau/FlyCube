@@ -17,6 +17,8 @@ public:
     virtual uint16_t GetDepthOrArraySize() const = 0;
     virtual uint16_t GetMipLevels() const = 0;
     virtual uint64_t GetAccelerationStructureHandle() const = 0;
+    virtual ResourceState GetResourceState() const = 0;
+    virtual void SetResourceState(ResourceState state) = 0;
     virtual void SetName(const std::string& name) = 0;
     virtual void UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes) = 0;
     virtual void UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,

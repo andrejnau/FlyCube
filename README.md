@@ -70,9 +70,9 @@ for (uint32_t i = 0; i < frame_count; ++i)
     command_lists.emplace_back(device->CreateCommandList());
     std::shared_ptr<CommandList> command_list = command_lists[i];
     command_list->Open();
-    command_list->ResourceBarrier(back_buffer, ResourceState::kClearColor);
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kClearColor} });
     command_list->ClearColor(back_buffer_view, { 0.0, 0.2, 0.4, 1.0 });
-    command_list->ResourceBarrier(back_buffer, ResourceState::kRenderTarget);
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kClearColor, ResourceState::kRenderTarget} });
     command_list->BindPipeline(pipeline);
     command_list->BindBindingSet(binding_set);
     command_list->BeginRenderPass(framebuffers.back());
@@ -81,7 +81,7 @@ for (uint32_t i = 0; i < frame_count; ++i)
     command_list->IASetVertexBuffer(0, vertex_buffer);
     command_list->DrawIndexed(3, 0, 0);
     command_list->EndRenderPass();
-    command_list->ResourceBarrier(back_buffer, ResourceState::kPresent);
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent} });
     command_list->Close();
 }
 

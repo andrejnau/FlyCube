@@ -277,9 +277,9 @@ void ProgramApi::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& co
         m_context.m_command_list->EndRenderPass();
         m_context.m_is_open_render_pass = false;
     }
-    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kClearColor);
+    m_context.ResourceBarrier(view->GetResource(), ResourceState::kClearColor);
     m_context.m_command_list->ClearColor(view, color);
-    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kRenderTarget);
+    m_context.ResourceBarrier(view->GetResource(), ResourceState::kRenderTarget);
 }
 
 void ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)
@@ -292,9 +292,9 @@ void ProgramApi::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Ste
         m_context.m_command_list->EndRenderPass();
         m_context.m_is_open_render_pass = false;
     }
-    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kClearDepth);
+    m_context.ResourceBarrier(view->GetResource(), ResourceState::kClearDepth);
     m_context.m_command_list->ClearDepth(view, Depth);
-    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kDepthTarget);
+    m_context.ResourceBarrier(view->GetResource(), ResourceState::kDepthTarget);
 }
 
 void ProgramApi::SetRasterizeState(const RasterizerDesc& desc)
@@ -348,9 +348,9 @@ void ProgramApi::OnAttachSRV(const BindKeyOld& bind_key, const std::shared_ptr<V
     auto resource = view->GetResource();
 
     if (bind_key.shader_type == ShaderType::kPixel)
-        m_context.m_command_list->ResourceBarrier(resource, ResourceState::kPixelShaderResource);
+        m_context.ResourceBarrier(resource, ResourceState::kPixelShaderResource);
     else
-        m_context.m_command_list->ResourceBarrier(resource, ResourceState::kNonPixelShaderResource);
+        m_context.ResourceBarrier(resource, ResourceState::kNonPixelShaderResource);
 }
 
 void ProgramApi::OnAttachUAV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
@@ -361,7 +361,7 @@ void ProgramApi::OnAttachUAV(const BindKeyOld& bind_key, const std::shared_ptr<V
         m_context.m_is_open_render_pass = false;
     }
 
-    m_context.m_command_list->ResourceBarrier(view->GetResource(), ResourceState::kUnorderedAccess);
+    m_context.ResourceBarrier(view->GetResource(), ResourceState::kUnorderedAccess);
 }
 
 void ProgramApi::OnAttachRTV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
@@ -372,12 +372,12 @@ void ProgramApi::OnAttachRTV(const BindKeyOld& bind_key, const std::shared_ptr<V
     render_target.slot = bind_key.slot;
     auto resource = view->GetResource();
     render_target.format = resource->GetFormat();
-    m_context.m_command_list->ResourceBarrier(resource, ResourceState::kRenderTarget);
+    m_context.ResourceBarrier(resource, ResourceState::kRenderTarget);
 }
 
 void ProgramApi::OnAttachDSV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
 {
     auto resource = view->GetResource();
     m_graphic_pipeline_desc.dsv.format = resource->GetFormat();
-    m_context.m_command_list->ResourceBarrier(resource, ResourceState::kDepthTarget);
+    m_context.ResourceBarrier(resource, ResourceState::kDepthTarget);
 }

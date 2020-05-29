@@ -16,6 +16,44 @@
 #include <d3dx12.h>
 #include <gli/dx.hpp>
 
+D3D12_RESOURCE_STATES ConvertSate(ResourceState state)
+{
+    switch (state)
+    {
+    case ResourceState::kCommon:
+        return D3D12_RESOURCE_STATE_COMMON;
+    case ResourceState::kGenericRead:
+        return D3D12_RESOURCE_STATE_GENERIC_READ;
+    case ResourceState::kPresent:
+        return D3D12_RESOURCE_STATE_PRESENT;
+    case ResourceState::kClearColor:
+    case ResourceState::kRenderTarget:
+        return D3D12_RESOURCE_STATE_RENDER_TARGET;
+    case ResourceState::kClearDepth:
+    case ResourceState::kDepthTarget:
+        return D3D12_RESOURCE_STATE_DEPTH_WRITE;
+    case ResourceState::kUnorderedAccess:
+        return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    case ResourceState::kPixelShaderResource:
+        return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    case ResourceState::kNonPixelShaderResource:
+        return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    case ResourceState::kCopyDest:
+        return D3D12_RESOURCE_STATE_COPY_DEST;
+    case ResourceState::kCopySource:
+        return D3D12_RESOURCE_STATE_COPY_SOURCE;
+    case ResourceState::kVertexAndConstantBuffer:
+        return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+    case ResourceState::kIndexBuffer:
+        return D3D12_RESOURCE_STATE_INDEX_BUFFER;
+    case ResourceState::kRaytracingAccelerationStructure:
+        return D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+    default:
+        assert(false);
+        return D3D12_RESOURCE_STATE_COMMON;
+    }
+}
+
 // RenderDoc UUID {A7AA6116-9C8D-4BBA-9083-B4D816B71B78}
 static const GUID IRenderDoc_uuid = {
     0xa7aa6116, 0x9c8d, 0x4bba, {0x90, 0x83, 0xb4, 0xd8, 0x16, 0xb7, 0x1b, 0x78} };
@@ -122,7 +160,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
     if (bind_flag & BindFlag::kUnorderedAccess)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
-    res->state = D3D12_RESOURCE_STATE_COPY_DEST;
+    res->SetResourceState(ResourceState::kCopyDest);
 
     D3D12_CLEAR_VALUE* p_clear_value = nullptr;
     D3D12_CLEAR_VALUE clear_value = {};
@@ -151,7 +189,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
         &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
         D3D12_HEAP_FLAG_NONE,
         &desc,
-        res->state,
+        ConvertSate(res->GetResourceState()),
         p_clear_value,
         IID_PPV_ARGS(&res->resource)));
     res->desc = desc;
@@ -171,7 +209,7 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
 
-    res->state = D3D12_RESOURCE_STATE_COMMON;
+    res->SetResourceState(ResourceState::kCommon);
     res->memory_type = memory_type;
     res->resource_type = ResourceType::kBuffer;
 
@@ -182,7 +220,7 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     if (bind_flag & BindFlag::kUnorderedAccess)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     if (bind_flag & BindFlag::kAccelerationStructure)
-        res->state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+        res->SetResourceState(ResourceState::kRaytracingAccelerationStructure);
 
     D3D12_HEAP_TYPE heap_type;
     if (memory_type == MemoryType::kDefault)
@@ -192,14 +230,14 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     else if (memory_type == MemoryType::kUpload)
     {
         heap_type = D3D12_HEAP_TYPE_UPLOAD;
-        res->state = D3D12_RESOURCE_STATE_GENERIC_READ;
+        res->SetResourceState(ResourceState::kGenericRead);
     }
 
     m_device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(heap_type),
         D3D12_HEAP_FLAG_NONE,
         &desc,
-        res->state,
+        ConvertSate(res->GetResourceState()),
         nullptr,
         IID_PPV_ARGS(&res->resource));
     res->desc = desc;
@@ -303,11 +341,6 @@ std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::shared_ptr<Co
 
     auto vertex_res = std::static_pointer_cast<DXResource>(vertex.res);
     auto index_res = std::static_pointer_cast<DXResource>(index.res);
-
-    if (vertex_res)
-        command_list->ResourceBarrier(vertex_res, ResourceState::kNonPixelShaderResource);
-    if (index_res)
-        command_list->ResourceBarrier(index_res, ResourceState::kNonPixelShaderResource);
 
     D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
     geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;

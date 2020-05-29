@@ -29,7 +29,6 @@ public:
     {
         vk::UniqueImage res;
         vk::UniqueDeviceMemory memory;
-        std::map<VkImageSubresourceRange, vk::ImageLayout> layout;
         vk::Format format = vk::Format::eUndefined;
         vk::Extent2D size = {};
         size_t level_count = 1;

@@ -15,6 +15,16 @@ MemoryType ResourceBase::GetMemoryType() const
     return memory_type;
 }
 
+ResourceState ResourceBase::GetResourceState() const
+{
+    return m_state;
+}
+
+void ResourceBase::SetResourceState(ResourceState state)
+{
+    m_state = state;
+}
+
 void ResourceBase::UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes)
 {
     void* dst_data = Map();

@@ -53,3 +53,5 @@ private:
     bool m_is_dxr_supported = false;
     bool m_is_renderdoc_present = false;
 };
+
+D3D12_RESOURCE_STATES ConvertSate(ResourceState state);
