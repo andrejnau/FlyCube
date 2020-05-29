@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
         command_list->BeginRenderPass(framebuffers.back());
         command_list->SetViewport(rect.width, rect.height);
         command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
-        command_list->IASetVertexBuffer(0, vertex_buffer, sizeof(vertex_data.front()));
+        command_list->IASetVertexBuffer(0, vertex_buffer);
         command_list->DrawIndexed(3, 0, 0);
         command_list->EndRenderPass();
         command_list->ResourceBarrier(back_buffer, ResourceState::kPresent);

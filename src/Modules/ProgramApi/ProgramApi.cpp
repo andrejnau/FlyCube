@@ -27,12 +27,6 @@ void ProgramApi::OnSetViewport(uint32_t width, uint32_t height)
     m_height = height;
 }
 
-uint32_t ProgramApi::GetStrideByVertexSlot(uint32_t slot)
-{
-    assert(m_graphic_pipeline_desc.input.at(slot).slot == slot);
-    return m_graphic_pipeline_desc.input.at(slot).stride;
-}
-
 void ProgramApi::ProgramDetach()
 {
     m_framebuffer.reset();

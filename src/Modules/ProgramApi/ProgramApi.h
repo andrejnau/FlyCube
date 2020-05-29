@@ -26,7 +26,6 @@ public:
 
     size_t GetProgramId() const;
     void OnSetViewport(uint32_t width, uint32_t height);
-    uint32_t GetStrideByVertexSlot(uint32_t slot);
     void ProgramDetach();
     void OnPresent();
     void SetBindingName(const BindKeyOld& bind_key, const std::string& name);

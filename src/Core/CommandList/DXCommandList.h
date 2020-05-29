@@ -28,7 +28,7 @@ public:
     void ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state) override;
     void SetViewport(float width, float height) override;
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) override;
-    void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride) override;
+    void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override;
     void CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
                     const std::vector<BufferCopyRegion>& regions) override;
     void CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
@@ -38,6 +38,7 @@ public:
 
 private:
     void ResourceBarrier(DXResource& resource, D3D12_RESOURCE_STATES state);
+    void IASetVertexBufferImpl(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride);
 
     DXDevice& m_device;
     ComPtr<ID3D12CommandAllocator> m_command_allocator;
@@ -45,4 +46,5 @@ private:
     std::vector<ComPtr<ID3D12DescriptorHeap>> m_heaps;
     std::shared_ptr<Pipeline> m_state;
     std::shared_ptr<BindingSet> m_binding_set;
+    std::map<uint32_t, std::shared_ptr<Resource>> m_lazy_vertex;
 };

@@ -157,7 +157,7 @@ void Context::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::f
 void Context::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
     m_command_list->ResourceBarrier(resource, ResourceState::kVertexAndConstantBuffer);
-    m_command_list->IASetVertexBuffer(slot, resource, m_current_program->GetStrideByVertexSlot(slot));
+    m_command_list->IASetVertexBuffer(slot, resource);
 }
 
 void Context::UseProgram(ProgramApi& program)

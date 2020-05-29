@@ -16,7 +16,7 @@ public:
     const GraphicsPipelineDesc& GetDesc() const;
     const ComPtr<ID3D12PipelineState>& GetPipeline() const;
     const ComPtr<ID3D12RootSignature>& GetRootSignature() const;
-    uint32_t GetStrideByVertexSlot(uint32_t slot) const;
+    const std::map<size_t, uint32_t>& GetStrideMap() const;
 
 private:
     void FillRTVFormats();

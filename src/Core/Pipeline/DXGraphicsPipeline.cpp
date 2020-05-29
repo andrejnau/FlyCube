@@ -201,7 +201,7 @@ const ComPtr<ID3D12RootSignature>& DXGraphicsPipeline::GetRootSignature() const
     return m_root_signature;
 }
 
-uint32_t DXGraphicsPipeline::GetStrideByVertexSlot(uint32_t slot) const
+const std::map<size_t, uint32_t>& DXGraphicsPipeline::GetStrideMap() const
 {
-    return m_input_layout_stride.at(slot);
+    return m_input_layout_stride;
 }

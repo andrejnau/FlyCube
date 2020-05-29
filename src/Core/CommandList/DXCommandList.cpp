@@ -30,6 +30,7 @@ void DXCommandList::Open()
     m_heaps.clear();
     m_state.reset();
     m_binding_set.reset();
+    m_lazy_vertex.clear();
 }
 
 void DXCommandList::Close()
@@ -48,6 +49,14 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
         m_command_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         m_command_list->SetGraphicsRootSignature(dx_state.GetRootSignature().Get());
         m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
+        for (const auto& x : dx_state.GetStrideMap())
+        {
+            auto it = m_lazy_vertex.find(x.first);
+            if (it != m_lazy_vertex.end())
+                IASetVertexBufferImpl(x.first, it->second, x.second);
+            else
+                IASetVertexBufferImpl(x.first, {}, 0);
+        }
     }
     else if (type == PipelineType::kCompute)
     {
@@ -227,13 +236,31 @@ void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
     m_command_list->IASetIndexBuffer(&index_buffer_view);
 }
 
-void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride)
+void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
-    decltype(auto) dx_resource = resource->As<DXResource>();
+    if (m_state && m_state->GetPipelineType() == PipelineType::kGraphics)
+    {
+        decltype(auto) dx_state = m_state->As<DXGraphicsPipeline>();
+        auto& strides = dx_state.GetStrideMap();
+        auto it = strides.find(slot);
+        if (it != strides.end())
+            IASetVertexBufferImpl(slot, resource, it->second);
+        else
+            IASetVertexBufferImpl(slot, {}, 0);
+    }
+    m_lazy_vertex[slot] = resource;
+}
+
+void DXCommandList::IASetVertexBufferImpl(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride)
+{
     D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view = {};
-    vertex_buffer_view.BufferLocation = dx_resource.resource->GetGPUVirtualAddress();
-    vertex_buffer_view.SizeInBytes = dx_resource.desc.Width;
-    vertex_buffer_view.StrideInBytes = stride;
+    if (resource)
+    {
+        decltype(auto) dx_resource = resource->As<DXResource>();
+        vertex_buffer_view.BufferLocation = dx_resource.resource->GetGPUVirtualAddress();
+        vertex_buffer_view.SizeInBytes = dx_resource.desc.Width;
+        vertex_buffer_view.StrideInBytes = stride;
+    }
     m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
 }
 
