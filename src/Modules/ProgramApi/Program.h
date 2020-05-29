@@ -17,7 +17,7 @@ class Binding
 public:
     Binding(ProgramApi& program_api, ShaderType shader_type, ViewType view_type, uint32_t slot, const std::string& name)
         : m_program_api(program_api)
-        , m_key{ program_api.GetProgramId(), shader_type, view_type, slot }
+        , m_key{ shader_type, view_type, slot }
     {
         m_program_api.SetBindingName(m_key, name);
     }
@@ -30,7 +30,7 @@ public:
 
 protected:
     ProgramApi& m_program_api;
-    BindKeyOld m_key;
+    BindKey m_key;
 };
 
 class SRVBinding : public Binding<SRVBinding>

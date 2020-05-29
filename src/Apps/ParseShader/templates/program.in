@@ -82,10 +82,10 @@ public:
         , sampler(program_api)
         , cbuffer_impl(*this)
     {
-        program_api.AddAvailableShaderType(type);      
+        program_api.AddAvailableShaderType(type);
         {{#CBuffers}}
         {
-            BindKeyOld bind_key = { program_api.GetProgramId(), type, ViewType::kConstantBuffer, {{BufferIndex}} };
+            BindKey bind_key = { type, ViewType::kConstantBuffer, {{BufferIndex}} };
             program_api.SetCBufferLayout(bind_key, cbuffer_impl.{{BufferName}});
             program_api.SetBindingName(bind_key, "{{BufferName}}");
         }

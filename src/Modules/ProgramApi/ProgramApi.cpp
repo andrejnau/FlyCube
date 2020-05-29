@@ -2,23 +2,11 @@
 #include "ProgramApi/BufferLayout.h"
 #include <Context/Context.h>
 
-static size_t GenId()
-{
-    static size_t id = 0;
-    return ++id;
-}
-
 ProgramApi::ProgramApi(Context& context)
     : m_context(context)
     , m_cbv_data(context.FrameCount)
-    , m_program_id(GenId())
     , m_device(*context.m_device)
 {
-}
-
-size_t ProgramApi::GetProgramId() const
-{
-    return m_program_id;
 }
 
 void ProgramApi::OnSetViewport(uint32_t width, uint32_t height)
@@ -37,12 +25,12 @@ void ProgramApi::OnPresent()
     m_cbv_data[m_context.GetFrameIndex()].cbv_offset.clear();
 }
 
-void ProgramApi::SetBindingName(const BindKeyOld& bind_key, const std::string& name)
+void ProgramApi::SetBindingName(const BindKey& bind_key, const std::string& name)
 {
     m_binding_names[bind_key] = name;
 }
 
-const std::string& ProgramApi::GetBindingName(const BindKeyOld& bind_key) const
+const std::string& ProgramApi::GetBindingName(const BindKey& bind_key) const
 {
     auto it = m_binding_names.find(bind_key);
     if (it == m_binding_names.end())
@@ -191,14 +179,14 @@ void ProgramApi::CompileShader(const ShaderBase& shader)
     m_shader_by_type[shader.type] = m_shaders.back();
 }
 
-void ProgramApi::SetCBufferLayout(const BindKeyOld& bind_key, BufferLayout& buffer_layout)
+void ProgramApi::SetCBufferLayout(const BindKey& bind_key, BufferLayout& buffer_layout)
 {
     m_cbv_layout.emplace(std::piecewise_construct,
         std::forward_as_tuple(bind_key),
         std::forward_as_tuple(buffer_layout));
 }
 
-void ProgramApi::SetBinding(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
+void ProgramApi::SetBinding(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     BoundResource bound_res = { view->GetResource(), view };
     auto it = m_bound_resources.find(bind_key);
@@ -208,7 +196,7 @@ void ProgramApi::SetBinding(const BindKeyOld& bind_key, const std::shared_ptr<Vi
         it->second = bound_res;
 }
 
-std::shared_ptr<View> ProgramApi::CreateView(const BindKeyOld& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
+std::shared_ptr<View> ProgramApi::CreateView(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
 {
     auto it = m_views.find({ bind_key, resource, view_desc });
     if (it != m_views.end())
@@ -235,19 +223,19 @@ std::shared_ptr<View> ProgramApi::CreateView(const BindKeyOld& bind_key, const s
 
 std::shared_ptr<View> ProgramApi::FindView(ShaderType shader_type, ViewType view_type, uint32_t slot)
 {
-    BindKeyOld bind_key = { m_program_id, shader_type, view_type, slot };
+    BindKey bind_key = { shader_type, view_type, slot };
     auto it = m_bound_resources.find(bind_key);
     if (it == m_bound_resources.end())
         return {};
     return it->second.view;
 }
 
-void ProgramApi::Attach(const BindKeyOld& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
+void ProgramApi::Attach(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
 {
     Attach(bind_key, CreateView(bind_key, resource, view_desc));
 }
 
-void ProgramApi::Attach(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
+void ProgramApi::Attach(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     SetBinding(bind_key, view);
     switch (bind_key.view_type)
@@ -338,7 +326,7 @@ void ProgramApi::UpdateCBuffers()
     }
 }
 
-void ProgramApi::OnAttachSRV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
+void ProgramApi::OnAttachSRV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     if (m_context.m_is_open_render_pass)
     {
@@ -353,7 +341,7 @@ void ProgramApi::OnAttachSRV(const BindKeyOld& bind_key, const std::shared_ptr<V
         m_context.ResourceBarrier(resource, ResourceState::kNonPixelShaderResource);
 }
 
-void ProgramApi::OnAttachUAV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
+void ProgramApi::OnAttachUAV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     if (m_context.m_is_open_render_pass)
     {
@@ -364,7 +352,7 @@ void ProgramApi::OnAttachUAV(const BindKeyOld& bind_key, const std::shared_ptr<V
     m_context.ResourceBarrier(view->GetResource(), ResourceState::kUnorderedAccess);
 }
 
-void ProgramApi::OnAttachRTV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
+void ProgramApi::OnAttachRTV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     if (bind_key.slot >= m_graphic_pipeline_desc.rtvs.size())
         m_graphic_pipeline_desc.rtvs.resize(bind_key.slot + 1);
@@ -375,7 +363,7 @@ void ProgramApi::OnAttachRTV(const BindKeyOld& bind_key, const std::shared_ptr<V
     m_context.ResourceBarrier(resource, ResourceState::kRenderTarget);
 }
 
-void ProgramApi::OnAttachDSV(const BindKeyOld& bind_key, const std::shared_ptr<View>& view)
+void ProgramApi::OnAttachDSV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     auto resource = view->GetResource();
     m_graphic_pipeline_desc.dsv.format = resource->GetFormat();

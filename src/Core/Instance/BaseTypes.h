@@ -245,25 +245,6 @@ struct ViewDesc : public LazyViewDesc
     }
 };
 
-struct BindKey
-{
-    ShaderType shader;
-    ViewType type;
-    std::string name;
-
-private:
-    auto MakeTie() const
-    {
-        return std::tie(shader, type, name);
-    }
-
-public:
-    bool operator< (const BindKey& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
-    }
-};
-
 struct ShaderDesc
 {
     std::string shader_path;
@@ -387,19 +368,18 @@ struct BindingDesc
     }
 };
 
-struct BindKeyOld
+struct BindKey
 {
-    size_t program_id;
     ShaderType shader_type;
     ViewType view_type;
     uint32_t slot;
 
     auto MakeTie() const
     {
-        return std::tie(program_id, shader_type, view_type, slot);
+        return std::tie(shader_type, view_type, slot);
     }
 
-    bool operator< (const BindKeyOld& oth) const
+    bool operator< (const BindKey& oth) const
     {
         return MakeTie() < oth.MakeTie();
     }

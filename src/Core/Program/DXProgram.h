@@ -30,6 +30,26 @@ struct BindingLayout
     };
 };
 
+struct DXBindKey
+{
+    ShaderType shader;
+    ViewType type;
+    std::string name;
+
+private:
+    auto MakeTie() const
+    {
+        return std::tie(shader, type, name);
+    }
+
+public:
+    bool operator< (const DXBindKey& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
+};
+
+
 class DXProgram : public ProgramBase
 {
 public:
@@ -54,7 +74,7 @@ private:
 
     std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE>, BindingLayout> m_binding_layout;
     std::map<std::set<size_t>, DXGPUDescriptorPoolRange> m_heap_cache;
-    std::map<BindKey, size_t> m_bind_to_slot;
+    std::map<DXBindKey, size_t> m_bind_to_slot;
     bool m_is_compute = false;
     using BindingsByHeap = std::map<D3D12_DESCRIPTOR_HEAP_TYPE, BindingsKey>;
 };

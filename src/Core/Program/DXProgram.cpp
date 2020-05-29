@@ -323,7 +323,7 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
             for (auto& id : x.second)
             {
                 auto& desc = m_bindings[id];
-                BindKey bind_key = { desc.shader, desc.type, desc.name };
+                DXBindKey bind_key = { desc.shader, desc.type, desc.name };
                 D3D12_DESCRIPTOR_RANGE_TYPE range_type;
                 D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
                 switch (desc.type)
