@@ -14,6 +14,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
     for (auto& shader : shaders)
     {
         m_shaders.emplace_back(std::static_pointer_cast<DXShader>(shader));
+        m_shaders_by_type[shader->GetType()] = m_shaders.back();
     }
 
     size_t num_resources = 0;
@@ -287,6 +288,11 @@ size_t DXProgram::HeapSizeByType(D3D12_DESCRIPTOR_HEAP_TYPE type)
         assert(false);
         return 0;
     }
+}
+
+bool DXProgram::HasBinding(ShaderType shader, ViewType type, std::string name) const
+{
+    return m_bind_to_slot.count({ shader, type, name });
 }
 
 std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& bindings)

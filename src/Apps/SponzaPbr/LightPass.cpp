@@ -33,7 +33,7 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
 void LightPass::SetDefines(ProgramHolder<LightPassPS, LightPassVS>& program)
 {
     if (m_settings.msaa_count != 1)
-        program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+        program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
 }
 
 void LightPass::OnUpdate()
@@ -155,7 +155,7 @@ void LightPass::OnModifySponzaSettings(const SponzaSettings& settings)
     m_settings = settings;
     if (prev.msaa_count != m_settings.msaa_count)
     {
-        m_program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+        m_program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
         m_program.ps.UpdateShader();
         m_program.LinkProgram();
     }

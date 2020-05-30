@@ -1,5 +1,4 @@
 ﻿#pragma once
-
 #include <Context/Context.h>
 #include <cstddef>
 #include <map>
@@ -7,37 +6,36 @@
 #include <memory>
 #include <vector>
 #include <functional>
-#include <Shader/ShaderBase.h>
-#include <ProgramApi/ProgramApi.h>
+#include <Context/Context.h>
 #include "ProgramApi/BufferLayout.h"
+#include "ProgramApi/ProgramApi.h"
 
 template<typename T>
 class Binding
 {
 public:
-    Binding(ProgramApi& program_api, ShaderType shader_type, ViewType view_type, uint32_t slot, const std::string& name)
-        : m_program_api(program_api)
-        , m_key{ shader_type, view_type, slot }
+    Binding(Context& context, ShaderType shader_type, ViewType view_type, uint32_t slot, const std::string& name)
+        : m_context(context)
+        , m_key{ shader_type, view_type, slot, name }
     {
-        m_program_api.SetBindingName(m_key, name);
     }
 
     T& Attach(const std::shared_ptr<Resource>& resource = {}, const LazyViewDesc& view_desc = {})
     {
-        m_program_api.Attach(m_key, resource, view_desc);
+        m_context.Attach(m_key, resource, view_desc);
         return static_cast<T&>(*this);
     }
 
 protected:
-    ProgramApi& m_program_api;
-    BindKey m_key;
+    Context& m_context;
+    NamedBindKey m_key;
 };
 
 class SRVBinding : public Binding<SRVBinding>
 {
-public:    
-    SRVBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
-        : Binding(program_api, shader_type, ViewType::kShaderResource, slot, name)
+public:
+    SRVBinding(Context& context, ShaderType shader_type, const std::string& name, uint32_t slot)
+        : Binding(context, shader_type, ViewType::kShaderResource, slot, name)
     {
     }
 };
@@ -45,8 +43,8 @@ public:
 class UAVBinding : public Binding<UAVBinding>
 {
 public:
-    UAVBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
-        : Binding(program_api, shader_type, ViewType::kUnorderedAccess, slot, name)
+    UAVBinding(Context& context, ShaderType shader_type, const std::string& name, uint32_t slot)
+        : Binding(context, shader_type, ViewType::kUnorderedAccess, slot, name)
     {
     }
 };
@@ -54,8 +52,8 @@ public:
 class SamplerBinding : public Binding<SamplerBinding>
 {
 public:
-    SamplerBinding(ProgramApi& program_api, ShaderType shader_type, const std::string& name, uint32_t slot)
-        : Binding(program_api, shader_type, ViewType::kSampler, slot, name)
+    SamplerBinding(Context& context, ShaderType shader_type, const std::string& name, uint32_t slot)
+        : Binding(context, shader_type, ViewType::kSampler, slot, name)
     {
     }
 };
@@ -63,28 +61,28 @@ public:
 class RTVBinding : public Binding<RTVBinding>
 {
 public:
-    RTVBinding(ProgramApi& program_api, uint32_t slot)
-        : Binding(program_api, ShaderType::kPixel, ViewType::kRenderTarget, slot, "")
+    RTVBinding(Context& context, uint32_t slot)
+        : Binding(context, ShaderType::kPixel, ViewType::kRenderTarget, slot, "")
     {
     }
 
     void Clear(const std::array<float, 4>& color)
     {
-        m_program_api.ClearRenderTarget(m_key.slot, color);
+        m_context.ClearRenderTarget(m_key.slot, color);
     }
 };
 
 class DSVBinding : public Binding<DSVBinding>
 {
 public:
-    DSVBinding(ProgramApi& program_api)
-        : Binding(program_api, ShaderType::kPixel, ViewType::kDepthStencil, 0, "")
+    DSVBinding(Context& context)
+        : Binding(context, ShaderType::kPixel, ViewType::kDepthStencil, 0, "")
     {
     }
 
     void Clear(uint32_t ClearFlags, float Depth, uint8_t Stencil)
     {
-        m_program_api.ClearDepthStencil(ClearFlags, Depth, Stencil);
+        m_context.ClearDepthStencil(ClearFlags, Depth, Stencil);
     }
 };
 
@@ -104,8 +102,8 @@ public:
         return ps;
     }
 
-    ShaderHolderImpl(ProgramApi& program_base)
-        : ps(program_base)
+    ShaderHolderImpl(ProgramApi& program)
+        : ps(program)
     {
     }
 };
@@ -124,8 +122,8 @@ public:
         return vs;
     }
 
-    ShaderHolderImpl(ProgramApi& program_base)
-        : vs(program_base)
+    ShaderHolderImpl(ProgramApi& program)
+        : vs(program)
     {
     }
 };
@@ -144,8 +142,8 @@ public:
         return gs;
     }
 
-    ShaderHolderImpl(ProgramApi& program_base)
-        : gs(program_base)
+    ShaderHolderImpl(ProgramApi& program)
+        : gs(program)
     {
     }
 };
@@ -164,8 +162,8 @@ public:
         return cs;
     }
 
-    ShaderHolderImpl(ProgramApi& program_base)
-        : cs(program_base)
+    ShaderHolderImpl(ProgramApi& program)
+        : cs(program)
     {
     }
 };
@@ -184,88 +182,95 @@ public:
         return lib;
     }
 
-    ShaderHolderImpl(ProgramApi& program_base)
-        : lib(program_base)
+    ShaderHolderImpl(ProgramApi& program)
+        : lib(program)
     {
     }
 };
+
+template<ShaderType T, ShaderType... Ts>
+constexpr bool contains()
+{
+    return ((T == Ts) || ...);
+}
 
 template<typename T> class ShaderHolder : public ShaderHolderImpl<T::type, T> { using ShaderHolderImpl<T::type, T>::ShaderHolderImpl; };
 
 template<typename ... Args>
 class ProgramHolder : public ShaderHolder<Args>...
 {
-    ProgramHolder(std::shared_ptr<ProgramApi>&& program_base)
-        : ShaderHolder<Args>(*program_base)...
-        , m_program_base(std::move(program_base))
+    ProgramHolder(std::shared_ptr<ProgramApi> program_api)
+        : ShaderHolder<Args>(*program_api)...
+        , m_program_api(program_api)
+        , m_context(program_api->GetContext())
     {
     }
 public:
     ProgramHolder(Context& context)
-        : ProgramHolder(context.CreateProgram())
+        : ProgramHolder(context.CreateProgramApi())
     {
         UpdateShaders();
     }
 
     template<typename Setup>
     ProgramHolder(Context& context, const Setup& setup)
-        : ProgramHolder(context.CreateProgram())
+        : ProgramHolder(context.CreateProgramApi())
     {
         setup(*this);
         UpdateShaders();
     }
 
-    using shader_callback = std::function<void(ShaderBase&)>;
-
     template <typename T>
-    bool ApplyCallback(shader_callback fn)
+    bool ApplyCallback()
     {
-        fn(static_cast<ShaderHolder<T>&>(*this).GetApi());
+        if constexpr (contains<ShaderType::kGeometry, Args::type...>() && T::type == ShaderType::kVertex)
+        {
+            static_cast<ShaderHolder<T>&>(*this).GetApi().desc.define["__INTERNAL_DO_NOT_INVERT_Y__"] = "1";
+        }
+        static_cast<ShaderHolder<T>&>(*this).GetApi().UpdateShader();
         return true;
     }
 
     template<typename ... ShadowsArgs> void DevNull(ShadowsArgs ... args) {}
 
     template<typename... ShadowsArgs>
-    void EnumerateShader(shader_callback fn)
+    void EnumerateShader()
     {
-        DevNull(ApplyCallback<ShadowsArgs>(fn)...);
-    }
-
-    void LinkProgram()
-    {
-        m_program_base->LinkProgram();
+        DevNull(ApplyCallback<ShadowsArgs>()...);
     }
 
     void SetRasterizeState(const RasterizerDesc& desc)
     {
-        m_program_base->SetRasterizeState(desc);
+        m_context.SetRasterizeState(desc);
     }
 
     void SetBlendState(const BlendDesc& desc)
     {
-        m_program_base->SetBlendState(desc);
+        m_context.SetBlendState(desc);
     }
 
     void SetDepthStencilState(const DepthStencilDesc& desc)
     {
-        m_program_base->SetDepthStencilState(desc);
+        m_context.SetDepthStencilState(desc);
     }
 
-    operator ProgramApi&()
+    void LinkProgram()
     {
-        return *m_program_base;
+        m_program_api->GetProgram() = m_context.CreateProgram({ static_cast<ShaderHolder<Args>&>(*this).GetApi().shader ... });
+    }
+
+    operator ProgramApi& ()
+    {
+        return *m_program_api;
     }
 
 private:
     void UpdateShaders()
     {
-        EnumerateShader<Args...>([&](ShaderBase& shader)
-        {
-            shader.UpdateShader();
-        });
-        m_program_base->LinkProgram();
+        EnumerateShader<Args...>();
+        m_program_api->GetProgram() = m_context.CreateProgram({ static_cast<ShaderHolder<Args>&>(*this).GetApi().shader ... });
     }
 
-    std::shared_ptr<ProgramApi> m_program_base;
+    std::shared_ptr<ProgramApi> m_program_api;
+    Context& m_context;
 };

@@ -28,6 +28,7 @@ VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>
     for (auto& shader : shaders)
     {
         m_shaders.emplace_back(std::static_pointer_cast<SpirvShader>(shader));
+        m_shaders_by_type[shader->GetType()] = m_shaders.back();
     }
 
     for (auto& shader : m_shaders)
@@ -75,6 +76,20 @@ VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>
     pipeline_layout_info.pSetLayouts = descriptor_set_layouts.data();
 
     m_pipeline_layout = device.GetDevice().createPipelineLayoutUnique(pipeline_layout_info);
+}
+
+bool VKProgram::HasBinding(ShaderType shader, ViewType type, std::string name) const
+{
+    if (!m_shader_ref.count(shader))
+        return false;
+    const ShaderRef& shader_ref = m_shader_ref.at(shader);
+    if (name == "$Globals")
+        name = "_Global";
+
+    if (!shader_ref.resources.count(name))
+        name = "type_" + name;
+
+    return shader_ref.resources.count(name);
 }
 
 std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& bindings)

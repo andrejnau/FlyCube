@@ -130,7 +130,7 @@ void SSAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
     m_settings = settings;
     if (prev.msaa_count != m_settings.msaa_count)
     {
-        m_program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+        m_program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
         m_program.ps.UpdateShader();
         m_program.LinkProgram();
     }
@@ -139,5 +139,5 @@ void SSAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
 void SSAOPass::SetDefines(ProgramHolder<SSAOPassPS, SSAOPassVS>& program)
 {
     if (m_settings.msaa_count != 1)
-        program.ps.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+        program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
 }

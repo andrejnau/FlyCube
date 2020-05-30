@@ -385,6 +385,11 @@ struct BindKey
     }
 };
 
+struct NamedBindKey : BindKey
+{
+    std::string name;
+};
+
 struct ResourceBindingDesc
 {
     ResourceDimension dimension = ResourceDimension::kBuffer;

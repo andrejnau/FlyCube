@@ -23,3 +23,13 @@ std::shared_ptr<BindingSet> ProgramBase::CreateBindingSet(const std::vector<Bind
     }
     return it->second;
 }
+
+bool ProgramBase::HasShader(ShaderType type) const
+{
+    return m_shaders_by_type.count(type);
+}
+
+const std::shared_ptr<Shader>& ProgramBase::GetShader(ShaderType type) const
+{
+    return m_shaders_by_type.at(type);
+}

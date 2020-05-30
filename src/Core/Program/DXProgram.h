@@ -54,6 +54,7 @@ class DXProgram : public ProgramBase
 {
 public:
     DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders);
+    bool HasBinding(ShaderType shader, ViewType type, std::string name) const override;
     std::shared_ptr<BindingSet> CreateBindingSetImpl(const BindingsKey& bindings) override;
 
     const std::vector<std::shared_ptr<DXShader>>& GetShaders() const;

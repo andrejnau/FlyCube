@@ -7,7 +7,7 @@ RayTracingAOPass::RayTracingAOPass(Context& context, const Input& input, int wid
     , m_height(height)
     , m_raytracing_program(context, [&](auto& program)
     {
-        program.lib.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+        program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
     })
     , m_program_blur(context)
 {
@@ -123,7 +123,7 @@ void RayTracingAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
     m_settings = settings;
     if (prev.msaa_count != m_settings.msaa_count)
     {
-        m_raytracing_program.lib.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+        m_raytracing_program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
         m_raytracing_program.lib.UpdateShader();
         m_raytracing_program.LinkProgram();
     }

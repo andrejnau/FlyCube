@@ -1,18 +1,15 @@
 #pragma once
 
 #include <ProgramApi/Program.h>
-#include <Shader/ShaderBase.h>
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>
 #include <memory>
 
-class {{ShaderName}} : public ShaderBase
+class {{ShaderName}}
 {
-    ProgramApi& program_api;
-
 public:
-
+    ShaderDesc desc;
     static const ShaderType type = {{ShaderType}};
 
     struct
@@ -25,8 +22,8 @@ public:
 
     struct SRV
     {
-        SRV(ProgramApi& program_api)
-{{#Textures}}            {{Separator}} {{Name}}(program_api, type, "{{Name}}", {{Slot}})
+        SRV(Context& context)
+{{#Textures}}            {{Separator}} {{Name}}(context, type, "{{Name}}", {{Slot}})
 {{/Textures}}        {
         }
 
@@ -35,8 +32,8 @@ public:
 
     struct UAV
     {
-        UAV(ProgramApi& program_api)
-{{#UAVs}}            {{Separator}} {{Name}}(program_api, type, "{{Name}}", {{Slot}})
+        UAV(Context& context)
+{{#UAVs}}            {{Separator}} {{Name}}(context, type, "{{Name}}", {{Slot}})
 {{/UAVs}}        {
         }
 
@@ -51,9 +48,9 @@ public:
     {{#HasOutputs}}
     struct OM
     {
-        OM(ProgramApi& program_api)
-{{#Outputs}}            {{Separator}} rtv{{Slot}}(program_api, {{Slot}})
-{{/Outputs}}            {{DSVSeparator}} dsv(program_api)
+        OM(Context& context)
+{{#Outputs}}            {{Separator}} rtv{{Slot}}(context, {{Slot}})
+{{/Outputs}}            {{DSVSeparator}} dsv(context)
         {
         }
 
@@ -64,38 +61,38 @@ public:
 
     struct Sampler
     {
-        Sampler(ProgramApi& program_api)
-{{#Samplers}}            {{Separator}} {{Name}}(program_api, type, "{{Name}}", {{Slot}})
+        Sampler(Context& context)
+{{#Samplers}}            {{Separator}} {{Name}}(context, type, "{{Name}}", {{Slot}})
 {{/Samplers}}        {
         }
 
 {{#Samplers}}       SamplerBinding {{Name}};
 {{/Samplers}}    } sampler;
 
-    {{ShaderName}}(ProgramApi& program_api)
-        : ShaderBase(type, "{{ShaderPath}}", "{{Entrypoint}}", "{{Target}}")
-        , program_api(program_api)
+    {{ShaderName}}(ProgramApi& program)
+        : desc("{{ShaderPath}}", "{{Entrypoint}}", type)
+        , m_program(program)
         , cbuffer{}
-        , srv(program_api)
-        , uav(program_api)
-        {{#HasOutputs}}, om(program_api) {{/HasOutputs}}
-        , sampler(program_api)
+        , srv(program.GetContext())
+        , uav(program.GetContext())
+        {{#HasOutputs}}, om(program.GetContext()) {{/HasOutputs}}
+        , sampler(program.GetContext())
         , cbuffer_impl(*this)
     {
-        program_api.AddAvailableShaderType(type);
         {{#CBuffers}}
         {
-            BindKey bind_key = { type, ViewType::kConstantBuffer, {{BufferIndex}} };
-            program_api.SetCBufferLayout(bind_key, cbuffer_impl.{{BufferName}});
-            program_api.SetBindingName(bind_key, "{{BufferName}}");
+            NamedBindKey bind_key = { type, ViewType::kConstantBuffer, {{BufferIndex}}, "{{BufferName}}" };
+            m_program.SetCBufferLayout(bind_key, cbuffer_impl.{{BufferName}});
         }
         {{/CBuffers}}
     }
 
-    virtual void UpdateShader() override
+    void UpdateShader()
     {
-        program_api.CompileShader(*this);
+        shader = m_program.GetContext().CompileShader(desc);
     }
+
+    std::shared_ptr<Shader> shader;
 
 private:
     class CBufferImpl
@@ -111,7 +108,7 @@ private:
                     {{#Variables}}{{VariableSize}}, {{/Variables}}
                 },
                 {
-                    {{#Variables}}offsetof(decltype(cbuffer.{{BufferName}}), {{Name}}), {{/Variables}}              
+                    {{#Variables}}offsetof(decltype(cbuffer.{{BufferName}}), {{Name}}), {{/Variables}}
                 },
                 {
                     {{#Variables}}{{StartOffset}}, {{/Variables}}
@@ -121,4 +118,6 @@ private:
         {
         }
     } cbuffer_impl;
+
+    ProgramApi& m_program;
 };

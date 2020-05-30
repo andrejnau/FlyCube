@@ -2,7 +2,6 @@
 #include <Utilities/DXUtility.h>
 #include <Shader/DXCompiler.h>
 #include <Shader/DXReflector.h>
-#include <Shader/ShaderBase.h>
 #include <mustache.hpp>
 #include <d3dcompiler.h>
 #include <wrl.h>
@@ -56,7 +55,23 @@ public:
             m_target.front() = std::tolower(m_option.type[0]);
         }
 
-        m_type = ShaderBase::GetShaderType(m_target);
+        m_type = GetShaderType(m_target);
+    }
+
+    ShaderType GetShaderType(const std::string& target)
+    {
+        if (target.find("ps") == 0)
+            return ShaderType::kPixel;
+        else if (target.find("vs") == 0)
+            return ShaderType::kVertex;
+        else if (target.find("cs") == 0)
+            return ShaderType::kCompute;
+        else if (target.find("gs") == 0)
+            return ShaderType::kGeometry;
+        else if (target.find("lib") == 0)
+            return ShaderType::kLibrary;
+        assert(false);
+        return ShaderType::kUnknown;
     }
 
     void Parse()

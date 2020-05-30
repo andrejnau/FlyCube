@@ -5,7 +5,6 @@
 #include <Geometry/Geometry.h>
 #include <string>
 
-#include <ProgramApi/Program.h>
 #include <ProgramRef/GeometryPassPS.h>
 #include <ProgramRef/GeometryPassVS.h>
 #include <ProgramRef/LightPassPS.h>

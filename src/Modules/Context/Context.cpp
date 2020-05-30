@@ -1,15 +1,16 @@
 #include "Context/Context.h"
+#include "ProgramApi/ProgramApi.h"
 #include <Utilities/FormatHelper.h>
 
 Context::Context(const Settings& settings, GLFWwindow* window)
     : m_window(window)
 {
-    glfwGetWindowSize(window, &m_width, &m_height);
+    glfwGetWindowSize(window, &m_window_width, &m_window_height);
 
     m_instance = CreateInstance(settings.api_type);
     m_adapter = std::move(m_instance->EnumerateAdapters()[settings.required_gpu_index]);
     m_device = m_adapter->CreateDevice();
-    m_swapchain = m_device->CreateSwapchain(window, m_width, m_height, FrameCount, settings.vsync);
+    m_swapchain = m_device->CreateSwapchain(window, m_window_width, m_window_height, FrameCount, settings.vsync);
     for (uint32_t i = 0; i < FrameCount; ++i)
     {
         m_command_lists.emplace_back(m_device->CreateCommandList());
@@ -19,11 +20,6 @@ Context::Context(const Settings& settings, GLFWwindow* window)
     m_command_list->Open();
     m_image_available_semaphore = m_device->CreateGPUSemaphore();
     m_rendering_finished_semaphore = m_device->CreateGPUSemaphore();
-}
-
-std::shared_ptr<ProgramApi> Context::CreateProgram()
-{
-    return m_created_program.emplace_back(std::make_shared<ProgramApi>(*this));
 }
 
 std::shared_ptr<Resource> Context::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
@@ -144,8 +140,6 @@ void Context::SetViewport(float width, float height)
     m_command_list->SetViewport(width, height);
     m_viewport_width = width;
     m_viewport_height = height;
-    if (m_current_program)
-        m_current_program->OnSetViewport(m_viewport_width, m_viewport_height);
 }
 
 void Context::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom)
@@ -164,23 +158,6 @@ void Context::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& 
     m_command_list->IASetVertexBuffer(slot, resource);
 }
 
-void Context::UseProgram(ProgramApi& program)
-{
-    if (m_current_program != &program)
-    {
-        if (m_current_program)
-            m_current_program->ProgramDetach();
-        m_current_program = &program;
-        if (m_is_open_render_pass)
-        {
-            m_command_list->EndRenderPass();
-            m_is_open_render_pass = false;
-        }
-    }
-    if (m_current_program)
-        m_current_program->OnSetViewport(m_viewport_width, m_viewport_height);
-}
-
 void Context::BeginEvent(const std::string& name)
 {
     m_command_list->BeginEvent(name);
@@ -193,22 +170,19 @@ void Context::EndEvent()
 
 void Context::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
-    if (m_current_program)
-        m_current_program->ApplyBindings();
+    ApplyBindings();
     m_command_list->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 
 void Context::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
 {
-    if (m_current_program)
-        m_current_program->ApplyBindings();
+    ApplyBindings();
     m_command_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
 void Context::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
 {
-    if (m_current_program)
-        m_current_program->ApplyBindings();
+    ApplyBindings();
     m_command_list->DispatchRays(width, height, depth);
 }
 
@@ -263,9 +237,9 @@ void Context::ResourceBarrier(const std::shared_ptr<Resource>& resource, Resourc
 
 void Context::OnResize(int width, int height)
 {
-    m_width = width;
-    m_height = height;
-    ResizeBackBuffer(m_width, m_height);
+    m_window_width = width;
+    m_window_height = height;
+    ResizeBackBuffer(m_window_width, m_window_height);
 }
 
 size_t Context::GetFrameIndex() const
@@ -280,4 +254,314 @@ GLFWwindow* Context::GetWindow()
 
 void Context::ResizeBackBuffer(int width, int height)
 {
+}
+
+void Context::UseProgram(ProgramApi& program_api)
+{
+    auto program = program_api.GetProgram();
+    if (m_program != program)
+    {
+        if (m_is_open_render_pass)
+        {
+            m_command_list->EndRenderPass();
+            m_is_open_render_pass = false;
+        }
+    }
+
+    m_graphic_pipeline_desc = {};
+    m_compute_pipeline_desc = {};
+
+    m_framebuffer.reset();
+    m_program = program;
+    if (m_program->HasShader(ShaderType::kCompute) || m_program->HasShader(ShaderType::kLibrary))
+    {
+        m_compute_pipeline_desc.program = m_program;
+    }
+    else
+    {
+        m_graphic_pipeline_desc.program = m_program;
+        m_graphic_pipeline_desc.input = m_program->GetShader(ShaderType::kVertex)->GetInputLayout();
+    }
+    m_program_api = &program_api;
+    m_bound_resources.clear();
+}
+
+std::shared_ptr<ProgramApi> Context::CreateProgramApi()
+{
+    return m_created_program.emplace_back(std::make_shared<ProgramApi>(*this));
+}
+
+void Context::ApplyBindings()
+{
+    m_program_api->UpdateCBuffers();
+
+    if (m_program->HasShader(ShaderType::kCompute))
+    {
+        auto it = m_compute_pso.find(m_compute_pipeline_desc);
+        if (it == m_compute_pso.end())
+        {
+            m_pipeline = m_device->CreateComputePipeline(m_compute_pipeline_desc);
+            m_compute_pso.emplace(std::piecewise_construct,
+                std::forward_as_tuple(m_compute_pipeline_desc),
+                std::forward_as_tuple(m_pipeline));
+        }
+        else
+        {
+            m_pipeline = it->second;
+        }
+    }
+    else if (m_program->HasShader(ShaderType::kLibrary))
+    {
+        auto it = m_compute_pso.find(m_compute_pipeline_desc);
+        if (it == m_compute_pso.end())
+        {
+            m_pipeline = m_device->CreateRayTracingPipeline(m_compute_pipeline_desc);
+            m_compute_pso.emplace(std::piecewise_construct,
+                std::forward_as_tuple(m_compute_pipeline_desc),
+                std::forward_as_tuple(m_pipeline));
+        }
+        else
+        {
+            m_pipeline = it->second;
+        }
+    }
+    else
+    {
+        auto it = m_pso.find(m_graphic_pipeline_desc);
+        if (it == m_pso.end())
+        {
+            m_pipeline = m_device->CreateGraphicsPipeline(m_graphic_pipeline_desc);
+            m_pso.emplace(std::piecewise_construct,
+                std::forward_as_tuple(m_graphic_pipeline_desc),
+                std::forward_as_tuple(m_pipeline));
+        }
+        else
+        {
+            m_pipeline = it->second;
+        }
+    }
+
+    std::vector<BindingDesc> descs;
+    for (auto& x : m_bound_resources)
+    {
+        switch (x.first.view_type)
+        {
+        case ViewType::kRenderTarget:
+        case ViewType::kDepthStencil:
+            continue;
+        }
+        decltype(auto) desc = descs.emplace_back();
+        desc.view = x.second.view;
+        desc.type = x.first.view_type;
+        desc.shader = x.first.shader_type;
+        desc.name = m_binding_names.at(x.first);
+        if (!m_program->HasBinding(desc.shader, desc.type, desc.name))
+            descs.pop_back();
+    }
+
+    m_binding_set = m_program->CreateBindingSet(descs);
+    m_command_list->BindPipeline(m_pipeline);
+    m_command_list->BindBindingSet(m_binding_set);
+
+    if (m_program->HasShader(ShaderType::kCompute) || m_program->HasShader(ShaderType::kLibrary))
+        return;
+
+    std::vector<std::shared_ptr<View>> rtvs;
+    for (auto& render_target : m_graphic_pipeline_desc.rtvs)
+    {
+        rtvs.emplace_back(FindView(ShaderType::kPixel, ViewType::kRenderTarget, render_target.slot));
+    }
+
+    auto prev_framebuffer = m_framebuffer;
+
+    auto dsv = FindView(ShaderType::kPixel, ViewType::kDepthStencil, 0);
+    auto key = std::make_tuple(m_viewport_width, m_viewport_height, rtvs, dsv);
+    auto f_it = m_framebuffers.find(key);
+    if (f_it == m_framebuffers.end())
+    {
+        m_framebuffer = m_device->CreateFramebuffer(m_pipeline, m_viewport_width, m_viewport_height, rtvs, dsv);
+        m_framebuffers.emplace(std::piecewise_construct,
+            std::forward_as_tuple(key),
+            std::forward_as_tuple(m_framebuffer));
+    }
+    else
+    {
+        m_framebuffer = f_it->second;
+    }
+
+    if (prev_framebuffer != m_framebuffer)
+    {
+        if (m_is_open_render_pass)
+            m_command_list->EndRenderPass();
+    }
+
+    if (!m_is_open_render_pass)
+    {
+        m_command_list->BeginRenderPass(m_framebuffer);
+        m_is_open_render_pass = true;
+    }
+}
+
+std::shared_ptr<Shader> Context::CompileShader(const ShaderDesc& desc)
+{
+    return m_device->CompileShader(desc);
+}
+
+void Context::SetBinding(const BindKey& bind_key, const std::shared_ptr<View>& view)
+{
+    BoundResource bound_res = { view->GetResource(), view };
+    auto it = m_bound_resources.find(bind_key);
+    if (it == m_bound_resources.end())
+        m_bound_resources.emplace(bind_key, bound_res);
+    else
+        it->second = bound_res;
+}
+
+std::shared_ptr<View> Context::CreateView(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
+{
+    auto it = m_views.find({ bind_key, resource, view_desc });
+    if (it != m_views.end())
+        return it->second;
+    decltype(auto) shader = m_program->GetShader(bind_key.shader_type);
+    ViewDesc desc = {};
+    static_cast<LazyViewDesc&>(desc) = view_desc;
+    desc.view_type = bind_key.view_type;
+    switch (bind_key.view_type)
+    {
+    case ViewType::kShaderResource:
+    case ViewType::kUnorderedAccess:
+    {
+        ResourceBindingDesc binding_desc = shader->GetResourceBindingDesc(m_binding_names.at(bind_key));
+        desc.dimension = binding_desc.dimension;
+        desc.stride = shader->GetResourceStride(m_binding_names.at(bind_key));
+        break;
+    }
+    }
+    auto view = m_device->CreateView(resource, desc);
+    m_views.emplace(std::piecewise_construct, std::forward_as_tuple(bind_key, resource, view_desc), std::forward_as_tuple(view));
+    return view;
+}
+
+std::shared_ptr<View> Context::FindView(ShaderType shader_type, ViewType view_type, uint32_t slot)
+{
+    BindKey bind_key = { shader_type, view_type, slot };
+    auto it = m_bound_resources.find(bind_key);
+    if (it == m_bound_resources.end())
+        return {};
+    return it->second.view;
+}
+
+void Context::Attach(const NamedBindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
+{
+    m_binding_names[bind_key] = bind_key.name;
+    Attach(bind_key, CreateView(bind_key, resource, view_desc));
+}
+
+void Context::Attach(const BindKey& bind_key, const std::shared_ptr<View>& view)
+{
+    SetBinding(bind_key, view);
+    switch (bind_key.view_type)
+    {
+    case ViewType::kShaderResource:
+        OnAttachSRV(bind_key, view);
+        break;
+    case ViewType::kUnorderedAccess:
+        OnAttachUAV(bind_key, view);
+        break;
+    case ViewType::kRenderTarget:
+        OnAttachRTV(bind_key, view);
+        break;
+    case ViewType::kDepthStencil:
+        OnAttachDSV(bind_key, view);
+        break;
+    }
+}
+
+void Context::ClearRenderTarget(uint32_t slot, const std::array<float, 4>& color)
+{
+    auto& view = FindView(ShaderType::kPixel, ViewType::kRenderTarget, slot);
+    if (!view)
+        return;
+    if (m_is_open_render_pass)
+    {
+        m_command_list->EndRenderPass();
+        m_is_open_render_pass = false;
+    }
+    ResourceBarrier(view->GetResource(), ResourceState::kClearColor);
+    m_command_list->ClearColor(view, color);
+    ResourceBarrier(view->GetResource(), ResourceState::kRenderTarget);
+}
+
+void Context::ClearDepthStencil(uint32_t ClearFlags, float Depth, uint8_t Stencil)
+{
+    auto& view = FindView(ShaderType::kPixel, ViewType::kDepthStencil, 0);
+    if (!view)
+        return;
+    if (m_is_open_render_pass)
+    {
+        m_command_list->EndRenderPass();
+        m_is_open_render_pass = false;
+    }
+    ResourceBarrier(view->GetResource(), ResourceState::kClearDepth);
+    m_command_list->ClearDepth(view, Depth);
+    ResourceBarrier(view->GetResource(), ResourceState::kDepthTarget);
+}
+
+void Context::SetRasterizeState(const RasterizerDesc& desc)
+{
+    m_graphic_pipeline_desc.rasterizer_desc = desc;
+}
+
+void Context::SetBlendState(const BlendDesc& desc)
+{
+    m_graphic_pipeline_desc.blend_desc = desc;
+}
+
+void Context::SetDepthStencilState(const DepthStencilDesc& desc)
+{
+    m_graphic_pipeline_desc.depth_desc = desc;
+}
+
+void Context::OnAttachSRV(const BindKey& bind_key, const std::shared_ptr<View>& view)
+{
+    if (m_is_open_render_pass)
+    {
+        m_command_list->EndRenderPass();
+        m_is_open_render_pass = false;
+    }
+    auto resource = view->GetResource();
+
+    if (bind_key.shader_type == ShaderType::kPixel)
+        ResourceBarrier(resource, ResourceState::kPixelShaderResource);
+    else
+        ResourceBarrier(resource, ResourceState::kNonPixelShaderResource);
+}
+
+void Context::OnAttachUAV(const BindKey& bind_key, const std::shared_ptr<View>& view)
+{
+    if (m_is_open_render_pass)
+    {
+        m_command_list->EndRenderPass();
+        m_is_open_render_pass = false;
+    }
+
+    ResourceBarrier(view->GetResource(), ResourceState::kUnorderedAccess);
+}
+
+void Context::OnAttachRTV(const BindKey& bind_key, const std::shared_ptr<View>& view)
+{
+    if (bind_key.slot >= m_graphic_pipeline_desc.rtvs.size())
+        m_graphic_pipeline_desc.rtvs.resize(bind_key.slot + 1);
+    decltype(auto) render_target = m_graphic_pipeline_desc.rtvs[bind_key.slot];
+    render_target.slot = bind_key.slot;
+    auto resource = view->GetResource();
+    render_target.format = resource->GetFormat();
+    ResourceBarrier(resource, ResourceState::kRenderTarget);
+}
+
+void Context::OnAttachDSV(const BindKey& bind_key, const std::shared_ptr<View>& view)
+{
+    auto resource = view->GetResource();
+    m_graphic_pipeline_desc.dsv.format = resource->GetFormat();
+    ResourceBarrier(resource, ResourceState::kDepthTarget);
 }

@@ -176,7 +176,6 @@ target_link_libraries(${target}
     Geometry
     Utilities
     Texture
-    ProgramApi
     imgui
 )
 
