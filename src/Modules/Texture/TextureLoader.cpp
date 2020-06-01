@@ -19,7 +19,7 @@ std::shared_ptr<Resource> CreateSRVFromFile(Context& context, const std::string&
     size_t row_bytes = 0;
     size_t num_bytes = 0;
     GetFormatInfo(width, height, format, num_bytes, row_bytes);
-    context.UpdateSubresource(res, 0, image, row_bytes, num_bytes);
+    context->UpdateSubresource(res, 0, image, row_bytes, num_bytes);
 
     SOIL_free_image_data(image);
 
@@ -41,7 +41,7 @@ std::shared_ptr<Resource> CreateSRVFromFileDDS(Context& context, const std::stri
         size_t row_bytes = 0;
         size_t num_bytes = 0;
         GetFormatInfo(Texture.extent(level).x, Texture.extent(level).y, format, num_bytes, row_bytes);
-        context.UpdateSubresource(res, level, Texture.data(0, 0, level), row_bytes, num_bytes);
+        context->UpdateSubresource(res, level, Texture.data(0, 0, level), row_bytes, num_bytes);
     }
 
     return res;

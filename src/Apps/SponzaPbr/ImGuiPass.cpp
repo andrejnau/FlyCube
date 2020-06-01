@@ -81,20 +81,21 @@ void ImGuiPass::OnRender()
 
     ImDrawData* draw_data = ImGui::GetDrawData();
 
-    m_context.UseProgram(m_program);
+    m_context->UseProgram(m_program);
+    m_context->Attach(m_program.vs.cbv.vertexBuffer, m_program.vs.cbuffer.vertexBuffer);
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f * m_height, 0.0f);
 
-    m_program.ps.om.rtv0.Attach(m_input.rtv);
+    m_context->Attach(m_program.ps.om.rtv0, m_input.rtv);
 
     m_indices_buffer.get()->Bind();
     m_positions_buffer.get()->BindToSlot(m_program.vs.ia.POSITION);
     m_texcoords_buffer.get()->BindToSlot(m_program.vs.ia.TEXCOORD);
     m_colors_buffer.get()->BindToSlot(m_program.vs.ia.COLOR);
 
-    m_program.ps.sampler.sampler0.Attach(m_sampler);
+    m_context->Attach(m_program.ps.sampler.sampler0, m_sampler);
 
-    m_program.SetBlendState({
+    m_context->SetBlendState({
         true,
         Blend::kSrcAlpha,
         Blend::kInvSrcAlpha,
@@ -103,11 +104,11 @@ void ImGuiPass::OnRender()
         Blend::kZero,
         BlendOp::kAdd });
 
-    m_program.SetRasterizeState({ FillMode::kSolid, CullMode::kNone });
+    m_context->SetRasterizeState({ FillMode::kSolid, CullMode::kNone });
 
-    m_program.SetDepthStencilState({ false });
+    m_context->SetDepthStencilState({ false });
 
-    m_context.SetViewport(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
+    m_context->SetViewport(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
     int vtx_offset = 0;
     int idx_offset = 0;
@@ -117,9 +118,9 @@ void ImGuiPass::OnRender()
         for (int j = 0; j < cmd_list->CmdBuffer.Size; ++j)
         {
             const ImDrawCmd& cmd = cmd_list->CmdBuffer[j];
-            m_program.ps.srv.texture0.Attach(*(std::shared_ptr<Resource>*)cmd.TextureId);
-            m_context.SetScissorRect(cmd.ClipRect.x, cmd.ClipRect.y, cmd.ClipRect.z, cmd.ClipRect.w);
-            m_context.DrawIndexed(cmd.ElemCount, idx_offset, vtx_offset);
+            m_context->Attach(m_program.ps.srv.texture0, *(std::shared_ptr<Resource>*)cmd.TextureId);
+            m_context->SetScissorRect(cmd.ClipRect.x, cmd.ClipRect.y, cmd.ClipRect.z, cmd.ClipRect.w);
+            m_context->DrawIndexed(cmd.ElemCount, idx_offset, vtx_offset);
             idx_offset += cmd.ElemCount;
         }
         vtx_offset += cmd_list->VtxBuffer.Size;
@@ -190,7 +191,7 @@ void ImGuiPass::CreateFontsTexture()
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(width, height, gli::format::FORMAT_RGBA8_UNORM_PACK8, num_bytes, row_bytes);
-    m_context.UpdateSubresource(m_font_texture_view, 0, pixels, row_bytes, num_bytes);
+    m_context->UpdateSubresource(m_font_texture_view, 0, pixels, row_bytes, num_bytes);
 
     // Store our identifier
     io.Fonts->TexID = (void*)&m_font_texture_view;

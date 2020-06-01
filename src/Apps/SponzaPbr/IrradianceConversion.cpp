@@ -28,13 +28,13 @@ void IrradianceConversion::OnRender()
 {
     if (!is || m_settings.irradiance_conversion_every_frame)
     {
-        m_context.BeginEvent("DrawIrradianceConvolution");
+        m_context->BeginEvent("DrawIrradianceConvolution");
         DrawIrradianceConvolution();
-        m_context.EndEvent();
+        m_context->EndEvent();
      
-        m_context.BeginEvent("DrawPrefilter");
+        m_context->BeginEvent("DrawPrefilter");
         DrawPrefilter();
-        m_context.EndEvent();
+        m_context->EndEvent();
 
         is = true;
     }
@@ -42,15 +42,17 @@ void IrradianceConversion::OnRender()
 
 void IrradianceConversion::DrawIrradianceConvolution()
 {
-    m_context.SetViewport(m_input.irradince.size, m_input.irradince.size);
+    m_context->SetViewport(m_input.irradince.size, m_input.irradince.size);
 
-    m_context.UseProgram(m_program_irradiance_convolution);
+    m_context->UseProgram(m_program_irradiance_convolution);
+    m_context->Attach(m_program_irradiance_convolution.vs.cbv.ConstantBuf, m_program_irradiance_convolution.vs.cbuffer.ConstantBuf);
 
-    m_program_irradiance_convolution.ps.sampler.g_sampler.Attach(m_sampler);
+    m_context->Attach(m_program_irradiance_convolution.ps.sampler.g_sampler, m_sampler);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_program_irradiance_convolution.ps.om.rtv0.Attach(m_input.irradince.res);
-    m_program_irradiance_convolution.ps.om.dsv.Attach(m_input.irradince.dsv).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
+    m_context->Attach(m_program_irradiance_convolution.ps.om.rtv0, m_input.irradince.res);
+    m_context->Attach(m_program_irradiance_convolution.ps.om.dsv, m_input.irradince.dsv);
+    m_context->ClearDepth(m_program_irradiance_convolution.ps.om.dsv, 1.0f);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program_irradiance_convolution.vs.ia.POSITION);
@@ -80,19 +82,21 @@ void IrradianceConversion::DrawIrradianceConvolution()
     {
         m_program_irradiance_convolution.vs.cbuffer.ConstantBuf.face = 6 * m_input.irradince.layer + i;
         m_program_irradiance_convolution.vs.cbuffer.ConstantBuf.view = glm::transpose(capture_views[i]);
-        m_program_irradiance_convolution.ps.srv.environmentMap.Attach(m_input.environment);
+        m_context->Attach(m_program_irradiance_convolution.ps.srv.environmentMap, m_input.environment);
         for (auto& range : m_input.model.ia.ranges)
         {
-            m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
 }
 
 void IrradianceConversion::DrawPrefilter()
 {
-    m_context.UseProgram(m_program_prefilter);
+    m_context->UseProgram(m_program_prefilter);
+    m_context->Attach(m_program_prefilter.ps.cbv.Settings, m_program_prefilter.ps.cbuffer.Settings);
+    m_context->Attach(m_program_prefilter.vs.cbv.ConstantBuf, m_program_prefilter.vs.cbuffer.ConstantBuf);
 
-    m_program_prefilter.ps.sampler.g_sampler.Attach(m_sampler);
+    m_context->Attach(m_program_prefilter.ps.sampler.g_sampler, m_sampler);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program_prefilter.vs.ia.POSITION);
@@ -121,27 +125,28 @@ void IrradianceConversion::DrawPrefilter()
     size_t max_mip_levels = log2(m_input.prefilter.size);
     for (size_t mip = 0; mip < max_mip_levels; ++mip)
     {
-        m_context.BeginEvent(std::string("DrawPrefilter: mip " + std::to_string(mip)).c_str());
-        m_context.SetViewport(m_input.prefilter.size >> mip, m_input.prefilter.size >> mip);
+        m_context->BeginEvent(std::string("DrawPrefilter: mip " + std::to_string(mip)).c_str());
+        m_context->SetViewport(m_input.prefilter.size >> mip, m_input.prefilter.size >> mip);
         m_program_prefilter.ps.cbuffer.Settings.roughness = (float)mip / (float)(max_mip_levels - 1);
         m_program_prefilter.ps.cbuffer.Settings.resolution = m_input.prefilter.size;
         std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-        m_program_prefilter.ps.om.rtv0.Attach(m_input.prefilter.res, { mip });
-        m_program_prefilter.ps.om.dsv.Attach(m_input.prefilter.dsv, { mip }).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
+        m_context->Attach(m_program_prefilter.ps.om.rtv0, m_input.prefilter.res, { mip });
+        m_context->Attach(m_program_prefilter.ps.om.dsv, m_input.prefilter.dsv, { mip });
+        m_context->ClearDepth(m_program_prefilter.ps.om.dsv, 1.0f);
 
         for (uint32_t i = 0; i < 6; ++i)
         {
-            m_context.BeginEvent(std::string("DrawPrefilter: mip " + std::to_string(mip) + " level " + std::to_string(i)).c_str());
+            m_context->BeginEvent(std::string("DrawPrefilter: mip " + std::to_string(mip) + " level " + std::to_string(i)).c_str());
             m_program_prefilter.vs.cbuffer.ConstantBuf.face = 6 * m_input.prefilter.layer + i;
             m_program_prefilter.vs.cbuffer.ConstantBuf.view = glm::transpose(capture_views[i]);
-            m_program_prefilter.ps.srv.environmentMap.Attach(m_input.environment);
+            m_context->Attach(m_program_prefilter.ps.srv.environmentMap, m_input.environment);
             for (auto& range : m_input.model.ia.ranges)
             {
-                m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+                m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
             }
-            m_context.EndEvent();
+            m_context->EndEvent();
         }
-        m_context.EndEvent();
+        m_context->EndEvent();
     }
 }
 

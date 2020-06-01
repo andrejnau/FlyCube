@@ -1,7 +1,7 @@
 StructuredBuffer<float> data;
 RWStructuredBuffer<float> result;
 
-cbuffer cbv
+cbuffer cb
 {
     uint bufferSize;
 };

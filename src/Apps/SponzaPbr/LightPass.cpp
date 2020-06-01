@@ -100,17 +100,22 @@ void LightPass::OnUpdate()
 
 void LightPass::OnRender()
 {
-    m_context.SetViewport(m_width, m_height);
+    m_context->SetViewport(m_width, m_height);
 
-    m_context.UseProgram(m_program);
+    m_context->UseProgram(m_program);
+    m_context->Attach(m_program.ps.cbv.Light, m_program.ps.cbuffer.Light);
+    m_context->Attach(m_program.ps.cbv.Settings, m_program.ps.cbuffer.Settings);
+    m_context->Attach(m_program.ps.cbv.ShadowParams, m_program.ps.cbuffer.ShadowParams);
 
-    m_program.ps.sampler.g_sampler.Attach(m_sampler);
-    m_program.ps.sampler.brdf_sampler.Attach(m_sampler_brdf);
-    m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_compare_sampler);
+    m_context->Attach(m_program.ps.sampler.g_sampler, m_sampler);
+    m_context->Attach(m_program.ps.sampler.brdf_sampler, m_sampler_brdf);
+    m_context->Attach(m_program.ps.sampler.LightCubeShadowComparsionSampler, m_compare_sampler);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_program.ps.om.rtv0.Attach(output.rtv).Clear(color);
-    m_program.ps.om.dsv.Attach(m_depth_stencil_view).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
+    m_context->Attach(m_program.ps.om.rtv0, output.rtv);
+    m_context->ClearColor(m_program.ps.om.rtv0, color);
+    m_context->Attach(m_program.ps.om.dsv, m_depth_stencil_view);
+    m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
@@ -118,21 +123,21 @@ void LightPass::OnRender()
 
     for (auto& range : m_input.model.ia.ranges)
     {
-        m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position);
-        m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal);
-        m_program.ps.srv.gAlbedo.Attach(m_input.geometry_pass.albedo);
-        m_program.ps.srv.gMaterial.Attach(m_input.geometry_pass.material);
+        m_context->Attach(m_program.ps.srv.gPosition, m_input.geometry_pass.position);
+        m_context->Attach(m_program.ps.srv.gNormal, m_input.geometry_pass.normal);
+        m_context->Attach(m_program.ps.srv.gAlbedo, m_input.geometry_pass.albedo);
+        m_context->Attach(m_program.ps.srv.gMaterial, m_input.geometry_pass.material);
         if (m_settings.use_rtao && m_input.ray_tracing_ao)
-            m_program.ps.srv.gSSAO.Attach(*m_input.ray_tracing_ao);
+            m_context->Attach(m_program.ps.srv.gSSAO, *m_input.ray_tracing_ao);
         else if (m_settings.use_ssao)
-            m_program.ps.srv.gSSAO.Attach(m_input.ssao_pass.ao);
-        m_program.ps.srv.irradianceMap.Attach(m_input.irradince);
-        m_program.ps.srv.prefilterMap.Attach(m_input.prefilter);
-        m_program.ps.srv.brdfLUT.Attach(m_input.brdf);
+            m_context->Attach(m_program.ps.srv.gSSAO, m_input.ssao_pass.ao);
+        m_context->Attach(m_program.ps.srv.irradianceMap, m_input.irradince);
+        m_context->Attach(m_program.ps.srv.prefilterMap, m_input.prefilter);
+        m_context->Attach(m_program.ps.srv.brdfLUT, m_input.brdf);
         if (m_settings.use_shadow)
-            m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
+            m_context->Attach(m_program.ps.srv.LightCubeShadowMap, m_input.shadow_pass.srv);
 
-        m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+        m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 }
 
@@ -156,7 +161,6 @@ void LightPass::OnModifySponzaSettings(const SponzaSettings& settings)
     if (prev.msaa_count != m_settings.msaa_count)
     {
         m_program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
-        m_program.ps.UpdateShader();
-        m_program.LinkProgram();
+        m_program.UpdateProgram();
     }
 }

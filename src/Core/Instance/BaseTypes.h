@@ -470,3 +470,17 @@ struct ResourceBarrierDesc
     uint32_t base_array_layer = 0;
     uint32_t layer_count = 1;
 };
+
+struct ResourceLazyViewDesc
+{
+    std::shared_ptr<Resource> resource;
+    LazyViewDesc view_desc;
+};
+
+class CommandList;
+
+class DeferredView
+{
+public:
+    virtual ResourceLazyViewDesc GetView(CommandList& command_list) = 0;
+};

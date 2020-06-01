@@ -77,7 +77,7 @@ void IBLCompute::OnUpdate()
 
 void IBLCompute::OnRender()
 {
-    m_context.SetViewport(m_size, m_size);
+    m_context->SetViewport(m_size, m_size);
 
     for (auto& ibl_model : m_input.scene_list)
     {
@@ -114,9 +114,11 @@ void IBLCompute::OnRender()
 
 void IBLCompute::DrawPrePass(Model & ibl_model)
 {
-    m_context.UseProgram(m_program_pre_pass);
+    m_context->UseProgram(m_program_pre_pass);
+    m_context->Attach(m_program_pre_pass.vs.cbv.ConstantBuf, m_program_pre_pass.vs.cbuffer.ConstantBuf);
+    m_context->Attach(m_program_pre_pass.gs.cbv.GSParams, m_program_pre_pass.gs.cbuffer.GSParams);
 
-    m_program_pre_pass.ps.sampler.g_sampler.Attach(m_sampler);
+    m_context->Attach(m_program_pre_pass.ps.sampler.g_sampler, m_sampler);
 
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 Down = glm::vec3(0.0f, -1.0f, 0.0f);
@@ -138,7 +140,8 @@ void IBLCompute::DrawPrePass(Model & ibl_model)
     view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
     view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
 
-    m_program_pre_pass.ps.om.dsv.Attach(ibl_model.ibl_dsv).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
+    m_context->Attach(m_program_pre_pass.ps.om.dsv, ibl_model.ibl_dsv);
+    m_context->ClearDepth(m_program_pre_pass.ps.om.dsv, 1.0f);
 
     for (auto& model : m_input.scene_list)
     {
@@ -153,8 +156,8 @@ void IBLCompute::DrawPrePass(Model & ibl_model)
         std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context);
         std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context);
 
-        m_program_pre_pass.vs.srv.bone_info.Attach(bones_info_srv);
-        m_program_pre_pass.vs.srv.gBones.Attach(bone_srv);
+        m_context->Attach(m_program_pre_pass.vs.srv.bone_info, bones_info_srv);
+        m_context->Attach(m_program_pre_pass.vs.srv.gBones, bone_srv);
 
         model.ia.indices.Bind();
         model.ia.positions.BindToSlot(m_program_pre_pass.vs.ia.POSITION);
@@ -167,18 +170,23 @@ void IBLCompute::DrawPrePass(Model & ibl_model)
         for (auto& range : model.ia.ranges)
         {
             auto& material = model.GetMaterial(range.id);
-            m_program_pre_pass.ps.srv.alphaMap.Attach(material.texture.opacity);
-            m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            m_context->Attach(m_program_pre_pass.ps.srv.alphaMap, material.texture.opacity);
+            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
 }
 
 void IBLCompute::Draw(Model& ibl_model)
 {
-    m_context.UseProgram(m_program);
+    m_context->UseProgram(m_program);
+    m_context->Attach(m_program.vs.cbv.ConstantBuf, m_program.vs.cbuffer.ConstantBuf);
+    m_context->Attach(m_program.gs.cbv.GSParams, m_program.gs.cbuffer.GSParams);
+    m_context->Attach(m_program.ps.cbv.Light, m_program.ps.cbuffer.Light);
+    m_context->Attach(m_program.ps.cbv.ShadowParams, m_program.ps.cbuffer.ShadowParams);
+    m_context->Attach(m_program.ps.cbv.Settings, m_program.ps.cbuffer.Settings);
 
-    m_program.ps.sampler.g_sampler.Attach(m_sampler);
-    m_program.ps.sampler.LightCubeShadowComparsionSampler.Attach(m_compare_sampler);
+    m_context->Attach(m_program.ps.sampler.g_sampler, m_sampler);
+    m_context->Attach(m_program.ps.sampler.LightCubeShadowComparsionSampler, m_compare_sampler);
 
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 Down = glm::vec3(0.0f, -1.0f, 0.0f);
@@ -202,15 +210,17 @@ void IBLCompute::Draw(Model& ibl_model)
     view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
     view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
 
-    m_program.ps.om.rtv0.Attach(ibl_model.ibl_rtv).Clear(color);
+    m_context->Attach(m_program.ps.om.rtv0, ibl_model.ibl_rtv);
+    m_context->ClearColor(m_program.ps.om.rtv0, color);
     if (m_use_pre_pass)
     {
-        m_program.ps.om.dsv.Attach(ibl_model.ibl_dsv);
-        m_program.SetDepthStencilState({ true, DepthComparison::kLessEqual });
+        m_context->Attach(m_program.ps.om.dsv, ibl_model.ibl_dsv);
+        m_context->SetDepthStencilState({ true, DepthComparison::kLessEqual });
     }
     else
     {
-        m_program.ps.om.dsv.Attach(ibl_model.ibl_dsv).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
+        m_context->Attach(m_program.ps.om.dsv, ibl_model.ibl_dsv);
+        m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
     }
 
     for (auto& model : m_input.scene_list)
@@ -226,8 +236,8 @@ void IBLCompute::Draw(Model& ibl_model)
         std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context);
         std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context);
 
-        m_program.vs.srv.bone_info.Attach(bones_info_srv);
-        m_program.vs.srv.gBones.Attach(bone_srv);
+        m_context->Attach(m_program.vs.srv.bone_info, bones_info_srv);
+        m_context->Attach(m_program.vs.srv.gBones, bone_srv);
 
         model.ia.indices.Bind();
         model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
@@ -245,34 +255,35 @@ void IBLCompute::Draw(Model& ibl_model)
             m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.glossiness && !material.texture.roughness;
             m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.use_flip_normal_y;
 
-            m_program.ps.srv.normalMap.Attach(material.texture.normal);
-            m_program.ps.srv.albedoMap.Attach(material.texture.albedo);
-            m_program.ps.srv.roughnessMap.Attach(material.texture.roughness);
-            m_program.ps.srv.metalnessMap.Attach(material.texture.metalness);
-            m_program.ps.srv.aoMap.Attach(material.texture.occlusion);
-            m_program.ps.srv.alphaMap.Attach(material.texture.opacity);
-            m_program.ps.srv.LightCubeShadowMap.Attach(m_input.shadow_pass.srv);
+            m_context->Attach(m_program.ps.srv.normalMap, material.texture.normal);
+            m_context->Attach(m_program.ps.srv.albedoMap, material.texture.albedo);
+            m_context->Attach(m_program.ps.srv.roughnessMap, material.texture.roughness);
+            m_context->Attach(m_program.ps.srv.metalnessMap, material.texture.metalness);
+            m_context->Attach(m_program.ps.srv.aoMap, material.texture.occlusion);
+            m_context->Attach(m_program.ps.srv.alphaMap, material.texture.opacity);
+            m_context->Attach(m_program.ps.srv.LightCubeShadowMap, m_input.shadow_pass.srv);
 
-            m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
 }
 
 void IBLCompute::DrawBackgroud(Model& ibl_model)
 {
-    m_context.UseProgram(m_program_backgroud);
+    m_context->UseProgram(m_program_backgroud);
+    m_context->Attach(m_program_backgroud.vs.cbv.ConstantBuf, m_program_backgroud.vs.cbuffer.ConstantBuf);
 
-    m_program_backgroud.SetDepthStencilState({ true, DepthComparison::kLessEqual });
+    m_context->SetDepthStencilState({ true, DepthComparison::kLessEqual });
 
-    m_program_backgroud.ps.sampler.g_sampler.Attach(m_sampler);
+    m_context->Attach(m_program_backgroud.ps.sampler.g_sampler, m_sampler);
 
-    m_program_backgroud.ps.om.rtv0.Attach(ibl_model.ibl_rtv);
-    m_program_backgroud.ps.om.dsv.Attach(ibl_model.ibl_dsv);
+    m_context->Attach(m_program_backgroud.ps.om.rtv0, ibl_model.ibl_rtv);
+    m_context->Attach(m_program_backgroud.ps.om.dsv, ibl_model.ibl_dsv);
 
     m_input.model_cube.ia.indices.Bind();
     m_input.model_cube.ia.positions.BindToSlot(m_program_backgroud.vs.ia.POSITION);
 
-    m_program_backgroud.ps.srv.environmentMap.Attach(m_input.environment);
+    m_context->Attach(m_program_backgroud.ps.srv.environmentMap, m_input.environment);
 
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 Down = glm::vec3(0.0f, -1.0f, 0.0f);
@@ -303,19 +314,19 @@ void IBLCompute::DrawBackgroud(Model& ibl_model)
 
         for (auto& range : m_input.model_cube.ia.ranges)
         {
-            m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
 }
 
 void IBLCompute::DrawDownSample(Model & ibl_model, size_t texture_mips)
 {
-    m_context.UseProgram(m_program_downsample);
+    m_context->UseProgram(m_program_downsample);
     for (size_t i = 1; i < texture_mips; ++i)
     {
-        m_program_downsample.cs.srv.inputTexture.Attach(ibl_model.ibl_rtv, {i - 1, 1});
-        m_program_downsample.cs.uav.outputTexture.Attach(ibl_model.ibl_rtv, {i, 1});
-        m_context.Dispatch((m_size >> i) / 8, (m_size >> i) / 8, 6);
+        m_context->Attach(m_program_downsample.cs.srv.inputTexture, ibl_model.ibl_rtv, {i - 1, 1});
+        m_context->Attach(m_program_downsample.cs.uav.outputTexture, ibl_model.ibl_rtv, {i, 1});
+        m_context->Dispatch((m_size >> i) / 8, (m_size >> i) / 8, 6);
     }
 }
 

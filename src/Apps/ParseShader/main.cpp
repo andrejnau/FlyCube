@@ -211,6 +211,8 @@ private:
             ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(cbdesc.Name, &res_desc));
 
             mustache::data tcbuffer;
+            tcbuffer.set("Name", cbdesc.Name);
+            tcbuffer.set("Slot", std::to_string(res_desc.BindPoint));
             tcbuffer.set("BufferName", cbdesc.Name);
             tcbuffer.set("BufferSize", std::to_string(cbdesc.Size));
             tcbuffer.set("BufferIndex", std::to_string(res_desc.BindPoint));
@@ -243,6 +245,7 @@ private:
             tcbuffers.push_back(tcbuffer);
         }
         m_tcontext["CBuffers"] = mustache::data{ tcbuffers };
+        m_tcontext["HasCBuffers"] = tcbuffers.is_non_empty_list();
 
         mustache::data ttextures{ mustache::data::type::list };
         mustache::data tuavs{ mustache::data::type::list };
@@ -290,8 +293,11 @@ private:
             }
         }
         m_tcontext["Textures"] = mustache::data{ ttextures };
+        m_tcontext["HasTextures"] = ttextures.is_non_empty_list();
         m_tcontext["UAVs"] = mustache::data{ tuavs };
+        m_tcontext["HasUAVs"] = tuavs.is_non_empty_list();
         m_tcontext["Samplers"] = mustache::data{ tsamplers };
+        m_tcontext["HasSamplers"] = tsamplers.is_non_empty_list();
 
         if (m_target.find("vs") != -1)
         {
@@ -317,11 +323,12 @@ private:
                 tinputs.push_back(tinput);
             }
             m_tcontext["Inputs"] = mustache::data{ tinputs };
+            m_tcontext["HasInputs"] = tinputs.is_non_empty_list();
         }
 
         if (m_target.find("ps") != -1)
         {
-            mustache::data toutputs{ mustache::data::type::list };          
+            mustache::data toutputs{ mustache::data::type::list };
 
             for (UINT i = 0; i < desc.OutputParameters; ++i)
             {
@@ -374,8 +381,10 @@ private:
                 ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(cbdesc.Name, &res_desc));
 
                 mustache::data tcbuffer;
+                tcbuffer.set("Name", cbdesc.Name);
                 tcbuffer.set("BufferName", cbdesc.Name);
                 tcbuffer.set("BufferSize", std::to_string(cbdesc.Size));
+                tcbuffer.set("Slot", std::to_string(res_desc.BindPoint));
                 tcbuffer.set("BufferIndex", std::to_string(res_desc.BindPoint));
                 tcbuffer.set("BufferSeparator", tcbuffers.is_empty_list() ? ":" : ",");
 
@@ -407,6 +416,7 @@ private:
             }
         }
         m_tcontext["CBuffers"] = mustache::data{ tcbuffers };
+        m_tcontext["HasCBuffers"] = tcbuffers.is_non_empty_list();
 
         mustache::data ttextures{ mustache::data::type::list };
         mustache::data tuavs{ mustache::data::type::list };
@@ -461,8 +471,11 @@ private:
             }
         }
         m_tcontext["Textures"] = mustache::data{ ttextures };
+        m_tcontext["HasTextures"] = ttextures.is_non_empty_list();
         m_tcontext["UAVs"] = mustache::data{ tuavs };
+        m_tcontext["HasUAVs"] = tuavs.is_non_empty_list();
         m_tcontext["Samplers"] = mustache::data{ tsamplers };
+        m_tcontext["HasSamplers"] = tsamplers.is_non_empty_list();
     }
 
     const Option& m_option;

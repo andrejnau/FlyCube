@@ -68,16 +68,8 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
-    Context
-    assimp
-    SOIL
     AppBox
-    Scene
-    Geometry
-    Utilities
-    Texture
-    Program
-    imgui
+    Context
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")

@@ -43,20 +43,23 @@ void ShadowPass::OnRender()
     if (!m_settings.use_shadow)
         return;
 
-    m_context.SetViewport(m_settings.s_size, m_settings.s_size);
+    m_context->SetViewport(m_settings.s_size, m_settings.s_size);
 
-    m_context.UseProgram(m_program);
+    m_context->UseProgram(m_program);
+    m_context->Attach(m_program.vs.cbv.VSParams, m_program.vs.cbuffer.VSParams);
+    m_context->Attach(m_program.gs.cbv.GSParams, m_program.gs.cbuffer.GSParams);
 
-    m_program.ps.sampler.g_sampler.Attach(m_sampler);
+    m_context->Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_program.ps.om.dsv.Attach(output.srv).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
+    m_context->Attach(m_program.ps.om.dsv, output.srv);
+    m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
 
     for (auto& model : m_input.scene_list)
     {
         m_program.vs.cbuffer.VSParams.World = glm::transpose(model.matrix);
 
-        m_program.SetRasterizeState({ FillMode::kSolid, CullMode::kBack, 4096 });
+        m_context->SetRasterizeState({ FillMode::kSolid, CullMode::kBack, 4096 });
 
         model.ia.indices.Bind();
         model.ia.positions.BindToSlot(m_program.vs.ia.SV_POSITION);
@@ -67,11 +70,11 @@ void ShadowPass::OnRender()
             auto& material = model.GetMaterial(range.id);
 
             if (m_settings.shadow_discard)
-                m_program.ps.srv.alphaMap.Attach(material.texture.opacity);
+                m_context->Attach(m_program.ps.srv.alphaMap, material.texture.opacity);
             else
-                m_program.ps.srv.alphaMap.Attach();
+                m_context->Attach(m_program.ps.srv.alphaMap);
 
-            m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
 }

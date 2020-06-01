@@ -19,9 +19,9 @@ void BRDFGen::OnRender()
 {
     if (!is)
     {
-        m_context.BeginEvent("DrawBRDF");
+        m_context->BeginEvent("DrawBRDF");
         DrawBRDF();
-        m_context.EndEvent();
+        m_context->EndEvent();
 
         is = true;
     }
@@ -29,13 +29,15 @@ void BRDFGen::OnRender()
 
 void BRDFGen::DrawBRDF()
 {
-    m_context.SetViewport(m_size, m_size);
+    m_context->SetViewport(m_size, m_size);
 
-    m_context.UseProgram(m_program);
+    m_context->UseProgram(m_program);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_program.ps.om.rtv0.Attach(output.brdf).Clear(color);
-    m_program.ps.om.dsv.Attach(m_dsv).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
+    m_context->Attach(m_program.ps.om.rtv0, output.brdf);
+    m_context->ClearColor(m_program.ps.om.rtv0, color);
+    m_context->Attach(m_program.ps.om.dsv, m_dsv);
+    m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
 
     m_input.square_model.ia.indices.Bind();
     m_input.square_model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
@@ -43,7 +45,7 @@ void BRDFGen::DrawBRDF()
 
     for (auto& range : m_input.square_model.ia.ranges)
     {
-        m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+        m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 }
 

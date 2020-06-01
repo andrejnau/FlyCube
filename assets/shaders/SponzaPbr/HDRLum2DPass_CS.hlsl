@@ -1,7 +1,7 @@
 Texture2D<float4> data;
 RWStructuredBuffer<float> result;
 
-cbuffer cbv
+cbuffer cb
 {
     uint2 dispatchSize;
 };

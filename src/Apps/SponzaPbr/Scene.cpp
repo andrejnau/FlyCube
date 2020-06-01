@@ -145,67 +145,67 @@ void Scene::OnRender()
     m_render_target_view = m_context.GetBackBuffer();
     m_camera.SetViewport(m_width, m_height);
 
-    m_context.BeginEvent("Skinning Pass");
+    m_context->BeginEvent("Skinning Pass");
     m_skinning_pass.OnRender();
-    m_context.EndEvent();
+    m_context->EndEvent();
 
-    m_context.BeginEvent("Geometry Pass");
+    m_context->BeginEvent("Geometry Pass");
     m_geometry_pass.OnRender();
-    m_context.EndEvent();
+    m_context->EndEvent();
 
-    m_context.BeginEvent("Shadow Pass");
+    m_context->BeginEvent("Shadow Pass");
     m_shadow_pass.OnRender();
-    m_context.EndEvent();
+    m_context->EndEvent();
 
-    m_context.BeginEvent("SSAO Pass");
+    m_context->BeginEvent("SSAO Pass");
     m_ssao_pass.OnRender();
-    m_context.EndEvent();
+    m_context->EndEvent();
 
 #ifdef RAYTRACING_SUPPORT
     if (m_ray_tracing_ao_pass)
     {
-        m_context.BeginEvent("DXR AO Pass");
+        m_context->BeginEvent("DXR AO Pass");
         m_ray_tracing_ao_pass->OnRender();
-        m_context.EndEvent();
+        m_context->EndEvent();
     }
 #endif
 
-    m_context.BeginEvent("brdf Pass");
+    m_context->BeginEvent("brdf Pass");
     m_brdf.OnRender();
-    m_context.EndEvent();
+    m_context->EndEvent();
 
-    m_context.BeginEvent("equirectangular to cubemap Pass");
+    m_context->BeginEvent("equirectangular to cubemap Pass");
     m_equirectangular2cubemap.OnRender();
-    m_context.EndEvent();
+    m_context->EndEvent();
 
-    m_context.BeginEvent("IBLCompute");
+    m_context->BeginEvent("IBLCompute");
     m_ibl_compute.OnRender();
-    m_context.EndEvent();
+    m_context->EndEvent();
 
-    m_context.BeginEvent("Irradiance Conversion Pass");
+    m_context->BeginEvent("Irradiance Conversion Pass");
     for (auto& x : m_irradiance_conversion)
     {
         x->OnRender();
     }
-    m_context.EndEvent();
+    m_context->EndEvent();
 
-    m_context.BeginEvent("Light Pass");
+    m_context->BeginEvent("Light Pass");
     m_light_pass.OnRender();
-    m_context.EndEvent();
+    m_context->EndEvent();
 
-    m_context.BeginEvent("Background Pass");
+    m_context->BeginEvent("Background Pass");
     m_background_pass.OnRender();
-    m_context.EndEvent();
+    m_context->EndEvent();
 
-    m_context.BeginEvent("HDR Pass");
+    m_context->BeginEvent("HDR Pass");
     m_compute_luminance.OnRender();
-    m_context.EndEvent();
+    m_context->EndEvent();
 
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
-        m_context.BeginEvent("ImGui Pass");
+        m_context->BeginEvent("ImGui Pass");
         m_imgui_pass.OnRender();
-        m_context.EndEvent();
+        m_context->EndEvent();
     }
 
     m_context.Present();
@@ -221,7 +221,8 @@ void Scene::OnResize(int width, int height)
 
     m_render_target_view.reset();
 
-    m_context.OnResize(width, height);
+    // TODO
+    // m_context.OnResize(width, height);
 
     CreateRT();
 

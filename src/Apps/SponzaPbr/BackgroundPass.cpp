@@ -25,25 +25,26 @@ void BackgroundPass::OnUpdate()
 
 void BackgroundPass::OnRender()
 {
-    m_context.SetViewport(m_width, m_height);
+    m_context->SetViewport(m_width, m_height);
 
-    m_context.UseProgram(m_program);
+    m_context->UseProgram(m_program);
+    m_context->Attach(m_program.vs.cbv.ConstantBuf, m_program.vs.cbuffer.ConstantBuf);
 
-    m_program.SetDepthStencilState({ true, DepthComparison::kLessEqual });
+    m_context->SetDepthStencilState({ true, DepthComparison::kLessEqual });
 
-    m_program.ps.sampler.g_sampler.Attach(m_sampler);
+    m_context->Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
-    m_program.ps.om.rtv0.Attach(m_input.rtv);
-    m_program.ps.om.dsv.Attach(m_input.dsv);
+    m_context->Attach(m_program.ps.om.rtv0, m_input.rtv);
+    m_context->Attach(m_program.ps.om.dsv, m_input.dsv);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
 
-    m_program.ps.srv.environmentMap.Attach(m_input.environment);
+    m_context->Attach(m_program.ps.srv.environmentMap, m_input.environment);
 
     for (auto& range : m_input.model.ia.ranges)
     {
-        m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+        m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 }
 

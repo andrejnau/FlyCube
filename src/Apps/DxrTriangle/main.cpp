@@ -25,32 +25,32 @@ int main(int argc, char *argv[])
         glm::vec3(0.5, -0.5, 0.0)
     };
     std::shared_ptr<Resource> positions = context.CreateBuffer(BindFlag::kVertexBuffer, sizeof(glm::vec3) * positions_data.size());
-    context.UpdateSubresource(positions, 0, positions_data.data(), 0, 0);
+    context->UpdateSubresource(positions, 0, positions_data.data(), 0, 0);
 
-    std::shared_ptr<Resource> bottom = context.CreateBottomLevelAS({ positions, gli::format::FORMAT_RGB32_SFLOAT_PACK32, 3 });
+    std::shared_ptr<Resource> bottom = context->CreateBottomLevelAS({ positions, gli::format::FORMAT_RGB32_SFLOAT_PACK32, 3 });
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> geometry = {
         { bottom, glm::mat4() },
     };
-    std::shared_ptr<Resource> top = context.CreateTopLevelAS(geometry);
+    std::shared_ptr<Resource> top = context->CreateTopLevelAS(geometry);
     std::shared_ptr<Resource> uav = context.CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kShaderResource, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, rect.width, rect.height);
 
     while (!app.PollEvents())
     {
-        context.UseProgram(raytracing_program);
-        raytracing_program.lib.srv.geometry.Attach(top);
-        raytracing_program.lib.uav.result.Attach(uav);
-        context.DispatchRays(rect.width, rect.height, 1);
+        context->UseProgram(raytracing_program);
+        context->Attach(raytracing_program.lib.srv.geometry, top);
+        context->Attach(raytracing_program.lib.uav.result, uav);
+        context->DispatchRays(rect.width, rect.height, 1);
 
-        context.UseProgram(graphics_program);
-        context.SetViewport(rect.width, rect.height);
-        graphics_program.ps.om.rtv0.Attach(context.GetBackBuffer());
+        context->UseProgram(graphics_program);
+        context->SetViewport(rect.width, rect.height);
+        context->Attach(graphics_program.ps.om.rtv0, context.GetBackBuffer());
         square.ia.indices.Bind();
         square.ia.positions.BindToSlot(graphics_program.vs.ia.POSITION);
         square.ia.texcoords.BindToSlot(graphics_program.vs.ia.TEXCOORD);
         for (auto& range : square.ia.ranges)
         {
-            graphics_program.ps.srv.tex.Attach(uav);
-            context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            context->Attach(graphics_program.ps.srv.tex, uav);
+            context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
 
         context.Present();

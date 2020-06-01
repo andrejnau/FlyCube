@@ -1,123 +1,81 @@
 #pragma once
-
-#include <ProgramApi/Program.h>
+#include <Context/Context.h>
+#include <Context/Program.h>
+#include <Context/BufferLayout.h>
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>
 #include <memory>
 
-class {{ShaderName}}
+struct {{ShaderName}}Desc
 {
-public:
-    ShaderDesc desc;
-    static const ShaderType type = {{ShaderType}};
+    static constexpr ShaderType type = {{ShaderType}};
+    ShaderDesc desc = { "{{ShaderPath}}", "{{Entrypoint}}", type };{{#HasCBuffers}}
 
-    struct
+    struct CBV
     {
-{{#CBuffers}}        struct
-        {
-{{#Variables}}            {{&Type}} {{Name}};
-{{/Variables}}        } {{BufferName}};
-{{/CBuffers}}    } cbuffer;
+{{#CBuffers}}        NamedBindKey {{Name}} = { type, ViewType::kConstantBuffer, {{Slot}}, "{{Name}}" };
+{{/CBuffers}}    } cbv;{{/HasCBuffers}}{{#HasTextures}}
 
     struct SRV
     {
-        SRV(Context& context)
-{{#Textures}}            {{Separator}} {{Name}}(context, type, "{{Name}}", {{Slot}})
-{{/Textures}}        {
-        }
-
-{{#Textures}}       SRVBinding {{Name}};
-{{/Textures}}    } srv;
+{{#Textures}}       NamedBindKey {{Name}} = { type, ViewType::kShaderResource, {{Slot}}, "{{Name}}" };
+{{/Textures}}    } srv;{{/HasTextures}}{{#HasUAVs}}
 
     struct UAV
     {
-        UAV(Context& context)
-{{#UAVs}}            {{Separator}} {{Name}}(context, type, "{{Name}}", {{Slot}})
-{{/UAVs}}        {
-        }
-
-{{#UAVs}}       UAVBinding {{Name}};
-{{/UAVs}}    } uav;
+{{#UAVs}}       NamedBindKey {{Name}} = { type, ViewType::kUnorderedAccess, {{Slot}}, "{{Name}}" };
+{{/UAVs}}    } uav;{{/HasUAVs}}{{#HasInputs}}
 
     struct IA
     {
 {{#Inputs}}        static constexpr const uint32_t {{Name}} = {{Slot}};
-{{/Inputs}}    } ia;
+{{/Inputs}}    } ia;{{/HasInputs}}{{#HasOutputs}}
 
-    {{#HasOutputs}}
     struct OM
     {
-        OM(Context& context)
-{{#Outputs}}            {{Separator}} rtv{{Slot}}(context, {{Slot}})
-{{/Outputs}}            {{DSVSeparator}} dsv(context)
-        {
-        }
-
-{{#Outputs}}        RTVBinding rtv{{Slot}};
-{{/Outputs}}        DSVBinding dsv;
-    } om;
-    {{/HasOutputs}}
+{{#Outputs}}        NamedBindKey rtv{{Slot}} = { type, ViewType::kRenderTarget, {{Slot}}, "{{Name}}" };
+{{/Outputs}}        NamedBindKey dsv = { type, ViewType::kDepthStencil, 0, "" };
+    } om;{{/HasOutputs}}{{#HasSamplers}}
 
     struct Sampler
     {
-        Sampler(Context& context)
-{{#Samplers}}            {{Separator}} {{Name}}(context, type, "{{Name}}", {{Slot}})
-{{/Samplers}}        {
-        }
+{{#Samplers}}       NamedBindKey {{Name}} = { type, ViewType::kSampler, {{Slot}}, "{{Name}}" };
+{{/Samplers}}    } sampler;{{/HasSamplers}}
+};
 
-{{#Samplers}}       SamplerBinding {{Name}};
-{{/Samplers}}    } sampler;
-
-    {{ShaderName}}(ProgramApi& program)
-        : desc("{{ShaderPath}}", "{{Entrypoint}}", type)
-        , m_program(program)
-        , cbuffer{}
-        , srv(program.GetContext())
-        , uav(program.GetContext())
-        {{#HasOutputs}}, om(program.GetContext()) {{/HasOutputs}}
-        , sampler(program.GetContext())
-        , cbuffer_impl(*this)
+class {{ShaderName}} : public {{ShaderName}}Desc
+{
+public:{{#CBuffers}}
+    struct {{BufferName}}
     {
-        {{#CBuffers}}
+{{#Variables}}        {{&Type}} {{Name}};
+{{/Variables}}    };
+{{/CBuffers}}{{#CBuffers}}
+    BufferLayout {{BufferName}}_layout = {
+        {{BufferSize}},
+        { {{#Variables}}{{VariableSize}}, {{/Variables}} },
+        { {{#Variables}}offsetof({{BufferName}}, {{Name}}), {{/Variables}} },
+        { {{#Variables}}{{StartOffset}}, {{/Variables}} }
+    };
+{{/CBuffers}}{{#HasCBuffers}}
+    struct Cbuffer
+    {
+        Cbuffer({{ShaderName}}& shader, Context& context){{#CBuffers}}
+            {{BufferSeparator}} {{BufferName}}(context, shader.{{BufferName}}_layout){{/CBuffers}}
         {
-            NamedBindKey bind_key = { type, ViewType::kConstantBuffer, {{BufferIndex}}, "{{BufferName}}" };
-            m_program.SetCBufferLayout(bind_key, cbuffer_impl.{{BufferName}});
         }
-        {{/CBuffers}}
-    }
+{{#CBuffers}}
+        ConstantBuffer<{{BufferName}}> {{BufferName}};{{/CBuffers}}
+    } cbuffer;
 
-    void UpdateShader()
+    {{ShaderName}}(Context& context)
+        : cbuffer(*this, context)
     {
-        shader = m_program.GetContext().CompileShader(desc);
-    }
+    }{{/HasCBuffers}}{{^HasCBuffers}}
+    {{ShaderName}}(Context& context)
+    {
+    }{{/HasCBuffers}}
 
     std::shared_ptr<Shader> shader;
-
-private:
-    class CBufferImpl
-    {
-    public:
-        {{#CBuffers}}BufferLayout {{BufferName}};
-        {{/CBuffers}}
-        CBufferImpl({{ShaderName}}& shader)
-            {{#CBuffers}}{{BufferSeparator}} {{BufferName}}(
-                (const char*)&shader.cbuffer.{{BufferName}},
-                {{BufferSize}},
-                {
-                    {{#Variables}}{{VariableSize}}, {{/Variables}}
-                },
-                {
-                    {{#Variables}}offsetof(decltype(cbuffer.{{BufferName}}), {{Name}}), {{/Variables}}
-                },
-                {
-                    {{#Variables}}{{StartOffset}}, {{/Variables}}
-                }
-            )
-            {{/CBuffers}}
-        {
-        }
-    } cbuffer_impl;
-
-    ProgramApi& m_program;
 };

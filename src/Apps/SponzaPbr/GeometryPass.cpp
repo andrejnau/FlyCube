@@ -27,18 +27,25 @@ void GeometryPass::OnUpdate()
 
 void GeometryPass::OnRender()
 {
-    m_context.SetViewport(m_width, m_height);
+    m_context->SetViewport(m_width, m_height);
 
-    m_context.UseProgram(m_program);
+    m_context->UseProgram(m_program);
+    m_context->Attach(m_program.vs.cbv.ConstantBuf, m_program.vs.cbuffer.ConstantBuf);
+    m_context->Attach(m_program.ps.cbv.Settings, m_program.ps.cbuffer.Settings);
 
-    m_program.ps.sampler.g_sampler.Attach(m_sampler);
+    m_context->Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_program.ps.om.rtv0.Attach(output.position).Clear(color);
-    m_program.ps.om.rtv1.Attach(output.normal).Clear(color);
-    m_program.ps.om.rtv2.Attach(output.albedo).Clear(color);
-    m_program.ps.om.rtv3.Attach(output.material).Clear(color);
-    m_program.ps.om.dsv.Attach(output.dsv).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
+    m_context->Attach(m_program.ps.om.rtv0, output.position);
+    m_context->ClearColor(m_program.ps.om.rtv0, color);
+    m_context->Attach(m_program.ps.om.rtv1, output.normal);
+    m_context->ClearColor(m_program.ps.om.rtv1, color);
+    m_context->Attach(m_program.ps.om.rtv2, output.albedo);
+    m_context->ClearColor(m_program.ps.om.rtv2, color);
+    m_context->Attach(m_program.ps.om.rtv3, output.material);
+    m_context->ClearColor(m_program.ps.om.rtv3, color);
+    m_context->Attach(m_program.ps.om.dsv, output.dsv);
+    m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
 
     bool skiped = false;
     for (auto& model : m_input.scene_list)
@@ -66,15 +73,15 @@ void GeometryPass::OnRender()
             m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.glossiness && !material.texture.roughness;
             m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.use_flip_normal_y;
 
-            m_program.ps.srv.normalMap.Attach(material.texture.normal);
-            m_program.ps.srv.albedoMap.Attach(material.texture.albedo);
-            m_program.ps.srv.glossMap.Attach(material.texture.glossiness);
-            m_program.ps.srv.roughnessMap.Attach(material.texture.roughness);
-            m_program.ps.srv.metalnessMap.Attach(material.texture.metalness);
-            m_program.ps.srv.aoMap.Attach(material.texture.occlusion);
-            m_program.ps.srv.alphaMap.Attach(material.texture.opacity);
+            m_context->Attach(m_program.ps.srv.normalMap, material.texture.normal);
+            m_context->Attach(m_program.ps.srv.albedoMap, material.texture.albedo);
+            m_context->Attach(m_program.ps.srv.glossMap, material.texture.glossiness);
+            m_context->Attach(m_program.ps.srv.roughnessMap, material.texture.roughness);
+            m_context->Attach(m_program.ps.srv.metalnessMap, material.texture.metalness);
+            m_context->Attach(m_program.ps.srv.aoMap, material.texture.occlusion);
+            m_context->Attach(m_program.ps.srv.alphaMap, material.texture.opacity);
 
-            m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
 }

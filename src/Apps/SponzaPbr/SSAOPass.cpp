@@ -47,7 +47,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(4, 4, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);
-    context.UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
+    context->UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
 }
 
 void SSAOPass::OnUpdate()
@@ -68,13 +68,16 @@ void SSAOPass::OnRender()
     if (!m_settings.use_ssao)
         return;
 
-    m_context.SetViewport(m_width, m_height);
+    m_context->SetViewport(m_width, m_height);
 
-    m_context.UseProgram(m_program);
+    m_context->UseProgram(m_program);
+    m_context->Attach(m_program.ps.cbv.SSAOBuffer, m_program.ps.cbuffer.SSAOBuffer);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_program.ps.om.rtv0.Attach(m_ao).Clear(color);
-    m_program.ps.om.dsv.Attach(m_depth_stencil_view).Clear(ClearFlag::kDepth | ClearFlag::kStencil, 1.0f, 0);
+    m_context->Attach(m_program.ps.om.rtv0, m_ao);
+    m_context->ClearColor(m_program.ps.om.rtv0, color);
+    m_context->Attach(m_program.ps.om.dsv, m_depth_stencil_view);
+    m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
 
     m_input.square.ia.indices.Bind();
     m_input.square.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
@@ -82,24 +85,24 @@ void SSAOPass::OnRender()
 
     for (auto& range : m_input.square.ia.ranges)
     {
-        m_program.ps.srv.gPosition.Attach(m_input.geometry_pass.position);
-        m_program.ps.srv.gNormal.Attach(m_input.geometry_pass.normal);
-        m_program.ps.srv.noiseTexture.Attach(m_noise_texture);
-        m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+        m_context->Attach(m_program.ps.srv.gPosition, m_input.geometry_pass.position);
+        m_context->Attach(m_program.ps.srv.gNormal, m_input.geometry_pass.normal);
+        m_context->Attach(m_program.ps.srv.noiseTexture, m_noise_texture);
+        m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 
     if (m_settings.use_ao_blur)
     {
-        m_context.UseProgram(m_program_blur);
-        m_program_blur.ps.uav.out_uav.Attach(m_ao_blur);
+        m_context->UseProgram(m_program_blur);
+        m_context->Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
 
         m_input.square.ia.indices.Bind();
         m_input.square.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);
         m_input.square.ia.texcoords.BindToSlot(m_program_blur.vs.ia.TEXCOORD);
         for (auto& range : m_input.square.ia.ranges)
         {
-            m_program_blur.ps.srv.ssaoInput.Attach(m_ao);
-            m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            m_context->Attach(m_program_blur.ps.srv.ssaoInput, m_ao);
+            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
 
         output.ao = m_ao_blur;
@@ -131,8 +134,7 @@ void SSAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
     if (prev.msaa_count != m_settings.msaa_count)
     {
         m_program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
-        m_program.ps.UpdateShader();
-        m_program.LinkProgram();
+        m_program.UpdateProgram();
     }
 }
 

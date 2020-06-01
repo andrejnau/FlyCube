@@ -174,6 +174,8 @@ void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
             assert(false);
             continue;
         }
+        if (barrier.state_before == ResourceState::kRaytracingAccelerationStructure)
+            continue;
 
         decltype(auto) dx_resource = barrier.resource->As<DXResource>();
         D3D12_RESOURCE_STATES dx_state_before = ConvertSate(barrier.state_before);

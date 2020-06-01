@@ -12,7 +12,7 @@ RWStructuredBuffer<float3> out_tangent;
 
 StructuredBuffer<uint> index_buffer;
 
-cbuffer cbv
+cbuffer cb
 {
     uint IndexCount;
     uint StartIndexLocation;

@@ -58,13 +58,13 @@ void RayTracingAOPass::OnRender()
                 if (cur_id >= m_geometry.size())
                     m_geometry.resize(cur_id + 1);
 
-                m_bottom[cur_id] = m_context.CreateBottomLevelAS(vertex, index);
+                m_bottom[cur_id] = m_context->CreateBottomLevelAS(vertex, index);
                 m_geometry[cur_id] = { m_bottom[cur_id], glm::transpose(model.matrix) };
                 ++node_updated;
             }
         }
         if (node_updated)
-            m_top = m_context.CreateTopLevelAS(m_geometry);
+            m_top = m_context->CreateTopLevelAS(m_geometry);
     };
 
     build_geometry(!m_is_initialized);
@@ -75,25 +75,26 @@ void RayTracingAOPass::OnRender()
         ++m_raytracing_program.lib.cbuffer.Settings.frame_index;
     m_is_initialized = true;
 
-    m_context.UseProgram(m_raytracing_program);
-    m_raytracing_program.lib.srv.gPosition.Attach(m_input.geometry_pass.position);
-    m_raytracing_program.lib.srv.gNormal.Attach(m_input.geometry_pass.normal);
-    m_raytracing_program.lib.srv.geometry.Attach(m_top);
-    m_raytracing_program.lib.uav.result.Attach(m_ao);
-    m_context.DispatchRays(m_width, m_height, 1);
+    m_context->UseProgram(m_raytracing_program);
+    m_context->Attach(m_raytracing_program.lib.cbv.Settings, m_raytracing_program.lib.cbuffer.Settings);
+    m_context->Attach(m_raytracing_program.lib.srv.gPosition, m_input.geometry_pass.position);
+    m_context->Attach(m_raytracing_program.lib.srv.gNormal, m_input.geometry_pass.normal);
+    m_context->Attach(m_raytracing_program.lib.srv.geometry, m_top);
+    m_context->Attach(m_raytracing_program.lib.uav.result, m_ao);
+    m_context->DispatchRays(m_width, m_height, 1);
 
     if (m_settings.use_ao_blur)
     {
-        m_context.UseProgram(m_program_blur);
-        m_program_blur.ps.uav.out_uav.Attach(m_ao_blur);
+        m_context->UseProgram(m_program_blur);
+        m_context->Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
 
         m_input.square.ia.indices.Bind();
         m_input.square.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);
         m_input.square.ia.texcoords.BindToSlot(m_program_blur.vs.ia.TEXCOORD);
         for (auto& range : m_input.square.ia.ranges)
         {
-            m_program_blur.ps.srv.ssaoInput.Attach(m_ao);
-            m_context.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            m_context->Attach(m_program_blur.ps.srv.ssaoInput, m_ao);
+            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
 
         output.ao = m_ao_blur;
@@ -124,7 +125,6 @@ void RayTracingAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
     if (prev.msaa_count != m_settings.msaa_count)
     {
         m_raytracing_program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
-        m_raytracing_program.lib.UpdateShader();
-        m_raytracing_program.LinkProgram();
+        m_raytracing_program.UpdateProgram();
     }
 }
