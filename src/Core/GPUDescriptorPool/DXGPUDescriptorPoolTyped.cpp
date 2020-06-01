@@ -12,10 +12,18 @@ DXGPUDescriptorPoolTyped::DXGPUDescriptorPoolTyped(DXDevice& device, D3D12_DESCR
 
 DXGPUDescriptorPoolRange DXGPUDescriptorPoolTyped::Allocate(size_t count)
 {
+    auto it = m_empty_ranges.lower_bound(count);
+    if (it != m_empty_ranges.end())
+    {
+        size_t offset = it->second;
+        size_t size = it->first;
+        m_empty_ranges.erase(it);
+        return DXGPUDescriptorPoolRange(*this, m_device, m_heap, m_cpu_handle, m_gpu_handle, m_heap_readable, m_cpu_handle_readable, offset, size, m_device.GetDevice()->GetDescriptorHandleIncrementSize(m_type), m_type);
+    }
     if (m_offset + count > m_size)
         ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
     m_offset += count;
-    return DXGPUDescriptorPoolRange(m_device, m_heap, m_cpu_handle, m_gpu_handle, m_heap_readable, m_cpu_handle_readable, m_offset - count, count, m_device.GetDevice()->GetDescriptorHandleIncrementSize(m_type), m_type);
+    return DXGPUDescriptorPoolRange(*this, m_device, m_heap, m_cpu_handle, m_gpu_handle, m_heap_readable, m_cpu_handle_readable, m_offset - count, count, m_device.GetDevice()->GetDescriptorHandleIncrementSize(m_type), m_type);
 }
 
 void DXGPUDescriptorPoolTyped::ResizeHeap(size_t req_size)
@@ -40,15 +48,17 @@ void DXGPUDescriptorPoolTyped::ResizeHeap(size_t req_size)
         m_device.GetDevice()->CopyDescriptorsSimple(m_size, heap->GetCPUDescriptorHandleForHeapStart(), m_cpu_handle_readable, m_type);
     }
 
-    // TODO
-    // m_context.QueryOnDelete(m_heap);
-
     m_size = heap_desc.NumDescriptors;
     m_heap = heap;
     m_heap_readable = heap_readable;
     m_cpu_handle = m_heap->GetCPUDescriptorHandleForHeapStart();
     m_gpu_handle = m_heap->GetGPUDescriptorHandleForHeapStart();
     m_cpu_handle_readable = m_heap_readable->GetCPUDescriptorHandleForHeapStart();
+}
+
+void DXGPUDescriptorPoolTyped::OnRangeDestroy(size_t offset, size_t size)
+{
+    m_empty_ranges.emplace(size, offset);
 }
 
 void DXGPUDescriptorPoolTyped::ResetHeap()

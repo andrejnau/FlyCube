@@ -1,8 +1,10 @@
 #include "GPUDescriptorPool/DXGPUDescriptorPoolRange.h"
+#include "GPUDescriptorPool/DXGPUDescriptorPoolTyped.h"
 #include <Device/DXDevice.h>
 #include <d3dx12.h>
 
 DXGPUDescriptorPoolRange::DXGPUDescriptorPoolRange(
+    DXGPUDescriptorPoolTyped& pool,
     DXDevice& device,
     ComPtr<ID3D12DescriptorHeap>& heap,
     D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle,
@@ -13,7 +15,8 @@ DXGPUDescriptorPoolRange::DXGPUDescriptorPoolRange(
     size_t size,
     uint32_t increment_size,
     D3D12_DESCRIPTOR_HEAP_TYPE type)
-    : m_device(device)
+    : m_pool(pool)
+    , m_device(device)
     , m_heap(heap)
     , m_cpu_handle(cpu_handle)
     , m_gpu_handle(gpu_handle)
@@ -23,8 +26,13 @@ DXGPUDescriptorPoolRange::DXGPUDescriptorPoolRange(
     , m_size(size)
     , m_increment_size(increment_size)
     , m_type(type)
+    , m_callback(this, [&](auto) { m_pool.get().OnRangeDestroy(m_offset, m_size); })
 {
 }
+
+DXGPUDescriptorPoolRange::DXGPUDescriptorPoolRange(DXGPUDescriptorPoolRange&& oth) = default;
+
+DXGPUDescriptorPoolRange::~DXGPUDescriptorPoolRange() = default;
 
 void DXGPUDescriptorPoolRange::CopyCpuHandle(size_t dst_offset, D3D12_CPU_DESCRIPTOR_HANDLE handle)
 {
