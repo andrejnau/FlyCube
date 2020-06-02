@@ -1,9 +1,11 @@
 list(APPEND headers
     Context.h
+    BufferLayout.h
 )
 
 list(APPEND sources
     Context.cpp
+    BufferLayout.cpp
 )
 
 add_library(Context ${headers} ${sources})

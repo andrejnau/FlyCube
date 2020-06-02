@@ -9,6 +9,7 @@ CommandListBox::CommandListBox(Device& device)
 
 void CommandListBox::Open()
 {
+    m_upload.clear();
     m_bound_resources.clear();
     m_bound_deferred_view.clear();
     m_command_list->Open();
@@ -43,7 +44,7 @@ void CommandListBox::UpdateSubresourceDefault(const std::shared_ptr<Resource>& r
         m_is_open_render_pass = false;
     }
 
-    std::shared_ptr<Resource>& upload_resource = resource->GetPrivateResource(subresource);
+    std::shared_ptr<Resource>& upload_resource = m_upload.emplace_back();
 
     switch (resource->GetResourceType())
     {
@@ -265,7 +266,7 @@ void CommandListBox::ApplyBindings()
 
     for (auto& x : m_bound_deferred_view)
     {
-        auto view = x.second->GetView(*m_command_list);
+        auto view = x.second->GetView(*this);
         if (!m_program->HasShader(x.first.shader_type))
             continue;
         Attach(x.first, CreateView(x.first, view.resource, view.view_desc));

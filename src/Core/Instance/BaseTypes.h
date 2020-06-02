@@ -477,10 +477,10 @@ struct ResourceLazyViewDesc
     LazyViewDesc view_desc;
 };
 
-class CommandList;
+class CommandListBox;
 
 class DeferredView
 {
 public:
-    virtual ResourceLazyViewDesc GetView(CommandList& command_list) = 0;
+    virtual ResourceLazyViewDesc GetView(CommandListBox& command_list) = 0;
 };

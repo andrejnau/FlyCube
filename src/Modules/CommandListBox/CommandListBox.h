@@ -98,4 +98,5 @@ private:
     std::map<BindKey, std::string> m_binding_names;
 
     void UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch);
+    std::vector<std::shared_ptr<Resource>> m_upload;
 };
