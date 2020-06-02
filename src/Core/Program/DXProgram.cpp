@@ -318,14 +318,17 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
         bindings_by_heap[heap_type].insert(id);
     }
 
-    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::reference_wrapper<DXGPUDescriptorPoolRange>> descriptor_ranges;
+    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<DXGPUDescriptorPoolRange>> descriptor_ranges;
     for (auto& x : bindings_by_heap)
     {
+        std::shared_ptr<DXGPUDescriptorPoolRange> heap_range;
         auto it = m_heap_cache.find(x.second);
-        if (it == m_heap_cache.end())
+        if (it == m_heap_cache.end() || it->second.expired())
         {
-            it = m_heap_cache.emplace(x.second, m_device.GetGPUDescriptorPool().Allocate(x.first, HeapSizeByType(x.first))).first;
-            auto& descriptor_range = it->second;
+            if (it != m_heap_cache.end())
+                m_heap_cache.erase(it);
+            heap_range = std::make_shared<DXGPUDescriptorPoolRange>(m_device.GetGPUDescriptorPool().Allocate(x.first, HeapSizeByType(x.first)));
+            m_heap_cache.emplace(x.second, heap_range);
             for (auto& id : x.second)
             {
                 auto& desc = m_bindings[id];
@@ -356,10 +359,13 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
                 }
 
                 size_t slot = m_bind_to_slot.at(bind_key);
-                CopyDescriptor(descriptor_range, m_binding_layout[{bind_key.shader, range_type}].table.heap_offset + slot, desc.view);
+                CopyDescriptor(*heap_range, m_binding_layout[{bind_key.shader, range_type}].table.heap_offset + slot, desc.view);
             }
         }
-        DXGPUDescriptorPoolRange& heap_range = it->second;
+        else
+        {
+            heap_range = it->second.lock();
+        }
         descriptor_ranges.emplace(std::piecewise_construct,
             std::forward_as_tuple(x.first),
             std::forward_as_tuple(heap_range));

@@ -20,5 +20,5 @@ protected:
 
 private:
     std::map<BindingDesc, size_t> m_bindings_id;
-    std::map<BindingsKey, std::shared_ptr<BindingSet>> m_binding_set_cache;
+    std::map<BindingsKey, std::weak_ptr<BindingSet>> m_binding_set_cache;
 };

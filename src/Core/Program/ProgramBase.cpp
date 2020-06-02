@@ -17,11 +17,12 @@ std::shared_ptr<BindingSet> ProgramBase::CreateBindingSet(const std::vector<Bind
     }
 
     auto it = m_binding_set_cache.find(bindings_key);
-    if (it == m_binding_set_cache.end())
-    {
-        it = m_binding_set_cache.emplace(bindings_key, CreateBindingSetImpl(bindings_key)).first;
-    }
-    return it->second;
+    if (it != m_binding_set_cache.end() && !it->second.expired())
+        return it->second.lock();
+
+    auto binding_set = CreateBindingSetImpl(bindings_key);
+    m_binding_set_cache.emplace(bindings_key, binding_set).first;
+    return binding_set;
 }
 
 bool ProgramBase::HasShader(ShaderType type) const

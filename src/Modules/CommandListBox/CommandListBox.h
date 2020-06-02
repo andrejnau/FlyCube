@@ -87,6 +87,7 @@ private:
     std::shared_ptr<Program> m_program;
     std::shared_ptr<Pipeline> m_pipeline;
     std::shared_ptr<BindingSet> m_binding_set;
+    std::vector<std::shared_ptr<BindingSet>> m_binding_sets;
 
     std::map<GraphicsPipelineDesc, std::shared_ptr<Pipeline>> m_pso;
     std::map<ComputePipelineDesc, std::shared_ptr<Pipeline>> m_compute_pso;

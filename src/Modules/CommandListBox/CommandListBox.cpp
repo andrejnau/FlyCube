@@ -12,6 +12,7 @@ void CommandListBox::Open()
     m_upload.clear();
     m_bound_resources.clear();
     m_bound_deferred_view.clear();
+    m_binding_sets.clear();
     m_command_list->Open();
 }
 
@@ -291,6 +292,7 @@ void CommandListBox::ApplyBindings()
     }
 
     m_binding_set = m_program->CreateBindingSet(descs);
+    m_binding_sets.emplace_back(m_binding_set);
     m_command_list->BindPipeline(m_pipeline);
     m_command_list->BindBindingSet(m_binding_set);
 

@@ -2,7 +2,7 @@
 #include <GPUDescriptorPool/DXGPUDescriptorPoolRange.h>
 
 DXBindingSet::DXBindingSet(DXProgram& program, bool is_compute,
-                           std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::reference_wrapper<DXGPUDescriptorPoolRange>> descriptor_ranges,
+                           std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<DXGPUDescriptorPoolRange>> descriptor_ranges,
                            std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE>, BindingLayout> binding_layout)
     : m_is_compute(is_compute)
     , m_descriptor_ranges(descriptor_ranges)
@@ -26,9 +26,9 @@ std::vector<ComPtr<ID3D12DescriptorHeap>> DXBindingSet::Apply(const ComPtr<ID3D1
     std::vector<ID3D12DescriptorHeap*> descriptor_heaps_ptr;
     for (decltype(auto) descriptor_range : m_descriptor_ranges)
     {
-        if (descriptor_range.second.get().GetSize() > 0)
+        if (descriptor_range.second->GetSize() > 0)
         {
-            descriptor_heaps.emplace_back(descriptor_range.second.get().GetHeap());
+            descriptor_heaps.emplace_back(descriptor_range.second->GetHeap());
             descriptor_heaps_ptr.emplace_back(descriptor_heaps.back().Get());
         }
     }
@@ -51,9 +51,9 @@ std::vector<ComPtr<ID3D12DescriptorHeap>> DXBindingSet::Apply(const ComPtr<ID3D1
             }
             if (!m_descriptor_ranges.count(heap_type))
                 continue;
-            std::reference_wrapper<DXGPUDescriptorPoolRange> heap_range = m_descriptor_ranges.find(heap_type)->second;
+            std::shared_ptr<DXGPUDescriptorPoolRange> heap_range = m_descriptor_ranges.at(heap_type);
             if (x.second.root_param_index != -1)
-                SetRootDescriptorTable(m_is_compute, command_list, x.second.root_param_index, heap_range.get().GetGpuHandle(x.second.table.root_param_heap_offset));
+                SetRootDescriptorTable(m_is_compute, command_list, x.second.root_param_index, heap_range->GetGpuHandle(x.second.table.root_param_heap_offset));
         }
     }
     return descriptor_heaps;
