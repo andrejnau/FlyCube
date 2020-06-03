@@ -44,8 +44,6 @@ void GeometryPass::OnRender()
     m_context->ClearColor(m_program.ps.om.rtv2, color);
     m_context->Attach(m_program.ps.om.rtv3, output.material);
     m_context->ClearColor(m_program.ps.om.rtv3, color);
-    m_context->Attach(m_program.ps.om.rtv4, output.uv);
-    m_context->ClearColor(m_program.ps.om.rtv4, color);
     m_context->Attach(m_program.ps.om.dsv, output.dsv);
     m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
 
@@ -111,6 +109,5 @@ void GeometryPass::CreateSizeDependentResources()
     output.normal = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
     output.albedo = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
     output.material = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    output.uv = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
     output.dsv = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
 }

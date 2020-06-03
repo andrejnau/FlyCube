@@ -22,7 +22,6 @@ public:
         std::shared_ptr<Resource> normal;
         std::shared_ptr<Resource> albedo;
         std::shared_ptr<Resource> material;
-        std::shared_ptr<Resource> uv;
         std::shared_ptr<Resource> dsv;
     } output;
 
