@@ -233,10 +233,11 @@ struct ViewDesc : public LazyViewDesc
     ViewType view_type;
     ResourceDimension dimension;
     uint32_t stride = 0;
+    bool bindless = false;
 
     auto MakeTie() const
     {
-        return std::tie(level, count, view_type, dimension, stride);
+        return std::tie(level, count, view_type, dimension, stride, bindless);
     }
 
     bool operator< (const ViewDesc& oth) const

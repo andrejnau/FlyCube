@@ -36,6 +36,7 @@ public:
     const ComPtr<ID3D12DescriptorHeap>& GetHeap() const;
 
     size_t GetSize() const;
+    size_t GetOffset() const;
 
 private:
     D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(D3D12_CPU_DESCRIPTOR_HANDLE handle, size_t offset = 0) const;

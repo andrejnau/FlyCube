@@ -101,9 +101,14 @@ void VKView::CreateRTV(const ViewDesc& view_desc, const VKResource& res)
     m_om = m_device.GetDevice().createImageViewUnique(m_view_info);
 }
 
-std::shared_ptr<Resource> VKView::GetResource()
+const std::shared_ptr<Resource>& VKView::GetResource() const
 {
     return m_resource;
+}
+
+uint32_t VKView::GetDescriptorId() const
+{
+    return -1;
 }
 
 const vk::ImageViewCreateInfo& VKView::GeViewInfo() const

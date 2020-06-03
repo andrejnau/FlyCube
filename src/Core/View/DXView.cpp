@@ -313,6 +313,16 @@ DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, con
         CreateDSV(view_desc, dx_resource, *m_handle);
         break;
     }
+
+    if (view_desc.bindless)
+    {
+        assert(view_desc.view_type != ViewType::kUnknown);
+        assert(view_desc.view_type != ViewType::kSampler);
+        assert(view_desc.view_type != ViewType::kRenderTarget);
+        assert(view_desc.view_type != ViewType::kDepthStencil);
+        m_range = std::make_shared<DXGPUDescriptorPoolRange>(m_device.GetGPUDescriptorPool().Allocate(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1));
+        m_range->CopyCpuHandle(0, m_handle->GetCpuHandle());
+    }
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DXView::GetHandle()
@@ -395,7 +405,14 @@ void DXView::CreateSampler(const ViewDesc& view_desc, const DXResource* res, DXC
     }
 }
 
-std::shared_ptr<Resource> DXView::GetResource()
+const std::shared_ptr<Resource>& DXView::GetResource() const
 {
     return m_resource;
+}
+
+uint32_t DXView::GetDescriptorId() const
+{
+    if (m_range)
+        return m_range->GetOffset();
+    return -1;
 }

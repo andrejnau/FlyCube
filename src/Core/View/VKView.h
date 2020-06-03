@@ -8,7 +8,8 @@ class VKView : public View
 {
 public:
     VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, const ViewDesc& view_desc);
-    std::shared_ptr<Resource> GetResource() override;
+    const std::shared_ptr<Resource>& GetResource() const override;
+    uint32_t GetDescriptorId() const override;
     const vk::ImageViewCreateInfo& GeViewInfo() const;
     vk::ImageView GetRtv() const;
     vk::ImageView GetSrv() const;

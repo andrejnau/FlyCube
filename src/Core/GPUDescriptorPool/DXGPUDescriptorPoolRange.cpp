@@ -73,3 +73,8 @@ size_t DXGPUDescriptorPoolRange::GetSize() const
 {
     return m_size;
 }
+
+size_t DXGPUDescriptorPoolRange::GetOffset() const
+{
+    return m_offset;
+}
