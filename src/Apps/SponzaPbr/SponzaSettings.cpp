@@ -25,6 +25,7 @@ SponzaSettings::SponzaSettings()
     only_ambient = false;
     light_in_camera = false;
     additional_lights = false;
+    show_only_position = false;
     show_only_albedo = false;
     show_only_normal = false;
     show_only_roughness = false;

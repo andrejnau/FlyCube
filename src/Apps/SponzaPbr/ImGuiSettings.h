@@ -43,6 +43,7 @@ public:
         add_checkbox("only ambientl", settings.only_ambient);
         add_checkbox("light in camera", settings.light_in_camera);
         add_checkbox("additional lights", settings.additional_lights);
+        add_checkbox("show_only_position", settings.show_only_position);
         add_checkbox("show_only_albedo", settings.show_only_albedo);
         add_checkbox("show_only_normal", settings.show_only_normal);
         add_checkbox("show_only_roughness", settings.show_only_roughness);

@@ -5,6 +5,7 @@
 #include <ProgramRef/GraphicsPS.h>
 #include <Geometry/Geometry.h>
 #include <glm/gtx/transform.hpp>
+#include <stdexcept>
 
 int main(int argc, char *argv[])
 {

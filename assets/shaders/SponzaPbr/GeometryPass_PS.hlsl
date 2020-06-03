@@ -85,7 +85,7 @@ PS_OUT main(VS_OUTPUT input)
         output.gNormal.rgb = CalcBumpedNormal(input);
     else
         output.gNormal.rgb = normalize(input.normal);
-    output.gNormal.a = 1.0;
+    output.gNormal.a = input.pos.z;
 
     output.gAlbedo = float4(getTexture(albedoMap, g_sampler, input.texCoord, true).rgb, 1.0);
 

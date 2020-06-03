@@ -14,7 +14,6 @@ struct VS_OUTPUT
 #define TEXTURE_TYPE Texture2D
 #endif
 
-TEXTURE_TYPE gPosition;
 TEXTURE_TYPE gNormal;
 TEXTURE_TYPE gAlbedo;
 TEXTURE_TYPE gMaterial;
@@ -37,6 +36,7 @@ cbuffer Light
     float4 light_color[LIGHT_COUNT];
     float4 light_pos[LIGHT_COUNT];
     float3 viewPos;
+    float4x4 inverted_mvp;
 };
 
 cbuffer ShadowParams
@@ -58,6 +58,7 @@ cbuffer Settings
     bool use_spec_ao_by_ndotv_roughness;
     float ambient_power;
     float light_power;
+    bool show_only_position;
     bool show_only_albedo;
     bool show_only_normal;
     bool show_only_roughness;
@@ -263,12 +264,20 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float3 lighting = 0;
     for (uint i = 0; i < SAMPLE_COUNT; ++i)
     {
-        float3 fragPos = getTexture(gPosition, input.texcoord, i).rgb;
         float3 normal = normalize(getTexture(gNormal, input.texcoord, i).rgb);
         float3 albedo = getTexture(gAlbedo, input.texcoord, i).rgb;
         float roughness = getTexture(gMaterial, input.texcoord, i).r;
         float metallic = getTexture(gMaterial, input.texcoord, i).g;
         int ibl_probe_index = getTexture(gMaterial, input.texcoord, i).a;
+
+        float x = input.texcoord.x * 2 - 1;
+        float y = (1 - input.texcoord.y) * 2 - 1;
+        float z = getTexture(gNormal, input.texcoord, i).a;
+        float4 vProjectedPos = float4(x, y, z, 1.0f);
+        // Transform by the inverse projection matrix
+        float4 vPositionVS = mul(vProjectedPos, inverted_mvp);  
+        // Divide by w to get the view-space position
+        float3 fragPos = vPositionVS.xyz / vPositionVS.w;
 
         float ao = 1;
         if (use_ao)
@@ -280,7 +289,12 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 
         ao = pow(max(0, min(ao, ssao)), 2.2);
 
-        if (show_only_albedo)
+        if (show_only_position)
+        {
+            lighting += fragPos;
+            continue;
+        }
+        else if (show_only_albedo)
         {
             lighting += albedo;
             continue;

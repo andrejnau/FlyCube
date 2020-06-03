@@ -49,6 +49,7 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.Settings.ambient_power = m_settings.ambient_power;
     m_program.ps.cbuffer.Settings.light_power = m_settings.light_power;
     m_program.ps.cbuffer.Settings.use_spec_ao_by_ndotv_roughness = m_settings.use_spec_ao_by_ndotv_roughness;
+    m_program.ps.cbuffer.Settings.show_only_position = m_settings.show_only_position;
     m_program.ps.cbuffer.Settings.show_only_albedo = m_settings.show_only_albedo;
     m_program.ps.cbuffer.Settings.show_only_normal = m_settings.show_only_normal;
     m_program.ps.cbuffer.Settings.show_only_roughness = m_settings.show_only_roughness;
@@ -96,6 +97,10 @@ void LightPass::OnUpdate()
             }
         }
     }
+
+    glm::mat4 projection, view, model;
+    m_input.camera.GetMatrix(projection, view, model);
+    m_program.ps.cbuffer.Light.inverted_mvp = glm::transpose(glm::inverse(projection * view));
 }
 
 void LightPass::OnRender()
@@ -123,7 +128,6 @@ void LightPass::OnRender()
 
     for (auto& range : m_input.model.ia.ranges)
     {
-        m_context->Attach(m_program.ps.srv.gPosition, m_input.geometry_pass.position);
         m_context->Attach(m_program.ps.srv.gNormal, m_input.geometry_pass.normal);
         m_context->Attach(m_program.ps.srv.gAlbedo, m_input.geometry_pass.albedo);
         m_context->Attach(m_program.ps.srv.gMaterial, m_input.geometry_pass.material);

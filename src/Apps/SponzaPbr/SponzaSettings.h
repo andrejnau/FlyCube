@@ -29,6 +29,7 @@ public:
     bool skip_sponza_model;
     bool light_in_camera;
     bool additional_lights;
+    bool show_only_position;
     bool show_only_albedo;
     bool show_only_normal;
     bool show_only_roughness;
