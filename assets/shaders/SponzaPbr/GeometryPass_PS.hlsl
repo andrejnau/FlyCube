@@ -43,6 +43,7 @@ struct PS_OUT
     float4 gNormal   : SV_Target1;
     float4 gAlbedo   : SV_Target2;
     float4 gMaterial : SV_Target3;
+    float4 gUv       : SV_Target4;
 };
 
 float3 CalcBumpedNormal(VS_OUTPUT input)
@@ -105,6 +106,9 @@ PS_OUT main(VS_OUTPUT input)
 
     output.gMaterial.b = getTexture(aoMap, g_sampler, input.texCoord).r;
     output.gMaterial.a = ibl_source;
+
+    output.gUv.xy = input.texCoord;
+    output.gUv.zw = float2(1.0f, 1.0f);
 
     return output;
 }
