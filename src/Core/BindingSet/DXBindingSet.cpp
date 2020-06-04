@@ -3,7 +3,7 @@
 
 DXBindingSet::DXBindingSet(DXProgram& program, bool is_compute,
                            std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<DXGPUDescriptorPoolRange>> descriptor_ranges,
-                           std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE, uint32_t /*space*/>, BindingLayout> binding_layout)
+                           std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE, uint32_t /*space*/, bool /*bindless*/>, BindingLayout> binding_layout)
     : m_is_compute(is_compute)
     , m_descriptor_ranges(descriptor_ranges)
     , m_binding_layout(binding_layout)
@@ -37,6 +37,8 @@ std::vector<ComPtr<ID3D12DescriptorHeap>> DXBindingSet::Apply(const ComPtr<ID3D1
 
     for (auto& x : m_binding_layout)
     {
+        if (x.second.root_param_index == -1)
+            continue;
         if (x.second.type == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
         {
             D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
@@ -49,11 +51,17 @@ std::vector<ComPtr<ID3D12DescriptorHeap>> DXBindingSet::Apply(const ComPtr<ID3D1
                 heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
                 break;
             }
+            if (std::get<3>(x.first))
+            {
+                // TODO
+                //SetRootDescriptorTable(m_is_compute, command_list, x.second.root_param_index, heap_range->GetGpuHandle(x.second.table.root_param_heap_offset));
+                continue;
+            }
+
             if (!m_descriptor_ranges.count(heap_type))
                 continue;
             std::shared_ptr<DXGPUDescriptorPoolRange> heap_range = m_descriptor_ranges.at(heap_type);
-            if (x.second.root_param_index != -1)
-                SetRootDescriptorTable(m_is_compute, command_list, x.second.root_param_index, heap_range->GetGpuHandle(x.second.table.root_param_heap_offset));
+            SetRootDescriptorTable(m_is_compute, command_list, x.second.root_param_index, heap_range->GetGpuHandle(x.second.table.root_param_heap_offset));
         }
     }
     return descriptor_heaps;

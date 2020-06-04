@@ -6,6 +6,7 @@
 #include <BindingSet/DXBindingSet.h>
 #include <deque>
 #include <set>
+#include <stdexcept>
 #include <d3dx12.h>
 
 DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders)
@@ -18,7 +19,72 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
     }
 
     std::vector<D3D12_ROOT_PARAMETER> root_parameters;
-    std::deque<std::array<D3D12_DESCRIPTOR_RANGE, 4>> descriptor_table_ranges;
+    std::deque<std::vector<D3D12_DESCRIPTOR_RANGE>> descriptor_table_ranges;
+
+    auto GetVisibility = [](ShaderType shader_type)
+    {
+        D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL;
+        switch (shader_type)
+        {
+        case ShaderType::kVertex:
+            visibility = D3D12_SHADER_VISIBILITY_VERTEX;
+            break;
+        case ShaderType::kPixel:
+            visibility = D3D12_SHADER_VISIBILITY_PIXEL;
+            break;
+        case ShaderType::kCompute:
+            visibility = D3D12_SHADER_VISIBILITY_ALL;
+            break;
+        case ShaderType::kGeometry:
+            visibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+            break;
+        }
+        return visibility;
+    };
+
+    auto GetRangeType = [](ViewType view_type)
+    {
+        D3D12_DESCRIPTOR_RANGE_TYPE range_type;
+        switch (view_type)
+        {
+        case ViewType::kShaderResource:
+            return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        case ViewType::kUnorderedAccess:
+            return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+        case ViewType::kConstantBuffer:
+            return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+        case ViewType::kSampler:
+            return D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+        default:
+            throw std::runtime_error("wrong view type");
+        }
+    };
+
+    auto add_bindless_range = [&](ShaderType shader_type, ViewType view_type, uint32_t base_slot, uint32_t space)
+    {
+        auto & descriptor_table_range = descriptor_table_ranges.emplace_back().emplace_back();
+        descriptor_table_range.RangeType = GetRangeType(view_type);
+        descriptor_table_range.NumDescriptors = UINT_MAX - base_slot;
+        descriptor_table_range.BaseShaderRegister = base_slot;
+        descriptor_table_range.RegisterSpace = space;
+        descriptor_table_range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+        D3D12_ROOT_DESCRIPTOR_TABLE descriptor_table;
+        descriptor_table.NumDescriptorRanges = 1;
+        descriptor_table.pDescriptorRanges = &descriptor_table_range;
+
+        m_binding_layout[{shader_type, GetRangeType(view_type), space, true}].root_param_index = static_cast<uint32_t>(root_parameters.size());
+        m_binding_layout[{shader_type, GetRangeType(view_type), space, true}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        m_binding_layout[{shader_type, GetRangeType(view_type), space, true}].table.root_param_heap_offset = 0;
+        m_binding_layout[{shader_type, GetRangeType(view_type), space, true}].table.heap_offset = 0;
+        m_binding_layout[{shader_type, GetRangeType(view_type), space, true}].table.start = base_slot;
+
+        root_parameters.emplace_back();
+        root_parameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        root_parameters.back().DescriptorTable = descriptor_table;
+        root_parameters.back().ShaderVisibility = GetVisibility(shader_type);
+    };
+
     for (auto& shader : m_shaders)
     {
         ShaderType shader_type = shader->GetType();
@@ -75,7 +141,9 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                     break;
                 }
 
-                m_bind_to_slot[{shader_type, view_type, res_desc.Name }] = { res_desc.BindPoint,  res_desc.Space };
+                if (res_desc.BindCount == 0)
+                    add_bindless_range(shader_type, view_type, res_desc.BindPoint, res_desc.Space);
+                m_bind_to_slot[{shader_type, view_type, res_desc.Name }] = { res_desc.BindPoint, res_desc.Space, res_desc.BindCount == 0 };
             }
         }
         else
@@ -124,28 +192,15 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                             view_type = ViewType::kUnorderedAccess;
                             break;
                         }
-                        m_bind_to_slot[{shader_type, view_type, res_desc.Name }] = { res_desc.BindPoint,  res_desc.Space };
+                        if (res_desc.BindCount == 0)
+                            add_bindless_range(shader_type, view_type, res_desc.BindPoint, res_desc.Space);
+                        m_bind_to_slot[{shader_type, view_type, res_desc.Name }] = { res_desc.BindPoint, res_desc.Space, res_desc.BindCount == 0 };
                     }
                 }
             }
         }
 
-        D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL;
-        switch (shader_type)
-        {
-        case ShaderType::kVertex:
-            visibility = D3D12_SHADER_VISIBILITY_VERTEX;
-            break;
-        case ShaderType::kPixel:
-            visibility = D3D12_SHADER_VISIBILITY_PIXEL;
-            break;
-        case ShaderType::kCompute:
-            visibility = D3D12_SHADER_VISIBILITY_ALL;
-            break;
-        case ShaderType::kGeometry:
-            visibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
-            break;
-        }
+        D3D12_SHADER_VISIBILITY visibility = GetVisibility(shader_type);
 
         for (uint32_t space : spaces)
         {
@@ -154,77 +209,80 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
             uint32_t num_uav = end_uav[space] - begin_uav[space];
             uint32_t num_sampler = end_sampler[space] - begin_sampler[space];
 
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space}].table.root_param_heap_offset = m_num_resources;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space}].table.heap_offset = m_num_resources;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space}].table.start = begin_srv[space];
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space, false}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space, false}].table.root_param_heap_offset = m_num_resources;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space, false}].table.heap_offset = m_num_resources;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space, false}].table.start = begin_srv[space];
 
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space}].table.root_param_heap_offset = m_num_resources;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space}].table.heap_offset = m_num_resources + num_srv;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space}].table.start = begin_uav[space];
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space, false}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space, false}].table.root_param_heap_offset = m_num_resources;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space, false}].table.heap_offset = m_num_resources + num_srv;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space, false}].table.start = begin_uav[space];
 
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space}].table.root_param_heap_offset = m_num_resources;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space}].table.heap_offset = m_num_resources + num_srv + num_uav;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space}].table.start = begin_cbv[space];
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space, false}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space, false}].table.root_param_heap_offset = m_num_resources;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space, false}].table.heap_offset = m_num_resources + num_srv + num_uav;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space, false}].table.start = begin_cbv[space];
 
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space}].table.root_param_heap_offset = m_num_samplers;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space}].table.heap_offset = m_num_samplers;
-            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space}].table.start = begin_sampler[space];
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space, false}].type = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space, false}].table.root_param_heap_offset = m_num_samplers;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space, false}].table.heap_offset = m_num_samplers;
+            m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space, false}].table.start = begin_sampler[space];
 
             if (num_srv == 0)
-                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space}].root_param_index = -1;
+                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space, false}].root_param_index = -1;
             if (num_uav == 0)
-                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space}].root_param_index = -1;
+                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space, false}].root_param_index = -1;
             if (num_cbv == 0)
-                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space}].root_param_index = -1;
+                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space, false}].root_param_index = -1;
             if (num_sampler == 0)
-                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space}].root_param_index = -1;
-
-            descriptor_table_ranges.emplace_back();
-            uint32_t index = 0;
+                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space, false}].root_param_index = -1;
 
             if (num_srv + num_uav + num_cbv > 0)
             {
+                descriptor_table_ranges.emplace_back();
+                uint32_t num_ranges = 0;
+
                 if (num_srv)
                 {
-                    descriptor_table_ranges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                    descriptor_table_ranges.back()[index].NumDescriptors = num_srv;
-                    descriptor_table_ranges.back()[index].BaseShaderRegister = begin_srv[space];
-                    descriptor_table_ranges.back()[index].RegisterSpace = space;
-                    descriptor_table_ranges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-                    ++index;
+                    descriptor_table_ranges.back().emplace_back();
+                    descriptor_table_ranges.back().back().RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                    descriptor_table_ranges.back().back().NumDescriptors = num_srv;
+                    descriptor_table_ranges.back().back().BaseShaderRegister = begin_srv[space];
+                    descriptor_table_ranges.back().back().RegisterSpace = space;
+                    descriptor_table_ranges.back().back().OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+                    ++num_ranges;
                 }
 
                 if (num_uav)
                 {
-                    descriptor_table_ranges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-                    descriptor_table_ranges.back()[index].NumDescriptors = num_uav;
-                    descriptor_table_ranges.back()[index].BaseShaderRegister = begin_uav[space];
-                    descriptor_table_ranges.back()[index].RegisterSpace = space;
-                    descriptor_table_ranges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-                    ++index;
+                    descriptor_table_ranges.back().emplace_back();
+                    descriptor_table_ranges.back().back().RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                    descriptor_table_ranges.back().back().NumDescriptors = num_uav;
+                    descriptor_table_ranges.back().back().BaseShaderRegister = begin_uav[space];
+                    descriptor_table_ranges.back().back().RegisterSpace = space;
+                    descriptor_table_ranges.back().back().OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+                    ++num_ranges;
                 }
 
                 if (num_cbv)
                 {
-                    descriptor_table_ranges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-                    descriptor_table_ranges.back()[index].NumDescriptors = num_cbv;
-                    descriptor_table_ranges.back()[index].BaseShaderRegister = begin_cbv[space];
-                    descriptor_table_ranges.back()[index].RegisterSpace = space;
-                    descriptor_table_ranges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-                    ++index;
+                    descriptor_table_ranges.back().emplace_back();
+                    descriptor_table_ranges.back().back().RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                    descriptor_table_ranges.back().back().NumDescriptors = num_cbv;
+                    descriptor_table_ranges.back().back().BaseShaderRegister = begin_cbv[space];
+                    descriptor_table_ranges.back().back().RegisterSpace = space;
+                    descriptor_table_ranges.back().back().OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+                    ++num_ranges;
                 }
 
                 D3D12_ROOT_DESCRIPTOR_TABLE descriptor_table = {};
-                descriptor_table.NumDescriptorRanges = index;
-                descriptor_table.pDescriptorRanges = &descriptor_table_ranges.back()[0];
+                descriptor_table.NumDescriptorRanges = num_ranges;
+                descriptor_table.pDescriptorRanges = &descriptor_table_ranges.back()[descriptor_table_ranges.back().size() - num_ranges];
 
-                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space}].root_param_index = static_cast<uint32_t>(root_parameters.size());
-                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space}].root_param_index = static_cast<uint32_t>(root_parameters.size());
-                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space}].root_param_index = static_cast<uint32_t>(root_parameters.size());
+                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, space, false}].root_param_index = static_cast<uint32_t>(root_parameters.size());
+                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, space, false}].root_param_index = static_cast<uint32_t>(root_parameters.size());
+                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, space, false}].root_param_index = static_cast<uint32_t>(root_parameters.size());
 
                 root_parameters.emplace_back();
                 root_parameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -234,17 +292,19 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
 
             if (num_sampler)
             {
-                descriptor_table_ranges.back()[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-                descriptor_table_ranges.back()[index].NumDescriptors = num_sampler;
-                descriptor_table_ranges.back()[index].BaseShaderRegister = begin_sampler[space];
-                descriptor_table_ranges.back()[index].RegisterSpace = space;
-                descriptor_table_ranges.back()[index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+                descriptor_table_ranges.emplace_back();
+                descriptor_table_ranges.back().emplace_back();
+                descriptor_table_ranges.back().back().RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+                descriptor_table_ranges.back().back().NumDescriptors = num_sampler;
+                descriptor_table_ranges.back().back().BaseShaderRegister = begin_sampler[space];
+                descriptor_table_ranges.back().back().RegisterSpace = space;
+                descriptor_table_ranges.back().back().OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
                 D3D12_ROOT_DESCRIPTOR_TABLE descriptor_table;
                 descriptor_table.NumDescriptorRanges = 1;
-                descriptor_table.pDescriptorRanges = &descriptor_table_ranges.back()[index];
+                descriptor_table.pDescriptorRanges = &descriptor_table_ranges.back().back();
 
-                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space}].root_param_index = static_cast<uint32_t>(root_parameters.size());
+                m_binding_layout[{shader_type, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, space, false}].root_param_index = static_cast<uint32_t>(root_parameters.size());
 
                 root_parameters.emplace_back();
                 root_parameters.back().ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -342,6 +402,10 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
             {
                 auto& desc = m_bindings[id];
                 DXBindKey bind_key = { desc.shader, desc.type, desc.name };
+                bool bindless = std::get<2>(m_bind_to_slot.at(bind_key));
+                if (bindless)
+                    continue;
+
                 D3D12_DESCRIPTOR_RANGE_TYPE range_type;
                 D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
                 switch (desc.type)
@@ -367,9 +431,9 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
                     continue;
                 }
 
-                size_t slot = m_bind_to_slot.at(bind_key).first;
-                size_t space = m_bind_to_slot.at(bind_key).second;
-                auto& table = m_binding_layout.at({ bind_key.shader, range_type, space }).table;
+                size_t slot = std::get<0>(m_bind_to_slot.at(bind_key));
+                size_t space = std::get<1>(m_bind_to_slot.at(bind_key));
+                auto& table = m_binding_layout.at({ bind_key.shader, range_type, space, bindless }).table;
                 CopyDescriptor(*heap_range, table.heap_offset + (slot - table.start), desc.view);
             }
         }

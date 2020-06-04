@@ -71,9 +71,9 @@ private:
     uint32_t m_num_samplers = 0;
     ComPtr<ID3D12RootSignature> m_root_signature;
 
-    std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE, uint32_t /*space*/>, BindingLayout> m_binding_layout;
+    std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE, uint32_t /*space*/, bool /*bindless*/>, BindingLayout> m_binding_layout;
     std::map<std::set<size_t>, std::weak_ptr<DXGPUDescriptorPoolRange>> m_heap_cache;
-    std::map<DXBindKey, std::pair<size_t, size_t>> m_bind_to_slot;
+    std::map<DXBindKey, std::tuple<size_t, size_t, bool>> m_bind_to_slot;
     bool m_is_compute = false;
     using BindingsByHeap = std::map<D3D12_DESCRIPTOR_HEAP_TYPE, BindingsKey>;
 };

@@ -13,6 +13,7 @@
 #include <iterator>
 #include <cctype>
 #include <map>
+#include <set>
 
 using namespace Microsoft::WRL;
 using namespace kainjow;
@@ -363,7 +364,7 @@ private:
         m_tcontext["Target"] = m_target;
 
         mustache::data tcbuffers{ mustache::data::type::list };
-
+        std::set<std::string> resources;
         D3D12_LIBRARY_DESC lib_desc = {};
         library_reflector->GetDesc(&lib_desc);
         for (UINT j = 0; j < lib_desc.FunctionCount; ++j)
@@ -379,6 +380,10 @@ private:
 
                 if (cbdesc.Type != D3D_CT_CBUFFER)
                     continue;
+
+                if (resources.count(cbdesc.Name))
+                    continue;
+                resources.insert(cbdesc.Name);
 
                 D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
                 ASSERT_SUCCEEDED(reflector->GetResourceBindingDescByName(cbdesc.Name, &res_desc));
@@ -424,6 +429,7 @@ private:
         mustache::data ttextures{ mustache::data::type::list };
         mustache::data tuavs{ mustache::data::type::list };
         mustache::data tsamplers{ mustache::data::type::list };
+
         for (UINT j = 0; j < lib_desc.FunctionCount; ++j)
         {
             auto reflector = library_reflector->GetFunctionByIndex(j);
@@ -433,6 +439,9 @@ private:
             {
                 D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
                 ASSERT_SUCCEEDED(reflector->GetResourceBindingDesc(i, &res_desc));
+                if (resources.count(res_desc.Name))
+                    continue;
+                resources.insert(res_desc.Name);
                 switch (res_desc.Type)
                 {
                 case D3D_SIT_SAMPLER:
