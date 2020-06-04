@@ -19,6 +19,7 @@ public:
     void ResizeHeap(size_t req_size);
     void OnRangeDestroy(size_t offset, size_t size);
     void ResetHeap();
+    ComPtr<ID3D12DescriptorHeap> GetHeap();
 
 private:
     DXDevice& m_device;

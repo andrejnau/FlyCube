@@ -5,6 +5,8 @@
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
+class DXDevice;
+
 class DXBindingSet
     : public BindingSet
 {
@@ -15,6 +17,7 @@ public:
     std::vector<ComPtr<ID3D12DescriptorHeap>> Apply(const ComPtr<ID3D12GraphicsCommandList>& command_list);
 
 private:
+    DXDevice& m_device;
     bool m_is_compute;
     std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<DXGPUDescriptorPoolRange>> m_descriptor_ranges;
     std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE, uint32_t /*space*/, bool /*bindless*/>, BindingLayout> m_binding_layout;

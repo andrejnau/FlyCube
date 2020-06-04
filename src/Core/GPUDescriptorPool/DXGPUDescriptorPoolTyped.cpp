@@ -65,3 +65,8 @@ void DXGPUDescriptorPoolTyped::ResetHeap()
 {
     m_offset = 0;
 }
+
+ComPtr<ID3D12DescriptorHeap> DXGPUDescriptorPoolTyped::GetHeap()
+{
+    return m_heap;
+}

@@ -1,10 +1,13 @@
 #include "BindingSet/DXBindingSet.h"
 #include <GPUDescriptorPool/DXGPUDescriptorPoolRange.h>
+#include <Program/DXProgram.h>
+#include <Device/DXDevice.h>
 
 DXBindingSet::DXBindingSet(DXProgram& program, bool is_compute,
                            std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<DXGPUDescriptorPoolRange>> descriptor_ranges,
                            std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE, uint32_t /*space*/, bool /*bindless*/>, BindingLayout> binding_layout)
-    : m_is_compute(is_compute)
+    : m_device(program.GetDevice())
+    , m_is_compute(is_compute)
     , m_descriptor_ranges(descriptor_ranges)
     , m_binding_layout(binding_layout)
 {
@@ -53,8 +56,7 @@ std::vector<ComPtr<ID3D12DescriptorHeap>> DXBindingSet::Apply(const ComPtr<ID3D1
             }
             if (std::get<3>(x.first))
             {
-                // TODO
-                //SetRootDescriptorTable(m_is_compute, command_list, x.second.root_param_index, heap_range->GetGpuHandle(x.second.table.root_param_heap_offset));
+                SetRootDescriptorTable(m_is_compute, command_list, x.second.root_param_index, m_device.GetGPUDescriptorPool().GetHeap(heap_type)->GetGPUDescriptorHandleForHeapStart());
                 continue;
             }
 

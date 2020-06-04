@@ -50,7 +50,6 @@ public:
     }
 };
 
-
 class DXProgram : public ProgramBase
 {
 public:
@@ -60,6 +59,7 @@ public:
 
     const std::vector<std::shared_ptr<DXShader>>& GetShaders() const;
     const ComPtr<ID3D12RootSignature>& GetRootSignature() const;
+    DXDevice& GetDevice();
 
 private:
     size_t HeapSizeByType(D3D12_DESCRIPTOR_HEAP_TYPE type);

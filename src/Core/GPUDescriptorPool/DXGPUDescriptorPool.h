@@ -17,6 +17,7 @@ class DXGPUDescriptorPool
 public:
     DXGPUDescriptorPool(DXDevice& device);
     DXGPUDescriptorPoolRange Allocate(D3D12_DESCRIPTOR_HEAP_TYPE descriptor_type, size_t count);
+    ComPtr<ID3D12DescriptorHeap> GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE descriptor_type);
 
 private:
     DXDevice& m_device;

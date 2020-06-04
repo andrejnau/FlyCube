@@ -458,3 +458,8 @@ const ComPtr<ID3D12RootSignature>& DXProgram::GetRootSignature() const
 {
     return m_root_signature;
 }
+
+DXDevice& DXProgram::GetDevice()
+{
+    return m_device;
+}

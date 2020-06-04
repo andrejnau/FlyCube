@@ -22,3 +22,16 @@ DXGPUDescriptorPoolRange DXGPUDescriptorPool::Allocate(D3D12_DESCRIPTOR_HEAP_TYP
         throw std::runtime_error("wrong descriptor type");
     }
 }
+
+ComPtr<ID3D12DescriptorHeap> DXGPUDescriptorPool::GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE descriptor_type)
+{
+    switch (descriptor_type)
+    {
+    case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
+        return m_shader_resource.GetHeap();
+    case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
+        return m_shader_sampler.GetHeap();
+    default:
+        throw std::runtime_error("wrong descriptor type");
+    }
+}
