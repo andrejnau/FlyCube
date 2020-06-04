@@ -15,5 +15,5 @@ private:
     void ResizeHeap(const std::map<vk::DescriptorType, size_t>& count);
 
     VKDevice& m_device;
-    vk::UniqueDescriptorPool m_descriptorPool;
+    vk::UniqueDescriptorPool m_descriptor_pool;
 };

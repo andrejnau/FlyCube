@@ -26,27 +26,27 @@ void VKGPUDescriptorPool::ResizeHeap(const std::map<vk::DescriptorType, size_t>&
         pool_size.descriptorCount = 1;
     }
 
-    vk::DescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.poolSizeCount = pool_sizes.size();
-    poolInfo.pPoolSizes = pool_sizes.data();
-    poolInfo.maxSets = 1;
+    vk::DescriptorPoolCreateInfo pool_info = {};
+    pool_info.poolSizeCount = pool_sizes.size();
+    pool_info.pPoolSizes = pool_sizes.data();
+    pool_info.maxSets = 1;
+    pool_info.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 
     // TODO
-    if (m_descriptorPool)
-        m_descriptorPool.release();
+    if (m_descriptor_pool)
+        m_descriptor_pool.release();
 
-    m_descriptorPool = m_device.GetDevice().createDescriptorPoolUnique(poolInfo);
+    m_descriptor_pool = m_device.GetDevice().createDescriptorPoolUnique(pool_info);
 }
 
 vk::UniqueDescriptorSet VKGPUDescriptorPool::AllocateDescriptorSet(const vk::DescriptorSetLayout& set_layout, const std::map<vk::DescriptorType, size_t>& count)
 {
     ResizeHeap(count);
 
-    vk::DescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.descriptorPool = m_descriptorPool.get();
-    allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &set_layout;
-
-    auto descriptor_sets = m_device.GetDevice().allocateDescriptorSetsUnique(allocInfo);
+    vk::DescriptorSetAllocateInfo alloc_info = {};
+    alloc_info.descriptorPool = m_descriptor_pool.get();
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.pSetLayouts = &set_layout;
+    auto descriptor_sets = m_device.GetDevice().allocateDescriptorSetsUnique(alloc_info);
     return std::move(descriptor_sets.front());
 }
