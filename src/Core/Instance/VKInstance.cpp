@@ -38,7 +38,8 @@ private:
             "VUID-vkCmdClearColorImage-imageLayout",
             "VUID-VkFramebufferCreateInfo-pAttachments",
             "VUID-VkRenderPassCreateInfo-pDependencies",
-            "VUID-VkDescriptorImageInfo-imageLayout"
+            "VUID-VkDescriptorImageInfo-imageLayout",
+            "VUID-VkPresentInfoKHR-pImageIndices"
         };
         for (auto& str : muted_warnings)
         {
