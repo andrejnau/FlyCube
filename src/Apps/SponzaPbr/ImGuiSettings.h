@@ -30,6 +30,7 @@ public:
         add_checkbox("use use_ao_blur", settings.use_ao_blur);
         add_slider("rtao_num_rays", settings.rtao_num_rays, 1, 128);
         add_slider("ao radius", settings.ao_radius, 0.01, 5, false);
+        add_checkbox("use use_alpha_test", settings.use_alpha_test);
         add_checkbox("use shadow", settings.use_shadow);
         add_checkbox("use white ligth", settings.use_white_ligth);
         m_use_IBL = settings.use_IBL_diffuse | settings.use_IBL_specular;
@@ -43,12 +44,12 @@ public:
         add_checkbox("only ambientl", settings.only_ambient);
         add_checkbox("light in camera", settings.light_in_camera);
         add_checkbox("additional lights", settings.additional_lights);
+        add_checkbox("show_only_ao", settings.show_only_ao);
         add_checkbox("show_only_position", settings.show_only_position);
         add_checkbox("show_only_albedo", settings.show_only_albedo);
         add_checkbox("show_only_normal", settings.show_only_normal);
         add_checkbox("show_only_roughness", settings.show_only_roughness);
         add_checkbox("show_only_metalness", settings.show_only_metalness);
-        add_checkbox("show_only_ao", settings.show_only_ao);
         add_checkbox("use_f0_with_roughness", settings.use_f0_with_roughness);
         add_checkbox("use_flip_normal_y", settings.use_flip_normal_y);
         add_checkbox("use spec ao by ndotv roughness", settings.use_spec_ao_by_ndotv_roughness);

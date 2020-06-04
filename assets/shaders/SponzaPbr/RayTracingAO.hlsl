@@ -61,6 +61,7 @@ cbuffer Settings : register(b0)
     float ao_radius;
     uint frame_index;
     uint num_rays;
+    bool use_alpha_test;
 };
 
 #ifndef SAMPLE_COUNT
@@ -84,6 +85,14 @@ RaytracingAccelerationStructure geometry : register(t2);
 
 [[vk::binding(4)]]
 RWTexture2D<float4> result : register(u0);
+
+StructuredBuffer<uint4> descriptor_offset : register(t3);
+
+Texture2D texture_table[] : register(t0, space1);
+StructuredBuffer<float2> texcoords_table[] : register(t0, space2);
+StructuredBuffer<uint> indices_table[] : register(t0, space3);
+
+SamplerState gSampler : register(s0);
 
 struct RayPayload
 {
@@ -115,7 +124,7 @@ float ShootAmbientOcclusionRay(float3 orig, float3 dir)
 }
 
 [shader("raygeneration")]
-void ray_gen()
+void RayGen()
 {
     uint2 launch_index = DispatchRaysIndex().xy;
     uint2 launch_dim = DispatchRaysDimensions().xy;
@@ -139,13 +148,38 @@ void ray_gen()
 }
 
 [shader("miss")]
-void miss(inout RayPayload rayData)
+void Miss(inout RayPayload rayData)
 {
-    rayData.value = 1.0f;
+    rayData.value = float3(1, 0, 0);
 }
 
-[shader("closesthit")]
-void closest(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
+float2 BarycentricLerp(in float2 v0, in float2 v1, in float2 v2, in float3 barycentrics)
 {
-    payload.value = float3(1, 0, 0);
+    return v0 * barycentrics.x + v1 * barycentrics.y + v2 * barycentrics.z;
+}
+
+float2 GetTexcoords(in BuiltInTriangleIntersectionAttributes attribs, in uint iid, in uint tid)
+{
+    StructuredBuffer<uint> index_buffer = indices_table[iid];
+    StructuredBuffer<float2> texcoord_buffer = texcoords_table[tid];
+
+    uint primitive = PrimitiveIndex();
+    float2 texcoord0 = texcoord_buffer[index_buffer[primitive]];
+    float2 texcoord1 = texcoord_buffer[index_buffer[primitive + 1]];
+    float2 texcoord2 = texcoord_buffer[index_buffer[primitive + 2]];
+    float3 barycentrics = float3(1 - attribs.barycentrics.x - attribs.barycentrics.y, attribs.barycentrics.x, attribs.barycentrics.y);
+    return BarycentricLerp(texcoord0, texcoord1, texcoord2, barycentrics);
+}
+
+[shader("anyhit")]
+void AnyHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
+{
+    if (!use_alpha_test)
+        return;
+
+    uint4 descriptor = descriptor_offset[InstanceID()];
+    float2 uv = GetTexcoords(attribs, descriptor.y, descriptor.z);
+    Texture2D alphaMap = texture_table[descriptor.x];
+    if(alphaMap.SampleLevel(gSampler, uv, 0.0f).r < 0.5)
+        IgnoreHit();
 }

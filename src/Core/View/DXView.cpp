@@ -12,8 +12,8 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const ViewDesc& view_desc, const D
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
         srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-        srv_desc.Buffer.FirstElement = 0;
-        srv_desc.Buffer.NumElements = static_cast<uint32_t>(res_desc.Width / view_desc.stride);
+        srv_desc.Buffer.FirstElement = view_desc.offset / view_desc.stride;
+        srv_desc.Buffer.NumElements = static_cast<uint32_t>((res_desc.Width - view_desc.offset) / view_desc.stride);
         srv_desc.Buffer.StructureByteStride = view_desc.stride;
     }
     else

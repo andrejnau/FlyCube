@@ -12,6 +12,48 @@ RayTracingAOPass::RayTracingAOPass(Context& context, const Input& input, int wid
     , m_program_blur(context)
 {
     CreateSizeDependentResources();
+    m_sampler = m_context.CreateSampler({
+        SamplerFilter::kAnisotropic,
+        SamplerTextureAddressMode::kWrap,
+        SamplerComparisonFunc::kNever 
+    });
+
+    std::vector<glm::uvec4> data;
+    for (auto& model : m_input.scene_list)
+    {
+        for (auto& range : model.ia.ranges)
+        {
+            auto& material = model.GetMaterial(range.id);
+            glm::uvec4 info = {};
+            ViewDesc view_desc = {};
+            view_desc.bindless = true;
+            view_desc.dimension = ResourceDimension::kTexture2D;
+            view_desc.view_type = ViewType::kShaderResource;
+            m_views.emplace_back(m_context.CreateView(material.texture.opacity, view_desc));
+            info.x = m_views.back()->GetDescriptorId();
+
+            view_desc.bindless = true;
+            view_desc.dimension = ResourceDimension::kBuffer;
+            view_desc.view_type = ViewType::kShaderResource;
+            view_desc.offset = sizeof(uint32_t) * range.start_index_location;
+            view_desc.stride = sizeof(uint32_t);
+            m_views.emplace_back(m_context.CreateView(model.ia.indices.GetBuffer(), view_desc));
+            info.y = m_views.back()->GetDescriptorId();
+
+            view_desc.bindless = true;
+            view_desc.dimension = ResourceDimension::kBuffer;
+            view_desc.view_type = ViewType::kShaderResource;
+            view_desc.offset = sizeof(glm::vec2) * range.base_vertex_location;
+            view_desc.stride = sizeof(glm::vec2);
+            m_views.emplace_back(m_context.CreateView(model.ia.texcoords.IsDynamic() ? model.ia.texcoords.GetDynamicBuffer() : model.ia.texcoords.GetBuffer(), view_desc));
+            info.z = m_views.back()->GetDescriptorId();
+
+            data.emplace_back(info);
+        }
+    }
+
+    m_buffer = m_context.CreateBuffer(BindFlag::kShaderResource, sizeof(glm::uvec4) * data.size());
+    m_context->UpdateSubresource(m_buffer, 0, data.data());
 }
 
 void RayTracingAOPass::OnUpdate()
@@ -25,6 +67,7 @@ void RayTracingAOPass::OnRender()
 
     m_raytracing_program.lib.cbuffer.Settings.ao_radius = m_settings.ao_radius;
     m_raytracing_program.lib.cbuffer.Settings.num_rays = m_settings.rtao_num_rays;
+    m_raytracing_program.lib.cbuffer.Settings.use_alpha_test = m_settings.use_alpha_test;
 
     auto build_geometry = [&](bool force_rebuild)
     {
@@ -81,6 +124,8 @@ void RayTracingAOPass::OnRender()
     m_context->Attach(m_raytracing_program.lib.srv.gNormal, m_input.geometry_pass.normal);
     m_context->Attach(m_raytracing_program.lib.srv.geometry, m_top);
     m_context->Attach(m_raytracing_program.lib.uav.result, m_ao);
+    m_context->Attach(m_raytracing_program.lib.sampler.gSampler, m_sampler);
+    m_context->Attach(m_raytracing_program.lib.srv.descriptor_offset, m_buffer);
     m_context->DispatchRays(m_width, m_height, 1);
 
     if (m_settings.use_ao_blur)

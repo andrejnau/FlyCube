@@ -50,5 +50,8 @@ private:
     std::shared_ptr<Resource> m_ao;
     std::shared_ptr<Resource> m_ao_blur;
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> m_geometry;
+    std::shared_ptr<Resource> m_sampler;
+    std::shared_ptr<Resource> m_buffer;
+    std::vector<std::shared_ptr<View>> m_views;
 };
 

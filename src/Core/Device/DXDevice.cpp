@@ -344,7 +344,7 @@ std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::shared_ptr<Co
 
     D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
     geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-    geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+    geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
     ASSERT(!!vertex_res);
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;

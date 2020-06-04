@@ -31,6 +31,11 @@ public:
 
     bool IsDxrSupported() const;
 
+    std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
+    {
+        return m_device->CreateView(resource, view_desc);
+    }
+
     std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1);
     std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size);
     std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc);

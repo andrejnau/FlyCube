@@ -18,6 +18,7 @@ SponzaSettings::SponzaSettings()
     use_ao_blur = true;
     rtao_num_rays = 32;
     ao_radius = 0.05;
+    use_alpha_test = true;
     use_white_ligth = true;
     use_IBL_diffuse = true;
     use_IBL_specular = true;

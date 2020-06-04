@@ -22,6 +22,7 @@ public:
     bool use_ao_blur;
     int rtao_num_rays;
     float ao_radius;
+    bool use_alpha_test;
     bool use_white_ligth;
     bool only_ambient;
     bool use_IBL_diffuse;
