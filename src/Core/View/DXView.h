@@ -10,7 +10,7 @@ class DXView : public View
 {
 public:
     DXView(DXDevice& device, const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc);
-    const std::shared_ptr<Resource>& GetResource() const override;
+    std::shared_ptr<Resource> GetResource() override;
     uint32_t GetDescriptorId() const override;
 
     D3D12_CPU_DESCRIPTOR_HANDLE GetHandle();

@@ -405,7 +405,7 @@ void DXView::CreateSampler(const ViewDesc& view_desc, const DXResource* res, DXC
     }
 }
 
-const std::shared_ptr<Resource>& DXView::GetResource() const
+ std::shared_ptr<Resource> DXView::GetResource()
 {
     return m_resource;
 }
