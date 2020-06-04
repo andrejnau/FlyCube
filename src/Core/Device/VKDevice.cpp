@@ -87,6 +87,10 @@ VKDevice::VKDevice(VKAdapter& adapter)
     vk::PhysicalDeviceTimelineSemaphoreFeatures device_timetine_feature = {};
     device_timetine_feature.timelineSemaphore = true;
 
+    vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing_feature = {};
+    descriptor_indexing_feature.runtimeDescriptorArray = true;
+    device_timetine_feature.pNext = &descriptor_indexing_feature;
+
     vk::DeviceCreateInfo device_create_info = {};
     device_create_info.pNext = &device_timetine_feature;
     device_create_info.queueCreateInfoCount = 1;
