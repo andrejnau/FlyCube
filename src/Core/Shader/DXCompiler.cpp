@@ -166,6 +166,7 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
         arguments.emplace_back(L"-fspv-extension=SPV_EXT_shader_viewport_index_layer");
         arguments.emplace_back(L"-fspv-extension=SPV_GOOGLE_hlsl_functionality1");
         arguments.emplace_back(L"-fspv-extension=SPV_GOOGLE_user_type");
+        arguments.emplace_back(L"-fspv-extension=SPV_EXT_descriptor_indexing");
         arguments.emplace_back(L"-fspv-reflect");
         arguments.emplace_back(L"-auto-binding-space");
         dynamic_arguments.emplace_back(std::to_wstring(static_cast<uint32_t>(shader.type)));
