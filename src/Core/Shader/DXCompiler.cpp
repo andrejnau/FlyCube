@@ -1,6 +1,7 @@
 #include "Shader/DXCompiler.h"
 #include "Shader/DXCLoader.h"
 #include <deque>
+#include <iostream>
 
 constexpr bool g_force_dxil = false;
 
@@ -198,6 +199,7 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
         ComPtr<IDxcBlobEncoding> errors;
         result->GetErrorBuffer(&errors);
         OutputDebugStringA(reinterpret_cast<char*>(errors->GetBufferPointer()));
+        std::cout << reinterpret_cast<char*>(errors->GetBufferPointer()) << std::endl;
     }
     return shader_buffer;
 }
