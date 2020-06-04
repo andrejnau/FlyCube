@@ -3,7 +3,7 @@
 
 DXBindingSet::DXBindingSet(DXProgram& program, bool is_compute,
                            std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<DXGPUDescriptorPoolRange>> descriptor_ranges,
-                           std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE>, BindingLayout> binding_layout)
+                           std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE, uint32_t /*space*/>, BindingLayout> binding_layout)
     : m_is_compute(is_compute)
     , m_descriptor_ranges(descriptor_ranges)
     , m_binding_layout(binding_layout)

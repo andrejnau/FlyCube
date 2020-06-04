@@ -213,9 +213,9 @@ private:
             mustache::data tcbuffer;
             tcbuffer.set("Name", cbdesc.Name);
             tcbuffer.set("Slot", std::to_string(res_desc.BindPoint));
+            tcbuffer.set("Space", std::to_string(res_desc.Space));
             tcbuffer.set("BufferName", cbdesc.Name);
             tcbuffer.set("BufferSize", std::to_string(cbdesc.Size));
-            tcbuffer.set("BufferIndex", std::to_string(res_desc.BindPoint));
             tcbuffer.set("BufferSeparator", tcbuffers.is_empty_list() ? ":" : ",");
 
             mustache::data tvariables{ mustache::data::type::list };
@@ -261,6 +261,7 @@ private:
                 mustache::data tsampler;
                 tsampler.set("Name", res_desc.Name);
                 tsampler.set("Slot", std::to_string(res_desc.BindPoint));
+                tsampler.set("Space", std::to_string(res_desc.Space));
                 tsampler.set("Separator", tsamplers.is_empty_list() ? ":" : ",");
                 tsamplers.push_back(tsampler);
                 break;
@@ -272,6 +273,7 @@ private:
                 mustache::data ttexture;
                 ttexture.set("Name", res_desc.Name);
                 ttexture.set("Slot", std::to_string(res_desc.BindPoint));
+                ttexture.set("Space", std::to_string(res_desc.Space));
                 ttexture.set("Separator", ttextures.is_empty_list() ? ":" : ",");
                 ttextures.push_back(ttexture);
                 break;  
@@ -286,6 +288,7 @@ private:
                 mustache::data tuav;
                 tuav.set("Name", res_desc.Name);
                 tuav.set("Slot", std::to_string(res_desc.BindPoint));
+                tuav.set("Space", std::to_string(res_desc.Space));
                 tuav.set("Separator", tuavs.is_empty_list() ? ":" : ",");
                 tuavs.push_back(tuav);
                 break;
@@ -385,7 +388,7 @@ private:
                 tcbuffer.set("BufferName", cbdesc.Name);
                 tcbuffer.set("BufferSize", std::to_string(cbdesc.Size));
                 tcbuffer.set("Slot", std::to_string(res_desc.BindPoint));
-                tcbuffer.set("BufferIndex", std::to_string(res_desc.BindPoint));
+                tcbuffer.set("Space", std::to_string(res_desc.Space));
                 tcbuffer.set("BufferSeparator", tcbuffers.is_empty_list() ? ":" : ",");
 
                 mustache::data tvariables{ mustache::data::type::list };
@@ -437,6 +440,7 @@ private:
                     mustache::data tsampler;
                     tsampler.set("Name", res_desc.Name);
                     tsampler.set("Slot", std::to_string(res_desc.BindPoint));
+                    tsampler.set("Space", std::to_string(res_desc.Space));
                     tsampler.set("Separator", tsamplers.is_empty_list() ? ":" : ",");
                     tsamplers.push_back(tsampler);
                     break;
@@ -449,6 +453,7 @@ private:
                     mustache::data ttexture;
                     ttexture.set("Name", res_desc.Name);
                     ttexture.set("Slot", std::to_string(res_desc.BindPoint));
+                    ttexture.set("Space", std::to_string(res_desc.Space));
                     ttexture.set("Separator", ttextures.is_empty_list() ? ":" : ",");
                     ttextures.push_back(ttexture);
                     break;
@@ -463,6 +468,7 @@ private:
                     mustache::data tuav;
                     tuav.set("Name", res_desc.Name);
                     tuav.set("Slot", std::to_string(res_desc.BindPoint));
+                    tuav.set("Space", std::to_string(res_desc.Space));
                     tuav.set("Separator", tuavs.is_empty_list() ? ":" : ",");
                     tuavs.push_back(tuav);
                     break;

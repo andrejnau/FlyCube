@@ -371,13 +371,14 @@ struct BindingDesc
 
 struct BindKey
 {
-    ShaderType shader_type;
-    ViewType view_type;
-    uint32_t slot;
+    ShaderType shader_type = ShaderType::kUnknown;
+    ViewType view_type = ViewType::kUnknown;
+    uint32_t slot = 0;
+    uint32_t space = 0;
 
     auto MakeTie() const
     {
-        return std::tie(shader_type, view_type, slot);
+        return std::tie(shader_type, view_type, slot, space);
     }
 
     bool operator< (const BindKey& oth) const
