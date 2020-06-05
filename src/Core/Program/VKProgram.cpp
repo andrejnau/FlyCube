@@ -36,11 +36,15 @@ VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>
         ShaderType shader_type = shader->GetType();
         auto& spirv = shader->GetBlob();
         std::vector<vk::DescriptorSetLayoutBinding> bindings;
-        ParseShader(shader_type, spirv, bindings);
+        std::vector<vk::DescriptorBindingFlagsEXT> bindings_flags;
+        ParseShader(shader_type, spirv, bindings, bindings_flags);
 
         vk::DescriptorSetLayoutCreateInfo layout_info = {};
         layout_info.bindingCount = bindings.size();
         layout_info.pBindings = bindings.data();
+
+        vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT layout_flags_info = {};
+        layout_info.pNext = &layout_flags_info;
 
         size_t set_num = static_cast<size_t>(shader_type);
         if (m_descriptor_set_layouts.size() <= set_num)
@@ -290,7 +294,9 @@ static void print_resources(const spirv_cross::Compiler& compiler, const char* t
     fprintf(stderr, "=============\n\n");
 }
 
-void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary, std::vector<vk::DescriptorSetLayoutBinding>& bindings)
+void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary,
+                            std::vector<vk::DescriptorSetLayoutBinding>& bindings,
+                            std::vector<vk::DescriptorBindingFlagsEXT>& bindings_flags)
 {
     m_shader_ref.emplace(shader_type, spirv_binary);
     spirv_cross::CompilerHLSL& compiler = m_shader_ref.find(shader_type)->second.compiler;
@@ -302,9 +308,8 @@ void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>&
         {
             auto& info = m_shader_ref.find(shader_type)->second.resources[res.name];
             info.res = res;
-            auto& type = compiler.get_type(res.base_type_id);
-
-            if (type.basetype == spirv_cross::SPIRType::BaseType::Image && type.image.dim == spv::Dim::DimBuffer)
+            auto& base_type = compiler.get_type(res.base_type_id);
+            if (base_type.basetype == spirv_cross::SPIRType::BaseType::Image && base_type.image.dim == spv::Dim::DimBuffer)
             {
                 if (res_type == vk::DescriptorType::eSampledImage)
                 {
@@ -325,6 +330,11 @@ void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>&
 
             info.binding = binding.binding;
             info.descriptor_type = res_type;
+
+            bindings_flags.emplace_back();
+            auto& type = compiler.get_type(res.type_id);
+            if (!type.array.empty() && type.array.front() == 0)
+                bindings_flags.back() = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
         }
     };
 

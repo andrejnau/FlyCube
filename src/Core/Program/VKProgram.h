@@ -22,7 +22,9 @@ public:
     vk::PipelineLayout GetPipelineLayout() const;
 
 private:
-    void ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary, std::vector<vk::DescriptorSetLayoutBinding>& bindings);
+    void ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary,
+                     std::vector<vk::DescriptorSetLayoutBinding>& bindings,
+                     std::vector<vk::DescriptorBindingFlagsEXT>& bindings_flags);
 
     VKDevice& m_device;
     std::vector<std::shared_ptr<SpirvShader>> m_shaders;
