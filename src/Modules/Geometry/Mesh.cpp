@@ -24,6 +24,26 @@ MergedMesh::MergedMesh(const std::vector<IMesh>& meshes)
     size_t id = 0;
     for (const auto & mesh : meshes)
     {
+        // TODO: fix me, workaround for Vulkan::minStorageBufferOffsetAlignment
+        while ((indices.size() * sizeof(uint32_t)) % 16 != 0)
+            indices.emplace_back(0);
+        while ((texcoords.size() * sizeof(glm::vec2)) % 16 != 0)
+        {
+            if (!positions.empty())
+                positions.emplace_back();
+            if (!normals.empty())
+                normals.emplace_back();
+            if (!texcoords.empty())
+                texcoords.emplace_back();
+            if (!tangents.empty())
+                tangents.emplace_back();
+            if (!bones_offset.empty())
+                bones_offset.emplace_back();
+            if (!bones_count.empty())
+                bones_count.emplace_back();
+            ++cur_size;
+        }
+
         ranges.emplace_back();
         ranges.back().id = id++;
         ranges.back().index_count = static_cast<uint32_t>(mesh.indices.size());

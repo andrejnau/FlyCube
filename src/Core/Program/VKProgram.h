@@ -24,7 +24,7 @@ public:
 private:
     void ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary,
                      std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>& bindings,
-                     std::map<uint32_t, std::vector<vk::DescriptorBindingFlagsEXT>>& bindings_flags);
+                     std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>>& bindings_flags);
 
     VKDevice& m_device;
     std::vector<std::shared_ptr<SpirvShader>> m_shaders;
@@ -51,6 +51,7 @@ private:
         std::map<std::string, ResourceRef> resources;
     };
 
+    std::map<uint32_t, vk::DescriptorType> m_bindless_type;
     std::map<ShaderType, ShaderRef> m_shader_ref;
     std::vector<std::map<vk::DescriptorType, size_t>> m_descriptor_count_by_set;
 };

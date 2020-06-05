@@ -389,9 +389,6 @@ std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::shared_ptr<Co
         geometry.geometry.triangles.indexType = vk::IndexType::eNoneNV;
     }
 
-    geometry.geometry.triangles.transformOffset = 0;
-    geometry.flags = vk::GeometryFlagBitsNV::eOpaque;
-
     vk::AccelerationStructureInfoNV acceleration_structure_info = {};
     acceleration_structure_info.type = vk::AccelerationStructureTypeNV::eBottomLevel;
     acceleration_structure_info.instanceCount = 0;
@@ -654,6 +651,14 @@ uint32_t VKDevice::FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags 
             return i;
     }
     throw std::runtime_error("failed to find suitable memory type!");
+}
+
+VKGPUBindlessDescriptorPoolTyped& VKDevice::GetGPUBindlessDescriptorPool(vk::DescriptorType type)
+{
+    auto it = m_gpu_bindless_descriptor_pool.find(type);
+    if (it == m_gpu_bindless_descriptor_pool.end())
+        it = m_gpu_bindless_descriptor_pool.emplace(std::piecewise_construct, std::forward_as_tuple(type), std::forward_as_tuple(*this, type)).first;
+    return it->second;
 }
 
 VKGPUDescriptorPool& VKDevice::GetGPUDescriptorPool()

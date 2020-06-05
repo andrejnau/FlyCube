@@ -2,6 +2,7 @@
 #include "Device/Device.h"
 #include <Utilities/Vulkan.h>
 #include <GPUDescriptorPool/VKGPUDescriptorPool.h>
+#include <GPUDescriptorPool/VKGPUBindlessDescriptorPoolTyped.h>
 
 class VKAdapter;
 
@@ -39,6 +40,7 @@ public:
     vk::Queue GetQueue();
     vk::CommandPool GetCmdPool();
     vk::ImageAspectFlags GetAspectFlags(vk::Format format) const;
+    VKGPUBindlessDescriptorPoolTyped& GetGPUBindlessDescriptorPool(vk::DescriptorType type);
     VKGPUDescriptorPool& GetGPUDescriptorPool();
     uint32_t FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties);
 
@@ -49,6 +51,7 @@ private:
     vk::UniqueDevice m_device;
     vk::Queue m_queue;
     vk::UniqueCommandPool m_cmd_pool;
+    std::map<vk::DescriptorType, VKGPUBindlessDescriptorPoolTyped> m_gpu_bindless_descriptor_pool;
     VKGPUDescriptorPool m_gpu_descriptor_pool;
     const bool m_use_timeline_semaphore = false;
 };

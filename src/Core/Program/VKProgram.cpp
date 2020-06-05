@@ -32,7 +32,7 @@ VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>
     }
 
     std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> bindings_by_set;
-    std::map<uint32_t, std::vector<vk::DescriptorBindingFlagsEXT>> bindings_flags_by_set;
+    std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>> bindings_flags_by_set;
     for (auto& shader : m_shaders)
     {
         ShaderType shader_type = shader->GetType();
@@ -46,7 +46,7 @@ VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>
         layout_info.bindingCount = set_desc.second.size();
         layout_info.pBindings = set_desc.second.data();
 
-        vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT layout_flags_info = {};
+        vk::DescriptorSetLayoutBindingFlagsCreateInfo layout_flags_info = {};
         layout_flags_info.bindingCount = bindings_flags_by_set[set_desc.first].size();
         layout_flags_info.pBindingFlags = bindings_flags_by_set[set_desc.first].data();
         layout_info.pNext = &layout_flags_info;
@@ -103,13 +103,22 @@ bool VKProgram::HasBinding(ShaderType shader, ViewType type, std::string name) c
 
 std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& bindings)
 {
-    std::vector<vk::UniqueDescriptorSet> descriptor_sets;
+    std::vector<vk::UniqueDescriptorSet> descriptor_sets_unique;
+    std::vector<vk::DescriptorSet> descriptor_sets;
     for (size_t i = 0; i < m_descriptor_set_layouts.size(); ++i)
     {
-        descriptor_sets.emplace_back(m_device.GetGPUDescriptorPool().AllocateDescriptorSet(m_descriptor_set_layouts[i].get(), m_descriptor_count_by_set[i]));
+        if (m_bindless_type.count(i))
+        {
+            descriptor_sets.emplace_back(m_device.GetGPUBindlessDescriptorPool(m_bindless_type[i]).GetDescriptorSet());
+        }
+        else
+        {
+            descriptor_sets_unique.emplace_back(m_device.GetGPUDescriptorPool().AllocateDescriptorSet(m_descriptor_set_layouts[i].get(), m_descriptor_count_by_set[i]));
+            descriptor_sets.emplace_back(descriptor_sets_unique.back().get());
+        }
     }
 
-    std::vector<vk::WriteDescriptorSet> descriptorWrites;
+    std::vector<vk::WriteDescriptorSet> descriptor_writes;
     std::list<vk::DescriptorImageInfo> list_image_info;
     std::list<vk::DescriptorBufferInfo> list_buffer_info;
     std::list<vk::WriteDescriptorSetAccelerationStructureNV> list_as;
@@ -129,8 +138,10 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& b
         if (is_rtv_dsv || !desc.view)
             continue;
 
-        decltype(auto) vk_view = desc.view->As<VKView>();
         ShaderType shader_type = desc.shader;
+        if (m_bindless_type.count(static_cast<size_t>(shader_type)))
+            continue;
+
         ShaderRef& shader_ref = m_shader_ref.find(shader_type)->second;
         std::string name = desc.name;
         if (name == "$Globals")
@@ -142,85 +153,25 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& b
         if (!shader_ref.resources.count(name))
             throw std::runtime_error("failed to find resource reflection");
         auto ref_res = shader_ref.resources[name];
-        auto res = vk_view.GetResource();
-        if (!res)
-            continue;
-        decltype(auto) vk_res = res->As<VKResource>();
 
-        vk::WriteDescriptorSet descriptorWrite = {};
-        descriptorWrite.dstSet = descriptor_sets[static_cast<size_t>(shader_type)].get();
-        descriptorWrite.dstBinding = ref_res.binding;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = ref_res.descriptor_type;
-        descriptorWrite.descriptorCount = 1;
+        vk::WriteDescriptorSet descriptor_write = {};
+        descriptor_write.dstSet = descriptor_sets[static_cast<size_t>(shader_type)];
+        descriptor_write.dstBinding = ref_res.binding;
+        descriptor_write.dstArrayElement = 0;
+        descriptor_write.descriptorType = ref_res.descriptor_type;
+        descriptor_write.descriptorCount = 1;
 
-        switch (ref_res.descriptor_type)
-        {
-        case vk::DescriptorType::eSampler:
-        {
-            list_image_info.emplace_back();
-            vk::DescriptorImageInfo& image_info = list_image_info.back();
-            image_info.sampler = vk_res.sampler.res.get();
-            descriptorWrite.pImageInfo = &image_info;
-            break;
-        }
-        case vk::DescriptorType::eSampledImage:
-        {
-            list_image_info.emplace_back();
-            vk::DescriptorImageInfo& image_info = list_image_info.back();
-            image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-            image_info.imageView = vk_view.GetSrv();
-            if (image_info.imageView)
-                descriptorWrite.pImageInfo = &image_info;
-            break;
-        }
-        case vk::DescriptorType::eStorageImage:
-        {
-            list_image_info.emplace_back();
-            vk::DescriptorImageInfo& image_info = list_image_info.back();
-            image_info.imageLayout = vk::ImageLayout::eGeneral;
-            image_info.imageView = vk_view.GetSrv();
-            if (image_info.imageView)
-                descriptorWrite.pImageInfo = &image_info;
-            break;
-        }
-        case vk::DescriptorType::eUniformTexelBuffer:
-        case vk::DescriptorType::eStorageTexelBuffer:
-        case vk::DescriptorType::eUniformBuffer:
-        case vk::DescriptorType::eStorageBuffer:
-        {
-            list_buffer_info.emplace_back();
-            vk::DescriptorBufferInfo& buffer_info = list_buffer_info.back();
-            buffer_info.buffer = vk_res.buffer.res.get();
-            buffer_info.offset = 0;
-            buffer_info.range = VK_WHOLE_SIZE;
-            descriptorWrite.pBufferInfo = &buffer_info;
-            break;
-        }
-        case vk::DescriptorType::eAccelerationStructureNV:
-        {
-            list_as.emplace_back();
-            vk::WriteDescriptorSetAccelerationStructureNV& descriptorAccelerationStructureInfo = list_as.back();
-            descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
-            descriptorAccelerationStructureInfo.pAccelerationStructures = &vk_res.as.acceleration_structure.get();
-            descriptorWrite.pNext = &descriptorAccelerationStructureInfo;
-            break;
-        }
-        case vk::DescriptorType::eUniformBufferDynamic:
-        case vk::DescriptorType::eStorageBufferDynamic:
-        default:
-            assert(false);
-            break;
-        }
+        decltype(auto) vk_view = desc.view->As<VKView>();
+        vk_view.WriteView(descriptor_write, list_image_info, list_buffer_info, list_as);
 
-        if (descriptorWrite.pImageInfo || descriptorWrite.pBufferInfo || descriptorWrite.pNext)
-            descriptorWrites.push_back(descriptorWrite);
+        if (descriptor_write.pImageInfo || descriptor_write.pBufferInfo || descriptor_write.pNext)
+            descriptor_writes.push_back(descriptor_write);
     }
 
-    if (!descriptorWrites.empty())
-        m_device.GetDevice().updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+    if (!descriptor_writes.empty())
+        m_device.GetDevice().updateDescriptorSets(descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
 
-    return std::make_shared<VKBindingSet>(std::move(descriptor_sets), m_pipeline_layout.get());
+    return std::make_shared<VKBindingSet>(std::move(descriptor_sets), std::move(descriptor_sets_unique), m_pipeline_layout.get());
 }
 
 const std::vector<std::shared_ptr<SpirvShader>>& VKProgram::GetShaders() const
@@ -301,7 +252,7 @@ static void print_resources(const spirv_cross::Compiler& compiler, const char* t
 
 void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary,
                             std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>& bindings,
-                            std::map<uint32_t, std::vector<vk::DescriptorBindingFlagsEXT>>& bindings_flags)
+                            std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>>& bindings_flags)
 {
     m_shader_ref.emplace(shader_type, spirv_binary);
     spirv_cross::CompilerHLSL& compiler = m_shader_ref.find(shader_type)->second.compiler;
@@ -335,10 +286,14 @@ void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>&
             info.binding = binding.binding;
             info.descriptor_type = res_type;
 
-            vk::DescriptorBindingFlagsEXT& binding_flag = bindings_flags[compiler.get_decoration(res.id, spv::DecorationDescriptorSet)].emplace_back();
+            vk::DescriptorBindingFlags& binding_flag = bindings_flags[compiler.get_decoration(res.id, spv::DecorationDescriptorSet)].emplace_back();
             auto& type = compiler.get_type(res.type_id);
             if (!type.array.empty() && type.array.front() == 0)
+            {
+                binding.descriptorCount = max_bindless_heap_size;
                 binding_flag = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
+                m_bindless_type.emplace(compiler.get_decoration(res.id, spv::DecorationDescriptorSet), res_type);
+            }
         }
     };
 

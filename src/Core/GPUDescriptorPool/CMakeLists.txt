@@ -14,9 +14,13 @@ endif()
 if (VULKAN_SUPPORT)
     list(APPEND headers
         VKGPUDescriptorPool.h
+        VKGPUBindlessDescriptorPoolTyped.cpp
+        VKGPUDescriptorPoolRange.h
     )
     list(APPEND sources
         VKGPUDescriptorPool.cpp
+        VKGPUBindlessDescriptorPoolTyped.cpp
+        VKGPUDescriptorPoolRange.cpp
     )
 endif()
 

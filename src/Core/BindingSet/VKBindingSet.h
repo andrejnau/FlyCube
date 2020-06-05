@@ -6,7 +6,7 @@ class VKBindingSet
     : public BindingSet
 {
 public:
-    VKBindingSet(std::vector<vk::UniqueDescriptorSet>&& descriptor_sets, vk::PipelineLayout pipeline_layout);
+    VKBindingSet(std::vector<vk::DescriptorSet>&& descriptor_sets, std::vector<vk::UniqueDescriptorSet>&& descriptor_sets_unique, vk::PipelineLayout pipeline_layout);
     const std::vector<vk::DescriptorSet>& GetDescriptorSets() const;
     vk::PipelineLayout GetPipelineLayout() const;
 
