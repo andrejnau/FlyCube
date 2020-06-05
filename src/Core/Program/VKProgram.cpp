@@ -31,22 +31,27 @@ VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>
         m_shaders_by_type[shader->GetType()] = m_shaders.back();
     }
 
+    std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> bindings_by_set;
+    std::map<uint32_t, std::vector<vk::DescriptorBindingFlagsEXT>> bindings_flags_by_set;
     for (auto& shader : m_shaders)
     {
         ShaderType shader_type = shader->GetType();
         auto& spirv = shader->GetBlob();
-        std::vector<vk::DescriptorSetLayoutBinding> bindings;
-        std::vector<vk::DescriptorBindingFlagsEXT> bindings_flags;
-        ParseShader(shader_type, spirv, bindings, bindings_flags);
+        ParseShader(shader_type, spirv, bindings_by_set, bindings_flags_by_set);
+    }
 
+    for (auto& set_desc : bindings_by_set)
+    {
         vk::DescriptorSetLayoutCreateInfo layout_info = {};
-        layout_info.bindingCount = bindings.size();
-        layout_info.pBindings = bindings.data();
+        layout_info.bindingCount = set_desc.second.size();
+        layout_info.pBindings = set_desc.second.data();
 
         vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT layout_flags_info = {};
+        layout_flags_info.bindingCount = bindings_flags_by_set[set_desc.first].size();
+        layout_flags_info.pBindingFlags = bindings_flags_by_set[set_desc.first].data();
         layout_info.pNext = &layout_flags_info;
 
-        size_t set_num = static_cast<size_t>(shader_type);
+        size_t set_num = set_desc.first;
         if (m_descriptor_set_layouts.size() <= set_num)
         {
             m_descriptor_set_layouts.resize(set_num + 1);
@@ -57,7 +62,7 @@ VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>
         descriptor_set_layout = device.GetDevice().createDescriptorSetLayoutUnique(layout_info);
 
         decltype(auto) descriptor_count = m_descriptor_count_by_set[set_num];
-        for (auto& binding : bindings)
+        for (auto& binding : set_desc.second)
         {
             descriptor_count[binding.descriptorType] += binding.descriptorCount;
         }
@@ -295,8 +300,8 @@ static void print_resources(const spirv_cross::Compiler& compiler, const char* t
 }
 
 void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary,
-                            std::vector<vk::DescriptorSetLayoutBinding>& bindings,
-                            std::vector<vk::DescriptorBindingFlagsEXT>& bindings_flags)
+                            std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>& bindings,
+                            std::map<uint32_t, std::vector<vk::DescriptorBindingFlagsEXT>>& bindings_flags)
 {
     m_shader_ref.emplace(shader_type, spirv_binary);
     spirv_cross::CompilerHLSL& compiler = m_shader_ref.find(shader_type)->second.compiler;
@@ -321,8 +326,7 @@ void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>&
                 }
             }
 
-            bindings.emplace_back();
-            vk::DescriptorSetLayoutBinding& binding = bindings.back();
+            vk::DescriptorSetLayoutBinding& binding = bindings[compiler.get_decoration(res.id, spv::DecorationDescriptorSet)].emplace_back();
             binding.binding = compiler.get_decoration(res.id, spv::DecorationBinding);
             binding.descriptorType = res_type;
             binding.descriptorCount = 1;
@@ -331,10 +335,10 @@ void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>&
             info.binding = binding.binding;
             info.descriptor_type = res_type;
 
-            bindings_flags.emplace_back();
+            vk::DescriptorBindingFlagsEXT& binding_flag = bindings_flags[compiler.get_decoration(res.id, spv::DecorationDescriptorSet)].emplace_back();
             auto& type = compiler.get_type(res.type_id);
             if (!type.array.empty() && type.array.front() == 0)
-                bindings_flags.back() = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
+                binding_flag = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
         }
     };
 

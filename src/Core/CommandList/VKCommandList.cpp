@@ -61,8 +61,11 @@ void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
 {
     if (binding_set == m_binding_set)
         return;
+    m_binding_set = binding_set;
     decltype(auto) vk_binding_set = binding_set->As<VKBindingSet>();
     decltype(auto) descriptor_sets = vk_binding_set.GetDescriptorSets();
+    if (descriptor_sets.empty())
+        return;
     auto type = m_state->GetPipelineType();
     if (type == PipelineType::kGraphics)
     {
@@ -76,7 +79,6 @@ void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     {
         m_command_list->bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, vk_binding_set.GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
     }
-    m_binding_set = binding_set;
 }
 
 void VKCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)

@@ -89,6 +89,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
     vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing_feature = {};
     descriptor_indexing_feature.runtimeDescriptorArray = true;
+    descriptor_indexing_feature.descriptorBindingVariableDescriptorCount = true;
     device_timetine_feature.pNext = &descriptor_indexing_feature;
 
     vk::DeviceCreateInfo device_create_info = {};

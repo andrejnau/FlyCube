@@ -89,13 +89,13 @@ RWTexture2D<float4> result : register(u0);
 [[vk::binding(5)]]
 StructuredBuffer<uint4> descriptor_offset : register(t3);
 
-[[vk::binding(6)]]
+[[vk::binding(0, 6)]]
 Texture2D texture_table[] : register(t0, space1);
 
-[[vk::binding(7)]]
+[[vk::binding(0, 7)]]
 StructuredBuffer<float2> texcoords_table[] : register(t0, space2);
 
-[[vk::binding(8)]]
+[[vk::binding(0, 8)]]
 StructuredBuffer<uint> indices_table[] : register(t0, space3);
 
 [[vk::binding(9)]]

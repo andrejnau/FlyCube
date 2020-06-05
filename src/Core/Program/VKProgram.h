@@ -23,8 +23,8 @@ public:
 
 private:
     void ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary,
-                     std::vector<vk::DescriptorSetLayoutBinding>& bindings,
-                     std::vector<vk::DescriptorBindingFlagsEXT>& bindings_flags);
+                     std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>& bindings,
+                     std::map<uint32_t, std::vector<vk::DescriptorBindingFlagsEXT>>& bindings_flags);
 
     VKDevice& m_device;
     std::vector<std::shared_ptr<SpirvShader>> m_shaders;
