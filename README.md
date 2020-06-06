@@ -1,14 +1,10 @@
 ## Low-level graphics api
-This api is written as C++ wrapper over existing graphics api. The api provide most of their features but hide some details.
-
-* Backends
-  * DirectX 12
-  * Vulkan
+This api is written in C++ on top of Directx 12 and Vulkan. Provides main features but hide some details.
 
 * Supported features
-  * Traditional graphics/compute pipeline
   * Ray Tracing
-  * HLSL as shading language for all backends
+  * Bindless
+  * HLSL as shader language for all backends
     * Compilation in DXBC, DXIL, SPIRV
 
 * Planned features
@@ -129,25 +125,28 @@ AppRect rect = app.GetAppRect();
 ProgramHolder<PixelShaderPS, VertexShaderVS> program(context);
 
 std::vector<uint32_t> ibuf = { 0, 1, 2 };
-std::shared_ptr<Resource> index = context.CreateBuffer(BindFlag::kIbv, sizeof(uint32_t) * ibuf.size(), sizeof(uint32_t));
-context.UpdateSubresource(index, 0, ibuf.data(), 0, 0);
+std::shared_ptr<Resource> index = context.CreateBuffer(BindFlag::kIndexBuffer, sizeof(uint32_t) * ibuf.size());
+context->UpdateSubresource(index, 0, ibuf.data(), 0, 0);
 std::vector<glm::vec3> pbuf = {
     glm::vec3(-0.5, -0.5, 0.0),
     glm::vec3(0.0,  0.5, 0.0),
     glm::vec3(0.5, -0.5, 0.0)
 };
-std::shared_ptr<Resource> pos = context.CreateBuffer(BindFlag::kVbv, sizeof(glm::vec3) * pbuf.size(), sizeof(glm::vec3));
-context.UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
+std::shared_ptr<Resource> pos = context.CreateBuffer(BindFlag::kVertexBuffer, sizeof(glm::vec3) * pbuf.size());
+context->UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
+
+program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
 
 while (!app.PollEvents())
 {
-    context.UseProgram(program);
-    context.SetViewport(rect.width, rect.height);
-    program.ps.om.rtv0.Attach(context.GetBackBuffer()).Clear({ 0.0f, 0.2f, 0.4f, 1.0f });
-    context.IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);
-    context.IASetVertexBuffer(program.vs.ia.POSITION, pos);
-    program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
-    context.DrawIndexed(3, 0, 0);
+    context->UseProgram(program);
+    context->Attach(program.ps.cbv.Settings, program.ps.cbuffer.Settings);
+    context->SetViewport(rect.width, rect.height);
+    context->Attach(program.ps.om.rtv0, context.GetBackBuffer());
+    context->ClearColor(program.ps.om.rtv0, { 0.0f, 0.2f, 0.4f, 1.0f });
+    context->IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);
+    context->IASetVertexBuffer(program.vs.ia.POSITION, pos);
+    context->DrawIndexed(3, 0, 0);
     context.Present();
     app.UpdateFps();
 }

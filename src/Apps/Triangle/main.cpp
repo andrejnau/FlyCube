@@ -25,9 +25,10 @@ int main(int argc, char* argv[])
     std::shared_ptr<Resource> pos = context.CreateBuffer(BindFlag::kVertexBuffer, sizeof(glm::vec3) * pbuf.size());
     context->UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
 
+    program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
+
     while (!app.PollEvents())
     {
-        program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
         context->UseProgram(program);
         context->Attach(program.ps.cbv.Settings, program.ps.cbuffer.Settings);
         context->SetViewport(rect.width, rect.height);
