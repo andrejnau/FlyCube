@@ -49,7 +49,7 @@ std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer,
 std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex });
 std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
 std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
-std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { ShaderType::kPixel, ViewType::kConstantBuffer, "Settings", constant_buffer_view } });
+std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { pixel_shader->GetBindKey("Settings"), constant_buffer_view } });
 GraphicsPipelineDesc pipeline_desc = {
     program,
     { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },

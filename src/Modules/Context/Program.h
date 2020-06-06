@@ -157,7 +157,7 @@ private:
         {
             api.desc.define["__INTERNAL_DO_NOT_INVERT_Y__"] = "1";
         }
-        api.shader = m_context.CompileShader(api.desc);
+        api.CompileShader(m_context);
         return true;
     }
 

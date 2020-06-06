@@ -283,11 +283,9 @@ void CommandListBox::ApplyBindings()
             continue;
         }
         decltype(auto) desc = descs.emplace_back();
+        desc.bind_key = x.first;
         desc.view = x.second.view;
-        desc.type = x.first.view_type;
-        desc.shader = x.first.shader_type;
-        desc.name = m_binding_names.at(x.first);
-        if (!m_program->HasBinding(desc.shader, desc.type, desc.name))
+        if (!m_program->HasBinding(desc.bind_key))
             descs.pop_back();
     }
 
@@ -359,9 +357,9 @@ std::shared_ptr<View> CommandListBox::CreateView(const BindKey& bind_key, const 
     case ViewType::kShaderResource:
     case ViewType::kUnorderedAccess:
     {
-        ResourceBindingDesc binding_desc = shader->GetResourceBindingDesc(m_binding_names.at(bind_key));
-        desc.dimension = binding_desc.dimension;
-        desc.stride = shader->GetResourceStride(m_binding_names.at(bind_key));
+        ResourceBindingDesc binding_desc = shader->GetResourceBindingDesc(bind_key);
+        desc.dimension = shader->GetResourceBindingDesc(bind_key).dimension;
+        desc.stride = shader->GetResourceStride(bind_key);
         break;
     }
     }
@@ -379,15 +377,13 @@ std::shared_ptr<View> CommandListBox::FindView(ShaderType shader_type, ViewType 
     return it->second.view;
 }
 
-void CommandListBox::Attach(const NamedBindKey& bind_key, const std::shared_ptr<DeferredView>& view)
+void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<DeferredView>& view)
 {
     m_bound_deferred_view[bind_key] = view;
-    m_binding_names[bind_key] = bind_key.name;
 }
 
-void CommandListBox::Attach(const NamedBindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
+void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
 {
-    m_binding_names[bind_key] = bind_key.name;
     Attach(bind_key, CreateView(bind_key, resource, view_desc));
 }
 
@@ -411,7 +407,7 @@ void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<View>
     }
 }
 
-void CommandListBox::ClearColor(const NamedBindKey& bind_key, const std::array<float, 4>& color)
+void CommandListBox::ClearColor(const BindKey& bind_key, const std::array<float, 4>& color)
 {
     auto& view = FindView(bind_key.shader_type, bind_key.view_type, bind_key.slot);
     if (!view)
@@ -426,7 +422,7 @@ void CommandListBox::ClearColor(const NamedBindKey& bind_key, const std::array<f
     ResourceBarrier(view->GetResource(), ResourceState::kRenderTarget);
 }
 
-void CommandListBox::ClearDepth(const NamedBindKey& bind_key, float depth)
+void CommandListBox::ClearDepth(const BindKey& bind_key, float depth)
 {
     auto& view = FindView(bind_key.shader_type, bind_key.view_type, bind_key.slot);
     if (!view)

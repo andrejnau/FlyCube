@@ -87,18 +87,9 @@ VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>
     m_pipeline_layout = device.GetDevice().createPipelineLayoutUnique(pipeline_layout_info);
 }
 
-bool VKProgram::HasBinding(ShaderType shader, ViewType type, std::string name) const
+bool VKProgram::HasBinding(const BindKey& bind_key) const
 {
-    if (!m_shader_ref.count(shader))
-        return false;
-    const ShaderRef& shader_ref = m_shader_ref.at(shader);
-    if (name == "$Globals")
-        name = "_Global";
-
-    if (!shader_ref.resources.count(name))
-        name = "type_" + name;
-
-    return shader_ref.resources.count(name);
+    return m_resources.count(bind_key);
 }
 
 std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& bindings)
@@ -127,7 +118,7 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& b
     {
         const auto& desc = m_bindings[id];
         bool is_rtv_dsv = false;
-        switch (desc.type)
+        switch (desc.bind_key.view_type)
         {
         case ViewType::kRenderTarget:
         case ViewType::kDepthStencil:
@@ -138,27 +129,17 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& b
         if (is_rtv_dsv || !desc.view)
             continue;
 
-        ShaderType shader_type = desc.shader;
+        ShaderType shader_type = desc.bind_key.shader_type;
         if (m_bindless_type.count(static_cast<size_t>(shader_type)))
             continue;
 
-        ShaderRef& shader_ref = m_shader_ref.find(shader_type)->second;
-        std::string name = desc.name;
-        if (name == "$Globals")
-            name = "_Global";
-
-        if (!shader_ref.resources.count(name))
-            name = "type_" + name;
-
-        if (!shader_ref.resources.count(name))
-            throw std::runtime_error("failed to find resource reflection");
-        auto ref_res = shader_ref.resources[name];
+        auto& rer_desc = m_resources.at(desc.bind_key);
 
         vk::WriteDescriptorSet descriptor_write = {};
         descriptor_write.dstSet = descriptor_sets[static_cast<size_t>(shader_type)];
-        descriptor_write.dstBinding = ref_res.binding;
+        descriptor_write.dstBinding = rer_desc.binding;
         descriptor_write.dstArrayElement = 0;
-        descriptor_write.descriptorType = ref_res.descriptor_type;
+        descriptor_write.descriptorType = rer_desc.descriptor_type;
         descriptor_write.descriptorCount = 1;
 
         decltype(auto) vk_view = desc.view->As<VKView>();
@@ -254,16 +235,15 @@ void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>&
                             std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>& bindings,
                             std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>>& bindings_flags)
 {
-    m_shader_ref.emplace(shader_type, spirv_binary);
-    spirv_cross::CompilerHLSL& compiler = m_shader_ref.find(shader_type)->second.compiler;
+    spirv_cross::CompilerHLSL compiler(spirv_binary);
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
     auto generate_bindings = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType res_type)
     {
         for (auto& res : resources)
         {
-            auto& info = m_shader_ref.find(shader_type)->second.resources[res.name];
-            info.res = res;
+            BindKey bind_key = GetShader(shader_type)->GetBindKey(res.name);
+            auto& info = m_resources[bind_key];
             auto& base_type = compiler.get_type(res.base_type_id);
             if (base_type.basetype == spirv_cross::SPIRType::BaseType::Image && base_type.image.dim == spv::Dim::DimBuffer)
             {

@@ -14,17 +14,17 @@ struct {{ShaderName}}Desc
 
     struct CBV
     {
-{{#CBuffers}}        NamedBindKey {{Name}} = { type, ViewType::kConstantBuffer, {{Slot}}, {{Space}}, "{{Name}}" };
+{{#CBuffers}}        BindKey {{Name}};
 {{/CBuffers}}    } cbv;{{/HasCBuffers}}{{#HasTextures}}
 
     struct SRV
     {
-{{#Textures}}       NamedBindKey {{Name}} = { type, ViewType::kShaderResource, {{Slot}}, {{Space}}, "{{Name}}" };
+{{#Textures}}       BindKey {{Name}};
 {{/Textures}}    } srv;{{/HasTextures}}{{#HasUAVs}}
 
     struct UAV
     {
-{{#UAVs}}       NamedBindKey {{Name}} = { type, ViewType::kUnorderedAccess, {{Slot}}, {{Space}}, "{{Name}}" };
+{{#UAVs}}       BindKey {{Name}};
 {{/UAVs}}    } uav;{{/HasUAVs}}{{#HasInputs}}
 
     struct IA
@@ -34,13 +34,13 @@ struct {{ShaderName}}Desc
 
     struct OM
     {
-{{#Outputs}}        NamedBindKey rtv{{Slot}} = { type, ViewType::kRenderTarget, {{Slot}}, 0, "{{Name}}" };
-{{/Outputs}}        NamedBindKey dsv = { type, ViewType::kDepthStencil, 0, 0, "" };
+{{#Outputs}}        BindKey rtv{{Slot}} = { type, ViewType::kRenderTarget, {{Slot}}, 0 };
+{{/Outputs}}        BindKey dsv = { type, ViewType::kDepthStencil, 0, 0 };
     } om;{{/HasOutputs}}{{#HasSamplers}}
 
     struct Sampler
     {
-{{#Samplers}}       NamedBindKey {{Name}} = { type, ViewType::kSampler, {{Slot}}, {{Space}}, "{{Name}}" };
+{{#Samplers}}       BindKey {{Name}};
 {{/Samplers}}    } sampler;{{/HasSamplers}}
 };
 
@@ -76,6 +76,15 @@ public:{{#CBuffers}}
     {{ShaderName}}(Context& context)
     {
     }{{/HasCBuffers}}
+
+    void CompileShader(Context& context)
+    {
+        shader = context.CompileShader(desc);{{#CBuffers}}
+        cbv.{{Name}} = shader->GetBindKey("{{Name}}");{{/CBuffers}}{{#Textures}}
+        srv.{{Name}} = shader->GetBindKey("{{Name}}");{{/Textures}}{{#UAVs}}
+        uav.{{Name}} = shader->GetBindKey("{{Name}}");{{/UAVs}}{{#Samplers}}
+        sampler.{{Name}} = shader->GetBindKey("{{Name}}");{{/Samplers}}
+    }
 
     std::shared_ptr<Shader> shader;
 };

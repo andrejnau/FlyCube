@@ -352,24 +352,6 @@ struct ComputePipelineDesc
 
 using RayTracingPipelineDesc = ComputePipelineDesc;
 
-struct BindingDesc
-{
-    ShaderType shader;
-    ViewType type;
-    std::string name;
-    std::shared_ptr<View> view;
-
-    auto MakeTie() const
-    {
-        return std::tie(shader, type, name, view);
-    }
-
-    bool operator< (const BindingDesc& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
-    }
-};
-
 struct BindKey
 {
     ShaderType shader_type = ShaderType::kUnknown;
@@ -388,9 +370,20 @@ struct BindKey
     }
 };
 
-struct NamedBindKey : BindKey
+struct BindingDesc
 {
-    std::string name;
+    BindKey bind_key;
+    std::shared_ptr<View> view;
+
+    auto MakeTie() const
+    {
+        return std::tie(bind_key, view);
+    }
+
+    bool operator< (const BindingDesc& oth) const
+    {
+        return MakeTie() < oth.MakeTie();
+    }
 };
 
 struct ResourceBindingDesc

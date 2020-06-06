@@ -172,6 +172,11 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
         dynamic_arguments.emplace_back(std::to_wstring(static_cast<uint32_t>(shader.type)));
         arguments.emplace_back(dynamic_arguments.back().c_str());
     }
+    else
+    {
+        arguments.emplace_back(L"-auto-binding-space");
+        arguments.emplace_back(L"0");
+    }
 
     ComPtr<IDxcOperationResult> result;
     IncludeHandler include_handler(loader, shader_dir);

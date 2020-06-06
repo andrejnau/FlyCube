@@ -31,30 +31,11 @@ struct BindingLayout
     };
 };
 
-struct DXBindKey
-{
-    ShaderType shader;
-    ViewType type;
-    std::string name;
-
-private:
-    auto MakeTie() const
-    {
-        return std::tie(shader, type, name);
-    }
-
-public:
-    bool operator< (const DXBindKey& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
-    }
-};
-
 class DXProgram : public ProgramBase
 {
 public:
     DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders);
-    bool HasBinding(ShaderType shader, ViewType type, std::string name) const override;
+    bool HasBinding(const BindKey& bind_key) const override;
     std::shared_ptr<BindingSet> CreateBindingSetImpl(const BindingsKey& bindings) override;
 
     const std::vector<std::shared_ptr<DXShader>>& GetShaders() const;
@@ -73,7 +54,11 @@ private:
 
     std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE, uint32_t /*space*/, bool /*bindless*/>, BindingLayout> m_binding_layout;
     std::map<std::set<size_t>, std::weak_ptr<DXGPUDescriptorPoolRange>> m_heap_cache;
-    std::map<DXBindKey, std::tuple<size_t, size_t, bool>> m_bind_to_slot;
+    struct BindingType
+    {
+        bool is_bindless = false;
+    };
+    std::map<BindKey, BindingType> m_binding_type;
     bool m_is_compute = false;
     using BindingsByHeap = std::map<D3D12_DESCRIPTOR_HEAP_TYPE, BindingsKey>;
 };

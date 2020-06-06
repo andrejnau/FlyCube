@@ -15,7 +15,7 @@ class VKProgram : public ProgramBase
 {
 public:
     VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders);
-    bool HasBinding(ShaderType shader, ViewType type, std::string name) const override;
+    bool HasBinding(const BindKey& bind_key) const override;
     std::shared_ptr<BindingSet> CreateBindingSetImpl(const BindingsKey& bindings) override;
 
     const std::vector<std::shared_ptr<SpirvShader>>& GetShaders() const;
@@ -32,26 +32,14 @@ private:
     std::vector<vk::UniqueDescriptorSetLayout> m_descriptor_set_layouts;
     vk::UniquePipelineLayout m_pipeline_layout;
 
-    struct ShaderRef
+    struct ResourceDesc
     {
-        ShaderRef(const std::vector<uint32_t>& spirv_binary)
-            : compiler(std::move(spirv_binary))
-        {
-        }
-
-        spirv_cross::CompilerHLSL compiler;
-
-        struct ResourceRef
-        {
-            spirv_cross::Resource res;
-            vk::DescriptorType descriptor_type;
-            uint32_t binding;
-        };
-
-        std::map<std::string, ResourceRef> resources;
+        vk::DescriptorType descriptor_type;
+        uint32_t binding;
     };
 
+    std::map<BindKey, ResourceDesc> m_resources;
+
     std::map<uint32_t, vk::DescriptorType> m_bindless_type;
-    std::map<ShaderType, ShaderRef> m_shader_ref;
     std::vector<std::map<vk::DescriptorType, size_t>> m_descriptor_count_by_set;
 };

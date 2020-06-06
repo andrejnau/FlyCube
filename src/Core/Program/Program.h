@@ -12,5 +12,5 @@ public:
     virtual std::shared_ptr<BindingSet> CreateBindingSet(const std::vector<BindingDesc>& bindings) = 0;
     virtual bool HasShader(ShaderType type) const = 0;
     virtual const std::shared_ptr<Shader>& GetShader(ShaderType type) const = 0;
-    virtual bool HasBinding(ShaderType shader, ViewType type, std::string name) const = 0;
+    virtual bool HasBinding(const BindKey& bind_key) const = 0;
 };

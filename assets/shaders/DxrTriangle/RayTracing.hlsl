@@ -1,8 +1,5 @@
-[[vk::binding(0)]]
-RaytracingAccelerationStructure geometry : register(t0);
-
-[[vk::binding(1)]]
-RWTexture2D<float4> result : register(u0);
+RaytracingAccelerationStructure geometry;
+RWTexture2D<float4> result;
 
 struct RayPayload
 {

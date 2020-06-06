@@ -55,8 +55,7 @@ float3 getCosHemisphereSample(inout uint randSeed, float3 hitNorm)
 // base on https://github.com/NVIDIAGameWorks/GettingStartedWithRTXRayTracing/blob/master/05-ao/Data/Tutorial05/aoTracing.rt.hlsl
 //--------------------------------------------------------------------------------
 
-[[vk::binding(0)]]
-cbuffer Settings : register(b0)
+cbuffer Settings
 {
     float ao_radius;
     uint frame_index;
@@ -74,32 +73,15 @@ cbuffer Settings : register(b0)
 #define TEXTURE_TYPE Texture2D
 #endif
 
-[[vk::binding(1)]]
-TEXTURE_TYPE gPosition : register(t0);
-
-[[vk::binding(2)]]
-TEXTURE_TYPE gNormal : register(t1);
-
-[[vk::binding(3)]]
-RaytracingAccelerationStructure geometry : register(t2);
-
-[[vk::binding(4)]]
-RWTexture2D<float4> result : register(u0);
-
-[[vk::binding(5)]]
-StructuredBuffer<uint4> descriptor_offset : register(t3);
-
-[[vk::binding(0, 6)]]
-Texture2D texture_table[] : register(t0, space1);
-
-[[vk::binding(0, 7)]]
-StructuredBuffer<float2> texcoords_table[] : register(t0, space2);
-
-[[vk::binding(0, 8)]]
-StructuredBuffer<uint> indices_table[] : register(t0, space3);
-
-[[vk::binding(9)]]
-SamplerState gSampler : register(s0);
+TEXTURE_TYPE gPosition;
+TEXTURE_TYPE gNormal;
+RaytracingAccelerationStructure geometry;
+RWTexture2D<float4> result;
+StructuredBuffer<uint4> descriptor_offset;
+Texture2D texture_table[] : register(space10);
+StructuredBuffer<float2> texcoords_table[] : register(space11);
+StructuredBuffer<uint> indices_table[] : register(space12);
+SamplerState gSampler;
 
 struct RayPayload
 {
