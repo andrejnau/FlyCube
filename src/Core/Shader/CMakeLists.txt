@@ -41,7 +41,6 @@ target_link_libraries(${target}
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
-    shaderc
 )
 
 if (VULKAN_SUPPORT)

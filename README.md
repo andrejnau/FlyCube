@@ -183,7 +183,6 @@ cmake -G "Visual Studio 16 2019 Win64" ..
 cmake --build . --config RelWithDebInfo
 ```
 
-## Setup for Vulkan Ray Tracing
-Download latest dxc with support spirv backend from https://ci.appveyor.com/project/antiagainst/directxshadercompiler/branch/master/artifacts
+## Setup for Vulkan
+Download latest DirectX Shader Compiler with support spirv backend from https://ci.appveyor.com/project/antiagainst/directxshadercompiler/branch/master/artifacts
 Unzip to 3rdparty/dxc-artifacts
-Copy dxil.dll from WinKits if you need DirectX12 backend too.

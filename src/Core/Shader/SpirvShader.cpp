@@ -60,8 +60,6 @@ SpirvShader::SpirvShader(const ShaderDesc& desc)
     option.auto_map_bindings = true;
     option.hlsl_iomap = true;
     option.invert_y = !desc.define.count("__INTERNAL_DO_NOT_INVERT_Y__");
-    if (desc.type == ShaderType::kLibrary)
-        option.use_dxc = true;
     option.resource_set_binding = static_cast<uint32_t>(desc.type);
     m_blob = SpirvCompile(desc, option);
 
