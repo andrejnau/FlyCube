@@ -183,5 +183,4 @@ cmake --build . --config RelWithDebInfo
 ```
 
 ## Setup for Vulkan
-Download latest DirectX Shader Compiler with support spirv backend from https://ci.appveyor.com/project/antiagainst/directxshadercompiler/branch/master/artifacts
-Unzip to 3rdparty/dxc-artifacts
+Use Vulkan SDK 1.2.141

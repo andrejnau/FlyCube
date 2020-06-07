@@ -64,7 +64,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     std::vector<const char*> found_extension;
     for (const auto& extension : extensions)
     {
-        if (req_extension.count(extension.extensionName))
+        if (req_extension.count(extension.extensionName.data()))
             found_extension.push_back(extension.extensionName);
     }
 

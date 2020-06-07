@@ -9,6 +9,14 @@ DXCLoader::DXCLoader(bool dxil_required)
     if (Load(custom_path, dxil_required))
         return;
 
+    std::string dxcompiler_path_from_vk_sdk;
+    const char* vk_sdk_path = getenv("VULKAN_SDK");
+    if (vk_sdk_path)
+        dxcompiler_path_from_vk_sdk = std::string(vk_sdk_path) + "/Bin/";
+
+    if (Load(utf8_to_wstring(dxcompiler_path_from_vk_sdk), dxil_required))
+        return;
+
 #ifdef _WIN64
     std::wstring sdk_path = utf8_to_wstring(SDKBIN) + L"/x64";
 #else
