@@ -223,3 +223,23 @@ vk::ImageView VKView::GetSrv() const
 {
     return m_srv.get();
 }
+
+uint32_t VKView::GetBaseMipLevel() const
+{
+    return m_view_info.subresourceRange.baseMipLevel;
+}
+
+uint32_t VKView::GetLevelCount() const
+{
+    return m_view_info.subresourceRange.levelCount;
+}
+
+uint32_t VKView::GetBaseArrayLayer() const
+{
+    return m_view_info.subresourceRange.baseArrayLayer;
+}
+
+uint32_t VKView::GetLayerCount() const
+{
+    return m_view_info.subresourceRange.layerCount;
+}

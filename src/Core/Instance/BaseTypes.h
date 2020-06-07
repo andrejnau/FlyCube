@@ -10,6 +10,7 @@
 
 enum class ResourceState
 {
+    kUndefined,
     kCommon,
     kGenericRead,
     kClearColor,

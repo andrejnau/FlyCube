@@ -10,8 +10,9 @@ public:
     ResourceType GetResourceType() const override final;
     gli::format GetFormat() const override final;
     MemoryType GetMemoryType() const override final;
-    ResourceState GetResourceState() const override final;
+    ResourceState GetResourceState(uint32_t mip_level, uint32_t array_layer) const override final;
     void SetResourceState(ResourceState state) override final;
+    void SetResourceState(uint32_t mip_level, uint32_t array_layer, ResourceState state) override final;
 
     void UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes) override final;
     void UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
@@ -25,5 +26,6 @@ public:
 
 private:
     std::map<uint64_t, std::shared_ptr<Resource>> m_private_resources;
-    ResourceState m_state = ResourceState::kCommon;
+    std::map<std::tuple<uint32_t, uint32_t>, ResourceState> m_states;
+    ResourceState m_state = ResourceState::kUndefined;
 };

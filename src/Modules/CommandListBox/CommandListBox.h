@@ -56,6 +56,7 @@ public:
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource);
     void UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch = 0, uint32_t depth_pitch = 0);
     void ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state);
+    void ViewBarrier(const std::shared_ptr<View>& view, ResourceState state);
 
     std::shared_ptr<Resource> CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index = {});
     std::shared_ptr<Resource> CreateTopLevelAS(const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry);

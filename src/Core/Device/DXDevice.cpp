@@ -161,7 +161,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
     if (bind_flag & BindFlag::kUnorderedAccess)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
-    res->SetResourceState(ResourceState::kCopyDest);
+    ResourceState state = ResourceState::kCopyDest;
 
     D3D12_CLEAR_VALUE* p_clear_value = nullptr;
     D3D12_CLEAR_VALUE clear_value = {};
@@ -183,18 +183,15 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
         p_clear_value = &clear_value;
     }
 
-    if (bind_flag & BindFlag::kUnorderedAccess)
-        p_clear_value = nullptr;
-
     ASSERT_SUCCEEDED(m_device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
         D3D12_HEAP_FLAG_NONE,
         &desc,
-        ConvertSate(res->GetResourceState()),
+        ConvertSate(state),
         p_clear_value,
         IID_PPV_ARGS(&res->resource)));
     res->desc = desc;
-
+    res->SetResourceState(state);
     return res;
 }
 
@@ -210,7 +207,7 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
 
-    res->SetResourceState(ResourceState::kCommon);
+    ResourceState state = ResourceState::kCommon;
     res->memory_type = memory_type;
     res->resource_type = ResourceType::kBuffer;
 
@@ -221,7 +218,7 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     if (bind_flag & BindFlag::kUnorderedAccess)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     if (bind_flag & BindFlag::kAccelerationStructure)
-        res->SetResourceState(ResourceState::kRaytracingAccelerationStructure);
+        state = ResourceState::kRaytracingAccelerationStructure;
 
     D3D12_HEAP_TYPE heap_type;
     if (memory_type == MemoryType::kDefault)
@@ -231,17 +228,18 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     else if (memory_type == MemoryType::kUpload)
     {
         heap_type = D3D12_HEAP_TYPE_UPLOAD;
-        res->SetResourceState(ResourceState::kGenericRead);
+        state = ResourceState::kGenericRead;
     }
 
     m_device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(heap_type),
         D3D12_HEAP_FLAG_NONE,
         &desc,
-        ConvertSate(res->GetResourceState()),
+        ConvertSate(state),
         nullptr,
         IID_PPV_ARGS(&res->resource));
     res->desc = desc;
+    res->SetResourceState(state);
     return res;
 }
 

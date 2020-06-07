@@ -44,39 +44,11 @@ VKRenderPass::VKRenderPass(VKDevice& device, const std::vector<RenderTargetDesc>
         sub_pass.pDepthStencilAttachment = &depth_attachment_references;
     }
 
-    vk::AccessFlags access_mask =
-        vk::AccessFlagBits::eIndirectCommandRead |
-        vk::AccessFlagBits::eIndexRead |
-        vk::AccessFlagBits::eVertexAttributeRead |
-        vk::AccessFlagBits::eUniformRead |
-        vk::AccessFlagBits::eInputAttachmentRead |
-        vk::AccessFlagBits::eShaderRead |
-        vk::AccessFlagBits::eShaderWrite |
-        vk::AccessFlagBits::eColorAttachmentRead |
-        vk::AccessFlagBits::eColorAttachmentWrite |
-        vk::AccessFlagBits::eDepthStencilAttachmentRead |
-        vk::AccessFlagBits::eDepthStencilAttachmentWrite |
-        vk::AccessFlagBits::eTransferRead |
-        vk::AccessFlagBits::eTransferWrite |
-        vk::AccessFlagBits::eHostRead |
-        vk::AccessFlagBits::eHostWrite |
-        vk::AccessFlagBits::eMemoryRead |
-        vk::AccessFlagBits::eMemoryWrite;
-
-    vk::SubpassDependency self_dependencie = {};
-    self_dependencie.srcStageMask = vk::PipelineStageFlagBits::eAllCommands;
-    self_dependencie.dstStageMask = vk::PipelineStageFlagBits::eAllCommands;
-    self_dependencie.srcAccessMask = access_mask;
-    self_dependencie.dstAccessMask = access_mask;
-    self_dependencie.dependencyFlags = vk::DependencyFlagBits::eByRegion;
-
     vk::RenderPassCreateInfo render_pass_info = {};
     render_pass_info.attachmentCount = attachment_descriptions.size();
     render_pass_info.pAttachments = attachment_descriptions.data();
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &sub_pass;
-    render_pass_info.dependencyCount = 1;
-    render_pass_info.pDependencies = &self_dependencie;
 
     m_render_pass = device.GetDevice().createRenderPassUnique(render_pass_info);
 }

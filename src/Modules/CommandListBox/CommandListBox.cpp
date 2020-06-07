@@ -144,12 +144,39 @@ void CommandListBox::ResourceBarrier(const std::shared_ptr<Resource>& resource, 
         return;
     ResourceBarrierDesc barrier = {};
     barrier.resource = resource;
-    barrier.state_before = resource->GetResourceState();
+    barrier.state_before = resource->GetResourceState(0, 0);
     barrier.state_after = state;
     barrier.level_count = resource->GetMipLevels();
     barrier.layer_count = resource->GetDepthOrArraySize();
     m_command_list->ResourceBarrier({ barrier });
     resource->SetResourceState(state);
+}
+
+void CommandListBox::ViewBarrier(const std::shared_ptr<View>& view, ResourceState state)
+{
+    if (!view)
+        return;
+    decltype(auto) resource = view->GetResource();
+    if (!resource)
+        return;
+
+    std::vector<ResourceBarrierDesc> barriers;
+    for (uint32_t i = 0; i < view->GetLevelCount(); ++i)
+    {
+        for (uint32_t j = 0; j < view->GetLayerCount(); ++j)
+        {
+            ResourceBarrierDesc& barrier = barriers.emplace_back();
+            barrier.resource = resource;
+            barrier.base_mip_level = view->GetBaseMipLevel() + i;
+            barrier.level_count = 1;
+            barrier.base_array_layer = view->GetBaseArrayLayer() + j;
+            barrier.layer_count = 1;
+            barrier.state_before = barrier.resource->GetResourceState(barrier.base_mip_level, barrier.base_array_layer);
+            barrier.state_after = state;
+            barrier.resource->SetResourceState(barrier.base_mip_level, barrier.base_array_layer, barrier.state_after);
+        }
+    }
+    m_command_list->ResourceBarrier(barriers);
 }
 
 std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
@@ -417,9 +444,9 @@ void CommandListBox::ClearColor(const BindKey& bind_key, const std::array<float,
         m_command_list->EndRenderPass();
         m_is_open_render_pass = false;
     }
-    ResourceBarrier(view->GetResource(), ResourceState::kClearColor);
+    ViewBarrier(view, ResourceState::kClearColor);
     m_command_list->ClearColor(view, color);
-    ResourceBarrier(view->GetResource(), ResourceState::kRenderTarget);
+    ViewBarrier(view, ResourceState::kRenderTarget);
 }
 
 void CommandListBox::ClearDepth(const BindKey& bind_key, float depth)
@@ -432,9 +459,9 @@ void CommandListBox::ClearDepth(const BindKey& bind_key, float depth)
         m_command_list->EndRenderPass();
         m_is_open_render_pass = false;
     }
-    ResourceBarrier(view->GetResource(), ResourceState::kClearDepth);
+    ViewBarrier(view, ResourceState::kClearDepth);
     m_command_list->ClearDepth(view, depth);
-    ResourceBarrier(view->GetResource(), ResourceState::kDepthTarget);
+    ViewBarrier(view, ResourceState::kDepthTarget);
 }
 
 void CommandListBox::SetRasterizeState(const RasterizerDesc& desc)
@@ -454,17 +481,15 @@ void CommandListBox::SetDepthStencilState(const DepthStencilDesc& desc)
 
 void CommandListBox::OnAttachSRV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
-    auto resource = view->GetResource();
-
     if (bind_key.shader_type == ShaderType::kPixel)
-        ResourceBarrier(resource, ResourceState::kPixelShaderResource);
+        ViewBarrier(view, ResourceState::kPixelShaderResource);
     else
-        ResourceBarrier(resource, ResourceState::kNonPixelShaderResource);
+        ViewBarrier(view, ResourceState::kNonPixelShaderResource);
 }
 
 void CommandListBox::OnAttachUAV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
-    ResourceBarrier(view->GetResource(), ResourceState::kUnorderedAccess);
+    ViewBarrier(view, ResourceState::kUnorderedAccess);
 }
 
 void CommandListBox::OnAttachRTV(const BindKey& bind_key, const std::shared_ptr<View>& view)
@@ -475,12 +500,12 @@ void CommandListBox::OnAttachRTV(const BindKey& bind_key, const std::shared_ptr<
     render_target.slot = bind_key.slot;
     auto resource = view->GetResource();
     render_target.format = resource->GetFormat();
-    ResourceBarrier(resource, ResourceState::kRenderTarget);
+    ViewBarrier(view, ResourceState::kRenderTarget);
 }
 
 void CommandListBox::OnAttachDSV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     auto resource = view->GetResource();
     m_graphic_pipeline_desc.dsv.format = resource->GetFormat();
-    ResourceBarrier(resource, ResourceState::kDepthTarget);
+    ViewBarrier(view, ResourceState::kDepthTarget);
 }

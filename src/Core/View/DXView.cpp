@@ -284,6 +284,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12GetDSVDesc(const ViewDesc& view_desc, const D3
 
 DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, const ViewDesc& view_desc)
     : m_device(device)
+    , m_view_desc(view_desc)
 {
     m_resource = resource;
     m_handle = m_device.GetCPUDescriptorPool().AllocateDescriptor(view_desc.view_type);
@@ -415,4 +416,24 @@ uint32_t DXView::GetDescriptorId() const
     if (m_range)
         return m_range->GetOffset();
     return -1;
+}
+
+uint32_t DXView::GetBaseMipLevel() const
+{
+    return m_view_desc.level;
+}
+
+uint32_t DXView::GetLevelCount() const
+{
+    return std::min<uint32_t>(m_view_desc.count, m_resource->GetMipLevels() - m_view_desc.level);
+}
+
+uint32_t DXView::GetBaseArrayLayer() const
+{
+    return 0;
+}
+
+uint32_t DXView::GetLayerCount() const
+{
+    return m_resource->GetDepthOrArraySize();
 }

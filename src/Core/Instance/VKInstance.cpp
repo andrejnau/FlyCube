@@ -25,22 +25,11 @@ private:
     static bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& message)
     {
         static std::vector<std::string> muted_warnings = {
-            "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv",
-            "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed",
-            "UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch",
-            "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout",
             "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated",
-            "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout",
-            "VUID-vkCmdDrawIndexed-None-02720",
-            "VUID-vkCmdPipelineBarrier-oldLayout-01181",
-            "VUID-vkCmdClearDepthStencilImage-imageLayout",
-            "VUID-vkCmdClearDepthStencilImage-renderpass",
-            "VUID-vkCmdClearColorImage-imageLayout",
-            "VUID-VkFramebufferCreateInfo-pAttachments",
-            "VUID-VkRenderPassCreateInfo-pDependencies",
-            "VUID-VkDescriptorImageInfo-imageLayout",
-            "VUID-VkPresentInfoKHR-pImageIndices",
-            "VUID-vkCmdPipelineBarrier-image-02635"
+            "VUID-vkCmdDrawIndexed-None-04007",
+            "VUID-vkCmdPipelineBarrier-pDependencies-02285",
+            "VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02460",
+            "VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02458",
         };
         for (auto& str : muted_warnings)
         {

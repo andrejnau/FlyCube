@@ -186,6 +186,8 @@ vk::ImageLayout ConvertSate(ResourceState state)
 {
     switch (state)
     {
+    case ResourceState::kUndefined:
+        return vk::ImageLayout::eUndefined;
     case ResourceState::kCommon:
     case ResourceState::kClearColor:
     case ResourceState::kClearDepth:

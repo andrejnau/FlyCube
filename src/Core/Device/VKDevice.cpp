@@ -212,7 +212,6 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
     vk::BufferCreateInfo buffer_info = {};
     buffer_info.size = buffer_size;
-    buffer_info.sharingMode = vk::SharingMode::eExclusive;
 
     if (bind_flag & BindFlag::kVertexBuffer)
         buffer_info.usage |= vk::BufferUsageFlagBits::eVertexBuffer;
@@ -243,7 +242,7 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     if (memory_type == MemoryType::kDefault)
         properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
     else if (memory_type == MemoryType::kUpload)
-        properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+        properties = vk::MemoryPropertyFlagBits::eHostVisible;
     alloc_info.memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, properties);
     res->buffer.memory = m_device->allocateMemoryUnique(alloc_info);
 
