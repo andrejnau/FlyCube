@@ -90,7 +90,7 @@ VKInstance::VKInstance()
     std::set<std::string> req_layers;
     static const bool debug_enabled = IsDebuggerPresent();
     if (debug_enabled)
-        req_layers.insert("VK_LAYER_LUNARG_standard_validation");
+        req_layers.insert("VK_LAYER_KHRONOS_validation");
     std::vector<const char*> found_layers;
     for (const auto& layer : layers)
     {
