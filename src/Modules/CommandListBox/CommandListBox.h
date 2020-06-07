@@ -28,6 +28,15 @@ public:
     void Open();
     void Close();
 
+    void EndRenderPass()
+    {
+        if (m_is_open_render_pass)
+        {
+            m_command_list->EndRenderPass();
+            m_is_open_render_pass = false;
+        }
+    }
+
     void Attach(const BindKey& bind_key, const std::shared_ptr<DeferredView>& view);
     void Attach(const BindKey& bind_key, const std::shared_ptr<Resource>& resource = {}, const LazyViewDesc& view_desc = {});
     void SetRasterizeState(const RasterizerDesc& desc);

@@ -71,7 +71,8 @@ DXDevice::DXDevice(DXAdapter& adapter)
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature_support = {};
     ASSERT_SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support, sizeof(feature_support)));
-    m_is_dxr_supported = feature_support.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
+    m_is_dxr_supported = feature_support.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
+    m_is_render_passes_supported = feature_support.RenderPassesTier >= D3D12_RENDER_PASS_TIER_0;
 
     D3D12_COMMAND_QUEUE_DESC queue_desc = {};
     ASSERT_SUCCEEDED(m_device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&m_command_queue)));
@@ -494,6 +495,11 @@ DXCPUDescriptorPool& DXDevice::GetCPUDescriptorPool()
 DXGPUDescriptorPool& DXDevice::GetGPUDescriptorPool()
 {
     return m_gpu_descriptor_pool;
+}
+
+bool DXDevice::IsRenderPassesSupported() const
+{
+    return m_is_render_passes_supported;
 }
 
 bool DXDevice::IsRenderdocPresent() const

@@ -37,6 +37,8 @@ public:
     ComPtr<ID3D12GraphicsCommandList> GetCommandList();
 
 private:
+    void BeginRenderPassImpl(const std::shared_ptr<Framebuffer>& framebuffer);
+    void OMSetFramebuffer(const std::shared_ptr<Framebuffer>& framebuffer);
     void IASetVertexBufferImpl(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride);
 
     DXDevice& m_device;
@@ -46,4 +48,6 @@ private:
     std::shared_ptr<Pipeline> m_state;
     std::shared_ptr<BindingSet> m_binding_set;
     std::map<uint32_t, std::shared_ptr<Resource>> m_lazy_vertex;
+    bool m_use_render_passes = true;
+    ComPtr<ID3D12GraphicsCommandList4> m_command_list4;
 };

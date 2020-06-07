@@ -64,6 +64,7 @@ std::shared_ptr<Resource> Context::GetBackBuffer()
 
 void Context::Present()
 {
+    m_command_list->EndRenderPass();
     m_command_list->ResourceBarrier(GetBackBuffer(), ResourceState::kPresent);
     m_command_list->Close();
     m_fence->WaitAndReset();

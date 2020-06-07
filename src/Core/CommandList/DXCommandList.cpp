@@ -18,9 +18,13 @@
 DXCommandList::DXCommandList(DXDevice& device)
     : m_device(device)
 {
+    m_use_render_passes = m_use_render_passes && m_device.IsRenderPassesSupported();
+
     ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_command_allocator)));
     ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_command_allocator.Get(), nullptr, IID_PPV_ARGS(&m_command_list)));
     m_command_list->Close();
+
+    m_command_list.As(&m_command_list4);
 }
 
 void DXCommandList::Open()
@@ -67,10 +71,8 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
     else if (type == PipelineType::kRayTracing)
     {
         decltype(auto) dx_state = state->As<DXRayTracingPipeline>();
-        ComPtr<ID3D12GraphicsCommandList4> command_list4;
-        m_command_list.As(&command_list4);
         m_command_list->SetComputeRootSignature(dx_state.GetRootSignature().Get());
-        command_list4->SetPipelineState1(dx_state.GetPipeline().Get());
+        m_command_list4->SetPipelineState1(dx_state.GetPipeline().Get());
     }
     m_state = state;
 }
@@ -86,6 +88,50 @@ void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
 }
 
 void DXCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
+{
+    if (m_use_render_passes)
+        BeginRenderPassImpl(framebuffer);
+    else
+        OMSetFramebuffer(framebuffer);
+}
+
+void DXCommandList::BeginRenderPassImpl(const std::shared_ptr<Framebuffer>& framebuffer)
+{
+    decltype(auto) dx_framebuffer = framebuffer->As<DXFramebuffer>();
+    auto& rtvs = dx_framebuffer.GetRtvs();
+    auto& dsv = dx_framebuffer.GetDsv();
+
+    auto get_handle = [](const std::shared_ptr<View>& view)
+    {
+        if (!view)
+            return D3D12_CPU_DESCRIPTOR_HANDLE{};
+        decltype(auto) dx_view = view->As<DXView>();
+        return dx_view.GetHandle();
+    };
+
+    std::vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC> om_rtv(rtvs.size());
+    for (uint32_t slot = 0; slot < rtvs.size(); ++slot)
+    {
+        D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE, {} };
+        D3D12_RENDER_PASS_ENDING_ACCESS end = { D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE, {} };
+        om_rtv[slot] = { get_handle(rtvs[slot]), begin, end };
+    }
+
+    D3D12_RENDER_PASS_DEPTH_STENCIL_DESC om_dsv = {};
+    D3D12_RENDER_PASS_DEPTH_STENCIL_DESC* om_dsv_ptr = nullptr;
+    D3D12_CPU_DESCRIPTOR_HANDLE om_dsv_handle = get_handle(dsv);
+    if (om_dsv_handle.ptr)
+    {
+        D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE, {} };
+        D3D12_RENDER_PASS_ENDING_ACCESS end = { D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE, {} };
+        om_dsv = { om_dsv_handle, begin, begin, end, end };
+        om_dsv_ptr = &om_dsv;
+    }
+
+    m_command_list4->BeginRenderPass(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), om_dsv_ptr, D3D12_RENDER_PASS_FLAG_NONE);
+}
+
+void DXCommandList::OMSetFramebuffer(const std::shared_ptr<Framebuffer>& framebuffer)
 {
     decltype(auto) dx_framebuffer = framebuffer->As<DXFramebuffer>();
     auto& rtvs = dx_framebuffer.GetRtvs();
@@ -109,6 +155,9 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuf
 
 void DXCommandList::EndRenderPass()
 {
+    if (!m_use_render_passes)
+        return;
+    m_command_list4->EndRenderPass();
 }
 
 void DXCommandList::BeginEvent(const std::string& name)
@@ -155,13 +204,11 @@ void DXCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_grou
 void DXCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
 {
     decltype(auto) dx_state = m_state->As<DXRayTracingPipeline>();
-    ComPtr<ID3D12GraphicsCommandList4> command_list4;
-    m_command_list.As(&command_list4);
     D3D12_DISPATCH_RAYS_DESC raytrace_desc = dx_state.GetDispatchRaysDesc();
     raytrace_desc.Width = width;
     raytrace_desc.Height = height;
     raytrace_desc.Depth = depth;
-    command_list4->DispatchRays(&raytrace_desc);
+    m_command_list4->DispatchRays(&raytrace_desc);
 }
 
 void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
