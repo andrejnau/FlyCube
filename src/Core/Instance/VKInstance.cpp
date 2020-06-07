@@ -39,7 +39,8 @@ private:
             "VUID-VkFramebufferCreateInfo-pAttachments",
             "VUID-VkRenderPassCreateInfo-pDependencies",
             "VUID-VkDescriptorImageInfo-imageLayout",
-            "VUID-VkPresentInfoKHR-pImageIndices"
+            "VUID-VkPresentInfoKHR-pImageIndices",
+            "VUID-vkCmdPipelineBarrier-image-02635"
         };
         for (auto& str : muted_warnings)
         {
