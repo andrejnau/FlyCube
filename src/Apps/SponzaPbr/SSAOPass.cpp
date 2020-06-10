@@ -37,17 +37,36 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
     }
 
     std::vector<glm::vec4> ssaoNoise;
-    for (uint32_t i = 0; i < 16; i++)
+    for (uint32_t i = 0; i < 16; ++i)
     {
         glm::vec4 noise(randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator) * 2.0f - 1.0f, 0.0f, 0.0f);
         ssaoNoise.push_back(noise);
     }
-
-    m_noise_texture = context.CreateTexture(BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 4, 4, 1);
+    m_noise_texture = context.CreateTexture(BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 4, 4);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(4, 4, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);
     context->UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
+
+    if (m_context.IsVariableRateShadingSupported())
+    {
+        std::vector<ShadingRate> shading_rate;
+        uint32_t tile_size = context.GetShadingRateImageTileSize();
+        uint32_t shading_rate_width = (width + tile_size - 1) / tile_size;
+        uint32_t shading_rate_height = (height + tile_size - 1) / tile_size;
+        for (uint32_t i = 0; i < shading_rate_width; ++i)
+        {
+            for (uint32_t j = 0; j < shading_rate_height; ++j)
+            {
+                shading_rate.emplace_back(ShadingRate::k2x2);
+            }
+        }
+        m_shading_rate_texture = context.CreateTexture(0, gli::format::FORMAT_R8_UINT_PACK8, 1, shading_rate_width, shading_rate_height);
+        num_bytes = 0;
+        row_bytes = 0;
+        GetFormatInfo(shading_rate_width, shading_rate_height, gli::format::FORMAT_R8_UINT_PACK8, num_bytes, row_bytes);
+        context->UpdateSubresource(m_shading_rate_texture, 0, shading_rate.data(), row_bytes, num_bytes);
+    }
 }
 
 void SSAOPass::OnUpdate()
@@ -83,12 +102,22 @@ void SSAOPass::OnRender()
     m_input.square.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
     m_input.square.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
 
+    if (m_context.IsVariableRateShadingSupported())
+    {
+        m_context->RSSetShadingRate(ShadingRate::k1x1, std::array<ShadingRateCombiner, 2>{ ShadingRateCombiner::kPassthrough, ShadingRateCombiner::kOverride });
+        m_context->RSSetShadingRateImage(m_shading_rate_texture);
+    }
     for (auto& range : m_input.square.ia.ranges)
     {
         m_context->Attach(m_program.ps.srv.gPosition, m_input.geometry_pass.position);
         m_context->Attach(m_program.ps.srv.gNormal, m_input.geometry_pass.normal);
         m_context->Attach(m_program.ps.srv.noiseTexture, m_noise_texture);
         m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+    }
+    if (m_context.IsVariableRateShadingSupported())
+    {
+        m_context->RSSetShadingRateImage({});
+        m_context->RSSetShadingRate(ShadingRate::k1x1);
     }
 
     if (m_settings.use_ao_blur)

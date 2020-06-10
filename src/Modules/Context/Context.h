@@ -31,6 +31,16 @@ public:
 
     bool IsDxrSupported() const;
 
+    bool IsVariableRateShadingSupported() const
+    {
+        return m_device->IsVariableRateShadingSupported();
+    }
+
+    uint32_t GetShadingRateImageTileSize() const
+    {
+        return m_device->GetShadingRateImageTileSize();
+    }
+
     std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
     {
         return m_device->CreateView(resource, view_desc);

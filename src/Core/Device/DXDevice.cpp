@@ -48,6 +48,8 @@ D3D12_RESOURCE_STATES ConvertSate(ResourceState state)
         return D3D12_RESOURCE_STATE_INDEX_BUFFER;
     case ResourceState::kRaytracingAccelerationStructure:
         return D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+    case ResourceState::kShadingRateSource:
+        return D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
     default:
         assert(false);
         return D3D12_RESOURCE_STATE_COMMON;
@@ -69,10 +71,15 @@ DXDevice::DXDevice(DXAdapter& adapter)
     m_device->QueryInterface(IRenderDoc_uuid, reinterpret_cast<void**>(renderdoc.GetAddressOf()));
     m_is_renderdoc_present = !!renderdoc;
 
-    D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature_support = {};
-    ASSERT_SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support, sizeof(feature_support)));
-    m_is_dxr_supported = feature_support.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
-    m_is_render_passes_supported = feature_support.RenderPassesTier >= D3D12_RENDER_PASS_TIER_0;
+    D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature_support5 = {};
+    ASSERT_SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support5, sizeof(feature_support5)));
+    m_is_dxr_supported = feature_support5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
+    m_is_render_passes_supported = feature_support5.RenderPassesTier >= D3D12_RENDER_PASS_TIER_0;
+
+    D3D12_FEATURE_DATA_D3D12_OPTIONS6 feature_support6 = {};
+    ASSERT_SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS6, &feature_support6, sizeof(feature_support6)));
+    m_is_variable_rate_shading_supported = feature_support6.VariableShadingRateTier >= D3D12_VARIABLE_SHADING_RATE_TIER_2;
+    m_shading_rate_image_tile_size = feature_support6.ShadingRateImageTileSize;
 
     D3D12_COMMAND_QUEUE_DESC queue_desc = {};
     ASSERT_SUCCEEDED(m_device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&m_command_queue)));
@@ -430,6 +437,16 @@ std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<Comma
 bool DXDevice::IsDxrSupported() const
 {
     return m_is_dxr_supported;
+}
+
+bool DXDevice::IsVariableRateShadingSupported() const
+{
+    return m_is_variable_rate_shading_supported;
+}
+
+uint32_t DXDevice::GetShadingRateImageTileSize() const
+{
+    return m_shading_rate_image_tile_size;
 }
 
 void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)

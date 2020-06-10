@@ -530,6 +530,16 @@ bool VKDevice::IsDxrSupported() const
     return true;
 }
 
+bool VKDevice::IsVariableRateShadingSupported() const
+{
+    return false;
+}
+
+uint32_t VKDevice::GetShadingRateImageTileSize() const
+{
+    return 0;
+}
+
 void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
 {
     std::vector<vk::Semaphore> vk_semaphores;

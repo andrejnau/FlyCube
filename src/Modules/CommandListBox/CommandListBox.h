@@ -54,6 +54,8 @@ public:
     void SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom);
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format);
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource);
+    void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners = {});
+    void RSSetShadingRateImage(const std::shared_ptr<Resource>& resource);
     void UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch = 0, uint32_t depth_pitch = 0);
     void ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state);
     void ViewBarrier(const std::shared_ptr<View>& view, ResourceState state);

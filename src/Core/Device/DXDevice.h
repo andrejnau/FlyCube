@@ -33,7 +33,9 @@ public:
     std::shared_ptr<Resource> CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list,
                                                const std::shared_ptr<Resource>& instance_data, uint32_t instance_count) override;
     bool IsDxrSupported() const override;
+    bool IsVariableRateShadingSupported() const override;
     void Wait(const std::shared_ptr<Semaphore>& semaphore) override;
+    uint32_t GetShadingRateImageTileSize() const override;
     void Signal(const std::shared_ptr<Semaphore>& semaphore) override;
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence) override;
 
@@ -53,6 +55,8 @@ private:
     DXGPUDescriptorPool m_gpu_descriptor_pool;
     bool m_is_dxr_supported = false;
     bool m_is_render_passes_supported = false;
+    bool m_is_variable_rate_shading_supported = false;
+    uint32_t m_shading_rate_image_tile_size = 0;
     bool m_is_renderdoc_present = false;
 };
 

@@ -25,6 +25,7 @@ DXCommandList::DXCommandList(DXDevice& device)
     m_command_list->Close();
 
     m_command_list.As(&m_command_list4);
+    m_command_list.As(&m_command_list5);
 }
 
 void DXCommandList::Open()
@@ -306,6 +307,24 @@ void DXCommandList::IASetVertexBufferImpl(uint32_t slot, const std::shared_ptr<R
         vertex_buffer_view.StrideInBytes = stride;
     }
     m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
+}
+
+void DXCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
+{
+    m_command_list5->RSSetShadingRate(static_cast<D3D12_SHADING_RATE>(shading_rate), reinterpret_cast<const D3D12_SHADING_RATE_COMBINER*>(combiners.data()));
+}
+
+void DXCommandList::RSSetShadingRateImage(const std::shared_ptr<Resource>& resource)
+{
+    if (resource)
+    {
+        decltype(auto) dx_resource = resource->As<DXResource>();
+        m_command_list5->RSSetShadingRateImage(dx_resource.resource.Get());
+    }
+    else
+    {
+        m_command_list5->RSSetShadingRateImage(nullptr);
+    }
 }
 
 void DXCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,

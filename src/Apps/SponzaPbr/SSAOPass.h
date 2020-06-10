@@ -40,6 +40,7 @@ private:
     int m_width;
     int m_height;
     std::shared_ptr<Resource> m_noise_texture;
+    std::shared_ptr<Resource> m_shading_rate_texture;
     std::shared_ptr<Resource> m_depth_stencil_view;
     ProgramHolder<SSAOPassPS, SSAOPassVS> m_program;
     ProgramHolder<SSAOBlurPassPS, SSAOPassVS> m_program_blur;

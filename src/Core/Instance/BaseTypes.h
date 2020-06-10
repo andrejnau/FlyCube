@@ -26,7 +26,8 @@ enum class ResourceState
     kCopySource,
     kVertexAndConstantBuffer,
     kIndexBuffer,
-    kRaytracingAccelerationStructure
+    kRaytracingAccelerationStructure,
+    kShadingRateSource,
 };
 
 enum class ResourceDimension
@@ -481,4 +482,24 @@ class DeferredView
 {
 public:
     virtual ResourceLazyViewDesc GetView(CommandListBox& command_list) = 0;
+};
+
+enum class ShadingRate : uint8_t
+{
+    k1x1 = 0,
+    k1x2 = 0x1,
+    k2x1 = 0x4,
+    k2x2 = 0x5,
+    k2x4 = 0x6,
+    k4x2 = 0x9,
+    k4x4 = 0xa,
+};
+
+enum class ShadingRateCombiner
+{
+   kPassthrough = 0,
+   kOverride = 1,
+   kMin = 2,
+   kMax = 3,
+   kSum = 4,
 };

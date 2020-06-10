@@ -30,6 +30,8 @@ public:
     std::shared_ptr<Resource> CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list,
                                                const std::shared_ptr<Resource>& instance_data, uint32_t instance_count) override;
     bool IsDxrSupported() const override;
+    bool IsVariableRateShadingSupported() const override;
+    uint32_t GetShadingRateImageTileSize() const override;
     void Wait(const std::shared_ptr<Semaphore>& semaphore) override;
     void Signal(const std::shared_ptr<Semaphore>& semaphore) override;
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence) override;

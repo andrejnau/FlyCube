@@ -38,6 +38,8 @@ public:
     virtual std::shared_ptr<Resource> CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list,
                                                        const std::shared_ptr<Resource>& instance_data, uint32_t instance_count) = 0;
     virtual bool IsDxrSupported() const = 0;
+    virtual bool IsVariableRateShadingSupported() const = 0;
+    virtual uint32_t GetShadingRateImageTileSize() const = 0;
     virtual void Wait(const std::shared_ptr<Semaphore>& semaphore) = 0;
     virtual void Signal(const std::shared_ptr<Semaphore>& semaphore) = 0;
     virtual void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence = {}) = 0;

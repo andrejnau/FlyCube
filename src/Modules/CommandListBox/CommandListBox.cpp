@@ -110,6 +110,17 @@ void CommandListBox::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Reso
     m_command_list->IASetVertexBuffer(slot, resource);
 }
 
+void CommandListBox::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
+{
+    m_command_list->RSSetShadingRate(shading_rate, combiners);
+}
+
+void CommandListBox::RSSetShadingRateImage(const std::shared_ptr<Resource>& resource)
+{
+    ResourceBarrier(resource, ResourceState::kShadingRateSource);
+    m_command_list->RSSetShadingRateImage(resource);
+}
+
 void CommandListBox::BeginEvent(const std::string& name)
 {
     m_command_list->BeginEvent(name);

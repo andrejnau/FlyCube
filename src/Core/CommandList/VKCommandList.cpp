@@ -394,6 +394,14 @@ void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
     m_command_list->bindVertexBuffers(slot, 1, vertex_buffers, offsets);
 }
 
+void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
+{
+}
+
+void VKCommandList::RSSetShadingRateImage(const std::shared_ptr<Resource>& resource)
+{
+}
+
 void VKCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
                                const std::vector<BufferCopyRegion>& regions)
 {
