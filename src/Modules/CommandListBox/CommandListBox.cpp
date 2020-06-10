@@ -142,12 +142,13 @@ void CommandListBox::ResourceBarrier(const std::shared_ptr<Resource>& resource, 
 {
     if (!resource)
         return;
+    assert(resource->HasResourceState());
     ResourceBarrierDesc barrier = {};
     barrier.resource = resource;
-    barrier.state_before = resource->GetResourceState(0, 0);
+    barrier.state_before = resource->GetResourceState();
     barrier.state_after = state;
-    barrier.level_count = resource->GetMipLevels();
-    barrier.layer_count = resource->GetDepthOrArraySize();
+    barrier.level_count = resource->GetLevelCount();
+    barrier.layer_count = resource->GetLayerCount();
     m_command_list->ResourceBarrier({ barrier });
     resource->SetResourceState(state);
 }
@@ -161,19 +162,33 @@ void CommandListBox::ViewBarrier(const std::shared_ptr<View>& view, ResourceStat
         return;
 
     std::vector<ResourceBarrierDesc> barriers;
-    for (uint32_t i = 0; i < view->GetLevelCount(); ++i)
+    if (resource->HasResourceState() && view->GetBaseMipLevel() == 0 && view->GetLevelCount() == resource->GetLevelCount() &&
+        view->GetBaseArrayLayer() == 0 && view->GetLayerCount() == resource->GetLayerCount())
     {
-        for (uint32_t j = 0; j < view->GetLayerCount(); ++j)
+        ResourceBarrierDesc& barrier = barriers.emplace_back();
+        barrier.resource = resource;
+        barrier.level_count = view->GetLevelCount();
+        barrier.layer_count = view->GetLayerCount();
+        barrier.state_before = barrier.resource->GetResourceState();
+        barrier.state_after = state;
+        barrier.resource->SetResourceState(barrier.state_after);
+    }
+    else
+    {
+        for (uint32_t i = 0; i < view->GetLevelCount(); ++i)
         {
-            ResourceBarrierDesc& barrier = barriers.emplace_back();
-            barrier.resource = resource;
-            barrier.base_mip_level = view->GetBaseMipLevel() + i;
-            barrier.level_count = 1;
-            barrier.base_array_layer = view->GetBaseArrayLayer() + j;
-            barrier.layer_count = 1;
-            barrier.state_before = barrier.resource->GetResourceState(barrier.base_mip_level, barrier.base_array_layer);
-            barrier.state_after = state;
-            barrier.resource->SetResourceState(barrier.base_mip_level, barrier.base_array_layer, barrier.state_after);
+            for (uint32_t j = 0; j < view->GetLayerCount(); ++j)
+            {
+                ResourceBarrierDesc& barrier = barriers.emplace_back();
+                barrier.resource = resource;
+                barrier.base_mip_level = view->GetBaseMipLevel() + i;
+                barrier.level_count = 1;
+                barrier.base_array_layer = view->GetBaseArrayLayer() + j;
+                barrier.layer_count = 1;
+                barrier.state_before = barrier.resource->GetSubresourceState(barrier.base_mip_level, barrier.base_array_layer);
+                barrier.state_after = state;
+                barrier.resource->SetSubresourceState(barrier.base_mip_level, barrier.base_array_layer, barrier.state_after);
+            }
         }
     }
     m_command_list->ResourceBarrier(barriers);

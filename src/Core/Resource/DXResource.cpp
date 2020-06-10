@@ -18,12 +18,12 @@ uint32_t DXResource::GetHeight() const
     return desc.Height;
 }
 
-uint16_t DXResource::GetDepthOrArraySize() const
+uint16_t DXResource::GetLayerCount() const
 {
     return desc.DepthOrArraySize;
 }
 
-uint16_t DXResource::GetMipLevels() const
+uint16_t DXResource::GetLevelCount() const
 {
     return desc.MipLevels;
 }

@@ -19,12 +19,12 @@ uint32_t VKResource::GetHeight() const
     return image.size.height;
 }
 
-uint16_t VKResource::GetDepthOrArraySize() const
+uint16_t VKResource::GetLayerCount() const
 {
     return image.array_layers;
 }
 
-uint16_t VKResource::GetMipLevels() const
+uint16_t VKResource::GetLevelCount() const
 {
     return image.level_count;
 }

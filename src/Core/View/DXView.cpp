@@ -425,7 +425,7 @@ uint32_t DXView::GetBaseMipLevel() const
 
 uint32_t DXView::GetLevelCount() const
 {
-    return std::min<uint32_t>(m_view_desc.count, m_resource->GetMipLevels() - m_view_desc.level);
+    return std::min<uint32_t>(m_view_desc.count, m_resource->GetLevelCount() - m_view_desc.level);
 }
 
 uint32_t DXView::GetBaseArrayLayer() const
@@ -435,5 +435,5 @@ uint32_t DXView::GetBaseArrayLayer() const
 
 uint32_t DXView::GetLayerCount() const
 {
-    return m_resource->GetDepthOrArraySize();
+    return m_resource->GetLayerCount();
 }

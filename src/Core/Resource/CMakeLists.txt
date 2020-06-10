@@ -1,10 +1,12 @@
 list(APPEND headers
     Resource.h
     ResourceBase.h
+    ResourceStateTracker.h
 )
 
 list(APPEND sources
     ResourceBase.cpp
+    ResourceStateTracker.cpp
 )
 
 if (VULKAN_SUPPORT)

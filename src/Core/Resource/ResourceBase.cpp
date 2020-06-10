@@ -15,23 +15,9 @@ MemoryType ResourceBase::GetMemoryType() const
     return memory_type;
 }
 
-ResourceState ResourceBase::GetResourceState(uint32_t mip_level, uint32_t array_layer) const
+uint32_t ResourceBase::GetSubresourceCount() const
 {
-    auto it = m_states.find({mip_level, array_layer});
-    if (it != m_states.end())
-        return it->second;
-    return m_state;
-}
-
-void ResourceBase::SetResourceState(ResourceState state)
-{
-    m_states.clear();
-    m_state = state;
-}
-
-void ResourceBase::SetResourceState(uint32_t mip_level, uint32_t array_layer, ResourceState state)
-{
-    m_states[{ mip_level, array_layer }] = state;
+    return GetLevelCount() * GetLayerCount();
 }
 
 void ResourceBase::UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes)

@@ -197,6 +197,8 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
     res->image.memory = m_device->allocateMemoryUnique(allo_iInfo);
     m_device->bindImageMemory(res->image.res.get(), res->image.memory.get(), 0);
 
+    res->SetResourceState(ResourceState::kUndefined);
+
     return res;
 }
 
@@ -247,6 +249,8 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     res->buffer.memory = m_device->allocateMemoryUnique(alloc_info);
 
     m_device->bindBufferMemory(res->buffer.res.get(), res->buffer.memory.get(), 0);
+
+    res->SetResourceState(ResourceState::kUndefined);
 
     return res;
 }

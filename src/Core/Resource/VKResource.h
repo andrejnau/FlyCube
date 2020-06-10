@@ -18,8 +18,8 @@ public:
     VKResource(VKDevice& device);
     uint64_t GetWidth() const override;
     uint32_t GetHeight() const override;
-    uint16_t GetDepthOrArraySize() const override;
-    uint16_t GetMipLevels() const override;
+    uint16_t GetLayerCount() const override;
+    uint16_t GetLevelCount() const override;
     uint64_t GetAccelerationStructureHandle() const override;
     void SetName(const std::string& name) override;
     uint8_t* Map() override;
