@@ -61,7 +61,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
                 shading_rate.emplace_back(ShadingRate::k2x2);
             }
         }
-        m_shading_rate_texture = context.CreateTexture(0, gli::format::FORMAT_R8_UINT_PACK8, 1, shading_rate_width, shading_rate_height);
+        m_shading_rate_texture = context.CreateTexture(BindFlag::kShadingRateSource, gli::format::FORMAT_R8_UINT_PACK8, 1, shading_rate_width, shading_rate_height);
         num_bytes = 0;
         row_bytes = 0;
         GetFormatInfo(shading_rate_width, shading_rate_height, gli::format::FORMAT_R8_UINT_PACK8, num_bytes, row_bytes);

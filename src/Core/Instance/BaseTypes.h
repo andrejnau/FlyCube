@@ -108,6 +108,7 @@ namespace BindFlag
         kRayTracing = 1 << 9,
         kCopyDest = 1 << 10,
         kCopySource = 1 << 11,
+        kShadingRateSource = 1 << 12,
     };
 }
 

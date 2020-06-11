@@ -56,4 +56,6 @@ private:
     std::map<vk::DescriptorType, VKGPUBindlessDescriptorPoolTyped> m_gpu_bindless_descriptor_pool;
     VKGPUDescriptorPool m_gpu_descriptor_pool;
     const bool m_use_timeline_semaphore = false;
+    bool m_is_variable_rate_shading_supported = false;
+    uint32_t m_shading_rate_image_tile_size = 0;
 };

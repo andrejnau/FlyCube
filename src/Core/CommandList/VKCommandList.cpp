@@ -125,8 +125,8 @@ void VKCommandList::ClearColor(const std::shared_ptr<View>& view, const std::arr
     clear_color.float32[2] = color[2];
     clear_color.float32[3] = color[3];
 
-    const vk::ImageSubresourceRange& ImageSubresourceRange = vk_view.GeViewInfo().subresourceRange;
-    m_command_list->clearColorImage(vk_resource.image.res.get(), vk::ImageLayout::eGeneral, clear_color, ImageSubresourceRange);
+    const vk::ImageSubresourceRange& image_subresource_range = vk_view.GeViewInfo().subresourceRange;
+    m_command_list->clearColorImage(vk_resource.image.res.get(), vk::ImageLayout::eGeneral, clear_color, image_subresource_range);
 }
 
 void VKCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)
@@ -206,6 +206,8 @@ vk::ImageLayout ConvertSate(ResourceState state)
         return vk::ImageLayout::eTransferDstOptimal;
     case ResourceState::kCopySource:
         return vk::ImageLayout::eTransferSrcOptimal;
+    case ResourceState::kShadingRateSource:
+        return vk::ImageLayout::eShadingRateOptimalNV;
     default:
         assert(false);
         return vk::ImageLayout::eGeneral;

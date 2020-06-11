@@ -56,7 +56,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_NV_RAY_TRACING_EXTENSION_NAME,
         VK_KHR_MAINTENANCE3_EXTENSION_NAME
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME
+        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+        VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
     };
     if (m_use_timeline_semaphore)
         req_extension.insert(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -66,6 +67,19 @@ VKDevice::VKDevice(VKAdapter& adapter)
     {
         if (req_extension.count(extension.extensionName.data()))
             found_extension.push_back(extension.extensionName);
+
+        if (std::string(extension.extensionName.data()) == VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME)
+            m_is_variable_rate_shading_supported = true;
+    }
+
+    if (m_is_variable_rate_shading_supported)
+    {
+        vk::PhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_properties = {};
+        vk::PhysicalDeviceProperties2 device_props2 = {};
+        device_props2.pNext = &shading_rate_image_properties;
+        m_adapter.GetPhysicalDevice().getProperties2(&device_props2);
+        assert(shading_rate_image_properties.shadingRateTexelSize.width == shading_rate_image_properties.shadingRateTexelSize.height);
+        m_shading_rate_image_tile_size = shading_rate_image_properties.shadingRateTexelSize.width;
     }
 
     const float queue_priority = 1.0f;
@@ -91,6 +105,14 @@ VKDevice::VKDevice(VKAdapter& adapter)
     descriptor_indexing_feature.runtimeDescriptorArray = true;
     descriptor_indexing_feature.descriptorBindingVariableDescriptorCount = true;
     device_timetine_feature.pNext = &descriptor_indexing_feature;
+
+    vk::PhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_feature = {};
+    if (m_is_variable_rate_shading_supported)
+    {
+        shading_rate_image_feature.shadingRateImage = VK_TRUE;
+        shading_rate_image_feature.shadingRateCoarseSampleOrder = VK_TRUE;
+        descriptor_indexing_feature.pNext = &shading_rate_image_feature;
+    }
 
     vk::DeviceCreateInfo device_create_info = {};
     device_create_info.pNext = &device_timetine_feature;
@@ -167,6 +189,8 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
         usage |= vk::ImageUsageFlagBits::eTransferDst;
     if (bind_flag & BindFlag::kCopySource)
         usage |= vk::ImageUsageFlagBits::eTransferSrc;
+    if (bind_flag & BindFlag::kShadingRateSource)
+        usage |= vk::ImageUsageFlagBits::eShadingRateImageNV;
 
     vk::ImageCreateInfo image_info = {};
     image_info.imageType = vk::ImageType::e2D;
@@ -537,7 +561,7 @@ bool VKDevice::IsVariableRateShadingSupported() const
 
 uint32_t VKDevice::GetShadingRateImageTileSize() const
 {
-    return 0;
+    return m_shading_rate_image_tile_size;
 }
 
 void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
