@@ -15,29 +15,29 @@ void BRDFGen::OnUpdate()
 {
 }
 
-void BRDFGen::OnRender()
+void BRDFGen::OnRender(CommandListBox& command_list)
 {
     if (!is)
     {
-        m_context->BeginEvent("DrawBRDF");
-        DrawBRDF();
-        m_context->EndEvent();
+        command_list.BeginEvent("DrawBRDF");
+        DrawBRDF(command_list);
+        command_list.EndEvent();
 
         is = true;
     }
 }
 
-void BRDFGen::DrawBRDF()
+void BRDFGen::DrawBRDF(CommandListBox& command_list)
 {
-    m_context->SetViewport(m_size, m_size);
+    command_list.SetViewport(m_size, m_size);
 
-    m_context->UseProgram(m_program);
+    command_list.UseProgram(m_program);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_context->Attach(m_program.ps.om.rtv0, output.brdf);
-    m_context->ClearColor(m_program.ps.om.rtv0, color);
-    m_context->Attach(m_program.ps.om.dsv, m_dsv);
-    m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
+    command_list.Attach(m_program.ps.om.rtv0, output.brdf);
+    command_list.ClearColor(m_program.ps.om.rtv0, color);
+    command_list.Attach(m_program.ps.om.dsv, m_dsv);
+    command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
 
     m_input.square_model.ia.indices.Bind();
     m_input.square_model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
@@ -45,7 +45,7 @@ void BRDFGen::DrawBRDF()
 
     for (auto& range : m_input.square_model.ia.ranges)
     {
-        m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+        command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 }
 

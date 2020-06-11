@@ -5,6 +5,8 @@
 #include <AppBox/WindowEvents.h>
 #include "SponzaSettings.h"
 
+class CommandListBox;
+
 class IPass
     : public WindowEvents
     , public IModifySponzaSettings
@@ -12,6 +14,6 @@ class IPass
 public:
     virtual ~IPass() = default;
     virtual void OnUpdate() {}
-    virtual void OnRender() = 0;
+    virtual void OnRender(CommandListBox& command_list)= 0;
     virtual void OnResize(int width, int height) {}
 };

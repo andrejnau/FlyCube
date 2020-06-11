@@ -22,11 +22,6 @@ Context::Context(const Settings& settings, GLFWwindow* window)
     m_command_list->Open();
 }
 
-CommandListBox* Context::operator->()
-{
-    return &*m_command_list;
-}
-
 std::shared_ptr<Resource> Context::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
     return m_device->CreateTexture(bind_flag | BindFlag::kCopyDest, format, msaa_count, width, height, depth, mip_levels);

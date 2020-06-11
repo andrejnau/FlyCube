@@ -18,32 +18,32 @@ void ComputeLuminance::OnUpdate()
 {
 }
 
-void ComputeLuminance::GetLum2DPassCS(size_t buf_id, uint32_t thread_group_x, uint32_t thread_group_y)
+void ComputeLuminance::GetLum2DPassCS(CommandListBox& command_list, size_t buf_id, uint32_t thread_group_x, uint32_t thread_group_y)
 {
     m_HDRLum2DPassCS.cs.cbuffer.cb.dispatchSize = glm::uvec2(thread_group_x, thread_group_y);
-    m_context->UseProgram(m_HDRLum2DPassCS);
-    m_context->Attach(m_HDRLum2DPassCS.cs.cbv.cb, m_HDRLum2DPassCS.cs.cbuffer.cb);
+    command_list.UseProgram(m_HDRLum2DPassCS);
+    command_list.Attach(m_HDRLum2DPassCS.cs.cbv.cb, m_HDRLum2DPassCS.cs.cbuffer.cb);
 
-    m_context->Attach(m_HDRLum2DPassCS.cs.uav.result, m_use_res[buf_id]);
-    m_context->Attach(m_HDRLum2DPassCS.cs.srv.data, m_input.hdr_res);
-    m_context->Dispatch(thread_group_x, thread_group_y, 1);
+    command_list.Attach(m_HDRLum2DPassCS.cs.uav.result, m_use_res[buf_id]);
+    command_list.Attach(m_HDRLum2DPassCS.cs.srv.data, m_input.hdr_res);
+    command_list.Dispatch(thread_group_x, thread_group_y, 1);
 }
 
-void ComputeLuminance::GetLum1DPassCS(size_t buf_id, uint32_t input_buffer_size, uint32_t thread_group_x)
+void ComputeLuminance::GetLum1DPassCS(CommandListBox& command_list, size_t buf_id, uint32_t input_buffer_size, uint32_t thread_group_x)
 {
     m_HDRLum1DPassCS.cs.cbuffer.cb.bufferSize = input_buffer_size;
-    m_context->UseProgram(m_HDRLum1DPassCS);
-    m_context->Attach(m_HDRLum1DPassCS.cs.cbv.cb, m_HDRLum1DPassCS.cs.cbuffer.cb);
+    command_list.UseProgram(m_HDRLum1DPassCS);
+    command_list.Attach(m_HDRLum1DPassCS.cs.cbv.cb, m_HDRLum1DPassCS.cs.cbuffer.cb);
 
-    m_context->Attach(m_HDRLum1DPassCS.cs.srv.data, m_use_res[buf_id - 1]);
-    m_context->Attach(m_HDRLum1DPassCS.cs.uav.result, m_use_res[buf_id]);
+    command_list.Attach(m_HDRLum1DPassCS.cs.srv.data, m_use_res[buf_id - 1]);
+    command_list.Attach(m_HDRLum1DPassCS.cs.uav.result, m_use_res[buf_id]);
 
-    m_context->Dispatch(thread_group_x, 1, 1);
+    command_list.Dispatch(thread_group_x, 1, 1);
 
-    m_context->Attach(m_HDRLum1DPassCS.cs.uav.result);
+    command_list.Attach(m_HDRLum1DPassCS.cs.uav.result);
 }
 
-void ComputeLuminance::Draw(size_t buf_id)
+void ComputeLuminance::Draw(CommandListBox& command_list, size_t buf_id)
 {
     m_HDRApply.ps.cbuffer.HDRSetting.gamma_correction = m_settings.gamma_correction;
     m_HDRApply.ps.cbuffer.HDRSetting.use_reinhard_tone_operator = m_settings.use_reinhard_tone_operator;
@@ -54,14 +54,14 @@ void ComputeLuminance::Draw(size_t buf_id)
     m_HDRApply.ps.cbuffer.HDRSetting.exposure = m_settings.exposure;
     m_HDRApply.ps.cbuffer.HDRSetting.white = m_settings.white;
 
-    m_context->UseProgram(m_HDRApply);
-    m_context->Attach(m_HDRApply.ps.cbv.HDRSetting, m_HDRApply.ps.cbuffer.HDRSetting);
+    command_list.UseProgram(m_HDRApply);
+    command_list.Attach(m_HDRApply.ps.cbv.HDRSetting, m_HDRApply.ps.cbuffer.HDRSetting);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_context->Attach(m_HDRApply.ps.om.rtv0, m_input.rtv);
-    m_context->ClearColor(m_HDRApply.ps.om.rtv0, color);
-    m_context->Attach(m_HDRApply.ps.om.dsv, m_input.dsv);
-    m_context->ClearDepth(m_HDRApply.ps.om.dsv, 1.0f);
+    command_list.Attach(m_HDRApply.ps.om.rtv0, m_input.rtv);
+    command_list.ClearColor(m_HDRApply.ps.om.rtv0, color);
+    command_list.Attach(m_HDRApply.ps.om.dsv, m_input.dsv);
+    command_list.ClearDepth(m_HDRApply.ps.om.dsv, 1.0f);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_HDRApply.vs.ia.POSITION);
@@ -69,30 +69,30 @@ void ComputeLuminance::Draw(size_t buf_id)
 
     for (auto& range : m_input.model.ia.ranges)
     {
-        m_context->Attach(m_HDRApply.ps.srv.hdr_input, m_input.hdr_res);
-        m_context->Attach(m_HDRApply.ps.srv.lum, m_use_res[buf_id]);
-        m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+        command_list.Attach(m_HDRApply.ps.srv.hdr_input, m_input.hdr_res);
+        command_list.Attach(m_HDRApply.ps.srv.lum, m_use_res[buf_id]);
+        command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 }
 
-void ComputeLuminance::OnRender()
+void ComputeLuminance::OnRender(CommandListBox& command_list)
 {
-    m_context->SetViewport(m_width, m_height);
+    command_list.SetViewport(m_width, m_height);
     size_t buf_id = 0;
     if (m_settings.use_tone_mapping)
     {
-        GetLum2DPassCS(buf_id, m_thread_group_x, m_thread_group_y);
+        GetLum2DPassCS(command_list, buf_id, m_thread_group_x, m_thread_group_y);
         for (int block_size = m_thread_group_x * m_thread_group_y; block_size > 1;)
         {
             uint32_t next_block_size = (block_size + 127) / 128;
-            GetLum1DPassCS(++buf_id, block_size, next_block_size);
+            GetLum1DPassCS(command_list, ++buf_id, block_size, next_block_size);
             block_size = next_block_size;
         }
-        Draw(buf_id);
+        Draw(command_list, buf_id);
     }
     else
     {
-        Draw(buf_id);
+        Draw(command_list, buf_id);
     }
 }
 

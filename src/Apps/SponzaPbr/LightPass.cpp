@@ -99,24 +99,24 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.Light.inverted_mvp = glm::transpose(glm::inverse(projection * view));
 }
 
-void LightPass::OnRender()
+void LightPass::OnRender(CommandListBox& command_list)
 {
-    m_context->SetViewport(m_width, m_height);
+    command_list.SetViewport(m_width, m_height);
 
-    m_context->UseProgram(m_program);
-    m_context->Attach(m_program.ps.cbv.Light, m_program.ps.cbuffer.Light);
-    m_context->Attach(m_program.ps.cbv.Settings, m_program.ps.cbuffer.Settings);
-    m_context->Attach(m_program.ps.cbv.ShadowParams, m_program.ps.cbuffer.ShadowParams);
+    command_list.UseProgram(m_program);
+    command_list.Attach(m_program.ps.cbv.Light, m_program.ps.cbuffer.Light);
+    command_list.Attach(m_program.ps.cbv.Settings, m_program.ps.cbuffer.Settings);
+    command_list.Attach(m_program.ps.cbv.ShadowParams, m_program.ps.cbuffer.ShadowParams);
 
-    m_context->Attach(m_program.ps.sampler.g_sampler, m_sampler);
-    m_context->Attach(m_program.ps.sampler.brdf_sampler, m_sampler_brdf);
-    m_context->Attach(m_program.ps.sampler.LightCubeShadowComparsionSampler, m_compare_sampler);
+    command_list.Attach(m_program.ps.sampler.g_sampler, m_sampler);
+    command_list.Attach(m_program.ps.sampler.brdf_sampler, m_sampler_brdf);
+    command_list.Attach(m_program.ps.sampler.LightCubeShadowComparsionSampler, m_compare_sampler);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_context->Attach(m_program.ps.om.rtv0, output.rtv);
-    m_context->ClearColor(m_program.ps.om.rtv0, color);
-    m_context->Attach(m_program.ps.om.dsv, m_depth_stencil_view);
-    m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
+    command_list.Attach(m_program.ps.om.rtv0, output.rtv);
+    command_list.ClearColor(m_program.ps.om.rtv0, color);
+    command_list.Attach(m_program.ps.om.dsv, m_depth_stencil_view);
+    command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
@@ -124,20 +124,20 @@ void LightPass::OnRender()
 
     for (auto& range : m_input.model.ia.ranges)
     {
-        m_context->Attach(m_program.ps.srv.gNormal, m_input.geometry_pass.normal);
-        m_context->Attach(m_program.ps.srv.gAlbedo, m_input.geometry_pass.albedo);
-        m_context->Attach(m_program.ps.srv.gMaterial, m_input.geometry_pass.material);
+        command_list.Attach(m_program.ps.srv.gNormal, m_input.geometry_pass.normal);
+        command_list.Attach(m_program.ps.srv.gAlbedo, m_input.geometry_pass.albedo);
+        command_list.Attach(m_program.ps.srv.gMaterial, m_input.geometry_pass.material);
         if (m_settings.use_rtao && m_input.ray_tracing_ao)
-            m_context->Attach(m_program.ps.srv.gSSAO, *m_input.ray_tracing_ao);
+            command_list.Attach(m_program.ps.srv.gSSAO, *m_input.ray_tracing_ao);
         else if (m_settings.use_ssao)
-            m_context->Attach(m_program.ps.srv.gSSAO, m_input.ssao_pass.ao);
-        m_context->Attach(m_program.ps.srv.irradianceMap, m_input.irradince);
-        m_context->Attach(m_program.ps.srv.prefilterMap, m_input.prefilter);
-        m_context->Attach(m_program.ps.srv.brdfLUT, m_input.brdf);
+            command_list.Attach(m_program.ps.srv.gSSAO, m_input.ssao_pass.ao);
+        command_list.Attach(m_program.ps.srv.irradianceMap, m_input.irradince);
+        command_list.Attach(m_program.ps.srv.prefilterMap, m_input.prefilter);
+        command_list.Attach(m_program.ps.srv.brdfLUT, m_input.brdf);
         if (m_settings.use_shadow)
-            m_context->Attach(m_program.ps.srv.LightCubeShadowMap, m_input.shadow_pass.srv);
+            command_list.Attach(m_program.ps.srv.LightCubeShadowMap, m_input.shadow_pass.srv);
 
-        m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+        command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 }
 

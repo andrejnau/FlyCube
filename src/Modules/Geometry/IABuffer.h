@@ -15,15 +15,15 @@ public:
     {
         m_buffer = m_context.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kShaderResource, static_cast<uint32_t>(m_size));
         if (m_buffer)
-            m_context->UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
+            m_context.GetCommandList().UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
 
     void BindToSlot(uint32_t slot)
     {
         if (m_dynamic_buffer)
-            m_context->IASetVertexBuffer(slot, m_dynamic_buffer);
+            m_context.GetCommandList().IASetVertexBuffer(slot, m_dynamic_buffer);
         else if (m_buffer)
-            m_context->IASetVertexBuffer(slot, m_buffer);
+            m_context.GetCommandList().IASetVertexBuffer(slot, m_buffer);
     }
 
     std::shared_ptr<Resource> GetBuffer() const
@@ -68,13 +68,13 @@ public:
     {
         m_buffer = m_context.CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kShaderResource, static_cast<uint32_t>(m_size));
         if (m_buffer)
-            m_context->UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
+            m_context.GetCommandList().UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
 
     void Bind()
     {
         if (m_buffer)
-            m_context->IASetIndexBuffer(m_buffer, m_format);
+            m_context.GetCommandList().IASetIndexBuffer(m_buffer, m_format);
     }
 
     std::shared_ptr<Resource> GetBuffer() const

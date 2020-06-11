@@ -25,27 +25,27 @@ void GeometryPass::OnUpdate()
     m_program.vs.cbuffer.ConstantBuf.projection = glm::transpose(projection);
 }
 
-void GeometryPass::OnRender()
+void GeometryPass::OnRender(CommandListBox& command_list)
 {
-    m_context->SetViewport(m_width, m_height);
+    command_list.SetViewport(m_width, m_height);
 
-    m_context->UseProgram(m_program);
-    m_context->Attach(m_program.vs.cbv.ConstantBuf, m_program.vs.cbuffer.ConstantBuf);
-    m_context->Attach(m_program.ps.cbv.Settings, m_program.ps.cbuffer.Settings);
+    command_list.UseProgram(m_program);
+    command_list.Attach(m_program.vs.cbv.ConstantBuf, m_program.vs.cbuffer.ConstantBuf);
+    command_list.Attach(m_program.ps.cbv.Settings, m_program.ps.cbuffer.Settings);
 
-    m_context->Attach(m_program.ps.sampler.g_sampler, m_sampler);
+    command_list.Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_context->Attach(m_program.ps.om.rtv0, output.position);
-    m_context->ClearColor(m_program.ps.om.rtv0, color);
-    m_context->Attach(m_program.ps.om.rtv1, output.normal);
-    m_context->ClearColor(m_program.ps.om.rtv1, color);
-    m_context->Attach(m_program.ps.om.rtv2, output.albedo);
-    m_context->ClearColor(m_program.ps.om.rtv2, color);
-    m_context->Attach(m_program.ps.om.rtv3, output.material);
-    m_context->ClearColor(m_program.ps.om.rtv3, color);
-    m_context->Attach(m_program.ps.om.dsv, output.dsv);
-    m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
+    command_list.Attach(m_program.ps.om.rtv0, output.position);
+    command_list.ClearColor(m_program.ps.om.rtv0, color);
+    command_list.Attach(m_program.ps.om.rtv1, output.normal);
+    command_list.ClearColor(m_program.ps.om.rtv1, color);
+    command_list.Attach(m_program.ps.om.rtv2, output.albedo);
+    command_list.ClearColor(m_program.ps.om.rtv2, color);
+    command_list.Attach(m_program.ps.om.rtv3, output.material);
+    command_list.ClearColor(m_program.ps.om.rtv3, color);
+    command_list.Attach(m_program.ps.om.dsv, output.dsv);
+    command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
 
     bool skiped = false;
     for (auto& model : m_input.scene_list)
@@ -73,15 +73,15 @@ void GeometryPass::OnRender()
             m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.glossiness && !material.texture.roughness;
             m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.use_flip_normal_y;
 
-            m_context->Attach(m_program.ps.srv.normalMap, material.texture.normal);
-            m_context->Attach(m_program.ps.srv.albedoMap, material.texture.albedo);
-            m_context->Attach(m_program.ps.srv.glossMap, material.texture.glossiness);
-            m_context->Attach(m_program.ps.srv.roughnessMap, material.texture.roughness);
-            m_context->Attach(m_program.ps.srv.metalnessMap, material.texture.metalness);
-            m_context->Attach(m_program.ps.srv.aoMap, material.texture.occlusion);
-            m_context->Attach(m_program.ps.srv.alphaMap, material.texture.opacity);
+            command_list.Attach(m_program.ps.srv.normalMap, material.texture.normal);
+            command_list.Attach(m_program.ps.srv.albedoMap, material.texture.albedo);
+            command_list.Attach(m_program.ps.srv.glossMap, material.texture.glossiness);
+            command_list.Attach(m_program.ps.srv.roughnessMap, material.texture.roughness);
+            command_list.Attach(m_program.ps.srv.metalnessMap, material.texture.metalness);
+            command_list.Attach(m_program.ps.srv.aoMap, material.texture.occlusion);
+            command_list.Attach(m_program.ps.srv.alphaMap, material.texture.opacity);
 
-            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
 }

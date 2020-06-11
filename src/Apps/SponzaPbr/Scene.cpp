@@ -147,9 +147,10 @@ void Scene::RenderFrame()
 
     for (auto& desc : m_passes)
     {
-        m_context->BeginEvent(desc.name);
-        desc.pass.get().OnRender();
-        m_context->EndEvent();
+        decltype(auto) command_list = m_context.GetCommandList();
+        command_list.BeginEvent(desc.name);
+        desc.pass.get().OnRender(command_list);
+        command_list.EndEvent();
     }
 
     m_context.Present();

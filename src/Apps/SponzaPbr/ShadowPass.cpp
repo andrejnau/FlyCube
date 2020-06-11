@@ -38,28 +38,28 @@ void ShadowPass::OnUpdate()
     view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
 }
 
-void ShadowPass::OnRender()
+void ShadowPass::OnRender(CommandListBox& command_list)
 {
     if (!m_settings.use_shadow)
         return;
 
-    m_context->SetViewport(m_settings.s_size, m_settings.s_size);
+    command_list.SetViewport(m_settings.s_size, m_settings.s_size);
 
-    m_context->UseProgram(m_program);
-    m_context->Attach(m_program.vs.cbv.VSParams, m_program.vs.cbuffer.VSParams);
-    m_context->Attach(m_program.gs.cbv.GSParams, m_program.gs.cbuffer.GSParams);
+    command_list.UseProgram(m_program);
+    command_list.Attach(m_program.vs.cbv.VSParams, m_program.vs.cbuffer.VSParams);
+    command_list.Attach(m_program.gs.cbv.GSParams, m_program.gs.cbuffer.GSParams);
 
-    m_context->Attach(m_program.ps.sampler.g_sampler, m_sampler);
+    command_list.Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_context->Attach(m_program.ps.om.dsv, output.srv);
-    m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
+    command_list.Attach(m_program.ps.om.dsv, output.srv);
+    command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
 
     for (auto& model : m_input.scene_list)
     {
         m_program.vs.cbuffer.VSParams.World = glm::transpose(model.matrix);
 
-        m_context->SetRasterizeState({ FillMode::kSolid, CullMode::kBack, 4096 });
+        command_list.SetRasterizeState({ FillMode::kSolid, CullMode::kBack, 4096 });
 
         model.ia.indices.Bind();
         model.ia.positions.BindToSlot(m_program.vs.ia.SV_POSITION);
@@ -70,11 +70,11 @@ void ShadowPass::OnRender()
             auto& material = model.GetMaterial(range.id);
 
             if (m_settings.shadow_discard)
-                m_context->Attach(m_program.ps.srv.alphaMap, material.texture.opacity);
+                command_list.Attach(m_program.ps.srv.alphaMap, material.texture.opacity);
             else
-                m_context->Attach(m_program.ps.srv.alphaMap);
+                command_list.Attach(m_program.ps.srv.alphaMap);
 
-            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
 }

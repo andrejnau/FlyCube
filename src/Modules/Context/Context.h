@@ -26,7 +26,10 @@ public:
         return m_window;
     }
 
-    CommandListBox* operator->();
+    CommandListBox& GetCommandList()
+    {
+        return *m_command_list;
+    }
 
     bool IsDxrSupported() const;
 

@@ -21,7 +21,7 @@ public:
     SkinningPass(Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
-    virtual void OnRender() override;
+    virtual void OnRender(CommandListBox& command_list)override;
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:

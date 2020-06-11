@@ -53,14 +53,14 @@ RayTracingAOPass::RayTracingAOPass(Context& context, const Input& input, int wid
     }
 
     m_buffer = m_context.CreateBuffer(BindFlag::kShaderResource, sizeof(glm::uvec4) * data.size());
-    m_context->UpdateSubresource(m_buffer, 0, data.data());
+    m_context.GetCommandList().UpdateSubresource(m_buffer, 0, data.data());
 }
 
 void RayTracingAOPass::OnUpdate()
 {
 }
 
-void RayTracingAOPass::OnRender()
+void RayTracingAOPass::OnRender(CommandListBox& command_list)
 {
     if (!m_settings.use_rtao)
         return;
@@ -101,13 +101,13 @@ void RayTracingAOPass::OnRender()
                 if (cur_id >= m_geometry.size())
                     m_geometry.resize(cur_id + 1);
 
-                m_bottom[cur_id] = m_context->CreateBottomLevelAS(vertex, index);
+                m_bottom[cur_id] = command_list.CreateBottomLevelAS(vertex, index);
                 m_geometry[cur_id] = { m_bottom[cur_id], glm::transpose(model.matrix) };
                 ++node_updated;
             }
         }
         if (node_updated)
-            m_top = m_context->CreateTopLevelAS(m_geometry);
+            m_top = command_list.CreateTopLevelAS(m_geometry);
     };
 
     build_geometry(!m_is_initialized);
@@ -118,28 +118,28 @@ void RayTracingAOPass::OnRender()
         ++m_raytracing_program.lib.cbuffer.Settings.frame_index;
     m_is_initialized = true;
 
-    m_context->UseProgram(m_raytracing_program);
-    m_context->Attach(m_raytracing_program.lib.cbv.Settings, m_raytracing_program.lib.cbuffer.Settings);
-    m_context->Attach(m_raytracing_program.lib.srv.gPosition, m_input.geometry_pass.position);
-    m_context->Attach(m_raytracing_program.lib.srv.gNormal, m_input.geometry_pass.normal);
-    m_context->Attach(m_raytracing_program.lib.srv.geometry, m_top);
-    m_context->Attach(m_raytracing_program.lib.uav.result, m_ao);
-    m_context->Attach(m_raytracing_program.lib.sampler.gSampler, m_sampler);
-    m_context->Attach(m_raytracing_program.lib.srv.descriptor_offset, m_buffer);
-    m_context->DispatchRays(m_width, m_height, 1);
+    command_list.UseProgram(m_raytracing_program);
+    command_list.Attach(m_raytracing_program.lib.cbv.Settings, m_raytracing_program.lib.cbuffer.Settings);
+    command_list.Attach(m_raytracing_program.lib.srv.gPosition, m_input.geometry_pass.position);
+    command_list.Attach(m_raytracing_program.lib.srv.gNormal, m_input.geometry_pass.normal);
+    command_list.Attach(m_raytracing_program.lib.srv.geometry, m_top);
+    command_list.Attach(m_raytracing_program.lib.uav.result, m_ao);
+    command_list.Attach(m_raytracing_program.lib.sampler.gSampler, m_sampler);
+    command_list.Attach(m_raytracing_program.lib.srv.descriptor_offset, m_buffer);
+    command_list.DispatchRays(m_width, m_height, 1);
 
     if (m_settings.use_ao_blur)
     {
-        m_context->UseProgram(m_program_blur);
-        m_context->Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
+        command_list.UseProgram(m_program_blur);
+        command_list.Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
 
         m_input.square.ia.indices.Bind();
         m_input.square.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);
         m_input.square.ia.texcoords.BindToSlot(m_program_blur.vs.ia.TEXCOORD);
         for (auto& range : m_input.square.ia.ranges)
         {
-            m_context->Attach(m_program_blur.ps.srv.ssaoInput, m_ao);
-            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            command_list.Attach(m_program_blur.ps.srv.ssaoInput, m_ao);
+            command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
 
         output.ao = m_ao_blur;

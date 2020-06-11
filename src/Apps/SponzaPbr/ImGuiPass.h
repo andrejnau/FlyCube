@@ -26,7 +26,7 @@ public:
     ~ImGuiPass();
 
     virtual void OnUpdate() override;
-    virtual void OnRender() override;
+    virtual void OnRender(CommandListBox& command_list)override;
     virtual void OnResize(int width, int height) override;
 
     virtual void OnKey(int key, int action) override;

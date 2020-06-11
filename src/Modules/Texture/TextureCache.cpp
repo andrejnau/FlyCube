@@ -23,7 +23,7 @@ std::shared_ptr<Resource> TextureCache::CreateTextuteStab(const glm::vec4& val)
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(1, 1, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);
-    m_context->UpdateSubresource(tex, 0, &val, row_bytes, num_bytes);
+    m_context.GetCommandList().UpdateSubresource(tex, 0, &val, row_bytes, num_bytes);
     m_stub_cache.emplace(val, tex);
     return tex;
 }

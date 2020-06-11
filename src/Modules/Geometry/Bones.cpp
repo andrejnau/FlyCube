@@ -53,7 +53,7 @@ std::shared_ptr<Resource> Bones::GetBonesInfo(Context& context)
     if (!bones_info_srv)
         bones_info_srv = context.CreateBuffer(BindFlag::kShaderResource, static_cast<uint32_t>(bone_info.size() * sizeof(BoneInfo)));
     if (!bone_info.empty())
-        context->UpdateSubresource(bones_info_srv, 0, bone_info.data(), 0, 0);
+        context.GetCommandList().UpdateSubresource(bones_info_srv, 0, bone_info.data(), 0, 0);
     return bones_info_srv;
 }
 
@@ -62,7 +62,7 @@ std::shared_ptr<Resource> Bones::GetBone(Context& context)
     if (!bone_srv)
         bone_srv = context.CreateBuffer(BindFlag::kShaderResource, static_cast<uint32_t>(bone.size() * sizeof(glm::mat4)));
     if (!bone.empty())
-        context->UpdateSubresource(bone_srv, 0, bone.data(), 0, 0);
+        context.GetCommandList().UpdateSubresource(bone_srv, 0, bone.data(), 0, 0);
     return bone_srv;
 }
 

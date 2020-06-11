@@ -23,28 +23,28 @@ void BackgroundPass::OnUpdate()
     m_program.vs.cbuffer.ConstantBuf.face = 0;
 }
 
-void BackgroundPass::OnRender()
+void BackgroundPass::OnRender(CommandListBox& command_list)
 {
-    m_context->SetViewport(m_width, m_height);
+    command_list.SetViewport(m_width, m_height);
 
-    m_context->UseProgram(m_program);
-    m_context->Attach(m_program.vs.cbv.ConstantBuf, m_program.vs.cbuffer.ConstantBuf);
+    command_list.UseProgram(m_program);
+    command_list.Attach(m_program.vs.cbv.ConstantBuf, m_program.vs.cbuffer.ConstantBuf);
 
-    m_context->SetDepthStencilState({ true, DepthComparison::kLessEqual });
+    command_list.SetDepthStencilState({ true, DepthComparison::kLessEqual });
 
-    m_context->Attach(m_program.ps.sampler.g_sampler, m_sampler);
+    command_list.Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
-    m_context->Attach(m_program.ps.om.rtv0, m_input.rtv);
-    m_context->Attach(m_program.ps.om.dsv, m_input.dsv);
+    command_list.Attach(m_program.ps.om.rtv0, m_input.rtv);
+    command_list.Attach(m_program.ps.om.dsv, m_input.dsv);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
 
-    m_context->Attach(m_program.ps.srv.environmentMap, m_input.environment);
+    command_list.Attach(m_program.ps.srv.environmentMap, m_input.environment);
 
     for (auto& range : m_input.model.ia.ranges)
     {
-        m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+        command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
 }
 

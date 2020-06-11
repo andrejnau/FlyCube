@@ -23,32 +23,32 @@ void Equirectangular2Cubemap::OnUpdate()
     m_program_equirectangular2cubemap.vs.cbuffer.ConstantBuf.projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f));
 }
 
-void Equirectangular2Cubemap::OnRender()
+void Equirectangular2Cubemap::OnRender(CommandListBox& command_list)
 {
     if (!is || m_settings.irradiance_conversion_every_frame)
     {
-        m_context->BeginEvent("DrawEquirectangular2Cubemap");
-        DrawEquirectangular2Cubemap();
-        m_context->EndEvent();
+        command_list.BeginEvent("DrawEquirectangular2Cubemap");
+        DrawEquirectangular2Cubemap(command_list);
+        command_list.EndEvent();
 
         is = true;
     }
 }
 
-void Equirectangular2Cubemap::DrawEquirectangular2Cubemap()
+void Equirectangular2Cubemap::DrawEquirectangular2Cubemap(CommandListBox& command_list)
 {
-    m_context->SetViewport(m_texture_size, m_texture_size);
+    command_list.SetViewport(m_texture_size, m_texture_size);
 
-    m_context->UseProgram(m_program_equirectangular2cubemap);
-    m_context->Attach(m_program_equirectangular2cubemap.vs.cbv.ConstantBuf, m_program_equirectangular2cubemap.vs.cbuffer.ConstantBuf);
+    command_list.UseProgram(m_program_equirectangular2cubemap);
+    command_list.Attach(m_program_equirectangular2cubemap.vs.cbv.ConstantBuf, m_program_equirectangular2cubemap.vs.cbuffer.ConstantBuf);
 
-    m_context->Attach(m_program_equirectangular2cubemap.ps.sampler.g_sampler, m_sampler);
+    command_list.Attach(m_program_equirectangular2cubemap.ps.sampler.g_sampler, m_sampler);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_context->Attach(m_program_equirectangular2cubemap.ps.om.rtv0, output.environment);
-    m_context->ClearColor(m_program_equirectangular2cubemap.ps.om.rtv0, color);
-    m_context->Attach(m_program_equirectangular2cubemap.ps.om.dsv, m_dsv);
-    m_context->ClearDepth(m_program_equirectangular2cubemap.ps.om.dsv, 1.0f);
+    command_list.Attach(m_program_equirectangular2cubemap.ps.om.rtv0, output.environment);
+    command_list.ClearColor(m_program_equirectangular2cubemap.ps.om.rtv0, color);
+    command_list.Attach(m_program_equirectangular2cubemap.ps.om.dsv, m_dsv);
+    command_list.ClearDepth(m_program_equirectangular2cubemap.ps.om.dsv, 1.0f);
 
     m_input.model.ia.indices.Bind();
     m_input.model.ia.positions.BindToSlot(m_program_equirectangular2cubemap.vs.ia.POSITION);
@@ -78,19 +78,19 @@ void Equirectangular2Cubemap::DrawEquirectangular2Cubemap()
     {
         m_program_equirectangular2cubemap.vs.cbuffer.ConstantBuf.face = i;
         m_program_equirectangular2cubemap.vs.cbuffer.ConstantBuf.view = glm::transpose(capture_views[i]);
-        m_context->Attach(m_program_equirectangular2cubemap.ps.srv.equirectangularMap, m_input.hdr);
+        command_list.Attach(m_program_equirectangular2cubemap.ps.srv.equirectangularMap, m_input.hdr);
         for (auto& range : m_input.model.ia.ranges)
         {
-            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
 
-    m_context->UseProgram(m_program_downsample);
+    command_list.UseProgram(m_program_downsample);
     for (size_t i = 1; i < m_texture_mips; ++i)
     {
-        m_context->Attach(m_program_downsample.cs.srv.inputTexture, output.environment, {i - 1, 1});
-        m_context->Attach(m_program_downsample.cs.uav.outputTexture, output.environment, {i, 1});
-        m_context->Dispatch((m_texture_size >> i) / 8, (m_texture_size >> i) / 8, 6);
+        command_list.Attach(m_program_downsample.cs.srv.inputTexture, output.environment, {i - 1, 1});
+        command_list.Attach(m_program_downsample.cs.uav.outputTexture, output.environment, {i, 1});
+        command_list.Dispatch((m_texture_size >> i) / 8, (m_texture_size >> i) / 8, 6);
     }
 }
 

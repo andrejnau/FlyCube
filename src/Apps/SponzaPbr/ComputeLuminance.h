@@ -27,18 +27,18 @@ public:
     ComputeLuminance(Context& context, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
-    virtual void OnRender() override;
+    virtual void OnRender(CommandListBox& command_list)override;
     virtual void OnResize(int width, int height) override;
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
-    void GetLum2DPassCS(size_t buf_id, uint32_t thread_group_x, uint32_t thread_group_y);
-    void GetLum1DPassCS(size_t buf_id, uint32_t input_buffer_size, uint32_t thread_group_x);
+    void GetLum2DPassCS(CommandListBox& command_list, size_t buf_id, uint32_t thread_group_x, uint32_t thread_group_y);
+    void GetLum1DPassCS(CommandListBox& command_list, size_t buf_id, uint32_t input_buffer_size, uint32_t thread_group_x);
     void CreateBuffers();
     uint32_t m_thread_group_x;
     uint32_t m_thread_group_y;
 
-    void Draw(size_t buf_id);
+    void Draw(CommandListBox& command_list, size_t buf_id);
 
     SponzaSettings m_settings;
     Context& m_context;

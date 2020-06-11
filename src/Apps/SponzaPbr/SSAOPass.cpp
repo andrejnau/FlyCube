@@ -46,7 +46,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(4, 4, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);
-    context->UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
+    context.GetCommandList().UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
 
     if (m_context.IsVariableRateShadingSupported())
     {
@@ -65,7 +65,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
         num_bytes = 0;
         row_bytes = 0;
         GetFormatInfo(shading_rate_width, shading_rate_height, gli::format::FORMAT_R8_UINT_PACK8, num_bytes, row_bytes);
-        context->UpdateSubresource(m_shading_rate_texture, 0, shading_rate.data(), row_bytes, num_bytes);
+        context.GetCommandList().UpdateSubresource(m_shading_rate_texture, 0, shading_rate.data(), row_bytes, num_bytes);
     }
 }
 
@@ -82,21 +82,21 @@ void SSAOPass::OnUpdate()
     m_program.ps.cbuffer.SSAOBuffer.viewInverse = glm::transpose(glm::transpose(glm::inverse(m_input.camera.GetViewMatrix())));
 }
 
-void SSAOPass::OnRender()
+void SSAOPass::OnRender(CommandListBox& command_list)
 {
     if (!m_settings.use_ssao)
         return;
 
-    m_context->SetViewport(m_width, m_height);
+    command_list.SetViewport(m_width, m_height);
 
-    m_context->UseProgram(m_program);
-    m_context->Attach(m_program.ps.cbv.SSAOBuffer, m_program.ps.cbuffer.SSAOBuffer);
+    command_list.UseProgram(m_program);
+    command_list.Attach(m_program.ps.cbv.SSAOBuffer, m_program.ps.cbuffer.SSAOBuffer);
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_context->Attach(m_program.ps.om.rtv0, m_ao);
-    m_context->ClearColor(m_program.ps.om.rtv0, color);
-    m_context->Attach(m_program.ps.om.dsv, m_depth_stencil_view);
-    m_context->ClearDepth(m_program.ps.om.dsv, 1.0f);
+    command_list.Attach(m_program.ps.om.rtv0, m_ao);
+    command_list.ClearColor(m_program.ps.om.rtv0, color);
+    command_list.Attach(m_program.ps.om.dsv, m_depth_stencil_view);
+    command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
 
     m_input.square.ia.indices.Bind();
     m_input.square.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
@@ -104,34 +104,34 @@ void SSAOPass::OnRender()
 
     if (m_context.IsVariableRateShadingSupported())
     {
-        m_context->RSSetShadingRate(ShadingRate::k1x1, std::array<ShadingRateCombiner, 2>{ ShadingRateCombiner::kPassthrough, ShadingRateCombiner::kOverride });
-        m_context->RSSetShadingRateImage(m_shading_rate_texture);
+        command_list.RSSetShadingRate(ShadingRate::k1x1, std::array<ShadingRateCombiner, 2>{ ShadingRateCombiner::kPassthrough, ShadingRateCombiner::kOverride });
+        command_list.RSSetShadingRateImage(m_shading_rate_texture);
     }
     for (auto& range : m_input.square.ia.ranges)
     {
-        m_context->Attach(m_program.ps.srv.gPosition, m_input.geometry_pass.position);
-        m_context->Attach(m_program.ps.srv.gNormal, m_input.geometry_pass.normal);
-        m_context->Attach(m_program.ps.srv.noiseTexture, m_noise_texture);
-        m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+        command_list.Attach(m_program.ps.srv.gPosition, m_input.geometry_pass.position);
+        command_list.Attach(m_program.ps.srv.gNormal, m_input.geometry_pass.normal);
+        command_list.Attach(m_program.ps.srv.noiseTexture, m_noise_texture);
+        command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
     if (m_context.IsVariableRateShadingSupported())
     {
-        m_context->RSSetShadingRateImage({});
-        m_context->RSSetShadingRate(ShadingRate::k1x1);
+        command_list.RSSetShadingRateImage({});
+        command_list.RSSetShadingRate(ShadingRate::k1x1);
     }
 
     if (m_settings.use_ao_blur)
     {
-        m_context->UseProgram(m_program_blur);
-        m_context->Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
+        command_list.UseProgram(m_program_blur);
+        command_list.Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
 
         m_input.square.ia.indices.Bind();
         m_input.square.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);
         m_input.square.ia.texcoords.BindToSlot(m_program_blur.vs.ia.TEXCOORD);
         for (auto& range : m_input.square.ia.ranges)
         {
-            m_context->Attach(m_program_blur.ps.srv.ssaoInput, m_ao);
-            m_context->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            command_list.Attach(m_program_blur.ps.srv.ssaoInput, m_ao);
+            command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
 
         output.ao = m_ao_blur;
