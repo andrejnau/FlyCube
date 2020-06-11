@@ -95,14 +95,33 @@ Scene::Scene(Context& context, int width, int height)
         m_rtao = &m_ray_tracing_ao_pass->output.ao;
     }
 #endif
+
+    m_passes.push_back({ "Skinning Pass", m_skinning_pass });
+    m_passes.push_back({ "Geometry Pass", m_geometry_pass });
+    m_passes.push_back({ "Shadow Pass", m_shadow_pass });
+    m_passes.push_back({ "SSAO Pass", m_ssao_pass });
+#ifdef RAYTRACING_SUPPORT
+    if (m_ray_tracing_ao_pass)
+        m_passes.push_back({ "DXR AO Pass", *m_ray_tracing_ao_pass });
+#endif
+
+    m_passes.push_back({ "brdf Pass", m_brdf });
+    m_passes.push_back({ "equirectangular to cubemap Pass", m_equirectangular2cubemap });
+    m_passes.push_back({ "IBLCompute", m_ibl_compute });
+    for (auto& x : m_irradiance_conversion)
+        m_passes.push_back({ "Irradiance Conversion Pass", *x });
+
+    m_passes.push_back({ "Light Pass", m_light_pass });
+    m_passes.push_back({ "Background Pass", m_background_pass });
+    m_passes.push_back({ "HDR Pass", m_compute_luminance });
+    m_passes.push_back({ "ImGui Pass", m_imgui_pass });
+
+    m_camera.SetCameraPos(glm::vec3(-3.0, 2.75, 0.0));
+    m_camera.SetCameraYaw(-178.0f);
+    m_camera.SetCameraYaw(-1.75f);
 }
 
-IScene::Ptr Scene::Create(Context& context, int width, int height)
-{
-    return std::make_unique<Scene>(context, width, height);
-}
-
-void Scene::OnUpdate()
+void Scene::RenderFrame()
 {
     UpdateCameraMovement();
 
@@ -118,93 +137,18 @@ void Scene::OnUpdate()
     float light_r = 2.5;
     m_light_pos = glm::vec3(light_r * cos(angle), 25.0f, light_r * sin(angle));
 
-    m_imgui_pass.OnUpdate();
-
-    m_skinning_pass.OnUpdate();
-    m_geometry_pass.OnUpdate();
-    m_shadow_pass.OnUpdate();
-    m_ssao_pass.OnUpdate();
-#ifdef RAYTRACING_SUPPORT
-    if (m_ray_tracing_ao_pass)
-        m_ray_tracing_ao_pass->OnUpdate();
-#endif
-    m_brdf.OnUpdate();
-    m_equirectangular2cubemap.OnUpdate();
-    m_ibl_compute.OnUpdate();
-    for (auto& x : m_irradiance_conversion)
+    for (auto& desc : m_passes)
     {
-        x->OnUpdate();
+        desc.pass.get().OnUpdate();
     }
-    m_light_pass.OnUpdate();
-    m_background_pass.OnUpdate();
-    m_compute_luminance.OnUpdate();
-}
 
-void Scene::OnRender()
-{
     m_render_target_view = m_context.GetBackBuffer();
     m_camera.SetViewport(m_width, m_height);
 
-    m_context->BeginEvent("Skinning Pass");
-    m_skinning_pass.OnRender();
-    m_context->EndEvent();
-
-    m_context->BeginEvent("Geometry Pass");
-    m_geometry_pass.OnRender();
-    m_context->EndEvent();
-
-    m_context->BeginEvent("Shadow Pass");
-    m_shadow_pass.OnRender();
-    m_context->EndEvent();
-
-    m_context->BeginEvent("SSAO Pass");
-    m_ssao_pass.OnRender();
-    m_context->EndEvent();
-
-#ifdef RAYTRACING_SUPPORT
-    if (m_ray_tracing_ao_pass)
+    for (auto& desc : m_passes)
     {
-        m_context->BeginEvent("DXR AO Pass");
-        m_ray_tracing_ao_pass->OnRender();
-        m_context->EndEvent();
-    }
-#endif
-
-    m_context->BeginEvent("brdf Pass");
-    m_brdf.OnRender();
-    m_context->EndEvent();
-
-    m_context->BeginEvent("equirectangular to cubemap Pass");
-    m_equirectangular2cubemap.OnRender();
-    m_context->EndEvent();
-
-    m_context->BeginEvent("IBLCompute");
-    m_ibl_compute.OnRender();
-    m_context->EndEvent();
-
-    m_context->BeginEvent("Irradiance Conversion Pass");
-    for (auto& x : m_irradiance_conversion)
-    {
-        x->OnRender();
-    }
-    m_context->EndEvent();
-
-    m_context->BeginEvent("Light Pass");
-    m_light_pass.OnRender();
-    m_context->EndEvent();
-
-    m_context->BeginEvent("Background Pass");
-    m_background_pass.OnRender();
-    m_context->EndEvent();
-
-    m_context->BeginEvent("HDR Pass");
-    m_compute_luminance.OnRender();
-    m_context->EndEvent();
-
-    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
-    {
-        m_context->BeginEvent("ImGui Pass");
-        m_imgui_pass.OnRender();
+        m_context->BeginEvent(desc.name);
+        desc.pass.get().OnRender();
         m_context->EndEvent();
     }
 
@@ -226,14 +170,10 @@ void Scene::OnResize(int width, int height)
 
     CreateRT();
 
-    m_skinning_pass.OnResize(width, height);
-    m_geometry_pass.OnResize(width, height);
-    m_shadow_pass.OnResize(width, height);
-    m_ssao_pass.OnResize(width, height);
-    m_ibl_compute.OnResize(width, height);
-    m_light_pass.OnResize(width, height);
-    m_compute_luminance.OnResize(width, height);
-    m_imgui_pass.OnResize(width, height);
+    for (auto& desc : m_passes)
+    {
+        desc.pass.get().OnResize(width, height);
+    }
 }
 
 void Scene::OnKey(int key, int action)
@@ -298,24 +238,10 @@ void Scene::OnInputChar(unsigned int ch)
 void Scene::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     m_settings = settings;
-    m_skinning_pass.OnModifySponzaSettings(settings);
-    m_geometry_pass.OnModifySponzaSettings(settings);
-    m_shadow_pass.OnModifySponzaSettings(settings);
-    m_ibl_compute.OnModifySponzaSettings(settings);
-    m_light_pass.OnModifySponzaSettings(settings);
-    m_compute_luminance.OnModifySponzaSettings(settings);
-    m_ssao_pass.OnModifySponzaSettings(settings);
-#ifdef RAYTRACING_SUPPORT
-    if (m_ray_tracing_ao_pass)
-        m_ray_tracing_ao_pass->OnModifySponzaSettings(settings);
-#endif
-    m_brdf.OnModifySponzaSettings(settings);
-    m_equirectangular2cubemap.OnModifySponzaSettings(settings);
-    for (auto& x : m_irradiance_conversion)
+    for (auto& desc : m_passes)
     {
-        x->OnModifySponzaSettings(settings);
+        desc.pass.get().OnModifySponzaSettings(m_settings);
     }
-    m_background_pass.OnModifySponzaSettings(settings);
 }
 
 void Scene::CreateRT()
@@ -329,4 +255,24 @@ void Scene::CreateRT()
 
     m_depth_stencil_view_irradince = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_irradince_texture_size, m_irradince_texture_size, 6 * m_ibl_count);
     m_depth_stencil_view_prefilter = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count, log2(m_prefilter_texture_size));
+}
+
+void Scene::UpdateCameraMovement()
+{
+    float currentFrame = static_cast<float>(glfwGetTime());
+    m_delta_time = currentFrame - m_last_frame;
+    m_last_frame = currentFrame;
+
+    if (m_keys[GLFW_KEY_W])
+        m_camera.ProcessKeyboard(CameraMovement::kForward, m_delta_time);
+    if (m_keys[GLFW_KEY_S])
+        m_camera.ProcessKeyboard(CameraMovement::kBackward, m_delta_time);
+    if (m_keys[GLFW_KEY_A])
+        m_camera.ProcessKeyboard(CameraMovement::kLeft, m_delta_time);
+    if (m_keys[GLFW_KEY_D])
+        m_camera.ProcessKeyboard(CameraMovement::kRight, m_delta_time);
+    if (m_keys[GLFW_KEY_Q])
+        m_camera.ProcessKeyboard(CameraMovement::kDown, m_delta_time);
+    if (m_keys[GLFW_KEY_E])
+        m_camera.ProcessKeyboard(CameraMovement::kUp, m_delta_time);
 }

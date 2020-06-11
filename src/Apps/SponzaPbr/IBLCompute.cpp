@@ -26,7 +26,7 @@ IBLCompute::IBLCompute(Context& context, const Input& input, int width, int heig
 void IBLCompute::OnUpdate()
 {
     glm::vec3 camera_position = m_input.camera.GetCameraPos();
-    m_program.ps.cbuffer.Light.viewPos = glm::vec4(camera_position, 0.0);
+    m_program.ps.cbuffer.Light.viewPos = camera_position;
 
     m_program.ps.cbuffer.ShadowParams.s_near = m_settings.s_near;
     m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;
@@ -131,7 +131,7 @@ void IBLCompute::DrawPrePass(Model & ibl_model)
 
     m_program_pre_pass.gs.cbuffer.GSParams.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.s_near, m_settings.s_far));
 
-    glm::vec3 position = ibl_model.matrix * glm::vec4(ibl_model.model_center, 1.0);
+    glm::vec3 position = glm::vec3(ibl_model.matrix * glm::vec4(ibl_model.model_center, 1.0));
     std::array<glm::mat4, 6>& view = m_program_pre_pass.gs.cbuffer.GSParams.View;
     view[0] = glm::transpose(glm::lookAt(position, position + Right, Up));
     view[1] = glm::transpose(glm::lookAt(position, position + Left, Up));
@@ -201,7 +201,7 @@ void IBLCompute::Draw(Model& ibl_model)
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-    glm::vec3 position = ibl_model.matrix * glm::vec4(ibl_model.model_center, 1.0);
+    glm::vec3 position = glm::vec3(ibl_model.matrix * glm::vec4(ibl_model.model_center, 1.0));
     std::array<glm::mat4, 6>& view = m_program.gs.cbuffer.GSParams.View;
     view[0] = glm::transpose(glm::lookAt(position, position + Right, Up));
     view[1] = glm::transpose(glm::lookAt(position, position + Left, Up));

@@ -6,7 +6,7 @@
 #include "IrradianceConversion.h"
 #include "SponzaSettings.h"
 
-#include <Scene/SceneBase.h>
+#include "RenderPass.h"
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/LightPassPS.h>

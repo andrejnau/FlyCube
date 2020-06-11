@@ -9,10 +9,6 @@ LightPass::LightPass(Context& context, const Input& input, int width, int height
     , m_height(height)
     , m_program(context, std::bind(&LightPass::SetDefines, this, std::placeholders::_1))
 {
-    m_input.camera.SetCameraPos(glm::vec3(-3.0, 2.75, 0.0));
-    m_input.camera.SetCameraYaw(-178.0f);
-    m_input.camera.SetCameraYaw(-1.75f);
-
     CreateSizeDependentResources();
     m_sampler = m_context.CreateSampler({
         SamplerFilter::kAnisotropic,
@@ -40,7 +36,7 @@ void LightPass::OnUpdate()
 {
     glm::vec3 camera_position = m_input.camera.GetCameraPos();
 
-    m_program.ps.cbuffer.Light.viewPos = glm::vec4(camera_position, 0.0);
+    m_program.ps.cbuffer.Light.viewPos = camera_position;
     m_program.ps.cbuffer.Settings.use_ssao = m_settings.use_ssao || m_settings.use_rtao;
     m_program.ps.cbuffer.Settings.use_ao = m_settings.use_ao;
     m_program.ps.cbuffer.Settings.use_IBL_diffuse = m_settings.use_IBL_diffuse;

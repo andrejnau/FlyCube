@@ -1,8 +1,9 @@
 #pragma once
 
 #include "SponzaSettings.h"
-#include <Scene/SceneBase.h>
+#include "RenderPass.h"
 #include <Context/Context.h>
+#include <Camera/Camera.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/GeometryPassPS.h>
 #include <ProgramRef/GeometryPassVS.h>

@@ -9,12 +9,11 @@ int main(int argc, char *argv[])
     AppBox app("testApp", settings);
     AppRect rect = app.GetAppRect();
     Context context(settings, app.GetWindow());
-    decltype(auto) scene = Scene::Create(context, rect.width, rect.height);
-    app.SubscribeEvents(scene.get(), scene.get());
+    Scene scene(context, rect.width, rect.height);
+    app.SubscribeEvents(&scene, &scene);
     while (!app.PollEvents())
     {
-        scene->OnUpdate();
-        scene->OnRender();
+        scene.RenderFrame();
         app.UpdateFps();
     }
     _exit(0);

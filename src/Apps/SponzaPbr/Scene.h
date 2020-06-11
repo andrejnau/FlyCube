@@ -1,6 +1,4 @@
 #pragma once
-
-#include <Scene/SceneBase.h>
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <string>
@@ -28,16 +26,22 @@
 #include "RayTracingAOPass.h"
 #endif
 
-class Scene : public SceneBase, public IModifySponzaSettings
+#include <Camera/Camera.h>
+#include <glm/glm.hpp>
+#include <vector>
+#include <map>
+
+class Scene
+    : public InputEvents
+    , public WindowEvents
+    , public IModifySponzaSettings
 {
 public:
     Scene(Context& context, int width, int height);
 
-    static IScene::Ptr Create(Context& context, int width, int height);
+    void RenderFrame();
 
-    virtual void OnUpdate() override;
-    virtual void OnRender() override;
-    virtual void OnResize(int width, int height) override;
+    void OnResize(int width, int height) override;
 
     virtual void OnKey(int key, int action) override;
     virtual void OnMouse(bool first, double xpos, double ypos) override;
@@ -87,4 +91,20 @@ private:
     SponzaSettings m_settings;
     size_t m_irradince_texture_size = 16;
     size_t m_prefilter_texture_size = 512;
+    struct PassDesc
+    {
+        std::string name;
+        std::reference_wrapper<IPass> pass;
+    };
+    std::vector<PassDesc> m_passes;
+
+    void UpdateCameraMovement();
+
+    Camera m_camera;
+    std::map<int, bool> m_keys;
+    float m_last_frame = 0.0;
+    float m_delta_time = 0.0f;
+    double m_last_x = 0.0f;
+    double m_last_y = 0.0f;
+    float m_angle = 0.0;
 };

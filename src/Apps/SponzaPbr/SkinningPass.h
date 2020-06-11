@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Scene/SceneBase.h>
+#include "RenderPass.h"
 #include "SponzaSettings.h"
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>

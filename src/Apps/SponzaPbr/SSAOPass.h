@@ -3,6 +3,7 @@
 #include "GeometryPass.h"
 #include "SponzaSettings.h"
 #include <Context/Context.h>
+#include <Camera/Camera.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/SSAOPassPS.h>
 #include <ProgramRef/SSAOPassVS.h>

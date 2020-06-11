@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Scene/SceneBase.h>
+#include "RenderPass.h"
 #include <Context/Context.h>
+#include <Camera/Camera.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/ShadowPassVS.h>
 #include <ProgramRef/ShadowPassGS.h>

@@ -3,7 +3,6 @@
 #include <Instance/Instance.h>
 #include <AppBox/Settings.h>
 #include <memory>
-#include <Scene/IScene.h>
 #include <ApiType/ApiType.h>
 
 #include <GLFW/glfw3.h>

@@ -42,6 +42,7 @@ set(headers
     ${include_path}/Scene.h
     ${include_path}/ImGuiSettings.h
     ${include_path}/SponzaSettings.h
+    ${include_path}/RenderPass.h
 )
 
 set(sources
@@ -172,8 +173,8 @@ target_link_libraries(${target}
     assimp
     SOIL
     AppBox
-    Scene
     Geometry
+    Camera
     Utilities
     Texture
     imgui

@@ -82,7 +82,6 @@ target_link_libraries(${target}
     assimp
     SOIL
     AppBox
-    Scene
     Geometry
     Utilities
     Texture

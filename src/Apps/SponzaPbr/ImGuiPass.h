@@ -1,7 +1,7 @@
 #pragma once
 
 #include <imgui.h>
-#include <Scene/SceneBase.h>
+#include "RenderPass.h"
 #include <Context/Context.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/ImGuiPassPS.h>
