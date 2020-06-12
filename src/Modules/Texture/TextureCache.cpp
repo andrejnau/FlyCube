@@ -1,8 +1,9 @@
 #include "Texture/TextureCache.h"
 #include <Utilities/FormatHelper.h>
 
-TextureCache::TextureCache(Context& context)
+TextureCache::TextureCache(Context& context, CommandListBox& command_list)
     : m_context(context)
+    , m_command_list(command_list)
 {
 }
 
@@ -10,7 +11,7 @@ std::shared_ptr<Resource> TextureCache::Load(const std::string& path)
 {
     auto it = m_cache.find(path);
     if (it == m_cache.end())
-        it = m_cache.emplace(path, CreateTexture(m_context, path)).first;
+        it = m_cache.emplace(path, CreateTexture(m_context, m_command_list, path)).first;
     return it->second;
 }
 
@@ -23,7 +24,7 @@ std::shared_ptr<Resource> TextureCache::CreateTextuteStab(const glm::vec4& val)
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(1, 1, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);
-    m_context.GetCommandList().UpdateSubresource(tex, 0, &val, row_bytes, num_bytes);
+    m_command_list.UpdateSubresource(tex, 0, &val, row_bytes, num_bytes);
     m_stub_cache.emplace(val, tex);
     return tex;
 }

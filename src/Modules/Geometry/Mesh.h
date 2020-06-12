@@ -50,7 +50,7 @@ class IAMergedMesh
 {
     std::unique_ptr<MergedMesh> m_data;
 public:
-    IAMergedMesh(Context& context, std::vector<IMesh>& meshes);
+    IAMergedMesh(Context& context, CommandListBox& command_list, std::vector<IMesh>& meshes);
 
     IAVertexBuffer positions;
     IAVertexBuffer normals;

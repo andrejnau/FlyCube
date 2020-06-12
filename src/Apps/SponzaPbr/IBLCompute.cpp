@@ -153,19 +153,19 @@ void IBLCompute::DrawPrePass(CommandListBox& command_list, Model & ibl_model)
 
         model.bones.UpdateAnimation(glfwGetTime());
 
-        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context);
-        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context);
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context, command_list);
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context, command_list);
 
         command_list.Attach(m_program_pre_pass.vs.srv.bone_info, bones_info_srv);
         command_list.Attach(m_program_pre_pass.vs.srv.gBones, bone_srv);
 
-        model.ia.indices.Bind();
-        model.ia.positions.BindToSlot(m_program_pre_pass.vs.ia.POSITION);
-        model.ia.normals.BindToSlot(m_program_pre_pass.vs.ia.NORMAL);
-        model.ia.texcoords.BindToSlot(m_program_pre_pass.vs.ia.TEXCOORD);
-        model.ia.tangents.BindToSlot(m_program_pre_pass.vs.ia.TANGENT);
-        model.ia.bones_offset.BindToSlot(m_program_pre_pass.vs.ia.BONES_OFFSET);
-        model.ia.bones_count.BindToSlot(m_program_pre_pass.vs.ia.BONES_COUNT);
+        model.ia.indices.Bind(command_list);
+        model.ia.positions.BindToSlot(command_list, m_program_pre_pass.vs.ia.POSITION);
+        model.ia.normals.BindToSlot(command_list, m_program_pre_pass.vs.ia.NORMAL);
+        model.ia.texcoords.BindToSlot(command_list, m_program_pre_pass.vs.ia.TEXCOORD);
+        model.ia.tangents.BindToSlot(command_list, m_program_pre_pass.vs.ia.TANGENT);
+        model.ia.bones_offset.BindToSlot(command_list, m_program_pre_pass.vs.ia.BONES_OFFSET);
+        model.ia.bones_count.BindToSlot(command_list, m_program_pre_pass.vs.ia.BONES_COUNT);
 
         for (auto& range : model.ia.ranges)
         {
@@ -233,19 +233,19 @@ void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
 
         model.bones.UpdateAnimation(glfwGetTime());
 
-        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context);
-        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context);
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context, command_list);
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context, command_list);
 
         command_list.Attach(m_program.vs.srv.bone_info, bones_info_srv);
         command_list.Attach(m_program.vs.srv.gBones, bone_srv);
 
-        model.ia.indices.Bind();
-        model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
-        model.ia.normals.BindToSlot(m_program.vs.ia.NORMAL);
-        model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
-        model.ia.tangents.BindToSlot(m_program.vs.ia.TANGENT);
-        model.ia.bones_offset.BindToSlot(m_program.vs.ia.BONES_OFFSET);
-        model.ia.bones_count.BindToSlot(m_program.vs.ia.BONES_COUNT);
+        model.ia.indices.Bind(command_list);
+        model.ia.positions.BindToSlot(command_list, m_program.vs.ia.POSITION);
+        model.ia.normals.BindToSlot(command_list, m_program.vs.ia.NORMAL);
+        model.ia.texcoords.BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
+        model.ia.tangents.BindToSlot(command_list, m_program.vs.ia.TANGENT);
+        model.ia.bones_offset.BindToSlot(command_list, m_program.vs.ia.BONES_OFFSET);
+        model.ia.bones_count.BindToSlot(command_list, m_program.vs.ia.BONES_COUNT);
 
         for (auto& range : model.ia.ranges)
         {
@@ -280,8 +280,8 @@ void IBLCompute::DrawBackgroud(CommandListBox& command_list, Model& ibl_model)
     command_list.Attach(m_program_backgroud.ps.om.rtv0, ibl_model.ibl_rtv);
     command_list.Attach(m_program_backgroud.ps.om.dsv, ibl_model.ibl_dsv);
 
-    m_input.model_cube.ia.indices.Bind();
-    m_input.model_cube.ia.positions.BindToSlot(m_program_backgroud.vs.ia.POSITION);
+    m_input.model_cube.ia.indices.Bind(command_list);
+    m_input.model_cube.ia.positions.BindToSlot(command_list, m_program_backgroud.vs.ia.POSITION);
 
     command_list.Attach(m_program_backgroud.ps.srv.environmentMap, m_input.environment);
 

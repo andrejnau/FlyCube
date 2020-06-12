@@ -59,11 +59,11 @@ void GeometryPass::OnRender(CommandListBox& command_list)
         m_program.vs.cbuffer.ConstantBuf.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model.matrix)));
         m_program.ps.cbuffer.Settings.ibl_source = model.ibl_source;
 
-        model.ia.indices.Bind();
-        model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
-        model.ia.normals.BindToSlot(m_program.vs.ia.NORMAL);
-        model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
-        model.ia.tangents.BindToSlot(m_program.vs.ia.TANGENT);
+        model.ia.indices.Bind(command_list);
+        model.ia.positions.BindToSlot(command_list, m_program.vs.ia.POSITION);
+        model.ia.normals.BindToSlot(command_list, m_program.vs.ia.NORMAL);
+        model.ia.texcoords.BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
+        model.ia.tangents.BindToSlot(command_list, m_program.vs.ia.TANGENT);
 
         for (auto& range : model.ia.ranges)
         {

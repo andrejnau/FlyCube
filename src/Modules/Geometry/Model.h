@@ -20,7 +20,7 @@ struct BoundBox
 class Model : public IModel
 {
 public:
-    Model(Context& context, const std::string& file, uint32_t flags = ~0);
+    Model(Context& context, CommandListBox& command_list, const std::string& file, uint32_t flags = ~0);
     virtual void AddMesh(const IMesh& mesh) override;
     virtual Bones& GetBones() override;
 

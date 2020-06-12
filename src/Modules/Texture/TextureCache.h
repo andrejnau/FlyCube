@@ -6,12 +6,13 @@
 class TextureCache
 {
 public:
-    TextureCache(Context& context);
+    TextureCache(Context& context, CommandListBox& command_list);
     std::shared_ptr<Resource> Load(const std::string& path);
     std::shared_ptr<Resource> CreateTextuteStab(const glm::vec4& val);
 
 private:
     Context& m_context;
+    CommandListBox& m_command_list;
     std::map<std::string, std::shared_ptr<Resource>> m_cache;
 
     struct glm_key

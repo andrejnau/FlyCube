@@ -89,7 +89,7 @@ DXDevice::DXDevice(DXAdapter& adapter)
     if (SUCCEEDED(m_device.As(&info_queue)))
     {
         info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-        info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+       // info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
 
         D3D12_MESSAGE_SEVERITY severities[] =
         {
@@ -108,6 +108,10 @@ DXDevice::DXDevice(DXAdapter& adapter)
         filter.DenyList.pIDList = deny_ids;
         info_queue->PushStorageFilter(&filter);
     }
+
+    ComPtr<ID3D12DebugDevice> debug_device;
+    m_device.As(&debug_device);
+    debug_device->SetFeatureMask(D3D12_DEBUG_FEATURE_CONSERVATIVE_RESOURCE_STATE_TRACKING);
 #endif
 }
 

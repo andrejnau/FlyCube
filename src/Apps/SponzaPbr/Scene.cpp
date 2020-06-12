@@ -8,33 +8,34 @@ Scene::Scene(Context& context, int width, int height)
     : m_context(context)
     , m_width(width)
     , m_height(height)
-    , m_model_square(m_context, "model/square.obj")
-    , m_model_cube(m_context, "model/cube.obj", ~aiProcess_FlipWindingOrder)
+    , m_upload_command_list(context.CreateCommandList(true))
+    , m_model_square(m_context, *m_upload_command_list, "model/square.obj")
+    , m_model_cube(m_context, *m_upload_command_list, "model/cube.obj", ~aiProcess_FlipWindingOrder)
     , m_skinning_pass(m_context, { m_scene_list }, width, height)
     , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
     , m_shadow_pass(m_context, { m_scene_list, m_camera, m_light_pos }, width, height)
-    , m_ssao_pass(m_context, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
+    , m_ssao_pass(m_context, *m_upload_command_list, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
     , m_brdf(m_context, { m_model_square }, width, height)
     , m_equirectangular2cubemap(m_context, { m_model_cube, m_equirectangular_environment }, width, height)
     , m_ibl_compute(m_context, { m_shadow_pass.output, m_scene_list, m_camera, m_light_pos, m_model_cube, m_equirectangular2cubemap.output.environment }, width, height)
     , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_rtao, m_model_square, m_camera, m_light_pos, m_irradince, m_prefilter, m_brdf.output.brdf }, width, height)
     , m_background_pass(m_context, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, m_light_pass.output.rtv, m_geometry_pass.output.dsv }, width, height)
     , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
-    , m_imgui_pass(m_context, { m_render_target_view, *this }, width, height)
+    , m_imgui_pass(m_context, *m_upload_command_list, { m_render_target_view, *this }, width, height)
 {
 #if !defined(_DEBUG) && 1
-    m_scene_list.emplace_back(m_context, "model/sponza_pbr/sponza.obj");
+    m_scene_list.emplace_back(m_context, *m_upload_command_list, "model/sponza_pbr/sponza.obj");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f));
 #endif
 
 #if 1
-    m_scene_list.emplace_back(m_context, "model/export3dcoat/export3dcoat.obj");
+    m_scene_list.emplace_back(m_context, *m_upload_command_list, "model/export3dcoat/export3dcoat.obj");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 35.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     m_scene_list.back().ibl_request = true;
 #endif
 
 #if 0
-    m_scene_list.emplace_back(m_context, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
+    m_scene_list.emplace_back(m_context, *m_upload_command_list, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(75.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 #endif
 
@@ -51,7 +52,7 @@ Scene::Scene(Context& context, int width, int height)
     float x = 300;
     for (const auto& test : hdr_tests)
     {
-        m_scene_list.emplace_back(m_context, "model/pbr_test/" + test.first + "/sphere.obj");
+        m_scene_list.emplace_back(m_context, *m_upload_command_list, "model/pbr_test/" + test.first + "/sphere.obj");
         m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f)) * glm::translate(glm::vec3(x, 500, 0.0f));
         m_scene_list.back().ibl_request = test.second;
         if (!test.second)
@@ -68,7 +69,7 @@ Scene::Scene(Context& context, int width, int height)
 
     CreateRT();
 
-    m_equirectangular_environment = CreateTexture(m_context, GetAssetFullPath("model/newport_loft.dds"));
+    m_equirectangular_environment = CreateTexture(m_context, *m_upload_command_list, GetAssetFullPath("model/newport_loft.dds"));
 
     size_t layer = 0;
     {
@@ -91,7 +92,7 @@ Scene::Scene(Context& context, int width, int height)
 #ifdef RAYTRACING_SUPPORT
     if (m_context.IsDxrSupported())
     {
-        m_ray_tracing_ao_pass.reset(new RayTracingAOPass(m_context, { m_geometry_pass.output, m_scene_list, m_model_square, m_camera }, width, height));
+        m_ray_tracing_ao_pass.reset(new RayTracingAOPass(m_context, *m_upload_command_list, { m_geometry_pass.output, m_scene_list, m_model_square, m_camera }, width, height));
         m_rtao = &m_ray_tracing_ao_pass->output.ao;
     }
 #endif
@@ -119,6 +120,12 @@ Scene::Scene(Context& context, int width, int height)
     m_camera.SetCameraPos(glm::vec3(-3.0, 2.75, 0.0));
     m_camera.SetCameraYaw(-178.0f);
     m_camera.SetCameraYaw(-1.75f);
+
+    for (uint32_t i = 0; i < Context::FrameCount * m_passes.size(); ++i)
+        m_command_lists.emplace_back(m_context.CreateCommandList());
+
+    m_upload_command_list->Close();
+    m_context.ExecuteCommandLists({ m_upload_command_list });
 }
 
 void Scene::RenderFrame()
@@ -142,17 +149,25 @@ void Scene::RenderFrame()
         desc.pass.get().OnUpdate();
     }
 
-    m_render_target_view = m_context.GetBackBuffer();
+    m_render_target_view = m_context.GetBackBuffer(m_context.GetFrameIndex());
     m_camera.SetViewport(m_width, m_height);
+
+    std::vector<std::shared_ptr<CommandListBox>> command_lists;
 
     for (auto& desc : m_passes)
     {
-        decltype(auto) command_list = m_context.GetCommandList();
-        command_list.BeginEvent(desc.name);
-        desc.pass.get().OnRender(command_list);
-        command_list.EndEvent();
+        decltype(auto) command_list = m_command_lists[m_command_list_index];
+        m_command_list_index = (m_command_list_index + 1) % m_command_lists.size();
+        command_list->Open();
+        command_list->BeginEvent(desc.name);
+        desc.pass.get().OnRender(*command_list);
+        command_list->EndEvent();
+        command_list->Close();
+
+        command_lists.emplace_back(command_list);
     }
 
+    m_context.ExecuteCommandLists(command_lists);
     m_context.Present();
 }
 

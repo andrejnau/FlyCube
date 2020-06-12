@@ -48,21 +48,21 @@ void Bones::ProcessMesh(const aiMesh* mesh, IMesh& cur_mesh)
     }
 }
 
-std::shared_ptr<Resource> Bones::GetBonesInfo(Context& context)
+std::shared_ptr<Resource> Bones::GetBonesInfo(Context& context, CommandListBox& command_list)
 {
     if (!bones_info_srv)
         bones_info_srv = context.CreateBuffer(BindFlag::kShaderResource, static_cast<uint32_t>(bone_info.size() * sizeof(BoneInfo)));
     if (!bone_info.empty())
-        context.GetCommandList().UpdateSubresource(bones_info_srv, 0, bone_info.data(), 0, 0);
+        command_list.UpdateSubresource(bones_info_srv, 0, bone_info.data(), 0, 0);
     return bones_info_srv;
 }
 
-std::shared_ptr<Resource> Bones::GetBone(Context& context)
+std::shared_ptr<Resource> Bones::GetBone(Context& context, CommandListBox& command_list)
 {
     if (!bone_srv)
         bone_srv = context.CreateBuffer(BindFlag::kShaderResource, static_cast<uint32_t>(bone.size() * sizeof(glm::mat4)));
     if (!bone.empty())
-        context.GetCommandList().UpdateSubresource(bone_srv, 0, bone.data(), 0, 0);
+        command_list.UpdateSubresource(bone_srv, 0, bone.data(), 0, 0);
     return bone_srv;
 }
 

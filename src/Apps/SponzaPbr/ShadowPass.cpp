@@ -61,9 +61,9 @@ void ShadowPass::OnRender(CommandListBox& command_list)
 
         command_list.SetRasterizeState({ FillMode::kSolid, CullMode::kBack, 4096 });
 
-        model.ia.indices.Bind();
-        model.ia.positions.BindToSlot(m_program.vs.ia.SV_POSITION);
-        model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
+        model.ia.indices.Bind(command_list);
+        model.ia.positions.BindToSlot(command_list, m_program.vs.ia.SV_POSITION);
+        model.ia.texcoords.BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
 
         for (auto& range : model.ia.ranges)
         {

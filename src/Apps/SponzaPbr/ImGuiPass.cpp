@@ -6,7 +6,7 @@
 #include <Geometry/IABuffer.h>
 #include <Utilities/FormatHelper.h>
 
-ImGuiPass::ImGuiPass(Context& context, const Input& input, int width, int height)
+ImGuiPass::ImGuiPass(Context& context, CommandListBox& command_list, const Input& input, int width, int height)
     : m_context(context)
     , m_input(input)
     , m_width(width)
@@ -22,7 +22,7 @@ ImGuiPass::ImGuiPass(Context& context, const Input& input, int width, int height
     io.DisplaySize = ImVec2((float)width, (float)height);
 
     InitKey();
-    CreateFontsTexture();
+    CreateFontsTexture(command_list);
     m_sampler = m_context.CreateSampler({
         SamplerFilter::kMinMagMipLinear,
         SamplerTextureAddressMode::kWrap,
@@ -35,6 +35,10 @@ ImGuiPass::~ImGuiPass()
 }
 
 void ImGuiPass::OnUpdate()
+{
+}
+
+void ImGuiPass::OnRender(CommandListBox& command_list)
 {
     if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         return;
@@ -68,18 +72,10 @@ void ImGuiPass::OnUpdate()
         }
     }
 
-    m_positions_buffer.get().reset(new IAVertexBuffer(m_context, positions));
-    m_texcoords_buffer.get().reset(new IAVertexBuffer(m_context, texcoords));
-    m_colors_buffer.get().reset(new IAVertexBuffer(m_context, colors));
-    m_indices_buffer.get().reset(new IAIndexBuffer(m_context, indices, gli::format::FORMAT_R32_UINT_PACK32));
-}
-
-void ImGuiPass::OnRender(CommandListBox& command_list)
-{
-    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
-        return;
-
-    ImDrawData* draw_data = ImGui::GetDrawData();
+    m_positions_buffer.get().reset(new IAVertexBuffer(m_context, command_list, positions));
+    m_texcoords_buffer.get().reset(new IAVertexBuffer(m_context, command_list, texcoords));
+    m_colors_buffer.get().reset(new IAVertexBuffer(m_context, command_list, colors));
+    m_indices_buffer.get().reset(new IAIndexBuffer(m_context, command_list, indices, gli::format::FORMAT_R32_UINT_PACK32));
 
     command_list.UseProgram(m_program);
     command_list.Attach(m_program.vs.cbv.vertexBuffer, m_program.vs.cbuffer.vertexBuffer);
@@ -88,10 +84,10 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
 
     command_list.Attach(m_program.ps.om.rtv0, m_input.rtv);
 
-    m_indices_buffer.get()->Bind();
-    m_positions_buffer.get()->BindToSlot(m_program.vs.ia.POSITION);
-    m_texcoords_buffer.get()->BindToSlot(m_program.vs.ia.TEXCOORD);
-    m_colors_buffer.get()->BindToSlot(m_program.vs.ia.COLOR);
+    m_indices_buffer.get()->Bind(command_list);
+    m_positions_buffer.get()->BindToSlot(command_list, m_program.vs.ia.POSITION);
+    m_texcoords_buffer.get()->BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
+    m_colors_buffer.get()->BindToSlot(command_list, m_program.vs.ia.COLOR);
 
     command_list.Attach(m_program.ps.sampler.sampler0, m_sampler);
 
@@ -179,7 +175,7 @@ void ImGuiPass::OnInputChar(unsigned int ch)
         io.AddInputCharacter((unsigned short)ch);
 }
 
-void ImGuiPass::CreateFontsTexture()
+void ImGuiPass::CreateFontsTexture(CommandListBox& command_list)
 {
     // Build texture atlas
     ImGuiIO& io = ImGui::GetIO();
@@ -191,7 +187,7 @@ void ImGuiPass::CreateFontsTexture()
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(width, height, gli::format::FORMAT_RGBA8_UNORM_PACK8, num_bytes, row_bytes);
-    m_context.GetCommandList().UpdateSubresource(m_font_texture_view, 0, pixels, row_bytes, num_bytes);
+    command_list.UpdateSubresource(m_font_texture_view, 0, pixels, row_bytes, num_bytes);
 
     // Store our identifier
     io.Fonts->TexID = (void*)&m_font_texture_view;

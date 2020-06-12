@@ -22,7 +22,7 @@ public:
     {
     } output;
 
-    ImGuiPass(Context& context, const Input& input, int width, int height);
+    ImGuiPass(Context& context, CommandListBox& command_list, const Input& input, int width, int height);
     ~ImGuiPass();
 
     virtual void OnUpdate() override;
@@ -36,7 +36,7 @@ public:
     virtual void OnInputChar(unsigned int ch) override;
 
 private:
-    void CreateFontsTexture();
+    void CreateFontsTexture(CommandListBox& command_list);
     void InitKey();
 
     Context& m_context;

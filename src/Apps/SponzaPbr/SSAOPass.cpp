@@ -10,7 +10,7 @@ inline float lerp(float a, float b, float f)
     return a + f * (b - a);
 }
 
-SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
+SSAOPass::SSAOPass(Context& context, CommandListBox& command_list, const Input& input, int width, int height)
     : m_context(context)
     , m_input(input)
     , m_width(width)
@@ -46,7 +46,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(4, 4, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);
-    context.GetCommandList().UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
+    command_list.UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
 
     if (m_context.IsVariableRateShadingSupported())
     {
@@ -65,7 +65,7 @@ SSAOPass::SSAOPass(Context& context, const Input& input, int width, int height)
         num_bytes = 0;
         row_bytes = 0;
         GetFormatInfo(shading_rate_width, shading_rate_height, gli::format::FORMAT_R8_UINT_PACK8, num_bytes, row_bytes);
-        context.GetCommandList().UpdateSubresource(m_shading_rate_texture, 0, shading_rate.data(), row_bytes, num_bytes);
+        command_list.UpdateSubresource(m_shading_rate_texture, 0, shading_rate.data(), row_bytes, num_bytes);
     }
 }
 
@@ -98,9 +98,9 @@ void SSAOPass::OnRender(CommandListBox& command_list)
     command_list.Attach(m_program.ps.om.dsv, m_depth_stencil_view);
     command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
 
-    m_input.square.ia.indices.Bind();
-    m_input.square.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
-    m_input.square.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
+    m_input.square.ia.indices.Bind(command_list);
+    m_input.square.ia.positions.BindToSlot(command_list, m_program.vs.ia.POSITION);
+    m_input.square.ia.texcoords.BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
 
     if (m_context.IsVariableRateShadingSupported())
     {
@@ -125,9 +125,9 @@ void SSAOPass::OnRender(CommandListBox& command_list)
         command_list.UseProgram(m_program_blur);
         command_list.Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
 
-        m_input.square.ia.indices.Bind();
-        m_input.square.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);
-        m_input.square.ia.texcoords.BindToSlot(m_program_blur.vs.ia.TEXCOORD);
+        m_input.square.ia.indices.Bind(command_list);
+        m_input.square.ia.positions.BindToSlot(command_list, m_program_blur.vs.ia.POSITION);
+        m_input.square.ia.texcoords.BindToSlot(command_list, m_program_blur.vs.ia.TEXCOORD);
         for (auto& range : m_input.square.ia.ranges)
         {
             command_list.Attach(m_program_blur.ps.srv.ssaoInput, m_ao);

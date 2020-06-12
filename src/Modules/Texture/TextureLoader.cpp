@@ -3,7 +3,7 @@
 #include <gli/gli.hpp>
 #include <SOIL.h>
 
-std::shared_ptr<Resource> CreateSRVFromFile(Context& context, const std::string& path)
+std::shared_ptr<Resource> CreateSRVFromFile(Context& context, CommandListBox& command_list, const std::string& path)
 {
     //return {};  // Generate MipMaps is not yet supported
 
@@ -19,14 +19,14 @@ std::shared_ptr<Resource> CreateSRVFromFile(Context& context, const std::string&
     size_t row_bytes = 0;
     size_t num_bytes = 0;
     GetFormatInfo(width, height, format, num_bytes, row_bytes);
-    context.GetCommandList().UpdateSubresource(res, 0, image, row_bytes, num_bytes);
+    command_list.UpdateSubresource(res, 0, image, row_bytes, num_bytes);
 
     SOIL_free_image_data(image);
 
     return res;
 }
 
-std::shared_ptr<Resource> CreateSRVFromFileDDS(Context& context, const std::string& path)
+std::shared_ptr<Resource> CreateSRVFromFileDDS(Context& context, CommandListBox& command_list, const std::string& path)
 {
     gli::texture Texture = gli::load(path);
     auto format = Texture.format();
@@ -41,16 +41,16 @@ std::shared_ptr<Resource> CreateSRVFromFileDDS(Context& context, const std::stri
         size_t row_bytes = 0;
         size_t num_bytes = 0;
         GetFormatInfo(Texture.extent(level).x, Texture.extent(level).y, format, num_bytes, row_bytes);
-        context.GetCommandList().UpdateSubresource(res, level, Texture.data(0, 0, level), row_bytes, num_bytes);
+        command_list.UpdateSubresource(res, level, Texture.data(0, 0, level), row_bytes, num_bytes);
     }
 
     return res;
 }
 
-std::shared_ptr<Resource> CreateTexture(Context& context, const std::string& path)
+std::shared_ptr<Resource> CreateTexture(Context& context, CommandListBox& command_list, const std::string& path)
 {
     if (path.find(".dds") != -1)
-        return CreateSRVFromFileDDS(context, path);
+        return CreateSRVFromFileDDS(context, command_list, path);
     else
-        return CreateSRVFromFile(context, path);
+        return CreateSRVFromFile(context, command_list, path);
 }

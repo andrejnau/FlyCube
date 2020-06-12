@@ -24,7 +24,7 @@ public:
         std::shared_ptr<Resource> ao;
     } output;
 
-    RayTracingAOPass(Context& context, const Input& input, int width, int height);
+    RayTracingAOPass(Context& context, CommandListBox& command_list, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;

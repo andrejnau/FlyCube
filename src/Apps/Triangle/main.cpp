@@ -14,29 +14,41 @@ int main(int argc, char* argv[])
     AppRect rect = app.GetAppRect();
     ProgramHolder<PixelShaderPS, VertexShaderVS> program(context);
 
+    std::shared_ptr<CommandListBox> upload_command_list = context.CreateCommandList();
+    upload_command_list->Open();
     std::vector<uint32_t> ibuf = { 0, 1, 2 };
     std::shared_ptr<Resource> index = context.CreateBuffer(BindFlag::kIndexBuffer, sizeof(uint32_t) * ibuf.size());
-    context.GetCommandList().UpdateSubresource(index, 0, ibuf.data(), 0, 0);
+    upload_command_list->UpdateSubresource(index, 0, ibuf.data(), 0, 0);
     std::vector<glm::vec3> pbuf = {
         glm::vec3(-0.5, -0.5, 0.0),
         glm::vec3(0.0,  0.5, 0.0),
         glm::vec3(0.5, -0.5, 0.0)
     };
     std::shared_ptr<Resource> pos = context.CreateBuffer(BindFlag::kVertexBuffer, sizeof(glm::vec3) * pbuf.size());
-    context.GetCommandList().UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
+    upload_command_list->UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
+    upload_command_list->Close();
+    context.ExecuteCommandLists({ upload_command_list });
 
     program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
 
+    std::vector<std::shared_ptr<CommandListBox>> command_lists;
+    for (uint32_t i = 0; i < Context::FrameCount; ++i)
+        command_lists.emplace_back(context.CreateCommandList());
+
     while (!app.PollEvents())
     {
-        context.GetCommandList().UseProgram(program);
-        context.GetCommandList().Attach(program.ps.cbv.Settings, program.ps.cbuffer.Settings);
-        context.GetCommandList().SetViewport(rect.width, rect.height);
-        context.GetCommandList().Attach(program.ps.om.rtv0, context.GetBackBuffer());
-        context.GetCommandList().ClearColor(program.ps.om.rtv0, { 0.0f, 0.2f, 0.4f, 1.0f });
-        context.GetCommandList().IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);
-        context.GetCommandList().IASetVertexBuffer(program.vs.ia.POSITION, pos);
-        context.GetCommandList().DrawIndexed(3, 0, 0);
+        decltype(auto) command_list = command_lists[context.GetFrameIndex()];
+        command_list->Open();
+        command_list->UseProgram(program);
+        command_list->Attach(program.ps.cbv.Settings, program.ps.cbuffer.Settings);
+        command_list->SetViewport(rect.width, rect.height);
+        command_list->Attach(program.ps.om.rtv0, context.GetBackBuffer(context.GetFrameIndex()));
+        command_list->ClearColor(program.ps.om.rtv0, { 0.0f, 0.2f, 0.4f, 1.0f });
+        command_list->IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);
+        command_list->IASetVertexBuffer(program.vs.ia.POSITION, pos);
+        command_list->DrawIndexed(3, 0, 0);
+        command_list->Close();
+        context.ExecuteCommandLists({ command_list });
         context.Present();
         app.UpdateFps();
     }

@@ -21,8 +21,8 @@ void SkinningPass::OnRender(CommandListBox& command_list)
         if (!model.bones.UpdateAnimation(glfwGetTime()))
             continue;
 
-        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context);
-        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context);
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context, command_list);
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context, command_list);
 
         command_list.Attach(m_program.cs.srv.index_buffer, model.ia.indices.GetBuffer());
 

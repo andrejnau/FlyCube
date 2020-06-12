@@ -63,9 +63,9 @@ void ComputeLuminance::Draw(CommandListBox& command_list, size_t buf_id)
     command_list.Attach(m_HDRApply.ps.om.dsv, m_input.dsv);
     command_list.ClearDepth(m_HDRApply.ps.om.dsv, 1.0f);
 
-    m_input.model.ia.indices.Bind();
-    m_input.model.ia.positions.BindToSlot(m_HDRApply.vs.ia.POSITION);
-    m_input.model.ia.texcoords.BindToSlot(m_HDRApply.vs.ia.TEXCOORD);
+    m_input.model.ia.indices.Bind(command_list);
+    m_input.model.ia.positions.BindToSlot(command_list, m_HDRApply.vs.ia.POSITION);
+    m_input.model.ia.texcoords.BindToSlot(command_list, m_HDRApply.vs.ia.TEXCOORD);
 
     for (auto& range : m_input.model.ia.ranges)
     {

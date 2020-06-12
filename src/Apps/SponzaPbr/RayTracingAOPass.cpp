@@ -1,6 +1,6 @@
 #include "RayTracingAOPass.h"
 
-RayTracingAOPass::RayTracingAOPass(Context& context, const Input& input, int width, int height)
+RayTracingAOPass::RayTracingAOPass(Context& context, CommandListBox& command_list, const Input& input, int width, int height)
     : m_context(context)
     , m_input(input)
     , m_width(width)
@@ -53,7 +53,7 @@ RayTracingAOPass::RayTracingAOPass(Context& context, const Input& input, int wid
     }
 
     m_buffer = m_context.CreateBuffer(BindFlag::kShaderResource, sizeof(glm::uvec4) * data.size());
-    m_context.GetCommandList().UpdateSubresource(m_buffer, 0, data.data());
+    command_list.UpdateSubresource(m_buffer, 0, data.data());
 }
 
 void RayTracingAOPass::OnUpdate()
@@ -133,9 +133,9 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
         command_list.UseProgram(m_program_blur);
         command_list.Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
 
-        m_input.square.ia.indices.Bind();
-        m_input.square.ia.positions.BindToSlot(m_program_blur.vs.ia.POSITION);
-        m_input.square.ia.texcoords.BindToSlot(m_program_blur.vs.ia.TEXCOORD);
+        m_input.square.ia.indices.Bind(command_list);
+        m_input.square.ia.positions.BindToSlot(command_list, m_program_blur.vs.ia.POSITION);
+        m_input.square.ia.texcoords.BindToSlot(command_list, m_program_blur.vs.ia.TEXCOORD);
         for (auto& range : m_input.square.ia.ranges)
         {
             command_list.Attach(m_program_blur.ps.srv.ssaoInput, m_ao);

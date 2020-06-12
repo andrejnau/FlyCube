@@ -1,10 +1,10 @@
 #include "Geometry/Model.h"
 
-Model::Model(Context& context, const std::string& file, uint32_t flags)
+Model::Model(Context& context, CommandListBox& command_list, const std::string& file, uint32_t flags)
     : m_context(context)
-    , m_model_loader(std::make_unique<ModelLoader>(file, (aiPostProcessSteps)flags, *this))
-    , ia(context, meshes)
-    , m_cache(context)
+    , m_model_loader(std::make_unique<ModelLoader>(file, static_cast<aiPostProcessSteps>(flags), *this))
+    , ia(context, command_list, meshes)
+    , m_cache(context, command_list)
 {
     for (auto & mesh : meshes)
     {

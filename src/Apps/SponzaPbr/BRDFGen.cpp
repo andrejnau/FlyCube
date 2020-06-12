@@ -39,9 +39,9 @@ void BRDFGen::DrawBRDF(CommandListBox& command_list)
     command_list.Attach(m_program.ps.om.dsv, m_dsv);
     command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
 
-    m_input.square_model.ia.indices.Bind();
-    m_input.square_model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
-    m_input.square_model.ia.texcoords.BindToSlot(m_program.vs.ia.TEXCOORD);
+    m_input.square_model.ia.indices.Bind(command_list);
+    m_input.square_model.ia.positions.BindToSlot(command_list, m_program.vs.ia.POSITION);
+    m_input.square_model.ia.texcoords.BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
 
     for (auto& range : m_input.square_model.ia.ranges)
     {

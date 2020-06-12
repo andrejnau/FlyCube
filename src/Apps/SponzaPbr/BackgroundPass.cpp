@@ -37,8 +37,8 @@ void BackgroundPass::OnRender(CommandListBox& command_list)
     command_list.Attach(m_program.ps.om.rtv0, m_input.rtv);
     command_list.Attach(m_program.ps.om.dsv, m_input.dsv);
 
-    m_input.model.ia.indices.Bind();
-    m_input.model.ia.positions.BindToSlot(m_program.vs.ia.POSITION);
+    m_input.model.ia.indices.Bind(command_list);
+    m_input.model.ia.positions.BindToSlot(command_list, m_program.vs.ia.POSITION);
 
     command_list.Attach(m_program.ps.srv.environmentMap, m_input.environment);
 
