@@ -22,7 +22,7 @@ public:
         SSAOPass::Output& ssao_pass;
         std::shared_ptr<Resource>*& ray_tracing_ao;
         Model& model;
-        Camera& camera;
+        const Camera& camera;
         glm::vec3& light_pos;
         std::shared_ptr<Resource>& irradince;
         std::shared_ptr<Resource>& prefilter;

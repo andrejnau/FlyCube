@@ -13,7 +13,7 @@ public:
     struct Input
     {
         Model& model;
-        Camera& camera;
+        const Camera& camera;
         std::shared_ptr<Resource>& environment;
         std::shared_ptr<Resource>& rtv;
         std::shared_ptr<Resource>& dsv;

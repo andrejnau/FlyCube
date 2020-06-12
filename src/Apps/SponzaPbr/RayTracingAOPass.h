@@ -16,7 +16,7 @@ public:
         GeometryPass::Output& geometry_pass;
         SceneModels& scene_list;
         Model& square;
-        Camera& camera;
+        const Camera& camera;
     };
 
     struct Output

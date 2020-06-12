@@ -14,7 +14,7 @@ public:
     struct Input
     {
         SceneModels& scene_list;
-        Camera& camera;
+        const Camera& camera;
     };
 
     struct Output

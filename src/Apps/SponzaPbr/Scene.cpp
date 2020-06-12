@@ -120,6 +120,7 @@ Scene::Scene(Context& context, int width, int height)
     m_camera.SetCameraPos(glm::vec3(-3.0, 2.75, 0.0));
     m_camera.SetCameraYaw(-178.0f);
     m_camera.SetCameraYaw(-1.75f);
+    m_camera.SetViewport(m_width, m_height);
 
     for (uint32_t i = 0; i < Context::FrameCount * m_passes.size(); ++i)
         m_command_lists.emplace_back(m_context.CreateCommandList());
@@ -150,7 +151,6 @@ void Scene::RenderFrame()
     }
 
     m_render_target_view = m_context.GetBackBuffer(m_context.GetFrameIndex());
-    m_camera.SetViewport(m_width, m_height);
 
     std::vector<std::shared_ptr<CommandListBox>> command_lists;
 
