@@ -165,9 +165,6 @@ std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
 
 std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
 {
-    if (format == gli::FORMAT_D24_UNORM_S8_UINT_PACK32)
-        format = gli::FORMAT_D32_SFLOAT_S8_UINT_PACK64;
-
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
     res->format = format;
     res->resource_type = ResourceType::kTexture;

@@ -151,7 +151,7 @@ void LightPass::OnResize(int width, int height)
 void LightPass::CreateSizeDependentResources()
 {
     output.rtv = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    m_depth_stencil_view = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_width, m_height, 1);
 }
 
 void LightPass::OnModifySponzaSettings(const SponzaSettings& settings)

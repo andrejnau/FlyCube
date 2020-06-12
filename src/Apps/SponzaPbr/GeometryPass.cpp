@@ -109,5 +109,5 @@ void GeometryPass::CreateSizeDependentResources()
     output.normal = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
     output.albedo = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
     output.material = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
-    output.dsv = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
+    output.dsv = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
 }
