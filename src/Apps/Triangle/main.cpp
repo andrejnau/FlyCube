@@ -1,6 +1,6 @@
 #include <AppBox/AppBox.h>
 #include <AppBox/ArgsParser.h>
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Context/Program.h>
 #include <ProgramRef/PixelShaderPS.h>
 #include <ProgramRef/VertexShaderVS.h>
@@ -11,20 +11,21 @@ int main(int argc, char* argv[])
     AppBox app("Triangle", settings);
 
     Context context(settings, app.GetWindow());
+    Device& device(*context.GetDevice());
     AppRect rect = app.GetAppRect();
-    ProgramHolder<PixelShaderPS, VertexShaderVS> program(context);
+    ProgramHolder<PixelShaderPS, VertexShaderVS> program(device);
 
     std::shared_ptr<CommandListBox> upload_command_list = context.CreateCommandList();
     upload_command_list->Open();
     std::vector<uint32_t> ibuf = { 0, 1, 2 };
-    std::shared_ptr<Resource> index = context.CreateBuffer(BindFlag::kIndexBuffer, sizeof(uint32_t) * ibuf.size());
+    std::shared_ptr<Resource> index = device.CreateBuffer(BindFlag::kIndexBuffer, sizeof(uint32_t) * ibuf.size());
     upload_command_list->UpdateSubresource(index, 0, ibuf.data(), 0, 0);
     std::vector<glm::vec3> pbuf = {
         glm::vec3(-0.5, -0.5, 0.0),
         glm::vec3(0.0,  0.5, 0.0),
         glm::vec3(0.5, -0.5, 0.0)
     };
-    std::shared_ptr<Resource> pos = context.CreateBuffer(BindFlag::kVertexBuffer, sizeof(glm::vec3) * pbuf.size());
+    std::shared_ptr<Resource> pos = device.CreateBuffer(BindFlag::kVertexBuffer, sizeof(glm::vec3) * pbuf.size());
     upload_command_list->UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
     upload_command_list->Close();
     context.ExecuteCommandLists({ upload_command_list });

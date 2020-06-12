@@ -1,18 +1,18 @@
 #include "RayTracingAOPass.h"
 
-RayTracingAOPass::RayTracingAOPass(Context& context, CommandListBox& command_list, const Input& input, int width, int height)
-    : m_context(context)
+RayTracingAOPass::RayTracingAOPass(Device& device, CommandListBox& command_list, const Input& input, int width, int height)
+    : m_device(device)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_raytracing_program(context, [&](auto& program)
+    , m_raytracing_program(device, [&](auto& program)
     {
         program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
     })
-    , m_program_blur(context)
+    , m_program_blur(device)
 {
     CreateSizeDependentResources();
-    m_sampler = m_context.CreateSampler({
+    m_sampler = m_device.CreateSampler({
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
         SamplerComparisonFunc::kNever 
@@ -29,7 +29,7 @@ RayTracingAOPass::RayTracingAOPass(Context& context, CommandListBox& command_lis
             view_desc.bindless = true;
             view_desc.dimension = ResourceDimension::kTexture2D;
             view_desc.view_type = ViewType::kShaderResource;
-            m_views.emplace_back(m_context.CreateView(material.texture.opacity, view_desc));
+            m_views.emplace_back(m_device.CreateView(material.texture.opacity, view_desc));
             info.x = m_views.back()->GetDescriptorId();
 
             view_desc.bindless = true;
@@ -37,7 +37,7 @@ RayTracingAOPass::RayTracingAOPass(Context& context, CommandListBox& command_lis
             view_desc.view_type = ViewType::kShaderResource;
             view_desc.offset = sizeof(uint32_t) * range.start_index_location;
             view_desc.stride = sizeof(uint32_t);
-            m_views.emplace_back(m_context.CreateView(model.ia.indices.GetBuffer(), view_desc));
+            m_views.emplace_back(m_device.CreateView(model.ia.indices.GetBuffer(), view_desc));
             info.y = m_views.back()->GetDescriptorId();
 
             view_desc.bindless = true;
@@ -45,14 +45,14 @@ RayTracingAOPass::RayTracingAOPass(Context& context, CommandListBox& command_lis
             view_desc.view_type = ViewType::kShaderResource;
             view_desc.offset = sizeof(glm::vec2) * range.base_vertex_location;
             view_desc.stride = sizeof(glm::vec2);
-            m_views.emplace_back(m_context.CreateView(model.ia.texcoords.IsDynamic() ? model.ia.texcoords.GetDynamicBuffer() : model.ia.texcoords.GetBuffer(), view_desc));
+            m_views.emplace_back(m_device.CreateView(model.ia.texcoords.IsDynamic() ? model.ia.texcoords.GetDynamicBuffer() : model.ia.texcoords.GetBuffer(), view_desc));
             info.z = m_views.back()->GetDescriptorId();
 
             data.emplace_back(info);
         }
     }
 
-    m_buffer = m_context.CreateBuffer(BindFlag::kShaderResource, sizeof(glm::uvec4) * data.size());
+    m_buffer = m_device.CreateBuffer(BindFlag::kShaderResource | BindFlag::kCopyDest, sizeof(glm::uvec4) * data.size());
     command_list.UpdateSubresource(m_buffer, 0, data.data());
 }
 
@@ -130,8 +130,10 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
 
     if (m_settings.use_ao_blur)
     {
+        command_list.SetViewport(m_width, m_height);
         command_list.UseProgram(m_program_blur);
         command_list.Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
+        command_list.Attach(m_program_blur.ps.sampler.g_sampler, m_sampler);
 
         m_input.square.ia.indices.Bind(command_list);
         m_input.square.ia.positions.BindToSlot(command_list, m_program_blur.vs.ia.POSITION);
@@ -159,8 +161,8 @@ void RayTracingAOPass::OnResize(int width, int height)
 
 void RayTracingAOPass::CreateSizeDependentResources()
 {
-    m_ao = m_context.CreateTexture(BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    m_ao_blur = m_context.CreateTexture(BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_ao = m_device.CreateTexture(BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_ao_blur = m_device.CreateTexture(BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
 }
 
 void RayTracingAOPass::OnModifySponzaSettings(const SponzaSettings& settings)

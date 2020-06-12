@@ -2,7 +2,7 @@
 
 #include "GeometryPass.h"
 #include "SponzaSettings.h"
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/CubemapVS.h>
 #include <ProgramRef/Equirectangular2CubemapPS.h>
@@ -24,7 +24,7 @@ public:
         std::shared_ptr<Resource> environment;
     } output;
 
-    Equirectangular2Cubemap(Context& context, const Input& input, int width, int height);
+    Equirectangular2Cubemap(Device& device, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;
@@ -36,7 +36,7 @@ private:
     void CreateSizeDependentResources();
 
     SponzaSettings m_settings;
-    Context& m_context;
+    Device& m_device;
     Input m_input;
     int m_width;
     int m_height;

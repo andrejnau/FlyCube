@@ -2,22 +2,22 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-IBLCompute::IBLCompute(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+IBLCompute::IBLCompute(Device& device, const Input& input, int width, int height)
+    : m_device(device)
     , m_input(input)
-    , m_program(context)
-    , m_program_pre_pass(context)
-    , m_program_backgroud(context)
-    , m_program_downsample(context)
+    , m_program(device)
+    , m_program_pre_pass(device)
+    , m_program_backgroud(device)
+    , m_program_downsample(device)
     , m_width(width)
     , m_height(height)
 {
-    m_sampler = m_context.CreateSampler({
+    m_sampler = m_device.CreateSampler({
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
         SamplerComparisonFunc::kNever });
 
-    m_compare_sampler = m_context.CreateSampler({
+    m_compare_sampler = m_device.CreateSampler({
         SamplerFilter::kComparisonMinMagMipLinear,
         SamplerTextureAddressMode::kClamp,
         SamplerComparisonFunc::kLess });
@@ -94,10 +94,10 @@ void IBLCompute::OnRender(CommandListBox& command_list)
 
         if (!ibl_model.ibl_rtv)
         {
-            ibl_model.ibl_rtv = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource | BindFlag::kUnorderedAccess,
+            ibl_model.ibl_rtv = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource | BindFlag::kUnorderedAccess,
                 gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_size, m_size, 6, texture_mips);
 
-            ibl_model.ibl_dsv = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_size, m_size, 6);
+            ibl_model.ibl_dsv = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_size, m_size, 6);
         }
         else
         {
@@ -153,8 +153,8 @@ void IBLCompute::DrawPrePass(CommandListBox& command_list, Model & ibl_model)
 
         model.bones.UpdateAnimation(glfwGetTime());
 
-        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context, command_list);
-        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context, command_list);
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_device, command_list);
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_device, command_list);
 
         command_list.Attach(m_program_pre_pass.vs.srv.bone_info, bones_info_srv);
         command_list.Attach(m_program_pre_pass.vs.srv.gBones, bone_srv);
@@ -233,8 +233,8 @@ void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
 
         model.bones.UpdateAnimation(glfwGetTime());
 
-        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context, command_list);
-        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context, command_list);
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_device, command_list);
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_device, command_list);
 
         command_list.Attach(m_program.vs.srv.bone_info, bones_info_srv);
         command_list.Attach(m_program.vs.srv.gBones, bone_srv);

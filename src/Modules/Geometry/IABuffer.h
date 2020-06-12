@@ -1,19 +1,19 @@
 #pragma once
-
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Resource/Resource.h>
+#include <CommandListBox/CommandListBox.h>
 #include <vector>
 
 class IAVertexBuffer
 {
 public:
     template<typename T>
-    IAVertexBuffer(Context& context, CommandListBox& command_list, const std::vector<T>& v)
-        : m_context(context)
+    IAVertexBuffer(Device& device, CommandListBox& command_list, const std::vector<T>& v)
+        : m_device(device)
         , m_size(v.size() * sizeof(v.front()))
         , m_count(v.size())
     {
-        m_buffer = m_context.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kShaderResource, static_cast<uint32_t>(m_size));
+        m_buffer = m_device.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kShaderResource | BindFlag::kCopyDest, static_cast<uint32_t>(m_size));
         if (m_buffer)
             command_list.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
@@ -34,7 +34,7 @@ public:
     std::shared_ptr<Resource> GetDynamicBuffer()
     {
         if (!m_dynamic_buffer)
-            m_dynamic_buffer = m_context.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kUnorderedAccess, static_cast<uint32_t>(m_size));
+            m_dynamic_buffer = m_device.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kUnorderedAccess, static_cast<uint32_t>(m_size));
         return m_dynamic_buffer;
     }
 
@@ -49,7 +49,7 @@ public:
     }
 
 private:
-    Context& m_context;
+    Device& m_device;
     std::shared_ptr<Resource> m_buffer;
     std::shared_ptr<Resource> m_dynamic_buffer;
     size_t m_size;
@@ -60,13 +60,13 @@ class IAIndexBuffer
 {
 public:
     template<typename T>
-    IAIndexBuffer(Context& context, CommandListBox& command_list, const std::vector<T>& v, gli::format format)
-        : m_context(context)
+    IAIndexBuffer(Device& device, CommandListBox& command_list, const std::vector<T>& v, gli::format format)
+        : m_device(device)
         , m_format(format)
         , m_count(v.size())
         , m_size(m_count * sizeof(v.front()))
     {
-        m_buffer = m_context.CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kShaderResource, static_cast<uint32_t>(m_size));
+        m_buffer = m_device.CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kShaderResource | BindFlag::kCopyDest, static_cast<uint32_t>(m_size));
         if (m_buffer)
             command_list.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
@@ -93,7 +93,7 @@ public:
     }
 
 private:
-    Context& m_context;
+    Device& m_device;
     std::shared_ptr<Resource> m_buffer;
     size_t m_count;
     size_t m_size;

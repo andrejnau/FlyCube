@@ -97,7 +97,7 @@ public:
         std::ifstream is(m_option.output_dir + "/" + m_option.shader_name + ".h");
         std::string old_content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
         std::stringstream buf;
-        m_tmpl.render(m_tcontext, buf);
+        m_tmpl.render(m_tdevice, buf);
         std::string new_content = buf.str();
         if (new_content != old_content)
         {
@@ -187,12 +187,12 @@ private:
 
     void ParseShader(ComPtr<ID3D12ShaderReflection>& reflector)
     {
-        m_tcontext["ShaderName"] = m_option.shader_name;
-        m_tcontext["ShaderType"] = TargetToShaderType(m_target);
-        m_tcontext["ShaderPrefix"] = TargetToShaderPrefix(m_target);
-        m_tcontext["ShaderPath"] = m_option.shader_path;
-        m_tcontext["Entrypoint"] = m_entrypoint;
-        m_tcontext["Target"] = m_target;
+        m_tdevice["ShaderName"] = m_option.shader_name;
+        m_tdevice["ShaderType"] = TargetToShaderType(m_target);
+        m_tdevice["ShaderPrefix"] = TargetToShaderPrefix(m_target);
+        m_tdevice["ShaderPath"] = m_option.shader_path;
+        m_tdevice["Entrypoint"] = m_entrypoint;
+        m_tdevice["Target"] = m_target;
 
         mustache::data tcbuffers{ mustache::data::type::list };
 
@@ -245,8 +245,8 @@ private:
 
             tcbuffers.push_back(tcbuffer);
         }
-        m_tcontext["CBuffers"] = mustache::data{ tcbuffers };
-        m_tcontext["HasCBuffers"] = tcbuffers.is_non_empty_list();
+        m_tdevice["CBuffers"] = mustache::data{ tcbuffers };
+        m_tdevice["HasCBuffers"] = tcbuffers.is_non_empty_list();
 
         mustache::data ttextures{ mustache::data::type::list };
         mustache::data tuavs{ mustache::data::type::list };
@@ -296,12 +296,12 @@ private:
             }
             }
         }
-        m_tcontext["Textures"] = mustache::data{ ttextures };
-        m_tcontext["HasTextures"] = ttextures.is_non_empty_list();
-        m_tcontext["UAVs"] = mustache::data{ tuavs };
-        m_tcontext["HasUAVs"] = tuavs.is_non_empty_list();
-        m_tcontext["Samplers"] = mustache::data{ tsamplers };
-        m_tcontext["HasSamplers"] = tsamplers.is_non_empty_list();
+        m_tdevice["Textures"] = mustache::data{ ttextures };
+        m_tdevice["HasTextures"] = ttextures.is_non_empty_list();
+        m_tdevice["UAVs"] = mustache::data{ tuavs };
+        m_tdevice["HasUAVs"] = tuavs.is_non_empty_list();
+        m_tdevice["Samplers"] = mustache::data{ tsamplers };
+        m_tdevice["HasSamplers"] = tsamplers.is_non_empty_list();
 
         if (m_target.find("vs") != -1)
         {
@@ -326,8 +326,8 @@ private:
                 tinput.set("Slot", std::to_string(i));
                 tinputs.push_back(tinput);
             }
-            m_tcontext["Inputs"] = mustache::data{ tinputs };
-            m_tcontext["HasInputs"] = tinputs.is_non_empty_list();
+            m_tdevice["Inputs"] = mustache::data{ tinputs };
+            m_tdevice["HasInputs"] = tinputs.is_non_empty_list();
         }
 
         if (m_target.find("ps") != -1)
@@ -348,20 +348,20 @@ private:
                 toutput.set("Separator", toutputs.is_empty_list() ? ":" : ",");
                 toutputs.push_back(toutput);
             }
-            m_tcontext["Outputs"] = mustache::data{ toutputs };
-            m_tcontext["DSVSeparator"] = toutputs.is_empty_list() ? ":" : ",";
-            m_tcontext["HasOutputs"] = true;
+            m_tdevice["Outputs"] = mustache::data{ toutputs };
+            m_tdevice["DSVSeparator"] = toutputs.is_empty_list() ? ":" : ",";
+            m_tdevice["HasOutputs"] = true;
         }
     }
 
     void ParseLibrary(ComPtr<ID3D12LibraryReflection>& library_reflector)
     {
-        m_tcontext["ShaderName"] = m_option.shader_name;
-        m_tcontext["ShaderType"] = TargetToShaderType(m_target);
-        m_tcontext["ShaderPrefix"] = TargetToShaderPrefix(m_target);
-        m_tcontext["ShaderPath"] = m_option.shader_path;
-        m_tcontext["Entrypoint"] = m_entrypoint;
-        m_tcontext["Target"] = m_target;
+        m_tdevice["ShaderName"] = m_option.shader_name;
+        m_tdevice["ShaderType"] = TargetToShaderType(m_target);
+        m_tdevice["ShaderPrefix"] = TargetToShaderPrefix(m_target);
+        m_tdevice["ShaderPath"] = m_option.shader_path;
+        m_tdevice["Entrypoint"] = m_entrypoint;
+        m_tdevice["Target"] = m_target;
 
         mustache::data tcbuffers{ mustache::data::type::list };
         std::set<std::string> resources;
@@ -423,8 +423,8 @@ private:
                 tcbuffers.push_back(tcbuffer);
             }
         }
-        m_tcontext["CBuffers"] = mustache::data{ tcbuffers };
-        m_tcontext["HasCBuffers"] = tcbuffers.is_non_empty_list();
+        m_tdevice["CBuffers"] = mustache::data{ tcbuffers };
+        m_tdevice["HasCBuffers"] = tcbuffers.is_non_empty_list();
 
         mustache::data ttextures{ mustache::data::type::list };
         mustache::data tuavs{ mustache::data::type::list };
@@ -485,17 +485,17 @@ private:
                 }
             }
         }
-        m_tcontext["Textures"] = mustache::data{ ttextures };
-        m_tcontext["HasTextures"] = ttextures.is_non_empty_list();
-        m_tcontext["UAVs"] = mustache::data{ tuavs };
-        m_tcontext["HasUAVs"] = tuavs.is_non_empty_list();
-        m_tcontext["Samplers"] = mustache::data{ tsamplers };
-        m_tcontext["HasSamplers"] = tsamplers.is_non_empty_list();
+        m_tdevice["Textures"] = mustache::data{ ttextures };
+        m_tdevice["HasTextures"] = ttextures.is_non_empty_list();
+        m_tdevice["UAVs"] = mustache::data{ tuavs };
+        m_tdevice["HasUAVs"] = tuavs.is_non_empty_list();
+        m_tdevice["Samplers"] = mustache::data{ tsamplers };
+        m_tdevice["HasSamplers"] = tsamplers.is_non_empty_list();
     }
 
     const Option& m_option;
     mustache::mustache m_tmpl;
-    mustache::data m_tcontext;
+    mustache::data m_tdevice;
     std::string m_target;
     ShaderType m_type;
     std::string m_entrypoint;

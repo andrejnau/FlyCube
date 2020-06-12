@@ -99,15 +99,15 @@ MergedMesh::MergedMesh(const std::vector<IMesh>& meshes)
     }
 }
 
-IAMergedMesh::IAMergedMesh(Context & context, CommandListBox& command_list, std::vector<IMesh>& meshes)
+IAMergedMesh::IAMergedMesh(Device & device, CommandListBox& command_list, std::vector<IMesh>& meshes)
     : m_data(std::make_unique<MergedMesh>(meshes))
-    , positions(context, command_list, m_data->positions)
-    , normals(context, command_list, m_data->normals)
-    , texcoords(context, command_list, m_data->texcoords)
-    , tangents(context, command_list, m_data->tangents)
-    , bones_offset(context, command_list, m_data->bones_offset)
-    , bones_count(context, command_list, m_data->bones_count)
-    , indices(context, command_list, m_data->indices, gli::format::FORMAT_R32_UINT_PACK32)
+    , positions(device, command_list, m_data->positions)
+    , normals(device, command_list, m_data->normals)
+    , texcoords(device, command_list, m_data->texcoords)
+    , tangents(device, command_list, m_data->tangents)
+    , bones_offset(device, command_list, m_data->bones_offset)
+    , bones_count(device, command_list, m_data->bones_count)
+    , indices(device, command_list, m_data->indices, gli::format::FORMAT_R32_UINT_PACK32)
     , ranges(std::move(m_data->ranges))
 {
     m_data.reset();

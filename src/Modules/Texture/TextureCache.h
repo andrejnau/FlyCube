@@ -1,17 +1,16 @@
 #pragma once
-
 #include "TextureLoader.h"
 #include <glm/glm.hpp>
 
 class TextureCache
 {
 public:
-    TextureCache(Context& context, CommandListBox& command_list);
+    TextureCache(Device& device, CommandListBox& command_list);
     std::shared_ptr<Resource> Load(const std::string& path);
     std::shared_ptr<Resource> CreateTextuteStab(const glm::vec4& val);
 
 private:
-    Context& m_context;
+    Device& m_device;
     CommandListBox& m_command_list;
     std::map<std::string, std::shared_ptr<Resource>> m_cache;
 

@@ -2,7 +2,7 @@
 
 #include "GeometryPass.h"
 #include "SponzaSettings.h"
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Camera/Camera.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/SSAOPassPS.h>
@@ -24,7 +24,7 @@ public:
         std::shared_ptr<Resource> ao;
     } output;
 
-    SSAOPass(Context& context, CommandListBox& command_list, const Input& input, int width, int height);
+    SSAOPass(Device& device, CommandListBox& command_list, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;
@@ -36,7 +36,7 @@ private:
     void CreateSizeDependentResources();
 
     SponzaSettings m_settings;
-    Context& m_context;
+    Device& m_device;
     Input m_input;
     int m_width;
     int m_height;
@@ -47,4 +47,5 @@ private:
     ProgramHolder<SSAOBlurPassPS, SSAOPassVS> m_program_blur;
     std::shared_ptr<Resource> m_ao;
     std::shared_ptr<Resource> m_ao_blur;
+    std::shared_ptr<Resource> m_sampler;
 };

@@ -7,7 +7,7 @@
 #include "SponzaSettings.h"
 
 #include "RenderPass.h"
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/LightPassPS.h>
 #include <ProgramRef/LightPassVS.h>
@@ -34,7 +34,7 @@ public:
         std::shared_ptr<Resource> rtv;
     } output;
 
-    LightPass(Context& context, const Input& input, int width, int height);
+    LightPass(Device& device, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;
@@ -46,7 +46,7 @@ private:
     void SetDefines(ProgramHolder<LightPassPS, LightPassVS>& program);
 
     SponzaSettings m_settings;
-    Context& m_context;
+    Device& m_device;
     Input m_input;
     int m_width;
     int m_height;

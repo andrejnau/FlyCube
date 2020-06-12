@@ -30,6 +30,9 @@ private:
             "VUID-vkCmdPipelineBarrier-pDependencies-02285",
             "VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02460",
             "VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02458",
+            "VUID-vkCmdClearColorImage-image",
+            "VUID-vkCmdClearDepthStencilImage-pRanges",
+            "VUID-vkCmdClearDepthStencilImage-image",
         };
         for (auto& str : muted_warnings)
         {

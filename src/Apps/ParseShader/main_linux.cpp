@@ -28,7 +28,7 @@ public:
     {
         kainjow::mustache::mustache tmpl(ReadFile(template_path));
         std::stringstream buf;
-        tmpl.render(m_tcontext, buf);
+        tmpl.render(m_tdevice, buf);
         std::string new_content = buf.str();
 
         std::ifstream is(output_dir + "/" + m_shader_name + ".h");
@@ -147,12 +147,12 @@ private:
         spirv_cross::CompilerHLSL compiler(SpirvCompile(m_shader_desc, option));
         spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
-        m_tcontext["ShaderName"] = m_shader_name;
-        m_tcontext["ShaderType"] = ShaderTypeToString(m_shader_desc.type);
-        m_tcontext["ShaderPrefix"] = TypeToShaderPrefix(m_shader_desc.type);
-        m_tcontext["ShaderPath"] = m_shader_desc.shader_path;
-        m_tcontext["Entrypoint"] = m_shader_desc.entrypoint;
-        m_tcontext["Target"] = m_shader_desc.target;
+        m_tdevice["ShaderName"] = m_shader_name;
+        m_tdevice["ShaderType"] = ShaderTypeToString(m_shader_desc.type);
+        m_tdevice["ShaderPrefix"] = TypeToShaderPrefix(m_shader_desc.type);
+        m_tdevice["ShaderPath"] = m_shader_desc.shader_path;
+        m_tdevice["Entrypoint"] = m_shader_desc.entrypoint;
+        m_tdevice["Target"] = m_shader_desc.target;
 
         kainjow::mustache::data tcbuffers{ kainjow::mustache::data::type::list };
 
@@ -183,7 +183,7 @@ private:
             tcbuffer.set("Variables", tvariables);
             tcbuffers.push_back(tcbuffer);
         }
-        m_tcontext["CBuffers"] = kainjow::mustache::data{ tcbuffers };
+        m_tdevice["CBuffers"] = kainjow::mustache::data{ tcbuffers };
 
         kainjow::mustache::data ttextures{ kainjow::mustache::data::type::list };
         kainjow::mustache::data tuavs{ kainjow::mustache::data::type::list };
@@ -231,9 +231,9 @@ private:
         add_resources(compiler, resources.storage_buffers);
         add_resources(compiler, resources.separate_samplers);
 
-        m_tcontext["Textures"] = kainjow::mustache::data{ ttextures };
-        m_tcontext["UAVs"] = kainjow::mustache::data{ tuavs };
-        m_tcontext["Samplers"] = kainjow::mustache::data{ tsamplers };
+        m_tdevice["Textures"] = kainjow::mustache::data{ ttextures };
+        m_tdevice["UAVs"] = kainjow::mustache::data{ tuavs };
+        m_tdevice["Samplers"] = kainjow::mustache::data{ tsamplers };
 
         if (m_shader_desc.type == ShaderType::kVertex)
         {
@@ -254,7 +254,7 @@ private:
                 tinput.set("Slot", std::to_string(compiler.get_decoration(resource.id, spv::DecorationLocation)));
                 tinputs.push_back(tinput);
             }
-            m_tcontext["Inputs"] = kainjow::mustache::data{ tinputs };
+            m_tdevice["Inputs"] = kainjow::mustache::data{ tinputs };
         }
 
         if (m_shader_desc.type == ShaderType::kPixel)
@@ -268,9 +268,9 @@ private:
                 toutput.set("Separator", toutputs.is_empty_list() ? ":" : ",");
                 toutputs.push_back(toutput);
             }
-            m_tcontext["Outputs"] = kainjow::mustache::data{ toutputs };
-            m_tcontext["DSVSeparator"] = toutputs.is_empty_list() ? ":" : ",";
-            m_tcontext["HasOutputs"] = true;
+            m_tdevice["Outputs"] = kainjow::mustache::data{ toutputs };
+            m_tdevice["DSVSeparator"] = toutputs.is_empty_list() ? ":" : ",";
+            m_tdevice["HasOutputs"] = true;
         }
     }
 
@@ -318,7 +318,7 @@ private:
 
     ShaderDesc m_shader_desc;
     const std::string& m_shader_name;
-    kainjow::mustache::data m_tcontext;
+    kainjow::mustache::data m_tdevice;
 };
 
 class ParseCmd

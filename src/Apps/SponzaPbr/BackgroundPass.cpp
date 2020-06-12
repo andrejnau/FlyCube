@@ -2,14 +2,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-BackgroundPass::BackgroundPass(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+BackgroundPass::BackgroundPass(Device& device, const Input& input, int width, int height)
+    : m_device(device)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context)
+    , m_program(device)
 {
-    m_sampler = m_context.CreateSampler({
+    m_sampler = m_device.CreateSampler({
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
         SamplerComparisonFunc::kNever }

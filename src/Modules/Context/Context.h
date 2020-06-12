@@ -34,30 +34,6 @@ public:
         return cmd;
     }
 
-    bool IsDxrSupported() const;
-
-    bool IsVariableRateShadingSupported() const
-    {
-        return m_device->IsVariableRateShadingSupported();
-    }
-
-    uint32_t GetShadingRateImageTileSize() const
-    {
-        return m_device->GetShadingRateImageTileSize();
-    }
-
-    std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
-    {
-        return m_device->CreateView(resource, view_desc);
-    }
-
-    std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth = 1, int mip_levels = 1);
-    std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size);
-    std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc);
-
-    std::shared_ptr<Shader> CompileShader(const ShaderDesc& desc);
-    std::shared_ptr<Program> CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders);
-
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandListBox>>& command_lists);
 
     std::shared_ptr<Resource> GetBackBuffer(uint32_t buffer);
@@ -86,27 +62,4 @@ private:
     std::vector<std::shared_ptr<CommandListBox>> m_swapchain_command_lists;
     std::shared_ptr<CommandListBox> m_swapchain_command_list;
     std::shared_ptr<Fence> m_fence;
-};
-
-template <typename T>
-class PerFrameData
-{
-public:
-    PerFrameData(Context& context)
-        : m_context(context)
-    {
-    }
-
-    T& get()
-    {
-        return m_data[m_context.GetFrameIndex()];
-    }
-
-    T& operator[](size_t pos)
-    {
-        return m_data[pos];
-    }
-private:
-    Context& m_context;
-    std::array<T, Context::FrameCount> m_data;
 };

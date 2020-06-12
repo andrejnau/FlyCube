@@ -1,9 +1,9 @@
 #include "SkinningPass.h"
 
-SkinningPass::SkinningPass(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+SkinningPass::SkinningPass(Device& device, const Input& input, int width, int height)
+    : m_device(device)
     , m_input(input)
-    , m_program(context)
+    , m_program(device)
 {
 }
 
@@ -21,8 +21,8 @@ void SkinningPass::OnRender(CommandListBox& command_list)
         if (!model.bones.UpdateAnimation(glfwGetTime()))
             continue;
 
-        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_context, command_list);
-        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_context, command_list);
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_device, command_list);
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_device, command_list);
 
         command_list.Attach(m_program.cs.srv.index_buffer, model.ia.indices.GetBuffer());
 

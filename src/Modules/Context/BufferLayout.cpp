@@ -2,14 +2,14 @@
 
 static constexpr bool use_copy = false;
 
-ViewProvider::ViewProvider(const std::shared_ptr<Device>& device, const uint8_t* src_data, BufferLayout& layout)
+ViewProvider::ViewProvider(Device& device, const uint8_t* src_data, BufferLayout& layout)
     : m_device(device)
     , m_src_data(src_data)
     , m_layout(layout)
     , m_dst_data(layout.dst_buffer_size)
 {
     if (use_copy)
-        m_resource = m_device->CreateBuffer(BindFlag::kConstantBuffer, static_cast<uint32_t>(m_layout.dst_buffer_size), MemoryType::kDefault);
+        m_resource = m_device.CreateBuffer(BindFlag::kConstantBuffer, static_cast<uint32_t>(m_layout.dst_buffer_size), MemoryType::kDefault);
 }
 
 ResourceLazyViewDesc ViewProvider::GetView(CommandListBox& command_list)
@@ -21,7 +21,7 @@ ResourceLazyViewDesc ViewProvider::GetView(CommandListBox& command_list)
     }
     else if (SyncData() || !m_resource)
     {
-        auto upload = m_device->CreateBuffer(BindFlag::kConstantBuffer, static_cast<uint32_t>(m_layout.dst_buffer_size), MemoryType::kUpload);
+        auto upload = m_device.CreateBuffer(BindFlag::kConstantBuffer, static_cast<uint32_t>(m_layout.dst_buffer_size), MemoryType::kUpload);
         upload->UpdateUploadData(m_dst_data.data(), 0, m_dst_data.size());
         m_resource = upload;
     }

@@ -21,36 +21,6 @@ Context::Context(const Settings& settings, GLFWwindow* window)
     m_swapchain_command_list->Open();
 }
 
-std::shared_ptr<Resource> Context::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
-{
-    return m_device->CreateTexture(bind_flag | BindFlag::kCopyDest, format, msaa_count, width, height, depth, mip_levels);
-}
-
-std::shared_ptr<Resource> Context::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
-{
-    return m_device->CreateBuffer(bind_flag | BindFlag::kCopyDest, buffer_size, MemoryType::kDefault);
-}
-
-std::shared_ptr<Resource> Context::CreateSampler(const SamplerDesc& desc)
-{
-    return m_device->CreateSampler(desc);
-}
-
-bool Context::IsDxrSupported() const
-{
-    return m_device->IsDxrSupported();
-}
-
-std::shared_ptr<Shader> Context::CompileShader(const ShaderDesc& desc)
-{
-    return m_device->CompileShader(desc);
-}
-
-std::shared_ptr<Program> Context::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
-{
-    return m_device->CreateProgram(shaders);
-}
-
 std::shared_ptr<Resource> Context::GetBackBuffer(uint32_t buffer)
 {
     return m_swapchain->GetBackBuffer(buffer);

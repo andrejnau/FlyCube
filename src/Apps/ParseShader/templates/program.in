@@ -1,5 +1,5 @@
 #pragma once
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Context/Program.h>
 #include <Context/BufferLayout.h>
 #include <glm/glm.hpp>
@@ -61,25 +61,25 @@ public:{{#CBuffers}}
 {{/CBuffers}}{{#HasCBuffers}}
     struct Cbuffer
     {
-        Cbuffer({{ShaderName}}& shader, Context& context){{#CBuffers}}
-            {{BufferSeparator}} {{BufferName}}(context, shader.{{BufferName}}_layout){{/CBuffers}}
+        Cbuffer({{ShaderName}}& shader, Device& device){{#CBuffers}}
+            {{BufferSeparator}} {{BufferName}}(device, shader.{{BufferName}}_layout){{/CBuffers}}
         {
         }
 {{#CBuffers}}
         ConstantBuffer<{{BufferName}}> {{BufferName}};{{/CBuffers}}
     } cbuffer;
 
-    {{ShaderName}}(Context& context)
-        : cbuffer(*this, context)
+    {{ShaderName}}(Device& device)
+        : cbuffer(*this, device)
     {
     }{{/HasCBuffers}}{{^HasCBuffers}}
-    {{ShaderName}}(Context& context)
+    {{ShaderName}}(Device& device)
     {
     }{{/HasCBuffers}}
 
-    void CompileShader(Context& context)
+    void CompileShader(Device& device)
     {
-        shader = context.CompileShader(desc);{{#CBuffers}}
+        shader = device.CompileShader(desc);{{#CBuffers}}
         cbv.{{Name}} = shader->GetBindKey("{{Name}}");{{/CBuffers}}{{#Textures}}
         srv.{{Name}} = shader->GetBindKey("{{Name}}");{{/Textures}}{{#UAVs}}
         uav.{{Name}} = shader->GetBindKey("{{Name}}");{{/UAVs}}{{#Samplers}}

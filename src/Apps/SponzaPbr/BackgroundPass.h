@@ -2,7 +2,7 @@
 
 #include "GeometryPass.h"
 #include "SponzaSettings.h"
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/BackgroundPS.h>
 #include <ProgramRef/BackgroundVS.h>
@@ -25,7 +25,7 @@ public:
         std::shared_ptr<Resource> irradince;
     } output;
 
-    BackgroundPass(Context& context, const Input& input, int width, int height);
+    BackgroundPass(Device& device, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;
@@ -34,7 +34,7 @@ public:
 
 private:
     SponzaSettings m_settings;
-    Context& m_context;
+    Device& m_device;
     Input m_input;
     int m_width;
     int m_height;

@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Context/BufferLayout.h>
 
 template<ShaderType, typename T> class ShaderHolderImpl {};
@@ -24,8 +24,8 @@ public:
         return ps;
     }
 
-    ShaderHolderImpl(Context& context)
-        : ps(context)
+    ShaderHolderImpl(Device& device)
+        : ps(device)
     {
     }
 };
@@ -44,8 +44,8 @@ public:
         return vs;
     }
 
-    ShaderHolderImpl(Context& context)
-        : vs(context)
+    ShaderHolderImpl(Device& device)
+        : vs(device)
     {
     }
 };
@@ -64,8 +64,8 @@ public:
         return gs;
     }
 
-    ShaderHolderImpl(Context& context)
-        : gs(context)
+    ShaderHolderImpl(Device& device)
+        : gs(device)
     {
     }
 };
@@ -84,8 +84,8 @@ public:
         return cs;
     }
 
-    ShaderHolderImpl(Context& context)
-        : cs(context)
+    ShaderHolderImpl(Device& device)
+        : cs(device)
     {
     }
 };
@@ -104,8 +104,8 @@ public:
         return lib;
     }
 
-    ShaderHolderImpl(Context& context)
-        : lib(context)
+    ShaderHolderImpl(Device& device)
+        : lib(device)
     {
     }
 };
@@ -122,17 +122,17 @@ template<typename ... Args>
 class ProgramHolder : public ShaderHolder<Args>...
 {
 public:
-    ProgramHolder(Context& context)
-        : ShaderHolder<Args>(context)...
-        , m_context(context)
+    ProgramHolder(Device& device)
+        : ShaderHolder<Args>(device)...
+        , m_device(device)
     {
         CompileShaders();
     }
 
     template<typename Setup>
-    ProgramHolder(Context& context, const Setup& setup)
-        : ShaderHolder<Args>(context)...
-        , m_context(context)
+    ProgramHolder(Device& device, const Setup& setup)
+        : ShaderHolder<Args>(device)...
+        , m_device(device)
     {
         setup(*this);
         CompileShaders();
@@ -157,7 +157,7 @@ private:
         {
             api.desc.define["__INTERNAL_DO_NOT_INVERT_Y__"] = "1";
         }
-        api.CompileShader(m_context);
+        api.CompileShader(m_device);
         return true;
     }
 
@@ -172,9 +172,9 @@ private:
     void CompileShaders()
     {
         EnumerateShader<Args...>();
-        m_program = m_context.CreateProgram({ static_cast<ShaderHolder<Args>&>(*this).GetApi().shader ... });
+        m_program = m_device.CreateProgram({ static_cast<ShaderHolder<Args>&>(*this).GetApi().shader ... });
     }
 
-    Context& m_context;
+    Device& m_device;
     std::shared_ptr<Program> m_program;
 };

@@ -2,7 +2,7 @@
 
 #include "SponzaSettings.h"
 #include "RenderPass.h"
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Camera/Camera.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/GeometryPassPS.h>
@@ -26,7 +26,7 @@ public:
         std::shared_ptr<Resource> dsv;
     } output;
 
-    GeometryPass(Context& context, const Input& input, int width, int height);
+    GeometryPass(Device& device, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;
@@ -34,7 +34,7 @@ public:
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
-    Context& m_context;
+    Device& m_device;
     Input m_input;
     int m_width;
     int m_height;

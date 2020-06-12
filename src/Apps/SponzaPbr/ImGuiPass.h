@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 #include "RenderPass.h"
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/ImGuiPassPS.h>
 #include <ProgramRef/ImGuiPassVS.h>
@@ -22,7 +22,7 @@ public:
     {
     } output;
 
-    ImGuiPass(Context& context, CommandListBox& command_list, const Input& input, int width, int height);
+    ImGuiPass(Device& device, CommandListBox& command_list, const Input& input, int width, int height, GLFWwindow* window);
     ~ImGuiPass();
 
     virtual void OnUpdate() override;
@@ -39,17 +39,18 @@ private:
     void CreateFontsTexture(CommandListBox& command_list);
     void InitKey();
 
-    Context& m_context;
+    Device& m_device;
     Input m_input;
     int m_width;
     int m_height;
+    GLFWwindow* m_window;
 
     std::shared_ptr<Resource> m_font_texture_view;
     ProgramHolder<ImGuiPassPS, ImGuiPassVS> m_program;
-    PerFrameData<std::unique_ptr<IAVertexBuffer>> m_positions_buffer;
-    PerFrameData<std::unique_ptr<IAVertexBuffer>> m_texcoords_buffer;
-    PerFrameData<std::unique_ptr<IAVertexBuffer>> m_colors_buffer;
-    PerFrameData<std::unique_ptr<IAIndexBuffer>> m_indices_buffer;
+    std::array<std::unique_ptr<IAVertexBuffer>, 3> m_positions_buffer;
+    std::array<std::unique_ptr<IAVertexBuffer>, 3> m_texcoords_buffer;
+    std::array<std::unique_ptr<IAVertexBuffer>, 3> m_colors_buffer;
+    std::array<std::unique_ptr<IAIndexBuffer>, 3> m_indices_buffer;
     std::shared_ptr<Resource> m_sampler;
     ImGuiSettings m_settings;
 };

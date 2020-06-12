@@ -2,17 +2,17 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-Equirectangular2Cubemap::Equirectangular2Cubemap(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+Equirectangular2Cubemap::Equirectangular2Cubemap(Device& device, const Input& input, int width, int height)
+    : m_device(device)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program_equirectangular2cubemap(context)
-    , m_program_downsample(context)
+    , m_program_equirectangular2cubemap(device)
+    , m_program_downsample(device)
 {
     CreateSizeDependentResources();
 
-    m_sampler = m_context.CreateSampler({
+    m_sampler = m_device.CreateSampler({
     SamplerFilter::kAnisotropic,
     SamplerTextureAddressMode::kWrap,
     SamplerComparisonFunc::kNever });
@@ -111,8 +111,8 @@ void Equirectangular2Cubemap::CreateSizeDependentResources()
         ++m_texture_mips;
     }
 
-    output.environment = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6, m_texture_mips);
-    m_dsv = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6);
+    output.environment = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6, m_texture_mips);
+    m_dsv = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_texture_size, m_texture_size, 6);
 }
 
 void Equirectangular2Cubemap::OnModifySponzaSettings(const SponzaSettings& settings)

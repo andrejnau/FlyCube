@@ -13,30 +13,31 @@ int main(int argc, char *argv[])
     AppBox app("DxrTriangle", settings);
     AppRect rect = app.GetAppRect();
     Context context(settings, app.GetWindow());
-    if (!context.IsDxrSupported())
+    Device& device(*context.GetDevice());
+    if (!device.IsDxrSupported())
         throw std::runtime_error("Ray Tracing is not supported");
 
-    ProgramHolder<RayTracing> raytracing_program(context);
-    ProgramHolder<GraphicsVS, GraphicsPS> graphics_program(context);
+    ProgramHolder<RayTracing> raytracing_program(device);
+    ProgramHolder<GraphicsVS, GraphicsPS> graphics_program(device);
 
     std::shared_ptr<CommandListBox> upload_command_list = context.CreateCommandList();
     upload_command_list->Open();
 
-    Model square(context, *upload_command_list, "model/square.obj");
+    Model square(device, *upload_command_list, "model/square.obj");
 
     std::vector<glm::vec3> positions_data = {
         glm::vec3(-0.5, -0.5, 0.0),
         glm::vec3(0.0, 0.5, 0.0),
         glm::vec3(0.5, -0.5, 0.0)
     };
-    std::shared_ptr<Resource> positions = context.CreateBuffer(BindFlag::kVertexBuffer, sizeof(glm::vec3) * positions_data.size());
+    std::shared_ptr<Resource> positions = device.CreateBuffer(BindFlag::kVertexBuffer, sizeof(glm::vec3) * positions_data.size());
     upload_command_list->UpdateSubresource(positions, 0, positions_data.data(), 0, 0);
     std::shared_ptr<Resource> bottom = upload_command_list->CreateBottomLevelAS({ positions, gli::format::FORMAT_RGB32_SFLOAT_PACK32, 3 });
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> geometry = {
         { bottom, glm::mat4() },
     };
     std::shared_ptr<Resource> top = upload_command_list->CreateTopLevelAS(geometry);
-    std::shared_ptr<Resource> uav = context.CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kShaderResource, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, rect.width, rect.height);
+    std::shared_ptr<Resource> uav = device.CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kShaderResource, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, rect.width, rect.height);
     upload_command_list->Close();
     context.ExecuteCommandLists({ upload_command_list });
 

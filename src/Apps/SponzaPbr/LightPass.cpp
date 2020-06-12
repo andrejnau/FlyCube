@@ -2,25 +2,25 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-LightPass::LightPass(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+LightPass::LightPass(Device& device, const Input& input, int width, int height)
+    : m_device(device)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context, std::bind(&LightPass::SetDefines, this, std::placeholders::_1))
+    , m_program(device, std::bind(&LightPass::SetDefines, this, std::placeholders::_1))
 {
     CreateSizeDependentResources();
-    m_sampler = m_context.CreateSampler({
+    m_sampler = m_device.CreateSampler({
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
         SamplerComparisonFunc::kNever });
 
-    m_sampler_brdf = m_context.CreateSampler({
+    m_sampler_brdf = m_device.CreateSampler({
         SamplerFilter::kMinMagMipLinear,
         SamplerTextureAddressMode::kClamp,
         SamplerComparisonFunc::kNever });
 
-    m_compare_sampler = m_context.CreateSampler({
+    m_compare_sampler = m_device.CreateSampler({
         SamplerFilter::kComparisonMinMagMipLinear,
         SamplerTextureAddressMode::kClamp,
         SamplerComparisonFunc::kLess });
@@ -150,8 +150,8 @@ void LightPass::OnResize(int width, int height)
 
 void LightPass::CreateSizeDependentResources()
 {
-    output.rtv = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
+    output.rtv = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
 }
 
 void LightPass::OnModifySponzaSettings(const SponzaSettings& settings)

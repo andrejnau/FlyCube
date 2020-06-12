@@ -12,13 +12,13 @@ struct BufferLayout
 class ViewProvider : public DeferredView
 {
 public:
-    ViewProvider(const std::shared_ptr<Device>& device, const uint8_t* src_data, BufferLayout& layout);
+    ViewProvider(Device& device, const uint8_t* src_data, BufferLayout& layout);
     ResourceLazyViewDesc GetView(CommandListBox& command_list) override;
 
 private:
     bool SyncData();
 
-    std::shared_ptr<Device> m_device;
+    Device& m_device;
     const uint8_t* m_src_data;
     BufferLayout& m_layout;
     std::vector<uint8_t> m_dst_data;
@@ -29,10 +29,10 @@ template<typename T>
 class ConstantBuffer : public T
 {
 public:
-    ConstantBuffer(Context& context, BufferLayout& layout)
+    ConstantBuffer(Device& device, BufferLayout& layout)
     {
         T& data = static_cast<T&>(*this);
-        m_view_provider = std::make_shared<ViewProvider>(context.GetDevice(), reinterpret_cast<const uint8_t*>(&data), layout);
+        m_view_provider = std::make_shared<ViewProvider>(device, reinterpret_cast<const uint8_t*>(&data), layout);
     }
 
     operator std::shared_ptr<DeferredView>& ()

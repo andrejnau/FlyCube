@@ -2,13 +2,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-ShadowPass::ShadowPass(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+ShadowPass::ShadowPass(Device& device, const Input& input, int width, int height)
+    : m_device(device)
     , m_input(input)
-    , m_program(context)
+    , m_program(device)
 {
     CreateSizeDependentResources();
-    m_sampler = m_context.CreateSampler({
+    m_sampler = m_device.CreateSampler({
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
         SamplerComparisonFunc::kNever });
@@ -85,8 +85,7 @@ void ShadowPass::OnResize(int width, int height)
 
 void ShadowPass::CreateSizeDependentResources()
 {
-    output.srv = m_context.CreateTexture(BindFlag::kDepthStencil | BindFlag::kShaderResource, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_settings.s_size, m_settings.s_size, 6);
-    m_buffer = m_context.CreateBuffer(BindFlag::kRenderTarget, sizeof(float) * m_settings.s_size * m_settings.s_size);
+    output.srv = m_device.CreateTexture(BindFlag::kDepthStencil | BindFlag::kShaderResource, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_settings.s_size, m_settings.s_size, 6);
 }
 
 void ShadowPass::OnModifySponzaSettings(const SponzaSettings& settings)

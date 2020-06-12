@@ -2,7 +2,7 @@
 
 #include "RenderPass.h"
 #include "SponzaSettings.h"
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/SkinningCS.h>
 
@@ -18,7 +18,7 @@ public:
     {
     } output;
 
-    SkinningPass(Context& context, const Input& input, int width, int height);
+    SkinningPass(Device& device, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;
@@ -26,7 +26,7 @@ public:
 
 private:
     SponzaSettings m_settings;
-    Context& m_context;
+    Device& m_device;
     Input m_input;
     ProgramHolder<SkinningCS> m_program;
 };

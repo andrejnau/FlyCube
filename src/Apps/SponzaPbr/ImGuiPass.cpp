@@ -6,16 +6,13 @@
 #include <Geometry/IABuffer.h>
 #include <Utilities/FormatHelper.h>
 
-ImGuiPass::ImGuiPass(Context& context, CommandListBox& command_list, const Input& input, int width, int height)
-    : m_context(context)
+ImGuiPass::ImGuiPass(Device& device, CommandListBox& command_list, const Input& input, int width, int height, GLFWwindow* window)
+    : m_device(device)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context)
-    , m_positions_buffer(context)
-    , m_texcoords_buffer(context)
-    , m_colors_buffer(context)
-    , m_indices_buffer(context)
+    , m_window(window)
+    , m_program(device)
     , m_settings(m_input.root_scene)
 {
     ImGuiIO& io = ImGui::GetIO();
@@ -23,7 +20,7 @@ ImGuiPass::ImGuiPass(Context& context, CommandListBox& command_list, const Input
 
     InitKey();
     CreateFontsTexture(command_list);
-    m_sampler = m_context.CreateSampler({
+    m_sampler = m_device.CreateSampler({
         SamplerFilter::kMinMagMipLinear,
         SamplerTextureAddressMode::kWrap,
         SamplerComparisonFunc::kAlways });
@@ -40,7 +37,7 @@ void ImGuiPass::OnUpdate()
 
 void ImGuiPass::OnRender(CommandListBox& command_list)
 {
-    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         return;
 
     m_settings.NewFrame();
@@ -72,10 +69,11 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
         }
     }
 
-    m_positions_buffer.get().reset(new IAVertexBuffer(m_context, command_list, positions));
-    m_texcoords_buffer.get().reset(new IAVertexBuffer(m_context, command_list, texcoords));
-    m_colors_buffer.get().reset(new IAVertexBuffer(m_context, command_list, colors));
-    m_indices_buffer.get().reset(new IAIndexBuffer(m_context, command_list, indices, gli::format::FORMAT_R32_UINT_PACK32));
+    static uint32_t index = 0;
+    m_positions_buffer[index].reset(new IAVertexBuffer(m_device, command_list, positions));
+    m_texcoords_buffer[index].reset(new IAVertexBuffer(m_device, command_list, texcoords));
+    m_colors_buffer[index].reset(new IAVertexBuffer(m_device, command_list, colors));
+    m_indices_buffer[index].reset(new IAIndexBuffer(m_device, command_list, indices, gli::format::FORMAT_R32_UINT_PACK32));
 
     command_list.UseProgram(m_program);
     command_list.Attach(m_program.vs.cbv.vertexBuffer, m_program.vs.cbuffer.vertexBuffer);
@@ -84,10 +82,10 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
 
     command_list.Attach(m_program.ps.om.rtv0, m_input.rtv);
 
-    m_indices_buffer.get()->Bind(command_list);
-    m_positions_buffer.get()->BindToSlot(command_list, m_program.vs.ia.POSITION);
-    m_texcoords_buffer.get()->BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
-    m_colors_buffer.get()->BindToSlot(command_list, m_program.vs.ia.COLOR);
+    m_indices_buffer[index]->Bind(command_list);
+    m_positions_buffer[index]->BindToSlot(command_list, m_program.vs.ia.POSITION);
+    m_texcoords_buffer[index]->BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
+    m_colors_buffer[index]->BindToSlot(command_list, m_program.vs.ia.COLOR);
 
     command_list.Attach(m_program.ps.sampler.sampler0, m_sampler);
 
@@ -121,6 +119,8 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
         }
         vtx_offset += cmd_list->VtxBuffer.Size;
     }
+
+    index = (index + 1) % 3;
 }
 
 void ImGuiPass::OnResize(int width, int height)
@@ -133,7 +133,7 @@ void ImGuiPass::OnResize(int width, int height)
 
 void ImGuiPass::OnKey(int key, int action)
 {
-    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
     {
         ImGuiIO& io = ImGui::GetIO();
         if (action == GLFW_PRESS)
@@ -183,7 +183,7 @@ void ImGuiPass::CreateFontsTexture(CommandListBox& command_list)
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
-    m_font_texture_view = m_context.CreateTexture(BindFlag::kShaderResource, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, width, height);
+    m_font_texture_view = m_device.CreateTexture(BindFlag::kShaderResource | BindFlag::kCopyDest, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, width, height);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(width, height, gli::format::FORMAT_RGBA8_UNORM_PACK8, num_bytes, row_bytes);

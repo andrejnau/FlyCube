@@ -2,7 +2,7 @@
 
 #include "GeometryPass.h"
 #include "SponzaSettings.h"
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/BRDFPS.h>
 #include <ProgramRef/BRDFVS.h>
@@ -20,7 +20,7 @@ public:
         std::shared_ptr<Resource> brdf;
     } output;
 
-    BRDFGen(Context& context, const Input& input, int width, int height);
+    BRDFGen(Device& device, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;
@@ -31,7 +31,7 @@ private:
     void DrawBRDF(CommandListBox& command_list);
 
     SponzaSettings m_settings;
-    Context& m_context;
+    Device& m_device;
     Input m_input;
     std::shared_ptr<Resource> m_dsv;
     ProgramHolder<BRDFVS, BRDFPS> m_program;

@@ -10,14 +10,18 @@ inline float lerp(float a, float b, float f)
     return a + f * (b - a);
 }
 
-SSAOPass::SSAOPass(Context& context, CommandListBox& command_list, const Input& input, int width, int height)
-    : m_context(context)
+SSAOPass::SSAOPass(Device& device, CommandListBox& command_list, const Input& input, int width, int height)
+    : m_device(device)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program(context, std::bind(&SSAOPass::SetDefines, this, std::placeholders::_1))
-    , m_program_blur(context)
+    , m_program(device, std::bind(&SSAOPass::SetDefines, this, std::placeholders::_1))
+    , m_program_blur(device)
 {
+    m_sampler = m_device.CreateSampler({
+        SamplerFilter::kAnisotropic,
+        SamplerTextureAddressMode::kWrap,
+        SamplerComparisonFunc::kNever });
     CreateSizeDependentResources();
 
     std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
@@ -42,16 +46,16 @@ SSAOPass::SSAOPass(Context& context, CommandListBox& command_list, const Input& 
         glm::vec4 noise(randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator) * 2.0f - 1.0f, 0.0f, 0.0f);
         ssaoNoise.push_back(noise);
     }
-    m_noise_texture = context.CreateTexture(BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 4, 4);
+    m_noise_texture = device.CreateTexture(BindFlag::kShaderResource | BindFlag::kCopyDest, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 4, 4);
     size_t num_bytes = 0;
     size_t row_bytes = 0;
     GetFormatInfo(4, 4, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);
     command_list.UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
 
-    if (m_context.IsVariableRateShadingSupported())
+    if (m_device.IsVariableRateShadingSupported())
     {
         std::vector<ShadingRate> shading_rate;
-        uint32_t tile_size = context.GetShadingRateImageTileSize();
+        uint32_t tile_size = device.GetShadingRateImageTileSize();
         uint32_t shading_rate_width = (width + tile_size - 1) / tile_size;
         uint32_t shading_rate_height = (height + tile_size - 1) / tile_size;
         for (uint32_t i = 0; i < shading_rate_width; ++i)
@@ -61,7 +65,7 @@ SSAOPass::SSAOPass(Context& context, CommandListBox& command_list, const Input& 
                 shading_rate.emplace_back(ShadingRate::k2x2);
             }
         }
-        m_shading_rate_texture = context.CreateTexture(BindFlag::kShadingRateSource, gli::format::FORMAT_R8_UINT_PACK8, 1, shading_rate_width, shading_rate_height);
+        m_shading_rate_texture = device.CreateTexture(BindFlag::kShadingRateSource | BindFlag::kCopyDest, gli::format::FORMAT_R8_UINT_PACK8, 1, shading_rate_width, shading_rate_height);
         num_bytes = 0;
         row_bytes = 0;
         GetFormatInfo(shading_rate_width, shading_rate_height, gli::format::FORMAT_R8_UINT_PACK8, num_bytes, row_bytes);
@@ -102,7 +106,7 @@ void SSAOPass::OnRender(CommandListBox& command_list)
     m_input.square.ia.positions.BindToSlot(command_list, m_program.vs.ia.POSITION);
     m_input.square.ia.texcoords.BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
 
-    if (m_context.IsVariableRateShadingSupported())
+    if (m_device.IsVariableRateShadingSupported())
     {
         command_list.RSSetShadingRate(ShadingRate::k1x1, std::array<ShadingRateCombiner, 2>{ ShadingRateCombiner::kPassthrough, ShadingRateCombiner::kOverride });
         command_list.RSSetShadingRateImage(m_shading_rate_texture);
@@ -114,7 +118,7 @@ void SSAOPass::OnRender(CommandListBox& command_list)
         command_list.Attach(m_program.ps.srv.noiseTexture, m_noise_texture);
         command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
-    if (m_context.IsVariableRateShadingSupported())
+    if (m_device.IsVariableRateShadingSupported())
     {
         command_list.RSSetShadingRateImage({});
         command_list.RSSetShadingRate(ShadingRate::k1x1);
@@ -124,6 +128,7 @@ void SSAOPass::OnRender(CommandListBox& command_list)
     {
         command_list.UseProgram(m_program_blur);
         command_list.Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
+        command_list.Attach(m_program_blur.ps.sampler.g_sampler, m_sampler);
 
         m_input.square.ia.indices.Bind(command_list);
         m_input.square.ia.positions.BindToSlot(command_list, m_program_blur.vs.ia.POSITION);
@@ -151,9 +156,9 @@ void SSAOPass::OnResize(int width, int height)
 
 void SSAOPass::CreateSizeDependentResources()
 {
-    m_ao = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    m_ao_blur = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
-    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
+    m_ao = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_ao_blur = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource | BindFlag::kUnorderedAccess, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
 }
 
 void SSAOPass::OnModifySponzaSettings(const SponzaSettings& settings)

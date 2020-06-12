@@ -2,14 +2,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-ComputeLuminance::ComputeLuminance(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+ComputeLuminance::ComputeLuminance(Device& device, const Input& input, int width, int height)
+    : m_device(device)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_HDRLum1DPassCS(context)
-    , m_HDRLum2DPassCS(context)
-    , m_HDRApply(context)
+    , m_HDRLum1DPassCS(device)
+    , m_HDRLum2DPassCS(device)
+    , m_HDRApply(device)
 {
     CreateBuffers();
 }
@@ -109,13 +109,13 @@ void ComputeLuminance::CreateBuffers()
     m_thread_group_x = (m_width + 31) / 32;
     m_thread_group_y = (m_height + 31) / 32;
     uint32_t total_invoke = m_thread_group_x * m_thread_group_y;
-    std::shared_ptr<Resource> buffer = m_context.CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kShaderResource, sizeof(float) * total_invoke);
+    std::shared_ptr<Resource> buffer = m_device.CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kShaderResource, sizeof(float) * total_invoke);
     m_use_res.push_back(buffer);
 
     for (int block_size = m_thread_group_x * m_thread_group_y; block_size > 1;)
     {
         uint32_t next_block_size = (block_size + 127) / 128;
-        std::shared_ptr<Resource> buffer = m_context.CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kShaderResource, sizeof(float) * next_block_size);
+        std::shared_ptr<Resource> buffer = m_device.CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kShaderResource, sizeof(float) * next_block_size);
         m_use_res.push_back(buffer);
         block_size = next_block_size;
     }

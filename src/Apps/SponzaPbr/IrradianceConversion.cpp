@@ -2,17 +2,17 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-IrradianceConversion::IrradianceConversion(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+IrradianceConversion::IrradianceConversion(Device& device, const Input& input, int width, int height)
+    : m_device(device)
     , m_input(input)
     , m_width(width)
     , m_height(height)
-    , m_program_irradiance_convolution(context)
-    , m_program_prefilter(context)
+    , m_program_irradiance_convolution(device)
+    , m_program_prefilter(device)
 {
     CreateSizeDependentResources();
 
-    m_sampler = m_context.CreateSampler({
+    m_sampler = m_device.CreateSampler({
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
         SamplerComparisonFunc::kNever });

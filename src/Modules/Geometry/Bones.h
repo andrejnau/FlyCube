@@ -11,8 +11,8 @@ class Bones
 public:
     void LoadModel(const aiScene* scene);
     void ProcessMesh(const aiMesh* mesh, IMesh& cur_mesh);
-    std::shared_ptr<Resource> GetBonesInfo(Context& context, CommandListBox& command_list);
-    std::shared_ptr<Resource> GetBone(Context& context, CommandListBox& command_list);
+    std::shared_ptr<Resource> GetBonesInfo(Device& device, CommandListBox& command_list);
+    std::shared_ptr<Resource> GetBone(Device& device, CommandListBox& command_list);
     bool UpdateAnimation(float time_in_seconds);
 
 private:

@@ -54,6 +54,7 @@ private:
     void CreateRT();
 
     Context& m_context;
+    Device& m_device;
 
     int m_width;
     int m_height;

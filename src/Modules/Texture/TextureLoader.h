@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Texture/TextureInfo.h"
-#include <Context/Context.h>
+#include <Device/Device.h>
+#include <CommandListBox/CommandListBox.h>
 
-std::shared_ptr<Resource> CreateTexture(Context& context, CommandListBox& command_list, const std::string& path);
+std::shared_ptr<Resource> CreateTexture(Device& device, CommandListBox& command_list, const std::string& path);

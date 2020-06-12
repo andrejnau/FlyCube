@@ -6,36 +6,37 @@
 
 Scene::Scene(Context& context, int width, int height)
     : m_context(context)
+    , m_device(*context.GetDevice())
     , m_width(width)
     , m_height(height)
     , m_upload_command_list(context.CreateCommandList(true))
-    , m_model_square(m_context, *m_upload_command_list, "model/square.obj")
-    , m_model_cube(m_context, *m_upload_command_list, "model/cube.obj", ~aiProcess_FlipWindingOrder)
-    , m_skinning_pass(m_context, { m_scene_list }, width, height)
-    , m_geometry_pass(m_context, { m_scene_list, m_camera }, width, height)
-    , m_shadow_pass(m_context, { m_scene_list, m_camera, m_light_pos }, width, height)
-    , m_ssao_pass(m_context, *m_upload_command_list, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
-    , m_brdf(m_context, { m_model_square }, width, height)
-    , m_equirectangular2cubemap(m_context, { m_model_cube, m_equirectangular_environment }, width, height)
-    , m_ibl_compute(m_context, { m_shadow_pass.output, m_scene_list, m_camera, m_light_pos, m_model_cube, m_equirectangular2cubemap.output.environment }, width, height)
-    , m_light_pass(m_context, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_rtao, m_model_square, m_camera, m_light_pos, m_irradince, m_prefilter, m_brdf.output.brdf }, width, height)
-    , m_background_pass(m_context, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, m_light_pass.output.rtv, m_geometry_pass.output.dsv }, width, height)
-    , m_compute_luminance(m_context, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
-    , m_imgui_pass(m_context, *m_upload_command_list, { m_render_target_view, *this }, width, height)
+    , m_model_square(m_device, *m_upload_command_list, "model/square.obj")
+    , m_model_cube(m_device, *m_upload_command_list, "model/cube.obj", ~aiProcess_FlipWindingOrder)
+    , m_skinning_pass(m_device, { m_scene_list }, width, height)
+    , m_geometry_pass(m_device, { m_scene_list, m_camera }, width, height)
+    , m_shadow_pass(m_device, { m_scene_list, m_camera, m_light_pos }, width, height)
+    , m_ssao_pass(m_device, *m_upload_command_list, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
+    , m_brdf(m_device, { m_model_square }, width, height)
+    , m_equirectangular2cubemap(m_device, { m_model_cube, m_equirectangular_environment }, width, height)
+    , m_ibl_compute(m_device, { m_shadow_pass.output, m_scene_list, m_camera, m_light_pos, m_model_cube, m_equirectangular2cubemap.output.environment }, width, height)
+    , m_light_pass(m_device, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_rtao, m_model_square, m_camera, m_light_pos, m_irradince, m_prefilter, m_brdf.output.brdf }, width, height)
+    , m_background_pass(m_device, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, m_light_pass.output.rtv, m_geometry_pass.output.dsv }, width, height)
+    , m_compute_luminance(m_device, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
+    , m_imgui_pass(m_device, *m_upload_command_list, { m_render_target_view, *this }, width, height, context.GetWindow())
 {
 #if !defined(_DEBUG) && 1
-    m_scene_list.emplace_back(m_context, *m_upload_command_list, "model/sponza_pbr/sponza.obj");
+    m_scene_list.emplace_back(m_device, *m_upload_command_list, "model/sponza_pbr/sponza.obj");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f));
 #endif
 
 #if 1
-    m_scene_list.emplace_back(m_context, *m_upload_command_list, "model/export3dcoat/export3dcoat.obj");
+    m_scene_list.emplace_back(m_device, *m_upload_command_list, "model/export3dcoat/export3dcoat.obj");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(0.0f, 35.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     m_scene_list.back().ibl_request = true;
 #endif
 
 #if 0
-    m_scene_list.emplace_back(m_context, *m_upload_command_list, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
+    m_scene_list.emplace_back(m_device, *m_upload_command_list, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(75.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 #endif
 
@@ -52,7 +53,7 @@ Scene::Scene(Context& context, int width, int height)
     float x = 300;
     for (const auto& test : hdr_tests)
     {
-        m_scene_list.emplace_back(m_context, *m_upload_command_list, "model/pbr_test/" + test.first + "/sphere.obj");
+        m_scene_list.emplace_back(m_device, *m_upload_command_list, "model/pbr_test/" + test.first + "/sphere.obj");
         m_scene_list.back().matrix = glm::scale(glm::vec3(0.01f)) * glm::translate(glm::vec3(x, 500, 0.0f));
         m_scene_list.back().ibl_request = test.second;
         if (!test.second)
@@ -69,13 +70,13 @@ Scene::Scene(Context& context, int width, int height)
 
     CreateRT();
 
-    m_equirectangular_environment = CreateTexture(m_context, *m_upload_command_list, GetAssetFullPath("model/newport_loft.dds"));
+    m_equirectangular_environment = CreateTexture(m_device, *m_upload_command_list, GetAssetFullPath("model/newport_loft.dds"));
 
     size_t layer = 0;
     {
         IrradianceConversion::Target irradince{ m_irradince, m_depth_stencil_view_irradince, layer, m_irradince_texture_size };
         IrradianceConversion::Target prefilter{ m_prefilter, m_depth_stencil_view_prefilter, layer, m_prefilter_texture_size };
-        m_irradiance_conversion.emplace_back(new IrradianceConversion(m_context, { m_model_cube, m_equirectangular2cubemap.output.environment, irradince, prefilter }, width, height));
+        m_irradiance_conversion.emplace_back(new IrradianceConversion(m_device, { m_model_cube, m_equirectangular2cubemap.output.environment, irradince, prefilter }, width, height));
     }
 
     for (auto& model : m_scene_list)
@@ -86,13 +87,13 @@ Scene::Scene(Context& context, int width, int height)
         model.ibl_source = ++layer;
         IrradianceConversion::Target irradince{ m_irradince, m_depth_stencil_view_irradince, model.ibl_source, m_irradince_texture_size };
         IrradianceConversion::Target prefilter{ m_prefilter, m_depth_stencil_view_prefilter, model.ibl_source, m_prefilter_texture_size };
-        m_irradiance_conversion.emplace_back(new IrradianceConversion(m_context, { m_model_cube, model.ibl_rtv, irradince, prefilter }, width, height));
+        m_irradiance_conversion.emplace_back(new IrradianceConversion(m_device, { m_model_cube, model.ibl_rtv, irradince, prefilter }, width, height));
     }
 
 #ifdef RAYTRACING_SUPPORT
-    if (m_context.IsDxrSupported())
+    if (m_device.IsDxrSupported())
     {
-        m_ray_tracing_ao_pass.reset(new RayTracingAOPass(m_context, *m_upload_command_list, { m_geometry_pass.output, m_scene_list, m_model_square, m_camera }, width, height));
+        m_ray_tracing_ao_pass.reset(new RayTracingAOPass(m_device, *m_upload_command_list, { m_geometry_pass.output, m_scene_list, m_model_square, m_camera }, width, height));
         m_rtao = &m_ray_tracing_ao_pass->output.ao;
     }
 #endif
@@ -262,15 +263,15 @@ void Scene::OnModifySponzaSettings(const SponzaSettings& settings)
 
 void Scene::CreateRT()
 {
-    m_depth_stencil_view = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
+    m_depth_stencil_view = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 1, m_width, m_height, 1);
 
-    m_irradince = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 
+    m_irradince = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 
         m_irradince_texture_size, m_irradince_texture_size, 6 * m_ibl_count);
-    m_prefilter = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 
+    m_prefilter = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 
         m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count, log2(m_prefilter_texture_size));
 
-    m_depth_stencil_view_irradince = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_irradince_texture_size, m_irradince_texture_size, 6 * m_ibl_count);
-    m_depth_stencil_view_prefilter = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count, log2(m_prefilter_texture_size));
+    m_depth_stencil_view_irradince = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_irradince_texture_size, m_irradince_texture_size, 6 * m_ibl_count);
+    m_depth_stencil_view_prefilter = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_prefilter_texture_size, m_prefilter_texture_size, 6 * m_ibl_count, log2(m_prefilter_texture_size));
 }
 
 void Scene::UpdateCameraMovement()

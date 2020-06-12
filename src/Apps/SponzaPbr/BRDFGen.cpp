@@ -2,13 +2,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-BRDFGen::BRDFGen(Context& context, const Input& input, int width, int height)
-    : m_context(context)
+BRDFGen::BRDFGen(Device& device, const Input& input, int width, int height)
+    : m_device(device)
     , m_input(input)
-    , m_program(context)
+    , m_program(device)
 {
-    output.brdf = m_context.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RG32_SFLOAT_PACK32, 1, m_size, m_size, 1);
-    m_dsv = m_context.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_size, m_size, 1);
+    output.brdf = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RG32_SFLOAT_PACK32, 1, m_size, m_size, 1);
+    m_dsv = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_size, m_size, 1);
 }
 
 void BRDFGen::OnUpdate()

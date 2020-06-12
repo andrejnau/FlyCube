@@ -3,7 +3,7 @@
 #include <vector>
 #include <memory>
 #include "RenderPass.h"
-#include <Context/Context.h>
+#include <Device/Device.h>
 #include <Camera/Camera.h>
 #include <Geometry/Geometry.h>
 #include <ProgramRef/IBLComputeVS.h>
@@ -33,7 +33,7 @@ public:
     {
     } output;
 
-    IBLCompute(Context& context, const Input& input, int width, int height);
+    IBLCompute(Device& device, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list) override;
@@ -46,7 +46,7 @@ private:
     void DrawBackgroud(CommandListBox& command_list, Model& ibl_model);
     void DrawDownSample(CommandListBox& command_list, Model& ibl_model, size_t texture_mips);
     SponzaSettings m_settings;
-    Context& m_context;
+    Device& m_device;
     Input m_input;
     ProgramHolder<IBLComputeVS, IBLComputeGS, IBLComputePS> m_program;
     ProgramHolder<IBLComputeVS, IBLComputeGS, IBLComputePrePassPS> m_program_pre_pass;
