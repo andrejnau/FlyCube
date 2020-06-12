@@ -45,14 +45,14 @@ void ComputeLuminance::GetLum1DPassCS(CommandListBox& command_list, size_t buf_i
 
 void ComputeLuminance::Draw(CommandListBox& command_list, size_t buf_id)
 {
-    m_HDRApply.ps.cbuffer.HDRSetting.gamma_correction = m_settings.gamma_correction;
-    m_HDRApply.ps.cbuffer.HDRSetting.use_reinhard_tone_operator = m_settings.use_reinhard_tone_operator;
-    m_HDRApply.ps.cbuffer.HDRSetting.use_tone_mapping = m_settings.use_tone_mapping;
-    m_HDRApply.ps.cbuffer.HDRSetting.use_white_balance = m_settings.use_white_balance;
-    m_HDRApply.ps.cbuffer.HDRSetting.use_filmic_hdr = m_settings.use_filmic_hdr;
-    m_HDRApply.ps.cbuffer.HDRSetting.use_avg_lum = m_settings.use_avg_lum && !m_use_res.empty();
-    m_HDRApply.ps.cbuffer.HDRSetting.exposure = m_settings.exposure;
-    m_HDRApply.ps.cbuffer.HDRSetting.white = m_settings.white;
+    m_HDRApply.ps.cbuffer.HDRSetting.gamma_correction = m_settings.Get<bool>("gamma_correction");
+    m_HDRApply.ps.cbuffer.HDRSetting.use_reinhard_tone_operator = m_settings.Get<bool>("use_reinhard_tone_operator");
+    m_HDRApply.ps.cbuffer.HDRSetting.use_tone_mapping = m_settings.Get<bool>("use_tone_mapping");
+    m_HDRApply.ps.cbuffer.HDRSetting.use_white_balance = m_settings.Get<bool>("use_white_balance");
+    m_HDRApply.ps.cbuffer.HDRSetting.use_filmic_hdr = m_settings.Get<bool>("use_filmic_hdr");
+    m_HDRApply.ps.cbuffer.HDRSetting.use_avg_lum = m_settings.Get<bool>("use_avg_lum") && !m_use_res.empty();
+    m_HDRApply.ps.cbuffer.HDRSetting.exposure = m_settings.Get<float>("exposure");
+    m_HDRApply.ps.cbuffer.HDRSetting.white = m_settings.Get<float>("white");
 
     command_list.UseProgram(m_HDRApply);
     command_list.Attach(m_HDRApply.ps.cbv.HDRSetting, m_HDRApply.ps.cbuffer.HDRSetting);
@@ -79,7 +79,7 @@ void ComputeLuminance::OnRender(CommandListBox& command_list)
 {
     command_list.SetViewport(m_width, m_height);
     size_t buf_id = 0;
-    if (m_settings.use_tone_mapping)
+    if (m_settings.Get<bool>("use_tone_mapping"))
     {
         GetLum2DPassCS(command_list, buf_id, m_thread_group_x, m_thread_group_y);
         for (int block_size = m_thread_group_x * m_thread_group_y; block_size > 1;)

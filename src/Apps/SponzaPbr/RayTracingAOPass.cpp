@@ -7,7 +7,7 @@ RayTracingAOPass::RayTracingAOPass(Device& device, CommandListBox& command_list,
     , m_height(height)
     , m_raytracing_program(device, [&](auto& program)
     {
-        program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+        program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("msaa_count"));
     })
     , m_program_blur(device)
 {
@@ -62,12 +62,12 @@ void RayTracingAOPass::OnUpdate()
 
 void RayTracingAOPass::OnRender(CommandListBox& command_list)
 {
-    if (!m_settings.use_rtao)
+    if (!m_settings.Get<bool>("use_rtao"))
         return;
 
-    m_raytracing_program.lib.cbuffer.Settings.ao_radius = m_settings.ao_radius;
-    m_raytracing_program.lib.cbuffer.Settings.num_rays = m_settings.rtao_num_rays;
-    m_raytracing_program.lib.cbuffer.Settings.use_alpha_test = m_settings.use_alpha_test;
+    m_raytracing_program.lib.cbuffer.Settings.ao_radius = m_settings.Get<float>("ao_radius");
+    m_raytracing_program.lib.cbuffer.Settings.num_rays = m_settings.Get<int32_t>("rtao_num_rays");
+    m_raytracing_program.lib.cbuffer.Settings.use_alpha_test = m_settings.Get<bool>("use_alpha_test");
 
     auto build_geometry = [&](bool force_rebuild)
     {
@@ -128,7 +128,7 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
     command_list.Attach(m_raytracing_program.lib.srv.descriptor_offset, m_buffer);
     command_list.DispatchRays(m_width, m_height, 1);
 
-    if (m_settings.use_ao_blur)
+    if (m_settings.Get<bool>("use_ao_blur"))
     {
         command_list.SetViewport(m_width, m_height);
         command_list.UseProgram(m_program_blur);
@@ -169,9 +169,9 @@ void RayTracingAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     SponzaSettings prev = m_settings;
     m_settings = settings;
-    if (prev.msaa_count != m_settings.msaa_count)
+    if (prev.Get<uint32_t>("msaa_count") != m_settings.Get<uint32_t>("msaa_count"))
     {
-        m_raytracing_program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+        m_raytracing_program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("msaa_count"));
         m_raytracing_program.UpdateProgram();
     }
 }

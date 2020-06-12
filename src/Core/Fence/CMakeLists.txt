@@ -35,7 +35,6 @@ target_link_libraries(Fence
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
-    glad
 )
 
 if (VULKAN_SUPPORT)
@@ -57,7 +56,7 @@ if (DIRECTX_SUPPORT)
     )
     target_include_directories(Fence
         PUBLIC
-            "${project_root}/3rdparty/d3dx12"
+            "${project_root}/3rdparty/unpacked/d3dx12"
     )
 endif()
 

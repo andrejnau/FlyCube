@@ -27,7 +27,7 @@ void ShadowPass::OnUpdate()
 
     glm::vec3 position = m_input.light_pos;
 
-    m_program.gs.cbuffer.GSParams.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.s_near, m_settings.s_far));
+    m_program.gs.cbuffer.GSParams.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.Get<float>("s_near"), m_settings.Get<float>("s_far")));
 
     std::array<glm::mat4, 6>& view = m_program.gs.cbuffer.GSParams.View;
     view[0] = glm::transpose(glm::lookAt(position, position + Right, Up));
@@ -40,10 +40,10 @@ void ShadowPass::OnUpdate()
 
 void ShadowPass::OnRender(CommandListBox& command_list)
 {
-    if (!m_settings.use_shadow)
+    if (!m_settings.Get<bool>("use_shadow"))
         return;
 
-    command_list.SetViewport(m_settings.s_size, m_settings.s_size);
+    command_list.SetViewport(m_settings.Get<float>("s_size"), m_settings.Get<float>("s_size"));
 
     command_list.UseProgram(m_program);
     command_list.Attach(m_program.vs.cbv.VSParams, m_program.vs.cbuffer.VSParams);
@@ -69,7 +69,7 @@ void ShadowPass::OnRender(CommandListBox& command_list)
         {
             auto& material = model.GetMaterial(range.id);
 
-            if (m_settings.shadow_discard)
+            if (m_settings.Get<bool>("shadow_discard"))
                 command_list.Attach(m_program.ps.srv.alphaMap, material.texture.opacity);
             else
                 command_list.Attach(m_program.ps.srv.alphaMap);
@@ -85,14 +85,14 @@ void ShadowPass::OnResize(int width, int height)
 
 void ShadowPass::CreateSizeDependentResources()
 {
-    output.srv = m_device.CreateTexture(BindFlag::kDepthStencil | BindFlag::kShaderResource, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_settings.s_size, m_settings.s_size, 6);
+    output.srv = m_device.CreateTexture(BindFlag::kDepthStencil | BindFlag::kShaderResource, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_settings.Get<float>("s_size"), m_settings.Get<float>("s_size"), 6);
 }
 
 void ShadowPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     SponzaSettings prev = m_settings;
     m_settings = settings;
-    if (prev.s_size != settings.s_size)
+    if (prev.Get<float>("s_size") != m_settings.Get<float>("s_size"))
     {
         CreateSizeDependentResources();
     }

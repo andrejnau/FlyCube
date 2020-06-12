@@ -158,8 +158,7 @@ source_group("Shader Ref Files" FILES ${shaders_ref})
 
 add_executable(${target} WIN32 ${headers} ${sources} ${shaders_files} ${shader_headers} ${shaders_ref})
 if (WIN32)
-    set_target_properties(${target} PROPERTIES
-                            LINK_FLAGS "/ENTRY:mainCRTStartup")
+    set_target_properties(${target} PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
 endif()
 
 target_include_directories(${target}

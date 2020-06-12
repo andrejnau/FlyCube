@@ -44,7 +44,6 @@ target_link_libraries(Pipeline
     Shader
     spirv-cross-core
     spirv-cross-hlsl
-    glad
 )
 
 if (VULKAN_SUPPORT)
@@ -66,7 +65,7 @@ if (DIRECTX_SUPPORT)
     )
     target_include_directories(Pipeline
         PUBLIC
-            "${project_root}/3rdparty/d3dx12"
+            "${project_root}/3rdparty/unpacked/d3dx12"
     )
 endif()
 

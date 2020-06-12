@@ -28,7 +28,6 @@ target_link_libraries(CommandListBox
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
-    glad
 )
 
 set_target_properties(CommandListBox PROPERTIES FOLDER "Modules")

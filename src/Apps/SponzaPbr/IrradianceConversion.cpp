@@ -26,7 +26,7 @@ void IrradianceConversion::OnUpdate()
 
 void IrradianceConversion::OnRender(CommandListBox& command_list)
 {
-    if (!is || m_settings.irradiance_conversion_every_frame)
+    if (!is || m_settings.Get<bool>("irradiance_conversion_every_frame"))
     {
         command_list.BeginEvent("DrawIrradianceConvolution");
         DrawIrradianceConvolution(command_list);

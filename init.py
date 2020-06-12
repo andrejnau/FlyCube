@@ -13,9 +13,9 @@ def runCmd(arg):
         runcode = cmd.poll()
 
 def submodule():
-    print ("git submodule init")
+    print("git submodule init")
     runCmd(['git', 'submodule', 'init'])
-    print ("git submodule update")
+    print("git submodule update")
     runCmd(['git', 'submodule', 'update'])
 
 def zip3rdparty():
@@ -24,11 +24,11 @@ def zip3rdparty():
 
     for file in os.listdir(path):
         if file.endswith(".zip"):
-            print ("unzip:", file)
-            unzip(os.path.join(path + "/" + file), path)
+            print("unzip:", file)
+            unzip(os.path.join(path + "/" + file), path + "/unpacked")
 
 def main():
-    print ("start init 3rdparty lib")
+    print("start init 3rdparty lib")
     zip3rdparty()
 
 if __name__ == "__main__":

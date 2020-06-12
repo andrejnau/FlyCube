@@ -1,56 +1,48 @@
 #pragma once
-
 #include <cstdint>
+#include <any>
+#include <map>
+#include <string>
+#include <vector>
+#include <functional>
+#include <GLFW/glfw3.h>
+
+class HotKey
+{
+public:
+    HotKey(std::function<void()> on_key);
+    void BindKey(int key);
+    bool OnKey(int key);
+
+private:
+    int m_key = -1;
+    std::function<void()> m_on_key;
+};
 
 class SponzaSettings
 {
 public:
     SponzaSettings();
 
-    uint32_t msaa_count;
-    int width;
-    int height;
-    bool gamma_correction;
-    bool use_reinhard_tone_operator;
-    bool use_tone_mapping;
-    bool use_white_balance;
-    bool use_filmic_hdr;
-    bool use_avg_lum;
-    bool use_ao;
-    bool use_ssao;
-    bool use_rtao;
-    bool use_ao_blur;
-    int rtao_num_rays;
-    float ao_radius;
-    bool use_alpha_test;
-    bool use_white_ligth;
-    bool only_ambient;
-    bool use_IBL_diffuse;
-    bool use_IBL_specular;
-    bool skip_sponza_model;
-    bool light_in_camera;
-    bool additional_lights;
-    bool show_only_position;
-    bool show_only_albedo;
-    bool show_only_normal;
-    bool show_only_roughness;
-    bool show_only_metalness;
-    bool show_only_ao;
-    bool use_f0_with_roughness;
-    bool use_flip_normal_y;
-    bool use_spec_ao_by_ndotv_roughness;
-    bool irradiance_conversion_every_frame;
-    float ambient_power;
-    float light_power;
-    float exposure;
-    float white;
-    float s_near;
-    float s_far;
-    float s_size;
-    bool use_shadow;
-    bool normal_mapping;
-    bool shadow_discard;
-    bool dynamic_sun_position;
+    bool OnDraw();
+    bool OnKey(int key, int action);
+
+    template<typename T>
+    T Get(const std::string& key)
+    {
+        return std::any_cast<T>(m_settings[key]);
+    }
+
+private:
+    template<typename T>
+    void add_combo(const std::string& label, const std::vector<std::string>& items, const std::vector<T>& items_data, T value);
+    HotKey& add_checkbox(const std::string& label, bool value);
+    void add_slider_int(const std::string& label, int32_t value, int min, int max);
+    void add_slider(const std::string& label, float value, float min, float max, bool linear);
+
+    std::vector<std::function<bool(void)>> m_items;
+    std::vector<HotKey> m_hotkeys;
+    std::map<std::string, std::any> m_settings;
 };
 
 class IModifySponzaSettings

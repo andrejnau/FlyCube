@@ -59,7 +59,7 @@ if (DIRECTX_SUPPORT)
     )
     target_include_directories(Resource
         PUBLIC
-            "${project_root}/3rdparty/d3dx12"
+            "${project_root}/3rdparty/unpacked/d3dx12"
     )
 endif()
 

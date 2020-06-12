@@ -13,9 +13,9 @@ option (ASSIMP_NO_EXPORT
   ON
 )
 
-add_subdirectory(${project_root}/3rdparty/assimp-4.1.0 assimp)
-include_directories(${project_root}/3rdparty/assimp-4.1.0/code/BoostWorkaround)
-include_directories(${project_root}/3rdparty/assimp-4.1.0/include)
+add_subdirectory(${project_root}/3rdparty/unpacked/assimp-4.1.0 assimp)
+include_directories(${project_root}/3rdparty/unpacked/assimp-4.1.0/code/BoostWorkaround)
+include_directories(${project_root}/3rdparty/unpacked/assimp-4.1.0/include)
 include_directories(${CMAKE_BINARY_DIR}/assimp/include)
 
 if (MSVC)

@@ -50,7 +50,7 @@ void GeometryPass::OnRender(CommandListBox& command_list)
     bool skiped = false;
     for (auto& model : m_input.scene_list)
     {
-        if (!skiped && m_settings.skip_sponza_model)
+        if (!skiped && m_settings.Get<bool>("skip_sponza_model"))
         {
             skiped = true;
             continue;
@@ -69,9 +69,9 @@ void GeometryPass::OnRender(CommandListBox& command_list)
         {
             auto& material = model.GetMaterial(range.id);
 
-            m_program.ps.cbuffer.Settings.use_normal_mapping = material.texture.normal && m_settings.normal_mapping;
+            m_program.ps.cbuffer.Settings.use_normal_mapping = material.texture.normal && m_settings.Get<bool>("normal_mapping");
             m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.glossiness && !material.texture.roughness;
-            m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.use_flip_normal_y;
+            m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.Get<bool>("use_flip_normal_y");
 
             command_list.Attach(m_program.ps.srv.normalMap, material.texture.normal);
             command_list.Attach(m_program.ps.srv.albedoMap, material.texture.albedo);
@@ -97,7 +97,7 @@ void GeometryPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     SponzaSettings prev = m_settings;
     m_settings = settings;
-    if (prev.msaa_count != settings.msaa_count)
+    if (prev.Get<uint32_t>("msaa_count") != m_settings.Get<uint32_t>("msaa_count"))
     {
         CreateSizeDependentResources();
     }
@@ -105,9 +105,9 @@ void GeometryPass::OnModifySponzaSettings(const SponzaSettings& settings)
 
 void GeometryPass::CreateSizeDependentResources()
 {
-    output.position = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    output.normal = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    output.albedo = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    output.material = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
-    output.dsv = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, m_settings.msaa_count, m_width, m_height, 1);
+    output.position = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
+    output.normal = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
+    output.albedo = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
+    output.material = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
+    output.dsv = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
 }

@@ -28,14 +28,14 @@ void IBLCompute::OnUpdate()
     glm::vec3 camera_position = m_input.camera.GetCameraPos();
     m_program.ps.cbuffer.Light.viewPos = camera_position;
 
-    m_program.ps.cbuffer.ShadowParams.s_near = m_settings.s_near;
-    m_program.ps.cbuffer.ShadowParams.s_far = m_settings.s_far;
-    m_program.ps.cbuffer.ShadowParams.s_size = m_settings.s_size;
-    m_program.ps.cbuffer.ShadowParams.use_shadow = m_settings.use_shadow;
+    m_program.ps.cbuffer.ShadowParams.s_near = m_settings.Get<float>("s_near");
+    m_program.ps.cbuffer.ShadowParams.s_far = m_settings.Get<float>("s_far");
+    m_program.ps.cbuffer.ShadowParams.s_size = m_settings.Get<float>("s_size");
+    m_program.ps.cbuffer.ShadowParams.use_shadow = m_settings.Get<bool>("use_shadow");
     m_program.ps.cbuffer.ShadowParams.shadow_light_pos = m_input.light_pos;
 
-    m_program.ps.cbuffer.Settings.ambient_power = m_settings.ambient_power;
-    m_program.ps.cbuffer.Settings.light_power = m_settings.light_power;
+    m_program.ps.cbuffer.Settings.ambient_power = m_settings.Get<float>("ambient_power");
+    m_program.ps.cbuffer.Settings.light_power = m_settings.Get<float>("light_power");
 
     m_program.ps.cbuffer.Light.use_light = m_use_pre_pass;
 
@@ -45,15 +45,15 @@ void IBLCompute::OnUpdate()
         m_program.ps.cbuffer.Light.light_color[i] = glm::vec4(0);
     }
 
-    if (m_settings.light_in_camera)
+    if (m_settings.Get<bool>("light_in_camera"))
     {
         m_program.ps.cbuffer.Light.light_pos[0] = glm::vec4(camera_position, 0);
         m_program.ps.cbuffer.Light.light_color[0] = glm::vec4(1, 1, 1, 0.0);
     }
-    if (m_settings.additional_lights)
+    if (m_settings.Get<bool>("additional_lights"))
     {
         int i = 0;
-        if (m_settings.light_in_camera)
+        if (m_settings.Get<bool>("light_in_camera"))
             ++i;
         for (int x = -13; x <= 13; ++x)
         {
@@ -64,7 +64,7 @@ void IBLCompute::OnUpdate()
                 {
                     m_program.ps.cbuffer.Light.light_pos[i] = glm::vec4(x, 1.5, z - 0.33, 0);
                     float color = 0.0;
-                    if (m_settings.use_white_ligth)
+                    if (m_settings.Get<bool>("use_white_ligth"))
                         color = 1;
                     m_program.ps.cbuffer.Light.light_color[i] = glm::vec4(q == 1 ? 1 : color, q == 2 ? 1 : color, q == 3 ? 1 : color, 0.0);
                     ++i;
@@ -129,7 +129,7 @@ void IBLCompute::DrawPrePass(CommandListBox& command_list, Model & ibl_model)
     glm::vec3 BackwardRH = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 BackwardLH = glm::vec3(0.0f, 0.0f, -1.0f);
 
-    m_program_pre_pass.gs.cbuffer.GSParams.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.s_near, m_settings.s_far));
+    m_program_pre_pass.gs.cbuffer.GSParams.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.Get<float>("s_near"), m_settings.Get<float>("s_far")));
 
     glm::vec3 position = glm::vec3(ibl_model.matrix * glm::vec4(ibl_model.model_center, 1.0));
     std::array<glm::mat4, 6>& view = m_program_pre_pass.gs.cbuffer.GSParams.View;
@@ -197,7 +197,7 @@ void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
     glm::vec3 BackwardRH = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 BackwardLH = glm::vec3(0.0f, 0.0f, -1.0f);
 
-    m_program.gs.cbuffer.GSParams.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.s_near, m_settings.s_far));
+    m_program.gs.cbuffer.GSParams.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.Get<float>("s_near"), m_settings.Get<float>("s_far")));
 
     std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
 
@@ -251,9 +251,9 @@ void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
         {
             auto& material = model.GetMaterial(range.id);
 
-            m_program.ps.cbuffer.Settings.use_normal_mapping = material.texture.normal && m_settings.normal_mapping;
+            m_program.ps.cbuffer.Settings.use_normal_mapping = material.texture.normal && m_settings.Get<bool>("normal_mapping");
             m_program.ps.cbuffer.Settings.use_gloss_instead_of_roughness = material.texture.glossiness && !material.texture.roughness;
-            m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.use_flip_normal_y;
+            m_program.ps.cbuffer.Settings.use_flip_normal_y = m_settings.Get<bool>("use_flip_normal_y");
 
             command_list.Attach(m_program.ps.srv.normalMap, material.texture.normal);
             command_list.Attach(m_program.ps.srv.albedoMap, material.texture.albedo);
@@ -310,7 +310,7 @@ void IBLCompute::DrawBackgroud(CommandListBox& command_list, Model& ibl_model)
     {
         m_program_backgroud.vs.cbuffer.ConstantBuf.face = i;
         m_program_backgroud.vs.cbuffer.ConstantBuf.view = glm::transpose(capture_views[i]);
-        m_program_backgroud.vs.cbuffer.ConstantBuf.projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.s_near, m_settings.s_far));
+        m_program_backgroud.vs.cbuffer.ConstantBuf.projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.Get<float>("s_near"), m_settings.Get<float>("s_far")));
 
         for (auto& range : m_input.model_cube.ia.ranges)
         {

@@ -1,1 +1,1 @@
-include_directories(${project_root}/3rdparty/glm-0.9.8.3)
+include_directories(${project_root}/3rdparty/unpacked/glm-0.9.8.3)

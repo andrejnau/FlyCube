@@ -75,7 +75,7 @@ SSAOPass::SSAOPass(Device& device, CommandListBox& command_list, const Input& in
 
 void SSAOPass::OnUpdate()
 {
-    m_program.ps.cbuffer.SSAOBuffer.ao_radius = m_settings.ao_radius;
+    m_program.ps.cbuffer.SSAOBuffer.ao_radius = m_settings.Get<float>("ao_radius");
     m_program.ps.cbuffer.SSAOBuffer.width = m_width;
     m_program.ps.cbuffer.SSAOBuffer.height = m_height;
 
@@ -88,7 +88,7 @@ void SSAOPass::OnUpdate()
 
 void SSAOPass::OnRender(CommandListBox& command_list)
 {
-    if (!m_settings.use_ssao)
+    if (!m_settings.Get<bool>("use_ssao"))
         return;
 
     command_list.SetViewport(m_width, m_height);
@@ -124,7 +124,7 @@ void SSAOPass::OnRender(CommandListBox& command_list)
         command_list.RSSetShadingRate(ShadingRate::k1x1);
     }
 
-    if (m_settings.use_ao_blur)
+    if (m_settings.Get<bool>("use_ao_blur"))
     {
         command_list.UseProgram(m_program_blur);
         command_list.Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
@@ -165,15 +165,15 @@ void SSAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     SponzaSettings prev = m_settings;
     m_settings = settings;
-    if (prev.msaa_count != m_settings.msaa_count)
+    if (prev.Get<uint32_t>("msaa_count") != m_settings.Get<uint32_t>("msaa_count"))
     {
-        m_program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+        m_program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("msaa_count"));
         m_program.UpdateProgram();
     }
 }
 
 void SSAOPass::SetDefines(ProgramHolder<SSAOPassPS, SSAOPassVS>& program)
 {
-    if (m_settings.msaa_count != 1)
-        program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.msaa_count);
+    if (m_settings.Get<uint32_t>("msaa_count") != 1)
+        program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("msaa_count"));
 }

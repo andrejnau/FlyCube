@@ -140,7 +140,7 @@ void Scene::RenderFrame()
     int64_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     start = end;
 
-    if (m_settings.dynamic_sun_position)
+    if (m_settings.Get<bool>("dynamic_sun_position"))
         angle += elapsed / 2e6f;
 
     float light_r = 2.5;
