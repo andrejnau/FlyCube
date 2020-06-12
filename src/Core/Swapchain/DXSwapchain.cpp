@@ -32,7 +32,7 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
         ComPtr<ID3D12Resource> back_buffer;
         ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
         res->format = GetFormat();
-        res->SetResourceState(ResourceState::kPresent);
+        res->GetGlobalResourceStateTracker().SetResourceState(ResourceState::kPresent);
         res->resource = back_buffer;
         res->desc = back_buffer->GetDesc();
         m_back_buffers.emplace_back(res);

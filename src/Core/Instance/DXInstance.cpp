@@ -25,6 +25,10 @@ DXInstance::DXInstance()
         {
             debug_controller->EnableDebugLayer();
         }
+        /*ComPtr<ID3D12Debug1> debug_controller1;
+        debug_controller.As(&debug_controller1);
+        if (debug_controller1)
+            debug_controller1->SetEnableSynchronizedCommandQueueValidation(true);*/
         flags = DXGI_CREATE_FACTORY_DEBUG;
     }
 

@@ -1,13 +1,17 @@
 #include "Resource/ResourceStateTracker.h"
 
+ResourceStateTracker::ResourceStateTracker(const subresource_count_getter_t& subresource_count_getter)
+    : m_subresource_count_getter(subresource_count_getter)
+{
+}
+
 bool ResourceStateTracker::HasResourceState() const
 {
-    return m_subresource_states.empty();
+    return m_subresource_states.empty() && m_resource_state != ResourceState::kUnknown;
 }
 
 ResourceState ResourceStateTracker::GetResourceState() const
 {
-    assert(HasResourceState());
     return m_resource_state;
 }
 
@@ -38,7 +42,7 @@ void ResourceStateTracker::SetSubresourceState(uint32_t mip_level, uint32_t arra
     }
     m_subresource_states[key] = state;
     ++m_subresource_state_groups[state];
-    if (m_subresource_state_groups.size() == 1 && m_subresource_state_groups.begin()->second == GetSubresourceCount())
+    if (m_subresource_state_groups.size() == 1 && m_subresource_state_groups.begin()->second == m_subresource_count_getter())
     {
         m_subresource_state_groups.clear();
         m_subresource_states.clear();

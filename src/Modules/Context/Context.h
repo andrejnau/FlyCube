@@ -59,7 +59,9 @@ private:
     std::shared_ptr<Swapchain> m_swapchain;
     std::shared_ptr<Semaphore> m_image_available_semaphore;
     std::shared_ptr<Semaphore> m_rendering_finished_semaphore;
-    std::vector<std::shared_ptr<CommandListBox>> m_swapchain_command_lists;
-    std::shared_ptr<CommandListBox> m_swapchain_command_list;
+    std::vector<std::shared_ptr<CommandList>> m_swapchain_command_lists;
+    std::shared_ptr<CommandList> m_swapchain_command_list;
     std::shared_ptr<Fence> m_fence;
+    std::array<std::vector<std::shared_ptr<CommandList>>, FrameCount> m_tmp_command_lists;
+    std::array<uint32_t, FrameCount> m_tmp_command_lists_offset = {};
 };

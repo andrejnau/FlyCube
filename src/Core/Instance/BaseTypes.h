@@ -436,7 +436,8 @@ struct BufferToTextureCopyRegion
 {
     uint64_t buffer_offset;
     uint32_t buffer_row_pitch;
-    uint32_t texture_subresource;
+    uint32_t texture_mip_level;
+    uint32_t texture_array_layer;
     TextureOffset texture_offset;
     TextureExtent3D texture_extent;
 };

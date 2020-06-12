@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
         glm::vec3(0.0, 0.5, 0.0),
         glm::vec3(0.5, -0.5, 0.0)
     };
-    std::shared_ptr<Resource> positions = device.CreateBuffer(BindFlag::kVertexBuffer, sizeof(glm::vec3) * positions_data.size());
+    std::shared_ptr<Resource> positions = device.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest, sizeof(glm::vec3) * positions_data.size());
     upload_command_list->UpdateSubresource(positions, 0, positions_data.data(), 0, 0);
     std::shared_ptr<Resource> bottom = upload_command_list->CreateBottomLevelAS({ positions, gli::format::FORMAT_RGB32_SFLOAT_PACK32, 3 });
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> geometry = {
@@ -43,11 +43,8 @@ int main(int argc, char *argv[])
 
     std::vector<std::shared_ptr<CommandListBox>> command_lists;
     for (uint32_t i = 0; i < Context::FrameCount; ++i)
-        command_lists.emplace_back(context.CreateCommandList());
-
-    while (!app.PollEvents())
     {
-        decltype(auto) command_list = command_lists[context.GetFrameIndex()];
+        decltype(auto) command_list = context.CreateCommandList();
         command_list->Open();
         command_list->UseProgram(raytracing_program);
         command_list->Attach(raytracing_program.lib.srv.geometry, top);
@@ -55,7 +52,7 @@ int main(int argc, char *argv[])
         command_list->DispatchRays(rect.width, rect.height, 1);
         command_list->UseProgram(graphics_program);
         command_list->SetViewport(rect.width, rect.height);
-        command_list->Attach(graphics_program.ps.om.rtv0, context.GetBackBuffer(context.GetFrameIndex()));
+        command_list->Attach(graphics_program.ps.om.rtv0, context.GetBackBuffer(i));
         square.ia.indices.Bind(*command_list);
         square.ia.positions.BindToSlot(*command_list, graphics_program.vs.ia.POSITION);
         square.ia.texcoords.BindToSlot(*command_list, graphics_program.vs.ia.TEXCOORD);
@@ -65,7 +62,12 @@ int main(int argc, char *argv[])
             command_list->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
         command_list->Close();
-        context.ExecuteCommandLists({ command_list });
+        command_lists.emplace_back(command_list);
+    }
+
+    while (!app.PollEvents())
+    {
+        context.ExecuteCommandLists({ command_lists[context.GetFrameIndex()] });
         context.Present();
         app.UpdateFps();
     }

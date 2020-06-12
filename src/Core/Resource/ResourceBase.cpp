@@ -1,5 +1,10 @@
 #include "Resource/ResourceBase.h"
 
+ResourceBase::ResourceBase()
+    : m_resource_state_tracker([this] { return GetLevelCount() * GetLayerCount(); })
+{
+}
+
 ResourceType ResourceBase::GetResourceType() const
 {
     return resource_type;
@@ -13,11 +18,6 @@ gli::format ResourceBase::GetFormat() const
 MemoryType ResourceBase::GetMemoryType() const
 {
     return memory_type;
-}
-
-uint32_t ResourceBase::GetSubresourceCount() const
-{
-    return GetLevelCount() * GetLayerCount();
 }
 
 void ResourceBase::UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes)
@@ -51,4 +51,9 @@ void ResourceBase::SetPrivateResource(uint64_t id, const std::shared_ptr<Resourc
 std::shared_ptr<Resource>& ResourceBase::GetPrivateResource(uint64_t id)
 {
     return m_private_resources[id];
+}
+
+ResourceStateTracker& ResourceBase::GetGlobalResourceStateTracker()
+{
+    return m_resource_state_tracker;
 }

@@ -111,9 +111,10 @@ DXDevice::DXDevice(DXAdapter& adapter)
             info_queue->PushStorageFilter(&filter);
         }
 
-        ComPtr<ID3D12DebugDevice> debug_device;
+        /*ComPtr<ID3D12DebugDevice2> debug_device;
         m_device.As(&debug_device);
-        debug_device->SetFeatureMask(D3D12_DEBUG_FEATURE_CONSERVATIVE_RESOURCE_STATE_TRACKING);
+        D3D12_DEBUG_FEATURE debug_feature = D3D12_DEBUG_FEATURE_CONSERVATIVE_RESOURCE_STATE_TRACKING;
+        debug_device->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS, &debug_feature, sizeof(debug_feature));*/
     }
 }
 
@@ -204,7 +205,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
         p_clear_value,
         IID_PPV_ARGS(&res->resource)));
     res->desc = desc;
-    res->SetResourceState(state);
+    res->GetGlobalResourceStateTracker().SetResourceState(state);
     return res;
 }
 
@@ -252,7 +253,7 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
         nullptr,
         IID_PPV_ARGS(&res->resource));
     res->desc = desc;
-    res->SetResourceState(state);
+    res->GetGlobalResourceStateTracker().SetResourceState(state);
     return res;
 }
 

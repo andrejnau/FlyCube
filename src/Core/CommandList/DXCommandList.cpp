@@ -350,7 +350,7 @@ void DXCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
         D3D12_TEXTURE_COPY_LOCATION dst = {};
         dst.pResource = dx_dst_texture.resource.Get();
         dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-        dst.SubresourceIndex = region.texture_subresource;
+        dst.SubresourceIndex = region.texture_array_layer * dx_dst_texture.GetLevelCount() + region.texture_mip_level;
 
         D3D12_TEXTURE_COPY_LOCATION src = {};
         src.pResource = dx_src_buffer.resource.Get();

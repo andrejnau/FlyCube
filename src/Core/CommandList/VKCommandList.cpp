@@ -440,8 +440,8 @@ void VKCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
             vk_region.bufferImageHeight = region.texture_extent.height;
         }
         vk_region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-        vk_region.imageSubresource.mipLevel = region.texture_subresource;
-        vk_region.imageSubresource.baseArrayLayer = 0;
+        vk_region.imageSubresource.mipLevel = region.texture_mip_level;
+        vk_region.imageSubresource.baseArrayLayer = region.texture_array_layer;
         vk_region.imageSubresource.layerCount = 1;
         vk_region.imageOffset.x = region.texture_offset.x;
         vk_region.imageOffset.y = region.texture_offset.y;

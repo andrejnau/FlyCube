@@ -8,7 +8,6 @@
 
 class Resource
     : public QueryInterface
-    , public ResourceStateTracker
 {
 public:
     virtual ~Resource() = default;
@@ -26,4 +25,5 @@ public:
                                    const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices) = 0;
     virtual void SetPrivateResource(uint64_t id, const std::shared_ptr<Resource>& resource) = 0;
     virtual std::shared_ptr<Resource>& GetPrivateResource(uint64_t id) = 0;
+    virtual ResourceStateTracker& GetGlobalResourceStateTracker() = 0;
 };

@@ -14,6 +14,8 @@ void CommandListBox::Open()
     m_bound_deferred_view.clear();
     m_binding_sets.clear();
     m_resource_lazy_view_descs.clear();
+    m_lazy_barriers.clear();
+    m_resource_state_tracker.clear();
     m_command_list->Open();
 }
 
@@ -60,7 +62,7 @@ void CommandListBox::UpdateSubresourceDefault(const std::shared_ptr<Resource>& r
         std::vector<BufferCopyRegion> regions;
         auto& region = regions.emplace_back();
         region.num_bytes = buffer_size;
-        ResourceBarrier(resource, ResourceState::kCopyDest);
+        BufferBarrier(resource, ResourceState::kCopyDest);
         m_command_list->CopyBuffer(upload_resource, resource, regions);
         break;
     }
@@ -68,9 +70,10 @@ void CommandListBox::UpdateSubresourceDefault(const std::shared_ptr<Resource>& r
     {
         std::vector<BufferToTextureCopyRegion> regions;
         auto& region = regions.emplace_back();
-        region.texture_subresource = subresource;
-        region.texture_extent.width = std::max<uint32_t>(1, resource->GetWidth() >> subresource);
-        region.texture_extent.height = std::max<uint32_t>(1, resource->GetHeight() >> subresource);
+        region.texture_mip_level = subresource % resource->GetLevelCount();
+        region.texture_array_layer = subresource / resource->GetLevelCount();
+        region.texture_extent.width = std::max<uint32_t>(1, resource->GetWidth() >> region.texture_mip_level);
+        region.texture_extent.height = std::max<uint32_t>(1, resource->GetHeight() >> region.texture_mip_level);
         region.texture_extent.depth = 1;
 
         size_t num_bytes = 0, row_bytes = 0, num_rows = 0;
@@ -81,7 +84,7 @@ void CommandListBox::UpdateSubresourceDefault(const std::shared_ptr<Resource>& r
             upload_resource = m_device.CreateBuffer(BindFlag::kCopySource, num_bytes, MemoryType::kUpload);
         upload_resource->UpdateSubresource(0, row_bytes, num_bytes, data, row_pitch, depth_pitch, num_rows, region.texture_extent.depth);
 
-        ResourceBarrier(resource, ResourceState::kCopyDest);
+        ImageBarrier(resource, region.texture_mip_level, 1, region.texture_array_layer, 1, ResourceState::kCopyDest);
         m_command_list->CopyBufferToTexture(upload_resource, resource, regions);
         break;
     }
@@ -101,13 +104,13 @@ void CommandListBox::SetScissorRect(int32_t left, int32_t top, int32_t right, in
 
 void CommandListBox::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {
-    ResourceBarrier(resource, ResourceState::kIndexBuffer);
+    BufferBarrier(resource, ResourceState::kIndexBuffer);
     m_command_list->IASetIndexBuffer(resource, format);
 }
 
 void CommandListBox::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
-    ResourceBarrier(resource, ResourceState::kVertexAndConstantBuffer);
+    BufferBarrier(resource, ResourceState::kVertexAndConstantBuffer);
     m_command_list->IASetVertexBuffer(slot, resource);
 }
 
@@ -118,7 +121,7 @@ void CommandListBox::RSSetShadingRate(ShadingRate shading_rate, const std::array
 
 void CommandListBox::RSSetShadingRateImage(const std::shared_ptr<Resource>& resource)
 {
-    ResourceBarrier(resource, ResourceState::kShadingRateSource);
+    ImageBarrier(resource, 0, 1, 0, 1, ResourceState::kShadingRateSource);
     m_command_list->RSSetShadingRateImage(resource);
 }
 
@@ -150,56 +153,77 @@ void CommandListBox::DispatchRays(uint32_t width, uint32_t height, uint32_t dept
     m_command_list->DispatchRays(width, height, depth);
 }
 
-void CommandListBox::ResourceBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
+ResourceStateTracker& CommandListBox::GetResourceStateTracker(const std::shared_ptr<Resource>& resource)
+{
+    auto it = m_resource_state_tracker.find(resource);
+    if (it == m_resource_state_tracker.end())
+        it = m_resource_state_tracker.emplace(resource, [resource] { return resource->GetLevelCount() * resource->GetLayerCount(); }).first;
+    return it->second;
+}
+
+void CommandListBox::BufferBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
     if (!resource)
         return;
-    assert(resource->HasResourceState());
+    auto& state_tracker = GetResourceStateTracker(resource);
     ResourceBarrierDesc barrier = {};
     barrier.resource = resource;
-    barrier.state_before = resource->GetResourceState();
+    barrier.state_before = state_tracker.GetResourceState();
     barrier.state_after = state;
-    barrier.level_count = resource->GetLevelCount();
-    barrier.layer_count = resource->GetLayerCount();
-    m_command_list->ResourceBarrier({ barrier });
-    resource->SetResourceState(state);
+    state_tracker.SetResourceState(state);
+
+    if (barrier.state_before != ResourceState::kUnknown)
+        m_command_list->ResourceBarrier({ barrier });
+    else
+        m_lazy_barriers.emplace_back(barrier);
 }
 
 void CommandListBox::ViewBarrier(const std::shared_ptr<View>& view, ResourceState state)
 {
-    if (!view)
+    if (!view || !view->GetResource())
         return;
-    decltype(auto) resource = view->GetResource();
+    ImageBarrier(view->GetResource(), view->GetBaseMipLevel(), view->GetLevelCount(), view->GetBaseArrayLayer(), view->GetLayerCount(), state);
+}
+
+void CommandListBox::ImageBarrier(const std::shared_ptr<Resource>& resource, uint32_t base_mip_level, uint32_t level_count, uint32_t base_array_layer, uint32_t layer_count, ResourceState state)
+{
     if (!resource)
         return;
 
+    auto& state_tracker = GetResourceStateTracker(resource);
+
     std::vector<ResourceBarrierDesc> barriers;
-    if (resource->HasResourceState() && view->GetBaseMipLevel() == 0 && view->GetLevelCount() == resource->GetLevelCount() &&
-        view->GetBaseArrayLayer() == 0 && view->GetLayerCount() == resource->GetLayerCount())
+    if (state_tracker.HasResourceState() && base_mip_level == 0 && level_count == resource->GetLevelCount() &&
+        base_array_layer == 0 && layer_count == resource->GetLayerCount())
     {
         ResourceBarrierDesc& barrier = barriers.emplace_back();
         barrier.resource = resource;
-        barrier.level_count = view->GetLevelCount();
-        barrier.layer_count = view->GetLayerCount();
-        barrier.state_before = barrier.resource->GetResourceState();
+        barrier.level_count = level_count;
+        barrier.layer_count = layer_count;
+        barrier.state_before = state_tracker.GetResourceState();
         barrier.state_after = state;
-        barrier.resource->SetResourceState(barrier.state_after);
+        state_tracker.SetResourceState(barrier.state_after);
     }
     else
     {
-        for (uint32_t i = 0; i < view->GetLevelCount(); ++i)
+        for (uint32_t i = 0; i < level_count; ++i)
         {
-            for (uint32_t j = 0; j < view->GetLayerCount(); ++j)
+            for (uint32_t j = 0; j < layer_count; ++j)
             {
-                ResourceBarrierDesc& barrier = barriers.emplace_back();
+                ResourceBarrierDesc barrier = {};
                 barrier.resource = resource;
-                barrier.base_mip_level = view->GetBaseMipLevel() + i;
+                barrier.base_mip_level = base_mip_level + i;
                 barrier.level_count = 1;
-                barrier.base_array_layer = view->GetBaseArrayLayer() + j;
+                barrier.base_array_layer = base_array_layer + j;
                 barrier.layer_count = 1;
-                barrier.state_before = barrier.resource->GetSubresourceState(barrier.base_mip_level, barrier.base_array_layer);
+                barrier.state_before = state_tracker.GetSubresourceState(barrier.base_mip_level, barrier.base_array_layer);
                 barrier.state_after = state;
-                barrier.resource->SetSubresourceState(barrier.base_mip_level, barrier.base_array_layer, barrier.state_after);
+                state_tracker.SetSubresourceState(barrier.base_mip_level, barrier.base_array_layer, barrier.state_after);
+
+                if (barrier.state_before != ResourceState::kUnknown)
+                    barriers.emplace_back(barrier);
+                else
+                    m_lazy_barriers.emplace_back(barrier);
             }
         }
     }
@@ -214,9 +238,9 @@ std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const BufferDesc& 
         m_is_open_render_pass = false;
     }
     if (vertex.res)
-        ResourceBarrier(vertex.res, ResourceState::kNonPixelShaderResource);
+        BufferBarrier(vertex.res, ResourceState::kNonPixelShaderResource);
     if (index.res)
-        ResourceBarrier(index.res, ResourceState::kNonPixelShaderResource);
+        BufferBarrier(index.res, ResourceState::kNonPixelShaderResource);
     return m_device.CreateBottomLevelAS(m_command_list, vertex, index);
 }
 
