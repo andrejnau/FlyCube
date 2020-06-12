@@ -17,8 +17,8 @@ std::shared_ptr<BindingSet> ProgramBase::CreateBindingSet(const std::vector<Bind
     }
 
     auto it = m_binding_set_cache.find(bindings_key);
-    if (it != m_binding_set_cache.end() && !it->second.expired())
-        return it->second.lock();
+    if (it != m_binding_set_cache.end())
+        return it->second;
 
     auto binding_set = CreateBindingSetImpl(bindings_key);
     m_binding_set_cache.emplace(bindings_key, binding_set).first;

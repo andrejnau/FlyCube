@@ -471,19 +471,34 @@ struct ResourceBarrierDesc
     uint32_t layer_count = 1;
 };
 
-struct ResourceLazyViewDesc
-{
-    std::shared_ptr<Resource> resource;
-    LazyViewDesc view_desc;
-};
-
 class CommandListBox;
+struct ResourceLazyViewDesc;
 
 class DeferredView
 {
 public:
-    virtual ResourceLazyViewDesc GetView(CommandListBox& command_list) = 0;
+    virtual std::shared_ptr<ResourceLazyViewDesc> GetView(CommandListBox& command_list) = 0;
+    virtual void OnDestroy(ResourceLazyViewDesc& view_desc) = 0;
 };
+
+struct ResourceLazyViewDesc
+{
+    ResourceLazyViewDesc(DeferredView& deferred_view, const std::shared_ptr<Resource>& resource)
+        : m_deferred_view(deferred_view)
+        , resource(resource)
+    {
+    }
+
+    ~ResourceLazyViewDesc()
+    {
+        m_deferred_view.OnDestroy(*this);
+    }
+
+    std::shared_ptr<Resource> resource;
+    LazyViewDesc view_desc;
+    DeferredView& m_deferred_view;
+};
+
 
 enum class ShadingRate : uint8_t
 {

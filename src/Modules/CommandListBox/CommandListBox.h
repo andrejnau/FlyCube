@@ -93,6 +93,7 @@ private:
     };
     std::map<BindKey, BoundResource> m_bound_resources;
     std::map<BindKey, std::shared_ptr<DeferredView>> m_bound_deferred_view;
+    std::vector<std::shared_ptr<ResourceLazyViewDesc>> m_resource_lazy_view_descs;
 
     std::vector<std::shared_ptr<Shader>> m_shaders;
     std::shared_ptr<Program> m_program;

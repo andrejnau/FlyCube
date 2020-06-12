@@ -1,31 +1,36 @@
 #include "Context/BufferLayout.h"
 
-static constexpr bool use_copy = false;
-
 ViewProvider::ViewProvider(Device& device, const uint8_t* src_data, BufferLayout& layout)
     : m_device(device)
     , m_src_data(src_data)
     , m_layout(layout)
     , m_dst_data(layout.dst_buffer_size)
 {
-    if (use_copy)
-        m_resource = m_device.CreateBuffer(BindFlag::kConstantBuffer, static_cast<uint32_t>(m_layout.dst_buffer_size), MemoryType::kDefault);
 }
 
-ResourceLazyViewDesc ViewProvider::GetView(CommandListBox& command_list)
+std::shared_ptr<ResourceLazyViewDesc> ViewProvider::GetView(CommandListBox& command_list)
 {
-    if (use_copy)
+    if (SyncData() || !m_last_view)
     {
-        if (SyncData())
-            command_list.UpdateSubresource(m_resource, 0, m_dst_data.data());
+        std::shared_ptr<Resource> resource;
+        if (!m_free_resources.empty())
+        {
+            resource = m_free_resources.back();
+            m_free_resources.pop_back();
+        }
+        else
+        {
+            resource = m_device.CreateBuffer(BindFlag::kConstantBuffer, static_cast<uint32_t>(m_layout.dst_buffer_size), MemoryType::kUpload);
+        }
+        resource->UpdateUploadData(m_dst_data.data(), 0, m_dst_data.size());
+        m_last_view = std::make_shared<ResourceLazyViewDesc>(*this, resource);
     }
-    else if (SyncData() || !m_resource)
-    {
-        auto upload = m_device.CreateBuffer(BindFlag::kConstantBuffer, static_cast<uint32_t>(m_layout.dst_buffer_size), MemoryType::kUpload);
-        upload->UpdateUploadData(m_dst_data.data(), 0, m_dst_data.size());
-        m_resource = upload;
-    }
-    return { m_resource };
+    return m_last_view;
+}
+
+void ViewProvider::OnDestroy(ResourceLazyViewDesc& view_desc)
+{
+    m_free_resources.emplace_back(view_desc.resource);
 }
 
 bool ViewProvider::SyncData()

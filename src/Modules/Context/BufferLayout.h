@@ -13,7 +13,8 @@ class ViewProvider : public DeferredView
 {
 public:
     ViewProvider(Device& device, const uint8_t* src_data, BufferLayout& layout);
-    ResourceLazyViewDesc GetView(CommandListBox& command_list) override;
+    std::shared_ptr<ResourceLazyViewDesc> GetView(CommandListBox& command_list) override;
+    void OnDestroy(ResourceLazyViewDesc& view_desc) override;
 
 private:
     bool SyncData();
@@ -22,7 +23,8 @@ private:
     const uint8_t* m_src_data;
     BufferLayout& m_layout;
     std::vector<uint8_t> m_dst_data;
-    std::shared_ptr<Resource> m_resource;
+    std::shared_ptr<ResourceLazyViewDesc> m_last_view;
+    std::vector<std::shared_ptr<Resource>> m_free_resources;
 };
 
 template<typename T>

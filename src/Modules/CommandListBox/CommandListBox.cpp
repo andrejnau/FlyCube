@@ -13,6 +13,7 @@ void CommandListBox::Open()
     m_bound_resources.clear();
     m_bound_deferred_view.clear();
     m_binding_sets.clear();
+    m_resource_lazy_view_descs.clear();
     m_command_list->Open();
 }
 
@@ -321,9 +322,10 @@ void CommandListBox::ApplyBindings()
     for (auto& x : m_bound_deferred_view)
     {
         auto view = x.second->GetView(*this);
+        m_resource_lazy_view_descs.emplace_back(view);
         if (!m_program->HasShader(x.first.shader_type))
             continue;
-        Attach(x.first, CreateView(x.first, view.resource, view.view_desc));
+        Attach(x.first, CreateView(x.first, view->resource, view->view_desc));
     }
 
     std::vector<BindingDesc> descs;
