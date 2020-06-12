@@ -45,7 +45,7 @@ public:
     DXCPUDescriptorPool& GetCPUDescriptorPool();
     DXGPUDescriptorPool& GetGPUDescriptorPool();
     bool IsRenderPassesSupported() const;
-    bool IsRenderdocPresent() const;
+    bool IsUnderGraphicsDebugger() const;
 
 private:
     DXAdapter& m_adapter;
@@ -57,7 +57,7 @@ private:
     bool m_is_render_passes_supported = false;
     bool m_is_variable_rate_shading_supported = false;
     uint32_t m_shading_rate_image_tile_size = 0;
-    bool m_is_renderdoc_present = false;
+    bool m_is_under_graphics_debugger = false;
 };
 
 D3D12_RESOURCE_STATES ConvertSate(ResourceState state);

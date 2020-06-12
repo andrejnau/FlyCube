@@ -69,7 +69,7 @@ DXDevice::DXDevice(DXAdapter& adapter)
 
     ComPtr<IUnknown> renderdoc;
     m_device->QueryInterface(IRenderDoc_uuid, reinterpret_cast<void**>(renderdoc.GetAddressOf()));
-    m_is_renderdoc_present = !!renderdoc;
+    m_is_under_graphics_debugger = renderdoc || GetModuleHandleW(L"WinPixCaptureReplay.dll");
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature_support5 = {};
     ASSERT_SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support5, sizeof(feature_support5)));
@@ -523,7 +523,7 @@ bool DXDevice::IsRenderPassesSupported() const
     return m_is_render_passes_supported;
 }
 
-bool DXDevice::IsRenderdocPresent() const
+bool DXDevice::IsUnderGraphicsDebugger() const
 {
-    return m_is_renderdoc_present;
+    return m_is_under_graphics_debugger;
 }

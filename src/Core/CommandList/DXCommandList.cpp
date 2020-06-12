@@ -163,7 +163,7 @@ void DXCommandList::EndRenderPass()
 
 void DXCommandList::BeginEvent(const std::string& name)
 {
-    if (!m_device.IsRenderdocPresent())
+    if (!m_device.IsUnderGraphicsDebugger())
         return;
     std::wstring wname = utf8_to_wstring(name);
     PIXBeginEvent(m_command_list.Get(), 0, wname.c_str());
@@ -171,7 +171,7 @@ void DXCommandList::BeginEvent(const std::string& name)
 
 void DXCommandList::EndEvent()
 {
-    if (!m_device.IsRenderdocPresent())
+    if (!m_device.IsUnderGraphicsDebugger())
         return;
     PIXEndEvent(m_command_list.Get());
 }
