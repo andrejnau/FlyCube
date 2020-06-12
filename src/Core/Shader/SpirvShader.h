@@ -16,8 +16,11 @@ public:
     const std::vector<uint32_t>& GetBlob() const;
 
 private:
+    std::vector<VertexInputDesc> GetInputLayoutImpl() const;
+
     ShaderType m_type;
     std::vector<uint32_t> m_blob;
     std::map<BindKey, ResourceBindingDesc> m_resource_binding_descs;
     std::map<std::string, BindKey> m_bind_keys;
+    std::vector<VertexInputDesc> m_input_layout_desc;
 };

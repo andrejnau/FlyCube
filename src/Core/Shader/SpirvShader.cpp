@@ -135,9 +135,17 @@ SpirvShader::SpirvShader(const ShaderDesc& desc)
     add_resources(shader_resources.acceleration_structures);
     add_resources(shader_resources.separate_images);
     add_resources(shader_resources.separate_samplers);
+
+    if (m_type == ShaderType::kVertex)
+        m_input_layout_desc = GetInputLayoutImpl();
 }
 
 std::vector<VertexInputDesc> SpirvShader::GetInputLayout() const
+{
+    return m_input_layout_desc;
+}
+
+std::vector<VertexInputDesc> SpirvShader::GetInputLayoutImpl() const
 {
     spirv_cross::CompilerHLSL compiler(m_blob);
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();

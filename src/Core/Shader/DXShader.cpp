@@ -70,9 +70,17 @@ DXShader::DXShader(const ShaderDesc& desc)
             m_names[bind_key] = res_desc.Name;
         }
     }
+
+    if (m_type == ShaderType::kVertex)
+        m_input_layout_desc = GetInputLayoutImpl();
 }
 
 std::vector<VertexInputDesc> DXShader::GetInputLayout() const
+{
+    return m_input_layout_desc;
+}
+
+std::vector<VertexInputDesc> DXShader::GetInputLayoutImpl() const
 {
     ComPtr<ID3D12ShaderReflection> reflector;
     DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&reflector));

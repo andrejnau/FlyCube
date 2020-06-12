@@ -19,8 +19,11 @@ public:
     ComPtr<ID3DBlob> GetBlob() const;
 
 private:
+    std::vector<VertexInputDesc> GetInputLayoutImpl() const;
+
     ShaderType m_type;
     ComPtr<ID3DBlob> m_blob;
     std::map<BindKey, std::string> m_names;
     std::map<std::string, BindKey> m_bind_keys;
+    std::vector<VertexInputDesc> m_input_layout_desc;
 };
