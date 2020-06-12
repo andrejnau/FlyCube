@@ -21,7 +21,7 @@ add_executable(${target}
 
 target_link_libraries(${target}
     Utilities
-    Shader
+    HLSLCompiler
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")

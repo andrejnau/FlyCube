@@ -1,6 +1,7 @@
 #include "Shader/DXShader.h"
-#include "Shader/DXCompiler.h"
-#include "Shader/DXReflector.h"
+#include <HLSLCompiler/DXCompiler.h>
+#include <HLSLCompiler/DXReflector.h>
+#include <Utilities/DXUtility.h>
 
 ViewType GetViewType(D3D_SHADER_INPUT_TYPE type)
 {

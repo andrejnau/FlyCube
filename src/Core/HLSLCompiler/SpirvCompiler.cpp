@@ -1,10 +1,9 @@
-#include "Shader/SpirvCompiler.h"
+#include "HLSLCompiler/SpirvCompiler.h"
+#include "HLSLCompiler/DXCompiler.h"
 #include <iostream>
 #include <fstream>
 #include <Utilities/FileUtility.h>
 #include <cassert>
-
-#include "Shader/DXCompiler.h"
 
 std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& option)
 {

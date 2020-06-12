@@ -2,7 +2,7 @@
 #include <Device/DXDevice.h>
 #include <Program/DXProgram.h>
 #include <Shader/DXShader.h>
-#include <Shader/DXReflector.h>
+#include <HLSLCompiler/DXReflector.h>
 #include <View/DXView.h>
 #include <Utilities/DXGIFormatHelper.h>
 #include <d3dx12.h>

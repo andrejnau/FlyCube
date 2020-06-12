@@ -1,12 +1,9 @@
 #pragma once
-
 #include <dxc/Support/WinIncludes.h>
 #include <dxc/Support/dxcapi.use.h>
-
+#include <string>
 #include <wrl.h>
 using namespace Microsoft::WRL;
-
-#include <string>
 
 class DXCLoader
 {

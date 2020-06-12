@@ -1,6 +1,6 @@
 #include "Program/DXProgram.h"
 #include <Device/DXDevice.h>
-#include <Shader/DXReflector.h>
+#include <HLSLCompiler/DXReflector.h>
 #include <Shader/DXShader.h>
 #include <View/DXView.h>
 #include <BindingSet/DXBindingSet.h>

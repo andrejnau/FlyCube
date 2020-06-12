@@ -1,5 +1,5 @@
 #include "Shader/SpirvShader.h"
-#include "Shader/SpirvCompiler.h"
+#include <HLSLCompiler/SpirvCompiler.h>
 #include <spirv_hlsl.hpp>
 
 ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& type, uint32_t resource_id)

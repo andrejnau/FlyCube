@@ -1,10 +1,8 @@
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
-#include <Shader/DXCompiler.h>
-#include <Shader/DXReflector.h>
+#include <HLSLCompiler/DXCompiler.h>
+#include <HLSLCompiler/DXReflector.h>
 #include <mustache.hpp>
-#include <d3dcompiler.h>
-#include <wrl.h>
 #include <string>
 #include <stdexcept>
 #include <iostream>
@@ -14,8 +12,6 @@
 #include <cctype>
 #include <map>
 #include <set>
-
-using namespace Microsoft::WRL;
 using namespace kainjow;
 
 struct Option

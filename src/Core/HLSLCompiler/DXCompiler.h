@@ -1,14 +1,7 @@
 #pragma once
-
-#include "Shader/SpirvCompiler.h"
-#include <Utilities/FileUtility.h>
-#include <Utilities/DXUtility.h>
-
-#include <d3dcompiler.h>
+#include <Instance/BaseTypes.h>
 #include <d3dcommon.h>
 #include <wrl.h>
-#include <assert.h>
-
 using namespace Microsoft::WRL;
 
 struct DXOption

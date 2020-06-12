@@ -1,5 +1,5 @@
-#include "Shader/DXReflector.h"
-#include "Shader/DXCLoader.h"
+#include "HLSLCompiler/DXReflector.h"
+#include "HLSLCompiler/DXCLoader.h"
 #include <dxc/Support/Global.h>
 #include <dxc/DxilContainer/DxilContainer.h>
 

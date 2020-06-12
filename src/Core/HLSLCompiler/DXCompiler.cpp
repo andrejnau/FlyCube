@@ -1,7 +1,12 @@
-#include "Shader/DXCompiler.h"
-#include "Shader/DXCLoader.h"
+#include "HLSLCompiler/DXCompiler.h"
+#include "HLSLCompiler/DXCLoader.h"
+#include <Utilities/FileUtility.h>
+#include <Utilities/DXUtility.h>
 #include <deque>
 #include <iostream>
+#include <vector>
+#include <d3dcompiler.h>
+#include <cassert>
 
 constexpr bool g_force_dxil = false;
 
