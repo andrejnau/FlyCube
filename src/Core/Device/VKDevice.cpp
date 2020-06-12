@@ -70,6 +70,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
         if (std::string(extension.extensionName.data()) == VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME)
             m_is_variable_rate_shading_supported = true;
+        if (std::string(extension.extensionName.data()) == VK_NV_RAY_TRACING_EXTENSION_NAME)
+            m_is_dxr_supported = true;
     }
 
     if (m_is_variable_rate_shading_supported)
@@ -551,7 +553,7 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(const std::shared_ptr<Comma
 
 bool VKDevice::IsDxrSupported() const
 {
-    return true;
+    return m_is_dxr_supported;
 }
 
 bool VKDevice::IsVariableRateShadingSupported() const
