@@ -8,8 +8,6 @@
 #include <d3dcompiler.h>
 #include <cassert>
 
-constexpr bool g_force_dxil = false;
-
 class FileWrap
 {
 public:
@@ -72,32 +70,6 @@ static std::string GetShaderTarget(ShaderType type, const std::string& model)
         assert(false);
         return "";
     }
-}
-
-ComPtr<ID3DBlob> DXBCCompile(const ShaderDesc& shader)
-{
-    ComPtr<ID3DBlob> shader_buffer;
-    std::vector<D3D_SHADER_MACRO> macro;
-    for (const auto & x : shader.define)
-    {
-        macro.push_back({ x.first.c_str(), x.second.c_str() });
-    }
-    macro.push_back({ nullptr, nullptr });
-    std::string target = GetShaderTarget(shader.type, "5_1");
-    ComPtr<ID3DBlob> errors;
-    ASSERT_SUCCEEDED(D3DCompileFromFile(
-        GetAssetFullPathW(shader.shader_path).c_str(),
-        macro.data(),
-        D3D_COMPILE_STANDARD_FILE_INCLUDE,
-        shader.entrypoint.c_str(),
-        target.c_str(),
-        D3DCOMPILE_DEBUG,
-        0,
-        &shader_buffer,
-        &errors));
-    if (errors)
-        OutputDebugStringA(reinterpret_cast<char*>(errors->GetBufferPointer()));
-    return shader_buffer;
 }
 
 class IncludeHandler : public IDxcIncludeHandler
@@ -217,17 +189,9 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
 
 ComPtr<ID3DBlob> DXCompile(const ShaderDesc& shader, const DXOption& option)
 {
-    bool dxc_target = shader.type == ShaderType::kLibrary;
-    bool different_options = !shader.define.empty();
-    different_options |= g_force_dxil != dxc_target;
-    different_options |= option.spirv;
-
+    bool different_options = !shader.define.empty() || option.spirv;
     ComPtr<ID3DBlob> shader_buffer;
     if (!different_options && GetBlobFromCache(shader.shader_path, shader_buffer))
         return shader_buffer;
-
-    if (dxc_target || option.spirv || g_force_dxil)
-        return DXCCompile(shader, option);
-    else
-        return DXBCCompile(shader);
+    return DXCCompile(shader, option);
 }
