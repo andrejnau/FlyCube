@@ -98,8 +98,9 @@ void CommandListBox::SetViewport(float width, float height)
     m_viewport_height = height;
 }
 
-void CommandListBox::SetScissorRect(int32_t left, int32_t top, int32_t right, int32_t bottom)
+void CommandListBox::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)
 {
+    m_command_list->SetScissorRect(left, top, right, bottom);
 }
 
 void CommandListBox::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)

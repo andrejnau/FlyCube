@@ -46,7 +46,7 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
 
     ImDrawData* draw_data = ImGui::GetDrawData();
 
-    std::vector<glm::vec3> positions;
+    std::vector<glm::vec2> positions;
     std::vector<glm::vec2> texcoords;
     std::vector<glm::vec4> colors;
     std::vector<uint32_t> indices;
@@ -59,7 +59,7 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
             auto& pos = cmd_list->VtxBuffer.Data[j].pos;
             auto& uv = cmd_list->VtxBuffer.Data[j].uv;
             uint8_t* col = reinterpret_cast<uint8_t*>(&cmd_list->VtxBuffer.Data[j].col);
-            positions.push_back({ pos.x, pos.y, 0.0 });
+            positions.push_back({ pos.x, pos.y });
             texcoords.push_back({ uv.x, uv.y });
             colors.push_back({ col[0] / 255.0, col[1] / 255.0, col[2] / 255.0, col[3] / 255.0 });
         }
@@ -96,12 +96,11 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
         BlendOp::kAdd,
         Blend::kInvSrcAlpha,
         Blend::kZero,
-        BlendOp::kAdd });
+        BlendOp::kAdd
+    });
 
     command_list.SetRasterizeState({ FillMode::kSolid, CullMode::kNone });
-
-    command_list.SetDepthStencilState({ false });
-
+    command_list.SetDepthStencilState({ false, DepthComparison::kLessEqual });
     command_list.SetViewport(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
     int vtx_offset = 0;

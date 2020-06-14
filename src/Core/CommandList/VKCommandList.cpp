@@ -352,7 +352,7 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
     }
 }
 
-void VKCommandList::SetViewport(float width, float height)
+void VKCommandList::SetViewport(float width, float height, bool set_scissor)
 {
     vk::Viewport viewport = {};
     viewport.width = width;
@@ -360,10 +360,17 @@ void VKCommandList::SetViewport(float width, float height)
     viewport.minDepth = 0;
     viewport.maxDepth = 1.0;
     m_command_list->setViewport(0, 1, &viewport);
+    if (set_scissor)
+        SetScissorRect(0, 0, width, height);
+}
 
+void VKCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)
+{
     vk::Rect2D rect = {};
-    rect.extent.width = static_cast<int32_t>(width);
-    rect.extent.height = static_cast<int32_t>(height);
+    rect.offset.x = left;
+    rect.offset.y = top;
+    rect.extent.width = right;
+    rect.extent.height = bottom;
     m_command_list->setScissor(0, 1, &rect);
 }
 

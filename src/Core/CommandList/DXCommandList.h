@@ -26,7 +26,8 @@ public:
     void Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z) override;
     void DispatchRays(uint32_t width, uint32_t height, uint32_t depth) override;
     void ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers) override;
-    void SetViewport(float width, float height) override;
+    void SetViewport(float width, float height, bool set_scissor) override;
+    void SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom) override;
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) override;
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override;
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) override;

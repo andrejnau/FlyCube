@@ -30,33 +30,28 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     m_graphics_pso_desc.SampleDesc.Count = 1;
     m_graphics_pso_desc.NumRenderTargets = 0;
 
+    switch (desc.rasterizer_desc.fill_mode)
     {
-        switch (desc.rasterizer_desc.fill_mode)
-        {
-        case FillMode::kWireframe:
-            m_graphics_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
-            break;
-        case FillMode::kSolid:
-            m_graphics_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-            break;
-        }
-
-        switch (desc.rasterizer_desc.cull_mode)
-        {
-        case CullMode::kNone:
-            m_graphics_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-            break;
-        case CullMode::kFront:
-            m_graphics_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
-            break;
-        case CullMode::kBack:
-            m_graphics_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
-            break;
-        }
-
-        m_graphics_pso_desc.RasterizerState.DepthBias = desc.rasterizer_desc.DepthBias;
+    case FillMode::kWireframe:
+        m_graphics_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+        break;
+    case FillMode::kSolid:
+        m_graphics_pso_desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        break;
     }
-
+    switch (desc.rasterizer_desc.cull_mode)
+    {
+    case CullMode::kNone:
+        m_graphics_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        break;
+    case CullMode::kFront:
+        m_graphics_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+        break;
+    case CullMode::kBack:
+        m_graphics_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+        break;
+    }
+    m_graphics_pso_desc.RasterizerState.DepthBias = desc.rasterizer_desc.depth_bias;
 
     auto convert = [](Blend type)
     {

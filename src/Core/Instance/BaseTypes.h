@@ -138,11 +138,11 @@ struct RasterizerDesc
 {
     FillMode fill_mode = FillMode::kSolid;
     CullMode cull_mode = CullMode::kBack;
-    int32_t DepthBias = 0;
+    int32_t depth_bias = 0;
 
     auto MakeTie() const
     {
-        return std::tie(fill_mode, cull_mode, DepthBias);
+        return std::tie(fill_mode, cull_mode, depth_bias);
     }
 
     bool operator< (const RasterizerDesc& oth) const
