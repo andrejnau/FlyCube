@@ -66,6 +66,7 @@ DXDevice::DXDevice(DXAdapter& adapter)
     , m_gpu_descriptor_pool(*this)
 {
     ASSERT_SUCCEEDED(D3D12CreateDevice(m_adapter.GetAdapter().Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&m_device)));
+    m_device.As(&m_device5);
 
     ComPtr<IUnknown> renderdoc;
     m_device->QueryInterface(IRenderDoc_uuid, reinterpret_cast<void**>(renderdoc.GetAddressOf()));
@@ -345,17 +346,13 @@ std::shared_ptr<Pipeline> DXDevice::CreateRayTracingPipeline(const RayTracingPip
     return std::make_shared<DXRayTracingPipeline>(*this, desc);
 }
 
-std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::shared_ptr<CommandList>& command_list, const BufferDesc& vertex, const BufferDesc& index)
+D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index)
 {
-    ComPtr<ID3D12Device5> device5;
-    m_device.As(&device5);
-    ComPtr<ID3D12GraphicsCommandList4> command_list4;
-    command_list->As<DXCommandList>().GetCommandList().As(&command_list4);
+    D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
 
     auto vertex_res = std::static_pointer_cast<DXResource>(vertex.res);
     auto index_res = std::static_pointer_cast<DXResource>(index.res);
 
-    D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
     geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
     geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
     ASSERT(!!vertex_res);
@@ -373,72 +370,38 @@ std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::shared_ptr<Co
         geometry_desc.Triangles.IndexCount = index.count;
     }
 
+    return geometry_desc;
+}
+
+std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs)
+{
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
+    m_device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
+    std::shared_ptr<DXResource> res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
+    res->resource_type = inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL ? ResourceType::kBottomLevelAS : ResourceType::kTopLevelAS;
+    res->prebuild_info = { info.ScratchDataSizeInBytes };
+    return res;
+}
+
+std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
+{
+    D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = FillRaytracingGeometryDesc(vertex, index);
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
     inputs.NumDescs = 1;
     inputs.pGeometryDescs = &geometry_desc;
-
-    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
-    device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
-
-    auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess, info.ScratchDataSizeInBytes, MemoryType::kDefault));
-    auto res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
-
-    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
-    acceleration_structure_desc.Inputs = inputs;
-    acceleration_structure_desc.DestAccelerationStructureData = res->resource->GetGPUVirtualAddress();
-    acceleration_structure_desc.ScratchAccelerationStructureData = scratch->resource->GetGPUVirtualAddress();
-    command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
-
-    D3D12_RESOURCE_BARRIER uav_barrier = {};
-    uav_barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    uav_barrier.UAV.pResource = res->resource.Get();
-    command_list4->ResourceBarrier(1, &uav_barrier);
-
-    res->GetPrivateResource(0) = scratch;
-
-    return res;
+    return CreateAccelerationStructure(inputs);
 }
 
-std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list,
-                                                     const std::shared_ptr<Resource>& instance_data, uint32_t instance_count)
+std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(uint32_t instance_count)
 {
-    ComPtr<ID3D12Device5> device5;
-    m_device.As(&device5);
-    ComPtr<ID3D12GraphicsCommandList4> command_list4;
-    command_list->As<DXCommandList>().GetCommandList().As(&command_list4);
-
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
     inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
     inputs.NumDescs = instance_count;
-
-    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
-    device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
-
-    auto scratch = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess, info.ScratchDataSizeInBytes, MemoryType::kDefault));
-    auto res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
-
-    decltype(auto) dx_instance_data = instance_data->As<DXResource>();
-
-    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
-    acceleration_structure_desc.Inputs = inputs;
-    acceleration_structure_desc.Inputs.InstanceDescs = dx_instance_data.resource->GetGPUVirtualAddress();
-    acceleration_structure_desc.DestAccelerationStructureData = res->resource->GetGPUVirtualAddress();
-    acceleration_structure_desc.ScratchAccelerationStructureData = scratch->resource->GetGPUVirtualAddress();
-    command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
-
-    D3D12_RESOURCE_BARRIER uav_barrier = {};
-    uav_barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    uav_barrier.UAV.pResource = res->resource.Get();
-    command_list4->ResourceBarrier(1, &uav_barrier);
-
-    res->GetPrivateResource(0) = scratch;
-    res->GetPrivateResource(1) = instance_data;
-
-    return res;
+    return CreateAccelerationStructure(inputs);
 }
 
 bool DXDevice::IsDxrSupported() const

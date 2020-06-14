@@ -121,7 +121,7 @@ private:
     GraphicsPipelineDesc m_graphic_pipeline_desc;
 
     void UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch);
-    std::vector<std::shared_ptr<Resource>> m_upload;
+    std::vector<std::shared_ptr<Resource>> m_cmd_resources;
 
     ResourceStateTracker& GetResourceStateTracker(const std::shared_ptr<Resource>& resource);
     std::map<std::shared_ptr<Resource>, ResourceStateTracker> m_resource_state_tracker;

@@ -9,7 +9,7 @@ CommandListBox::CommandListBox(Device& device)
 
 void CommandListBox::Open()
 {
-    m_upload.clear();
+    m_cmd_resources.clear();
     m_bound_resources.clear();
     m_bound_deferred_view.clear();
     m_binding_sets.clear();
@@ -48,7 +48,7 @@ void CommandListBox::UpdateSubresourceDefault(const std::shared_ptr<Resource>& r
         m_is_open_render_pass = false;
     }
 
-    std::shared_ptr<Resource>& upload_resource = m_upload.emplace_back();
+    std::shared_ptr<Resource>& upload_resource = m_cmd_resources.emplace_back();
 
     switch (resource->GetResourceType())
     {
@@ -241,7 +241,17 @@ std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const BufferDesc& 
         BufferBarrier(vertex.res, ResourceState::kNonPixelShaderResource);
     if (index.res)
         BufferBarrier(index.res, ResourceState::kNonPixelShaderResource);
-    return m_device.CreateBottomLevelAS(m_command_list, vertex, index);
+
+    auto res = m_device.CreateBottomLevelAS(vertex, index);
+
+    RaytracingASPrebuildInfo prebuild_info = res->GetRaytracingASPrebuildInfo();
+    auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, prebuild_info.build_scratch_data_size, MemoryType::kDefault);
+
+    m_command_list->BuildBottomLevelAS(res, scratch, vertex, index);
+
+    m_cmd_resources.emplace_back(scratch);
+
+    return res;
 }
 
 std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry)
@@ -251,10 +261,10 @@ std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::vector<std
         m_command_list->EndRenderPass();
         m_is_open_render_pass = false;
     }
-    std::vector<GeometryInstance> instances;
+    std::vector<RaytracingGeometryInstance> instances;
     for (const auto& mesh : geometry)
     {
-        GeometryInstance& instance = instances.emplace_back();
+        RaytracingGeometryInstance& instance = instances.emplace_back();
         memcpy(&instance.transform, &mesh.second, sizeof(instance.transform));
         instance.instance_id = static_cast<uint32_t>(instances.size() - 1);
         instance.instance_mask = 0xff;
@@ -264,7 +274,16 @@ std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::vector<std
     auto instance_data = m_device.CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload);
     instance_data->UpdateUploadData(instances.data(), 0, instances.size() * sizeof(instances.back()));
 
-    return m_device.CreateTopLevelAS(m_command_list, instance_data, geometry.size());
+    auto res = m_device.CreateTopLevelAS(geometry.size());
+    RaytracingASPrebuildInfo prebuild_info = res->GetRaytracingASPrebuildInfo();
+    auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, prebuild_info.build_scratch_data_size, MemoryType::kDefault);
+
+    m_command_list->BuildTopLevelAS(res, scratch, instance_data, geometry.size());
+
+    m_cmd_resources.emplace_back(scratch);
+    m_cmd_resources.emplace_back(instance_data);
+
+    return res;
 }
 
 void CommandListBox::UseProgram(std::shared_ptr<Program>& program)

@@ -449,7 +449,7 @@ struct BufferCopyRegion
     uint64_t num_bytes;
 };
 
-struct GeometryInstance
+struct RaytracingGeometryInstance
 {
     glm::mat3x4 transform;
     uint32_t instance_id : 24;
@@ -459,7 +459,7 @@ struct GeometryInstance
     uint64_t acceleration_structure_handle;
 };
 
-static_assert(sizeof(GeometryInstance) == 64);
+static_assert(sizeof(RaytracingGeometryInstance) == 64);
 
 struct ResourceBarrierDesc
 {
@@ -519,4 +519,9 @@ enum class ShadingRateCombiner
    kMin = 2,
    kMax = 3,
    kSum = 4,
+};
+
+struct RaytracingASPrebuildInfo
+{
+    uint64_t build_scratch_data_size;
 };

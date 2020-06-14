@@ -20,6 +20,11 @@ MemoryType ResourceBase::GetMemoryType() const
     return memory_type;
 }
 
+const RaytracingASPrebuildInfo& ResourceBase::GetRaytracingASPrebuildInfo() const
+{
+    return prebuild_info;
+}
+
 void ResourceBase::UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes)
 {
     void* dst_data = Map();
@@ -41,16 +46,6 @@ void ResourceBase::UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row
         }
     }
     Unmap();
-}
-
-void ResourceBase::SetPrivateResource(uint64_t id, const std::shared_ptr<Resource>& resource)
-{
-    m_private_resources[id] = resource;
-}
-
-std::shared_ptr<Resource>& ResourceBase::GetPrivateResource(uint64_t id)
-{
-    return m_private_resources[id];
 }
 
 ResourceStateTracker& ResourceBase::GetGlobalResourceStateTracker()

@@ -29,9 +29,8 @@ public:
     std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) override;
-    std::shared_ptr<Resource> CreateBottomLevelAS(const std::shared_ptr<CommandList>& command_list, const BufferDesc& vertex, const BufferDesc& index) override;
-    std::shared_ptr<Resource> CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list,
-                                               const std::shared_ptr<Resource>& instance_data, uint32_t instance_count) override;
+    std::shared_ptr<Resource> CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index) override;
+    std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count) override;
     bool IsDxrSupported() const override;
     bool IsVariableRateShadingSupported() const override;
     void Wait(const std::shared_ptr<Semaphore>& semaphore) override;
@@ -48,8 +47,11 @@ public:
     bool IsUnderGraphicsDebugger() const;
 
 private:
+    std::shared_ptr<Resource> CreateAccelerationStructure(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs);
+
     DXAdapter& m_adapter;
     ComPtr<ID3D12Device> m_device;
+    ComPtr<ID3D12Device5> m_device5;
     ComPtr<ID3D12CommandQueue> m_command_queue;
     DXCPUDescriptorPool m_cpu_descriptor_pool;
     DXGPUDescriptorPool m_gpu_descriptor_pool;
@@ -61,3 +63,4 @@ private:
 };
 
 D3D12_RESOURCE_STATES ConvertSate(ResourceState state);
+D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index);

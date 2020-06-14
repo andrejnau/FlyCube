@@ -31,6 +31,8 @@ public:
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override;
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) override;
     void RSSetShadingRateImage(const std::shared_ptr<Resource>& resource) override;
+    void BuildBottomLevelAS(const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch, const BufferDesc& vertex, const BufferDesc& index) override;
+    void BuildTopLevelAS(const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch, const std::shared_ptr<Resource>& instance_data, uint32_t instance_count) override;
     void CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
                     const std::vector<BufferCopyRegion>& regions) override;
     void CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
@@ -42,6 +44,7 @@ private:
     void BeginRenderPassImpl(const std::shared_ptr<Framebuffer>& framebuffer);
     void OMSetFramebuffer(const std::shared_ptr<Framebuffer>& framebuffer);
     void IASetVertexBufferImpl(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride);
+    void BuildAccelerationStructure(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs, const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch);
 
     DXDevice& m_device;
     ComPtr<ID3D12CommandAllocator> m_command_allocator;

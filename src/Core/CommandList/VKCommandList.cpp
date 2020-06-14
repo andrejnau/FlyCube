@@ -8,6 +8,7 @@
 #include <Pipeline/VKRayTracingPipeline.h>
 #include <Framebuffer/VKFramebuffer.h>
 #include <BindingSet/VKBindingSet.h>
+#include <Utilities/VKUtility.h>
 
 VKCommandList::VKCommandList(VKDevice& device)
     : m_device(device)
@@ -402,6 +403,48 @@ void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<
 
 void VKCommandList::RSSetShadingRateImage(const std::shared_ptr<Resource>& resource)
 {
+}
+
+void VKCommandList::BuildAccelerationStructure(const vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch)
+{
+    decltype(auto) vk_result = result->As<VKResource>();
+    decltype(auto) vk_scratch = scratch->As<VKResource>();
+
+    m_command_list->buildAccelerationStructureNV(
+        build_info,
+        instance_data,
+        0,
+        VK_FALSE,
+        vk_result.as.acceleration_structure.get(),
+        {},
+        vk_scratch.buffer.res.get(),
+        0
+    );
+
+    vk::MemoryBarrier memory_barrier = {};
+    memory_barrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
+    memory_barrier.dstAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
+    m_command_list->pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, 1, &memory_barrier, 0, 0, 0, 0);
+}
+
+void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch, const BufferDesc& vertex, const BufferDesc& index)
+{
+    vk::GeometryNV geometry_desc = FillRaytracingGeometryDesc(vertex, index);
+    vk::AccelerationStructureInfoNV build_info = {};
+    build_info.type = vk::AccelerationStructureTypeNV::eBottomLevel;
+    build_info.instanceCount = 0;
+    build_info.geometryCount = 1;
+    build_info.pGeometries = &geometry_desc;
+    BuildAccelerationStructure(build_info, {}, result, scratch);
+}
+
+void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch, const std::shared_ptr<Resource>& instance_data, uint32_t instance_count)
+{
+    decltype(auto) vk_instance_data = instance_data->As<VKResource>();
+    vk::AccelerationStructureInfoNV build_info = {};
+    build_info.type = vk::AccelerationStructureTypeNV::eTopLevel;
+    build_info.instanceCount = instance_count;
+    BuildAccelerationStructure(build_info, vk_instance_data.buffer.res.get(), result, scratch);
 }
 
 void VKCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,

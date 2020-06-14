@@ -26,9 +26,8 @@ public:
     std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) override;
-    std::shared_ptr<Resource> CreateBottomLevelAS(const std::shared_ptr<CommandList>& command_list, const BufferDesc& vertex, const BufferDesc& index) override;
-    std::shared_ptr<Resource> CreateTopLevelAS(const std::shared_ptr<CommandList>& command_list,
-                                               const std::shared_ptr<Resource>& instance_data, uint32_t instance_count) override;
+    std::shared_ptr<Resource> CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index) override;
+    std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count) override;
     bool IsDxrSupported() const override;
     bool IsVariableRateShadingSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
@@ -47,6 +46,8 @@ public:
     uint32_t FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties);
 
 private:
+    std::shared_ptr<Resource> CreateAccelerationStructure(const vk::AccelerationStructureInfoNV& acceleration_structure_info);
+
     VKAdapter& m_adapter;
     const vk::PhysicalDevice& m_physical_device;
     uint32_t m_queue_family_index = -1;
@@ -60,3 +61,5 @@ private:
     uint32_t m_shading_rate_image_tile_size = 0;
     bool m_is_dxr_supported = false;
 };
+
+vk::GeometryNV FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index);
