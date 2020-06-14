@@ -2,20 +2,17 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-IrradianceConversion::IrradianceConversion(Device& device, const Input& input, int width, int height)
+IrradianceConversion::IrradianceConversion(Device& device, const Input& input)
     : m_device(device)
     , m_input(input)
-    , m_width(width)
-    , m_height(height)
     , m_program_irradiance_convolution(device)
     , m_program_prefilter(device)
 {
-    CreateSizeDependentResources();
-
     m_sampler = m_device.CreateSampler({
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
-        SamplerComparisonFunc::kNever });
+        SamplerComparisonFunc::kNever
+    });
 }
 
 void IrradianceConversion::OnUpdate()
@@ -148,17 +145,6 @@ void IrradianceConversion::DrawPrefilter(CommandListBox& command_list)
         }
         command_list.EndEvent();
     }
-}
-
-void IrradianceConversion::OnResize(int width, int height)
-{
-    m_width = width;
-    m_height = height;
-    CreateSizeDependentResources();
-}
-
-void IrradianceConversion::CreateSizeDependentResources()
-{
 }
 
 void IrradianceConversion::OnModifySponzaSettings(const SponzaSettings& settings)

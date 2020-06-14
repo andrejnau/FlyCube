@@ -26,7 +26,7 @@ AppBox::AppBox(const std::string& title, Settings setting)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
     glfwSetWindowUserPointer(m_window, this);
-    glfwSetFramebufferSizeCallback(m_window, AppBox::OnSizeChanged);
+    glfwSetWindowSizeCallback(m_window, AppBox::OnSizeChanged);
     glfwSetKeyCallback(m_window, AppBox::OnKey);
     glfwSetCursorPosCallback(m_window, AppBox::OnMouse);
     glfwSetMouseButtonCallback(m_window, AppBox::OnMouseButton);

@@ -127,7 +127,7 @@ void VKCommandList::ClearColor(const std::shared_ptr<View>& view, const std::arr
     clear_color.float32[3] = color[3];
 
     const vk::ImageSubresourceRange& image_subresource_range = vk_view.GeViewInfo().subresourceRange;
-    m_command_list->clearColorImage(vk_resource.image.res.get(), vk::ImageLayout::eGeneral, clear_color, image_subresource_range);
+    m_command_list->clearColorImage(vk_resource.image.res, vk::ImageLayout::eGeneral, clear_color, image_subresource_range);
 }
 
 void VKCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)
@@ -144,7 +144,7 @@ void VKCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)
     vk::ClearDepthStencilValue clear_color = {};
     clear_color.depth = depth;
     const vk::ImageSubresourceRange& ImageSubresourceRange = vk_view.GeViewInfo().subresourceRange;
-    m_command_list->clearDepthStencilImage(vk_resource.image.res.get(), vk::ImageLayout::eGeneral, clear_color, ImageSubresourceRange);
+    m_command_list->clearDepthStencilImage(vk_resource.image.res, vk::ImageLayout::eGeneral, clear_color, ImageSubresourceRange);
 }
 
 void VKCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
@@ -241,7 +241,7 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
         image_memory_barrier.newLayout = vk_state_after;
         image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        image_memory_barrier.image = image.res.get();
+        image_memory_barrier.image = image.res;
 
         vk::ImageSubresourceRange& range = image_memory_barrier.subresourceRange;
         range.aspectMask = m_device.GetAspectFlags(image.format);
@@ -502,7 +502,7 @@ void VKCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
     }
     m_command_list->copyBufferToImage(
         vk_src_buffer.buffer.res.get(),
-        vk_dst_texture.image.res.get(),
+        vk_dst_texture.image.res,
         vk::ImageLayout::eTransferDstOptimal,
         vk_regions);
 }

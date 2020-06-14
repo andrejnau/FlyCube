@@ -124,10 +124,9 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
 
 void ImGuiPass::OnResize(int width, int height)
 {
-    ImGuiIO& io = ImGui::GetIO();
     m_width = width;
     m_height = height;
-    io.DisplaySize = ImVec2((float)m_width, (float)m_height);
+    ImGui::GetIO().DisplaySize = ImVec2((float)m_width, (float)m_height);
 }
 
 void ImGuiPass::OnKey(int key, int action)

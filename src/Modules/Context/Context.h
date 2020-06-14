@@ -37,6 +37,8 @@ public:
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandListBox>>& command_lists);
 
     std::shared_ptr<Resource> GetBackBuffer(uint32_t buffer);
+    void WaitIdle();
+    void Resize(uint32_t width, uint32_t height);
     void Present();
 
     std::shared_ptr<Device> GetDevice();
@@ -52,6 +54,7 @@ private:
     int m_width = 0;
     int m_height = 0;
     uint32_t m_frame_index = 0;
+    bool m_vsync = false;
 
     std::shared_ptr<Instance> m_instance;
     std::shared_ptr<Adapter> m_adapter;

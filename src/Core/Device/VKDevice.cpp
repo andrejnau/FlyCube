@@ -210,17 +210,18 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
     if (image_info.arrayLayers % 6 == 0)
         image_info.flags = vk::ImageCreateFlagBits::eCubeCompatible;
 
-    res->image.res = m_device->createImageUnique(image_info);
+    res->image.res_owner = m_device->createImageUnique(image_info);
+    res->image.res = res->image.res_owner.get();
 
     vk::MemoryRequirements mem_requirements;
-    m_device->getImageMemoryRequirements(res->image.res.get(), &mem_requirements);
+    m_device->getImageMemoryRequirements(res->image.res, &mem_requirements);
 
-    vk::MemoryAllocateInfo allo_iInfo = {};
-    allo_iInfo.allocationSize = mem_requirements.size;
-    allo_iInfo.memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    vk::MemoryAllocateInfo allocate_info = {};
+    allocate_info.allocationSize = mem_requirements.size;
+    allocate_info.memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-    res->image.memory = m_device->allocateMemoryUnique(allo_iInfo);
-    m_device->bindImageMemory(res->image.res.get(), res->image.memory.get(), 0);
+    res->image.memory = m_device->allocateMemoryUnique(allocate_info);
+    m_device->bindImageMemory(res->image.res, res->image.memory.get(), 0);
 
     res->GetGlobalResourceStateTracker().SetResourceState(ResourceState::kUndefined);
 

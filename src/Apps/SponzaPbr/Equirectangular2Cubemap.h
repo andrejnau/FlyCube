@@ -24,11 +24,10 @@ public:
         std::shared_ptr<Resource> environment;
     } output;
 
-    Equirectangular2Cubemap(Device& device, const Input& input, int width, int height);
+    Equirectangular2Cubemap(Device& device, const Input& input);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;
-    virtual void OnResize(int width, int height) override;
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
@@ -38,8 +37,6 @@ private:
     SponzaSettings m_settings;
     Device& m_device;
     Input m_input;
-    int m_width;
-    int m_height;
     std::shared_ptr<Resource> m_sampler;
     std::shared_ptr<Resource> m_dsv;
     ProgramHolder<CubemapVS, Equirectangular2CubemapPS> m_program_equirectangular2cubemap;

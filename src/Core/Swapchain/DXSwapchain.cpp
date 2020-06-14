@@ -24,6 +24,7 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
 
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
     ASSERT_SUCCEEDED(instance.GetFactory()->CreateSwapChainForHwnd(device.GetCommandQueue().Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
+    ASSERT_SUCCEEDED(instance.GetFactory()->MakeWindowAssociation(glfwGetWin32Window(window), DXGI_MWA_NO_WINDOW_CHANGES));
     tmp_swap_chain.As(&m_swap_chain);
 
     for (size_t i = 0; i < frame_count; ++i)

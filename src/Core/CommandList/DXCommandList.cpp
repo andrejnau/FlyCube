@@ -178,7 +178,7 @@ void DXCommandList::EndEvent()
 
 void DXCommandList::ClearColor(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
 {
-    if (!view)
+    if (!view || !view->GetResource())
         return;
     decltype(auto) dx_view = view->As<DXView>();
     m_command_list->ClearRenderTargetView(dx_view.GetHandle(), color.data(), 0, nullptr);
@@ -186,7 +186,7 @@ void DXCommandList::ClearColor(const std::shared_ptr<View>& view, const std::arr
 
 void DXCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)
 {
-    if (!view)
+    if (!view || !view->GetResource())
         return;
     decltype(auto) dx_view = view->As<DXView>();
     m_command_list->ClearDepthStencilView(dx_view.GetHandle(), D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);

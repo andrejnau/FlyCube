@@ -18,7 +18,7 @@ public:
     {
     } output;
 
-    SkinningPass(Device& device, const Input& input, int width, int height);
+    SkinningPass(Device& device, const Input& input);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;

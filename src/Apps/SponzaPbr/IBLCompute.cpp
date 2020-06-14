@@ -2,15 +2,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-IBLCompute::IBLCompute(Device& device, const Input& input, int width, int height)
+IBLCompute::IBLCompute(Device& device, const Input& input)
     : m_device(device)
     , m_input(input)
     , m_program(device)
     , m_program_pre_pass(device)
     , m_program_backgroud(device)
     , m_program_downsample(device)
-    , m_width(width)
-    , m_height(height)
 {
     m_sampler = m_device.CreateSampler({
         SamplerFilter::kAnisotropic,
@@ -328,10 +326,6 @@ void IBLCompute::DrawDownSample(CommandListBox& command_list, Model& ibl_model, 
         command_list.Attach(m_program_downsample.cs.uav.outputTexture, ibl_model.ibl_rtv, {i, 1});
         command_list.Dispatch((m_size >> i) / 8, (m_size >> i) / 8, 6);
     }
-}
-
-void IBLCompute::OnResize(int width, int height)
-{
 }
 
 void IBLCompute::OnModifySponzaSettings(const SponzaSettings& settings)

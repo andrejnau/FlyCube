@@ -52,7 +52,7 @@ void VKResource::SetName(const std::string& name)
     else if (resource_type == ResourceType::kTexture)
     {
         info.objectType = vk::ObjectType::eBuffer;
-        info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkImage>(image.res.get()));
+        info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkImage>(image.res));
     }
     m_device.GetDevice().setDebugUtilsObjectNameEXT(info);
 }

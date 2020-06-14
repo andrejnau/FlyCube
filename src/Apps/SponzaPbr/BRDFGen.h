@@ -20,7 +20,7 @@ public:
         std::shared_ptr<Resource> brdf;
     } output;
 
-    BRDFGen(Device& device, const Input& input, int width, int height);
+    BRDFGen(Device& device, const Input& input);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;

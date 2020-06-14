@@ -33,11 +33,10 @@ public:
     {
     } output;
 
-    IBLCompute(Device& device, const Input& input, int width, int height);
+    IBLCompute(Device& device, const Input& input);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list) override;
-    virtual void OnResize(int width, int height) override;
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
@@ -56,7 +55,5 @@ private:
     std::shared_ptr<Resource> m_sampler;
     std::shared_ptr<Resource> m_compare_sampler;
     size_t m_size = 512;
-    int m_width;
-    int m_height;
     bool m_use_pre_pass = true;
 };

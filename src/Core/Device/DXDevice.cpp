@@ -448,7 +448,8 @@ void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
         decltype(auto) dx_command_list = command_list->As<DXCommandList>();
         dx_command_lists.emplace_back(dx_command_list.GetCommandList().Get());
     }
-    m_command_queue->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
+    if (!dx_command_lists.empty())
+        m_command_queue->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
 
     if (fence)
     {

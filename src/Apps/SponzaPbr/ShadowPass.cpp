@@ -2,7 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-ShadowPass::ShadowPass(Device& device, const Input& input, int width, int height)
+ShadowPass::ShadowPass(Device& device, const Input& input)
     : m_device(device)
     , m_input(input)
     , m_program(device)
@@ -77,10 +77,6 @@ void ShadowPass::OnRender(CommandListBox& command_list)
             command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
-}
-
-void ShadowPass::OnResize(int width, int height)
-{
 }
 
 void ShadowPass::CreateSizeDependentResources()

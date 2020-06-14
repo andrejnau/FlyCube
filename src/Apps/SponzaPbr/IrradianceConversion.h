@@ -31,23 +31,19 @@ public:
     {
     } output;
 
-    IrradianceConversion(Device& device, const Input& input, int width, int height);
+    IrradianceConversion(Device& device, const Input& input);
 
     virtual void OnUpdate() override;
     virtual void OnRender(CommandListBox& command_list)override;
-    virtual void OnResize(int width, int height) override;
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
     void DrawIrradianceConvolution(CommandListBox& command_list);
     void DrawPrefilter(CommandListBox& command_list);
-    void CreateSizeDependentResources();
 
     SponzaSettings m_settings;
     Device& m_device;
     Input m_input;
-    int m_width;
-    int m_height;
     std::shared_ptr<Resource> m_sampler;
     ProgramHolder<CubemapVS, IrradianceConvolutionPS> m_program_irradiance_convolution;
     ProgramHolder<CubemapVS, PrefilterPS> m_program_prefilter;

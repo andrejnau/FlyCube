@@ -12,13 +12,13 @@ Scene::Scene(Context& context, int width, int height)
     , m_upload_command_list(context.CreateCommandList(true))
     , m_model_square(m_device, *m_upload_command_list, "model/square.obj")
     , m_model_cube(m_device, *m_upload_command_list, "model/cube.obj", ~aiProcess_FlipWindingOrder)
-    , m_skinning_pass(m_device, { m_scene_list }, width, height)
+    , m_skinning_pass(m_device, { m_scene_list })
     , m_geometry_pass(m_device, { m_scene_list, m_camera }, width, height)
-    , m_shadow_pass(m_device, { m_scene_list, m_camera, m_light_pos }, width, height)
+    , m_shadow_pass(m_device, { m_scene_list, m_camera, m_light_pos })
     , m_ssao_pass(m_device, *m_upload_command_list, { m_geometry_pass.output, m_model_square, m_camera }, width, height)
-    , m_brdf(m_device, { m_model_square }, width, height)
-    , m_equirectangular2cubemap(m_device, { m_model_cube, m_equirectangular_environment }, width, height)
-    , m_ibl_compute(m_device, { m_shadow_pass.output, m_scene_list, m_camera, m_light_pos, m_model_cube, m_equirectangular2cubemap.output.environment }, width, height)
+    , m_brdf(m_device, { m_model_square })
+    , m_equirectangular2cubemap(m_device, { m_model_cube, m_equirectangular_environment })
+    , m_ibl_compute(m_device, { m_shadow_pass.output, m_scene_list, m_camera, m_light_pos, m_model_cube, m_equirectangular2cubemap.output.environment })
     , m_background_pass(m_device, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, m_geometry_pass.output.albedo, m_geometry_pass.output.dsv }, width, height)
     , m_light_pass(m_device, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_rtao, m_model_square, m_camera, m_light_pos, m_irradince, m_prefilter, m_brdf.output.brdf }, width, height)
     , m_compute_luminance(m_device, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
@@ -76,7 +76,7 @@ Scene::Scene(Context& context, int width, int height)
     {
         IrradianceConversion::Target irradince{ m_irradince, m_depth_stencil_view_irradince, layer, m_irradince_texture_size };
         IrradianceConversion::Target prefilter{ m_prefilter, m_depth_stencil_view_prefilter, layer, m_prefilter_texture_size };
-        m_irradiance_conversion.emplace_back(new IrradianceConversion(m_device, { m_model_cube, m_equirectangular2cubemap.output.environment, irradince, prefilter }, width, height));
+        m_irradiance_conversion.emplace_back(new IrradianceConversion(m_device, { m_model_cube, m_equirectangular2cubemap.output.environment, irradince, prefilter }));
     }
 
     for (auto& model : m_scene_list)
@@ -87,7 +87,7 @@ Scene::Scene(Context& context, int width, int height)
         model.ibl_source = ++layer;
         IrradianceConversion::Target irradince{ m_irradince, m_depth_stencil_view_irradince, model.ibl_source, m_irradince_texture_size };
         IrradianceConversion::Target prefilter{ m_prefilter, m_depth_stencil_view_prefilter, model.ibl_source, m_prefilter_texture_size };
-        m_irradiance_conversion.emplace_back(new IrradianceConversion(m_device, { m_model_cube, model.ibl_rtv, irradince, prefilter }, width, height));
+        m_irradiance_conversion.emplace_back(new IrradianceConversion(m_device, { m_model_cube, model.ibl_rtv, irradince, prefilter }));
     }
 
 #ifdef RAYTRACING_SUPPORT
@@ -180,9 +180,13 @@ void Scene::OnResize(int width, int height)
     m_height = height;
 
     m_render_target_view.reset();
+    m_context.WaitIdle();
 
-    // TODO
-    // m_context.OnResize(width, height);
+    for (auto& cmd : m_command_lists)
+        cmd = m_context.CreateCommandList();
+
+    m_context.Resize(m_width, m_height);
+    m_camera.SetViewport(m_width, m_height);
 
     CreateRT();
 
@@ -263,6 +267,9 @@ void Scene::OnModifySponzaSettings(const SponzaSettings& settings)
 void Scene::CreateRT()
 {
     m_depth_stencil_view = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, m_width, m_height, 1);
+
+    if (m_irradince)
+        return;
 
     m_irradince = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, 1, 
         m_irradince_texture_size, m_irradince_texture_size, 6 * m_ibl_count);

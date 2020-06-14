@@ -2,11 +2,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-Equirectangular2Cubemap::Equirectangular2Cubemap(Device& device, const Input& input, int width, int height)
+Equirectangular2Cubemap::Equirectangular2Cubemap(Device& device, const Input& input)
     : m_device(device)
     , m_input(input)
-    , m_width(width)
-    , m_height(height)
     , m_program_equirectangular2cubemap(device)
     , m_program_downsample(device)
 {
@@ -92,13 +90,6 @@ void Equirectangular2Cubemap::DrawEquirectangular2Cubemap(CommandListBox& comman
         command_list.Attach(m_program_downsample.cs.uav.outputTexture, output.environment, {i, 1});
         command_list.Dispatch((m_texture_size >> i) / 8, (m_texture_size >> i) / 8, 6);
     }
-}
-
-void Equirectangular2Cubemap::OnResize(int width, int height)
-{
-    m_width = width;
-    m_height = height;
-    CreateSizeDependentResources();
 }
 
 void Equirectangular2Cubemap::CreateSizeDependentResources()

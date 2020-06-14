@@ -28,7 +28,8 @@ public:
 
     struct Image
     {
-        vk::UniqueImage res;
+        vk::Image res;
+        vk::UniqueImage res_owner;
         vk::UniqueDeviceMemory memory;
         vk::Format format = vk::Format::eUndefined;
         vk::Extent2D size = {};

@@ -3,6 +3,7 @@
 
 Context::Context(const Settings& settings, GLFWwindow* window)
     : m_window(window)
+    , m_vsync(settings.vsync)
 {
     m_instance = CreateInstance(settings.api_type);
     m_adapter = std::move(m_instance->EnumerateAdapters()[settings.required_gpu_index]);
@@ -75,6 +76,23 @@ void Context::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandListB
         }
     }
     m_device->ExecuteCommandLists(raw_command_lists, {});
+}
+
+void Context::WaitIdle()
+{
+    m_fence->WaitAndReset();
+    m_device->ExecuteCommandLists({}, m_fence);
+    m_fence->WaitAndReset();
+    m_device->ExecuteCommandLists({}, m_fence);
+}
+
+void Context::Resize(uint32_t width, uint32_t height)
+{
+    m_width = width;
+    m_height = height;
+    m_swapchain.reset();
+    m_swapchain = m_device->CreateSwapchain(m_window, m_width, m_height, FrameCount, m_vsync);
+    m_frame_index = 0;
 }
 
 void Context::Present()
