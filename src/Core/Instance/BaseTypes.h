@@ -288,10 +288,11 @@ struct RenderTargetDesc
 {
     uint32_t slot = 0;
     gli::format format = gli::format::FORMAT_UNDEFINED;
+    uint32_t sample_count = 1;
 
     auto MakeTie() const
     {
-        return std::tie(slot, format);
+        return std::tie(slot, format, sample_count);
     }
 
     bool operator< (const RenderTargetDesc& oth) const
@@ -303,10 +304,11 @@ struct RenderTargetDesc
 struct DepthStencilTargetDesc
 {
     gli::format format = gli::format::FORMAT_UNDEFINED;
+    uint32_t sample_count = 1;
 
     auto MakeTie() const
     {
-        return std::tie(format);
+        return std::tie(format, sample_count);
     }
 
     bool operator< (const DepthStencilTargetDesc& oth) const

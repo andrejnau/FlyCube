@@ -587,6 +587,7 @@ void CommandListBox::OnAttachRTV(const BindKey& bind_key, const std::shared_ptr<
     render_target.slot = bind_key.slot;
     auto resource = view->GetResource();
     render_target.format = resource->GetFormat();
+    render_target.sample_count = resource->GetSampleCount();
     ViewBarrier(view, ResourceState::kRenderTarget);
 }
 
@@ -594,5 +595,6 @@ void CommandListBox::OnAttachDSV(const BindKey& bind_key, const std::shared_ptr<
 {
     auto resource = view->GetResource();
     m_graphic_pipeline_desc.dsv.format = resource->GetFormat();
+    m_graphic_pipeline_desc.dsv.sample_count = resource->GetSampleCount();
     ViewBarrier(view, ResourceState::kDepthTarget);
 }

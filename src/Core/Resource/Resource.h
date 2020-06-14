@@ -18,6 +18,7 @@ public:
     virtual uint32_t GetHeight() const = 0;
     virtual uint16_t GetLayerCount() const = 0;
     virtual uint16_t GetLevelCount() const = 0;
+    virtual uint32_t GetSampleCount() const = 0;
     virtual uint64_t GetAccelerationStructureHandle() const = 0;
     virtual const RaytracingASPrebuildInfo& GetRaytracingASPrebuildInfo() const = 0;
     virtual void SetName(const std::string& name) = 0;

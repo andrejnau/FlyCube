@@ -19,8 +19,8 @@ Scene::Scene(Context& context, int width, int height)
     , m_brdf(m_device, { m_model_square }, width, height)
     , m_equirectangular2cubemap(m_device, { m_model_cube, m_equirectangular_environment }, width, height)
     , m_ibl_compute(m_device, { m_shadow_pass.output, m_scene_list, m_camera, m_light_pos, m_model_cube, m_equirectangular2cubemap.output.environment }, width, height)
+    , m_background_pass(m_device, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, m_geometry_pass.output.albedo, m_geometry_pass.output.dsv }, width, height)
     , m_light_pass(m_device, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_rtao, m_model_square, m_camera, m_light_pos, m_irradince, m_prefilter, m_brdf.output.brdf }, width, height)
-    , m_background_pass(m_device, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, m_light_pass.output.rtv, m_geometry_pass.output.dsv }, width, height)
     , m_compute_luminance(m_device, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
     , m_imgui_pass(m_device, *m_upload_command_list, { m_render_target_view, *this }, width, height, context.GetWindow())
 {
@@ -112,9 +112,8 @@ Scene::Scene(Context& context, int width, int height)
     m_passes.push_back({ "IBLCompute", m_ibl_compute });
     for (auto& x : m_irradiance_conversion)
         m_passes.push_back({ "Irradiance Conversion Pass", *x });
-
-    m_passes.push_back({ "Light Pass", m_light_pass });
     m_passes.push_back({ "Background Pass", m_background_pass });
+    m_passes.push_back({ "Light Pass", m_light_pass });
     m_passes.push_back({ "HDR Pass", m_compute_luminance });
     m_passes.push_back({ "ImGui Pass", m_imgui_pass });
 

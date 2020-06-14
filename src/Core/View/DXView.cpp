@@ -341,14 +341,14 @@ void DXView::CreateSrv(const ViewDesc& view_desc, const DXResource* res, DXCPUDe
     if (!res)
         return;
     D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = DX12GeSRVDesc(view_desc, res->resource->GetDesc());
-    if (srv_desc.ViewDimension != D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE)
-    {
-        m_device.GetDevice()->CreateShaderResourceView(res->resource.Get(), &srv_desc, m_handle.GetCpuHandle());
-    }
-    else
+    if (srv_desc.ViewDimension == D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE)
     {
         srv_desc.RaytracingAccelerationStructure.Location = res->resource->GetGPUVirtualAddress();
         m_device.GetDevice()->CreateShaderResourceView(nullptr, &srv_desc, m_handle.GetCpuHandle());
+    }
+    else
+    {
+        m_device.GetDevice()->CreateShaderResourceView(res->resource.Get(), &srv_desc, m_handle.GetCpuHandle());
     }
 }
 

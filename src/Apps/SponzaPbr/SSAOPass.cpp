@@ -165,15 +165,15 @@ void SSAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     SponzaSettings prev = m_settings;
     m_settings = settings;
-    if (prev.Get<uint32_t>("msaa_count") != m_settings.Get<uint32_t>("msaa_count"))
+    if (prev.Get<uint32_t>("sample_count") != m_settings.Get<uint32_t>("sample_count"))
     {
-        m_program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("msaa_count"));
+        m_program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("sample_count"));
         m_program.UpdateProgram();
     }
 }
 
 void SSAOPass::SetDefines(ProgramHolder<SSAOPassPS, SSAOPassVS>& program)
 {
-    if (m_settings.Get<uint32_t>("msaa_count") != 1)
-        program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("msaa_count"));
+    if (m_settings.Get<uint32_t>("sample_count") != 1)
+        program.ps.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("sample_count"));
 }

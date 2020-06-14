@@ -28,6 +28,11 @@ uint16_t DXResource::GetLevelCount() const
     return desc.MipLevels;
 }
 
+uint32_t DXResource::GetSampleCount() const
+{
+    return desc.SampleDesc.Count;
+}
+
 uint64_t DXResource::GetAccelerationStructureHandle() const
 {
     return resource->GetGPUVirtualAddress();

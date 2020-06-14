@@ -29,6 +29,11 @@ uint16_t VKResource::GetLevelCount() const
     return image.level_count;
 }
 
+uint32_t VKResource::GetSampleCount() const
+{
+    return image.sample_count;
+}
+
 uint64_t VKResource::GetAccelerationStructureHandle() const
 {
     return as.handle;

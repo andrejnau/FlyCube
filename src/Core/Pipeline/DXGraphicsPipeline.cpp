@@ -27,7 +27,8 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     m_graphics_pso_desc.DepthStencilState = depth_stencil_desc;
     m_graphics_pso_desc.SampleMask = std::numeric_limits<uint32_t>::max();
     m_graphics_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    m_graphics_pso_desc.SampleDesc.Count = 1;
+    uint32_t sample_count = !m_desc.rtvs.empty() ? m_desc.rtvs.front().sample_count : m_desc.dsv.sample_count;
+    m_graphics_pso_desc.SampleDesc.Count = sample_count;
     m_graphics_pso_desc.NumRenderTargets = 0;
 
     switch (desc.rasterizer_desc.fill_mode)

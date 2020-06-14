@@ -30,7 +30,6 @@ private:
     std::vector<vk::VertexInputAttributeDescription> m_attribute_desc;
     std::vector<vk::PipelineShaderStageCreateInfo> m_shader_stage_create_info;
     std::map<ShaderType, vk::UniqueShaderModule> m_shader_modules;
-    size_t m_msaa_count = 1;
     std::map<ShaderType, spirv_cross::SmallVector<spirv_cross::EntryPoint>> m_entries;
     VKRenderPass m_render_pass;
 };

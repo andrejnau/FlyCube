@@ -144,7 +144,7 @@ std::shared_ptr<Semaphore> DXDevice::CreateGPUSemaphore()
     return std::make_shared<DXSemaphore>(*this);
 }
 
-std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
+std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
 {
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
     if (bind_flag & BindFlag::kShaderResource && dx_format == DXGI_FORMAT_D32_FLOAT)
@@ -164,9 +164,9 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
 
     D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS ms_check_desc = {};
     ms_check_desc.Format = desc.Format;
-    ms_check_desc.SampleCount = msaa_count;
+    ms_check_desc.SampleCount = sample_count;
     m_device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &ms_check_desc, sizeof(ms_check_desc));
-    desc.SampleDesc.Count = msaa_count;
+    desc.SampleDesc.Count = sample_count;
     desc.SampleDesc.Quality = ms_check_desc.NumQualityLevels - 1;
 
     if (bind_flag & BindFlag::kRenderTarget)

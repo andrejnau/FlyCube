@@ -85,8 +85,8 @@ private:
     std::shared_ptr<Resource> m_prefilter;
     std::shared_ptr<Resource> m_depth_stencil_view_irradince;
     std::shared_ptr<Resource> m_depth_stencil_view_prefilter;
-    LightPass m_light_pass;
     BackgroundPass m_background_pass;
+    LightPass m_light_pass;
     ComputeLuminance m_compute_luminance;
     ImGuiPass m_imgui_pass;
     SponzaSettings m_settings;

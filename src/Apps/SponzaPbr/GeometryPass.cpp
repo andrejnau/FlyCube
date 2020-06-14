@@ -97,7 +97,7 @@ void GeometryPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     SponzaSettings prev = m_settings;
     m_settings = settings;
-    if (prev.Get<uint32_t>("msaa_count") != m_settings.Get<uint32_t>("msaa_count"))
+    if (prev.Get<uint32_t>("sample_count") != m_settings.Get<uint32_t>("sample_count"))
     {
         CreateSizeDependentResources();
     }
@@ -105,9 +105,9 @@ void GeometryPass::OnModifySponzaSettings(const SponzaSettings& settings)
 
 void GeometryPass::CreateSizeDependentResources()
 {
-    output.position = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
-    output.normal = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
-    output.albedo = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
-    output.material = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
-    output.dsv = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, m_settings.Get<uint32_t>("msaa_count"), m_width, m_height, 1);
+    output.position = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("sample_count"), m_width, m_height, 1);
+    output.normal = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("sample_count"), m_width, m_height, 1);
+    output.albedo = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("sample_count"), m_width, m_height, 1);
+    output.material = m_device.CreateTexture(BindFlag::kRenderTarget | BindFlag::kShaderResource, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, m_settings.Get<uint32_t>("sample_count"), m_width, m_height, 1);
+    output.dsv = m_device.CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, m_settings.Get<uint32_t>("sample_count"), m_width, m_height, 1);
 }

@@ -262,10 +262,12 @@ float computeSpecOcclusion(float NdotV, float AO, float roughness)
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
     float3 lighting = 0;
+    [unroll (SAMPLE_COUNT)]
     for (uint i = 0; i < SAMPLE_COUNT; ++i)
     {
+        float4 albedo_rgba = getTexture(gAlbedo, input.texcoord, i);
+        float3 albedo = albedo_rgba.rgb;
         float3 normal = normalize(getTexture(gNormal, input.texcoord, i).rgb);
-        float3 albedo = getTexture(gAlbedo, input.texcoord, i).rgb;
         float roughness = getTexture(gMaterial, input.texcoord, i).r;
         float metallic = getTexture(gMaterial, input.texcoord, i).g;
         int ibl_probe_index = getTexture(gMaterial, input.texcoord, i).a;
@@ -317,6 +319,12 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         else if (show_only_ao)
         {
             lighting += ao;
+            continue;
+        }
+
+        if (albedo_rgba.a == 0)
+        {
+            lighting += albedo;
             continue;
         }
 

@@ -165,7 +165,7 @@ std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
     return std::make_shared<VKSemaphore>(*this);
 }
 
-std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t msaa_count, int width, int height, int depth, int mip_levels)
+std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
 {
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
     res->format = format;
@@ -174,7 +174,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
     res->image.size.width = width;
     res->image.format = static_cast<vk::Format>(format);
     res->image.level_count = mip_levels;
-    res->image.msaa_count = msaa_count;
+    res->image.sample_count = sample_count;
     res->image.array_layers = depth;
 
     vk::ImageUsageFlags usage = {};
@@ -204,7 +204,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
     image_info.tiling = vk::ImageTiling::eOptimal;
     image_info.initialLayout = vk::ImageLayout::eUndefined;
     image_info.usage = usage;
-    image_info.samples = static_cast<vk::SampleCountFlagBits>(msaa_count);
+    image_info.samples = static_cast<vk::SampleCountFlagBits>(sample_count);
     image_info.sharingMode = vk::SharingMode::eExclusive;
 
     if (image_info.arrayLayers % 6 == 0)

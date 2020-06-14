@@ -20,6 +20,7 @@ public:
     uint32_t GetHeight() const override;
     uint16_t GetLayerCount() const override;
     uint16_t GetLevelCount() const override;
+    uint32_t GetSampleCount() const override;
     uint64_t GetAccelerationStructureHandle() const override;
     void SetName(const std::string& name) override;
     uint8_t* Map() override;
@@ -32,7 +33,7 @@ public:
         vk::Format format = vk::Format::eUndefined;
         vk::Extent2D size = {};
         size_t level_count = 1;
-        size_t msaa_count = 1;
+        size_t sample_count = 1;
         size_t array_layers = 1;
     } image;
 

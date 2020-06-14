@@ -5,12 +5,12 @@
 VKRenderPass::VKRenderPass(VKDevice& device, const std::vector<RenderTargetDesc>& rtvs, const DepthStencilTargetDesc& dsv)
 {
     std::vector<vk::AttachmentDescription> attachment_descriptions;
-    auto add_attachment = [&](vk::AttachmentReference& reference, gli::format format, vk::ImageLayout layout)
+    auto add_attachment = [&](vk::AttachmentReference& reference, gli::format format, uint32_t sample_count, vk::ImageLayout layout)
     {
         attachment_descriptions.emplace_back();
         vk::AttachmentDescription& description = attachment_descriptions.back();
         description.format = static_cast<vk::Format>(format);
-        description.samples = static_cast<vk::SampleCountFlagBits>(1);
+        description.samples = static_cast<vk::SampleCountFlagBits>(sample_count);
         description.loadOp = vk::AttachmentLoadOp::eLoad;
         description.storeOp = vk::AttachmentStoreOp::eStore;
         description.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
@@ -29,7 +29,7 @@ VKRenderPass::VKRenderPass(VKDevice& device, const std::vector<RenderTargetDesc>
             continue;
         if (rtv.slot >= color_attachment_references.size())
             color_attachment_references.resize(rtv.slot + 1, { VK_ATTACHMENT_UNUSED });
-        add_attachment(color_attachment_references[rtv.slot], rtv.format, vk::ImageLayout::eColorAttachmentOptimal);
+        add_attachment(color_attachment_references[rtv.slot], rtv.format, rtv.sample_count, vk::ImageLayout::eColorAttachmentOptimal);
     }
 
     vk::SubpassDescription sub_pass = {};
@@ -40,7 +40,7 @@ VKRenderPass::VKRenderPass(VKDevice& device, const std::vector<RenderTargetDesc>
     vk::AttachmentReference depth_attachment_references = {};
     if (dsv.format != gli::FORMAT_UNDEFINED)
     {
-        add_attachment(depth_attachment_references, dsv.format, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+        add_attachment(depth_attachment_references, dsv.format, dsv.sample_count, vk::ImageLayout::eDepthStencilAttachmentOptimal);
         sub_pass.pDepthStencilAttachment = &depth_attachment_references;
     }
 

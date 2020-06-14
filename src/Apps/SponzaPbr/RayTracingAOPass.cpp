@@ -7,7 +7,7 @@ RayTracingAOPass::RayTracingAOPass(Device& device, CommandListBox& command_list,
     , m_height(height)
     , m_raytracing_program(device, [&](auto& program)
     {
-        program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("msaa_count"));
+        program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("sample_count"));
     })
     , m_program_blur(device)
 {
@@ -175,9 +175,9 @@ void RayTracingAOPass::OnModifySponzaSettings(const SponzaSettings& settings)
 {
     SponzaSettings prev = m_settings;
     m_settings = settings;
-    if (prev.Get<uint32_t>("msaa_count") != m_settings.Get<uint32_t>("msaa_count"))
+    if (prev.Get<uint32_t>("sample_count") != m_settings.Get<uint32_t>("sample_count"))
     {
-        m_raytracing_program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("msaa_count"));
+        m_raytracing_program.lib.desc.define["SAMPLE_COUNT"] = std::to_string(m_settings.Get<uint32_t>("sample_count"));
         m_raytracing_program.UpdateProgram();
     }
 }

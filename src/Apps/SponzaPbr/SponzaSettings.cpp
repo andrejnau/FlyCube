@@ -109,16 +109,15 @@ void SponzaSettings::add_slider(const std::string& label, float value, float min
 
 SponzaSettings::SponzaSettings()
 {
-    std::vector<std::string> msaa_str = { "Off" };
-    std::vector<uint32_t> msaa = { 1 };
-
+    std::vector<std::string> sample_count_str = { "Off" };
+    std::vector<uint32_t> sample_count = { 1 };
     for (uint32_t i = 2; i <= 8; i *= 2)
     {
-        msaa_str.push_back("x" + std::to_string(i));
-        msaa.push_back(i);
+        sample_count_str.push_back("x" + std::to_string(i));
+        sample_count.push_back(i);
     }
 
-    add_combo("msaa_count", msaa_str, msaa, 1u);
+    add_combo("sample_count", sample_count_str, sample_count, sample_count.front());
     add_checkbox("gamma_correction", true);
     add_checkbox("use_reinhard_tone_operator", false);
     add_checkbox("use_tone_mapping", true);

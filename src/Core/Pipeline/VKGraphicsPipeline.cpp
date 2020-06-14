@@ -213,7 +213,8 @@ void VKGraphicsPipeline::CreateGrPipeLine()
     color_blending.pAttachments = color_blend_attachments.data();
 
     vk::PipelineMultisampleStateCreateInfo multisampling = {};
-    multisampling.rasterizationSamples = static_cast<vk::SampleCountFlagBits>(m_msaa_count);
+    uint32_t sample_count = !m_desc.rtvs.empty() ? m_desc.rtvs.front().sample_count : m_desc.dsv.sample_count;
+    multisampling.rasterizationSamples = static_cast<vk::SampleCountFlagBits>(sample_count);
     multisampling.sampleShadingEnable = multisampling.rasterizationSamples != vk::SampleCountFlagBits::e1;
 
     vk::PipelineDepthStencilStateCreateInfo depth_stencil = {};
