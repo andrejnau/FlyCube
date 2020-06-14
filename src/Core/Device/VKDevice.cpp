@@ -126,6 +126,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
     m_device = m_physical_device.createDeviceUnique(device_create_info);
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device.get());
+    if (!VULKAN_HPP_DEFAULT_DISPATCHER.vkDestroyAccelerationStructureKHR)
+        VULKAN_HPP_DEFAULT_DISPATCHER.vkDestroyAccelerationStructureKHR = VULKAN_HPP_DEFAULT_DISPATCHER.vkDestroyAccelerationStructureNV;
 
     m_queue = m_device->getQueue(m_queue_family_index, 0);
 

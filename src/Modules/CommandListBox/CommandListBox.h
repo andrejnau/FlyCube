@@ -63,15 +63,9 @@ public:
     std::shared_ptr<Resource> CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index = {});
     std::shared_ptr<Resource> CreateTopLevelAS(const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry);
 
-    std::vector<ResourceBarrierDesc>& GetLazyBarriers()
-    {
-        return m_lazy_barriers;
-    }
-
-    const std::map<std::shared_ptr<Resource>, ResourceStateTracker>& GetResourceStateTrackers()
-    {
-        return m_resource_state_tracker;
-    }
+    void ReleaseRequest(const std::shared_ptr<Resource>& resource);
+    std::vector<ResourceBarrierDesc>& GetLazyBarriers();
+    const std::map<std::shared_ptr<Resource>, ResourceStateTracker>& GetResourceStateTrackers();
 
 private:
     void ApplyBindings();

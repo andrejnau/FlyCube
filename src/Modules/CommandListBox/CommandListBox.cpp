@@ -286,6 +286,21 @@ std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::vector<std
     return res;
 }
 
+void CommandListBox::ReleaseRequest(const std::shared_ptr<Resource>& resource)
+{
+    m_cmd_resources.emplace_back(resource);
+}
+
+std::vector<ResourceBarrierDesc>& CommandListBox::GetLazyBarriers()
+{
+    return m_lazy_barriers;
+}
+
+const std::map<std::shared_ptr<Resource>, ResourceStateTracker>& CommandListBox::GetResourceStateTrackers()
+{
+    return m_resource_state_tracker;
+}
+
 void CommandListBox::UseProgram(std::shared_ptr<Program>& program)
 {
     if (m_program != program)

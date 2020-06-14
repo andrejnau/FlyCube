@@ -101,13 +101,19 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
                 if (cur_id >= m_geometry.size())
                     m_geometry.resize(cur_id + 1);
 
+                if (m_bottom[cur_id])
+                    command_list.ReleaseRequest(m_bottom[cur_id]);
                 m_bottom[cur_id] = command_list.CreateBottomLevelAS(vertex, index);
                 m_geometry[cur_id] = { m_bottom[cur_id], glm::transpose(model.matrix) };
                 ++node_updated;
             }
         }
         if (node_updated)
+        {
+            if (m_top)
+                command_list.ReleaseRequest(m_top);
             m_top = command_list.CreateTopLevelAS(m_geometry);
+        }
     };
 
     build_geometry(!m_is_initialized);
