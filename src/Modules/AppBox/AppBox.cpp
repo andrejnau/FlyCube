@@ -94,8 +94,26 @@ GLFWwindow* AppBox::GetWindow() const
     return m_window;
 }
 
+void AppBox::SwitchFullScreenMode()
+{
+    if (glfwGetWindowMonitor(m_window))
+    {
+        glfwSetWindowMonitor(m_window, nullptr, m_window_box[0], m_window_box[1], m_window_box[2], m_window_box[3], 0);
+    }
+    else
+    {
+        glfwGetWindowPos(m_window, &m_window_box[0], &m_window_box[1]);
+        glfwGetWindowSize(m_window, &m_window_box[2], &m_window_box[3]);
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+    }
+}
+
 void AppBox::OnSizeChanged(GLFWwindow* m_window, int width, int height)
 {
+    if (width == 0 && height == 0)
+        return;
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
     self->m_width = width;
     self->m_height = height;
@@ -106,9 +124,16 @@ void AppBox::OnSizeChanged(GLFWwindow* m_window, int width, int height)
 void AppBox::OnKey(GLFWwindow* m_window, int key, int scancode, int action, int mods)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
+    self->m_keys[key] = action;
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         self->m_exit_request = true;
+
+    if (self->m_keys[GLFW_KEY_RIGHT_ALT] == GLFW_PRESS &&
+        self->m_keys[GLFW_KEY_ENTER] == GLFW_PRESS)
+    {
+        self->SwitchFullScreenMode();
+    }
 
     if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
     {

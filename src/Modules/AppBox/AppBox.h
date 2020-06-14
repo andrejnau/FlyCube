@@ -6,6 +6,8 @@
 #include <functional>
 #include <string>
 #include <memory>
+#include <array>
+#include <map>
 #include <GLFW/glfw3.h>
 
 struct AppRect
@@ -27,6 +29,7 @@ public:
     void SubscribeEvents(InputEvents* input_listener, WindowEvents* window_listener);
 
 private:
+    void SwitchFullScreenMode();
     static void OnSizeChanged(GLFWwindow* window, int width, int height);
     static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
     static void OnMouse(GLFWwindow* window, double xpos, double ypos);
@@ -44,4 +47,6 @@ private:
     bool m_exit_request = false;
     uint32_t m_frame_number = 0;
     double m_last_time = 0;
+    std::array<int, 4> m_window_box = {};
+    std::map<int, bool> m_keys;
 };
