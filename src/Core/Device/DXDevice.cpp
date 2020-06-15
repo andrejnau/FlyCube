@@ -73,14 +73,18 @@ DXDevice::DXDevice(DXAdapter& adapter)
     m_is_under_graphics_debugger = renderdoc || GetModuleHandleW(L"WinPixCaptureReplay.dll");
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature_support5 = {};
-    ASSERT_SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support5, sizeof(feature_support5)));
-    m_is_dxr_supported = feature_support5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
-    m_is_render_passes_supported = feature_support5.RenderPassesTier >= D3D12_RENDER_PASS_TIER_0;
+    if (SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support5, sizeof(feature_support5))))
+    {
+        m_is_dxr_supported = feature_support5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
+        m_is_render_passes_supported = feature_support5.RenderPassesTier >= D3D12_RENDER_PASS_TIER_0;
+    }
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS6 feature_support6 = {};
-    ASSERT_SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS6, &feature_support6, sizeof(feature_support6)));
-    m_is_variable_rate_shading_supported = feature_support6.VariableShadingRateTier >= D3D12_VARIABLE_SHADING_RATE_TIER_2;
-    m_shading_rate_image_tile_size = feature_support6.ShadingRateImageTileSize;
+    if (SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS6, &feature_support6, sizeof(feature_support6))))
+    {
+        m_is_variable_rate_shading_supported = feature_support6.VariableShadingRateTier >= D3D12_VARIABLE_SHADING_RATE_TIER_2;
+        m_shading_rate_image_tile_size = feature_support6.ShadingRateImageTileSize;
+    }
 
     D3D12_COMMAND_QUEUE_DESC queue_desc = {};
     ASSERT_SUCCEEDED(m_device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&m_command_queue)));

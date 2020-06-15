@@ -129,7 +129,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                 case D3D_SIT_TEXTURE:
                 case D3D_SIT_STRUCTURED:
                 case D3D_SIT_BYTEADDRESS:
-                case D3D_SIT_RTACCELERATIONSTRUCTURE:
+                case SIT_RTACCELERATIONSTRUCTURE:
                     update_start(begin_srv, res_desc.Space, res_desc.BindPoint);
                     end_srv[res_desc.Space] = std::max<uint32_t>(end_srv[res_desc.Space], res_desc.BindPoint + res_desc.BindCount);
                     view_type = ViewType::kShaderResource;
@@ -181,7 +181,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
                         case D3D_SIT_TEXTURE:
                         case D3D_SIT_STRUCTURED:
                         case D3D_SIT_BYTEADDRESS:
-                        case D3D_SIT_RTACCELERATIONSTRUCTURE:
+                        case SIT_RTACCELERATIONSTRUCTURE:
                             update_start(begin_srv, res_desc.Space, res_desc.BindPoint);
                             end_srv[res_desc.Space] = std::max<uint32_t>(end_srv[res_desc.Space], res_desc.BindPoint + res_desc.BindCount);
                             view_type = ViewType::kShaderResource;

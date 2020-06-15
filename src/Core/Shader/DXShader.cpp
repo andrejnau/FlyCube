@@ -13,7 +13,7 @@ ViewType GetViewType(D3D_SHADER_INPUT_TYPE type)
         return ViewType::kSampler;
     case D3D_SIT_TEXTURE:
     case D3D_SIT_STRUCTURED:
-    case D3D_SIT_RTACCELERATIONSTRUCTURE:
+    case SIT_RTACCELERATIONSTRUCTURE:
         return ViewType::kShaderResource;
     case D3D_SIT_UAV_RWSTRUCTURED:
     case D3D_SIT_UAV_RWTYPED:
@@ -203,7 +203,7 @@ ResourceBindingDesc DXShader::GetResourceBindingDesc(const BindKey& bind_key) co
     default:
         break;
     }
-    if (input_bind_desc.Type == D3D_SIT_RTACCELERATIONSTRUCTURE)
+    if (input_bind_desc.Type == SIT_RTACCELERATIONSTRUCTURE)
         binding_desc.dimension = ResourceDimension::kRaytracingAccelerationStructure;
     return binding_desc;
 }

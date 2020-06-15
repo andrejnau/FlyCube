@@ -453,7 +453,7 @@ private:
                 }
                 case D3D_SIT_TEXTURE:
                 case D3D_SIT_STRUCTURED:
-                case D3D_SIT_RTACCELERATIONSTRUCTURE:
+                case SIT_RTACCELERATIONSTRUCTURE:
                 {
                     mustache::data ttexture;
                     ttexture.set("Name", res_desc.Name);
