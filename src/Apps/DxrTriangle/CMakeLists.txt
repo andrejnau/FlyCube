@@ -48,17 +48,17 @@ set(lib_shaders
 set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_ENTRYPOINT " ")
 set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_TYPE Library)
 set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_MODEL 6.3)
-set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_FLAGS "/Zi")
+set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_FLAGS "/Zi /auto-binding-space 0")
 
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_TYPE Pixel)
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_MODEL 6.3)
-set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_FLAGS "/Zi")
+set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_FLAGS "/Zi /auto-binding-space 0")
 
 set_property(SOURCE ${vertex_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
 set_property(SOURCE ${vertex_shaders} PROPERTY VS_SHADER_TYPE Vertex)
 set_property(SOURCE ${vertex_shaders} PROPERTY VS_SHADER_MODEL 6.3)
-set_property(SOURCE ${vertex_shaders} PROPERTY VS_SHADER_FLAGS "/Zi")
+set_property(SOURCE ${vertex_shaders} PROPERTY VS_SHADER_FLAGS "/Zi /auto-binding-space 0")
 
 set(shaders_files ${lib_shaders} ${pixel_shaders} ${vertex_shaders})
 
