@@ -1,11 +1,12 @@
 #include "Fence/VKFence.h"
 #include <Device/VKDevice.h>
 
-VKFence::VKFence(VKDevice& device)
+VKFence::VKFence(VKDevice& device, FenceFlag flag)
     : m_device(device)
 {
     vk::FenceCreateInfo fence_create_info = {};
-    fence_create_info.flags = vk::FenceCreateFlagBits::eSignaled;
+    if (flag == FenceFlag::kSignaled)
+        fence_create_info.flags = vk::FenceCreateFlagBits::eSignaled;
     m_fence = m_device.GetDevice().createFenceUnique(fence_create_info);
 }
 

@@ -16,5 +16,5 @@ int main(int argc, char *argv[])
         scene.RenderFrame();
         app.UpdateFps();
     }
-    _exit(0);
+    return 0;
 }

@@ -96,6 +96,9 @@ while (!app.PollEvents())
     swapchain->Present(rendering_finished_semaphore);
     app.UpdateFps();
 }
+std::shared_ptr<Fence> idle_fence = device->CreateFence(FenceFlag::kNone);
+device->Signal(idle_fence);
+idle_fence->WaitAndReset();
 ```
 
 ## High-level graphics api and utilities

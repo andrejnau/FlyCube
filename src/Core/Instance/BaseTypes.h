@@ -32,6 +32,7 @@ enum class ResourceState
 
 enum class ResourceDimension
 {
+    kUnknown,
     kBuffer,
     kTexture1D,
     kTexture1DArray,
@@ -234,8 +235,8 @@ struct LazyViewDesc
 
 struct ViewDesc : public LazyViewDesc
 {
-    ViewType view_type;
-    ResourceDimension dimension;
+    ViewType view_type = ViewType::kUnknown;
+    ResourceDimension dimension = ResourceDimension::kUnknown;
     uint32_t stride = 0;
     uint32_t offset = 0;
     bool bindless = false;
@@ -526,4 +527,10 @@ enum class ShadingRateCombiner
 struct RaytracingASPrebuildInfo
 {
     uint64_t build_scratch_data_size;
+};
+
+enum class FenceFlag
+{
+    kNone,
+    kSignaled,
 };

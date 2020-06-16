@@ -1,14 +1,17 @@
 #include "Fence/VKTimelineSemaphore.h"
 #include <Device/VKDevice.h>
 
-VKTimelineSemaphore::VKTimelineSemaphore(VKDevice& device)
+VKTimelineSemaphore::VKTimelineSemaphore(VKDevice& device, FenceFlag flag)
     : m_device(device)
 {
     vk::SemaphoreTypeCreateInfo timeline_create_info = {};
+    timeline_create_info.initialValue = m_fence_value;
     timeline_create_info.semaphoreType = vk::SemaphoreType::eTimeline;
     vk::SemaphoreCreateInfo create_info;
     create_info.pNext = &timeline_create_info;
     m_timeline_semaphore = device.GetDevice().createSemaphoreUnique(create_info);
+    if (flag == FenceFlag::kNone)
+        ++m_fence_value;
 }
 
 void VKTimelineSemaphore::WaitAndReset()

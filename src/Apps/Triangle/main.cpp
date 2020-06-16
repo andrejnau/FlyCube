@@ -55,5 +55,5 @@ int main(int argc, char* argv[])
         context.Present();
         app.UpdateFps();
     }
-    _exit(0);
+    return 0;
 }

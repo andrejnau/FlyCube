@@ -59,8 +59,12 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
         VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
     };
+
     if (m_use_timeline_semaphore)
+    {
         req_extension.insert(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+        m_use_timeline_semaphore = false;
+    }
 
     std::vector<const char*> found_extension;
     for (const auto& extension : extensions)
@@ -72,6 +76,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
             m_is_variable_rate_shading_supported = true;
         if (std::string(extension.extensionName.data()) == VK_NV_RAY_TRACING_EXTENSION_NAME)
             m_is_dxr_supported = true;
+        if (std::string(extension.extensionName.data()) == VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)
+            m_use_timeline_semaphore = true;
     }
 
     if (m_is_variable_rate_shading_supported)
@@ -100,24 +106,33 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.imageCubeArray = true;
     device_features.shaderImageGatherExtended = true;
 
-    vk::PhysicalDeviceTimelineSemaphoreFeatures device_timetine_feature = {};
-    device_timetine_feature.timelineSemaphore = true;
+    void* device_create_info_next = nullptr;
+
+    if (m_use_timeline_semaphore)
+    {
+        vk::PhysicalDeviceTimelineSemaphoreFeatures device_timetine_feature = {};
+        device_timetine_feature.timelineSemaphore = true;
+        device_timetine_feature.pNext = device_create_info_next;
+        device_create_info_next = &device_timetine_feature;
+    }
 
     vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing_feature = {};
     descriptor_indexing_feature.runtimeDescriptorArray = true;
     descriptor_indexing_feature.descriptorBindingVariableDescriptorCount = true;
-    device_timetine_feature.pNext = &descriptor_indexing_feature;
+    descriptor_indexing_feature.pNext = device_create_info_next;
+    device_create_info_next = &descriptor_indexing_feature;
 
     vk::PhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_feature = {};
     if (m_is_variable_rate_shading_supported)
     {
         shading_rate_image_feature.shadingRateImage = VK_TRUE;
         shading_rate_image_feature.shadingRateCoarseSampleOrder = VK_TRUE;
-        descriptor_indexing_feature.pNext = &shading_rate_image_feature;
+        shading_rate_image_feature.pNext = device_create_info_next;
+        device_create_info_next = &shading_rate_image_feature;
     }
 
     vk::DeviceCreateInfo device_create_info = {};
-    device_create_info.pNext = &device_timetine_feature;
+    device_create_info.pNext = device_create_info_next;
     device_create_info.queueCreateInfoCount = 1;
     device_create_info.pQueueCreateInfos = &queue_create_info;
     device_create_info.pEnabledFeatures = &device_features;
@@ -152,12 +167,12 @@ std::shared_ptr<CommandList> VKDevice::CreateCommandList()
     return std::make_shared<VKCommandList>(*this);
 }
 
-std::shared_ptr<Fence> VKDevice::CreateFence()
+std::shared_ptr<Fence> VKDevice::CreateFence(FenceFlag flag)
 {
     if (m_use_timeline_semaphore)
-        return std::make_shared<VKTimelineSemaphore>(*this);
+        return std::make_shared<VKTimelineSemaphore>(*this, flag);
     else
-        return std::make_shared<VKFence>(*this);
+        return std::make_shared<VKFence>(*this, flag);
 }
 
 std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
@@ -497,7 +512,7 @@ void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
     vk::SubmitInfo submit_info = {};
     submit_info.waitSemaphoreCount = vk_semaphores.size();
     submit_info.pWaitSemaphores = vk_semaphores.data();
-    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eTransfer;
+    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
     submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
     m_queue.submit(1, &submit_info, {});
 }
@@ -513,9 +528,14 @@ void VKDevice::Signal(const std::shared_ptr<Semaphore>& semaphore)
     vk::SubmitInfo submit_info = {};
     submit_info.signalSemaphoreCount = vk_semaphores.size();
     submit_info.pSignalSemaphores = vk_semaphores.data();
-    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eTransfer;
+    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
     submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
     m_queue.submit(1, &submit_info, {});
+}
+
+void VKDevice::Signal(const std::shared_ptr<Fence>& fence)
+{
+    return ExecuteCommandLists({}, fence);
 }
 
 void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence)
@@ -533,7 +553,7 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     submit_info.commandBufferCount = vk_command_lists.size();
     submit_info.pCommandBuffers = vk_command_lists.data();
 
-    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eTransfer;
+    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
     submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
 
     vk::Fence handle = {};

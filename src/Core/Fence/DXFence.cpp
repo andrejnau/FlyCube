@@ -5,11 +5,13 @@
 #include <dxgi1_6.h>
 #include <d3d12.h>
 
-DXFence::DXFence(DXDevice& device)
+DXFence::DXFence(DXDevice& device, FenceFlag flag)
     : m_device(device)
 {
     ASSERT_SUCCEEDED(device.GetDevice()->CreateFence(m_fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
     m_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (flag == FenceFlag::kNone)
+        ++m_fence_value;
 }
 
 void DXFence::WaitAndReset()

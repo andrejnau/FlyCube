@@ -83,5 +83,8 @@ int main(int argc, char* argv[])
         swapchain->Present(rendering_finished_semaphore);
         app.UpdateFps();
     }
-    _exit(0);
+    std::shared_ptr<Fence> idle_fence = device->CreateFence(FenceFlag::kNone);
+    device->Signal(idle_fence);
+    idle_fence->WaitAndReset();
+    return 0;
 }

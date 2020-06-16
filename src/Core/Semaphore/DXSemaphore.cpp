@@ -1,7 +1,7 @@
 #include "Semaphore/DXSemaphore.h"
 
 DXSemaphore::DXSemaphore(DXDevice& device)
-    : m_fence(device)
+    : m_fence(device, FenceFlag::kSignaled)
 {
 }
 

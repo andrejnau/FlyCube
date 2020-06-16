@@ -20,6 +20,7 @@ class Context
 {
 public:
     Context(const Settings& settings, GLFWwindow* window);
+    ~Context();
 
     GLFWwindow* GetWindow()
     {

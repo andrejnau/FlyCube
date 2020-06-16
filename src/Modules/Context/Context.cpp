@@ -20,6 +20,11 @@ Context::Context(const Settings& settings, GLFWwindow* window)
     }
 }
 
+Context::~Context()
+{
+    WaitIdle();
+}
+
 std::shared_ptr<Resource> Context::GetBackBuffer(uint32_t buffer)
 {
     return m_swapchain->GetBackBuffer(buffer);
@@ -80,10 +85,9 @@ void Context::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandListB
 
 void Context::WaitIdle()
 {
-    m_fence->WaitAndReset();
-    m_device->ExecuteCommandLists({}, m_fence);
-    m_fence->WaitAndReset();
-    m_device->ExecuteCommandLists({}, m_fence);
+    std::shared_ptr<Fence> idle_fence = m_device->CreateFence(FenceFlag::kNone);
+    m_device->Signal(idle_fence);
+    idle_fence->WaitAndReset();
 }
 
 void Context::Resize(uint32_t width, uint32_t height)

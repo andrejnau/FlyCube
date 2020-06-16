@@ -6,7 +6,7 @@ class VKDevice;
 class VKFence : public Fence
 {
 public:
-    VKFence(VKDevice& device);
+    VKFence(VKDevice& device, FenceFlag flag);
     void WaitAndReset() override;
 
     vk::Fence GetFence();

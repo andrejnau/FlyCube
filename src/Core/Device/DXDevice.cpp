@@ -138,9 +138,9 @@ std::shared_ptr<CommandList> DXDevice::CreateCommandList()
     return std::make_shared<DXCommandList>(*this);
 }
 
-std::shared_ptr<Fence> DXDevice::CreateFence()
+std::shared_ptr<Fence> DXDevice::CreateFence(FenceFlag flag)
 {
-    return std::make_shared<DXFence>(*this);
+    return std::make_shared<DXFence>(*this, flag);
 }
 
 std::shared_ptr<Semaphore> DXDevice::CreateGPUSemaphore()
@@ -425,21 +425,27 @@ uint32_t DXDevice::GetShadingRateImageTileSize() const
 
 void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
 {
-    if (semaphore)
-    {
-        decltype(auto) dx_fence = semaphore->As<DXSemaphore>().GetFence();
-        ASSERT_SUCCEEDED(m_command_queue->Wait(dx_fence.GetFence().Get(), dx_fence.GetValue()));
-    }
+    if (!semaphore)
+        return;
+    decltype(auto) dx_fence = semaphore->As<DXSemaphore>().GetFence();
+    ASSERT_SUCCEEDED(m_command_queue->Wait(dx_fence.GetFence().Get(), dx_fence.GetValue()));
 }
 
 void DXDevice::Signal(const std::shared_ptr<Semaphore>& semaphore)
 {
-    if (semaphore)
-    {
-        decltype(auto) dx_fence = semaphore->As<DXSemaphore>().GetFence();
-        dx_fence.Increment();
-        ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), dx_fence.GetValue()));
-    }
+    if (!semaphore)
+        return;
+    decltype(auto) dx_fence = semaphore->As<DXSemaphore>().GetFence();
+    dx_fence.Increment();
+    ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), dx_fence.GetValue()));
+}
+
+void DXDevice::Signal(const std::shared_ptr<Fence>& fence)
+{
+    if (!fence)
+        return;
+    decltype(auto) dx_fence = fence->As<DXFence>();
+    ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), dx_fence.GetValue()));
 }
 
 void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence)
@@ -454,12 +460,7 @@ void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     }
     if (!dx_command_lists.empty())
         m_command_queue->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
-
-    if (fence)
-    {
-        decltype(auto) dx_fence = fence->As<DXFence>();
-        ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), dx_fence.GetValue()));
-    }
+    Signal(fence);
 }
 
 DXAdapter& DXDevice::GetAdapter()

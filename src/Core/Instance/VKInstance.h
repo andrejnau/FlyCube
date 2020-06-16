@@ -12,4 +12,5 @@ public:
 private:
     vk::DynamicLoader m_dl;
     vk::UniqueInstance m_instance;
+    vk::UniqueDebugReportCallbackEXT m_callback;
 };

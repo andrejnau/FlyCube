@@ -65,7 +65,7 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
         res->image.format = m_swapchain_color_format;
         res->image.size = vk::Extent2D(1u * width, 1u * height);
         res->resource_type = ResourceType::kTexture;
-        res->GetGlobalResourceStateTracker().SetResourceState(ResourceState::kUndefined);
+        res->GetGlobalResourceStateTracker().SetResourceState(ResourceState::kPresent);
         m_back_buffers.emplace_back(res);
     }
 }

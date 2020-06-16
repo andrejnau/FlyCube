@@ -7,7 +7,7 @@ class VKDevice;
 class VKTimelineSemaphore : public Fence
 {
 public:
-    VKTimelineSemaphore(VKDevice& device);
+    VKTimelineSemaphore(VKDevice& device, FenceFlag flag);
     void WaitAndReset() override;
 
     const vk::Semaphore& GetFence() const;
