@@ -42,13 +42,11 @@ public:
         if (m_option.type == "Library")
         {
             m_target = "lib_" + m_option.model;
-            m_target.replace(m_target.find("."), 1, "_");
             m_entrypoint = {};
         }
         else
         {
             m_target = "xs_" + m_option.model;
-            m_target.replace(m_target.find("."), 1, "_");
             m_target.front() = std::tolower(m_option.type[0]);
         }
 
@@ -73,7 +71,7 @@ public:
 
     void Parse()
     {
-        auto blob = DXCompile({ m_option.shader_path, m_entrypoint, m_type });
+        auto blob = DXCompile({ m_option.shader_path, m_entrypoint, m_type, m_option.model });
 
         ComPtr<ID3D12ShaderReflection> shader_reflector;
         DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
@@ -188,7 +186,7 @@ private:
         m_tdevice["ShaderPrefix"] = TargetToShaderPrefix(m_target);
         m_tdevice["ShaderPath"] = m_option.shader_path;
         m_tdevice["Entrypoint"] = m_entrypoint;
-        m_tdevice["Target"] = m_target;
+        m_tdevice["ShaderModel"] = m_option.model;
 
         mustache::data tcbuffers{ mustache::data::type::list };
 
@@ -357,7 +355,7 @@ private:
         m_tdevice["ShaderPrefix"] = TargetToShaderPrefix(m_target);
         m_tdevice["ShaderPath"] = m_option.shader_path;
         m_tdevice["Entrypoint"] = m_entrypoint;
-        m_tdevice["Target"] = m_target;
+        m_tdevice["ShaderModel"] = m_option.model;
 
         mustache::data tcbuffers{ mustache::data::type::list };
         std::set<std::string> resources;
@@ -511,6 +509,7 @@ public:
         m_option.model = argv[arg_index++];
         m_option.template_path = argv[arg_index++];
         m_option.output_dir = argv[arg_index++];
+        m_option.model.replace(m_option.model.find("."), 1, "_");
     }
 
     const Option& GetOption() const

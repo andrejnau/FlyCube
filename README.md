@@ -43,8 +43,8 @@ constant_buffer->UpdateUploadData(&constant_data, 0, sizeof(constant_data));
 ViewDesc constant_view_desc = {};
 constant_view_desc.view_type = ViewType::kConstantBuffer;
 std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, constant_view_desc);
-std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex });
-std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel });
+std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex, "6_0" });
+std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel, "6_0" });
 std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
 std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { pixel_shader->GetBindKey("Settings"), constant_buffer_view } });
 GraphicsPipelineDesc pipeline_desc = {

@@ -257,12 +257,14 @@ struct ShaderDesc
     std::string shader_path;
     std::string entrypoint;
     ShaderType type;
+    std::string model;
     std::map<std::string, std::string> define;
 
-    ShaderDesc(const std::string& shader_path, const std::string& entrypoint, ShaderType type)
+    ShaderDesc(const std::string& shader_path, const std::string& entrypoint, ShaderType type, const std::string& model)
         : shader_path(shader_path)
         , entrypoint(entrypoint)
         , type(type)
+        , model(model)
     {
     }
 };

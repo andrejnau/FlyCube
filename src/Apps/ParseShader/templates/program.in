@@ -10,7 +10,7 @@
 struct {{ShaderName}}Desc
 {
     static constexpr ShaderType type = {{ShaderType}};
-    ShaderDesc desc = { "{{ShaderPath}}", "{{Entrypoint}}", type };{{#HasCBuffers}}
+    ShaderDesc desc = { "{{ShaderPath}}", "{{Entrypoint}}", type, "{{ShaderModel}}" };{{#HasCBuffers}}
 
     struct CBV
     {
