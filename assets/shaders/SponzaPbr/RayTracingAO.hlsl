@@ -78,9 +78,9 @@ TEXTURE_TYPE gNormal;
 RaytracingAccelerationStructure geometry;
 RWTexture2D<float4> result;
 StructuredBuffer<uint4> descriptor_offset;
-Texture2D texture_table[] : register(space10);
-StructuredBuffer<float2> texcoords_table[] : register(space11);
-StructuredBuffer<uint> indices_table[] : register(space12);
+Texture2D texture_table[] : register(t, space10);
+StructuredBuffer<float2> texcoords_table[] : register(t, space11);
+StructuredBuffer<uint> indices_table[] : register(t, space12);
 SamplerState gSampler;
 
 struct RayPayload
