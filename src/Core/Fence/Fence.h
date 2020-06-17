@@ -7,5 +7,5 @@ class Fence : public QueryInterface
 {
 public:
     virtual ~Fence() = default;
-    virtual void WaitAndReset() = 0;
+    virtual void Wait(uint64_t value) = 0;
 };

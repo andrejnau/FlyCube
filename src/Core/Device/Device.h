@@ -21,7 +21,7 @@ public:
     virtual uint32_t GetTextureDataPitchAlignment() const = 0;
     virtual std::shared_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync) = 0;
     virtual std::shared_ptr<CommandList> CreateCommandList() = 0;
-    virtual std::shared_ptr<Fence> CreateFence(FenceFlag flag = FenceFlag::kSignaled) = 0;
+    virtual std::shared_ptr<Fence> CreateFence(uint64_t initial_value) = 0;
     virtual std::shared_ptr<Semaphore> CreateGPUSemaphore() = 0;
     virtual std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth = 1, int mip_levels = 1) = 0;
     virtual std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, MemoryType memory_type = MemoryType::kDefault) = 0;
@@ -41,6 +41,7 @@ public:
     virtual uint32_t GetShadingRateImageTileSize() const = 0;
     virtual void Wait(const std::shared_ptr<Semaphore>& semaphore) = 0;
     virtual void Signal(const std::shared_ptr<Semaphore>& semaphore) = 0;
-    virtual void Signal(const std::shared_ptr<Fence>& fence) = 0;
-    virtual void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence = {}) = 0;
+    virtual void Wait(const std::shared_ptr<Fence>& fence, uint64_t value) = 0;
+    virtual void Signal(const std::shared_ptr<Fence>& fence, uint64_t value) = 0;
+    virtual void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists) = 0;
 };

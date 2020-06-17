@@ -16,7 +16,7 @@ public:
     uint32_t GetTextureDataPitchAlignment() const override;
     std::shared_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync) override;
     std::shared_ptr<CommandList> CreateCommandList() override;
-    std::shared_ptr<Fence> CreateFence(FenceFlag flag) override;
+    std::shared_ptr<Fence> CreateFence(uint64_t initial_value) override;
     std::shared_ptr<Semaphore> CreateGPUSemaphore() override;
     std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels) override;
     std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, MemoryType memory_type) override;
@@ -36,8 +36,9 @@ public:
     void Wait(const std::shared_ptr<Semaphore>& semaphore) override;
     uint32_t GetShadingRateImageTileSize() const override;
     void Signal(const std::shared_ptr<Semaphore>& semaphore) override;
-    void Signal(const std::shared_ptr<Fence>& fence) override;
-    void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence) override;
+    void Wait(const std::shared_ptr<Fence>& fence, uint64_t value) override;
+    void Signal(const std::shared_ptr<Fence>& fence, uint64_t value) override;
+    void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
 
     DXAdapter& GetAdapter();
     ComPtr<ID3D12Device> GetDevice();

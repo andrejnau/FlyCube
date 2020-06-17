@@ -138,9 +138,9 @@ std::shared_ptr<CommandList> DXDevice::CreateCommandList()
     return std::make_shared<DXCommandList>(*this);
 }
 
-std::shared_ptr<Fence> DXDevice::CreateFence(FenceFlag flag)
+std::shared_ptr<Fence> DXDevice::CreateFence(uint64_t initial_value)
 {
-    return std::make_shared<DXFence>(*this, flag);
+    return std::make_shared<DXFence>(*this, initial_value);
 }
 
 std::shared_ptr<Semaphore> DXDevice::CreateGPUSemaphore()
@@ -427,28 +427,32 @@ void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
 {
     if (!semaphore)
         return;
-    decltype(auto) dx_fence = semaphore->As<DXSemaphore>().GetFence();
-    ASSERT_SUCCEEDED(m_command_queue->Wait(dx_fence.GetFence().Get(), dx_fence.GetValue()));
+    decltype(auto) dx_semaphore = semaphore->As<DXSemaphore>();
+    ASSERT_SUCCEEDED(m_command_queue->Wait(dx_semaphore.GetFence().Get(), dx_semaphore.GetValue()));
 }
 
 void DXDevice::Signal(const std::shared_ptr<Semaphore>& semaphore)
 {
     if (!semaphore)
         return;
-    decltype(auto) dx_fence = semaphore->As<DXSemaphore>().GetFence();
-    dx_fence.Increment();
-    ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), dx_fence.GetValue()));
+    decltype(auto) dx_semaphore = semaphore->As<DXSemaphore>();
+    dx_semaphore.Increment();
+    ASSERT_SUCCEEDED(m_command_queue->Signal(dx_semaphore.GetFence().Get(), dx_semaphore.GetValue()));
 }
 
-void DXDevice::Signal(const std::shared_ptr<Fence>& fence)
+void DXDevice::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
 {
-    if (!fence)
-        return;
     decltype(auto) dx_fence = fence->As<DXFence>();
-    ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), dx_fence.GetValue()));
+    ASSERT_SUCCEEDED(m_command_queue->Wait(dx_fence.GetFence().Get(), value));
 }
 
-void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence)
+void DXDevice::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
+{
+    decltype(auto) dx_fence = fence->As<DXFence>();
+    ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), value));
+}
+
+void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
 {
     std::vector<ID3D12CommandList*> dx_command_lists;
     for (auto& command_list : command_lists)
@@ -460,7 +464,6 @@ void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     }
     if (!dx_command_lists.empty())
         m_command_queue->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
-    Signal(fence);
 }
 
 DXAdapter& DXDevice::GetAdapter()

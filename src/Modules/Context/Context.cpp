@@ -13,7 +13,7 @@ Context::Context(const Settings& settings, GLFWwindow* window)
     m_swapchain = m_device->CreateSwapchain(window, m_width, m_height, FrameCount, settings.vsync);
     m_image_available_semaphore = m_device->CreateGPUSemaphore();
     m_rendering_finished_semaphore = m_device->CreateGPUSemaphore();
-    m_fence = m_device->CreateFence();
+    m_fence = m_device->CreateFence(m_fence_value);
     for (uint32_t i = 0; i < FrameCount; ++i)
     {
         m_swapchain_command_lists.emplace_back(m_device->CreateCommandList());
@@ -80,14 +80,14 @@ void Context::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandListB
             }
         }
     }
-    m_device->ExecuteCommandLists(raw_command_lists, {});
+    m_device->ExecuteCommandLists(raw_command_lists);
 }
 
 void Context::WaitIdle()
 {
-    std::shared_ptr<Fence> idle_fence = m_device->CreateFence(FenceFlag::kNone);
-    m_device->Signal(idle_fence);
-    idle_fence->WaitAndReset();
+    std::shared_ptr<Fence> idle_fence = m_device->CreateFence(0);
+    m_device->Signal(idle_fence, 1);
+    idle_fence->Wait(1);
 }
 
 void Context::Resize(uint32_t width, uint32_t height)
@@ -114,10 +114,11 @@ void Context::Present()
     m_swapchain_command_list->ResourceBarrier({ barrier });
     m_swapchain_command_list->Close();
 
-    m_fence->WaitAndReset();
+    m_fence->Wait(m_fence_value);
     m_swapchain->NextImage(m_image_available_semaphore);
     m_device->Wait(m_image_available_semaphore);
-    m_device->ExecuteCommandLists({ m_swapchain_command_list }, m_fence);
+    m_device->ExecuteCommandLists({ m_swapchain_command_list });
+    m_device->Signal(m_fence, ++m_fence_value);
     m_device->Signal(m_rendering_finished_semaphore);
     m_swapchain->Present(m_rendering_finished_semaphore);
 

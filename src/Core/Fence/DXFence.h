@@ -10,16 +10,13 @@ class DXDevice;
 class DXFence : public Fence
 {
 public:
-    DXFence(DXDevice& device, FenceFlag flag);
-    void WaitAndReset() override;
+    DXFence(DXDevice& device, uint64_t initial_value);
+    void Wait(uint64_t value) override;
 
     ComPtr<ID3D12Fence> GetFence();
-    const uint64_t& GetValue() const;
-    void Increment();
 
 private:
     DXDevice& m_device;
     ComPtr<ID3D12Fence> m_fence;
-    uint64_t m_fence_value = 0;
     HANDLE m_fence_event = nullptr;
 };

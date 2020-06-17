@@ -530,9 +530,3 @@ struct RaytracingASPrebuildInfo
 {
     uint64_t build_scratch_data_size;
 };
-
-enum class FenceFlag
-{
-    kNone,
-    kSignaled,
-};

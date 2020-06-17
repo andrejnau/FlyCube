@@ -9,8 +9,11 @@ class DXSemaphore
 {
 public:
     DXSemaphore(DXDevice& device);
-    DXFence& GetFence();
+    ComPtr<ID3D12Fence> GetFence();
+    uint64_t GetValue() const;
+    void Increment();
 
 private:
+    uint64_t m_value = 0;
     DXFence m_fence;
 };

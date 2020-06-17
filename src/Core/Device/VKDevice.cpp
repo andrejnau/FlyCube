@@ -2,7 +2,6 @@
 #include <Swapchain/VKSwapchain.h>
 #include <CommandList/VKCommandList.h>
 #include <Instance/VKInstance.h>
-#include <Fence/VKFence.h>
 #include <Fence/VKTimelineSemaphore.h>
 #include <Semaphore/VKSemaphore.h>
 #include <Program/VKProgram.h>
@@ -57,14 +56,9 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_KHR_MAINTENANCE3_EXTENSION_NAME
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-        VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
+        VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME,
+        VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME
     };
-
-    if (m_use_timeline_semaphore)
-    {
-        req_extension.insert(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-        m_use_timeline_semaphore = false;
-    }
 
     std::vector<const char*> found_extension;
     for (const auto& extension : extensions)
@@ -76,8 +70,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
             m_is_variable_rate_shading_supported = true;
         if (std::string(extension.extensionName.data()) == VK_NV_RAY_TRACING_EXTENSION_NAME)
             m_is_dxr_supported = true;
-        if (std::string(extension.extensionName.data()) == VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)
-            m_use_timeline_semaphore = true;
     }
 
     if (m_is_variable_rate_shading_supported)
@@ -108,13 +100,10 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
     void* device_create_info_next = nullptr;
 
-    if (m_use_timeline_semaphore)
-    {
-        vk::PhysicalDeviceTimelineSemaphoreFeatures device_timetine_feature = {};
-        device_timetine_feature.timelineSemaphore = true;
-        device_timetine_feature.pNext = device_create_info_next;
-        device_create_info_next = &device_timetine_feature;
-    }
+    vk::PhysicalDeviceTimelineSemaphoreFeatures device_timetine_feature = {};
+    device_timetine_feature.timelineSemaphore = true;
+    device_timetine_feature.pNext = device_create_info_next;
+    device_create_info_next = &device_timetine_feature;
 
     vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing_feature = {};
     descriptor_indexing_feature.runtimeDescriptorArray = true;
@@ -167,12 +156,9 @@ std::shared_ptr<CommandList> VKDevice::CreateCommandList()
     return std::make_shared<VKCommandList>(*this);
 }
 
-std::shared_ptr<Fence> VKDevice::CreateFence(FenceFlag flag)
+std::shared_ptr<Fence> VKDevice::CreateFence(uint64_t initial_value)
 {
-    if (m_use_timeline_semaphore)
-        return std::make_shared<VKTimelineSemaphore>(*this, flag);
-    else
-        return std::make_shared<VKFence>(*this, flag);
+    return std::make_shared<VKTimelineSemaphore>(*this, initial_value);
 }
 
 std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
@@ -533,12 +519,35 @@ void VKDevice::Signal(const std::shared_ptr<Semaphore>& semaphore)
     m_queue.submit(1, &submit_info, {});
 }
 
-void VKDevice::Signal(const std::shared_ptr<Fence>& fence)
+void VKDevice::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
 {
-    return ExecuteCommandLists({}, fence);
+    decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
+    vk::TimelineSemaphoreSubmitInfo timeline_info = {};
+    timeline_info.waitSemaphoreValueCount = 1;
+    timeline_info.pWaitSemaphoreValues = &value;
+
+    vk::SubmitInfo signal_submit_info = {};
+    signal_submit_info.pNext = &timeline_info;
+    signal_submit_info.waitSemaphoreCount = 1;
+    signal_submit_info.pWaitSemaphores = &vk_fence.GetFence();
+    m_queue.submit(1, &signal_submit_info, {});
 }
 
-void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists, const std::shared_ptr<Fence>& fence)
+void VKDevice::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
+{
+    decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
+    vk::TimelineSemaphoreSubmitInfo timeline_info = {};
+    timeline_info.signalSemaphoreValueCount = 1;
+    timeline_info.pSignalSemaphoreValues = &value;
+
+    vk::SubmitInfo signal_submit_info = {};
+    signal_submit_info.pNext = &timeline_info;
+    signal_submit_info.signalSemaphoreCount = 1;
+    signal_submit_info.pSignalSemaphores = &vk_fence.GetFence();
+    m_queue.submit(1, &signal_submit_info, {});
+}
+
+void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
 {
     std::vector<vk::CommandBuffer> vk_command_lists;
     for (auto& command_list : command_lists)
@@ -556,28 +565,7 @@ void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList
     vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
     submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
 
-    vk::Fence handle = {};
-    if (!m_use_timeline_semaphore && fence)
-    {
-        decltype(auto) vk_fence = fence->As<VKFence>();
-        handle = vk_fence.GetFence();
-    }
-
-    m_queue.submit(1, &submit_info, handle);
-
-    if (m_use_timeline_semaphore && fence)
-    {
-        decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
-        vk::TimelineSemaphoreSubmitInfo timeline_info = {};
-        timeline_info.signalSemaphoreValueCount = 1;
-        timeline_info.pSignalSemaphoreValues = &vk_fence.GetValue();
-
-        vk::SubmitInfo signal_submit_info = {};
-        signal_submit_info.pNext = &timeline_info;
-        signal_submit_info.signalSemaphoreCount = 1;
-        signal_submit_info.pSignalSemaphores = &vk_fence.GetFence();
-        m_queue.submit(1, &signal_submit_info, {});
-    }
+    m_queue.submit(1, &submit_info, {});
 }
 
 VKAdapter& VKDevice::GetAdapter()
