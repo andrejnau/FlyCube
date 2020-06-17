@@ -71,5 +71,6 @@ int main(int argc, char *argv[])
         context.Present();
         app.UpdateFps();
     }
+    context.WaitIdle();
     return 0;
 }

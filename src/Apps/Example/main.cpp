@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[settings.required_gpu_index]);
     std::shared_ptr<Device> device = adapter->CreateDevice();
 
-    uint32_t frame_count = 3;
+    constexpr uint32_t frame_count = 3;
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count, settings.vsync);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
@@ -69,6 +69,7 @@ int main(int argc, char* argv[])
         command_list->Close();
     }
 
+    std::array<uint64_t, frame_count> fence_values = {};
     uint64_t fence_value = 0;
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
     std::shared_ptr<Semaphore> image_available_semaphore = device->CreateGPUSemaphore();
@@ -76,17 +77,16 @@ int main(int argc, char* argv[])
 
     while (!app.PollEvents())
     {
-        fence->Wait(fence_value);
         uint32_t frame_index = swapchain->NextImage(image_available_semaphore);
         device->Wait(image_available_semaphore);
+        fence->Wait(fence_values[frame_index]);
         device->ExecuteCommandLists({ command_lists[frame_index] });
-        device->Signal(fence, ++fence_value);
+        device->Signal(fence, fence_values[frame_index] = ++fence_value);
         device->Signal(rendering_finished_semaphore);
         swapchain->Present(rendering_finished_semaphore);
         app.UpdateFps();
     }
-    std::shared_ptr<Fence> idle_fence = device->CreateFence(0);
-    device->Signal(idle_fence, 1);
-    idle_fence->Wait(1);
+    device->Signal(fence, ++fence_value);
+    fence->Wait(fence_value);
     return 0;
 }

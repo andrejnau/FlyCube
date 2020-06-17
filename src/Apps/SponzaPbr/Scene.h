@@ -37,7 +37,8 @@ class Scene
     , public IModifySponzaSettings
 {
 public:
-    Scene(Context& context, int width, int height);
+    Scene(const Settings& settings, GLFWwindow* window, int width, int height);
+    ~Scene();
 
     void RenderFrame();
 
@@ -53,7 +54,7 @@ public:
 private:
     void CreateRT();
 
-    Context& m_context;
+    Context m_context;
     Device& m_device;
 
     int m_width;

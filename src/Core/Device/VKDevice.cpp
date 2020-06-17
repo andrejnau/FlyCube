@@ -530,6 +530,8 @@ void VKDevice::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
     signal_submit_info.pNext = &timeline_info;
     signal_submit_info.waitSemaphoreCount = 1;
     signal_submit_info.pWaitSemaphores = &vk_fence.GetFence();
+    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
+    signal_submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
     m_queue.submit(1, &signal_submit_info, {});
 }
 

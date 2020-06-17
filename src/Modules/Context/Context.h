@@ -38,6 +38,12 @@ public:
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandListBox>>& command_lists);
 
     std::shared_ptr<Resource> GetBackBuffer(uint32_t buffer);
+
+    std::shared_ptr<Fence>& GetFence()
+    {
+        return m_fence;
+    }
+
     void WaitIdle();
     void Resize(uint32_t width, uint32_t height);
     void Present();
@@ -64,9 +70,11 @@ private:
     std::shared_ptr<Semaphore> m_image_available_semaphore;
     std::shared_ptr<Semaphore> m_rendering_finished_semaphore;
     std::vector<std::shared_ptr<CommandList>> m_swapchain_command_lists;
+    std::vector<uint64_t> m_swapchain_fence_values;
     std::shared_ptr<CommandList> m_swapchain_command_list;
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
     std::array<std::vector<std::shared_ptr<CommandList>>, FrameCount> m_tmp_command_lists;
+    std::array<std::vector<uint64_t>, FrameCount> m_tmp_fence_values;
     std::array<uint32_t, FrameCount> m_tmp_command_lists_offset = {};
 };

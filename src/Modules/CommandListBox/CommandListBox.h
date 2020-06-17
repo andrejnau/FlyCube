@@ -67,6 +67,8 @@ public:
     std::vector<ResourceBarrierDesc>& GetLazyBarriers();
     const std::map<std::shared_ptr<Resource>, ResourceStateTracker>& GetResourceStateTrackers();
 
+    uint64_t fence_value = 0;
+
 private:
     void ApplyBindings();
 
