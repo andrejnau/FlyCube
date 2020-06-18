@@ -36,6 +36,8 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
     adapter.GetPhysicalDevice().getSurfaceSupportKHR(device.GetQueueFamilyIndex(), m_surface.get(), &is_supported_surface);
     ASSERT(is_supported_surface);
 
+    auto modes = adapter.GetPhysicalDevice().getSurfacePresentModesKHR(m_surface.get());
+
     vk::SwapchainCreateInfoKHR swap_chain_create_info = {};
     swap_chain_create_info.surface = m_surface.get();
     swap_chain_create_info.minImageCount = frame_count;
@@ -48,9 +50,19 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
     swap_chain_create_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
     swap_chain_create_info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
     if (vsync)
-        swap_chain_create_info.presentMode = vk::PresentModeKHR::eFifoRelaxed;
+    {
+        if (std::count(modes.begin(), modes.end(), vk::PresentModeKHR::eFifoRelaxed))
+            swap_chain_create_info.presentMode = vk::PresentModeKHR::eFifoRelaxed;
+        else
+            swap_chain_create_info.presentMode = vk::PresentModeKHR::eFifo;
+    }
     else
-        swap_chain_create_info.presentMode = vk::PresentModeKHR::eMailbox;
+    {
+        if (std::count(modes.begin(), modes.end(), vk::PresentModeKHR::eMailbox))
+            swap_chain_create_info.presentMode = vk::PresentModeKHR::eMailbox;
+        else
+            swap_chain_create_info.presentMode = vk::PresentModeKHR::eImmediate;
+    }
     swap_chain_create_info.clipped = true;
 
     m_swapchain = device.GetDevice().createSwapchainKHRUnique(swap_chain_create_info);
