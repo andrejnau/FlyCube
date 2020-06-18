@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
     {
         context.ExecuteCommandLists({ command_lists[context.GetFrameIndex()] });
         context.Present();
-        app.UpdateFps();
+        app.UpdateFps(context.GetGpuName());
     }
     context.WaitIdle();
     return 0;

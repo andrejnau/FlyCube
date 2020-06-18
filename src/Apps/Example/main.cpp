@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
         device->ExecuteCommandLists({ command_lists[frame_index] });
         device->Signal(fence, fence_values[frame_index] = ++fence_value);
         swapchain->Present(fence, fence_values[frame_index]);
-        app.UpdateFps();
+        app.UpdateFps(adapter->GetName());
     }
     device->Signal(fence, ++fence_value);
     fence->Wait(fence_value);

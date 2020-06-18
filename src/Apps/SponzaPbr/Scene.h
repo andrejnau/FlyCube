@@ -40,6 +40,11 @@ public:
     Scene(const Settings& settings, GLFWwindow* window, int width, int height);
     ~Scene();
 
+    Context& GetContext()
+    {
+        return m_context;
+    }
+
     void RenderFrame();
 
     void OnResize(int width, int height) override;

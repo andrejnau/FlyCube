@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     while (!app.PollEvents())
     {
         scene.RenderFrame();
-        app.UpdateFps();
+        app.UpdateFps(scene.GetContext().GetGpuName());
     }
     return 0;
 }

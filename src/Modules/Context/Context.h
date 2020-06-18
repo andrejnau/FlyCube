@@ -27,6 +27,11 @@ public:
         return m_window;
     }
 
+    const std::string& GetGpuName()const
+    {
+        return m_adapter->GetName();
+    }
+
     std::shared_ptr<CommandListBox> CreateCommandList(bool open = false)
     {
         auto cmd = std::make_shared<CommandListBox>(*m_device);

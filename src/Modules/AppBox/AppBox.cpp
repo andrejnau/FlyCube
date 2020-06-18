@@ -46,7 +46,7 @@ AppBox::~AppBox()
     glfwTerminate();
 }
 
-void AppBox::UpdateFps()
+void AppBox::UpdateFps(const std::string& gpu_name)
 {
     ++m_frame_number;
     double current_time = glfwGetTime();
@@ -58,7 +58,10 @@ void AppBox::UpdateFps()
         {
             double fps = m_frame_number / delta;
             std::stringstream buf;
-            buf << m_title << " [";
+            buf << m_title;
+            if (!gpu_name.empty())
+                buf << " " << gpu_name;
+            buf  << " [";
             if (m_setting.round_fps)
                 buf << static_cast<int64_t>(std::round(fps));
             else
