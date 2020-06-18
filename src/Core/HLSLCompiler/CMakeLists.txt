@@ -35,6 +35,11 @@ if (VULKAN_SUPPORT)
     target_link_libraries(HLSLCompiler
         spirv-cross-core
         spirv-cross-hlsl
+        ${Vulkan_INCLUDE_DIR}/../Lib/shaderc_shared.lib
+    )
+    target_include_directories(HLSLCompiler
+        PUBLIC
+            ${Vulkan_INCLUDE_DIR}
     )
 endif()
 

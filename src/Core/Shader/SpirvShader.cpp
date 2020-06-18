@@ -73,6 +73,14 @@ SpirvShader::SpirvShader(const ShaderDesc& desc)
             auto& res_type = compiler.get_type(resource.type_id);
             auto slot = compiler.get_decoration(resource.id, spv::DecorationBinding);
             auto space = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+
+            if (space == 0)
+            {
+                uint32_t word_offset = 0;
+                compiler.get_binary_offset_for_decoration(resource.id, spv::DecorationDescriptorSet, word_offset);
+                m_blob[word_offset] = space = option.resource_set_binding;
+            }
+
             ViewType view_type = GetViewType(compiler, res_type, resource.id);
             BindKey bind_key = { m_type, view_type, slot, space };
             m_bind_keys[resource.name] = bind_key;;
