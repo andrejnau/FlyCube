@@ -12,7 +12,6 @@ enum class ResourceState
 {
     kUnknown,
     kUndefined,
-    kCommon,
     kGenericRead,
     kClearColor,
     kClearDepth,

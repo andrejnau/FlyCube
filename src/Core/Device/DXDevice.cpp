@@ -19,7 +19,7 @@ D3D12_RESOURCE_STATES ConvertSate(ResourceState state)
 {
     switch (state)
     {
-    case ResourceState::kCommon:
+    case ResourceState::kUndefined:
         return D3D12_RESOURCE_STATE_COMMON;
     case ResourceState::kGenericRead:
         return D3D12_RESOURCE_STATE_GENERIC_READ;
@@ -220,7 +220,7 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
 
-    ResourceState state = ResourceState::kCommon;
+    ResourceState state = ResourceState::kUndefined;
     res->memory_type = memory_type;
     res->resource_type = ResourceType::kBuffer;
 

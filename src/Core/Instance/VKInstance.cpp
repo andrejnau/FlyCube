@@ -11,7 +11,6 @@ static bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& me
     static std::vector<std::string> muted_warnings = {
         "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv",
         "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated",
-        "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout",
         "VUID-vkCmdDrawIndexed-None-04007",
         "VUID-vkCmdPipelineBarrier-pDependencies-02285",
         "VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02460",
