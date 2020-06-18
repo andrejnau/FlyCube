@@ -38,7 +38,6 @@ target_link_libraries(Device
     CPUDescriptorPool
     GPUDescriptorPool
     Fence
-    Semaphore
     Utilities
     spirv-cross-core
     spirv-cross-hlsl

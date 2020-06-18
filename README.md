@@ -85,18 +85,15 @@ for (uint32_t i = 0; i < frame_count; ++i)
 std::array<uint64_t, frame_count> fence_values = {};
 uint64_t fence_value = 0;
 std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
-std::shared_ptr<Semaphore> image_available_semaphore = device->CreateGPUSemaphore();
-std::shared_ptr<Semaphore> rendering_finished_semaphore = device->CreateGPUSemaphore();
 
 while (!app.PollEvents())
 {
-    uint32_t frame_index = swapchain->NextImage(image_available_semaphore);
-    device->Wait(image_available_semaphore);
+    uint32_t frame_index = swapchain->NextImage(fence, ++fence_value);
+    device->Wait(fence, fence_value);
     fence->Wait(fence_values[frame_index]);
     device->ExecuteCommandLists({ command_lists[frame_index] });
     device->Signal(fence, fence_values[frame_index] = ++fence_value);
-    device->Signal(rendering_finished_semaphore);
-    swapchain->Present(rendering_finished_semaphore);
+    swapchain->Present(fence, fence_values[frame_index]);
     app.UpdateFps();
 }
 device->Signal(fence, ++fence_value);

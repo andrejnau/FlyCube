@@ -3,7 +3,6 @@
 #include <CommandList/VKCommandList.h>
 #include <Instance/VKInstance.h>
 #include <Fence/VKTimelineSemaphore.h>
-#include <Semaphore/VKSemaphore.h>
 #include <Program/VKProgram.h>
 #include <Pipeline/VKGraphicsPipeline.h>
 #include <Pipeline/VKComputePipeline.h>
@@ -159,11 +158,6 @@ std::shared_ptr<CommandList> VKDevice::CreateCommandList()
 std::shared_ptr<Fence> VKDevice::CreateFence(uint64_t initial_value)
 {
     return std::make_shared<VKTimelineSemaphore>(*this, initial_value);
-}
-
-std::shared_ptr<Semaphore> VKDevice::CreateGPUSemaphore()
-{
-    return std::make_shared<VKSemaphore>(*this);
 }
 
 std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
@@ -485,38 +479,6 @@ bool VKDevice::IsVariableRateShadingSupported() const
 uint32_t VKDevice::GetShadingRateImageTileSize() const
 {
     return m_shading_rate_image_tile_size;
-}
-
-void VKDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
-{
-    std::vector<vk::Semaphore> vk_semaphores;
-    if (semaphore)
-    {
-        decltype(auto) vk_semaphore = semaphore->As<VKSemaphore>();
-        vk_semaphores.emplace_back(vk_semaphore.GetSemaphore());
-    }
-    vk::SubmitInfo submit_info = {};
-    submit_info.waitSemaphoreCount = vk_semaphores.size();
-    submit_info.pWaitSemaphores = vk_semaphores.data();
-    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
-    submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
-    m_queue.submit(1, &submit_info, {});
-}
-
-void VKDevice::Signal(const std::shared_ptr<Semaphore>& semaphore)
-{
-    std::vector<vk::Semaphore> vk_semaphores;
-    if (semaphore)
-    {
-        decltype(auto) vk_semaphore = semaphore->As<VKSemaphore>();
-        vk_semaphores.emplace_back(vk_semaphore.GetSemaphore());
-    }
-    vk::SubmitInfo submit_info = {};
-    submit_info.signalSemaphoreCount = vk_semaphores.size();
-    submit_info.pSignalSemaphores = vk_semaphores.data();
-    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
-    submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
-    m_queue.submit(1, &submit_info, {});
 }
 
 void VKDevice::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)

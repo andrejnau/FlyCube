@@ -50,15 +50,16 @@ std::shared_ptr<Resource> DXSwapchain::GetBackBuffer(uint32_t buffer)
     return m_back_buffers[buffer];
 }
 
-uint32_t DXSwapchain::NextImage(const std::shared_ptr<Semaphore>& semaphore)
+uint32_t DXSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
 {
-    m_device.Signal(semaphore);
-    return m_swap_chain->GetCurrentBackBufferIndex();
+    uint32_t frame_index = m_swap_chain->GetCurrentBackBufferIndex();
+    m_device.Signal(fence, signal_value);
+    return frame_index;
 }
 
-void DXSwapchain::Present(const std::shared_ptr<Semaphore>& semaphore)
+void DXSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
-    m_device.Wait(semaphore);
+    m_device.Wait(fence, wait_value);
     if (m_vsync)
     {
         ASSERT_SUCCEEDED(m_swap_chain->Present(1, 0));

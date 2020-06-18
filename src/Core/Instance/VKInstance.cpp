@@ -20,6 +20,8 @@ static bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& me
         "VUID-vkCmdClearDepthStencilImage-pRanges",
         "VUID-vkCmdClearDepthStencilImage-image",
         "VUID-vkDestroyDevice-device-00378",
+        "VUID-VkSubmitInfo-pWaitSemaphores-03243",
+        "VUID-VkSubmitInfo-pSignalSemaphores-03244",
     };
     for (auto& str : muted_warnings)
     {

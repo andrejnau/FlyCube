@@ -24,7 +24,6 @@ target_link_libraries(CommandListBox
     CPUDescriptorPool
     GPUDescriptorPool
     Fence
-    Semaphore
     Utilities
     spirv-cross-core
     spirv-cross-hlsl

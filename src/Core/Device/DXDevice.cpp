@@ -5,7 +5,6 @@
 #include <Shader/DXShader.h>
 #include <Fence/DXFence.h>
 #include <View/DXView.h>
-#include <Semaphore/DXSemaphore.h>
 #include <Program/DXProgram.h>
 #include <Pipeline/DXGraphicsPipeline.h>
 #include <Pipeline/DXComputePipeline.h>
@@ -141,11 +140,6 @@ std::shared_ptr<CommandList> DXDevice::CreateCommandList()
 std::shared_ptr<Fence> DXDevice::CreateFence(uint64_t initial_value)
 {
     return std::make_shared<DXFence>(*this, initial_value);
-}
-
-std::shared_ptr<Semaphore> DXDevice::CreateGPUSemaphore()
-{
-    return std::make_shared<DXSemaphore>(*this);
 }
 
 std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
@@ -421,23 +415,6 @@ bool DXDevice::IsVariableRateShadingSupported() const
 uint32_t DXDevice::GetShadingRateImageTileSize() const
 {
     return m_shading_rate_image_tile_size;
-}
-
-void DXDevice::Wait(const std::shared_ptr<Semaphore>& semaphore)
-{
-    if (!semaphore)
-        return;
-    decltype(auto) dx_semaphore = semaphore->As<DXSemaphore>();
-    ASSERT_SUCCEEDED(m_command_queue->Wait(dx_semaphore.GetFence().Get(), dx_semaphore.GetValue()));
-}
-
-void DXDevice::Signal(const std::shared_ptr<Semaphore>& semaphore)
-{
-    if (!semaphore)
-        return;
-    decltype(auto) dx_semaphore = semaphore->As<DXSemaphore>();
-    dx_semaphore.Increment();
-    ASSERT_SUCCEEDED(m_command_queue->Signal(dx_semaphore.GetFence().Get(), dx_semaphore.GetValue()));
 }
 
 void DXDevice::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)

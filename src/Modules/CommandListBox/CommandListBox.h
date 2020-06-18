@@ -75,8 +75,6 @@ private:
     Device& m_device;
     std::shared_ptr<CommandList> m_command_list;
     std::shared_ptr<Fence> m_fence;
-    std::shared_ptr<Semaphore> m_image_available_semaphore;
-    std::shared_ptr<Semaphore> m_rendering_finished_semaphore;
     bool m_is_open_render_pass = false;
     uint32_t m_viewport_width = 0;
     uint32_t m_viewport_height = 0;

@@ -3,7 +3,7 @@
 #include <Device/VKDevice.h>
 #include <Adapter/VKAdapter.h>
 #include <Instance/VKInstance.h>
-#include <Semaphore/VKSemaphore.h>
+#include <Fence/VKTimelineSemaphore.h>
 #include <Utilities/VKUtility.h>
 #include <Resource/VKResource.h>
 
@@ -68,6 +68,10 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
         res->GetGlobalResourceStateTracker().SetResourceState(ResourceState::kPresent);
         m_back_buffers.emplace_back(res);
     }
+
+    vk::SemaphoreCreateInfo semaphore_create_info = {};
+    m_image_available_semaphore = m_device.GetDevice().createSemaphoreUnique(semaphore_create_info);
+    m_rendering_finished_semaphore = m_device.GetDevice().createSemaphoreUnique(semaphore_create_info);
 }
 
 gli::format VKSwapchain::GetFormat() const
@@ -80,29 +84,54 @@ std::shared_ptr<Resource> VKSwapchain::GetBackBuffer(uint32_t buffer)
     return m_back_buffers[buffer];
 }
 
-uint32_t VKSwapchain::NextImage(const std::shared_ptr<Semaphore>& semaphore)
+uint32_t VKSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
 {
-    vk::Semaphore vk_semaphore_handle = {};
-    if (semaphore)
-    {
-        decltype(auto) vk_semaphore = semaphore->As<VKSemaphore>();
-        vk_semaphore_handle = vk_semaphore.GetSemaphore();
-    }
-    m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, vk_semaphore_handle, nullptr, &m_frame_index);
+    m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, m_image_available_semaphore.get(), nullptr, &m_frame_index);
+
+    decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
+    uint64_t tmp = std::numeric_limits<uint64_t>::max();
+    vk::TimelineSemaphoreSubmitInfo timeline_info = {};
+    timeline_info.waitSemaphoreValueCount = 1;
+    timeline_info.pWaitSemaphoreValues = &tmp;
+    timeline_info.signalSemaphoreValueCount = 1;
+    timeline_info.pSignalSemaphoreValues = &signal_value;
+    vk::SubmitInfo signal_submit_info = {};
+    signal_submit_info.pNext = &timeline_info;
+    signal_submit_info.waitSemaphoreCount = 1;
+    signal_submit_info.pWaitSemaphores = &m_image_available_semaphore.get();
+    vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eTransfer;
+    signal_submit_info.pWaitDstStageMask = &waitDstStageMask;
+    signal_submit_info.signalSemaphoreCount = 1;
+    signal_submit_info.pSignalSemaphores = &vk_fence.GetFence();
+    m_device.GetQueue().submit(1, &signal_submit_info, {});
+
     return m_frame_index;
 }
 
-void VKSwapchain::Present(const std::shared_ptr<Semaphore>& semaphore)
+void VKSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
+    decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
+    uint64_t tmp = std::numeric_limits<uint64_t>::max();
+    vk::TimelineSemaphoreSubmitInfo timeline_info = {};
+    timeline_info.waitSemaphoreValueCount = 1;
+    timeline_info.pWaitSemaphoreValues = &wait_value;
+    timeline_info.signalSemaphoreValueCount = 1;
+    timeline_info.pSignalSemaphoreValues = &tmp;
+    vk::SubmitInfo signal_submit_info = {};
+    signal_submit_info.pNext = &timeline_info;
+    signal_submit_info.waitSemaphoreCount = 1;
+    signal_submit_info.pWaitSemaphores = &vk_fence.GetFence();
+    vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eTransfer;
+    signal_submit_info.pWaitDstStageMask = &waitDstStageMask;
+    signal_submit_info.signalSemaphoreCount = 1;
+    signal_submit_info.pSignalSemaphores = &m_rendering_finished_semaphore.get();
+    m_device.GetQueue().submit(1, &signal_submit_info, {});
+
     vk::PresentInfoKHR present_info = {};
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &m_swapchain.get();
     present_info.pImageIndices = &m_frame_index;
-    if (semaphore)
-    {
-        decltype(auto) vk_semaphore = semaphore->As<VKSemaphore>();
-        present_info.waitSemaphoreCount = 1;
-        present_info.pWaitSemaphores = &vk_semaphore.GetSemaphore();
-    }
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = &m_rendering_finished_semaphore.get();
     m_device.GetQueue().presentKHR(present_info);
 }

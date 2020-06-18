@@ -11,8 +11,6 @@ Context::Context(const Settings& settings, GLFWwindow* window)
 
     glfwGetWindowSize(window, &m_width, &m_height);
     m_swapchain = m_device->CreateSwapchain(window, m_width, m_height, FrameCount, settings.vsync);
-    m_image_available_semaphore = m_device->CreateGPUSemaphore();
-    m_rendering_finished_semaphore = m_device->CreateGPUSemaphore();
     m_fence = m_device->CreateFence(m_fence_value);
     for (uint32_t i = 0; i < FrameCount; ++i)
     {
@@ -122,13 +120,12 @@ void Context::Present()
     m_swapchain_command_list->ResourceBarrier({ barrier });
     m_swapchain_command_list->Close();
 
-    m_swapchain->NextImage(m_image_available_semaphore);
-    m_device->Wait(m_image_available_semaphore);
+    m_swapchain->NextImage(m_fence, ++m_fence_value);
+    m_device->Wait(m_fence, m_fence_value);
     m_device->ExecuteCommandLists({ m_swapchain_command_list });
     m_device->Signal(m_fence, ++m_fence_value);
     m_swapchain_fence_values[m_frame_index] = m_fence_value;
-    m_device->Signal(m_rendering_finished_semaphore);
-    m_swapchain->Present(m_rendering_finished_semaphore);
+    m_swapchain->Present(m_fence, m_fence_value);
 
     m_frame_index = (m_frame_index + 1) % FrameCount;
     m_tmp_command_lists_offset[m_frame_index] = 0;

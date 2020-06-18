@@ -23,7 +23,6 @@ target_link_libraries(CPUDescriptorPool
     Swapchain
     CommandList
     Fence
-    Semaphore
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
