@@ -111,51 +111,44 @@ VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const ComputePipeli
 
     m_device.GetAdapter().GetPhysicalDevice().getProperties2(&deviceProps2);
 
-    constexpr int group_count = 3;
+    constexpr uint32_t group_count = 3;
+    vk::BufferCreateInfo buffer_info = {};
+    buffer_info.size = ray_tracing_properties.shaderGroupBaseAlignment * group_count;
+    buffer_info.usage = vk::BufferUsageFlagBits::eRayTracingNV;
+    m_shader_binding_table = m_device.GetDevice().createBufferUnique(buffer_info);
 
+    vk::MemoryRequirements mem_requirements;
+    m_device.GetDevice().getBufferMemoryRequirements(m_shader_binding_table.get(), &mem_requirements);
+
+    vk::MemoryAllocateInfo allocInfo = {};
+    allocInfo.allocationSize = mem_requirements.size;
+    allocInfo.memoryTypeIndex = m_device.FindMemoryType(mem_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible);
+
+    m_shader_binding_table_memory = m_device.GetDevice().allocateMemoryUnique(allocInfo);
+
+    m_device.GetDevice().bindBufferMemory(m_shader_binding_table.get(), m_shader_binding_table_memory.get(), 0);
+
+    void* datav;
+    m_device.GetDevice().mapMemory(m_shader_binding_table_memory.get(), 0, buffer_info.size, {}, &datav);
+    uint8_t* data = (uint8_t*)datav;
+
+    std::vector<uint8_t> shader_handle_storage(buffer_info.size);
+
+    m_device.GetDevice().getRayTracingShaderGroupHandlesNV(m_pipeline.get(), 0, group_count, buffer_info.size, shader_handle_storage.data());
+
+    auto copy_shader_identifier = [&ray_tracing_properties](uint8_t* data, const uint8_t* shader_handle_storage, uint32_t groupIndex)
     {
-        const uint32_t sbt_size = ray_tracing_properties.shaderGroupHandleSize * group_count;
+        memcpy(data, shader_handle_storage + groupIndex * ray_tracing_properties.shaderGroupHandleSize, ray_tracing_properties.shaderGroupHandleSize);
+        data += ray_tracing_properties.shaderGroupBaseAlignment;
+        return ray_tracing_properties.shaderGroupBaseAlignment;
+    };
 
-        vk::BufferCreateInfo buffer_info = {};
-        buffer_info.size = sbt_size;
-        buffer_info.usage = vk::BufferUsageFlagBits::eRayTracingNV;
-        m_shader_binding_table = m_device.GetDevice().createBufferUnique(buffer_info);
-
-        vk::MemoryRequirements mem_requirements;
-        m_device.GetDevice().getBufferMemoryRequirements(m_shader_binding_table.get(), &mem_requirements);
-
-        vk::MemoryAllocateInfo allocInfo = {};
-        allocInfo.allocationSize = mem_requirements.size;
-        allocInfo.memoryTypeIndex = m_device.FindMemoryType(mem_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible);
-
-        m_shader_binding_table_memory = m_device.GetDevice().allocateMemoryUnique(allocInfo);
-
-        m_device.GetDevice().bindBufferMemory(m_shader_binding_table.get(), m_shader_binding_table_memory.get(), 0);
-
-        void* datav;
-        m_device.GetDevice().mapMemory(m_shader_binding_table_memory.get(), 0, buffer_info.size, {}, &datav);
-        uint8_t* data = (uint8_t*)datav;
-
-        std::vector<uint8_t> shader_handle_storage(sbt_size);
-
-        m_device.GetDevice().getRayTracingShaderGroupHandlesNV(m_pipeline.get(), 0, group_count, sbt_size, shader_handle_storage.data());
-
-        auto copy_shader_identifier = [&ray_tracing_properties](uint8_t* data, const uint8_t* shaderHandleStorage, uint32_t groupIndex) {
-            const uint32_t shaderGroupHandleSize = ray_tracing_properties.shaderGroupHandleSize;
-            memcpy(data, shaderHandleStorage + groupIndex * shaderGroupHandleSize, shaderGroupHandleSize);
-            data += shaderGroupHandleSize;
-            return shaderGroupHandleSize;
-        };
-
-        // Copy the shader identifiers to the shader binding table
-        vk::DeviceSize offset = 0;
-        for (int i = 0; i < group_count; ++i)
-        {
-            data += copy_shader_identifier(data, shader_handle_storage.data(), i);
-        }
-
-        m_device.GetDevice().unmapMemory(m_shader_binding_table_memory.get());
+    for (int i = 0; i < group_count; ++i)
+    {
+        data += copy_shader_identifier(data, shader_handle_storage.data(), i);
     }
+
+    m_device.GetDevice().unmapMemory(m_shader_binding_table_memory.get());
 }
 
 PipelineType VKRayTracingPipeline::GetPipelineType() const

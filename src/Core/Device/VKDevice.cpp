@@ -174,11 +174,11 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
 
     vk::ImageUsageFlags usage = {};
     if (bind_flag & BindFlag::kDepthStencil)
-        usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+        usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst;
     if (bind_flag & BindFlag::kShaderResource)
         usage |= vk::ImageUsageFlagBits::eSampled;
     if (bind_flag & BindFlag::kRenderTarget)
-        usage |= vk::ImageUsageFlagBits::eColorAttachment;
+        usage |= vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
     if (bind_flag & BindFlag::kUnorderedAccess)
         usage |= vk::ImageUsageFlagBits::eStorage;
     if (bind_flag & BindFlag::kCopyDest)

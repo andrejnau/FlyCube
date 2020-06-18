@@ -166,12 +166,11 @@ void VKCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth
 
     vk::PhysicalDeviceProperties2 device_props2{};
     device_props2.pNext = &ray_tracing_properties;
-
     m_device.GetAdapter().GetPhysicalDevice().getProperties2(&device_props2);
 
-    vk::DeviceSize binding_offset_ray_gen_shader = ray_tracing_properties.shaderGroupHandleSize * 0;
-    vk::DeviceSize binding_offset_miss_shader = ray_tracing_properties.shaderGroupHandleSize * 1;
-    vk::DeviceSize binding_offset_hit_shader = ray_tracing_properties.shaderGroupHandleSize * 2;
+    vk::DeviceSize binding_offset_ray_gen_shader = ray_tracing_properties.shaderGroupBaseAlignment * 0;
+    vk::DeviceSize binding_offset_miss_shader = ray_tracing_properties.shaderGroupBaseAlignment * 1;
+    vk::DeviceSize binding_offset_hit_shader = ray_tracing_properties.shaderGroupBaseAlignment * 2;
     vk::DeviceSize binding_stride = ray_tracing_properties.shaderGroupHandleSize;
 
     m_command_list->traceRaysNV(
