@@ -14,6 +14,7 @@ add_definitions(-DASSETS_PATH="${assets_path}")
 add_definitions(-DSDKBIN="${sdkbin_path}")
 
 set(VULKAN_SUPPORT ON)
+set(USE_SHADERC OFF)
 if (WIN32)
     set(DIRECTX_SUPPORT ON)
     set(RAYTRACING_SUPPORT ON)

@@ -4,6 +4,8 @@
 #include <fstream>
 #include <Utilities/FileUtility.h>
 #include <cassert>
+
+#ifdef USE_SHADERC
 #include <shaderc/shaderc.hpp>
 
 std::string ReadShaderFile(const std::string& path)
@@ -51,7 +53,7 @@ private:
     };
 };
 
-std::vector<uint32_t> ShadercCompile(const ShaderDesc& shader, const SpirvOption& option)
+std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& option)
 {
     shaderc_shader_kind shader_type;
     switch (shader.type)
@@ -111,10 +113,9 @@ std::vector<uint32_t> ShadercCompile(const ShaderDesc& shader, const SpirvOption
 
     return { module.cbegin(), module.cend() };
 }
-
+#else
 std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& option)
 {
-#if 1
     DXOption dx_option = { true, option.invert_y };
     auto blob = DXCompile(shader, dx_option);
     if (!blob)
@@ -122,7 +123,5 @@ std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& 
     auto blob_as_uint32 = reinterpret_cast<uint32_t*>(blob->GetBufferPointer());
     std::vector<uint32_t> spirv(blob_as_uint32, blob_as_uint32 + blob->GetBufferSize() / 4);
     return spirv;
-#else
-    return ShadercCompile(shader, option);
-#endif
 }
+#endif
