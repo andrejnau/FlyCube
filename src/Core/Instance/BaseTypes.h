@@ -446,6 +446,17 @@ struct BufferToTextureCopyRegion
     TextureExtent3D texture_extent;
 };
 
+struct TextureCopyRegion
+{
+    TextureExtent3D extent;
+    uint32_t src_mip_level;
+    uint32_t src_array_layer;
+    TextureOffset src_offset;
+    uint32_t dst_mip_level;
+    uint32_t dst_array_layer;
+    TextureOffset dst_offset;
+};
+
 struct BufferCopyRegion
 {
     uint64_t src_offset;

@@ -29,6 +29,16 @@ void CommandListBox::Close()
     m_command_list->Close();
 }
 
+void CommandListBox::CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture, const std::vector<TextureCopyRegion>& regions)
+{
+    for (const auto& region : regions)
+    {
+        ImageBarrier(src_texture, region.src_mip_level, 1, region.src_array_layer, 1, ResourceState::kCopySource);
+        ImageBarrier(dst_texture, region.dst_mip_level, 1, region.dst_array_layer, 1, ResourceState::kCopyDest);
+    }
+    m_command_list->CopyTexture(src_texture, dst_texture, regions);
+}
+
 void CommandListBox::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
 {
     switch (resource->GetMemoryType())

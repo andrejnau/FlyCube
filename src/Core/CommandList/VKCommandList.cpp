@@ -127,7 +127,7 @@ void VKCommandList::ClearColor(const std::shared_ptr<View>& view, const std::arr
     clear_color.float32[3] = color[3];
 
     const vk::ImageSubresourceRange& image_subresource_range = vk_view.GeViewInfo().subresourceRange;
-    m_command_list->clearColorImage(vk_resource.image.res, vk::ImageLayout::eGeneral, clear_color, image_subresource_range);
+    m_command_list->clearColorImage(vk_resource.image.res, vk::ImageLayout::eTransferDstOptimal, clear_color, image_subresource_range);
 }
 
 void VKCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)
@@ -144,7 +144,7 @@ void VKCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)
     vk::ClearDepthStencilValue clear_color = {};
     clear_color.depth = depth;
     const vk::ImageSubresourceRange& ImageSubresourceRange = vk_view.GeViewInfo().subresourceRange;
-    m_command_list->clearDepthStencilImage(vk_resource.image.res, vk::ImageLayout::eGeneral, clear_color, ImageSubresourceRange);
+    m_command_list->clearDepthStencilImage(vk_resource.image.res, vk::ImageLayout::eTransferDstOptimal, clear_color, ImageSubresourceRange);
 }
 
 void VKCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
@@ -190,6 +190,7 @@ vk::ImageLayout ConvertSate(ResourceState state)
         return vk::ImageLayout::eUndefined;
     case ResourceState::kClearColor:
     case ResourceState::kClearDepth:
+        return vk::ImageLayout::eTransferDstOptimal;
     case ResourceState::kUnorderedAccess:
         return vk::ImageLayout::eGeneral;
     case ResourceState::kPresent:
@@ -505,9 +506,36 @@ void VKCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
         vk_regions);
 }
 
-void VKCommandList::ResourceBarrier(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc, ResourceState state)
+void VKCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture,
+                                const std::vector<TextureCopyRegion>& regions)
 {
- 
+    decltype(auto) vk_src_texture = src_texture->As<VKResource>();
+    decltype(auto) vk_dst_texture = dst_texture->As<VKResource>();
+    std::vector<vk::ImageCopy> vk_regions;
+    for (const auto& region : regions)
+    {
+        auto& vk_region = vk_regions.emplace_back();
+        vk_region.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+        vk_region.srcSubresource.mipLevel = region.src_mip_level;
+        vk_region.srcSubresource.baseArrayLayer = region.src_array_layer;
+        vk_region.srcSubresource.layerCount = 1;
+        vk_region.srcOffset.x = region.src_offset.x;
+        vk_region.srcOffset.y = region.src_offset.y;
+        vk_region.srcOffset.z = region.src_offset.z;
+
+        vk_region.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+        vk_region.dstSubresource.mipLevel = region.dst_mip_level;
+        vk_region.dstSubresource.baseArrayLayer = region.dst_array_layer;
+        vk_region.dstSubresource.layerCount = 1;
+        vk_region.dstOffset.x = region.dst_offset.x;
+        vk_region.dstOffset.y = region.dst_offset.y;
+        vk_region.dstOffset.z = region.dst_offset.z;
+
+        vk_region.extent.width = region.extent.width;
+        vk_region.extent.height = region.extent.height;
+        vk_region.extent.depth = region.extent.depth;
+    }
+    m_command_list->copyImage(vk_src_texture.image.res, vk::ImageLayout::eTransferSrcOptimal, vk_dst_texture.image.res, vk::ImageLayout::eTransferDstOptimal, vk_regions);
 }
 
 vk::CommandBuffer VKCommandList::GetCommandList()

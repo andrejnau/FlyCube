@@ -1,9 +1,6 @@
 #include <AppBox/AppBox.h>
 #include <AppBox/ArgsParser.h>
 #include <ProgramRef/RayTracing.h>
-#include <ProgramRef/GraphicsVS.h>
-#include <ProgramRef/GraphicsPS.h>
-#include <Geometry/Geometry.h>
 #include <glm/gtx/transform.hpp>
 #include <stdexcept>
 
@@ -17,13 +14,10 @@ int main(int argc, char *argv[])
     if (!device.IsDxrSupported())
         throw std::runtime_error("Ray Tracing is not supported");
 
-    ProgramHolder<RayTracing> raytracing_program(device);
-    ProgramHolder<GraphicsVS, GraphicsPS> graphics_program(device);
+    ProgramHolder<RayTracing> program(device);
 
     std::shared_ptr<CommandListBox> upload_command_list = context.CreateCommandList();
     upload_command_list->Open();
-
-    Model square(device, *upload_command_list, "model/square.obj");
 
     std::vector<glm::vec3> positions_data = {
         glm::vec3(-0.5, -0.5, 0.0),
@@ -37,7 +31,8 @@ int main(int argc, char *argv[])
         { bottom, glm::mat4() },
     };
     std::shared_ptr<Resource> top = upload_command_list->CreateTopLevelAS(geometry);
-    std::shared_ptr<Resource> uav = device.CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kShaderResource, gli::format::FORMAT_RGBA8_UNORM_PACK8, 1, rect.width, rect.height);
+    std::shared_ptr<Resource> uav = device.CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kShaderResource | BindFlag::kCopySource,
+                                                         context.GetSwapchain()->GetFormat(), 1, rect.width, rect.height);
     upload_command_list->Close();
     context.ExecuteCommandLists({ upload_command_list });
 
@@ -46,21 +41,11 @@ int main(int argc, char *argv[])
     {
         decltype(auto) command_list = context.CreateCommandList();
         command_list->Open();
-        command_list->UseProgram(raytracing_program);
-        command_list->Attach(raytracing_program.lib.srv.geometry, top);
-        command_list->Attach(raytracing_program.lib.uav.result, uav);
+        command_list->UseProgram(program);
+        command_list->Attach(program.lib.srv.geometry, top);
+        command_list->Attach(program.lib.uav.result, uav);
         command_list->DispatchRays(rect.width, rect.height, 1);
-        command_list->UseProgram(graphics_program);
-        command_list->SetViewport(rect.width, rect.height);
-        command_list->Attach(graphics_program.ps.om.rtv0, context.GetBackBuffer(i));
-        square.ia.indices.Bind(*command_list);
-        square.ia.positions.BindToSlot(*command_list, graphics_program.vs.ia.POSITION);
-        square.ia.texcoords.BindToSlot(*command_list, graphics_program.vs.ia.TEXCOORD);
-        for (auto& range : square.ia.ranges)
-        {
-            command_list->Attach(graphics_program.ps.srv.tex, uav);
-            command_list->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
-        }
+        command_list->CopyTexture(uav, context.GetBackBuffer(i), { { rect.width, rect.height, 1 } });
         command_list->Close();
         command_lists.emplace_back(command_list);
     }

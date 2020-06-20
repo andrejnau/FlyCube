@@ -6,6 +6,7 @@
 #include <Utilities/DXUtility.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
+#include <gli/dx.hpp>
 
 DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
     : m_device(device)
@@ -15,7 +16,7 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
     swap_chain_desc.Width = width;
     swap_chain_desc.Height = height;
-    swap_chain_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swap_chain_desc.Format = static_cast<DXGI_FORMAT>(gli::dx().translate(GetFormat()).DXGIFormat.DDS);
     swap_chain_desc.SampleDesc.Count = 1;
     swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swap_chain_desc.BufferCount = frame_count;

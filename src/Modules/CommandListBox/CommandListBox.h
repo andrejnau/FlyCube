@@ -55,6 +55,7 @@ public:
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource);
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners = {});
     void RSSetShadingRateImage(const std::shared_ptr<Resource>& resource);
+    void CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture, const std::vector<TextureCopyRegion>& regions);
     void UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch = 0, uint32_t depth_pitch = 0);
     void BufferBarrier(const std::shared_ptr<Resource>& resource, ResourceState state);
     void ViewBarrier(const std::shared_ptr<View>& view, ResourceState state);

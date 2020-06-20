@@ -20,8 +20,8 @@ AppBox::AppBox(const std::string& title, Settings setting)
     glfwInit();
 
     const GLFWvidmode* monitor_desc = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    m_width = static_cast<int>(monitor_desc->width / 1.5);
-    m_height = static_cast<int>(monitor_desc->height / 1.5);
+    m_width = static_cast<uint32_t>(monitor_desc->width / 1.5);
+    m_height = static_cast<uint32_t>(monitor_desc->height / 1.5);
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);

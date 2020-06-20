@@ -12,8 +12,8 @@
 
 struct AppRect
 {
-    int width;
-    int height;
+    uint32_t width;
+    uint32_t height;
 };
 
 class AppBox
@@ -42,8 +42,8 @@ private:
     InputEvents* m_input_listener = nullptr;
     WindowEvents* m_window_listener = nullptr;
     GLFWwindow* m_window = nullptr;
-    int m_width = 0;
-    int m_height = 0;
+    uint32_t m_width = 0;
+    uint32_t m_height = 0;
     bool m_exit_request = false;
     uint32_t m_frame_number = 0;
     double m_last_time = 0;

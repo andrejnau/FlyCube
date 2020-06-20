@@ -59,6 +59,11 @@ public:
         return m_frame_index;
     }
 
+    std::shared_ptr<Swapchain>& GetSwapchain()
+    {
+        return m_swapchain;
+    }
+
     static constexpr int FrameCount = 3;
 
 private:

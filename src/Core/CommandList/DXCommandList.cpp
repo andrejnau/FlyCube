@@ -416,6 +416,35 @@ void DXCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
     }
 }
 
+void DXCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture,
+                                const std::vector<TextureCopyRegion>& regions)
+{
+    decltype(auto) dx_src_texture = src_texture->As<DXResource>();
+    decltype(auto) dx_dst_texture = dst_texture->As<DXResource>();
+    for (const auto& region : regions)
+    {
+        D3D12_TEXTURE_COPY_LOCATION dst = {};
+        dst.pResource = dx_dst_texture.resource.Get();
+        dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+        dst.SubresourceIndex = region.dst_array_layer * dx_dst_texture.GetLevelCount() + region.dst_mip_level;
+
+        D3D12_TEXTURE_COPY_LOCATION src = {};
+        src.pResource = dx_src_texture.resource.Get();
+        src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+        src.SubresourceIndex = region.src_array_layer * dx_src_texture.GetLevelCount() + region.src_mip_level;
+
+        D3D12_BOX src_box = {};
+        src_box.left = region.src_offset.x;
+        src_box.top = region.src_offset.y;
+        src_box.front = region.src_offset.z;
+        src_box.right = region.src_offset.x + region.extent.width;
+        src_box.bottom = region.src_offset.y + region.extent.height;
+        src_box.back = region.src_offset.z + region.extent.depth;
+
+        m_command_list->CopyTextureRegion(&dst, region.dst_offset.x, region.dst_offset.y, region.dst_offset.z, &src, &src_box);
+    }
+}
+
 ComPtr<ID3D12GraphicsCommandList> DXCommandList::GetCommandList()
 {
     return m_command_list;
