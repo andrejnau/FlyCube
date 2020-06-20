@@ -1,12 +1,12 @@
 #pragma once
-#include "Device/Device.h"
+#include "Device/DeviceBase.h"
 #include <Utilities/Vulkan.h>
 #include <GPUDescriptorPool/VKGPUDescriptorPool.h>
 #include <GPUDescriptorPool/VKGPUBindlessDescriptorPoolTyped.h>
 
 class VKAdapter;
 
-class VKDevice : public Device
+class VKDevice : public DeviceBase
 {
 public:
     VKDevice(VKAdapter& adapter);
@@ -32,7 +32,7 @@ public:
     uint32_t GetShadingRateImageTileSize() const override;
     void Wait(const std::shared_ptr<Fence>& fence, uint64_t value) override;
     void Signal(const std::shared_ptr<Fence>& fence, uint64_t value) override;
-    void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
+    void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
 
     VKAdapter& GetAdapter();
     uint32_t GetQueueFamilyIndex();

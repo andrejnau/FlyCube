@@ -511,7 +511,7 @@ void VKDevice::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
     m_queue.submit(1, &signal_submit_info, {});
 }
 
-void VKDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
+void VKDevice::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists)
 {
     std::vector<vk::CommandBuffer> vk_command_lists;
     for (auto& command_list : command_lists)

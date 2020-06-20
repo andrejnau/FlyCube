@@ -429,7 +429,7 @@ void DXDevice::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
     ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), value));
 }
 
-void DXDevice::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
+void DXDevice::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists)
 {
     std::vector<ID3D12CommandList*> dx_command_lists;
     for (auto& command_list : command_lists)

@@ -14,8 +14,6 @@ void CommandListBox::Open()
     m_bound_deferred_view.clear();
     m_binding_sets.clear();
     m_resource_lazy_view_descs.clear();
-    m_lazy_barriers.clear();
-    m_resource_state_tracker.clear();
     m_command_list->Open();
 }
 
@@ -164,29 +162,14 @@ void CommandListBox::DispatchRays(uint32_t width, uint32_t height, uint32_t dept
     m_command_list->DispatchRays(width, height, depth);
 }
 
-ResourceStateTracker& CommandListBox::GetResourceStateTracker(const std::shared_ptr<Resource>& resource)
-{
-    auto it = m_resource_state_tracker.find(resource);
-    if (it == m_resource_state_tracker.end())
-        it = m_resource_state_tracker.emplace(resource, [resource] { return resource->GetLevelCount() * resource->GetLayerCount(); }).first;
-    return it->second;
-}
-
 void CommandListBox::BufferBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
     if (!resource)
         return;
-    auto& state_tracker = GetResourceStateTracker(resource);
     ResourceBarrierDesc barrier = {};
     barrier.resource = resource;
-    barrier.state_before = state_tracker.GetResourceState();
-    barrier.state_after = state;
-    state_tracker.SetResourceState(state);
-
-    if (barrier.state_before != ResourceState::kUnknown)
-        m_command_list->ResourceBarrier({ barrier });
-    else
-        m_lazy_barriers.emplace_back(barrier);
+    barrier.state = state;
+    m_command_list->ResourceBarrier({ barrier });
 }
 
 void CommandListBox::ViewBarrier(const std::shared_ptr<View>& view, ResourceState state)
@@ -200,45 +183,14 @@ void CommandListBox::ImageBarrier(const std::shared_ptr<Resource>& resource, uin
 {
     if (!resource)
         return;
-
-    auto& state_tracker = GetResourceStateTracker(resource);
-
-    std::vector<ResourceBarrierDesc> barriers;
-    if (state_tracker.HasResourceState() && base_mip_level == 0 && level_count == resource->GetLevelCount() &&
-        base_array_layer == 0 && layer_count == resource->GetLayerCount())
-    {
-        ResourceBarrierDesc& barrier = barriers.emplace_back();
-        barrier.resource = resource;
-        barrier.level_count = level_count;
-        barrier.layer_count = layer_count;
-        barrier.state_before = state_tracker.GetResourceState();
-        barrier.state_after = state;
-        state_tracker.SetResourceState(barrier.state_after);
-    }
-    else
-    {
-        for (uint32_t i = 0; i < level_count; ++i)
-        {
-            for (uint32_t j = 0; j < layer_count; ++j)
-            {
-                ResourceBarrierDesc barrier = {};
-                barrier.resource = resource;
-                barrier.base_mip_level = base_mip_level + i;
-                barrier.level_count = 1;
-                barrier.base_array_layer = base_array_layer + j;
-                barrier.layer_count = 1;
-                barrier.state_before = state_tracker.GetSubresourceState(barrier.base_mip_level, barrier.base_array_layer);
-                barrier.state_after = state;
-                state_tracker.SetSubresourceState(barrier.base_mip_level, barrier.base_array_layer, barrier.state_after);
-
-                if (barrier.state_before != ResourceState::kUnknown)
-                    barriers.emplace_back(barrier);
-                else
-                    m_lazy_barriers.emplace_back(barrier);
-            }
-        }
-    }
-    m_command_list->ResourceBarrier(barriers);
+    ResourceBarrierDesc barrier = {};
+    barrier.resource = resource;
+    barrier.base_mip_level = base_mip_level;
+    barrier.level_count = level_count;
+    barrier.base_array_layer = base_array_layer;
+    barrier.layer_count = layer_count;
+    barrier.state = state;
+    m_command_list->ResourceBarrier({ barrier });
 }
 
 std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
@@ -300,16 +252,6 @@ std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::vector<std
 void CommandListBox::ReleaseRequest(const std::shared_ptr<Resource>& resource)
 {
     m_cmd_resources.emplace_back(resource);
-}
-
-std::vector<ResourceBarrierDesc>& CommandListBox::GetLazyBarriers()
-{
-    return m_lazy_barriers;
-}
-
-const std::map<std::shared_ptr<Resource>, ResourceStateTracker>& CommandListBox::GetResourceStateTrackers()
-{
-    return m_resource_state_tracker;
 }
 
 void CommandListBox::UseProgram(std::shared_ptr<Program>& program)

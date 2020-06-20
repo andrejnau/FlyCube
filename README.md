@@ -5,6 +5,8 @@ This api is written in C++ on top of Directx 12 and Vulkan. Provides main featur
   * Ray Tracing
   * Bindless
   * Variable rate shading (DX12 only)
+  * Per command list resource state tracking
+    * Creating patch command list for sync with global resource state on execute
   * HLSL as shader language for all backends
     * Compilation in DXBC, DXIL, SPIRV
 
@@ -67,9 +69,9 @@ for (uint32_t i = 0; i < frame_count; ++i)
     command_lists.emplace_back(device->CreateCommandList());
     std::shared_ptr<CommandList> command_list = command_lists[i];
     command_list->Open();
-    command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kClearColor} });
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kClearColor} });
     command_list->ClearColor(back_buffer_view, { 0.0, 0.2, 0.4, 1.0 });
-    command_list->ResourceBarrier({ { back_buffer, ResourceState::kClearColor, ResourceState::kRenderTarget} });
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget} });
     command_list->BindPipeline(pipeline);
     command_list->BindBindingSet(binding_set);
     command_list->BeginRenderPass(framebuffers.back());
@@ -78,7 +80,7 @@ for (uint32_t i = 0; i < frame_count; ++i)
     command_list->IASetVertexBuffer(0, vertex_buffer);
     command_list->DrawIndexed(3, 0, 0);
     command_list->EndRenderPass();
-    command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent} });
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent} });
     command_list->Close();
 }
 
@@ -94,7 +96,7 @@ while (!app.PollEvents())
     device->ExecuteCommandLists({ command_lists[frame_index] });
     device->Signal(fence, fence_values[frame_index] = ++fence_value);
     swapchain->Present(fence, fence_values[frame_index]);
-    app.UpdateFps();
+    app.UpdateFps(adapter->GetName());
 }
 device->Signal(fence, ++fence_value);
 fence->Wait(fence_value);
@@ -167,7 +169,7 @@ while (!app.PollEvents())
 {
     context.ExecuteCommandLists({ command_lists[context.GetFrameIndex()] });
     context.Present();
-    app.UpdateFps();
+    app.UpdateFps(context.GetGpuName());
 }
 context.WaitIdle();
 ```

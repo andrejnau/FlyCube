@@ -65,8 +65,6 @@ public:
     std::shared_ptr<Resource> CreateTopLevelAS(const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry);
 
     void ReleaseRequest(const std::shared_ptr<Resource>& resource);
-    std::vector<ResourceBarrierDesc>& GetLazyBarriers();
-    const std::map<std::shared_ptr<Resource>, ResourceStateTracker>& GetResourceStateTrackers();
 
     uint64_t fence_value = 0;
 
@@ -117,8 +115,4 @@ private:
 
     void UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch);
     std::vector<std::shared_ptr<Resource>> m_cmd_resources;
-
-    ResourceStateTracker& GetResourceStateTracker(const std::shared_ptr<Resource>& resource);
-    std::map<std::shared_ptr<Resource>, ResourceStateTracker> m_resource_state_tracker;
-    std::vector<ResourceBarrierDesc> m_lazy_barriers;
 };

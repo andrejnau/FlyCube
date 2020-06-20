@@ -11,6 +11,7 @@ class DXFence : public Fence
 {
 public:
     DXFence(DXDevice& device, uint64_t initial_value);
+    uint64_t GetCompletedValue() override;
     void Wait(uint64_t value) override;
 
     ComPtr<ID3D12Fence> GetFence();

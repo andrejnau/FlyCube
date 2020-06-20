@@ -212,7 +212,7 @@ void DXCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth
     m_command_list4->DispatchRays(&raytrace_desc);
 }
 
-void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
+void DXCommandList::ResourceBarrierManual(const std::vector<ResourceBarrierManualDesc>& barriers)
 {
     std::vector<D3D12_RESOURCE_BARRIER> dx_barriers;
     for (const auto& barrier : barriers)

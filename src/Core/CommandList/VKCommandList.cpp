@@ -214,7 +214,7 @@ vk::ImageLayout ConvertSate(ResourceState state)
     }
 }
 
-void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
+void VKCommandList::ResourceBarrierManual(const std::vector<ResourceBarrierManualDesc>& barriers)
 {
     std::vector<vk::ImageMemoryBarrier> image_memory_barriers;
     for (const auto& barrier : barriers)

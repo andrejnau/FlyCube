@@ -479,8 +479,7 @@ static_assert(sizeof(RaytracingGeometryInstance) == 64);
 struct ResourceBarrierDesc
 {
     std::shared_ptr<Resource> resource;
-    ResourceState state_before;
-    ResourceState state_after;
+    ResourceState state;
     uint32_t base_mip_level = 0;
     uint32_t level_count = 1;
     uint32_t base_array_layer = 0;

@@ -12,9 +12,14 @@ DXFence::DXFence(DXDevice& device, uint64_t initial_value)
     m_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 }
 
+uint64_t DXFence::GetCompletedValue()
+{
+    return m_fence->GetCompletedValue();
+}
+
 void DXFence::Wait(uint64_t value)
 {
-    if (m_fence->GetCompletedValue() < value)
+    if (GetCompletedValue() < value)
     {
         ASSERT_SUCCEEDED(m_fence->SetEventOnCompletion(value, m_fence_event));
         WaitForSingleObjectEx(m_fence_event, INFINITE, FALSE);

@@ -12,6 +12,11 @@ VKTimelineSemaphore::VKTimelineSemaphore(VKDevice& device, uint64_t initial_valu
     m_timeline_semaphore = device.GetDevice().createSemaphoreUnique(create_info);
 }
 
+uint64_t VKTimelineSemaphore::GetCompletedValue()
+{
+    return m_device.GetDevice().getSemaphoreCounterValueKHR(m_timeline_semaphore.get());
+}
+
 void VKTimelineSemaphore::Wait(uint64_t value)
 {
     vk::SemaphoreWaitInfo wait_info = {};

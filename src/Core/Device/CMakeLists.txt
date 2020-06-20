@@ -1,5 +1,10 @@
 list(APPEND headers
     Device.h
+    DeviceBase.h
+)
+
+list(APPEND sources
+    DeviceBase.cpp
 )
 
 if (VULKAN_SUPPORT)

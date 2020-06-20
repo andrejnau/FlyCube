@@ -82,7 +82,4 @@ private:
     std::shared_ptr<CommandList> m_swapchain_command_list;
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
-    std::array<std::vector<std::shared_ptr<CommandList>>, FrameCount> m_tmp_command_lists;
-    std::array<std::vector<uint64_t>, FrameCount> m_tmp_fence_values;
-    std::array<uint32_t, FrameCount> m_tmp_command_lists_offset = {};
 };

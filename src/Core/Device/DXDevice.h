@@ -1,5 +1,5 @@
 #pragma once
-#include "Device/Device.h"
+#include "Device/DeviceBase.h"
 #include <CPUDescriptorPool/DXCPUDescriptorPool.h>
 #include <GPUDescriptorPool/DXGPUDescriptorPool.h>
 #include <dxgi.h>
@@ -9,7 +9,7 @@ using namespace Microsoft::WRL;
 
 class DXAdapter;
 
-class DXDevice : public Device
+class DXDevice : public DeviceBase
 {
 public:
     DXDevice(DXAdapter& adapter);
@@ -35,7 +35,7 @@ public:
     uint32_t GetShadingRateImageTileSize() const override;
     void Wait(const std::shared_ptr<Fence>& fence, uint64_t value) override;
     void Signal(const std::shared_ptr<Fence>& fence, uint64_t value) override;
-    void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
+    void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
 
     DXAdapter& GetAdapter();
     ComPtr<ID3D12Device> GetDevice();
