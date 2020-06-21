@@ -1,4 +1,4 @@
-add_subdirectory(${project_root}/3rdparty/unpacked/SPIRV-Cross-2020-05-19)
+add_subdirectory(${project_root}/3rdparty/SPIRV-Cross)
 set_target_properties(spirv-cross PROPERTIES FOLDER "3rdparty/spirv-cross")
 set_target_properties(spirv-cross-core PROPERTIES FOLDER "3rdparty/spirv-cross")
 set_target_properties(spirv-cross-cpp PROPERTIES FOLDER "3rdparty/spirv-cross")
