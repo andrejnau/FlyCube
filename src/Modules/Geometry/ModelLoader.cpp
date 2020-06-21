@@ -6,7 +6,7 @@
 
 #include <assimp/DefaultIOStream.h>
 #include <assimp/DefaultIOSystem.h>
-#include <assimp/../../code/MemoryIOWrapper.h>
+#include <assimp/MemoryIOWrapper.h>
 
 class MyIOSystem : public Assimp::DefaultIOSystem
 {
