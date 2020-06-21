@@ -15,6 +15,7 @@ ImGuiPass::ImGuiPass(Device& device, CommandListBox& command_list, const Input& 
     , m_program(device)
     , m_settings(m_input.root_scene)
 {
+    ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)width, (float)height);
 
@@ -28,7 +29,7 @@ ImGuiPass::ImGuiPass(Device& device, CommandListBox& command_list, const Input& 
 
 ImGuiPass::~ImGuiPass()
 {
-    ImGui::Shutdown();
+    ImGui::DestroyContext();
 }
 
 void ImGuiPass::OnUpdate()
