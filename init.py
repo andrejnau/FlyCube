@@ -30,6 +30,7 @@ def zip3rdparty():
 def main():
     print("start init 3rdparty lib")
     zip3rdparty()
+    submodule()
 
 if __name__ == "__main__":
     main()
