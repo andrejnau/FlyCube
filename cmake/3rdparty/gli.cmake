@@ -1,1 +1,1 @@
-include_directories(${project_root}/3rdparty/unpacked/gli)
+include_directories(${project_root}/3rdparty/gli)
