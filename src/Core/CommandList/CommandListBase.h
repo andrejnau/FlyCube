@@ -17,11 +17,15 @@ class CommandListBase : public CommandList
 public:
     virtual void ResourceBarrierManual(const std::vector<ResourceBarrierManualDesc>& barriers) = 0;
     void ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers) override final;
-    std::map<std::shared_ptr<Resource>, ResourceStateTracker> GetResourceStateTrackers();
-    std::vector<ResourceBarrierManualDesc> GetLazyBarriers();
+    const std::map<std::shared_ptr<Resource>, ResourceStateTracker>& GetResourceStateTrackers() const;
+    const std::vector<ResourceBarrierManualDesc>& GetLazyBarriers() const;
+
+protected:
+    void OnOpen();
 
 private:
     ResourceStateTracker& GetResourceStateTracker(const std::shared_ptr<Resource>& resource);
+
     std::map<std::shared_ptr<Resource>, ResourceStateTracker> m_resource_state_tracker;
     std::vector<ResourceBarrierManualDesc> m_lazy_barriers;
 };

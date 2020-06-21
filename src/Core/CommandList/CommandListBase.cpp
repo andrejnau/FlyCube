@@ -45,6 +45,12 @@ void CommandListBase::ResourceBarrier(const std::vector<ResourceBarrierDesc>& ba
         ResourceBarrierManual(manual_barriers);
 }
 
+void CommandListBase::OnOpen()
+{
+    m_lazy_barriers.clear();
+    m_resource_state_tracker.clear();
+}
+
 ResourceStateTracker& CommandListBase::GetResourceStateTracker(const std::shared_ptr<Resource>& resource)
 {
     auto it = m_resource_state_tracker.find(resource);
@@ -53,12 +59,12 @@ ResourceStateTracker& CommandListBase::GetResourceStateTracker(const std::shared
     return it->second;
 }
 
-std::map<std::shared_ptr<Resource>, ResourceStateTracker> CommandListBase::GetResourceStateTrackers()
+const std::map<std::shared_ptr<Resource>, ResourceStateTracker>& CommandListBase::GetResourceStateTrackers() const
 {
-    return std::move(m_resource_state_tracker);
+    return m_resource_state_tracker;
 }
 
-std::vector<ResourceBarrierManualDesc> CommandListBase::GetLazyBarriers()
+const std::vector<ResourceBarrierManualDesc>& CommandListBase::GetLazyBarriers() const
 {
-    return std::move(m_lazy_barriers);
+    return m_lazy_barriers;
 }

@@ -64,7 +64,7 @@ void DeviceBase::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandLi
             raw_command_lists.emplace_back(tmp_cmd);
         }
 
-        auto state_trackers = command_list_base.GetResourceStateTrackers();
+        auto& state_trackers = command_list_base.GetResourceStateTrackers();
         for (const auto& state_tracker_pair : state_trackers)
         {
             auto& resource = state_tracker_pair.first;

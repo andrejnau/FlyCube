@@ -30,6 +30,7 @@ DXCommandList::DXCommandList(DXDevice& device)
 
 void DXCommandList::Open()
 {
+    OnOpen();
     ASSERT_SUCCEEDED(m_command_allocator->Reset());
     ASSERT_SUCCEEDED(m_command_list->Reset(m_command_allocator.Get(), nullptr));
     m_heaps.clear();

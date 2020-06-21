@@ -23,6 +23,7 @@ VKCommandList::VKCommandList(VKDevice& device)
 
 void VKCommandList::Open()
 {
+    OnOpen();
     vk::CommandBufferBeginInfo begin_info = {};
     begin_info.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
     m_command_list->begin(begin_info);
