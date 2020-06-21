@@ -13,6 +13,7 @@ class DXDevice : public DeviceBase
 {
 public:
     DXDevice(DXAdapter& adapter);
+    ~DXDevice();
     uint32_t GetTextureDataPitchAlignment() const override;
     std::shared_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync) override;
     std::shared_ptr<CommandList> CreateCommandList() override;

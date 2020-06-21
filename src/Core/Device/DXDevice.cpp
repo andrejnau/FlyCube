@@ -122,6 +122,11 @@ DXDevice::DXDevice(DXAdapter& adapter)
     }
 }
 
+DXDevice::~DXDevice()
+{
+    OnDestroy();
+}
+
 uint32_t DXDevice::GetTextureDataPitchAlignment() const
 {
     return D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;

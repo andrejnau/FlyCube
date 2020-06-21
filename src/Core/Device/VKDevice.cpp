@@ -140,6 +140,11 @@ VKDevice::VKDevice(VKAdapter& adapter)
     m_cmd_pool = m_device->createCommandPoolUnique(cmd_pool_create_info);
 }
 
+VKDevice::~VKDevice()
+{
+    OnDestroy();
+}
+
 uint32_t VKDevice::GetTextureDataPitchAlignment() const
 {
     return 1;

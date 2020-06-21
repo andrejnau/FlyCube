@@ -1,10 +1,14 @@
 #include "Device/DeviceBase.h"
 #include <CommandList/CommandListBase.h>
 
-DeviceBase::~DeviceBase()
+void DeviceBase::OnDestroy()
 {
     if (m_fence)
-        m_fence->Wait(m_fence_value_by_cmd.back().first);
+    {
+        m_fence->Wait(m_fence_value);
+        m_fence.reset();
+    }
+    m_command_list_pool.clear();
 }
 
 void DeviceBase::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)

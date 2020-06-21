@@ -6,8 +6,7 @@
 class DeviceBase : public Device
 {
 public:
-    ~DeviceBase();
-
+    void OnDestroy();
     virtual void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists) = 0;
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists) final override;
 
