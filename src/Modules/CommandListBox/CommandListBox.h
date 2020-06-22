@@ -44,7 +44,7 @@ public:
     void UseProgram(std::shared_ptr<Program>& program);
     void BeginEvent(const std::string& name);
     void EndEvent();
-    void ClearColor(const BindKey& bind_key, const std::array<float, 4>& color);
+    void ClearColor(const BindKey& bind_key, const glm::vec4& color);
     void ClearDepth(const BindKey& bind_key, float depth);
     void DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location);
     void Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z);
@@ -108,10 +108,13 @@ private:
     std::map<GraphicsPipelineDesc, std::shared_ptr<Pipeline>> m_pso;
     std::map<ComputePipelineDesc, std::shared_ptr<Pipeline>> m_compute_pso;
     std::map<std::tuple<uint32_t, uint32_t, std::vector<std::shared_ptr<View>>, std::shared_ptr<View>>, std::shared_ptr<Framebuffer>> m_framebuffers;
+    std::shared_ptr<RenderPass> m_render_pass;
     std::shared_ptr<Framebuffer> m_framebuffer;
     std::map<std::tuple<BindKey, std::shared_ptr<Resource>, LazyViewDesc>, std::shared_ptr<View>> m_views;
-    ComputePipelineDesc m_compute_pipeline_desc;
-    GraphicsPipelineDesc m_graphic_pipeline_desc;
+    ComputePipelineDesc m_compute_pipeline_desc = {};
+    GraphicsPipelineDesc m_graphic_pipeline_desc = {};
+    std::map<RenderPassDesc, std::shared_ptr<RenderPass>> m_render_pass_cache;
+    RenderPassDesc m_render_pass_desc = {};
 
     void UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch);
     std::vector<std::shared_ptr<Resource>> m_cmd_resources;

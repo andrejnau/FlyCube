@@ -144,11 +144,6 @@ struct RasterizerDesc
     {
         return std::tie(fill_mode, cull_mode, depth_bias);
     }
-
-    bool operator< (const RasterizerDesc& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
-    }
 };
 
 enum class Blend
@@ -177,11 +172,6 @@ struct BlendDesc
     {
         return std::tie(blend_enable, blend_src, blend_dest, blend_op, blend_src_alpha, blend_dest_apha, blend_op_alpha);
     }
-
-    bool operator< (const BlendDesc& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
-    }
 };
 
 enum class DepthComparison
@@ -198,11 +188,6 @@ struct DepthStencilDesc
     auto MakeTie() const
     {
         return std::tie(depth_enable, func);
-    }
-
-    bool operator< (const DepthStencilDesc& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
     }
 };
 
@@ -225,11 +210,6 @@ struct LazyViewDesc
     {
         return std::tie(level, count);
     }
-
-    bool operator< (const LazyViewDesc& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
-    }
 };
 
 struct ViewDesc : public LazyViewDesc
@@ -243,11 +223,6 @@ struct ViewDesc : public LazyViewDesc
     auto MakeTie() const
     {
         return std::tie(level, count, view_type, dimension, stride, offset, bindless);
-    }
-
-    bool operator< (const ViewDesc& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
     }
 };
 
@@ -279,67 +254,75 @@ struct VertexInputDesc
     {
         return std::tie(slot, semantic_name, format, stride);
     }
+};
 
-    bool operator< (const VertexInputDesc& oth) const
+enum class RenderPassLoadOp
+{
+    kLoad,
+    kClear,
+    kDontCare,
+};
+
+enum class RenderPassStoreOp
+{
+    kStore = 0,
+    kDontCare,
+};
+
+struct RenderPassColorDesc
+{
+    gli::format format;
+    RenderPassLoadOp load_op = RenderPassLoadOp::kLoad;
+    RenderPassStoreOp store_op = RenderPassStoreOp::kStore;
+
+    auto MakeTie() const
     {
-        return MakeTie() < oth.MakeTie();
+        return std::tie(format, load_op, store_op);
     }
 };
 
-struct RenderTargetDesc
+struct RenderPassDepthStencilDesc
 {
-    uint32_t slot = 0;
-    gli::format format = gli::format::FORMAT_UNDEFINED;
+    gli::format format;
+    RenderPassLoadOp depth_load_op = RenderPassLoadOp::kLoad;
+    RenderPassStoreOp depth_store_op = RenderPassStoreOp::kStore;
+    RenderPassLoadOp stencil_load_op = RenderPassLoadOp::kLoad;
+    RenderPassStoreOp stencil_store_op = RenderPassStoreOp::kStore;
+
+    auto MakeTie() const
+    {
+        return std::tie(format, depth_load_op, depth_store_op, stencil_load_op, stencil_store_op);
+    }
+};
+
+struct RenderPassDesc
+{
+    std::vector<RenderPassColorDesc> colors;
+    RenderPassDepthStencilDesc depth_stencil;
     uint32_t sample_count = 1;
 
     auto MakeTie() const
     {
-        return std::tie(slot, format, sample_count);
-    }
-
-    bool operator< (const RenderTargetDesc& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
-    }
-};
-
-struct DepthStencilTargetDesc
-{
-    gli::format format = gli::format::FORMAT_UNDEFINED;
-    uint32_t sample_count = 1;
-
-    auto MakeTie() const
-    {
-        return std::tie(format, sample_count);
-    }
-
-    bool operator< (const DepthStencilTargetDesc& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
+        return std::tie(colors, depth_stencil, sample_count);
     }
 };
 
 class Program;
 class View;
+class RenderPass;
 
 struct GraphicsPipelineDesc
 {
     std::shared_ptr<Program> program;
     std::vector<VertexInputDesc> input;
-    std::vector<RenderTargetDesc> rtvs;
-    DepthStencilTargetDesc dsv;
+    std::shared_ptr<RenderPass> render_pass;
     DepthStencilDesc depth_desc;
     BlendDesc blend_desc;
     RasterizerDesc rasterizer_desc;
 
     auto MakeTie() const
     {
-        return std::tie(program, input, rtvs, dsv, depth_desc, blend_desc, rasterizer_desc);
-    }
-
-    bool operator< (const GraphicsPipelineDesc& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
+        return std::tie(program, input, render_pass, depth_desc, blend_desc, rasterizer_desc);
     }
 };
 
@@ -350,11 +333,6 @@ struct ComputePipelineDesc
     auto MakeTie() const
     {
         return std::tie(program);
-    }
-
-    bool operator< (const ComputePipelineDesc& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
     }
 };
 
@@ -371,11 +349,6 @@ struct BindKey
     {
         return std::tie(shader_type, view_type, slot, space);
     }
-
-    bool operator< (const BindKey& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
-    }
 };
 
 struct BindingDesc
@@ -386,11 +359,6 @@ struct BindingDesc
     auto MakeTie() const
     {
         return std::tie(bind_key, view);
-    }
-
-    bool operator< (const BindingDesc& oth) const
-    {
-        return MakeTie() < oth.MakeTie();
     }
 };
 
@@ -539,3 +507,9 @@ struct RaytracingASPrebuildInfo
 {
     uint64_t build_scratch_data_size;
 };
+
+template<typename T> 
+auto operator< (const T& l, const T& r) -> std::enable_if_t<std::is_same_v<decltype(l.MakeTie() < r.MakeTie()), bool>, bool>
+{
+    return l.MakeTie() < r.MakeTie();
+}

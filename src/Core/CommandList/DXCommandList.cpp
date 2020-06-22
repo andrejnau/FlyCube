@@ -7,6 +7,7 @@
 #include <Pipeline/DXGraphicsPipeline.h>
 #include <Pipeline/DXComputePipeline.h>
 #include <Pipeline/DXRayTracingPipeline.h>
+#include <RenderPass/DXRenderPass.h>
 #include <Framebuffer/DXFramebuffer.h>
 #include <BindingSet/DXBindingSet.h>
 #include <dxgi1_6.h>
@@ -89,16 +90,43 @@ void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     m_binding_set = binding_set;
 }
 
-void DXCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
+void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer,
+                                    const std::vector<glm::vec4>& clear_color, float clear_depth)
 {
     if (m_use_render_passes)
-        BeginRenderPassImpl(framebuffer);
+        BeginRenderPassImpl(render_pass, framebuffer, clear_color, clear_depth);
     else
-        OMSetFramebuffer(framebuffer);
+        OMSetFramebuffer(render_pass, framebuffer, clear_color, clear_depth);
 }
 
-void DXCommandList::BeginRenderPassImpl(const std::shared_ptr<Framebuffer>& framebuffer)
+D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE Convert(RenderPassLoadOp op)
 {
+    switch (op)
+    {
+    case RenderPassLoadOp::kLoad:
+        return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE;
+    case RenderPassLoadOp::kClear:
+        return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR;
+    case RenderPassLoadOp::kDontCare:
+        return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
+    }
+}
+
+D3D12_RENDER_PASS_ENDING_ACCESS_TYPE Convert(RenderPassStoreOp op)
+{
+    switch (op)
+    {
+    case RenderPassStoreOp::kStore:
+        return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE;
+    case RenderPassStoreOp::kDontCare:
+        return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
+    }
+}
+
+void DXCommandList::BeginRenderPassImpl(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer,
+                                        const std::vector<glm::vec4>& clear_color, float clear_depth)
+{
+    decltype(auto) dx_render_pass = render_pass->As<DXRenderPass>();
     decltype(auto) dx_framebuffer = framebuffer->As<DXFramebuffer>();
     auto& rtvs = dx_framebuffer.GetRtvs();
     auto& dsv = dx_framebuffer.GetDsv();
@@ -111,12 +139,22 @@ void DXCommandList::BeginRenderPassImpl(const std::shared_ptr<Framebuffer>& fram
         return dx_view.GetHandle();
     };
 
-    std::vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC> om_rtv(rtvs.size());
+    std::vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC> om_rtv;
     for (uint32_t slot = 0; slot < rtvs.size(); ++slot)
     {
-        D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE, {} };
-        D3D12_RENDER_PASS_ENDING_ACCESS end = { D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE, {} };
-        om_rtv[slot] = { get_handle(rtvs[slot]), begin, end };
+        auto handle = get_handle(rtvs[slot]);
+        if (!handle.ptr)
+            continue;
+        D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { Convert(dx_render_pass.GetDesc().colors[slot].load_op), {} };
+        if (slot < clear_color.size())
+        {
+            begin.Clear.ClearValue.Color[0] = clear_color[slot].r;
+            begin.Clear.ClearValue.Color[1] = clear_color[slot].g;
+            begin.Clear.ClearValue.Color[2] = clear_color[slot].b;
+            begin.Clear.ClearValue.Color[3] = clear_color[slot].a;
+        }
+        D3D12_RENDER_PASS_ENDING_ACCESS end = { Convert(dx_render_pass.GetDesc().colors[slot].store_op), {} };
+        om_rtv.push_back({ handle, begin, end });
     }
 
     D3D12_RENDER_PASS_DEPTH_STENCIL_DESC om_dsv = {};
@@ -124,16 +162,20 @@ void DXCommandList::BeginRenderPassImpl(const std::shared_ptr<Framebuffer>& fram
     D3D12_CPU_DESCRIPTOR_HANDLE om_dsv_handle = get_handle(dsv);
     if (om_dsv_handle.ptr)
     {
-        D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE, {} };
-        D3D12_RENDER_PASS_ENDING_ACCESS end = { D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE, {} };
-        om_dsv = { om_dsv_handle, begin, begin, end, end };
+        D3D12_RENDER_PASS_BEGINNING_ACCESS depth_begin = { Convert(dx_render_pass.GetDesc().depth_stencil.depth_load_op), {} };
+        D3D12_RENDER_PASS_ENDING_ACCESS depth_end = { Convert(dx_render_pass.GetDesc().depth_stencil.depth_store_op), {} };
+        D3D12_RENDER_PASS_BEGINNING_ACCESS stencil_begin = { Convert(dx_render_pass.GetDesc().depth_stencil.stencil_load_op), {} };
+        D3D12_RENDER_PASS_ENDING_ACCESS stencil_end = { Convert(dx_render_pass.GetDesc().depth_stencil.stencil_store_op), {} };
+        depth_begin.Clear.ClearValue.DepthStencil.Depth = clear_depth;
+        om_dsv = { om_dsv_handle, depth_begin, stencil_begin, depth_end, stencil_end };
         om_dsv_ptr = &om_dsv;
     }
 
     m_command_list4->BeginRenderPass(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), om_dsv_ptr, D3D12_RENDER_PASS_FLAG_NONE);
 }
 
-void DXCommandList::OMSetFramebuffer(const std::shared_ptr<Framebuffer>& framebuffer)
+void DXCommandList::OMSetFramebuffer(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer,
+                                     const std::vector<glm::vec4>& clear_color, float clear_depth)
 {
     decltype(auto) dx_framebuffer = framebuffer->As<DXFramebuffer>();
     auto& rtvs = dx_framebuffer.GetRtvs();
@@ -150,8 +192,10 @@ void DXCommandList::OMSetFramebuffer(const std::shared_ptr<Framebuffer>& framebu
     for (uint32_t slot = 0; slot < rtvs.size(); ++slot)
     {
         om_rtv[slot] = get_handle(rtvs[slot]);
+        ClearColor(rtvs[slot], clear_color[slot]);
     }
     D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = get_handle(dsv);
+    ClearDepth(dsv, clear_depth);
     m_command_list->OMSetRenderTargets(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv.ptr ? &om_dsv : nullptr);
 }
 
@@ -177,12 +221,12 @@ void DXCommandList::EndEvent()
     PIXEndEvent(m_command_list.Get());
 }
 
-void DXCommandList::ClearColor(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
+void DXCommandList::ClearColor(const std::shared_ptr<View>& view, const glm::vec4& color)
 {
     if (!view || !view->GetResource())
         return;
     decltype(auto) dx_view = view->As<DXView>();
-    m_command_list->ClearRenderTargetView(dx_view.GetHandle(), color.data(), 0, nullptr);
+    m_command_list->ClearRenderTargetView(dx_view.GetHandle(), &color.x, 0, nullptr);
 }
 
 void DXCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)

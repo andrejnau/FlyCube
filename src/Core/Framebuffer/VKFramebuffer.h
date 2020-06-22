@@ -8,14 +8,12 @@ class VKGraphicsPipeline;
 class VKFramebuffer : public FramebufferBase
 {
 public:
-    VKFramebuffer(VKDevice& device, const std::shared_ptr<VKGraphicsPipeline>& pipeline, uint32_t width, uint32_t height,
+    VKFramebuffer(VKDevice& device, const std::shared_ptr<RenderPass>& render_pass, uint32_t width, uint32_t height,
                   const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv);
     vk::Framebuffer GetFramebuffer() const;
-    vk::RenderPass GetRenderPass() const;
     vk::Extent2D GetExtent() const;
 
 private:
     vk::UniqueFramebuffer m_framebuffer;
-    vk::RenderPass m_render_pass;
     vk::Extent2D m_extent;
 };

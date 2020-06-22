@@ -265,9 +265,11 @@ void CommandListBox::UseProgram(std::shared_ptr<Program>& program)
         }
     }
 
+    m_render_pass_desc = {};
     m_graphic_pipeline_desc = {};
     m_compute_pipeline_desc = {};
 
+    m_render_pass.reset();
     m_framebuffer.reset();
     m_program = program;
     if (m_program->HasShader(ShaderType::kCompute) || m_program->HasShader(ShaderType::kLibrary))
@@ -284,6 +286,20 @@ void CommandListBox::UseProgram(std::shared_ptr<Program>& program)
 
 void CommandListBox::ApplyBindings()
 {
+    auto it = m_render_pass_cache.find(m_render_pass_desc);
+    if (it == m_render_pass_cache.end())
+    {
+        m_render_pass = m_device.CreateRenderPass(m_render_pass_desc);
+        m_render_pass_cache.emplace(std::piecewise_construct,
+            std::forward_as_tuple(m_render_pass_desc),
+            std::forward_as_tuple(m_render_pass));
+    }
+    else
+    {
+        m_render_pass = it->second;
+    }
+    m_graphic_pipeline_desc.render_pass = m_render_pass;
+
     if (m_program->HasShader(ShaderType::kCompute))
     {
         auto it = m_compute_pso.find(m_compute_pipeline_desc);
@@ -364,9 +380,10 @@ void CommandListBox::ApplyBindings()
         return;
 
     std::vector<std::shared_ptr<View>> rtvs;
-    for (auto& render_target : m_graphic_pipeline_desc.rtvs)
+    uint32_t slot = 0;
+    for (auto& render_target : m_render_pass_desc.colors)
     {
-        rtvs.emplace_back(FindView(ShaderType::kPixel, ViewType::kRenderTarget, render_target.slot));
+        rtvs.emplace_back(FindView(ShaderType::kPixel, ViewType::kRenderTarget, slot++));
     }
 
     auto prev_framebuffer = m_framebuffer;
@@ -376,7 +393,7 @@ void CommandListBox::ApplyBindings()
     auto f_it = m_framebuffers.find(key);
     if (f_it == m_framebuffers.end())
     {
-        m_framebuffer = m_device.CreateFramebuffer(m_pipeline, m_viewport_width, m_viewport_height, rtvs, dsv);
+        m_framebuffer = m_device.CreateFramebuffer(m_render_pass, m_viewport_width, m_viewport_height, rtvs, dsv);
         m_framebuffers.emplace(std::piecewise_construct,
             std::forward_as_tuple(key),
             std::forward_as_tuple(m_framebuffer));
@@ -394,7 +411,7 @@ void CommandListBox::ApplyBindings()
 
     if (!m_is_open_render_pass)
     {
-        m_command_list->BeginRenderPass(m_framebuffer);
+        m_command_list->BeginRenderPass(m_render_pass, m_framebuffer);
         m_is_open_render_pass = true;
     }
 }
@@ -473,7 +490,7 @@ void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<View>
     }
 }
 
-void CommandListBox::ClearColor(const BindKey& bind_key, const std::array<float, 4>& color)
+void CommandListBox::ClearColor(const BindKey& bind_key, const glm::vec4& color)
 {
     auto& view = FindView(bind_key.shader_type, bind_key.view_type, bind_key.slot);
     if (!view)
@@ -533,20 +550,18 @@ void CommandListBox::OnAttachUAV(const BindKey& bind_key, const std::shared_ptr<
 
 void CommandListBox::OnAttachRTV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
-    if (bind_key.slot >= m_graphic_pipeline_desc.rtvs.size())
-        m_graphic_pipeline_desc.rtvs.resize(bind_key.slot + 1);
-    decltype(auto) render_target = m_graphic_pipeline_desc.rtvs[bind_key.slot];
-    render_target.slot = bind_key.slot;
+    if (bind_key.slot >= m_render_pass_desc.colors.size())
+        m_render_pass_desc.colors.resize(bind_key.slot + 1);
     auto resource = view->GetResource();
-    render_target.format = resource->GetFormat();
-    render_target.sample_count = resource->GetSampleCount();
+    m_render_pass_desc.colors[bind_key.slot].format = resource->GetFormat();
+    m_render_pass_desc.sample_count = resource->GetSampleCount();
     ViewBarrier(view, ResourceState::kRenderTarget);
 }
 
 void CommandListBox::OnAttachDSV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     auto resource = view->GetResource();
-    m_graphic_pipeline_desc.dsv.format = resource->GetFormat();
-    m_graphic_pipeline_desc.dsv.sample_count = resource->GetSampleCount();
+    m_render_pass_desc.depth_stencil.format = resource->GetFormat();
+    m_render_pass_desc.sample_count = resource->GetSampleCount();
     ViewBarrier(view, ResourceState::kDepthTarget);
 }

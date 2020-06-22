@@ -3,7 +3,7 @@
 #include <View/VKView.h>
 #include <Pipeline/VKGraphicsPipeline.h>
 
-VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<VKGraphicsPipeline>& pipeline, uint32_t width, uint32_t height,
+VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<RenderPass>& render_pass, uint32_t width, uint32_t height,
                              const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
     : FramebufferBase(rtvs, dsv)
     , m_extent(width, height)
@@ -34,10 +34,7 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<VKGraphicsP
 
     framebuffer_info.width = m_extent.width;
     framebuffer_info.height = m_extent.height;
-
-    m_render_pass = pipeline->GetRenderPass();
-
-    framebuffer_info.renderPass = m_render_pass;
+    framebuffer_info.renderPass = render_pass->As<VKRenderPass>().GetRenderPass();;
     framebuffer_info.attachmentCount = attachment_views.size();
     framebuffer_info.pAttachments = attachment_views.data();
     m_framebuffer = device.GetDevice().createFramebufferUnique(framebuffer_info);
@@ -46,11 +43,6 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<VKGraphicsP
 vk::Framebuffer VKFramebuffer::GetFramebuffer() const
 {
     return m_framebuffer.get();
-}
-
-vk::RenderPass VKFramebuffer::GetRenderPass() const
-{
-    return m_render_pass;
 }
 
 vk::Extent2D VKFramebuffer::GetExtent() const

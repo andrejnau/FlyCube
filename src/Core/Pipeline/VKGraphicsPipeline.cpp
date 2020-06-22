@@ -36,7 +36,6 @@ static vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
 VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
     : m_device(device)
     , m_desc(desc)
-    , m_render_pass(device, desc.rtvs, desc.dsv)
 {
     decltype(auto) vk_program = desc.program->As<VKProgram>();
     auto shaders = vk_program.GetShaders();
@@ -85,7 +84,7 @@ vk::Pipeline VKGraphicsPipeline::GetPipeline() const
 
 vk::RenderPass VKGraphicsPipeline::GetRenderPass() const
 {
-    return m_render_pass.GetRenderPass();
+    return m_desc.render_pass->As<VKRenderPass>().GetRenderPass();
 }
 
 void VKGraphicsPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
@@ -117,6 +116,7 @@ void VKGraphicsPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_bi
 
 void VKGraphicsPipeline::CreateGrPipeLine()
 {
+    const RenderPassDesc& render_pass_desc = m_desc.render_pass->GetDesc();
     decltype(auto) vk_program = m_desc.program->As<VKProgram>();
 
     vk::PipelineVertexInputStateCreateInfo vertex_input_info = {};
@@ -199,12 +199,7 @@ void VKGraphicsPipeline::CreateGrPipeLine()
         color_blend_attachment.alphaBlendOp = convert_op(m_desc.blend_desc.blend_op_alpha);
     }
 
-    uint32_t num_slots = 0;
-    for (auto& rtv : m_desc.rtvs)
-    {
-        num_slots = std::max(num_slots, rtv.slot + 1);
-    }
-    std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments(num_slots, color_blend_attachment);
+    std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments(render_pass_desc.colors.size(), color_blend_attachment);
 
     vk::PipelineColorBlendStateCreateInfo color_blending = {};
     color_blending.logicOpEnable = VK_FALSE;
@@ -213,8 +208,7 @@ void VKGraphicsPipeline::CreateGrPipeLine()
     color_blending.pAttachments = color_blend_attachments.data();
 
     vk::PipelineMultisampleStateCreateInfo multisampling = {};
-    uint32_t sample_count = !m_desc.rtvs.empty() ? m_desc.rtvs.front().sample_count : m_desc.dsv.sample_count;
-    multisampling.rasterizationSamples = static_cast<vk::SampleCountFlagBits>(sample_count);
+    multisampling.rasterizationSamples = static_cast<vk::SampleCountFlagBits>(render_pass_desc.sample_count);
     multisampling.sampleShadingEnable = multisampling.rasterizationSamples != vk::SampleCountFlagBits::e1;
 
     vk::PipelineDepthStencilStateCreateInfo depth_stencil = {};
@@ -246,7 +240,7 @@ void VKGraphicsPipeline::CreateGrPipeLine()
     pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = &color_blending;
     pipeline_info.layout = vk_program.GetPipelineLayout();
-    pipeline_info.renderPass = m_render_pass.GetRenderPass();
+    pipeline_info.renderPass = GetRenderPass();
     pipeline_info.pDynamicState = &pipelineDynamicStateCreateInfo;
     m_pipeline = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info);
 }

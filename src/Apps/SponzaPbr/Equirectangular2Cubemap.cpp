@@ -42,7 +42,7 @@ void Equirectangular2Cubemap::DrawEquirectangular2Cubemap(CommandListBox& comman
 
     command_list.Attach(m_program_equirectangular2cubemap.ps.sampler.g_sampler, m_sampler);
 
-    std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
     command_list.Attach(m_program_equirectangular2cubemap.ps.om.rtv0, output.environment);
     command_list.ClearColor(m_program_equirectangular2cubemap.ps.om.rtv0, color);
     command_list.Attach(m_program_equirectangular2cubemap.ps.om.dsv, m_dsv);

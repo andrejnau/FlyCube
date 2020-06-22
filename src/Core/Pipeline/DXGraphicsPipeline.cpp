@@ -11,6 +11,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     : m_device(device)
     , m_desc(desc)
 {
+    const RenderPassDesc& render_pass_desc = desc.render_pass->GetDesc();
     m_graphics_pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     m_graphics_pso_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
     CD3DX12_DEPTH_STENCIL_DESC depth_stencil_desc(D3D12_DEFAULT);
@@ -27,8 +28,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     m_graphics_pso_desc.DepthStencilState = depth_stencil_desc;
     m_graphics_pso_desc.SampleMask = std::numeric_limits<uint32_t>::max();
     m_graphics_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    uint32_t sample_count = !m_desc.rtvs.empty() ? m_desc.rtvs.front().sample_count : m_desc.dsv.sample_count;
-    m_graphics_pso_desc.SampleDesc.Count = sample_count;
+    m_graphics_pso_desc.SampleDesc.Count = render_pass_desc.sample_count;
     m_graphics_pso_desc.NumRenderTargets = 0;
 
     switch (desc.rasterizer_desc.fill_mode)
@@ -78,11 +78,11 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
         return static_cast<D3D12_BLEND_OP>(0);
     };
 
-    for (auto& rtv : m_desc.rtvs)
+    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
     {
-        if (rtv.format == gli::format::FORMAT_UNDEFINED)
+        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED)
             continue;
-        decltype(auto) rt_desc = m_graphics_pso_desc.BlendState.RenderTarget[rtv.slot];
+        decltype(auto) rt_desc = m_graphics_pso_desc.BlendState.RenderTarget[i];
         rt_desc.BlendEnable = desc.blend_desc.blend_enable;
         rt_desc.BlendOp = convert_op(desc.blend_desc.blend_op);
         rt_desc.SrcBlend = convert(desc.blend_desc.blend_src);
@@ -111,8 +111,8 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
         }
         case ShaderType::kPixel:
             m_graphics_pso_desc.PS = ShaderBytecode;
-            FillRTVFormats();
-            FillDSVFormat();
+            FillRTVFormats(render_pass_desc);
+            FillDSVFormat(render_pass_desc);
             break;
         case ShaderType::kGeometry:
             m_graphics_pso_desc.GS = ShaderBytecode;
@@ -133,22 +133,22 @@ PipelineType DXGraphicsPipeline::GetPipelineType() const
     return PipelineType::kGraphics;
 }
 
-void DXGraphicsPipeline::FillRTVFormats()
+void DXGraphicsPipeline::FillRTVFormats(const RenderPassDesc& render_pass_desc)
 {
-    for (auto& rtv : m_desc.rtvs)
+    m_graphics_pso_desc.NumRenderTargets = render_pass_desc.colors.size();
+    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
     {
-        if (rtv.format == gli::format::FORMAT_UNDEFINED)
+        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED)
             continue;
-        m_graphics_pso_desc.NumRenderTargets = std::max(m_graphics_pso_desc.NumRenderTargets, rtv.slot + 1);
-        m_graphics_pso_desc.RTVFormats[rtv.slot] = static_cast<DXGI_FORMAT>(gli::dx().translate(rtv.format).DXGIFormat.DDS);
+        m_graphics_pso_desc.RTVFormats[i] = static_cast<DXGI_FORMAT>(gli::dx().translate(render_pass_desc.colors[i].format).DXGIFormat.DDS);
     }
 }
 
-void DXGraphicsPipeline::FillDSVFormat()
+void DXGraphicsPipeline::FillDSVFormat(const RenderPassDesc& render_pass_desc)
 {
-    if (m_desc.dsv.format == gli::format::FORMAT_UNDEFINED)
+    if (render_pass_desc.depth_stencil.format == gli::format::FORMAT_UNDEFINED)
         return;
-    m_graphics_pso_desc.DSVFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(m_desc.dsv.format).DXGIFormat.DDS);
+    m_graphics_pso_desc.DSVFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(render_pass_desc.depth_stencil.format).DXGIFormat.DDS);
     m_graphics_pso_desc.DepthStencilState.DepthEnable = m_graphics_pso_desc.DSVFormat != DXGI_FORMAT_UNKNOWN;
 }
 

@@ -8,6 +8,7 @@
 #include <Framebuffer/Framebuffer.h>
 #include <Pipeline/Pipeline.h>
 #include <Shader/Shader.h>
+#include <RenderPass/RenderPass.h>
 #include <memory>
 #include <vector>
 #include <GLFW/glfw3.h>
@@ -25,7 +26,8 @@ public:
     virtual std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, MemoryType memory_type = MemoryType::kDefault) = 0;
     virtual std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) = 0;
     virtual std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) = 0;
-    virtual std::shared_ptr<Framebuffer> CreateFramebuffer(const std::shared_ptr<Pipeline>& pipeline, uint32_t width, uint32_t height,
+    virtual std::shared_ptr<RenderPass> CreateRenderPass(const RenderPassDesc& desc) = 0;
+    virtual std::shared_ptr<Framebuffer> CreateFramebuffer(const std::shared_ptr<RenderPass>& render_pass, uint32_t width, uint32_t height,
                                                            const std::vector<std::shared_ptr<View>>& rtvs = {}, const std::shared_ptr<View>& dsv = {}) = 0;
     virtual std::shared_ptr<Shader> CompileShader(const ShaderDesc& desc) = 0;
     virtual std::shared_ptr<Program> CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders) = 0;

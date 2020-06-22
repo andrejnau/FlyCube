@@ -35,7 +35,7 @@ void GeometryPass::OnRender(CommandListBox& command_list)
 
     command_list.Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
-    std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
     command_list.Attach(m_program.ps.om.rtv0, output.position);
     command_list.ClearColor(m_program.ps.om.rtv0, color);
     command_list.Attach(m_program.ps.om.rtv1, output.normal);

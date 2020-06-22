@@ -34,10 +34,14 @@ int main(int argc, char* argv[])
     std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel, "6_0" });
     std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
     std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { pixel_shader->GetBindKey("Settings"), constant_buffer_view } });
+    RenderPassDesc render_pass_desc = {
+        { { swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
+    };
+    std::shared_ptr<RenderPass> render_pass = device->CreateRenderPass(render_pass_desc);
     GraphicsPipelineDesc pipeline_desc = {
         program,
         { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
-        { { 0, swapchain->GetFormat() } },
+        render_pass
     };
     std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
 
@@ -50,19 +54,17 @@ int main(int argc, char* argv[])
         ViewDesc back_buffer_view_desc = {};
         back_buffer_view_desc.view_type = ViewType::kRenderTarget;
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
-        framebuffers.emplace_back(device->CreateFramebuffer(pipeline, rect.width, rect.height, { back_buffer_view }));
+        framebuffers.emplace_back(device->CreateFramebuffer(render_pass, rect.width, rect.height, { back_buffer_view }));
         command_lists.emplace_back(device->CreateCommandList());
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->Open();
-        command_list->ResourceBarrier({ { back_buffer, ResourceState::kClearColor} });
-        command_list->ClearColor(back_buffer_view, { 0.0, 0.2, 0.4, 1.0 });
-        command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget} });
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);
-        command_list->BeginRenderPass(framebuffers.back());
         command_list->SetViewport(rect.width, rect.height);
         command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, vertex_buffer);
+        command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget} });
+        command_list->BeginRenderPass(render_pass, framebuffers.back(), { { 0.0, 0.2, 0.4, 1.0 } });
         command_list->DrawIndexed(3, 0, 0);
         command_list->EndRenderPass();
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent} });

@@ -2,17 +2,47 @@
 #include <Device/VKDevice.h>
 #include <View/VKView.h>
 
-VKRenderPass::VKRenderPass(VKDevice& device, const std::vector<RenderTargetDesc>& rtvs, const DepthStencilTargetDesc& dsv)
+vk::AttachmentLoadOp Convert(RenderPassLoadOp op)
+{
+    switch (op)
+    {
+    case RenderPassLoadOp::kLoad:
+        return vk::AttachmentLoadOp::eLoad;
+    case RenderPassLoadOp::kClear:
+        return vk::AttachmentLoadOp::eClear;
+    case RenderPassLoadOp::kDontCare:
+        return vk::AttachmentLoadOp::eDontCare;
+    }
+}
+
+vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
+{
+    switch (op)
+    {
+    case RenderPassStoreOp::kStore:
+        return vk::AttachmentStoreOp::eStore;
+    case RenderPassStoreOp::kDontCare:
+        return vk::AttachmentStoreOp::eDontCare;
+    }
+}
+
+VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
+    : m_desc(desc)
 {
     std::vector<vk::AttachmentDescription> attachment_descriptions;
-    auto add_attachment = [&](vk::AttachmentReference& reference, gli::format format, uint32_t sample_count, vk::ImageLayout layout)
+    auto add_attachment = [&](vk::AttachmentReference& reference, gli::format format, vk::ImageLayout layout, RenderPassLoadOp load_op, RenderPassStoreOp store_op)
     {
+        if (format == gli::FORMAT_UNDEFINED)
+        {
+            reference.attachment = VK_ATTACHMENT_UNUSED;
+            return;
+        }
         attachment_descriptions.emplace_back();
         vk::AttachmentDescription& description = attachment_descriptions.back();
         description.format = static_cast<vk::Format>(format);
-        description.samples = static_cast<vk::SampleCountFlagBits>(sample_count);
-        description.loadOp = vk::AttachmentLoadOp::eLoad;
-        description.storeOp = vk::AttachmentStoreOp::eStore;
+        description.samples = static_cast<vk::SampleCountFlagBits>(desc.sample_count);
+        description.loadOp = Convert(load_op);
+        description.storeOp = Convert(store_op);
         description.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
         description.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
         description.initialLayout = layout;
@@ -23,13 +53,9 @@ VKRenderPass::VKRenderPass(VKDevice& device, const std::vector<RenderTargetDesc>
     };
 
     std::vector<vk::AttachmentReference> color_attachment_references;
-    for (auto& rtv : rtvs)
+    for (auto& rtv : desc.colors)
     {
-        if (rtv.format == gli::FORMAT_UNDEFINED)
-            continue;
-        if (rtv.slot >= color_attachment_references.size())
-            color_attachment_references.resize(rtv.slot + 1, { VK_ATTACHMENT_UNUSED });
-        add_attachment(color_attachment_references[rtv.slot], rtv.format, rtv.sample_count, vk::ImageLayout::eColorAttachmentOptimal);
+        add_attachment(color_attachment_references.emplace_back(), rtv.format, vk::ImageLayout::eColorAttachmentOptimal, rtv.load_op, rtv.store_op);
     }
 
     vk::SubpassDescription sub_pass = {};
@@ -38,9 +64,9 @@ VKRenderPass::VKRenderPass(VKDevice& device, const std::vector<RenderTargetDesc>
     sub_pass.pColorAttachments = color_attachment_references.data();
 
     vk::AttachmentReference depth_attachment_references = {};
-    if (dsv.format != gli::FORMAT_UNDEFINED)
+    if (desc.depth_stencil.format != gli::FORMAT_UNDEFINED)
     {
-        add_attachment(depth_attachment_references, dsv.format, dsv.sample_count, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+        add_attachment(depth_attachment_references, desc.depth_stencil.format, vk::ImageLayout::eDepthStencilAttachmentOptimal, desc.depth_stencil.depth_load_op, desc.depth_stencil.depth_store_op);
         sub_pass.pDepthStencilAttachment = &depth_attachment_references;
     }
 
@@ -51,6 +77,11 @@ VKRenderPass::VKRenderPass(VKDevice& device, const std::vector<RenderTargetDesc>
     render_pass_info.pSubpasses = &sub_pass;
 
     m_render_pass = device.GetDevice().createRenderPassUnique(render_pass_info);
+}
+
+const RenderPassDesc& VKRenderPass::GetDesc() const
+{
+    return m_desc;
 }
 
 vk::RenderPass VKRenderPass::GetRenderPass() const

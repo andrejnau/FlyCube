@@ -46,7 +46,7 @@ void IrradianceConversion::DrawIrradianceConvolution(CommandListBox& command_lis
 
     command_list.Attach(m_program_irradiance_convolution.ps.sampler.g_sampler, m_sampler);
 
-    std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
     command_list.Attach(m_program_irradiance_convolution.ps.om.rtv0, m_input.irradince.res);
     command_list.Attach(m_program_irradiance_convolution.ps.om.dsv, m_input.irradince.dsv);
     command_list.ClearDepth(m_program_irradiance_convolution.ps.om.dsv, 1.0f);
@@ -126,7 +126,7 @@ void IrradianceConversion::DrawPrefilter(CommandListBox& command_list)
         command_list.SetViewport(m_input.prefilter.size >> mip, m_input.prefilter.size >> mip);
         m_program_prefilter.ps.cbuffer.Settings.roughness = (float)mip / (float)(max_mip_levels - 1);
         m_program_prefilter.ps.cbuffer.Settings.resolution = m_input.prefilter.size;
-        std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
+        glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
         command_list.Attach(m_program_prefilter.ps.om.rtv0, m_input.prefilter.res, { mip });
         command_list.Attach(m_program_prefilter.ps.om.dsv, m_input.prefilter.dsv, { mip });
         command_list.ClearDepth(m_program_prefilter.ps.om.dsv, 1.0f);

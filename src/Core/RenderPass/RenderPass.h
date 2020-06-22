@@ -7,4 +7,5 @@ class RenderPass : public QueryInterface
 {
 public:
     virtual ~RenderPass() = default;
+    virtual const RenderPassDesc& GetDesc() const = 0;
 };

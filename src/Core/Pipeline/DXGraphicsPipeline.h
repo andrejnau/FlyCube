@@ -19,8 +19,8 @@ public:
     const std::map<size_t, uint32_t>& GetStrideMap() const;
 
 private:
-    void FillRTVFormats();
-    void FillDSVFormat();
+    void FillRTVFormats(const RenderPassDesc& render_pass_desc);
+    void FillDSVFormat(const RenderPassDesc& render_pass_desc);
     void FillInputLayout();
 
     DXDevice& m_device;

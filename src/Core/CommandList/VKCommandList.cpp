@@ -83,13 +83,32 @@ void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     }
 }
 
-void VKCommandList::BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer)
+void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer,
+                                    const std::vector<glm::vec4>& clear_color, float clear_depth)
 {
     decltype(auto) vk_framebuffer = framebuffer->As<VKFramebuffer>();
+    decltype(auto) vk_render_pass = render_pass->As<VKRenderPass>();
     vk::RenderPassBeginInfo render_pass_info = {};
-    render_pass_info.renderPass = vk_framebuffer.GetRenderPass();
+    render_pass_info.renderPass = vk_render_pass.GetRenderPass();
     render_pass_info.framebuffer = vk_framebuffer.GetFramebuffer();
     render_pass_info.renderArea.extent = vk_framebuffer.GetExtent();
+    std::vector<vk::ClearValue> clear_values(clear_color.size());
+    for (size_t i = 0; i < clear_color.size(); ++i)
+    {
+        clear_values[i].color.float32[0] = clear_color[i].r;
+        clear_values[i].color.float32[1] = clear_color[i].g;
+        clear_values[i].color.float32[2] = clear_color[i].b;
+        clear_values[i].color.float32[3] = clear_color[i].a;
+    }
+    clear_values.resize(vk_render_pass.GetDesc().colors.size());
+    if (vk_render_pass.GetDesc().depth_stencil.format != gli::FORMAT_UNDEFINED)
+    {
+        vk::ClearValue clear_value = {};
+        clear_value.depthStencil.depth = clear_depth;
+        clear_values.emplace_back(clear_value);
+    }
+    render_pass_info.clearValueCount = clear_values.size();
+    render_pass_info.pClearValues = clear_values.data();
     m_command_list->beginRenderPass(render_pass_info, vk::SubpassContents::eInline);
 }
 
@@ -110,7 +129,7 @@ void VKCommandList::EndEvent()
     m_command_list->endDebugUtilsLabelEXT();
 }
 
-void VKCommandList::ClearColor(const std::shared_ptr<View>& view, const std::array<float, 4>& color)
+void VKCommandList::ClearColor(const std::shared_ptr<View>& view, const glm::vec4& color)
 {
     if (!view)
         return;

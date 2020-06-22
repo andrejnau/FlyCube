@@ -112,7 +112,7 @@ void LightPass::OnRender(CommandListBox& command_list)
     command_list.Attach(m_program.ps.sampler.brdf_sampler, m_sampler_brdf);
     command_list.Attach(m_program.ps.sampler.LightCubeShadowComparsionSampler, m_compare_sampler);
 
-    std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
     command_list.Attach(m_program.ps.om.rtv0, output.rtv);
     command_list.ClearColor(m_program.ps.om.rtv0, color);
     command_list.Attach(m_program.ps.om.dsv, m_depth_stencil_view);

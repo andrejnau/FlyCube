@@ -18,11 +18,12 @@ public:
     virtual void Close() = 0;
     virtual void BindPipeline(const std::shared_ptr<Pipeline>& state) = 0;
     virtual void BindBindingSet(const std::shared_ptr<BindingSet>& binding_set) = 0;
-    virtual void BeginRenderPass(const std::shared_ptr<Framebuffer>& framebuffer) = 0;
+    virtual void BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer,
+                                 const std::vector<glm::vec4>& clear_color = {}, float clear_depth = 1.0) = 0;
     virtual void EndRenderPass() = 0;
     virtual void BeginEvent(const std::string& name) = 0;
     virtual void EndEvent() = 0;
-    virtual void ClearColor(const std::shared_ptr<View>& view, const std::array<float, 4>& color) = 0;
+    virtual void ClearColor(const std::shared_ptr<View>& view, const glm::vec4& color) = 0;
     virtual void ClearDepth(const std::shared_ptr<View>& view, float depth) = 0;
     virtual void DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location) = 0;
     virtual void Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z) = 0;

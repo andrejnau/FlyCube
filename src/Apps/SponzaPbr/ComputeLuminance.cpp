@@ -57,7 +57,7 @@ void ComputeLuminance::Draw(CommandListBox& command_list, size_t buf_id)
     command_list.UseProgram(m_HDRApply);
     command_list.Attach(m_HDRApply.ps.cbv.HDRSetting, m_HDRApply.ps.cbuffer.HDRSetting);
 
-    std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
     command_list.Attach(m_HDRApply.ps.om.rtv0, m_input.rtv);
     command_list.ClearColor(m_HDRApply.ps.om.rtv0, color);
     command_list.Attach(m_HDRApply.ps.om.dsv, m_input.dsv);

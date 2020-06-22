@@ -197,7 +197,7 @@ void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
 
     m_program.gs.cbuffer.GSParams.Projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, m_settings.Get<float>("s_near"), m_settings.Get<float>("s_far")));
 
-    std::array<float, 4> color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     glm::vec3 position = glm::vec3(ibl_model.matrix * glm::vec4(ibl_model.model_center, 1.0));
     std::array<glm::mat4, 6>& view = m_program.gs.cbuffer.GSParams.View;

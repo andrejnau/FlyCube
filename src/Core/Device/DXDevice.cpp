@@ -9,6 +9,7 @@
 #include <Pipeline/DXGraphicsPipeline.h>
 #include <Pipeline/DXComputePipeline.h>
 #include <Pipeline/DXRayTracingPipeline.h>
+#include <RenderPass/DXRenderPass.h>
 #include <Framebuffer/DXFramebuffer.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
@@ -318,7 +319,12 @@ std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& reso
     return std::make_shared<DXView>(*this, resource, view_desc);
 }
 
-std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const std::shared_ptr<Pipeline>& pipeline, uint32_t width, uint32_t height,
+std::shared_ptr<RenderPass> DXDevice::CreateRenderPass(const RenderPassDesc& desc)
+{
+    return std::make_shared<DXRenderPass>(*this, desc);
+}
+
+std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const std::shared_ptr<RenderPass>& render_pass, uint32_t width, uint32_t height,
                                                          const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
 {
     return std::make_shared<DXFramebuffer>(rtvs, dsv);
