@@ -7,14 +7,14 @@ CommandListBox::CommandListBox(Device& device)
     m_command_list = m_device.CreateCommandList();
 }
 
-void CommandListBox::Open()
+void CommandListBox::Reset()
 {
     m_cmd_resources.clear();
     m_bound_resources.clear();
     m_bound_deferred_view.clear();
     m_binding_sets.clear();
     m_resource_lazy_view_descs.clear();
-    m_command_list->Open();
+    m_command_list->Reset();
 }
 
 void CommandListBox::Close()

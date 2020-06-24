@@ -45,7 +45,7 @@ void CommandListBase::ResourceBarrier(const std::vector<ResourceBarrierDesc>& ba
         ResourceBarrierManual(manual_barriers);
 }
 
-void CommandListBase::OnOpen()
+void CommandListBase::OnReset()
 {
     m_lazy_barriers.clear();
     m_resource_state_tracker.clear();

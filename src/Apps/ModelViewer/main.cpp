@@ -21,7 +21,6 @@ int main(int argc, char* argv[])
 
     std::shared_ptr<CommandListBox> upload_command_list = context.CreateCommandList();
 
-    upload_command_list->Open();
     Model model(device, *upload_command_list, "model/export3dcoat/export3dcoat.obj");
     model.matrix = glm::scale(glm::vec3(0.1f)) * glm::translate(glm::vec3(0.0f, 30.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -74,7 +73,6 @@ int main(int argc, char* argv[])
     for (uint32_t i = 0; i < Context::FrameCount; ++i)
     {
         decltype(auto) command_list = context.CreateCommandList();
-        command_list->Open();
         command_list->UseProgram(program);
         command_list->SetViewport(rect.width, rect.height);
         command_list->Attach(program.ps.om.rtv0, context.GetBackBuffer(i));

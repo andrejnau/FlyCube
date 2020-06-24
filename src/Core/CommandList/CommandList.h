@@ -14,7 +14,7 @@ class CommandList : public QueryInterface
 {
 public:
     virtual ~CommandList() = default;
-    virtual void Open() = 0;
+    virtual void Reset() = 0;
     virtual void Close() = 0;
     virtual void BindPipeline(const std::shared_ptr<Pipeline>& state) = 0;
     virtual void BindBindingSet(const std::shared_ptr<BindingSet>& binding_set) = 0;

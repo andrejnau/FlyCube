@@ -32,12 +32,9 @@ public:
         return m_adapter->GetName();
     }
 
-    std::shared_ptr<CommandListBox> CreateCommandList(bool open = false)
+    std::shared_ptr<CommandListBox> CreateCommandList()
     {
-        auto cmd = std::make_shared<CommandListBox>(*m_device);
-        if (open)
-            cmd->Open();
-        return cmd;
+        return std::make_shared<CommandListBox>(*m_device);
     }
 
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandListBox>>& command_lists);

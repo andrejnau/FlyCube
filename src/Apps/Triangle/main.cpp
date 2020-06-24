@@ -16,7 +16,6 @@ int main(int argc, char* argv[])
     ProgramHolder<PixelShaderPS, VertexShaderVS> program(device);
 
     std::shared_ptr<CommandListBox> upload_command_list = context.CreateCommandList();
-    upload_command_list->Open();
     std::vector<uint32_t> ibuf = { 0, 1, 2 };
     std::shared_ptr<Resource> index = device.CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * ibuf.size());
     upload_command_list->UpdateSubresource(index, 0, ibuf.data(), 0, 0);
@@ -36,7 +35,6 @@ int main(int argc, char* argv[])
     for (uint32_t i = 0; i < Context::FrameCount; ++i)
     {
         decltype(auto) command_list = context.CreateCommandList();
-        command_list->Open();
         command_list->UseProgram(program);
         command_list->Attach(program.ps.cbv.Settings, program.ps.cbuffer.Settings);
         command_list->SetViewport(rect.width, rect.height);

@@ -21,7 +21,7 @@ public:
     const std::vector<ResourceBarrierManualDesc>& GetLazyBarriers() const;
 
 protected:
-    void OnOpen();
+    void OnReset();
 
 private:
     ResourceStateTracker& GetResourceStateTracker(const std::shared_ptr<Resource>& resource);

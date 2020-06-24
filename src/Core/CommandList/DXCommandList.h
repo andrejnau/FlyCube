@@ -12,7 +12,7 @@ class DXCommandList : public CommandListBase
 {
 public:
     DXCommandList(DXDevice& device);
-    void Open() override;
+    void Reset() override;
     void Close() override;
     void BindPipeline(const std::shared_ptr<Pipeline>& state) override;
     void BindBindingSet(const std::shared_ptr<BindingSet>& binding_set) override;
@@ -62,4 +62,5 @@ private:
     bool m_use_render_passes = true;
     ComPtr<ID3D12GraphicsCommandList4> m_command_list4;
     ComPtr<ID3D12GraphicsCommandList5> m_command_list5;
+    bool m_closed = false;
 };

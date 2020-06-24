@@ -8,7 +8,7 @@ class VKCommandList : public CommandListBase
 {
 public:
     VKCommandList(VKDevice& device);
-    void Open() override;
+    void Reset() override;
     void Close() override;
     void BindPipeline(const std::shared_ptr<Pipeline>& state) override;
     void BindBindingSet(const std::shared_ptr<BindingSet>& binding_set) override;
@@ -47,4 +47,5 @@ private:
     vk::UniqueCommandBuffer m_command_list;
     std::shared_ptr<Pipeline> m_state;
     std::shared_ptr<BindingSet> m_binding_set;
+    bool m_closed = false;
 };

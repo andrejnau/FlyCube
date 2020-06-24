@@ -72,7 +72,6 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
 
     m_command_list = m_device.CreateCommandList();
     auto& command_list = m_command_list->As<CommandListBase>();
-    command_list.Open();
     for (uint32_t i = 0; i < frame_count; ++i)
     {
         std::shared_ptr<VKResource> res = std::make_shared<VKResource>(m_device);

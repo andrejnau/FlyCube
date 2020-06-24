@@ -24,7 +24,7 @@ public:
         return m_command_list;
     }
 
-    void Open();
+    void Reset();
     void Close();
 
     void EndRenderPass()

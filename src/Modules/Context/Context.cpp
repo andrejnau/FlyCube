@@ -69,7 +69,7 @@ void Context::Present()
 
     m_swapchain_command_list = m_swapchain_command_lists[m_frame_index];
     m_fence->Wait(m_swapchain_fence_values[m_frame_index]);
-    m_swapchain_command_list->Open();
+    m_swapchain_command_list->Reset();
     m_swapchain_command_list->As<CommandListBase>().ResourceBarrierManual({ barrier });
     m_swapchain_command_list->Close();
 

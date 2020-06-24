@@ -31,7 +31,8 @@ void DeviceBase::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandLi
                 for (uint32_t j = 0; j < barrier.layer_count; ++j)
                 {
                     barrier.state_before = global_state_tracker.GetSubresourceState(barrier.base_mip_level + i, barrier.base_array_layer + j);
-                    new_barriers.emplace_back(barrier);
+                    if (barrier.state_before != barrier.state_after)
+                        new_barriers.emplace_back(barrier);
                 }
             }
         }
@@ -46,6 +47,7 @@ void DeviceBase::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandLi
                 {
                     m_fence->Wait(desc.first);
                     tmp_cmd = m_command_list_pool[desc.second];
+                    tmp_cmd->Reset();
                     m_fence_value_by_cmd.pop_front();
                     m_fence_value_by_cmd.emplace_back(m_fence_value + 1, desc.second);
                 }
@@ -57,7 +59,6 @@ void DeviceBase::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandLi
             }
 
             auto& tmp_cmd_base = tmp_cmd->As<CommandListBase>();
-            tmp_cmd_base.Open();
             tmp_cmd_base.ResourceBarrierManual(new_barriers);
             tmp_cmd_base.Close();
             ++patch_cmds;

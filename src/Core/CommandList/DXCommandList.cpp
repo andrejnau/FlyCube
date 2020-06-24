@@ -23,17 +23,19 @@ DXCommandList::DXCommandList(DXDevice& device)
 
     ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_command_allocator)));
     ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_command_allocator.Get(), nullptr, IID_PPV_ARGS(&m_command_list)));
-    m_command_list->Close();
 
     m_command_list.As(&m_command_list4);
     m_command_list.As(&m_command_list5);
 }
 
-void DXCommandList::Open()
+void DXCommandList::Reset()
 {
-    OnOpen();
+    if (!m_closed)
+        Close();
+    OnReset();
     ASSERT_SUCCEEDED(m_command_allocator->Reset());
     ASSERT_SUCCEEDED(m_command_list->Reset(m_command_allocator.Get(), nullptr));
+    m_closed = false;
     m_heaps.clear();
     m_state.reset();
     m_binding_set.reset();
@@ -43,6 +45,7 @@ void DXCommandList::Open()
 void DXCommandList::Close()
 {
     m_command_list->Close();
+    m_closed = true;
 }
 
 void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)

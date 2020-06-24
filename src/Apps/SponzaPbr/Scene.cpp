@@ -9,7 +9,7 @@ Scene::Scene(const Settings& settings, GLFWwindow* window, int width, int height
     , m_device(*m_context.GetDevice())
     , m_width(width)
     , m_height(height)
-    , m_upload_command_list(m_context.CreateCommandList(true))
+    , m_upload_command_list(m_context.CreateCommandList())
     , m_model_square(m_device, *m_upload_command_list, "model/square.obj")
     , m_model_cube(m_device, *m_upload_command_list, "model/cube.obj", ~aiProcess_FlipWindingOrder)
     , m_skinning_pass(m_device, { m_scene_list })
@@ -164,7 +164,7 @@ void Scene::RenderFrame()
         decltype(auto) command_list = m_command_lists[m_command_list_index];
         m_command_list_index = (m_command_list_index + 1) % m_command_lists.size();
         m_context.GetFence()->Wait(command_list->fence_value);
-        command_list->Open();
+        command_list->Reset();
         command_list->BeginEvent(desc.name);
         desc.pass.get().OnRender(*command_list);
         command_list->EndEvent();

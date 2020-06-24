@@ -72,17 +72,16 @@ for (uint32_t i = 0; i < frame_count; ++i)
     framebuffers.emplace_back(device->CreateFramebuffer(render_pass, rect.width, rect.height, { back_buffer_view }));
     command_lists.emplace_back(device->CreateCommandList());
     std::shared_ptr<CommandList> command_list = command_lists[i];
-    command_list->Open();
     command_list->BindPipeline(pipeline);
     command_list->BindBindingSet(binding_set);
     command_list->SetViewport(rect.width, rect.height);
     command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
     command_list->IASetVertexBuffer(0, vertex_buffer);
-    command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget} });
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget } });
     command_list->BeginRenderPass(render_pass, framebuffers.back(), { { 0.0, 0.2, 0.4, 1.0 } });
     command_list->DrawIndexed(3, 0, 0);
     command_list->EndRenderPass();
-    command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent} });
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent } });
     command_list->Close();
 }
 
@@ -134,7 +133,6 @@ AppRect rect = app.GetAppRect();
 ProgramHolder<PixelShaderPS, VertexShaderVS> program(device);
 
 std::shared_ptr<CommandListBox> upload_command_list = context.CreateCommandList();
-upload_command_list->Open();
 std::vector<uint32_t> ibuf = { 0, 1, 2 };
 std::shared_ptr<Resource> index = device.CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * ibuf.size());
 upload_command_list->UpdateSubresource(index, 0, ibuf.data(), 0, 0);
@@ -154,7 +152,6 @@ std::vector<std::shared_ptr<CommandListBox>> command_lists;
 for (uint32_t i = 0; i < Context::FrameCount; ++i)
 {
     decltype(auto) command_list = context.CreateCommandList();
-    command_list->Open();
     command_list->UseProgram(program);
     command_list->Attach(program.ps.cbv.Settings, program.ps.cbuffer.Settings);
     command_list->SetViewport(rect.width, rect.height);
