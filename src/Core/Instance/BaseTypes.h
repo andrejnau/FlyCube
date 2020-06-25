@@ -384,10 +384,20 @@ struct BufferDesc
     uint32_t offset = 0;
 };
 
+enum class RaytracingInstanceFlags : uint32_t
+{
+    kNone = 0x0,
+    kTriangleCullDisable = 0x1,
+    kTriangleFrontCounterclockwise = 0x2,
+    kForceOpaque = 0x4,
+    kForceNonOpaque = 0x8
+};
+
 enum class RaytracingGeometryFlags
 {
     kNone,
-    kOpaque
+    kOpaque,
+    kNoDuplicateAnyHitInvocation
 };
 
 struct RaytracingGeometryDesc
@@ -451,7 +461,7 @@ struct RaytracingGeometryInstance
     uint32_t instance_id : 24;
     uint32_t instance_mask : 8;
     uint32_t instance_offset : 24;
-    uint32_t flags : 8;
+    RaytracingInstanceFlags flags : 8;
     uint64_t acceleration_structure_handle;
 };
 

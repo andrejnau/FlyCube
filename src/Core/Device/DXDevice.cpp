@@ -368,6 +368,9 @@ D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vert
     case RaytracingGeometryFlags::kOpaque:
         geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
         break;
+    case RaytracingGeometryFlags::kNoDuplicateAnyHitInvocation:
+        geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
+        break;
     }
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;

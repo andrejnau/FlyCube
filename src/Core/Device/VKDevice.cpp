@@ -401,6 +401,9 @@ vk::GeometryNV FillRaytracingGeometryDesc(const BufferDesc& vertex, const Buffer
     case RaytracingGeometryFlags::kOpaque:
         geometry_desc.flags = vk::GeometryFlagBitsKHR::eOpaque;
         break;
+    case RaytracingGeometryFlags::kNoDuplicateAnyHitInvocation:
+        geometry_desc.flags = vk::GeometryFlagBitsKHR::eNoDuplicateAnyHitInvocation;
+        break;
     }
 
     auto vk_vertex_res = std::static_pointer_cast<VKResource>(vertex.res);
