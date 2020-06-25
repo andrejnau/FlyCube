@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     upload_command_list->UpdateSubresource(positions, 0, positions_data.data(), 0, 0);
     std::shared_ptr<Resource> bottom = upload_command_list->CreateBottomLevelAS({ positions, gli::format::FORMAT_RGB32_SFLOAT_PACK32, 3 });
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> geometry = {
-        { bottom, glm::mat4() },
+        { bottom, glm::mat4(1.0) },
     };
     std::shared_ptr<Resource> top = upload_command_list->CreateTopLevelAS(geometry);
     std::shared_ptr<Resource> uav = device.CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kShaderResource | BindFlag::kCopySource,
