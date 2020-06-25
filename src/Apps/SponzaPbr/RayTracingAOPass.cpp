@@ -77,6 +77,11 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
         {
             for (auto& range : model.ia.ranges)
             {
+                auto& material = model.GetMaterial(range.id);
+                RaytracingGeometryFlags flags = RaytracingGeometryFlags::kOpaque;
+                if (material.texture.opacity->GetWidth() != 1 || material.texture.opacity->GetHeight() != 1)
+                    flags = RaytracingGeometryFlags::kNone;
+
                 size_t cur_id = id++;
                 if (!force_rebuild && !model.ia.positions.IsDynamic())
                     continue;
@@ -103,7 +108,7 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
 
                 if (m_bottom[cur_id])
                     command_list.ReleaseRequest(m_bottom[cur_id]);
-                m_bottom[cur_id] = command_list.CreateBottomLevelAS(vertex, index);
+                m_bottom[cur_id] = command_list.CreateBottomLevelAS({ { vertex, index, flags } });
                 m_geometry[cur_id] = { m_bottom[cur_id], glm::transpose(model.matrix) };
                 ++node_updated;
             }

@@ -384,6 +384,19 @@ struct BufferDesc
     uint32_t offset = 0;
 };
 
+enum class RaytracingGeometryFlags
+{
+    kNone,
+    kOpaque
+};
+
+struct RaytracingGeometryDesc
+{
+    BufferDesc vertex;
+    BufferDesc index;
+    RaytracingGeometryFlags flags = RaytracingGeometryFlags::kNone;
+};
+
 enum class MemoryType
 {
     kDefault,

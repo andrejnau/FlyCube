@@ -25,7 +25,8 @@ int main(int argc, char *argv[])
     };
     std::shared_ptr<Resource> positions = device.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest, sizeof(glm::vec3) * positions_data.size());
     upload_command_list->UpdateSubresource(positions, 0, positions_data.data(), 0, 0);
-    std::shared_ptr<Resource> bottom = upload_command_list->CreateBottomLevelAS({ positions, gli::format::FORMAT_RGB32_SFLOAT_PACK32, 3 });
+    RaytracingGeometryDesc raytracing_geometry_desc = { { positions, gli::format::FORMAT_RGB32_SFLOAT_PACK32, 3 }, {}, RaytracingGeometryFlags::kOpaque };
+    std::shared_ptr<Resource> bottom = upload_command_list->CreateBottomLevelAS({ raytracing_geometry_desc });
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> geometry = {
         { bottom, glm::mat4(1.0) },
     };

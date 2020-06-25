@@ -461,14 +461,17 @@ void VKCommandList::BuildAccelerationStructure(const vk::AccelerationStructureIn
     m_command_list->pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, 1, &memory_barrier, 0, 0, 0, 0);
 }
 
-void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch, const BufferDesc& vertex, const BufferDesc& index)
+void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch, const std::vector<RaytracingGeometryDesc>& descs)
 {
-    vk::GeometryNV geometry_desc = FillRaytracingGeometryDesc(vertex, index);
+    std::vector<vk::GeometryNV> geometry_descs;
+    for (const auto& desc : descs)
+    {
+        geometry_descs.emplace_back(FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags));
+    }
     vk::AccelerationStructureInfoNV build_info = {};
     build_info.type = vk::AccelerationStructureTypeNV::eBottomLevel;
-    build_info.instanceCount = 0;
-    build_info.geometryCount = 1;
-    build_info.pGeometries = &geometry_desc;
+    build_info.geometryCount = geometry_descs.size();
+    build_info.pGeometries = geometry_descs.data();
     BuildAccelerationStructure(build_info, {}, result, scratch);
 }
 

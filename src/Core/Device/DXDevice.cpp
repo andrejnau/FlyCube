@@ -355,7 +355,7 @@ std::shared_ptr<Pipeline> DXDevice::CreateRayTracingPipeline(const RayTracingPip
     return std::make_shared<DXRayTracingPipeline>(*this, desc);
 }
 
-D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index)
+D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags)
 {
     D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
 
@@ -363,8 +363,12 @@ D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vert
     auto index_res = std::static_pointer_cast<DXResource>(index.res);
 
     geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-    geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
-    ASSERT(!!vertex_res);
+    switch (flags)
+    {
+    case RaytracingGeometryFlags::kOpaque:
+        geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+        break;
+    }
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
     geometry_desc.Triangles.VertexBuffer.StartAddress = vertex_res->resource->GetGPUVirtualAddress() + vertex.offset * vertex_stride;
@@ -392,14 +396,18 @@ std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(const D3D12_BUIL
     return res;
 }
 
-std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
+std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs)
 {
-    D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = FillRaytracingGeometryDesc(vertex, index);
+    std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometry_descs;
+    for (const auto& desc : descs)
+    {
+        geometry_descs.emplace_back(FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags));
+    }
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-    inputs.NumDescs = 1;
-    inputs.pGeometryDescs = &geometry_desc;
+    inputs.NumDescs = geometry_descs.size();
+    inputs.pGeometryDescs = geometry_descs.data();
     return CreateAccelerationStructure(inputs);
 }
 

@@ -392,15 +392,21 @@ std::shared_ptr<Pipeline> VKDevice::CreateRayTracingPipeline(const RayTracingPip
     return std::make_shared<VKRayTracingPipeline>(*this, desc);
 }
 
-vk::GeometryNV FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index)
+vk::GeometryNV FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags)
 {
     vk::GeometryNV geometry_desc = {};
+    geometry_desc.geometryType = vk::GeometryTypeNV::eTriangles;
+    switch (flags)
+    {
+    case RaytracingGeometryFlags::kOpaque:
+        geometry_desc.flags = vk::GeometryFlagBitsKHR::eOpaque;
+        break;
+    }
 
     auto vk_vertex_res = std::static_pointer_cast<VKResource>(vertex.res);
     auto vk_index_res = std::static_pointer_cast<VKResource>(index.res);
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
-    geometry_desc.geometryType = vk::GeometryTypeNV::eTriangles;
     geometry_desc.geometry.triangles.vertexData = vk_vertex_res->buffer.res.get();
     geometry_desc.geometry.triangles.vertexOffset = vertex.offset * vertex_stride;
     geometry_desc.geometry.triangles.vertexCount = vertex.count;
@@ -458,14 +464,17 @@ std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const vk::Accele
     return res;
 }
 
-std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
+std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs)
 {
-    vk::GeometryNV geometry_desc = FillRaytracingGeometryDesc(vertex, index);
+    std::vector<vk::GeometryNV> geometry_descs;
+    for (const auto& desc : descs)
+    {
+        geometry_descs.emplace_back(FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags));
+    }
     vk::AccelerationStructureInfoNV acceleration_structure_info = {};
     acceleration_structure_info.type = vk::AccelerationStructureTypeNV::eBottomLevel;
-    acceleration_structure_info.instanceCount = 0;
-    acceleration_structure_info.geometryCount = 1;
-    acceleration_structure_info.pGeometries = &geometry_desc;
+    acceleration_structure_info.geometryCount = geometry_descs.size();
+    acceleration_structure_info.pGeometries = geometry_descs.data();
     return CreateAccelerationStructure(acceleration_structure_info);
 }
 

@@ -395,14 +395,18 @@ void DXCommandList::BuildAccelerationStructure(const D3D12_BUILD_RAYTRACING_ACCE
     m_command_list4->ResourceBarrier(1, &uav_barrier);
 }
 
-void DXCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch, const BufferDesc& vertex, const BufferDesc& index)
+void DXCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch, const std::vector<RaytracingGeometryDesc>& descs)
 {
-    D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = FillRaytracingGeometryDesc(vertex, index);
+    std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometry_descs;
+    for (const auto& desc : descs)
+    {
+        geometry_descs.emplace_back(FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags));
+    }
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-    inputs.NumDescs = 1;
-    inputs.pGeometryDescs = &geometry_desc;
+    inputs.NumDescs = geometry_descs.size();
+    inputs.pGeometryDescs = geometry_descs.data();
     BuildAccelerationStructure(inputs, result, scratch);
 }
 

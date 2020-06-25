@@ -193,25 +193,26 @@ void CommandListBox::ImageBarrier(const std::shared_ptr<Resource>& resource, uin
     m_command_list->ResourceBarrier({ barrier });
 }
 
-std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const BufferDesc& vertex, const BufferDesc& index)
+std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs)
 {
     if (m_is_open_render_pass)
     {
         m_command_list->EndRenderPass();
         m_is_open_render_pass = false;
     }
-    if (vertex.res)
-        BufferBarrier(vertex.res, ResourceState::kNonPixelShaderResource);
-    if (index.res)
-        BufferBarrier(index.res, ResourceState::kNonPixelShaderResource);
 
-    auto res = m_device.CreateBottomLevelAS(vertex, index);
+    for (const auto& desc : descs)
+    {
+        if (desc.vertex.res)
+            BufferBarrier(desc.vertex.res, ResourceState::kNonPixelShaderResource);
+        if (desc.index.res)
+            BufferBarrier(desc.index.res, ResourceState::kNonPixelShaderResource);
+    }
 
+    auto res = m_device.CreateBottomLevelAS(descs);
     RaytracingASPrebuildInfo prebuild_info = res->GetRaytracingASPrebuildInfo();
     auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, prebuild_info.build_scratch_data_size, MemoryType::kDefault);
-
-    m_command_list->BuildBottomLevelAS(res, scratch, vertex, index);
-
+    m_command_list->BuildBottomLevelAS(res, scratch, descs);
     m_cmd_resources.emplace_back(scratch);
 
     return res;
