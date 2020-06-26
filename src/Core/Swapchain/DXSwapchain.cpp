@@ -28,8 +28,6 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
     ASSERT_SUCCEEDED(instance.GetFactory()->MakeWindowAssociation(glfwGetWin32Window(window), DXGI_MWA_NO_WINDOW_CHANGES));
     tmp_swap_chain.As(&m_swap_chain);
 
-    ViewDesc view_desc = {};
-    view_desc.view_type = ViewType::kRenderTarget;
     for (size_t i = 0; i < frame_count; ++i)
     {
         std::shared_ptr<DXResource> res = std::make_shared<DXResource>(m_device);
@@ -39,8 +37,7 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
         res->GetGlobalResourceStateTracker().SetResourceState(ResourceState::kPresent);
         res->resource = back_buffer;
         res->desc = back_buffer->GetDesc();
-        m_back_buffer_resources.emplace_back(res);
-        m_back_buffer_views.emplace_back(m_device.CreateView(m_back_buffer_resources.back(), view_desc));
+        m_back_buffers.emplace_back(res);
     }
 }
 
@@ -51,12 +48,7 @@ gli::format DXSwapchain::GetFormat() const
 
 std::shared_ptr<Resource> DXSwapchain::GetBackBuffer(uint32_t buffer)
 {
-    return m_back_buffer_resources[buffer];
-}
-
-std::shared_ptr<View> DXSwapchain::GetBackBufferView(uint32_t buffer)
-{
-    return m_back_buffer_views[buffer];
+    return m_back_buffers[buffer];
 }
 
 uint32_t DXSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
