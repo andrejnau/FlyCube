@@ -89,17 +89,7 @@ std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& 
     options.SetHlslIoMapping(option.hlsl_iomap);
     options.SetHlslFunctionality1(option.fhlsl_functionality1);
     options.SetOptimizationLevel(shaderc_optimization_level_performance);
-    switch (shader.type)
-    {
-    case ShaderType::kVertex:
-    case ShaderType::kGeometry:
-        options.SetInvertY(option.invert_y);
-        break;
-    }
-    if (option.vulkan_semantics)
-        options.SetTargetEnvironment(shaderc_target_env_vulkan, 0);
-    else
-        options.SetTargetEnvironment(shaderc_target_env_opengl, 0);
+    options.SetTargetEnvironment(shaderc_target_env_vulkan, 0);
 
     shaderc::Compiler compiler;
     std::string source = ReadShaderFile(GetAssetFullPath(shader.shader_path));
