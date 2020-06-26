@@ -50,11 +50,7 @@ int main(int argc, char* argv[])
     std::vector<std::shared_ptr<Framebuffer>> framebuffers;
     for (uint32_t i = 0; i < frame_count; ++i)
     {
-        std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
-        ViewDesc back_buffer_view_desc = {};
-        back_buffer_view_desc.view_type = ViewType::kRenderTarget;
-        std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
-        framebuffers.emplace_back(device->CreateFramebuffer(render_pass, rect.width, rect.height, { back_buffer_view }));
+        framebuffers.emplace_back(device->CreateFramebuffer(render_pass, rect.width, rect.height, { swapchain->GetBackBufferView(i) }));
         command_lists.emplace_back(device->CreateCommandList());
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->BindPipeline(pipeline);
@@ -62,11 +58,11 @@ int main(int argc, char* argv[])
         command_list->SetViewport(rect.width, rect.height);
         command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, vertex_buffer);
-        command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget } });
+        command_list->ResourceBarrier({ { swapchain->GetBackBuffer(i), ResourceState::kRenderTarget } });
         command_list->BeginRenderPass(render_pass, framebuffers.back(), { { 0.0, 0.2, 0.4, 1.0 } });
         command_list->DrawIndexed(3, 0, 0);
         command_list->EndRenderPass();
-        command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent } });
+        command_list->ResourceBarrier({ { swapchain->GetBackBuffer(i), ResourceState::kPresent } });
         command_list->Close();
     }
 

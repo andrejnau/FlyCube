@@ -72,6 +72,9 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
 
     m_command_list = m_device.CreateCommandList();
     auto& command_list = m_command_list->As<CommandListBase>();
+
+    ViewDesc view_desc = {};
+    view_desc.view_type = ViewType::kRenderTarget;
     for (uint32_t i = 0; i < frame_count; ++i)
     {
         std::shared_ptr<VKResource> res = std::make_shared<VKResource>(m_device);
@@ -82,7 +85,8 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
         res->resource_type = ResourceType::kTexture;
         command_list.ResourceBarrierManual({ { res, ResourceState::kUndefined, ResourceState::kPresent } });
         res->GetGlobalResourceStateTracker().SetResourceState(ResourceState::kPresent);
-        m_back_buffers.emplace_back(res);
+        m_back_buffer_resources.emplace_back(res);
+        m_back_buffer_views.emplace_back(m_device.CreateView(m_back_buffer_resources.back(), view_desc));
     }
     command_list.Close();
 
@@ -106,7 +110,12 @@ gli::format VKSwapchain::GetFormat() const
 
 std::shared_ptr<Resource> VKSwapchain::GetBackBuffer(uint32_t buffer)
 {
-    return m_back_buffers[buffer];
+    return m_back_buffer_resources[buffer];
+}
+
+std::shared_ptr<View> VKSwapchain::GetBackBufferView(uint32_t buffer)
+{
+    return m_back_buffer_views[buffer];
 }
 
 uint32_t VKSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
