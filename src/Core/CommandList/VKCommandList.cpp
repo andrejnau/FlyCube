@@ -382,8 +382,10 @@ void VKCommandList::ResourceBarrierManual(const std::vector<ResourceBarrierManua
 void VKCommandList::SetViewport(float width, float height, bool set_scissor)
 {
     vk::Viewport viewport = {};
+    viewport.x = 0;
+    viewport.y = height;
     viewport.width = width;
-    viewport.height = height;
+    viewport.height = -height;
     viewport.minDepth = 0;
     viewport.maxDepth = 1.0;
     m_command_list->setViewport(0, 1, &viewport);

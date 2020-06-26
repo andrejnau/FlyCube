@@ -153,10 +153,6 @@ private:
     bool ApplyCallback()
     {
         auto& api = static_cast<ShaderHolder<T>&>(*this).GetApi();
-        if constexpr (contains<ShaderType::kGeometry, Args::type...>() && T::type == ShaderType::kVertex)
-        {
-            api.desc.define["__INTERNAL_DO_NOT_INVERT_Y__"] = "1";
-        }
         api.CompileShader(m_device);
         return true;
     }

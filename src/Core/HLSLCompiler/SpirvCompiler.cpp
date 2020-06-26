@@ -116,8 +116,7 @@ std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& 
 #else
 std::vector<uint32_t> SpirvCompile(const ShaderDesc& shader, const SpirvOption& option)
 {
-    DXOption dx_option = { true, option.invert_y };
-    auto blob = DXCompile(shader, dx_option);
+    auto blob = DXCompile(shader, { true });
     if (!blob)
         return {};
     auto blob_as_uint32 = reinterpret_cast<uint32_t*>(blob->GetBufferPointer());

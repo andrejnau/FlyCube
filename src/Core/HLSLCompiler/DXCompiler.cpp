@@ -134,9 +134,6 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
     if (option.spirv)
     {
         arguments.emplace_back(L"-spirv");
-        bool vs_or_gs = target.find(L"vs") != -1 || target.find(L"gs") != -1;
-        if (option.spirv_invert_y && vs_or_gs)
-            arguments.emplace_back(L"-fvk-invert-y");
         arguments.emplace_back(L"-fvk-use-dx-layout");
         arguments.emplace_back(L"-fspv-target-env=vulkan1.1");
         arguments.emplace_back(L"-fspv-extension=SPV_NV_ray_tracing");
