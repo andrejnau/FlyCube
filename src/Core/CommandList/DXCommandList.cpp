@@ -317,7 +317,7 @@ void DXCommandList::SetViewport(float width, float height, bool set_scissor)
 
 void DXCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)
 {
-    D3D12_RECT rect = { left, left, right, bottom };
+    D3D12_RECT rect = { left, top, right, bottom };
     m_command_list->RSSetScissorRects(1, &rect);
 }
 
