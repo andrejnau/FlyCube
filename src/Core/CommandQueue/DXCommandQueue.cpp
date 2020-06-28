@@ -56,6 +56,7 @@ void DXCommandQueue::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<C
         if (!command_list)
             continue;
         decltype(auto) dx_command_list = command_list->As<DXCommandList>();
+        dx_command_list.ForceClose();
         dx_command_lists.emplace_back(dx_command_list.GetCommandList().Get());
     }
     if (!dx_command_lists.empty())

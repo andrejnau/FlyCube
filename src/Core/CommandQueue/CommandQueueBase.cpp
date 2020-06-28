@@ -49,29 +49,36 @@ void CommandQueueBase::ExecuteCommandLists(const std::vector<std::shared_ptr<Com
         if (!new_barriers.empty())
         {
             std::shared_ptr<CommandList> tmp_cmd;
-            if (!m_fence_value_by_cmd.empty())
+            if (c != 0 && kUseFakeClose)
             {
-                auto& desc = m_fence_value_by_cmd.front();
-                if (m_fence->GetCompletedValue() >= desc.first)
-                {
-                    m_fence->Wait(desc.first);
-                    tmp_cmd = m_command_list_pool[desc.second];
-                    tmp_cmd->Reset();
-                    m_fence_value_by_cmd.pop_front();
-                    m_fence_value_by_cmd.emplace_back(m_fence_value + 1, desc.second);
-                }
+                tmp_cmd = command_lists[c - 1];
             }
-            if (!tmp_cmd)
+            else
             {
-                tmp_cmd = m_command_list_pool.emplace_back(m_device.CreateCommandList(m_type));
-                m_fence_value_by_cmd.emplace_back(m_fence_value + 1, m_command_list_pool.size() - 1);
+                if (!m_fence_value_by_cmd.empty())
+                {
+                    auto& desc = m_fence_value_by_cmd.front();
+                    if (m_fence->GetCompletedValue() >= desc.first)
+                    {
+                        m_fence->Wait(desc.first);
+                        tmp_cmd = m_command_list_pool[desc.second];
+                        tmp_cmd->Reset();
+                        m_fence_value_by_cmd.pop_front();
+                        m_fence_value_by_cmd.emplace_back(m_fence_value + 1, desc.second);
+                    }
+                }
+                if (!tmp_cmd)
+                {
+                    tmp_cmd = m_command_list_pool.emplace_back(m_device.CreateCommandList(m_type));
+                    m_fence_value_by_cmd.emplace_back(m_fence_value + 1, m_command_list_pool.size() - 1);
+                }
+                raw_command_lists.emplace_back(tmp_cmd);
             }
 
             auto& tmp_cmd_base = tmp_cmd->As<CommandListBase>();
             tmp_cmd_base.ResourceBarrierManual(new_barriers);
             tmp_cmd_base.Close();
             ++patch_cmds;
-            raw_command_lists.emplace_back(tmp_cmd);
         }
 
         auto& state_trackers = command_list_base.GetResourceStateTrackers();

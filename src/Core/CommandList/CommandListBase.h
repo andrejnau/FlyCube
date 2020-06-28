@@ -12,6 +12,8 @@ struct ResourceBarrierManualDesc
     uint32_t layer_count = 1;
 };
 
+constexpr bool kUseFakeClose = true;
+
 class CommandListBase : public CommandList
 {
 public:

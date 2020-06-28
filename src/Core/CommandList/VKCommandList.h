@@ -39,6 +39,7 @@ public:
                      const std::vector<TextureCopyRegion>& regions) override;
 
     vk::CommandBuffer GetCommandList();
+    void ForceClose();
 
 private:
     void BuildAccelerationStructure(const vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch);

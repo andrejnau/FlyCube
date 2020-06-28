@@ -30,8 +30,7 @@ void VKCommandList::Reset()
     OnReset();
     m_state.reset();
     m_binding_set.reset();
-    if (!m_closed)
-        Close();
+    ForceClose();
     vk::CommandBufferBeginInfo begin_info = {};
     begin_info.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
     m_command_list->begin(begin_info);
@@ -40,8 +39,17 @@ void VKCommandList::Reset()
 
 void VKCommandList::Close()
 {
-    m_command_list->end();
-    m_closed = true;
+    if (!kUseFakeClose)
+        ForceClose();
+}
+
+void VKCommandList::ForceClose()
+{
+    if (!m_closed)
+    {
+        m_command_list->end();
+        m_closed = true;
+    }
 }
 
 void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)

@@ -54,6 +54,7 @@ void VKCommandQueue::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<C
         if (!command_list)
             continue;
         decltype(auto) vk_command_list = command_list->As<VKCommandList>();
+        vk_command_list.ForceClose();
         vk_command_lists.emplace_back(vk_command_list.GetCommandList());
     }
 

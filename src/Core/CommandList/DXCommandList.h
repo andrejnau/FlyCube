@@ -43,6 +43,7 @@ public:
                      const std::vector<TextureCopyRegion>& regions) override;
 
     ComPtr<ID3D12GraphicsCommandList> GetCommandList();
+    void ForceClose();
 
 private:
     void BeginRenderPassImpl(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer,

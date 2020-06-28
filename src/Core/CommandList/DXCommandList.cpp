@@ -46,8 +46,7 @@ DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
 
 void DXCommandList::Reset()
 {
-    if (!m_closed)
-        Close();
+    ForceClose();
     OnReset();
     ASSERT_SUCCEEDED(m_command_allocator->Reset());
     ASSERT_SUCCEEDED(m_command_list->Reset(m_command_allocator.Get(), nullptr));
@@ -60,8 +59,17 @@ void DXCommandList::Reset()
 
 void DXCommandList::Close()
 {
-    m_command_list->Close();
-    m_closed = true;
+    if (!kUseFakeClose)
+        ForceClose();
+}
+
+void DXCommandList::ForceClose()
+{
+    if (!m_closed)
+    {
+        m_command_list->Close();
+        m_closed = true;
+    }
 }
 
 void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
