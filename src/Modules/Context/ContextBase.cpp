@@ -1,14 +1,8 @@
-#include "CommandQueue/CommandQueueBase.h"
-#include <CommandList/CommandListBase.h>
+#include "Context/ContextBase.h"
+#include <CommandListBox/CommandListBox.h>
 #include <Device/Device.h>
 
-CommandQueueBase::CommandQueueBase(Device& device, CommandListType type)
-    : m_device(device)
-    , m_type(type)
-{
-}
-
-void CommandQueueBase::OnDestroy()
+void ContextBase::OnDestroy()
 {
     if (m_fence)
     {
@@ -18,21 +12,21 @@ void CommandQueueBase::OnDestroy()
     m_command_list_pool.clear();
 }
 
-void CommandQueueBase::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
+void ContextBase::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandListBox>>& command_lists)
 {
     if (!m_fence)
-        m_fence = m_device.CreateFence(m_fence_value);
+        m_fence = m_device->CreateFence(m_fence_value);
 
     std::vector<std::shared_ptr<CommandList>> raw_command_lists;
     size_t patch_cmds = 0;
     for (size_t c = 0; c < command_lists.size(); ++c)
     {
-        std::vector<ResourceBarrierManualDesc> new_barriers;
-        auto& command_list_base = command_lists[c]->As<CommandListBase>();
+        std::vector<ResourceBarrierDesc> new_barriers;
+        auto& command_list_base = *command_lists[c];
         auto barriers = command_list_base.GetLazyBarriers();
         for (auto& barrier : barriers)
         {
-            if (c == 0 && AllowCommonStatePromotion(barrier.resource, barrier.state_after))
+            if (c == 0 && barrier.resource->AllowCommonStatePromotion(barrier.state_after))
                 continue;
             auto& global_state_tracker = barrier.resource->GetGlobalResourceStateTracker();
             for (uint32_t i = 0; i < barrier.level_count; ++i)
@@ -51,7 +45,7 @@ void CommandQueueBase::ExecuteCommandLists(const std::vector<std::shared_ptr<Com
             std::shared_ptr<CommandList> tmp_cmd;
             if (c != 0 && kUseFakeClose)
             {
-                tmp_cmd = command_lists[c - 1];
+                tmp_cmd = command_lists[c - 1]->GetCommandList();
             }
             else
             {
@@ -69,15 +63,15 @@ void CommandQueueBase::ExecuteCommandLists(const std::vector<std::shared_ptr<Com
                 }
                 if (!tmp_cmd)
                 {
-                    tmp_cmd = m_command_list_pool.emplace_back(m_device.CreateCommandList(m_type));
+                    tmp_cmd = m_command_list_pool.emplace_back(m_device->CreateCommandList(m_type));
                     m_fence_value_by_cmd.emplace_back(m_fence_value + 1, m_command_list_pool.size() - 1);
                 }
                 raw_command_lists.emplace_back(tmp_cmd);
             }
 
-            auto& tmp_cmd_base = tmp_cmd->As<CommandListBase>();
-            tmp_cmd_base.ResourceBarrierManual(new_barriers);
-            tmp_cmd_base.Close();
+            tmp_cmd->ResourceBarrier(new_barriers);
+            if (!kUseFakeClose)
+                tmp_cmd->Close();
             ++patch_cmds;
         }
 
@@ -98,9 +92,14 @@ void CommandQueueBase::ExecuteCommandLists(const std::vector<std::shared_ptr<Com
             }
         }
 
-        raw_command_lists.emplace_back(command_lists[c]);
+        raw_command_lists.emplace_back(command_lists[c]->GetCommandList());
     }
-    ExecuteCommandListsImpl(raw_command_lists);
+    if (kUseFakeClose)
+    {
+        for (auto& cmd : raw_command_lists)
+            cmd->Close();
+    }
+    m_command_queue->ExecuteCommandLists(raw_command_lists);
     if (patch_cmds)
-        Signal(m_fence, ++m_fence_value);
+        m_command_queue->Signal(m_fence, ++m_fence_value);
 }

@@ -67,3 +67,8 @@ void VKResource::Unmap()
 {
     m_device.GetDevice().unmapMemory(buffer.memory.get());
 }
+
+bool VKResource::AllowCommonStatePromotion(ResourceState state_after)
+{
+    return false;
+}

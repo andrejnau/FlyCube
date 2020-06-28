@@ -1,10 +1,12 @@
 list(APPEND headers
     Context.h
+    ContextBase.h
     BufferLayout.h
 )
 
 list(APPEND sources
     Context.cpp
+    ContextBase.cpp
     BufferLayout.cpp
 )
 

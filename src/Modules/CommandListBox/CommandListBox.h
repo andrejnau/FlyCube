@@ -1,4 +1,5 @@
 #pragma once
+#include "CommandListBox/CommandListBoxBase.h"
 #include <Instance/BaseTypes.h>
 #include <Instance/Instance.h>
 #include <AppBox/Settings.h>
@@ -14,7 +15,7 @@
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
 
-class CommandListBox
+class CommandListBox : public CommandListBoxBase
 {
 public:
     CommandListBox(Device& device);
@@ -72,7 +73,6 @@ private:
     void ApplyBindings();
 
     Device& m_device;
-    std::shared_ptr<CommandList> m_command_list;
     std::shared_ptr<Fence> m_fence;
     bool m_is_open_render_pass = false;
     uint32_t m_viewport_width = 0;

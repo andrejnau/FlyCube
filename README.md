@@ -5,8 +5,6 @@ This api is written in C++ on top of Directx 12 and Vulkan. Provides main featur
   * Ray Tracing
   * Bindless
   * Variable rate shading (DX12 only)
-  * Per command list resource state tracking
-    * Creating patch command list for sync with global resource state on execute
   * HLSL as shader language for all backends
     * Compilation in DXBC, DXIL, SPIRV
 
@@ -85,19 +83,16 @@ for (uint32_t i = 0; i < frame_count; ++i)
     framebuffers.emplace_back(device->CreateFramebuffer(render_pass, rect.width, rect.height, { back_buffer_view }));
     command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
     std::shared_ptr<CommandList> command_list = command_lists[i];
-    command_list->ResourceBarrier({ { index_buffer, ResourceState::kIndexBuffer } });
-    command_list->ResourceBarrier({ { vertex_buffer, ResourceState::kVertexAndConstantBuffer } });
-    command_list->ResourceBarrier({ { constant_buffer, ResourceState::kVertexAndConstantBuffer } });
     command_list->BindPipeline(pipeline);
     command_list->BindBindingSet(binding_set);
     command_list->SetViewport(rect.width, rect.height);
     command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
     command_list->IASetVertexBuffer(0, vertex_buffer);
-    command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget } });
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
     command_list->BeginRenderPass(render_pass, framebuffers.back(), { { 0.0, 0.2, 0.4, 1.0 } });
     command_list->DrawIndexed(3, 0, 0);
     command_list->EndRenderPass();
-    command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent } });
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });
     command_list->Close();
 }
 
@@ -120,6 +115,8 @@ A set of classes simplifying the writing of complex scenes.
 
 * High-level api features
   * Automatic resource state tracking
+    * Per command list resource state tracking
+    * Creating patch command list for sync with global resource state on execute
   * Generated shader helper by shader reflection
     * Easy to use resources binding
     * Constant buffers proxy for compile time access to members

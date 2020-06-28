@@ -1,10 +1,5 @@
 list(APPEND headers
     CommandQueue.h
-    CommandQueueBase.h
-)
-
-list(APPEND sources
-    CommandQueueBase.cpp
 )
 
 if (VULKAN_SUPPORT)

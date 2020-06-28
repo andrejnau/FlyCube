@@ -1,18 +1,16 @@
 #pragma once
-#include "CommandQueue/CommandQueueBase.h"
+#include "CommandQueue/CommandQueue.h"
 #include <Utilities/Vulkan.h>
 
 class VKDevice;
 
-class VKCommandQueue : public CommandQueueBase
+class VKCommandQueue : public CommandQueue
 {
 public:
     VKCommandQueue(VKDevice& device, CommandListType type, uint32_t queue_family_index);
-    ~VKCommandQueue();
     void Wait(const std::shared_ptr<Fence>& fence, uint64_t value) override;
     void Signal(const std::shared_ptr<Fence>& fence, uint64_t value) override;
-    void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
-    bool AllowCommonStatePromotion(const std::shared_ptr<Resource>& resource, ResourceState state_after) override;
+    void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
 
     VKDevice& GetDevice();
     uint32_t GetQueueFamilyIndex();

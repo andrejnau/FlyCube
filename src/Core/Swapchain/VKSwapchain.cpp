@@ -7,7 +7,6 @@
 #include <Fence/VKTimelineSemaphore.h>
 #include <Utilities/VKUtility.h>
 #include <Resource/VKResource.h>
-#include <CommandList/CommandListBase.h>
 
 VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
     : m_command_queue(command_queue)
@@ -73,7 +72,6 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, GLFWwindow* window, uint
     std::vector<vk::Image> m_images = m_device.GetDevice().getSwapchainImagesKHR(m_swapchain.get());
 
     m_command_list = m_device.CreateCommandList(CommandListType::kGraphics);
-    auto& command_list = m_command_list->As<CommandListBase>();
     for (uint32_t i = 0; i < frame_count; ++i)
     {
         std::shared_ptr<VKResource> res = std::make_shared<VKResource>(m_device);
@@ -82,11 +80,11 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, GLFWwindow* window, uint
         res->image.format = m_swapchain_color_format;
         res->image.size = vk::Extent2D(1u * width, 1u * height);
         res->resource_type = ResourceType::kTexture;
-        command_list.ResourceBarrierManual({ { res, ResourceState::kUndefined, ResourceState::kPresent } });
+        m_command_list->ResourceBarrier({ { res, ResourceState::kUndefined, ResourceState::kPresent } });
         res->GetGlobalResourceStateTracker().SetResourceState(ResourceState::kPresent);
         m_back_buffers.emplace_back(res);
     }
-    command_list.Close();
+    m_command_list->Close();
 
     vk::SemaphoreCreateInfo semaphore_create_info = {};
     m_image_available_semaphore = m_device.GetDevice().createSemaphoreUnique(semaphore_create_info);

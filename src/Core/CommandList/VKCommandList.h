@@ -1,10 +1,10 @@
 #pragma once
-#include "CommandList/CommandListBase.h"
+#include "CommandList/CommandList.h"
 #include <Utilities/Vulkan.h>
 
 class VKDevice;
 
-class VKCommandList : public CommandListBase
+class VKCommandList : public CommandList
 {
 public:
     VKCommandList(VKDevice& device, CommandListType type);
@@ -22,7 +22,7 @@ public:
     void DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location) override;
     void Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z) override;
     void DispatchRays(uint32_t width, uint32_t height, uint32_t depth) override;
-    void ResourceBarrierManual(const std::vector<ResourceBarrierManualDesc>& barriers) override;
+    void ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers) override;
     void SetViewport(float width, float height, bool set_scissor) override;
     void SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom) override;
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) override;
@@ -39,7 +39,6 @@ public:
                      const std::vector<TextureCopyRegion>& regions) override;
 
     vk::CommandBuffer GetCommandList();
-    void ForceClose();
 
 private:
     void BuildAccelerationStructure(const vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch);

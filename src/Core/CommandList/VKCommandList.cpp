@@ -27,10 +27,9 @@ VKCommandList::VKCommandList(VKDevice& device, CommandListType type)
 
 void VKCommandList::Reset()
 {
-    OnReset();
+    Close();
     m_state.reset();
     m_binding_set.reset();
-    ForceClose();
     vk::CommandBufferBeginInfo begin_info = {};
     begin_info.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
     m_command_list->begin(begin_info);
@@ -38,12 +37,6 @@ void VKCommandList::Reset()
 }
 
 void VKCommandList::Close()
-{
-    if (!kUseFakeClose)
-        ForceClose();
-}
-
-void VKCommandList::ForceClose()
 {
     if (!m_closed)
     {
@@ -250,7 +243,7 @@ vk::ImageLayout ConvertSate(ResourceState state)
     }
 }
 
-void VKCommandList::ResourceBarrierManual(const std::vector<ResourceBarrierManualDesc>& barriers)
+void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
 {
     std::vector<vk::ImageMemoryBarrier> image_memory_barriers;
     for (const auto& barrier : barriers)

@@ -1,6 +1,5 @@
 #include "Context/Context.h"
 #include <Utilities/FormatHelper.h>
-#include <CommandList/CommandListBase.h>
 
 Context::Context(const Settings& settings, GLFWwindow* window)
     : m_window(window)
@@ -33,13 +32,11 @@ std::shared_ptr<Resource> Context::GetBackBuffer(uint32_t buffer)
 
 void Context::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandListBox>>& command_lists)
 {
-    std::vector<std::shared_ptr<CommandList>> raw_command_lists;
     for (auto& command_list : command_lists)
     {
         command_list->fence_value = m_fence_value + 1;
-        raw_command_lists.emplace_back(command_list->GetCommandList());
     }
-    m_command_queue->ExecuteCommandLists(raw_command_lists);
+    ExecuteCommandListsImpl(command_lists);
     m_command_queue->Signal(m_fence, ++m_fence_value);
 }
 
@@ -62,7 +59,7 @@ void Context::Present()
 {
     auto& back_buffer = GetBackBuffer(GetFrameIndex());
     auto& global_state_tracker = back_buffer->GetGlobalResourceStateTracker();
-    ResourceBarrierManualDesc barrier = {};
+    ResourceBarrierDesc barrier = {};
     barrier.resource = back_buffer;
     barrier.state_before = global_state_tracker.GetSubresourceState(0, 0);
     barrier.state_after = ResourceState::kPresent;
@@ -71,7 +68,7 @@ void Context::Present()
     m_swapchain_command_list = m_swapchain_command_lists[m_frame_index];
     m_fence->Wait(m_swapchain_fence_values[m_frame_index]);
     m_swapchain_command_list->Reset();
-    m_swapchain_command_list->As<CommandListBase>().ResourceBarrierManual({ barrier });
+    m_swapchain_command_list->ResourceBarrier({ barrier });
     m_swapchain_command_list->Close();
 
     m_swapchain->NextImage(m_fence, ++m_fence_value);

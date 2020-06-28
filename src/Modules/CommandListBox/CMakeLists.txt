@@ -1,9 +1,11 @@
 list(APPEND headers
     CommandListBox.h
+    CommandListBoxBase.h
 )
 
 list(APPEND sources
     CommandListBox.cpp
+    CommandListBoxBase.cpp
 )
 
 add_library(CommandListBox ${headers} ${sources})

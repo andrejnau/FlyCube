@@ -26,4 +26,5 @@ public:
     virtual void UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
                                    const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices) = 0;
     virtual ResourceStateTracker& GetGlobalResourceStateTracker() = 0;
+    virtual bool AllowCommonStatePromotion(ResourceState state_after) = 0;
 };

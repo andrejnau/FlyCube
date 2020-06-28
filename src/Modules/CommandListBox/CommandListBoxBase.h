@@ -1,11 +1,10 @@
 #pragma once
 #include "CommandList/CommandList.h"
 
-struct ResourceBarrierManualDesc
+struct LazyResourceBarrierDesc
 {
     std::shared_ptr<Resource> resource;
-    ResourceState state_before;
-    ResourceState state_after;
+    ResourceState state;
     uint32_t base_mip_level = 0;
     uint32_t level_count = 1;
     uint32_t base_array_layer = 0;
@@ -14,20 +13,21 @@ struct ResourceBarrierManualDesc
 
 constexpr bool kUseFakeClose = true;
 
-class CommandListBase : public CommandList
+class CommandListBoxBase
 {
 public:
-    virtual void ResourceBarrierManual(const std::vector<ResourceBarrierManualDesc>& barriers) = 0;
-    void ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers) override final;
+    void LazyResourceBarrier(const std::vector<LazyResourceBarrierDesc>& barriers);
     const std::map<std::shared_ptr<Resource>, ResourceStateTracker>& GetResourceStateTrackers() const;
-    const std::vector<ResourceBarrierManualDesc>& GetLazyBarriers() const;
+    const std::vector<ResourceBarrierDesc>& GetLazyBarriers() const;
 
 protected:
     void OnReset();
+
+    std::shared_ptr<CommandList> m_command_list;
 
 private:
     ResourceStateTracker& GetResourceStateTracker(const std::shared_ptr<Resource>& resource);
 
     std::map<std::shared_ptr<Resource>, ResourceStateTracker> m_resource_state_tracker;
-    std::vector<ResourceBarrierManualDesc> m_lazy_barriers;
+    std::vector<ResourceBarrierDesc> m_lazy_barriers;
 };

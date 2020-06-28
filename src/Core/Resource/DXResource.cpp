@@ -56,3 +56,33 @@ void DXResource::Unmap()
     CD3DX12_RANGE range(0, 0);
     resource->Unmap(0, &range);
 }
+
+bool DXResource::AllowCommonStatePromotion(ResourceState state_after)
+{
+    if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+        return true;
+    if (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS)
+    {
+        switch (ConvertSate(state_after))
+        {
+        case D3D12_RESOURCE_STATE_DEPTH_WRITE:
+            return false;
+        default:
+            return true;
+        }
+    }
+    else
+    {
+        switch (ConvertSate(state_after))
+        {
+        case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE:
+        case D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:
+        case D3D12_RESOURCE_STATE_COPY_DEST:
+        case D3D12_RESOURCE_STATE_COPY_SOURCE:
+            return true;
+        default:
+            return false;
+        }
+    }
+    return false;
+}

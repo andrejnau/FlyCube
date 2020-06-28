@@ -9,6 +9,7 @@ CommandListBox::CommandListBox(Device& device)
 
 void CommandListBox::Reset()
 {
+    OnReset();
     m_cmd_resources.clear();
     m_bound_resources.clear();
     m_bound_deferred_view.clear();
@@ -24,7 +25,8 @@ void CommandListBox::Close()
         m_command_list->EndRenderPass();
         m_is_open_render_pass = false;
     }
-    m_command_list->Close();
+    if (!kUseFakeClose)
+        m_command_list->Close();
 }
 
 void CommandListBox::CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture, const std::vector<TextureCopyRegion>& regions)
@@ -166,10 +168,10 @@ void CommandListBox::BufferBarrier(const std::shared_ptr<Resource>& resource, Re
 {
     if (!resource)
         return;
-    ResourceBarrierDesc barrier = {};
+    LazyResourceBarrierDesc barrier = {};
     barrier.resource = resource;
     barrier.state = state;
-    m_command_list->ResourceBarrier({ barrier });
+    LazyResourceBarrier({ barrier });
 }
 
 void CommandListBox::ViewBarrier(const std::shared_ptr<View>& view, ResourceState state)
@@ -183,14 +185,14 @@ void CommandListBox::ImageBarrier(const std::shared_ptr<Resource>& resource, uin
 {
     if (!resource)
         return;
-    ResourceBarrierDesc barrier = {};
+    LazyResourceBarrierDesc barrier = {};
     barrier.resource = resource;
     barrier.base_mip_level = base_mip_level;
     barrier.level_count = level_count;
     barrier.base_array_layer = base_array_layer;
     barrier.layer_count = layer_count;
     barrier.state = state;
-    m_command_list->ResourceBarrier({ barrier });
+    LazyResourceBarrier({ barrier });
 }
 
 std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs)

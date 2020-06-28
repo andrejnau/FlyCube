@@ -1,10 +1,5 @@
 list(APPEND headers
     CommandList.h
-    CommandListBase.h
-)
-
-list(APPEND sources
-    CommandListBase.cpp
 )
 
 if (VULKAN_SUPPORT)

@@ -19,6 +19,7 @@ public:
     void SetName(const std::string& name) override;
     uint8_t* Map() override;
     void Unmap() override;
+    bool AllowCommonStatePromotion(ResourceState state_after) override;
 
     ComPtr<ID3D12Resource> resource;
     D3D12_RESOURCE_DESC desc = {};

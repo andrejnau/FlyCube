@@ -4,16 +4,10 @@
 #include <Device/VKDevice.h>
 
 VKCommandQueue::VKCommandQueue(VKDevice& device, CommandListType type, uint32_t queue_family_index)
-    : CommandQueueBase(device, type)
-    , m_device(device)
+    : m_device(device)
     , m_queue_family_index(queue_family_index)
 {
     m_queue = m_device.GetDevice().getQueue(m_queue_family_index, 0);
-}
-
-VKCommandQueue::~VKCommandQueue()
-{
-    OnDestroy();
 }
 
 void VKCommandQueue::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
@@ -46,7 +40,7 @@ void VKCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
     m_queue.submit(1, &signal_submit_info, {});
 }
 
-void VKCommandQueue::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists)
+void VKCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
 {
     std::vector<vk::CommandBuffer> vk_command_lists;
     for (auto& command_list : command_lists)
@@ -54,7 +48,6 @@ void VKCommandQueue::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<C
         if (!command_list)
             continue;
         decltype(auto) vk_command_list = command_list->As<VKCommandList>();
-        vk_command_list.ForceClose();
         vk_command_lists.emplace_back(vk_command_list.GetCommandList());
     }
 
@@ -66,11 +59,6 @@ void VKCommandQueue::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<C
     submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
 
     m_queue.submit(1, &submit_info, {});
-}
-
-bool VKCommandQueue::AllowCommonStatePromotion(const std::shared_ptr<Resource>& resource, ResourceState state_after)
-{
-    return false;
 }
 
 VKDevice& VKCommandQueue::GetDevice()

@@ -46,24 +46,17 @@ DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
 
 void DXCommandList::Reset()
 {
-    ForceClose();
-    OnReset();
+    Close();
     ASSERT_SUCCEEDED(m_command_allocator->Reset());
     ASSERT_SUCCEEDED(m_command_list->Reset(m_command_allocator.Get(), nullptr));
-    m_closed = false;
     m_heaps.clear();
     m_state.reset();
     m_binding_set.reset();
     m_lazy_vertex.clear();
+    m_closed = false;
 }
 
 void DXCommandList::Close()
-{
-    if (!kUseFakeClose)
-        ForceClose();
-}
-
-void DXCommandList::ForceClose()
 {
     if (!m_closed)
     {
@@ -284,7 +277,7 @@ void DXCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth
     m_command_list4->DispatchRays(&raytrace_desc);
 }
 
-void DXCommandList::ResourceBarrierManual(const std::vector<ResourceBarrierManualDesc>& barriers)
+void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
 {
     std::vector<D3D12_RESOURCE_BARRIER> dx_barriers;
     for (const auto& barrier : barriers)
