@@ -25,13 +25,15 @@ void CommandQueueBase::ExecuteCommandLists(const std::vector<std::shared_ptr<Com
 
     std::vector<std::shared_ptr<CommandList>> raw_command_lists;
     size_t patch_cmds = 0;
-    for (auto& command_list : command_lists)
+    for (size_t c = 0; c < command_lists.size(); ++c)
     {
         std::vector<ResourceBarrierManualDesc> new_barriers;
-        auto& command_list_base = command_list->As<CommandListBase>();
+        auto& command_list_base = command_lists[c]->As<CommandListBase>();
         auto barriers = command_list_base.GetLazyBarriers();
         for (auto& barrier : barriers)
         {
+            if (c == 0 && AllowCommonStatePromotion(barrier.resource, barrier.state_after))
+                continue;
             auto& global_state_tracker = barrier.resource->GetGlobalResourceStateTracker();
             for (uint32_t i = 0; i < barrier.level_count; ++i)
             {
@@ -89,7 +91,7 @@ void CommandQueueBase::ExecuteCommandLists(const std::vector<std::shared_ptr<Com
             }
         }
 
-        raw_command_lists.emplace_back(command_list);
+        raw_command_lists.emplace_back(command_lists[c]);
     }
     ExecuteCommandListsImpl(raw_command_lists);
     if (patch_cmds)

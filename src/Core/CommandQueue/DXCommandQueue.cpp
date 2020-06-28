@@ -2,6 +2,7 @@
 #include <Device/DXDevice.h>
 #include <CommandList/DXCommandList.h>
 #include <Fence/DXFence.h>
+#include <Resource/DXResource.h>
 #include <Utilities/DXUtility.h>
 
 DXCommandQueue::DXCommandQueue(DXDevice& device, CommandListType type)
@@ -59,6 +60,37 @@ void DXCommandQueue::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<C
     }
     if (!dx_command_lists.empty())
         m_command_queue->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
+}
+
+bool DXCommandQueue::AllowCommonStatePromotion(const std::shared_ptr<Resource>& resource, ResourceState state_after)
+{
+    decltype(auto) dx_resource = resource->As<DXResource>();
+    if (dx_resource.desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+        return true;
+    if (dx_resource.desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS)
+    {
+        switch (ConvertSate(state_after))
+        {
+        case D3D12_RESOURCE_STATE_DEPTH_WRITE:
+            return false;
+        default:
+            return true;
+        }
+    }
+    else
+    {
+        switch (ConvertSate(state_after))
+        {
+        case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE:
+        case D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:
+        case D3D12_RESOURCE_STATE_COPY_DEST:
+        case D3D12_RESOURCE_STATE_COPY_SOURCE:
+            return true;
+        default:
+            return false;
+        }
+    }
+    return false;
 }
 
 DXDevice& DXCommandQueue::GetDevice()

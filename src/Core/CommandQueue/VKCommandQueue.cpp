@@ -67,6 +67,11 @@ void VKCommandQueue::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<C
     m_queue.submit(1, &submit_info, {});
 }
 
+bool VKCommandQueue::AllowCommonStatePromotion(const std::shared_ptr<Resource>& resource, ResourceState state_after)
+{
+    return false;
+}
+
 VKDevice& VKCommandQueue::GetDevice()
 {
     return m_device;

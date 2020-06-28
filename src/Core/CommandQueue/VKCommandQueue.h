@@ -12,6 +12,7 @@ public:
     void Wait(const std::shared_ptr<Fence>& fence, uint64_t value) override;
     void Signal(const std::shared_ptr<Fence>& fence, uint64_t value) override;
     void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
+    bool AllowCommonStatePromotion(const std::shared_ptr<Resource>& resource, ResourceState state_after) override;
 
     VKDevice& GetDevice();
     uint32_t GetQueueFamilyIndex();

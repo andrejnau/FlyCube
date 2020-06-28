@@ -11,6 +11,7 @@ public:
     CommandQueueBase(Device& device, CommandListType type);
     void OnDestroy();
     virtual void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists) = 0;
+    virtual bool AllowCommonStatePromotion(const std::shared_ptr<Resource>& resource, ResourceState state_after) = 0;
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists) final override;
 
 private:
