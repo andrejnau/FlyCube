@@ -73,6 +73,7 @@ private:
     std::shared_ptr<Instance> m_instance;
     std::shared_ptr<Adapter> m_adapter;
     std::shared_ptr<Device> m_device;
+    std::shared_ptr<CommandQueue> m_command_queue;
     std::shared_ptr<Swapchain> m_swapchain;
     std::vector<std::shared_ptr<CommandList>> m_swapchain_command_lists;
     std::vector<uint64_t> m_swapchain_fence_values;

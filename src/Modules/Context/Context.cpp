@@ -9,6 +9,7 @@ Context::Context(const Settings& settings, GLFWwindow* window)
     m_instance = CreateInstance(settings.api_type);
     m_adapter = std::move(m_instance->EnumerateAdapters()[settings.required_gpu_index]);
     m_device = m_adapter->CreateDevice();
+    m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
 
     glfwGetWindowSize(window, &m_width, &m_height);
     m_swapchain = m_device->CreateSwapchain(window, m_width, m_height, FrameCount, settings.vsync);
@@ -38,13 +39,13 @@ void Context::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandListB
         command_list->fence_value = m_fence_value + 1;
         raw_command_lists.emplace_back(command_list->GetCommandList());
     }
-    m_device->ExecuteCommandLists(raw_command_lists);
-    m_device->Signal(m_fence, ++m_fence_value);
+    m_command_queue->ExecuteCommandLists(raw_command_lists);
+    m_command_queue->Signal(m_fence, ++m_fence_value);
 }
 
 void Context::WaitIdle()
 {
-    m_device->Signal(m_fence, ++m_fence_value);
+    m_command_queue->Signal(m_fence, ++m_fence_value);
     m_fence->Wait(m_fence_value);
 }
 
@@ -74,9 +75,9 @@ void Context::Present()
     m_swapchain_command_list->Close();
 
     m_swapchain->NextImage(m_fence, ++m_fence_value);
-    m_device->Wait(m_fence, m_fence_value);
-    m_device->ExecuteCommandLists({ m_swapchain_command_list });
-    m_device->Signal(m_fence, ++m_fence_value);
+    m_command_queue->Wait(m_fence, m_fence_value);
+    m_command_queue->ExecuteCommandLists({ m_swapchain_command_list });
+    m_command_queue->Signal(m_fence, ++m_fence_value);
     m_swapchain_fence_values[m_frame_index] = m_fence_value;
     m_swapchain->Present(m_fence, m_fence_value);
 

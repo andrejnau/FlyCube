@@ -16,13 +16,29 @@
 #include <gli/dx.hpp>
 #include <pix.h>
 
-DXCommandList::DXCommandList(DXDevice& device)
+DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
     : m_device(device)
 {
     m_use_render_passes = m_use_render_passes && m_device.IsRenderPassesSupported();
 
-    ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_command_allocator)));
-    ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_command_allocator.Get(), nullptr, IID_PPV_ARGS(&m_command_list)));
+    D3D12_COMMAND_LIST_TYPE dx_type;
+    switch (type)
+    {
+    case CommandListType::kGraphics:
+        dx_type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+        break;
+    case CommandListType::kCompute:
+        dx_type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+        break;
+    case CommandListType::kCopy:
+        dx_type = D3D12_COMMAND_LIST_TYPE_COPY;
+        break;
+    default:
+        assert(false);
+        break;
+    }
+    ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandAllocator(dx_type, IID_PPV_ARGS(&m_command_allocator)));
+    ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandList(0, dx_type, m_command_allocator.Get(), nullptr, IID_PPV_ARGS(&m_command_list)));
 
     m_command_list.As(&m_command_list4);
     m_command_list.As(&m_command_list5);

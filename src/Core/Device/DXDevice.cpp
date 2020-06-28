@@ -11,6 +11,7 @@
 #include <Pipeline/DXRayTracingPipeline.h>
 #include <RenderPass/DXRenderPass.h>
 #include <Framebuffer/DXFramebuffer.h>
+#include <CommandQueue/DXCommandQueue.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
 #include <d3dx12.h>
@@ -86,8 +87,9 @@ DXDevice::DXDevice(DXAdapter& adapter)
         m_shading_rate_image_tile_size = feature_support6.ShadingRateImageTileSize;
     }
 
-    D3D12_COMMAND_QUEUE_DESC queue_desc = {};
-    ASSERT_SUCCEEDED(m_device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&m_command_queue)));
+    m_command_queues[CommandListType::kGraphics] = std::make_shared<DXCommandQueue>(*this, CommandListType::kGraphics);
+    m_command_queues[CommandListType::kCompute] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCompute);
+    m_command_queues[CommandListType::kCopy] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCopy);
 
     static const bool debug_enabled = IsDebuggerPresent();
     if (debug_enabled)
@@ -123,9 +125,9 @@ DXDevice::DXDevice(DXAdapter& adapter)
     }
 }
 
-DXDevice::~DXDevice()
+std::shared_ptr<CommandQueue> DXDevice::GetCommandQueue(CommandListType type)
 {
-    OnDestroy();
+    return m_command_queues.at(type);
 }
 
 uint32_t DXDevice::GetTextureDataPitchAlignment() const
@@ -135,12 +137,12 @@ uint32_t DXDevice::GetTextureDataPitchAlignment() const
 
 std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
 {
-    return std::make_shared<DXSwapchain>(*this, window, width, height, frame_count, vsync);
+    return std::make_shared<DXSwapchain>(*m_command_queues.at(CommandListType::kGraphics), window, width, height, frame_count, vsync);
 }
 
-std::shared_ptr<CommandList> DXDevice::CreateCommandList()
+std::shared_ptr<CommandList> DXDevice::CreateCommandList(CommandListType type)
 {
-    return std::make_shared<DXCommandList>(*this);
+    return std::make_shared<DXCommandList>(*this, type);
 }
 
 std::shared_ptr<Fence> DXDevice::CreateFence(uint64_t initial_value)
@@ -439,32 +441,6 @@ uint32_t DXDevice::GetShadingRateImageTileSize() const
     return m_shading_rate_image_tile_size;
 }
 
-void DXDevice::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
-{
-    decltype(auto) dx_fence = fence->As<DXFence>();
-    ASSERT_SUCCEEDED(m_command_queue->Wait(dx_fence.GetFence().Get(), value));
-}
-
-void DXDevice::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
-{
-    decltype(auto) dx_fence = fence->As<DXFence>();
-    ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), value));
-}
-
-void DXDevice::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists)
-{
-    std::vector<ID3D12CommandList*> dx_command_lists;
-    for (auto& command_list : command_lists)
-    {
-        if (!command_list)
-            continue;
-        decltype(auto) dx_command_list = command_list->As<DXCommandList>();
-        dx_command_lists.emplace_back(dx_command_list.GetCommandList().Get());
-    }
-    if (!dx_command_lists.empty())
-        m_command_queue->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
-}
-
 DXAdapter& DXDevice::GetAdapter()
 {
     return m_adapter;
@@ -473,11 +449,6 @@ DXAdapter& DXDevice::GetAdapter()
 ComPtr<ID3D12Device> DXDevice::GetDevice()
 {
     return m_device;
-}
-
-ComPtr<ID3D12CommandQueue> DXDevice::GetCommandQueue()
-{
-    return m_command_queue;
 }
 
 DXCPUDescriptorPool& DXDevice::GetCPUDescriptorPool()

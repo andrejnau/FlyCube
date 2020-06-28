@@ -1,7 +1,14 @@
-#include "Device/DeviceBase.h"
+#include "CommandQueue/CommandQueueBase.h"
 #include <CommandList/CommandListBase.h>
+#include <Device/Device.h>
 
-void DeviceBase::OnDestroy()
+CommandQueueBase::CommandQueueBase(Device& device, CommandListType type)
+    : m_device(device)
+    , m_type(type)
+{
+}
+
+void CommandQueueBase::OnDestroy()
 {
     if (m_fence)
     {
@@ -11,10 +18,10 @@ void DeviceBase::OnDestroy()
     m_command_list_pool.clear();
 }
 
-void DeviceBase::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
+void CommandQueueBase::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
 {
     if (!m_fence)
-        m_fence = CreateFence(m_fence_value);
+        m_fence = m_device.CreateFence(m_fence_value);
 
     std::vector<std::shared_ptr<CommandList>> raw_command_lists;
     size_t patch_cmds = 0;
@@ -54,7 +61,7 @@ void DeviceBase::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandLi
             }
             if (!tmp_cmd)
             {
-                tmp_cmd = m_command_list_pool.emplace_back(CreateCommandList());
+                tmp_cmd = m_command_list_pool.emplace_back(m_device.CreateCommandList(m_type));
                 m_fence_value_by_cmd.emplace_back(m_fence_value + 1, m_command_list_pool.size() - 1);
             }
 

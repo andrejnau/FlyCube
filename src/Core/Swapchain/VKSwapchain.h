@@ -6,6 +6,7 @@
 #include <vector>
 
 class VKDevice;
+class VKCommandQueue;
 class CommandList;
 class Fence;
 
@@ -13,7 +14,7 @@ class VKSwapchain
     : public Swapchain
 {
 public:
-    VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync);
+    VKSwapchain(VKCommandQueue& command_queue, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync);
     ~VKSwapchain();
     gli::format GetFormat() const override;
     std::shared_ptr<Resource> GetBackBuffer(uint32_t buffer) override;
@@ -21,6 +22,7 @@ public:
     void Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value) override;
 
 private:
+    VKCommandQueue& m_command_queue;
     VKDevice& m_device;
     vk::UniqueSurfaceKHR m_surface;
     vk::Format m_swapchain_color_format = vk::Format::eB8G8R8Unorm;

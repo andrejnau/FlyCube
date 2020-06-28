@@ -10,11 +10,11 @@
 #include <BindingSet/VKBindingSet.h>
 #include <Utilities/VKUtility.h>
 
-VKCommandList::VKCommandList(VKDevice& device)
+VKCommandList::VKCommandList(VKDevice& device, CommandListType type)
     : m_device(device)
 {
     vk::CommandBufferAllocateInfo cmd_buf_alloc_info = {};
-    cmd_buf_alloc_info.commandPool = device.GetCmdPool();
+    cmd_buf_alloc_info.commandPool = device.GetCmdPool(type);
     cmd_buf_alloc_info.commandBufferCount = 1;
     cmd_buf_alloc_info.level = vk::CommandBufferLevel::ePrimary;
     std::vector<vk::UniqueCommandBuffer> cmd_bufs = device.GetDevice().allocateCommandBuffersUnique(cmd_buf_alloc_info);

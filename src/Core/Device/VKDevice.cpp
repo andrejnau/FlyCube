@@ -1,6 +1,7 @@
 #include "Device/VKDevice.h"
 #include <Swapchain/VKSwapchain.h>
 #include <CommandList/VKCommandList.h>
+#include <CommandQueue/VKCommandQueue.h>
 #include <Instance/VKInstance.h>
 #include <Fence/VKTimelineSemaphore.h>
 #include <Program/VKProgram.h>
@@ -36,17 +37,30 @@ VKDevice::VKDevice(VKAdapter& adapter)
     , m_gpu_descriptor_pool(*this)
 {
     auto queue_families = m_physical_device.getQueueFamilyProperties();
-
+    auto has_all_bits = [](auto flags, auto bits)
+    {
+        return (flags & bits) == bits;
+    };
+    auto has_any_bits = [](auto flags, auto bits)
+    {
+        return flags & bits;
+    };
     for (size_t i = 0; i < queue_families.size(); ++i)
     {
         const auto& queue = queue_families[i];
-        if (queue.queueCount > 0 && queue.queueFlags & vk::QueueFlagBits::eGraphics && queue.queueFlags & vk::QueueFlagBits::eCompute)
+        if (queue.queueCount > 0 && has_all_bits(queue.queueFlags, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer))
         {
-            m_queue_family_index = static_cast<uint32_t>(i);
-            break;
+            m_per_queue_data[CommandListType::kGraphics].queue_family_index = i;
+        }
+        else if (queue.queueCount > 0 && has_all_bits(queue.queueFlags, vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer) && !has_any_bits(queue.queueFlags, vk::QueueFlagBits::eGraphics))
+        {
+            m_per_queue_data[CommandListType::kCompute].queue_family_index = i;
+        }
+        else if (queue.queueCount > 0 && has_all_bits(queue.queueFlags, vk::QueueFlagBits::eTransfer) && !has_any_bits(queue.queueFlags, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute))
+        {
+            m_per_queue_data[CommandListType::kCopy].queue_family_index = i;
         }
     }
-    ASSERT(m_queue_family_index != -1);
 
     auto extensions = m_physical_device.enumerateDeviceExtensionProperties();
     std::set<std::string> req_extension = {
@@ -84,10 +98,14 @@ VKDevice::VKDevice(VKAdapter& adapter)
     }
 
     const float queue_priority = 1.0f;
-    vk::DeviceQueueCreateInfo queue_create_info = {};
-    queue_create_info.queueFamilyIndex = m_queue_family_index;
-    queue_create_info.queueCount = 1;
-    queue_create_info.pQueuePriorities = &queue_priority;
+    std::vector<vk::DeviceQueueCreateInfo> queues_create_info;
+    for (const auto& queue_data : m_per_queue_data)
+    {
+        vk::DeviceQueueCreateInfo& queue_create_info = queues_create_info.emplace_back();
+        queue_create_info.queueFamilyIndex = queue_data.second.queue_family_index;
+        queue_create_info.queueCount = 1;
+        queue_create_info.pQueuePriorities = &queue_priority;
+    }
 
     vk::PhysicalDeviceFeatures device_features = {};
     device_features.textureCompressionBC = true;
@@ -123,8 +141,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
     vk::DeviceCreateInfo device_create_info = {};
     device_create_info.pNext = device_create_info_next;
-    device_create_info.queueCreateInfoCount = 1;
-    device_create_info.pQueueCreateInfos = &queue_create_info;
+    device_create_info.queueCreateInfoCount = queues_create_info.size();
+    device_create_info.pQueueCreateInfos = queues_create_info.data();
     device_create_info.pEnabledFeatures = &device_features;
     device_create_info.enabledExtensionCount = found_extension.size();
     device_create_info.ppEnabledExtensionNames = found_extension.data();
@@ -134,17 +152,19 @@ VKDevice::VKDevice(VKAdapter& adapter)
     if (!VULKAN_HPP_DEFAULT_DISPATCHER.vkDestroyAccelerationStructureKHR)
         VULKAN_HPP_DEFAULT_DISPATCHER.vkDestroyAccelerationStructureKHR = VULKAN_HPP_DEFAULT_DISPATCHER.vkDestroyAccelerationStructureNV;
 
-    m_queue = m_device->getQueue(m_queue_family_index, 0);
-
-    vk::CommandPoolCreateInfo cmd_pool_create_info = {};
-    cmd_pool_create_info.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-    cmd_pool_create_info.queueFamilyIndex = m_queue_family_index;
-    m_cmd_pool = m_device->createCommandPoolUnique(cmd_pool_create_info);
+    for (auto& queue_data : m_per_queue_data)
+    {
+        vk::CommandPoolCreateInfo cmd_pool_create_info = {};
+        cmd_pool_create_info.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+        cmd_pool_create_info.queueFamilyIndex = queue_data.second.queue_family_index;
+        queue_data.second.cmd_pool = m_device->createCommandPoolUnique(cmd_pool_create_info);
+        m_command_queues[queue_data.first] = std::make_shared<VKCommandQueue>(*this, queue_data.first, queue_data.second.queue_family_index);
+    }
 }
 
-VKDevice::~VKDevice()
+std::shared_ptr<CommandQueue> VKDevice::GetCommandQueue(CommandListType type)
 {
-    OnDestroy();
+    return m_command_queues.at(type);
 }
 
 uint32_t VKDevice::GetTextureDataPitchAlignment() const
@@ -154,12 +174,12 @@ uint32_t VKDevice::GetTextureDataPitchAlignment() const
 
 std::shared_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
 {
-    return std::make_shared<VKSwapchain>(*this, window, width, height, frame_count, vsync);
+    return std::make_shared<VKSwapchain>(*m_command_queues.at(CommandListType::kGraphics), window, width, height, frame_count, vsync);
 }
 
-std::shared_ptr<CommandList> VKDevice::CreateCommandList()
+std::shared_ptr<CommandList> VKDevice::CreateCommandList(CommandListType type)
 {
-    return std::make_shared<VKCommandList>(*this);
+    return std::make_shared<VKCommandList>(*this, type);
 }
 
 std::shared_ptr<Fence> VKDevice::CreateFence(uint64_t initial_value)
@@ -505,65 +525,9 @@ uint32_t VKDevice::GetShadingRateImageTileSize() const
     return m_shading_rate_image_tile_size;
 }
 
-void VKDevice::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
-{
-    decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
-    vk::TimelineSemaphoreSubmitInfo timeline_info = {};
-    timeline_info.waitSemaphoreValueCount = 1;
-    timeline_info.pWaitSemaphoreValues = &value;
-
-    vk::SubmitInfo signal_submit_info = {};
-    signal_submit_info.pNext = &timeline_info;
-    signal_submit_info.waitSemaphoreCount = 1;
-    signal_submit_info.pWaitSemaphores = &vk_fence.GetFence();
-    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
-    signal_submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
-    m_queue.submit(1, &signal_submit_info, {});
-}
-
-void VKDevice::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
-{
-    decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
-    vk::TimelineSemaphoreSubmitInfo timeline_info = {};
-    timeline_info.signalSemaphoreValueCount = 1;
-    timeline_info.pSignalSemaphoreValues = &value;
-
-    vk::SubmitInfo signal_submit_info = {};
-    signal_submit_info.pNext = &timeline_info;
-    signal_submit_info.signalSemaphoreCount = 1;
-    signal_submit_info.pSignalSemaphores = &vk_fence.GetFence();
-    m_queue.submit(1, &signal_submit_info, {});
-}
-
-void VKDevice::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists)
-{
-    std::vector<vk::CommandBuffer> vk_command_lists;
-    for (auto& command_list : command_lists)
-    {
-        if (!command_list)
-            continue;
-        decltype(auto) vk_command_list = command_list->As<VKCommandList>();
-        vk_command_lists.emplace_back(vk_command_list.GetCommandList());
-    }
-
-    vk::SubmitInfo submit_info = {};
-    submit_info.commandBufferCount = vk_command_lists.size();
-    submit_info.pCommandBuffers = vk_command_lists.data();
-
-    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
-    submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
-
-    m_queue.submit(1, &submit_info, {});
-}
-
 VKAdapter& VKDevice::GetAdapter()
 {
     return m_adapter;
-}
-
-uint32_t VKDevice::GetQueueFamilyIndex()
-{
-    return m_queue_family_index;
 }
 
 vk::Device VKDevice::GetDevice()
@@ -571,14 +535,9 @@ vk::Device VKDevice::GetDevice()
     return m_device.get();
 }
 
-vk::Queue VKDevice::GetQueue()
+vk::CommandPool VKDevice::GetCmdPool(CommandListType type)
 {
-    return m_queue;
-}
-
-vk::CommandPool VKDevice::GetCmdPool()
-{
-    return m_cmd_pool.get();
+    return m_per_queue_data.at(type).cmd_pool.get();
 }
 
 vk::ImageAspectFlags VKDevice::GetAspectFlags(vk::Format format) const

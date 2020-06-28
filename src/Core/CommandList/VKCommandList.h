@@ -7,7 +7,7 @@ class VKDevice;
 class VKCommandList : public CommandListBase
 {
 public:
-    VKCommandList(VKDevice& device);
+    VKCommandList(VKDevice& device, CommandListType type);
     void Reset() override;
     void Close() override;
     void BindPipeline(const std::shared_ptr<Pipeline>& state) override;

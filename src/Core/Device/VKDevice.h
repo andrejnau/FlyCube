@@ -1,19 +1,20 @@
 #pragma once
-#include "Device/DeviceBase.h"
+#include "Device/Device.h"
 #include <Utilities/Vulkan.h>
 #include <GPUDescriptorPool/VKGPUDescriptorPool.h>
 #include <GPUDescriptorPool/VKGPUBindlessDescriptorPoolTyped.h>
 
 class VKAdapter;
+class VKCommandQueue;
 
-class VKDevice : public DeviceBase
+class VKDevice : public Device
 {
 public:
     VKDevice(VKAdapter& adapter);
-    ~VKDevice();
+    std::shared_ptr<CommandQueue> GetCommandQueue(CommandListType type) override;
     uint32_t GetTextureDataPitchAlignment() const override;
     std::shared_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync) override;
-    std::shared_ptr<CommandList> CreateCommandList() override;
+    std::shared_ptr<CommandList> CreateCommandList(CommandListType type) override;
     std::shared_ptr<Fence> CreateFence(uint64_t initial_value) override;
     std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels) override;
     std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, MemoryType memory_type) override;
@@ -32,15 +33,10 @@ public:
     bool IsDxrSupported() const override;
     bool IsVariableRateShadingSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
-    void Wait(const std::shared_ptr<Fence>& fence, uint64_t value) override;
-    void Signal(const std::shared_ptr<Fence>& fence, uint64_t value) override;
-    void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
 
     VKAdapter& GetAdapter();
-    uint32_t GetQueueFamilyIndex();
     vk::Device GetDevice();
-    vk::Queue GetQueue();
-    vk::CommandPool GetCmdPool();
+    vk::CommandPool GetCmdPool(CommandListType type);
     vk::ImageAspectFlags GetAspectFlags(vk::Format format) const;
     VKGPUBindlessDescriptorPoolTyped& GetGPUBindlessDescriptorPool(vk::DescriptorType type);
     VKGPUDescriptorPool& GetGPUDescriptorPool();
@@ -51,10 +47,14 @@ private:
 
     VKAdapter& m_adapter;
     const vk::PhysicalDevice& m_physical_device;
-    uint32_t m_queue_family_index = -1;
     vk::UniqueDevice m_device;
-    vk::Queue m_queue;
-    vk::UniqueCommandPool m_cmd_pool;
+    struct PerQueueData
+    {
+        uint32_t queue_family_index = -1;
+        vk::UniqueCommandPool cmd_pool;
+    };
+    std::map<CommandListType, PerQueueData> m_per_queue_data;
+    std::map<CommandListType, std::shared_ptr<VKCommandQueue>> m_command_queues;
     std::map<vk::DescriptorType, VKGPUBindlessDescriptorPoolTyped> m_gpu_bindless_descriptor_pool;
     VKGPUDescriptorPool m_gpu_descriptor_pool;
     bool m_is_variable_rate_shading_supported = false;

@@ -1,5 +1,5 @@
 #pragma once
-#include "Device/DeviceBase.h"
+#include "Device/Device.h"
 #include <CPUDescriptorPool/DXCPUDescriptorPool.h>
 #include <GPUDescriptorPool/DXGPUDescriptorPool.h>
 #include <dxgi.h>
@@ -8,15 +8,16 @@
 using namespace Microsoft::WRL;
 
 class DXAdapter;
+class DXCommandQueue;
 
-class DXDevice : public DeviceBase
+class DXDevice : public Device
 {
 public:
     DXDevice(DXAdapter& adapter);
-    ~DXDevice();
+    std::shared_ptr<CommandQueue> GetCommandQueue(CommandListType type) override;
     uint32_t GetTextureDataPitchAlignment() const override;
     std::shared_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync) override;
-    std::shared_ptr<CommandList> CreateCommandList() override;
+    std::shared_ptr<CommandList> CreateCommandList(CommandListType type) override;
     std::shared_ptr<Fence> CreateFence(uint64_t initial_value) override;
     std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels) override;
     std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, MemoryType memory_type) override;
@@ -35,13 +36,9 @@ public:
     bool IsDxrSupported() const override;
     bool IsVariableRateShadingSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
-    void Wait(const std::shared_ptr<Fence>& fence, uint64_t value) override;
-    void Signal(const std::shared_ptr<Fence>& fence, uint64_t value) override;
-    void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
 
     DXAdapter& GetAdapter();
     ComPtr<ID3D12Device> GetDevice();
-    ComPtr<ID3D12CommandQueue> GetCommandQueue();
     DXCPUDescriptorPool& GetCPUDescriptorPool();
     DXGPUDescriptorPool& GetGPUDescriptorPool();
     bool IsRenderPassesSupported() const;
@@ -53,7 +50,7 @@ private:
     DXAdapter& m_adapter;
     ComPtr<ID3D12Device> m_device;
     ComPtr<ID3D12Device5> m_device5;
-    ComPtr<ID3D12CommandQueue> m_command_queue;
+    std::map<CommandListType, std::shared_ptr<DXCommandQueue>> m_command_queues;
     DXCPUDescriptorPool m_cpu_descriptor_pool;
     DXGPUDescriptorPool m_gpu_descriptor_pool;
     bool m_is_dxr_supported = false;

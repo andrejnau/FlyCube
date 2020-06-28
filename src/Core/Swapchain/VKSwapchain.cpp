@@ -1,6 +1,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include "Swapchain/VKSwapchain.h"
 #include <Device/VKDevice.h>
+#include <CommandQueue/VKCommandQueue.h>
 #include <Adapter/VKAdapter.h>
 #include <Instance/VKInstance.h>
 #include <Fence/VKTimelineSemaphore.h>
@@ -8,10 +9,11 @@
 #include <Resource/VKResource.h>
 #include <CommandList/CommandListBase.h>
 
-VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
-    : m_device(device)
+VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+    : m_command_queue(command_queue)
+    , m_device(command_queue.GetDevice())
 {
-    VKAdapter& adapter = device.GetAdapter();
+    VKAdapter& adapter = m_device.GetAdapter();
     VKInstance& instance = adapter.GetInstance();
 
     VkSurfaceKHR surface = 0;
@@ -34,7 +36,7 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
     ASSERT(surface_capabilities.currentExtent.height == height);
 
     vk::Bool32 is_supported_surface = VK_FALSE;
-    adapter.GetPhysicalDevice().getSurfaceSupportKHR(device.GetQueueFamilyIndex(), m_surface.get(), &is_supported_surface);
+    adapter.GetPhysicalDevice().getSurfaceSupportKHR(command_queue.GetQueueFamilyIndex(), m_surface.get(), &is_supported_surface);
     ASSERT(is_supported_surface);
 
     auto modes = adapter.GetPhysicalDevice().getSurfacePresentModesKHR(m_surface.get());
@@ -66,11 +68,11 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
     }
     swap_chain_create_info.clipped = true;
 
-    m_swapchain = device.GetDevice().createSwapchainKHRUnique(swap_chain_create_info);
+    m_swapchain = m_device.GetDevice().createSwapchainKHRUnique(swap_chain_create_info);
 
-    std::vector<vk::Image> m_images = device.GetDevice().getSwapchainImagesKHR(m_swapchain.get());
+    std::vector<vk::Image> m_images = m_device.GetDevice().getSwapchainImagesKHR(m_swapchain.get());
 
-    m_command_list = m_device.CreateCommandList();
+    m_command_list = m_device.CreateCommandList(CommandListType::kGraphics);
     auto& command_list = m_command_list->As<CommandListBase>();
     for (uint32_t i = 0; i < frame_count; ++i)
     {
@@ -90,8 +92,8 @@ VKSwapchain::VKSwapchain(VKDevice& device, GLFWwindow* window, uint32_t width, u
     m_image_available_semaphore = m_device.GetDevice().createSemaphoreUnique(semaphore_create_info);
     m_rendering_finished_semaphore = m_device.GetDevice().createSemaphoreUnique(semaphore_create_info);
     m_fence = m_device.CreateFence(0);
-    m_device.ExecuteCommandLists({ m_command_list });
-    m_device.Signal(m_fence, 1);
+    command_queue.ExecuteCommandLists({ m_command_list });
+    command_queue.Signal(m_fence, 1);
 }
 
 VKSwapchain::~VKSwapchain()
@@ -128,7 +130,7 @@ uint32_t VKSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t si
     signal_submit_info.pWaitDstStageMask = &waitDstStageMask;
     signal_submit_info.signalSemaphoreCount = 1;
     signal_submit_info.pSignalSemaphores = &vk_fence.GetFence();
-    m_device.GetQueue().submit(1, &signal_submit_info, {});
+    m_command_queue.GetQueue().submit(1, &signal_submit_info, {});
 
     return m_frame_index;
 }
@@ -150,7 +152,7 @@ void VKSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
     signal_submit_info.pWaitDstStageMask = &waitDstStageMask;
     signal_submit_info.signalSemaphoreCount = 1;
     signal_submit_info.pSignalSemaphores = &m_rendering_finished_semaphore.get();
-    m_device.GetQueue().submit(1, &signal_submit_info, {});
+    m_command_queue.GetQueue().submit(1, &signal_submit_info, {});
 
     vk::PresentInfoKHR present_info = {};
     present_info.swapchainCount = 1;
@@ -158,5 +160,5 @@ void VKSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
     present_info.pImageIndices = &m_frame_index;
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores = &m_rendering_finished_semaphore.get();
-    m_device.GetQueue().presentKHR(present_info);
+    m_command_queue.GetQueue().presentKHR(present_info);
 }

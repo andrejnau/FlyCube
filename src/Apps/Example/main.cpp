@@ -11,6 +11,7 @@ int main(int argc, char* argv[])
     std::shared_ptr<Instance> instance = CreateInstance(settings.api_type);
     std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[settings.required_gpu_index]);
     std::shared_ptr<Device> device = adapter->CreateDevice();
+    std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
 
     constexpr uint32_t frame_count = 3;
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count, settings.vsync);
@@ -55,7 +56,7 @@ int main(int argc, char* argv[])
         back_buffer_view_desc.view_type = ViewType::kRenderTarget;
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
         framebuffers.emplace_back(device->CreateFramebuffer(render_pass, rect.width, rect.height, { back_buffer_view }));
-        command_lists.emplace_back(device->CreateCommandList());
+        command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);
@@ -77,14 +78,14 @@ int main(int argc, char* argv[])
     while (!app.PollEvents())
     {
         uint32_t frame_index = swapchain->NextImage(fence, ++fence_value);
-        device->Wait(fence, fence_value);
+        command_queue->Wait(fence, fence_value);
         fence->Wait(fence_values[frame_index]);
-        device->ExecuteCommandLists({ command_lists[frame_index] });
-        device->Signal(fence, fence_values[frame_index] = ++fence_value);
+        command_queue->ExecuteCommandLists({ command_lists[frame_index] });
+        command_queue->Signal(fence, fence_values[frame_index] = ++fence_value);
         swapchain->Present(fence, fence_values[frame_index]);
         app.UpdateFps(adapter->GetName());
     }
-    device->Signal(fence, ++fence_value);
+    command_queue->Signal(fence, ++fence_value);
     fence->Wait(fence_value);
     return 0;
 }

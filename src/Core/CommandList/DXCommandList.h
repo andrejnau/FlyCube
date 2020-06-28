@@ -11,7 +11,7 @@ class DXResource;
 class DXCommandList : public CommandListBase
 {
 public:
-    DXCommandList(DXDevice& device);
+    DXCommandList(DXDevice& device, CommandListType type);
     void Reset() override;
     void Close() override;
     void BindPipeline(const std::shared_ptr<Pipeline>& state) override;

@@ -1,6 +1,7 @@
 #include "Swapchain/DXSwapchain.h"
 #include <Adapter/DXAdapter.h>
 #include <Device/DXDevice.h>
+#include <CommandQueue/DXCommandQueue.h>
 #include <Instance/DXInstance.h>
 #include <Resource/DXResource.h>
 #include <Utilities/DXUtility.h>
@@ -8,11 +9,11 @@
 #include <GLFW/glfw3native.h>
 #include <gli/dx.hpp>
 
-DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
-    : m_device(device)
+DXSwapchain::DXSwapchain(DXCommandQueue& command_queue, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+    : m_command_queue(command_queue)
     , m_vsync(vsync)
 {
-    DXInstance& instance = device.GetAdapter().GetInstance();
+    DXInstance& instance = command_queue.GetDevice().GetAdapter().GetInstance();
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
     swap_chain_desc.Width = width;
     swap_chain_desc.Height = height;
@@ -24,13 +25,13 @@ DXSwapchain::DXSwapchain(DXDevice& device, GLFWwindow* window, uint32_t width, u
     swap_chain_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
-    ASSERT_SUCCEEDED(instance.GetFactory()->CreateSwapChainForHwnd(device.GetCommandQueue().Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
+    ASSERT_SUCCEEDED(instance.GetFactory()->CreateSwapChainForHwnd(command_queue.GetQueue().Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
     ASSERT_SUCCEEDED(instance.GetFactory()->MakeWindowAssociation(glfwGetWin32Window(window), DXGI_MWA_NO_WINDOW_CHANGES));
     tmp_swap_chain.As(&m_swap_chain);
 
     for (size_t i = 0; i < frame_count; ++i)
     {
-        std::shared_ptr<DXResource> res = std::make_shared<DXResource>(m_device);
+        std::shared_ptr<DXResource> res = std::make_shared<DXResource>(command_queue.GetDevice());
         ComPtr<ID3D12Resource> back_buffer;
         ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
         res->format = GetFormat();
@@ -54,13 +55,13 @@ std::shared_ptr<Resource> DXSwapchain::GetBackBuffer(uint32_t buffer)
 uint32_t DXSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
 {
     uint32_t frame_index = m_swap_chain->GetCurrentBackBufferIndex();
-    m_device.Signal(fence, signal_value);
+    m_command_queue.Signal(fence, signal_value);
     return frame_index;
 }
 
 void DXSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
-    m_device.Wait(fence, wait_value);
+    m_command_queue.Wait(fence, wait_value);
     if (m_vsync)
     {
         ASSERT_SUCCEEDED(m_swap_chain->Present(1, 0));
