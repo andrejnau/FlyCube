@@ -27,7 +27,7 @@ const RaytracingASPrebuildInfo& ResourceBase::GetRaytracingASPrebuildInfo() cons
 
 void ResourceBase::UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes)
 {
-    void* dst_data = Map();
+    void* dst_data = Map() + offset;
     memcpy(dst_data, data, num_bytes);
     Unmap();
 }
