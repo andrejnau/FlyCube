@@ -1,4 +1,4 @@
-## Low-level graphics api
+## High-level graphics api
 This api is written in C++ on top of Directx 12 and Vulkan. Provides main features but hide some details.
 
 * Supported features
@@ -7,14 +7,61 @@ This api is written in C++ on top of Directx 12 and Vulkan. Provides main featur
   * Variable rate shading (DX12 only)
   * HLSL as shader language for all backends
     * Compilation in DXBC, DXIL, SPIRV
+  * Automatic resource state tracking
+    * Per command list resource state tracking
+    * Creating patch command list for sync with global resource state on execute
 
-* Planned features
-  * Mesh shading (need investigation)
-  * DX11/OpenGL were available on [commit](https://github.com/andrejnau/FlyCube/tree/9756f8fae2530a635302c549694374206c886b5c), not sure if these api really needs
+### High-level graphics api example
+```cpp
+Settings settings = ParseArgs(argc, argv);
+AppBox app("Triangle", settings);
 
-* Platforms
-  * Windows 10
-  
+Context context(settings, app.GetWindow());
+Device& device(*context.GetDevice());
+AppRect rect = app.GetAppRect();
+ProgramHolder<PixelShaderPS, VertexShaderVS> program(device);
+
+std::shared_ptr<CommandListBox> upload_command_list = context.CreateCommandList();
+std::vector<uint32_t> ibuf = { 0, 1, 2 };
+std::shared_ptr<Resource> index = device.CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * ibuf.size());
+upload_command_list->UpdateSubresource(index, 0, ibuf.data(), 0, 0);
+std::vector<glm::vec3> pbuf = {
+    glm::vec3(-0.5, -0.5, 0.0),
+    glm::vec3(0.0,  0.5, 0.0),
+    glm::vec3(0.5, -0.5, 0.0)
+};
+std::shared_ptr<Resource> pos = device.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest, sizeof(glm::vec3) * pbuf.size());
+upload_command_list->UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
+upload_command_list->Close();
+context.ExecuteCommandLists({ upload_command_list });
+
+program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
+
+std::vector<std::shared_ptr<CommandListBox>> command_lists;
+for (uint32_t i = 0; i < Context::FrameCount; ++i)
+{
+    decltype(auto) command_list = context.CreateCommandList();
+    command_list->UseProgram(program);
+    command_list->Attach(program.ps.cbv.Settings, program.ps.cbuffer.Settings);
+    command_list->SetViewport(rect.width, rect.height);
+    command_list->Attach(program.ps.om.rtv0, context.GetBackBuffer(i));
+    command_list->ClearColor(program.ps.om.rtv0, { 0.0f, 0.2f, 0.4f, 1.0f });
+    command_list->IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);
+    command_list->IASetVertexBuffer(program.vs.ia.POSITION, pos);
+    command_list->DrawIndexed(3, 0, 0);
+    command_list->Close();
+    command_lists.emplace_back(command_list);
+}
+
+while (!app.PollEvents())
+{
+    context.ExecuteCommandLists({ command_lists[context.GetFrameIndex()] });
+    context.Present();
+    app.UpdateFps(context.GetGpuName());
+}
+context.WaitIdle();
+```
+
 ### Low-level graphics api example
 ```cpp
 Settings settings = ParseArgs(argc, argv);
@@ -110,18 +157,7 @@ command_queue->Signal(fence, ++fence_value);
 fence->Wait(fence_value);
 ```
 
-## High-level graphics api and utilities
-A set of classes simplifying the writing of complex scenes.
-
-* High-level api features
-  * Automatic resource state tracking
-    * Per command list resource state tracking
-    * Creating patch command list for sync with global resource state on execute
-  * Generated shader helper by shader reflection
-    * Easy to use resources binding
-    * Constant buffers proxy for compile time access to members
-
-* Utilities features
+## Utilities features
   * Application skeleton
     * Window creating
     * Keyboard/Mouse events source
@@ -130,57 +166,9 @@ A set of classes simplifying the writing of complex scenes.
     * 3D models loading with assimp
   * Texture utils
     * Images loading with gli and SOIL
-   
-### High-level graphics api example
-```cpp
-Settings settings = ParseArgs(argc, argv);
-AppBox app("Triangle", settings);
-
-Context context(settings, app.GetWindow());
-Device& device(*context.GetDevice());
-AppRect rect = app.GetAppRect();
-ProgramHolder<PixelShaderPS, VertexShaderVS> program(device);
-
-std::shared_ptr<CommandListBox> upload_command_list = context.CreateCommandList();
-std::vector<uint32_t> ibuf = { 0, 1, 2 };
-std::shared_ptr<Resource> index = device.CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * ibuf.size());
-upload_command_list->UpdateSubresource(index, 0, ibuf.data(), 0, 0);
-std::vector<glm::vec3> pbuf = {
-    glm::vec3(-0.5, -0.5, 0.0),
-    glm::vec3(0.0,  0.5, 0.0),
-    glm::vec3(0.5, -0.5, 0.0)
-};
-std::shared_ptr<Resource> pos = device.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest, sizeof(glm::vec3) * pbuf.size());
-upload_command_list->UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
-upload_command_list->Close();
-context.ExecuteCommandLists({ upload_command_list });
-
-program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
-
-std::vector<std::shared_ptr<CommandListBox>> command_lists;
-for (uint32_t i = 0; i < Context::FrameCount; ++i)
-{
-    decltype(auto) command_list = context.CreateCommandList();
-    command_list->UseProgram(program);
-    command_list->Attach(program.ps.cbv.Settings, program.ps.cbuffer.Settings);
-    command_list->SetViewport(rect.width, rect.height);
-    command_list->Attach(program.ps.om.rtv0, context.GetBackBuffer(i));
-    command_list->ClearColor(program.ps.om.rtv0, { 0.0f, 0.2f, 0.4f, 1.0f });
-    command_list->IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);
-    command_list->IASetVertexBuffer(program.vs.ia.POSITION, pos);
-    command_list->DrawIndexed(3, 0, 0);
-    command_list->Close();
-    command_lists.emplace_back(command_list);
-}
-
-while (!app.PollEvents())
-{
-    context.ExecuteCommandLists({ command_lists[context.GetFrameIndex()] });
-    context.Present();
-    app.UpdateFps(context.GetGpuName());
-}
-context.WaitIdle();
-```
+  * Generated shader helper by shader reflection
+    * Easy to use resources binding
+    * Constant buffers proxy for compile time access to members
 
 ## SponzaPbr
 
