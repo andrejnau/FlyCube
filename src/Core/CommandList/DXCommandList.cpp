@@ -320,16 +320,16 @@ void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
         m_command_list->ResourceBarrier(dx_barriers.size(), dx_barriers.data());
 }
 
-void DXCommandList::SetViewport(float width, float height, bool set_scissor)
+void DXCommandList::SetViewport(float x, float y, float width, float height)
 {
     D3D12_VIEWPORT viewport = {};
+    viewport.TopLeftX = x;
+    viewport.TopLeftY = y;
     viewport.Width = width;
     viewport.Height = height;
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
     m_command_list->RSSetViewports(1, &viewport);
-    if (set_scissor)
-        SetScissorRect(0, 0, width, height);
 }
 
 void DXCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)

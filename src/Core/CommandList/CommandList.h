@@ -29,7 +29,7 @@ public:
     virtual void Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z) = 0;
     virtual void DispatchRays(uint32_t width, uint32_t height, uint32_t depth) = 0;
     virtual void ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers) = 0;
-    virtual void SetViewport(float width, float height, bool set_scissor = true) = 0;
+    virtual void SetViewport(float x, float y, float width, float height) = 0;
     virtual void SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom) = 0;
     virtual void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) = 0;
     virtual void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) = 0;

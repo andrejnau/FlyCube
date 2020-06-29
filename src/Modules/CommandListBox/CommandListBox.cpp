@@ -103,7 +103,8 @@ void CommandListBox::UpdateSubresourceDefault(const std::shared_ptr<Resource>& r
 
 void CommandListBox::SetViewport(float width, float height)
 {
-    m_command_list->SetViewport(width, height);
+    m_command_list->SetViewport(0, 0, width, height);
+    m_command_list->SetScissorRect(0, 0, width, height);
     m_viewport_width = width;
     m_viewport_height = height;
 }
