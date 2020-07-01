@@ -65,29 +65,28 @@ void LightPass::OnUpdate()
         m_program.ps.cbuffer.Light.light_color[i] = glm::vec4(0);
     }
 
+    m_program.ps.cbuffer.Light.light_count = 0;
     if (m_settings.Get<bool>("light_in_camera"))
     {
-        m_program.ps.cbuffer.Light.light_pos[0] = glm::vec4(camera_position, 0);
-        m_program.ps.cbuffer.Light.light_color[0] = glm::vec4(1, 1, 1, 0.0);
+        m_program.ps.cbuffer.Light.light_pos[m_program.ps.cbuffer.Light.light_count] = glm::vec4(camera_position, 0);
+        m_program.ps.cbuffer.Light.light_color[m_program.ps.cbuffer.Light.light_count] = glm::vec4(1, 1, 1, 0.0);
+        ++m_program.ps.cbuffer.Light.light_count;
     }
     if (m_settings.Get<bool>("additional_lights"))
     {
-        int i = 0;
-        if (m_settings.Get<bool>("light_in_camera"))
-            ++i;
         for (int x = -13; x <= 13; ++x)
         {
             int q = 1;
             for (int z = -1; z <= 1; ++z)
             {
-                if (i < std::size(m_program.ps.cbuffer.Light.light_pos))
+                if (m_program.ps.cbuffer.Light.light_count < std::size(m_program.ps.cbuffer.Light.light_pos))
                 {
-                    m_program.ps.cbuffer.Light.light_pos[i] = glm::vec4(x, 1.5, z - 0.33, 0);
+                    m_program.ps.cbuffer.Light.light_pos[m_program.ps.cbuffer.Light.light_count] = glm::vec4(x, 1.5, z - 0.33, 0);
                     float color = 0.0;
                     if (m_settings.Get<bool>("use_white_ligth"))
                         color = 1;
-                    m_program.ps.cbuffer.Light.light_color[i] = glm::vec4(q == 1 ? 1 : color, q == 2 ? 1 : color, q == 3 ? 1 : color, 0.0);
-                    ++i;
+                    m_program.ps.cbuffer.Light.light_color[m_program.ps.cbuffer.Light.light_count] = glm::vec4(q == 1 ? 1 : color, q == 2 ? 1 : color, q == 3 ? 1 : color, 0.0);
+                    ++m_program.ps.cbuffer.Light.light_count;
                     ++q;
                 }
             }

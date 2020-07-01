@@ -29,14 +29,15 @@ SamplerComparisonState LightCubeShadowComparsionSampler;
 
 static const float PI = acos(-1.0);
 
-#define LIGHT_COUNT 90
+#define MAX_LIGHT_COUNT 90
 
 cbuffer Light
 {
-    float4 light_color[LIGHT_COUNT];
-    float4 light_pos[LIGHT_COUNT];
+    float4 light_color[MAX_LIGHT_COUNT];
+    float4 light_pos[MAX_LIGHT_COUNT];
     float3 viewPos;
     float4x4 inverted_mvp;
+    uint light_count;
 };
 
 cbuffer ShadowParams
@@ -346,8 +347,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             lighting += CookTorrance_GGX(fragPos, normal, V, m, shadow_light_pos, 1, true) * shadow;
         }
 
-        [unroll]
-        for (int i = 0; i < LIGHT_COUNT; ++i)
+        for (int i = 0; i < light_count; ++i)
         {
             lighting += CookTorrance_GGX(fragPos, normal, V, m, light_pos[i].rgb, light_color[i].rgb);
         }
@@ -378,7 +378,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             ambient += specular * computeSpecOcclusion(max(dot(normal, V), 0.0), ao, roughness);
         }
 
-        if (!use_IBL_diffuse && !use_IBL_specular || ibl_probe_index == -1)
+        if ((!use_IBL_diffuse && !use_IBL_specular) || ibl_probe_index == -1)
             ambient = albedo * ao / 4;
 
         if (only_ambient)
