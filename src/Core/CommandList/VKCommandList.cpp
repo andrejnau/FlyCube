@@ -89,8 +89,7 @@ void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     }
 }
 
-void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer,
-                                    const std::vector<glm::vec4>& clear_color, float clear_depth)
+void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc)
 {
     decltype(auto) vk_framebuffer = framebuffer->As<VKFramebuffer>();
     decltype(auto) vk_render_pass = render_pass->As<VKRenderPass>();
@@ -98,19 +97,20 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     render_pass_info.renderPass = vk_render_pass.GetRenderPass();
     render_pass_info.framebuffer = vk_framebuffer.GetFramebuffer();
     render_pass_info.renderArea.extent = vk_framebuffer.GetExtent();
-    std::vector<vk::ClearValue> clear_values(clear_color.size());
-    for (size_t i = 0; i < clear_color.size(); ++i)
+    std::vector<vk::ClearValue> clear_values;
+    for (size_t i = 0; i < clear_desc.colors.size(); ++i)
     {
-        clear_values[i].color.float32[0] = clear_color[i].r;
-        clear_values[i].color.float32[1] = clear_color[i].g;
-        clear_values[i].color.float32[2] = clear_color[i].b;
-        clear_values[i].color.float32[3] = clear_color[i].a;
+        auto& clear_value = clear_values.emplace_back();
+        clear_value.color.float32[0] = clear_desc.colors[i].r;
+        clear_value.color.float32[1] = clear_desc.colors[i].g;
+        clear_value.color.float32[2] = clear_desc.colors[i].b;
+        clear_value.color.float32[3] = clear_desc.colors[i].a;
     }
     clear_values.resize(vk_render_pass.GetDesc().colors.size());
     if (vk_render_pass.GetDesc().depth_stencil.format != gli::FORMAT_UNDEFINED)
     {
         vk::ClearValue clear_value = {};
-        clear_value.depthStencil.depth = clear_depth;
+        clear_value.depthStencil.depth = clear_desc.depth;
         clear_values.emplace_back(clear_value);
     }
     render_pass_info.clearValueCount = clear_values.size();

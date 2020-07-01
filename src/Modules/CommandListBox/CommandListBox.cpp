@@ -415,7 +415,7 @@ void CommandListBox::ApplyBindings()
 
     if (!m_is_open_render_pass)
     {
-        m_command_list->BeginRenderPass(m_render_pass, m_framebuffer);
+        m_command_list->BeginRenderPass(m_render_pass, m_framebuffer, {});
         m_is_open_render_pass = true;
     }
 }

@@ -16,8 +16,7 @@ public:
     void Close() override;
     void BindPipeline(const std::shared_ptr<Pipeline>& state) override;
     void BindBindingSet(const std::shared_ptr<BindingSet>& binding_set) override;
-    void BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer,
-                         const std::vector<glm::vec4>& clear_color, float clear_depth) override;
+    void BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc) override;
     void EndRenderPass() override;
     void BeginEvent(const std::string& name) override;
     void EndEvent() override;
@@ -45,10 +44,8 @@ public:
     ComPtr<ID3D12GraphicsCommandList> GetCommandList();
 
 private:
-    void BeginRenderPassImpl(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer,
-                             const std::vector<glm::vec4>& clear_color, float clear_depth);
-    void OMSetFramebuffer(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer,
-                          const std::vector<glm::vec4>& clear_color, float clear_depth);
+    void BeginRenderPassImpl(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc);
+    void OMSetFramebuffer(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc);
     void IASetVertexBufferImpl(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride);
     void BuildAccelerationStructure(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs, const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch);
 

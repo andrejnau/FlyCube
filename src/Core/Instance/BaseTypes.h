@@ -112,15 +112,6 @@ namespace BindFlag
     };
 }
 
-namespace ClearFlag
-{
-    enum
-    {
-        kDepth = 1 << 0,
-        kStencil = 1 << 1,
-    };
-}
-
 enum class FillMode
 {
     kWireframe,
@@ -537,6 +528,12 @@ enum class CommandListType
     kGraphics,
     kCompute,
     kCopy,
+};
+
+struct ClearDesc
+{
+    std::vector<glm::vec4> colors;
+    float depth;
 };
 
 template<typename T> 

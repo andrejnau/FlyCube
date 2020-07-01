@@ -12,8 +12,7 @@ public:
     void Close() override;
     void BindPipeline(const std::shared_ptr<Pipeline>& state) override;
     void BindBindingSet(const std::shared_ptr<BindingSet>& binding_set) override;
-    void BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer,
-                         const std::vector<glm::vec4>& clear_color, float clear_depth) override;
+    void BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc) override;
     void EndRenderPass() override;
     void BeginEvent(const std::string& name) override;
     void EndEvent() override;
