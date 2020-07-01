@@ -57,9 +57,9 @@ D3D12_RESOURCE_STATES ConvertSate(ResourceState state)
     }
 }
 
-// RenderDoc UUID {A7AA6116-9C8D-4BBA-9083-B4D816B71B78}
-static const GUID IRenderDoc_uuid = {
-    0xa7aa6116, 0x9c8d, 0x4bba, {0x90, 0x83, 0xb4, 0xd8, 0x16, 0xb7, 0x1b, 0x78} };
+static const GUID renderdoc_uuid = { 0xa7aa6116, 0x9c8d, 0x4bba, { 0x90, 0x83, 0xb4, 0xd8, 0x16, 0xb7, 0x1b, 0x78 } };
+static const GUID pix_uuid = { 0x9f251514, 0x9d4d, 0x4902, { 0x9d, 0x60, 0x18, 0x98, 0x8a, 0xb7, 0xd4, 0xb5 } };
+static const GUID gpa_uuid = { 0xccffef16, 0x7b69, 0x468f, { 0xbc, 0xe3, 0xcd, 0x95, 0x33, 0x69, 0xa3, 0x9a } };
 
 DXDevice::DXDevice(DXAdapter& adapter)
     : m_adapter(adapter)
@@ -70,8 +70,16 @@ DXDevice::DXDevice(DXAdapter& adapter)
     m_device.As(&m_device5);
 
     ComPtr<IUnknown> renderdoc;
-    m_device->QueryInterface(IRenderDoc_uuid, reinterpret_cast<void**>(renderdoc.GetAddressOf()));
-    m_is_under_graphics_debugger = renderdoc || GetModuleHandleW(L"WinPixCaptureReplay.dll");
+    if (SUCCEEDED(m_device->QueryInterface(renderdoc_uuid, &renderdoc)))
+        m_is_under_graphics_debugger |= !!renderdoc;
+
+    ComPtr<IUnknown> pix;
+    if (SUCCEEDED(DXGIGetDebugInterface1(0, pix_uuid, &pix)))
+        m_is_under_graphics_debugger |= !!pix;
+
+    ComPtr<IUnknown> gpa;
+    if (SUCCEEDED(m_device->QueryInterface(gpa_uuid, &gpa)))
+        m_is_under_graphics_debugger |= !!gpa;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature_support5 = {};
     if (SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support5, sizeof(feature_support5))))
