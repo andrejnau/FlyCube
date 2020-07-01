@@ -19,9 +19,7 @@ VKCommandList::VKCommandList(VKDevice& device, CommandListType type)
     cmd_buf_alloc_info.level = vk::CommandBufferLevel::ePrimary;
     std::vector<vk::UniqueCommandBuffer> cmd_bufs = device.GetDevice().allocateCommandBuffersUnique(cmd_buf_alloc_info);
     m_command_list = std::move(cmd_bufs.front());
-
     vk::CommandBufferBeginInfo begin_info = {};
-    begin_info.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
     m_command_list->begin(begin_info);
 }
 
@@ -31,7 +29,6 @@ void VKCommandList::Reset()
     m_state.reset();
     m_binding_set.reset();
     vk::CommandBufferBeginInfo begin_info = {};
-    begin_info.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
     m_command_list->begin(begin_info);
     m_closed = false;
 }
