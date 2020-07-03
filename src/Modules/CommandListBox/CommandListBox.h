@@ -86,16 +86,13 @@ private:
     void OnAttachDSV(const BindKey& bind_key, const std::shared_ptr<View>& view);
 
     std::shared_ptr<View> CreateView(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc);
-    std::shared_ptr<View> FindView(ShaderType shader_type, ViewType view_type, uint32_t slot);
+    std::shared_ptr<View> FindOmView(ShaderType shader_type, ViewType view_type, uint32_t slot);
 
     void SetBinding(const BindKey& bind_key, const std::shared_ptr<View>& view);
+    void SetBindingImpl(const BindKey& bind_key, const std::shared_ptr<View>& view, std::map<BindKey, std::shared_ptr<View>>& bound_resources);
 
-    struct BoundResource
-    {
-        std::shared_ptr<Resource> res;
-        std::shared_ptr<View> view;
-    };
-    std::map<BindKey, BoundResource> m_bound_resources;
+    std::map<BindKey, std::shared_ptr<View>> m_bound_resources;
+    std::map<BindKey, std::shared_ptr<View>> m_bound_om_resources;
     std::map<BindKey, std::shared_ptr<DeferredView>> m_bound_deferred_view;
     std::vector<std::shared_ptr<ResourceLazyViewDesc>> m_resource_lazy_view_descs;
 

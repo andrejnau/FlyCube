@@ -364,14 +364,13 @@ bool DXProgram::HasBinding(const BindKey& bind_key) const
     return m_binding_type.count(bind_key);
 }
 
-std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& bindings)
+std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const std::vector<BindingDesc>& bindings)
 {
     BindingsByHeap bindings_by_heap;
-    for (const auto& id : bindings)
+    for (const auto& binding : bindings)
     {
-        const auto& desc = m_bindings[id];
         D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
-        switch (desc.bind_key.view_type)
+        switch (binding.bind_key.view_type)
         {
         case ViewType::kConstantBuffer:
         case ViewType::kShaderResource:
@@ -384,7 +383,7 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
         default:
             assert(false);
         }
-        bindings_by_heap[heap_type].insert(id);
+        bindings_by_heap[heap_type].emplace_back(binding);
     }
 
     std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<DXGPUDescriptorPoolRange>> descriptor_ranges;
@@ -398,16 +397,15 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
                 m_heap_cache.erase(it);
             heap_range = std::make_shared<DXGPUDescriptorPoolRange>(m_device.GetGPUDescriptorPool().Allocate(x.first, HeapSizeByType(x.first)));
             m_heap_cache.emplace(x.second, heap_range);
-            for (auto& id : x.second)
+            for (auto& binding : x.second)
             {
-                auto& desc = m_bindings[id];
-                bool bindless = m_binding_type.at(desc.bind_key).is_bindless;
+                bool bindless = m_binding_type.at(binding.bind_key).is_bindless;
                 if (bindless)
                     continue;
 
                 D3D12_DESCRIPTOR_RANGE_TYPE range_type;
                 D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
-                switch (desc.bind_key.view_type)
+                switch (binding.bind_key.view_type)
                 {
                 case ViewType::kShaderResource:
                     range_type = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -430,8 +428,8 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const BindingsKey& b
                     continue;
                 }
 
-                auto& table = m_binding_layout.at({ desc.bind_key.shader_type, range_type, desc.bind_key.space, bindless }).table;
-                CopyDescriptor(*heap_range, table.heap_offset + (desc.bind_key.slot - table.start), desc.view);
+                auto& table = m_binding_layout.at({ binding.bind_key.shader_type, range_type, binding.bind_key.space, bindless }).table;
+                CopyDescriptor(*heap_range, table.heap_offset + (binding.bind_key.slot - table.start), binding.view);
             }
         }
         else

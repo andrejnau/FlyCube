@@ -36,7 +36,7 @@ class DXProgram : public ProgramBase
 public:
     DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders);
     bool HasBinding(const BindKey& bind_key) const override;
-    std::shared_ptr<BindingSet> CreateBindingSetImpl(const BindingsKey& bindings) override;
+    std::shared_ptr<BindingSet> CreateBindingSetImpl(const std::vector<BindingDesc>& bindings) override;
 
     const std::vector<std::shared_ptr<DXShader>>& GetShaders() const;
     const ComPtr<ID3D12RootSignature>& GetRootSignature() const;
@@ -53,12 +53,12 @@ private:
     ComPtr<ID3D12RootSignature> m_root_signature;
 
     std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE, uint32_t /*space*/, bool /*bindless*/>, BindingLayout> m_binding_layout;
-    std::map<std::set<size_t>, std::weak_ptr<DXGPUDescriptorPoolRange>> m_heap_cache;
+    std::map<std::vector<BindingDesc>, std::weak_ptr<DXGPUDescriptorPoolRange>> m_heap_cache;
     struct BindingType
     {
         bool is_bindless = false;
     };
     std::map<BindKey, BindingType> m_binding_type;
     bool m_is_compute = false;
-    using BindingsByHeap = std::map<D3D12_DESCRIPTOR_HEAP_TYPE, BindingsKey>;
+    using BindingsByHeap = std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::vector<BindingDesc>>;
 };

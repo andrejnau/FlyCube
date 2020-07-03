@@ -92,7 +92,7 @@ bool VKProgram::HasBinding(const BindKey& bind_key) const
     return m_resources.count(bind_key);
 }
 
-std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& bindings)
+std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const std::vector<BindingDesc>& bindings)
 {
     std::vector<vk::UniqueDescriptorSet> descriptor_sets_unique;
     std::vector<vk::DescriptorSet> descriptor_sets;
@@ -114,11 +114,10 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& b
     std::list<vk::DescriptorBufferInfo> list_buffer_info;
     std::list<vk::WriteDescriptorSetAccelerationStructureNV> list_as;
 
-    for (const auto& id : bindings)
+    for (const auto& binding : bindings)
     {
-        const auto& desc = m_bindings[id];
         bool is_rtv_dsv = false;
-        switch (desc.bind_key.view_type)
+        switch (binding.bind_key.view_type)
         {
         case ViewType::kRenderTarget:
         case ViewType::kDepthStencil:
@@ -126,14 +125,14 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& b
             break;
         }
 
-        if (is_rtv_dsv || !desc.view)
+        if (is_rtv_dsv || !binding.view)
             continue;
 
-        ShaderType shader_type = desc.bind_key.shader_type;
+        ShaderType shader_type = binding.bind_key.shader_type;
         if (m_bindless_type.count(static_cast<size_t>(shader_type)))
             continue;
 
-        auto& rer_desc = m_resources.at(desc.bind_key);
+        auto& rer_desc = m_resources.at(binding.bind_key);
 
         vk::WriteDescriptorSet descriptor_write = {};
         descriptor_write.dstSet = descriptor_sets[static_cast<size_t>(shader_type)];
@@ -142,7 +141,7 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const BindingsKey& b
         descriptor_write.descriptorType = rer_desc.descriptor_type;
         descriptor_write.descriptorCount = 1;
 
-        decltype(auto) vk_view = desc.view->As<VKView>();
+        decltype(auto) vk_view = binding.view->As<VKView>();
         vk_view.WriteView(descriptor_write, list_image_info, list_buffer_info, list_as);
 
         if (descriptor_write.pImageInfo || descriptor_write.pBufferInfo || descriptor_write.pNext)

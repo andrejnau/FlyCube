@@ -16,7 +16,7 @@ class VKProgram : public ProgramBase
 public:
     VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders);
     bool HasBinding(const BindKey& bind_key) const override;
-    std::shared_ptr<BindingSet> CreateBindingSetImpl(const BindingsKey& bindings) override;
+    std::shared_ptr<BindingSet> CreateBindingSetImpl(const std::vector<BindingDesc>& bindings) override;
 
     const std::vector<std::shared_ptr<SpirvShader>>& GetShaders() const;
     vk::PipelineLayout GetPipelineLayout() const;

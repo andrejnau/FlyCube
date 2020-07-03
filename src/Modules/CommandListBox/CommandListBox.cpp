@@ -12,6 +12,7 @@ void CommandListBox::Reset()
     OnReset();
     m_cmd_resources.clear();
     m_bound_resources.clear();
+    m_bound_om_resources.clear();
     m_bound_deferred_view.clear();
     m_binding_sets.clear();
     m_resource_lazy_view_descs.clear();
@@ -286,6 +287,8 @@ void CommandListBox::UseProgram(std::shared_ptr<Program>& program)
         m_graphic_pipeline_desc.input = m_program->GetShader(ShaderType::kVertex)->GetInputLayout();
     }
     m_bound_resources.clear();
+    m_bound_om_resources.clear();
+    m_bound_deferred_view.clear();
 }
 
 void CommandListBox::ApplyBindings()
@@ -354,25 +357,16 @@ void CommandListBox::ApplyBindings()
     {
         auto view = x.second->GetView(*this);
         m_resource_lazy_view_descs.emplace_back(view);
-        if (!m_program->HasShader(x.first.shader_type))
-            continue;
         Attach(x.first, CreateView(x.first, view->resource, view->view_desc));
     }
 
     std::vector<BindingDesc> descs;
+    descs.reserve(m_bound_resources.size());
     for (auto& x : m_bound_resources)
     {
-        switch (x.first.view_type)
-        {
-        case ViewType::kRenderTarget:
-        case ViewType::kDepthStencil:
-            continue;
-        }
-        decltype(auto) desc = descs.emplace_back();
+        BindingDesc& desc = descs.emplace_back();
         desc.bind_key = x.first;
-        desc.view = x.second.view;
-        if (!m_program->HasBinding(desc.bind_key))
-            descs.pop_back();
+        desc.view = x.second;
     }
 
     m_binding_set = m_program->CreateBindingSet(descs);
@@ -387,12 +381,12 @@ void CommandListBox::ApplyBindings()
     uint32_t slot = 0;
     for (auto& render_target : m_render_pass_desc.colors)
     {
-        rtvs.emplace_back(FindView(ShaderType::kPixel, ViewType::kRenderTarget, slot++));
+        rtvs.emplace_back(FindOmView(ShaderType::kPixel, ViewType::kRenderTarget, slot++));
     }
 
     auto prev_framebuffer = m_framebuffer;
 
-    auto dsv = FindView(ShaderType::kPixel, ViewType::kDepthStencil, 0);
+    auto dsv = FindOmView(ShaderType::kPixel, ViewType::kDepthStencil, 0);
     auto key = std::make_tuple(m_viewport_width, m_viewport_height, rtvs, dsv);
     auto f_it = m_framebuffers.find(key);
     if (f_it == m_framebuffers.end())
@@ -422,12 +416,23 @@ void CommandListBox::ApplyBindings()
 
 void CommandListBox::SetBinding(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
-    BoundResource bound_res = { view->GetResource(), view };
-    auto it = m_bound_resources.find(bind_key);
-    if (it == m_bound_resources.end())
-        m_bound_resources.emplace(bind_key, bound_res);
+    switch (bind_key.view_type)
+    {
+    case ViewType::kRenderTarget:
+    case ViewType::kDepthStencil:
+        return SetBindingImpl(bind_key, view, m_bound_om_resources);
+    default:
+        return SetBindingImpl(bind_key, view, m_bound_resources);
+    }
+}
+
+void CommandListBox::SetBindingImpl(const BindKey& bind_key, const std::shared_ptr<View>& view, std::map<BindKey, std::shared_ptr<View>>& bound_resources)
+{
+    auto it = bound_resources.find(bind_key);
+    if (it == bound_resources.end())
+        bound_resources.emplace(bind_key, view);
     else
-        it->second = bound_res;
+        it->second = view;
 }
 
 std::shared_ptr<View> CommandListBox::CreateView(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
@@ -455,13 +460,13 @@ std::shared_ptr<View> CommandListBox::CreateView(const BindKey& bind_key, const 
     return view;
 }
 
-std::shared_ptr<View> CommandListBox::FindView(ShaderType shader_type, ViewType view_type, uint32_t slot)
+std::shared_ptr<View> CommandListBox::FindOmView(ShaderType shader_type, ViewType view_type, uint32_t slot)
 {
     BindKey bind_key = { shader_type, view_type, slot };
-    auto it = m_bound_resources.find(bind_key);
-    if (it == m_bound_resources.end())
+    auto it = m_bound_om_resources.find(bind_key);
+    if (it == m_bound_om_resources.end())
         return {};
-    return it->second.view;
+    return it->second;
 }
 
 void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<DeferredView>& view)
@@ -496,7 +501,7 @@ void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<View>
 
 void CommandListBox::ClearColor(const BindKey& bind_key, const glm::vec4& color)
 {
-    auto& view = FindView(bind_key.shader_type, bind_key.view_type, bind_key.slot);
+    auto& view = FindOmView(bind_key.shader_type, bind_key.view_type, bind_key.slot);
     if (!view)
         return;
     if (m_is_open_render_pass)
@@ -511,7 +516,7 @@ void CommandListBox::ClearColor(const BindKey& bind_key, const glm::vec4& color)
 
 void CommandListBox::ClearDepth(const BindKey& bind_key, float depth)
 {
-    auto& view = FindView(bind_key.shader_type, bind_key.view_type, bind_key.slot);
+    auto& view = FindOmView(bind_key.shader_type, bind_key.view_type, bind_key.slot);
     if (!view)
         return;
     if (m_is_open_render_pass)
