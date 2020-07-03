@@ -1,13 +1,14 @@
 #include "Resource/ResourceStateTracker.h"
+#include <Resource/Resource.h>
 
-ResourceStateTracker::ResourceStateTracker(const subresource_count_getter_t& subresource_count_getter)
-    : m_subresource_count_getter(subresource_count_getter)
+ResourceStateTracker::ResourceStateTracker(Resource& resource)
+    : m_resource(resource)
 {
 }
 
 bool ResourceStateTracker::HasResourceState() const
 {
-    return m_subresource_states.empty() && m_resource_state != ResourceState::kUnknown;
+    return m_subresource_states.empty();
 }
 
 ResourceState ResourceStateTracker::GetResourceState() const
@@ -42,10 +43,32 @@ void ResourceStateTracker::SetSubresourceState(uint32_t mip_level, uint32_t arra
     }
     m_subresource_states[key] = state;
     ++m_subresource_state_groups[state];
-    if (m_subresource_state_groups.size() == 1 && m_subresource_state_groups.begin()->second == m_subresource_count_getter())
+    if (m_subresource_state_groups.size() == 1 && m_subresource_state_groups.begin()->second == m_resource.GetLayerCount() * m_resource.GetLevelCount())
     {
         m_subresource_state_groups.clear();
         m_subresource_states.clear();
         m_resource_state = state;
+    }
+}
+
+void ResourceStateTracker::Merge(const ResourceStateTracker& other)
+{
+    if (other.HasResourceState())
+    {
+        auto state = other.GetResourceState();
+        if (state != ResourceState::kUnknown)
+            SetResourceState(state);
+    }
+    else
+    {
+        for (uint32_t i = 0; i < other.m_resource.GetLevelCount(); ++i)
+        {
+            for (uint32_t j = 0; j < other.m_resource.GetLayerCount(); ++j)
+            {
+                auto state = other.GetSubresourceState(i, j);
+                if (state != ResourceState::kUnknown)
+                    SetSubresourceState(i, j, state);
+            }
+        }
     }
 }

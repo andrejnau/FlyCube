@@ -29,13 +29,29 @@ void ContextBase::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<Comm
             if (c == 0 && barrier.resource->AllowCommonStatePromotion(barrier.state_after))
                 continue;
             auto& global_state_tracker = barrier.resource->GetGlobalResourceStateTracker();
-            for (uint32_t i = 0; i < barrier.level_count; ++i)
+            if (global_state_tracker.HasResourceState() && barrier.base_mip_level == 0 && barrier.level_count == barrier.resource->GetLevelCount() &&
+                barrier.base_array_layer == 0 && barrier.layer_count == barrier.resource->GetLayerCount())
             {
-                for (uint32_t j = 0; j < barrier.layer_count; ++j)
+                barrier.state_before = global_state_tracker.GetResourceState();
+                if (barrier.state_before != barrier.state_after)
+                    new_barriers.emplace_back(barrier);
+            }
+            else
+            {
+                for (uint32_t i = 0; i < barrier.level_count; ++i)
                 {
-                    barrier.state_before = global_state_tracker.GetSubresourceState(barrier.base_mip_level + i, barrier.base_array_layer + j);
-                    if (barrier.state_before != barrier.state_after)
-                        new_barriers.emplace_back(barrier);
+                    for (uint32_t j = 0; j < barrier.layer_count; ++j)
+                    {
+                        barrier.state_before = global_state_tracker.GetSubresourceState(barrier.base_mip_level + i, barrier.base_array_layer + j);
+                        if (barrier.state_before != barrier.state_after)
+                        {
+                            auto& new_barrier = new_barriers.emplace_back(barrier);
+                            new_barrier.base_mip_level = barrier.base_mip_level + i;
+                            new_barrier.level_count = 1;
+                            new_barrier.base_array_layer = barrier.base_array_layer + j;
+                            new_barrier.layer_count = 1;
+                        }
+                    }
                 }
             }
         }
@@ -81,15 +97,7 @@ void ContextBase::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<Comm
             auto& resource = state_tracker_pair.first;
             auto& state_tracker = state_tracker_pair.second;
             auto& global_state_tracker = resource->GetGlobalResourceStateTracker();
-            for (uint32_t i = 0; i < resource->GetLevelCount(); ++i)
-            {
-                for (uint32_t j = 0; j < resource->GetLayerCount(); ++j)
-                {
-                    auto state = state_tracker.GetSubresourceState(i, j);
-                    if (state != ResourceState::kUnknown)
-                        global_state_tracker.SetSubresourceState(i, j, state);
-                }
-            }
+            global_state_tracker.Merge(state_tracker);
         }
 
         raw_command_lists.emplace_back(command_lists[c]->GetCommandList());

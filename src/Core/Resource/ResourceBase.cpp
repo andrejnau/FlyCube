@@ -1,7 +1,7 @@
 #include "Resource/ResourceBase.h"
 
 ResourceBase::ResourceBase()
-    : m_resource_state_tracker([this] { return GetLevelCount() * GetLayerCount(); })
+    : m_resource_state_tracker(*this)
 {
 }
 
@@ -49,6 +49,11 @@ void ResourceBase::UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row
 }
 
 ResourceStateTracker& ResourceBase::GetGlobalResourceStateTracker()
+{
+    return m_resource_state_tracker;
+}
+
+const ResourceStateTracker& ResourceBase::GetGlobalResourceStateTracker() const
 {
     return m_resource_state_tracker;
 }

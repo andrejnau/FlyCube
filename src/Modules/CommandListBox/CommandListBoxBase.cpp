@@ -10,13 +10,17 @@ void CommandListBoxBase::LazyResourceBarrier(const std::vector<LazyResourceBarri
         if (state_tracker.HasResourceState() && barrier.base_mip_level == 0 && barrier.level_count == barrier.resource->GetLevelCount() &&
             barrier.base_array_layer == 0 && barrier.layer_count == barrier.resource->GetLayerCount())
         {
-            ResourceBarrierDesc& manual_barrier = manual_barriers.emplace_back();
+            ResourceBarrierDesc manual_barrier = {};
             manual_barrier.resource = barrier.resource;
             manual_barrier.level_count = barrier.level_count;
             manual_barrier.layer_count = barrier.layer_count;
             manual_barrier.state_before = state_tracker.GetResourceState();
             manual_barrier.state_after = barrier.state;
             state_tracker.SetResourceState(manual_barrier.state_after);
+            if (manual_barrier.state_before != ResourceState::kUnknown)
+                manual_barriers.emplace_back(manual_barrier);
+            else
+                m_lazy_barriers.emplace_back(manual_barrier);
         }
         else
         {
@@ -55,7 +59,7 @@ ResourceStateTracker& CommandListBoxBase::GetResourceStateTracker(const std::sha
 {
     auto it = m_resource_state_tracker.find(resource);
     if (it == m_resource_state_tracker.end())
-        it = m_resource_state_tracker.emplace(resource, [resource] { return resource->GetLevelCount() * resource->GetLayerCount(); }).first;
+        it = m_resource_state_tracker.emplace(resource, *resource).first;
     return it->second;
 }
 
