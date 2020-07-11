@@ -13,6 +13,8 @@ Settings ParseArgs(int argc, char* argv[])
             settings.api_type = ApiType::kDX12;
         else if (arg == "--vk")
             settings.api_type = ApiType::kVulkan;
+        else if (arg == "--vsync")
+            settings.vsync = true;
         else if (arg == "--no_vsync")
             settings.vsync = false;
         else if (arg == "--round_fps")
