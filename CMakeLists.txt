@@ -4,6 +4,9 @@ set (PROJECT FlyCube)
 project (${PROJECT})
 
 set(project_root ${CMAKE_CURRENT_SOURCE_DIR})
+if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "${project_root}/install" CACHE PATH "install path" FORCE)
+endif()
 set(assets_path ${CMAKE_CURRENT_SOURCE_DIR}/assets/)
 set(sdkbin_path "C:/Program Files (x86)/Windows Kits/10/Bin/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
 

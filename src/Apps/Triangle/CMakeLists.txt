@@ -73,3 +73,5 @@ target_link_libraries(${target}
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")
+
+install(TARGETS ${target})

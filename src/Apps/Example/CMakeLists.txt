@@ -12,3 +12,5 @@ target_link_libraries(Example
 )
 
 set_target_properties(Example PROPERTIES FOLDER "Apps")
+
+install(TARGETS Example)
