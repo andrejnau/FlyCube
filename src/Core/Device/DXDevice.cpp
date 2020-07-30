@@ -85,7 +85,7 @@ DXDevice::DXDevice(DXAdapter& adapter)
     if (SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support5, sizeof(feature_support5))))
     {
         m_is_dxr_supported = feature_support5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
-        m_is_render_passes_supported = feature_support5.RenderPassesTier >= D3D12_RENDER_PASS_TIER_0;
+        m_is_render_passes_supported = feature_support5.RenderPassesTier >= D3D12_RENDER_PASS_TIER_1;
     }
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS6 feature_support6 = {};
