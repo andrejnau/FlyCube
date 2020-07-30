@@ -57,3 +57,9 @@ inline std::string GetExecutableDir()
     auto path = GetExecutablePath();
     return path.substr(0, path.find_last_of("\\/"));
 }
+
+inline std::string GetEnv(const std::string& var)
+{
+    const char* res = getenv("VULKAN_SDK");
+    return res ? res : "";
+}

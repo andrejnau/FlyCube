@@ -16,6 +16,6 @@ public:
     ComPtr<IDxcCompiler> compiler;
 
 private:
-    bool Load(const std::wstring& path, bool dxil_required);
+    bool Load(const std::string& path, bool dxil_required);
     dxc::DxcDllSupport m_dll_support;
 };
