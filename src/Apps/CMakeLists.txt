@@ -1,4 +1,4 @@
-add_subdirectory(ParseShader)
+add_subdirectory(ShaderParser)
 add_subdirectory(Triangle)
 add_subdirectory(Example)
 

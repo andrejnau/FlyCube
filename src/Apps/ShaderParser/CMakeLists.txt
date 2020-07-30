@@ -1,4 +1,4 @@
-set(target ParseShader)
+set(target ShaderParser)
 
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
 
