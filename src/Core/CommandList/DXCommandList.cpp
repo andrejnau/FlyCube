@@ -439,6 +439,29 @@ void DXCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& result, con
     BuildAccelerationStructure(inputs, result, scratch);
 }
 
+void DXCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)
+{
+    decltype(auto) dx_src = src->As<DXResource>();
+    decltype(auto) dx_dst = dst->As<DXResource>();
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE  dx_mode = {};
+    switch (mode)
+    {
+    case CopyAccelerationStructureMode::kClone:
+        dx_mode = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE_CLONE;
+        break;
+    case CopyAccelerationStructureMode::kCompact:
+        dx_mode = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE_COMPACT;
+        break;
+    default:
+        assert(false);
+    }
+    m_command_list4->CopyRaytracingAccelerationStructure(
+        dx_dst.resource->GetGPUVirtualAddress(),
+        dx_src.resource->GetGPUVirtualAddress(),
+        dx_mode
+    );
+}
+
 void DXCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
                                const std::vector<BufferCopyRegion>& regions)
 {

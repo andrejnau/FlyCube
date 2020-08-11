@@ -536,6 +536,12 @@ struct ClearDesc
     float depth;
 };
 
+enum class CopyAccelerationStructureMode
+{
+    kClone,
+    kCompact,
+};
+
 template<typename T> 
 auto operator< (const T& l, const T& r) -> std::enable_if_t<std::is_same_v<decltype(l.MakeTie() < r.MakeTie()), bool>, bool>
 {

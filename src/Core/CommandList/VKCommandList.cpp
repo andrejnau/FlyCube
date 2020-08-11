@@ -482,6 +482,29 @@ void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& result, con
     BuildAccelerationStructure(build_info, vk_instance_data.buffer.res.get(), result, scratch);
 }
 
+void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)
+{
+    decltype(auto) vk_src = src->As<VKResource>();
+    decltype(auto) vk_dst = dst->As<VKResource>();
+    vk::CopyAccelerationStructureModeNV vk_mode = {};
+    switch (mode)
+    {
+    case CopyAccelerationStructureMode::kClone:
+        vk_mode = vk::CopyAccelerationStructureModeNV::eClone;
+        break;
+    case CopyAccelerationStructureMode::kCompact:
+        vk_mode = vk::CopyAccelerationStructureModeNV::eCompact;
+        break;
+    default:
+        assert(false);
+    }
+    m_command_list->copyAccelerationStructureNV(
+        vk_dst.as.acceleration_structure.get(),
+        vk_src.as.acceleration_structure.get(),
+        vk_mode
+    );
+}
+
 void VKCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
                                const std::vector<BufferCopyRegion>& regions)
 {

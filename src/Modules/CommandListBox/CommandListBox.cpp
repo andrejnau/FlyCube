@@ -254,6 +254,11 @@ std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::vector<std
     return res;
 }
 
+void CommandListBox::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)
+{
+    m_command_list->CopyAccelerationStructure(src, dst, mode);
+}
+
 void CommandListBox::ReleaseRequest(const std::shared_ptr<Resource>& resource)
 {
     m_cmd_resources.emplace_back(resource);
