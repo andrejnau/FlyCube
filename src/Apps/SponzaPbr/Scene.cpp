@@ -35,7 +35,7 @@ Scene::Scene(const Settings& settings, GLFWwindow* window, int width, int height
     m_scene_list.back().ibl_request = true;
 #endif
 
-#if 0
+#if 1
     m_scene_list.emplace_back(m_device, *m_upload_command_list, "model/Mannequin_Animation/source/Mannequin_Animation.FBX");
     m_scene_list.back().matrix = glm::scale(glm::vec3(0.07f)) * glm::translate(glm::vec3(75.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 #endif
