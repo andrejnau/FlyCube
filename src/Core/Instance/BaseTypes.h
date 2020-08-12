@@ -542,6 +542,21 @@ enum class CopyAccelerationStructureMode
     kCompact,
 };
 
+namespace enum_class
+{
+    enum BuildAccelerationStructureFlags
+    {
+        kNone = 0,
+        kAllowUpdate = 1 << 0,
+        kAllowCompaction = 1 << 1,
+        kPreferFastTrace = 1 << 2,
+        kPreferFastBuild = 1 << 3,
+        kMinimizeMemory = 1 << 4,
+    };
+}
+
+using BuildAccelerationStructureFlags = enum_class::BuildAccelerationStructureFlags;
+
 template<typename T> 
 auto operator< (const T& l, const T& r) -> std::enable_if_t<std::is_same_v<decltype(l.MakeTie() < r.MakeTie()), bool>, bool>
 {

@@ -55,7 +55,8 @@ public:
     {
         vk::UniqueDeviceMemory memory;
         vk::UniqueAccelerationStructureNV acceleration_structure;
-        uint64_t handle;
+        uint64_t handle = {};
+        vk::BuildAccelerationStructureFlagsNV flags = {};
     } as;
 
 private:

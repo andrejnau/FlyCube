@@ -31,8 +31,8 @@ public:
     std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) override;
-    std::shared_ptr<Resource> CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs) override;
-    std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count) override;
+    std::shared_ptr<Resource> CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) override;
+    std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags) override;
     bool IsDxrSupported() const override;
     bool IsVariableRateShadingSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;

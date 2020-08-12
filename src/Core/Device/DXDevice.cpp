@@ -406,10 +406,27 @@ std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(const D3D12_BUIL
     std::shared_ptr<DXResource> res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
     res->resource_type = inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL ? ResourceType::kBottomLevelAS : ResourceType::kTopLevelAS;
     res->prebuild_info = { info.ScratchDataSizeInBytes };
+    res->as_flags = inputs.Flags;
     return res;
 }
 
-std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs)
+D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStructureFlags flags)
+{
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS dx_flags = {};
+    if (flags & BuildAccelerationStructureFlags::kAllowUpdate)
+        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+    if (flags & BuildAccelerationStructureFlags::kAllowCompaction)
+        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
+    if (flags & BuildAccelerationStructureFlags::kPreferFastTrace)
+        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+    if (flags & BuildAccelerationStructureFlags::kPreferFastBuild)
+        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
+    if (flags & BuildAccelerationStructureFlags::kMinimizeMemory)
+        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
+    return dx_flags;
+}
+
+std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
 {
     std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometry_descs;
     for (const auto& desc : descs)
@@ -421,16 +438,18 @@ std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::vector<Raytra
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
     inputs.NumDescs = geometry_descs.size();
     inputs.pGeometryDescs = geometry_descs.data();
+    inputs.Flags = Convert(flags);
     return CreateAccelerationStructure(inputs);
 }
 
-std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(uint32_t instance_count)
+std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags)
 {
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
     inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
     inputs.NumDescs = instance_count;
+    inputs.Flags = Convert(flags);
     return CreateAccelerationStructure(inputs);
 }
 

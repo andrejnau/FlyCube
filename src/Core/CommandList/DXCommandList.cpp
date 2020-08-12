@@ -395,10 +395,12 @@ void DXCommandList::RSSetShadingRateImage(const std::shared_ptr<Resource>& resou
     }
 }
 
-void DXCommandList::BuildAccelerationStructure(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs, const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch)
+void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs, const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch)
 {
     decltype(auto) dx_result = result->As<DXResource>();
     decltype(auto) dx_scratch = scratch->As<DXResource>();
+
+    inputs.Flags = dx_result.as_flags;
 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
     acceleration_structure_desc.Inputs = inputs;

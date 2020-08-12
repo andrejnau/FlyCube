@@ -36,8 +36,8 @@ public:
     virtual std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
     virtual std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) = 0;
     virtual std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) = 0;
-    virtual std::shared_ptr<Resource> CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs) = 0;
-    virtual std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count) = 0;
+    virtual std::shared_ptr<Resource> CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) = 0;
+    virtual std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags) = 0;
     virtual bool IsDxrSupported() const = 0;
     virtual bool IsVariableRateShadingSupported() const = 0;
     virtual uint32_t GetShadingRateImageTileSize() const = 0;

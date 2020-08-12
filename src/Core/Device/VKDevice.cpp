@@ -484,11 +484,28 @@ std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const vk::Accele
     memory_requirements_info_build_scratch.accelerationStructure = res->as.acceleration_structure.get();
     m_device->getAccelerationStructureMemoryRequirementsNV(&memory_requirements_info_build_scratch, &memory_requirements2);
     res->prebuild_info.build_scratch_data_size = memory_requirements2.memoryRequirements.size;
+    res->as.flags = acceleration_structure_info.flags;
 
     return res;
 }
 
-std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs)
+vk::BuildAccelerationStructureFlagsNV Convert(BuildAccelerationStructureFlags flags)
+{
+    vk::BuildAccelerationStructureFlagsNV vk_flags = {};
+    if (flags & BuildAccelerationStructureFlags::kAllowUpdate)
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsNV::eAllowUpdate;
+    if (flags & BuildAccelerationStructureFlags::kAllowCompaction)
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsNV::eAllowCompaction;
+    if (flags & BuildAccelerationStructureFlags::kPreferFastTrace)
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace;
+    if (flags & BuildAccelerationStructureFlags::kPreferFastBuild)
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsNV::ePreferFastBuild;
+    if (flags & BuildAccelerationStructureFlags::kMinimizeMemory)
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsNV::eLowMemory;
+    return vk_flags;
+}
+
+std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
 {
     std::vector<vk::GeometryNV> geometry_descs;
     for (const auto& desc : descs)
@@ -499,14 +516,16 @@ std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::vector<Raytra
     acceleration_structure_info.type = vk::AccelerationStructureTypeNV::eBottomLevel;
     acceleration_structure_info.geometryCount = geometry_descs.size();
     acceleration_structure_info.pGeometries = geometry_descs.data();
+    acceleration_structure_info.flags = Convert(flags);
     return CreateAccelerationStructure(acceleration_structure_info);
 }
 
-std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(uint32_t instance_count)
+std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags)
 {
     vk::AccelerationStructureInfoNV acceleration_structure_info = {};
     acceleration_structure_info.type = vk::AccelerationStructureTypeNV::eTopLevel;
     acceleration_structure_info.instanceCount = instance_count;
+    acceleration_structure_info.flags = Convert(flags);
     return CreateAccelerationStructure(acceleration_structure_info);
 }
 

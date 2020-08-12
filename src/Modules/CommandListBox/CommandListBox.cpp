@@ -197,7 +197,7 @@ void CommandListBox::ImageBarrier(const std::shared_ptr<Resource>& resource, uin
     LazyResourceBarrier({ barrier });
 }
 
-std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs)
+std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
 {
     if (m_is_open_render_pass)
     {
@@ -213,7 +213,7 @@ std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const std::vector<
             BufferBarrier(desc.index.res, ResourceState::kNonPixelShaderResource);
     }
 
-    auto res = m_device.CreateBottomLevelAS(descs);
+    auto res = m_device.CreateBottomLevelAS(descs, flags);
     RaytracingASPrebuildInfo prebuild_info = res->GetRaytracingASPrebuildInfo();
     auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, prebuild_info.build_scratch_data_size, MemoryType::kDefault);
     m_command_list->BuildBottomLevelAS(res, scratch, descs);
@@ -222,7 +222,7 @@ std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const std::vector<
     return res;
 }
 
-std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry)
+std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry, BuildAccelerationStructureFlags flags)
 {
     if (m_is_open_render_pass)
     {
@@ -242,7 +242,7 @@ std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::vector<std
     auto instance_data = m_device.CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload);
     instance_data->UpdateUploadData(instances.data(), 0, instances.size() * sizeof(instances.back()));
 
-    auto res = m_device.CreateTopLevelAS(geometry.size());
+    auto res = m_device.CreateTopLevelAS(geometry.size(), flags);
     RaytracingASPrebuildInfo prebuild_info = res->GetRaytracingASPrebuildInfo();
     auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, prebuild_info.build_scratch_data_size, MemoryType::kDefault);
 

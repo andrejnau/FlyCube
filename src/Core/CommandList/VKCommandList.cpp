@@ -437,10 +437,12 @@ void VKCommandList::RSSetShadingRateImage(const std::shared_ptr<Resource>& resou
 {
 }
 
-void VKCommandList::BuildAccelerationStructure(const vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch)
+void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, const std::shared_ptr<Resource>& result, const std::shared_ptr<Resource>& scratch)
 {
     decltype(auto) vk_result = result->As<VKResource>();
     decltype(auto) vk_scratch = scratch->As<VKResource>();
+
+    build_info.flags = vk_result.as.flags;
 
     m_command_list->buildAccelerationStructureNV(
         build_info,
