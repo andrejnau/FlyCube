@@ -73,6 +73,7 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
     {
         size_t id = 0;
         size_t node_updated = 0;
+        bool has_dynamic_geometry = false;
         for (auto& model : m_input.scene_list)
         {
             for (auto& range : model.ia.ranges)
@@ -108,7 +109,18 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
 
                 if (m_bottom[cur_id])
                     command_list.ReleaseRequest(m_bottom[cur_id]);
-                m_bottom[cur_id] = command_list.CreateBottomLevelAS({ { vertex, index, flags } });
+
+
+                std::shared_ptr<Resource> src;
+                BuildAccelerationStructureFlags build_flags = BuildAccelerationStructureFlags::kPreferFastTrace;
+                if (model.ia.positions.IsDynamic())
+                {
+                    has_dynamic_geometry = true;
+                    src = m_bottom[cur_id];
+                    build_flags = BuildAccelerationStructureFlags::kAllowUpdate | BuildAccelerationStructureFlags::kPreferFastBuild;
+                }
+
+                m_bottom[cur_id] = command_list.CreateBottomLevelAS(src, { { vertex, index, flags } }, build_flags);
                 m_geometry[cur_id] = { m_bottom[cur_id], glm::transpose(model.matrix) };
                 ++node_updated;
             }
@@ -117,7 +129,10 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
         {
             if (m_top)
                 command_list.ReleaseRequest(m_top);
-            m_top = command_list.CreateTopLevelAS(m_geometry);
+            if (has_dynamic_geometry)
+                m_top = command_list.CreateTopLevelAS(m_top, m_geometry, BuildAccelerationStructureFlags::kAllowUpdate);
+            else
+                m_top = command_list.CreateTopLevelAS({}, m_geometry, BuildAccelerationStructureFlags::kNone);
         }
     };
 

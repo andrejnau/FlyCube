@@ -405,7 +405,7 @@ std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(const D3D12_BUIL
     m_device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
     std::shared_ptr<DXResource> res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
     res->resource_type = inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL ? ResourceType::kBottomLevelAS : ResourceType::kTopLevelAS;
-    res->prebuild_info = { info.ScratchDataSizeInBytes };
+    res->prebuild_info = { info.ScratchDataSizeInBytes, info.UpdateScratchDataSizeInBytes };
     res->as_flags = inputs.Flags;
     return res;
 }

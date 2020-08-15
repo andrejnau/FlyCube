@@ -484,6 +484,13 @@ std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const vk::Accele
     memory_requirements_info_build_scratch.accelerationStructure = res->as.acceleration_structure.get();
     m_device->getAccelerationStructureMemoryRequirementsNV(&memory_requirements_info_build_scratch, &memory_requirements2);
     res->prebuild_info.build_scratch_data_size = memory_requirements2.memoryRequirements.size;
+
+    vk::AccelerationStructureMemoryRequirementsInfoNV memory_requirements_info_update_scratch = {};
+    memory_requirements_info_update_scratch.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eUpdateScratch;
+    memory_requirements_info_update_scratch.accelerationStructure = res->as.acceleration_structure.get();
+    m_device->getAccelerationStructureMemoryRequirementsNV(&memory_requirements_info_update_scratch, &memory_requirements2);
+    res->prebuild_info.update_scratch_data_size = memory_requirements2.memoryRequirements.size;
+
     res->as.flags = acceleration_structure_info.flags;
 
     return res;

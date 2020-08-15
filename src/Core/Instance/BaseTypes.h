@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <gli/format.hpp>
+#include "EnumUtils.h"
 
 enum class ResourceState
 {
@@ -520,7 +521,8 @@ enum class ShadingRateCombiner
 
 struct RaytracingASPrebuildInfo
 {
-    uint64_t build_scratch_data_size;
+    uint64_t build_scratch_data_size = 0;
+    uint64_t update_scratch_data_size = 0;
 };
 
 enum class CommandListType
@@ -556,6 +558,7 @@ namespace enum_class
 }
 
 using BuildAccelerationStructureFlags = enum_class::BuildAccelerationStructureFlags;
+ENABLE_BITMASK_OPERATORS(BuildAccelerationStructureFlags);
 
 template<typename T> 
 auto operator< (const T& l, const T& r) -> std::enable_if_t<std::is_same_v<decltype(l.MakeTie() < r.MakeTie()), bool>, bool>
