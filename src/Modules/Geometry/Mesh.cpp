@@ -1,5 +1,6 @@
 #include "Geometry/Mesh.h"
 #include <Texture/TextureLoader.h>
+#include <iterator>
 
 MergedMesh::MergedMesh(const std::vector<IMesh>& meshes)
 {

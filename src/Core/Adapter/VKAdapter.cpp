@@ -4,7 +4,7 @@
 VKAdapter::VKAdapter(VKInstance& instance, const vk::PhysicalDevice& physical_device)
     : m_instance(instance)
     , m_physical_device(physical_device)
-    , m_name(physical_device.getProperties().deviceName)
+    , m_name(physical_device.getProperties().deviceName.data())
 {
 }
 

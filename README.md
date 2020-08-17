@@ -202,4 +202,4 @@ cmake --build . --config RelWithDebInfo
 ```
 
 ## Setup for Vulkan
-Use Vulkan SDK 1.2.141
+Use Vulkan SDK 1.2.148.1

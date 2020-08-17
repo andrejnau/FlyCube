@@ -1,5 +1,6 @@
 #include "Geometry/Bones.h"
 #include <glm/gtx/transform.hpp>
+#include <iterator>
 
 void Bones::LoadModel(const aiScene* scene)
 {
