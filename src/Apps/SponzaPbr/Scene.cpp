@@ -22,7 +22,7 @@ Scene::Scene(const Settings& settings, GLFWwindow* window, int width, int height
     , m_background_pass(m_device, { m_model_cube, m_camera, m_equirectangular2cubemap.output.environment, m_geometry_pass.output.albedo, m_geometry_pass.output.dsv }, width, height)
     , m_light_pass(m_device, { m_geometry_pass.output, m_shadow_pass.output, m_ssao_pass.output, m_rtao, m_model_square, m_camera, m_light_pos, m_irradince, m_prefilter, m_brdf.output.brdf }, width, height)
     , m_compute_luminance(m_device, { m_light_pass.output.rtv, m_model_square, m_render_target_view, m_depth_stencil_view }, width, height)
-    , m_imgui_pass(m_device, *m_upload_command_list, { m_render_target_view, *this }, width, height, window)
+    , m_imgui_pass(m_device, *m_upload_command_list, { m_render_target_view, *this, m_settings }, width, height, window)
 {
 #if !defined(_DEBUG) && 1
     m_scene_list.emplace_back(m_device, *m_upload_command_list, "model/sponza_pbr/sponza.obj");
@@ -93,6 +93,7 @@ Scene::Scene(const Settings& settings, GLFWwindow* window, int width, int height
 #ifdef RAYTRACING_SUPPORT
     if (m_device.IsDxrSupported())
     {
+        m_settings.Set("use_rtao", true);
         m_ray_tracing_ao_pass.reset(new RayTracingAOPass(m_device, *m_upload_command_list, { m_geometry_pass.output, m_scene_list, m_model_square, m_camera }, width, height));
         m_rtao = &m_ray_tracing_ao_pass->output.ao;
     }
@@ -127,6 +128,9 @@ Scene::Scene(const Settings& settings, GLFWwindow* window, int width, int height
 
     m_upload_command_list->Close();
     m_context.ExecuteCommandLists({ m_upload_command_list });
+
+    m_settings.Set("gpu_name", m_context.GetAdapter()->GetName());
+    OnModifySponzaSettings(m_settings);
 }
 
 Scene::~Scene()

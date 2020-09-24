@@ -8,23 +8,27 @@
 class ImGuiSettings
 {
 public:
-    ImGuiSettings(IModifySponzaSettings& listener)
+    ImGuiSettings(IModifySponzaSettings& listener, SponzaSettings& settings)
         : listener(listener)
+        , settings(settings)
     {
     }
 
     void NewFrame()
     {
-
         ImGui::NewFrame();
         ImGui::Begin("SponzaSettings");
 
-        ImGui::Text("%s", "TODO"); // CurState::Instance().gpu_name.c_str());
+        if (settings.Has("gpu_name"))
+        {
+            std::string gpu_name = settings.Get<std::string>("gpu_name");
+            if (!gpu_name.empty())
+                ImGui::Text("%s", gpu_name.c_str());
+        }
 
         bool has_changed = settings.OnDraw();
 
         ImGui::End();
-
         if (has_changed)
             listener.OnModifySponzaSettings(settings);
     }
@@ -37,5 +41,5 @@ public:
 
 private:
     IModifySponzaSettings& listener;
-    SponzaSettings settings;
+    SponzaSettings& settings;
 };

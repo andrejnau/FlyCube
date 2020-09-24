@@ -27,10 +27,21 @@ public:
     bool OnDraw();
     bool OnKey(int key, int action);
 
-    template<typename T>
-    T Get(const std::string& key)
+    bool Has(const std::string& key) const
     {
-        return std::any_cast<T>(m_settings[key]);
+        return m_settings.count(key);
+    }
+
+    template<typename T>
+    T Get(const std::string& key) const
+    {
+        return std::any_cast<T>(m_settings.at(key));
+    }
+
+    template<typename T>
+    void Set(const std::string& key, const T& value)
+    {
+        m_settings[key] = value;
     }
 
 private:

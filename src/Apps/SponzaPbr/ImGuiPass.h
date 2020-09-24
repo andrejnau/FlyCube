@@ -16,6 +16,7 @@ public:
     {
         std::shared_ptr<Resource>& rtv;
         IModifySponzaSettings& root_scene;
+        SponzaSettings& settings;
     };
 
     struct Output
@@ -52,5 +53,5 @@ private:
     std::array<std::unique_ptr<IAVertexBuffer>, 3> m_colors_buffer;
     std::array<std::unique_ptr<IAIndexBuffer>, 3> m_indices_buffer;
     std::shared_ptr<Resource> m_sampler;
-    ImGuiSettings m_settings;
+    ImGuiSettings m_imgui_settings;
 };

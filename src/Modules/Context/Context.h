@@ -62,6 +62,11 @@ public:
         return m_swapchain;
     }
 
+    std::shared_ptr<Adapter>& GetAdapter()
+    {
+        return m_adapter;
+    }
+
     static constexpr int FrameCount = 3;
 
 private:

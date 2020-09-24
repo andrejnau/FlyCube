@@ -13,7 +13,7 @@ ImGuiPass::ImGuiPass(Device& device, CommandListBox& command_list, const Input& 
     , m_height(height)
     , m_window(window)
     , m_program(device)
-    , m_settings(m_input.root_scene)
+    , m_imgui_settings(m_input.root_scene, m_input.settings)
 {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -41,7 +41,7 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
     if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         return;
 
-    m_settings.NewFrame();
+    m_imgui_settings.NewFrame();
 
     ImGui::Render();
 
@@ -145,7 +145,7 @@ void ImGuiPass::OnKey(int key, int action)
         io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
         io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
     }
-    m_settings.OnKey(key, action);
+    m_imgui_settings.OnKey(key, action);
 }
 
 void ImGuiPass::OnMouse(bool first, double xpos, double ypos)

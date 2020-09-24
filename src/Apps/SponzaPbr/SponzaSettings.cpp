@@ -60,15 +60,16 @@ void SponzaSettings::add_combo(const std::string& label, const std::vector<std::
 HotKey& SponzaSettings::add_checkbox(const std::string& label, bool value)
 {
     m_settings[label] = value;
-    m_items.push_back([this, label, value]() mutable
+    m_items.push_back([this, label]() mutable
     {
+        bool value = Get<bool>(label);
         auto res = ImGui::Checkbox(label.c_str(), &value);
         m_settings[label] = value;
         return res;
     });
     m_hotkeys.emplace_back([this, label]
     {
-        m_settings[label] = !std::any_cast<bool>(m_settings[label]);
+        m_settings[label] = !Get<bool>(label);
     });
     return m_hotkeys.back();
 }
@@ -76,8 +77,9 @@ HotKey& SponzaSettings::add_checkbox(const std::string& label, bool value)
 void SponzaSettings::add_slider_int(const std::string& label, int32_t value, int min, int max)
 {
     m_settings[label] = value;
-    m_items.push_back([this, label, value, min, max]() mutable
+    m_items.push_back([this, label, min, max]() mutable
     {
+        int32_t value = Get<int32_t>(label);
         auto res = ImGui::SliderInt(label.c_str(), &value, min, max);
         m_settings[label] = value;
         return res;
@@ -89,8 +91,9 @@ void SponzaSettings::add_slider(const std::string& label, float value, float min
     m_settings[label] = value;
     if (linear)
     {
-        m_items.push_back([this, label, value, min, max]() mutable
+        m_items.push_back([this, label, min, max]() mutable
         {
+            float value = Get<float>(label);
             auto res = ImGui::SliderFloat(label.c_str(), &value, min, max);
             m_settings[label] = value;
             return res;
@@ -98,8 +101,9 @@ void SponzaSettings::add_slider(const std::string& label, float value, float min
     }
     else
     {
-        m_items.push_back([this, label, value, min, max]() mutable
+        m_items.push_back([this, label, min, max]() mutable
         {
+            float value = Get<float>(label);
             auto res = ImGui::SliderFloat(label.c_str(), &value, min, max, "%.3f", 2);
             m_settings[label] = value;
             return res;
