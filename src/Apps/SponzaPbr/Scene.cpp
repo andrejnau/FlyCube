@@ -209,7 +209,7 @@ void Scene::OnResize(int width, int height)
 void Scene::OnKey(int key, int action)
 {
     m_imgui_pass.OnKey(key, action);
-    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
         return;
 
     if (action == GLFW_PRESS)
@@ -220,7 +220,7 @@ void Scene::OnKey(int key, int action)
 
 void Scene::OnMouse(bool first_event, double xpos, double ypos)
 {
-    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
     {
         m_imgui_pass.OnMouse(first_event, xpos, ypos);
         return;
@@ -243,7 +243,7 @@ void Scene::OnMouse(bool first_event, double xpos, double ypos)
 
 void Scene::OnMouseButton(int button, int action)
 {
-    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
     {
         m_imgui_pass.OnMouseButton(button, action);
     }
@@ -251,7 +251,7 @@ void Scene::OnMouseButton(int button, int action)
 
 void Scene::OnScroll(double xoffset, double yoffset)
 {
-    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
     {
         m_imgui_pass.OnScroll(xoffset, yoffset);
     }
@@ -259,7 +259,7 @@ void Scene::OnScroll(double xoffset, double yoffset)
 
 void Scene::OnInputChar(unsigned int ch)
 {
-    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_context.GetWindow(), GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
     {
         m_imgui_pass.OnInputChar(ch);
     }

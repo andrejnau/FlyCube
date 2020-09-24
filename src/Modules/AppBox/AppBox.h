@@ -49,4 +49,5 @@ private:
     double m_last_time = 0;
     std::array<int, 4> m_window_box = {};
     std::map<int, bool> m_keys;
+    int m_mouse_mode = GLFW_CURSOR_HIDDEN;
 };

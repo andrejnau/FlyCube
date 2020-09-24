@@ -32,7 +32,7 @@ AppBox::AppBox(const std::string& title, Settings setting)
     glfwSetMouseButtonCallback(m_window, AppBox::OnMouseButton);
     glfwSetScrollCallback(m_window, AppBox::OnScroll);
     glfwSetCharCallback(m_window, AppBox::OnInputChar);
-    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(m_window, GLFW_CURSOR, m_mouse_mode);
 
     int xpos = (monitor_desc->width - m_width) / 2;
     int ypos = (monitor_desc->height - m_height) / 2;
@@ -138,12 +138,23 @@ void AppBox::OnKey(GLFWwindow* m_window, int key, int scancode, int action, int 
         self->SwitchFullScreenMode();
     }
 
+    if (key == GLFW_KEY_L && action == GLFW_PRESS)
+    {
+        if (self->m_mouse_mode == GLFW_CURSOR_HIDDEN)
+            self->m_mouse_mode = GLFW_CURSOR_DISABLED;
+        else
+            self->m_mouse_mode = GLFW_CURSOR_HIDDEN;
+
+        if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL)
+            glfwSetInputMode(m_window, GLFW_CURSOR, self->m_mouse_mode);
+    }
+
     if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
     {
-        if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
-            glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
+            glfwSetInputMode(m_window, GLFW_CURSOR, self->m_mouse_mode);
         else
-            glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
     if (self->m_input_listener)
@@ -156,7 +167,7 @@ void AppBox::OnMouse(GLFWwindow* m_window, double xpos, double ypos)
     if (!self->m_input_listener)
         return;
     static bool first_event = true;
-    if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL)
     {
         self->m_input_listener->OnMouse(first_event, xpos, ypos);
         first_event = false;

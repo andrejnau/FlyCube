@@ -38,7 +38,7 @@ void ImGuiPass::OnUpdate()
 
 void ImGuiPass::OnRender(CommandListBox& command_list)
 {
-    if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL)
         return;
 
     m_imgui_settings.NewFrame();
@@ -132,7 +132,7 @@ void ImGuiPass::OnResize(int width, int height)
 
 void ImGuiPass::OnKey(int key, int action)
 {
-    if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+    if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
     {
         ImGuiIO& io = ImGui::GetIO();
         if (action == GLFW_PRESS)
