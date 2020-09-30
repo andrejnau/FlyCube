@@ -12,7 +12,7 @@
 int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
-    AppBox app("ModelViewer", settings);
+    AppBox app("VariableRateShading", settings);
 
     Context context(settings, app.GetWindow());
     Device& device(*context.GetDevice());

@@ -8,4 +8,4 @@ if (RAYTRACING_SUPPORT)
     add_subdirectory(DxrTriangle)
 endif()
 
-add_subdirectory(ModelViewer)
+add_subdirectory(VariableRateShading)
