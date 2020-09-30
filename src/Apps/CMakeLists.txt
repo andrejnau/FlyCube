@@ -1,6 +1,6 @@
 add_subdirectory(ShaderParser)
 add_subdirectory(Triangle)
-add_subdirectory(Example)
+add_subdirectory(CoreTriangle)
 
 add_subdirectory(SponzaPbr)
 

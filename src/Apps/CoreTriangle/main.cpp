@@ -5,7 +5,7 @@
 int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
-    AppBox app("Example", settings);
+    AppBox app("CoreTriangle", settings);
     AppRect rect = app.GetAppRect();
 
     std::shared_ptr<Instance> instance = CreateInstance(settings.api_type);
