@@ -437,7 +437,7 @@ void VKCommandList::RSSetShadingRateImage(const std::shared_ptr<Resource>& resou
 {
 }
 
-void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch)
+void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset)
 {
     decltype(auto) vk_dst = dst->As<VKResource>();
     decltype(auto) vk_scratch = scratch->As<VKResource>();
@@ -459,7 +459,7 @@ void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& 
         vk_dst.as.acceleration_structure.get(),
         vk_src_as,
         vk_scratch.buffer.res.get(),
-        0
+        scratch_offset
     );
 
     vk::MemoryBarrier memory_barrier = {};
@@ -468,7 +468,8 @@ void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& 
     m_command_list->pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, 1, &memory_barrier, 0, 0, 0, 0);
 }
 
-void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, const std::vector<RaytracingGeometryDesc>& descs)
+void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,
+                                       const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset, const std::vector<RaytracingGeometryDesc>& descs)
 {
     std::vector<vk::GeometryNV> geometry_descs;
     for (const auto& desc : descs)
@@ -479,16 +480,17 @@ void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, con
     build_info.type = vk::AccelerationStructureTypeNV::eBottomLevel;
     build_info.geometryCount = geometry_descs.size();
     build_info.pGeometries = geometry_descs.data();
-    BuildAccelerationStructure(build_info, {}, src, dst, scratch);
+    BuildAccelerationStructure(build_info, {}, src, dst, scratch, scratch_offset);
 }
 
-void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, const std::shared_ptr<Resource>& instance_data, uint32_t instance_count)
+void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,
+                                    const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset, const std::shared_ptr<Resource>& instance_data, uint32_t instance_count)
 {
     decltype(auto) vk_instance_data = instance_data->As<VKResource>();
     vk::AccelerationStructureInfoNV build_info = {};
     build_info.type = vk::AccelerationStructureTypeNV::eTopLevel;
     build_info.instanceCount = instance_count;
-    BuildAccelerationStructure(build_info, vk_instance_data.buffer.res.get(), src, dst, scratch);
+    BuildAccelerationStructure(build_info, vk_instance_data.buffer.res.get(), src, dst, scratch, scratch_offset);
 }
 
 void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)
