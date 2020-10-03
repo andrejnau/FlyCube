@@ -45,11 +45,7 @@ int main(int argc, char* argv[])
         RaytracingGeometryFlags::kOpaque
     };
     std::shared_ptr<Resource> bottom = device->CreateBottomLevelAS({ raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
-    RaytracingASPrebuildInfo prebuild_info_bottom = bottom->GetRaytracingASPrebuildInfo();
-    auto scratch_bottom = device->CreateBuffer(BindFlag::kRayTracing, prebuild_info_bottom.build_scratch_data_size, MemoryType::kDefault);
-    scratch_bottom->SetName("scratch_bottom");
-    upload_command_list->BuildBottomLevelAS({}, bottom, scratch_bottom, 0, { raytracing_geometry_desc });
-    upload_command_list->CopyAccelerationStructure(bottom, bottom, CopyAccelerationStructureMode::kCompact);
+
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> geometry = {
         { bottom, glm::mat4(1.0) },
     };
@@ -62,15 +58,22 @@ int main(int argc, char* argv[])
         instance.instance_mask = 0xff;
         instance.acceleration_structure_handle = mesh.first->GetAccelerationStructureHandle();
     }
+
+    std::shared_ptr<Resource> top = device->CreateTopLevelAS(instances.size(), BuildAccelerationStructureFlags::kNone);
+    RaytracingASPrebuildInfo prebuild_info_top = top->GetRaytracingASPrebuildInfo();
+    RaytracingASPrebuildInfo prebuild_info_bottom = bottom->GetRaytracingASPrebuildInfo();
+
+    auto scratch = device->CreateBuffer(BindFlag::kRayTracing, prebuild_info_bottom.build_scratch_data_size + prebuild_info_top.build_scratch_data_size, MemoryType::kDefault);
+    scratch->SetName("scratch");
+
+    upload_command_list->BuildBottomLevelAS({}, bottom, scratch, 0, { raytracing_geometry_desc });
+    upload_command_list->CopyAccelerationStructure(bottom, bottom, CopyAccelerationStructureMode::kCompact);
+
     auto instance_data = device->CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload);
     instance_data->SetName("instance_data");
     instance_data->UpdateUploadData(instances.data(), 0, instances.size() * sizeof(instances.back()));
-    std::shared_ptr<Resource> top = device->CreateTopLevelAS(instances.size(), BuildAccelerationStructureFlags::kNone);
-    RaytracingASPrebuildInfo prebuild_info_top = top->GetRaytracingASPrebuildInfo();
-    auto scratch_top = device->CreateBuffer(BindFlag::kRayTracing, prebuild_info_top.build_scratch_data_size, MemoryType::kDefault);
-    scratch_top->SetName("scratch_top");
+    upload_command_list->BuildTopLevelAS({}, top, scratch, prebuild_info_bottom.build_scratch_data_size, instance_data, instances.size());
 
-    upload_command_list->BuildTopLevelAS({}, top, scratch_top, 0, instance_data, instances.size());
     std::shared_ptr<Resource> uav = device->CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kCopySource, swapchain->GetFormat(), 1, rect.width, rect.height);
     uav->SetName("uav");
     upload_command_list->ResourceBarrier({ { uav, ResourceState::kCopyDest, ResourceState::kUnorderedAccess } });
@@ -90,7 +93,7 @@ int main(int argc, char* argv[])
     uav_view_desc.dimension = ResourceDimension::kTexture2D;
     std::shared_ptr<View> uav_view = device->CreateView(uav, uav_view_desc);
 
-    std::shared_ptr<Shader> library = device->CompileShader({ "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_0" });
+    std::shared_ptr<Shader> library = device->CompileShader({ "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
     std::shared_ptr<Program> program = device->CreateProgram({ library });
     std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({
         { library->GetBindKey("geometry"), top_view },
