@@ -26,6 +26,11 @@ void DXFence::Wait(uint64_t value)
     }
 }
 
+void DXFence::Signal(uint64_t value)
+{
+    m_fence->Signal(value);
+}
+
 ComPtr<ID3D12Fence> DXFence::GetFence()
 {
     return m_fence;

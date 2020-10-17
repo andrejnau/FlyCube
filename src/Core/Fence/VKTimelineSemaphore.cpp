@@ -26,6 +26,14 @@ void VKTimelineSemaphore::Wait(uint64_t value)
     m_device.GetDevice().waitSemaphoresKHR(wait_info, UINT64_MAX);
 }
 
+void VKTimelineSemaphore::Signal(uint64_t value)
+{
+    vk::SemaphoreSignalInfo signal_info = {};
+    signal_info.semaphore = m_timeline_semaphore.get();
+    signal_info.value = value;
+    m_device.GetDevice().signalSemaphoreKHR(signal_info);
+}
+
 const vk::Semaphore& VKTimelineSemaphore::GetFence() const
 {
     return m_timeline_semaphore.get();
