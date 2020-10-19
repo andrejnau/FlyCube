@@ -43,10 +43,11 @@ void Equirectangular2Cubemap::DrawEquirectangular2Cubemap(CommandListBox& comman
     command_list.Attach(m_program_equirectangular2cubemap.ps.sampler.g_sampler, m_sampler);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    command_list.Attach(m_program_equirectangular2cubemap.ps.om.rtv0, output.environment);
-    command_list.ClearColor(m_program_equirectangular2cubemap.ps.om.rtv0, color);
-    command_list.Attach(m_program_equirectangular2cubemap.ps.om.dsv, m_dsv);
-    command_list.ClearDepth(m_program_equirectangular2cubemap.ps.om.dsv, 1.0f);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[m_program_equirectangular2cubemap.ps.om.rtv0].texture = output.environment;
+    render_pass_desc.colors[m_program_equirectangular2cubemap.ps.om.rtv0].clear_color = color;
+    render_pass_desc.depth_stencil.texture = m_dsv;
+    render_pass_desc.depth_stencil.clear_depth = 1.0f;
 
     m_input.model.ia.indices.Bind(command_list);
     m_input.model.ia.positions.BindToSlot(command_list, m_program_equirectangular2cubemap.vs.ia.POSITION);
@@ -72,6 +73,7 @@ void Equirectangular2Cubemap::DrawEquirectangular2Cubemap(CommandListBox& comman
         glm::lookAt(position, position + ForwardLH, Up)
     };
 
+    command_list.BeginRenderPass(render_pass_desc);
     for (uint32_t i = 0; i < 6; ++i)
     {
         m_program_equirectangular2cubemap.vs.cbuffer.ConstantBuf.face = i;
@@ -82,6 +84,7 @@ void Equirectangular2Cubemap::DrawEquirectangular2Cubemap(CommandListBox& comman
             command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
+    command_list.EndRenderPass();
 
     command_list.UseProgram(m_program_downsample);
     for (size_t i = 1; i < m_texture_mips; ++i)

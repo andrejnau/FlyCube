@@ -72,16 +72,16 @@ int main(int argc, char* argv[])
     std::vector<std::shared_ptr<CommandListBox>> command_lists;
     for (uint32_t i = 0; i < Context::FrameCount; ++i)
     {
+        FlyRenderPassDesc render_pass_desc = {};
+        render_pass_desc.colors[0].texture = context.GetBackBuffer(i);
+        render_pass_desc.colors[0].clear_color = { 1.0f, 1.0f, 1.0f, 1.0f };
+        render_pass_desc.depth_stencil.texture = dsv;
+        render_pass_desc.depth_stencil.clear_depth = 1.0;
+
         decltype(auto) command_list = context.CreateCommandList();
         command_list->UseProgram(program);
         command_list->SetViewport(rect.width, rect.height);
-        command_list->Attach(program.ps.om.rtv0, context.GetBackBuffer(i));
-        command_list->Attach(program.ps.om.dsv, dsv);
         command_list->Attach(program.vs.cbv.ConstantBuf, program.vs.cbuffer.ConstantBuf);
-
-        command_list->ClearColor(program.ps.om.rtv0, { 1.0f, 1.0f, 1.0f, 1.0f });
-        command_list->ClearDepth(program.ps.om.dsv, 1.0f);
-
         model.ia.indices.Bind(*command_list);
         model.ia.positions.BindToSlot(*command_list, program.vs.ia.POSITION);
         model.ia.normals.BindToSlot(*command_list, program.vs.ia.NORMAL);
@@ -94,12 +94,14 @@ int main(int argc, char* argv[])
             command_list->RSSetShadingRateImage(shading_rate_texture);
         }
 
+        command_list->BeginRenderPass(render_pass_desc);
         for (auto& range : model.ia.ranges)
         {
             auto& material = model.GetMaterial(range.id);
             command_list->Attach(program.ps.srv.albedoMap, material.texture.albedo);
             command_list->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
+        command_list->EndRenderPass();
 
         if (device.IsVariableRateShadingSupported())
         {

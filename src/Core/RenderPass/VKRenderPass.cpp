@@ -29,6 +29,11 @@ vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
 VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
     : m_desc(desc)
 {
+    while (!m_desc.colors.empty() && m_desc.colors.back().format == gli::FORMAT_UNDEFINED)
+    {
+        m_desc.colors.pop_back();
+    }
+
     std::vector<vk::AttachmentDescription> attachment_descriptions;
     auto add_attachment = [&](vk::AttachmentReference& reference, gli::format format, vk::ImageLayout layout, RenderPassLoadOp load_op, RenderPassStoreOp store_op)
     {
@@ -40,7 +45,7 @@ VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
         attachment_descriptions.emplace_back();
         vk::AttachmentDescription& description = attachment_descriptions.back();
         description.format = static_cast<vk::Format>(format);
-        description.samples = static_cast<vk::SampleCountFlagBits>(desc.sample_count);
+        description.samples = static_cast<vk::SampleCountFlagBits>(m_desc.sample_count);
         description.loadOp = Convert(load_op);
         description.storeOp = Convert(store_op);
         description.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
@@ -53,7 +58,7 @@ VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
     };
 
     std::vector<vk::AttachmentReference> color_attachment_references;
-    for (auto& rtv : desc.colors)
+    for (auto& rtv : m_desc.colors)
     {
         add_attachment(color_attachment_references.emplace_back(), rtv.format, vk::ImageLayout::eColorAttachmentOptimal, rtv.load_op, rtv.store_op);
     }
@@ -64,9 +69,9 @@ VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
     sub_pass.pColorAttachments = color_attachment_references.data();
 
     vk::AttachmentReference depth_attachment_references = {};
-    if (desc.depth_stencil.format != gli::FORMAT_UNDEFINED)
+    if (m_desc.depth_stencil.format != gli::FORMAT_UNDEFINED)
     {
-        add_attachment(depth_attachment_references, desc.depth_stencil.format, vk::ImageLayout::eDepthStencilAttachmentOptimal, desc.depth_stencil.depth_load_op, desc.depth_stencil.depth_store_op);
+        add_attachment(depth_attachment_references, m_desc.depth_stencil.format, vk::ImageLayout::eDepthStencilAttachmentOptimal, m_desc.depth_stencil.depth_load_op, m_desc.depth_stencil.depth_store_op);
         sub_pass.pDepthStencilAttachment = &depth_attachment_references;
     }
 

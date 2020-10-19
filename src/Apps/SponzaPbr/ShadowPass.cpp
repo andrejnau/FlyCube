@@ -52,9 +52,11 @@ void ShadowPass::OnRender(CommandListBox& command_list)
     command_list.Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    command_list.Attach(m_program.ps.om.dsv, output.srv);
-    command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.depth_stencil.texture = output.srv;
+    render_pass_desc.depth_stencil.clear_depth = 1.0f;
 
+    command_list.BeginRenderPass(render_pass_desc);
     for (auto& model : m_input.scene_list)
     {
         m_program.vs.cbuffer.VSParams.World = glm::transpose(model.matrix);
@@ -77,6 +79,7 @@ void ShadowPass::OnRender(CommandListBox& command_list)
             command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
+    command_list.EndRenderPass();
 }
 
 void ShadowPass::CreateSizeDependentResources()

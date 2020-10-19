@@ -164,11 +164,14 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
         m_input.square.ia.indices.Bind(command_list);
         m_input.square.ia.positions.BindToSlot(command_list, m_program_blur.vs.ia.POSITION);
         m_input.square.ia.texcoords.BindToSlot(command_list, m_program_blur.vs.ia.TEXCOORD);
+
+        command_list.BeginRenderPass({});
         for (auto& range : m_input.square.ia.ranges)
         {
             command_list.Attach(m_program_blur.ps.srv.ssaoInput, m_ao);
             command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
+        command_list.EndRenderPass();
 
         output.ao = m_ao_blur;
     }

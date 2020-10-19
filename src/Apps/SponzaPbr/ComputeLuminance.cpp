@@ -58,21 +58,24 @@ void ComputeLuminance::Draw(CommandListBox& command_list, size_t buf_id)
     command_list.Attach(m_HDRApply.ps.cbv.HDRSetting, m_HDRApply.ps.cbuffer.HDRSetting);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    command_list.Attach(m_HDRApply.ps.om.rtv0, m_input.rtv);
-    command_list.ClearColor(m_HDRApply.ps.om.rtv0, color);
-    command_list.Attach(m_HDRApply.ps.om.dsv, m_input.dsv);
-    command_list.ClearDepth(m_HDRApply.ps.om.dsv, 1.0f);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[m_HDRApply.ps.om.rtv0].texture = m_input.rtv;
+    render_pass_desc.colors[m_HDRApply.ps.om.rtv0].clear_color = color;
+    render_pass_desc.depth_stencil.texture = m_input.dsv;
+    render_pass_desc.depth_stencil.clear_depth = 1.0f;
 
     m_input.model.ia.indices.Bind(command_list);
     m_input.model.ia.positions.BindToSlot(command_list, m_HDRApply.vs.ia.POSITION);
     m_input.model.ia.texcoords.BindToSlot(command_list, m_HDRApply.vs.ia.TEXCOORD);
 
+    command_list.BeginRenderPass(render_pass_desc);
     for (auto& range : m_input.model.ia.ranges)
     {
         command_list.Attach(m_HDRApply.ps.srv.hdr_input, m_input.hdr_res);
         command_list.Attach(m_HDRApply.ps.srv.lum, m_use_res[buf_id]);
         command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
+    command_list.EndRenderPass();
 }
 
 void ComputeLuminance::OnRender(CommandListBox& command_list)

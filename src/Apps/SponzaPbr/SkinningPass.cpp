@@ -18,11 +18,13 @@ void SkinningPass::OnRender(CommandListBox& command_list)
 
     for (auto& model : m_input.scene_list)
     {
-        if (!model.bones.UpdateAnimation(glfwGetTime()))
-            continue;
+        model.bones.UpdateAnimation(m_device, command_list, glfwGetTime());
+    }
 
-        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_device, command_list);
-        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_device, command_list);
+    for (auto& model : m_input.scene_list)
+    {
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo();
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone();
 
         command_list.Attach(m_program.cs.srv.index_buffer, model.ia.indices.GetBuffer());
 

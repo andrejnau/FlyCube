@@ -34,18 +34,23 @@ void BackgroundPass::OnRender(CommandListBox& command_list)
 
     command_list.Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
-    command_list.Attach(m_program.ps.om.rtv0, m_input.rtv);
-    command_list.Attach(m_program.ps.om.dsv, m_input.dsv);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[m_program.ps.om.rtv0].texture = m_input.rtv;
+    render_pass_desc.colors[m_program.ps.om.rtv0].load_op = RenderPassLoadOp::kLoad;
+    render_pass_desc.depth_stencil.texture = m_input.dsv;
+    render_pass_desc.depth_stencil.depth_load_op = RenderPassLoadOp::kLoad;
 
     m_input.model.ia.indices.Bind(command_list);
     m_input.model.ia.positions.BindToSlot(command_list, m_program.vs.ia.POSITION);
 
     command_list.Attach(m_program.ps.srv.environmentMap, m_input.environment);
 
+    command_list.BeginRenderPass(render_pass_desc);
     for (auto& range : m_input.model.ia.ranges)
     {
         command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
+    command_list.EndRenderPass();
 }
 
 void BackgroundPass::OnResize(int width, int height)

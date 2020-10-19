@@ -185,6 +185,7 @@ void DXCommandList::BeginRenderPassImpl(const std::shared_ptr<RenderPass>& rende
         D3D12_RENDER_PASS_BEGINNING_ACCESS stencil_begin = { Convert(dx_render_pass.GetDesc().depth_stencil.stencil_load_op), {} };
         D3D12_RENDER_PASS_ENDING_ACCESS stencil_end = { Convert(dx_render_pass.GetDesc().depth_stencil.stencil_store_op), {} };
         depth_begin.Clear.ClearValue.DepthStencil.Depth = clear_desc.depth;
+        depth_begin.Clear.ClearValue.DepthStencil.Stencil = clear_desc.stencil;
         om_dsv = { om_dsv_handle, depth_begin, stencil_begin, depth_end, stencil_end };
         om_dsv_ptr = &om_dsv;
     }

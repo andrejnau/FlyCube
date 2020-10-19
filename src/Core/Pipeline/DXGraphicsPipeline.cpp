@@ -135,11 +135,11 @@ PipelineType DXGraphicsPipeline::GetPipelineType() const
 
 void DXGraphicsPipeline::FillRTVFormats(const RenderPassDesc& render_pass_desc)
 {
-    m_graphics_pso_desc.NumRenderTargets = render_pass_desc.colors.size();
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
     {
         if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED)
             continue;
+        m_graphics_pso_desc.NumRenderTargets = i + 1;
         m_graphics_pso_desc.RTVFormats[i] = static_cast<DXGI_FORMAT>(gli::dx().translate(render_pass_desc.colors[i].format).DXGIFormat.DDS);
     }
 }

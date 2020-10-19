@@ -34,19 +34,22 @@ void BRDFGen::DrawBRDF(CommandListBox& command_list)
     command_list.UseProgram(m_program);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    command_list.Attach(m_program.ps.om.rtv0, output.brdf);
-    command_list.ClearColor(m_program.ps.om.rtv0, color);
-    command_list.Attach(m_program.ps.om.dsv, m_dsv);
-    command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[m_program.ps.om.rtv0].texture = output.brdf;
+    render_pass_desc.colors[m_program.ps.om.rtv0].clear_color = color;
+    render_pass_desc.depth_stencil.texture = m_dsv;
+    render_pass_desc.depth_stencil.clear_depth = 1.0f;
 
     m_input.square_model.ia.indices.Bind(command_list);
     m_input.square_model.ia.positions.BindToSlot(command_list, m_program.vs.ia.POSITION);
     m_input.square_model.ia.texcoords.BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
 
+    command_list.BeginRenderPass(render_pass_desc);
     for (auto& range : m_input.square_model.ia.ranges)
     {
         command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
+    command_list.EndRenderPass();
 }
 
 void BRDFGen::OnResize(int width, int height)

@@ -5,9 +5,12 @@
 #include <string>
 #include <map>
 #include <memory>
+#include <array>
 #include <vector>
 #include <gli/format.hpp>
 #include "EnumUtils.h"
+
+class Resource;
 
 enum class ResourceState
 {
@@ -299,6 +302,33 @@ struct RenderPassDesc
     }
 };
 
+struct FlyRenderPassColorDesc
+{
+    std::shared_ptr<Resource> texture;
+    LazyViewDesc view_desc;
+    RenderPassLoadOp load_op = RenderPassLoadOp::kClear;
+    RenderPassStoreOp store_op = RenderPassStoreOp::kStore;
+    glm::vec4 clear_color = {};
+};
+
+struct FlyRenderPassDepthStencilDesc
+{
+    std::shared_ptr<Resource> texture;
+    LazyViewDesc view_desc;
+    RenderPassLoadOp depth_load_op = RenderPassLoadOp::kClear;
+    RenderPassStoreOp depth_store_op = RenderPassStoreOp::kStore;
+    RenderPassLoadOp stencil_load_op = RenderPassLoadOp::kClear;
+    RenderPassStoreOp stencil_store_op = RenderPassStoreOp::kStore;
+    float clear_depth = 1.0f;
+    uint8_t clear_stencil = 0;
+};
+
+struct FlyRenderPassDesc
+{
+    std::array<FlyRenderPassColorDesc, 8> colors = {};
+    FlyRenderPassDepthStencilDesc depth_stencil;
+};
+
 class Program;
 class View;
 class RenderPass;
@@ -365,8 +395,6 @@ enum class PipelineType
     kCompute,
     kRayTracing,
 };
-
-class Resource;
 
 struct BufferDesc
 {
@@ -535,7 +563,8 @@ enum class CommandListType
 struct ClearDesc
 {
     std::vector<glm::vec4> colors;
-    float depth;
+    float depth = 1.0f;
+    uint8_t stencil = 0;
 };
 
 enum class CopyAccelerationStructureMode

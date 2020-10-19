@@ -47,9 +47,11 @@ void IrradianceConversion::DrawIrradianceConvolution(CommandListBox& command_lis
     command_list.Attach(m_program_irradiance_convolution.ps.sampler.g_sampler, m_sampler);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    command_list.Attach(m_program_irradiance_convolution.ps.om.rtv0, m_input.irradince.res);
-    command_list.Attach(m_program_irradiance_convolution.ps.om.dsv, m_input.irradince.dsv);
-    command_list.ClearDepth(m_program_irradiance_convolution.ps.om.dsv, 1.0f);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[m_program_irradiance_convolution.ps.om.rtv0].texture = m_input.irradince.res;
+    render_pass_desc.colors[m_program_irradiance_convolution.ps.om.rtv0].load_op = RenderPassLoadOp::kLoad;
+    render_pass_desc.depth_stencil.texture = m_input.irradince.dsv;
+    render_pass_desc.depth_stencil.clear_depth = 1.0f;
 
     m_input.model.ia.indices.Bind(command_list);
     m_input.model.ia.positions.BindToSlot(command_list, m_program_irradiance_convolution.vs.ia.POSITION);
@@ -75,6 +77,7 @@ void IrradianceConversion::DrawIrradianceConvolution(CommandListBox& command_lis
         glm::lookAt(position, position + ForwardLH, Up)
     };
 
+    command_list.BeginRenderPass(render_pass_desc);
     for (uint32_t i = 0; i < 6; ++i)
     {
         m_program_irradiance_convolution.vs.cbuffer.ConstantBuf.face = 6 * m_input.irradince.layer + i;
@@ -85,6 +88,7 @@ void IrradianceConversion::DrawIrradianceConvolution(CommandListBox& command_lis
             command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
+    command_list.EndRenderPass();
 }
 
 void IrradianceConversion::DrawPrefilter(CommandListBox& command_list)
@@ -126,11 +130,17 @@ void IrradianceConversion::DrawPrefilter(CommandListBox& command_list)
         command_list.SetViewport(m_input.prefilter.size >> mip, m_input.prefilter.size >> mip);
         m_program_prefilter.ps.cbuffer.Settings.roughness = (float)mip / (float)(max_mip_levels - 1);
         m_program_prefilter.ps.cbuffer.Settings.resolution = m_input.prefilter.size;
-        glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-        command_list.Attach(m_program_prefilter.ps.om.rtv0, m_input.prefilter.res, { mip });
-        command_list.Attach(m_program_prefilter.ps.om.dsv, m_input.prefilter.dsv, { mip });
-        command_list.ClearDepth(m_program_prefilter.ps.om.dsv, 1.0f);
 
+        glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
+        FlyRenderPassDesc render_pass_desc = {};
+        render_pass_desc.colors[m_program_prefilter.ps.om.rtv0].texture = m_input.prefilter.res;
+        render_pass_desc.colors[m_program_prefilter.ps.om.rtv0].load_op = RenderPassLoadOp::kLoad;
+        render_pass_desc.colors[m_program_prefilter.ps.om.rtv0].view_desc = { mip };
+        render_pass_desc.depth_stencil.texture = m_input.prefilter.dsv;
+        render_pass_desc.depth_stencil.view_desc = { mip };
+        render_pass_desc.depth_stencil.clear_depth = 1.0f;
+
+        command_list.BeginRenderPass(render_pass_desc);
         for (uint32_t i = 0; i < 6; ++i)
         {
             command_list.BeginEvent(std::string("DrawPrefilter: mip " + std::to_string(mip) + " level " + std::to_string(i)).c_str());
@@ -143,6 +153,7 @@ void IrradianceConversion::DrawPrefilter(CommandListBox& command_list)
             }
             command_list.EndEvent();
         }
+        command_list.EndRenderPass();
         command_list.EndEvent();
     }
 }

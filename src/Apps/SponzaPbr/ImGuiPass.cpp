@@ -81,7 +81,9 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f * m_height, 0.0f);
 
-    command_list.Attach(m_program.ps.om.rtv0, m_input.rtv);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[m_program.ps.om.rtv0].texture = m_input.rtv;
+    render_pass_desc.colors[m_program.ps.om.rtv0].load_op = RenderPassLoadOp::kLoad;
 
     m_indices_buffer[index]->Bind(command_list);
     m_positions_buffer[index]->BindToSlot(command_list, m_program.vs.ia.POSITION);
@@ -106,6 +108,7 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
 
     int vtx_offset = 0;
     int idx_offset = 0;
+    command_list.BeginRenderPass(render_pass_desc);
     for (int i = 0; i < draw_data->CmdListsCount; ++i)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[i];
@@ -119,6 +122,7 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
         }
         vtx_offset += cmd_list->VtxBuffer.Size;
     }
+    command_list.EndRenderPass();
 
     index = (index + 1) % 3;
 }

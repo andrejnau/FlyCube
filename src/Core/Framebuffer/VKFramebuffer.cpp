@@ -34,7 +34,7 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<RenderPass>
 
     framebuffer_info.width = m_extent.width;
     framebuffer_info.height = m_extent.height;
-    framebuffer_info.renderPass = render_pass->As<VKRenderPass>().GetRenderPass();;
+    framebuffer_info.renderPass = render_pass->As<VKRenderPass>().GetRenderPass();
     framebuffer_info.attachmentCount = attachment_views.size();
     framebuffer_info.pAttachments = attachment_views.data();
     m_framebuffer = device.GetDevice().createFramebufferUnique(framebuffer_info);

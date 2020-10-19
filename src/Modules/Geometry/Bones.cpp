@@ -49,25 +49,17 @@ void Bones::ProcessMesh(const aiMesh* mesh, IMesh& cur_mesh)
     }
 }
 
-std::shared_ptr<Resource> Bones::GetBonesInfo(Device& device, CommandListBox& command_list)
+std::shared_ptr<Resource> Bones::GetBonesInfo()
 {
-    if (!bones_info_srv)
-        bones_info_srv = device.CreateBuffer(BindFlag::kShaderResource | BindFlag::kCopyDest, static_cast<uint32_t>(bone_info.size() * sizeof(BoneInfo)));
-    if (!bone_info.empty())
-        command_list.UpdateSubresource(bones_info_srv, 0, bone_info.data(), 0, 0);
     return bones_info_srv;
 }
 
-std::shared_ptr<Resource> Bones::GetBone(Device& device, CommandListBox& command_list)
+std::shared_ptr<Resource> Bones::GetBone()
 {
-    if (!bone_srv)
-        bone_srv = device.CreateBuffer(BindFlag::kShaderResource | BindFlag::kCopyDest, static_cast<uint32_t>(bone.size() * sizeof(glm::mat4)));
-    if (!bone.empty())
-        command_list.UpdateSubresource(bone_srv, 0, bone.data(), 0, 0);
     return bone_srv;
 }
 
-bool Bones::UpdateAnimation(float time_in_seconds)
+bool Bones::UpdateAnimation(Device& device, CommandListBox& command_list, float time_in_seconds)
 {
     if (!m_scene)
         return false;
@@ -80,6 +72,16 @@ bool Bones::UpdateAnimation(float time_in_seconds)
 
     glm::mat4 identity(1.0);
     ReadNodeHeirarchy(animation_time, m_scene->mRootNode, identity);
+
+    if (!bones_info_srv)
+        bones_info_srv = device.CreateBuffer(BindFlag::kShaderResource | BindFlag::kCopyDest, static_cast<uint32_t>(bone_info.size() * sizeof(BoneInfo)));
+    if (!bone_info.empty())
+        command_list.UpdateSubresource(bones_info_srv, 0, bone_info.data(), 0, 0);
+
+    if (!bone_srv)
+        bone_srv = device.CreateBuffer(BindFlag::kShaderResource | BindFlag::kCopyDest, static_cast<uint32_t>(bone.size() * sizeof(glm::mat4)));
+    if (!bone.empty())
+        command_list.UpdateSubresource(bone_srv, 0, bone.data(), 0, 0);
 
     return true;
 }
@@ -158,7 +160,7 @@ aiQuaternion Bones::CalcInterpolatedRotation(float animation_time, const aiNodeA
 {
     if (node_anim->mNumRotationKeys == 1)
         return node_anim->mRotationKeys[0].mValue;
-    uint32_t RotationIndex = FindRotation(animation_time, node_anim);;
+    uint32_t RotationIndex = FindRotation(animation_time, node_anim);
     if (RotationIndex == -1)
         return {};
     uint32_t NextRotationIndex = RotationIndex + 1;

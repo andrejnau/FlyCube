@@ -35,19 +35,20 @@ void GeometryPass::OnRender(CommandListBox& command_list)
 
     command_list.Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
-    glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    command_list.Attach(m_program.ps.om.rtv0, output.position);
-    command_list.ClearColor(m_program.ps.om.rtv0, color);
-    command_list.Attach(m_program.ps.om.rtv1, output.normal);
-    command_list.ClearColor(m_program.ps.om.rtv1, color);
-    command_list.Attach(m_program.ps.om.rtv2, output.albedo);
-    command_list.ClearColor(m_program.ps.om.rtv2, color);
-    command_list.Attach(m_program.ps.om.rtv3, output.material);
-    command_list.ClearColor(m_program.ps.om.rtv3, color);
-    command_list.Attach(m_program.ps.om.dsv, output.dsv);
-    command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[m_program.ps.om.rtv0].texture = output.position;
+    render_pass_desc.colors[m_program.ps.om.rtv0].clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    render_pass_desc.colors[m_program.ps.om.rtv1].texture = output.normal;
+    render_pass_desc.colors[m_program.ps.om.rtv1].clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    render_pass_desc.colors[m_program.ps.om.rtv2].texture = output.albedo;
+    render_pass_desc.colors[m_program.ps.om.rtv2].clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    render_pass_desc.colors[m_program.ps.om.rtv3].texture = output.material;
+    render_pass_desc.colors[m_program.ps.om.rtv3].clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    render_pass_desc.depth_stencil.texture = output.dsv;
+    render_pass_desc.depth_stencil.clear_depth = 1.0f;
 
     bool skiped = false;
+    command_list.BeginRenderPass(render_pass_desc);
     for (auto& model : m_input.scene_list)
     {
         if (!skiped && m_settings.Get<bool>("skip_sponza_model"))
@@ -84,6 +85,7 @@ void GeometryPass::OnRender(CommandListBox& command_list)
             command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
+    command_list.EndRenderPass();
 }
 
 void GeometryPass::OnResize(int width, int height)

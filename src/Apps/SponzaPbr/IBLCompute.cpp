@@ -138,9 +138,18 @@ void IBLCompute::DrawPrePass(CommandListBox& command_list, Model & ibl_model)
     view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
     view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
 
-    command_list.Attach(m_program_pre_pass.ps.om.dsv, ibl_model.ibl_dsv);
-    command_list.ClearDepth(m_program_pre_pass.ps.om.dsv, 1.0f);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.depth_stencil.texture = ibl_model.ibl_dsv;
+    render_pass_desc.depth_stencil.clear_depth = 1.0f;
 
+    for (auto& model : m_input.scene_list)
+    {
+        if (&ibl_model == &model)
+            continue;
+        model.bones.UpdateAnimation(m_device, command_list, glfwGetTime());
+    }
+
+    command_list.BeginRenderPass(render_pass_desc);
     for (auto& model : m_input.scene_list)
     {
         if (&ibl_model == &model)
@@ -149,10 +158,8 @@ void IBLCompute::DrawPrePass(CommandListBox& command_list, Model & ibl_model)
         m_program_pre_pass.vs.cbuffer.ConstantBuf.model = glm::transpose(model.matrix);
         m_program_pre_pass.vs.cbuffer.ConstantBuf.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model.matrix)));
 
-        model.bones.UpdateAnimation(glfwGetTime());
-
-        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_device, command_list);
-        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_device, command_list);
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo();
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone();
 
         command_list.Attach(m_program_pre_pass.vs.srv.bone_info, bones_info_srv);
         command_list.Attach(m_program_pre_pass.vs.srv.gBones, bone_srv);
@@ -172,6 +179,7 @@ void IBLCompute::DrawPrePass(CommandListBox& command_list, Model & ibl_model)
             command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
+    command_list.EndRenderPass();
 }
 
 void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
@@ -208,19 +216,29 @@ void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
     view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
     view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
 
-    command_list.Attach(m_program.ps.om.rtv0, ibl_model.ibl_rtv);
-    command_list.ClearColor(m_program.ps.om.rtv0, color);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[m_program.ps.om.rtv0].texture = ibl_model.ibl_rtv;
+    render_pass_desc.colors[m_program.ps.om.rtv0].clear_color = color;
     if (m_use_pre_pass)
     {
-        command_list.Attach(m_program.ps.om.dsv, ibl_model.ibl_dsv);
+        render_pass_desc.depth_stencil.texture = ibl_model.ibl_dsv;
+        render_pass_desc.depth_stencil.depth_load_op = RenderPassLoadOp::kLoad;
         command_list.SetDepthStencilState({ true, DepthComparison::kLessEqual });
     }
     else
     {
-        command_list.Attach(m_program.ps.om.dsv, ibl_model.ibl_dsv);
-        command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
+        render_pass_desc.depth_stencil.texture = ibl_model.ibl_dsv;
+        render_pass_desc.depth_stencil.clear_depth = 1.0f;
     }
 
+    for (auto& model : m_input.scene_list)
+    {
+        if (&ibl_model == &model)
+            continue;
+        model.bones.UpdateAnimation(m_device, command_list, glfwGetTime());
+    }
+
+    command_list.BeginRenderPass(render_pass_desc);
     for (auto& model : m_input.scene_list)
     {
         if (&ibl_model == &model)
@@ -229,10 +247,8 @@ void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
         m_program.vs.cbuffer.ConstantBuf.model = glm::transpose(model.matrix);
         m_program.vs.cbuffer.ConstantBuf.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model.matrix)));
 
-        model.bones.UpdateAnimation(glfwGetTime());
-
-        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo(m_device, command_list);
-        std::shared_ptr<Resource> bone_srv = model.bones.GetBone(m_device, command_list);
+        std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo();
+        std::shared_ptr<Resource> bone_srv = model.bones.GetBone();
 
         command_list.Attach(m_program.vs.srv.bone_info, bones_info_srv);
         command_list.Attach(m_program.vs.srv.gBones, bone_srv);
@@ -264,6 +280,7 @@ void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
             command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
+    command_list.EndRenderPass();
 }
 
 void IBLCompute::DrawBackgroud(CommandListBox& command_list, Model& ibl_model)
@@ -275,8 +292,11 @@ void IBLCompute::DrawBackgroud(CommandListBox& command_list, Model& ibl_model)
 
     command_list.Attach(m_program_backgroud.ps.sampler.g_sampler, m_sampler);
 
-    command_list.Attach(m_program_backgroud.ps.om.rtv0, ibl_model.ibl_rtv);
-    command_list.Attach(m_program_backgroud.ps.om.dsv, ibl_model.ibl_dsv);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[m_program_backgroud.ps.om.rtv0].texture = ibl_model.ibl_rtv;
+    render_pass_desc.colors[m_program_backgroud.ps.om.rtv0].load_op = RenderPassLoadOp::kLoad;
+    render_pass_desc.depth_stencil.texture = ibl_model.ibl_dsv;
+    render_pass_desc.depth_stencil.depth_load_op = RenderPassLoadOp::kLoad;
 
     m_input.model_cube.ia.indices.Bind(command_list);
     m_input.model_cube.ia.positions.BindToSlot(command_list, m_program_backgroud.vs.ia.POSITION);
@@ -304,6 +324,7 @@ void IBLCompute::DrawBackgroud(CommandListBox& command_list, Model& ibl_model)
         glm::lookAt(position, position + ForwardLH, Up)
     };
 
+    command_list.BeginRenderPass(render_pass_desc);
     for (uint32_t i = 0; i < 6; ++i)
     {
         m_program_backgroud.vs.cbuffer.ConstantBuf.face = i;
@@ -315,6 +336,7 @@ void IBLCompute::DrawBackgroud(CommandListBox& command_list, Model& ibl_model)
             command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
     }
+    command_list.EndRenderPass();
 }
 
 void IBLCompute::DrawDownSample(CommandListBox& command_list, Model& ibl_model, size_t texture_mips)

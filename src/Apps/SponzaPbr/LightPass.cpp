@@ -111,16 +111,17 @@ void LightPass::OnRender(CommandListBox& command_list)
     command_list.Attach(m_program.ps.sampler.brdf_sampler, m_sampler_brdf);
     command_list.Attach(m_program.ps.sampler.LightCubeShadowComparsionSampler, m_compare_sampler);
 
-    glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    command_list.Attach(m_program.ps.om.rtv0, output.rtv);
-    command_list.ClearColor(m_program.ps.om.rtv0, color);
-    command_list.Attach(m_program.ps.om.dsv, m_depth_stencil_view);
-    command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
-
     m_input.model.ia.indices.Bind(command_list);
     m_input.model.ia.positions.BindToSlot(command_list, m_program.vs.ia.POSITION);
     m_input.model.ia.texcoords.BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
 
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[m_program.ps.om.rtv0].texture = output.rtv;
+    render_pass_desc.colors[m_program.ps.om.rtv0].clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    render_pass_desc.depth_stencil.texture = m_depth_stencil_view;
+    render_pass_desc.depth_stencil.clear_depth = 1.0f;
+
+    command_list.BeginRenderPass(render_pass_desc);
     for (auto& range : m_input.model.ia.ranges)
     {
         command_list.Attach(m_program.ps.srv.gNormal, m_input.geometry_pass.normal);
@@ -138,6 +139,7 @@ void LightPass::OnRender(CommandListBox& command_list)
 
         command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
+    command_list.EndRenderPass();
 }
 
 void LightPass::OnResize(int width, int height)

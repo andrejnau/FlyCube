@@ -34,8 +34,8 @@ struct {{ShaderName}}Desc
 
     struct OM
     {
-{{#Outputs}}        BindKey rtv{{Slot}} = { type, ViewType::kRenderTarget, {{Slot}}, 0 };
-{{/Outputs}}        BindKey dsv = { type, ViewType::kDepthStencil, 0, 0 };
+{{#Outputs}}        static constexpr const uint32_t rtv{{Slot}} = {{Slot}};
+{{/Outputs}}
     } om;{{/HasOutputs}}{{#HasSamplers}}
 
     struct Sampler

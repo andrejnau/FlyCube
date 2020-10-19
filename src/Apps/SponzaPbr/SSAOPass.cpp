@@ -51,26 +51,6 @@ SSAOPass::SSAOPass(Device& device, CommandListBox& command_list, const Input& in
     size_t row_bytes = 0;
     GetFormatInfo(4, 4, gli::format::FORMAT_RGBA32_SFLOAT_PACK32, num_bytes, row_bytes);
     command_list.UpdateSubresource(m_noise_texture, 0, ssaoNoise.data(), row_bytes, num_bytes);
-
-    if (m_device.IsVariableRateShadingSupported())
-    {
-        std::vector<ShadingRate> shading_rate;
-        uint32_t tile_size = device.GetShadingRateImageTileSize();
-        uint32_t shading_rate_width = (width + tile_size - 1) / tile_size;
-        uint32_t shading_rate_height = (height + tile_size - 1) / tile_size;
-        for (uint32_t i = 0; i < shading_rate_width; ++i)
-        {
-            for (uint32_t j = 0; j < shading_rate_height; ++j)
-            {
-                shading_rate.emplace_back(ShadingRate::k2x2);
-            }
-        }
-        m_shading_rate_texture = device.CreateTexture(BindFlag::kShadingRateSource | BindFlag::kCopyDest, gli::format::FORMAT_R8_UINT_PACK8, 1, shading_rate_width, shading_rate_height);
-        num_bytes = 0;
-        row_bytes = 0;
-        GetFormatInfo(shading_rate_width, shading_rate_height, gli::format::FORMAT_R8_UINT_PACK8, num_bytes, row_bytes);
-        command_list.UpdateSubresource(m_shading_rate_texture, 0, shading_rate.data(), row_bytes, num_bytes);
-    }
 }
 
 void SSAOPass::OnUpdate()
@@ -97,20 +77,17 @@ void SSAOPass::OnRender(CommandListBox& command_list)
     command_list.Attach(m_program.ps.cbv.SSAOBuffer, m_program.ps.cbuffer.SSAOBuffer);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    command_list.Attach(m_program.ps.om.rtv0, m_ao);
-    command_list.ClearColor(m_program.ps.om.rtv0, color);
-    command_list.Attach(m_program.ps.om.dsv, m_depth_stencil_view);
-    command_list.ClearDepth(m_program.ps.om.dsv, 1.0f);
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[m_program.ps.om.rtv0].texture = m_ao;
+    render_pass_desc.colors[m_program.ps.om.rtv0].clear_color = color;
+    render_pass_desc.depth_stencil.texture = m_depth_stencil_view;
+    render_pass_desc.depth_stencil.clear_depth = 1.0f;
 
     m_input.square.ia.indices.Bind(command_list);
     m_input.square.ia.positions.BindToSlot(command_list, m_program.vs.ia.POSITION);
     m_input.square.ia.texcoords.BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
 
-    if (m_device.IsVariableRateShadingSupported())
-    {
-        command_list.RSSetShadingRate(ShadingRate::k1x1, std::array<ShadingRateCombiner, 2>{ ShadingRateCombiner::kPassthrough, ShadingRateCombiner::kOverride });
-        command_list.RSSetShadingRateImage(m_shading_rate_texture);
-    }
+    command_list.BeginRenderPass(render_pass_desc);
     for (auto& range : m_input.square.ia.ranges)
     {
         command_list.Attach(m_program.ps.srv.gPosition, m_input.geometry_pass.position);
@@ -118,11 +95,7 @@ void SSAOPass::OnRender(CommandListBox& command_list)
         command_list.Attach(m_program.ps.srv.noiseTexture, m_noise_texture);
         command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
     }
-    if (m_device.IsVariableRateShadingSupported())
-    {
-        command_list.RSSetShadingRateImage({});
-        command_list.RSSetShadingRate(ShadingRate::k1x1);
-    }
+    command_list.EndRenderPass();
 
     if (m_settings.Get<bool>("use_ao_blur"))
     {
@@ -133,11 +106,14 @@ void SSAOPass::OnRender(CommandListBox& command_list)
         m_input.square.ia.indices.Bind(command_list);
         m_input.square.ia.positions.BindToSlot(command_list, m_program_blur.vs.ia.POSITION);
         m_input.square.ia.texcoords.BindToSlot(command_list, m_program_blur.vs.ia.TEXCOORD);
+
+        command_list.BeginRenderPass({});
         for (auto& range : m_input.square.ia.ranges)
         {
             command_list.Attach(m_program_blur.ps.srv.ssaoInput, m_ao);
             command_list.DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
+        command_list.EndRenderPass();
 
         output.ao = m_ao_blur;
     }

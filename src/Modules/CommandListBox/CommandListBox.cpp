@@ -12,7 +12,6 @@ void CommandListBox::Reset()
     OnReset();
     m_cmd_resources.clear();
     m_bound_resources.clear();
-    m_bound_om_resources.clear();
     m_bound_deferred_view.clear();
     m_binding_sets.clear();
     m_resource_lazy_view_descs.clear();
@@ -21,11 +20,6 @@ void CommandListBox::Reset()
 
 void CommandListBox::Close()
 {
-    if (m_is_open_render_pass)
-    {
-        m_command_list->EndRenderPass();
-        m_is_open_render_pass = false;
-    }
     if (!kUseFakeClose)
         m_command_list->Close();
 }
@@ -53,12 +47,6 @@ void CommandListBox::UpdateSubresource(const std::shared_ptr<Resource>& resource
 
 void CommandListBox::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
 {
-    if (m_is_open_render_pass)
-    {
-        m_command_list->EndRenderPass();
-        m_is_open_render_pass = false;
-    }
-
     std::shared_ptr<Resource>& upload_resource = m_cmd_resources.emplace_back();
 
     switch (resource->GetResourceType())
@@ -199,12 +187,6 @@ void CommandListBox::ImageBarrier(const std::shared_ptr<Resource>& resource, uin
 
 std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const std::shared_ptr<Resource>& src, const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
 {
-    if (m_is_open_render_pass)
-    {
-        m_command_list->EndRenderPass();
-        m_is_open_render_pass = false;
-    }
-
     for (const auto& desc : descs)
     {
         if (desc.vertex.res)
@@ -224,11 +206,6 @@ std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const std::shared_
 
 std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::shared_ptr<Resource>& src, const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry, BuildAccelerationStructureFlags flags)
 {
-    if (m_is_open_render_pass)
-    {
-        m_command_list->EndRenderPass();
-        m_is_open_render_pass = false;
-    }
     std::vector<RaytracingGeometryInstance> instances;
     for (const auto& mesh : geometry)
     {
@@ -266,21 +243,9 @@ void CommandListBox::ReleaseRequest(const std::shared_ptr<Resource>& resource)
 
 void CommandListBox::UseProgram(std::shared_ptr<Program>& program)
 {
-    if (m_program != program)
-    {
-        if (m_is_open_render_pass)
-        {
-            m_command_list->EndRenderPass();
-            m_is_open_render_pass = false;
-        }
-    }
-
-    m_render_pass_desc = {};
     m_graphic_pipeline_desc = {};
     m_compute_pipeline_desc = {};
 
-    m_render_pass.reset();
-    m_framebuffer.reset();
     m_program = program;
     if (m_program->HasShader(ShaderType::kCompute) || m_program->HasShader(ShaderType::kLibrary))
     {
@@ -292,26 +257,11 @@ void CommandListBox::UseProgram(std::shared_ptr<Program>& program)
         m_graphic_pipeline_desc.input = m_program->GetShader(ShaderType::kVertex)->GetInputLayout();
     }
     m_bound_resources.clear();
-    m_bound_om_resources.clear();
     m_bound_deferred_view.clear();
 }
 
 void CommandListBox::ApplyBindings()
 {
-    auto it = m_render_pass_cache.find(m_render_pass_desc);
-    if (it == m_render_pass_cache.end())
-    {
-        m_render_pass = m_device.CreateRenderPass(m_render_pass_desc);
-        m_render_pass_cache.emplace(std::piecewise_construct,
-            std::forward_as_tuple(m_render_pass_desc),
-            std::forward_as_tuple(m_render_pass));
-    }
-    else
-    {
-        m_render_pass = it->second;
-    }
-    m_graphic_pipeline_desc.render_pass = m_render_pass;
-
     if (m_program->HasShader(ShaderType::kCompute))
     {
         auto it = m_compute_pso.find(m_compute_pipeline_desc);
@@ -378,64 +328,13 @@ void CommandListBox::ApplyBindings()
     m_binding_sets.emplace_back(m_binding_set);
     m_command_list->BindPipeline(m_pipeline);
     m_command_list->BindBindingSet(m_binding_set);
-
-    if (m_program->HasShader(ShaderType::kCompute) || m_program->HasShader(ShaderType::kLibrary))
-        return;
-
-    std::vector<std::shared_ptr<View>> rtvs;
-    uint32_t slot = 0;
-    for (auto& render_target : m_render_pass_desc.colors)
-    {
-        rtvs.emplace_back(FindOmView(ShaderType::kPixel, ViewType::kRenderTarget, slot++));
-    }
-
-    auto prev_framebuffer = m_framebuffer;
-
-    auto dsv = FindOmView(ShaderType::kPixel, ViewType::kDepthStencil, 0);
-    auto key = std::make_tuple(m_viewport_width, m_viewport_height, rtvs, dsv);
-    auto f_it = m_framebuffers.find(key);
-    if (f_it == m_framebuffers.end())
-    {
-        m_framebuffer = m_device.CreateFramebuffer(m_render_pass, m_viewport_width, m_viewport_height, rtvs, dsv);
-        m_framebuffers.emplace(std::piecewise_construct,
-            std::forward_as_tuple(key),
-            std::forward_as_tuple(m_framebuffer));
-    }
-    else
-    {
-        m_framebuffer = f_it->second;
-    }
-
-    if (prev_framebuffer != m_framebuffer)
-    {
-        if (m_is_open_render_pass)
-            m_command_list->EndRenderPass();
-    }
-
-    if (!m_is_open_render_pass)
-    {
-        m_command_list->BeginRenderPass(m_render_pass, m_framebuffer, {});
-        m_is_open_render_pass = true;
-    }
 }
 
 void CommandListBox::SetBinding(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
-    switch (bind_key.view_type)
-    {
-    case ViewType::kRenderTarget:
-    case ViewType::kDepthStencil:
-        return SetBindingImpl(bind_key, view, m_bound_om_resources);
-    default:
-        return SetBindingImpl(bind_key, view, m_bound_resources);
-    }
-}
-
-void CommandListBox::SetBindingImpl(const BindKey& bind_key, const std::shared_ptr<View>& view, std::map<BindKey, std::shared_ptr<View>>& bound_resources)
-{
-    auto it = bound_resources.find(bind_key);
-    if (it == bound_resources.end())
-        bound_resources.emplace(bind_key, view);
+    auto it = m_bound_resources.find(bind_key);
+    if (it == m_bound_resources.end())
+        m_bound_resources.emplace(bind_key, view);
     else
         it->second = view;
 }
@@ -465,13 +364,89 @@ std::shared_ptr<View> CommandListBox::CreateView(const BindKey& bind_key, const 
     return view;
 }
 
-std::shared_ptr<View> CommandListBox::FindOmView(ShaderType shader_type, ViewType view_type, uint32_t slot)
+void CommandListBox::BeginRenderPass(const FlyRenderPassDesc& fly_render_pass_desc)
 {
-    BindKey bind_key = { shader_type, view_type, slot };
-    auto it = m_bound_om_resources.find(bind_key);
-    if (it == m_bound_om_resources.end())
-        return {};
-    return it->second;
+    RenderPassDesc render_pass_desc = {};
+    ClearDesc clear_desc = {};
+    render_pass_desc.colors.reserve(fly_render_pass_desc.colors.size());
+    for (const auto& color_desc : fly_render_pass_desc.colors)
+    {
+        auto& color = render_pass_desc.colors.emplace_back();
+        clear_desc.colors.emplace_back() = color_desc.clear_color;
+        if (!color_desc.texture)
+            continue;
+        color.format = color_desc.texture->GetFormat();
+        color.load_op = color_desc.load_op;
+        color.store_op = color_desc.store_op;
+        render_pass_desc.sample_count = color_desc.texture->GetSampleCount();
+    }
+
+    if (fly_render_pass_desc.depth_stencil.texture)
+    {
+        render_pass_desc.depth_stencil.format = fly_render_pass_desc.depth_stencil.texture->GetFormat();
+        render_pass_desc.depth_stencil.depth_load_op = fly_render_pass_desc.depth_stencil.depth_load_op;
+        render_pass_desc.depth_stencil.depth_store_op = fly_render_pass_desc.depth_stencil.depth_store_op;
+        render_pass_desc.depth_stencil.stencil_load_op = fly_render_pass_desc.depth_stencil.stencil_load_op;
+        render_pass_desc.depth_stencil.stencil_store_op = fly_render_pass_desc.depth_stencil.stencil_store_op;
+        clear_desc.depth = fly_render_pass_desc.depth_stencil.clear_depth;
+        clear_desc.stencil = fly_render_pass_desc.depth_stencil.clear_stencil;
+    }
+
+    std::shared_ptr<RenderPass> render_pass;
+    auto render_pass_it = m_render_pass_cache.find(render_pass_desc);
+    if (render_pass_it == m_render_pass_cache.end())
+    {
+        render_pass = m_device.CreateRenderPass(render_pass_desc);
+        m_render_pass_cache.emplace(std::piecewise_construct,
+            std::forward_as_tuple(render_pass_desc),
+            std::forward_as_tuple(render_pass));
+    }
+    else
+    {
+        render_pass = render_pass_it->second;
+    }
+
+    m_graphic_pipeline_desc.render_pass = render_pass;
+
+    std::vector<std::shared_ptr<View>> rtvs;
+    for (size_t i = 0; i < fly_render_pass_desc.colors.size(); ++i)
+    {
+        BindKey bind_key = { ShaderType::kPixel, ViewType::kRenderTarget, i, 0 };
+        auto view = CreateView(bind_key, fly_render_pass_desc.colors[i].texture, fly_render_pass_desc.colors[i].view_desc);
+        ViewBarrier(view, ResourceState::kRenderTarget);
+        rtvs.emplace_back(view);
+    }
+
+    std::shared_ptr<View> dsv;
+    if (fly_render_pass_desc.depth_stencil.texture)
+    {
+        BindKey bind_key = { ShaderType::kPixel, ViewType::kDepthStencil, 0, 0 };
+        dsv = CreateView(bind_key, fly_render_pass_desc.depth_stencil.texture, fly_render_pass_desc.depth_stencil.view_desc);
+    }
+    ViewBarrier(dsv, ResourceState::kDepthTarget);
+
+    auto key = std::make_tuple(m_viewport_width, m_viewport_height, rtvs, dsv);
+    std::shared_ptr<Framebuffer> framebuffer;
+    auto framebuffer_it = m_framebuffers.find(key);
+    if (framebuffer_it == m_framebuffers.end())
+    {
+        framebuffer = m_device.CreateFramebuffer(render_pass, m_viewport_width, m_viewport_height, rtvs, dsv);
+        m_framebuffers.emplace(std::piecewise_construct,
+            std::forward_as_tuple(key),
+            std::forward_as_tuple(framebuffer));
+    }
+    else
+    {
+        framebuffer = framebuffer_it->second;
+    }
+
+    m_command_list->BeginRenderPass(render_pass, framebuffer, clear_desc);
+}
+
+void CommandListBox::EndRenderPass()
+{
+    m_command_list->EndRenderPass();
+    m_graphic_pipeline_desc.render_pass = {};
 }
 
 void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<DeferredView>& view)
@@ -496,42 +471,10 @@ void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<View>
         OnAttachUAV(bind_key, view);
         break;
     case ViewType::kRenderTarget:
-        OnAttachRTV(bind_key, view);
-        break;
     case ViewType::kDepthStencil:
-        OnAttachDSV(bind_key, view);
+        assert(false);
         break;
     }
-}
-
-void CommandListBox::ClearColor(const BindKey& bind_key, const glm::vec4& color)
-{
-    auto& view = FindOmView(bind_key.shader_type, bind_key.view_type, bind_key.slot);
-    if (!view)
-        return;
-    if (m_is_open_render_pass)
-    {
-        m_command_list->EndRenderPass();
-        m_is_open_render_pass = false;
-    }
-    ViewBarrier(view, ResourceState::kClearColor);
-    m_command_list->ClearColor(view, color);
-    ViewBarrier(view, ResourceState::kRenderTarget);
-}
-
-void CommandListBox::ClearDepth(const BindKey& bind_key, float depth)
-{
-    auto& view = FindOmView(bind_key.shader_type, bind_key.view_type, bind_key.slot);
-    if (!view)
-        return;
-    if (m_is_open_render_pass)
-    {
-        m_command_list->EndRenderPass();
-        m_is_open_render_pass = false;
-    }
-    ViewBarrier(view, ResourceState::kClearDepth);
-    m_command_list->ClearDepth(view, depth);
-    ViewBarrier(view, ResourceState::kDepthTarget);
 }
 
 void CommandListBox::SetRasterizeState(const RasterizerDesc& desc)
@@ -560,22 +503,4 @@ void CommandListBox::OnAttachSRV(const BindKey& bind_key, const std::shared_ptr<
 void CommandListBox::OnAttachUAV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     ViewBarrier(view, ResourceState::kUnorderedAccess);
-}
-
-void CommandListBox::OnAttachRTV(const BindKey& bind_key, const std::shared_ptr<View>& view)
-{
-    if (bind_key.slot >= m_render_pass_desc.colors.size())
-        m_render_pass_desc.colors.resize(bind_key.slot + 1);
-    auto resource = view->GetResource();
-    m_render_pass_desc.colors[bind_key.slot].format = resource->GetFormat();
-    m_render_pass_desc.sample_count = resource->GetSampleCount();
-    ViewBarrier(view, ResourceState::kRenderTarget);
-}
-
-void CommandListBox::OnAttachDSV(const BindKey& bind_key, const std::shared_ptr<View>& view)
-{
-    auto resource = view->GetResource();
-    m_render_pass_desc.depth_stencil.format = resource->GetFormat();
-    m_render_pass_desc.sample_count = resource->GetSampleCount();
-    ViewBarrier(view, ResourceState::kDepthTarget);
 }

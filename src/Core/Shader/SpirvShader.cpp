@@ -82,7 +82,7 @@ SpirvShader::SpirvShader(const ShaderDesc& desc)
 
             ViewType view_type = GetViewType(compiler, res_type, resource.id);
             BindKey bind_key = { m_type, view_type, slot, space };
-            m_bind_keys[resource.name] = bind_key;;
+            m_bind_keys[resource.name] = bind_key;
             auto& resource_binding_desc = m_resource_binding_descs[bind_key];
             auto& dim = res_type.image.dim;
             if (res_type.basetype == spirv_cross::SPIRType::BaseType::Struct)
