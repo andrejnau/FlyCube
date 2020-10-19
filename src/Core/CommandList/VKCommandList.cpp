@@ -438,7 +438,7 @@ void VKCommandList::RSSetShadingRateImage(const std::shared_ptr<Resource>& resou
 {
 }
 
-void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset)
+void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, uint64_t instance_offset, const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset)
 {
     decltype(auto) vk_dst = dst->As<VKResource>();
     decltype(auto) vk_scratch = scratch->As<VKResource>();
@@ -455,7 +455,7 @@ void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& 
     m_command_list->buildAccelerationStructureNV(
         build_info,
         instance_data,
-        0,
+        instance_offset,
         !!vk_src_as,
         vk_dst.as.acceleration_structure.get(),
         vk_src_as,
@@ -481,17 +481,17 @@ void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, con
     build_info.type = vk::AccelerationStructureTypeNV::eBottomLevel;
     build_info.geometryCount = geometry_descs.size();
     build_info.pGeometries = geometry_descs.data();
-    BuildAccelerationStructure(build_info, {}, src, dst, scratch, scratch_offset);
+    BuildAccelerationStructure(build_info, {}, 0, src, dst, scratch, scratch_offset);
 }
 
-void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,
-                                    const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset, const std::shared_ptr<Resource>& instance_data, uint32_t instance_count)
+void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset,
+                                    const std::shared_ptr<Resource>& instance_data, uint64_t instance_offset, uint32_t instance_count)
 {
     decltype(auto) vk_instance_data = instance_data->As<VKResource>();
     vk::AccelerationStructureInfoNV build_info = {};
     build_info.type = vk::AccelerationStructureTypeNV::eTopLevel;
     build_info.instanceCount = instance_count;
-    BuildAccelerationStructure(build_info, vk_instance_data.buffer.res.get(), src, dst, scratch, scratch_offset);
+    BuildAccelerationStructure(build_info, vk_instance_data.buffer.res.get(), instance_offset, src, dst, scratch, scratch_offset);
 }
 
 void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)

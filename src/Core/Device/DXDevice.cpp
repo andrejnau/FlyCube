@@ -247,7 +247,10 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     if (bind_flag & BindFlag::kUnorderedAccess)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     if (bind_flag & BindFlag::kAccelerationStructure)
+    {
         state = ResourceState::kRaytracingAccelerationStructure;
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
 
     D3D12_HEAP_TYPE heap_type;
     if (memory_type == MemoryType::kDefault)
@@ -403,7 +406,7 @@ std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(const D3D12_BUIL
 {
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
     m_device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
-    std::shared_ptr<DXResource> res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kUnorderedAccess | BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
+    std::shared_ptr<DXResource> res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
     res->resource_type = inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL ? ResourceType::kBottomLevelAS : ResourceType::kTopLevelAS;
     res->prebuild_info = { info.ScratchDataSizeInBytes, info.UpdateScratchDataSizeInBytes };
     res->as_flags = inputs.Flags;

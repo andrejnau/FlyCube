@@ -223,7 +223,7 @@ std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::shared_ptr
     RaytracingASPrebuildInfo prebuild_info = res->GetRaytracingASPrebuildInfo();
     auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size, MemoryType::kDefault);
 
-    m_command_list->BuildTopLevelAS(src, res, scratch, 0, instance_data, geometry.size());
+    m_command_list->BuildTopLevelAS(src, res, scratch, 0, instance_data, 0, geometry.size());
 
     m_cmd_resources.emplace_back(scratch);
     m_cmd_resources.emplace_back(instance_data);

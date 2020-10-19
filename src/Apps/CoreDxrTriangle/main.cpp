@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
     auto instance_data = device->CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload);
     instance_data->SetName("instance_data");
     instance_data->UpdateUploadData(instances.data(), 0, instances.size() * sizeof(instances.back()));
-    upload_command_list->BuildTopLevelAS({}, top, scratch, prebuild_info_bottom.build_scratch_data_size, instance_data, instances.size());
+    upload_command_list->BuildTopLevelAS({}, top, scratch, prebuild_info_bottom.build_scratch_data_size, instance_data, 0, instances.size());
 
     std::shared_ptr<Resource> uav = device->CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kCopySource, swapchain->GetFormat(), 1, rect.width, rect.height);
     uav->SetName("uav");

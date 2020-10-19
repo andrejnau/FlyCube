@@ -36,8 +36,8 @@ public:
     virtual void RSSetShadingRateImage(const std::shared_ptr<Resource>& resource) = 0;
     virtual void BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,
                                     const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset, const std::vector<RaytracingGeometryDesc>& descs) = 0;
-    virtual void BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,
-                                 const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset, const std::shared_ptr<Resource>& instance_data, uint32_t instance_count) = 0;
+    virtual void BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset,
+                                 const std::shared_ptr<Resource>& instance_data, uint64_t instance_offset, uint32_t instance_count) = 0;
     virtual void CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode) = 0;
     virtual void CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
                             const std::vector<BufferCopyRegion>& regions) = 0;
