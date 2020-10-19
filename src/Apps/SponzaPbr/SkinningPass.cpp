@@ -23,6 +23,8 @@ void SkinningPass::OnRender(CommandListBox& command_list)
 
     for (auto& model : m_input.scene_list)
     {
+        if (!model.bones.HasAnimation())
+            continue;
         std::shared_ptr<Resource> bones_info_srv = model.bones.GetBonesInfo();
         std::shared_ptr<Resource> bone_srv = model.bones.GetBone();
 

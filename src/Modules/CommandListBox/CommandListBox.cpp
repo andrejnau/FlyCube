@@ -185,7 +185,7 @@ void CommandListBox::ImageBarrier(const std::shared_ptr<Resource>& resource, uin
     LazyResourceBarrier({ barrier });
 }
 
-std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const std::shared_ptr<Resource>& src, const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
+void CommandListBox::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
 {
     for (const auto& desc : descs)
     {
@@ -195,16 +195,13 @@ std::shared_ptr<Resource> CommandListBox::CreateBottomLevelAS(const std::shared_
             BufferBarrier(desc.index.res, ResourceState::kNonPixelShaderResource);
     }
 
-    auto res = m_device.CreateBottomLevelAS(descs, flags);
-    RaytracingASPrebuildInfo prebuild_info = res->GetRaytracingASPrebuildInfo();
+    RaytracingASPrebuildInfo prebuild_info = dst->GetRaytracingASPrebuildInfo();
     auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size, MemoryType::kDefault);
-    m_command_list->BuildBottomLevelAS(src, res, scratch, 0, descs);
+    m_command_list->BuildBottomLevelAS(src, dst, scratch, 0, descs);
     m_cmd_resources.emplace_back(scratch);
-
-    return res;
 }
 
-std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::shared_ptr<Resource>& src, const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry, BuildAccelerationStructureFlags flags)
+void CommandListBox::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry, BuildAccelerationStructureFlags flags)
 {
     std::vector<RaytracingGeometryInstance> instances;
     for (const auto& mesh : geometry)
@@ -219,16 +216,13 @@ std::shared_ptr<Resource> CommandListBox::CreateTopLevelAS(const std::shared_ptr
     auto instance_data = m_device.CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload);
     instance_data->UpdateUploadData(instances.data(), 0, instances.size() * sizeof(instances.back()));
 
-    auto res = m_device.CreateTopLevelAS(geometry.size(), flags);
-    RaytracingASPrebuildInfo prebuild_info = res->GetRaytracingASPrebuildInfo();
+    RaytracingASPrebuildInfo prebuild_info = dst->GetRaytracingASPrebuildInfo();
     auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size, MemoryType::kDefault);
 
-    m_command_list->BuildTopLevelAS(src, res, scratch, 0, instance_data, 0, geometry.size());
+    m_command_list->BuildTopLevelAS(src, dst, scratch, 0, instance_data, 0, geometry.size());
 
     m_cmd_resources.emplace_back(scratch);
     m_cmd_resources.emplace_back(instance_data);
-
-    return res;
 }
 
 void CommandListBox::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)

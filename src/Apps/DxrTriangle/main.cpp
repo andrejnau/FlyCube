@@ -26,12 +26,14 @@ int main(int argc, char *argv[])
     std::shared_ptr<Resource> positions = device.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest, sizeof(glm::vec3) * positions_data.size());
     upload_command_list->UpdateSubresource(positions, 0, positions_data.data(), 0, 0);
     RaytracingGeometryDesc raytracing_geometry_desc = { { positions, gli::format::FORMAT_RGB32_SFLOAT_PACK32, 3 }, {}, RaytracingGeometryFlags::kOpaque };
-    std::shared_ptr<Resource> bottom = upload_command_list->CreateBottomLevelAS({}, { raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
+    std::shared_ptr<Resource> bottom = device.CreateBottomLevelAS({ raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
+    upload_command_list->BuildBottomLevelAS({}, bottom, { raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
     upload_command_list->CopyAccelerationStructure(bottom, bottom, CopyAccelerationStructureMode::kCompact);
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> geometry = {
         { bottom, glm::mat4(1.0) },
     };
-    std::shared_ptr<Resource> top = upload_command_list->CreateTopLevelAS({}, geometry);
+    std::shared_ptr<Resource> top = device.CreateTopLevelAS(geometry.size(), BuildAccelerationStructureFlags::kNone);
+    upload_command_list->BuildTopLevelAS({}, top, geometry);
     std::shared_ptr<Resource> uav = device.CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kShaderResource | BindFlag::kCopySource,
                                                          context.GetSwapchain()->GetFormat(), 1, rect.width, rect.height);
     upload_command_list->Close();

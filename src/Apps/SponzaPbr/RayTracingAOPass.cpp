@@ -107,32 +107,52 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
                 if (cur_id >= m_geometry.size())
                     m_geometry.resize(cur_id + 1);
 
-                if (m_bottom[cur_id])
-                    command_list.ReleaseRequest(m_bottom[cur_id]);
-
+                auto& dst = m_bottom[cur_id];
 
                 std::shared_ptr<Resource> src;
                 BuildAccelerationStructureFlags build_flags = BuildAccelerationStructureFlags::kPreferFastTrace;
                 if (model.ia.positions.IsDynamic())
                 {
                     has_dynamic_geometry = true;
-                    src = m_bottom[cur_id];
+                    src = dst;
                     build_flags = BuildAccelerationStructureFlags::kAllowUpdate | BuildAccelerationStructureFlags::kPreferFastBuild;
                 }
 
-                m_bottom[cur_id] = command_list.CreateBottomLevelAS(src, { { vertex, index, flags } }, build_flags);
-                m_geometry[cur_id] = { m_bottom[cur_id], glm::transpose(model.matrix) };
+                std::vector<RaytracingGeometryDesc> descs = { { vertex, index, flags } };
+
+                if (!dst)
+                {
+                    dst = m_device.CreateBottomLevelAS(descs, build_flags);
+                    command_list.BuildBottomLevelAS({}, dst, descs, build_flags);
+                }
+                else if (src && dst)
+                {
+                    command_list.BuildBottomLevelAS(src, dst, descs, build_flags);
+                }
+
+                m_geometry[cur_id] = { dst, glm::transpose(model.matrix) };
                 ++node_updated;
             }
         }
         if (node_updated)
         {
-            if (m_top)
-                command_list.ReleaseRequest(m_top);
+            BuildAccelerationStructureFlags build_flag = BuildAccelerationStructureFlags::kNone;
+            std::shared_ptr<Resource> src;
             if (has_dynamic_geometry)
-                m_top = command_list.CreateTopLevelAS(m_top, m_geometry, BuildAccelerationStructureFlags::kAllowUpdate);
-            else
-                m_top = command_list.CreateTopLevelAS({}, m_geometry, BuildAccelerationStructureFlags::kNone);
+            {
+                build_flag = BuildAccelerationStructureFlags::kAllowUpdate;
+                src = m_top;
+            }
+
+            if (!m_top)
+            {
+                m_top = m_device.CreateTopLevelAS(m_geometry.size(), build_flag);
+                command_list.BuildTopLevelAS(src, m_top, m_geometry, build_flag);
+            }
+            else if (src && m_top)
+            {
+                command_list.BuildTopLevelAS(src, m_top, m_geometry, build_flag);
+            }
         }
     };
 

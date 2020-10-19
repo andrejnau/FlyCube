@@ -59,13 +59,19 @@ std::shared_ptr<Resource> Bones::GetBone()
     return bone_srv;
 }
 
-bool Bones::UpdateAnimation(Device& device, CommandListBox& command_list, float time_in_seconds)
+bool Bones::HasAnimation()
 {
     if (!m_scene)
         return false;
     if (!m_scene->mAnimations)
         return false;
+    return true;
+}
 
+void Bones::UpdateAnimation(Device& device, CommandListBox& command_list, float time_in_seconds)
+{
+    if (!HasAnimation())
+        return;
     float ticks_per_second = (float)(m_scene->mAnimations[0]->mTicksPerSecond != 0 ? m_scene->mAnimations[0]->mTicksPerSecond : 25.0f);
     float time_in_ticks = time_in_seconds* ticks_per_second;
     float animation_time = fmod(time_in_ticks, (float)m_scene->mAnimations[0]->mDuration);
@@ -82,8 +88,6 @@ bool Bones::UpdateAnimation(Device& device, CommandListBox& command_list, float 
         bone_srv = device.CreateBuffer(BindFlag::kShaderResource | BindFlag::kCopyDest, static_cast<uint32_t>(bone.size() * sizeof(glm::mat4)));
     if (!bone.empty())
         command_list.UpdateSubresource(bone_srv, 0, bone.data(), 0, 0);
-
-    return true;
 }
 
 glm::mat4 Bones::to_glm(const aiMatrix4x4& mat)
