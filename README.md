@@ -40,15 +40,19 @@ program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
 std::vector<std::shared_ptr<CommandListBox>> command_lists;
 for (uint32_t i = 0; i < Context::FrameCount; ++i)
 {
+    FlyRenderPassDesc render_pass_desc = {};
+    render_pass_desc.colors[0].texture = context.GetBackBuffer(i);
+    render_pass_desc.colors[0].clear_color = { 0.0f, 0.2f, 0.4f, 1.0f };
+
     decltype(auto) command_list = context.CreateCommandList();
     command_list->UseProgram(program);
     command_list->Attach(program.ps.cbv.Settings, program.ps.cbuffer.Settings);
     command_list->SetViewport(rect.width, rect.height);
-    command_list->Attach(program.ps.om.rtv0, context.GetBackBuffer(i));
-    command_list->ClearColor(program.ps.om.rtv0, { 0.0f, 0.2f, 0.4f, 1.0f });
     command_list->IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);
     command_list->IASetVertexBuffer(program.vs.ia.POSITION, pos);
+    command_list->BeginRenderPass(render_pass_desc);
     command_list->DrawIndexed(3, 0, 0);
+    command_list->EndRenderPass();
     command_list->Close();
     command_lists.emplace_back(command_list);
 }
@@ -65,7 +69,7 @@ context.WaitIdle();
 ### Low-level graphics api example
 ```cpp
 Settings settings = ParseArgs(argc, argv);
-AppBox app("Example", settings);
+AppBox app("CoreTriangle", settings);
 AppRect rect = app.GetAppRect();
 
 std::shared_ptr<Instance> instance = CreateInstance(settings.api_type);
@@ -111,6 +115,7 @@ RenderPassDesc render_pass_desc = {
     { { swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
 };
 std::shared_ptr<RenderPass> render_pass = device->CreateRenderPass(render_pass_desc);
+ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
 GraphicsPipelineDesc pipeline_desc = {
     program,
     { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
@@ -137,7 +142,7 @@ for (uint32_t i = 0; i < frame_count; ++i)
     command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
     command_list->IASetVertexBuffer(0, vertex_buffer);
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
-    command_list->BeginRenderPass(render_pass, framebuffers.back(), { { 0.0, 0.2, 0.4, 1.0 } });
+    command_list->BeginRenderPass(render_pass, framebuffers.back(), clear_desc);
     command_list->DrawIndexed(3, 0, 0);
     command_list->EndRenderPass();
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });
