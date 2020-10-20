@@ -100,7 +100,7 @@ MergedMesh::MergedMesh(const std::vector<IMesh>& meshes)
     }
 }
 
-IAMergedMesh::IAMergedMesh(Device & device, RenderCommandList& command_list, std::vector<IMesh>& meshes)
+IAMergedMesh::IAMergedMesh(RenderDevice & device, RenderCommandList& command_list, std::vector<IMesh>& meshes)
     : m_data(std::make_unique<MergedMesh>(meshes))
     , positions(device, command_list, m_data->positions)
     , normals(device, command_list, m_data->normals)

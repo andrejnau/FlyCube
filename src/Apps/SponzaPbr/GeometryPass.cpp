@@ -2,7 +2,7 @@
 
 #include <glm/gtx/transform.hpp>
 
-GeometryPass::GeometryPass(Device& device, const Input& input, int width, int height)
+GeometryPass::GeometryPass(RenderDevice& device, const Input& input, int width, int height)
     : m_device(device)
     , m_input(input)
     , m_width(width)

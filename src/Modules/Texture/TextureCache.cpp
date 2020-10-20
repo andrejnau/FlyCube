@@ -1,7 +1,7 @@
 #include "Texture/TextureCache.h"
 #include <Utilities/FormatHelper.h>
 
-TextureCache::TextureCache(Device& device, RenderCommandList& command_list)
+TextureCache::TextureCache(RenderDevice& device, RenderCommandList& command_list)
     : m_device(device)
     , m_command_list(command_list)
 {

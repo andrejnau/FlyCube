@@ -21,7 +21,7 @@ target_include_directories(${target}
 target_link_libraries(${target}
     SOIL
     Utilities
-    Device
+    RenderDevice
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Modules")

@@ -23,7 +23,7 @@ public:
     {
     } output;
 
-    ImGuiPass(Device& device, RenderCommandList& command_list, const Input& input, int width, int height, GLFWwindow* window);
+    ImGuiPass(RenderDevice& device, RenderCommandList& command_list, const Input& input, int width, int height, GLFWwindow* window);
     ~ImGuiPass();
 
     virtual void OnUpdate() override;
@@ -40,7 +40,7 @@ private:
     void CreateFontsTexture(RenderCommandList& command_list);
     void InitKey();
 
-    Device& m_device;
+    RenderDevice& m_device;
     Input m_input;
     int m_width;
     int m_height;

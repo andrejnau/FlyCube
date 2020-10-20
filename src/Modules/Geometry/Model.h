@@ -20,7 +20,7 @@ struct BoundBox
 class Model : public IModel
 {
 public:
-    Model(Device& device, RenderCommandList& command_list, const std::string& file, uint32_t flags = ~0);
+    Model(RenderDevice& device, RenderCommandList& command_list, const std::string& file, uint32_t flags = ~0);
     virtual void AddMesh(const IMesh& mesh) override;
     virtual Bones& GetBones() override;
 
@@ -45,7 +45,7 @@ public:
     }
 
 private:
-    Device& m_device;
+    RenderDevice& m_device;
     std::unique_ptr<ModelLoader> m_model_loader;
 
 public:

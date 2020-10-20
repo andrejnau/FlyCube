@@ -5,8 +5,8 @@
 #include <memory>
 #include <vector>
 #include <functional>
-#include <Device/Device.h>
-#include <Context/BufferLayout.h>
+#include <RenderDevice/RenderDevice.h>
+#include <Utilities/BufferLayout.h>
 
 template<ShaderType, typename T> class ShaderHolderImpl {};
 
@@ -24,7 +24,7 @@ public:
         return ps;
     }
 
-    ShaderHolderImpl(Device& device)
+    ShaderHolderImpl(RenderDevice& device)
         : ps(device)
     {
     }
@@ -44,7 +44,7 @@ public:
         return vs;
     }
 
-    ShaderHolderImpl(Device& device)
+    ShaderHolderImpl(RenderDevice& device)
         : vs(device)
     {
     }
@@ -64,7 +64,7 @@ public:
         return gs;
     }
 
-    ShaderHolderImpl(Device& device)
+    ShaderHolderImpl(RenderDevice& device)
         : gs(device)
     {
     }
@@ -84,7 +84,7 @@ public:
         return cs;
     }
 
-    ShaderHolderImpl(Device& device)
+    ShaderHolderImpl(RenderDevice& device)
         : cs(device)
     {
     }
@@ -104,7 +104,7 @@ public:
         return lib;
     }
 
-    ShaderHolderImpl(Device& device)
+    ShaderHolderImpl(RenderDevice& device)
         : lib(device)
     {
     }
@@ -122,7 +122,7 @@ template<typename ... Args>
 class ProgramHolder : public ShaderHolder<Args>...
 {
 public:
-    ProgramHolder(Device& device)
+    ProgramHolder(RenderDevice& device)
         : ShaderHolder<Args>(device)...
         , m_device(device)
     {
@@ -130,7 +130,7 @@ public:
     }
 
     template<typename Setup>
-    ProgramHolder(Device& device, const Setup& setup)
+    ProgramHolder(RenderDevice& device, const Setup& setup)
         : ShaderHolder<Args>(device)...
         , m_device(device)
     {
@@ -171,6 +171,6 @@ private:
         m_program = m_device.CreateProgram({ static_cast<ShaderHolder<Args>&>(*this).GetApi().shader ... });
     }
 
-    Device& m_device;
+    RenderDevice& m_device;
     std::shared_ptr<Program> m_program;
 };

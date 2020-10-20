@@ -1,5 +1,5 @@
 #pragma once
-#include <Context/Context.h>
+#include <RenderDevice/RenderDevice.h>
 #include <Geometry/Geometry.h>
 #include <string>
 
@@ -40,9 +40,9 @@ public:
     Scene(const Settings& settings, GLFWwindow* window, int width, int height);
     ~Scene();
 
-    Context& GetContext()
+    RenderDevice& GetRenderDevice()
     {
-        return m_context;
+        return *m_device;
     }
 
     void RenderFrame();
@@ -59,8 +59,8 @@ public:
 private:
     void CreateRT();
 
-    Context m_context;
-    Device& m_device;
+    std::shared_ptr<RenderDevice> m_device;
+    GLFWwindow* m_window;
 
     int m_width;
     int m_height;

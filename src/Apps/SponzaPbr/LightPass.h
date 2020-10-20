@@ -34,7 +34,7 @@ public:
         std::shared_ptr<Resource> rtv;
     } output;
 
-    LightPass(Device& device, const Input& input, int width, int height);
+    LightPass(RenderDevice& device, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender(RenderCommandList& command_list)override;
@@ -46,7 +46,7 @@ private:
     void SetDefines(ProgramHolder<LightPassPS, LightPassVS>& program);
 
     SponzaSettings m_settings;
-    Device& m_device;
+    RenderDevice& m_device;
     Input m_input;
     int m_width;
     int m_height;

@@ -26,7 +26,7 @@ public:
         std::shared_ptr<Resource> dsv;
     } output;
 
-    GeometryPass(Device& device, const Input& input, int width, int height);
+    GeometryPass(RenderDevice& device, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
     virtual void OnRender(RenderCommandList& command_list)override;
@@ -34,7 +34,7 @@ public:
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
-    Device& m_device;
+    RenderDevice& m_device;
     Input m_input;
     int m_width;
     int m_height;

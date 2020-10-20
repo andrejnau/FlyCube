@@ -2,7 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-IrradianceConversion::IrradianceConversion(Device& device, const Input& input)
+IrradianceConversion::IrradianceConversion(RenderDevice& device, const Input& input)
     : m_device(device)
     , m_input(input)
     , m_program_irradiance_convolution(device)

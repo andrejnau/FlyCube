@@ -31,7 +31,7 @@ public:
     {
     } output;
 
-    IrradianceConversion(Device& device, const Input& input);
+    IrradianceConversion(RenderDevice& device, const Input& input);
 
     virtual void OnUpdate() override;
     virtual void OnRender(RenderCommandList& command_list)override;
@@ -42,7 +42,7 @@ private:
     void DrawPrefilter(RenderCommandList& command_list);
 
     SponzaSettings m_settings;
-    Device& m_device;
+    RenderDevice& m_device;
     Input m_input;
     std::shared_ptr<Resource> m_sampler;
     ProgramHolder<CubemapVS, IrradianceConvolutionPS> m_program_irradiance_convolution;

@@ -33,7 +33,7 @@ public:
     {
     } output;
 
-    IBLCompute(Device& device, const Input& input);
+    IBLCompute(RenderDevice& device, const Input& input);
 
     virtual void OnUpdate() override;
     virtual void OnRender(RenderCommandList& command_list) override;
@@ -45,7 +45,7 @@ private:
     void DrawBackgroud(RenderCommandList& command_list, Model& ibl_model);
     void DrawDownSample(RenderCommandList& command_list, Model& ibl_model, size_t texture_mips);
     SponzaSettings m_settings;
-    Device& m_device;
+    RenderDevice& m_device;
     Input m_input;
     ProgramHolder<IBLComputeVS, IBLComputeGS, IBLComputePS> m_program;
     ProgramHolder<IBLComputeVS, IBLComputeGS, IBLComputePrePassPS> m_program_pre_pass;

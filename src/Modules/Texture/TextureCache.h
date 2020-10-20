@@ -5,12 +5,12 @@
 class TextureCache
 {
 public:
-    TextureCache(Device& device, RenderCommandList& command_list);
+    TextureCache(RenderDevice& device, RenderCommandList& command_list);
     std::shared_ptr<Resource> Load(const std::string& path);
     std::shared_ptr<Resource> CreateTextuteStab(const glm::vec4& val);
 
 private:
-    Device& m_device;
+    RenderDevice& m_device;
     RenderCommandList& m_command_list;
     std::map<std::string, std::shared_ptr<Resource>> m_cache;
 

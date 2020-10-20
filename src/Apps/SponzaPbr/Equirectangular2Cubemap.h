@@ -24,7 +24,7 @@ public:
         std::shared_ptr<Resource> environment;
     } output;
 
-    Equirectangular2Cubemap(Device& device, const Input& input);
+    Equirectangular2Cubemap(RenderDevice& device, const Input& input);
 
     virtual void OnUpdate() override;
     virtual void OnRender(RenderCommandList& command_list)override;
@@ -35,7 +35,7 @@ private:
     void CreateSizeDependentResources();
 
     SponzaSettings m_settings;
-    Device& m_device;
+    RenderDevice& m_device;
     Input m_input;
     std::shared_ptr<Resource> m_sampler;
     std::shared_ptr<Resource> m_dsv;

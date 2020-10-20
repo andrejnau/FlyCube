@@ -1,6 +1,6 @@
 #include "RayTracingAOPass.h"
 
-RayTracingAOPass::RayTracingAOPass(Device& device, RenderCommandList& command_list, const Input& input, int width, int height)
+RayTracingAOPass::RayTracingAOPass(RenderDevice& device, RenderCommandList& command_list, const Input& input, int width, int height)
     : m_device(device)
     , m_input(input)
     , m_width(width)

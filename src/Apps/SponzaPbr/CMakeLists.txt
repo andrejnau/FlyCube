@@ -147,7 +147,7 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
-    Context
+    RenderDevice
     assimp
     SOIL
     AppBox

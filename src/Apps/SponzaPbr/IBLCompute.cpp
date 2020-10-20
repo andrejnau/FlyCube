@@ -2,7 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-IBLCompute::IBLCompute(Device& device, const Input& input)
+IBLCompute::IBLCompute(RenderDevice& device, const Input& input)
     : m_device(device)
     , m_input(input)
     , m_program(device)

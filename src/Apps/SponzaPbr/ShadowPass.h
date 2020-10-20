@@ -24,7 +24,7 @@ public:
         std::shared_ptr<Resource> srv;
     } output;
 
-    ShadowPass(Device& device, const Input& input);
+    ShadowPass(RenderDevice& device, const Input& input);
 
     virtual void OnUpdate() override;
     virtual void OnRender(RenderCommandList& command_list)override;
@@ -34,7 +34,7 @@ private:
     void CreateSizeDependentResources();
 
     SponzaSettings m_settings;
-    Device& m_device;
+    RenderDevice& m_device;
     Input m_input;
     ProgramHolder<ShadowPassVS, ShadowPassGS, ShadowPassPS> m_program;
     std::shared_ptr<Resource> m_sampler;

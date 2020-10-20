@@ -2,7 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-ShadowPass::ShadowPass(Device& device, const Input& input)
+ShadowPass::ShadowPass(RenderDevice& device, const Input& input)
     : m_device(device)
     , m_input(input)
     , m_program(device)

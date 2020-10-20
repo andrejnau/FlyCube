@@ -1,5 +1,5 @@
 #pragma once
-#include <Device/Device.h>
+#include <RenderDevice/RenderDevice.h>
 #include <Resource/Resource.h>
 #include <RenderCommandList/RenderCommandList.h>
 #include <vector>
@@ -8,7 +8,7 @@ class IAVertexBuffer
 {
 public:
     template<typename T>
-    IAVertexBuffer(Device& device, RenderCommandList& command_list, const std::vector<T>& v)
+    IAVertexBuffer(RenderDevice& device, RenderCommandList& command_list, const std::vector<T>& v)
         : m_device(device)
         , m_size(v.size() * sizeof(v.front()))
         , m_count(v.size())
@@ -49,7 +49,7 @@ public:
     }
 
 private:
-    Device& m_device;
+    RenderDevice& m_device;
     std::shared_ptr<Resource> m_buffer;
     std::shared_ptr<Resource> m_dynamic_buffer;
     size_t m_size;
@@ -60,7 +60,7 @@ class IAIndexBuffer
 {
 public:
     template<typename T>
-    IAIndexBuffer(Device& device, RenderCommandList& command_list, const std::vector<T>& v, gli::format format)
+    IAIndexBuffer(RenderDevice& device, RenderCommandList& command_list, const std::vector<T>& v, gli::format format)
         : m_device(device)
         , m_format(format)
         , m_count(v.size())
@@ -93,7 +93,7 @@ public:
     }
 
 private:
-    Device& m_device;
+    RenderDevice& m_device;
     std::shared_ptr<Resource> m_buffer;
     size_t m_count;
     size_t m_size;

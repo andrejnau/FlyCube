@@ -1,7 +1,7 @@
 #pragma once
-#include <Device/Device.h>
-#include <Context/Program.h>
-#include <Context/BufferLayout.h>
+#include <RenderDevice/RenderDevice.h>
+#include <Utilities/ProgramHolder.h>
+#include <Utilities/BufferLayout.h>
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>
@@ -61,7 +61,7 @@ public:{{#CBuffers}}
 {{/CBuffers}}{{#HasCBuffers}}
     struct Cbuffer
     {
-        Cbuffer({{ShaderName}}& shader, Device& device){{#CBuffers}}
+        Cbuffer({{ShaderName}}& shader, RenderDevice& device){{#CBuffers}}
             {{BufferSeparator}} {{BufferName}}(device, shader.{{BufferName}}_layout){{/CBuffers}}
         {
         }
@@ -69,15 +69,15 @@ public:{{#CBuffers}}
         ConstantBuffer<{{BufferName}}> {{BufferName}};{{/CBuffers}}
     } cbuffer;
 
-    {{ShaderName}}(Device& device)
+    {{ShaderName}}(RenderDevice& device)
         : cbuffer(*this, device)
     {
     }{{/HasCBuffers}}{{^HasCBuffers}}
-    {{ShaderName}}(Device& device)
+    {{ShaderName}}(RenderDevice& device)
     {
     }{{/HasCBuffers}}
 
-    void CompileShader(Device& device)
+    void CompileShader(RenderDevice& device)
     {
         shader = device.CompileShader(desc);{{#CBuffers}}
         cbv.{{Name}} = shader->GetBindKey("{{Name}}");{{/CBuffers}}{{#Textures}}

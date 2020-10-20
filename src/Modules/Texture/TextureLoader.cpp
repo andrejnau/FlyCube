@@ -3,7 +3,7 @@
 #include <gli/gli.hpp>
 #include <SOIL.h>
 
-std::shared_ptr<Resource> CreateSRVFromFile(Device& device, RenderCommandList& command_list, const std::string& path)
+std::shared_ptr<Resource> CreateSRVFromFile(RenderDevice& device, RenderCommandList& command_list, const std::string& path)
 {
     //return {};  // Generate MipMaps is not yet supported
 
@@ -26,7 +26,7 @@ std::shared_ptr<Resource> CreateSRVFromFile(Device& device, RenderCommandList& c
     return res;
 }
 
-std::shared_ptr<Resource> CreateSRVFromFileDDS(Device& device, RenderCommandList& command_list, const std::string& path)
+std::shared_ptr<Resource> CreateSRVFromFileDDS(RenderDevice& device, RenderCommandList& command_list, const std::string& path)
 {
     gli::texture Texture = gli::load(path);
     auto format = Texture.format();
@@ -47,7 +47,7 @@ std::shared_ptr<Resource> CreateSRVFromFileDDS(Device& device, RenderCommandList
     return res;
 }
 
-std::shared_ptr<Resource> CreateTexture(Device& device, RenderCommandList& command_list, const std::string& path)
+std::shared_ptr<Resource> CreateTexture(RenderDevice& device, RenderCommandList& command_list, const std::string& path)
 {
     if (path.find(".dds") != -1)
         return CreateSRVFromFileDDS(device, command_list, path);

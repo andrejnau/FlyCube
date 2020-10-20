@@ -1,6 +1,6 @@
 #include "SkinningPass.h"
 
-SkinningPass::SkinningPass(Device& device, const Input& input)
+SkinningPass::SkinningPass(RenderDevice& device, const Input& input)
     : m_device(device)
     , m_input(input)
     , m_program(device)

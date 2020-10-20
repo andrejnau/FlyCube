@@ -2,7 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-LightPass::LightPass(Device& device, const Input& input, int width, int height)
+LightPass::LightPass(RenderDevice& device, const Input& input, int width, int height)
     : m_device(device)
     , m_input(input)
     , m_width(width)

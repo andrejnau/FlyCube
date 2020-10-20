@@ -10,7 +10,7 @@ inline float lerp(float a, float b, float f)
     return a + f * (b - a);
 }
 
-SSAOPass::SSAOPass(Device& device, RenderCommandList& command_list, const Input& input, int width, int height)
+SSAOPass::SSAOPass(RenderDevice& device, RenderCommandList& command_list, const Input& input, int width, int height)
     : m_device(device)
     , m_input(input)
     , m_width(width)

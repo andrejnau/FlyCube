@@ -2,7 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-ComputeLuminance::ComputeLuminance(Device& device, const Input& input, int width, int height)
+ComputeLuminance::ComputeLuminance(RenderDevice& device, const Input& input, int width, int height)
     : m_device(device)
     , m_input(input)
     , m_width(width)

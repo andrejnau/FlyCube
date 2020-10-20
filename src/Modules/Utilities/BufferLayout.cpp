@@ -1,6 +1,6 @@
-#include "Context/BufferLayout.h"
+#include "Utilities/BufferLayout.h"
 
-ViewProvider::ViewProvider(Device& device, const uint8_t* src_data, BufferLayout& layout)
+ViewProvider::ViewProvider(RenderDevice& device, const uint8_t* src_data, BufferLayout& layout)
     : m_device(device)
     , m_src_data(src_data)
     , m_layout(layout)

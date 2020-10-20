@@ -48,7 +48,7 @@ target_include_directories(${target}
 
 target_link_libraries(${target}
     AppBox
-    Context
+    RenderDevice
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")

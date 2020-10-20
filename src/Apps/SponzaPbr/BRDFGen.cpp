@@ -2,7 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-BRDFGen::BRDFGen(Device& device, const Input& input)
+BRDFGen::BRDFGen(RenderDevice& device, const Input& input)
     : m_device(device)
     , m_input(input)
     , m_program(device)

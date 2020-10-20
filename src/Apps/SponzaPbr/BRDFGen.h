@@ -20,7 +20,7 @@ public:
         std::shared_ptr<Resource> brdf;
     } output;
 
-    BRDFGen(Device& device, const Input& input);
+    BRDFGen(RenderDevice& device, const Input& input);
 
     virtual void OnUpdate() override;
     virtual void OnRender(RenderCommandList& command_list)override;
@@ -31,7 +31,7 @@ private:
     void DrawBRDF(RenderCommandList& command_list);
 
     SponzaSettings m_settings;
-    Device& m_device;
+    RenderDevice& m_device;
     Input m_input;
     std::shared_ptr<Resource> m_dsv;
     ProgramHolder<BRDFVS, BRDFPS> m_program;

@@ -6,7 +6,7 @@
 #include <Geometry/IABuffer.h>
 #include <Utilities/FormatHelper.h>
 
-ImGuiPass::ImGuiPass(Device& device, RenderCommandList& command_list, const Input& input, int width, int height, GLFWwindow* window)
+ImGuiPass::ImGuiPass(RenderDevice& device, RenderCommandList& command_list, const Input& input, int width, int height, GLFWwindow* window)
     : m_device(device)
     , m_input(input)
     , m_width(width)

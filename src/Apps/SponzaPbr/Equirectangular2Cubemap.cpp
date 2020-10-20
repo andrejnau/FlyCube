@@ -2,7 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-Equirectangular2Cubemap::Equirectangular2Cubemap(Device& device, const Input& input)
+Equirectangular2Cubemap::Equirectangular2Cubemap(RenderDevice& device, const Input& input)
     : m_device(device)
     , m_input(input)
     , m_program_equirectangular2cubemap(device)

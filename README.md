@@ -15,36 +15,35 @@ This api is written in C++ on top of Directx 12 and Vulkan. Provides main featur
 ```cpp
 Settings settings = ParseArgs(argc, argv);
 AppBox app("Triangle", settings);
-
-Context context(settings, app.GetWindow());
-Device& device(*context.GetDevice());
 AppRect rect = app.GetAppRect();
-ProgramHolder<PixelShaderPS, VertexShaderVS> program(device);
 
-std::shared_ptr<RenderCommandList> upload_command_list = context.CreateCommandList();
+std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
+ProgramHolder<PixelShaderPS, VertexShaderVS> program(*device);
+
+std::shared_ptr<RenderCommandList> upload_command_list = device->CreateRenderCommandList();
 std::vector<uint32_t> ibuf = { 0, 1, 2 };
-std::shared_ptr<Resource> index = device.CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * ibuf.size());
+std::shared_ptr<Resource> index = device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * ibuf.size());
 upload_command_list->UpdateSubresource(index, 0, ibuf.data(), 0, 0);
 std::vector<glm::vec3> pbuf = {
     glm::vec3(-0.5, -0.5, 0.0),
     glm::vec3(0.0,  0.5, 0.0),
     glm::vec3(0.5, -0.5, 0.0)
 };
-std::shared_ptr<Resource> pos = device.CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest, sizeof(glm::vec3) * pbuf.size());
+std::shared_ptr<Resource> pos = device->CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest, sizeof(glm::vec3) * pbuf.size());
 upload_command_list->UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
 upload_command_list->Close();
-context.ExecuteCommandLists({ upload_command_list });
+device->ExecuteCommandLists({ upload_command_list });
 
 program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
 
 std::vector<std::shared_ptr<RenderCommandList>> command_lists;
-for (uint32_t i = 0; i < Context::FrameCount; ++i)
+for (uint32_t i = 0; i < settings.frame_count; ++i)
 {
     RenderPassBeginDesc render_pass_desc = {};
-    render_pass_desc.colors[0].texture = context.GetBackBuffer(i);
+    render_pass_desc.colors[0].texture = device->GetBackBuffer(i);
     render_pass_desc.colors[0].clear_color = { 0.0f, 0.2f, 0.4f, 1.0f };
 
-    decltype(auto) command_list = context.CreateCommandList();
+    decltype(auto) command_list = device->CreateRenderCommandList();
     command_list->UseProgram(program);
     command_list->Attach(program.ps.cbv.Settings, program.ps.cbuffer.Settings);
     command_list->SetViewport(0, 0, rect.width, rect.height);
@@ -59,11 +58,10 @@ for (uint32_t i = 0; i < Context::FrameCount; ++i)
 
 while (!app.PollEvents())
 {
-    context.ExecuteCommandLists({ command_lists[context.GetFrameIndex()] });
-    context.Present();
-    app.UpdateFps(context.GetGpuName());
+    device->ExecuteCommandLists({ command_lists[device->GetFrameIndex()] });
+    device->Present();
+    app.UpdateFps(device->GetGpuName());
 }
-context.WaitIdle();
 ```
 
 ### Low-level graphics api example

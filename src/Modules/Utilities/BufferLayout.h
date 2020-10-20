@@ -1,5 +1,5 @@
 #pragma once
-#include <Context/Context.h>
+#include <RenderDevice/RenderDevice.h>
 
 struct BufferLayout
 {
@@ -12,14 +12,14 @@ struct BufferLayout
 class ViewProvider : public DeferredView
 {
 public:
-    ViewProvider(Device& device, const uint8_t* src_data, BufferLayout& layout);
+    ViewProvider(RenderDevice& device, const uint8_t* src_data, BufferLayout& layout);
     std::shared_ptr<ResourceLazyViewDesc> GetView(RenderCommandList& command_list) override;
     void OnDestroy(ResourceLazyViewDesc& view_desc) override;
 
 private:
     bool SyncData();
 
-    Device& m_device;
+    RenderDevice& m_device;
     const uint8_t* m_src_data;
     BufferLayout& m_layout;
     std::vector<uint8_t> m_dst_data;
@@ -31,7 +31,7 @@ template<typename T>
 class ConstantBuffer : public T
 {
 public:
-    ConstantBuffer(Device& device, BufferLayout& layout)
+    ConstantBuffer(RenderDevice& device, BufferLayout& layout)
     {
         T& data = static_cast<T&>(*this);
         m_view_provider = std::make_shared<ViewProvider>(device, reinterpret_cast<const uint8_t*>(&data), layout);
