@@ -15,7 +15,7 @@
 #include <glm/glm.hpp>
 #include <gli/gli.hpp>
 
-#include <CommandListBox/CommandListBox.h>
+#include <RenderCommandList/RenderCommandList.h>
 
 class Context : public ContextBase
 {
@@ -33,12 +33,9 @@ public:
         return m_adapter->GetName();
     }
 
-    std::shared_ptr<CommandListBox> CreateCommandList()
-    {
-        return std::make_shared<CommandListBox>(*m_device);
-    }
+    std::shared_ptr<RenderCommandList> CreateCommandList();
 
-    void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandListBox>>& command_lists);
+    void ExecuteCommandLists(const std::vector<std::shared_ptr<RenderCommandList>>& command_lists);
 
     std::shared_ptr<Resource> GetBackBuffer(uint32_t buffer);
 

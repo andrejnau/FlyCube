@@ -64,7 +64,7 @@ private:
 
     int m_width;
     int m_height;
-    std::shared_ptr<CommandListBox> m_upload_command_list;
+    std::shared_ptr<RenderCommandList> m_upload_command_list;
     std::shared_ptr<Resource> m_render_target_view;
     std::shared_ptr<Resource> m_depth_stencil_view;
     std::shared_ptr<Resource> m_equirectangular_environment;
@@ -104,7 +104,7 @@ private:
         std::reference_wrapper<IPass> pass;
     };
     std::vector<PassDesc> m_passes;
-    std::vector<std::shared_ptr<CommandListBox>> m_command_lists;
+    std::vector<std::shared_ptr<RenderCommandList>> m_command_lists;
     size_t m_command_list_index = 0;
 
     void UpdateCameraMovement();

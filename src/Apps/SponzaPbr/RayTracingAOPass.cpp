@@ -1,6 +1,6 @@
 #include "RayTracingAOPass.h"
 
-RayTracingAOPass::RayTracingAOPass(Device& device, CommandListBox& command_list, const Input& input, int width, int height)
+RayTracingAOPass::RayTracingAOPass(Device& device, RenderCommandList& command_list, const Input& input, int width, int height)
     : m_device(device)
     , m_input(input)
     , m_width(width)
@@ -60,7 +60,7 @@ void RayTracingAOPass::OnUpdate()
 {
 }
 
-void RayTracingAOPass::OnRender(CommandListBox& command_list)
+void RayTracingAOPass::OnRender(RenderCommandList& command_list)
 {
     if (!m_settings.Get<bool>("use_rtao"))
         return;
@@ -176,7 +176,7 @@ void RayTracingAOPass::OnRender(CommandListBox& command_list)
 
     if (m_settings.Get<bool>("use_ao_blur"))
     {
-        command_list.SetViewport(m_width, m_height);
+        command_list.SetViewport(0, 0, m_width, m_height);
         command_list.UseProgram(m_program_blur);
         command_list.Attach(m_program_blur.ps.uav.out_uav, m_ao_blur);
         command_list.Attach(m_program_blur.ps.sampler.g_sampler, m_sampler);

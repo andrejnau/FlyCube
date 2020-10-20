@@ -10,7 +10,7 @@ inline float lerp(float a, float b, float f)
     return a + f * (b - a);
 }
 
-SSAOPass::SSAOPass(Device& device, CommandListBox& command_list, const Input& input, int width, int height)
+SSAOPass::SSAOPass(Device& device, RenderCommandList& command_list, const Input& input, int width, int height)
     : m_device(device)
     , m_input(input)
     , m_width(width)
@@ -66,18 +66,18 @@ void SSAOPass::OnUpdate()
     m_program.ps.cbuffer.SSAOBuffer.viewInverse = glm::transpose(glm::transpose(glm::inverse(m_input.camera.GetViewMatrix())));
 }
 
-void SSAOPass::OnRender(CommandListBox& command_list)
+void SSAOPass::OnRender(RenderCommandList& command_list)
 {
     if (!m_settings.Get<bool>("use_ssao"))
         return;
 
-    command_list.SetViewport(m_width, m_height);
+    command_list.SetViewport(0, 0, m_width, m_height);
 
     command_list.UseProgram(m_program);
     command_list.Attach(m_program.ps.cbv.SSAOBuffer, m_program.ps.cbuffer.SSAOBuffer);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.colors[m_program.ps.om.rtv0].texture = m_ao;
     render_pass_desc.colors[m_program.ps.om.rtv0].clear_color = color;
     render_pass_desc.depth_stencil.texture = m_depth_stencil_view;

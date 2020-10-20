@@ -6,7 +6,7 @@
 #include <Geometry/IABuffer.h>
 #include <Utilities/FormatHelper.h>
 
-ImGuiPass::ImGuiPass(Device& device, CommandListBox& command_list, const Input& input, int width, int height, GLFWwindow* window)
+ImGuiPass::ImGuiPass(Device& device, RenderCommandList& command_list, const Input& input, int width, int height, GLFWwindow* window)
     : m_device(device)
     , m_input(input)
     , m_width(width)
@@ -36,7 +36,7 @@ void ImGuiPass::OnUpdate()
 {
 }
 
-void ImGuiPass::OnRender(CommandListBox& command_list)
+void ImGuiPass::OnRender(RenderCommandList& command_list)
 {
     if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL)
         return;
@@ -81,7 +81,7 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
 
     m_program.vs.cbuffer.vertexBuffer.ProjectionMatrix = glm::ortho(0.0f, 1.0f * m_width, 1.0f * m_height, 0.0f);
 
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.colors[m_program.ps.om.rtv0].texture = m_input.rtv;
     render_pass_desc.colors[m_program.ps.om.rtv0].load_op = RenderPassLoadOp::kLoad;
 
@@ -104,7 +104,7 @@ void ImGuiPass::OnRender(CommandListBox& command_list)
 
     command_list.SetRasterizeState({ FillMode::kSolid, CullMode::kNone });
     command_list.SetDepthStencilState({ false, DepthComparison::kLessEqual });
-    command_list.SetViewport(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
+    command_list.SetViewport(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
     int vtx_offset = 0;
     int idx_offset = 0;
@@ -178,7 +178,7 @@ void ImGuiPass::OnInputChar(unsigned int ch)
         io.AddInputCharacter((unsigned short)ch);
 }
 
-void ImGuiPass::CreateFontsTexture(CommandListBox& command_list)
+void ImGuiPass::CreateFontsTexture(RenderCommandList& command_list)
 {
     // Build texture atlas
     ImGuiIO& io = ImGui::GetIO();

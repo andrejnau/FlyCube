@@ -38,12 +38,12 @@ void ShadowPass::OnUpdate()
     view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
 }
 
-void ShadowPass::OnRender(CommandListBox& command_list)
+void ShadowPass::OnRender(RenderCommandList& command_list)
 {
     if (!m_settings.Get<bool>("use_shadow"))
         return;
 
-    command_list.SetViewport(m_settings.Get<float>("s_size"), m_settings.Get<float>("s_size"));
+    command_list.SetViewport(0, 0, m_settings.Get<float>("s_size"), m_settings.Get<float>("s_size"));
 
     command_list.UseProgram(m_program);
     command_list.Attach(m_program.vs.cbv.VSParams, m_program.vs.cbuffer.VSParams);
@@ -52,7 +52,7 @@ void ShadowPass::OnRender(CommandListBox& command_list)
     command_list.Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.depth_stencil.texture = output.srv;
     render_pass_desc.depth_stencil.clear_depth = 1.0f;
 

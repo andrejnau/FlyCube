@@ -15,7 +15,7 @@ void BRDFGen::OnUpdate()
 {
 }
 
-void BRDFGen::OnRender(CommandListBox& command_list)
+void BRDFGen::OnRender(RenderCommandList& command_list)
 {
     if (!is)
     {
@@ -27,14 +27,14 @@ void BRDFGen::OnRender(CommandListBox& command_list)
     }
 }
 
-void BRDFGen::DrawBRDF(CommandListBox& command_list)
+void BRDFGen::DrawBRDF(RenderCommandList& command_list)
 {
-    command_list.SetViewport(m_size, m_size);
+    command_list.SetViewport(0, 0, m_size, m_size);
 
     command_list.UseProgram(m_program);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.colors[m_program.ps.om.rtv0].texture = output.brdf;
     render_pass_desc.colors[m_program.ps.om.rtv0].clear_color = color;
     render_pass_desc.depth_stencil.texture = m_dsv;

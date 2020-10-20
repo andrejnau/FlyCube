@@ -34,12 +34,12 @@ public:
     IrradianceConversion(Device& device, const Input& input);
 
     virtual void OnUpdate() override;
-    virtual void OnRender(CommandListBox& command_list)override;
+    virtual void OnRender(RenderCommandList& command_list)override;
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
-    void DrawIrradianceConvolution(CommandListBox& command_list);
-    void DrawPrefilter(CommandListBox& command_list);
+    void DrawIrradianceConvolution(RenderCommandList& command_list);
+    void DrawPrefilter(RenderCommandList& command_list);
 
     SponzaSettings m_settings;
     Device& m_device;

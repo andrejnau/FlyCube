@@ -21,7 +21,7 @@ void IrradianceConversion::OnUpdate()
     m_program_prefilter.vs.cbuffer.ConstantBuf.projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f));
 }
 
-void IrradianceConversion::OnRender(CommandListBox& command_list)
+void IrradianceConversion::OnRender(RenderCommandList& command_list)
 {
     if (!is || m_settings.Get<bool>("irradiance_conversion_every_frame"))
     {
@@ -37,9 +37,9 @@ void IrradianceConversion::OnRender(CommandListBox& command_list)
     }
 }
 
-void IrradianceConversion::DrawIrradianceConvolution(CommandListBox& command_list)
+void IrradianceConversion::DrawIrradianceConvolution(RenderCommandList& command_list)
 {
-    command_list.SetViewport(m_input.irradince.size, m_input.irradince.size);
+    command_list.SetViewport(0, 0, m_input.irradince.size, m_input.irradince.size);
 
     command_list.UseProgram(m_program_irradiance_convolution);
     command_list.Attach(m_program_irradiance_convolution.vs.cbv.ConstantBuf, m_program_irradiance_convolution.vs.cbuffer.ConstantBuf);
@@ -47,7 +47,7 @@ void IrradianceConversion::DrawIrradianceConvolution(CommandListBox& command_lis
     command_list.Attach(m_program_irradiance_convolution.ps.sampler.g_sampler, m_sampler);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.colors[m_program_irradiance_convolution.ps.om.rtv0].texture = m_input.irradince.res;
     render_pass_desc.colors[m_program_irradiance_convolution.ps.om.rtv0].load_op = RenderPassLoadOp::kLoad;
     render_pass_desc.depth_stencil.texture = m_input.irradince.dsv;
@@ -91,7 +91,7 @@ void IrradianceConversion::DrawIrradianceConvolution(CommandListBox& command_lis
     command_list.EndRenderPass();
 }
 
-void IrradianceConversion::DrawPrefilter(CommandListBox& command_list)
+void IrradianceConversion::DrawPrefilter(RenderCommandList& command_list)
 {
     command_list.UseProgram(m_program_prefilter);
     command_list.Attach(m_program_prefilter.ps.cbv.Settings, m_program_prefilter.ps.cbuffer.Settings);
@@ -127,12 +127,12 @@ void IrradianceConversion::DrawPrefilter(CommandListBox& command_list)
     for (size_t mip = 0; mip < max_mip_levels; ++mip)
     {
         command_list.BeginEvent(std::string("DrawPrefilter: mip " + std::to_string(mip)).c_str());
-        command_list.SetViewport(m_input.prefilter.size >> mip, m_input.prefilter.size >> mip);
+        command_list.SetViewport(0, 0, m_input.prefilter.size >> mip, m_input.prefilter.size >> mip);
         m_program_prefilter.ps.cbuffer.Settings.roughness = (float)mip / (float)(max_mip_levels - 1);
         m_program_prefilter.ps.cbuffer.Settings.resolution = m_input.prefilter.size;
 
         glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-        FlyRenderPassDesc render_pass_desc = {};
+        RenderPassBeginDesc render_pass_desc = {};
         render_pass_desc.colors[m_program_prefilter.ps.om.rtv0].texture = m_input.prefilter.res;
         render_pass_desc.colors[m_program_prefilter.ps.om.rtv0].load_op = RenderPassLoadOp::kLoad;
         render_pass_desc.colors[m_program_prefilter.ps.om.rtv0].view_desc = { mip };

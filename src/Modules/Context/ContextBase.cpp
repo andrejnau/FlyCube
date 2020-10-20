@@ -1,5 +1,5 @@
 #include "Context/ContextBase.h"
-#include <CommandListBox/CommandListBox.h>
+#include <RenderCommandList/RenderCommandListImpl.h>
 #include <Device/Device.h>
 
 void ContextBase::OnDestroy()
@@ -12,7 +12,7 @@ void ContextBase::OnDestroy()
     m_command_list_pool.clear();
 }
 
-void ContextBase::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandListBox>>& command_lists)
+void ContextBase::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<RenderCommandList>>& command_lists)
 {
     if (!m_fence)
         m_fence = m_device->CreateFence(m_fence_value);
@@ -22,8 +22,8 @@ void ContextBase::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<Comm
     for (size_t c = 0; c < command_lists.size(); ++c)
     {
         std::vector<ResourceBarrierDesc> new_barriers;
-        auto& command_list_base = *command_lists[c];
-        auto barriers = command_list_base.GetLazyBarriers();
+        decltype(auto) command_list_impl = command_lists[c]->As<RenderCommandListImpl>();
+        auto barriers = command_list_impl.GetLazyBarriers();
         for (auto& barrier : barriers)
         {
             if (c == 0 && barrier.resource->AllowCommonStatePromotion(barrier.state_after))
@@ -61,7 +61,7 @@ void ContextBase::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<Comm
             std::shared_ptr<CommandList> tmp_cmd;
             if (c != 0 && kUseFakeClose)
             {
-                tmp_cmd = command_lists[c - 1]->GetCommandList();
+                tmp_cmd = command_lists[c - 1]->As<RenderCommandListImpl>().GetCommandList();
             }
             else
             {
@@ -91,7 +91,7 @@ void ContextBase::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<Comm
             ++patch_cmds;
         }
 
-        auto& state_trackers = command_list_base.GetResourceStateTrackers();
+        auto& state_trackers = command_list_impl.GetResourceStateTrackers();
         for (const auto& state_tracker_pair : state_trackers)
         {
             auto& resource = state_tracker_pair.first;
@@ -100,7 +100,7 @@ void ContextBase::ExecuteCommandListsImpl(const std::vector<std::shared_ptr<Comm
             global_state_tracker.Merge(state_tracker);
         }
 
-        raw_command_lists.emplace_back(command_lists[c]->GetCommandList());
+        raw_command_lists.emplace_back(command_list_impl.GetCommandList());
     }
     if (kUseFakeClose)
     {

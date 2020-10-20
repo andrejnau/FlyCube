@@ -1,5 +1,6 @@
 #include "Context/Context.h"
 #include <Utilities/FormatHelper.h>
+#include <RenderCommandList/RenderCommandListImpl.h>
 
 Context::Context(const Settings& settings, GLFWwindow* window)
     : m_window(window)
@@ -30,11 +31,16 @@ std::shared_ptr<Resource> Context::GetBackBuffer(uint32_t buffer)
     return m_swapchain->GetBackBuffer(buffer);
 }
 
-void Context::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandListBox>>& command_lists)
+std::shared_ptr<RenderCommandList> Context::CreateCommandList()
+{
+    return std::make_shared<RenderCommandListImpl>(*m_device, CommandListType::kGraphics);
+}
+
+void Context::ExecuteCommandLists(const std::vector<std::shared_ptr<RenderCommandList>>& command_lists)
 {
     for (auto& command_list : command_lists)
     {
-        command_list->fence_value = m_fence_value + 1;
+        command_list->GetFenceValue() = m_fence_value + 1;
     }
     ExecuteCommandListsImpl(command_lists);
     m_command_queue->Signal(m_fence, ++m_fence_value);

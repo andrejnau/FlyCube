@@ -68,7 +68,7 @@ bool Bones::HasAnimation()
     return true;
 }
 
-void Bones::UpdateAnimation(Device& device, CommandListBox& command_list, float time_in_seconds)
+void Bones::UpdateAnimation(Device& device, RenderCommandList& command_list, float time_in_seconds)
 {
     if (!HasAnimation())
         return;

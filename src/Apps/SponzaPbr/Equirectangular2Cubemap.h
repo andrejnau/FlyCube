@@ -27,11 +27,11 @@ public:
     Equirectangular2Cubemap(Device& device, const Input& input);
 
     virtual void OnUpdate() override;
-    virtual void OnRender(CommandListBox& command_list)override;
+    virtual void OnRender(RenderCommandList& command_list)override;
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
-    void DrawEquirectangular2Cubemap(CommandListBox& command_list);
+    void DrawEquirectangular2Cubemap(RenderCommandList& command_list);
     void CreateSizeDependentResources();
 
     SponzaSettings m_settings;

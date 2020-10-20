@@ -29,7 +29,7 @@ public:
     GeometryPass(Device& device, const Input& input, int width, int height);
 
     virtual void OnUpdate() override;
-    virtual void OnRender(CommandListBox& command_list)override;
+    virtual void OnRender(RenderCommandList& command_list)override;
     virtual void OnResize(int width, int height) override;
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 

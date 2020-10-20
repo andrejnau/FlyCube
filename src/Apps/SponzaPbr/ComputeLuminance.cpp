@@ -18,7 +18,7 @@ void ComputeLuminance::OnUpdate()
 {
 }
 
-void ComputeLuminance::GetLum2DPassCS(CommandListBox& command_list, size_t buf_id, uint32_t thread_group_x, uint32_t thread_group_y)
+void ComputeLuminance::GetLum2DPassCS(RenderCommandList& command_list, size_t buf_id, uint32_t thread_group_x, uint32_t thread_group_y)
 {
     m_HDRLum2DPassCS.cs.cbuffer.cb.dispatchSize = glm::uvec2(thread_group_x, thread_group_y);
     command_list.UseProgram(m_HDRLum2DPassCS);
@@ -29,7 +29,7 @@ void ComputeLuminance::GetLum2DPassCS(CommandListBox& command_list, size_t buf_i
     command_list.Dispatch(thread_group_x, thread_group_y, 1);
 }
 
-void ComputeLuminance::GetLum1DPassCS(CommandListBox& command_list, size_t buf_id, uint32_t input_buffer_size, uint32_t thread_group_x)
+void ComputeLuminance::GetLum1DPassCS(RenderCommandList& command_list, size_t buf_id, uint32_t input_buffer_size, uint32_t thread_group_x)
 {
     m_HDRLum1DPassCS.cs.cbuffer.cb.bufferSize = input_buffer_size;
     command_list.UseProgram(m_HDRLum1DPassCS);
@@ -43,7 +43,7 @@ void ComputeLuminance::GetLum1DPassCS(CommandListBox& command_list, size_t buf_i
     command_list.Attach(m_HDRLum1DPassCS.cs.uav.result);
 }
 
-void ComputeLuminance::Draw(CommandListBox& command_list, size_t buf_id)
+void ComputeLuminance::Draw(RenderCommandList& command_list, size_t buf_id)
 {
     m_HDRApply.ps.cbuffer.HDRSetting.gamma_correction = m_settings.Get<bool>("gamma_correction");
     m_HDRApply.ps.cbuffer.HDRSetting.use_reinhard_tone_operator = m_settings.Get<bool>("use_reinhard_tone_operator");
@@ -58,7 +58,7 @@ void ComputeLuminance::Draw(CommandListBox& command_list, size_t buf_id)
     command_list.Attach(m_HDRApply.ps.cbv.HDRSetting, m_HDRApply.ps.cbuffer.HDRSetting);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.colors[m_HDRApply.ps.om.rtv0].texture = m_input.rtv;
     render_pass_desc.colors[m_HDRApply.ps.om.rtv0].clear_color = color;
     render_pass_desc.depth_stencil.texture = m_input.dsv;
@@ -78,9 +78,9 @@ void ComputeLuminance::Draw(CommandListBox& command_list, size_t buf_id)
     command_list.EndRenderPass();
 }
 
-void ComputeLuminance::OnRender(CommandListBox& command_list)
+void ComputeLuminance::OnRender(RenderCommandList& command_list)
 {
-    command_list.SetViewport(m_width, m_height);
+    command_list.SetViewport(0, 0, m_width, m_height);
     size_t buf_id = 0;
     if (m_settings.Get<bool>("use_tone_mapping"))
     {

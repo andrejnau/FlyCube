@@ -1,15 +1,22 @@
-#include "CommandListBox/CommandListBox.h"
+#include "RenderCommandList/RenderCommandListImpl.h"
 #include <Utilities/FormatHelper.h>
 
-CommandListBox::CommandListBox(Device& device)
+RenderCommandListImpl::RenderCommandListImpl(Device& device, CommandListType type)
     : m_device(device)
 {
-    m_command_list = m_device.CreateCommandList();
+    m_command_list = m_device.CreateCommandList(type);
 }
 
-void CommandListBox::Reset()
+const std::shared_ptr<CommandList>& RenderCommandListImpl::GetCommandList()
 {
-    OnReset();
+    return m_command_list;
+}
+
+void RenderCommandListImpl::Reset()
+{
+    m_lazy_barriers.clear();
+    m_resource_state_tracker.clear();
+
     m_cmd_resources.clear();
     m_bound_resources.clear();
     m_bound_deferred_view.clear();
@@ -18,13 +25,35 @@ void CommandListBox::Reset()
     m_command_list->Reset();
 }
 
-void CommandListBox::Close()
+void RenderCommandListImpl::Close()
 {
     if (!kUseFakeClose)
         m_command_list->Close();
 }
 
-void CommandListBox::CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture, const std::vector<TextureCopyRegion>& regions)
+void RenderCommandListImpl::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
+                                       const std::vector<BufferCopyRegion>& regions)
+{
+    for (const auto& region : regions)
+    {
+        BufferBarrier(src_buffer, ResourceState::kCopySource);
+        BufferBarrier(dst_buffer, ResourceState::kCopyDest);
+    }
+    m_command_list->CopyBuffer(src_buffer, dst_buffer, regions);
+}
+
+void RenderCommandListImpl::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
+                                                const std::vector<BufferToTextureCopyRegion>& regions)
+{
+    for (const auto& region : regions)
+    {
+        BufferBarrier(src_buffer, ResourceState::kCopySource);
+        ImageBarrier(dst_texture, region.texture_mip_level, 1, region.texture_array_layer, 1, ResourceState::kCopyDest);
+    }
+    m_command_list->CopyBufferToTexture(src_buffer, dst_texture, regions);
+}
+
+void RenderCommandListImpl::CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture, const std::vector<TextureCopyRegion>& regions)
 {
     for (const auto& region : regions)
     {
@@ -34,7 +63,7 @@ void CommandListBox::CopyTexture(const std::shared_ptr<Resource>& src_texture, c
     m_command_list->CopyTexture(src_texture, dst_texture, regions);
 }
 
-void CommandListBox::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
+void RenderCommandListImpl::UpdateSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
 {
     switch (resource->GetMemoryType())
     {
@@ -45,7 +74,7 @@ void CommandListBox::UpdateSubresource(const std::shared_ptr<Resource>& resource
     }
 }
 
-void CommandListBox::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
+void RenderCommandListImpl::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
 {
     std::shared_ptr<Resource>& upload_resource = m_cmd_resources.emplace_back();
 
@@ -90,71 +119,71 @@ void CommandListBox::UpdateSubresourceDefault(const std::shared_ptr<Resource>& r
     }
 }
 
-void CommandListBox::SetViewport(float width, float height)
+void RenderCommandListImpl::SetViewport(float x, float y, float width, float height)
 {
-    m_command_list->SetViewport(0, 0, width, height);
-    m_command_list->SetScissorRect(0, 0, width, height);
+    m_command_list->SetViewport(x, y, width, height);
+    m_command_list->SetScissorRect(x, y, width, height);
     m_viewport_width = width;
     m_viewport_height = height;
 }
 
-void CommandListBox::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)
+void RenderCommandListImpl::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)
 {
     m_command_list->SetScissorRect(left, top, right, bottom);
 }
 
-void CommandListBox::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
+void RenderCommandListImpl::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {
     BufferBarrier(resource, ResourceState::kIndexBuffer);
     m_command_list->IASetIndexBuffer(resource, format);
 }
 
-void CommandListBox::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
+void RenderCommandListImpl::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
     BufferBarrier(resource, ResourceState::kVertexAndConstantBuffer);
     m_command_list->IASetVertexBuffer(slot, resource);
 }
 
-void CommandListBox::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
+void RenderCommandListImpl::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
 {
     m_command_list->RSSetShadingRate(shading_rate, combiners);
 }
 
-void CommandListBox::RSSetShadingRateImage(const std::shared_ptr<Resource>& resource)
+void RenderCommandListImpl::RSSetShadingRateImage(const std::shared_ptr<Resource>& resource)
 {
     ImageBarrier(resource, 0, 1, 0, 1, ResourceState::kShadingRateSource);
     m_command_list->RSSetShadingRateImage(resource);
 }
 
-void CommandListBox::BeginEvent(const std::string& name)
+void RenderCommandListImpl::BeginEvent(const std::string& name)
 {
     m_command_list->BeginEvent(name);
 }
 
-void CommandListBox::EndEvent()
+void RenderCommandListImpl::EndEvent()
 {
     m_command_list->EndEvent();
 }
 
-void CommandListBox::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
+void RenderCommandListImpl::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
     ApplyBindings();
     m_command_list->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 
-void CommandListBox::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
+void RenderCommandListImpl::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
 {
     ApplyBindings();
     m_command_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
-void CommandListBox::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
+void RenderCommandListImpl::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
 {
     ApplyBindings();
     m_command_list->DispatchRays(width, height, depth);
 }
 
-void CommandListBox::BufferBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
+void RenderCommandListImpl::BufferBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
 {
     if (!resource)
         return;
@@ -164,14 +193,14 @@ void CommandListBox::BufferBarrier(const std::shared_ptr<Resource>& resource, Re
     LazyResourceBarrier({ barrier });
 }
 
-void CommandListBox::ViewBarrier(const std::shared_ptr<View>& view, ResourceState state)
+void RenderCommandListImpl::ViewBarrier(const std::shared_ptr<View>& view, ResourceState state)
 {
     if (!view || !view->GetResource())
         return;
     ImageBarrier(view->GetResource(), view->GetBaseMipLevel(), view->GetLevelCount(), view->GetBaseArrayLayer(), view->GetLayerCount(), state);
 }
 
-void CommandListBox::ImageBarrier(const std::shared_ptr<Resource>& resource, uint32_t base_mip_level, uint32_t level_count, uint32_t base_array_layer, uint32_t layer_count, ResourceState state)
+void RenderCommandListImpl::ImageBarrier(const std::shared_ptr<Resource>& resource, uint32_t base_mip_level, uint32_t level_count, uint32_t base_array_layer, uint32_t layer_count, ResourceState state)
 {
     if (!resource)
         return;
@@ -185,7 +214,7 @@ void CommandListBox::ImageBarrier(const std::shared_ptr<Resource>& resource, uin
     LazyResourceBarrier({ barrier });
 }
 
-void CommandListBox::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
+void RenderCommandListImpl::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
 {
     for (const auto& desc : descs)
     {
@@ -201,7 +230,7 @@ void CommandListBox::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, co
     m_cmd_resources.emplace_back(scratch);
 }
 
-void CommandListBox::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry, BuildAccelerationStructureFlags flags)
+void RenderCommandListImpl::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>>& geometry, BuildAccelerationStructureFlags flags)
 {
     std::vector<RaytracingGeometryInstance> instances;
     for (const auto& mesh : geometry)
@@ -225,17 +254,12 @@ void CommandListBox::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const
     m_cmd_resources.emplace_back(instance_data);
 }
 
-void CommandListBox::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)
+void RenderCommandListImpl::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)
 {
     m_command_list->CopyAccelerationStructure(src, dst, mode);
 }
 
-void CommandListBox::ReleaseRequest(const std::shared_ptr<Resource>& resource)
-{
-    m_cmd_resources.emplace_back(resource);
-}
-
-void CommandListBox::UseProgram(std::shared_ptr<Program>& program)
+void RenderCommandListImpl::UseProgram(const std::shared_ptr<Program>& program)
 {
     m_graphic_pipeline_desc = {};
     m_compute_pipeline_desc = {};
@@ -254,7 +278,7 @@ void CommandListBox::UseProgram(std::shared_ptr<Program>& program)
     m_bound_deferred_view.clear();
 }
 
-void CommandListBox::ApplyBindings()
+void RenderCommandListImpl::ApplyBindings()
 {
     if (m_program->HasShader(ShaderType::kCompute))
     {
@@ -324,7 +348,7 @@ void CommandListBox::ApplyBindings()
     m_command_list->BindBindingSet(m_binding_set);
 }
 
-void CommandListBox::SetBinding(const BindKey& bind_key, const std::shared_ptr<View>& view)
+void RenderCommandListImpl::SetBinding(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     auto it = m_bound_resources.find(bind_key);
     if (it == m_bound_resources.end())
@@ -333,7 +357,7 @@ void CommandListBox::SetBinding(const BindKey& bind_key, const std::shared_ptr<V
         it->second = view;
 }
 
-std::shared_ptr<View> CommandListBox::CreateView(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
+std::shared_ptr<View> RenderCommandListImpl::CreateView(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
 {
     auto it = m_views.find({ bind_key, resource, view_desc });
     if (it != m_views.end())
@@ -358,12 +382,12 @@ std::shared_ptr<View> CommandListBox::CreateView(const BindKey& bind_key, const 
     return view;
 }
 
-void CommandListBox::BeginRenderPass(const FlyRenderPassDesc& fly_render_pass_desc)
+void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
 {
     RenderPassDesc render_pass_desc = {};
     ClearDesc clear_desc = {};
-    render_pass_desc.colors.reserve(fly_render_pass_desc.colors.size());
-    for (const auto& color_desc : fly_render_pass_desc.colors)
+    render_pass_desc.colors.reserve(desc.colors.size());
+    for (const auto& color_desc : desc.colors)
     {
         auto& color = render_pass_desc.colors.emplace_back();
         clear_desc.colors.emplace_back() = color_desc.clear_color;
@@ -375,15 +399,15 @@ void CommandListBox::BeginRenderPass(const FlyRenderPassDesc& fly_render_pass_de
         render_pass_desc.sample_count = color_desc.texture->GetSampleCount();
     }
 
-    if (fly_render_pass_desc.depth_stencil.texture)
+    if (desc.depth_stencil.texture)
     {
-        render_pass_desc.depth_stencil.format = fly_render_pass_desc.depth_stencil.texture->GetFormat();
-        render_pass_desc.depth_stencil.depth_load_op = fly_render_pass_desc.depth_stencil.depth_load_op;
-        render_pass_desc.depth_stencil.depth_store_op = fly_render_pass_desc.depth_stencil.depth_store_op;
-        render_pass_desc.depth_stencil.stencil_load_op = fly_render_pass_desc.depth_stencil.stencil_load_op;
-        render_pass_desc.depth_stencil.stencil_store_op = fly_render_pass_desc.depth_stencil.stencil_store_op;
-        clear_desc.depth = fly_render_pass_desc.depth_stencil.clear_depth;
-        clear_desc.stencil = fly_render_pass_desc.depth_stencil.clear_stencil;
+        render_pass_desc.depth_stencil.format = desc.depth_stencil.texture->GetFormat();
+        render_pass_desc.depth_stencil.depth_load_op = desc.depth_stencil.depth_load_op;
+        render_pass_desc.depth_stencil.depth_store_op = desc.depth_stencil.depth_store_op;
+        render_pass_desc.depth_stencil.stencil_load_op = desc.depth_stencil.stencil_load_op;
+        render_pass_desc.depth_stencil.stencil_store_op = desc.depth_stencil.stencil_store_op;
+        clear_desc.depth = desc.depth_stencil.clear_depth;
+        clear_desc.stencil = desc.depth_stencil.clear_stencil;
     }
 
     std::shared_ptr<RenderPass> render_pass;
@@ -403,19 +427,19 @@ void CommandListBox::BeginRenderPass(const FlyRenderPassDesc& fly_render_pass_de
     m_graphic_pipeline_desc.render_pass = render_pass;
 
     std::vector<std::shared_ptr<View>> rtvs;
-    for (size_t i = 0; i < fly_render_pass_desc.colors.size(); ++i)
+    for (size_t i = 0; i < desc.colors.size(); ++i)
     {
         BindKey bind_key = { ShaderType::kPixel, ViewType::kRenderTarget, i, 0 };
-        auto view = CreateView(bind_key, fly_render_pass_desc.colors[i].texture, fly_render_pass_desc.colors[i].view_desc);
+        auto view = CreateView(bind_key, desc.colors[i].texture, desc.colors[i].view_desc);
         ViewBarrier(view, ResourceState::kRenderTarget);
         rtvs.emplace_back(view);
     }
 
     std::shared_ptr<View> dsv;
-    if (fly_render_pass_desc.depth_stencil.texture)
+    if (desc.depth_stencil.texture)
     {
         BindKey bind_key = { ShaderType::kPixel, ViewType::kDepthStencil, 0, 0 };
-        dsv = CreateView(bind_key, fly_render_pass_desc.depth_stencil.texture, fly_render_pass_desc.depth_stencil.view_desc);
+        dsv = CreateView(bind_key, desc.depth_stencil.texture, desc.depth_stencil.view_desc);
     }
     ViewBarrier(dsv, ResourceState::kDepthTarget);
 
@@ -437,23 +461,23 @@ void CommandListBox::BeginRenderPass(const FlyRenderPassDesc& fly_render_pass_de
     m_command_list->BeginRenderPass(render_pass, framebuffer, clear_desc);
 }
 
-void CommandListBox::EndRenderPass()
+void RenderCommandListImpl::EndRenderPass()
 {
     m_command_list->EndRenderPass();
     m_graphic_pipeline_desc.render_pass = {};
 }
 
-void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<DeferredView>& view)
+void RenderCommandListImpl::Attach(const BindKey& bind_key, const std::shared_ptr<DeferredView>& view)
 {
     m_bound_deferred_view[bind_key] = view;
 }
 
-void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
+void RenderCommandListImpl::Attach(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
 {
     Attach(bind_key, CreateView(bind_key, resource, view_desc));
 }
 
-void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<View>& view)
+void RenderCommandListImpl::Attach(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     SetBinding(bind_key, view);
     switch (bind_key.view_type)
@@ -471,22 +495,22 @@ void CommandListBox::Attach(const BindKey& bind_key, const std::shared_ptr<View>
     }
 }
 
-void CommandListBox::SetRasterizeState(const RasterizerDesc& desc)
+void RenderCommandListImpl::SetRasterizeState(const RasterizerDesc& desc)
 {
     m_graphic_pipeline_desc.rasterizer_desc = desc;
 }
 
-void CommandListBox::SetBlendState(const BlendDesc& desc)
+void RenderCommandListImpl::SetBlendState(const BlendDesc& desc)
 {
     m_graphic_pipeline_desc.blend_desc = desc;
 }
 
-void CommandListBox::SetDepthStencilState(const DepthStencilDesc& desc)
+void RenderCommandListImpl::SetDepthStencilState(const DepthStencilDesc& desc)
 {
     m_graphic_pipeline_desc.depth_desc = desc;
 }
 
-void CommandListBox::OnAttachSRV(const BindKey& bind_key, const std::shared_ptr<View>& view)
+void RenderCommandListImpl::OnAttachSRV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     if (bind_key.shader_type == ShaderType::kPixel)
         ViewBarrier(view, ResourceState::kPixelShaderResource);
@@ -494,7 +518,78 @@ void CommandListBox::OnAttachSRV(const BindKey& bind_key, const std::shared_ptr<
         ViewBarrier(view, ResourceState::kNonPixelShaderResource);
 }
 
-void CommandListBox::OnAttachUAV(const BindKey& bind_key, const std::shared_ptr<View>& view)
+void RenderCommandListImpl::OnAttachUAV(const BindKey& bind_key, const std::shared_ptr<View>& view)
 {
     ViewBarrier(view, ResourceState::kUnorderedAccess);
+}
+
+ResourceStateTracker& RenderCommandListImpl::GetResourceStateTracker(const std::shared_ptr<Resource>& resource)
+{
+    auto it = m_resource_state_tracker.find(resource);
+    if (it == m_resource_state_tracker.end())
+        it = m_resource_state_tracker.emplace(resource, *resource).first;
+    return it->second;
+}
+
+const std::map<std::shared_ptr<Resource>, ResourceStateTracker>& RenderCommandListImpl::GetResourceStateTrackers() const
+{
+    return m_resource_state_tracker;
+}
+
+const std::vector<ResourceBarrierDesc>& RenderCommandListImpl::GetLazyBarriers() const
+{
+    return m_lazy_barriers;
+}
+
+void RenderCommandListImpl::LazyResourceBarrier(const std::vector<LazyResourceBarrierDesc>& barriers)
+{
+    std::vector<ResourceBarrierDesc> manual_barriers;
+    for (const auto& barrier : barriers)
+    {
+        auto& state_tracker = GetResourceStateTracker(barrier.resource);
+        if (state_tracker.HasResourceState() && barrier.base_mip_level == 0 && barrier.level_count == barrier.resource->GetLevelCount() &&
+            barrier.base_array_layer == 0 && barrier.layer_count == barrier.resource->GetLayerCount())
+        {
+            ResourceBarrierDesc manual_barrier = {};
+            manual_barrier.resource = barrier.resource;
+            manual_barrier.level_count = barrier.level_count;
+            manual_barrier.layer_count = barrier.layer_count;
+            manual_barrier.state_before = state_tracker.GetResourceState();
+            manual_barrier.state_after = barrier.state;
+            state_tracker.SetResourceState(manual_barrier.state_after);
+            if (manual_barrier.state_before != ResourceState::kUnknown)
+                manual_barriers.emplace_back(manual_barrier);
+            else
+                m_lazy_barriers.emplace_back(manual_barrier);
+        }
+        else
+        {
+            for (uint32_t i = 0; i < barrier.level_count; ++i)
+            {
+                for (uint32_t j = 0; j < barrier.layer_count; ++j)
+                {
+                    ResourceBarrierDesc manual_barrier = {};
+                    manual_barrier.resource = barrier.resource;
+                    manual_barrier.base_mip_level = barrier.base_mip_level + i;
+                    manual_barrier.level_count = 1;
+                    manual_barrier.base_array_layer = barrier.base_array_layer + j;
+                    manual_barrier.layer_count = 1;
+                    manual_barrier.state_before = state_tracker.GetSubresourceState(manual_barrier.base_mip_level, manual_barrier.base_array_layer);
+                    manual_barrier.state_after = barrier.state;
+                    state_tracker.SetSubresourceState(manual_barrier.base_mip_level, manual_barrier.base_array_layer, manual_barrier.state_after);
+                    if (manual_barrier.state_before != ResourceState::kUnknown)
+                        manual_barriers.emplace_back(manual_barrier);
+                    else
+                        m_lazy_barriers.emplace_back(manual_barrier);
+                }
+            }
+        }
+    }
+    if (!manual_barriers.empty())
+        m_command_list->ResourceBarrier(manual_barriers);
+}
+
+uint64_t& RenderCommandListImpl::GetFenceValue()
+{
+    return m_fence_value;
 }

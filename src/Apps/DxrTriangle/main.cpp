@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 
     ProgramHolder<RayTracing> program(device);
 
-    std::shared_ptr<CommandListBox> upload_command_list = context.CreateCommandList();
+    std::shared_ptr<RenderCommandList> upload_command_list = context.CreateCommandList();
 
     std::vector<glm::vec3> positions_data = {
         glm::vec3(-0.5, -0.5, 0.0),
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     upload_command_list->Close();
     context.ExecuteCommandLists({ upload_command_list });
 
-    std::vector<std::shared_ptr<CommandListBox>> command_lists;
+    std::vector<std::shared_ptr<RenderCommandList>> command_lists;
     for (uint32_t i = 0; i < Context::FrameCount; ++i)
     {
         decltype(auto) command_list = context.CreateCommandList();

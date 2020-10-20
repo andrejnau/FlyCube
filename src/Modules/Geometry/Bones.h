@@ -14,7 +14,7 @@ public:
     std::shared_ptr<Resource> GetBonesInfo();
     std::shared_ptr<Resource> GetBone();
     bool HasAnimation();
-    void UpdateAnimation(Device& device, CommandListBox& command_list, float time_in_seconds);
+    void UpdateAnimation(Device& device, RenderCommandList& command_list, float time_in_seconds);
 
 private:
     void ReadNodeHeirarchy(float animation_time, const aiNode* node, const glm::mat4& parent_transform);

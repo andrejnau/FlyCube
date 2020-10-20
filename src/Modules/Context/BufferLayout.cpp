@@ -8,7 +8,7 @@ ViewProvider::ViewProvider(Device& device, const uint8_t* src_data, BufferLayout
 {
 }
 
-std::shared_ptr<ResourceLazyViewDesc> ViewProvider::GetView(CommandListBox& command_list)
+std::shared_ptr<ResourceLazyViewDesc> ViewProvider::GetView(RenderCommandList& command_list)
 {
     if (SyncData() || !m_last_view)
     {

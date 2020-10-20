@@ -18,7 +18,7 @@ target_include_directories(Context
 )
 
 target_link_libraries(Context
-    CommandListBox
+    RenderCommandList
 )
 
 set_target_properties(Context PROPERTIES FOLDER "Modules")

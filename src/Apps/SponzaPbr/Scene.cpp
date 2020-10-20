@@ -161,13 +161,13 @@ void Scene::RenderFrame()
 
     m_render_target_view = m_context.GetBackBuffer(m_context.GetFrameIndex());
 
-    std::vector<std::shared_ptr<CommandListBox>> command_lists;
+    std::vector<std::shared_ptr<RenderCommandList>> command_lists;
 
     for (auto& desc : m_passes)
     {
         decltype(auto) command_list = m_command_lists[m_command_list_index];
         m_command_list_index = (m_command_list_index + 1) % m_command_lists.size();
-        m_context.GetFence()->Wait(command_list->fence_value);
+        m_context.GetFence()->Wait(command_list->GetFenceValue());
         command_list->Reset();
         command_list->BeginEvent(desc.name);
         desc.pass.get().OnRender(*command_list);

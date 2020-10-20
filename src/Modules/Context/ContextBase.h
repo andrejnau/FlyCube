@@ -9,7 +9,7 @@ class ContextBase
 {
 public:
     void OnDestroy();
-    void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<CommandListBox>>& command_lists);
+    void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<RenderCommandList>>& command_lists);
 
 protected:
     std::shared_ptr<Device> m_device;

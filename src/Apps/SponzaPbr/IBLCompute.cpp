@@ -73,9 +73,9 @@ void IBLCompute::OnUpdate()
     }
 }
 
-void IBLCompute::OnRender(CommandListBox& command_list)
+void IBLCompute::OnRender(RenderCommandList& command_list)
 {
-    command_list.SetViewport(m_size, m_size);
+    command_list.SetViewport(0, 0, m_size, m_size);
 
     for (auto& ibl_model : m_input.scene_list)
     {
@@ -110,7 +110,7 @@ void IBLCompute::OnRender(CommandListBox& command_list)
     }
 }
 
-void IBLCompute::DrawPrePass(CommandListBox& command_list, Model & ibl_model)
+void IBLCompute::DrawPrePass(RenderCommandList& command_list, Model & ibl_model)
 {
     command_list.UseProgram(m_program_pre_pass);
     command_list.Attach(m_program_pre_pass.vs.cbv.ConstantBuf, m_program_pre_pass.vs.cbuffer.ConstantBuf);
@@ -138,7 +138,7 @@ void IBLCompute::DrawPrePass(CommandListBox& command_list, Model & ibl_model)
     view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
     view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
 
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.depth_stencil.texture = ibl_model.ibl_dsv;
     render_pass_desc.depth_stencil.clear_depth = 1.0f;
 
@@ -182,7 +182,7 @@ void IBLCompute::DrawPrePass(CommandListBox& command_list, Model & ibl_model)
     command_list.EndRenderPass();
 }
 
-void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
+void IBLCompute::Draw(RenderCommandList& command_list, Model& ibl_model)
 {
     command_list.UseProgram(m_program);
     command_list.Attach(m_program.vs.cbv.ConstantBuf, m_program.vs.cbuffer.ConstantBuf);
@@ -216,7 +216,7 @@ void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
     view[4] = glm::transpose(glm::lookAt(position, position + BackwardLH, Up));
     view[5] = glm::transpose(glm::lookAt(position, position + ForwardLH, Up));
 
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.colors[m_program.ps.om.rtv0].texture = ibl_model.ibl_rtv;
     render_pass_desc.colors[m_program.ps.om.rtv0].clear_color = color;
     if (m_use_pre_pass)
@@ -283,7 +283,7 @@ void IBLCompute::Draw(CommandListBox& command_list, Model& ibl_model)
     command_list.EndRenderPass();
 }
 
-void IBLCompute::DrawBackgroud(CommandListBox& command_list, Model& ibl_model)
+void IBLCompute::DrawBackgroud(RenderCommandList& command_list, Model& ibl_model)
 {
     command_list.UseProgram(m_program_backgroud);
     command_list.Attach(m_program_backgroud.vs.cbv.ConstantBuf, m_program_backgroud.vs.cbuffer.ConstantBuf);
@@ -292,7 +292,7 @@ void IBLCompute::DrawBackgroud(CommandListBox& command_list, Model& ibl_model)
 
     command_list.Attach(m_program_backgroud.ps.sampler.g_sampler, m_sampler);
 
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.colors[m_program_backgroud.ps.om.rtv0].texture = ibl_model.ibl_rtv;
     render_pass_desc.colors[m_program_backgroud.ps.om.rtv0].load_op = RenderPassLoadOp::kLoad;
     render_pass_desc.depth_stencil.texture = ibl_model.ibl_dsv;
@@ -339,7 +339,7 @@ void IBLCompute::DrawBackgroud(CommandListBox& command_list, Model& ibl_model)
     command_list.EndRenderPass();
 }
 
-void IBLCompute::DrawDownSample(CommandListBox& command_list, Model& ibl_model, size_t texture_mips)
+void IBLCompute::DrawDownSample(RenderCommandList& command_list, Model& ibl_model, size_t texture_mips)
 {
     command_list.UseProgram(m_program_downsample);
     for (size_t i = 1; i < texture_mips; ++i)

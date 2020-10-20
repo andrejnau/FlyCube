@@ -25,9 +25,9 @@ void GeometryPass::OnUpdate()
     m_program.vs.cbuffer.ConstantBuf.projection = glm::transpose(projection);
 }
 
-void GeometryPass::OnRender(CommandListBox& command_list)
+void GeometryPass::OnRender(RenderCommandList& command_list)
 {
-    command_list.SetViewport(m_width, m_height);
+    command_list.SetViewport(0, 0, m_width, m_height);
 
     command_list.UseProgram(m_program);
     command_list.Attach(m_program.vs.cbv.ConstantBuf, m_program.vs.cbuffer.ConstantBuf);
@@ -35,7 +35,7 @@ void GeometryPass::OnRender(CommandListBox& command_list)
 
     command_list.Attach(m_program.ps.sampler.g_sampler, m_sampler);
 
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.colors[m_program.ps.om.rtv0].texture = output.position;
     render_pass_desc.colors[m_program.ps.om.rtv0].clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
     render_pass_desc.colors[m_program.ps.om.rtv1].texture = output.normal;

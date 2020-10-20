@@ -11,7 +11,7 @@ void SkinningPass::OnUpdate()
 {
 }
 
-void SkinningPass::OnRender(CommandListBox& command_list)
+void SkinningPass::OnRender(RenderCommandList& command_list)
 {
     command_list.UseProgram(m_program);
     command_list.Attach(m_program.cs.cbv.cb, m_program.cs.cbuffer.cb);

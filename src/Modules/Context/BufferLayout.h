@@ -13,7 +13,7 @@ class ViewProvider : public DeferredView
 {
 public:
     ViewProvider(Device& device, const uint8_t* src_data, BufferLayout& layout);
-    std::shared_ptr<ResourceLazyViewDesc> GetView(CommandListBox& command_list) override;
+    std::shared_ptr<ResourceLazyViewDesc> GetView(RenderCommandList& command_list) override;
     void OnDestroy(ResourceLazyViewDesc& view_desc) override;
 
 private:

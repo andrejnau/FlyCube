@@ -1,14 +1,14 @@
 #pragma once
 #include <Device/Device.h>
 #include <Resource/Resource.h>
-#include <CommandListBox/CommandListBox.h>
+#include <RenderCommandList/RenderCommandList.h>
 #include <vector>
 
 class IAVertexBuffer
 {
 public:
     template<typename T>
-    IAVertexBuffer(Device& device, CommandListBox& command_list, const std::vector<T>& v)
+    IAVertexBuffer(Device& device, RenderCommandList& command_list, const std::vector<T>& v)
         : m_device(device)
         , m_size(v.size() * sizeof(v.front()))
         , m_count(v.size())
@@ -18,7 +18,7 @@ public:
             command_list.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
 
-    void BindToSlot(CommandListBox& command_list, uint32_t slot)
+    void BindToSlot(RenderCommandList& command_list, uint32_t slot)
     {
         if (m_dynamic_buffer)
             command_list.IASetVertexBuffer(slot, m_dynamic_buffer);
@@ -60,7 +60,7 @@ class IAIndexBuffer
 {
 public:
     template<typename T>
-    IAIndexBuffer(Device& device, CommandListBox& command_list, const std::vector<T>& v, gli::format format)
+    IAIndexBuffer(Device& device, RenderCommandList& command_list, const std::vector<T>& v, gli::format format)
         : m_device(device)
         , m_format(format)
         , m_count(v.size())
@@ -71,7 +71,7 @@ public:
             command_list.UpdateSubresource(m_buffer, 0, v.data(), 0, 0);
     }
 
-    void Bind(CommandListBox& command_list)
+    void Bind(RenderCommandList& command_list)
     {
         if (m_buffer)
             command_list.IASetIndexBuffer(m_buffer, m_format);

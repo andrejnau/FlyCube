@@ -23,11 +23,11 @@ public:
     {
     } output;
 
-    ImGuiPass(Device& device, CommandListBox& command_list, const Input& input, int width, int height, GLFWwindow* window);
+    ImGuiPass(Device& device, RenderCommandList& command_list, const Input& input, int width, int height, GLFWwindow* window);
     ~ImGuiPass();
 
     virtual void OnUpdate() override;
-    virtual void OnRender(CommandListBox& command_list)override;
+    virtual void OnRender(RenderCommandList& command_list)override;
     virtual void OnResize(int width, int height) override;
 
     virtual void OnKey(int key, int action) override;
@@ -37,7 +37,7 @@ public:
     virtual void OnInputChar(unsigned int ch) override;
 
 private:
-    void CreateFontsTexture(CommandListBox& command_list);
+    void CreateFontsTexture(RenderCommandList& command_list);
     void InitKey();
 
     Device& m_device;

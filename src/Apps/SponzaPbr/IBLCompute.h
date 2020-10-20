@@ -36,14 +36,14 @@ public:
     IBLCompute(Device& device, const Input& input);
 
     virtual void OnUpdate() override;
-    virtual void OnRender(CommandListBox& command_list) override;
+    virtual void OnRender(RenderCommandList& command_list) override;
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
-    void DrawPrePass(CommandListBox& command_list, Model& ibl_model);
-    void Draw(CommandListBox& command_list, Model& ibl_model);
-    void DrawBackgroud(CommandListBox& command_list, Model& ibl_model);
-    void DrawDownSample(CommandListBox& command_list, Model& ibl_model, size_t texture_mips);
+    void DrawPrePass(RenderCommandList& command_list, Model& ibl_model);
+    void Draw(RenderCommandList& command_list, Model& ibl_model);
+    void DrawBackgroud(RenderCommandList& command_list, Model& ibl_model);
+    void DrawDownSample(RenderCommandList& command_list, Model& ibl_model, size_t texture_mips);
     SponzaSettings m_settings;
     Device& m_device;
     Input m_input;

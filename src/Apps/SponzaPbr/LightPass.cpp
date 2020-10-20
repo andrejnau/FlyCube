@@ -98,9 +98,9 @@ void LightPass::OnUpdate()
     m_program.ps.cbuffer.Light.inverted_mvp = glm::transpose(glm::inverse(projection * view));
 }
 
-void LightPass::OnRender(CommandListBox& command_list)
+void LightPass::OnRender(RenderCommandList& command_list)
 {
-    command_list.SetViewport(m_width, m_height);
+    command_list.SetViewport(0, 0, m_width, m_height);
 
     command_list.UseProgram(m_program);
     command_list.Attach(m_program.ps.cbv.Light, m_program.ps.cbuffer.Light);
@@ -115,7 +115,7 @@ void LightPass::OnRender(CommandListBox& command_list)
     m_input.model.ia.positions.BindToSlot(command_list, m_program.vs.ia.POSITION);
     m_input.model.ia.texcoords.BindToSlot(command_list, m_program.vs.ia.TEXCOORD);
 
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.colors[m_program.ps.om.rtv0].texture = output.rtv;
     render_pass_desc.colors[m_program.ps.om.rtv0].clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
     render_pass_desc.depth_stencil.texture = m_depth_stencil_view;

@@ -302,7 +302,7 @@ struct RenderPassDesc
     }
 };
 
-struct FlyRenderPassColorDesc
+struct RenderPassBeginColorDesc
 {
     std::shared_ptr<Resource> texture;
     LazyViewDesc view_desc;
@@ -311,7 +311,7 @@ struct FlyRenderPassColorDesc
     glm::vec4 clear_color = {};
 };
 
-struct FlyRenderPassDepthStencilDesc
+struct RenderPassBeginDepthStencilDesc
 {
     std::shared_ptr<Resource> texture;
     LazyViewDesc view_desc;
@@ -323,10 +323,10 @@ struct FlyRenderPassDepthStencilDesc
     uint8_t clear_stencil = 0;
 };
 
-struct FlyRenderPassDesc
+struct RenderPassBeginDesc
 {
-    std::array<FlyRenderPassColorDesc, 8> colors = {};
-    FlyRenderPassDepthStencilDesc depth_stencil;
+    std::array<RenderPassBeginColorDesc, 8> colors = {};
+    RenderPassBeginDepthStencilDesc depth_stencil;
 };
 
 class Program;
@@ -498,13 +498,13 @@ struct ResourceBarrierDesc
     uint32_t layer_count = 1;
 };
 
-class CommandListBox;
+class RenderCommandList;
 struct ResourceLazyViewDesc;
 
 class DeferredView
 {
 public:
-    virtual std::shared_ptr<ResourceLazyViewDesc> GetView(CommandListBox& command_list) = 0;
+    virtual std::shared_ptr<ResourceLazyViewDesc> GetView(RenderCommandList& command_list) = 0;
     virtual void OnDestroy(ResourceLazyViewDesc& view_desc) = 0;
 };
 

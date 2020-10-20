@@ -1,6 +1,6 @@
 #include "Geometry/Model.h"
 
-Model::Model(Device& device, CommandListBox& command_list, const std::string& file, uint32_t flags)
+Model::Model(Device& device, RenderCommandList& command_list, const std::string& file, uint32_t flags)
     : m_device(device)
     , m_model_loader(std::make_unique<ModelLoader>(file, static_cast<aiPostProcessSteps>(flags), *this))
     , ia(device, command_list, meshes)

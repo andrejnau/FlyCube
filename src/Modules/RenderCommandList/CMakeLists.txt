@@ -1,21 +1,20 @@
 list(APPEND headers
-    CommandListBox.h
-    CommandListBoxBase.h
+    RenderCommandList.h
+    RenderCommandListImpl.h
 )
 
 list(APPEND sources
-    CommandListBox.cpp
-    CommandListBoxBase.cpp
+    RenderCommandListImpl.cpp
 )
 
-add_library(CommandListBox ${headers} ${sources})
+add_library(RenderCommandList ${headers} ${sources})
 
-target_include_directories(CommandListBox
+target_include_directories(RenderCommandList
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(CommandListBox
+target_link_libraries(RenderCommandList
     ApiType
     Swapchain
     Shader
@@ -31,4 +30,4 @@ target_link_libraries(CommandListBox
     spirv-cross-hlsl
 )
 
-set_target_properties(CommandListBox PROPERTIES FOLDER "Modules")
+set_target_properties(RenderCommandList PROPERTIES FOLDER "Modules")

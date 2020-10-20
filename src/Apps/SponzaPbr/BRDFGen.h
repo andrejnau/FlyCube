@@ -23,12 +23,12 @@ public:
     BRDFGen(Device& device, const Input& input);
 
     virtual void OnUpdate() override;
-    virtual void OnRender(CommandListBox& command_list)override;
+    virtual void OnRender(RenderCommandList& command_list)override;
     virtual void OnResize(int width, int height) override;
     virtual void OnModifySponzaSettings(const SponzaSettings& settings) override;
 
 private:
-    void DrawBRDF(CommandListBox& command_list);
+    void DrawBRDF(RenderCommandList& command_list);
 
     SponzaSettings m_settings;
     Device& m_device;

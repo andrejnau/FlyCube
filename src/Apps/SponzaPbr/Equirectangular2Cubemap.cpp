@@ -21,7 +21,7 @@ void Equirectangular2Cubemap::OnUpdate()
     m_program_equirectangular2cubemap.vs.cbuffer.ConstantBuf.projection = glm::transpose(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f));
 }
 
-void Equirectangular2Cubemap::OnRender(CommandListBox& command_list)
+void Equirectangular2Cubemap::OnRender(RenderCommandList& command_list)
 {
     if (!is || m_settings.Get<bool>("irradiance_conversion_every_frame"))
     {
@@ -33,9 +33,9 @@ void Equirectangular2Cubemap::OnRender(CommandListBox& command_list)
     }
 }
 
-void Equirectangular2Cubemap::DrawEquirectangular2Cubemap(CommandListBox& command_list)
+void Equirectangular2Cubemap::DrawEquirectangular2Cubemap(RenderCommandList& command_list)
 {
-    command_list.SetViewport(m_texture_size, m_texture_size);
+    command_list.SetViewport(0, 0, m_texture_size, m_texture_size);
 
     command_list.UseProgram(m_program_equirectangular2cubemap);
     command_list.Attach(m_program_equirectangular2cubemap.vs.cbv.ConstantBuf, m_program_equirectangular2cubemap.vs.cbuffer.ConstantBuf);
@@ -43,7 +43,7 @@ void Equirectangular2Cubemap::DrawEquirectangular2Cubemap(CommandListBox& comman
     command_list.Attach(m_program_equirectangular2cubemap.ps.sampler.g_sampler, m_sampler);
 
     glm::vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    FlyRenderPassDesc render_pass_desc = {};
+    RenderPassBeginDesc render_pass_desc = {};
     render_pass_desc.colors[m_program_equirectangular2cubemap.ps.om.rtv0].texture = output.environment;
     render_pass_desc.colors[m_program_equirectangular2cubemap.ps.om.rtv0].clear_color = color;
     render_pass_desc.depth_stencil.texture = m_dsv;

@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
     AppRect rect = app.GetAppRect();
     ProgramHolder<PixelShaderPS, VertexShaderVS> program(device);
 
-    std::shared_ptr<CommandListBox> upload_command_list = context.CreateCommandList();
+    std::shared_ptr<RenderCommandList> upload_command_list = context.CreateCommandList();
 
     Model model(device, *upload_command_list, "model/export3dcoat/export3dcoat.obj");
     model.matrix = glm::scale(glm::vec3(0.1f)) * glm::translate(glm::vec3(0.0f, 30.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -69,10 +69,10 @@ int main(int argc, char* argv[])
     upload_command_list->Close();
     context.ExecuteCommandLists({ upload_command_list });
 
-    std::vector<std::shared_ptr<CommandListBox>> command_lists;
+    std::vector<std::shared_ptr<RenderCommandList>> command_lists;
     for (uint32_t i = 0; i < Context::FrameCount; ++i)
     {
-        FlyRenderPassDesc render_pass_desc = {};
+        RenderPassBeginDesc render_pass_desc = {};
         render_pass_desc.colors[0].texture = context.GetBackBuffer(i);
         render_pass_desc.colors[0].clear_color = { 1.0f, 1.0f, 1.0f, 1.0f };
         render_pass_desc.depth_stencil.texture = dsv;
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
 
         decltype(auto) command_list = context.CreateCommandList();
         command_list->UseProgram(program);
-        command_list->SetViewport(rect.width, rect.height);
+        command_list->SetViewport(0, 0, rect.width, rect.height);
         command_list->Attach(program.vs.cbv.ConstantBuf, program.vs.cbuffer.ConstantBuf);
         model.ia.indices.Bind(*command_list);
         model.ia.positions.BindToSlot(*command_list, program.vs.ia.POSITION);
