@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
     AppRect rect = app.GetAppRect();
 
     std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
-    ProgramHolder<PixelShaderPS, VertexShaderVS> program(*device);
+    app.SetGpuName(device->GetGpuName());
 
     std::shared_ptr<RenderCommandList> upload_command_list = device->CreateRenderCommandList();
     std::vector<uint32_t> ibuf = { 0, 1, 2 };
@@ -27,6 +27,7 @@ int main(int argc, char* argv[])
     upload_command_list->Close();
     device->ExecuteCommandLists({ upload_command_list });
 
+    ProgramHolder<PixelShaderPS, VertexShaderVS> program(*device);
     program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
 
     std::vector<std::shared_ptr<RenderCommandList>> command_lists;
@@ -53,7 +54,6 @@ int main(int argc, char* argv[])
     {
         device->ExecuteCommandLists({ command_lists[device->GetFrameIndex()] });
         device->Present();
-        app.UpdateFps(device->GetGpuName());
     }
     return 0;
 }

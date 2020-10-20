@@ -11,6 +11,7 @@ int main(int argc, char* argv[])
 
     std::shared_ptr<Instance> instance = CreateInstance(settings.api_type);
     std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[settings.required_gpu_index]);
+    app.SetGpuName(adapter->GetName());
     std::shared_ptr<Device> device = adapter->CreateDevice();
     if (!device->IsDxrSupported())
         throw std::runtime_error("Ray Tracing is not supported");
@@ -129,7 +130,6 @@ int main(int argc, char* argv[])
         command_queue->ExecuteCommandLists({ command_lists[frame_index] });
         command_queue->Signal(fence, fence_values[frame_index] = ++fence_value);
         swapchain->Present(fence, fence_values[frame_index]);
-        app.UpdateFps(adapter->GetName());
     }
     command_queue->Signal(fence, ++fence_value);
     fence->Wait(fence_value);

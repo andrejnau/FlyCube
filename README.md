@@ -18,7 +18,7 @@ AppBox app("Triangle", settings);
 AppRect rect = app.GetAppRect();
 
 std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
-ProgramHolder<PixelShaderPS, VertexShaderVS> program(*device);
+app.SetGpuName(device->GetGpuName());
 
 std::shared_ptr<RenderCommandList> upload_command_list = device->CreateRenderCommandList();
 std::vector<uint32_t> ibuf = { 0, 1, 2 };
@@ -34,6 +34,7 @@ upload_command_list->UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
 upload_command_list->Close();
 device->ExecuteCommandLists({ upload_command_list });
 
+ProgramHolder<PixelShaderPS, VertexShaderVS> program(*device);
 program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
 
 std::vector<std::shared_ptr<RenderCommandList>> command_lists;
@@ -60,7 +61,6 @@ while (!app.PollEvents())
 {
     device->ExecuteCommandLists({ command_lists[device->GetFrameIndex()] });
     device->Present();
-    app.UpdateFps(device->GetGpuName());
 }
 ```
 
@@ -72,6 +72,7 @@ AppRect rect = app.GetAppRect();
 
 std::shared_ptr<Instance> instance = CreateInstance(settings.api_type);
 std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[settings.required_gpu_index]);
+app.SetGpuName(adapter->GetName());
 std::shared_ptr<Device> device = adapter->CreateDevice();
 std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
 std::shared_ptr<CommandQueue> copy_command_queue = device->GetCommandQueue(CommandListType::kCopy);
@@ -155,7 +156,6 @@ while (!app.PollEvents())
     command_queue->ExecuteCommandLists({ command_lists[frame_index] });
     command_queue->Signal(fence, fence_values[frame_index] = ++fence_value);
     swapchain->Present(fence, fence_values[frame_index]);
-    app.UpdateFps(adapter->GetName());
 }
 command_queue->Signal(fence, ++fence_value);
 fence->Wait(fence_value);

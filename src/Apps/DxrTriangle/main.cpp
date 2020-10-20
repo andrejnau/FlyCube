@@ -14,8 +14,7 @@ int main(int argc, char *argv[])
     std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
     if (!device->IsDxrSupported())
         throw std::runtime_error("Ray Tracing is not supported");
-
-    ProgramHolder<RayTracing> program(*device);
+    app.SetGpuName(device->GetGpuName());
 
     std::shared_ptr<RenderCommandList> upload_command_list = device->CreateRenderCommandList();
 
@@ -40,6 +39,7 @@ int main(int argc, char *argv[])
     upload_command_list->Close();
     device->ExecuteCommandLists({ upload_command_list });
 
+    ProgramHolder<RayTracing> program(*device);
     std::vector<std::shared_ptr<RenderCommandList>> command_lists;
     for (uint32_t i = 0; i < settings.frame_count; ++i)
     {
@@ -57,7 +57,6 @@ int main(int argc, char *argv[])
     {
         device->ExecuteCommandLists({ command_lists[device->GetFrameIndex()] });
         device->Present();
-        app.UpdateFps(device->GetGpuName());
     }
     return 0;
 }

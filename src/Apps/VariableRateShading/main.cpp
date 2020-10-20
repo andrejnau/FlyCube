@@ -14,12 +14,7 @@ int main(int argc, char* argv[])
     AppRect rect = app.GetAppRect();
 
     std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
-    ProgramHolder<PixelShaderPS, VertexShaderVS> program(*device);
-
-    std::shared_ptr<RenderCommandList> upload_command_list = device->CreateRenderCommandList();
-
-    Model model(*device, *upload_command_list, "model/export3dcoat/export3dcoat.obj");
-    model.matrix = glm::scale(glm::vec3(0.1f)) * glm::translate(glm::vec3(0.0f, 30.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    app.SetGpuName(device->GetGpuName());
 
     auto dsv = device->CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, rect.width, rect.height, 1);
     auto sampler = device->CreateSampler({
@@ -34,6 +29,12 @@ int main(int argc, char* argv[])
     camera.SetCameraYaw(-1.75f);
     camera.SetViewport(rect.width, rect.height);
 
+    std::shared_ptr<RenderCommandList> upload_command_list = device->CreateRenderCommandList();
+
+    Model model(*device, *upload_command_list, "model/export3dcoat/export3dcoat.obj");
+    model.matrix = glm::scale(glm::vec3(0.1f)) * glm::translate(glm::vec3(0.0f, 30.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    ProgramHolder<PixelShaderPS, VertexShaderVS> program(*device);
     program.vs.cbuffer.ConstantBuf.model = glm::transpose(model.matrix);
     program.vs.cbuffer.ConstantBuf.view = glm::transpose(camera.GetViewMatrix());
     program.vs.cbuffer.ConstantBuf.projection = glm::transpose(camera.GetProjectionMatrix());
@@ -114,7 +115,6 @@ int main(int argc, char* argv[])
     {
         device->ExecuteCommandLists({ command_lists[device->GetFrameIndex()] });
         device->Present();
-        app.UpdateFps(device->GetGpuName());
     }
     return 0;
 }

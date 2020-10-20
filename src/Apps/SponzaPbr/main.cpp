@@ -5,14 +5,14 @@
 int main(int argc, char *argv[])
 {
     Settings settings = ParseArgs(argc, argv);
-    AppBox app("testApp", settings);
+    AppBox app("SponzaPbr", settings);
     AppRect rect = app.GetAppRect();
     Scene scene(settings, app.GetWindow(), rect.width, rect.height);
     app.SubscribeEvents(&scene, &scene);
+    app.SetGpuName(scene.GetRenderDevice().GetGpuName());
     while (!app.PollEvents())
     {
         scene.RenderFrame();
-        app.UpdateFps(scene.GetRenderDevice().GetGpuName());
     }
     return 0;
 }

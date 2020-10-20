@@ -25,10 +25,12 @@ public:
 
     AppRect GetAppRect() const;
     GLFWwindow* GetWindow() const;
-    void UpdateFps(const std::string& gpu_name);
+    void SetGpuName(const std::string& gpu_name);
     void SubscribeEvents(InputEvents* input_listener, WindowEvents* window_listener);
 
 private:
+    void UpdateFps();
+    void UpdateTitle();
     void SwitchFullScreenMode();
     static void OnSizeChanged(GLFWwindow* window, int width, int height);
     static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -50,4 +52,6 @@ private:
     std::array<int, 4> m_window_box = {};
     std::map<int, bool> m_keys;
     int m_mouse_mode = GLFW_CURSOR_HIDDEN;
+    std::string m_gpu_name;
+    std::string m_fps;
 };
