@@ -321,6 +321,18 @@ void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
         m_command_list->ResourceBarrier(dx_barriers.size(), dx_barriers.data());
 }
 
+void DXCommandList::UAVResourceBarrier(const std::shared_ptr<Resource>& resource)
+{
+    D3D12_RESOURCE_BARRIER uav_barrier = {};
+    uav_barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    if (resource)
+    {
+        decltype(auto) dx_resource = resource->As<DXResource>();
+        uav_barrier.UAV.pResource = dx_resource.resource.Get();
+    }
+    m_command_list4->ResourceBarrier(1, &uav_barrier);
+}
+
 void DXCommandList::SetViewport(float x, float y, float width, float height)
 {
     D3D12_VIEWPORT viewport = {};
@@ -414,11 +426,6 @@ void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATI
     acceleration_structure_desc.DestAccelerationStructureData = dx_dst.resource->GetGPUVirtualAddress();
     acceleration_structure_desc.ScratchAccelerationStructureData = dx_scratch.resource->GetGPUVirtualAddress() + scratch_offset;
     m_command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
-
-    D3D12_RESOURCE_BARRIER uav_barrier = {};
-    uav_barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    uav_barrier.UAV.pResource = dx_dst.resource.Get();
-    m_command_list4->ResourceBarrier(1, &uav_barrier);
 }
 
 void DXCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,

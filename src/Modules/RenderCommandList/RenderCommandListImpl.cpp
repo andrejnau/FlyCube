@@ -227,6 +227,7 @@ void RenderCommandListImpl::BuildBottomLevelAS(const std::shared_ptr<Resource>& 
     RaytracingASPrebuildInfo prebuild_info = dst->GetRaytracingASPrebuildInfo();
     auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size, MemoryType::kDefault);
     m_command_list->BuildBottomLevelAS(src, dst, scratch, 0, descs);
+    m_command_list->UAVResourceBarrier(dst);
     m_cmd_resources.emplace_back(scratch);
 }
 
@@ -249,6 +250,7 @@ void RenderCommandListImpl::BuildTopLevelAS(const std::shared_ptr<Resource>& src
     auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size, MemoryType::kDefault);
 
     m_command_list->BuildTopLevelAS(src, dst, scratch, 0, instance_data, 0, geometry.size());
+    m_command_list->UAVResourceBarrier(dst);
 
     m_cmd_resources.emplace_back(scratch);
     m_cmd_resources.emplace_back(instance_data);

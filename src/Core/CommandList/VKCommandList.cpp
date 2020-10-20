@@ -378,6 +378,17 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
     }
 }
 
+void VKCommandList::UAVResourceBarrier(const std::shared_ptr<Resource>& /*resource*/)
+{
+    vk::MemoryBarrier memory_barrier = {};
+    memory_barrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV
+                                 | vk::AccessFlagBits::eAccelerationStructureReadNV
+                                 | vk::AccessFlagBits::eShaderWrite
+                                 | vk::AccessFlagBits::eShaderRead;
+    memory_barrier.dstAccessMask = memory_barrier.srcAccessMask;
+    m_command_list->pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, vk::DependencyFlagBits::eByRegion, 1, &memory_barrier, 0, 0, 0, 0);
+}
+
 void VKCommandList::SetViewport(float x, float y, float width, float height)
 {
     vk::Viewport viewport = {};
@@ -462,11 +473,6 @@ void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& 
         vk_scratch.buffer.res.get(),
         scratch_offset
     );
-
-    vk::MemoryBarrier memory_barrier = {};
-    memory_barrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
-    memory_barrier.dstAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV;
-    m_command_list->pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, 1, &memory_barrier, 0, 0, 0, 0);
 }
 
 void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,
