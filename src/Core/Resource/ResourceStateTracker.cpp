@@ -57,7 +57,9 @@ void ResourceStateTracker::Merge(const ResourceStateTracker& other)
     {
         auto state = other.GetResourceState();
         if (state != ResourceState::kUnknown)
+        {
             SetResourceState(state);
+        }
     }
     else
     {

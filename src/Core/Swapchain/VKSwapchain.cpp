@@ -80,7 +80,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, GLFWwindow* window, uint
         res->image.format = m_swapchain_color_format;
         res->image.size = vk::Extent2D(1u * width, 1u * height);
         res->resource_type = ResourceType::kTexture;
-        m_command_list->ResourceBarrier({ { res, ResourceState::kUndefined, ResourceState::kPresent } });
+        m_command_list->ResourceBarrier({ { res, ResourceState::kCommon, ResourceState::kPresent } });
         res->SetInitialState(ResourceState::kPresent);
         m_back_buffers.emplace_back(res);
     }
