@@ -177,7 +177,7 @@ void RenderDeviceImpl::ExecuteCommandListsImpl(const std::vector<std::shared_ptr
                 }
                 if (!tmp_cmd)
                 {
-                    tmp_cmd = m_command_list_pool.emplace_back(m_device->CreateCommandList(m_type));
+                    tmp_cmd = m_command_list_pool.emplace_back(m_device->CreateCommandList(CommandListType::kGraphics));
                     m_fence_value_by_cmd.emplace_back(m_fence_value + 1, m_command_list_pool.size() - 1);
                 }
                 raw_command_lists.emplace_back(tmp_cmd);
@@ -254,11 +254,6 @@ void RenderDeviceImpl::Present()
 void RenderDeviceImpl::Wait(uint64_t fence_value)
 {
     m_fence->Wait(fence_value);
-}
-
-std::shared_ptr<Device> RenderDeviceImpl::GetDevice()
-{
-    return m_device;
 }
 
 uint32_t RenderDeviceImpl::GetFrameIndex() const

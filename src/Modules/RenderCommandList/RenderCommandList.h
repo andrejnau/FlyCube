@@ -10,7 +10,8 @@ public:
     virtual void Reset() = 0;
     virtual void Close() = 0;
     virtual void Attach(const BindKey& bind_key, const std::shared_ptr<Resource>& resource = {}, const LazyViewDesc& view_desc = {}) = 0;
-    virtual void Attach(const BindKey & bind_key, const std::shared_ptr<DeferredView> & view) = 0;
+    virtual void Attach(const BindKey& bind_key, const std::shared_ptr<DeferredView>& view) = 0;
+    virtual void Attach(const BindKey& bind_key, const std::shared_ptr<View>& view) = 0;
     virtual void SetRasterizeState(const RasterizerDesc& desc) = 0;
     virtual void SetBlendState(const BlendDesc& desc) = 0;
     virtual void SetDepthStencilState(const DepthStencilDesc& desc) = 0;

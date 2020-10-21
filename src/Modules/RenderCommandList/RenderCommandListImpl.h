@@ -26,7 +26,8 @@ public:
     void Reset() override;
     void Close() override;
     void Attach(const BindKey& bind_key, const std::shared_ptr<Resource>& resource = {}, const LazyViewDesc& view_desc = {}) override;
-    void Attach(const BindKey & bind_key, const std::shared_ptr<DeferredView> & view) override;
+    void Attach(const BindKey& bind_key, const std::shared_ptr<DeferredView>& view) override;
+    void Attach(const BindKey& bind_key, const std::shared_ptr<View>& view) override;
     void SetRasterizeState(const RasterizerDesc& desc) override;
     void SetBlendState(const BlendDesc& desc) override;
     void SetDepthStencilState(const DepthStencilDesc& desc) override;
@@ -59,14 +60,14 @@ public:
 private:
     void BufferBarrier(const std::shared_ptr<Resource>& resource, ResourceState state);
     void ViewBarrier(const std::shared_ptr<View>& view, ResourceState state);
-    void Attach(const BindKey& bind_key, const std::shared_ptr<View>& view);
     void ImageBarrier(const std::shared_ptr<Resource>& resource, uint32_t base_mip_level, uint32_t level_count, uint32_t base_array_layer, uint32_t layer_count, ResourceState state);
     void OnAttachSRV(const BindKey& bind_key, const std::shared_ptr<View>& view);
     void OnAttachUAV(const BindKey& bind_key, const std::shared_ptr<View>& view);
     std::shared_ptr<View> CreateView(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc);
     void SetBinding(const BindKey& bind_key, const std::shared_ptr<View>& view);
     void UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch);
-    void ApplyBindings();
+    void ApplyPipeline();
+    void ApplyBindingSet();
     ResourceStateTracker& GetResourceStateTracker(const std::shared_ptr<Resource>& resource);
 
     Device& m_device;
@@ -78,17 +79,16 @@ private:
     std::map<BindKey, std::shared_ptr<DeferredView>> m_bound_deferred_view;
     std::vector<std::shared_ptr<ResourceLazyViewDesc>> m_resource_lazy_view_descs;
 
-    std::vector<std::shared_ptr<Shader>> m_shaders;
     std::shared_ptr<Program> m_program;
-    std::shared_ptr<Pipeline> m_pipeline;
-    std::shared_ptr<BindingSet> m_binding_set;
     std::vector<std::shared_ptr<BindingSet>> m_binding_sets;
 
-    std::map<GraphicsPipelineDesc, std::shared_ptr<Pipeline>> m_pso;
-    std::map<ComputePipelineDesc, std::shared_ptr<Pipeline>> m_compute_pso;
+    std::map<GraphicsPipelineDesc, std::shared_ptr<Pipeline>> m_graphics_pipeline_cache;
+    std::map<ComputePipelineDesc, std::shared_ptr<Pipeline>> m_compute_pipeline_cache;
+    std::map<RayTracingPipelineDesc, std::shared_ptr<Pipeline>> m_ray_tracing_pipeline_cache;
     std::map<std::tuple<uint32_t, uint32_t, std::vector<std::shared_ptr<View>>, std::shared_ptr<View>>, std::shared_ptr<Framebuffer>> m_framebuffers;
     std::map<std::tuple<BindKey, std::shared_ptr<Resource>, LazyViewDesc>, std::shared_ptr<View>> m_views;
     ComputePipelineDesc m_compute_pipeline_desc = {};
+    RayTracingPipelineDesc m_ray_tracing_pipeline_desc = {};
     GraphicsPipelineDesc m_graphic_pipeline_desc = {};
     std::map<RenderPassDesc, std::shared_ptr<RenderPass>> m_render_pass_cache;
 

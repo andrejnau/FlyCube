@@ -167,19 +167,22 @@ void RenderCommandListImpl::EndEvent()
 
 void RenderCommandListImpl::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
 {
-    ApplyBindings();
+    ApplyPipeline();
+    ApplyBindingSet();
     m_command_list->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 
 void RenderCommandListImpl::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
 {
-    ApplyBindings();
+    ApplyPipeline();
+    ApplyBindingSet();
     m_command_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
 void RenderCommandListImpl::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
 {
-    ApplyBindings();
+    ApplyPipeline();
+    ApplyBindingSet();
     m_command_list->DispatchRays(width, height, depth);
 }
 
@@ -265,11 +268,16 @@ void RenderCommandListImpl::UseProgram(const std::shared_ptr<Program>& program)
 {
     m_graphic_pipeline_desc = {};
     m_compute_pipeline_desc = {};
+    m_ray_tracing_pipeline_desc = {};
 
     m_program = program;
-    if (m_program->HasShader(ShaderType::kCompute) || m_program->HasShader(ShaderType::kLibrary))
+    if (m_program->HasShader(ShaderType::kCompute))
     {
         m_compute_pipeline_desc.program = m_program;
+    }
+    else if (m_program->HasShader(ShaderType::kLibrary))
+    {
+        m_ray_tracing_pipeline_desc.program = m_program;
     }
     else
     {
@@ -280,54 +288,60 @@ void RenderCommandListImpl::UseProgram(const std::shared_ptr<Program>& program)
     m_bound_deferred_view.clear();
 }
 
-void RenderCommandListImpl::ApplyBindings()
+void RenderCommandListImpl::ApplyPipeline()
 {
+    std::shared_ptr<Pipeline> pipeline;
     if (m_program->HasShader(ShaderType::kCompute))
     {
-        auto it = m_compute_pso.find(m_compute_pipeline_desc);
-        if (it == m_compute_pso.end())
+        auto it = m_compute_pipeline_cache.find(m_compute_pipeline_desc);
+        if (it == m_compute_pipeline_cache.end())
         {
-            m_pipeline = m_device.CreateComputePipeline(m_compute_pipeline_desc);
-            m_compute_pso.emplace(std::piecewise_construct,
+            pipeline = m_device.CreateComputePipeline(m_compute_pipeline_desc);
+            m_compute_pipeline_cache.emplace(std::piecewise_construct,
                 std::forward_as_tuple(m_compute_pipeline_desc),
-                std::forward_as_tuple(m_pipeline));
+                std::forward_as_tuple(pipeline));
         }
         else
         {
-            m_pipeline = it->second;
+            pipeline = it->second;
         }
     }
     else if (m_program->HasShader(ShaderType::kLibrary))
     {
-        auto it = m_compute_pso.find(m_compute_pipeline_desc);
-        if (it == m_compute_pso.end())
+        auto it = m_ray_tracing_pipeline_cache.find(m_ray_tracing_pipeline_desc);
+        if (it == m_ray_tracing_pipeline_cache.end())
         {
-            m_pipeline = m_device.CreateRayTracingPipeline(m_compute_pipeline_desc);
-            m_compute_pso.emplace(std::piecewise_construct,
-                std::forward_as_tuple(m_compute_pipeline_desc),
-                std::forward_as_tuple(m_pipeline));
+            pipeline = m_device.CreateRayTracingPipeline(m_ray_tracing_pipeline_desc);
+            m_ray_tracing_pipeline_cache.emplace(std::piecewise_construct,
+                std::forward_as_tuple(m_ray_tracing_pipeline_desc),
+                std::forward_as_tuple(pipeline));
         }
         else
         {
-            m_pipeline = it->second;
+            pipeline = it->second;
         }
     }
     else
     {
-        auto it = m_pso.find(m_graphic_pipeline_desc);
-        if (it == m_pso.end())
+        auto it = m_graphics_pipeline_cache.find(m_graphic_pipeline_desc);
+        if (it == m_graphics_pipeline_cache.end())
         {
-            m_pipeline = m_device.CreateGraphicsPipeline(m_graphic_pipeline_desc);
-            m_pso.emplace(std::piecewise_construct,
+            pipeline = m_device.CreateGraphicsPipeline(m_graphic_pipeline_desc);
+            m_graphics_pipeline_cache.emplace(std::piecewise_construct,
                 std::forward_as_tuple(m_graphic_pipeline_desc),
-                std::forward_as_tuple(m_pipeline));
+                std::forward_as_tuple(pipeline));
         }
         else
         {
-            m_pipeline = it->second;
+            pipeline = it->second;
         }
     }
 
+    m_command_list->BindPipeline(pipeline);
+}
+
+void RenderCommandListImpl::ApplyBindingSet()
+{
     for (auto& x : m_bound_deferred_view)
     {
         auto view = x.second->GetView(*this);
@@ -344,10 +358,9 @@ void RenderCommandListImpl::ApplyBindings()
         desc.view = x.second;
     }
 
-    m_binding_set = m_program->CreateBindingSet(descs);
-    m_binding_sets.emplace_back(m_binding_set);
-    m_command_list->BindPipeline(m_pipeline);
-    m_command_list->BindBindingSet(m_binding_set);
+    auto binding_set = m_program->CreateBindingSet(descs);
+    m_command_list->BindBindingSet(binding_set);
+    m_binding_sets.emplace_back(binding_set);
 }
 
 void RenderCommandListImpl::SetBinding(const BindKey& bind_key, const std::shared_ptr<View>& view)

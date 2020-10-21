@@ -46,52 +46,25 @@ public:
     void WaitForIdle() override;
     void Resize(uint32_t width, uint32_t height) override;
 
-    GLFWwindow* GetWindow()
-    {
-        return m_window;
-    }
-
     void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<RenderCommandList>>& command_lists);
-
-    std::shared_ptr<Fence>& GetFence()
-    {
-        return m_fence;
-    }
-
-    std::shared_ptr<Device> GetDevice();
-
-    std::shared_ptr<Swapchain>& GetSwapchain()
-    {
-        return m_swapchain;
-    }
-
-    std::shared_ptr<Adapter>& GetAdapter()
-    {
-        return m_adapter;
-    }
-
-    uint32_t m_frame_count;
 
 private:
     GLFWwindow* m_window;
+    bool m_vsync;
+    uint32_t m_frame_count;
+    uint32_t m_frame_index = 0;
     int m_width = 0;
     int m_height = 0;
-    uint32_t m_frame_index = 0;
-    bool m_vsync = false;
-
     std::shared_ptr<Instance> m_instance;
     std::shared_ptr<Adapter> m_adapter;
+    std::shared_ptr<Device> m_device;
+    std::shared_ptr<CommandQueue> m_command_queue;
     std::shared_ptr<Swapchain> m_swapchain;
     std::vector<std::shared_ptr<CommandList>> m_swapchain_command_lists;
     std::vector<uint64_t> m_swapchain_fence_values;
     std::shared_ptr<CommandList> m_swapchain_command_list;
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
-
-    std::shared_ptr<Device> m_device;
-    std::shared_ptr<CommandQueue> m_command_queue;
-
-    CommandListType m_type = CommandListType::kGraphics;
     std::vector<std::shared_ptr<CommandList>> m_command_list_pool;
     std::deque<std::pair<uint64_t /*fence_value*/, size_t /*offset*/>> m_fence_value_by_cmd;
 };
