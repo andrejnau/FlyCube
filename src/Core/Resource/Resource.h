@@ -22,10 +22,9 @@ public:
     virtual uint64_t GetAccelerationStructureHandle() const = 0;
     virtual const RaytracingASPrebuildInfo& GetRaytracingASPrebuildInfo() const = 0;
     virtual void SetName(const std::string& name) = 0;
-    virtual void UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes) = 0;
-    virtual void UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
+    virtual void UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes) = 0;
+    virtual void UpdateUploadBufferWithTextureData(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
                                    const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices) = 0;
-    virtual ResourceStateTracker& GetGlobalResourceStateTracker() = 0;
-    virtual const ResourceStateTracker& GetGlobalResourceStateTracker() const = 0;
     virtual bool AllowCommonStatePromotion(ResourceState state_after) = 0;
+    virtual ResourceState GetInitialState() const = 0;
 };

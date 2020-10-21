@@ -25,17 +25,17 @@ const RaytracingASPrebuildInfo& ResourceBase::GetRaytracingASPrebuildInfo() cons
     return prebuild_info;
 }
 
-void ResourceBase::UpdateUploadData(const void* data, uint64_t offset, uint64_t num_bytes)
+void ResourceBase::UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes)
 {
-    void* dst_data = Map() + offset;
+    void* dst_data = Map() + buffer_offset;
     memcpy(dst_data, data, num_bytes);
     Unmap();
 }
 
-void ResourceBase::UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
+void ResourceBase::UpdateUploadBufferWithTextureData(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
     const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices)
 {
-    void* dst_data = Map();
+    void* dst_data = Map() + buffer_offset;
     for (uint32_t z = 0; z < num_slices; ++z)
     {
         uint8_t* dest_slice = reinterpret_cast<uint8_t*>(dst_data) + buffer_depth_pitch * z;
@@ -46,6 +46,17 @@ void ResourceBase::UpdateSubresource(uint64_t buffer_offset, uint32_t buffer_row
         }
     }
     Unmap();
+}
+
+ResourceState ResourceBase::GetInitialState() const
+{
+    return m_initial_state;
+}
+
+void ResourceBase::SetInitialState(ResourceState state)
+{
+    m_initial_state = state;
+    m_resource_state_tracker.SetResourceState(m_initial_state);
 }
 
 ResourceStateTracker& ResourceBase::GetGlobalResourceStateTracker()

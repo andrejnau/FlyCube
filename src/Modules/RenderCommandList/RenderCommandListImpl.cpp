@@ -68,7 +68,7 @@ void RenderCommandListImpl::UpdateSubresource(const std::shared_ptr<Resource>& r
     switch (resource->GetMemoryType())
     {
     case MemoryType::kUpload:
-        return resource->UpdateUploadData(data, 0, resource->GetWidth());
+        return resource->UpdateUploadBuffer(0, data, resource->GetWidth());
     case MemoryType::kDefault:
         return UpdateSubresourceDefault(resource, subresource, data, row_pitch, depth_pitch);
     }
@@ -85,7 +85,7 @@ void RenderCommandListImpl::UpdateSubresourceDefault(const std::shared_ptr<Resou
         size_t buffer_size = resource->GetWidth();
         if (!upload_resource)
             upload_resource = m_device.CreateBuffer(BindFlag::kCopySource, buffer_size, MemoryType::kUpload);
-        upload_resource->UpdateUploadData(data, 0, buffer_size);
+        upload_resource->UpdateUploadBuffer(0, data, buffer_size);
 
         std::vector<BufferCopyRegion> regions;
         auto& region = regions.emplace_back();
@@ -110,7 +110,7 @@ void RenderCommandListImpl::UpdateSubresourceDefault(const std::shared_ptr<Resou
 
         if (!upload_resource)
             upload_resource = m_device.CreateBuffer(BindFlag::kCopySource, num_bytes, MemoryType::kUpload);
-        upload_resource->UpdateSubresource(0, row_bytes, num_bytes, data, row_pitch, depth_pitch, num_rows, region.texture_extent.depth);
+        upload_resource->UpdateUploadBufferWithTextureData(0, row_bytes, num_bytes, data, row_pitch, depth_pitch, num_rows, region.texture_extent.depth);
 
         ImageBarrier(resource, region.texture_mip_level, 1, region.texture_array_layer, 1, ResourceState::kCopyDest);
         m_command_list->CopyBufferToTexture(upload_resource, resource, regions);
@@ -247,7 +247,7 @@ void RenderCommandListImpl::BuildTopLevelAS(const std::shared_ptr<Resource>& src
     }
 
     auto instance_data = m_device.CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload);
-    instance_data->UpdateUploadData(instances.data(), 0, instances.size() * sizeof(instances.back()));
+    instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
 
     RaytracingASPrebuildInfo prebuild_info = dst->GetRaytracingASPrebuildInfo();
     auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size, MemoryType::kDefault);

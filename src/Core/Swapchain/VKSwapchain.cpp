@@ -81,7 +81,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, GLFWwindow* window, uint
         res->image.size = vk::Extent2D(1u * width, 1u * height);
         res->resource_type = ResourceType::kTexture;
         m_command_list->ResourceBarrier({ { res, ResourceState::kUndefined, ResourceState::kPresent } });
-        res->GetGlobalResourceStateTracker().SetResourceState(ResourceState::kPresent);
+        res->SetInitialState(ResourceState::kPresent);
         m_back_buffers.emplace_back(res);
     }
     m_command_list->Close();

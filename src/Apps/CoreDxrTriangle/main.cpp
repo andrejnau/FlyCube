@@ -31,8 +31,8 @@ int main(int argc, char* argv[])
 
     std::shared_ptr<Resource> upload_buffer = device->CreateBuffer(BindFlag::kCopySource, index_buffer->GetWidth() + vertex_buffer->GetWidth(), MemoryType::kUpload);
     upload_buffer->SetName("upload_buffer");
-    upload_buffer->UpdateUploadData(index_data.data(), 0, sizeof(index_data.front()) * index_data.size());
-    upload_buffer->UpdateUploadData(vertex_data.data(), index_buffer->GetWidth(), sizeof(vertex_data.front()) * vertex_data.size());
+    upload_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
+    upload_buffer->UpdateUploadBuffer(index_buffer->GetWidth(), vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 
     std::shared_ptr<CommandList> upload_command_list = device->CreateCommandList(CommandListType::kGraphics);
     upload_command_list->CopyBuffer(upload_buffer, index_buffer, { { 0, 0, index_buffer->GetWidth() } });
@@ -73,13 +73,13 @@ int main(int argc, char* argv[])
 
     auto instance_data = device->CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload);
     instance_data->SetName("instance_data");
-    instance_data->UpdateUploadData(instances.data(), 0, instances.size() * sizeof(instances.back()));
+    instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
     upload_command_list->BuildTopLevelAS({}, top, scratch, prebuild_info_bottom.build_scratch_data_size, instance_data, 0, instances.size());
     upload_command_list->UAVResourceBarrier(top);
 
     std::shared_ptr<Resource> uav = device->CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kCopySource, swapchain->GetFormat(), 1, rect.width, rect.height);
     uav->SetName("uav");
-    upload_command_list->ResourceBarrier({ { uav, ResourceState::kCopyDest, ResourceState::kUnorderedAccess } });
+    upload_command_list->ResourceBarrier({ { uav, uav->GetInitialState(), ResourceState::kUnorderedAccess } });
     upload_command_list->Close();
 
     upload_command_queue->ExecuteCommandLists({ upload_command_list });

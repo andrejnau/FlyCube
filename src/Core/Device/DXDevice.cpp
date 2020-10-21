@@ -220,7 +220,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
         p_clear_value,
         IID_PPV_ARGS(&res->resource)));
     res->desc = desc;
-    res->GetGlobalResourceStateTracker().SetResourceState(state);
+    res->SetInitialState(state);
     return res;
 }
 
@@ -271,7 +271,7 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
         nullptr,
         IID_PPV_ARGS(&res->resource));
     res->desc = desc;
-    res->GetGlobalResourceStateTracker().SetResourceState(state);
+    res->SetInitialState(state);
     return res;
 }
 

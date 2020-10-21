@@ -1,6 +1,7 @@
 #include "RenderDevice/RenderDeviceImpl.h"
 #include <Utilities/FormatHelper.h>
 #include <RenderCommandList/RenderCommandListImpl.h>
+#include <Resource/ResourceBase.h>
 
 RenderDeviceImpl::RenderDeviceImpl(const Settings& settings, GLFWwindow* window)
     : m_window(window)
@@ -126,7 +127,8 @@ void RenderDeviceImpl::ExecuteCommandListsImpl(const std::vector<std::shared_ptr
         {
             if (c == 0 && barrier.resource->AllowCommonStatePromotion(barrier.state_after))
                 continue;
-            auto& global_state_tracker = barrier.resource->GetGlobalResourceStateTracker();
+            decltype(auto) resource_base = barrier.resource->As<ResourceBase>();
+            auto& global_state_tracker = resource_base.GetGlobalResourceStateTracker();
             if (global_state_tracker.HasResourceState() && barrier.base_mip_level == 0 && barrier.level_count == barrier.resource->GetLevelCount() &&
                 barrier.base_array_layer == 0 && barrier.layer_count == barrier.resource->GetLayerCount())
             {
@@ -194,7 +196,8 @@ void RenderDeviceImpl::ExecuteCommandListsImpl(const std::vector<std::shared_ptr
         {
             auto& resource = state_tracker_pair.first;
             auto& state_tracker = state_tracker_pair.second;
-            auto& global_state_tracker = resource->GetGlobalResourceStateTracker();
+            decltype(auto) resource_base = resource->As<ResourceBase>();
+            auto& global_state_tracker = resource_base.GetGlobalResourceStateTracker();
             global_state_tracker.Merge(state_tracker);
         }
 
@@ -228,7 +231,8 @@ void RenderDeviceImpl::Resize(uint32_t width, uint32_t height)
 void RenderDeviceImpl::Present()
 {
     auto& back_buffer = GetBackBuffer(GetFrameIndex());
-    auto& global_state_tracker = back_buffer->GetGlobalResourceStateTracker();
+    decltype(auto) resource_base = back_buffer->As<ResourceBase>();
+    auto& global_state_tracker = resource_base.GetGlobalResourceStateTracker();
     ResourceBarrierDesc barrier = {};
     barrier.resource = back_buffer;
     barrier.state_before = global_state_tracker.GetSubresourceState(0, 0);

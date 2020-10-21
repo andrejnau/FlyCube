@@ -89,9 +89,9 @@ glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
 std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kConstantBuffer | BindFlag::kCopyDest, sizeof(constant_data), MemoryType::kDefault);
 
 std::shared_ptr<Resource> upload_buffer = device->CreateBuffer(BindFlag::kCopySource, index_buffer->GetWidth() + vertex_buffer->GetWidth() + constant_buffer->GetWidth(), MemoryType::kUpload);
-upload_buffer->UpdateUploadData(index_data.data(), 0, sizeof(index_data.front()) * index_data.size());
-upload_buffer->UpdateUploadData(vertex_data.data(), index_buffer->GetWidth(), sizeof(vertex_data.front()) * vertex_data.size());
-upload_buffer->UpdateUploadData(&constant_data, index_buffer->GetWidth() + vertex_buffer->GetWidth(), sizeof(constant_data));
+upload_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
+upload_buffer->UpdateUploadBuffer(index_buffer->GetWidth(), vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
+upload_buffer->UpdateUploadBuffer(index_buffer->GetWidth() + vertex_buffer->GetWidth(), &constant_data, sizeof(constant_data));
 
 std::shared_ptr<CommandList> upload_command_list = device->CreateCommandList(CommandListType::kCopy);
 upload_command_list->CopyBuffer(upload_buffer, index_buffer, { { 0, 0, index_buffer->GetWidth() } });

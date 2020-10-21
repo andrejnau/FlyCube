@@ -22,7 +22,7 @@ std::shared_ptr<ResourceLazyViewDesc> ViewProvider::GetView(RenderCommandList& c
         {
             resource = m_device.CreateBuffer(BindFlag::kConstantBuffer, static_cast<uint32_t>(m_layout.dst_buffer_size), MemoryType::kUpload);
         }
-        resource->UpdateUploadData(m_dst_data.data(), 0, m_dst_data.size());
+        resource->UpdateUploadBuffer(0, m_dst_data.data(), m_dst_data.size());
         m_last_view = std::make_shared<ResourceLazyViewDesc>(*this, resource);
     }
     return m_last_view;
