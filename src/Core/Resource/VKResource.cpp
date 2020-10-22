@@ -12,7 +12,19 @@ VKResource::VKResource(VKDevice& device)
 void VKResource::CommitMemory(MemoryType memory_type)
 {
     MemoryRequirements mem_requirements = GetMemoryRequirements();
-    auto memory = m_device.AllocateMemory(mem_requirements.size, memory_type, mem_requirements.memory_type_bits);
+    vk::MemoryDedicatedAllocateInfoKHR dedicated_allocate_info = {};
+    vk::MemoryDedicatedAllocateInfoKHR* p_dedicated_allocate_info = nullptr;
+    if (resource_type == ResourceType::kBuffer)
+    {
+        dedicated_allocate_info.buffer = buffer.res.get();
+        p_dedicated_allocate_info = &dedicated_allocate_info;
+    }
+    else if (resource_type == ResourceType::kTexture)
+    {
+        dedicated_allocate_info.image = image.res;
+        p_dedicated_allocate_info = &dedicated_allocate_info;
+    }
+    auto memory = std::make_shared<VKMemory>(m_device, mem_requirements.size, memory_type, mem_requirements.memory_type_bits, p_dedicated_allocate_info);
     BindMemory(memory, 0);
 }
 

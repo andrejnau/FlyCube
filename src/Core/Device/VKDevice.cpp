@@ -73,7 +73,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
         VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME,
         VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
-        VK_KHR_MAINTENANCE1_EXTENSION_NAME
+        VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+        VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
     };
 
     std::vector<const char*> found_extension;
@@ -163,7 +164,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
 std::shared_ptr<Memory> VKDevice::AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits)
 {
-    return std::make_shared<VKMemory>(*this, size, memory_type, memory_type_bits);
+    return std::make_shared<VKMemory>(*this, size, memory_type, memory_type_bits, nullptr);
 }
 
 std::shared_ptr<CommandQueue> VKDevice::GetCommandQueue(CommandListType type)
