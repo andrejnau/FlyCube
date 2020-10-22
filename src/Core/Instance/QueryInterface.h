@@ -10,4 +10,10 @@ public:
     {
         return static_cast<T&>(*this);
     }
+
+    template<typename T>
+    const T& As() const
+    {
+        return static_cast<T&>(*this);
+    }
 };

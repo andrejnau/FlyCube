@@ -1,16 +1,25 @@
 #pragma once
 #include "Resource/ResourceStateTracker.h"
 #include <Instance/QueryInterface.h>
+#include <Memory/Memory.h>
 #include <View/View.h>
 #include <memory>
 #include <string>
 #include <gli/format.hpp>
 
-class Resource
-    : public QueryInterface
+struct MemoryRequirements
+{
+    uint64_t size;
+    uint64_t alignment;
+    uint32_t memory_type_bits;
+};
+
+class Resource : public QueryInterface
 {
 public:
     virtual ~Resource() = default;
+    virtual void CommitMemory(MemoryType memory_type) = 0;
+    virtual void BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset) = 0;
     virtual ResourceType GetResourceType() const = 0;
     virtual gli::format GetFormat() const = 0;
     virtual MemoryType GetMemoryType() const = 0;
@@ -27,4 +36,5 @@ public:
                                    const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices) = 0;
     virtual bool AllowCommonStatePromotion(ResourceState state_after) = 0;
     virtual ResourceState GetInitialState() const = 0;
+    virtual MemoryRequirements GetMemoryRequirements() const = 0;
 };

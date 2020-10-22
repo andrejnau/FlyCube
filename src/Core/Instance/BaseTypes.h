@@ -430,7 +430,8 @@ struct RaytracingGeometryDesc
 enum class MemoryType
 {
     kDefault,
-    kUpload
+    kUpload,
+    kReadback
 };
 
 struct TextureOffset

@@ -10,6 +10,7 @@
 #include <Pipeline/VKRayTracingPipeline.h>
 #include <RenderPass/VKRenderPass.h>
 #include <Framebuffer/VKFramebuffer.h>
+#include <Memory/VKMemory.h>
 #include <Shader/SpirvShader.h>
 #include <View/VKView.h>
 #include <Adapter/VKAdapter.h>
@@ -160,6 +161,11 @@ VKDevice::VKDevice(VKAdapter& adapter)
     }
 }
 
+std::shared_ptr<Memory> VKDevice::AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits)
+{
+    return std::make_shared<VKMemory>(*this, size, memory_type, memory_type_bits);
+}
+
 std::shared_ptr<CommandQueue> VKDevice::GetCommandQueue(CommandListType type)
 {
     return m_command_queues.at(type);
@@ -233,29 +239,18 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
     res->image.res_owner = m_device->createImageUnique(image_info);
     res->image.res = res->image.res_owner.get();
 
-    vk::MemoryRequirements mem_requirements;
-    m_device->getImageMemoryRequirements(res->image.res, &mem_requirements);
-
-    vk::MemoryAllocateInfo allocate_info = {};
-    allocate_info.allocationSize = mem_requirements.size;
-    allocate_info.memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-    res->image.memory = m_device->allocateMemoryUnique(allocate_info);
-    m_device->bindImageMemory(res->image.res, res->image.memory.get(), 0);
-
     res->SetInitialState(ResourceState::kCommon);
 
     return res;
 }
 
-std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, MemoryType memory_type)
+std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
 {
     if (buffer_size == 0)
         return {};
 
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
     res->resource_type = ResourceType::kBuffer;
-    res->memory_type = memory_type;
     res->buffer.size = buffer_size;
 
     vk::BufferCreateInfo buffer_info = {};
@@ -279,23 +274,6 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
         buffer_info.usage |= vk::BufferUsageFlagBits::eTransferDst;
 
     res->buffer.res = m_device->createBufferUnique(buffer_info);
-
-    vk::MemoryRequirements mem_requirements;
-    m_device->getBufferMemoryRequirements(res->buffer.res.get(), &mem_requirements);
-
-    vk::MemoryAllocateInfo alloc_info = {};
-    alloc_info.allocationSize = mem_requirements.size;
-
-    vk::MemoryPropertyFlags properties = {};
-    if (memory_type == MemoryType::kDefault)
-        properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
-    else if (memory_type == MemoryType::kUpload)
-        properties = vk::MemoryPropertyFlagBits::eHostVisible;
-    alloc_info.memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, properties);
-    res->buffer.memory = m_device->allocateMemoryUnique(alloc_info);
-
-    m_device->bindBufferMemory(res->buffer.res.get(), res->buffer.memory.get(), 0);
-
     res->SetInitialState(ResourceState::kCommon);
 
     return res;
@@ -459,23 +437,7 @@ std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const vk::Accele
     acceleration_structure_ci.info = acceleration_structure_info;
     res->as.acceleration_structure = m_device->createAccelerationStructureNVUnique(acceleration_structure_ci);
 
-    vk::AccelerationStructureMemoryRequirementsInfoNV memory_requirements_info = {};
-    memory_requirements_info.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eObject;
-    memory_requirements_info.accelerationStructure = res->as.acceleration_structure.get();
-
     vk::MemoryRequirements2 memory_requirements2 = {};
-    m_device->getAccelerationStructureMemoryRequirementsNV(&memory_requirements_info, &memory_requirements2);
-
-    vk::MemoryAllocateInfo memory_allocate_info = {};
-    memory_allocate_info.allocationSize = memory_requirements2.memoryRequirements.size;
-    memory_allocate_info.memoryTypeIndex = FindMemoryType(memory_requirements2.memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    res->as.memory = m_device->allocateMemoryUnique(memory_allocate_info);
-
-    vk::BindAccelerationStructureMemoryInfoNV acceleration_structure_memory_info = {};
-    acceleration_structure_memory_info.accelerationStructure = res->as.acceleration_structure.get();
-    acceleration_structure_memory_info.memory = res->as.memory.get();
-    ASSERT_SUCCEEDED(m_device->bindAccelerationStructureMemoryNV(1, &acceleration_structure_memory_info));
-    ASSERT_SUCCEEDED(m_device->getAccelerationStructureHandleNV(res->as.acceleration_structure.get(), sizeof(uint64_t), &res->as.handle));
 
     vk::AccelerationStructureMemoryRequirementsInfoNV memory_requirements_info_build_scratch = {};
     memory_requirements_info_build_scratch.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch;
@@ -488,9 +450,7 @@ std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const vk::Accele
     memory_requirements_info_update_scratch.accelerationStructure = res->as.acceleration_structure.get();
     m_device->getAccelerationStructureMemoryRequirementsNV(&memory_requirements_info_update_scratch, &memory_requirements2);
     res->prebuild_info.update_scratch_data_size = memory_requirements2.memoryRequirements.size;
-
     res->as.flags = acceleration_structure_info.flags;
-
     return res;
 }
 

@@ -1,33 +1,33 @@
 list(APPEND headers
-    Device.h
+    Memory.h
 )
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKDevice.h
+        VKMemory.h
     )
     list(APPEND sources
-        VKDevice.cpp
+        VKMemory.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXDevice.h
+        DXMemory.h
     )
     list(APPEND sources
-        DXDevice.cpp
+        DXMemory.cpp
     )
 endif()
 
-add_library(Device ${headers} ${sources})
+add_library(Memory ${headers} ${sources})
 
-target_include_directories(Device
+target_include_directories(Memory
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(Device
+target_link_libraries(Memory
     ApiType
     Swapchain
     Shader
@@ -39,33 +39,32 @@ target_link_libraries(Device
     CPUDescriptorPool
     GPUDescriptorPool
     Fence
-    Memory
     Utilities
     spirv-cross-core
     spirv-cross-hlsl
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(Memory
         ${Vulkan_LIBRARIES}
     )
-    target_include_directories(Device
+    target_include_directories(Memory
         PUBLIC
             ${Vulkan_INCLUDE_DIR}
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(Device
+    target_link_libraries(Memory
         d3d11
         d3d12
         dxgi
         dxguid
     )
-    target_include_directories(Device
+    target_include_directories(Memory
         PUBLIC
             "${project_root}/3rdparty/unpacked/d3dx12"
     )
 endif()
 
-set_target_properties(Device PROPERTIES FOLDER "Core")
+set_target_properties(Memory PROPERTIES FOLDER "Core")

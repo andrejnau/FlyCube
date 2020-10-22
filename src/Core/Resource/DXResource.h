@@ -10,6 +10,9 @@ class DXResource : public ResourceBase
 {
 public:
     DXResource(DXDevice& device);
+
+    void CommitMemory(MemoryType memory_type) override;
+    void BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset) override;
     uint64_t GetWidth() const override;
     uint32_t GetHeight() const override;
     uint16_t GetLayerCount() const override;
@@ -20,6 +23,7 @@ public:
     uint8_t* Map() override;
     void Unmap() override;
     bool AllowCommonStatePromotion(ResourceState state_after) override;
+    MemoryRequirements GetMemoryRequirements() const override;
 
     ComPtr<ID3D12Resource> resource;
     D3D12_RESOURCE_DESC desc = {};

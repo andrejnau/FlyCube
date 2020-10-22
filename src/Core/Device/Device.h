@@ -4,6 +4,7 @@
 #include <CommandList/CommandList.h>
 #include <Fence/Fence.h>
 #include <Instance/BaseTypes.h>
+#include <Memory/Memory.h>
 #include <Program/Program.h>
 #include <Framebuffer/Framebuffer.h>
 #include <Pipeline/Pipeline.h>
@@ -19,13 +20,14 @@ class Device : public QueryInterface
 {
 public:
     virtual ~Device() = default;
+    virtual std::shared_ptr<Memory> AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits) = 0;
     virtual std::shared_ptr<CommandQueue> GetCommandQueue(CommandListType type) = 0;
     virtual uint32_t GetTextureDataPitchAlignment() const = 0;
     virtual std::shared_ptr<Swapchain> CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync) = 0;
-    virtual std::shared_ptr<CommandList> CreateCommandList(CommandListType type = CommandListType::kGraphics) = 0;
+    virtual std::shared_ptr<CommandList> CreateCommandList(CommandListType type) = 0;
     virtual std::shared_ptr<Fence> CreateFence(uint64_t initial_value) = 0;
     virtual std::shared_ptr<Resource> CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth = 1, int mip_levels = 1) = 0;
-    virtual std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, MemoryType memory_type = MemoryType::kDefault) = 0;
+    virtual std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size) = 0;
     virtual std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) = 0;
     virtual std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) = 0;
     virtual std::shared_ptr<RenderPass> CreateRenderPass(const RenderPassDesc& desc) = 0;

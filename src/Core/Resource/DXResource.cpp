@@ -1,11 +1,83 @@
 #include "Resource/DXResource.h"
 #include <Device/DXDevice.h>
+#include <Memory/DXMemory.h>
 #include <Utilities/FileUtility.h>
 #include <d3dx12.h>
+#include <optional>
+
+std::optional<D3D12_CLEAR_VALUE> GetClearValue(const D3D12_RESOURCE_DESC& desc)
+{
+    D3D12_CLEAR_VALUE clear_value = {};
+    if (desc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER)
+    {
+        clear_value.Format = desc.Format;
+        if (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)
+        {
+            clear_value.Color[0] = 0.0f;
+            clear_value.Color[1] = 0.0f;
+            clear_value.Color[2] = 0.0f;
+            clear_value.Color[3] = 1.0f;
+            return clear_value;
+        }
+        else if (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL)
+        {
+            clear_value.DepthStencil.Depth = 1.0f;
+            clear_value.DepthStencil.Stencil = 0;
+            if (desc.Format == DXGI_FORMAT_R32_TYPELESS)
+                clear_value.Format = DXGI_FORMAT_D32_FLOAT;
+            return clear_value;
+        }
+    }
+    return {};
+}
 
 DXResource::DXResource(DXDevice& device)
     : m_device(device)
 {
+}
+
+void DXResource::CommitMemory(MemoryType memory_type)
+{
+    m_memory_type = memory_type;
+    auto clear_value = GetClearValue(desc);
+    D3D12_CLEAR_VALUE* p_clear_value = nullptr;
+    if (clear_value.has_value())
+        p_clear_value = &clear_value.value();
+
+    // TODO
+    if (m_memory_type == MemoryType::kUpload)
+        SetInitialState(ResourceState::kGenericRead);
+
+    m_device.GetDevice()->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(GetHeapType(m_memory_type)),
+        D3D12_HEAP_FLAG_NONE,
+        &desc,
+        ConvertSate(GetInitialState()),
+        p_clear_value,
+        IID_PPV_ARGS(&resource));
+}
+
+void DXResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset)
+{
+    m_memory = memory;
+    m_memory_type = m_memory->GetMemoryType();
+    auto clear_value = GetClearValue(desc);
+    D3D12_CLEAR_VALUE* p_clear_value = nullptr;
+    if (clear_value.has_value())
+        p_clear_value = &clear_value.value();
+
+    // TODO
+    if (m_memory_type == MemoryType::kUpload)
+        SetInitialState(ResourceState::kGenericRead);
+
+    decltype(auto) dx_memory = m_memory->As<DXMemory>();
+    m_device.GetDevice()->CreatePlacedResource(
+        dx_memory.GetHeap().Get(),
+        offset,
+        &desc,
+        ConvertSate(GetInitialState()),
+        p_clear_value,
+        IID_PPV_ARGS(&resource));
 }
 
 uint64_t DXResource::GetWidth() const
@@ -85,4 +157,10 @@ bool DXResource::AllowCommonStatePromotion(ResourceState state_after)
         }
     }
     return false;
+}
+
+MemoryRequirements DXResource::GetMemoryRequirements() const
+{
+    D3D12_RESOURCE_ALLOCATION_INFO allocation_info = m_device.GetDevice()->GetResourceAllocationInfo(0, 1, &desc);
+    return { allocation_info.SizeInBytes, allocation_info.Alignment, 0 };
 }

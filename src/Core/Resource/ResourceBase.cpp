@@ -17,7 +17,7 @@ gli::format ResourceBase::GetFormat() const
 
 MemoryType ResourceBase::GetMemoryType() const
 {
-    return memory_type;
+    return m_memory_type;
 }
 
 const RaytracingASPrebuildInfo& ResourceBase::GetRaytracingASPrebuildInfo() const

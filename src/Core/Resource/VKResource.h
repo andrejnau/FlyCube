@@ -1,8 +1,8 @@
 #pragma once
 #include "Resource/ResourceBase.h"
+#include <Utilities/Vulkan.h>
 #include <glm/glm.hpp>
 #include <map>
-#include <Utilities/Vulkan.h>
 
 static bool operator<(const VkImageSubresourceRange& lhs, const VkImageSubresourceRange& rhs)
 {
@@ -16,6 +16,9 @@ class VKResource : public ResourceBase
 {
 public:
     VKResource(VKDevice& device);
+
+    void CommitMemory(MemoryType memory_type) override;
+    void BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset) override;
     uint64_t GetWidth() const override;
     uint32_t GetHeight() const override;
     uint16_t GetLayerCount() const override;
@@ -26,12 +29,12 @@ public:
     uint8_t* Map() override;
     void Unmap() override;
     bool AllowCommonStatePromotion(ResourceState state_after) override;
+    MemoryRequirements GetMemoryRequirements() const override;
 
     struct Image
     {
         vk::Image res;
         vk::UniqueImage res_owner;
-        vk::UniqueDeviceMemory memory;
         vk::Format format = vk::Format::eUndefined;
         vk::Extent2D size = {};
         size_t level_count = 1;
@@ -42,7 +45,6 @@ public:
     struct Buffer
     {
         vk::UniqueBuffer res;
-        vk::UniqueDeviceMemory memory;
         uint32_t size = 0;
     } buffer;
 
@@ -53,12 +55,11 @@ public:
 
     struct AccelerationStructure
     {
-        vk::UniqueDeviceMemory memory;
         vk::UniqueAccelerationStructureNV acceleration_structure;
-        uint64_t handle = {};
         vk::BuildAccelerationStructureFlagsNV flags = {};
     } as;
 
 private:
     VKDevice& m_device;
+    vk::DeviceMemory m_vk_memory;
 };

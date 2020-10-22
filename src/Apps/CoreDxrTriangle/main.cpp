@@ -23,13 +23,16 @@ int main(int argc, char* argv[])
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
-    std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * index_data.size(), MemoryType::kDefault);
+    std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * index_data.size());
+    index_buffer->CommitMemory(MemoryType::kDefault);
     index_buffer->SetName("index_buffer");
     std::vector<glm::vec3> vertex_data = { glm::vec3(-0.5, -0.5, 0.0), glm::vec3(0.0,  0.5, 0.0), glm::vec3(0.5, -0.5, 0.0) };
-    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest, sizeof(vertex_data.front()) * vertex_data.size(), MemoryType::kDefault);
+    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest, sizeof(vertex_data.front()) * vertex_data.size());
+    vertex_buffer->CommitMemory(MemoryType::kDefault);
     vertex_buffer->SetName("vertex_buffer");
 
-    std::shared_ptr<Resource> upload_buffer = device->CreateBuffer(BindFlag::kCopySource, index_buffer->GetWidth() + vertex_buffer->GetWidth(), MemoryType::kUpload);
+    std::shared_ptr<Resource> upload_buffer = device->CreateBuffer(BindFlag::kCopySource, index_buffer->GetWidth() + vertex_buffer->GetWidth());
+    upload_buffer->CommitMemory(MemoryType::kUpload);
     upload_buffer->SetName("upload_buffer");
     upload_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
     upload_buffer->UpdateUploadBuffer(index_buffer->GetWidth(), vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
@@ -46,6 +49,8 @@ int main(int argc, char* argv[])
         RaytracingGeometryFlags::kOpaque
     };
     std::shared_ptr<Resource> bottom = device->CreateBottomLevelAS({ raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
+    bottom->CommitMemory(MemoryType::kDefault);
+    bottom->SetName("bottom");
 
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> geometry = {
         { bottom, glm::mat4(1.0) },
@@ -61,23 +66,28 @@ int main(int argc, char* argv[])
     }
 
     std::shared_ptr<Resource> top = device->CreateTopLevelAS(instances.size(), BuildAccelerationStructureFlags::kNone);
+    top->CommitMemory(MemoryType::kDefault);
+    top->SetName("top");
     RaytracingASPrebuildInfo prebuild_info_top = top->GetRaytracingASPrebuildInfo();
     RaytracingASPrebuildInfo prebuild_info_bottom = bottom->GetRaytracingASPrebuildInfo();
 
-    auto scratch = device->CreateBuffer(BindFlag::kRayTracing, prebuild_info_bottom.build_scratch_data_size + prebuild_info_top.build_scratch_data_size, MemoryType::kDefault);
+    auto scratch = device->CreateBuffer(BindFlag::kRayTracing, prebuild_info_bottom.build_scratch_data_size + prebuild_info_top.build_scratch_data_size);
+    scratch->CommitMemory(MemoryType::kDefault);
     scratch->SetName("scratch");
 
     upload_command_list->BuildBottomLevelAS({}, bottom, scratch, 0, { raytracing_geometry_desc });
     upload_command_list->UAVResourceBarrier(bottom);
     upload_command_list->CopyAccelerationStructure(bottom, bottom, CopyAccelerationStructureMode::kCompact);
 
-    auto instance_data = device->CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload);
+    auto instance_data = device->CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()));
+    instance_data->CommitMemory(MemoryType::kUpload);
     instance_data->SetName("instance_data");
     instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
     upload_command_list->BuildTopLevelAS({}, top, scratch, prebuild_info_bottom.build_scratch_data_size, instance_data, 0, instances.size());
     upload_command_list->UAVResourceBarrier(top);
 
     std::shared_ptr<Resource> uav = device->CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kCopySource, swapchain->GetFormat(), 1, rect.width, rect.height);
+    uav->CommitMemory(MemoryType::kDefault);
     uav->SetName("uav");
     upload_command_list->ResourceBarrier({ { uav, uav->GetInitialState(), ResourceState::kUnorderedAccess } });
     upload_command_list->Close();

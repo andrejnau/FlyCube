@@ -84,7 +84,10 @@ void RenderCommandListImpl::UpdateSubresourceDefault(const std::shared_ptr<Resou
     {
         size_t buffer_size = resource->GetWidth();
         if (!upload_resource)
-            upload_resource = m_device.CreateBuffer(BindFlag::kCopySource, buffer_size, MemoryType::kUpload);
+        {
+            upload_resource = m_device.CreateBuffer(BindFlag::kCopySource, buffer_size);
+            upload_resource->CommitMemory(MemoryType::kUpload);
+        }
         upload_resource->UpdateUploadBuffer(0, data, buffer_size);
 
         std::vector<BufferCopyRegion> regions;
@@ -109,7 +112,10 @@ void RenderCommandListImpl::UpdateSubresourceDefault(const std::shared_ptr<Resou
         region.buffer_row_pitch = row_bytes;
 
         if (!upload_resource)
-            upload_resource = m_device.CreateBuffer(BindFlag::kCopySource, num_bytes, MemoryType::kUpload);
+        {
+            upload_resource = m_device.CreateBuffer(BindFlag::kCopySource, num_bytes);
+            upload_resource->CommitMemory(MemoryType::kUpload);
+        }
         upload_resource->UpdateUploadBufferWithTextureData(0, row_bytes, num_bytes, data, row_pitch, depth_pitch, num_rows, region.texture_extent.depth);
 
         ImageBarrier(resource, region.texture_mip_level, 1, region.texture_array_layer, 1, ResourceState::kCopyDest);
@@ -228,7 +234,8 @@ void RenderCommandListImpl::BuildBottomLevelAS(const std::shared_ptr<Resource>& 
     }
 
     RaytracingASPrebuildInfo prebuild_info = dst->GetRaytracingASPrebuildInfo();
-    auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size, MemoryType::kDefault);
+    auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size);
+    scratch->CommitMemory(MemoryType::kDefault);
     m_command_list->BuildBottomLevelAS(src, dst, scratch, 0, descs);
     m_command_list->UAVResourceBarrier(dst);
     m_cmd_resources.emplace_back(scratch);
@@ -246,11 +253,13 @@ void RenderCommandListImpl::BuildTopLevelAS(const std::shared_ptr<Resource>& src
         instance.acceleration_structure_handle = mesh.first->GetAccelerationStructureHandle();
     }
 
-    auto instance_data = m_device.CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()), MemoryType::kUpload);
+    auto instance_data = m_device.CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()));
+    instance_data->CommitMemory(MemoryType::kUpload);
     instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
 
     RaytracingASPrebuildInfo prebuild_info = dst->GetRaytracingASPrebuildInfo();
-    auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size, MemoryType::kDefault);
+    auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size);
+    scratch->CommitMemory(MemoryType::kDefault);
 
     m_command_list->BuildTopLevelAS(src, dst, scratch, 0, instance_data, 0, geometry.size());
     m_command_list->UAVResourceBarrier(dst);

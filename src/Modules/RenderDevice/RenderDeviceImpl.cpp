@@ -18,7 +18,7 @@ RenderDeviceImpl::RenderDeviceImpl(const Settings& settings, GLFWwindow* window)
     m_fence = m_device->CreateFence(m_fence_value);
     for (uint32_t i = 0; i < m_frame_count; ++i)
     {
-        m_swapchain_command_lists.emplace_back(m_device->CreateCommandList());
+        m_swapchain_command_lists.emplace_back(m_device->CreateCommandList(CommandListType::kGraphics));
         m_swapchain_fence_values.emplace_back(0);
     }
 }
@@ -46,12 +46,17 @@ std::shared_ptr<RenderCommandList> RenderDeviceImpl::CreateRenderCommandList(Com
 
 std::shared_ptr<Resource> RenderDeviceImpl::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
 {
-    return m_device->CreateTexture(bind_flag, format, sample_count, width, height, depth, mip_levels);
+    auto res = m_device->CreateTexture(bind_flag, format, sample_count, width, height, depth, mip_levels);
+    res->CommitMemory(MemoryType::kDefault);
+    return res;
 }
 
 std::shared_ptr<Resource> RenderDeviceImpl::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, MemoryType memory_type)
 {
-    return m_device->CreateBuffer(bind_flag, buffer_size, memory_type);
+    auto res = m_device->CreateBuffer(bind_flag, buffer_size);
+    if (res)
+        res->CommitMemory(memory_type);
+    return res;
 }
 
 std::shared_ptr<Resource> RenderDeviceImpl::CreateSampler(const SamplerDesc& desc)
@@ -61,12 +66,16 @@ std::shared_ptr<Resource> RenderDeviceImpl::CreateSampler(const SamplerDesc& des
 
 std::shared_ptr<Resource> RenderDeviceImpl::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
 {
-    return m_device->CreateBottomLevelAS(descs, flags);
+    auto res = m_device->CreateBottomLevelAS(descs, flags);
+    res->CommitMemory(MemoryType::kDefault);
+    return res;
 }
 
 std::shared_ptr<Resource> RenderDeviceImpl::CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags)
 {
-    return m_device->CreateTopLevelAS(instance_count, flags);
+    auto res = m_device->CreateTopLevelAS(instance_count, flags);
+    res->CommitMemory(MemoryType::kDefault);
+    return res;
 }
 
 std::shared_ptr<View> RenderDeviceImpl::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)

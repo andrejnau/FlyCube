@@ -23,9 +23,12 @@ public:
     const ResourceStateTracker& GetGlobalResourceStateTracker() const;
 
     gli::format format = gli::FORMAT_UNDEFINED;
-    MemoryType memory_type = MemoryType::kDefault;
     ResourceType resource_type = ResourceType::kUnknown;
     RaytracingASPrebuildInfo prebuild_info = {};
+
+protected:
+    std::shared_ptr<Memory> m_memory;
+    MemoryType m_memory_type = MemoryType::kDefault;
 
 private:
     ResourceStateTracker m_resource_state_tracker;

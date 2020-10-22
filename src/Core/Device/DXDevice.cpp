@@ -2,6 +2,7 @@
 #include <Adapter/DXAdapter.h>
 #include <Swapchain/DXSwapchain.h>
 #include <CommandList/DXCommandList.h>
+#include <Memory/DXMemory.h>
 #include <Shader/DXShader.h>
 #include <Fence/DXFence.h>
 #include <View/DXView.h>
@@ -54,6 +55,22 @@ D3D12_RESOURCE_STATES ConvertSate(ResourceState state)
     default:
         assert(false);
         return D3D12_RESOURCE_STATE_COMMON;
+    }
+}
+
+D3D12_HEAP_TYPE GetHeapType(MemoryType memory_type)
+{
+    switch (memory_type)
+    {
+    case MemoryType::kDefault:
+        return D3D12_HEAP_TYPE_DEFAULT;
+    case MemoryType::kUpload:
+        return D3D12_HEAP_TYPE_UPLOAD;
+    case MemoryType::kReadback:
+        return D3D12_HEAP_TYPE_READBACK;
+    default:
+        assert(false);
+        return D3D12_HEAP_TYPE_CUSTOM;
     }
 }
 
@@ -133,6 +150,11 @@ DXDevice::DXDevice(DXAdapter& adapter)
     }
 }
 
+std::shared_ptr<Memory> DXDevice::AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits)
+{
+    return std::make_shared<DXMemory>(*this, size, memory_type, memory_type_bits);
+}
+
 std::shared_ptr<CommandQueue> DXDevice::GetCommandQueue(CommandListType type)
 {
     return m_command_queues.at(type);
@@ -190,41 +212,12 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
     if (bind_flag & BindFlag::kUnorderedAccess)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
-    ResourceState state = ResourceState::kCopyDest;
-
-    D3D12_CLEAR_VALUE* p_clear_value = nullptr;
-    D3D12_CLEAR_VALUE clear_value = {};
-    clear_value.Format = dx_format;
-    if (bind_flag & BindFlag::kRenderTarget)
-    {
-        clear_value.Color[0] = 0.0f;
-        clear_value.Color[1] = 0.0f;
-        clear_value.Color[2] = 0.0f;
-        clear_value.Color[3] = 1.0f;
-        p_clear_value = &clear_value;
-    }
-    else if (bind_flag & BindFlag::kDepthStencil)
-    {
-        clear_value.DepthStencil.Depth = 1.0f;
-        clear_value.DepthStencil.Stencil = 0;
-        if (dx_format == DXGI_FORMAT_R32_TYPELESS)
-            clear_value.Format = DXGI_FORMAT_D32_FLOAT;
-        p_clear_value = &clear_value;
-    }
-
-    ASSERT_SUCCEEDED(m_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &desc,
-        ConvertSate(state),
-        p_clear_value,
-        IID_PPV_ARGS(&res->resource)));
     res->desc = desc;
-    res->SetInitialState(state);
+    res->SetInitialState(ResourceState::kCopyDest);
     return res;
 }
 
-std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size, MemoryType memory_type)
+std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
 {
     if (buffer_size == 0)
         return {};
@@ -236,40 +229,27 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
 
-    ResourceState state = ResourceState::kCommon;
-    res->memory_type = memory_type;
     res->resource_type = ResourceType::kBuffer;
 
+    ResourceState state = ResourceState::kCommon;
     if (bind_flag & BindFlag::kRenderTarget)
+    {
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    }
     if (bind_flag & BindFlag::kDepthStencil)
+    {
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    }
     if (bind_flag & BindFlag::kUnorderedAccess)
+    {
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
     if (bind_flag & BindFlag::kAccelerationStructure)
     {
         state = ResourceState::kRaytracingAccelerationStructure;
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
-    D3D12_HEAP_TYPE heap_type;
-    if (memory_type == MemoryType::kDefault)
-    {
-        heap_type = D3D12_HEAP_TYPE_DEFAULT;
-    }
-    else if (memory_type == MemoryType::kUpload)
-    {
-        heap_type = D3D12_HEAP_TYPE_UPLOAD;
-        state = ResourceState::kGenericRead;
-    }
-
-    m_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(heap_type),
-        D3D12_HEAP_FLAG_NONE,
-        &desc,
-        ConvertSate(state),
-        nullptr,
-        IID_PPV_ARGS(&res->resource));
     res->desc = desc;
     res->SetInitialState(state);
     return res;
@@ -406,7 +386,7 @@ std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(const D3D12_BUIL
 {
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
     m_device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
-    std::shared_ptr<DXResource> res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes, MemoryType::kDefault));
+    std::shared_ptr<DXResource> res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes));
     res->resource_type = inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL ? ResourceType::kBottomLevelAS : ResourceType::kTopLevelAS;
     res->prebuild_info = { info.ScratchDataSizeInBytes, info.UpdateScratchDataSizeInBytes };
     res->as_flags = inputs.Flags;
