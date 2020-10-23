@@ -126,23 +126,25 @@ bool VKResource::AllowCommonStatePromotion(ResourceState state_after)
 
 MemoryRequirements VKResource::GetMemoryRequirements() const
 {
-    vk::MemoryRequirements mem_requirements;
+    vk::MemoryRequirements2 mem_requirements = {};
     if (resource_type == ResourceType::kBuffer)
     {
-        m_device.GetDevice().getBufferMemoryRequirements(buffer.res.get(), &mem_requirements);
+        vk::BufferMemoryRequirementsInfo2KHR buffer_mem_req = {};
+        buffer_mem_req.buffer = buffer.res.get();
+        m_device.GetDevice().getBufferMemoryRequirements2(&buffer_mem_req, &mem_requirements);
     }
     else if (resource_type == ResourceType::kTexture)
     {
-        m_device.GetDevice().getImageMemoryRequirements(image.res, &mem_requirements);
+        vk::ImageMemoryRequirementsInfo2KHR image_mem_req = {};
+        image_mem_req.image = image.res;
+        m_device.GetDevice().getImageMemoryRequirements2(&image_mem_req, &mem_requirements);
     }
     else if (resource_type == ResourceType::kTopLevelAS || resource_type == ResourceType::kBottomLevelAS)
     {
         vk::AccelerationStructureMemoryRequirementsInfoNV memory_requirements_info = {};
         memory_requirements_info.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eObject;
         memory_requirements_info.accelerationStructure = as.acceleration_structure.get();
-        vk::MemoryRequirements2 mem_requirements2 = {};
-        m_device.GetDevice().getAccelerationStructureMemoryRequirementsNV(&memory_requirements_info, &mem_requirements2);
-        mem_requirements = mem_requirements2.memoryRequirements;
+        m_device.GetDevice().getAccelerationStructureMemoryRequirementsNV(&memory_requirements_info, &mem_requirements);
     }
-    return { mem_requirements.size, mem_requirements.alignment, mem_requirements.memoryTypeBits };
+    return { mem_requirements.memoryRequirements.size, mem_requirements.memoryRequirements.alignment, mem_requirements.memoryRequirements.memoryTypeBits };
 }
