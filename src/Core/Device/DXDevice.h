@@ -37,6 +37,7 @@ public:
     bool IsDxrSupported() const override;
     bool IsVariableRateShadingSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
+    MemoryBudget GetMemoryBudget() const override;
 
     DXAdapter& GetAdapter();
     ComPtr<ID3D12Device> GetDevice();

@@ -75,6 +75,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
         VK_KHR_MAINTENANCE1_EXTENSION_NAME,
         VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
+        VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
     };
 
     std::vector<const char*> found_extension;
@@ -508,6 +509,21 @@ bool VKDevice::IsVariableRateShadingSupported() const
 uint32_t VKDevice::GetShadingRateImageTileSize() const
 {
     return m_shading_rate_image_tile_size;
+}
+
+MemoryBudget VKDevice::GetMemoryBudget() const
+{
+    vk::PhysicalDeviceMemoryBudgetPropertiesEXT memory_budget = {};
+    vk::PhysicalDeviceMemoryProperties2 mem_properties = {};
+    mem_properties.pNext = &memory_budget;
+    m_adapter.GetPhysicalDevice().getMemoryProperties2(&mem_properties);
+    MemoryBudget res = {};
+    for (size_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i)
+    {
+        res.budget += memory_budget.heapBudget[i];
+        res.usage += memory_budget.heapUsage[i];
+    }
+    return res;
 }
 
 VKAdapter& VKDevice::GetAdapter()

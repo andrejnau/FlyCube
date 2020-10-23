@@ -34,6 +34,7 @@ public:
     bool IsDxrSupported() const override;
     bool IsVariableRateShadingSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
+    MemoryBudget GetMemoryBudget() const override;
 
     VKAdapter& GetAdapter();
     vk::Device GetDevice();

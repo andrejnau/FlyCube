@@ -451,6 +451,17 @@ uint32_t DXDevice::GetShadingRateImageTileSize() const
     return m_shading_rate_image_tile_size;
 }
 
+MemoryBudget DXDevice::GetMemoryBudget() const
+{
+    ComPtr<IDXGIAdapter3> adapter3;
+    m_adapter.GetAdapter().As(&adapter3);
+    DXGI_QUERY_VIDEO_MEMORY_INFO local_memory_info = {};
+    adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &local_memory_info);
+    DXGI_QUERY_VIDEO_MEMORY_INFO non_local_memory_info = {};
+    adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL, &non_local_memory_info);
+    return { local_memory_info.Budget + non_local_memory_info.Budget, local_memory_info.CurrentUsage + non_local_memory_info.CurrentUsage };
+}
+
 DXAdapter& DXDevice::GetAdapter()
 {
     return m_adapter;

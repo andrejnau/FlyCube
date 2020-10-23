@@ -16,6 +16,12 @@
 #include <GLFW/glfw3.h>
 #include <gli/format.hpp>
 
+struct MemoryBudget
+{
+    uint64_t budget;
+    uint64_t usage;
+};
+
 class Device : public QueryInterface
 {
 public:
@@ -43,4 +49,5 @@ public:
     virtual bool IsDxrSupported() const = 0;
     virtual bool IsVariableRateShadingSupported() const = 0;
     virtual uint32_t GetShadingRateImageTileSize() const = 0;
+    virtual MemoryBudget GetMemoryBudget() const = 0;
 };
