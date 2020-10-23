@@ -48,9 +48,13 @@ void DXResource::CommitMemory(MemoryType memory_type)
     if (m_memory_type == MemoryType::kUpload)
         SetInitialState(ResourceState::kGenericRead);
 
+    D3D12_HEAP_FLAGS flags = D3D12_HEAP_FLAG_NONE;
+    if (m_device.IsCreateNotZeroedAvailable())
+        flags |= D3D12_HEAP_FLAG_CREATE_NOT_ZEROED;
+
     m_device.GetDevice()->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(GetHeapType(m_memory_type)),
-        D3D12_HEAP_FLAG_NONE,
+        flags,
         &desc,
         ConvertSate(GetInitialState()),
         p_clear_value,

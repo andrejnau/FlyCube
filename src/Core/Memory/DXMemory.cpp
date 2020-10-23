@@ -9,6 +9,8 @@ DXMemory::DXMemory(DXDevice& device, uint64_t size, MemoryType memory_type, uint
     desc.Properties = CD3DX12_HEAP_PROPERTIES(GetHeapType(memory_type));
     desc.SizeInBytes = size;
     desc.Alignment = memory_type_bits;
+    if (device.IsCreateNotZeroedAvailable())
+        desc.Flags |= D3D12_HEAP_FLAG_CREATE_NOT_ZEROED;
     ASSERT_SUCCEEDED(device.GetDevice()->CreateHeap(&desc, IID_PPV_ARGS(&m_heap)));
 }
 

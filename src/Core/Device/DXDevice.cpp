@@ -112,6 +112,12 @@ DXDevice::DXDevice(DXAdapter& adapter)
         m_shading_rate_image_tile_size = feature_support6.ShadingRateImageTileSize;
     }
 
+    D3D12_FEATURE_DATA_D3D12_OPTIONS7 feature_support7 = {};
+    if (SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &feature_support7, sizeof(feature_support7))))
+    {
+        m_is_create_not_zeroed_available = true;
+    }
+
     m_command_queues[CommandListType::kGraphics] = std::make_shared<DXCommandQueue>(*this, CommandListType::kGraphics);
     m_command_queues[CommandListType::kCompute] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCompute);
     m_command_queues[CommandListType::kCopy] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCopy);
@@ -490,4 +496,9 @@ bool DXDevice::IsRenderPassesSupported() const
 bool DXDevice::IsUnderGraphicsDebugger() const
 {
     return m_is_under_graphics_debugger;
+}
+
+bool DXDevice::IsCreateNotZeroedAvailable() const
+{
+    return m_is_create_not_zeroed_available;
 }
