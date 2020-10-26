@@ -171,18 +171,25 @@ void RenderCommandListImpl::EndEvent()
     m_command_list->EndEvent();
 }
 
-void RenderCommandListImpl::DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation)
+void RenderCommandListImpl::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
 {
     ApplyPipeline();
     ApplyBindingSet();
-    m_command_list->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
+    m_command_list->DrawIndexed(index_count, start_index_location, base_vertex_location);
 }
 
-void RenderCommandListImpl::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
+void RenderCommandListImpl::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
 {
     ApplyPipeline();
     ApplyBindingSet();
-    m_command_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
+    m_command_list->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+}
+
+void RenderCommandListImpl::DispatchMesh(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
+{
+    ApplyPipeline();
+    ApplyBindingSet();
+    m_command_list->DispatchMesh(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
 void RenderCommandListImpl::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
@@ -291,7 +298,8 @@ void RenderCommandListImpl::UseProgram(const std::shared_ptr<Program>& program)
     else
     {
         m_graphic_pipeline_desc.program = m_program;
-        m_graphic_pipeline_desc.input = m_program->GetShader(ShaderType::kVertex)->GetInputLayout();
+        if (m_program->HasShader(ShaderType::kVertex))
+            m_graphic_pipeline_desc.input = m_program->GetShader(ShaderType::kVertex)->GetInputLayout();
     }
     m_bound_resources.clear();
     m_bound_deferred_view.clear();

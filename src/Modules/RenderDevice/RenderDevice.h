@@ -33,6 +33,7 @@ public:
     virtual std::shared_ptr<Program> CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders) = 0;
     virtual bool IsDxrSupported() const = 0;
     virtual bool IsVariableRateShadingSupported() const = 0;
+    virtual bool IsMeshShadingSupported() const = 0;
     virtual uint32_t GetShadingRateImageTileSize() const = 0;
     virtual uint32_t GetFrameIndex() const = 0;
     virtual gli::format GetFormat() const = 0;

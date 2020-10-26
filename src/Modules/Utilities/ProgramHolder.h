@@ -71,6 +71,46 @@ public:
 };
 
 template<typename T>
+class ShaderHolderImpl<ShaderType::kAmplification, T>
+{
+public:
+    struct Api : public T
+    {
+        using T::T;
+    } as;
+
+    T& GetApi()
+    {
+        return as;
+    }
+
+    ShaderHolderImpl(RenderDevice& device)
+        : as(device)
+    {
+    }
+};
+
+template<typename T>
+class ShaderHolderImpl<ShaderType::kMesh, T>
+{
+public:
+    struct Api : public T
+    {
+        using T::T;
+    } ms;
+
+    T& GetApi()
+    {
+        return ms;
+    }
+
+    ShaderHolderImpl(RenderDevice& device)
+        : ms(device)
+    {
+    }
+};
+
+template<typename T>
 class ShaderHolderImpl<ShaderType::kCompute, T>
 {
 public:

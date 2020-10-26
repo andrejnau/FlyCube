@@ -506,6 +506,11 @@ bool VKDevice::IsVariableRateShadingSupported() const
     return false;
 }
 
+bool VKDevice::IsMeshShadingSupported() const
+{
+    return false;
+}
+
 uint32_t VKDevice::GetShadingRateImageTileSize() const
 {
     return m_shading_rate_image_tile_size;

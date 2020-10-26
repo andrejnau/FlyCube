@@ -33,6 +33,7 @@ public:
     std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags) override;
     bool IsDxrSupported() const override;
     bool IsVariableRateShadingSupported() const override;
+    bool IsMeshShadingSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
     MemoryBudget GetMemoryBudget() const override;
 

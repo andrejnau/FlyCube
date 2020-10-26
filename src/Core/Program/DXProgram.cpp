@@ -38,6 +38,12 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
         case ShaderType::kGeometry:
             visibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
             break;
+        case ShaderType::kAmplification:
+            visibility = D3D12_SHADER_VISIBILITY_AMPLIFICATION;
+            break;
+        case ShaderType::kMesh:
+            visibility = D3D12_SHADER_VISIBILITY_MESH;
+            break;
         }
         return visibility;
     };

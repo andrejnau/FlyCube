@@ -103,6 +103,11 @@ bool RenderDeviceImpl::IsVariableRateShadingSupported() const
     return m_device->IsVariableRateShadingSupported();
 }
 
+bool RenderDeviceImpl::IsMeshShadingSupported() const
+{
+    return m_device->IsMeshShadingSupported();
+}
+
 uint32_t RenderDeviceImpl::GetShadingRateImageTileSize() const
 {
     return m_device->GetShadingRateImageTileSize();

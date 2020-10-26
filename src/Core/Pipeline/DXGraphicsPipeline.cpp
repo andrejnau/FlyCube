@@ -14,6 +14,8 @@ struct GraphicsPipelineStateStream
     CD3DX12_PIPELINE_STATE_STREAM_PRIMITIVE_TOPOLOGY PrimitiveTopologyType;
     CD3DX12_PIPELINE_STATE_STREAM_VS VS;
     CD3DX12_PIPELINE_STATE_STREAM_GS GS;
+    CD3DX12_PIPELINE_STATE_STREAM_AS AS;
+    CD3DX12_PIPELINE_STATE_STREAM_MS MS;
     CD3DX12_PIPELINE_STATE_STREAM_PS PS;
     CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC BlendState;
     CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL DepthStencilState;
@@ -167,6 +169,12 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
         }
         case ShaderType::kGeometry:
             graphics_stream_desc.GS = ShaderBytecode;
+            break;
+        case ShaderType::kAmplification:
+            graphics_stream_desc.AS = ShaderBytecode;
+            break;
+        case ShaderType::kMesh:
+            graphics_stream_desc.MS = ShaderBytecode;
             break;
         case ShaderType::kPixel:
             graphics_stream_desc.PS = ShaderBytecode;

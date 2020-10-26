@@ -193,6 +193,8 @@ enum class ShaderType
     kPixel,
     kCompute,
     kGeometry,
+    kAmplification,
+    kMesh,
     kLibrary,
 };
 

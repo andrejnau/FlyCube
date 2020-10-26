@@ -64,6 +64,10 @@ static std::string GetShaderTarget(ShaderType type, const std::string& model)
         return "gs_" + model;
     case ShaderType::kCompute:
         return "cs_" + model;
+    case ShaderType::kAmplification:
+        return "as_" + model;
+    case ShaderType::kMesh:
+        return "ms_" + model;
     case ShaderType::kLibrary:
         return "lib_" + model;
     default:

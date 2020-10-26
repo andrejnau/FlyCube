@@ -48,6 +48,7 @@ public:
     virtual std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags) = 0;
     virtual bool IsDxrSupported() const = 0;
     virtual bool IsVariableRateShadingSupported() const = 0;
+    virtual bool IsMeshShadingSupported() const = 0;
     virtual uint32_t GetShadingRateImageTileSize() const = 0;
     virtual MemoryBudget GetMemoryBudget() const = 0;
 };

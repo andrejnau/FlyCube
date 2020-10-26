@@ -42,6 +42,7 @@ DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
 
     m_command_list.As(&m_command_list4);
     m_command_list.As(&m_command_list5);
+    m_command_list.As(&m_command_list6);
 }
 
 void DXCommandList::Reset()
@@ -266,6 +267,11 @@ void DXCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_locat
 void DXCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
 {
     m_command_list->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+}
+
+void DXCommandList::DispatchMesh(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
+{
+    m_command_list6->DispatchMesh(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
 void DXCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)

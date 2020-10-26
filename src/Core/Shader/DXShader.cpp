@@ -13,6 +13,7 @@ ViewType GetViewType(D3D_SHADER_INPUT_TYPE type)
         return ViewType::kSampler;
     case D3D_SIT_TEXTURE:
     case D3D_SIT_STRUCTURED:
+    case D3D_SIT_BYTEADDRESS:
     case SIT_RTACCELERATIONSTRUCTURE:
         return ViewType::kShaderResource;
     case D3D_SIT_UAV_RWSTRUCTURED:

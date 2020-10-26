@@ -116,6 +116,7 @@ DXDevice::DXDevice(DXAdapter& adapter)
     if (SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &feature_support7, sizeof(feature_support7))))
     {
         m_is_create_not_zeroed_available = true;
+        m_is_mesh_shading_supported = feature_support7.MeshShaderTier >= D3D12_MESH_SHADER_TIER_1;
     }
 
     m_command_queues[CommandListType::kGraphics] = std::make_shared<DXCommandQueue>(*this, CommandListType::kGraphics);
@@ -450,6 +451,11 @@ bool DXDevice::IsDxrSupported() const
 bool DXDevice::IsVariableRateShadingSupported() const
 {
     return m_is_variable_rate_shading_supported;
+}
+
+bool DXDevice::IsMeshShadingSupported() const
+{
+    return m_is_mesh_shading_supported;
 }
 
 uint32_t DXDevice::GetShadingRateImageTileSize() const

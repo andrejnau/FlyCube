@@ -35,6 +35,7 @@ public:
     std::shared_ptr<Program> CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders) override;
     bool IsDxrSupported() const override;
     bool IsVariableRateShadingSupported() const override;
+    bool IsMeshShadingSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
     uint32_t GetFrameIndex() const override;
     gli::format GetFormat() const override;

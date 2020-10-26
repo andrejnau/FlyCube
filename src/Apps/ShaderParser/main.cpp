@@ -39,18 +39,20 @@ public:
         , m_entrypoint(m_option.entrypoint)
         , m_tmpl(ReadFile(m_option.template_path))
     {
+        std::string shader_model;
         if (m_option.type == "Library")
         {
-            m_target = "lib_" + m_option.model;
+            shader_model = "lib";
             m_entrypoint = {};
         }
         else
         {
-            m_target = "xs_" + m_option.model;
-            m_target.front() = std::tolower(m_option.type[0]);
+            shader_model.push_back(std::tolower(m_option.type[0]));
+            shader_model.push_back('s');
         }
 
-        m_type = GetShaderType(m_target);
+        m_type = GetShaderType(shader_model);
+        m_target = shader_model + "_" + m_option.model;
     }
 
     ShaderType GetShaderType(const std::string& target)
@@ -63,6 +65,10 @@ public:
             return ShaderType::kCompute;
         else if (target.find("gs") == 0)
             return ShaderType::kGeometry;
+        else if (target.find("as") == 0)
+            return ShaderType::kAmplification;
+        else if (target.find("ms") == 0)
+            return ShaderType::kMesh;
         else if (target.find("lib") == 0)
             return ShaderType::kLibrary;
         assert(false);
@@ -88,14 +94,18 @@ public:
 
     void Gen()
     {
-        std::ifstream is(m_option.output_dir + "/" + m_option.shader_name + ".h");
-        std::string old_content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
+        std::string path = m_option.output_dir + "/" + m_option.shader_name + ".h";
+        std::string old_content;
+        {
+            std::ifstream is(path);
+            old_content = std::string((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
+        }
         std::stringstream buf;
         m_tmpl.render(m_tdevice, buf);
         std::string new_content = buf.str();
         if (new_content != old_content)
         {
-            std::ofstream os(m_option.output_dir + "/" + m_option.shader_name + ".h");
+            std::ofstream os(path);
             os << new_content;
         }
     }
@@ -107,19 +117,27 @@ private:
         return std::string(std::istreambuf_iterator<char>(is), std::istreambuf_iterator<char>());
     }
 
-    std::string TargetToShaderType(const std::string& str)
+    std::string TargetToShaderType(ShaderType type)
     {
-        if (str.find("ps") == 0)
-            return "ShaderType::kPixel";
-        else if (str.find("vs") == 0)
+        switch (type)
+        {
+        case ShaderType::kVertex:
             return "ShaderType::kVertex";
-        else if (str.find("cs") == 0)
+        case ShaderType::kPixel:
+            return "ShaderType::kPixel";
+        case ShaderType::kCompute:
             return "ShaderType::kCompute";
-        else if (str.find("gs") == 0)
+        case ShaderType::kGeometry:
             return "ShaderType::kGeometry";
-        else if (str.find("lib") == 0)
+        case ShaderType::kAmplification:
+            return "ShaderType::kAmplification";
+        case ShaderType::kMesh:
+            return "ShaderType::kMesh";
+        case ShaderType::kLibrary:
             return "ShaderType::kLibrary";
-        return "";
+        default:
+            return "ShaderType::kUnknown";
+        }
     }
 
     std::string TargetToShaderPrefix(const std::string& str)
@@ -182,7 +200,7 @@ private:
     void ParseShader(ComPtr<ID3D12ShaderReflection>& reflector)
     {
         m_tdevice["ShaderName"] = m_option.shader_name;
-        m_tdevice["ShaderType"] = TargetToShaderType(m_target);
+        m_tdevice["ShaderType"] = TargetToShaderType(m_type);
         m_tdevice["ShaderPrefix"] = TargetToShaderPrefix(m_target);
         m_tdevice["ShaderPath"] = m_option.shader_path;
         m_tdevice["Entrypoint"] = m_entrypoint;
@@ -351,7 +369,7 @@ private:
     void ParseLibrary(ComPtr<ID3D12LibraryReflection>& library_reflector)
     {
         m_tdevice["ShaderName"] = m_option.shader_name;
-        m_tdevice["ShaderType"] = TargetToShaderType(m_target);
+        m_tdevice["ShaderType"] = TargetToShaderType(m_type);
         m_tdevice["ShaderPrefix"] = TargetToShaderPrefix(m_target);
         m_tdevice["ShaderPath"] = m_option.shader_path;
         m_tdevice["Entrypoint"] = m_entrypoint;
