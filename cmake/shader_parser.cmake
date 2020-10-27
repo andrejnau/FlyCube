@@ -9,6 +9,11 @@ function(gen_shaders_ref target shaders shaders_ref)
         get_property(entrypoint SOURCE ${full_shader_path} PROPERTY VS_SHADER_ENTRYPOINT)
         get_property(type SOURCE ${full_shader_path} PROPERTY VS_SHADER_TYPE)
         get_property(model SOURCE ${full_shader_path} PROPERTY VS_SHADER_MODEL)
+        # TODO: workaround for mesh shaders
+        if (NOT type)
+            get_property(type SOURCE ${full_shader_path} PROPERTY SHADER_TYPE)
+            set(model 6.5)
+        endif()
         add_custom_command(OUTPUT ${output_file}
             COMMAND ${CMAKE_COMMAND} -E echo ${shader_name} ${shader_path} ${entrypoint} ${type} ${model} ${template} ${output_dir}
             COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
