@@ -185,11 +185,11 @@ void RenderCommandListImpl::Dispatch(uint32_t thread_group_count_x, uint32_t thr
     m_command_list->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
-void RenderCommandListImpl::DispatchMesh(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
+void RenderCommandListImpl::DispatchMesh(uint32_t thread_group_count_x)
 {
     ApplyPipeline();
     ApplyBindingSet();
-    m_command_list->DispatchMesh(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+    m_command_list->DispatchMesh(thread_group_count_x);
 }
 
 void RenderCommandListImpl::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)

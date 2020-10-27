@@ -11,14 +11,14 @@
 
 // https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12MeshShaders
 
-cbuffer Constants : register(b0)
+cbuffer Constants
 {
     float4x4 World;
     float4x4 WorldView;
     float4x4 WorldViewProj;
 };
 
-cbuffer MeshInfo : register(b1)
+cbuffer MeshInfo
 {
     uint IndexCount;
     uint IndexOffset;
@@ -32,9 +32,9 @@ struct VertexOut
     uint   MeshletIndex : COLOR0;
 };
 
-StructuredBuffer<float3>  Position            : register(t0);
-StructuredBuffer<float3>  Normal              : register(t1);
-StructuredBuffer<uint>    VertexIndices       : register(t2);
+StructuredBuffer<float3>  Position;
+StructuredBuffer<float3>  Normal;
+StructuredBuffer<uint>    VertexIndices;
 
 VertexOut GetVertexAttributes(uint meshletIndex, uint vertexIndex)
 {
@@ -47,9 +47,9 @@ VertexOut GetVertexAttributes(uint meshletIndex, uint vertexIndex)
     return vout;
 }
 
-#define MAX_OUTPUT_PRIMITIVES 42
+#define MAX_OUTPUT_PRIMITIVES 10
 
-[NumThreads(128, 1, 1)]
+[NumThreads(MAX_OUTPUT_PRIMITIVES * 3, 1, 1)]
 [OutputTopology("triangle")]
 void main(
     uint gtid : SV_GroupThreadID,

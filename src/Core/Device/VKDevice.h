@@ -63,6 +63,7 @@ private:
     bool m_is_variable_rate_shading_supported = false;
     uint32_t m_shading_rate_image_tile_size = 0;
     bool m_is_dxr_supported = false;
+    bool m_is_mesh_shading_supported = false;
 };
 
 vk::GeometryNV FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags);

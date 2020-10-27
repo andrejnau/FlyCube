@@ -16,9 +16,14 @@ vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
         return vk::ShaderStageFlagBits::eGeometry;
     case ShaderType::kCompute:
         return vk::ShaderStageFlagBits::eCompute;
+    case ShaderType::kAmplification:
+        return vk::ShaderStageFlagBits::eTaskNV;
+    case ShaderType::kMesh:
+        return vk::ShaderStageFlagBits::eMeshNV;
     case ShaderType::kLibrary:
         return vk::ShaderStageFlagBits::eAll;
     }
+    assert(false);
     return {};
 }
 

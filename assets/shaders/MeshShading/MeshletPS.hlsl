@@ -11,7 +11,7 @@
 
 // https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12MeshShaders
 
-cbuffer Constants : register(b0)
+cbuffer Constants
 {
     uint DrawMeshlets;
 };

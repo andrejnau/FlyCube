@@ -8,6 +8,8 @@
 #include <glm/gtx/transform.hpp>
 #include <stdexcept>
 
+constexpr uint32_t kMaxOutputPrimitives = 10;
+
 int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
@@ -72,7 +74,7 @@ int main(int argc, char* argv[])
             auto& material = model.GetMaterial(range.id);
             program.ms.cbuffer.MeshInfo.IndexCount = range.index_count;
             program.ms.cbuffer.MeshInfo.IndexOffset = 0;
-            command_list->DispatchMesh((range.index_count + 42 - 1) / (42), 1, 1);
+            command_list->DispatchMesh((range.index_count + kMaxOutputPrimitives - 1)/ kMaxOutputPrimitives);
         }
         command_list->EndRenderPass();
 

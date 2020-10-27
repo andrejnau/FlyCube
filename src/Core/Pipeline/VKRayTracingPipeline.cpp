@@ -1,38 +1,10 @@
 #include "Pipeline/VKRayTracingPipeline.h"
+#include "Pipeline/VKGraphicsPipeline.h"
 #include <Device/VKDevice.h>
 #include <Adapter/VKAdapter.h>
 #include <Program/VKProgram.h>
 #include <Shader/SpirvShader.h>
 #include <map>
-
-static vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
-{
-    switch (model)
-    {
-    case spv::ExecutionModel::ExecutionModelVertex:
-        return vk::ShaderStageFlagBits::eVertex;
-    case spv::ExecutionModel::ExecutionModelFragment:
-        return vk::ShaderStageFlagBits::eFragment;
-    case spv::ExecutionModel::ExecutionModelGeometry:
-        return vk::ShaderStageFlagBits::eGeometry;
-    case spv::ExecutionModel::ExecutionModelGLCompute:
-        return vk::ShaderStageFlagBits::eCompute;
-    case spv::ExecutionModel::ExecutionModelRayGenerationNV:
-        return vk::ShaderStageFlagBits::eRaygenNV;
-    case spv::ExecutionModel::ExecutionModelIntersectionNV:
-        return vk::ShaderStageFlagBits::eIntersectionNV;
-    case spv::ExecutionModel::ExecutionModelAnyHitNV:
-        return vk::ShaderStageFlagBits::eAnyHitNV;
-    case spv::ExecutionModel::ExecutionModelClosestHitNV:
-        return vk::ShaderStageFlagBits::eClosestHitNV;
-    case spv::ExecutionModel::ExecutionModelMissNV:
-        return vk::ShaderStageFlagBits::eMissNV;
-    case spv::ExecutionModel::ExecutionModelCallableNV:
-        return vk::ShaderStageFlagBits::eCallableNV;
-    }
-    assert(false);
-    return {};
-}
 
 VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const ComputePipelineDesc& desc)
     : m_device(device)

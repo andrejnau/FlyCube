@@ -4,7 +4,7 @@
 #include <Shader/SpirvShader.h>
 #include <map>
 
-static vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
+vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
 {
     switch (model)
     {
@@ -28,6 +28,10 @@ static vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
         return vk::ShaderStageFlagBits::eMissNV;
     case spv::ExecutionModel::ExecutionModelCallableNV:
         return vk::ShaderStageFlagBits::eCallableNV;
+    case spv::ExecutionModel::ExecutionModelTaskNV:
+        return vk::ShaderStageFlagBits::eTaskNV;
+    case spv::ExecutionModel::ExecutionModelMeshNV:
+        return vk::ShaderStageFlagBits::eMeshNV;
     }
     assert(false);
     return {};

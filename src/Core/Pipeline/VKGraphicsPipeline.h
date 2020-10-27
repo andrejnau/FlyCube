@@ -6,6 +6,8 @@
 #include <spirv_cross.hpp>
 #include <spirv_hlsl.hpp>
 
+vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model);
+
 class VKDevice;
 
 class VKGraphicsPipeline : public Pipeline

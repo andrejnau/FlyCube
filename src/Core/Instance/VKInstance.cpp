@@ -8,6 +8,8 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 static bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& message)
 {
+    if (object_type == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT)
+        return true;
     static std::vector<std::string> muted_warnings = {
         "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv",
         "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated",

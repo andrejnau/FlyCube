@@ -76,6 +76,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_KHR_MAINTENANCE1_EXTENSION_NAME,
         VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
         VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
+        VK_NV_MESH_SHADER_EXTENSION_NAME,
     };
 
     std::vector<const char*> found_extension;
@@ -88,6 +89,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
             m_is_variable_rate_shading_supported = true;
         if (std::string(extension.extensionName.data()) == VK_NV_RAY_TRACING_EXTENSION_NAME)
             m_is_dxr_supported = true;
+        if (std::string(extension.extensionName.data()) == VK_NV_MESH_SHADER_EXTENSION_NAME)
+            m_is_mesh_shading_supported = true;
     }
 
     if (m_is_variable_rate_shading_supported)
@@ -140,6 +143,15 @@ VKDevice::VKDevice(VKAdapter& adapter)
         shading_rate_image_feature.shadingRateCoarseSampleOrder = VK_TRUE;
         shading_rate_image_feature.pNext = device_create_info_next;
         device_create_info_next = &shading_rate_image_feature;
+    }
+
+    vk::PhysicalDeviceMeshShaderFeaturesNV mesh_shader_feature = {};
+    if (m_is_mesh_shading_supported)
+    {
+        mesh_shader_feature.taskShader = true;
+        mesh_shader_feature.meshShader = true;
+        mesh_shader_feature.pNext = device_create_info_next;
+        device_create_info_next = &mesh_shader_feature;
     }
 
     vk::DeviceCreateInfo device_create_info = {};
@@ -508,7 +520,7 @@ bool VKDevice::IsVariableRateShadingSupported() const
 
 bool VKDevice::IsMeshShadingSupported() const
 {
-    return false;
+    return m_is_mesh_shading_supported;
 }
 
 uint32_t VKDevice::GetShadingRateImageTileSize() const
