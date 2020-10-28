@@ -446,12 +446,17 @@ void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
     m_command_list->bindVertexBuffers(slot, 1, vertex_buffers, offsets);
 }
 
-void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
+void VKCommandList::RSSetShadingRateImage(const std::shared_ptr<View>& view)
 {
-}
-
-void VKCommandList::RSSetShadingRateImage(const std::shared_ptr<Resource>& resource)
-{
+    if (view)
+    {
+        decltype(auto) vk_view = view->As<VKView>();
+        m_command_list->bindShadingRateImageNV(vk_view.GetSrv(), vk::ImageLayout::eShadingRateOptimalNV);
+    }
+    else
+    {
+        m_command_list->bindShadingRateImageNV({}, vk::ImageLayout::eShadingRateOptimalNV);
+    }
 }
 
 void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, uint64_t instance_offset, const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset)

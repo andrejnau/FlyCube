@@ -15,6 +15,7 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
     {
     case ViewType::kShaderResource:
     case ViewType::kUnorderedAccess:
+    case ViewType::kShadingRateSource:
         CreateSrv(view_desc, vk_resource);
         break;
     case ViewType::kRenderTarget:

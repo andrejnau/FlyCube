@@ -140,7 +140,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
     if (m_is_variable_rate_shading_supported)
     {
         shading_rate_image_feature.shadingRateImage = VK_TRUE;
-        shading_rate_image_feature.shadingRateCoarseSampleOrder = VK_TRUE;
         shading_rate_image_feature.pNext = device_create_info_next;
         device_create_info_next = &shading_rate_image_feature;
     }
@@ -515,7 +514,7 @@ bool VKDevice::IsDxrSupported() const
 
 bool VKDevice::IsVariableRateShadingSupported() const
 {
-    return false;
+    return m_is_variable_rate_shading_supported;
 }
 
 bool VKDevice::IsMeshShadingSupported() const

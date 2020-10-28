@@ -287,6 +287,8 @@ DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, con
     , m_view_desc(view_desc)
 {
     m_resource = resource;
+    if (view_desc.view_type == ViewType::kShadingRateSource)
+        return;
     m_handle = m_device.GetCPUDescriptorPool().AllocateDescriptor(view_desc.view_type);
 
     DXResource* dx_resource = nullptr;

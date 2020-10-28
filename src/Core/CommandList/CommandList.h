@@ -34,8 +34,7 @@ public:
     virtual void SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom) = 0;
     virtual void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) = 0;
     virtual void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) = 0;
-    virtual void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners = {}) = 0;
-    virtual void RSSetShadingRateImage(const std::shared_ptr<Resource>& resource) = 0;
+    virtual void RSSetShadingRateImage(const std::shared_ptr<View>& view) = 0;
     virtual void BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,
                                     const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset, const std::vector<RaytracingGeometryDesc>& descs) = 0;
     virtual void BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset,

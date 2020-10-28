@@ -6,6 +6,7 @@
 #include <ProgramRef/PixelShaderPS.h>
 #include <ProgramRef/VertexShaderVS.h>
 #include <glm/gtx/transform.hpp>
+#include <stdexcept>
 
 int main(int argc, char* argv[])
 {
@@ -14,6 +15,8 @@ int main(int argc, char* argv[])
     AppRect rect = app.GetAppRect();
 
     std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
+    if (!device->IsVariableRateShadingSupported())
+        throw std::runtime_error("Variable rate shading is not supported");
     app.SetGpuName(device->GetGpuName());
 
     auto dsv = device->CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, rect.width, rect.height, 1);
@@ -40,32 +43,33 @@ int main(int argc, char* argv[])
     program.vs.cbuffer.ConstantBuf.projection = glm::transpose(camera.GetProjectionMatrix());
     program.vs.cbuffer.ConstantBuf.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model.matrix)));
 
-    std::shared_ptr<Resource> shading_rate_texture;
-    if (device->IsVariableRateShadingSupported())
+    std::vector<ShadingRate> shading_rate;
+    uint32_t tile_size = device->GetShadingRateImageTileSize();
+    uint32_t shading_rate_width = (rect.width + tile_size - 1) / tile_size;
+    uint32_t shading_rate_height = (rect.height + tile_size - 1) / tile_size;
+    for (uint32_t y = 0; y < shading_rate_height; ++y)
     {
-        std::vector<ShadingRate> shading_rate;
-        uint32_t tile_size = device->GetShadingRateImageTileSize();
-        uint32_t shading_rate_width = (rect.width + tile_size - 1) / tile_size;
-        uint32_t shading_rate_height = (rect.height + tile_size - 1) / tile_size;
-        for (uint32_t y = 0; y < shading_rate_height; ++y)
+        for (uint32_t x = 0; x < shading_rate_width; ++x)
         {
-            for (uint32_t x = 0; x < shading_rate_width; ++x)
-            {
-                if (x > (shading_rate_width / 2))
-                    shading_rate.emplace_back(ShadingRate::k4x4);
-                else
-                    shading_rate.emplace_back(ShadingRate::k1x1);
-            }
+            if (x > (shading_rate_width / 2))
+                shading_rate.emplace_back(ShadingRate::k4x4);
+            else
+                shading_rate.emplace_back(ShadingRate::k1x1);
         }
-        shading_rate_texture = device->CreateTexture(BindFlag::kShadingRateSource | BindFlag::kCopyDest, gli::format::FORMAT_R8_UINT_PACK8, 1, shading_rate_width, shading_rate_height);
-        size_t num_bytes = 0;
-        size_t row_bytes = 0;
-        GetFormatInfo(shading_rate_width, shading_rate_height, gli::format::FORMAT_R8_UINT_PACK8, num_bytes, row_bytes);
-        upload_command_list->UpdateSubresource(shading_rate_texture, 0, shading_rate.data(), row_bytes, num_bytes);
     }
+    std::shared_ptr<Resource> shading_rate_texture = device->CreateTexture(BindFlag::kShadingRateSource | BindFlag::kCopyDest, gli::format::FORMAT_R8_UINT_PACK8, 1, shading_rate_width, shading_rate_height);
+    size_t num_bytes = 0;
+    size_t row_bytes = 0;
+    GetFormatInfo(shading_rate_width, shading_rate_height, gli::format::FORMAT_R8_UINT_PACK8, num_bytes, row_bytes);
+    upload_command_list->UpdateSubresource(shading_rate_texture, 0, shading_rate.data(), row_bytes, num_bytes);
 
     upload_command_list->Close();
     device->ExecuteCommandLists({ upload_command_list });
+
+    ViewDesc shading_rate_view_desc = {};
+    shading_rate_view_desc.dimension = ResourceDimension::kTexture2D;
+    shading_rate_view_desc.view_type = ViewType::kShadingRateSource;
+    std::shared_ptr<View> shading_rate_view = device->CreateView(shading_rate_texture, shading_rate_view_desc);
 
     std::vector<std::shared_ptr<RenderCommandList>> command_lists;
     for (uint32_t i = 0; i < settings.frame_count; ++i)
@@ -80,17 +84,13 @@ int main(int argc, char* argv[])
         command_list->UseProgram(program);
         command_list->SetViewport(0, 0, rect.width, rect.height);
         command_list->Attach(program.vs.cbv.ConstantBuf, program.vs.cbuffer.ConstantBuf);
+        command_list->Attach(program.ps.sampler.g_sampler, sampler);
         model.ia.indices.Bind(*command_list);
         model.ia.positions.BindToSlot(*command_list, program.vs.ia.POSITION);
         model.ia.normals.BindToSlot(*command_list, program.vs.ia.NORMAL);
         model.ia.texcoords.BindToSlot(*command_list, program.vs.ia.TEXCOORD);
         model.ia.tangents.BindToSlot(*command_list, program.vs.ia.TANGENT);
-
-        if (device->IsVariableRateShadingSupported())
-        {
-            command_list->RSSetShadingRate(ShadingRate::k1x1, std::array<ShadingRateCombiner, 2>{ ShadingRateCombiner::kPassthrough, ShadingRateCombiner::kOverride });
-            command_list->RSSetShadingRateImage(shading_rate_texture);
-        }
+        command_list->RSSetShadingRateImage(shading_rate_view);
 
         command_list->BeginRenderPass(render_pass_desc);
         for (auto& range : model.ia.ranges)
@@ -100,12 +100,6 @@ int main(int argc, char* argv[])
             command_list->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
         }
         command_list->EndRenderPass();
-
-        if (device->IsVariableRateShadingSupported())
-        {
-            command_list->RSSetShadingRateImage({});
-            command_list->RSSetShadingRate(ShadingRate::k1x1);
-        }
 
         command_list->Close();
         command_lists.emplace_back(command_list);

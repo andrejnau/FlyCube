@@ -150,15 +150,10 @@ void RenderCommandListImpl::IASetVertexBuffer(uint32_t slot, const std::shared_p
     m_command_list->IASetVertexBuffer(slot, resource);
 }
 
-void RenderCommandListImpl::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
+void RenderCommandListImpl::RSSetShadingRateImage(const std::shared_ptr<View>& view)
 {
-    m_command_list->RSSetShadingRate(shading_rate, combiners);
-}
-
-void RenderCommandListImpl::RSSetShadingRateImage(const std::shared_ptr<Resource>& resource)
-{
-    ImageBarrier(resource, 0, 1, 0, 1, ResourceState::kShadingRateSource);
-    m_command_list->RSSetShadingRateImage(resource);
+    ViewBarrier(view, ResourceState::kShadingRateSource);
+    m_command_list->RSSetShadingRateImage(view);
 }
 
 void RenderCommandListImpl::BeginEvent(const std::string& name)

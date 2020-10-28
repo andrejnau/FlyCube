@@ -246,5 +246,28 @@ void VKGraphicsPipeline::CreateGrPipeLine()
     pipeline_info.layout = vk_program.GetPipelineLayout();
     pipeline_info.renderPass = GetRenderPass();
     pipeline_info.pDynamicState = &pipelineDynamicStateCreateInfo;
+
+    const std::vector<vk::ShadingRatePaletteEntryNV> shading_rate_palette_entries = {
+        vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel,      // 0x0
+        vk::ShadingRatePaletteEntryNV::e1InvocationPer1X2Pixels,  // 0x1
+        vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel,      // 0x2
+        vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel,      // 0x3
+        vk::ShadingRatePaletteEntryNV::e1InvocationPer2X1Pixels,  // 0x4
+        vk::ShadingRatePaletteEntryNV::e1InvocationPer2X2Pixels,  // 0x5
+        vk::ShadingRatePaletteEntryNV::e1InvocationPer2X4Pixels,  // 0x6
+        vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel,      // 0x7
+        vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel,      // 0x8
+        vk::ShadingRatePaletteEntryNV::e1InvocationPer4X2Pixels,  // 0x9
+        vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels,  // 0xa
+    };
+    vk::ShadingRatePaletteNV shading_rate_palette = {};
+    shading_rate_palette.shadingRatePaletteEntryCount = shading_rate_palette_entries.size();
+    shading_rate_palette.pShadingRatePaletteEntries = shading_rate_palette_entries.data();
+    vk::PipelineViewportShadingRateImageStateCreateInfoNV pipeline_viewport_shading_rate_image_state = {};
+    pipeline_viewport_shading_rate_image_state.shadingRateImageEnable = VK_TRUE;
+    pipeline_viewport_shading_rate_image_state.viewportCount = 1;
+    pipeline_viewport_shading_rate_image_state.pShadingRatePalettes = &shading_rate_palette;
+    viewport_state.pNext = &pipeline_viewport_shading_rate_image_state;
+
     m_pipeline = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info);
 }

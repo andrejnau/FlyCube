@@ -79,6 +79,7 @@ struct SamplerDesc
 enum class ViewType
 {
     kUnknown,
+    kShadingRateSource,
     kShaderResource,
     kUnorderedAccess,
     kConstantBuffer,
@@ -529,7 +530,6 @@ struct ResourceLazyViewDesc
     DeferredView& m_deferred_view;
 };
 
-
 enum class ShadingRate : uint8_t
 {
     k1x1 = 0,
@@ -539,15 +539,6 @@ enum class ShadingRate : uint8_t
     k2x4 = 0x6,
     k4x2 = 0x9,
     k4x4 = 0xa,
-};
-
-enum class ShadingRateCombiner
-{
-   kPassthrough = 0,
-   kOverride = 1,
-   kMin = 2,
-   kMax = 3,
-   kSum = 4,
 };
 
 struct RaytracingASPrebuildInfo

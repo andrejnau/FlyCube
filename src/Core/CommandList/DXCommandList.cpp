@@ -396,20 +396,27 @@ void DXCommandList::IASetVertexBufferImpl(uint32_t slot, const std::shared_ptr<R
     m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
 }
 
-void DXCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
+void DXCommandList::RSSetShadingRateImage(const std::shared_ptr<View>& view)
 {
-    m_command_list5->RSSetShadingRate(static_cast<D3D12_SHADING_RATE>(shading_rate), reinterpret_cast<const D3D12_SHADING_RATE_COMBINER*>(combiners.data()));
-}
+    std::shared_ptr<Resource> resource;
+    if (view)
+    {
+        decltype(auto) dx_view = view->As<DXView>();
+        resource = dx_view.GetResource();
+    }
 
-void DXCommandList::RSSetShadingRateImage(const std::shared_ptr<Resource>& resource)
-{
     if (resource)
     {
         decltype(auto) dx_resource = resource->As<DXResource>();
+        const std::array<D3D12_SHADING_RATE_COMBINER, 2> combiners = {
+            D3D12_SHADING_RATE_COMBINER_PASSTHROUGH, D3D12_SHADING_RATE_COMBINER_OVERRIDE
+        };
+        m_command_list5->RSSetShadingRate(D3D12_SHADING_RATE_1X1, combiners.data());
         m_command_list5->RSSetShadingRateImage(dx_resource.resource.Get());
     }
     else
     {
+        m_command_list5->RSSetShadingRate(D3D12_SHADING_RATE_1X1, nullptr);
         m_command_list5->RSSetShadingRateImage(nullptr);
     }
 }

@@ -5,7 +5,7 @@ This api is written in C++ on top of Directx 12 and Vulkan. Provides main featur
   * Ray Tracing
   * Bindless
   * Mesh shading
-  * Variable rate shading (DX12 only)
+  * Variable rate shading
   * HLSL as shader language for all backends
     * Compilation in DXBC, DXIL, SPIRV
   * Automatic resource state tracking
