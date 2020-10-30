@@ -6,6 +6,7 @@
 using namespace Microsoft::WRL;
 
 class DXDevice;
+class DXShader;
 
 class DXGraphicsPipeline : public Pipeline
 {
@@ -19,7 +20,7 @@ public:
     const std::map<size_t, uint32_t>& GetStrideMap() const;
 
 private:
-    void ParseInputLayout();
+    void ParseInputLayout(const std::shared_ptr<DXShader>& shader);
     D3D12_INPUT_LAYOUT_DESC GetInputLayoutDesc();
 
     DXDevice& m_device;

@@ -144,7 +144,7 @@ SpirvShader::SpirvShader(const ShaderDesc& desc)
     add_resources(shader_resources.separate_samplers);
 
     if (m_type == ShaderType::kVertex)
-        m_input_layout_desc = GetInputLayoutImpl();
+        ParseInputLayout();
 }
 
 std::vector<VertexInputDesc> SpirvShader::GetInputLayout() const
@@ -152,16 +152,16 @@ std::vector<VertexInputDesc> SpirvShader::GetInputLayout() const
     return m_input_layout_desc;
 }
 
-std::vector<VertexInputDesc> SpirvShader::GetInputLayoutImpl() const
+void SpirvShader::ParseInputLayout()
 {
     spirv_cross::CompilerHLSL compiler(m_blob);
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-    std::vector<VertexInputDesc> input_layout_desc;
     for (auto& resource : resources.stage_inputs)
     {
-        decltype(auto) layout = input_layout_desc.emplace_back();
-        layout.slot = compiler.get_decoration(resource.id, spv::DecorationLocation);
-        layout.semantic_name = compiler.get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE);
+        decltype(auto) layout = m_input_layout_desc.emplace_back();
+        layout.slot = layout.location = compiler.get_decoration(resource.id, spv::DecorationLocation);
+        std::string semantic = compiler.get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE);
+        m_locations[semantic] = layout.location;
         decltype(auto) type = compiler.get_type(resource.base_type_id);
 
         if (type.basetype == spirv_cross::SPIRType::Float)
@@ -199,7 +199,6 @@ std::vector<VertexInputDesc> SpirvShader::GetInputLayoutImpl() const
         }
         layout.stride = gli::detail::bits_per_pixel(layout.format) / 8;
     }
-    return input_layout_desc;
 }
 
 ResourceBindingDesc SpirvShader::GetResourceBindingDesc(const BindKey& bind_key) const
@@ -223,6 +222,11 @@ BindKey SpirvShader::GetBindKey(const std::string& name) const
     if (it != m_bind_keys.end())
         return it->second;
     return m_bind_keys.at("type_" + name);
+}
+
+uint32_t SpirvShader::GetVertexInputLocation(const std::string& semantic_name) const
+{
+    return m_locations.at(semantic_name);
 }
 
 const std::vector<uint32_t>& SpirvShader::GetBlob() const

@@ -163,7 +163,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
         case ShaderType::kVertex:
         {
             graphics_stream_desc.VS = ShaderBytecode;
-            ParseInputLayout();
+            ParseInputLayout(shader);
             graphics_stream_desc.InputLayout = GetInputLayoutDesc();
             break;
         }
@@ -200,12 +200,12 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     ASSERT_SUCCEEDED(device2->CreatePipelineState(&stream_desc, IID_PPV_ARGS(&m_pipeline_state)));
 }
 
-void DXGraphicsPipeline::ParseInputLayout()
+void DXGraphicsPipeline::ParseInputLayout(const std::shared_ptr<DXShader>& shader)
 {
     for (auto& vertex : m_desc.input)
     {
         D3D12_INPUT_ELEMENT_DESC layout = {};
-        std::string semantic_name = vertex.semantic_name;
+        std::string semantic_name = shader->GetSemanticName(vertex.location);
         uint32_t semantic_slot = 0;
         uint32_t pow = 1;
         while (!semantic_name.empty() && std::isdigit(semantic_name.back()))

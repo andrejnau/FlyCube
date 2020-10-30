@@ -74,7 +74,7 @@ DXShader::DXShader(const ShaderDesc& desc)
     }
 
     if (m_type == ShaderType::kVertex)
-        m_input_layout_desc = GetInputLayoutImpl();
+        ParseInputLayout();
 }
 
 std::vector<VertexInputDesc> DXShader::GetInputLayout() const
@@ -82,7 +82,7 @@ std::vector<VertexInputDesc> DXShader::GetInputLayout() const
     return m_input_layout_desc;
 }
 
-std::vector<VertexInputDesc> DXShader::GetInputLayoutImpl() const
+void DXShader::ParseInputLayout()
 {
     ComPtr<ID3D12ShaderReflection> reflector;
     DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&reflector));
@@ -90,17 +90,18 @@ std::vector<VertexInputDesc> DXShader::GetInputLayoutImpl() const
     D3D12_SHADER_DESC shader_desc = {};
     reflector->GetDesc(&shader_desc);
 
-    std::vector<VertexInputDesc> input_layout_desc;
     for (uint32_t i = 0; i < shader_desc.InputParameters; ++i)
     {
         D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
         reflector->GetInputParameterDesc(i, &param_desc);
 
-        decltype(auto) layout = input_layout_desc.emplace_back();
-        layout.semantic_name = param_desc.SemanticName;
+        decltype(auto) layout = m_input_layout_desc.emplace_back();
+        std::string semantic_name = param_desc.SemanticName;
         if (param_desc.SemanticIndex)
-            layout.semantic_name += std::to_string(param_desc.SemanticIndex);
-        layout.slot = i;
+            semantic_name += std::to_string(param_desc.SemanticIndex);
+        layout.slot = layout.location = i;
+        m_locations[semantic_name] = layout.location;
+        m_semantic_names[layout.location] = semantic_name;
 
         if (param_desc.Mask == 1)
         {
@@ -140,8 +141,6 @@ std::vector<VertexInputDesc> DXShader::GetInputLayoutImpl() const
         }
         layout.stride = gli::detail::bits_per_pixel(layout.format) / 8;
     }
-
-    return input_layout_desc;
 }
 
 ResourceBindingDesc DXShader::GetResourceBindingDesc(const BindKey& bind_key) const
@@ -248,6 +247,13 @@ uint32_t DXShader::GetResourceStride(const BindKey& bind_key) const
         ASSERT_SUCCEEDED(shader_reflector->GetResourceBindingDescByName(name.c_str(), &input_bind_desc));
         return impl(shader_reflector);
     }
+    assert(false);
+    return 0;
+}
+
+uint32_t DXShader::GetVertexInputLocation(const std::string& semantic_name) const
+{
+    return m_locations.at(semantic_name);
 }
 
 ShaderType DXShader::GetType() const
@@ -263,4 +269,9 @@ BindKey DXShader::GetBindKey(const std::string& name) const
 ComPtr<ID3DBlob> DXShader::GetBlob() const
 {
     return m_blob;
+}
+
+std::string DXShader::GetSemanticName(uint32_t location) const
+{
+    return m_semantic_names.at(location);
 }

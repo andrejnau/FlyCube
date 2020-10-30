@@ -244,13 +244,13 @@ struct ShaderDesc
 struct VertexInputDesc
 {
     uint32_t slot = 0;
-    std::string semantic_name;
+    uint32_t location = 0;
     gli::format format = gli::format::FORMAT_UNDEFINED;
     uint32_t stride = 0;
 
     auto MakeTie() const
     {
-        return std::tie(slot, semantic_name, format, stride);
+        return std::tie(slot, location, format, stride);
     }
 };
 

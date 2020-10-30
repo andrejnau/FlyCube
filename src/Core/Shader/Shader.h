@@ -12,4 +12,5 @@ public:
     virtual uint32_t GetResourceStride(const BindKey& bind_key) const = 0;
     virtual ShaderType GetType() const = 0;
     virtual BindKey GetBindKey(const std::string& name) const = 0;
+    virtual uint32_t GetVertexInputLocation(const std::string& semantic_name) const = 0;
 };

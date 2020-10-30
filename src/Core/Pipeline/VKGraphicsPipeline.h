@@ -20,9 +20,7 @@ public:
     vk::RenderPass GetRenderPass() const;
 
 private:
-    void VKGraphicsPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
-                                       std::vector<vk::VertexInputBindingDescription>& binding_desc,
-                                       std::vector<vk::VertexInputAttributeDescription>& attribute_desc);
+    void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDescription>& binding_desc, std::vector<vk::VertexInputAttributeDescription>& attribute_desc);
     void CreateGrPipeLine();
 
     VKDevice& m_device;

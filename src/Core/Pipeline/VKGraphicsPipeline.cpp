@@ -50,7 +50,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
         switch (shader_type)
         {
         case ShaderType::kVertex:
-            CreateInputLayout(blob, m_binding_desc, m_attribute_desc);
+            CreateInputLayout(m_binding_desc, m_attribute_desc);
             break;
         }
 
@@ -91,26 +91,15 @@ vk::RenderPass VKGraphicsPipeline::GetRenderPass() const
     return m_desc.render_pass->As<VKRenderPass>().GetRenderPass();
 }
 
-void VKGraphicsPipeline::CreateInputLayout(const std::vector<uint32_t>& spirv_binary,
-                                   std::vector<vk::VertexInputBindingDescription>& m_binding_desc,
-                                   std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
+void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDescription>& m_binding_desc, std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
 {
-    spirv_cross::CompilerHLSL compiler(spirv_binary);
-    spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-    std::map<std::string, uint32_t> locations;
-    for (auto& resource : resources.stage_inputs)
-    {
-        std::string semantic = compiler.get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE);
-        locations[semantic] = compiler.get_decoration(resource.id, spv::DecorationLocation);
-    }
-
     for (auto& vertex : m_desc.input)
     {
         m_binding_desc.emplace_back();
         auto& binding = m_binding_desc.back();
         m_attribute_desc.emplace_back();
         auto& attribute = m_attribute_desc.back();
-        attribute.location = locations.at(vertex.semantic_name);
+        attribute.location = vertex.location;
         attribute.binding = binding.binding = vertex.slot;
         binding.inputRate = vk::VertexInputRate::eVertex;
         binding.stride = vertex.stride;
