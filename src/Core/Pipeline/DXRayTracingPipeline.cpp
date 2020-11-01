@@ -239,24 +239,9 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
     DxilLibrary dxil_lib(blob);
     subobjects.emplace_back(dxil_lib.GetSubobject());
 
-    D3D12_ROOT_SIGNATURE_DESC local_root_sign_desc = {};
-    local_root_sign_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-
-    ComPtr<ID3DBlob> signature;
-    ComPtr<ID3DBlob> error_blob;
-    ComPtr<ID3D12RootSignature> local_root_sign;
-    ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&local_root_sign_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error_blob), "%s", (char*)error_blob->GetBufferPointer());
-    ASSERT_SUCCEEDED(m_device.GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&local_root_sign)));
-    D3D12_STATE_SUBOBJECT& local_root_sign_subobject = subobjects.emplace_back();
-    local_root_sign_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
-    local_root_sign_subobject.pDesc = local_root_sign.GetAddressOf();
-
     D3D12_STATE_SUBOBJECT& global_root_sign_subobject = subobjects.emplace_back();
     global_root_sign_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
     global_root_sign_subobject.pDesc = m_root_signature.GetAddressOf();
-
-    ExportAssociation local_root_association(shader_entries, local_root_sign_subobject);
-    subobjects.emplace_back(local_root_association.GetSubobject());
 
     ShaderConfig shader_config(blob);
     subobjects.emplace_back(shader_config.GetSubobject());
