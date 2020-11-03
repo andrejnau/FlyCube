@@ -211,5 +211,6 @@ cmake -G "Visual Studio 16 2019" -Ax64 ..
 cmake --build . --config RelWithDebInfo
 ```
 
-## Setup for Vulkan
-Use Vulkan SDK 1.2.148.1
+## Requirements
+* Windows SDK Version 10.0.19041.0
+* Vulkan SDK 1.2.154.1 if you build this with VULKAN_SUPPORT=ON (enabled by default)
