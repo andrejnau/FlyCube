@@ -1,4 +1,5 @@
 #include "Pipeline/DXGraphicsPipeline.h"
+#include "Pipeline/DXStateBuilder.h"
 #include <Device/DXDevice.h>
 #include <Program/DXProgram.h>
 #include <Shader/DXShader.h>
@@ -7,27 +8,9 @@
 #include <Utilities/DXGIFormatHelper.h>
 #include <d3dx12.h>
 
-struct GraphicsPipelineStateStream
-{
-    CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE pRootSignature;
-    CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT InputLayout;
-    CD3DX12_PIPELINE_STATE_STREAM_PRIMITIVE_TOPOLOGY PrimitiveTopologyType;
-    CD3DX12_PIPELINE_STATE_STREAM_VS VS;
-    CD3DX12_PIPELINE_STATE_STREAM_GS GS;
-    CD3DX12_PIPELINE_STATE_STREAM_AS AS;
-    CD3DX12_PIPELINE_STATE_STREAM_MS MS;
-    CD3DX12_PIPELINE_STATE_STREAM_PS PS;
-    CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC BlendState;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL DepthStencilState;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT DSVFormat;
-    CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER RasterizerState;
-    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTVFormats;
-    CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC SampleDesc;
-};
-
 CD3DX12_RASTERIZER_DESC GetRasterizerDesc(const GraphicsPipelineDesc& desc)
 {
-    CD3DX12_RASTERIZER_DESC rasterizer_desc = {};
+    CD3DX12_RASTERIZER_DESC rasterizer_desc(D3D12_DEFAULT);
     switch (desc.rasterizer_desc.fill_mode)
     {
     case FillMode::kWireframe:
@@ -55,7 +38,7 @@ CD3DX12_RASTERIZER_DESC GetRasterizerDesc(const GraphicsPipelineDesc& desc)
 
 CD3DX12_BLEND_DESC GetBlendDesc(const GraphicsPipelineDesc& desc)
 {
-    CD3DX12_BLEND_DESC blend_desc = {};
+    CD3DX12_BLEND_DESC blend_desc(D3D12_DEFAULT);
     auto convert = [](Blend type)
     {
         switch (type)
@@ -147,7 +130,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     : m_device(device)
     , m_desc(desc)
 {
-    GraphicsPipelineStateStream graphics_stream_desc = {};
+    DXStateBuilder graphics_state_builder;
 
     decltype(auto) dx_program = m_desc.program->As<DXProgram>();
     m_root_signature = dx_program.GetRootSignature();
@@ -162,42 +145,37 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
         {
         case ShaderType::kVertex:
         {
-            graphics_stream_desc.VS = ShaderBytecode;
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_VS>(ShaderBytecode);
             ParseInputLayout(shader);
-            graphics_stream_desc.InputLayout = GetInputLayoutDesc();
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT>(GetInputLayoutDesc());
             break;
         }
         case ShaderType::kGeometry:
-            graphics_stream_desc.GS = ShaderBytecode;
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_GS>(ShaderBytecode);
             break;
         case ShaderType::kAmplification:
-            graphics_stream_desc.AS = ShaderBytecode;
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_AS>(ShaderBytecode);
             break;
         case ShaderType::kMesh:
-            graphics_stream_desc.MS = ShaderBytecode;
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_MS>(ShaderBytecode);
             break;
         case ShaderType::kPixel:
-            graphics_stream_desc.PS = ShaderBytecode;
-            graphics_stream_desc.RTVFormats = GetRTVFormats(desc);
-            graphics_stream_desc.DSVFormat = GetDSVFormat(desc);
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_PS>(ShaderBytecode);
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS>(GetRTVFormats(desc));
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT>(GetDSVFormat(desc));
             break;
         }
     }
 
-    graphics_stream_desc.DepthStencilState = GetDepthStencilDesc(desc, graphics_stream_desc.DSVFormat);
-    graphics_stream_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    graphics_stream_desc.SampleDesc = GetSampleDesc(desc);
-    graphics_stream_desc.RasterizerState = GetRasterizerDesc(desc);
-    graphics_stream_desc.BlendState = GetBlendDesc(desc);
-    graphics_stream_desc.pRootSignature = m_root_signature.Get();
-
-    D3D12_PIPELINE_STATE_STREAM_DESC stream_desc = {};
-    stream_desc.pPipelineStateSubobjectStream = &graphics_stream_desc;
-    stream_desc.SizeInBytes = sizeof(graphics_stream_desc);
+    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL>(GetDepthStencilDesc(desc, GetDSVFormat(desc)));
+    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC>(GetSampleDesc(desc));
+    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER>(GetRasterizerDesc(desc));
+    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC>(GetBlendDesc(desc));
+    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE>(m_root_signature.Get());
 
     ComPtr<ID3D12Device2> device2;
     m_device.GetDevice().As(&device2);
-    ASSERT_SUCCEEDED(device2->CreatePipelineState(&stream_desc, IID_PPV_ARGS(&m_pipeline_state)));
+    ASSERT_SUCCEEDED(device2->CreatePipelineState(&graphics_state_builder.GetDesc(), IID_PPV_ARGS(&m_pipeline_state)));
 }
 
 void DXGraphicsPipeline::ParseInputLayout(const std::shared_ptr<DXShader>& shader)
