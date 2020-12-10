@@ -28,12 +28,13 @@ set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_FLAGS "/Zi /auto-binding-s
 set(shaders_files ${lib_shaders})
 
 include(shader_parser)
-gen_shaders_ref(${target} "${shaders_files}" shaders_ref)
 
 source_group("Shader Files" FILES ${shaders_files})
 source_group("Shader Ref Files" FILES ${shaders_ref})
 
 add_executable(${target} WIN32 ${headers} ${sources} ${shaders_files} ${shaders_ref})
+gen_shaders_ref(${target} "${shaders_files}" shaders_ref)
+
 set_target_properties(${target} PROPERTIES
                         LINK_FLAGS "/ENTRY:mainCRTStartup")
 

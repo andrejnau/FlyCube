@@ -23,6 +23,7 @@ struct Option
     std::string model;
     std::string template_path;
     std::string output_dir;
+    std::string build_folder;
 };
 
 inline void ThrowIfFailed(bool res, const std::string& msg)
@@ -78,6 +79,9 @@ public:
     void Parse()
     {
         auto blob = DXCompile({ m_option.shader_path, m_entrypoint, m_type, m_option.model });
+        std::string path = m_option.build_folder + "/" + m_option.shader_name + ".cso";
+        std::ofstream output(path, std::ios::binary);
+        output.write((char*)blob->GetBufferPointer(), blob->GetBufferSize());
 
         ComPtr<ID3D12ShaderReflection> shader_reflector;
         DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
@@ -518,7 +522,7 @@ class ParseCmd
 public:
     ParseCmd(int argc, char *argv[])
     {
-        ThrowIfFailed(argc == 8, "Invalide CommandLine");
+        ThrowIfFailed(argc == 9, "Invalide CommandLine");
         size_t arg_index = 1;
         m_option.shader_name = argv[arg_index++];
         m_option.shader_path = argv[arg_index++];
@@ -527,6 +531,7 @@ public:
         m_option.model = argv[arg_index++];
         m_option.template_path = argv[arg_index++];
         m_option.output_dir = argv[arg_index++];
+        m_option.build_folder = argv[arg_index++];
         m_option.model.replace(m_option.model.find("."), 1, "_");
     }
 
