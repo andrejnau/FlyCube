@@ -22,3 +22,6 @@
 [submodule "3rdparty/Mustache"]
 	path = 3rdparty/Mustache
 	url = https://github.com/kainjow/Mustache.git
+[submodule "3rdparty/Catch2"]
+	path = 3rdparty/Catch2
+	url = https://github.com/catchorg/Catch2.git
