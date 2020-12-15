@@ -22,9 +22,9 @@ set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_MODEL 6.3)
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_FLAGS "/Zi /auto-binding-space 0")
 
 set_property(SOURCE ${mesh_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
-set_property(SOURCE ${mesh_shaders} PROPERTY SHADER_TYPE Mesh)
-set_property(SOURCE ${mesh_shaders} PROPERTY VS_SHADER_MODEL 6.3)
-set_property(SOURCE ${mesh_shaders} PROPERTY VS_SHADER_FLAGS "/Tms_6_5 /Zi /auto-binding-space 0")
+set_property(SOURCE ${mesh_shaders} PROPERTY VS_SHADER_TYPE Mesh)
+set_property(SOURCE ${mesh_shaders} PROPERTY VS_SHADER_MODEL 6.5)
+set_property(SOURCE ${mesh_shaders} PROPERTY VS_SHADER_FLAGS "/Zi /auto-binding-space 0")
 
 set(shaders_files ${pixel_shaders} ${mesh_shaders})
 
