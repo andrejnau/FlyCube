@@ -464,7 +464,7 @@ void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& 
     decltype(auto) vk_dst = dst->As<VKResource>();
     decltype(auto) vk_scratch = scratch->As<VKResource>();
 
-    vk::AccelerationStructureKHR vk_src_as = {};
+    vk::AccelerationStructureNV vk_src_as = {};
     if (src)
     {
         decltype(auto) vk_src = src->As<VKResource>();
