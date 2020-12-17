@@ -44,7 +44,7 @@ public:
     vk::CommandBuffer GetCommandList();
 
 private:
-    void BuildAccelerationStructure(vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, uint64_t instance_offset, const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset);
+    void BuildAccelerationStructure(vk::AccelerationStructureCreateInfoKHR& build_info, const vk::Buffer& instance_data, uint64_t instance_offset, const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset);
 
     VKDevice& m_device;
     vk::UniqueCommandBuffer m_command_list;

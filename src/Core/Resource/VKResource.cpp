@@ -14,7 +14,7 @@ void VKResource::CommitMemory(MemoryType memory_type)
     MemoryRequirements mem_requirements = GetMemoryRequirements();
     vk::MemoryDedicatedAllocateInfoKHR dedicated_allocate_info = {};
     vk::MemoryDedicatedAllocateInfoKHR* p_dedicated_allocate_info = nullptr;
-    if (resource_type == ResourceType::kBuffer)
+    if (resource_type == ResourceType::kBuffer || resource_type == ResourceType::kBottomLevelAS || resource_type == ResourceType::kTopLevelAS)
     {
         dedicated_allocate_info.buffer = buffer.res.get();
         p_dedicated_allocate_info = &dedicated_allocate_info;
@@ -34,20 +34,13 @@ void VKResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
     m_memory_type = m_memory->GetMemoryType();
     m_vk_memory = m_memory->As<VKMemory>().GetMemory();
 
-    if (resource_type == ResourceType::kBuffer)
+    if (resource_type == ResourceType::kBuffer || resource_type == ResourceType::kTopLevelAS || resource_type == ResourceType::kBottomLevelAS)
     {
         m_device.GetDevice().bindBufferMemory(buffer.res.get(), m_vk_memory, offset);
     }
     else if (resource_type == ResourceType::kTexture)
     {
         m_device.GetDevice().bindImageMemory(image.res, m_vk_memory, offset);
-    }
-    else if (resource_type == ResourceType::kTopLevelAS || resource_type == ResourceType::kBottomLevelAS)
-    {
-        vk::BindAccelerationStructureMemoryInfoNV acceleration_structure_memory_info = {};
-        acceleration_structure_memory_info.accelerationStructure = as.acceleration_structure.get();
-        acceleration_structure_memory_info.memory = m_vk_memory;
-        ASSERT_SUCCEEDED(m_device.GetDevice().bindAccelerationStructureMemoryNV(1, &acceleration_structure_memory_info));
     }
 }
 
@@ -80,9 +73,7 @@ uint32_t VKResource::GetSampleCount() const
 
 uint64_t VKResource::GetAccelerationStructureHandle() const
 {
-    uint64_t handle = {};
-    ASSERT_SUCCEEDED(m_device.GetDevice().getAccelerationStructureHandleNV(as.acceleration_structure.get(), sizeof(uint64_t), &handle));
-    return handle;
+    return m_device.GetDevice().getAccelerationStructureAddressKHR({ as.acceleration_structure.get() });
 }
 
 void VKResource::SetName(const std::string& name)
@@ -102,7 +93,7 @@ void VKResource::SetName(const std::string& name)
     else if (resource_type == ResourceType::kTopLevelAS || resource_type == ResourceType::kBottomLevelAS)
     {
         info.objectType = as.acceleration_structure.get().objectType;
-        info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkAccelerationStructureNV>(as.acceleration_structure.get()));
+        info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkAccelerationStructureKHR>(as.acceleration_structure.get()));
     }
     m_device.GetDevice().setDebugUtilsObjectNameEXT(info);
 }
@@ -127,7 +118,7 @@ bool VKResource::AllowCommonStatePromotion(ResourceState state_after)
 MemoryRequirements VKResource::GetMemoryRequirements() const
 {
     vk::MemoryRequirements2 mem_requirements = {};
-    if (resource_type == ResourceType::kBuffer)
+    if (resource_type == ResourceType::kBuffer || resource_type == ResourceType::kTopLevelAS || resource_type == ResourceType::kBottomLevelAS)
     {
         vk::BufferMemoryRequirementsInfo2KHR buffer_mem_req = {};
         buffer_mem_req.buffer = buffer.res.get();
@@ -138,13 +129,6 @@ MemoryRequirements VKResource::GetMemoryRequirements() const
         vk::ImageMemoryRequirementsInfo2KHR image_mem_req = {};
         image_mem_req.image = image.res;
         m_device.GetDevice().getImageMemoryRequirements2(&image_mem_req, &mem_requirements);
-    }
-    else if (resource_type == ResourceType::kTopLevelAS || resource_type == ResourceType::kBottomLevelAS)
-    {
-        vk::AccelerationStructureMemoryRequirementsInfoNV memory_requirements_info = {};
-        memory_requirements_info.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eObject;
-        memory_requirements_info.accelerationStructure = as.acceleration_structure.get();
-        m_device.GetDevice().getAccelerationStructureMemoryRequirementsNV(&memory_requirements_info, &mem_requirements);
     }
     return { mem_requirements.memoryRequirements.size, mem_requirements.memoryRequirements.alignment, mem_requirements.memoryRequirements.memoryTypeBits };
 }

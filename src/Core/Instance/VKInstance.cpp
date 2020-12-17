@@ -6,9 +6,9 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-static bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& message)
+static bool SkipIt(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type, const std::string& message)
 {
-    if (object_type == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT)
+    if (object_type == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT && flags != VK_DEBUG_REPORT_ERROR_BIT_EXT)
         return true;
     static std::vector<std::string> muted_warnings = {
         "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv",
@@ -19,6 +19,9 @@ static bool SkipIt(VkDebugReportObjectTypeEXT object_type, const std::string& me
         "VUID-VkSubmitInfo-pSignalSemaphores-03244",
         "VUID-vkCmdPipelineBarrier-pDependencies-02285",
         "VUID-VkImageMemoryBarrier-oldLayout-01213",
+        "VUID-vkCmdDrawIndexed-None-02721",
+        "VUID-vkCmdDrawIndexed-None-02699",
+        "VUID-vkCmdTraceRaysKHR-None-02699",
     };
     for (auto& str : muted_warnings)
     {
@@ -40,7 +43,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 {
     constexpr size_t error_limit = 1024;
     static size_t error_count = 0;
-    if (error_count >= error_limit || SkipIt(objectType, pMessage))
+    if (error_count >= error_limit || SkipIt(flags, objectType, pMessage))
         return VK_FALSE;
 #ifdef _WIN32
     if (error_count < error_limit)

@@ -55,8 +55,8 @@ public:
 
     struct AccelerationStructure
     {
-        vk::UniqueAccelerationStructureNV acceleration_structure;
-        vk::BuildAccelerationStructureFlagsNV flags = {};
+        vk::UniqueAccelerationStructureKHR acceleration_structure;
+        vk::BuildAccelerationStructureFlagsKHR flags = {};
     } as;
 
 private:

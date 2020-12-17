@@ -23,7 +23,7 @@ public:
     void WriteView(vk::WriteDescriptorSet& descriptor_write,
                    std::list<vk::DescriptorImageInfo>& list_image_info,
                    std::list<vk::DescriptorBufferInfo>& list_buffer_info,
-                   std::list<vk::WriteDescriptorSetAccelerationStructureNV>& list_as);
+                   std::list<vk::WriteDescriptorSetAccelerationStructureKHR>& list_as);
 
 private:
     void CreateSrv(const ViewDesc& view_desc, const VKResource& res);

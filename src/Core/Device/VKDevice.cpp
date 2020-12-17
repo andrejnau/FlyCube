@@ -67,8 +67,11 @@ VKDevice::VKDevice(VKAdapter& adapter)
     std::set<std::string> req_extension = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
-        VK_NV_RAY_TRACING_EXTENSION_NAME,
-        VK_KHR_MAINTENANCE3_EXTENSION_NAME
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        VK_KHR_MAINTENANCE3_EXTENSION_NAME,
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
         VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME,
@@ -87,7 +90,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
         if (std::string(extension.extensionName.data()) == VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME)
             m_is_variable_rate_shading_supported = true;
-        if (std::string(extension.extensionName.data()) == VK_NV_RAY_TRACING_EXTENSION_NAME)
+        if (std::string(extension.extensionName.data()) == VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
             m_is_dxr_supported = true;
         if (std::string(extension.extensionName.data()) == VK_NV_MESH_SHADER_EXTENSION_NAME)
             m_is_mesh_shading_supported = true;
@@ -124,33 +127,50 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.shaderImageGatherExtended = true;
 
     void* device_create_info_next = nullptr;
+    auto add_extension = [&](auto& extension)
+    {
+        extension.pNext = device_create_info_next;
+        device_create_info_next = &extension;
+    };
 
     vk::PhysicalDeviceTimelineSemaphoreFeatures device_timetine_feature = {};
     device_timetine_feature.timelineSemaphore = true;
-    device_timetine_feature.pNext = device_create_info_next;
-    device_create_info_next = &device_timetine_feature;
+    add_extension(device_timetine_feature);
 
     vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing_feature = {};
     descriptor_indexing_feature.runtimeDescriptorArray = true;
     descriptor_indexing_feature.descriptorBindingVariableDescriptorCount = true;
-    descriptor_indexing_feature.pNext = device_create_info_next;
-    device_create_info_next = &descriptor_indexing_feature;
+    add_extension(descriptor_indexing_feature);
 
     vk::PhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_feature = {};
+    shading_rate_image_feature.shadingRateImage = true;
     if (m_is_variable_rate_shading_supported)
     {
-        shading_rate_image_feature.shadingRateImage = VK_TRUE;
-        shading_rate_image_feature.pNext = device_create_info_next;
-        device_create_info_next = &shading_rate_image_feature;
+        add_extension(shading_rate_image_feature);
     }
 
     vk::PhysicalDeviceMeshShaderFeaturesNV mesh_shader_feature = {};
+    mesh_shader_feature.taskShader = true;
+    mesh_shader_feature.meshShader = true;
     if (m_is_mesh_shading_supported)
     {
-        mesh_shader_feature.taskShader = true;
-        mesh_shader_feature.meshShader = true;
-        mesh_shader_feature.pNext = device_create_info_next;
-        device_create_info_next = &mesh_shader_feature;
+        add_extension(mesh_shader_feature);
+    }
+
+    vk::PhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_feature = {};
+    buffer_device_address_feature.bufferDeviceAddress = true;
+    add_extension(buffer_device_address_feature);
+
+    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_pipeline_feature = {};
+    raytracing_pipeline_feature.rayTracingPipeline = true;
+
+    vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_feature = {};
+    acceleration_structure_feature.accelerationStructure = true;
+
+    if (m_is_dxr_supported)
+    {
+        add_extension(raytracing_pipeline_feature);
+        add_extension(acceleration_structure_feature);
     }
 
     vk::DeviceCreateInfo device_create_info = {};
@@ -268,6 +288,7 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
     vk::BufferCreateInfo buffer_info = {};
     buffer_info.size = buffer_size;
+    buffer_info.usage = vk::BufferUsageFlagBits::eShaderDeviceAddress;
 
     if (bind_flag & BindFlag::kVertexBuffer)
         buffer_info.usage |= vk::BufferUsageFlagBits::eVertexBuffer;
@@ -279,8 +300,8 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
         buffer_info.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
     if (bind_flag & BindFlag::kShaderResource)
         buffer_info.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
-    if (bind_flag & BindFlag::kRayTracing)
-        buffer_info.usage |= vk::BufferUsageFlagBits::eRayTracingNV;
+    if (bind_flag & BindFlag::kAccelerationStructure)
+        buffer_info.usage |= vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR;
     if (bind_flag & BindFlag::kCopySource)
         buffer_info.usage |= vk::BufferUsageFlagBits::eTransferSrc;
     if (bind_flag & BindFlag::kCopyDest)
@@ -302,7 +323,7 @@ std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
     samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
     samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
     samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.anisotropyEnable = true;
     samplerInfo.maxAnisotropy = 16;
     samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
@@ -402,9 +423,9 @@ std::shared_ptr<Pipeline> VKDevice::CreateRayTracingPipeline(const RayTracingPip
     return std::make_shared<VKRayTracingPipeline>(*this, desc);
 }
 
-vk::GeometryNV FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags)
+vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags)
 {
-    vk::GeometryNV geometry_desc = {};
+    vk::AccelerationStructureGeometryKHR geometry_desc = {};
     geometry_desc.geometryType = vk::GeometryTypeNV::eTriangles;
     switch (flags)
     {
@@ -420,17 +441,14 @@ vk::GeometryNV FillRaytracingGeometryDesc(const BufferDesc& vertex, const Buffer
     auto vk_index_res = std::static_pointer_cast<VKResource>(index.res);
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
-    geometry_desc.geometry.triangles.vertexData = vk_vertex_res->buffer.res.get();
-    geometry_desc.geometry.triangles.vertexOffset = vertex.offset * vertex_stride;
-    geometry_desc.geometry.triangles.vertexCount = vertex.count;
+    geometry_desc.geometry.triangles.vertexData = m_device->getBufferAddress({ vk_vertex_res->buffer.res.get() }) + vertex.offset * vertex_stride;
     geometry_desc.geometry.triangles.vertexStride = vertex_stride;
     geometry_desc.geometry.triangles.vertexFormat = static_cast<vk::Format>(vertex.format);
+    geometry_desc.geometry.triangles.maxVertex = vertex.count;
     if (vk_index_res)
     {
         auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
-        geometry_desc.geometry.triangles.indexData = vk_index_res->buffer.res.get();
-        geometry_desc.geometry.triangles.indexOffset = index.offset * index_stride;
-        geometry_desc.geometry.triangles.indexCount = index.count;
+        geometry_desc.geometry.triangles.indexData = m_device->getBufferAddress({ vk_index_res->buffer.res.get() }) + index.offset * index_stride;
         geometry_desc.geometry.triangles.indexType = GetVkIndexType(index.format);
     }
     else
@@ -441,70 +459,73 @@ vk::GeometryNV FillRaytracingGeometryDesc(const BufferDesc& vertex, const Buffer
     return geometry_desc;
 }
 
-std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const vk::AccelerationStructureInfoNV& acceleration_structure_info)
+std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const vk::AccelerationStructureBuildGeometryInfoKHR& acceleration_structure_info, const std::vector<uint32_t>& max_primitive_counts)
 {
-    std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-    res->resource_type = acceleration_structure_info.type == vk::AccelerationStructureTypeNV::eBottomLevel ? ResourceType::kBottomLevelAS : ResourceType::kTopLevelAS;
+    vk::AccelerationStructureBuildSizesInfoKHR size_info = {};
+    m_device->getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, &acceleration_structure_info, max_primitive_counts.data(), &size_info);
 
-    vk::AccelerationStructureCreateInfoNV acceleration_structure_ci = {};
-    acceleration_structure_ci.info = acceleration_structure_info;
-    res->as.acceleration_structure = m_device->createAccelerationStructureNVUnique(acceleration_structure_ci);
+    std::shared_ptr<VKResource> res = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kAccelerationStructure, size_info.accelerationStructureSize));
+    res->prebuild_info.build_scratch_data_size = size_info.buildScratchSize;
+    res->prebuild_info.update_scratch_data_size = size_info.updateScratchSize;
+    res->resource_type = acceleration_structure_info.type == vk::AccelerationStructureTypeKHR::eBottomLevel ? ResourceType::kBottomLevelAS : ResourceType::kTopLevelAS;
 
-    vk::MemoryRequirements2 memory_requirements2 = {};
-
-    vk::AccelerationStructureMemoryRequirementsInfoNV memory_requirements_info_build_scratch = {};
-    memory_requirements_info_build_scratch.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch;
-    memory_requirements_info_build_scratch.accelerationStructure = res->as.acceleration_structure.get();
-    m_device->getAccelerationStructureMemoryRequirementsNV(&memory_requirements_info_build_scratch, &memory_requirements2);
-    res->prebuild_info.build_scratch_data_size = memory_requirements2.memoryRequirements.size;
-
-    vk::AccelerationStructureMemoryRequirementsInfoNV memory_requirements_info_update_scratch = {};
-    memory_requirements_info_update_scratch.type = vk::AccelerationStructureMemoryRequirementsTypeNV::eUpdateScratch;
-    memory_requirements_info_update_scratch.accelerationStructure = res->as.acceleration_structure.get();
-    m_device->getAccelerationStructureMemoryRequirementsNV(&memory_requirements_info_update_scratch, &memory_requirements2);
-    res->prebuild_info.update_scratch_data_size = memory_requirements2.memoryRequirements.size;
+    vk::AccelerationStructureCreateInfoKHR acceleration_structure_create_info = {};
+    acceleration_structure_create_info.buffer = res->buffer.res.get();
+    acceleration_structure_create_info.size = size_info.accelerationStructureSize;
+    acceleration_structure_create_info.type = acceleration_structure_info.type;
+    res->as.acceleration_structure = m_device->createAccelerationStructureKHRUnique(acceleration_structure_create_info);
     res->as.flags = acceleration_structure_info.flags;
     return res;
 }
 
-vk::BuildAccelerationStructureFlagsNV Convert(BuildAccelerationStructureFlags flags)
+vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags flags)
 {
-    vk::BuildAccelerationStructureFlagsNV vk_flags = {};
+    vk::BuildAccelerationStructureFlagsKHR vk_flags = {};
     if (flags & BuildAccelerationStructureFlags::kAllowUpdate)
-        vk_flags |= vk::BuildAccelerationStructureFlagBitsNV::eAllowUpdate;
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate;
     if (flags & BuildAccelerationStructureFlags::kAllowCompaction)
-        vk_flags |= vk::BuildAccelerationStructureFlagBitsNV::eAllowCompaction;
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::eAllowCompaction;
     if (flags & BuildAccelerationStructureFlags::kPreferFastTrace)
-        vk_flags |= vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace;
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace;
     if (flags & BuildAccelerationStructureFlags::kPreferFastBuild)
-        vk_flags |= vk::BuildAccelerationStructureFlagBitsNV::ePreferFastBuild;
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastBuild;
     if (flags & BuildAccelerationStructureFlags::kMinimizeMemory)
-        vk_flags |= vk::BuildAccelerationStructureFlagBitsNV::eLowMemory;
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::eLowMemory;
     return vk_flags;
 }
 
 std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
 {
-    std::vector<vk::GeometryNV> geometry_descs;
+    std::vector<vk::AccelerationStructureGeometryKHR> geometry_descs;
+    std::vector<uint32_t> max_primitive_counts;
     for (const auto& desc : descs)
     {
-        geometry_descs.emplace_back(FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags));
+        geometry_descs.emplace_back(FillRaytracingGeometryTriangles(desc.vertex, desc.index, desc.flags));
+        if (desc.index.res)
+            max_primitive_counts.emplace_back(desc.index.count / 3);
+        else
+            max_primitive_counts.emplace_back(desc.vertex.count / 3);
     }
-    vk::AccelerationStructureInfoNV acceleration_structure_info = {};
-    acceleration_structure_info.type = vk::AccelerationStructureTypeNV::eBottomLevel;
+    vk::AccelerationStructureBuildGeometryInfoKHR acceleration_structure_info = {};
+    acceleration_structure_info.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
     acceleration_structure_info.geometryCount = geometry_descs.size();
     acceleration_structure_info.pGeometries = geometry_descs.data();
     acceleration_structure_info.flags = Convert(flags);
-    return CreateAccelerationStructure(acceleration_structure_info);
+    return CreateAccelerationStructure(acceleration_structure_info, max_primitive_counts);
 }
 
 std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags)
 {
-    vk::AccelerationStructureInfoNV acceleration_structure_info = {};
-    acceleration_structure_info.type = vk::AccelerationStructureTypeNV::eTopLevel;
-    acceleration_structure_info.instanceCount = instance_count;
+    vk::AccelerationStructureGeometryKHR geometry_info{};
+    geometry_info.geometryType = vk::GeometryTypeKHR::eInstances;
+    geometry_info.geometry.setInstances({});
+
+    vk::AccelerationStructureBuildGeometryInfoKHR acceleration_structure_info = {};
+    acceleration_structure_info.type = vk::AccelerationStructureTypeKHR::eTopLevel;
+    acceleration_structure_info.pGeometries = &geometry_info;
+    acceleration_structure_info.geometryCount = 1;
     acceleration_structure_info.flags = Convert(flags);
-    return CreateAccelerationStructure(acceleration_structure_info);
+    return CreateAccelerationStructure(acceleration_structure_info, { instance_count });
 }
 
 bool VKDevice::IsDxrSupported() const

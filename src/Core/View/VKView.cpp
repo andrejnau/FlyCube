@@ -36,7 +36,7 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
 
         std::list<vk::DescriptorImageInfo> list_image_info;
         std::list<vk::DescriptorBufferInfo> list_buffer_info;
-        std::list<vk::WriteDescriptorSetAccelerationStructureNV> list_as;
+        std::list<vk::WriteDescriptorSetAccelerationStructureKHR> list_as;
 
         vk::WriteDescriptorSet descriptor_write = {};
         descriptor_write.dstSet = m_range->GetDescriptoSet();
@@ -55,7 +55,7 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
 void VKView::WriteView(vk::WriteDescriptorSet& descriptor_write,
                        std::list<vk::DescriptorImageInfo>& list_image_info,
                        std::list<vk::DescriptorBufferInfo>& list_buffer_info,
-                       std::list<vk::WriteDescriptorSetAccelerationStructureNV>& list_as)
+                       std::list<vk::WriteDescriptorSetAccelerationStructureKHR>& list_as)
 {
     if (!m_resource)
         return;
@@ -103,10 +103,10 @@ void VKView::WriteView(vk::WriteDescriptorSet& descriptor_write,
         descriptor_write.pBufferInfo = &buffer_info;
         break;
     }
-    case vk::DescriptorType::eAccelerationStructureNV:
+    case vk::DescriptorType::eAccelerationStructureKHR:
     {
         list_as.emplace_back();
-        vk::WriteDescriptorSetAccelerationStructureNV& descriptorAccelerationStructureInfo = list_as.back();
+        vk::WriteDescriptorSetAccelerationStructureKHR& descriptorAccelerationStructureInfo = list_as.back();
         descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
         descriptorAccelerationStructureInfo.pAccelerationStructures = &m_resource->as.acceleration_structure.get();
         descriptor_write.pNext = &descriptorAccelerationStructureInfo;

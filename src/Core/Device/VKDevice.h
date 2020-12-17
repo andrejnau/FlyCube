@@ -44,9 +44,10 @@ public:
     VKGPUBindlessDescriptorPoolTyped& GetGPUBindlessDescriptorPool(vk::DescriptorType type);
     VKGPUDescriptorPool& GetGPUDescriptorPool();
     uint32_t FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties);
+    vk::AccelerationStructureGeometryKHR FillRaytracingGeometryTriangles(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags);
 
 private:
-    std::shared_ptr<Resource> CreateAccelerationStructure(const vk::AccelerationStructureInfoNV& acceleration_structure_info);
+    std::shared_ptr<Resource> CreateAccelerationStructure(const vk::AccelerationStructureBuildGeometryInfoKHR& acceleration_structure_info, const std::vector<uint32_t>& max_primitive_counts);
 
     VKAdapter& m_adapter;
     const vk::PhysicalDevice& m_physical_device;
@@ -65,5 +66,3 @@ private:
     bool m_is_dxr_supported = false;
     bool m_is_mesh_shading_supported = false;
 };
-
-vk::GeometryNV FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags);

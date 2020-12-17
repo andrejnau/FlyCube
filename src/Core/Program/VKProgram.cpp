@@ -117,7 +117,7 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const std::vector<Bi
     std::vector<vk::WriteDescriptorSet> descriptor_writes;
     std::list<vk::DescriptorImageInfo> list_image_info;
     std::list<vk::DescriptorBufferInfo> list_buffer_info;
-    std::list<vk::WriteDescriptorSetAccelerationStructureNV> list_as;
+    std::list<vk::WriteDescriptorSetAccelerationStructureKHR> list_as;
 
     for (const auto& binding : bindings)
     {
@@ -286,7 +286,7 @@ void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>&
     generate_bindings(resources.separate_samplers, vk::DescriptorType::eSampler);
     generate_bindings(resources.storage_buffers, vk::DescriptorType::eStorageBuffer);
     generate_bindings(resources.storage_images, vk::DescriptorType::eStorageImage);
-    generate_bindings(resources.acceleration_structures, vk::DescriptorType::eAccelerationStructureNV);
+    generate_bindings(resources.acceleration_structures, vk::DescriptorType::eAccelerationStructureKHR);
 
     print_resources(compiler, " stage_inputs ", resources.stage_inputs);
     print_resources(compiler, " uniform_buffers ", resources.uniform_buffers);

@@ -192,24 +192,28 @@ void VKCommandList::DispatchMesh(uint32_t thread_group_count_x)
 void VKCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
 {
     decltype(auto) vk_state = m_state->As<VKRayTracingPipeline>();
-    auto shader_binding_table = vk_state.GetShaderBindingTable();
+    auto shader_binding_table = m_device.GetDevice().getBufferAddress({ vk_state.GetShaderBindingTable() });
 
-    vk::PhysicalDeviceRayTracingPropertiesNV ray_tracing_properties{};
-
+    vk::PhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = {};
     vk::PhysicalDeviceProperties2 device_props2{};
     device_props2.pNext = &ray_tracing_properties;
     m_device.GetAdapter().GetPhysicalDevice().getProperties2(&device_props2);
 
-    vk::DeviceSize binding_offset_ray_gen_shader = ray_tracing_properties.shaderGroupBaseAlignment * 0;
-    vk::DeviceSize binding_offset_miss_shader = ray_tracing_properties.shaderGroupBaseAlignment * 1;
-    vk::DeviceSize binding_offset_hit_shader = ray_tracing_properties.shaderGroupBaseAlignment * 2;
+    vk::DeviceSize binding_offset_ray_gen_shader = shader_binding_table + ray_tracing_properties.shaderGroupBaseAlignment * 0;
+    vk::DeviceSize binding_offset_miss_shader = shader_binding_table + ray_tracing_properties.shaderGroupBaseAlignment * 1;
+    vk::DeviceSize binding_offset_hit_shader = shader_binding_table + ray_tracing_properties.shaderGroupBaseAlignment * 2;
     vk::DeviceSize binding_stride = ray_tracing_properties.shaderGroupHandleSize;
 
-    m_command_list->traceRaysNV(
-        shader_binding_table, binding_offset_ray_gen_shader,
-        shader_binding_table, binding_offset_miss_shader, binding_stride,
-        shader_binding_table, binding_offset_hit_shader, binding_stride,
-        {}, 0, 0,
+    vk::StridedDeviceAddressRegionKHR raygen_shader_table = { binding_offset_ray_gen_shader, binding_stride, binding_stride };
+    vk::StridedDeviceAddressRegionKHR miss_shader_table = { binding_offset_miss_shader, binding_stride, binding_stride };
+    vk::StridedDeviceAddressRegionKHR hit_shader_table = { binding_offset_hit_shader, binding_stride, binding_stride };
+    vk::StridedDeviceAddressRegionKHR callable_shader_table = {};
+
+    m_command_list->traceRaysKHR(
+        raygen_shader_table,
+        miss_shader_table,
+        hit_shader_table,
+        callable_shader_table,
         width, height, depth
     );
 }
@@ -386,8 +390,8 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
 void VKCommandList::UAVResourceBarrier(const std::shared_ptr<Resource>& /*resource*/)
 {
     vk::MemoryBarrier memory_barrier = {};
-    memory_barrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteNV
-                                 | vk::AccessFlagBits::eAccelerationStructureReadNV
+    memory_barrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR
+                                 | vk::AccessFlagBits::eAccelerationStructureReadKHR
                                  | vk::AccessFlagBits::eShaderWrite
                                  | vk::AccessFlagBits::eShaderRead;
     memory_barrier.dstAccessMask = memory_barrier.srcAccessMask;
@@ -459,78 +463,117 @@ void VKCommandList::RSSetShadingRateImage(const std::shared_ptr<View>& view)
     }
 }
 
-void VKCommandList::BuildAccelerationStructure(vk::AccelerationStructureInfoNV& build_info, const vk::Buffer& instance_data, uint64_t instance_offset, const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset)
+void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,
+                                       const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset, const std::vector<RaytracingGeometryDesc>& descs)
 {
+    std::vector<vk::AccelerationStructureGeometryKHR> geometry_descs;
+    for (const auto& desc : descs)
+    {
+        geometry_descs.emplace_back(m_device.FillRaytracingGeometryTriangles(desc.vertex, desc.index, desc.flags));
+    }
+
     decltype(auto) vk_dst = dst->As<VKResource>();
     decltype(auto) vk_scratch = scratch->As<VKResource>();
 
-    vk::AccelerationStructureNV vk_src_as = {};
+    vk::AccelerationStructureKHR vk_src_as = {};
     if (src)
     {
         decltype(auto) vk_src = src->As<VKResource>();
         vk_src_as = vk_src.as.acceleration_structure.get();
     }
 
-    build_info.flags = vk_dst.as.flags;
-
-    m_command_list->buildAccelerationStructureNV(
-        build_info,
-        instance_data,
-        instance_offset,
-        !!vk_src_as,
-        vk_dst.as.acceleration_structure.get(),
-        vk_src_as,
-        vk_scratch.buffer.res.get(),
-        scratch_offset
-    );
-}
-
-void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,
-                                       const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset, const std::vector<RaytracingGeometryDesc>& descs)
-{
-    std::vector<vk::GeometryNV> geometry_descs;
+    std::vector<vk::AccelerationStructureBuildRangeInfoKHR> ranges;
     for (const auto& desc : descs)
     {
-        geometry_descs.emplace_back(FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags));
+        vk::AccelerationStructureBuildRangeInfoKHR& offset = ranges.emplace_back();
+        if (desc.index.res)
+            offset.primitiveCount = desc.index.count / 3;
+        else
+            offset.primitiveCount = desc.vertex.count / 3;
     }
-    vk::AccelerationStructureInfoNV build_info = {};
-    build_info.type = vk::AccelerationStructureTypeNV::eBottomLevel;
-    build_info.geometryCount = geometry_descs.size();
-    build_info.pGeometries = geometry_descs.data();
-    BuildAccelerationStructure(build_info, {}, 0, src, dst, scratch, scratch_offset);
+    std::vector<const vk::AccelerationStructureBuildRangeInfoKHR*> range_infos(ranges.size());
+    for (size_t i = 0; i < ranges.size(); ++i)
+        range_infos[i] = &ranges[i];
+
+    vk::AccelerationStructureBuildGeometryInfoKHR infos = {};
+    infos.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
+    infos.flags = vk_dst.as.flags;
+    infos.dstAccelerationStructure = vk_dst.as.acceleration_structure.get();
+    infos.srcAccelerationStructure = vk_src_as;
+    if (vk_src_as)
+        infos.mode = vk::BuildAccelerationStructureModeKHR::eUpdate;
+    else
+        infos.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
+    infos.scratchData = m_device.GetDevice().getBufferAddress({ vk_scratch.buffer.res.get() }) + scratch_offset;
+    infos.pGeometries = geometry_descs.data();
+    infos.geometryCount = geometry_descs.size();
+
+    m_command_list->buildAccelerationStructuresKHR(1, &infos, range_infos.data());
 }
 
 void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset,
                                     const std::shared_ptr<Resource>& instance_data, uint64_t instance_offset, uint32_t instance_count)
 {
     decltype(auto) vk_instance_data = instance_data->As<VKResource>();
-    vk::AccelerationStructureInfoNV build_info = {};
-    build_info.type = vk::AccelerationStructureTypeNV::eTopLevel;
-    build_info.instanceCount = instance_count;
-    BuildAccelerationStructure(build_info, vk_instance_data.buffer.res.get(), instance_offset, src, dst, scratch, scratch_offset);
+    vk::DeviceAddress instance_address = m_device.GetDevice().getBufferAddress(vk_instance_data.buffer.res.get()) + instance_offset;
+
+    vk::AccelerationStructureGeometryKHR top_as_geometry = {};
+    top_as_geometry.geometryType = vk::GeometryTypeKHR::eInstances;
+    top_as_geometry.geometry.setInstances({});
+    top_as_geometry.geometry.instances.arrayOfPointers = VK_FALSE;
+    top_as_geometry.geometry.instances.data = instance_address;
+
+    decltype(auto) vk_dst = dst->As<VKResource>();
+    decltype(auto) vk_scratch = scratch->As<VKResource>();
+
+    vk::AccelerationStructureKHR vk_src_as = {};
+    if (src)
+    {
+        decltype(auto) vk_src = src->As<VKResource>();
+        vk_src_as = vk_src.as.acceleration_structure.get();
+    }
+
+    vk::AccelerationStructureBuildRangeInfoKHR acceleration_structure_build_range_info = {};
+    acceleration_structure_build_range_info.primitiveCount = instance_count;
+    std::vector<vk::AccelerationStructureBuildRangeInfoKHR*> offset_infos = { &acceleration_structure_build_range_info };
+
+    vk::AccelerationStructureBuildGeometryInfoKHR infos = {};
+    infos.type = vk::AccelerationStructureTypeKHR::eTopLevel;
+    infos.flags = vk_dst.as.flags;
+    infos.dstAccelerationStructure = vk_dst.as.acceleration_structure.get();
+    infos.srcAccelerationStructure = vk_src_as;
+    if (vk_src_as)
+        infos.mode = vk::BuildAccelerationStructureModeKHR::eUpdate;
+    else
+        infos.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
+    infos.scratchData = m_device.GetDevice().getBufferAddress({ vk_scratch.buffer.res.get() }) + scratch_offset;
+    infos.pGeometries = &top_as_geometry;
+    infos.geometryCount = 1;
+
+    m_command_list->buildAccelerationStructuresKHR(1, &infos, offset_infos.data());
 }
 
 void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)
 {
     decltype(auto) vk_src = src->As<VKResource>();
     decltype(auto) vk_dst = dst->As<VKResource>();
-    vk::CopyAccelerationStructureModeNV vk_mode = {};
+    vk::CopyAccelerationStructureInfoKHR info = {};
     switch (mode)
     {
     case CopyAccelerationStructureMode::kClone:
-        vk_mode = vk::CopyAccelerationStructureModeNV::eClone;
+        info.mode = vk::CopyAccelerationStructureModeKHR::eClone;
         break;
     case CopyAccelerationStructureMode::kCompact:
-        vk_mode = vk::CopyAccelerationStructureModeNV::eCompact;
+        info.mode = vk::CopyAccelerationStructureModeKHR::eCompact;
         break;
     default:
         assert(false);
+        info.mode = vk::CopyAccelerationStructureModeKHR::eClone;
+        break;
     }
-    m_command_list->copyAccelerationStructureNV(
-        vk_dst.as.acceleration_structure.get(),
-        vk_src.as.acceleration_structure.get(),
-        vk_mode
-    );
+    info.dst = vk_dst.as.acceleration_structure.get();
+    info.src = vk_src.as.acceleration_structure.get();
+    m_command_list->copyAccelerationStructureKHR(info);
 }
 
 void VKCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
