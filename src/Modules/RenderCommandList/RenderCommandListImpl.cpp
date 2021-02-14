@@ -1,5 +1,6 @@
 #include "RenderCommandList/RenderCommandListImpl.h"
 #include <Utilities/FormatHelper.h>
+#include <Utilities/DXGIFormatHelper.h>
 
 RenderCommandListImpl::RenderCommandListImpl(Device& device, CommandListType type)
     : m_device(device)
@@ -401,6 +402,23 @@ std::shared_ptr<View> RenderCommandListImpl::CreateView(const BindKey& bind_key,
         ResourceBindingDesc binding_desc = shader->GetResourceBindingDesc(bind_key);
         desc.dimension = shader->GetResourceBindingDesc(bind_key).dimension;
         desc.stride = shader->GetResourceStride(bind_key);
+        if (resource)
+        {
+            DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(resource->GetFormat()).DXGIFormat.DDS);
+            if (IsTypelessDepthStencil(MakeTypelessDepthStencil(dx_format)))
+            {
+                switch (binding_desc.return_type)
+                {
+                case ReturnType::kFloat:
+                    desc.plane_slice = 0;
+                    break;
+                case ReturnType::kUint:
+                    desc.plane_slice = 1;
+                default:
+                    assert(false);
+                }
+            }
+        }
         break;
     }
     }

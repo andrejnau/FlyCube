@@ -255,10 +255,11 @@ struct ViewDesc : public LazyViewDesc
     uint32_t stride = 0;
     uint32_t offset = 0;
     bool bindless = false;
+    uint32_t plane_slice = 0;
 
     auto MakeTie() const
     {
-        return std::tie(level, count, view_type, dimension, stride, offset, bindless);
+        return std::tie(level, count, view_type, dimension, stride, offset, bindless, plane_slice);
     }
 };
 
@@ -425,9 +426,16 @@ struct BindingDesc
     }
 };
 
+enum class ReturnType
+{
+    kFloat,
+    kUint,
+};
+
 struct ResourceBindingDesc
 {
     ResourceDimension dimension = ResourceDimension::kBuffer;
+    ReturnType return_type = ReturnType::kFloat;
 };
 
 enum class PipelineType

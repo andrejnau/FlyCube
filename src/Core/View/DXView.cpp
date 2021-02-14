@@ -19,38 +19,13 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const ViewDesc& view_desc, const D
     else
     {
         srv_desc.Format = res_desc.Format;
-        // TODO
-        if (srv_desc.Format == DXGI_FORMAT_R32_TYPELESS)
+        if (IsTypelessDepthStencil(srv_desc.Format))
         {
-            srv_desc.Format = DXGI_FORMAT_R32_FLOAT;
+            if (view_desc.plane_slice == 0)
+                srv_desc.Format = DepthReadFromTypeless(srv_desc.Format);
+            else
+                srv_desc.Format = StencilReadFromTypeless(srv_desc.Format);
         }
-        else if (srv_desc.Format == DXGI_FORMAT_R32G8X24_TYPELESS)
-        {
-            srv_desc.Format = DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
-            srv_desc.Texture2D.PlaneSlice = 1;
-        }
-        else if (srv_desc.Format == DXGI_FORMAT_R24G8_TYPELESS)
-        {
-            srv_desc.Format = DXGI_FORMAT_X24_TYPELESS_G8_UINT;
-            srv_desc.Texture2D.PlaneSlice = 1;
-        }
-        /*if (IsTypeless(srv_desc.Format))
-        {
-            switch (binding_desc.ReturnType)
-            {
-            case D3D_RETURN_TYPE_FLOAT:
-                srv_desc.Format = FloatFromTypeless(srv_desc.Format);
-                break;
-            case D3D_RETURN_TYPE_UINT:
-                srv_desc.Format = UintFromTypeless(srv_desc.Format);
-                break;
-            case D3D_RETURN_TYPE_SINT:
-                srv_desc.Format = SintFromTypeless(srv_desc.Format);
-                break;
-            default:
-                assert(false);
-            }
-        }*/
 
         auto setup_mips = [&](uint32_t& MostDetailedMip, uint32_t& MipLevels)
         {
@@ -80,12 +55,14 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const ViewDesc& view_desc, const D
         case ResourceDimension::kTexture2D:
         {
             srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srv_desc.Texture2D.PlaneSlice = view_desc.plane_slice;
             setup_mips(srv_desc.Texture2D.MostDetailedMip, srv_desc.Texture2D.MipLevels);
             break;
         }
         case ResourceDimension::kTexture2DArray:
         {
             srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+            srv_desc.Texture2DArray.PlaneSlice = view_desc.plane_slice;
             setup_mips(srv_desc.Texture2DArray.MostDetailedMip, srv_desc.Texture2DArray.MipLevels);
             srv_desc.Texture2DArray.FirstArraySlice = 0;
             srv_desc.Texture2DArray.ArraySize = res_desc.DepthOrArraySize;

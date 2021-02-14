@@ -193,7 +193,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
     if (bind_flag & BindFlag::kShaderResource)
     {
-        dx_format = MakeTypeless(dx_format);
+        dx_format = MakeTypelessDepthStencil(dx_format);
     }
 
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);

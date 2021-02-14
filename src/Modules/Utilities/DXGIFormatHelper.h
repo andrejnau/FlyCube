@@ -15,9 +15,8 @@ void GetSurfaceInfo(
     _Out_opt_ size_t* outRowBytes,
     _Out_opt_ size_t* outNumRows);
 
-DXGI_FORMAT MakeTypeless(DXGI_FORMAT format);
-bool IsTypeless(DXGI_FORMAT format);
-DXGI_FORMAT FloatFromTypeless(DXGI_FORMAT format);
-DXGI_FORMAT UintFromTypeless(DXGI_FORMAT format);
-DXGI_FORMAT SintFromTypeless(DXGI_FORMAT format);
+DXGI_FORMAT MakeTypelessDepthStencil(DXGI_FORMAT format);
+bool IsTypelessDepthStencil(DXGI_FORMAT format);
+DXGI_FORMAT DepthReadFromTypeless(DXGI_FORMAT format);
+DXGI_FORMAT StencilReadFromTypeless(DXGI_FORMAT format);
 DXGI_FORMAT DepthStencilFromTypeless(DXGI_FORMAT format);

@@ -2,6 +2,7 @@
 #include <Device/DXDevice.h>
 #include <Memory/DXMemory.h>
 #include <Utilities/FileUtility.h>
+#include <Utilities/DXGIFormatHelper.h>
 #include <d3dx12.h>
 #include <optional>
 
@@ -23,13 +24,7 @@ std::optional<D3D12_CLEAR_VALUE> GetClearValue(const D3D12_RESOURCE_DESC& desc)
         {
             clear_value.DepthStencil.Depth = 1.0f;
             clear_value.DepthStencil.Stencil = 0;
-            // TODO
-            if (desc.Format == DXGI_FORMAT_R32_TYPELESS)
-                clear_value.Format = DXGI_FORMAT_D32_FLOAT;
-            else if (desc.Format == DXGI_FORMAT_R32G8X24_TYPELESS)
-                clear_value.Format = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-            else if (desc.Format == DXGI_FORMAT_R24G8_TYPELESS)
-                clear_value.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+            clear_value.Format = DepthStencilFromTypeless(clear_value.Format);
             return clear_value;
         }
     }

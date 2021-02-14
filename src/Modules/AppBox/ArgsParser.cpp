@@ -5,7 +5,7 @@ Settings ParseArgs(int argc, char* argv[])
 {
     Settings settings;
     settings.api_type = ApiType::kDX12;
-    settings.vsync = false;
+    settings.vsync = true;
     for (int i = 1; i < argc; ++i)
     {
         std::string arg(argv[i]);
