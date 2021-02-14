@@ -19,8 +19,21 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const ViewDesc& view_desc, const D
     else
     {
         srv_desc.Format = res_desc.Format;
+        // TODO
         if (srv_desc.Format == DXGI_FORMAT_R32_TYPELESS)
+        {
             srv_desc.Format = DXGI_FORMAT_R32_FLOAT;
+        }
+        else if (srv_desc.Format == DXGI_FORMAT_R32G8X24_TYPELESS)
+        {
+            srv_desc.Format = DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
+            srv_desc.Texture2D.PlaneSlice = 1;
+        }
+        else if (srv_desc.Format == DXGI_FORMAT_R24G8_TYPELESS)
+        {
+            srv_desc.Format = DXGI_FORMAT_X24_TYPELESS_G8_UINT;
+            srv_desc.Texture2D.PlaneSlice = 1;
+        }
         /*if (IsTypeless(srv_desc.Format))
         {
             switch (binding_desc.ReturnType)

@@ -14,6 +14,7 @@
 #include <Framebuffer/DXFramebuffer.h>
 #include <CommandQueue/DXCommandQueue.h>
 #include <Utilities/DXUtility.h>
+#include <Utilities/DXGIFormatHelper.h>
 #include <dxgi1_6.h>
 #include <d3dx12.h>
 #include <gli/dx.hpp>
@@ -190,8 +191,10 @@ std::shared_ptr<Fence> DXDevice::CreateFence(uint64_t initial_value)
 std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
 {
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
-    if (bind_flag & BindFlag::kShaderResource && dx_format == DXGI_FORMAT_D32_FLOAT)
-        dx_format = DXGI_FORMAT_R32_TYPELESS;
+    if (bind_flag & BindFlag::kShaderResource)
+    {
+        dx_format = MakeTypeless(dx_format);
+    }
 
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
     res->resource_type = ResourceType::kTexture;

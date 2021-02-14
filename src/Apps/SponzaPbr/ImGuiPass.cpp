@@ -103,7 +103,7 @@ void ImGuiPass::OnRender(RenderCommandList& command_list)
     });
 
     command_list.SetRasterizeState({ FillMode::kSolid, CullMode::kNone });
-    command_list.SetDepthStencilState({ false, DepthComparison::kLessEqual });
+    command_list.SetDepthStencilState({ false, ComparisonFunc::kLessEqual });
     command_list.SetViewport(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
     int vtx_offset = 0;

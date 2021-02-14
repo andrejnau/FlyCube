@@ -79,21 +79,85 @@ CD3DX12_BLEND_DESC GetBlendDesc(const GraphicsPipelineDesc& desc)
     return blend_desc;
 }
 
-CD3DX12_DEPTH_STENCIL_DESC GetDepthStencilDesc(const GraphicsPipelineDesc& desc, DXGI_FORMAT dsv_format)
+D3D12_COMPARISON_FUNC Convert(ComparisonFunc func)
 {
-    CD3DX12_DEPTH_STENCIL_DESC depth_stencil_desc(D3D12_DEFAULT);
-    depth_stencil_desc.DepthEnable = desc.depth_desc.depth_enable;
-    depth_stencil_desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-    depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-    depth_stencil_desc.StencilEnable = false;
+    switch (func)
+    {
+    case ComparisonFunc::kNever:
+        return D3D12_COMPARISON_FUNC_NEVER;
+    case ComparisonFunc::kLess:
+        return D3D12_COMPARISON_FUNC_LESS;
+    case ComparisonFunc::kEqual:
+        return D3D12_COMPARISON_FUNC_EQUAL;
+    case ComparisonFunc::kLessEqual:
+        return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    case ComparisonFunc::kGreater:
+        return D3D12_COMPARISON_FUNC_GREATER;
+    case ComparisonFunc::kNotEqual:
+        return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+    case ComparisonFunc::kGreaterEqual:
+        return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+    case ComparisonFunc::kAlways:
+        return D3D12_COMPARISON_FUNC_ALWAYS;
+    default:
+        assert(false);
+        return D3D12_COMPARISON_FUNC_LESS;
+    }
+}
 
-    if (desc.depth_desc.func == DepthComparison::kLess)
-        depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-    else if (desc.depth_desc.func == DepthComparison::kLessEqual)
-        depth_stencil_desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+D3D12_STENCIL_OP Convert(StencilOp op)
+{
+    switch (op)
+    {
+    case StencilOp::kKeep:
+        return D3D12_STENCIL_OP_KEEP;
+    case StencilOp::kZero:
+        return D3D12_STENCIL_OP_ZERO;
+    case StencilOp::kReplace:
+        return D3D12_STENCIL_OP_REPLACE;
+    case StencilOp::kIncrSat:
+        return D3D12_STENCIL_OP_INCR_SAT;
+    case StencilOp::kDecrSat:
+        return D3D12_STENCIL_OP_DECR_SAT;
+    case StencilOp::kInvert:
+        return D3D12_STENCIL_OP_INVERT;
+    case StencilOp::kIncr:
+        return D3D12_STENCIL_OP_INCR;
+    case StencilOp::kDecr:
+        return D3D12_STENCIL_OP_DECR;
+    default:
+        assert(false);
+        return D3D12_STENCIL_OP_KEEP;
+    }
+}
+
+D3D12_DEPTH_STENCILOP_DESC Convert(const StencilOpDesc& desc)
+{
+    D3D12_DEPTH_STENCILOP_DESC res = {};
+    res.StencilFailOp = Convert(desc.fail_op);
+    res.StencilPassOp = Convert(desc.pass_op);
+    res.StencilDepthFailOp = Convert(desc.depth_fail_op);
+    res.StencilFunc = Convert(desc.func);
+    return res;
+}
+
+CD3DX12_DEPTH_STENCIL_DESC1 GetDepthStencilDesc(const DepthStencilDesc& desc, DXGI_FORMAT dsv_format)
+{
+    CD3DX12_DEPTH_STENCIL_DESC1 depth_stencil_desc(D3D12_DEFAULT);
+    depth_stencil_desc.DepthEnable = desc.depth_test_enable;
+    depth_stencil_desc.DepthWriteMask = desc.depth_write_enable ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+    depth_stencil_desc.DepthBoundsTestEnable = desc.depth_bounds_test_enable;
+    depth_stencil_desc.DepthFunc = Convert(desc.depth_func);
+    depth_stencil_desc.StencilEnable = desc.stencil_enable;
+    depth_stencil_desc.StencilReadMask = desc.stencil_read_mask;
+    depth_stencil_desc.StencilWriteMask = desc.stencil_write_mask;
+    depth_stencil_desc.FrontFace = Convert(desc.front_face);
+    depth_stencil_desc.BackFace = Convert(desc.back_face);
 
     if (dsv_format == DXGI_FORMAT_UNKNOWN)
+    {
         depth_stencil_desc.DepthEnable = false;
+    }
 
     return depth_stencil_desc;
 }
@@ -148,6 +212,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_VS>(ShaderBytecode);
             ParseInputLayout(shader);
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT>(GetInputLayoutDesc());
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT>(GetDSVFormat(desc));
             break;
         }
         case ShaderType::kGeometry:
@@ -162,12 +227,11 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
         case ShaderType::kPixel:
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_PS>(ShaderBytecode);
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS>(GetRTVFormats(desc));
-            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT>(GetDSVFormat(desc));
             break;
         }
     }
 
-    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL>(GetDepthStencilDesc(desc, GetDSVFormat(desc)));
+    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL1>(GetDepthStencilDesc(desc.depth_stencil_desc, GetDSVFormat(desc)));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC>(GetSampleDesc(desc));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER>(GetRasterizerDesc(desc));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC>(GetBlendDesc(desc));

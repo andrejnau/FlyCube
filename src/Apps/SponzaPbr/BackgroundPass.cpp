@@ -30,7 +30,7 @@ void BackgroundPass::OnRender(RenderCommandList& command_list)
     command_list.UseProgram(m_program);
     command_list.Attach(m_program.vs.cbv.ConstantBuf, m_program.vs.cbuffer.ConstantBuf);
 
-    command_list.SetDepthStencilState({ true, DepthComparison::kLessEqual });
+    command_list.SetDepthStencilState({ true, ComparisonFunc::kLessEqual });
 
     command_list.Attach(m_program.ps.sampler.g_sampler, m_sampler);
 

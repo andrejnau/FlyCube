@@ -223,7 +223,7 @@ void IBLCompute::Draw(RenderCommandList& command_list, Model& ibl_model)
     {
         render_pass_desc.depth_stencil.texture = ibl_model.ibl_dsv;
         render_pass_desc.depth_stencil.depth_load_op = RenderPassLoadOp::kLoad;
-        command_list.SetDepthStencilState({ true, DepthComparison::kLessEqual });
+        command_list.SetDepthStencilState({ true, ComparisonFunc::kLessEqual });
     }
     else
     {
@@ -288,7 +288,7 @@ void IBLCompute::DrawBackgroud(RenderCommandList& command_list, Model& ibl_model
     command_list.UseProgram(m_program_backgroud);
     command_list.Attach(m_program_backgroud.vs.cbv.ConstantBuf, m_program_backgroud.vs.cbuffer.ConstantBuf);
 
-    command_list.SetDepthStencilState({ true, DepthComparison::kLessEqual });
+    command_list.SetDepthStencilState({ true, ComparisonFunc::kLessEqual });
 
     command_list.Attach(m_program_backgroud.ps.sampler.g_sampler, m_sampler);
 

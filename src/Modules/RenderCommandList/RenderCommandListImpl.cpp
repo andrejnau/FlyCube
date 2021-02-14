@@ -389,7 +389,6 @@ std::shared_ptr<View> RenderCommandListImpl::CreateView(const BindKey& bind_key,
     auto it = m_views.find({ bind_key, resource, view_desc });
     if (it != m_views.end())
         return it->second;
-    decltype(auto) shader = m_program->GetShader(bind_key.shader_type);
     ViewDesc desc = {};
     static_cast<LazyViewDesc&>(desc) = view_desc;
     desc.view_type = bind_key.view_type;
@@ -398,6 +397,7 @@ std::shared_ptr<View> RenderCommandListImpl::CreateView(const BindKey& bind_key,
     case ViewType::kShaderResource:
     case ViewType::kUnorderedAccess:
     {
+        decltype(auto) shader = m_program->GetShader(bind_key.shader_type);
         ResourceBindingDesc binding_desc = shader->GetResourceBindingDesc(bind_key);
         desc.dimension = shader->GetResourceBindingDesc(bind_key).dimension;
         desc.stride = shader->GetResourceStride(bind_key);
@@ -433,6 +433,7 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
         render_pass_desc.depth_stencil.depth_store_op = desc.depth_stencil.depth_store_op;
         render_pass_desc.depth_stencil.stencil_load_op = desc.depth_stencil.stencil_load_op;
         render_pass_desc.depth_stencil.stencil_store_op = desc.depth_stencil.stencil_store_op;
+        render_pass_desc.sample_count = desc.depth_stencil.texture->GetSampleCount();
         clear_desc.depth = desc.depth_stencil.clear_depth;
         clear_desc.stencil = desc.depth_stencil.clear_stencil;
     }
@@ -456,10 +457,15 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
     std::vector<std::shared_ptr<View>> rtvs;
     for (size_t i = 0; i < desc.colors.size(); ++i)
     {
+        auto& view = rtvs.emplace_back();
+        if (!desc.colors[i].texture)
+        {
+            continue;
+        }
+
         BindKey bind_key = { ShaderType::kPixel, ViewType::kRenderTarget, i, 0 };
-        auto view = CreateView(bind_key, desc.colors[i].texture, desc.colors[i].view_desc);
+        view = CreateView(bind_key, desc.colors[i].texture, desc.colors[i].view_desc);
         ViewBarrier(view, ResourceState::kRenderTarget);
-        rtvs.emplace_back(view);
     }
 
     std::shared_ptr<View> dsv;
@@ -534,7 +540,7 @@ void RenderCommandListImpl::SetBlendState(const BlendDesc& desc)
 
 void RenderCommandListImpl::SetDepthStencilState(const DepthStencilDesc& desc)
 {
-    m_graphic_pipeline_desc.depth_desc = desc;
+    m_graphic_pipeline_desc.depth_stencil_desc = desc;
 }
 
 void RenderCommandListImpl::OnAttachSRV(const BindKey& bind_key, const std::shared_ptr<View>& view)

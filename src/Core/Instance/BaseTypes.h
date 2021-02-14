@@ -170,20 +170,58 @@ struct BlendDesc
     }
 };
 
-enum class DepthComparison
+enum class ComparisonFunc
 {
+    kNever,
     kLess,
-    kLessEqual
+    kEqual,
+    kLessEqual,
+    kGreater,
+    kNotEqual,
+    kGreaterEqual,
+    kAlways
+};
+
+enum class StencilOp
+{
+    kKeep,
+    kZero,
+    kReplace,
+    kIncrSat,
+    kDecrSat,
+    kInvert,
+    kIncr,
+    kDecr
+};
+
+struct StencilOpDesc
+{
+    StencilOp fail_op = StencilOp::kKeep;
+    StencilOp depth_fail_op = StencilOp::kKeep;
+    StencilOp pass_op = StencilOp::kKeep;
+    ComparisonFunc func = ComparisonFunc::kAlways;
+
+    auto MakeTie() const
+    {
+        return std::tie(fail_op, depth_fail_op, pass_op, func);
+    }
 };
 
 struct DepthStencilDesc
 {
-    bool depth_enable = true;
-    DepthComparison func = DepthComparison::kLess;
+    bool depth_test_enable = true;
+    ComparisonFunc depth_func = ComparisonFunc::kLess;
+    bool depth_write_enable = true;
+    bool depth_bounds_test_enable = false;
+    bool stencil_enable = false;
+    uint8_t stencil_read_mask = 0xff;
+    uint8_t stencil_write_mask = 0xff;
+    StencilOpDesc front_face = {};
+    StencilOpDesc back_face = {};
 
     auto MakeTie() const
     {
-        return std::tie(depth_enable, func);
+        return std::tie(depth_test_enable, depth_func, depth_write_enable, depth_bounds_test_enable, stencil_enable, stencil_read_mask, stencil_write_mask, front_face, back_face);
     }
 };
 
@@ -341,13 +379,13 @@ struct GraphicsPipelineDesc
     std::shared_ptr<Program> program;
     std::vector<VertexInputDesc> input;
     std::shared_ptr<RenderPass> render_pass;
-    DepthStencilDesc depth_desc;
+    DepthStencilDesc depth_stencil_desc;
     BlendDesc blend_desc;
     RasterizerDesc rasterizer_desc;
 
     auto MakeTie() const
     {
-        return std::tie(program, input, render_pass, depth_desc, blend_desc, rasterizer_desc);
+        return std::tie(program, input, render_pass, depth_stencil_desc, blend_desc, rasterizer_desc);
     }
 };
 

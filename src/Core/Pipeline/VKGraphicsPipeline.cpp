@@ -107,6 +107,70 @@ void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDes
     }
 }
 
+vk::CompareOp Convert(ComparisonFunc func)
+{
+    switch (func)
+    {
+    case ComparisonFunc::kNever:
+        return vk::CompareOp::eNever;
+    case ComparisonFunc::kLess:
+        return vk::CompareOp::eLess;
+    case ComparisonFunc::kEqual:
+        return vk::CompareOp::eEqual;
+    case ComparisonFunc::kLessEqual:
+        return vk::CompareOp::eLessOrEqual;
+    case ComparisonFunc::kGreater:
+        return vk::CompareOp::eGreater;
+    case ComparisonFunc::kNotEqual:
+        return vk::CompareOp::eNotEqual;
+    case ComparisonFunc::kGreaterEqual:
+        return vk::CompareOp::eGreaterOrEqual;
+    case ComparisonFunc::kAlways:
+        return vk::CompareOp::eAlways;
+    default:
+        assert(false);
+        return vk::CompareOp::eLess;
+    }
+}
+
+vk::StencilOp Convert(StencilOp op)
+{
+    switch (op)
+    {
+    case StencilOp::kKeep:
+        return vk::StencilOp::eKeep;
+    case StencilOp::kZero:
+        return vk::StencilOp::eZero;
+    case StencilOp::kReplace:
+        return vk::StencilOp::eReplace;
+    case StencilOp::kIncrSat:
+        return vk::StencilOp::eIncrementAndClamp;
+    case StencilOp::kDecrSat:
+        return vk::StencilOp::eDecrementAndClamp;
+    case StencilOp::kInvert:
+        return vk::StencilOp::eInvert;
+    case StencilOp::kIncr:
+        return vk::StencilOp::eIncrementAndWrap;
+    case StencilOp::kDecr:
+        return vk::StencilOp::eDecrementAndWrap;
+    default:
+        assert(false);
+        return vk::StencilOp::eKeep;
+    }
+}
+
+vk::StencilOpState Convert(const StencilOpDesc& desc, uint8_t read_mask, uint8_t write_mask)
+{
+    vk::StencilOpState res = {};
+    res.failOp = Convert(desc.fail_op);
+    res.passOp = Convert(desc.pass_op);
+    res.depthFailOp = Convert(desc.depth_fail_op);
+    res.compareOp = Convert(desc.func);
+    res.compareMask = read_mask;
+    res.writeMask = write_mask;
+    return res;
+}
+
 void VKGraphicsPipeline::CreateGrPipeLine()
 {
     const RenderPassDesc& render_pass_desc = m_desc.render_pass->GetDesc();
@@ -205,14 +269,13 @@ void VKGraphicsPipeline::CreateGrPipeLine()
     multisampling.sampleShadingEnable = multisampling.rasterizationSamples != vk::SampleCountFlagBits::e1;
 
     vk::PipelineDepthStencilStateCreateInfo depth_stencil = {};
-    depth_stencil.depthTestEnable = m_desc.depth_desc.depth_enable;
-    depth_stencil.depthWriteEnable = m_desc.depth_desc.depth_enable;
-    if (m_desc.depth_desc.func == DepthComparison::kLess)
-        depth_stencil.depthCompareOp = vk::CompareOp::eLess;
-    else if (m_desc.depth_desc.func == DepthComparison::kLessEqual)
-        depth_stencil.depthCompareOp = vk::CompareOp::eLessOrEqual;
-    depth_stencil.depthBoundsTestEnable = VK_FALSE;
-    depth_stencil.stencilTestEnable = VK_FALSE;
+    depth_stencil.depthTestEnable = m_desc.depth_stencil_desc.depth_test_enable;
+    depth_stencil.depthWriteEnable = m_desc.depth_stencil_desc.depth_write_enable;
+    depth_stencil.depthCompareOp = Convert(m_desc.depth_stencil_desc.depth_func);
+    depth_stencil.depthBoundsTestEnable = m_desc.depth_stencil_desc.depth_bounds_test_enable;
+    depth_stencil.stencilTestEnable = m_desc.depth_stencil_desc.stencil_enable;
+    depth_stencil.back = Convert(m_desc.depth_stencil_desc.back_face, m_desc.depth_stencil_desc.stencil_read_mask, m_desc.depth_stencil_desc.stencil_write_mask);
+    depth_stencil.front = Convert(m_desc.depth_stencil_desc.front_face, m_desc.depth_stencil_desc.stencil_read_mask, m_desc.depth_stencil_desc.stencil_write_mask);
 
     std::vector<vk::DynamicState> dynamic_state_enables = {
         vk::DynamicState::eViewport,
