@@ -66,6 +66,6 @@ private:
     bool m_is_create_not_zeroed_available = false;
 };
 
-D3D12_RESOURCE_STATES ConvertSate(ResourceState state);
+D3D12_RESOURCE_STATES ConvertState(ResourceState state);
 D3D12_HEAP_TYPE GetHeapType(MemoryType memory_type);
 D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags);

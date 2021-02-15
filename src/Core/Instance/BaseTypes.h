@@ -12,26 +12,38 @@
 
 class Resource;
 
-enum class ResourceState
+namespace enum_class
 {
-    kUnknown,
-    kCommon,
-    kGenericRead,
-    kClearColor,
-    kClearDepth,
-    kPresent,
-    kRenderTarget,
-    kDepthTarget,
-    kPixelShaderResource,
-    kNonPixelShaderResource,
-    kUnorderedAccess,
-    kCopyDest,
-    kCopySource,
-    kVertexAndConstantBuffer,
-    kIndexBuffer,
-    kRaytracingAccelerationStructure,
-    kShadingRateSource,
-};
+    enum ResourceState : uint32_t
+    {
+        kUnknown = 0,
+        kCommon = 1 << 0,
+        kVertexAndConstantBuffer = 1 << 1,
+        kIndexBuffer = 1 << 2,
+        kRenderTarget = 1 << 3,
+        kUnorderedAccess = 1 << 4,
+        kDepthWrite = 1 << 5,
+        kDepthRead = 1 << 6,
+        kNonPixelShaderResource = 1 << 7,
+        kPixelShaderResource = 1 << 8,
+        kIndirectArgument = 1 << 9,
+        kCopyDest = 1 << 10,
+        kCopySource = 1 << 11,
+        kRaytracingAccelerationStructure = 1 << 12,
+        kShadingRateSource = 1 << 13,
+        kPresent = 1 << 14,
+        kGenericRead =
+            ResourceState::kVertexAndConstantBuffer |
+            ResourceState::kIndexBuffer |
+            ResourceState::kCopySource |
+            ResourceState::kNonPixelShaderResource |
+            ResourceState::kPixelShaderResource |
+            ResourceState::kIndirectArgument
+    };
+}
+
+using ResourceState = enum_class::ResourceState;
+ENABLE_BITMASK_OPERATORS(ResourceState);
 
 enum class ResourceDimension
 {

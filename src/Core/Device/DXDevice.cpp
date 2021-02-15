@@ -19,44 +19,91 @@
 #include <d3dx12.h>
 #include <gli/dx.hpp>
 
-D3D12_RESOURCE_STATES ConvertSate(ResourceState state)
+D3D12_RESOURCE_STATES ConvertState(ResourceState state)
 {
-    switch (state)
+    D3D12_RESOURCE_STATES res = {};
+    if (state & ResourceState::kCommon)
     {
-    case ResourceState::kCommon:
-        return D3D12_RESOURCE_STATE_COMMON;
-    case ResourceState::kGenericRead:
-        return D3D12_RESOURCE_STATE_GENERIC_READ;
-    case ResourceState::kPresent:
-        return D3D12_RESOURCE_STATE_PRESENT;
-    case ResourceState::kClearColor:
-    case ResourceState::kRenderTarget:
-        return D3D12_RESOURCE_STATE_RENDER_TARGET;
-    case ResourceState::kClearDepth:
-    case ResourceState::kDepthTarget:
-        return D3D12_RESOURCE_STATE_DEPTH_WRITE;
-    case ResourceState::kUnorderedAccess:
-        return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-    case ResourceState::kPixelShaderResource:
-        return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    case ResourceState::kNonPixelShaderResource:
-        return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-    case ResourceState::kCopyDest:
-        return D3D12_RESOURCE_STATE_COPY_DEST;
-    case ResourceState::kCopySource:
-        return D3D12_RESOURCE_STATE_COPY_SOURCE;
-    case ResourceState::kVertexAndConstantBuffer:
-        return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-    case ResourceState::kIndexBuffer:
-        return D3D12_RESOURCE_STATE_INDEX_BUFFER;
-    case ResourceState::kRaytracingAccelerationStructure:
-        return D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-    case ResourceState::kShadingRateSource:
-        return D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
-    default:
-        assert(false);
-        return D3D12_RESOURCE_STATE_COMMON;
+        res |= D3D12_RESOURCE_STATE_COMMON;
+        state &= ~ResourceState::kCommon;
     }
+    if (state & ResourceState::kVertexAndConstantBuffer)
+    {
+        res |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+        state &= ~ResourceState::kVertexAndConstantBuffer;
+    }
+    if (state & ResourceState::kIndexBuffer)
+    {
+        res |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
+        state &= ~ResourceState::kIndexBuffer;
+    }
+    if (state & ResourceState::kRenderTarget)
+    {
+        res |= D3D12_RESOURCE_STATE_RENDER_TARGET;
+        state &= ~ResourceState::kRenderTarget;
+    }
+    if (state & ResourceState::kUnorderedAccess)
+    {
+        res |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        state &= ~ResourceState::kUnorderedAccess;
+    }
+    if (state & ResourceState::kDepthWrite)
+    {
+        res |= D3D12_RESOURCE_STATE_DEPTH_WRITE;
+        state &= ~ResourceState::kDepthWrite;
+    }
+    if (state & ResourceState::kDepthRead)
+    {
+        res |= D3D12_RESOURCE_STATE_DEPTH_READ;
+        state &= ~ResourceState::kDepthRead;
+    }
+    if (state & ResourceState::kNonPixelShaderResource)
+    {
+        res |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+        state &= ~ResourceState::kNonPixelShaderResource;
+    }
+    if (state & ResourceState::kPixelShaderResource)
+    {
+        res |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        state &= ~ResourceState::kPixelShaderResource;
+    }
+    if (state & ResourceState::kIndirectArgument)
+    {
+        res |= D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
+        state &= ~ResourceState::kIndirectArgument;
+    }
+    if (state & ResourceState::kCopyDest)
+    {
+        res |= D3D12_RESOURCE_STATE_COPY_DEST;
+        state &= ~ResourceState::kCopyDest;
+    }
+    if (state & ResourceState::kCopySource)
+    {
+        res |= D3D12_RESOURCE_STATE_COPY_SOURCE;
+        state &= ~ResourceState::kCopySource;
+    }
+    if (state & ResourceState::kRaytracingAccelerationStructure)
+    {
+        res |= D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+        state &= ~ResourceState::kRaytracingAccelerationStructure;
+    }
+    if (state & ResourceState::kShadingRateSource)
+    {
+        res |= D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
+        state &= ~ResourceState::kShadingRateSource;
+    }
+    if (state & ResourceState::kPresent)
+    {
+        res |= D3D12_RESOURCE_STATE_PRESENT;
+        state &= ~ResourceState::kPresent;
+    }
+    if (state & ResourceState::kGenericRead)
+    {
+        res |= D3D12_RESOURCE_STATE_GENERIC_READ;
+        state &= ~ResourceState::kGenericRead;
+    }
+    assert(state == 0);
+    return res;
 }
 
 D3D12_HEAP_TYPE GetHeapType(MemoryType memory_type)

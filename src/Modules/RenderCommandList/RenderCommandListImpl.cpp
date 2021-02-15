@@ -493,7 +493,7 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
         BindKey bind_key = { ShaderType::kPixel, ViewType::kDepthStencil, 0, 0 };
         dsv = CreateView(bind_key, desc.depth_stencil.texture, desc.depth_stencil.view_desc);
     }
-    ViewBarrier(dsv, ResourceState::kDepthTarget);
+    ViewBarrier(dsv, ResourceState::kDepthWrite);
 
     auto key = std::make_tuple(m_viewport_width, m_viewport_height, rtvs, dsv);
     std::shared_ptr<Framebuffer> framebuffer;

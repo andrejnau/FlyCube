@@ -56,7 +56,7 @@ void DXResource::CommitMemory(MemoryType memory_type)
         &CD3DX12_HEAP_PROPERTIES(GetHeapType(m_memory_type)),
         flags,
         &desc,
-        ConvertSate(GetInitialState()),
+        ConvertState(GetInitialState()),
         p_clear_value,
         IID_PPV_ARGS(&resource));
 }
@@ -79,7 +79,7 @@ void DXResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
         dx_memory.GetHeap().Get(),
         offset,
         &desc,
-        ConvertSate(GetInitialState()),
+        ConvertState(GetInitialState()),
         p_clear_value,
         IID_PPV_ARGS(&resource));
 }
@@ -139,7 +139,7 @@ bool DXResource::AllowCommonStatePromotion(ResourceState state_after)
         return true;
     if (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS)
     {
-        switch (ConvertSate(state_after))
+        switch (ConvertState(state_after))
         {
         case D3D12_RESOURCE_STATE_DEPTH_WRITE:
             return false;
@@ -149,7 +149,7 @@ bool DXResource::AllowCommonStatePromotion(ResourceState state_after)
     }
     else
     {
-        switch (ConvertSate(state_after))
+        switch (ConvertState(state_after))
         {
         case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE:
         case D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:

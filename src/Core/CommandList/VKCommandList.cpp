@@ -136,44 +136,6 @@ void VKCommandList::EndEvent()
     m_command_list->endDebugUtilsLabelEXT();
 }
 
-void VKCommandList::ClearColor(const std::shared_ptr<View>& view, const glm::vec4& color)
-{
-    if (!view)
-        return;
-    decltype(auto) vk_view = view->As<VKView>();
-
-    std::shared_ptr<Resource> resource = vk_view.GetResource();
-    if (!resource)
-        return;
-    decltype(auto) vk_resource = resource->As<VKResource>();
-
-    vk::ClearColorValue clear_color = {};
-    clear_color.float32[0] = color[0];
-    clear_color.float32[1] = color[1];
-    clear_color.float32[2] = color[2];
-    clear_color.float32[3] = color[3];
-
-    const vk::ImageSubresourceRange& image_subresource_range = vk_view.GeViewInfo().subresourceRange;
-    m_command_list->clearColorImage(vk_resource.image.res, vk::ImageLayout::eTransferDstOptimal, clear_color, image_subresource_range);
-}
-
-void VKCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)
-{
-    if (!view)
-        return;
-    decltype(auto) vk_view = view->As<VKView>();
-
-    std::shared_ptr<Resource> resource = vk_view.GetResource();
-    if (!resource)
-        return;
-    decltype(auto) vk_resource = resource->As<VKResource>();
-
-    vk::ClearDepthStencilValue clear_color = {};
-    clear_color.depth = depth;
-    const vk::ImageSubresourceRange& ImageSubresourceRange = vk_view.GeViewInfo().subresourceRange;
-    m_command_list->clearDepthStencilImage(vk_resource.image.res, vk::ImageLayout::eTransferDstOptimal, clear_color, ImageSubresourceRange);
-}
-
 void VKCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
 {
     m_command_list->drawIndexed(index_count, 1, start_index_location, base_vertex_location, 0);
@@ -218,22 +180,19 @@ void VKCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth
     );
 }
 
-vk::ImageLayout ConvertSate(ResourceState state)
+vk::ImageLayout ConvertState(ResourceState state)
 {
     switch (state)
     {
     case ResourceState::kCommon:
         return vk::ImageLayout::eUndefined;
-    case ResourceState::kClearColor:
-    case ResourceState::kClearDepth:
-        return vk::ImageLayout::eTransferDstOptimal;
     case ResourceState::kUnorderedAccess:
         return vk::ImageLayout::eGeneral;
     case ResourceState::kPresent:
         return vk::ImageLayout::ePresentSrcKHR;
     case ResourceState::kRenderTarget:
         return vk::ImageLayout::eColorAttachmentOptimal;
-    case ResourceState::kDepthTarget:
+    case ResourceState::kDepthWrite:
         return vk::ImageLayout::eDepthStencilAttachmentOptimal;
     case ResourceState::kPixelShaderResource:
     case ResourceState::kNonPixelShaderResource:
@@ -266,8 +225,8 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
         if (!image.res)
             continue;
 
-        vk::ImageLayout vk_state_before = ConvertSate(barrier.state_before);
-        vk::ImageLayout vk_state_after = ConvertSate(barrier.state_after);
+        vk::ImageLayout vk_state_before = ConvertState(barrier.state_before);
+        vk::ImageLayout vk_state_after = ConvertState(barrier.state_after);
         if (vk_state_before == vk_state_after)
             continue;
 

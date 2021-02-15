@@ -213,11 +213,20 @@ void DXCommandList::OMSetFramebuffer(const std::shared_ptr<RenderPass>& render_p
     {
         om_rtv[slot] = get_handle(rtvs[slot]);
         if (dx_render_pass.GetDesc().colors[slot].load_op == RenderPassLoadOp::kClear)
-            ClearColor(rtvs[slot], clear_desc.colors[slot]);
+            m_command_list->ClearRenderTargetView(om_rtv[slot], &clear_desc.colors[slot].x, 0, nullptr);
+    }
+    while (!om_rtv.empty() && om_rtv.back().ptr == 0)
+    {
+        om_rtv.pop_back();
     }
     D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = get_handle(dsv);
+    D3D12_CLEAR_FLAGS clear_flags = {};
     if (dx_render_pass.GetDesc().depth_stencil.depth_load_op == RenderPassLoadOp::kClear)
-        ClearDepth(dsv, clear_desc.depth);
+        clear_flags |= D3D12_CLEAR_FLAG_DEPTH;
+    if (dx_render_pass.GetDesc().depth_stencil.stencil_load_op == RenderPassLoadOp::kClear)
+        clear_flags |= D3D12_CLEAR_FLAG_STENCIL;
+    if (om_dsv.ptr && clear_flags)
+        m_command_list->ClearDepthStencilView(om_dsv, clear_flags, clear_desc.depth, clear_desc.stencil, 0, nullptr);
     m_command_list->OMSetRenderTargets(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), FALSE, om_dsv.ptr ? &om_dsv : nullptr);
 }
 
@@ -241,22 +250,6 @@ void DXCommandList::EndEvent()
     if (!m_device.IsUnderGraphicsDebugger())
         return;
     PIXEndEvent(m_command_list.Get());
-}
-
-void DXCommandList::ClearColor(const std::shared_ptr<View>& view, const glm::vec4& color)
-{
-    if (!view || !view->GetResource())
-        return;
-    decltype(auto) dx_view = view->As<DXView>();
-    m_command_list->ClearRenderTargetView(dx_view.GetHandle(), &color.x, 0, nullptr);
-}
-
-void DXCommandList::ClearDepth(const std::shared_ptr<View>& view, float depth)
-{
-    if (!view || !view->GetResource())
-        return;
-    decltype(auto) dx_view = view->As<DXView>();
-    m_command_list->ClearDepthStencilView(dx_view.GetHandle(), D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
 }
 
 void DXCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
@@ -298,8 +291,8 @@ void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
             continue;
 
         decltype(auto) dx_resource = barrier.resource->As<DXResource>();
-        D3D12_RESOURCE_STATES dx_state_before = ConvertSate(barrier.state_before);
-        D3D12_RESOURCE_STATES dx_state_after = ConvertSate(barrier.state_after);
+        D3D12_RESOURCE_STATES dx_state_before = ConvertState(barrier.state_before);
+        D3D12_RESOURCE_STATES dx_state_after = ConvertState(barrier.state_after);
         if (dx_state_before == dx_state_after)
             continue;
 
