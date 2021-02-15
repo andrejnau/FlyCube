@@ -402,7 +402,7 @@ std::shared_ptr<View> RenderCommandListImpl::CreateView(const BindKey& bind_key,
         ResourceBindingDesc binding_desc = shader->GetResourceBindingDesc(bind_key);
         desc.dimension = shader->GetResourceBindingDesc(bind_key).dimension;
         desc.stride = shader->GetResourceStride(bind_key);
-        if (resource)
+        if (resource && binding_desc.dimension != ResourceDimension::kBuffer && binding_desc.dimension != ResourceDimension::kRaytracingAccelerationStructure)
         {
             DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(resource->GetFormat()).DXGIFormat.DDS);
             if (IsTypelessDepthStencil(MakeTypelessDepthStencil(dx_format)))
@@ -414,6 +414,7 @@ std::shared_ptr<View> RenderCommandListImpl::CreateView(const BindKey& bind_key,
                     break;
                 case ReturnType::kUint:
                     desc.plane_slice = 1;
+                    break;
                 default:
                     assert(false);
                 }

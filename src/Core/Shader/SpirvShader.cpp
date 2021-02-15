@@ -96,6 +96,23 @@ SpirvShader::SpirvShader(const ShaderDesc& desc)
                 continue;
             }
 
+            if (res_type.basetype == spirv_cross::SPIRType::BaseType::Image)
+            {
+                auto& image_type = compiler.get_type(res_type.image.type);
+                if (image_type.basetype == spirv_cross::SPIRType::BaseType::Float)
+                {
+                    resource_binding_desc.return_type = ReturnType::kFloat;
+                }
+                else if (image_type.basetype == spirv_cross::SPIRType::BaseType::UInt)
+                {
+                    resource_binding_desc.return_type = ReturnType::kUint;
+                }
+                else if (image_type.basetype == spirv_cross::SPIRType::BaseType::Int)
+                {
+                    resource_binding_desc.return_type = ReturnType::kSint;
+                }
+            }
+
             switch (dim)
             {
             case spv::Dim::Dim1D:

@@ -584,9 +584,14 @@ vk::ImageAspectFlags VKDevice::GetAspectFlags(vk::Format format) const
     {
     case vk::Format::eD32SfloatS8Uint:
     case vk::Format::eD24UnormS8Uint:
+    case vk::Format::eD16UnormS8Uint:
         return vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
+    case vk::Format::eD16Unorm:
     case vk::Format::eD32Sfloat:
+    case vk::Format::eX8D24UnormPack32:
         return vk::ImageAspectFlagBits::eDepth;
+    case vk::Format::eS8Uint:
+        return vk::ImageAspectFlagBits::eStencil;
     default:
         return vk::ImageAspectFlagBits::eColor;
     }

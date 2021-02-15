@@ -127,6 +127,13 @@ void VKView::CreateSrv(const ViewDesc& view_desc, const VKResource& res)
     m_view_info.image = res.image.res;
     m_view_info.format = res.image.format;
     m_view_info.subresourceRange.aspectMask = m_device.GetAspectFlags(m_view_info.format);
+    if (m_view_info.subresourceRange.aspectMask & (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil))
+    {
+        if (view_desc.plane_slice == 0)
+            m_view_info.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+        else
+            m_view_info.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eStencil;
+    }
     m_view_info.subresourceRange.baseMipLevel = view_desc.level;
     if (view_desc.count == -1)
         m_view_info.subresourceRange.levelCount = res.image.level_count - m_view_info.subresourceRange.baseMipLevel;

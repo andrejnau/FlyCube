@@ -7,6 +7,7 @@ struct VS_OUTPUT
     float2 texCoord  : TEXCOORD;
 };
 
+//TODO: Vulkan required "Texture2DMS<uint>"
 Texture2DMS<uint2> stencilBuffer;
 
 float4 main(VS_OUTPUT input) : SV_TARGET

@@ -203,15 +203,22 @@ ResourceBindingDesc DXShader::GetResourceBindingDesc(const BindKey& bind_key) co
     default:
         break;
     }
-    switch (input_bind_desc.ReturnType)
+    if (input_bind_desc.Dimension != D3D_SRV_DIMENSION_BUFFER)
     {
-    case D3D_RETURN_TYPE_FLOAT:
-        binding_desc.return_type = ReturnType::kFloat;
-        break;
-    case D3D_RETURN_TYPE_UINT:
-        binding_desc.return_type = ReturnType::kUint;
-    default:
-        assert(false);
+        switch (input_bind_desc.ReturnType)
+        {
+        case D3D_RETURN_TYPE_FLOAT:
+            binding_desc.return_type = ReturnType::kFloat;
+            break;
+        case D3D_RETURN_TYPE_UINT:
+            binding_desc.return_type = ReturnType::kUint;
+            break;
+        case D3D_RETURN_TYPE_SINT:
+            binding_desc.return_type = ReturnType::kSint;
+            break;
+        default:
+            assert(false);
+        }
     }
     if (input_bind_desc.Type == SIT_RTACCELERATIONSTRUCTURE)
         binding_desc.dimension = ResourceDimension::kRaytracingAccelerationStructure;

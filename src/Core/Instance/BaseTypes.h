@@ -430,6 +430,7 @@ enum class ReturnType
 {
     kFloat,
     kUint,
+    kSint,
 };
 
 struct ResourceBindingDesc
