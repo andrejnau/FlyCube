@@ -21,86 +21,33 @@
 
 D3D12_RESOURCE_STATES ConvertState(ResourceState state)
 {
+    static std::pair<ResourceState, D3D12_RESOURCE_STATES> mapping[] = {
+        { ResourceState::kCommon, D3D12_RESOURCE_STATE_COMMON },
+        { ResourceState::kVertexAndConstantBuffer, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER },
+        { ResourceState::kIndexBuffer, D3D12_RESOURCE_STATE_INDEX_BUFFER },
+        { ResourceState::kRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET },
+        { ResourceState::kUnorderedAccess, D3D12_RESOURCE_STATE_UNORDERED_ACCESS },
+        { ResourceState::kDepthStencilWrite, D3D12_RESOURCE_STATE_DEPTH_WRITE },
+        { ResourceState::kDepthStencilRead, D3D12_RESOURCE_STATE_DEPTH_READ },
+        { ResourceState::kNonPixelShaderResource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE },
+        { ResourceState::kPixelShaderResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE },
+        { ResourceState::kIndirectArgument, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT },
+        { ResourceState::kCopyDest, D3D12_RESOURCE_STATE_COPY_DEST },
+        { ResourceState::kCopySource, D3D12_RESOURCE_STATE_COPY_SOURCE },
+        { ResourceState::kRaytracingAccelerationStructure, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE },
+        { ResourceState::kShadingRateSource, D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE },
+        { ResourceState::kPresent, D3D12_RESOURCE_STATE_PRESENT },
+        { ResourceState::kGenericRead, D3D12_RESOURCE_STATE_GENERIC_READ },
+    };
+
     D3D12_RESOURCE_STATES res = {};
-    if (state & ResourceState::kCommon)
+    for (const auto& m : mapping)
     {
-        res |= D3D12_RESOURCE_STATE_COMMON;
-        state &= ~ResourceState::kCommon;
-    }
-    if (state & ResourceState::kVertexAndConstantBuffer)
-    {
-        res |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-        state &= ~ResourceState::kVertexAndConstantBuffer;
-    }
-    if (state & ResourceState::kIndexBuffer)
-    {
-        res |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
-        state &= ~ResourceState::kIndexBuffer;
-    }
-    if (state & ResourceState::kRenderTarget)
-    {
-        res |= D3D12_RESOURCE_STATE_RENDER_TARGET;
-        state &= ~ResourceState::kRenderTarget;
-    }
-    if (state & ResourceState::kUnorderedAccess)
-    {
-        res |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        state &= ~ResourceState::kUnorderedAccess;
-    }
-    if (state & ResourceState::kDepthWrite)
-    {
-        res |= D3D12_RESOURCE_STATE_DEPTH_WRITE;
-        state &= ~ResourceState::kDepthWrite;
-    }
-    if (state & ResourceState::kDepthRead)
-    {
-        res |= D3D12_RESOURCE_STATE_DEPTH_READ;
-        state &= ~ResourceState::kDepthRead;
-    }
-    if (state & ResourceState::kNonPixelShaderResource)
-    {
-        res |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-        state &= ~ResourceState::kNonPixelShaderResource;
-    }
-    if (state & ResourceState::kPixelShaderResource)
-    {
-        res |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-        state &= ~ResourceState::kPixelShaderResource;
-    }
-    if (state & ResourceState::kIndirectArgument)
-    {
-        res |= D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
-        state &= ~ResourceState::kIndirectArgument;
-    }
-    if (state & ResourceState::kCopyDest)
-    {
-        res |= D3D12_RESOURCE_STATE_COPY_DEST;
-        state &= ~ResourceState::kCopyDest;
-    }
-    if (state & ResourceState::kCopySource)
-    {
-        res |= D3D12_RESOURCE_STATE_COPY_SOURCE;
-        state &= ~ResourceState::kCopySource;
-    }
-    if (state & ResourceState::kRaytracingAccelerationStructure)
-    {
-        res |= D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-        state &= ~ResourceState::kRaytracingAccelerationStructure;
-    }
-    if (state & ResourceState::kShadingRateSource)
-    {
-        res |= D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
-        state &= ~ResourceState::kShadingRateSource;
-    }
-    if (state & ResourceState::kPresent)
-    {
-        res |= D3D12_RESOURCE_STATE_PRESENT;
-        state &= ~ResourceState::kPresent;
-    }
-    if (state & ResourceState::kGenericRead)
-    {
-        res |= D3D12_RESOURCE_STATE_GENERIC_READ;
-        state &= ~ResourceState::kGenericRead;
+        if (state & m.first)
+        {
+            res |= m.second;
+            state &= ~m.first;
+        }
     }
     assert(state == 0);
     return res;
@@ -270,7 +217,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
     res->desc = desc;
-    res->SetInitialState(ResourceState::kCopyDest);
+    res->SetInitialState(ResourceState::kCommon);
     return res;
 }
 

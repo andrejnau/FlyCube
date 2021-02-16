@@ -22,8 +22,8 @@ namespace enum_class
         kIndexBuffer = 1 << 2,
         kRenderTarget = 1 << 3,
         kUnorderedAccess = 1 << 4,
-        kDepthWrite = 1 << 5,
-        kDepthRead = 1 << 6,
+        kDepthStencilWrite = 1 << 5,
+        kDepthStencilRead = 1 << 6,
         kNonPixelShaderResource = 1 << 7,
         kPixelShaderResource = 1 << 8,
         kIndirectArgument = 1 << 9,
@@ -38,7 +38,8 @@ namespace enum_class
             ResourceState::kCopySource |
             ResourceState::kNonPixelShaderResource |
             ResourceState::kPixelShaderResource |
-            ResourceState::kIndirectArgument
+            ResourceState::kIndirectArgument,
+        kUndefined = 1 << 15,
     };
 }
 

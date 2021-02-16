@@ -32,6 +32,34 @@ static vk::IndexType GetVkIndexType(gli::format format)
     }
 }
 
+vk::ImageLayout ConvertState(ResourceState state)
+{
+    static std::pair<ResourceState, vk::ImageLayout> mapping[] = {
+        { ResourceState::kCommon, vk::ImageLayout::eGeneral },
+        { ResourceState::kRenderTarget, vk::ImageLayout::eColorAttachmentOptimal},
+        { ResourceState::kUnorderedAccess, vk::ImageLayout::eGeneral },
+        { ResourceState::kDepthStencilWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal },
+        { ResourceState::kDepthStencilRead, vk::ImageLayout::eDepthStencilReadOnlyOptimal },
+        { ResourceState::kNonPixelShaderResource, vk::ImageLayout::eShaderReadOnlyOptimal },
+        { ResourceState::kPixelShaderResource, vk::ImageLayout::eShaderReadOnlyOptimal },
+        { ResourceState::kCopyDest, vk::ImageLayout::eTransferDstOptimal },
+        { ResourceState::kCopySource, vk::ImageLayout::eTransferSrcOptimal },
+        { ResourceState::kShadingRateSource, vk::ImageLayout::eShadingRateOptimalNV },
+        { ResourceState::kPresent, vk::ImageLayout::ePresentSrcKHR },
+        { ResourceState::kUndefined, vk::ImageLayout::eUndefined },
+    };
+    for (const auto& m : mapping)
+    {
+        if (state & m.first)
+        {
+            assert(state == m.first);
+            return m.second;
+        }
+    }
+    assert(false);
+    return vk::ImageLayout::eGeneral;
+}
+
 VKDevice::VKDevice(VKAdapter& adapter)
     : m_adapter(adapter)
     , m_physical_device(adapter.GetPhysicalDevice())
@@ -272,7 +300,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
     res->image.res_owner = m_device->createImageUnique(image_info);
     res->image.res = res->image.res_owner.get();
 
-    res->SetInitialState(ResourceState::kCommon);
+    res->SetInitialState(ResourceState::kUndefined);
 
     return res;
 }

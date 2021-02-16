@@ -66,3 +66,5 @@ private:
     bool m_is_dxr_supported = false;
     bool m_is_mesh_shading_supported = false;
 };
+
+vk::ImageLayout ConvertState(ResourceState state);

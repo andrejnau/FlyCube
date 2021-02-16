@@ -180,35 +180,6 @@ void VKCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth
     );
 }
 
-vk::ImageLayout ConvertState(ResourceState state)
-{
-    switch (state)
-    {
-    case ResourceState::kCommon:
-        return vk::ImageLayout::eUndefined;
-    case ResourceState::kUnorderedAccess:
-        return vk::ImageLayout::eGeneral;
-    case ResourceState::kPresent:
-        return vk::ImageLayout::ePresentSrcKHR;
-    case ResourceState::kRenderTarget:
-        return vk::ImageLayout::eColorAttachmentOptimal;
-    case ResourceState::kDepthWrite:
-        return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-    case ResourceState::kPixelShaderResource:
-    case ResourceState::kNonPixelShaderResource:
-        return vk::ImageLayout::eShaderReadOnlyOptimal;
-    case ResourceState::kCopyDest:
-        return vk::ImageLayout::eTransferDstOptimal;
-    case ResourceState::kCopySource:
-        return vk::ImageLayout::eTransferSrcOptimal;
-    case ResourceState::kShadingRateSource:
-        return vk::ImageLayout::eShadingRateOptimalNV;
-    default:
-        assert(false);
-        return vk::ImageLayout::eGeneral;
-    }
-}
-
 void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
 {
     std::vector<vk::ImageMemoryBarrier> image_memory_barriers;
