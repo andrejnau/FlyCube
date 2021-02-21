@@ -25,3 +25,9 @@
 [submodule "3rdparty/Catch2"]
 	path = 3rdparty/Catch2
 	url = https://github.com/catchorg/Catch2.git
+[submodule "3rdparty/dxc"]
+	path = 3rdparty/dxc
+	url = https://github.com/andrejnau/dxc
+[submodule "3rdparty/d3dx12"]
+	path = 3rdparty/d3dx12
+	url = https://github.com/andrejnau/d3dx12.git
