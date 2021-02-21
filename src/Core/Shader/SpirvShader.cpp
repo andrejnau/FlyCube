@@ -56,11 +56,7 @@ ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::S
 SpirvShader::SpirvShader(const ShaderDesc& desc)
     : m_type(desc.type)
 {
-    SpirvOption option = {};
-    option.auto_map_bindings = true;
-    option.hlsl_iomap = true;
-    option.resource_set_binding = static_cast<uint32_t>(desc.type);
-    m_blob = SpirvCompile(desc, option);
+    m_blob = SpirvCompile(desc);
 
     spirv_cross::CompilerHLSL compiler(m_blob);
     spirv_cross::ShaderResources shader_resources = compiler.get_shader_resources();
@@ -77,7 +73,7 @@ SpirvShader::SpirvShader(const ShaderDesc& desc)
             {
                 uint32_t word_offset = 0;
                 compiler.get_binary_offset_for_decoration(resource.id, spv::DecorationDescriptorSet, word_offset);
-                m_blob[word_offset] = space = option.resource_set_binding;
+                m_blob[word_offset] = space = static_cast<uint32_t>(desc.type);
             }
 
             ViewType view_type = GetViewType(compiler, res_type, resource.id);

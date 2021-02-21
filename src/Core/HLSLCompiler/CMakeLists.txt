@@ -38,17 +38,6 @@ if (VULKAN_SUPPORT)
     )
 endif()
 
-if (VULKAN_SUPPORT AND USE_SHADERC)
-    target_link_libraries(HLSLCompiler
-        ${Vulkan_INCLUDE_DIR}/../Lib/shaderc_shared.lib
-    )
-    target_include_directories(HLSLCompiler
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
-    )
-    target_compile_definitions(HLSLCompiler PRIVATE -DUSE_SHADERC)
-endif()
-
 if (DIRECTX_SUPPORT)
     target_link_libraries(HLSLCompiler
         d3dcompiler
