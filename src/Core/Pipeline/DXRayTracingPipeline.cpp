@@ -48,18 +48,22 @@ ShaderInfo GetShaderInfo(ComPtr<ID3DBlob> blob)
     DXCLoader loader;
     CComPtr<IDxcBlobEncoding> source;
     uint32_t shade_idx = 0;
-    ASSERT_SUCCEEDED(loader.library->CreateBlobWithEncodingOnHeapCopy(blob->GetBufferPointer(), static_cast<UINT32>(blob->GetBufferSize()), CP_ACP, &source));
-    ASSERT_SUCCEEDED(loader.reflection->Load(source));
+    ComPtr<IDxcLibrary> library;
+    loader.CreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library));
+    ASSERT_SUCCEEDED(library->CreateBlobWithEncodingOnHeapCopy(blob->GetBufferPointer(), static_cast<UINT32>(blob->GetBufferSize()), CP_ACP, &source));
+    ComPtr<IDxcContainerReflection> reflection;
+    loader.CreateInstance(CLSID_DxcContainerReflection, IID_PPV_ARGS(&reflection));
+    ASSERT_SUCCEEDED(reflection->Load(source));
     uint32_t part_count = 0;
-    ASSERT_SUCCEEDED(loader.reflection->GetPartCount(&part_count));
+    ASSERT_SUCCEEDED(reflection->GetPartCount(&part_count));
     for (uint32_t i = 0; i < part_count; ++i)
     {
         uint32_t kind = 0;
-        ASSERT_SUCCEEDED(loader.reflection->GetPartKind(i, &kind));
+        ASSERT_SUCCEEDED(reflection->GetPartKind(i, &kind));
         if (kind == hlsl::DxilFourCC::DFCC_RuntimeData)
         {
             CComPtr<IDxcBlob> part_blob;
-            loader.reflection->GetPartContent(i, &part_blob);
+            reflection->GetPartContent(i, &part_blob);
             hlsl::RDAT::DxilRuntimeData context;
             context.InitFromRDAT(part_blob->GetBufferPointer(), part_blob->GetBufferSize());
             FunctionTableReader* func_table_reader = context.GetFunctionTableReader();

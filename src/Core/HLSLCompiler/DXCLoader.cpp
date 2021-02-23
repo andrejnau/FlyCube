@@ -31,15 +31,15 @@ bool DXCLoader::Load(const std::string& path, bool dxil_required)
     SetDllDirectoryW(wpath.c_str());
     std::wstring dxcompiler = wpath + L"/dxcompiler.dll";
     HRESULT hr = m_dll_support.InitializeForDll(dxcompiler.c_str(), "DxcCreateInstance");
-    if (FAILED(hr))
-        return false;
-    m_dll_support.CreateInstance(CLSID_DxcLibrary, __uuidof(IDxcLibrary), &library);
-    m_dll_support.CreateInstance(CLSID_DxcContainerReflection, __uuidof(IDxcContainerReflection), &reflection);
-    m_dll_support.CreateInstance(CLSID_DxcCompiler, __uuidof(IDxcCompiler), &compiler);
-    return true;
+    return SUCCEEDED(hr);
 }
 
 DXCLoader::~DXCLoader()
 {
     m_dll_support.Detach();
+}
+
+HRESULT DXCLoader::CreateInstance(REFCLSID clsid, REFIID riid, void** pResult)
+{
+    return m_dll_support.CreateInstance(clsid, riid, (IUnknown**)pResult);
 }

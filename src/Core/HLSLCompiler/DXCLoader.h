@@ -11,11 +11,10 @@ public:
     DXCLoader(bool dxil_required = true);
     ~DXCLoader();
 
-    ComPtr<IDxcLibrary> library;
-    ComPtr<IDxcContainerReflection> reflection;
-    ComPtr<IDxcCompiler> compiler;
+    HRESULT CreateInstance(REFCLSID clsid, REFIID riid, _Outptr_ void** pResult);
 
 private:
     bool Load(const std::string& path, bool dxil_required);
+
     dxc::DxcDllSupport m_dll_support;
 };

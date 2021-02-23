@@ -79,8 +79,8 @@ static std::string GetShaderTarget(ShaderType type, const std::string& model)
 class IncludeHandler : public IDxcIncludeHandler
 {
 public:
-    IncludeHandler(DXCLoader& loader, const std::wstring& base_path)
-        : m_loader(loader)
+    IncludeHandler(ComPtr<IDxcLibrary> library, const std::wstring& base_path)
+        : m_library(library)
         , m_base_path(base_path)
     {
     }
@@ -95,17 +95,18 @@ public:
     {
         std::wstring path = m_base_path + pFilename;
         ComPtr<IDxcBlobEncoding> source;
-        HRESULT hr = m_loader.library->CreateBlobFromFile(
+        HRESULT hr = m_library->CreateBlobFromFile(
             path.c_str(),
             nullptr,
-            &source);
+            &source
+        );
         if (SUCCEEDED(hr) && ppIncludeSource)
             *ppIncludeSource = source.Detach();
         return hr;
     }
 
 private:
-    DXCLoader& m_loader;
+    ComPtr<IDxcLibrary> m_library;
     const std::wstring& m_base_path;
 };
 
@@ -116,11 +117,14 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
     std::wstring shader_path = GetAssetFullPathW(shader.shader_path);
     std::wstring shader_dir = shader_path.substr(0, shader_path.find_last_of(L"\\/") + 1);
 
+    ComPtr<IDxcLibrary> library;
+    loader.CreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library));
     ComPtr<IDxcBlobEncoding> source;
-    ASSERT_SUCCEEDED(loader.library->CreateBlobFromFile(
+    ASSERT_SUCCEEDED(library->CreateBlobFromFile(
         shader_path.c_str(),
         nullptr,
-        &source));
+        &source)
+    );
 
     std::wstring target = utf8_to_wstring(GetShaderTarget(shader.type, shader.model));
     std::wstring entrypoint = utf8_to_wstring(shader.entrypoint);
@@ -135,6 +139,7 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
     std::vector<LPCWSTR> arguments;
     std::deque<std::wstring> dynamic_arguments;
     arguments.push_back(L"/Zi");
+    arguments.push_back(L"/Qembed_debug");
     if (option.spirv)
     {
         arguments.emplace_back(L"-spirv");
@@ -158,8 +163,10 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
     }
 
     ComPtr<IDxcOperationResult> result;
-    IncludeHandler include_handler(loader, shader_dir);
-    ASSERT_SUCCEEDED(loader.compiler->Compile(
+    IncludeHandler include_handler(library, shader_dir);
+    ComPtr<IDxcCompiler> compiler;
+    loader.CreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler));
+    ASSERT_SUCCEEDED(compiler->Compile(
         source.Get(),
         L"main.hlsl",
         entrypoint.c_str(),

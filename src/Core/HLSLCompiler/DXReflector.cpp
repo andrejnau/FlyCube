@@ -13,9 +13,13 @@ HRESULT DXReflect(
     DXCLoader loader;
     CComPtr<IDxcBlobEncoding> source;
     uint32_t shade_idx = 0;
-    IFR(loader.library->CreateBlobWithEncodingOnHeapCopy(pSrcData, static_cast<UINT32>(SrcDataSize), CP_ACP, &source));
-    IFR(loader.reflection->Load(source));
-    IFR(loader.reflection->FindFirstPartKind(hlsl::DFCC_DXIL, &shade_idx));
-    IFR(loader.reflection->GetPartReflection(shade_idx, pInterface, ppReflector));
+    ComPtr<IDxcLibrary> library;
+    IFR(loader.CreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library)));
+    IFR(library->CreateBlobWithEncodingOnHeapCopy(pSrcData, static_cast<UINT32>(SrcDataSize), CP_ACP, &source));
+    ComPtr<IDxcContainerReflection> reflection;
+    IFR(loader.CreateInstance(CLSID_DxcContainerReflection, IID_PPV_ARGS(&reflection)));
+    IFR(reflection->Load(source));
+    IFR(reflection->FindFirstPartKind(hlsl::DFCC_DXIL, &shade_idx));
+    IFR(reflection->GetPartReflection(shade_idx, pInterface, ppReflector));
     return S_OK;
 }
