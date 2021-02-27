@@ -24,4 +24,4 @@ target_link_libraries(${target}
     HLSLCompiler
 )
 
-set_target_properties(${target} PROPERTIES FOLDER "Apps")
+set_target_properties(${target} PROPERTIES FOLDER "Tools")

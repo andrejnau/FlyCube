@@ -1,6 +1,6 @@
 function(gen_shaders_ref target shaders shaders_ref)
     set(build_folder $<TARGET_FILE_DIR:${target}>)
-    set(template ${project_root}/src/Apps/ShaderParser/templates/program.in)
+    set(template ${project_root}/src/Tools/ShaderParser/templates/program.in)
     set(output_dir ${CMAKE_BINARY_DIR}/gen/${target}/ProgramRef)
     foreach(full_shader_path ${shaders})
         get_filename_component(shader_name ${full_shader_path} NAME_WE)
