@@ -181,33 +181,28 @@ fence->Wait(fence_value);
     * Easy to use resources binding
     * Constant buffers proxy for compile time access to members
 
-## SponzaPbr
-
-* Scene Features
-  * Deferred rendering
-  * Physically based rendering
-  * Image based lighting
-  * Ambient occlusion
-    * Raytracing
-    * Screen space
-  * Normal mapping
-  * Point shadow mapping
-  * Skeletal animation
-  * Multisample anti-aliasing
-  * Tone mapping
-  * Simple imgui based UI settings
-
+## Advanced sample
+[SponzaPbr](https://github.com/andrejnau/SponzaPbr)
 ![sponza.png](screenshots/sponza.png)
 
-### SponzaPbr Settings
-Press Tab to open settings menu
+## Cloning repository
+```
+git clone --recursive https://github.com/andrejnau/FlyCube.git
+```
+
+or
+
+```
+git clone https://github.com/andrejnau/FlyCube.git
+cd FlyCube
+git submodule update --init --recursive
+```
 
 ## Build
 ```
-python init.py
 mkdir build
 cd build
-cmake -G "Visual Studio 16 2019" -Ax64 ..
+cmake ..
 cmake --build . --config RelWithDebInfo
 ```
 
