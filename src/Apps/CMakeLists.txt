@@ -8,7 +8,6 @@ if (RAYTRACING_SUPPORT)
 endif()
 
 add_subdirectory(MeshShading)
-add_subdirectory(SponzaPbr)
 add_subdirectory(Stencil)
 add_subdirectory(Triangle)
 add_subdirectory(VariableRateShading)
