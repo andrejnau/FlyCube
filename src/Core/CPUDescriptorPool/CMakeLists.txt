@@ -9,6 +9,8 @@ if (DIRECTX_SUPPORT)
         DXCPUDescriptorPool.cpp
         DXCPUDescriptorPoolTyped.cpp
     )
+else()
+    return()
 endif()
 
 add_library(CPUDescriptorPool ${headers} ${sources})
@@ -24,27 +26,12 @@ target_link_libraries(CPUDescriptorPool
     CommandList
     Fence
     Utilities
-    spirv-cross-core
-    spirv-cross-hlsl
 )
 
-if (VULKAN_SUPPORT)
-    target_link_libraries(CPUDescriptorPool
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(CPUDescriptorPool
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
-    )
-endif()
-
-if (DIRECTX_SUPPORT)
-    target_link_libraries(CPUDescriptorPool
-        d3d11
-        d3d12
-        dxgi
-        dxguid
-    )
-endif()
+target_link_libraries(CPUDescriptorPool
+    d3d12
+    dxgi
+    dxguid
+)
 
 set_target_properties(CPUDescriptorPool PROPERTIES FOLDER "Core")

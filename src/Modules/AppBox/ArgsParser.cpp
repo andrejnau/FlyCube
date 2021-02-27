@@ -1,10 +1,23 @@
 #include "AppBox/ArgsParser.h"
 #include <string>
+#include <vector>
+
+std::vector<ApiType> GetSupportedApis()
+{
+    std::vector<ApiType> res;
+#ifdef DIRECTX_SUPPORT
+    res.emplace_back(ApiType::kDX12);
+#endif
+#ifdef VULKAN_SUPPORT
+    res.emplace_back(ApiType::kVulkan);
+#endif
+    return res;
+}
 
 Settings ParseArgs(int argc, char* argv[])
 {
     Settings settings;
-    settings.api_type = ApiType::kDX12;
+    settings.api_type = GetSupportedApis()[0];
     settings.vsync = true;
     for (int i = 1; i < argc; ++i)
     {

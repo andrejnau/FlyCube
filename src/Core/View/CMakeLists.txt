@@ -45,7 +45,6 @@ endif()
 
 if (DIRECTX_SUPPORT)
     target_link_libraries(View
-        d3d11
         d3d12
         dxgi
         dxguid

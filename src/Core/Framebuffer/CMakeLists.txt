@@ -33,8 +33,6 @@ target_link_libraries(Framebuffer
     ApiType
     Device
     Utilities
-    spirv-cross-core
-    spirv-cross-hlsl
 )
 
 if (VULKAN_SUPPORT)
@@ -49,7 +47,6 @@ endif()
 
 if (DIRECTX_SUPPORT)
     target_link_libraries(Framebuffer
-        d3d11
         d3d12
         dxgi
         dxguid

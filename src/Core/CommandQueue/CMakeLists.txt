@@ -35,12 +35,9 @@ target_link_libraries(CommandQueue
     Program
     Framebuffer
     Pipeline
-    CPUDescriptorPool
     GPUDescriptorPool
     Fence
     Utilities
-    spirv-cross-core
-    spirv-cross-hlsl
 )
 
 if (VULKAN_SUPPORT)
@@ -55,7 +52,6 @@ endif()
 
 if (DIRECTX_SUPPORT)
     target_link_libraries(CommandQueue
-        d3d11
         d3d12
         dxgi
         dxguid

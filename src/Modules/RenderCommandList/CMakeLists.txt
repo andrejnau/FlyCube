@@ -22,12 +22,9 @@ target_link_libraries(RenderCommandList
     Program
     Framebuffer
     Pipeline
-    CPUDescriptorPool
     GPUDescriptorPool
     Fence
     Utilities
-    spirv-cross-core
-    spirv-cross-hlsl
 )
 
 set_target_properties(RenderCommandList PROPERTIES FOLDER "Modules")

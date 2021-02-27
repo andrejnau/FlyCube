@@ -14,13 +14,17 @@ public:
 
 void RunTest(const ShaderTestCase& test_case)
 {
+#ifdef DIRECTX_SUPPORT
     auto dxil_blob = DXCompile(test_case.GetShaderDesc());
     REQUIRE(dxil_blob);
     test_case.Test(ShaderBlobType::kDXIL, dxil_blob->GetBufferPointer(), dxil_blob->GetBufferSize());
+#endif
 
+#ifdef VULKAN_SUPPORT
     auto spirv_blob = SpirvCompile(test_case.GetShaderDesc());
     REQUIRE(spirv_blob.size());
     test_case.Test(ShaderBlobType::kSPIRV, spirv_blob.data(), spirv_blob.size() * sizeof(spirv_blob.front()));
+#endif
 }
 
 class RayTracing : public ShaderTestCase

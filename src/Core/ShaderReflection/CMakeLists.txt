@@ -32,17 +32,13 @@ target_include_directories(ShaderReflection
 
 target_link_libraries(ShaderReflection
     Utilities
-    spirv-cross-core
-    spirv-cross-hlsl
+    HLSLCompiler
 )
 
 if (VULKAN_SUPPORT)
     target_link_libraries(ShaderReflection
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(ShaderReflection
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        spirv-cross-core
+        spirv-cross-hlsl
     )
 endif()
 
@@ -53,7 +49,6 @@ if (DIRECTX_SUPPORT)
             ${DIASDK_INCLUDE_DIRS}
     )
     target_link_libraries(ShaderReflection
-        d3d11
         d3d12
         dxgi
         dxguid

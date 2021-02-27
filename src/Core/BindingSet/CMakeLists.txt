@@ -32,8 +32,6 @@ target_link_libraries(BindingSet
     Device
     Instance
     Utilities
-    spirv-cross-core
-    spirv-cross-hlsl
 )
 
 if (VULKAN_SUPPORT)
@@ -48,7 +46,6 @@ endif()
 
 if (DIRECTX_SUPPORT)
     target_link_libraries(BindingSet
-        d3d11
         d3d12
         dxgi
         dxguid

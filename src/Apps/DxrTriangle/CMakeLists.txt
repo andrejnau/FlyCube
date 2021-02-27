@@ -52,7 +52,6 @@ target_link_libraries(${target}
     Utilities
     Texture
     Program
-    imgui
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")

@@ -36,13 +36,10 @@ target_link_libraries(Device
     Program
     Framebuffer
     Pipeline
-    CPUDescriptorPool
     GPUDescriptorPool
     Fence
     Memory
     Utilities
-    spirv-cross-core
-    spirv-cross-hlsl
 )
 
 if (VULKAN_SUPPORT)
@@ -57,7 +54,7 @@ endif()
 
 if (DIRECTX_SUPPORT)
     target_link_libraries(Device
-        d3d11
+        CPUDescriptorPool
         d3d12
         dxgi
         dxguid

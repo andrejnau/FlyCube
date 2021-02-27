@@ -31,8 +31,6 @@ target_link_libraries(RenderPass
     ApiType
     Device
     Utilities
-    spirv-cross-core
-    spirv-cross-hlsl
 )
 
 if (VULKAN_SUPPORT)
@@ -47,7 +45,6 @@ endif()
 
 if (DIRECTX_SUPPORT)
     target_link_libraries(RenderPass
-        d3d11
         d3d12
         dxgi
         dxguid

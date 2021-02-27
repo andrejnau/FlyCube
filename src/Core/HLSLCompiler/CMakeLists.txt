@@ -7,18 +7,16 @@ if (VULKAN_SUPPORT)
     )
 endif()
 
-if (DIRECTX_SUPPORT)
-    list(APPEND headers
-        DXCompiler.h
-        DXReflector.h
-        DXCLoader.h
-    )
-    list(APPEND sources
-        DXCompiler.cpp
-        DXReflector.cpp
-        DXCLoader.cpp
-    )
-endif()
+list(APPEND headers
+    DXCompiler.h
+    DXReflector.h
+    DXCLoader.h
+)
+list(APPEND sources
+    DXCompiler.cpp
+    DXReflector.cpp
+    DXCLoader.cpp
+)
 
 add_library(HLSLCompiler ${headers} ${sources})
 
@@ -38,10 +36,8 @@ if (VULKAN_SUPPORT)
     )
 endif()
 
-if (DIRECTX_SUPPORT)
-    target_link_libraries(HLSLCompiler
-        d3dcompiler
-    )
-endif()
+target_link_libraries(HLSLCompiler
+    d3dcompiler
+)
 
 set_target_properties(HLSLCompiler PROPERTIES FOLDER "Core")

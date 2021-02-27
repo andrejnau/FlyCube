@@ -43,8 +43,6 @@ target_link_libraries(Pipeline
     Program
     RenderPass
     Shader
-    spirv-cross-core
-    spirv-cross-hlsl
 )
 
 if (VULKAN_SUPPORT)
@@ -59,7 +57,6 @@ endif()
 
 if (DIRECTX_SUPPORT)
     target_link_libraries(Pipeline
-        d3d11
         d3d12
         dxgi
         dxguid
