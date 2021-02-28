@@ -7,24 +7,6 @@ list(APPEND sources
     ShaderBase.cpp
 )
 
-if (VULKAN_SUPPORT)
-    list(APPEND headers
-        SpirvShader.h
-    )
-    list(APPEND sources
-        SpirvShader.cpp
-    )
-endif()
-
-if (DIRECTX_SUPPORT)
-    list(APPEND headers
-        DXShader.h
-    )
-    list(APPEND sources
-        DXShader.cpp
-    )
-endif()
-
 add_library(Shader ${headers} ${sources})
 
 target_include_directories(Shader

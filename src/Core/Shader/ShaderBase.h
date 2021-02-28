@@ -8,10 +8,14 @@ class ShaderBase : public Shader
 {
 public:
     ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type);
-    ResourceBindingDesc GetResourceBindingDesc(const BindKey& bind_key) const override;
     ShaderType GetType() const override;
-    BindKey GetBindKey(const std::string& name) const override;
     const std::vector<uint8_t>& GetBlob() const override;
+    const BindKey& GetBindKey(const std::string& name) const override;
+    const std::vector<ResourceBindingDesc>& GetResourceBindings() const override;
+    const ResourceBindingDesc& GetResourceBinding(const BindKey& bind_key) const override;
+    const std::vector<InputLayoutDesc>& GetInputLayouts() const override;
+    uint32_t GetInputLayoutLocation(const std::string& semantic_name) const override;
+    const std::string& GetSemanticName(uint32_t location) const override;
 
 protected:
     ShaderType m_shader_type;
@@ -20,4 +24,7 @@ protected:
     std::vector<ResourceBindingDesc> m_bindings;
     std::map<BindKey, size_t> m_mapping;
     std::map<std::string, BindKey> m_bind_keys;
+    std::vector<InputLayoutDesc> m_input_layout_descs;
+    std::map<std::string, uint32_t> m_locations;
+    std::map<uint32_t, std::string> m_semantic_names;
 };

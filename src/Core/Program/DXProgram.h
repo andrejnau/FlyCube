@@ -8,7 +8,7 @@
 using namespace Microsoft::WRL;
 
 class DXDevice;
-class DXShader;
+class Shader;
 class DXGPUDescriptorPoolRange;
 
 struct BindingLayout
@@ -38,7 +38,7 @@ public:
     bool HasBinding(const BindKey& bind_key) const override;
     std::shared_ptr<BindingSet> CreateBindingSetImpl(const std::vector<BindingDesc>& bindings) override;
 
-    const std::vector<std::shared_ptr<DXShader>>& GetShaders() const;
+    const std::vector<std::shared_ptr<Shader>>& GetShaders() const;
     const ComPtr<ID3D12RootSignature>& GetRootSignature() const;
     DXDevice& GetDevice();
 
@@ -46,7 +46,7 @@ private:
     size_t HeapSizeByType(D3D12_DESCRIPTOR_HEAP_TYPE type);
 
     DXDevice& m_device;
-    std::vector<std::shared_ptr<DXShader>> m_shaders;
+    std::vector<std::shared_ptr<Shader>> m_shaders;
 
     uint32_t m_num_resources = 0;
     uint32_t m_num_samplers = 0;

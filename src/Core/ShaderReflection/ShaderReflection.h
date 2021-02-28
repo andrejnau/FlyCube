@@ -49,12 +49,20 @@ inline bool operator< (const ResourceBindingDesc& lhs, const ResourceBindingDesc
     return MakeTie(lhs) < MakeTie(rhs);
 }
 
+struct InputParameterDesc
+{
+    uint32_t location;
+    std::string semantic_name;
+    gli::format format;
+};
+
 class ShaderReflection : public QueryInterface
 {
 public:
     virtual ~ShaderReflection() = default;
     virtual const std::vector<EntryPoint> GetEntryPoints() const = 0;
     virtual const std::vector<ResourceBindingDesc> GetBindings() const = 0;
+    virtual const std::vector<InputParameterDesc> GetInputParameters() const = 0;
 };
 
 std::shared_ptr<ShaderReflection> CreateShaderReflection(ShaderBlobType type, const void* data, size_t size);

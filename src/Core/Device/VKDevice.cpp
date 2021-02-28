@@ -11,7 +11,7 @@
 #include <RenderPass/VKRenderPass.h>
 #include <Framebuffer/VKFramebuffer.h>
 #include <Memory/VKMemory.h>
-#include <Shader/SpirvShader.h>
+#include <Shader/ShaderBase.h>
 #include <View/VKView.h>
 #include <Adapter/VKAdapter.h>
 #include <Utilities/VKUtility.h>
@@ -428,7 +428,7 @@ std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const std::shared_ptr<R
 
 std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)
 {
-    return std::make_shared<SpirvShader>(desc);
+    return std::make_shared<ShaderBase>(desc, ShaderBlobType::kSPIRV);
 }
 
 std::shared_ptr<Program> VKDevice::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)

@@ -144,6 +144,11 @@ const std::vector<ResourceBindingDesc> DXILReflection::GetBindings() const
     return m_bindings;
 }
 
+const std::vector<InputParameterDesc> DXILReflection::GetInputParameters() const
+{
+    return m_input_parameters;
+}
+
 void DXILReflection::ParseRuntimeData(ComPtr<IDxcContainerReflection> reflection, uint32_t idx)
 {
     ComPtr<IDxcBlob> part_blob;
@@ -234,7 +239,19 @@ ReturnType GetReturnType(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
     }
 }
 
-ResourceBindingDesc GetBindingDesc(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
+template<typename T>
+uint32_t GetStride(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc, T* reflection)
+{
+    ID3D12ShaderReflectionConstantBuffer* cbuffer = reflection->GetConstantBufferByName(bind_desc.Name);
+    if (!cbuffer)
+        return 0;
+    D3D12_SHADER_BUFFER_DESC cbuffer_desc = {};
+    cbuffer->GetDesc(&cbuffer_desc);
+    return cbuffer_desc.Size;
+}
+
+template<typename T>
+ResourceBindingDesc GetBindingDesc(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc, T* reflection)
 {
     ResourceBindingDesc desc = {};
     desc.name = bind_desc.Name;
@@ -243,6 +260,7 @@ ResourceBindingDesc GetBindingDesc(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc
     desc.space = bind_desc.Space;
     desc.dimension = GetResourceDimension(bind_desc);
     desc.return_type = GetReturnType(bind_desc);
+    desc.stride = GetStride(bind_desc, reflection);
     return desc;
 }
 
@@ -255,18 +273,71 @@ std::vector<ResourceBindingDesc> ParseReflection(const T& desc, U* reflection)
     {
         D3D12_SHADER_INPUT_BIND_DESC bind_desc = {};
         ASSERT_SUCCEEDED(reflection->GetResourceBindingDesc(i, &bind_desc));
-        res.emplace_back(GetBindingDesc(bind_desc));
+        res.emplace_back(GetBindingDesc(bind_desc, reflection));
     }
     return res;
+}
+
+std::vector<InputParameterDesc> ParseInputParameters(const D3D12_SHADER_DESC& desc, ComPtr<ID3D12ShaderReflection> shader_reflection)
+{
+    std::vector<InputParameterDesc> input_parameters;
+    for (uint32_t i = 0; i < desc.InputParameters; ++i)
+    {
+        D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
+        ASSERT_SUCCEEDED(shader_reflection->GetInputParameterDesc(i, &param_desc));
+        decltype(auto) input = input_parameters.emplace_back();
+        input.semantic_name = param_desc.SemanticName;
+        if (param_desc.SemanticIndex)
+            input.semantic_name += std::to_string(param_desc.SemanticIndex);
+        input.location = i;
+        if (param_desc.Mask == 1)
+        {
+            if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
+                input.format = gli::format::FORMAT_R32_UINT_PACK32;
+            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
+                input.format = gli::format::FORMAT_R32_SINT_PACK32;
+            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
+                input.format = gli::format::FORMAT_R32_SFLOAT_PACK32;
+        }
+        else if (param_desc.Mask <= 3)
+        {
+            if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
+                input.format = gli::format::FORMAT_RG32_UINT_PACK32;
+            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
+                input.format = gli::format::FORMAT_RG32_SINT_PACK32;
+            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
+                input.format = gli::format::FORMAT_RG32_SFLOAT_PACK32;
+        }
+        else if (param_desc.Mask <= 7)
+        {
+            if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
+                input.format = gli::format::FORMAT_RGB32_UINT_PACK32;
+            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
+                input.format = gli::format::FORMAT_RGB32_SINT_PACK32;
+            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
+                input.format = gli::format::FORMAT_RGB32_SFLOAT_PACK32;
+        }
+        else if (param_desc.Mask <= 15)
+        {
+            if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
+                input.format = gli::format::FORMAT_RGBA32_UINT_PACK32;
+            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
+                input.format = gli::format::FORMAT_RGBA32_SINT_PACK32;
+            else if (param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
+                input.format = gli::format::FORMAT_RGBA32_SFLOAT_PACK32;
+        }
+    }
+    return input_parameters;
 }
 
 void DXILReflection::ParseShaderReflection(ComPtr<ID3D12ShaderReflection> shader_reflection)
 {
     D3D12_SHADER_DESC desc = {};
-    shader_reflection->GetDesc(&desc);
+    ASSERT_SUCCEEDED(shader_reflection->GetDesc(&desc));
     hlsl::DXIL::ShaderKind kind = hlsl::GetVersionShaderType(desc.Version);
     m_entry_points.push_back({ "", ConvertShaderKind(kind) });
     m_bindings = ParseReflection(desc, shader_reflection.Get());
+    m_input_parameters = ParseInputParameters(desc, shader_reflection);
 }
 
 void DXILReflection::ParseLibraryReflection(ComPtr<ID3D12LibraryReflection> library_reflection)

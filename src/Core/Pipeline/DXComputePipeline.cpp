@@ -2,7 +2,7 @@
 #include "Pipeline/DXStateBuilder.h"
 #include <Device/DXDevice.h>
 #include <Program/DXProgram.h>
-#include <Shader/DXShader.h>
+#include <Shader/Shader.h>
 #include <HLSLCompiler/DXReflector.h>
 #include <View/DXView.h>
 #include <Utilities/DXGIFormatHelper.h>

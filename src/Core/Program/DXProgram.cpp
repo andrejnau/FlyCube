@@ -1,7 +1,6 @@
 #include "Program/DXProgram.h"
 #include <Device/DXDevice.h>
 #include <HLSLCompiler/DXReflector.h>
-#include <Shader/DXShader.h>
 #include <View/DXView.h>
 #include <BindingSet/DXBindingSet.h>
 #include <deque>
@@ -11,11 +10,11 @@
 
 DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders)
     : m_device(device)
+    , m_shaders(shaders)
 {
-    for (auto& shader : shaders)
+    for (const auto& shader : m_shaders)
     {
-        m_shaders.emplace_back(std::static_pointer_cast<DXShader>(shader));
-        m_shaders_by_type[shader->GetType()] = m_shaders.back();
+        m_shaders_by_type[shader->GetType()] = shader;
     }
 
     std::vector<D3D12_ROOT_PARAMETER> root_parameters;
@@ -450,7 +449,7 @@ std::shared_ptr<BindingSet> DXProgram::CreateBindingSetImpl(const std::vector<Bi
     return std::make_shared<DXBindingSet>(*this, m_is_compute, descriptor_ranges, m_binding_layout);
 }
 
-const std::vector<std::shared_ptr<DXShader>>& DXProgram::GetShaders() const
+const std::vector<std::shared_ptr<Shader>>& DXProgram::GetShaders() const
 {
     return m_shaders;
 }

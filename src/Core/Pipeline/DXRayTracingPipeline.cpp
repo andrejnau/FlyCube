@@ -1,7 +1,7 @@
 #include "Pipeline/DXRayTracingPipeline.h"
 #include <Device/DXDevice.h>
 #include <Program/DXProgram.h>
-#include <Shader/DXShader.h>
+#include <Shader/Shader.h>
 #include <View/DXView.h>
 #include <Utilities/DXGIFormatHelper.h>
 #include <d3d12.h>

@@ -3,7 +3,7 @@
 #include <Swapchain/DXSwapchain.h>
 #include <CommandList/DXCommandList.h>
 #include <Memory/DXMemory.h>
-#include <Shader/DXShader.h>
+#include <Shader/ShaderBase.h>
 #include <Fence/DXFence.h>
 #include <View/DXView.h>
 #include <Program/DXProgram.h>
@@ -329,7 +329,7 @@ std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const std::shared_ptr<R
 
 std::shared_ptr<Shader> DXDevice::CompileShader(const ShaderDesc& desc)
 {
-    return std::make_shared<DXShader>(desc);
+    return std::make_shared<ShaderBase>(desc, ShaderBlobType::kDXIL);
 }
 
 std::shared_ptr<Program> DXDevice::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)

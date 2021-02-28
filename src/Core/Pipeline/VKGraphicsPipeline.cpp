@@ -1,7 +1,6 @@
 #include "Pipeline/VKGraphicsPipeline.h"
 #include <Device/VKDevice.h>
 #include <Program/VKProgram.h>
-#include <Shader/SpirvShader.h>
 #include <map>
 
 vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)

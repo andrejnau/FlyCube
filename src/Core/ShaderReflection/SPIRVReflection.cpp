@@ -33,16 +33,51 @@ ShaderKind ConvertShaderKind(spv::ExecutionModel execution_model)
     return ShaderKind::kUnknown;
 }
 
-SPIRVReflection::SPIRVReflection(const void* data, size_t size)
-    : m_blob((const uint32_t*)data, (const uint32_t*)data + size / sizeof(uint32_t))
+std::vector<InputParameterDesc> ParseInputParameters(const spirv_cross::Compiler& compiler)
 {
-    spirv_cross::CompilerHLSL compiler(m_blob);
-    auto entry_points = compiler.get_entry_points_and_stages();
-    for (const auto& entry_point : entry_points)
+    spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+    std::vector<InputParameterDesc> input_parameters;
+    for (const auto& resource : resources.stage_inputs)
     {
-        m_entry_points.push_back({ entry_point.name.c_str(), ConvertShaderKind(entry_point.execution_model) });
+        decltype(auto) input = input_parameters.emplace_back();
+        input.location = compiler.get_decoration(resource.id, spv::DecorationLocation);
+        input.semantic_name = compiler.get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE);
+        decltype(auto) type = compiler.get_type(resource.base_type_id);
+        if (type.basetype == spirv_cross::SPIRType::Float)
+        {
+            if (type.vecsize == 1)
+                input.format = gli::format::FORMAT_R32_SFLOAT_PACK32;
+            else if (type.vecsize == 2)
+                input.format = gli::format::FORMAT_RG32_SFLOAT_PACK32;
+            else if (type.vecsize == 3)
+                input.format = gli::format::FORMAT_RGB32_SFLOAT_PACK32;
+            else if (type.vecsize == 4)
+                input.format = gli::format::FORMAT_RGBA32_SFLOAT_PACK32;
+        }
+        else if (type.basetype == spirv_cross::SPIRType::UInt)
+        {
+            if (type.vecsize == 1)
+                input.format = gli::format::FORMAT_R32_UINT_PACK32;
+            else if (type.vecsize == 2)
+                input.format = gli::format::FORMAT_RG32_UINT_PACK32;
+            else if (type.vecsize == 3)
+                input.format = gli::format::FORMAT_RGB32_UINT_PACK32;
+            else if (type.vecsize == 4)
+                input.format = gli::format::FORMAT_RGBA32_UINT_PACK32;
+        }
+        else if (type.basetype == spirv_cross::SPIRType::Int)
+        {
+            if (type.vecsize == 1)
+                input.format = gli::format::FORMAT_R32_SINT_PACK32;
+            else if (type.vecsize == 2)
+                input.format = gli::format::FORMAT_RG32_SINT_PACK32;
+            else if (type.vecsize == 3)
+                input.format = gli::format::FORMAT_RGB32_SINT_PACK32;
+            else if (type.vecsize == 4)
+                input.format = gli::format::FORMAT_RGBA32_SINT_PACK32;
+        }
     }
-    ParseBindings(compiler);
+    return input_parameters;
 }
 
 ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& type, uint32_t resource_id)
@@ -146,7 +181,6 @@ ResourceDimension GetResourceDimension(const spirv_cross::SPIRType& resource_typ
     }
     else
     {
-        assert(false);
         return ResourceDimension::kUnknown;
     }
 }
@@ -173,26 +207,29 @@ ReturnType GetReturnType(const spirv_cross::CompilerHLSL& compiler, const spirv_
     return ReturnType::kUnknown;
 }
 
-ResourceBindingDesc SPIRVReflection::GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, const spirv_cross::Resource& resource)
+ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, const spirv_cross::Resource& resource)
 {
     ResourceBindingDesc desc = {};
-    const auto& resource_type = compiler.get_type(resource.type_id);
+    decltype(auto) resource_type = compiler.get_type(resource.type_id);
+    desc.name = resource.name;
     desc.type = GetViewType(compiler, resource_type, resource.id);
     desc.slot = compiler.get_decoration(resource.id, spv::DecorationBinding);
     desc.space = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
     desc.dimension = GetResourceDimension(resource_type);
     desc.return_type = GetReturnType(compiler, resource_type);
+    desc.stride = compiler.get_declared_struct_size(resource_type);
     return desc;
 }
 
-void SPIRVReflection::ParseBindings(const spirv_cross::CompilerHLSL& compiler)
+std::vector<ResourceBindingDesc> ParseBindings(const spirv_cross::CompilerHLSL& compiler)
 {
+    std::vector<ResourceBindingDesc> bindings;
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
     auto enumerate_resources = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources)
     {
         for (const auto& resource : resources)
         {
-            m_bindings.emplace_back(GetBindingDesc(compiler, resource));
+            bindings.emplace_back(GetBindingDesc(compiler, resource));
         }
     };
     enumerate_resources(resources.uniform_buffers);
@@ -202,6 +239,20 @@ void SPIRVReflection::ParseBindings(const spirv_cross::CompilerHLSL& compiler)
     enumerate_resources(resources.separate_samplers);
     enumerate_resources(resources.atomic_counters);
     enumerate_resources(resources.acceleration_structures);
+    return bindings;
+}
+
+SPIRVReflection::SPIRVReflection(const void* data, size_t size)
+    : m_blob((const uint32_t*)data, (const uint32_t*)data + size / sizeof(uint32_t))
+{
+    spirv_cross::CompilerHLSL compiler(m_blob);
+    auto entry_points = compiler.get_entry_points_and_stages();
+    for (const auto& entry_point : entry_points)
+    {
+        m_entry_points.push_back({ entry_point.name.c_str(), ConvertShaderKind(entry_point.execution_model) });
+    }
+    m_bindings = ParseBindings(compiler);
+    m_input_parameters = ParseInputParameters(compiler);
 }
 
 const std::vector<EntryPoint> SPIRVReflection::GetEntryPoints() const
@@ -212,4 +263,9 @@ const std::vector<EntryPoint> SPIRVReflection::GetEntryPoints() const
 const std::vector<ResourceBindingDesc> SPIRVReflection::GetBindings() const
 {
     return m_bindings;
+}
+
+const std::vector<InputParameterDesc> SPIRVReflection::GetInputParameters() const
+{
+    return m_input_parameters;
 }

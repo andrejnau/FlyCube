@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
     GraphicsPipelineDesc pipeline_desc = {
         program,
-        { { 0, vertex_shader->GetVertexInputLocation("POSITION"), gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
+        { { 0, vertex_shader->GetInputLayoutLocation("POSITION"), gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
         render_pass
     };
     std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);

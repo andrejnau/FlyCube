@@ -299,7 +299,7 @@ struct ShaderDesc
     }
 };
 
-struct VertexInputDesc
+struct InputLayoutDesc
 {
     uint32_t slot = 0;
     uint32_t location = 0;
@@ -397,7 +397,7 @@ class RenderPass;
 struct GraphicsPipelineDesc
 {
     std::shared_ptr<Program> program;
-    std::vector<VertexInputDesc> input;
+    std::vector<InputLayoutDesc> input;
     std::shared_ptr<RenderPass> render_pass;
     DepthStencilDesc depth_stencil_desc;
     BlendDesc blend_desc;
@@ -461,6 +461,7 @@ struct ResourceBindingDesc
     uint32_t space;
     ResourceDimension dimension;
     ReturnType return_type;
+    uint32_t stride;
 };
 
 enum class PipelineType

@@ -82,14 +82,12 @@ public:
     void Parse()
     {
         auto blob = Compile({ m_option.shader_path, m_entrypoint, m_type, m_option.model }, ShaderBlobType::kDXIL);
-        std::string path = m_option.build_folder + "/" + m_option.shader_name + ".cso";
-        std::ofstream output(path, std::ios::binary);
-        output.write((char*)blob.data(), blob.size());
-
         ComPtr<ID3D12ShaderReflection> shader_reflector;
         DXReflect(blob.data(), blob.size(), IID_PPV_ARGS(&shader_reflector));
         if (shader_reflector)
+        {
             ParseShader(shader_reflector);
+        }
         else
         {
             ComPtr<ID3D12LibraryReflection> library_reflector;

@@ -295,7 +295,7 @@ void RenderCommandListImpl::UseProgram(const std::shared_ptr<Program>& program)
     {
         m_graphic_pipeline_desc.program = m_program;
         if (m_program->HasShader(ShaderType::kVertex))
-            m_graphic_pipeline_desc.input = m_program->GetShader(ShaderType::kVertex)->GetInputLayout();
+            m_graphic_pipeline_desc.input = m_program->GetShader(ShaderType::kVertex)->GetInputLayouts();
     }
     m_bound_resources.clear();
     m_bound_deferred_view.clear();
@@ -399,9 +399,9 @@ std::shared_ptr<View> RenderCommandListImpl::CreateView(const BindKey& bind_key,
     case ViewType::kUnorderedAccess:
     {
         decltype(auto) shader = m_program->GetShader(bind_key.shader_type);
-        ResourceBindingDesc binding_desc = shader->GetResourceBindingDesc(bind_key);
-        desc.dimension = shader->GetResourceBindingDesc(bind_key).dimension;
-        desc.stride = shader->GetResourceStride(bind_key);
+        ResourceBindingDesc binding_desc = shader->GetResourceBinding(bind_key);
+        desc.dimension = binding_desc.dimension;
+        desc.stride = binding_desc.stride;
         if (resource && binding_desc.dimension != ResourceDimension::kBuffer && binding_desc.dimension != ResourceDimension::kRaytracingAccelerationStructure)
         {
             DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(resource->GetFormat()).DXGIFormat.DDS);

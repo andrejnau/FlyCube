@@ -1,6 +1,6 @@
 #include "Program/VKProgram.h"
 #include <Device/VKDevice.h>
-#include <Shader/SpirvShader.h>
+#include <Shader/ShaderBase.h>
 #include <View/VKView.h>
 #include <BindingSet/VKBindingSet.h>
 
@@ -29,11 +29,11 @@ vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
 
 VKProgram::VKProgram(VKDevice& device, const std::vector<std::shared_ptr<Shader>>& shaders)
     : m_device(device)
+    , m_shaders(shaders)
 {
-    for (auto& shader : shaders)
+    for (const auto& shader : m_shaders)
     {
-        m_shaders.emplace_back(std::static_pointer_cast<SpirvShader>(shader));
-        m_shaders_by_type[shader->GetType()] = m_shaders.back();
+        m_shaders_by_type[shader->GetType()] = shader;
     }
 
     std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> bindings_by_set;
@@ -159,7 +159,7 @@ std::shared_ptr<BindingSet> VKProgram::CreateBindingSetImpl(const std::vector<Bi
     return std::make_shared<VKBindingSet>(std::move(descriptor_sets), std::move(descriptor_sets_unique), m_pipeline_layout.get());
 }
 
-const std::vector<std::shared_ptr<SpirvShader>>& VKProgram::GetShaders() const
+const std::vector<std::shared_ptr<Shader>>& VKProgram::GetShaders() const
 {
     return m_shaders;
 }

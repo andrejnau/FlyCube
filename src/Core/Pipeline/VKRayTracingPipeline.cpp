@@ -3,7 +3,7 @@
 #include <Device/VKDevice.h>
 #include <Adapter/VKAdapter.h>
 #include <Program/VKProgram.h>
-#include <Shader/SpirvShader.h>
+#include <Shader/Shader.h>
 #include <map>
 
 VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const ComputePipelineDesc& desc)

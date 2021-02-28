@@ -2,7 +2,7 @@
 #include "Pipeline/VKGraphicsPipeline.h"
 #include <Device/VKDevice.h>
 #include <Program/VKProgram.h>
-#include <Shader/SpirvShader.h>
+#include <Shader/Shader.h>
 #include <map>
 
 VKComputePipeline::VKComputePipeline(VKDevice& device, const ComputePipelineDesc& desc)

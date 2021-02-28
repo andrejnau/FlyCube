@@ -2,7 +2,6 @@
 #include "Pipeline/DXStateBuilder.h"
 #include <Device/DXDevice.h>
 #include <Program/DXProgram.h>
-#include <Shader/DXShader.h>
 #include <HLSLCompiler/DXReflector.h>
 #include <View/DXView.h>
 #include <Utilities/DXGIFormatHelper.h>
@@ -242,7 +241,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     ASSERT_SUCCEEDED(device2->CreatePipelineState(&graphics_state_builder.GetDesc(), IID_PPV_ARGS(&m_pipeline_state)));
 }
 
-void DXGraphicsPipeline::ParseInputLayout(const std::shared_ptr<DXShader>& shader)
+void DXGraphicsPipeline::ParseInputLayout(const std::shared_ptr<Shader>& shader)
 {
     for (auto& vertex : m_desc.input)
     {

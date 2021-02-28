@@ -9,7 +9,7 @@
 #include <spirv_hlsl.hpp>
 
 class VKDevice;
-class SpirvShader;
+class Shader;
 
 class VKProgram : public ProgramBase
 {
@@ -18,7 +18,7 @@ public:
     bool HasBinding(const BindKey& bind_key) const override;
     std::shared_ptr<BindingSet> CreateBindingSetImpl(const std::vector<BindingDesc>& bindings) override;
 
-    const std::vector<std::shared_ptr<SpirvShader>>& GetShaders() const;
+    const std::vector<std::shared_ptr<Shader>>& GetShaders() const;
     vk::PipelineLayout GetPipelineLayout() const;
 
 private:
@@ -27,7 +27,7 @@ private:
                      std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>>& bindings_flags);
 
     VKDevice& m_device;
-    std::vector<std::shared_ptr<SpirvShader>> m_shaders;
+    std::vector<std::shared_ptr<Shader>> m_shaders;
 
     std::vector<vk::UniqueDescriptorSetLayout> m_descriptor_set_layouts;
     vk::UniquePipelineLayout m_pipeline_layout;
