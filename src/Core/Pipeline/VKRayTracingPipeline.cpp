@@ -17,12 +17,12 @@ VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const ComputePipeli
         ShaderType shader_type = shader->GetType();
         auto blob = shader->GetBlob();
         vk::ShaderModuleCreateInfo shader_module_info = {};
-        shader_module_info.codeSize = sizeof(uint32_t) * blob.size();
-        shader_module_info.pCode = blob.data();
+        shader_module_info.codeSize = blob.size();
+        shader_module_info.pCode = (uint32_t*)blob.data();
 
         m_shader_modules[shader_type] = m_device.GetDevice().createShaderModuleUnique(shader_module_info);
 
-        spirv_cross::CompilerHLSL compiler(blob);
+        spirv_cross::CompilerHLSL compiler((uint32_t*)blob.data(), blob.size() / sizeof(uint32_t));
         m_entries[shader_type] = compiler.get_entry_points_and_stages();
 
         for (auto& entry_point : m_entries[shader_type])

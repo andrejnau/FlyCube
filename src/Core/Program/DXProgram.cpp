@@ -96,7 +96,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
         ShaderType shader_type = shader->GetType();
         if (shader_type == ShaderType::kCompute || shader_type == ShaderType::kLibrary)
             m_is_compute = true;
-        ComPtr<ID3DBlob> shader_blob = shader->GetBlob();
+        const auto& shader_blob = shader->GetBlob();
         std::map<uint32_t, uint32_t> begin_cbv, begin_srv, begin_uav, begin_sampler;
         std::map<uint32_t, uint32_t> end_cbv, end_srv, end_uav, end_sampler;
         std::set<uint32_t> spaces;
@@ -108,7 +108,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
         };
 
         ComPtr<ID3D12ShaderReflection> shader_reflector;
-        DXReflect(shader_blob->GetBufferPointer(), shader_blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
+        DXReflect(shader_blob.data(), shader_blob.size(), IID_PPV_ARGS(&shader_reflector));
         if (shader_reflector)
         {
             D3D12_SHADER_DESC desc = {};
@@ -155,7 +155,7 @@ DXProgram::DXProgram(DXDevice& device, const std::vector<std::shared_ptr<Shader>
         else
         {
             ComPtr<ID3D12LibraryReflection> library_reflector;
-            DXReflect(shader_blob->GetBufferPointer(), shader_blob->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
+            DXReflect(shader_blob.data(), shader_blob.size(), IID_PPV_ARGS(&library_reflector));
             if (library_reflector)
             {
                 D3D12_LIBRARY_DESC lib_desc = {};

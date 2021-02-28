@@ -22,7 +22,7 @@ public:
     vk::PipelineLayout GetPipelineLayout() const;
 
 private:
-    void ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary,
+    void ParseShader(ShaderType shader_type, const std::vector<uint8_t>& spirv_binary,
                      std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>& bindings,
                      std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>>& bindings_flags);
 

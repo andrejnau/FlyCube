@@ -1,5 +1,10 @@
 list(APPEND headers
     Shader.h
+    ShaderBase.h
+)
+
+list(APPEND sources
+    ShaderBase.cpp
 )
 
 if (VULKAN_SUPPORT)
@@ -30,6 +35,7 @@ target_include_directories(Shader
 target_link_libraries(Shader
     Utilities
     HLSLCompiler
+    ShaderReflection
 )
 
 set_target_properties(Shader PROPERTIES FOLDER "Core")

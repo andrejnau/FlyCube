@@ -20,8 +20,8 @@ DXComputePipeline::DXComputePipeline(DXDevice& device, const ComputePipelineDesc
     {
         D3D12_SHADER_BYTECODE ShaderBytecode = {};
         auto blob = shader->GetBlob();
-        ShaderBytecode.BytecodeLength = blob->GetBufferSize();
-        ShaderBytecode.pShaderBytecode = blob->GetBufferPointer();
+        ShaderBytecode.pShaderBytecode = blob.data();
+        ShaderBytecode.BytecodeLength = blob.size();
         switch (shader->GetType())
         {
         case ShaderType::kCompute:

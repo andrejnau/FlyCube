@@ -2,8 +2,7 @@
 #include <catch.hpp>
 
 #include <ShaderReflection/ShaderReflection.h>
-#include <HLSLCompiler/DXCompiler.h>
-#include <HLSLCompiler/SpirvCompiler.h>
+#include <HLSLCompiler/Compiler.h>
 
 class ShaderTestCase
 {
@@ -15,14 +14,14 @@ public:
 void RunTest(const ShaderTestCase& test_case)
 {
 #ifdef DIRECTX_SUPPORT
-    auto dxil_blob = DXCompile(test_case.GetShaderDesc());
-    REQUIRE(dxil_blob);
-    test_case.Test(ShaderBlobType::kDXIL, dxil_blob->GetBufferPointer(), dxil_blob->GetBufferSize());
+    auto dxil_blob = Compile(test_case.GetShaderDesc(), ShaderBlobType::kDXIL);
+    REQUIRE(!dxil_blob.empty());
+    test_case.Test(ShaderBlobType::kDXIL, dxil_blob.data(), dxil_blob.size());
 #endif
 
 #ifdef VULKAN_SUPPORT
-    auto spirv_blob = SpirvCompile(test_case.GetShaderDesc());
-    REQUIRE(spirv_blob.size());
+    auto spirv_blob = Compile(test_case.GetShaderDesc(), ShaderBlobType::kSPIRV);
+    REQUIRE(!spirv_blob.empty());
     test_case.Test(ShaderBlobType::kSPIRV, spirv_blob.data(), spirv_blob.size() * sizeof(spirv_blob.front()));
 #endif
 }

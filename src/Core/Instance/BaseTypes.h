@@ -92,13 +92,19 @@ struct SamplerDesc
 enum class ViewType
 {
     kUnknown,
-    kShadingRateSource,
     kShaderResource,
     kUnorderedAccess,
     kConstantBuffer,
     kSampler,
+    kShadingRateSource,
     kRenderTarget,
     kDepthStencil
+};
+
+enum class ShaderBlobType
+{
+    kDXIL,
+    kSPIRV
 };
 
 enum class ResourceType
@@ -441,6 +447,7 @@ struct BindingDesc
 
 enum class ReturnType
 {
+    kUnknown,
     kFloat,
     kUint,
     kSint,
@@ -448,8 +455,12 @@ enum class ReturnType
 
 struct ResourceBindingDesc
 {
-    ResourceDimension dimension = ResourceDimension::kBuffer;
-    ReturnType return_type = ReturnType::kFloat;
+    std::string name;
+    ViewType type;
+    uint32_t slot;
+    uint32_t space;
+    ResourceDimension dimension;
+    ReturnType return_type;
 };
 
 enum class PipelineType

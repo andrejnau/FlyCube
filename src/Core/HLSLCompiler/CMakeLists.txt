@@ -1,19 +1,10 @@
-if (VULKAN_SUPPORT)
-    list(APPEND headers
-        SpirvCompiler.h
-    )
-    list(APPEND sources
-        SpirvCompiler.cpp
-    )
-endif()
-
 list(APPEND headers
-    DXCompiler.h
+    Compiler.h
     DXReflector.h
     DXCLoader.h
 )
 list(APPEND sources
-    DXCompiler.cpp
+    Compiler.cpp
     DXReflector.cpp
     DXCLoader.cpp
 )

@@ -1,4 +1,4 @@
-#include "HLSLCompiler/DXCompiler.h"
+#include "HLSLCompiler/Compiler.h"
 #include "HLSLCompiler/DXCLoader.h"
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
@@ -7,50 +7,6 @@
 #include <vector>
 #include <d3dcompiler.h>
 #include <cassert>
-
-class FileWrap
-{
-public:
-    FileWrap(const std::string& path)
-        : m_file_path(GetExecutableDir() + "/" + path)
-    {
-    }
-
-    bool IsExist() const
-    {
-        return std::ifstream(m_file_path, std::ios::binary).good();
-    }
-
-    std::vector<uint8_t> ReadFile() const
-    {
-        std::ifstream file(m_file_path, std::ios::binary);
-
-        file.seekg(0, std::ios::end);
-        size_t file_size = file.tellg();
-        file.seekg(0, std::ios::beg);
-
-        std::vector<uint8_t> res(file_size);
-        file.read(reinterpret_cast<char*>(res.data()), file_size);
-        return res;
-    }
-
-private:
-    std::string m_file_path;
-};
-
-bool GetBlobFromCache(const std::string& shader_path, ComPtr<ID3DBlob>& shader_buffer)
-{
-    std::string shader_name = shader_path.substr(shader_path.find_last_of("\\/") + 1);
-    shader_name = shader_name.substr(0, shader_name.find(".hlsl")) + ".cso";
-    FileWrap precompiled_blob(shader_name);
-    if (!precompiled_blob.IsExist())
-        return false;
-    auto data = precompiled_blob.ReadFile();
-    D3DCreateBlob(data.size(), &shader_buffer);
-    shader_buffer->GetBufferPointer();
-    memcpy(shader_buffer->GetBufferPointer(), data.data(), data.size());
-    return true;
-}
 
 static std::string GetShaderTarget(ShaderType type, const std::string& model)
 {
@@ -110,9 +66,9 @@ private:
     const std::wstring& m_base_path;
 };
 
-ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
+std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
 {
-    DXCLoader loader(!option.spirv);
+    DXCLoader loader(blob_type == ShaderBlobType::kDXIL);
 
     std::wstring shader_path = GetAssetFullPathW(shader.shader_path);
     std::wstring shader_dir = shader_path.substr(0, shader_path.find_last_of(L"\\/") + 1);
@@ -140,7 +96,7 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
     std::deque<std::wstring> dynamic_arguments;
     arguments.push_back(L"/Zi");
     arguments.push_back(L"/Qembed_debug");
-    if (option.spirv)
+    if (blob_type == ShaderBlobType::kSPIRV)
     {
         arguments.emplace_back(L"-spirv");
         arguments.emplace_back(L"-fvk-use-dx-layout");
@@ -179,12 +135,12 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
 
     HRESULT hr = {};
     result->GetStatus(&hr);
-    ComPtr<ID3DBlob> shader_buffer;
+    std::vector<uint8_t> blob;
     if (SUCCEEDED(hr))
     {
-        ComPtr<IDxcBlob> tmp_blob;
-        ASSERT_SUCCEEDED(result->GetResult(&tmp_blob));
-        tmp_blob.As(&shader_buffer);
+        ComPtr<IDxcBlob> dxc_blob;
+        ASSERT_SUCCEEDED(result->GetResult(&dxc_blob));
+        blob.assign((uint8_t*)dxc_blob->GetBufferPointer(), (uint8_t*)dxc_blob->GetBufferPointer() + dxc_blob->GetBufferSize());
     }
     else
     {
@@ -193,14 +149,5 @@ ComPtr<ID3DBlob> DXCCompile(const ShaderDesc& shader, const DXOption& option)
         OutputDebugStringA(reinterpret_cast<char*>(errors->GetBufferPointer()));
         std::cout << reinterpret_cast<char*>(errors->GetBufferPointer()) << std::endl;
     }
-    return shader_buffer;
-}
-
-ComPtr<ID3DBlob> DXCompile(const ShaderDesc& shader, const DXOption& option)
-{
-    bool different_options = !shader.define.empty() || option.spirv;
-    ComPtr<ID3DBlob> shader_buffer;
-    if (!different_options && GetBlobFromCache(shader.shader_path, shader_buffer))
-        return shader_buffer;
-    return DXCCompile(shader, option);
+    return blob;
 }

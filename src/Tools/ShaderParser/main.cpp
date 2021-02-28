@@ -1,6 +1,6 @@
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
-#include <HLSLCompiler/DXCompiler.h>
+#include <HLSLCompiler/Compiler.h>
 #include <HLSLCompiler/DXReflector.h>
 #include <mustache.hpp>
 #include <string>
@@ -12,6 +12,9 @@
 #include <cctype>
 #include <map>
 #include <set>
+#include <d3dcommon.h>
+#include <wrl.h>
+using namespace Microsoft::WRL;
 using namespace kainjow;
 
 struct Option
@@ -78,19 +81,19 @@ public:
 
     void Parse()
     {
-        auto blob = DXCompile({ m_option.shader_path, m_entrypoint, m_type, m_option.model });
+        auto blob = Compile({ m_option.shader_path, m_entrypoint, m_type, m_option.model }, ShaderBlobType::kDXIL);
         std::string path = m_option.build_folder + "/" + m_option.shader_name + ".cso";
         std::ofstream output(path, std::ios::binary);
-        output.write((char*)blob->GetBufferPointer(), blob->GetBufferSize());
+        output.write((char*)blob.data(), blob.size());
 
         ComPtr<ID3D12ShaderReflection> shader_reflector;
-        DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
+        DXReflect(blob.data(), blob.size(), IID_PPV_ARGS(&shader_reflector));
         if (shader_reflector)
             ParseShader(shader_reflector);
         else
         {
             ComPtr<ID3D12LibraryReflection> library_reflector;
-            DXReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
+            DXReflect(blob.data(), blob.size(), IID_PPV_ARGS(&library_reflector));
             if (library_reflector)
                 ParseLibrary(library_reflector);
         }

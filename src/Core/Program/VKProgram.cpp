@@ -193,7 +193,7 @@ static void print_resources(const spirv_cross::Compiler& compiler, const char* t
             compiler.get_decoration_bitset(type.self).get(DecorationBufferBlock);
         bool is_sized_block = is_block && (compiler.get_storage_class(res.id) == StorageClassUniform ||
             compiler.get_storage_class(res.id) == StorageClassUniformConstant);
-        uint32_t fallback_id = !is_push_constant && is_block ? res.base_type_id : res.id;
+        uint32_t fallback_id = !is_push_constant && is_block ? (uint32_t)res.base_type_id : (uint32_t)res.id;
 
         uint32_t block_size = 0;
         if (is_sized_block)
@@ -235,11 +235,11 @@ static void print_resources(const spirv_cross::Compiler& compiler, const char* t
     fprintf(stderr, "=============\n\n");
 }
 
-void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint32_t>& spirv_binary,
+void VKProgram::ParseShader(ShaderType shader_type, const std::vector<uint8_t>& spirv_binary,
                             std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>& bindings,
                             std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>>& bindings_flags)
 {
-    spirv_cross::CompilerHLSL compiler(spirv_binary);
+    spirv_cross::CompilerHLSL compiler((uint32_t*)spirv_binary.data(), spirv_binary.size() / sizeof(uint32_t));
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
     auto generate_bindings = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType res_type)

@@ -1,79 +1,12 @@
 #include "Shader/DXShader.h"
-#include <HLSLCompiler/DXCompiler.h>
+#include <HLSLCompiler/Compiler.h>
 #include <HLSLCompiler/DXReflector.h>
 #include <Utilities/DXUtility.h>
 
-ViewType GetViewType(D3D_SHADER_INPUT_TYPE type)
-{
-    switch (type)
-    {
-    case D3D_SIT_CBUFFER:
-        return ViewType::kConstantBuffer;
-    case D3D_SIT_SAMPLER:
-        return ViewType::kSampler;
-    case D3D_SIT_TEXTURE:
-    case D3D_SIT_STRUCTURED:
-    case D3D_SIT_BYTEADDRESS:
-    case SIT_RTACCELERATIONSTRUCTURE:
-        return ViewType::kShaderResource;
-    case D3D_SIT_UAV_RWSTRUCTURED:
-    case D3D_SIT_UAV_RWTYPED:
-    case D3D_SIT_UAV_RWBYTEADDRESS:
-    case D3D_SIT_UAV_APPEND_STRUCTURED:
-    case D3D_SIT_UAV_CONSUME_STRUCTURED:
-    case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
-        return ViewType::kUnorderedAccess;
-    default:
-    {
-        assert(false);
-        return ViewType::kUnknown;
-    }
-    }
-}
-
 DXShader::DXShader(const ShaderDesc& desc)
-    : m_type(desc.type)
+    : ShaderBase(desc, ShaderBlobType::kDXIL)
 {
-    m_blob = DXCompile(desc);
-
-    if (m_type == ShaderType::kLibrary)
-    {
-        ComPtr<ID3D12LibraryReflection> library_reflector;
-        DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
-        D3D12_LIBRARY_DESC lib_desc = {};
-        library_reflector->GetDesc(&lib_desc);
-        for (uint32_t i = 0; i < lib_desc.FunctionCount; ++i)
-        {
-            auto function_reflector = library_reflector->GetFunctionByIndex(i);
-            D3D12_FUNCTION_DESC desc = {};
-            function_reflector->GetDesc(&desc);
-            for (uint32_t j = 0; j < desc.BoundResources; ++j)
-            {
-                D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
-                ASSERT_SUCCEEDED(function_reflector->GetResourceBindingDesc(j, &res_desc));
-                BindKey bind_key = { m_type, GetViewType(res_desc.Type), res_desc.BindPoint, res_desc.Space };
-                m_bind_keys[res_desc.Name] = bind_key;
-                m_names[bind_key] = res_desc.Name;
-            }
-        }
-    }
-    else
-    {
-        ComPtr<ID3D12ShaderReflection> shader_reflector;
-        DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
-        D3D12_SHADER_DESC desc = {};
-        shader_reflector->GetDesc(&desc);
-        for (uint32_t j = 0; j < desc.BoundResources; ++j)
-        {
-            D3D12_SHADER_INPUT_BIND_DESC res_desc = {};
-            ASSERT_SUCCEEDED(shader_reflector->GetResourceBindingDesc(j, &res_desc));
-            BindKey bind_key = { m_type, GetViewType(res_desc.Type), res_desc.BindPoint, res_desc.Space };
-            m_bind_keys[res_desc.Name] = bind_key;
-            m_names[bind_key] = res_desc.Name;
-        }
-    }
-
-    if (m_type == ShaderType::kVertex)
+    if (m_shader_type == ShaderType::kVertex)
         ParseInputLayout();
 }
 
@@ -85,7 +18,7 @@ std::vector<VertexInputDesc> DXShader::GetInputLayout() const
 void DXShader::ParseInputLayout()
 {
     ComPtr<ID3D12ShaderReflection> reflector;
-    DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&reflector));
+    DXReflect(m_blob.data(), m_blob.size(), IID_PPV_ARGS(&reflector));
 
     D3D12_SHADER_DESC shader_desc = {};
     reflector->GetDesc(&shader_desc);
@@ -143,91 +76,9 @@ void DXShader::ParseInputLayout()
     }
 }
 
-ResourceBindingDesc DXShader::GetResourceBindingDesc(const BindKey& bind_key) const
-{
-    const std::string& name = m_names.at(bind_key);
-    D3D12_SHADER_INPUT_BIND_DESC input_bind_desc = {};
-    if (m_type == ShaderType::kLibrary)
-    {
-        ComPtr<ID3D12LibraryReflection> library_reflector;
-        DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
-        D3D12_LIBRARY_DESC lib_desc = {};
-        library_reflector->GetDesc(&lib_desc);
-        for (uint32_t i = 0; i < lib_desc.FunctionCount; ++i)
-        {
-            auto function_reflector = library_reflector->GetFunctionByIndex(i);
-            if (SUCCEEDED(function_reflector->GetResourceBindingDescByName(name.c_str(), &input_bind_desc)))
-                break;
-        }
-    }
-    else
-    {
-        ComPtr<ID3D12ShaderReflection> shader_reflector;
-        DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
-        ASSERT_SUCCEEDED(shader_reflector->GetResourceBindingDescByName(name.c_str(), &input_bind_desc));
-    }
-
-    ResourceBindingDesc binding_desc = {};
-    switch (input_bind_desc.Dimension)
-    {
-    case D3D_SRV_DIMENSION_BUFFER:
-        binding_desc.dimension = ResourceDimension::kBuffer;
-        break;
-    case D3D_SRV_DIMENSION_TEXTURE1D:
-        binding_desc.dimension = ResourceDimension::kTexture1D;
-        break;
-    case D3D_SRV_DIMENSION_TEXTURE1DARRAY:
-        binding_desc.dimension = ResourceDimension::kTexture1DArray;
-        break;
-    case D3D_SRV_DIMENSION_TEXTURE2D:
-        binding_desc.dimension = ResourceDimension::kTexture2D;
-        break;
-    case D3D_SRV_DIMENSION_TEXTURE2DARRAY:
-        binding_desc.dimension = ResourceDimension::kTexture2DArray;
-        break;
-    case D3D_SRV_DIMENSION_TEXTURE2DMS:
-        binding_desc.dimension = ResourceDimension::kTexture2DMS;
-        break;
-    case D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:
-        binding_desc.dimension = ResourceDimension::kTexture2DMSArray;
-        break;
-    case D3D_SRV_DIMENSION_TEXTURE3D:
-        binding_desc.dimension = ResourceDimension::kTexture3D;
-        break;
-    case D3D_SRV_DIMENSION_TEXTURECUBE:
-        binding_desc.dimension = ResourceDimension::kTextureCube;
-        break;
-    case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
-        binding_desc.dimension = ResourceDimension::kTextureCubeArray;
-        break;
-    default:
-        break;
-    }
-    if (input_bind_desc.Dimension != D3D_SRV_DIMENSION_BUFFER)
-    {
-        switch (input_bind_desc.ReturnType)
-        {
-        case D3D_RETURN_TYPE_FLOAT:
-            binding_desc.return_type = ReturnType::kFloat;
-            break;
-        case D3D_RETURN_TYPE_UINT:
-            binding_desc.return_type = ReturnType::kUint;
-            break;
-        case D3D_RETURN_TYPE_SINT:
-            binding_desc.return_type = ReturnType::kSint;
-            break;
-        default:
-            assert(false);
-        }
-    }
-    if (input_bind_desc.Type == SIT_RTACCELERATIONSTRUCTURE)
-        binding_desc.dimension = ResourceDimension::kRaytracingAccelerationStructure;
-    return binding_desc;
-}
-
 uint32_t DXShader::GetResourceStride(const BindKey& bind_key) const
 {
-    const std::string& name = m_names.at(bind_key);
+    const std::string& name = m_bindings[m_mapping.at(bind_key)].name;
     D3D12_SHADER_INPUT_BIND_DESC input_bind_desc = {};
 
     auto impl = [&](auto reflector) -> uint32_t
@@ -242,10 +93,10 @@ uint32_t DXShader::GetResourceStride(const BindKey& bind_key) const
         return cbdesc.Size;
     };
 
-    if (m_type == ShaderType::kLibrary)
+    if (m_shader_type == ShaderType::kLibrary)
     {
         ComPtr<ID3D12LibraryReflection> library_reflector;
-        DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&library_reflector));
+        DXReflect(m_blob.data(), m_blob.size(), IID_PPV_ARGS(&library_reflector));
         D3D12_LIBRARY_DESC lib_desc = {};
         library_reflector->GetDesc(&lib_desc);
         for (uint32_t i = 0; i < lib_desc.FunctionCount; ++i)
@@ -260,7 +111,7 @@ uint32_t DXShader::GetResourceStride(const BindKey& bind_key) const
     else
     {
         ComPtr<ID3D12ShaderReflection> shader_reflector;
-        DXReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(), IID_PPV_ARGS(&shader_reflector));
+        DXReflect(m_blob.data(), m_blob.size(), IID_PPV_ARGS(&shader_reflector));
         ASSERT_SUCCEEDED(shader_reflector->GetResourceBindingDescByName(name.c_str(), &input_bind_desc));
         return impl(shader_reflector);
     }
@@ -271,21 +122,6 @@ uint32_t DXShader::GetResourceStride(const BindKey& bind_key) const
 uint32_t DXShader::GetVertexInputLocation(const std::string& semantic_name) const
 {
     return m_locations.at(semantic_name);
-}
-
-ShaderType DXShader::GetType() const
-{
-    return m_type;
-}
-
-BindKey DXShader::GetBindKey(const std::string& name) const
-{
-    return m_bind_keys.at(name);
-}
-
-ComPtr<ID3DBlob> DXShader::GetBlob() const
-{
-    return m_blob;
 }
 
 std::string DXShader::GetSemanticName(uint32_t location) const

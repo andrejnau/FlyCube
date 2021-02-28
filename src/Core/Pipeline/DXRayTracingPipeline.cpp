@@ -8,12 +8,11 @@
 #include <d3dx12.h>
 #include <d3d12shader.h>
 #include <Utilities/FileUtility.h>
-#include <HLSLCompiler/DXCompiler.h>
 #include <HLSLCompiler/DXReflector.h>
 #include <HLSLCompiler/DXCLoader.h>
 #include <dxc/DXIL/DxilConstants.h>
 #include <dxc/DxilContainer/DxilContainer.h>
-#include <dxc/DxilContainer/DxilRuntimeReflection.inl>
+#include <dxc/DxilContainer/DxilRuntimeReflection.h>
 
 static const WCHAR* kHitGroup = L"hit_group";
 
@@ -41,7 +40,7 @@ struct ShaderInfo
     std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> entries;
 };
 
-ShaderInfo GetShaderInfo(ComPtr<ID3DBlob> blob)
+ShaderInfo GetShaderInfo(const std::vector<uint8_t>& blob)
 {
     ShaderInfo res;
 
@@ -50,7 +49,7 @@ ShaderInfo GetShaderInfo(ComPtr<ID3DBlob> blob)
     uint32_t shade_idx = 0;
     ComPtr<IDxcLibrary> library;
     loader.CreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library));
-    ASSERT_SUCCEEDED(library->CreateBlobWithEncodingOnHeapCopy(blob->GetBufferPointer(), static_cast<UINT32>(blob->GetBufferSize()), CP_ACP, &source));
+    ASSERT_SUCCEEDED(library->CreateBlobWithEncodingOnHeapCopy(blob.data(), static_cast<UINT32>(blob.size()), CP_ACP, &source));
     ComPtr<IDxcContainerReflection> reflection;
     loader.CreateInstance(CLSID_DxcContainerReflection, IID_PPV_ARGS(&reflection));
     ASSERT_SUCCEEDED(reflection->Load(source));
@@ -66,10 +65,10 @@ ShaderInfo GetShaderInfo(ComPtr<ID3DBlob> blob)
             reflection->GetPartContent(i, &part_blob);
             hlsl::RDAT::DxilRuntimeData context;
             context.InitFromRDAT(part_blob->GetBufferPointer(), part_blob->GetBufferSize());
-            FunctionTableReader* func_table_reader = context.GetFunctionTableReader();
+            auto func_table_reader = context.GetFunctionTableReader();
             for (uint32_t j = 0; j < func_table_reader->GetNumFunctions(); ++j)
             {
-                FunctionReader func_reader = func_table_reader->GetItem(j);
+                auto func_reader = func_table_reader->GetItem(j);
                 std::wstring name = utf8_to_wstring(func_reader.GetUnmangledName());
                 hlsl::DXIL::ShaderKind type = func_reader.GetShaderKind();
                 res.entries.emplace_back(name, type);
@@ -83,7 +82,7 @@ ShaderInfo GetShaderInfo(ComPtr<ID3DBlob> blob)
     return res;
 }
 
-std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> GetEntries(ComPtr<ID3DBlob> blob)
+std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> GetEntries(const std::vector<uint8_t>& blob)
 {
     return GetShaderInfo(blob).entries;
 }
@@ -91,7 +90,7 @@ std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> GetEntries(ComPtr<I
 class DxilLibrary : public Subobject
 {
 public:
-    DxilLibrary(ComPtr<ID3DBlob> blob)
+    DxilLibrary(const std::vector<uint8_t>& blob)
     {
         m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
         m_state_subobject.pDesc = &m_dxil_lib_desc;
@@ -101,8 +100,8 @@ public:
         m_export_desc.resize(entries.size());
         m_export_name.resize(entries.size());
 
-        m_dxil_lib_desc.DXILLibrary.pShaderBytecode = blob->GetBufferPointer();
-        m_dxil_lib_desc.DXILLibrary.BytecodeLength = blob->GetBufferSize();
+        m_dxil_lib_desc.DXILLibrary.pShaderBytecode = blob.data();
+        m_dxil_lib_desc.DXILLibrary.BytecodeLength = blob.size();
         m_dxil_lib_desc.NumExports = entries.size();
         m_dxil_lib_desc.pExports = m_export_desc.data();
 
@@ -145,7 +144,7 @@ private:
 class ShaderConfig : public Subobject
 {
 public:
-    ShaderConfig(ComPtr<ID3DBlob> blob)
+    ShaderConfig(const std::vector<uint8_t>& blob)
     {
         auto info = GetShaderInfo(blob);
         m_shader_config.MaxAttributeSizeInBytes = info.max_attribute_size;
