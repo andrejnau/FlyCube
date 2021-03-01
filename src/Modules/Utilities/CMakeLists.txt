@@ -1,6 +1,7 @@
 add_library(Utilities
     DXUtility.h
     FileUtility.h
+    FileUtility.cpp
     Logger.h
     ScopeGuard.h
     Singleton.h

@@ -19,7 +19,7 @@ DXComputePipeline::DXComputePipeline(DXDevice& device, const ComputePipelineDesc
     for (const auto& shader : dx_program.GetShaders())
     {
         D3D12_SHADER_BYTECODE ShaderBytecode = {};
-        auto blob = shader->GetBlob();
+        decltype(auto) blob = shader->GetBlob();
         ShaderBytecode.pShaderBytecode = blob.data();
         ShaderBytecode.BytecodeLength = blob.size();
         switch (shader->GetType())
