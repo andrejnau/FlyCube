@@ -85,6 +85,7 @@ ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::S
     switch (type.basetype)
     {
     case spirv_cross::SPIRType::SampledImage:
+    case spirv_cross::SPIRType::AccelerationStructure:
     {
         return ViewType::kShaderResource;
     }
@@ -217,7 +218,10 @@ ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, co
     desc.space = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
     desc.dimension = GetResourceDimension(resource_type);
     desc.return_type = GetReturnType(compiler, resource_type);
-    desc.stride = compiler.get_declared_struct_size(resource_type);
+    if (desc.dimension == ResourceDimension::kBuffer)
+    {
+        desc.stride = compiler.get_declared_struct_size(resource_type);
+    }
     return desc;
 }
 
