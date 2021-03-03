@@ -1,6 +1,6 @@
 #pragma once
 #include "Resource/ResourceBase.h"
-#include <Utilities/Vulkan.h>
+#include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 #include <map>
 

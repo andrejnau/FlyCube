@@ -43,11 +43,7 @@ target_link_libraries(Memory
 
 if (VULKAN_SUPPORT)
     target_link_libraries(Memory
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(Memory
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

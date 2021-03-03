@@ -37,11 +37,7 @@ target_link_libraries(Framebuffer
 
 if (VULKAN_SUPPORT)
     target_link_libraries(Framebuffer
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(Framebuffer
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

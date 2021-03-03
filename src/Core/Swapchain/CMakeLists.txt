@@ -36,11 +36,7 @@ target_link_libraries(Swapchain
 
 if (VULKAN_SUPPORT)
     target_link_libraries(Swapchain
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(Swapchain
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

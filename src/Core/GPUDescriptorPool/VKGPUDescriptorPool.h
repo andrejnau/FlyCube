@@ -1,7 +1,7 @@
 #pragma once
 #include <map>
 #include <algorithm>
-#include <Utilities/Vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 class VKDevice;
 

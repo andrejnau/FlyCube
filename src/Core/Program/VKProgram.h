@@ -1,7 +1,7 @@
 #pragma once
 #include "ProgramBase.h"
 #include <Shader/Shader.h>
-#include <Utilities/Vulkan.h>
+#include <vulkan/vulkan.hpp>
 #include <vector>
 #include <map>
 #include <set>

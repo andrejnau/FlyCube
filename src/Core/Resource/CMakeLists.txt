@@ -42,11 +42,7 @@ target_link_libraries(Resource
 
 if (VULKAN_SUPPORT)
     target_link_libraries(Resource
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(Resource
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

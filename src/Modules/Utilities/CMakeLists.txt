@@ -6,7 +6,6 @@ add_library(Utilities
     ScopeGuard.h
     Singleton.h
     VKUtility.h
-    Vulkan.h
     DXGIFormatHelper.cpp
     DXGIFormatHelper.h
     FormatHelper.cpp

@@ -44,11 +44,7 @@ target_link_libraries(Device
 
 if (VULKAN_SUPPORT)
     target_link_libraries(Device
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(Device
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

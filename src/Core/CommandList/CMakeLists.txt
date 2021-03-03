@@ -35,11 +35,7 @@ target_link_libraries(CommandList
 
 if (VULKAN_SUPPORT)
     target_link_libraries(CommandList
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(CommandList
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

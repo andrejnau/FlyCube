@@ -1,6 +1,6 @@
 #pragma once
 #include "CommandQueue/CommandQueue.h"
-#include <Utilities/Vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 class VKDevice;
 

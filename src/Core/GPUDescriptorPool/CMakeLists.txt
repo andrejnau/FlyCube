@@ -41,11 +41,7 @@ target_link_libraries(GPUDescriptorPool
 
 if (VULKAN_SUPPORT)
     target_link_libraries(GPUDescriptorPool
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(GPUDescriptorPool
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

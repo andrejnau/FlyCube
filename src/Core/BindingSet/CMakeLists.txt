@@ -36,11 +36,7 @@ target_link_libraries(BindingSet
 
 if (VULKAN_SUPPORT)
     target_link_libraries(BindingSet
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(BindingSet
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

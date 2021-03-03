@@ -1,6 +1,6 @@
 #pragma once
 #include "Framebuffer/FramebufferBase.h"
-#include <Utilities/Vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 class VKDevice;
 class VKGraphicsPipeline;

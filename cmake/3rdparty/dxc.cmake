@@ -1,4 +1,4 @@
-include_directories(${project_root}/3rdparty/dxc/include)
-set(dxc_custom_bin "${project_root}/3rdparty/dxc/bin")
-add_definitions(-DDXC_CUSTOM_BIN="${dxc_custom_bin}")
+add_library(dxc INTERFACE)
+target_include_directories(dxc INTERFACE "${project_root}/3rdparty/dxc/include")
+target_compile_definitions(dxc INTERFACE DXC_CUSTOM_BIN="${project_root}/3rdparty/dxc/bin")
 list(APPEND CMAKE_MODULE_PATH "${project_root}/3rdparty/dxc/cmake/modules")

@@ -40,11 +40,7 @@ target_link_libraries(Instance
 
 if (VULKAN_SUPPORT)
     target_link_libraries(Instance
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(Instance
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 
@@ -53,6 +49,7 @@ if (DIRECTX_SUPPORT)
         d3d12
         dxgi
         dxguid
+        d3dx12
     )
 endif()
 

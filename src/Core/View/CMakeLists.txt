@@ -35,11 +35,7 @@ target_link_libraries(View
 
 if (VULKAN_SUPPORT)
     target_link_libraries(View
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(View
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

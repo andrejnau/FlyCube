@@ -42,11 +42,7 @@ target_link_libraries(CommandQueue
 
 if (VULKAN_SUPPORT)
     target_link_libraries(CommandQueue
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(CommandQueue
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

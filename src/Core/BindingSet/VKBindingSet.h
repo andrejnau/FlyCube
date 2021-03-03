@@ -1,6 +1,6 @@
 #pragma once
 #include "BindingSet/BindingSet.h"
-#include <Utilities/Vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 class VKBindingSet
     : public BindingSet

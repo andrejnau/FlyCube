@@ -35,11 +35,7 @@ target_link_libraries(Fence
 
 if (VULKAN_SUPPORT)
     target_link_libraries(Fence
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(Fence
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

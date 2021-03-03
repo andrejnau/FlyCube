@@ -1,6 +1,6 @@
 #pragma once
 #include "Device/Device.h"
-#include <Utilities/Vulkan.h>
+#include <vulkan/vulkan.hpp>
 #include <GPUDescriptorPool/VKGPUDescriptorPool.h>
 #include <GPUDescriptorPool/VKGPUBindlessDescriptorPoolTyped.h>
 

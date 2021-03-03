@@ -1,7 +1,7 @@
 #pragma once
 #include "Pipeline.h"
 #include <Instance/BaseTypes.h>
-#include <Utilities/Vulkan.h>
+#include <vulkan/vulkan.hpp>
 #include <RenderPass/VKRenderPass.h>
 #include <spirv_cross.hpp>
 #include <spirv_hlsl.hpp>

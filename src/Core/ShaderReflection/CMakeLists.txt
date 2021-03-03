@@ -53,10 +53,6 @@ if (DIRECTX_SUPPORT)
         dxgi
         dxguid
     )
-    target_include_directories(ShaderReflection
-        PUBLIC
-            "${project_root}/3rdparty/unpacked/d3dx12"
-    )
 endif()
 
 set_target_properties(ShaderReflection PROPERTIES FOLDER "Core")

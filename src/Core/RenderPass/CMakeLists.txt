@@ -35,11 +35,7 @@ target_link_libraries(RenderPass
 
 if (VULKAN_SUPPORT)
     target_link_libraries(RenderPass
-        ${Vulkan_LIBRARIES}
-    )
-    target_include_directories(RenderPass
-        PUBLIC
-            ${Vulkan_INCLUDE_DIR}
+        vulkan
     )
 endif()
 

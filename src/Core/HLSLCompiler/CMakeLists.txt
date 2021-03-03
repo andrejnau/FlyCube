@@ -29,6 +29,7 @@ endif()
 
 target_link_libraries(HLSLCompiler
     d3dcompiler
+    dxc
 )
 
 set_target_properties(HLSLCompiler PROPERTIES FOLDER "Core")

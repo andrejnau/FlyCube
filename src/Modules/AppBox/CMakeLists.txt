@@ -20,14 +20,13 @@ target_link_libraries(AppBox
 
 if (VULKAN_SUPPORT)
     target_link_libraries(AppBox
-        ${Vulkan_LIBRARIES}
+        vulkan
     )
 endif()
 
 target_include_directories(AppBox
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
-        ${Vulkan_INCLUDE_DIR}
 )
 
 set_target_properties(AppBox PROPERTIES FOLDER "Modules")
