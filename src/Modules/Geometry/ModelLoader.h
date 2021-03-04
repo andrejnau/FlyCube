@@ -11,7 +11,7 @@
 class ModelLoader
 {
 public:
-    ModelLoader(const std::string& file, aiPostProcessSteps flags, IModel& model);
+    ModelLoader(const std::string& path, aiPostProcessSteps flags, IModel& model);
 
 private:
     void LoadModel(aiPostProcessSteps flags);

@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 
     std::shared_ptr<RenderCommandList> upload_command_list = device->CreateRenderCommandList();
 
-    Model model(*device, *upload_command_list, "model/export3dcoat/export3dcoat.obj");
+    Model model(*device, *upload_command_list, ASSETS_PATH"model/export3dcoat/export3dcoat.obj");
     model.matrix = glm::scale(glm::vec3(0.1f)) * glm::translate(glm::vec3(0.0f, 30.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     upload_command_list->Close();
     device->ExecuteCommandLists({ upload_command_list });

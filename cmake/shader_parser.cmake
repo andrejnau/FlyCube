@@ -11,9 +11,9 @@ function(gen_shaders_ref target shaders shaders_ref)
         get_property(type SOURCE ${full_shader_path} PROPERTY VS_SHADER_TYPE)
         get_property(model SOURCE ${full_shader_path} PROPERTY VS_SHADER_MODEL)
         add_custom_command(OUTPUT ${output_file}
-            COMMAND ${CMAKE_COMMAND} -E echo ${shader_name} ${shader_path} ${entrypoint} ${type} ${model} ${template} ${output_dir} ${build_folder}
+            COMMAND ${CMAKE_COMMAND} -E echo ${assets_path} ${shader_name} ${shader_path} ${entrypoint} ${type} ${model} ${template} ${output_dir} ${build_folder}
             COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
-            COMMAND $<TARGET_FILE:ShaderParser> ${shader_name} ${shader_path} ${entrypoint} ${type} ${model} ${template} ${output_dir} ${build_folder}
+            COMMAND $<TARGET_FILE:ShaderParser> ${assets_path} ${shader_name} ${shader_path} ${entrypoint} ${type} ${model} ${template} ${output_dir} ${build_folder}
             DEPENDS ${template} ShaderParser
             MAIN_DEPENDENCY "${full_shader_path}"
         )

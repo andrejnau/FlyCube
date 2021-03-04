@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
     uav_view_desc.dimension = ResourceDimension::kTexture2D;
     std::shared_ptr<View> uav_view = device->CreateView(uav, uav_view_desc);
 
-    std::shared_ptr<Shader> library = device->CompileShader({ "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
+    std::shared_ptr<Shader> library = device->CompileShader({ ASSETS_PATH"shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
     std::shared_ptr<Program> program = device->CreateProgram({ library });
     std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({
         { library->GetBindKey("geometry"), top_view },

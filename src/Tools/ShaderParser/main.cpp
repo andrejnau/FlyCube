@@ -19,6 +19,7 @@ using namespace kainjow;
 
 struct Option
 {
+    std::string assets_path;
     std::string shader_name;
     std::string shader_path;
     std::string entrypoint;
@@ -81,7 +82,7 @@ public:
 
     void Parse()
     {
-        auto blob = Compile({ m_option.shader_path, m_entrypoint, m_type, m_option.model }, ShaderBlobType::kDXIL);
+        auto blob = Compile({ m_option.assets_path + m_option.shader_path, m_entrypoint, m_type, m_option.model }, ShaderBlobType::kDXIL);
         ComPtr<ID3D12ShaderReflection> shader_reflector;
         DXReflect(blob.data(), blob.size(), IID_PPV_ARGS(&shader_reflector));
         if (shader_reflector)
@@ -523,8 +524,9 @@ class ParseCmd
 public:
     ParseCmd(int argc, char *argv[])
     {
-        ThrowIfFailed(argc == 9, "Invalide CommandLine");
+        ThrowIfFailed(argc == 10, "Invalide CommandLine");
         size_t arg_index = 1;
+        m_option.assets_path = argv[arg_index++];
         m_option.shader_name = argv[arg_index++];
         m_option.shader_path = argv[arg_index++];
         m_option.entrypoint = argv[arg_index++];

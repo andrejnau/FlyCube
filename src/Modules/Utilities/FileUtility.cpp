@@ -31,24 +31,6 @@ std::string GetExecutableDir()
     return path.substr(0, path.find_last_of("\\/"));
 }
 
-std::wstring GetAssetFullPath(const std::wstring& assetName)
-{
-    std::wstring path = utf8_to_wstring(ASSETS_PATH) + assetName;
-    if (!std::ifstream(wstring_to_utf8(path)).good())
-        path = utf8_to_wstring(GetExecutableDir()) + L"/assets/" + assetName;
-    return path;
-}
-
-std::string GetAssetFullPath(const std::string& assetName)
-{
-    return wstring_to_utf8(GetAssetFullPath(utf8_to_wstring(assetName)));
-}
-
-std::wstring GetAssetFullPathW(const std::string& assetName)
-{
-    return GetAssetFullPath(utf8_to_wstring(assetName));
-}
-
 std::string GetEnv(const std::string& var)
 {
     const char* res = getenv("VULKAN_SDK");

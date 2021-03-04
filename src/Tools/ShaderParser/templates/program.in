@@ -79,7 +79,9 @@ public:{{#CBuffers}}
 
     void CompileShader(RenderDevice& device)
     {
-        shader = device.CompileShader(desc);{{#CBuffers}}
+        auto full_desc = desc;
+        full_desc.shader_path = ASSETS_PATH + full_desc.shader_path;
+        shader = device.CompileShader(full_desc);{{#CBuffers}}
         cbv.{{Name}} = shader->GetBindKey("{{Name}}");{{/CBuffers}}{{#Textures}}
         srv.{{Name}} = shader->GetBindKey("{{Name}}");{{/Textures}}{{#UAVs}}
         uav.{{Name}} = shader->GetBindKey("{{Name}}");{{/UAVs}}{{#Samplers}}

@@ -34,8 +34,8 @@ glm::vec3 aiVector3DToVec3(const aiVector3D& x)
     return glm::vec3(x.x, x.y, x.z);
 }
 
-ModelLoader::ModelLoader(const std::string& file, aiPostProcessSteps flags, IModel& model)
-    : m_path(GetAssetFullPath(file))
+ModelLoader::ModelLoader(const std::string& path, aiPostProcessSteps flags, IModel& model)
+    : m_path(path)
     , m_directory(SplitFilename(m_path))
     , m_model(model)
 {
