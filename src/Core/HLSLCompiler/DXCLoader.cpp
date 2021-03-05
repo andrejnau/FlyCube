@@ -2,17 +2,16 @@
 #include <Utilities/FileUtility.h>
 #include <Utilities/ScopeGuard.h>
 #include <vector>
-using namespace std::string_literals;
 
 DXCLoader::DXCLoader(bool dxil_required)
 {
     if (Load(GetExecutableDir(), dxil_required))
         return;
-    if (Load(DXC_CUSTOM_BIN, dxil_required))
+    if (Load(DXC_CUSTOM_LOCATION, dxil_required))
         return;
     if (Load(GetEnv("VULKAN_SDK") + "/Bin/", dxil_required))
         return;
-    Load(SDKBIN + "/x64"s, dxil_required);
+    Load(DXC_DEFAULT_LOCATION, dxil_required);
 }
 
 bool DXCLoader::Load(const std::string& path, bool dxil_required)
