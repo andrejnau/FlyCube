@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.2.2)
+cmake_minimum_required(VERSION 3.15)
 project(FlyCube)
 
 set(project_root "${CMAKE_CURRENT_SOURCE_DIR}")
 set(assets_path "${project_root}/assets/")
 add_definitions(-DASSETS_PATH="${assets_path}")
 
-list(APPEND CMAKE_MODULE_PATH "${project_root}/cmake")
+list(PREPEND CMAKE_MODULE_PATH "${project_root}/cmake")
 include(cmake_settings)
 include(compiler_settings)
 
