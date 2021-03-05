@@ -1,5 +1,4 @@
-#define CATCH_CONFIG_MAIN
-#include <catch.hpp>
+#include <catch2/catch_all.hpp>
 
 #include <ShaderReflection/ShaderReflection.h>
 #include <HLSLCompiler/Compiler.h>
@@ -56,7 +55,7 @@ public:
     }
 
 private:
-    ShaderDesc m_desc = { "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_5" };
+    ShaderDesc m_desc = { ASSETS_PATH"shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_5" };
 };
 
 class TrianglePS : public ShaderTestCase
@@ -82,7 +81,7 @@ public:
     }
 
 private:
-    ShaderDesc m_desc = { "shaders/Triangle/PixelShader_PS.hlsl", "main", ShaderType::kPixel, "6_5" };
+    ShaderDesc m_desc = { ASSETS_PATH"shaders/Triangle/PixelShader_PS.hlsl", "main", ShaderType::kPixel, "6_5" };
 };
 
 class TriangleVS : public ShaderTestCase
@@ -108,7 +107,7 @@ public:
     }
 
 private:
-    ShaderDesc m_desc = { "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex, "6_5" };
+    ShaderDesc m_desc = { ASSETS_PATH"shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex, "6_5" };
 };
 
 TEST_CASE("ShaderReflection")

@@ -43,15 +43,11 @@ if (VULKAN_SUPPORT)
 endif()
 
 if (DIRECTX_SUPPORT)
-    find_package(DiaSDK REQUIRED)
-    target_include_directories(ShaderReflection
-        PRIVATE
-            ${DIASDK_INCLUDE_DIRS}
-    )
     target_link_libraries(ShaderReflection
         d3d12
         dxgi
         dxguid
+        dia
     )
 endif()
 

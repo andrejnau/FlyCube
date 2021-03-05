@@ -14,9 +14,6 @@ option (ASSIMP_NO_EXPORT
 )
 
 add_subdirectory(${project_root}/3rdparty/assimp assimp EXCLUDE_FROM_ALL)
-include_directories(${project_root}/3rdparty/assimp/code/BoostWorkaround)
-include_directories(${project_root}/3rdparty/assimp/include)
-include_directories(${CMAKE_BINARY_DIR}/assimp/include)
 
 if (MSVC)
     set_target_properties(assimp PROPERTIES FOLDER "3rdparty/assimp")

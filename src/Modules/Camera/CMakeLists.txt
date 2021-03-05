@@ -15,4 +15,6 @@ target_include_directories(${target}
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
+target_link_libraries(${target} glm)
+
 set_target_properties(${target} PROPERTIES FOLDER "Modules")

@@ -36,6 +36,8 @@ target_link_libraries(Instance
     Adapter
     ApiType
     Utilities
+    gli
+    glm
 )
 
 if (VULKAN_SUPPORT)

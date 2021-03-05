@@ -1,3 +1,8 @@
 add_executable(ShaderReflectionTest main.cpp)
-target_link_libraries(ShaderReflectionTest PRIVATE ShaderReflection Catch2::Catch2)
+if (WIN32)
+    set_target_properties(ShaderReflectionTest PROPERTIES
+        LINK_FLAGS "/ENTRY:wmainCRTStartup"
+    )
+endif()
+target_link_libraries(ShaderReflectionTest PRIVATE ShaderReflection Catch2WithMain)
 set_target_properties(ShaderReflectionTest PROPERTIES FOLDER "Tests")
