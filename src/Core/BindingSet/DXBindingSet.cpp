@@ -1,33 +1,56 @@
 #include "BindingSet/DXBindingSet.h"
 #include <GPUDescriptorPool/DXGPUDescriptorPoolRange.h>
 #include <Program/DXProgram.h>
+#include <BindingSetLayout/DXBindingSetLayout.h>
 #include <Device/DXDevice.h>
+#include <View/DXView.h>
 
-DXBindingSet::DXBindingSet(DXProgram& program, bool is_compute,
-                           std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<DXGPUDescriptorPoolRange>> descriptor_ranges,
-                           std::map<std::tuple<ShaderType, D3D12_DESCRIPTOR_RANGE_TYPE, uint32_t /*space*/, bool /*bindless*/>, BindingLayout> binding_layout)
-    : m_device(program.GetDevice())
-    , m_is_compute(is_compute)
-    , m_descriptor_ranges(descriptor_ranges)
-    , m_binding_layout(binding_layout)
+DXBindingSet::DXBindingSet(DXDevice& device, const std::shared_ptr<DXBindingSetLayout>& layout)
+    : m_device(device)
+    , m_layout(layout)
 {
+    for (const auto& desc : m_layout->GetHeapDescs())
+    {
+        std::shared_ptr<DXGPUDescriptorPoolRange> heap_range = std::make_shared<DXGPUDescriptorPoolRange>(m_device.GetGPUDescriptorPool().Allocate(desc.first, desc.second));
+        m_descriptor_ranges.emplace(std::piecewise_construct,
+            std::forward_as_tuple(desc.first),
+            std::forward_as_tuple(heap_range)
+        );
+    }
 }
 
-void SetRootDescriptorTable(bool is_compute, const ComPtr<ID3D12GraphicsCommandList>& command_list, uint32_t RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor)
+void DXBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
 {
-    if (RootParameterIndex == -1)
-        return;
+    for (const auto& binding : bindings)
+    {
+        if (!binding.view)
+        {
+            continue;
+        }
+        decltype(auto) binding_layout = m_layout->GetLayout().at(binding.bind_key);
+        std::shared_ptr<DXGPUDescriptorPoolRange> heap_range = m_descriptor_ranges.at(binding_layout.heap_type);
+        decltype(auto) src_cpu_handle = binding.view->As<DXView>().GetHandle();
+        heap_range->CopyCpuHandle(binding_layout.heap_offset, src_cpu_handle);
+    }
+}
+
+void SetRootDescriptorTable(const ComPtr<ID3D12GraphicsCommandList>& command_list, uint32_t root_parameter, bool is_compute, D3D12_GPU_DESCRIPTOR_HANDLE base_descriptor)
+{
     if (is_compute)
-        command_list->SetComputeRootDescriptorTable(RootParameterIndex, BaseDescriptor);
+    {
+        command_list->SetComputeRootDescriptorTable(root_parameter, base_descriptor);
+    }
     else
-        command_list->SetGraphicsRootDescriptorTable(RootParameterIndex, BaseDescriptor);
+    {
+        command_list->SetGraphicsRootDescriptorTable(root_parameter, base_descriptor);
+    }
 }
 
 std::vector<ComPtr<ID3D12DescriptorHeap>> DXBindingSet::Apply(const ComPtr<ID3D12GraphicsCommandList>& command_list)
 {
     std::vector<ComPtr<ID3D12DescriptorHeap>> descriptor_heaps;
     std::vector<ID3D12DescriptorHeap*> descriptor_heaps_ptr;
-    for (decltype(auto) descriptor_range : m_descriptor_ranges)
+    for (const auto& descriptor_range : m_descriptor_ranges)
     {
         if (descriptor_range.second->GetSize() > 0)
         {
@@ -35,36 +58,21 @@ std::vector<ComPtr<ID3D12DescriptorHeap>> DXBindingSet::Apply(const ComPtr<ID3D1
             descriptor_heaps_ptr.emplace_back(descriptor_heaps.back().Get());
         }
     }
+
     if (descriptor_heaps_ptr.size())
-        command_list->SetDescriptorHeaps(descriptor_heaps_ptr.size(), descriptor_heaps_ptr.data());
-
-    for (auto& x : m_binding_layout)
     {
-        if (x.second.root_param_index == -1)
-            continue;
-        if (x.second.type == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
-        {
-            D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
-            switch (std::get<1>(x.first))
-            {
-            case D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER:
-                heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-                break;
-            default:
-                heap_type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-                break;
-            }
-            if (std::get<3>(x.first))
-            {
-                SetRootDescriptorTable(m_is_compute, command_list, x.second.root_param_index, m_device.GetGPUDescriptorPool().GetHeap(heap_type)->GetGPUDescriptorHandleForHeapStart());
-                continue;
-            }
+        command_list->SetDescriptorHeaps(descriptor_heaps_ptr.size(), descriptor_heaps_ptr.data());
+    }
 
-            if (!m_descriptor_ranges.count(heap_type))
-                continue;
-            std::shared_ptr<DXGPUDescriptorPoolRange> heap_range = m_descriptor_ranges.at(heap_type);
-            SetRootDescriptorTable(m_is_compute, command_list, x.second.root_param_index, heap_range->GetGpuHandle(x.second.table.root_param_heap_offset));
+    for (const auto& table : m_layout->GetDescriptorTables())
+    {
+        D3D12_DESCRIPTOR_HEAP_TYPE heap_type = table.second.heap_type;
+        if (!m_descriptor_ranges.count(heap_type))
+        {
+            continue;
         }
+        std::shared_ptr<DXGPUDescriptorPoolRange> heap_range = m_descriptor_ranges.at(heap_type);
+        SetRootDescriptorTable(command_list, table.first, table.second.is_compute, heap_range->GetGpuHandle(table.second.heap_offset));
     }
     return descriptor_heaps;
 }

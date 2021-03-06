@@ -10,9 +10,10 @@ ShaderBase::ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type)
     m_bindings = reflection->GetBindings();
     for (uint32_t i = 0; i < m_bindings.size(); ++i)
     {
-        BindKey bind_key = { m_shader_type, m_bindings[i].type, m_bindings[i].slot, m_bindings[i].space };
+        BindKey bind_key = { m_shader_type, m_bindings[i].type, m_bindings[i].slot, m_bindings[i].space, m_bindings[i].count };
         m_bind_keys[m_bindings[i].name] = bind_key;
         m_mapping[bind_key] = i;
+        m_binding_keys.emplace_back(bind_key);
     }
 
     decltype(auto) input_parameters = reflection->GetInputParameters();
@@ -71,4 +72,9 @@ uint32_t ShaderBase::GetInputLayoutLocation(const std::string& semantic_name) co
 const std::string& ShaderBase::GetSemanticName(uint32_t location) const
 {
     return m_semantic_names.at(location);
+}
+
+const std::vector<BindKey>& ShaderBase::GetBindings() const
+{
+    return m_binding_keys;
 }

@@ -13,8 +13,12 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
 
     switch (view_desc.view_type)
     {
-    case ViewType::kShaderResource:
-    case ViewType::kUnorderedAccess:
+    case ViewType::kTexture:
+    case ViewType::kRWTexture:
+    case ViewType::kBuffer:
+    case ViewType::kRWBuffer:
+    case ViewType::kStructuredBuffer:
+    case ViewType::kRWStructuredBuffer:
     case ViewType::kShadingRateSource:
         CreateSrv(view_desc, vk_resource);
         break;

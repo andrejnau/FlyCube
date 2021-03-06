@@ -287,10 +287,15 @@ DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, con
 
     switch (view_desc.view_type)
     {
-    case ViewType::kShaderResource:
+    case ViewType::kTexture:
+    case ViewType::kBuffer:
+    case ViewType::kStructuredBuffer:
+    case ViewType::kAccelerationStructure:
         CreateSrv(view_desc, dx_resource, *m_handle);
         break;
-    case ViewType::kUnorderedAccess:
+    case ViewType::kRWTexture:
+    case ViewType::kRWBuffer:
+    case ViewType::kRWStructuredBuffer:
         CreateUAV(view_desc, dx_resource, *m_handle);
         break;
     case ViewType::kConstantBuffer:

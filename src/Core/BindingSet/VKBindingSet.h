@@ -2,16 +2,22 @@
 #include "BindingSet/BindingSet.h"
 #include <vulkan/vulkan.hpp>
 
+class VKDevice;
+class VKBindingSetLayout;
+
 class VKBindingSet
     : public BindingSet
 {
 public:
-    VKBindingSet(std::vector<vk::DescriptorSet>&& descriptor_sets, std::vector<vk::UniqueDescriptorSet>&& descriptor_sets_unique, vk::PipelineLayout pipeline_layout);
+    VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetLayout>& layout);
+
+    void WriteBindings(const std::vector<BindingDesc>& bindings) override;
     const std::vector<vk::DescriptorSet>& GetDescriptorSets() const;
     vk::PipelineLayout GetPipelineLayout() const;
 
 private:
-    std::vector<vk::UniqueDescriptorSet> m_descriptor_sets;
-    std::vector<vk::DescriptorSet> m_descriptor_sets_raw;
-    vk::PipelineLayout m_pipeline_layout;
+    VKDevice& m_device;
+    std::vector<vk::UniqueDescriptorSet> m_descriptor_sets_unique;
+    std::vector<vk::DescriptorSet> m_descriptor_sets;
+    std::shared_ptr<VKBindingSetLayout> m_layout;
 };

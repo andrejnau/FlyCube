@@ -5,6 +5,8 @@
 #include <Instance/VKInstance.h>
 #include <Fence/VKTimelineSemaphore.h>
 #include <Program/VKProgram.h>
+#include <BindingSetLayout/VKBindingSetLayout.h>
+#include <BindingSet/VKBindingSet.h>
 #include <Pipeline/VKGraphicsPipeline.h>
 #include <Pipeline/VKComputePipeline.h>
 #include <Pipeline/VKRayTracingPipeline.h>
@@ -413,6 +415,16 @@ std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
 std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
     return std::make_shared<VKView>(*this, std::static_pointer_cast<VKResource>(resource), view_desc);
+}
+
+std::shared_ptr<BindingSetLayout> VKDevice::CreateBindingSetLayout(const std::vector<BindKey>& descs)
+{
+    return std::make_shared<VKBindingSetLayout>(*this, descs);
+}
+
+std::shared_ptr<BindingSet> VKDevice::CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout)
+{
+    return std::make_shared<VKBindingSet>(*this, std::static_pointer_cast<VKBindingSetLayout>(layout));
 }
 
 std::shared_ptr<RenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& desc)

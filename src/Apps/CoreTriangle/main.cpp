@@ -47,13 +47,18 @@ int main(int argc, char* argv[])
     copy_command_queue->Signal(fence, ++fence_value);
     command_queue->Wait(fence, fence_value);
 
-    ViewDesc constant_view_desc = {};
-    constant_view_desc.view_type = ViewType::kConstantBuffer;
-    std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, constant_view_desc);
     std::shared_ptr<Shader> vertex_shader = device->CompileShader({ ASSETS_PATH"shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex, "6_0" });
     std::shared_ptr<Shader> pixel_shader = device->CompileShader({ ASSETS_PATH"shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel, "6_0" });
     std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
-    std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { pixel_shader->GetBindKey("Settings"), constant_buffer_view } });
+
+    ViewDesc constant_view_desc = {};
+    constant_view_desc.view_type = ViewType::kConstantBuffer;
+    std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, constant_view_desc);
+    BindKey settings_key = pixel_shader->GetBindKey("Settings");
+    std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ settings_key });
+    std::shared_ptr<BindingSet> binding_set = device->CreateBindingSet(layout);
+    binding_set->WriteBindings({ { settings_key, constant_buffer_view } });
+
     RenderPassDesc render_pass_desc = {
         { { swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
@@ -61,6 +66,7 @@ int main(int argc, char* argv[])
     ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
     GraphicsPipelineDesc pipeline_desc = {
         program,
+        layout,
         { { 0, vertex_shader->GetInputLayoutLocation("POSITION"), gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
         render_pass
     };

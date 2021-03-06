@@ -173,17 +173,34 @@ ViewType GetViewType(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
     case D3D_SIT_SAMPLER:
         return ViewType::kSampler;
     case D3D_SIT_TEXTURE:
+        return ViewType::kTexture;
     case D3D_SIT_STRUCTURED:
-    case D3D_SIT_BYTEADDRESS:
+        return ViewType::kStructuredBuffer;
     case D3D_SIT_RTACCELERATIONSTRUCTURE:
-        return ViewType::kShaderResource;
+        return ViewType::kAccelerationStructure;
     case D3D_SIT_UAV_RWSTRUCTURED:
+        return ViewType::kRWStructuredBuffer;
     case D3D_SIT_UAV_RWTYPED:
-    case D3D_SIT_UAV_RWBYTEADDRESS:
-    case D3D_SIT_UAV_APPEND_STRUCTURED:
-    case D3D_SIT_UAV_CONSUME_STRUCTURED:
-    case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
-        return ViewType::kUnorderedAccess;
+    {
+        switch (bind_desc.Dimension)
+        {
+        case D3D_SRV_DIMENSION_BUFFER:
+            return ViewType::kRWBuffer;
+        case D3D_SRV_DIMENSION_TEXTURE1D:
+        case D3D_SRV_DIMENSION_TEXTURE1DARRAY:
+        case D3D_SRV_DIMENSION_TEXTURE2D:
+        case D3D_SRV_DIMENSION_TEXTURE2DARRAY:
+        case D3D_SRV_DIMENSION_TEXTURE2DMS:
+        case D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:
+        case D3D_SRV_DIMENSION_TEXTURE3D:
+        case D3D_SRV_DIMENSION_TEXTURECUBE:
+        case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
+            return ViewType::kRWTexture;
+        default:
+            assert(false);
+            break;
+        }
+    }
     default:
         assert(false);
         return ViewType::kUnknown;
@@ -258,6 +275,11 @@ ResourceBindingDesc GetBindingDesc(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc
     desc.type = GetViewType(bind_desc);
     desc.slot = bind_desc.BindPoint;
     desc.space = bind_desc.Space;
+    desc.count = bind_desc.BindCount;
+    if (desc.count == 0)
+    {
+        desc.count = std::numeric_limits<uint32_t>::max();
+    }
     desc.dimension = GetResourceDimension(bind_desc);
     desc.return_type = GetReturnType(bind_desc);
     desc.stride = GetStride(bind_desc, reflection);

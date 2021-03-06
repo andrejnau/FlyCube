@@ -97,4 +97,7 @@ private:
     std::map<std::shared_ptr<Resource>, ResourceStateTracker> m_resource_state_tracker;
     std::vector<ResourceBarrierDesc> m_lazy_barriers;
     uint64_t m_fence_value = 0;
+    std::shared_ptr<BindingSetLayout> m_layout;
+    std::map<std::vector<BindKey>, std::shared_ptr<BindingSetLayout>> m_layout_cache;
+    std::map<std::pair<std::shared_ptr<BindingSetLayout>, std::vector<BindingDesc>>, std::shared_ptr<BindingSet>> m_binding_set_cache;
 };

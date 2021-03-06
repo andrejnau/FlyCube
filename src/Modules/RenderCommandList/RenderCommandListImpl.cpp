@@ -283,17 +283,27 @@ void RenderCommandListImpl::UseProgram(const std::shared_ptr<Program>& program)
     m_ray_tracing_pipeline_desc = {};
 
     m_program = program;
+    decltype(auto) bindings = m_program->GetBindings();
+    auto it = m_layout_cache.find(bindings);
+    if (it == m_layout_cache.end())
+    {
+        it = m_layout_cache.emplace(bindings, m_device.CreateBindingSetLayout(bindings)).first;
+    }
+    m_layout = it->second;
     if (m_program->HasShader(ShaderType::kCompute))
     {
         m_compute_pipeline_desc.program = m_program;
+        m_compute_pipeline_desc.layout = m_layout;
     }
     else if (m_program->HasShader(ShaderType::kLibrary))
     {
         m_ray_tracing_pipeline_desc.program = m_program;
+        m_ray_tracing_pipeline_desc.layout = m_layout;
     }
     else
     {
         m_graphic_pipeline_desc.program = m_program;
+        m_graphic_pipeline_desc.layout = m_layout;
         if (m_program->HasShader(ShaderType::kVertex))
             m_graphic_pipeline_desc.input = m_program->GetShader(ShaderType::kVertex)->GetInputLayouts();
     }
@@ -371,7 +381,18 @@ void RenderCommandListImpl::ApplyBindingSet()
         desc.view = x.second;
     }
 
-    auto binding_set = m_program->CreateBindingSet(descs);
+    std::shared_ptr<BindingSet> binding_set;
+    auto it = m_binding_set_cache.find({ m_layout, descs });
+    if (it != m_binding_set_cache.end())
+    {
+        binding_set = it->second;
+    }
+    else
+    {
+        binding_set = m_device.CreateBindingSet(m_layout);
+        binding_set->WriteBindings(descs);
+        m_binding_set_cache[{ m_layout, descs }] = binding_set;
+    }
     m_command_list->BindBindingSet(binding_set);
     m_binding_sets.emplace_back(binding_set);
 }
@@ -393,16 +414,24 @@ std::shared_ptr<View> RenderCommandListImpl::CreateView(const BindKey& bind_key,
     ViewDesc desc = {};
     static_cast<LazyViewDesc&>(desc) = view_desc;
     desc.view_type = bind_key.view_type;
+
+    bool shader_binding = true;
     switch (bind_key.view_type)
     {
-    case ViewType::kShaderResource:
-    case ViewType::kUnorderedAccess:
+    case ViewType::kRenderTarget:
+    case ViewType::kDepthStencil:
+    case ViewType::kShadingRateSource:
+        shader_binding = false;
+        break;
+    }
+
+    if (shader_binding)
     {
         decltype(auto) shader = m_program->GetShader(bind_key.shader_type);
         ResourceBindingDesc binding_desc = shader->GetResourceBinding(bind_key);
         desc.dimension = binding_desc.dimension;
         desc.stride = binding_desc.stride;
-        if (resource && binding_desc.dimension != ResourceDimension::kBuffer && binding_desc.dimension != ResourceDimension::kRaytracingAccelerationStructure)
+        if (resource && bind_key.view_type == ViewType::kTexture)
         {
             DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(resource->GetFormat()).DXGIFormat.DDS);
             if (IsTypelessDepthStencil(MakeTypelessDepthStencil(dx_format)))
@@ -420,8 +449,6 @@ std::shared_ptr<View> RenderCommandListImpl::CreateView(const BindKey& bind_key,
                 }
             }
         }
-        break;
-    }
     }
     auto view = m_device.CreateView(resource, desc);
     m_views.emplace(std::piecewise_construct, std::forward_as_tuple(bind_key, resource, view_desc), std::forward_as_tuple(view));
@@ -534,10 +561,14 @@ void RenderCommandListImpl::Attach(const BindKey& bind_key, const std::shared_pt
     SetBinding(bind_key, view);
     switch (bind_key.view_type)
     {
-    case ViewType::kShaderResource:
+    case ViewType::kTexture:
+    case ViewType::kBuffer:
+    case ViewType::kStructuredBuffer:
         OnAttachSRV(bind_key, view);
         break;
-    case ViewType::kUnorderedAccess:
+    case ViewType::kRWTexture:
+    case ViewType::kRWBuffer:
+    case ViewType::kRWStructuredBuffer:
         OnAttachUAV(bind_key, view);
         break;
     case ViewType::kRenderTarget:

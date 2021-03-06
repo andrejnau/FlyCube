@@ -92,10 +92,15 @@ struct SamplerDesc
 enum class ViewType
 {
     kUnknown,
-    kShaderResource,
-    kUnorderedAccess,
     kConstantBuffer,
     kSampler,
+    kTexture,
+    kRWTexture,
+    kBuffer,
+    kRWBuffer,
+    kStructuredBuffer,
+    kRWStructuredBuffer,
+    kAccelerationStructure,
     kShadingRateSource,
     kRenderTarget,
     kDepthStencil
@@ -391,12 +396,14 @@ struct RenderPassBeginDesc
 };
 
 class Program;
+class BindingSetLayout;
 class View;
 class RenderPass;
 
 struct GraphicsPipelineDesc
 {
     std::shared_ptr<Program> program;
+    std::shared_ptr<BindingSetLayout> layout;
     std::vector<InputLayoutDesc> input;
     std::shared_ptr<RenderPass> render_pass;
     DepthStencilDesc depth_stencil_desc;
@@ -405,17 +412,18 @@ struct GraphicsPipelineDesc
 
     auto MakeTie() const
     {
-        return std::tie(program, input, render_pass, depth_stencil_desc, blend_desc, rasterizer_desc);
+        return std::tie(program, layout, input, render_pass, depth_stencil_desc, blend_desc, rasterizer_desc);
     }
 };
 
 struct ComputePipelineDesc
 {
     std::shared_ptr<Program> program;
+    std::shared_ptr<BindingSetLayout> layout;
 
     auto MakeTie() const
     {
-        return std::tie(program);
+        return std::tie(program, layout);
     }
 };
 
@@ -427,10 +435,11 @@ struct BindKey
     ViewType view_type = ViewType::kUnknown;
     uint32_t slot = 0;
     uint32_t space = 0;
+    uint32_t count = 0;
 
     auto MakeTie() const
     {
-        return std::tie(shader_type, view_type, slot, space);
+        return std::tie(shader_type, view_type, slot, space, count);
     }
 };
 
@@ -459,6 +468,7 @@ struct ResourceBindingDesc
     ViewType type;
     uint32_t slot;
     uint32_t space;
+    uint32_t count;
     ResourceDimension dimension;
     ReturnType return_type;
     uint32_t stride;
@@ -655,7 +665,7 @@ namespace enum_class
 using BuildAccelerationStructureFlags = enum_class::BuildAccelerationStructureFlags;
 ENABLE_BITMASK_OPERATORS(BuildAccelerationStructureFlags);
 
-template<typename T> 
+template<typename T>
 auto operator< (const T& l, const T& r) -> std::enable_if_t<std::is_same_v<decltype(l.MakeTie() < r.MakeTie()), bool>, bool>
 {
     return l.MakeTie() < r.MakeTie();

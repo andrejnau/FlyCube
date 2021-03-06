@@ -3,6 +3,7 @@
 #include <Device/DXDevice.h>
 #include <Program/DXProgram.h>
 #include <Shader/Shader.h>
+#include <BindingSetLayout/DXBindingSetLayout.h>
 #include <HLSLCompiler/DXReflector.h>
 #include <View/DXView.h>
 #include <Utilities/DXGIFormatHelper.h>
@@ -15,7 +16,8 @@ DXComputePipeline::DXComputePipeline(DXDevice& device, const ComputePipelineDesc
     DXStateBuilder compute_state_builder;
 
     decltype(auto) dx_program = m_desc.program->As<DXProgram>();
-    m_root_signature = dx_program.GetRootSignature();
+    decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
+    m_root_signature = dx_layout.GetRootSignature();
     for (const auto& shader : dx_program.GetShaders())
     {
         D3D12_SHADER_BYTECODE ShaderBytecode = {};

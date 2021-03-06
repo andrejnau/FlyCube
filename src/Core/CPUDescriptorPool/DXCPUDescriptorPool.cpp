@@ -21,9 +21,14 @@ DXCPUDescriptorPoolTyped& DXCPUDescriptorPool::SelectHeap(ViewType view_type)
 {
     switch (view_type)
     {
-    case ViewType::kShaderResource:
-    case ViewType::kUnorderedAccess:
+    case ViewType::kAccelerationStructure:
     case ViewType::kConstantBuffer:
+    case ViewType::kTexture:
+    case ViewType::kRWTexture:
+    case ViewType::kBuffer:
+    case ViewType::kRWBuffer:
+    case ViewType::kStructuredBuffer:
+    case ViewType::kRWStructuredBuffer:
         return m_resource;
     case ViewType::kSampler:
         return m_sampler;

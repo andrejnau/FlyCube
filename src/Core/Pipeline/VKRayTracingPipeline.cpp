@@ -3,6 +3,7 @@
 #include <Device/VKDevice.h>
 #include <Adapter/VKAdapter.h>
 #include <Program/VKProgram.h>
+#include <BindingSetLayout/VKBindingSetLayout.h>
 #include <Shader/Shader.h>
 #include <map>
 
@@ -10,7 +11,8 @@ VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const ComputePipeli
     : m_device(device)
     , m_desc(desc)
 {
-    decltype(auto) vk_program = desc.program->As<VKProgram>();
+    decltype(auto) vk_program = m_desc.program->As<VKProgram>();
+    decltype(auto) vk_layout = m_desc.layout->As<VKBindingSetLayout>();
     auto shaders = vk_program.GetShaders();
     for (auto& shader : shaders)
     {
@@ -71,7 +73,7 @@ VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const ComputePipeli
     ray_pipeline_info.groupCount = static_cast<uint32_t>(groups.size());
     ray_pipeline_info.pGroups = groups.data();
     ray_pipeline_info.maxPipelineRayRecursionDepth = 1;
-    ray_pipeline_info.layout = vk_program.GetPipelineLayout();
+    ray_pipeline_info.layout = vk_layout.GetPipelineLayout();
 
     m_pipeline = m_device.GetDevice().createRayTracingPipelineKHRUnique({}, {}, ray_pipeline_info);
 

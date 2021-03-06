@@ -1,6 +1,7 @@
 #include "Pipeline/VKGraphicsPipeline.h"
 #include <Device/VKDevice.h>
 #include <Program/VKProgram.h>
+#include <BindingSetLayout/VKBindingSetLayout.h>
 #include <map>
 
 vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
@@ -174,6 +175,7 @@ void VKGraphicsPipeline::CreateGrPipeLine()
 {
     const RenderPassDesc& render_pass_desc = m_desc.render_pass->GetDesc();
     decltype(auto) vk_program = m_desc.program->As<VKProgram>();
+    decltype(auto) vk_layout = m_desc.layout->As<VKBindingSetLayout>();
 
     vk::PipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.vertexBindingDescriptionCount = m_binding_desc.size();
@@ -294,7 +296,7 @@ void VKGraphicsPipeline::CreateGrPipeLine()
     pipeline_info.pMultisampleState = &multisampling;
     pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = &color_blending;
-    pipeline_info.layout = vk_program.GetPipelineLayout();
+    pipeline_info.layout = vk_layout.GetPipelineLayout();
     pipeline_info.renderPass = GetRenderPass();
     pipeline_info.pDynamicState = &pipelineDynamicStateCreateInfo;
 

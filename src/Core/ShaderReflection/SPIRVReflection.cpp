@@ -84,17 +84,20 @@ ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::S
 {
     switch (type.basetype)
     {
-    case spirv_cross::SPIRType::SampledImage:
     case spirv_cross::SPIRType::AccelerationStructure:
     {
-        return ViewType::kShaderResource;
+        return ViewType::kAccelerationStructure;
+    }
+    case spirv_cross::SPIRType::SampledImage:
+    {
+        return ViewType::kTexture;
     }
     case spirv_cross::SPIRType::Image:
     {
         if (type.image.sampled == 2 && type.image.dim != spv::DimSubpassData)
-            return ViewType::kUnorderedAccess;
+            return ViewType::kRWTexture;
         else
-            return ViewType::kShaderResource;
+            return ViewType::kTexture;
     }
     case spirv_cross::SPIRType::Sampler:
     {
@@ -109,9 +112,13 @@ ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::S
                 spirv_cross::Bitset flags = compiler.get_buffer_block_flags(resource_id);
                 bool is_readonly = flags.get(spv::DecorationNonWritable);
                 if (is_readonly)
-                    return ViewType::kShaderResource;
+                {
+                    return ViewType::kStructuredBuffer;
+                }
                 else
-                    return ViewType::kUnorderedAccess;
+                {
+                    return ViewType::kRWStructuredBuffer;
+                }
             }
             else if (compiler.has_decoration(type.self, spv::DecorationBlock))
             {
@@ -216,6 +223,11 @@ ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, co
     desc.type = GetViewType(compiler, resource_type, resource.id);
     desc.slot = compiler.get_decoration(resource.id, spv::DecorationBinding);
     desc.space = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+    desc.count = 1;
+    if (!resource_type.array.empty() && resource_type.array.front() == 0)
+    {
+        desc.count = std::numeric_limits<uint32_t>::max();
+    }
     desc.dimension = GetResourceDimension(resource_type);
     desc.return_type = GetReturnType(compiler, resource_type);
     if (desc.dimension == ResourceDimension::kBuffer)

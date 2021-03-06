@@ -3,6 +3,7 @@
 #include <Device/VKDevice.h>
 #include <Program/VKProgram.h>
 #include <Shader/Shader.h>
+#include <BindingSetLayout/VKBindingSetLayout.h>
 #include <map>
 
 VKComputePipeline::VKComputePipeline(VKDevice& device, const ComputePipelineDesc& desc)
@@ -51,8 +52,9 @@ vk::Pipeline VKComputePipeline::GetPipeline() const
 void VKComputePipeline::CreateComputePipeLine()
 {
     decltype(auto) vk_program = m_desc.program->As<VKProgram>();
+    decltype(auto) vk_layout = m_desc.layout->As<VKBindingSetLayout>();
     vk::ComputePipelineCreateInfo pipeline_info = {};
     pipeline_info.stage = *m_shader_stage_create_info.data();
-    pipeline_info.layout = vk_program.GetPipelineLayout();
+    pipeline_info.layout = vk_layout.GetPipelineLayout();
     m_pipeline = m_device.GetDevice().createComputePipelineUnique({}, pipeline_info);
 }

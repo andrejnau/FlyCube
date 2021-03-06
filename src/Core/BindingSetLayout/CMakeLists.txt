@@ -1,52 +1,51 @@
 list(APPEND headers
-    BindingSet.h
+    BindingSetLayout.h
 )
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
-        VKBindingSet.h
+        VKBindingSetLayout.h
     )
     list(APPEND sources
-        VKBindingSet.cpp
+        VKBindingSetLayout.cpp
     )
 endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
-        DXBindingSet.h
+        DXBindingSetLayout.h
     )
     list(APPEND sources
-        DXBindingSet.cpp
+        DXBindingSetLayout.cpp
     )
 endif()
 
-add_library(BindingSet ${headers} ${sources})
+add_library(BindingSetLayout ${headers} ${sources})
 
-target_include_directories(BindingSet
+target_include_directories(BindingSetLayout
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
-target_link_libraries(BindingSet
+target_link_libraries(BindingSetLayout
     ApiType
     Device
     Instance
     Utilities
-    BindingSetLayout
 )
 
 if (VULKAN_SUPPORT)
-    target_link_libraries(BindingSet
+    target_link_libraries(BindingSetLayout
         vulkan
     )
 endif()
 
 if (DIRECTX_SUPPORT)
-    target_link_libraries(BindingSet
+    target_link_libraries(BindingSetLayout
         d3d12
         dxgi
         dxguid
     )
 endif()
 
-set_target_properties(BindingSet PROPERTIES FOLDER "Core")
+set_target_properties(BindingSetLayout PROPERTIES FOLDER "Core")

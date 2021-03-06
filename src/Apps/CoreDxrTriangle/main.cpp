@@ -97,22 +97,27 @@ int main(int argc, char* argv[])
     command_queue->Wait(fence, fence_value);
 
     ViewDesc top_view_desc = {};
-    top_view_desc.view_type = ViewType::kShaderResource;
+    top_view_desc.view_type = ViewType::kAccelerationStructure;
     top_view_desc.dimension = ResourceDimension::kRaytracingAccelerationStructure;
     std::shared_ptr<View> top_view = device->CreateView(top, top_view_desc);
 
     ViewDesc uav_view_desc = {};
-    uav_view_desc.view_type = ViewType::kUnorderedAccess;
+    uav_view_desc.view_type = ViewType::kTexture;
     uav_view_desc.dimension = ResourceDimension::kTexture2D;
     std::shared_ptr<View> uav_view = device->CreateView(uav, uav_view_desc);
 
     std::shared_ptr<Shader> library = device->CompileShader({ ASSETS_PATH"shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
     std::shared_ptr<Program> program = device->CreateProgram({ library });
-    std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({
-        { library->GetBindKey("geometry"), top_view },
-        { library->GetBindKey("result"), uav_view },
+    BindKey geometry_key = library->GetBindKey("geometry");
+    BindKey result_key = library->GetBindKey("result");
+    std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ geometry_key, result_key });
+    std::shared_ptr<BindingSet> binding_set = device->CreateBindingSet(layout);
+    binding_set->WriteBindings({
+        { geometry_key, top_view },
+        { result_key, uav_view }
     });
-    std::shared_ptr<Pipeline> pipeline = device->CreateRayTracingPipeline({ program });
+
+    std::shared_ptr<Pipeline> pipeline = device->CreateRayTracingPipeline({ program, layout });
     std::array<uint64_t, frame_count> fence_values = {};
     std::vector<std::shared_ptr<CommandList>> command_lists;
     for (uint32_t i = 0; i < frame_count; ++i)

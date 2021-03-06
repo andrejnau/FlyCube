@@ -1,6 +1,7 @@
 add_subdirectory(Adapter)
 add_subdirectory(ApiType)
 add_subdirectory(BindingSet)
+add_subdirectory(BindingSetLayout)
 add_subdirectory(CommandList)
 add_subdirectory(CommandQueue)
 add_subdirectory(CPUDescriptorPool)

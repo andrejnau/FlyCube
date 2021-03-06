@@ -16,12 +16,14 @@ public:
     const std::vector<InputLayoutDesc>& GetInputLayouts() const override;
     uint32_t GetInputLayoutLocation(const std::string& semantic_name) const override;
     const std::string& GetSemanticName(uint32_t location) const override;
+    const std::vector<BindKey>& GetBindings() const override;
 
 protected:
     ShaderType m_shader_type;
     ShaderBlobType m_blob_type;
     std::vector<uint8_t> m_blob;
     std::vector<ResourceBindingDesc> m_bindings;
+    std::vector<BindKey> m_binding_keys;
     std::map<BindKey, size_t> m_mapping;
     std::map<std::string, BindKey> m_bind_keys;
     std::vector<InputLayoutDesc> m_input_layout_descs;

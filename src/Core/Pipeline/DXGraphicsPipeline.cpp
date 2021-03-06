@@ -2,6 +2,7 @@
 #include "Pipeline/DXStateBuilder.h"
 #include <Device/DXDevice.h>
 #include <Program/DXProgram.h>
+#include <BindingSetLayout/DXBindingSetLayout.h>
 #include <HLSLCompiler/DXReflector.h>
 #include <View/DXView.h>
 #include <Utilities/DXGIFormatHelper.h>
@@ -196,7 +197,8 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     DXStateBuilder graphics_state_builder;
 
     decltype(auto) dx_program = m_desc.program->As<DXProgram>();
-    m_root_signature = dx_program.GetRootSignature();
+    decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
+    m_root_signature = dx_layout.GetRootSignature();
     for (const auto& shader : dx_program.GetShaders())
     {
         D3D12_SHADER_BYTECODE ShaderBytecode = {};
@@ -222,6 +224,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
             break;
         case ShaderType::kMesh:
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_MS>(ShaderBytecode);
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT>(GetDSVFormat(desc));
             break;
         case ShaderType::kPixel:
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_PS>(ShaderBytecode);

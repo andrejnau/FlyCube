@@ -1,15 +1,15 @@
 #include "Program/ProgramBase.h"
 #include <deque>
 
-std::shared_ptr<BindingSet> ProgramBase::CreateBindingSet(const std::vector<BindingDesc>& bindings)
+ProgramBase::ProgramBase(const std::vector<std::shared_ptr<Shader>>& shaders)
+    : m_shaders(shaders)
 {
-    auto it = m_binding_set_cache.find(bindings);
-    if (it != m_binding_set_cache.end())
-        return it->second;
-
-    auto binding_set = CreateBindingSetImpl(bindings);
-    m_binding_set_cache.emplace(bindings, binding_set).first;
-    return binding_set;
+    for (const auto& shader : m_shaders)
+    {
+        m_shaders_by_type[shader->GetType()] = shader;
+        decltype(auto) bindings = shader->GetBindings();
+        m_bindings.insert(m_bindings.begin(), bindings.begin(), bindings.end());
+    }
 }
 
 bool ProgramBase::HasShader(ShaderType type) const
@@ -17,7 +17,22 @@ bool ProgramBase::HasShader(ShaderType type) const
     return m_shaders_by_type.count(type);
 }
 
-const std::shared_ptr<Shader>& ProgramBase::GetShader(ShaderType type) const
+std::shared_ptr<Shader> ProgramBase::GetShader(ShaderType type) const
 {
-    return m_shaders_by_type.at(type);
+    auto it = m_shaders_by_type.find(type);
+    if (it != m_shaders_by_type.end())
+    {
+        return it->second;
+    }
+    return {};
+}
+
+const std::vector<std::shared_ptr<Shader>>& ProgramBase::GetShaders() const
+{
+    return m_shaders;
+}
+
+const std::vector<BindKey>& ProgramBase::GetBindings() const
+{
+    return m_bindings;
 }

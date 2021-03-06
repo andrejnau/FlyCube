@@ -13,6 +13,8 @@ vk::AttachmentLoadOp Convert(RenderPassLoadOp op)
     case RenderPassLoadOp::kDontCare:
         return vk::AttachmentLoadOp::eDontCare;
     }
+    assert(false);
+    return vk::AttachmentLoadOp::eLoad;
 }
 
 vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
@@ -24,6 +26,8 @@ vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
     case RenderPassStoreOp::kDontCare:
         return vk::AttachmentStoreOp::eDontCare;
     }
+    assert(false);
+    return vk::AttachmentStoreOp::eStore;
 }
 
 VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)

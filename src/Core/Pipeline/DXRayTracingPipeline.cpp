@@ -2,6 +2,7 @@
 #include <Device/DXDevice.h>
 #include <Program/DXProgram.h>
 #include <Shader/Shader.h>
+#include <BindingSetLayout/DXBindingSetLayout.h>
 #include <View/DXView.h>
 #include <Utilities/DXGIFormatHelper.h>
 #include <d3d12.h>
@@ -209,7 +210,8 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
 {
     decltype(auto) dx_program = m_desc.program->As<DXProgram>();
     auto shaders = dx_program.GetShaders();
-    m_root_signature = dx_program.GetRootSignature();
+    decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
+    m_root_signature = dx_layout.GetRootSignature();
     auto blob = shaders.front()->GetBlob();
 
     size_t max_size = 16;

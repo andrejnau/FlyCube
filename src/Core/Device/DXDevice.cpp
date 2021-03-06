@@ -10,6 +10,8 @@
 #include <Pipeline/DXGraphicsPipeline.h>
 #include <Pipeline/DXComputePipeline.h>
 #include <Pipeline/DXRayTracingPipeline.h>
+#include <BindingSetLayout/DXBindingSetLayout.h>
+#include <BindingSet/DXBindingSet.h>
 #include <RenderPass/DXRenderPass.h>
 #include <Framebuffer/DXFramebuffer.h>
 #include <CommandQueue/DXCommandQueue.h>
@@ -314,6 +316,16 @@ std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
 std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
     return std::make_shared<DXView>(*this, resource, view_desc);
+}
+
+std::shared_ptr<BindingSetLayout> DXDevice::CreateBindingSetLayout(const std::vector<BindKey>& descs)
+{
+    return std::make_shared<DXBindingSetLayout>(*this, descs);
+}
+
+std::shared_ptr<BindingSet> DXDevice::CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout)
+{
+    return std::make_shared<DXBindingSet>(*this, std::static_pointer_cast<DXBindingSetLayout>(layout));
 }
 
 std::shared_ptr<RenderPass> DXDevice::CreateRenderPass(const RenderPassDesc& desc)
