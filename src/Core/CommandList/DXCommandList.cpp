@@ -70,7 +70,9 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
     if (state == m_state)
         return;
-    auto type = state->GetPipelineType();
+    m_state = std::static_pointer_cast<DXPipeline>(state);
+    m_command_list->SetComputeRootSignature(m_state->GetRootSignature().Get());
+    auto type = m_state->GetPipelineType();
     if (type == PipelineType::kGraphics)
     {
         decltype(auto) dx_state = state->As<DXGraphicsPipeline>();
@@ -89,16 +91,13 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
     else if (type == PipelineType::kCompute)
     {
         decltype(auto) dx_state = state->As<DXComputePipeline>();
-        m_command_list->SetComputeRootSignature(dx_state.GetRootSignature().Get());
         m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
     }
     else if (type == PipelineType::kRayTracing)
     {
         decltype(auto) dx_state = state->As<DXRayTracingPipeline>();
-        m_command_list->SetComputeRootSignature(dx_state.GetRootSignature().Get());
         m_command_list4->SetPipelineState1(dx_state.GetPipeline().Get());
     }
-    m_state = state;
 }
 
 void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)

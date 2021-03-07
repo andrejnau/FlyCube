@@ -49,6 +49,17 @@ vk::Pipeline VKComputePipeline::GetPipeline() const
     return m_pipeline.get();
 }
 
+vk::PipelineLayout VKComputePipeline::GetPipelineLayout() const
+{
+    decltype(auto) vk_layout = m_desc.layout->As<VKBindingSetLayout>();
+    return vk_layout.GetPipelineLayout();
+}
+
+vk::PipelineBindPoint VKComputePipeline::GetPipelineBindPoint() const
+{
+    return vk::PipelineBindPoint::eCompute;
+}
+
 void VKComputePipeline::CreateComputePipeLine()
 {
     decltype(auto) vk_program = m_desc.program->As<VKProgram>();

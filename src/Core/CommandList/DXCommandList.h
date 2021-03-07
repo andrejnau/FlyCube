@@ -7,6 +7,7 @@ using namespace Microsoft::WRL;
 
 class DXDevice;
 class DXResource;
+class DXPipeline;
 
 class DXCommandList : public CommandList
 {
@@ -55,7 +56,7 @@ private:
     ComPtr<ID3D12CommandAllocator> m_command_allocator;
     ComPtr<ID3D12GraphicsCommandList> m_command_list;
     std::vector<ComPtr<ID3D12DescriptorHeap>> m_heaps;
-    std::shared_ptr<Pipeline> m_state;
+    std::shared_ptr<DXPipeline> m_state;
     std::shared_ptr<BindingSet> m_binding_set;
     std::map<uint32_t, std::shared_ptr<Resource>> m_lazy_vertex;
     bool m_use_render_passes = true;

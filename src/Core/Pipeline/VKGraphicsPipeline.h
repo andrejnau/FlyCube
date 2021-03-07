@@ -1,5 +1,5 @@
 #pragma once
-#include "Pipeline.h"
+#include "Pipeline/VKPipeline.h"
 #include <Instance/BaseTypes.h>
 #include <vulkan/vulkan.hpp>
 #include <RenderPass/VKRenderPass.h>
@@ -10,13 +10,15 @@ vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model);
 
 class VKDevice;
 
-class VKGraphicsPipeline : public Pipeline
+class VKGraphicsPipeline : public VKPipeline
 {
 public:
     VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc);
     PipelineType GetPipelineType() const override;
+    vk::Pipeline GetPipeline() const override;
+    vk::PipelineLayout GetPipelineLayout() const override;
+    vk::PipelineBindPoint GetPipelineBindPoint() const override;
 
-    vk::Pipeline GetPipeline() const;
     vk::RenderPass GetRenderPass() const;
 
 private:

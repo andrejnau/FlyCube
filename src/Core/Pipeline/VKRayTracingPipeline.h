@@ -1,5 +1,5 @@
 #pragma once
-#include "Pipeline.h"
+#include "Pipeline/VKPipeline.h"
 #include <Instance/BaseTypes.h>
 #include <vulkan/vulkan.hpp>
 #include <RenderPass/VKRenderPass.h>
@@ -8,13 +8,15 @@
 
 class VKDevice;
 
-class VKRayTracingPipeline : public Pipeline
+class VKRayTracingPipeline : public VKPipeline
 {
 public:
     VKRayTracingPipeline(VKDevice& device, const ComputePipelineDesc& desc);
     PipelineType GetPipelineType() const override;
+    vk::Pipeline GetPipeline() const override;
+    vk::PipelineLayout GetPipelineLayout() const override;
+    vk::PipelineBindPoint GetPipelineBindPoint() const override;
 
-    vk::Pipeline GetPipeline() const;
     vk::Buffer GetShaderBindingTable() const;
 
 private:

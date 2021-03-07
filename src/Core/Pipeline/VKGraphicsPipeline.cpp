@@ -91,6 +91,17 @@ vk::RenderPass VKGraphicsPipeline::GetRenderPass() const
     return m_desc.render_pass->As<VKRenderPass>().GetRenderPass();
 }
 
+vk::PipelineLayout VKGraphicsPipeline::GetPipelineLayout() const
+{
+    decltype(auto) vk_layout = m_desc.layout->As<VKBindingSetLayout>();
+    return vk_layout.GetPipelineLayout();
+}
+
+vk::PipelineBindPoint VKGraphicsPipeline::GetPipelineBindPoint() const
+{
+    return vk::PipelineBindPoint::eGraphics;
+}
+
 void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDescription>& m_binding_desc, std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
 {
     for (auto& vertex : m_desc.input)

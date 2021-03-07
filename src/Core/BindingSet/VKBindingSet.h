@@ -13,7 +13,6 @@ public:
 
     void WriteBindings(const std::vector<BindingDesc>& bindings) override;
     const std::vector<vk::DescriptorSet>& GetDescriptorSets() const;
-    vk::PipelineLayout GetPipelineLayout() const;
 
 private:
     VKDevice& m_device;

@@ -138,6 +138,17 @@ vk::Pipeline VKRayTracingPipeline::GetPipeline() const
     return m_pipeline.get();
 }
 
+vk::PipelineLayout VKRayTracingPipeline::GetPipelineLayout() const
+{
+    decltype(auto) vk_layout = m_desc.layout->As<VKBindingSetLayout>();
+    return vk_layout.GetPipelineLayout();
+}
+
+vk::PipelineBindPoint VKRayTracingPipeline::GetPipelineBindPoint() const
+{
+    return vk::PipelineBindPoint::eRayTracingKHR;
+}
+
 vk::Buffer VKRayTracingPipeline::GetShaderBindingTable() const
 {
     return m_shader_binding_table.get();

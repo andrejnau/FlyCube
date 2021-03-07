@@ -4,6 +4,7 @@ list(APPEND headers
 
 if (VULKAN_SUPPORT)
     list(APPEND headers
+        VKPipeline.h
         VKComputePipeline.h
         VKGraphicsPipeline.h
         VKRayTracingPipeline.h
@@ -17,6 +18,7 @@ endif()
 
 if (DIRECTX_SUPPORT)
     list(APPEND headers
+        DXPipeline.h
         DXComputePipeline.h
         DXGraphicsPipeline.h
         DXRayTracingPipeline.h

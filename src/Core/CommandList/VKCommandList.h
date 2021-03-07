@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 
 class VKDevice;
+class VKPipeline;
 
 class VKCommandList : public CommandList
 {
@@ -46,7 +47,7 @@ private:
 
     VKDevice& m_device;
     vk::UniqueCommandBuffer m_command_list;
-    std::shared_ptr<Pipeline> m_state;
+    std::shared_ptr<VKPipeline> m_state;
     std::shared_ptr<BindingSet> m_binding_set;
     bool m_closed = false;
 };

@@ -80,8 +80,3 @@ const std::vector<vk::DescriptorSet>& VKBindingSet::GetDescriptorSets() const
 {
     return m_descriptor_sets;
 }
-
-vk::PipelineLayout VKBindingSet::GetPipelineLayout() const
-{
-    return m_layout->GetPipelineLayout();
-}

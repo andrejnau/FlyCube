@@ -1,5 +1,5 @@
 #pragma once
-#include "Pipeline/Pipeline.h"
+#include "Pipeline/DXPipeline.h"
 #include <Instance/BaseTypes.h>
 #include <d3d12.h>
 #include <wrl.h>
@@ -8,15 +8,15 @@ using namespace Microsoft::WRL;
 class DXDevice;
 class Shader;
 
-class DXGraphicsPipeline : public Pipeline
+class DXGraphicsPipeline : public DXPipeline
 {
 public:
     DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineDesc& desc);
     PipelineType GetPipelineType() const override;
+    const ComPtr<ID3D12RootSignature>& GetRootSignature() const override;
 
     const GraphicsPipelineDesc& GetDesc() const;
     const ComPtr<ID3D12PipelineState>& GetPipeline() const;
-    const ComPtr<ID3D12RootSignature>& GetRootSignature() const;
     const std::map<size_t, uint32_t>& GetStrideMap() const;
 
 private:
