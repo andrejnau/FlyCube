@@ -9,7 +9,6 @@
 #include <d3dx12.h>
 #include <d3d12shader.h>
 #include <Utilities/FileUtility.h>
-#include <HLSLCompiler/DXReflector.h>
 #include <HLSLCompiler/DXCLoader.h>
 #include <dxc/DXIL/DxilConstants.h>
 #include <dxc/DxilContainer/DxilContainer.h>
@@ -45,14 +44,14 @@ ShaderInfo GetShaderInfo(const std::vector<uint8_t>& blob)
 {
     ShaderInfo res;
 
-    DXCLoader loader;
+    decltype(auto) dxc_support = GetDxcSupport(ShaderBlobType::kDXIL);
     CComPtr<IDxcBlobEncoding> source;
     uint32_t shade_idx = 0;
     ComPtr<IDxcLibrary> library;
-    loader.CreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library));
+    dxc_support.CreateInstance(CLSID_DxcLibrary, library.GetAddressOf());
     ASSERT_SUCCEEDED(library->CreateBlobWithEncodingOnHeapCopy(blob.data(), static_cast<UINT32>(blob.size()), CP_ACP, &source));
     ComPtr<IDxcContainerReflection> reflection;
-    loader.CreateInstance(CLSID_DxcContainerReflection, IID_PPV_ARGS(&reflection));
+    dxc_support.CreateInstance(CLSID_DxcContainerReflection, reflection.GetAddressOf());
     ASSERT_SUCCEEDED(reflection->Load(source));
     uint32_t part_count = 0;
     ASSERT_SUCCEEDED(reflection->GetPartCount(&part_count));

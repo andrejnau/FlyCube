@@ -1,7 +1,6 @@
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
 #include <HLSLCompiler/Compiler.h>
-#include <HLSLCompiler/DXReflector.h>
 #include <mustache.hpp>
 #include <string>
 #include <stdexcept>
@@ -13,9 +12,34 @@
 #include <map>
 #include <set>
 #include <d3dcommon.h>
+#include <d3d12shader.h>
 #include <wrl.h>
+#include "HLSLCompiler/DXCLoader.h"
+#include <dxc/Support/Global.h>
+#include <dxc/DxilContainer/DxilContainer.h>
 using namespace Microsoft::WRL;
 using namespace kainjow;
+
+HRESULT DXReflect(
+    _In_reads_bytes_(SrcDataSize) LPCVOID pSrcData,
+    _In_ SIZE_T SrcDataSize,
+    _In_ REFIID pInterface,
+    _Out_ void** ppReflector)
+{
+    *ppReflector = nullptr;
+    decltype(auto) dxc_support = GetDxcSupport(ShaderBlobType::kDXIL);
+    CComPtr<IDxcBlobEncoding> source;
+    uint32_t shade_idx = 0;
+    ComPtr<IDxcLibrary> library;
+    IFR(dxc_support.CreateInstance(CLSID_DxcLibrary, library.GetAddressOf()));
+    IFR(library->CreateBlobWithEncodingOnHeapCopy(pSrcData, static_cast<UINT32>(SrcDataSize), CP_ACP, &source));
+    ComPtr<IDxcContainerReflection> reflection;
+    IFR(dxc_support.CreateInstance(CLSID_DxcContainerReflection, reflection.GetAddressOf()));
+    IFR(reflection->Load(source));
+    IFR(reflection->FindFirstPartKind(hlsl::DFCC_DXIL, &shade_idx));
+    IFR(reflection->GetPartReflection(shade_idx, pInterface, ppReflector));
+    return S_OK;
+}
 
 struct Option
 {
@@ -475,7 +499,7 @@ private:
                 }
                 case D3D_SIT_TEXTURE:
                 case D3D_SIT_STRUCTURED:
-                case SIT_RTACCELERATIONSTRUCTURE:
+                case D3D_SIT_RTACCELERATIONSTRUCTURE:
                 {
                     mustache::data ttexture;
                     ttexture.set("Name", res_desc.Name);

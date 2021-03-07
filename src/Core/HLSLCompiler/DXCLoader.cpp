@@ -1,24 +1,59 @@
 #include "HLSLCompiler/DXCLoader.h"
 #include <Utilities/FileUtility.h>
 #include <Utilities/ScopeGuard.h>
+#include <dxc/Support/Global.h>
 #include <vector>
+#include <string>
+#include <filesystem>
+#include <wrl.h>
+using namespace Microsoft::WRL;
 
-DXCLoader::DXCLoader(bool dxil_required)
+HRESULT Test(dxc::DxcDllSupport& dll_support, ShaderBlobType target)
 {
-    if (Load(GetExecutableDir(), dxil_required))
-        return;
-    if (Load(DXC_CUSTOM_LOCATION, dxil_required))
-        return;
-    if (Load(GetEnv("VULKAN_SDK") + "/Bin/", dxil_required))
-        return;
-    Load(DXC_DEFAULT_LOCATION, dxil_required);
+    std::string test_shader = "[shader(\"pixel\")]void main(){}";
+    ComPtr<IDxcLibrary> library;
+    IFR(dll_support.CreateInstance(CLSID_DxcLibrary, library.GetAddressOf()));
+    ComPtr<IDxcBlobEncoding> source;
+    IFR(library->CreateBlobWithEncodingFromPinned(test_shader.data(), test_shader.size(), CP_ACP, &source));
+
+    std::vector<LPCWSTR> args;
+    if (target == ShaderBlobType::kSPIRV)
+    {
+        args.emplace_back(L"-spirv");
+    }
+
+    ComPtr<IDxcOperationResult> result;
+    ComPtr<IDxcCompiler> compiler;
+    IFR(dll_support.CreateInstance(CLSID_DxcCompiler, compiler.GetAddressOf()));
+    IFR(compiler->Compile(
+        source.Get(),
+        L"main.hlsl",
+        L"",
+        L"lib_6_3",
+        args.data(), args.size(),
+        nullptr, 0,
+        nullptr,
+        &result
+    ));
+
+    HRESULT hr = {};
+    result->GetStatus(&hr);
+    return hr;
 }
 
-bool DXCLoader::Load(const std::string& path, bool dxil_required)
+std::unique_ptr<dxc::DxcDllSupport> Load(const std::string& path, ShaderBlobType target)
 {
-    std::wstring wpath = utf8_to_wstring(path);
-    if (dxil_required && !PathFileExistsW((wpath + L"/dxil.dll").c_str()))
-        return false;
+    auto dxcompiler_path = std::filesystem::u8path(path) / "dxcompiler.dll";
+    if (!std::filesystem::exists(dxcompiler_path))
+    {
+        return {};
+    }
+
+    auto dxil_path = std::filesystem::u8path(path) / "dxil.dll";
+    if (target == ShaderBlobType::kDXIL && !std::filesystem::exists(dxil_path))
+    {
+        return {};
+    }
 
     std::vector<wchar_t> prev_dll_dir(GetDllDirectoryW(0, nullptr));
     GetDllDirectoryW(static_cast<DWORD>(prev_dll_dir.size()), prev_dll_dir.data());
@@ -26,19 +61,48 @@ bool DXCLoader::Load(const std::string& path, bool dxil_required)
     {
         SetDllDirectoryW(prev_dll_dir.data());
     };
+    SetDllDirectoryW(std::filesystem::u8path(path).wstring().c_str());
 
-    SetDllDirectoryW(wpath.c_str());
-    std::wstring dxcompiler = wpath + L"/dxcompiler.dll";
-    HRESULT hr = m_dll_support.InitializeForDll(dxcompiler.c_str(), "DxcCreateInstance");
-    return SUCCEEDED(hr);
+    auto dll_support = std::make_unique<dxc::DxcDllSupport>();
+    if (FAILED(dll_support->InitializeForDll(dxcompiler_path.wstring().c_str(), "DxcCreateInstance")))
+    {
+        return {};
+    }
+    if (FAILED(Test(*dll_support, target)))
+    {
+        return {};
+    }
+
+    return dll_support;
 }
 
-DXCLoader::~DXCLoader()
+std::unique_ptr<dxc::DxcDllSupport> GetDxcSupportImpl(ShaderBlobType target)
 {
-    m_dll_support.Detach();
+    std::vector<std::string> localions = {
+        GetExecutableDir(),
+        DXC_CUSTOM_LOCATION,
+        DXC_DEFAULT_LOCATION,
+        GetEnv("VULKAN_SDK") + "/Bin"
+    };
+    for (const auto& path : localions)
+    {
+        auto res = Load(path, target);
+        if (res)
+        {
+            return res;
+        }
+    }
+    assert(false);
+    return {};
 }
 
-HRESULT DXCLoader::CreateInstance(REFCLSID clsid, REFIID riid, void** pResult)
+dxc::DxcDllSupport& GetDxcSupport(ShaderBlobType target)
 {
-    return m_dll_support.CreateInstance(clsid, riid, (IUnknown**)pResult);
+    static std::map<ShaderBlobType, std::unique_ptr<dxc::DxcDllSupport>> cache;
+    auto it = cache.find(target);
+    if (it == cache.end())
+    {
+        it = cache.emplace(target, GetDxcSupportImpl(target)).first;
+    }
+    return *it->second;
 }

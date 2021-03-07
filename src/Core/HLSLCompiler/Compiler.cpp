@@ -7,6 +7,8 @@
 #include <vector>
 #include <d3dcompiler.h>
 #include <cassert>
+#include <wrl.h>
+using namespace Microsoft::WRL;
 
 static std::string GetShaderTarget(ShaderType type, const std::string& model)
 {
@@ -68,13 +70,13 @@ private:
 
 std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
 {
-    DXCLoader loader(blob_type == ShaderBlobType::kDXIL);
+    decltype(auto) dxc_support = GetDxcSupport(blob_type);
 
     std::wstring shader_path = utf8_to_wstring(shader.shader_path);
     std::wstring shader_dir = shader_path.substr(0, shader_path.find_last_of(L"\\/") + 1);
 
     ComPtr<IDxcLibrary> library;
-    loader.CreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library));
+    dxc_support.CreateInstance(CLSID_DxcLibrary, library.GetAddressOf());
     ComPtr<IDxcBlobEncoding> source;
     ASSERT_SUCCEEDED(library->CreateBlobFromFile(
         shader_path.c_str(),
@@ -121,7 +123,7 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     ComPtr<IDxcOperationResult> result;
     IncludeHandler include_handler(library, shader_dir);
     ComPtr<IDxcCompiler> compiler;
-    loader.CreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler));
+    dxc_support.CreateInstance(CLSID_DxcCompiler, compiler.GetAddressOf());
     ASSERT_SUCCEEDED(compiler->Compile(
         source.Get(),
         L"main.hlsl",

@@ -1,11 +1,9 @@
 list(APPEND headers
     Compiler.h
-    DXReflector.h
     DXCLoader.h
 )
 list(APPEND sources
     Compiler.cpp
-    DXReflector.cpp
     DXCLoader.cpp
 )
 

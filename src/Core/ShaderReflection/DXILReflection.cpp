@@ -88,13 +88,13 @@ std::string FindStrValue(ComPtr<IDiaTable> table, const std::wstring& name)
 
 DXILReflection::DXILReflection(const void* data, size_t size)
 {
-    DXCLoader loader;
+    decltype(auto) dxc_support = GetDxcSupport(ShaderBlobType::kDXIL);
     ComPtr<IDxcLibrary> library;
-    loader.CreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library));
+    dxc_support.CreateInstance(CLSID_DxcLibrary, library.GetAddressOf());
     ComPtr<IDxcBlobEncoding> source;
     ASSERT_SUCCEEDED(library->CreateBlobWithEncodingOnHeapCopy(data, size, CP_ACP, &source));
     ComPtr<IDxcContainerReflection> reflection;
-    loader.CreateInstance(CLSID_DxcContainerReflection, IID_PPV_ARGS(&reflection));
+    dxc_support.CreateInstance(CLSID_DxcContainerReflection, reflection.GetAddressOf());
     ASSERT_SUCCEEDED(reflection->Load(source.Get()));
 
     ComPtr<IDxcBlob> pdb;
@@ -130,7 +130,7 @@ DXILReflection::DXILReflection(const void* data, size_t size)
 
     if (pdb && !m_is_library)
     {
-        ParseDebugInfo(loader, pdb);
+        ParseDebugInfo(dxc_support, pdb);
     }
 }
 
@@ -379,15 +379,15 @@ void DXILReflection::ParseLibraryReflection(ComPtr<ID3D12LibraryReflection> libr
     m_bindings.erase(std::unique(m_bindings.begin(), m_bindings.end()), m_bindings.end());
 }
 
-void DXILReflection::ParseDebugInfo(DXCLoader& loader, ComPtr<IDxcBlob> pdb)
+void DXILReflection::ParseDebugInfo(dxc::DxcDllSupport& dxc_support, ComPtr<IDxcBlob> pdb)
 {
     ComPtr<IDxcLibrary> library;
-    ASSERT_SUCCEEDED(loader.CreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library)));
+    ASSERT_SUCCEEDED(dxc_support.CreateInstance(CLSID_DxcLibrary, library.GetAddressOf()));
     ComPtr<IStream> stream;
     ASSERT_SUCCEEDED(library->CreateStreamFromBlobReadOnly(pdb.Get(), &stream));
 
     ComPtr<IDiaDataSource> dia;
-    ASSERT_SUCCEEDED(loader.CreateInstance(CLSID_DxcDiaDataSource, IID_PPV_ARGS(&dia)));
+    ASSERT_SUCCEEDED(dxc_support.CreateInstance(CLSID_DxcDiaDataSource, dia.GetAddressOf()));
     ASSERT_SUCCEEDED(dia->loadDataFromIStream(stream.Get()));
     ComPtr<IDiaSession> session;
     ASSERT_SUCCEEDED(dia->openSession(&session));
