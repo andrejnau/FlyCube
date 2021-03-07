@@ -6,8 +6,8 @@ ShaderBase::ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type)
     , m_blob_type(blob_type)
 {
     m_blob = Compile(desc, blob_type);
-    std::shared_ptr<ShaderReflection> reflection = CreateShaderReflection(blob_type, m_blob.data(), m_blob.size());
-    m_bindings = reflection->GetBindings();
+    m_reflection = CreateShaderReflection(blob_type, m_blob.data(), m_blob.size());
+    m_bindings = m_reflection->GetBindings();
     for (uint32_t i = 0; i < m_bindings.size(); ++i)
     {
         BindKey bind_key = { m_shader_type, m_bindings[i].type, m_bindings[i].slot, m_bindings[i].space, m_bindings[i].count };
@@ -16,7 +16,7 @@ ShaderBase::ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type)
         m_binding_keys.emplace_back(bind_key);
     }
 
-    decltype(auto) input_parameters = reflection->GetInputParameters();
+    decltype(auto) input_parameters = m_reflection->GetInputParameters();
     for (uint32_t i = 0; i < input_parameters.size(); ++i)
     {
         decltype(auto) layout = m_input_layout_descs.emplace_back();
@@ -77,4 +77,9 @@ const std::string& ShaderBase::GetSemanticName(uint32_t location) const
 const std::vector<BindKey>& ShaderBase::GetBindings() const
 {
     return m_binding_keys;
+}
+
+const std::shared_ptr<ShaderReflection>& ShaderBase::GetReflection() const
+{
+    return m_reflection;
 }

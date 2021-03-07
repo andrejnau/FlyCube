@@ -17,6 +17,7 @@ public:
     uint32_t GetInputLayoutLocation(const std::string& semantic_name) const override;
     const std::string& GetSemanticName(uint32_t location) const override;
     const std::vector<BindKey>& GetBindings() const override;
+    const std::shared_ptr<ShaderReflection>& GetReflection() const override;
 
 protected:
     ShaderType m_shader_type;
@@ -29,4 +30,5 @@ protected:
     std::vector<InputLayoutDesc> m_input_layout_descs;
     std::map<std::string, uint32_t> m_locations;
     std::map<uint32_t, std::string> m_semantic_names;
+    std::shared_ptr<ShaderReflection> m_reflection;
 };

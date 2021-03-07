@@ -1,6 +1,7 @@
 #pragma once
 #include <Instance/QueryInterface.h>
 #include <Instance/BaseTypes.h>
+#include <ShaderReflection/ShaderReflection.h>
 #include <memory>
 
 class Shader : public QueryInterface
@@ -16,4 +17,5 @@ public:
     virtual uint32_t GetInputLayoutLocation(const std::string& semantic_name) const = 0;
     virtual const std::string& GetSemanticName(uint32_t location) const = 0;
     virtual const std::vector<BindKey>& GetBindings() const = 0;
+    virtual const std::shared_ptr<ShaderReflection>& GetReflection() const = 0;
 };

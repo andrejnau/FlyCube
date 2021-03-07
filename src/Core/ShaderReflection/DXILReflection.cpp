@@ -160,7 +160,7 @@ void DXILReflection::ParseRuntimeData(ComPtr<IDxcContainerReflection> reflection
     {
         hlsl::RDAT::FunctionReader func_reader = func_table_reader->GetItem(j);
         auto kind = func_reader.GetShaderKind();
-        m_entry_points.push_back({ func_reader.GetUnmangledName(), ConvertShaderKind(kind) });
+        m_entry_points.push_back({ func_reader.GetUnmangledName(), ConvertShaderKind(kind), func_reader.GetPayloadSizeInBytes(), func_reader.GetAttributeSizeInBytes() });
     }
 }
 

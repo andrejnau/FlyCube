@@ -27,6 +27,8 @@ struct EntryPoint
 {
     std::string name;
     ShaderKind kind;
+    uint32_t payload_size;
+    uint32_t attribute_size;
 };
 
 inline bool operator== (const EntryPoint& lhs, const EntryPoint& rhs)

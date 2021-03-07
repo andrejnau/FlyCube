@@ -21,254 +21,91 @@ inline uint32_t Align(uint32_t size, uint32_t alignment)
     return (size + (alignment - 1)) & ~(alignment - 1);
 }
 
-class Subobject
-{
-public:
-    const D3D12_STATE_SUBOBJECT& GetSubobject() const
-    {
-        return m_state_subobject;
-    }
-
-protected:
-    D3D12_STATE_SUBOBJECT m_state_subobject = {};
-};
-
-struct ShaderInfo
-{
-    uint32_t max_attribute_size = 0;
-    uint32_t max_payload_size = 0;
-    std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> entries;
-};
-
-ShaderInfo GetShaderInfo(const std::vector<uint8_t>& blob)
-{
-    ShaderInfo res;
-
-    decltype(auto) dxc_support = GetDxcSupport(ShaderBlobType::kDXIL);
-    CComPtr<IDxcBlobEncoding> source;
-    uint32_t shade_idx = 0;
-    ComPtr<IDxcLibrary> library;
-    dxc_support.CreateInstance(CLSID_DxcLibrary, library.GetAddressOf());
-    ASSERT_SUCCEEDED(library->CreateBlobWithEncodingOnHeapCopy(blob.data(), static_cast<UINT32>(blob.size()), CP_ACP, &source));
-    ComPtr<IDxcContainerReflection> reflection;
-    dxc_support.CreateInstance(CLSID_DxcContainerReflection, reflection.GetAddressOf());
-    ASSERT_SUCCEEDED(reflection->Load(source));
-    uint32_t part_count = 0;
-    ASSERT_SUCCEEDED(reflection->GetPartCount(&part_count));
-    for (uint32_t i = 0; i < part_count; ++i)
-    {
-        uint32_t kind = 0;
-        ASSERT_SUCCEEDED(reflection->GetPartKind(i, &kind));
-        if (kind == hlsl::DxilFourCC::DFCC_RuntimeData)
-        {
-            CComPtr<IDxcBlob> part_blob;
-            reflection->GetPartContent(i, &part_blob);
-            hlsl::RDAT::DxilRuntimeData context;
-            context.InitFromRDAT(part_blob->GetBufferPointer(), part_blob->GetBufferSize());
-            auto func_table_reader = context.GetFunctionTableReader();
-            for (uint32_t j = 0; j < func_table_reader->GetNumFunctions(); ++j)
-            {
-                auto func_reader = func_table_reader->GetItem(j);
-                std::wstring name = utf8_to_wstring(func_reader.GetUnmangledName());
-                hlsl::DXIL::ShaderKind type = func_reader.GetShaderKind();
-                res.entries.emplace_back(name, type);
-
-                res.max_attribute_size = std::max(res.max_attribute_size, func_reader.GetAttributeSizeInBytes());
-                res.max_payload_size = std::max(res.max_payload_size, func_reader.GetPayloadSizeInBytes());
-            }
-        }
-    }
-
-    return res;
-}
-
-std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>> GetEntries(const std::vector<uint8_t>& blob)
-{
-    return GetShaderInfo(blob).entries;
-}
-
-class DxilLibrary : public Subobject
-{
-public:
-    DxilLibrary(const std::vector<uint8_t>& blob)
-    {
-        m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
-        m_state_subobject.pDesc = &m_dxil_lib_desc;
-
-        auto entries = GetEntries(blob);
-
-        m_export_desc.resize(entries.size());
-        m_export_name.resize(entries.size());
-
-        m_dxil_lib_desc.DXILLibrary.pShaderBytecode = blob.data();
-        m_dxil_lib_desc.DXILLibrary.BytecodeLength = blob.size();
-        m_dxil_lib_desc.NumExports = entries.size();
-        m_dxil_lib_desc.pExports = m_export_desc.data();
-
-        for (size_t i = 0; i < entries.size(); ++i)
-        {
-            m_export_name[i] = entries[i].first;
-            m_export_desc[i].Name = m_export_name[i].c_str();
-        }
-    }
-
-private:
-    D3D12_DXIL_LIBRARY_DESC m_dxil_lib_desc = {};
-    std::vector<D3D12_EXPORT_DESC> m_export_desc;
-    std::vector<std::wstring> m_export_name;
-};
-
-class ExportAssociation : public Subobject
-{
-public:
-    ExportAssociation(const std::vector<std::wstring>& exports, const D3D12_STATE_SUBOBJECT& subobject_to_associate)
-    {
-        for (auto& str : exports)
-        {
-            m_exports.emplace_back(str.c_str());
-        }
-
-        m_association.NumExports = m_exports.size();
-        m_association.pExports = m_exports.data();
-        m_association.pSubobjectToAssociate = &subobject_to_associate;
-
-        m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
-        m_state_subobject.pDesc = &m_association;
-    }
-
-private:
-    std::vector<const wchar_t*> m_exports;
-    D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION m_association = {};
-};
-
-class ShaderConfig : public Subobject
-{
-public:
-    ShaderConfig(const std::vector<uint8_t>& blob)
-    {
-        auto info = GetShaderInfo(blob);
-        m_shader_config.MaxAttributeSizeInBytes = info.max_attribute_size;
-        m_shader_config.MaxPayloadSizeInBytes = info.max_payload_size;
-        m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
-        m_state_subobject.pDesc = &m_shader_config;
-    }
-
-private:
-    D3D12_RAYTRACING_SHADER_CONFIG m_shader_config = {};
-};
-
-class PipelineConfig : public Subobject
-{
-public:
-    PipelineConfig(uint32_t max_trace_recursion_depth)
-    {
-        config.MaxTraceRecursionDepth = max_trace_recursion_depth;
-
-        m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
-        m_state_subobject.pDesc = &config;
-    }
-
-private:
-    D3D12_RAYTRACING_PIPELINE_CONFIG config = {};
-};
-
-class HitProgram : public Subobject
-{
-public:
-    HitProgram(const wchar_t* hit_group_name, const std::vector<std::pair<std::wstring, hlsl::DXIL::ShaderKind>>& entries)
-    {
-        for (size_t i = 0; i < entries.size(); ++i)
-        {
-            switch (entries[i].second)
-            {
-            case hlsl::DXIL::ShaderKind::Intersection:
-                m_desc.IntersectionShaderImport = entries[i].first.c_str();
-                break;
-            case hlsl::DXIL::ShaderKind::AnyHit:
-                m_desc.AnyHitShaderImport = entries[i].first.c_str();
-                break;
-            case hlsl::DXIL::ShaderKind::ClosestHit:
-                m_desc.ClosestHitShaderImport = entries[i].first.c_str();
-                break;
-            }
-        }
-
-        m_desc.HitGroupExport = hit_group_name;
-
-        m_state_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
-        m_state_subobject.pDesc = &m_desc;
-    }
-
-private:
-    D3D12_HIT_GROUP_DESC m_desc = {};
-};
-
 DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPipelineDesc& desc)
     : m_device(device)
     , m_desc(desc)
 {
     decltype(auto) dx_program = m_desc.program->As<DXProgram>();
-    auto shaders = dx_program.GetShaders();
+    decltype(auto) shaders = dx_program.GetShaders();
     decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
     m_root_signature = dx_layout.GetRootSignature();
-    auto blob = shaders.front()->GetBlob();
 
-    size_t max_size = 16;
-    std::vector<D3D12_STATE_SUBOBJECT> subobjects;
-    subobjects.reserve(max_size);
+    CD3DX12_STATE_OBJECT_DESC subobjects(D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE);
 
-    auto entries = GetEntries(blob);
+    std::vector<EntryPoint> entry_points;
+    for (const auto& shader : shaders)
+    {
+        decltype(auto) reflection = shader->GetReflection();
+        decltype(auto) blob_entry_points = reflection->GetEntryPoints();
+        entry_points.insert(entry_points.end(), blob_entry_points.begin(), blob_entry_points.end());
+
+        decltype(auto) library = subobjects.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
+        decltype(auto) blob = shader->GetBlob();
+        D3D12_SHADER_BYTECODE byte = { blob.data(), blob.size() };
+        library->SetDXILLibrary(&byte);
+    }
 
     std::vector<std::wstring> shader_entries;
-    std::vector<std::wstring> hit_group;
-    for (size_t i = 0; i < entries.size(); ++i)
+    std::vector<std::wstring> hit_group_entries;
+    for (size_t i = 0; i < entry_points.size(); ++i)
     {
-        switch (entries[i].second)
+        decltype(auto) name = utf8_to_wstring(entry_points[i].name);
+        switch (entry_points[i].kind)
         {
-        case hlsl::DXIL::ShaderKind::RayGeneration:
-        case hlsl::DXIL::ShaderKind::Miss:
-            shader_entries.emplace_back(entries[i].first);
+        case ShaderKind::kRayGeneration:
+        case ShaderKind::kMiss:
+            shader_entries.emplace_back(name);
             break;
-        case hlsl::DXIL::ShaderKind::Intersection:
-        case hlsl::DXIL::ShaderKind::AnyHit:
-        case hlsl::DXIL::ShaderKind::ClosestHit:
-            hit_group.emplace_back(entries[i].first);
+        case ShaderKind::kIntersection:
+        case ShaderKind::kAnyHit:
+        case ShaderKind::kClosestHit:
+            hit_group_entries.emplace_back(name);
             break;
         }
     }
 
-    if (!hit_group.empty())
+    if (!hit_group_entries.empty())
         shader_entries.emplace_back(kHitGroup);
 
-    DxilLibrary dxil_lib(blob);
-    subobjects.emplace_back(dxil_lib.GetSubobject());
+    decltype(auto) global_root_signature = subobjects.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
+    global_root_signature->SetRootSignature(m_root_signature.Get());
 
-    D3D12_STATE_SUBOBJECT& global_root_sign_subobject = subobjects.emplace_back();
-    global_root_sign_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
-    global_root_sign_subobject.pDesc = m_root_signature.GetAddressOf();
+    decltype(auto) shader_config = subobjects.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
 
-    ShaderConfig shader_config(blob);
-    subobjects.emplace_back(shader_config.GetSubobject());
+    uint32_t max_payload_size = 0;
+    uint32_t max_attribute_size = 0;
+    for (size_t i = 0; i < entry_points.size(); ++i)
+    {
+        max_payload_size = std::max(max_payload_size, entry_points[i].payload_size);
+        max_attribute_size = std::max(max_payload_size, entry_points[i].attribute_size);
+    }
+    shader_config->Config(max_payload_size, max_attribute_size);
 
-    ExportAssociation shader_config_association(shader_entries, subobjects.back());
-    subobjects.emplace_back(shader_config_association.GetSubobject());
+    decltype(auto) pipeline_config = subobjects.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
+    pipeline_config->Config(1);
 
-    PipelineConfig pipeline_config(1);
-    subobjects.emplace_back(pipeline_config.GetSubobject());
-
-    HitProgram hit_program(kHitGroup, entries);
-    subobjects.emplace_back(hit_program.GetSubobject());
-
-    ASSERT(subobjects.capacity() == max_size);
-
-    D3D12_STATE_OBJECT_DESC ray_tracing_desc = {};
-    ray_tracing_desc.NumSubobjects = subobjects.size();
-    ray_tracing_desc.pSubobjects = subobjects.data();
-    ray_tracing_desc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+    decltype(auto) hit_group = subobjects.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+    hit_group->SetHitGroupExport(kHitGroup);
+    for (size_t i = 0; i < entry_points.size(); ++i)
+    {
+        decltype(auto) name = utf8_to_wstring(entry_points[i].name);
+        switch (entry_points[i].kind)
+        {
+        case ShaderKind::kIntersection:
+            hit_group->SetIntersectionShaderImport(name.c_str());
+            break;
+        case ShaderKind::kAnyHit:
+            hit_group->SetAnyHitShaderImport(name.c_str());
+            break;
+        case ShaderKind::kClosestHit:
+            hit_group->SetClosestHitShaderImport(name.c_str());
+            break;
+        }
+    }
 
     ComPtr<ID3D12Device5> device5;
     m_device.GetDevice().As(&device5);
-    ASSERT_SUCCEEDED(device5->CreateStateObject(&ray_tracing_desc, IID_PPV_ARGS(&m_pipeline_state)));
+    ASSERT_SUCCEEDED(device5->CreateStateObject(subobjects, IID_PPV_ARGS(&m_pipeline_state)));
 
     CreateShaderTable();
 }
@@ -279,23 +116,30 @@ void DXRayTracingPipeline::CreateShaderTable()
     auto shaders = dx_program.GetShaders();
     auto blob = shaders.front()->GetBlob();
 
-    auto entries = GetEntries(blob);
+    std::vector<EntryPoint> entry_points;
+    for (const auto& shader : shaders)
+    {
+        decltype(auto) reflection = shader->GetReflection();
+        decltype(auto) blob_entry_points = reflection->GetEntryPoints();
+        entry_points.insert(entry_points.end(), blob_entry_points.begin(), blob_entry_points.end());
+    }
 
     std::vector<std::pair<std::wstring, std::reference_wrapper<D3D12_GPU_VIRTUAL_ADDRESS>>> shader_entries;
     bool has_hit_group = false;
-    for (size_t i = 0; i < entries.size(); ++i)
+    for (size_t i = 0; i < entry_points.size(); ++i)
     {
-        switch (entries[i].second)
+        decltype(auto) name = utf8_to_wstring(entry_points[i].name);
+        switch (entry_points[i].kind)
         {
-        case hlsl::DXIL::ShaderKind::RayGeneration:
-            shader_entries.emplace_back(entries[i].first, m_raytrace_desc.RayGenerationShaderRecord.StartAddress);
+        case ShaderKind::kRayGeneration:
+            shader_entries.emplace_back(name.c_str(), m_raytrace_desc.RayGenerationShaderRecord.StartAddress);
             break;
-        case hlsl::DXIL::ShaderKind::Miss:
-            shader_entries.emplace_back(entries[i].first, m_raytrace_desc.MissShaderTable.StartAddress);
+        case ShaderKind::kMiss:
+            shader_entries.emplace_back(name.c_str(), m_raytrace_desc.MissShaderTable.StartAddress);
             break;
-        case hlsl::DXIL::ShaderKind::Intersection:
-        case hlsl::DXIL::ShaderKind::AnyHit:
-        case hlsl::DXIL::ShaderKind::ClosestHit:
+        case ShaderKind::kIntersection:
+        case ShaderKind::kAnyHit:
+        case ShaderKind::kClosestHit:
             has_hit_group = true;
             break;
         }

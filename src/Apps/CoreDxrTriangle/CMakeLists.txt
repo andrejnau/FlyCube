@@ -2,22 +2,15 @@ set(target CoreDxrTriangle)
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}")
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
-set(shaders_path "${assets_path}/shaders/DxrTriangle")
+set(shaders_path "${assets_path}/shaders/CoreDxrTriangle")
 
 set(sources
     ${source_path}/main.cpp
 )
 
-set(pixel_shaders
-    ${shaders_path}/Graphics_PS.hlsl
-)
-
-set(vertex_shaders
-    ${shaders_path}/Graphics_VS.hlsl
-)
-
 set(lib_shaders
     ${shaders_path}/RayTracing.hlsl
+    ${shaders_path}/RayTracingHit.hlsl
 )
 
 set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_ENTRYPOINT " ")
