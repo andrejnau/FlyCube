@@ -10,6 +10,7 @@ if (VULKAN_SUPPORT)
         VKRayTracingPipeline.h
     )
     list(APPEND sources
+        VKPipeline.cpp
         VKComputePipeline.cpp
         VKGraphicsPipeline.cpp
         VKRayTracingPipeline.cpp

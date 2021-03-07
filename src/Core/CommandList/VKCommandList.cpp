@@ -43,12 +43,27 @@ void VKCommandList::Close()
     }
 }
 
+vk::PipelineBindPoint GetPipelineBindPoint(PipelineType type)
+{
+    switch (type)
+    {
+    case PipelineType::kGraphics:
+        return vk::PipelineBindPoint::eGraphics;
+    case PipelineType::kCompute:
+        return vk::PipelineBindPoint::eCompute;
+    case PipelineType::kRayTracing:
+        return vk::PipelineBindPoint::eRayTracingKHR;
+    }
+    assert(false);
+    return {};
+}
+
 void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
     if (state == m_state)
         return;
     m_state = std::static_pointer_cast<VKPipeline>(state);
-    m_command_list->bindPipeline(m_state->GetPipelineBindPoint(), m_state->GetPipeline());
+    m_command_list->bindPipeline(GetPipelineBindPoint(m_state->GetPipelineType()), m_state->GetPipeline());
 }
 
 void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
@@ -60,7 +75,7 @@ void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     decltype(auto) descriptor_sets = vk_binding_set.GetDescriptorSets();
     if (descriptor_sets.empty())
         return;
-    m_command_list->bindDescriptorSets(m_state->GetPipelineBindPoint(), m_state->GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
+    m_command_list->bindDescriptorSets(GetPipelineBindPoint(m_state->GetPipelineType()), m_state->GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
 }
 
 void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc)

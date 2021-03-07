@@ -8,43 +8,17 @@
 #include <map>
 
 VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const ComputePipelineDesc& desc)
-    : m_device(device)
+    : VKPipeline(device, desc.program, desc.layout)
     , m_desc(desc)
 {
-    decltype(auto) vk_program = m_desc.program->As<VKProgram>();
-    decltype(auto) vk_layout = m_desc.layout->As<VKBindingSetLayout>();
-    auto shaders = vk_program.GetShaders();
-    for (auto& shader : shaders)
-    {
-        ShaderType shader_type = shader->GetType();
-        auto blob = shader->GetBlob();
-        vk::ShaderModuleCreateInfo shader_module_info = {};
-        shader_module_info.codeSize = blob.size();
-        shader_module_info.pCode = (uint32_t*)blob.data();
-
-        m_shader_modules[shader_type] = m_device.GetDevice().createShaderModuleUnique(shader_module_info);
-
-        spirv_cross::CompilerHLSL compiler((uint32_t*)blob.data(), blob.size() / sizeof(uint32_t));
-        m_entries[shader_type] = compiler.get_entry_points_and_stages();
-
-        for (auto& entry_point : m_entries[shader_type])
-        {
-            m_shader_stage_create_info.emplace_back();
-            m_shader_stage_create_info.back().stage = ExecutionModel2Bit(entry_point.execution_model);
-            m_shader_stage_create_info.back().module = m_shader_modules[shader_type].get();
-            m_shader_stage_create_info.back().pName = entry_point.name.c_str();
-            m_shader_stage_create_info.back().pSpecializationInfo = NULL;
-        }
-    }
-
     std::vector<vk::RayTracingShaderGroupCreateInfoKHR> groups(m_shader_stage_create_info.size());
     for (int i = 0; i < m_shader_stage_create_info.size(); ++i)
     {
-        auto& group = groups[i];
-        group.generalShader = VK_SHADER_UNUSED_NV;
-        group.closestHitShader = VK_SHADER_UNUSED_NV;
-        group.anyHitShader = VK_SHADER_UNUSED_NV;
-        group.intersectionShader = VK_SHADER_UNUSED_NV;
+        decltype(auto) group = groups[i];
+        group.generalShader = VK_SHADER_UNUSED_KHR;
+        group.closestHitShader = VK_SHADER_UNUSED_KHR;
+        group.anyHitShader = VK_SHADER_UNUSED_KHR;
+        group.intersectionShader = VK_SHADER_UNUSED_KHR;
 
         switch (m_shader_stage_create_info[i].stage)
         {
@@ -73,7 +47,7 @@ VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const ComputePipeli
     ray_pipeline_info.groupCount = static_cast<uint32_t>(groups.size());
     ray_pipeline_info.pGroups = groups.data();
     ray_pipeline_info.maxPipelineRayRecursionDepth = 1;
-    ray_pipeline_info.layout = vk_layout.GetPipelineLayout();
+    ray_pipeline_info.layout = m_pipeline_layout;
 
     m_pipeline = m_device.GetDevice().createRayTracingPipelineKHRUnique({}, {}, ray_pipeline_info);
 
@@ -131,22 +105,6 @@ VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const ComputePipeli
 PipelineType VKRayTracingPipeline::GetPipelineType() const
 {
     return PipelineType::kRayTracing;
-}
-
-vk::Pipeline VKRayTracingPipeline::GetPipeline() const
-{
-    return m_pipeline.get();
-}
-
-vk::PipelineLayout VKRayTracingPipeline::GetPipelineLayout() const
-{
-    decltype(auto) vk_layout = m_desc.layout->As<VKBindingSetLayout>();
-    return vk_layout.GetPipelineLayout();
-}
-
-vk::PipelineBindPoint VKRayTracingPipeline::GetPipelineBindPoint() const
-{
-    return vk::PipelineBindPoint::eRayTracingKHR;
 }
 
 vk::Buffer VKRayTracingPipeline::GetShaderBindingTable() const

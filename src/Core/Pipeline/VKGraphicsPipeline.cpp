@@ -1,122 +1,7 @@
 #include "Pipeline/VKGraphicsPipeline.h"
 #include <Device/VKDevice.h>
 #include <Program/VKProgram.h>
-#include <BindingSetLayout/VKBindingSetLayout.h>
 #include <map>
-
-vk::ShaderStageFlagBits ExecutionModel2Bit(spv::ExecutionModel model)
-{
-    switch (model)
-    {
-    case spv::ExecutionModel::ExecutionModelVertex:
-        return vk::ShaderStageFlagBits::eVertex;
-    case spv::ExecutionModel::ExecutionModelFragment:
-        return vk::ShaderStageFlagBits::eFragment;
-    case spv::ExecutionModel::ExecutionModelGeometry:
-        return vk::ShaderStageFlagBits::eGeometry;
-    case spv::ExecutionModel::ExecutionModelGLCompute:
-        return vk::ShaderStageFlagBits::eCompute;
-    case spv::ExecutionModel::ExecutionModelRayGenerationNV:
-        return vk::ShaderStageFlagBits::eRaygenNV;
-    case spv::ExecutionModel::ExecutionModelIntersectionNV:
-        return vk::ShaderStageFlagBits::eIntersectionNV;
-    case spv::ExecutionModel::ExecutionModelAnyHitNV:
-        return vk::ShaderStageFlagBits::eAnyHitNV;
-    case spv::ExecutionModel::ExecutionModelClosestHitNV:
-        return vk::ShaderStageFlagBits::eClosestHitNV;
-    case spv::ExecutionModel::ExecutionModelMissNV:
-        return vk::ShaderStageFlagBits::eMissNV;
-    case spv::ExecutionModel::ExecutionModelCallableNV:
-        return vk::ShaderStageFlagBits::eCallableNV;
-    case spv::ExecutionModel::ExecutionModelTaskNV:
-        return vk::ShaderStageFlagBits::eTaskNV;
-    case spv::ExecutionModel::ExecutionModelMeshNV:
-        return vk::ShaderStageFlagBits::eMeshNV;
-    }
-    assert(false);
-    return {};
-}
-
-VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
-    : m_device(device)
-    , m_desc(desc)
-{
-    decltype(auto) vk_program = desc.program->As<VKProgram>();
-    auto shaders = vk_program.GetShaders();
-    for (auto& shader : shaders)
-    {
-        ShaderType shader_type = shader->GetType();
-        auto blob = shader->GetBlob();
-        switch (shader_type)
-        {
-        case ShaderType::kVertex:
-            CreateInputLayout(m_binding_desc, m_attribute_desc);
-            break;
-        }
-
-        vk::ShaderModuleCreateInfo shader_module_info = {};
-        shader_module_info.codeSize = blob.size();
-        shader_module_info.pCode = (uint32_t*)blob.data();
-
-        m_shader_modules[shader_type] = m_device.GetDevice().createShaderModuleUnique(shader_module_info);
-
-        spirv_cross::CompilerHLSL compiler((uint32_t*)blob.data(), blob.size() / sizeof(uint32_t));
-        m_entries[shader_type] = compiler.get_entry_points_and_stages();
-
-        for (auto& entry_point : m_entries[shader_type])
-        {
-            m_shader_stage_create_info.emplace_back();
-            m_shader_stage_create_info.back().stage = ExecutionModel2Bit(entry_point.execution_model);
-            m_shader_stage_create_info.back().module = m_shader_modules[shader_type].get();
-            m_shader_stage_create_info.back().pName = entry_point.name.c_str();
-            m_shader_stage_create_info.back().pSpecializationInfo = NULL;
-        }
-    }
-
-    CreateGrPipeLine();
-}
-
-PipelineType VKGraphicsPipeline::GetPipelineType() const
-{
-    return PipelineType::kGraphics;
-}
-
-vk::Pipeline VKGraphicsPipeline::GetPipeline() const
-{
-    return m_pipeline.get();
-}
-
-vk::RenderPass VKGraphicsPipeline::GetRenderPass() const
-{
-    return m_desc.render_pass->As<VKRenderPass>().GetRenderPass();
-}
-
-vk::PipelineLayout VKGraphicsPipeline::GetPipelineLayout() const
-{
-    decltype(auto) vk_layout = m_desc.layout->As<VKBindingSetLayout>();
-    return vk_layout.GetPipelineLayout();
-}
-
-vk::PipelineBindPoint VKGraphicsPipeline::GetPipelineBindPoint() const
-{
-    return vk::PipelineBindPoint::eGraphics;
-}
-
-void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDescription>& m_binding_desc, std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
-{
-    for (auto& vertex : m_desc.input)
-    {
-        m_binding_desc.emplace_back();
-        auto& binding = m_binding_desc.back();
-        m_attribute_desc.emplace_back();
-        auto& attribute = m_attribute_desc.back();
-        attribute.location = vertex.location;
-        attribute.binding = binding.binding = vertex.slot;
-        binding.inputRate = vk::VertexInputRate::eVertex;
-        binding.stride = vertex.stride;
-        attribute.format = static_cast<vk::Format>(vertex.format);
-    }
-}
 
 vk::CompareOp Convert(ComparisonFunc func)
 {
@@ -182,11 +67,16 @@ vk::StencilOpState Convert(const StencilOpDesc& desc, uint8_t read_mask, uint8_t
     return res;
 }
 
-void VKGraphicsPipeline::CreateGrPipeLine()
+VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
+    : VKPipeline(device, desc.program, desc.layout)
+    , m_desc(desc)
 {
+    if (desc.program->HasShader(ShaderType::kVertex))
+    {
+        CreateInputLayout(m_binding_desc, m_attribute_desc);
+    }
+
     const RenderPassDesc& render_pass_desc = m_desc.render_pass->GetDesc();
-    decltype(auto) vk_program = m_desc.program->As<VKProgram>();
-    decltype(auto) vk_layout = m_desc.layout->As<VKBindingSetLayout>();
 
     vk::PipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.vertexBindingDescriptionCount = m_binding_desc.size();
@@ -307,7 +197,7 @@ void VKGraphicsPipeline::CreateGrPipeLine()
     pipeline_info.pMultisampleState = &multisampling;
     pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = &color_blending;
-    pipeline_info.layout = vk_layout.GetPipelineLayout();
+    pipeline_info.layout = m_pipeline_layout;
     pipeline_info.renderPass = GetRenderPass();
     pipeline_info.pDynamicState = &pipelineDynamicStateCreateInfo;
 
@@ -334,4 +224,30 @@ void VKGraphicsPipeline::CreateGrPipeLine()
     viewport_state.pNext = &pipeline_viewport_shading_rate_image_state;
 
     m_pipeline = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info);
+}
+
+PipelineType VKGraphicsPipeline::GetPipelineType() const
+{
+    return PipelineType::kGraphics;
+}
+
+vk::RenderPass VKGraphicsPipeline::GetRenderPass() const
+{
+    return m_desc.render_pass->As<VKRenderPass>().GetRenderPass();
+}
+
+void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDescription>& m_binding_desc, std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
+{
+    for (auto& vertex : m_desc.input)
+    {
+        m_binding_desc.emplace_back();
+        auto& binding = m_binding_desc.back();
+        m_attribute_desc.emplace_back();
+        auto& attribute = m_attribute_desc.back();
+        attribute.location = vertex.location;
+        attribute.binding = binding.binding = vertex.slot;
+        binding.inputRate = vk::VertexInputRate::eVertex;
+        binding.stride = vertex.stride;
+        attribute.format = static_cast<vk::Format>(vertex.format);
+    }
 }

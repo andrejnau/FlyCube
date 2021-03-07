@@ -25,20 +25,15 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
     : m_device(device)
     , m_desc(desc)
 {
-    decltype(auto) dx_program = m_desc.program->As<DXProgram>();
-    decltype(auto) shaders = dx_program.GetShaders();
+    decltype(auto) shaders = m_desc.program->GetShaders();
     decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
     m_root_signature = dx_layout.GetRootSignature();
 
     CD3DX12_STATE_OBJECT_DESC subobjects(D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE);
 
-    std::vector<EntryPoint> entry_points;
+    decltype(auto) entry_points = m_desc.program->GetEntryPoints();
     for (const auto& shader : shaders)
     {
-        decltype(auto) reflection = shader->GetReflection();
-        decltype(auto) blob_entry_points = reflection->GetEntryPoints();
-        entry_points.insert(entry_points.end(), blob_entry_points.begin(), blob_entry_points.end());
-
         decltype(auto) library = subobjects.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
         decltype(auto) blob = shader->GetBlob();
         D3D12_SHADER_BYTECODE byte = { blob.data(), blob.size() };
@@ -65,7 +60,9 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
     }
 
     if (!hit_group_entries.empty())
+    {
         shader_entries.emplace_back(kHitGroup);
+    }
 
     decltype(auto) global_root_signature = subobjects.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
     global_root_signature->SetRootSignature(m_root_signature.Get());
@@ -112,17 +109,8 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
 
 void DXRayTracingPipeline::CreateShaderTable()
 {
-    decltype(auto) dx_program = m_desc.program->As<DXProgram>();
-    auto shaders = dx_program.GetShaders();
-    auto blob = shaders.front()->GetBlob();
-
-    std::vector<EntryPoint> entry_points;
-    for (const auto& shader : shaders)
-    {
-        decltype(auto) reflection = shader->GetReflection();
-        decltype(auto) blob_entry_points = reflection->GetEntryPoints();
-        entry_points.insert(entry_points.end(), blob_entry_points.begin(), blob_entry_points.end());
-    }
+    auto shaders = m_desc.program->GetShaders();
+    decltype(auto) entry_points = m_desc.program->GetEntryPoints();
 
     std::vector<std::pair<std::wstring, std::reference_wrapper<D3D12_GPU_VIRTUAL_ADDRESS>>> shader_entries;
     bool has_hit_group = false;

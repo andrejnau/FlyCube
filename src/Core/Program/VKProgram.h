@@ -5,8 +5,6 @@
 #include <vector>
 #include <map>
 #include <set>
-#include <spirv_cross.hpp>
-#include <spirv_hlsl.hpp>
 
 class VKDevice;
 
