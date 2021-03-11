@@ -1,5 +1,6 @@
 #pragma once
 #include "BindingSet/BindingSet.h"
+#include <GPUDescriptorPool/VKGPUDescriptorPool.h>
 #include <vulkan/vulkan.hpp>
 
 class VKDevice;
@@ -16,7 +17,7 @@ public:
 
 private:
     VKDevice& m_device;
-    std::vector<vk::UniqueDescriptorSet> m_descriptor_sets_unique;
+    std::vector<DescriptorSetPool> m_descriptors;
     std::vector<vk::DescriptorSet> m_descriptor_sets;
     std::shared_ptr<VKBindingSetLayout> m_layout;
 };

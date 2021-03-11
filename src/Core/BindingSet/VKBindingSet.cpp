@@ -18,8 +18,8 @@ VKBindingSet::VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetL
         }
         else
         {
-            m_descriptor_sets_unique.emplace_back(m_device.GetGPUDescriptorPool().AllocateDescriptorSet(descriptor_set_layouts[i].get(), descriptor_count_by_set[i]));
-            m_descriptor_sets.emplace_back(m_descriptor_sets_unique.back().get());
+            m_descriptors.emplace_back(m_device.GetGPUDescriptorPool().AllocateDescriptorSet(descriptor_set_layouts[i].get(), descriptor_count_by_set[i]));
+            m_descriptor_sets.emplace_back(m_descriptors.back().set.get());
         }
     }
 }
