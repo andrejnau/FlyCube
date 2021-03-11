@@ -37,9 +37,6 @@ void DXCPUDescriptorPoolTyped::ResizeHeap(size_t req_size)
             m_type);
     }
 
-    // TODO: keep heap while it used, bad way but better than nothing
-    heap->AddRef();
-
     m_size = heap_desc.NumDescriptors;
     m_heap = heap;
     m_cpu_handle = m_heap->GetCPUDescriptorHandleForHeapStart();
