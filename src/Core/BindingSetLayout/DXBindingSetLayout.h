@@ -17,6 +17,7 @@ struct DescriptorTableDesc
 {
     D3D12_DESCRIPTOR_HEAP_TYPE heap_type;
     size_t heap_offset;
+    bool bindless;
     bool is_compute;
 };
 

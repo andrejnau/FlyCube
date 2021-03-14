@@ -315,10 +315,12 @@ DXView::DXView(DXDevice& device, const std::shared_ptr <Resource>& resource, con
     if (view_desc.bindless)
     {
         assert(view_desc.view_type != ViewType::kUnknown);
-        assert(view_desc.view_type != ViewType::kSampler);
         assert(view_desc.view_type != ViewType::kRenderTarget);
         assert(view_desc.view_type != ViewType::kDepthStencil);
-        m_range = std::make_shared<DXGPUDescriptorPoolRange>(m_device.GetGPUDescriptorPool().Allocate(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1));
+        if (view_desc.view_type == ViewType::kSampler)
+            m_range = std::make_shared<DXGPUDescriptorPoolRange>(m_device.GetGPUDescriptorPool().Allocate(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 1));
+        else
+            m_range = std::make_shared<DXGPUDescriptorPoolRange>(m_device.GetGPUDescriptorPool().Allocate(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1));
         m_range->CopyCpuHandle(0, m_handle->GetCpuHandle());
     }
 }

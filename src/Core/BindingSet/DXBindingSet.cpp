@@ -48,17 +48,38 @@ void SetRootDescriptorTable(const ComPtr<ID3D12GraphicsCommandList>& command_lis
 
 std::vector<ComPtr<ID3D12DescriptorHeap>> DXBindingSet::Apply(const ComPtr<ID3D12GraphicsCommandList>& command_list)
 {
-    std::vector<ComPtr<ID3D12DescriptorHeap>> descriptor_heaps;
-    std::vector<ID3D12DescriptorHeap*> descriptor_heaps_ptr;
-    for (const auto& descriptor_range : m_descriptor_ranges)
+    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, ComPtr<ID3D12DescriptorHeap>> heap_map;
+    for (const auto& table : m_layout->GetDescriptorTables())
     {
-        if (descriptor_range.second->GetSize() > 0)
+        D3D12_DESCRIPTOR_HEAP_TYPE heap_type = table.second.heap_type;
+        ComPtr<ID3D12DescriptorHeap> heap;
+        if (table.second.bindless)
         {
-            descriptor_heaps.emplace_back(descriptor_range.second->GetHeap());
-            descriptor_heaps_ptr.emplace_back(descriptor_heaps.back().Get());
+            heap = m_device.GetGPUDescriptorPool().GetHeap(heap_type);
+        }
+        else
+        {
+            heap = m_descriptor_ranges.at(heap_type)->GetHeap();
+        }
+
+        auto it = heap_map.find(heap_type);
+        if (it == heap_map.end())
+        {
+            heap_map.emplace(heap_type, m_device.GetGPUDescriptorPool().GetHeap(heap_type));
+        }
+        else
+        {
+            assert(it->second == heap);
         }
     }
 
+    std::vector<ComPtr<ID3D12DescriptorHeap>> descriptor_heaps;
+    std::vector<ID3D12DescriptorHeap*> descriptor_heaps_ptr;
+    for (const auto& heap : heap_map)
+    {
+        descriptor_heaps.emplace_back(heap.second);
+        descriptor_heaps_ptr.emplace_back(heap.second.Get());
+    }
     if (descriptor_heaps_ptr.size())
     {
         command_list->SetDescriptorHeaps(descriptor_heaps_ptr.size(), descriptor_heaps_ptr.data());
@@ -67,12 +88,17 @@ std::vector<ComPtr<ID3D12DescriptorHeap>> DXBindingSet::Apply(const ComPtr<ID3D1
     for (const auto& table : m_layout->GetDescriptorTables())
     {
         D3D12_DESCRIPTOR_HEAP_TYPE heap_type = table.second.heap_type;
-        if (!m_descriptor_ranges.count(heap_type))
+        D3D12_GPU_DESCRIPTOR_HANDLE base_descriptor = {};
+        if (table.second.bindless)
         {
-            continue;
+            base_descriptor = m_device.GetGPUDescriptorPool().GetHeap(heap_type)->GetGPUDescriptorHandleForHeapStart();
         }
-        std::shared_ptr<DXGPUDescriptorPoolRange> heap_range = m_descriptor_ranges.at(heap_type);
-        SetRootDescriptorTable(command_list, table.first, table.second.is_compute, heap_range->GetGpuHandle(table.second.heap_offset));
+        else
+        {
+            decltype(auto) heap_range = m_descriptor_ranges.at(heap_type);
+            base_descriptor = heap_range->GetGpuHandle(table.second.heap_offset);
+        }
+        SetRootDescriptorTable(command_list, table.first, table.second.is_compute, base_descriptor);
     }
     return descriptor_heaps;
 }

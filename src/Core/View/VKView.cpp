@@ -1,6 +1,7 @@
 #include "View/VKView.h"
 #include <Device/VKDevice.h>
 #include <Resource/VKResource.h>
+#include <BindingSetLayout/VKBindingSetLayout.h>
 
 VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, const ViewDesc& view_desc)
     : m_device(device)
@@ -30,12 +31,8 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
 
     if (view_desc.bindless)
     {
-        vk::DescriptorType type = {};
-        if (view_desc.dimension == ResourceDimension::kBuffer)
-            type = vk::DescriptorType::eStorageBuffer;
-        else
-            type = vk::DescriptorType::eSampledImage;
-        auto& pool = device.GetGPUBindlessDescriptorPool(type);
+        vk::DescriptorType type = GetDescriptorType(view_desc.view_type);
+        decltype(auto) pool = device.GetGPUBindlessDescriptorPool(type);
         m_range = std::make_shared<VKGPUDescriptorPoolRange>(pool.Allocate(1));
 
         std::list<vk::DescriptorImageInfo> list_image_info;

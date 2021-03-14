@@ -102,7 +102,17 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
         descriptor_table_range.NumDescriptors = UINT_MAX;
         descriptor_table_range.BaseShaderRegister = base_slot;
         descriptor_table_range.RegisterSpace = space;
-        add_root_table(shader_type, 1, &descriptor_table_range);
+        size_t root_param_index = add_root_table(shader_type, 1, &descriptor_table_range);
+        m_descriptor_tables[root_param_index].heap_type = GetHeapType(view_type);
+        m_descriptor_tables[root_param_index].heap_offset = 0;
+        m_descriptor_tables[root_param_index].bindless = true;
+        switch (shader_type)
+        {
+        case ShaderType::kCompute:
+        case ShaderType::kLibrary:
+            m_descriptor_tables[root_param_index].is_compute = true;
+            break;
+        }
     };
 
     for (const auto& bind_key : descs)

@@ -26,6 +26,11 @@ int main(int argc, char* argv[])
         SamplerComparisonFunc::kNever
     });
 
+    ViewDesc sampler_view_desc = {};
+    sampler_view_desc.bindless = true;
+    sampler_view_desc.view_type = ViewType::kSampler;
+    auto sampler_view = device->CreateView(sampler, sampler_view_desc);
+
     Camera camera;
     camera.SetCameraPos(glm::vec3(-3.0, 2.75, 0.0));
     camera.SetCameraYaw(-178.0f);
@@ -84,7 +89,6 @@ int main(int argc, char* argv[])
         command_list->UseProgram(program);
         command_list->SetViewport(0, 0, rect.width, rect.height);
         command_list->Attach(program.vs.cbv.ConstantBuf, program.vs.cbuffer.ConstantBuf);
-        command_list->Attach(program.ps.sampler.g_sampler, sampler);
         model.ia.indices.Bind(*command_list);
         model.ia.positions.BindToSlot(*command_list, program.vs.ia.POSITION);
         model.ia.normals.BindToSlot(*command_list, program.vs.ia.NORMAL);
