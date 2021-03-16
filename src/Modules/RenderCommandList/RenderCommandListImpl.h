@@ -100,4 +100,6 @@ private:
     std::shared_ptr<BindingSetLayout> m_layout;
     std::map<std::vector<BindKey>, std::shared_ptr<BindingSetLayout>> m_layout_cache;
     std::map<std::pair<std::shared_ptr<BindingSetLayout>, std::vector<BindingDesc>>, std::shared_ptr<BindingSet>> m_binding_set_cache;
+    RayTracingShaderTables m_shader_tables = {};
+    std::shared_ptr<Resource> m_shader_table;
 };

@@ -192,7 +192,8 @@ void RenderCommandListImpl::DispatchRays(uint32_t width, uint32_t height, uint32
 {
     ApplyPipeline();
     ApplyBindingSet();
-    m_command_list->DispatchRays(width, height, depth);
+    m_cmd_resources.emplace_back(m_shader_table);
+    m_command_list->DispatchRays(m_shader_tables, width, height, depth);
 }
 
 void RenderCommandListImpl::BufferBarrier(const std::shared_ptr<Resource>& resource, ResourceState state)
@@ -299,6 +300,54 @@ void RenderCommandListImpl::UseProgram(const std::shared_ptr<Program>& program)
     {
         m_ray_tracing_pipeline_desc.program = m_program;
         m_ray_tracing_pipeline_desc.layout = m_layout;
+
+        m_shader_tables = {};
+        std::vector<RayTracingShaderGroup>& groups = m_ray_tracing_pipeline_desc.groups;
+        m_shader_tables.raygen.stride = m_device.GetShaderTableAlignment();
+        m_shader_tables.miss.stride = m_device.GetShaderTableAlignment();
+        m_shader_tables.callable.stride = m_device.GetShaderTableAlignment();
+        m_shader_tables.hit.stride = m_device.GetShaderTableAlignment();
+        for (const auto& shader : m_program->GetShaders())
+        {
+            for (const auto& entry_point : shader->GetReflection()->GetEntryPoints())
+            {
+                switch (entry_point.kind)
+                {
+                case ShaderKind::kRayGeneration:
+                    m_shader_tables.raygen.size += m_device.GetShaderTableAlignment();
+                    break;
+                case ShaderKind::kMiss:
+                    m_shader_tables.miss.size += m_device.GetShaderTableAlignment();
+                    break;
+                case ShaderKind::kCallable:
+                    m_shader_tables.callable.size += m_device.GetShaderTableAlignment();
+                    break;
+                case ShaderKind::kAnyHit:
+                case ShaderKind::kClosestHit:
+                case ShaderKind::kIntersection:
+                    m_shader_tables.hit.size += m_device.GetShaderTableAlignment();
+                    break;
+                }
+
+                switch (entry_point.kind)
+                {
+                case ShaderKind::kRayGeneration:
+                case ShaderKind::kMiss:
+                case ShaderKind::kCallable:
+                    groups.push_back({ RayTracingShaderGroupType::kGeneral, shader->GetId(entry_point.name) });
+                    break;
+                case ShaderKind::kClosestHit:
+                    groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, shader->GetId(entry_point.name) });
+                    break;
+                case ShaderKind::kAnyHit:
+                    groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, 0, shader->GetId(entry_point.name) });
+                    break;
+                case ShaderKind::kIntersection:
+                    groups.push_back({ RayTracingShaderGroupType::kProceduralHitGroup, 0, 0, 0, shader->GetId(entry_point.name) });
+                    break;
+                }
+            }
+        }
     }
     else
     {
@@ -342,6 +391,56 @@ void RenderCommandListImpl::ApplyPipeline()
         else
         {
             pipeline = it->second;
+        }
+
+        decltype(auto) shader_handles = pipeline->GetRayTracingShaderGroupHandles(0, m_ray_tracing_pipeline_desc.groups.size());
+
+        uint64_t table_size = m_shader_tables.raygen.size + m_shader_tables.miss.size + m_shader_tables.callable.size + m_shader_tables.hit.size;
+        m_shader_table = m_device.CreateBuffer(BindFlag::kShaderTable, table_size);
+        m_shader_table->CommitMemory(MemoryType::kUpload);
+
+        m_shader_tables.raygen.resource = m_shader_table;
+        m_shader_tables.miss.resource = m_shader_table;
+        m_shader_tables.callable.resource = m_shader_table;
+        m_shader_tables.hit.resource = m_shader_table;
+
+        m_shader_tables.raygen.offset = 0;
+        m_shader_tables.miss.offset = m_shader_tables.raygen.offset + m_shader_tables.raygen.size;
+        m_shader_tables.callable.offset = m_shader_tables.miss.offset + m_shader_tables.miss.size;
+        m_shader_tables.hit.offset = m_shader_tables.callable.offset + m_shader_tables.callable.size;
+
+        size_t group_id = 0;
+        uint64_t raygen_offset = 0;
+        uint64_t miss_offset = 0;
+        uint64_t callable_offset = 0;
+        uint64_t hit_offset = 0;
+        for (const auto& shader : m_program->GetShaders())
+        {
+            for (const auto& entry_point : shader->GetReflection()->GetEntryPoints())
+            {
+                switch (entry_point.kind)
+                {
+                case ShaderKind::kRayGeneration:
+                    m_shader_table->UpdateUploadBuffer(m_shader_tables.raygen.offset + raygen_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
+                    raygen_offset += m_device.GetShaderTableAlignment();
+                    break;
+                case ShaderKind::kMiss:
+                    m_shader_table->UpdateUploadBuffer(m_shader_tables.miss.offset + miss_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
+                    miss_offset += m_device.GetShaderTableAlignment();
+                    break;
+                case ShaderKind::kCallable:
+                    m_shader_table->UpdateUploadBuffer(m_shader_tables.callable.offset + callable_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
+                    callable_offset += m_device.GetShaderTableAlignment();
+                    break;
+                case ShaderKind::kAnyHit:
+                case ShaderKind::kClosestHit:
+                case ShaderKind::kIntersection:
+                    m_shader_table->UpdateUploadBuffer(m_shader_tables.hit.offset + hit_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
+                    hit_offset += m_device.GetShaderTableAlignment();
+                    break;
+                }
+                ++group_id;
+            }
         }
     }
     else

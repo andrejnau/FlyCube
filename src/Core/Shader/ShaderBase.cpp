@@ -1,6 +1,12 @@
 #include "Shader/ShaderBase.h"
 #include <HLSLCompiler/Compiler.h>
 
+static uint64_t GenId()
+{
+    static uint64_t id = 0;
+    return ++id;
+}
+
 ShaderBase::ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type)
     : m_shader_type(desc.type)
     , m_blob_type(blob_type)
@@ -28,6 +34,11 @@ ShaderBase::ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type)
         m_locations[input_parameters[i].semantic_name] = layout.location;
         m_semantic_names[layout.location] = input_parameters[i].semantic_name;
     }
+
+    for (const auto& entry_point : m_reflection->GetEntryPoints())
+    {
+        m_ids.emplace(entry_point.name, GenId());
+    }
 }
 
 ShaderType ShaderBase::GetType() const
@@ -38,6 +49,11 @@ ShaderType ShaderBase::GetType() const
 const std::vector<uint8_t>& ShaderBase::GetBlob() const
 {
     return m_blob;
+}
+
+uint64_t ShaderBase::GetId(const std::string& entry_point) const
+{
+    return m_ids.at(entry_point);
 }
 
 const BindKey& ShaderBase::GetBindKey(const std::string& name) const

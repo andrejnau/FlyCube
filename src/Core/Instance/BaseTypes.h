@@ -138,6 +138,7 @@ namespace BindFlag
         kCopyDest = 1 << 10,
         kCopySource = 1 << 11,
         kShadingRateSource = 1 << 12,
+        kShaderTable = 1 << 13
     };
 }
 
@@ -427,7 +428,54 @@ struct ComputePipelineDesc
     }
 };
 
-using RayTracingPipelineDesc = ComputePipelineDesc;
+enum class RayTracingShaderGroupType
+{
+    kGeneral,
+    kTrianglesHitGroup,
+    kProceduralHitGroup,
+};
+
+struct RayTracingShaderGroup
+{
+    RayTracingShaderGroupType type = RayTracingShaderGroupType::kGeneral;
+    uint64_t general = 0;
+    uint64_t closest_hit = 0;
+    uint64_t any_hit = 0;
+    uint64_t intersection = 0;
+
+    auto MakeTie() const
+    {
+        return std::tie(type, general, closest_hit, any_hit, intersection);
+    }
+};
+
+struct RayTracingPipelineDesc
+{
+    std::shared_ptr<Program> program;
+    std::shared_ptr<BindingSetLayout> layout;
+    std::vector<RayTracingShaderGroup> groups;
+
+    auto MakeTie() const
+    {
+        return std::tie(program, layout, groups);
+    }
+};
+
+struct RayTracingShaderTable
+{
+    std::shared_ptr<Resource> resource;
+    uint64_t offset;
+    uint64_t size;
+    uint64_t stride;
+};
+
+struct RayTracingShaderTables
+{
+    RayTracingShaderTable raygen;
+    RayTracingShaderTable miss;
+    RayTracingShaderTable hit;
+    RayTracingShaderTable callable;
+};
 
 struct BindKey
 {

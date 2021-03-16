@@ -10,13 +10,10 @@ class VKDevice;
 class VKRayTracingPipeline : public VKPipeline
 {
 public:
-    VKRayTracingPipeline(VKDevice& device, const ComputePipelineDesc& desc);
+    VKRayTracingPipeline(VKDevice& device, const RayTracingPipelineDesc& desc);
     PipelineType GetPipelineType() const override;
-
-    vk::Buffer GetShaderBindingTable() const;
+    std::vector<uint8_t> GetRayTracingShaderGroupHandles(uint32_t first_group, uint32_t group_count) const override;
 
 private:
-    ComputePipelineDesc m_desc;
-    vk::UniqueBuffer m_shader_binding_table;
-    vk::UniqueDeviceMemory m_shader_binding_table_memory;
+    RayTracingPipelineDesc m_desc;
 };

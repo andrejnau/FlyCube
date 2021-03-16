@@ -38,6 +38,9 @@ public:
     bool IsMeshShadingSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
     MemoryBudget GetMemoryBudget() const override;
+    uint32_t GetShaderGroupHandleSize() const override;
+    uint32_t GetShaderRecordAlignment() const override;
+    uint32_t GetShaderTableAlignment() const override;
 
     VKAdapter& GetAdapter();
     vk::Device GetDevice();
@@ -67,6 +70,9 @@ private:
     uint32_t m_shading_rate_image_tile_size = 0;
     bool m_is_dxr_supported = false;
     bool m_is_mesh_shading_supported = false;
+    uint32_t m_shader_group_handle_size = 0;
+    uint32_t m_shader_record_alignment = 0;
+    uint32_t m_shader_table_alignment = 0;
 };
 
 vk::ImageLayout ConvertState(ResourceState state);

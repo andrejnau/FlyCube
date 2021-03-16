@@ -4,7 +4,13 @@ struct RayPayload
 };
 
 [shader("closesthit")]
-void closest(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
+void closest_red(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
 {
     payload.color = float3(1, 0, 0);
+}
+
+[shader("closesthit")]
+void closest_green(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
+{
+    payload.color = float3(0, 1, 0);
 }

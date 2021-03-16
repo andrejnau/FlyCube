@@ -26,6 +26,7 @@ if (DIRECTX_SUPPORT)
         DXStateBuilder.h
     )
     list(APPEND sources
+        DXPipeline.cpp
         DXComputePipeline.cpp
         DXGraphicsPipeline.cpp
         DXRayTracingPipeline.cpp

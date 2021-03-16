@@ -45,6 +45,7 @@ target_link_libraries(${target}
     Utilities
     Texture
     Program
+    Pipeline
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")

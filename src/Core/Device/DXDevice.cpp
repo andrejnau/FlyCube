@@ -483,6 +483,21 @@ MemoryBudget DXDevice::GetMemoryBudget() const
     return { local_memory_info.Budget + non_local_memory_info.Budget, local_memory_info.CurrentUsage + non_local_memory_info.CurrentUsage };
 }
 
+uint32_t DXDevice::GetShaderGroupHandleSize() const
+{
+    return D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+}
+
+uint32_t DXDevice::GetShaderRecordAlignment() const
+{
+    return D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+}
+
+uint32_t DXDevice::GetShaderTableAlignment() const
+{
+    return D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+}
+
 DXAdapter& DXDevice::GetAdapter()
 {
     return m_adapter;

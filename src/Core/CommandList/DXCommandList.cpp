@@ -266,14 +266,40 @@ void DXCommandList::DispatchMesh(uint32_t thread_group_count_x)
     m_command_list6->DispatchMesh(thread_group_count_x, 1, 1);
 }
 
-void DXCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
+static D3D12_GPU_VIRTUAL_ADDRESS GetVirtualAddress(const RayTracingShaderTable& table)
 {
-    decltype(auto) dx_state = m_state->As<DXRayTracingPipeline>();
-    D3D12_DISPATCH_RAYS_DESC raytrace_desc = dx_state.GetDispatchRaysDesc();
-    raytrace_desc.Width = width;
-    raytrace_desc.Height = height;
-    raytrace_desc.Depth = depth;
-    m_command_list4->DispatchRays(&raytrace_desc);
+    if (!table.resource)
+    {
+        return 0;
+    }
+    decltype(auto) dx_resource = table.resource->As<DXResource>();
+    return dx_resource.resource->GetGPUVirtualAddress() + table.offset;
+}
+
+void DXCommandList::DispatchRays(const RayTracingShaderTables& shader_tables, uint32_t width, uint32_t height, uint32_t depth)
+{
+    D3D12_DISPATCH_RAYS_DESC dispatch_rays_desc = {};
+
+    dispatch_rays_desc.RayGenerationShaderRecord.StartAddress = GetVirtualAddress(shader_tables.raygen);
+    dispatch_rays_desc.RayGenerationShaderRecord.SizeInBytes = shader_tables.raygen.size;
+
+    dispatch_rays_desc.MissShaderTable.StartAddress = GetVirtualAddress(shader_tables.miss);
+    dispatch_rays_desc.MissShaderTable.SizeInBytes = shader_tables.miss.size;
+    dispatch_rays_desc.MissShaderTable.StrideInBytes = shader_tables.miss.stride;
+
+    dispatch_rays_desc.HitGroupTable.StartAddress = GetVirtualAddress(shader_tables.hit);
+    dispatch_rays_desc.HitGroupTable.SizeInBytes = shader_tables.hit.size;
+    dispatch_rays_desc.HitGroupTable.StrideInBytes = shader_tables.hit.stride;
+
+    dispatch_rays_desc.CallableShaderTable.StartAddress = GetVirtualAddress(shader_tables.callable);
+    dispatch_rays_desc.CallableShaderTable.SizeInBytes = shader_tables.callable.size;
+    dispatch_rays_desc.CallableShaderTable.StrideInBytes = shader_tables.callable.stride;
+
+    dispatch_rays_desc.Width = width;
+    dispatch_rays_desc.Height = height;
+    dispatch_rays_desc.Depth = depth;
+
+    m_command_list4->DispatchRays(&dispatch_rays_desc);
 }
 
 void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)

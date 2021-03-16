@@ -135,6 +135,16 @@ VKDevice::VKDevice(VKAdapter& adapter)
         assert(shading_rate_image_properties.shadingRateTexelSize.width == shading_rate_image_properties.shadingRateTexelSize.height);
         m_shading_rate_image_tile_size = shading_rate_image_properties.shadingRateTexelSize.width;
     }
+    if (m_is_dxr_supported)
+    {
+        vk::PhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = {};
+        vk::PhysicalDeviceProperties2 device_props2 = {};
+        device_props2.pNext = &ray_tracing_properties;
+        m_physical_device.getProperties2(&device_props2);
+        m_shader_group_handle_size = ray_tracing_properties.shaderGroupHandleSize;
+        m_shader_record_alignment = ray_tracing_properties.shaderGroupHandleSize;
+        m_shader_table_alignment = ray_tracing_properties.shaderGroupBaseAlignment;
+    }
 
     const float queue_priority = 1.0f;
     std::vector<vk::DeviceQueueCreateInfo> queues_create_info;
@@ -336,6 +346,8 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
         buffer_info.usage |= vk::BufferUsageFlagBits::eTransferSrc;
     if (bind_flag & BindFlag::kCopyDest)
         buffer_info.usage |= vk::BufferUsageFlagBits::eTransferDst;
+    if (bind_flag & BindFlag::kShaderTable)
+        buffer_info.usage |= vk::BufferUsageFlagBits::eShaderBindingTableKHR;
 
     res->buffer.res = m_device->createBufferUnique(buffer_info);
     res->SetInitialState(ResourceState::kCommon);
@@ -601,6 +613,21 @@ MemoryBudget VKDevice::GetMemoryBudget() const
         res.usage += memory_budget.heapUsage[i];
     }
     return res;
+}
+
+uint32_t VKDevice::GetShaderGroupHandleSize() const
+{
+    return m_shader_group_handle_size;
+}
+
+uint32_t VKDevice::GetShaderRecordAlignment() const
+{
+    return m_shader_record_alignment;
+}
+
+uint32_t VKDevice::GetShaderTableAlignment() const
+{
+    return m_shader_table_alignment;
 }
 
 VKAdapter& VKDevice::GetAdapter()

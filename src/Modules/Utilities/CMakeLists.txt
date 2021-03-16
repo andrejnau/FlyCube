@@ -1,4 +1,5 @@
 add_library(Utilities
+    Common.h
     DXUtility.h
     FileUtility.h
     FileUtility.cpp

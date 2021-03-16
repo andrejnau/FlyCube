@@ -139,32 +139,30 @@ void VKCommandList::DispatchMesh(uint32_t thread_group_count_x)
     m_command_list->drawMeshTasksNV(thread_group_count_x, 0);
 }
 
-void VKCommandList::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
+static vk::StridedDeviceAddressRegionKHR GetStridedDeviceAddressRegion(VKDevice& device, const RayTracingShaderTable& table)
 {
-    decltype(auto) vk_state = m_state->As<VKRayTracingPipeline>();
-    auto shader_binding_table = m_device.GetDevice().getBufferAddress({ vk_state.GetShaderBindingTable() });
+    if (!table.resource)
+    {
+        return {};
+    }
+    decltype(auto) vk_resource = table.resource->As<VKResource>();
+    vk::StridedDeviceAddressRegionKHR vk_table = {};
+    vk_table.deviceAddress = device.GetDevice().getBufferAddress({ vk_resource.buffer.res.get() }) + table.offset;
+    vk_table.size = table.size;
+    vk_table.stride = table.stride;
+    return vk_table;
+}
 
-    vk::PhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = {};
-    vk::PhysicalDeviceProperties2 device_props2{};
-    device_props2.pNext = &ray_tracing_properties;
-    m_device.GetAdapter().GetPhysicalDevice().getProperties2(&device_props2);
-
-    vk::DeviceSize binding_offset_ray_gen_shader = shader_binding_table + ray_tracing_properties.shaderGroupBaseAlignment * 0;
-    vk::DeviceSize binding_offset_miss_shader = shader_binding_table + ray_tracing_properties.shaderGroupBaseAlignment * 1;
-    vk::DeviceSize binding_offset_hit_shader = shader_binding_table + ray_tracing_properties.shaderGroupBaseAlignment * 2;
-    vk::DeviceSize binding_stride = ray_tracing_properties.shaderGroupHandleSize;
-
-    vk::StridedDeviceAddressRegionKHR raygen_shader_table = { binding_offset_ray_gen_shader, binding_stride, binding_stride };
-    vk::StridedDeviceAddressRegionKHR miss_shader_table = { binding_offset_miss_shader, binding_stride, binding_stride };
-    vk::StridedDeviceAddressRegionKHR hit_shader_table = { binding_offset_hit_shader, binding_stride, binding_stride };
-    vk::StridedDeviceAddressRegionKHR callable_shader_table = {};
-
+void VKCommandList::DispatchRays(const RayTracingShaderTables& shader_tables, uint32_t width, uint32_t height, uint32_t depth)
+{
     m_command_list->traceRaysKHR(
-        raygen_shader_table,
-        miss_shader_table,
-        hit_shader_table,
-        callable_shader_table,
-        width, height, depth
+        GetStridedDeviceAddressRegion(m_device, shader_tables.raygen),
+        GetStridedDeviceAddressRegion(m_device, shader_tables.miss),
+        GetStridedDeviceAddressRegion(m_device, shader_tables.hit),
+        GetStridedDeviceAddressRegion(m_device, shader_tables.callable),
+        width,
+        height,
+        depth
     );
 }
 

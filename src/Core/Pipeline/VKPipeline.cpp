@@ -54,6 +54,7 @@ VKPipeline::VKPipeline(VKDevice& device, const std::shared_ptr<Program>& program
         decltype(auto) entry_points = reflection->GetEntryPoints();
         for (const auto& entry_point : entry_points)
         {
+            m_shader_ids[shader->GetId(entry_point.name)] = m_shader_stage_create_info.size();
             decltype(auto) shader_stage_create_info = m_shader_stage_create_info.emplace_back();
             shader_stage_create_info.stage = ExecutionModel2Bit(entry_point.kind);
             shader_stage_create_info.module = m_shader_modules.back().get();
@@ -71,4 +72,9 @@ vk::Pipeline VKPipeline::GetPipeline() const
 vk::PipelineLayout VKPipeline::GetPipelineLayout() const
 {
     return m_pipeline_layout;
+}
+
+std::vector<uint8_t> VKPipeline::GetRayTracingShaderGroupHandles(uint32_t first_group, uint32_t group_count) const
+{
+    return {};
 }

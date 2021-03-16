@@ -54,4 +54,7 @@ public:
     virtual bool IsMeshShadingSupported() const = 0;
     virtual uint32_t GetShadingRateImageTileSize() const = 0;
     virtual MemoryBudget GetMemoryBudget() const = 0;
+    virtual uint32_t GetShaderGroupHandleSize() const = 0;
+    virtual uint32_t GetShaderRecordAlignment() const = 0;
+    virtual uint32_t GetShaderTableAlignment() const = 0;
 };

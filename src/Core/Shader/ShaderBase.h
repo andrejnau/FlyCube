@@ -10,6 +10,7 @@ public:
     ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type);
     ShaderType GetType() const override;
     const std::vector<uint8_t>& GetBlob() const override;
+    uint64_t GetId(const std::string& entry_point) const override;
     const BindKey& GetBindKey(const std::string& name) const override;
     const std::vector<ResourceBindingDesc>& GetResourceBindings() const override;
     const ResourceBindingDesc& GetResourceBinding(const BindKey& bind_key) const override;
@@ -23,6 +24,7 @@ protected:
     ShaderType m_shader_type;
     ShaderBlobType m_blob_type;
     std::vector<uint8_t> m_blob;
+    std::map<std::string, uint64_t> m_ids;
     std::vector<ResourceBindingDesc> m_bindings;
     std::vector<BindKey> m_binding_keys;
     std::map<BindKey, size_t> m_mapping;

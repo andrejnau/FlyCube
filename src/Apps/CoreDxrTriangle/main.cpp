@@ -2,6 +2,7 @@
 #include <AppBox/ArgsParser.h>
 #include <Instance/Instance.h>
 #include <stdexcept>
+#include <glm/gtx/transform.hpp>
 
 int main(int argc, char* argv[])
 {
@@ -52,15 +53,16 @@ int main(int argc, char* argv[])
     bottom->CommitMemory(MemoryType::kDefault);
     bottom->SetName("bottom");
 
-    std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> geometry = {
-        { bottom, glm::mat4(1.0) },
+    std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4x4>> geometry = {
+        { bottom, glm::transpose(glm::translate(glm::vec3(-0.5f, 0.0f, 0.0f))) },
+        { bottom, glm::transpose(glm::translate(glm::vec3(0.5f, 0.0f, 0.0f))) },
     };
     std::vector<RaytracingGeometryInstance> instances;
     for (const auto& mesh : geometry)
     {
         RaytracingGeometryInstance& instance = instances.emplace_back();
         memcpy(&instance.transform, &mesh.second, sizeof(instance.transform));
-        instance.instance_id = static_cast<uint32_t>(instances.size() - 1);
+        instance.instance_offset = static_cast<uint32_t>(instances.size() - 1);
         instance.instance_mask = 0xff;
         instance.acceleration_structure_handle = mesh.first->GetAccelerationStructureHandle();
     }
@@ -118,7 +120,28 @@ int main(int argc, char* argv[])
         { result_key, uav_view }
     });
 
-    std::shared_ptr<Pipeline> pipeline = device->CreateRayTracingPipeline({ program, layout });
+    std::vector<RayTracingShaderGroup> groups;
+    groups.push_back({ RayTracingShaderGroupType::kGeneral, library->GetId("ray_gen") });
+    groups.push_back({ RayTracingShaderGroupType::kGeneral, library->GetId("miss") });
+    groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, library_hit->GetId("closest_red") });
+    groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, library_hit->GetId("closest_green") });
+
+    std::shared_ptr<Pipeline> pipeline = device->CreateRayTracingPipeline({ program, layout, groups });
+
+    std::shared_ptr<Resource> shader_table = device->CreateBuffer(BindFlag::kShaderTable, device->GetShaderTableAlignment() * groups.size());
+    shader_table->CommitMemory(MemoryType::kUpload);
+
+    RayTracingShaderTables shader_tables = {};
+    shader_tables.raygen = { shader_table, 0 * device->GetShaderTableAlignment(), device->GetShaderTableAlignment(), device->GetShaderTableAlignment() };
+    shader_tables.miss = { shader_table, 1 * device->GetShaderTableAlignment(), device->GetShaderTableAlignment(), device->GetShaderTableAlignment() };
+    shader_tables.hit = { shader_table, 2 * device->GetShaderTableAlignment(), 2 * device->GetShaderTableAlignment(), device->GetShaderTableAlignment() };
+
+    decltype(auto) shader_handles = pipeline->GetRayTracingShaderGroupHandles(0, groups.size());
+    shader_table->UpdateUploadBuffer(shader_tables.raygen.offset, shader_handles.data() + device->GetShaderGroupHandleSize() * 0, device->GetShaderGroupHandleSize());
+    shader_table->UpdateUploadBuffer(shader_tables.miss.offset, shader_handles.data() + device->GetShaderGroupHandleSize() * 1, device->GetShaderGroupHandleSize());
+    shader_table->UpdateUploadBuffer(shader_tables.hit.offset, shader_handles.data() + device->GetShaderGroupHandleSize() * 2, device->GetShaderGroupHandleSize());
+    shader_table->UpdateUploadBuffer(shader_tables.hit.offset + shader_tables.hit.stride, shader_handles.data() + device->GetShaderGroupHandleSize() * 3, device->GetShaderGroupHandleSize());
+
     std::array<uint64_t, frame_count> fence_values = {};
     std::vector<std::shared_ptr<CommandList>> command_lists;
     for (uint32_t i = 0; i < frame_count; ++i)
@@ -131,7 +154,7 @@ int main(int argc, char* argv[])
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);
-        command_list->DispatchRays(rect.width, rect.height, 1);
+        command_list->DispatchRays(shader_tables, rect.width, rect.height, 1);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kCopyDest } });
         command_list->ResourceBarrier({ { uav, ResourceState::kUnorderedAccess, ResourceState::kCopySource } });
         command_list->CopyTexture(uav, back_buffer, { { rect.width, rect.height, 1 } });

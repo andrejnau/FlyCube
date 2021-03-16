@@ -12,6 +12,7 @@ public:
     VKPipeline(VKDevice& device, const std::shared_ptr<Program>& program, const std::shared_ptr<BindingSetLayout>& layout);
     vk::PipelineLayout GetPipelineLayout() const;
     vk::Pipeline GetPipeline() const;
+    std::vector<uint8_t> GetRayTracingShaderGroupHandles(uint32_t first_group, uint32_t group_count) const override;
 
 protected:
     VKDevice& m_device;
@@ -20,4 +21,5 @@ protected:
     std::vector<vk::UniqueShaderModule> m_shader_modules;
     vk::UniquePipeline m_pipeline;
     vk::PipelineLayout m_pipeline_layout;
+    std::map<uint64_t, uint32_t> m_shader_ids;
 };

@@ -41,6 +41,9 @@ public:
     bool IsMeshShadingSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
     MemoryBudget GetMemoryBudget() const override;
+    uint32_t GetShaderGroupHandleSize() const override;
+    uint32_t GetShaderRecordAlignment() const override;
+    uint32_t GetShaderTableAlignment() const override;
 
     DXAdapter& GetAdapter();
     ComPtr<ID3D12Device> GetDevice();
