@@ -138,7 +138,8 @@ namespace BindFlag
         kCopyDest = 1 << 10,
         kCopySource = 1 << 11,
         kShadingRateSource = 1 << 12,
-        kShaderTable = 1 << 13
+        kShaderTable = 1 << 13,
+        kIndirectBuffer = 1 << 14
     };
 }
 
@@ -712,6 +713,25 @@ namespace enum_class
 
 using BuildAccelerationStructureFlags = enum_class::BuildAccelerationStructureFlags;
 ENABLE_BITMASK_OPERATORS(BuildAccelerationStructureFlags);
+
+struct DrawIndexedIndirectCommand
+{
+    uint32_t index_count;
+    uint32_t instance_count;
+    uint32_t first_index;
+    int32_t vertex_offset;
+    uint32_t first_instance;
+};
+
+struct DrawIndirectCommand
+{
+    uint32_t vertex_count;
+    uint32_t instance_count;
+    uint32_t first_vertex;
+    uint32_t first_instance;
+};
+
+using IndirectCountType = uint32_t;
 
 template<typename T>
 auto operator< (const T& l, const T& r) -> std::enable_if_t<std::is_same_v<decltype(l.MakeTie() < r.MakeTie()), bool>, bool>

@@ -21,6 +21,20 @@ public:
     virtual void BeginEvent(const std::string& name) = 0;
     virtual void EndEvent() = 0;
     virtual void DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location) = 0;
+    virtual void DrawIndirectCount(
+        const std::shared_ptr<Resource>& argument_buffer,
+        uint64_t argument_buffer_offset,
+        const std::shared_ptr<Resource>& count_buffer,
+        uint64_t count_buffer_offset,
+        uint32_t max_draw_count,
+        uint32_t stride) = 0;
+    virtual void DrawIndexedIndirectCount(
+        const std::shared_ptr<Resource>& argument_buffer,
+        uint64_t argument_buffer_offset,
+        const std::shared_ptr<Resource>& count_buffer,
+        uint64_t count_buffer_offset,
+        uint32_t max_draw_count,
+        uint32_t stride) = 0;
     virtual void Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z) = 0;
     virtual void DispatchMesh(uint32_t thread_group_count_x) = 0;
     virtual void DispatchRays(uint32_t width, uint32_t height, uint32_t depth) = 0;

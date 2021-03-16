@@ -1,6 +1,7 @@
 add_subdirectory(CoreTriangle)
 add_subdirectory(CoreDxrTriangle)
 add_subdirectory(DxrTriangle)
+add_subdirectory(Indirect)
 add_subdirectory(MeshShading)
 add_subdirectory(Stencil)
 add_subdirectory(Triangle)

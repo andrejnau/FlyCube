@@ -52,6 +52,7 @@ public:
     bool IsRenderPassesSupported() const;
     bool IsUnderGraphicsDebugger() const;
     bool IsCreateNotZeroedAvailable() const;
+    ID3D12CommandSignature* GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TYPE type, uint32_t stride);
 
 private:
     std::shared_ptr<Resource> CreateAccelerationStructure(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs);
@@ -69,6 +70,7 @@ private:
     uint32_t m_shading_rate_image_tile_size = 0;
     bool m_is_under_graphics_debugger = false;
     bool m_is_create_not_zeroed_available = false;
+    std::map<std::pair<D3D12_INDIRECT_ARGUMENT_TYPE, uint32_t>, ComPtr<ID3D12CommandSignature>> m_command_signature_cache;
 };
 
 D3D12_RESOURCE_STATES ConvertState(ResourceState state);

@@ -532,3 +532,31 @@ bool DXDevice::IsCreateNotZeroedAvailable() const
 {
     return m_is_create_not_zeroed_available;
 }
+
+ID3D12CommandSignature* DXDevice::GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TYPE type, uint32_t stride)
+{
+    auto it = m_command_signature_cache.find({ type, stride });
+    if (it != m_command_signature_cache.end())
+    {
+        return it->second.Get();
+    }
+
+    D3D12_INDIRECT_ARGUMENT_DESC arg = {};
+    arg.Type = type;
+    D3D12_COMMAND_SIGNATURE_DESC desc = {};
+    desc.NumArgumentDescs = 1;
+    desc.pArgumentDescs = &arg;
+    desc.ByteStride = stride;
+    ComPtr<ID3D12CommandSignature> command_signature;
+    ASSERT_SUCCEEDED(m_device->CreateCommandSignature(
+        &desc,
+        nullptr,
+        IID_PPV_ARGS(&command_signature)
+    ));
+
+    m_command_signature_cache.emplace(std::piecewise_construct,
+        std::forward_as_tuple(type, stride),
+        std::forward_as_tuple(command_signature)
+    );
+    return command_signature.Get();
+}

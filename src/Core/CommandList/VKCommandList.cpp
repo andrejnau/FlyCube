@@ -129,6 +129,46 @@ void VKCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_locat
     m_command_list->drawIndexed(index_count, 1, start_index_location, base_vertex_location, 0);
 }
 
+void VKCommandList::DrawIndirectCount(
+    const std::shared_ptr<Resource>& argument_buffer,
+    uint64_t argument_buffer_offset,
+    const std::shared_ptr<Resource>& count_buffer,
+    uint64_t count_buffer_offset,
+    uint32_t max_draw_count,
+    uint32_t stride)
+{
+    decltype(auto) vk_argument_buffer = argument_buffer->As<VKResource>();
+    decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
+    m_command_list->drawIndirectCount(
+        vk_argument_buffer.buffer.res.get(),
+        argument_buffer_offset,
+        vk_count_buffer.buffer.res.get(),
+        count_buffer_offset,
+        max_draw_count,
+        stride
+    );
+}
+
+void VKCommandList::DrawIndexedIndirectCount(
+    const std::shared_ptr<Resource>& argument_buffer,
+    uint64_t argument_buffer_offset,
+    const std::shared_ptr<Resource>& count_buffer,
+    uint64_t count_buffer_offset,
+    uint32_t max_draw_count,
+    uint32_t stride)
+{
+    decltype(auto) vk_argument_buffer = argument_buffer->As<VKResource>();
+    decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
+    m_command_list->drawIndexedIndirectCount(
+        vk_argument_buffer.buffer.res.get(),
+        argument_buffer_offset,
+        vk_count_buffer.buffer.res.get(),
+        count_buffer_offset,
+        max_draw_count,
+        stride
+    );
+}
+
 void VKCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
 {
     m_command_list->dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);

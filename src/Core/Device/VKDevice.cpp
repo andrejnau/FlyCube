@@ -96,7 +96,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
     auto extensions = m_physical_device.enumerateDeviceExtensionProperties();
     std::set<std::string> req_extension = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
         VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
         VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
@@ -173,14 +172,13 @@ VKDevice::VKDevice(VKAdapter& adapter)
         device_create_info_next = &extension;
     };
 
-    vk::PhysicalDeviceTimelineSemaphoreFeatures device_timetine_feature = {};
-    device_timetine_feature.timelineSemaphore = true;
-    add_extension(device_timetine_feature);
-
-    vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing_feature = {};
-    descriptor_indexing_feature.runtimeDescriptorArray = true;
-    descriptor_indexing_feature.descriptorBindingVariableDescriptorCount = true;
-    add_extension(descriptor_indexing_feature);
+    vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
+    device_vulkan12_features.drawIndirectCount = true;
+    device_vulkan12_features.bufferDeviceAddress = true;
+    device_vulkan12_features.timelineSemaphore = true;
+    device_vulkan12_features.runtimeDescriptorArray = true;
+    device_vulkan12_features.descriptorBindingVariableDescriptorCount = true;
+    add_extension(device_vulkan12_features);
 
     vk::PhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_feature = {};
     shading_rate_image_feature.shadingRateImage = true;
@@ -196,10 +194,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
     {
         add_extension(mesh_shader_feature);
     }
-
-    vk::PhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_feature = {};
-    buffer_device_address_feature.bufferDeviceAddress = true;
-    add_extension(buffer_device_address_feature);
 
     vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_pipeline_feature = {};
     raytracing_pipeline_feature.rayTracingPipeline = true;
@@ -348,6 +342,8 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
         buffer_info.usage |= vk::BufferUsageFlagBits::eTransferDst;
     if (bind_flag & BindFlag::kShaderTable)
         buffer_info.usage |= vk::BufferUsageFlagBits::eShaderBindingTableKHR;
+    if (bind_flag & BindFlag::kIndirectBuffer)
+        buffer_info.usage |= vk::BufferUsageFlagBits::eIndirectBuffer;
 
     res->buffer.res = m_device->createBufferUnique(buffer_info);
     res->SetInitialState(ResourceState::kCommon);

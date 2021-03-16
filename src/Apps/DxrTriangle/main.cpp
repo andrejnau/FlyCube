@@ -58,5 +58,6 @@ int main(int argc, char *argv[])
         device->ExecuteCommandLists({ command_lists[device->GetFrameIndex()] });
         device->Present();
     }
+    device->WaitForIdle();
     return 0;
 }
