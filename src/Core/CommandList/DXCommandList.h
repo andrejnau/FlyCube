@@ -40,6 +40,7 @@ public:
         uint32_t max_draw_count,
         uint32_t stride) override;
     void Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z) override;
+    void DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset) override;
     void DispatchMesh(uint32_t thread_group_count_x) override;
     void DispatchRays(const RayTracingShaderTables& shader_tables, uint32_t width, uint32_t height, uint32_t depth) override;
     void ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers) override;

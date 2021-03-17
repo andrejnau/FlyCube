@@ -343,6 +343,19 @@ void DXCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_grou
     m_command_list->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
+void DXCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
+{
+    ExecuteIndirect(
+        D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH,
+        argument_buffer,
+        argument_buffer_offset,
+        {},
+        0,
+        1,
+        sizeof(DispatchIndirectCommand)
+    );
+}
+
 void DXCommandList::DispatchMesh(uint32_t thread_group_count_x)
 {
     m_command_list6->DispatchMesh(thread_group_count_x, 1, 1);

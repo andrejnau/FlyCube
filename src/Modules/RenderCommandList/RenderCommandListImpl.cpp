@@ -242,6 +242,13 @@ void RenderCommandListImpl::Dispatch(uint32_t thread_group_count_x, uint32_t thr
     m_command_list->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
+void RenderCommandListImpl::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
+{
+    ApplyPipeline();
+    ApplyBindingSet();
+    m_command_list->DispatchIndirect(argument_buffer, argument_buffer_offset);
+}
+
 void RenderCommandListImpl::DispatchMesh(uint32_t thread_group_count_x)
 {
     ApplyPipeline();

@@ -215,6 +215,15 @@ void VKCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_grou
     m_command_list->dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
+void VKCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
+{
+    decltype(auto) vk_argument_buffer = argument_buffer->As<VKResource>();
+    m_command_list->dispatchIndirect(
+        vk_argument_buffer.buffer.res.get(),
+        argument_buffer_offset
+    );
+}
+
 void VKCommandList::DispatchMesh(uint32_t thread_group_count_x)
 {
     m_command_list->drawMeshTasksNV(thread_group_count_x, 0);
