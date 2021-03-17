@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
         command_list->IASetVertexBuffer(0, vertex_buffer);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         command_list->BeginRenderPass(render_pass, framebuffers.back(), clear_desc);
-        command_list->DrawIndexed(3, 0, 0);
+        command_list->DrawIndexed(3, 1, 0, 0, 0);
         command_list->EndRenderPass();
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });
         command_list->Close();

@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
         command_list->IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(program.vs.ia.POSITION, pos);
         command_list->BeginRenderPass(render_pass_desc);
-        command_list->DrawIndexed(3, 0, 0);
+        command_list->DrawIndexed(3, 1, 0, 0, 0);
         command_list->EndRenderPass();
         command_list->Close();
         command_lists.emplace_back(command_list);

@@ -22,7 +22,8 @@ public:
     virtual void EndRenderPass() = 0;
     virtual void BeginEvent(const std::string& name) = 0;
     virtual void EndEvent() = 0;
-    virtual void DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location) = 0;
+    virtual void Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) = 0;
+    virtual void DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance) = 0;
     virtual void DrawIndirectCount(
         const std::shared_ptr<Resource>& argument_buffer,
         uint64_t argument_buffer_offset,

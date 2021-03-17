@@ -167,11 +167,18 @@ void RenderCommandListImpl::EndEvent()
     m_command_list->EndEvent();
 }
 
-void RenderCommandListImpl::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
+void RenderCommandListImpl::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
     ApplyPipeline();
     ApplyBindingSet();
-    m_command_list->DrawIndexed(index_count, start_index_location, base_vertex_location);
+    m_command_list->Draw(vertex_count, instance_count, first_vertex, first_instance);
+}
+
+void RenderCommandListImpl::DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
+{
+    ApplyPipeline();
+    ApplyBindingSet();
+    m_command_list->DrawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
 void RenderCommandListImpl::DrawIndirectCount(

@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
         command_list->BeginRenderPass(depth_render_pass_desc);
         for (auto& range : model.ia.ranges)
         {
-            command_list->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            command_list->DrawIndexed(range.index_count, 1, range.start_index_location, range.base_vertex_location, 0);
         }
         command_list->EndRenderPass();
 
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
         for (auto& range : model_square.ia.ranges)
         {
             command_list->Attach(resolve_program.ps.srv.stencilBuffer, dsv);
-            command_list->DrawIndexed(range.index_count, range.start_index_location, range.base_vertex_location);
+            command_list->DrawIndexed(range.index_count, 1, range.start_index_location, range.base_vertex_location, 0);
         }
         command_list->EndRenderPass();
 

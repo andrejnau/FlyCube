@@ -251,9 +251,14 @@ void DXCommandList::EndEvent()
     PIXEndEvent(m_command_list.Get());
 }
 
-void DXCommandList::DrawIndexed(uint32_t index_count, uint32_t start_index_location, int32_t base_vertex_location)
+void DXCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
-    m_command_list->DrawIndexedInstanced(index_count, 1, start_index_location, base_vertex_location, 0);
+    m_command_list->DrawInstanced(vertex_count, instance_count, first_vertex, first_instance);
+}
+
+void DXCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
+{
+    m_command_list->DrawIndexedInstanced(index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
 void DXCommandList::DrawIndirectCount(
