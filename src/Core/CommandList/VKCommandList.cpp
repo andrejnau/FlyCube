@@ -143,15 +143,28 @@ void VKCommandList::DrawIndirectCount(
     uint32_t stride)
 {
     decltype(auto) vk_argument_buffer = argument_buffer->As<VKResource>();
-    decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
-    m_command_list->drawIndirectCount(
-        vk_argument_buffer.buffer.res.get(),
-        argument_buffer_offset,
-        vk_count_buffer.buffer.res.get(),
-        count_buffer_offset,
-        max_draw_count,
-        stride
-    );
+    if (count_buffer)
+    {
+        decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
+        m_command_list->drawIndirectCount(
+            vk_argument_buffer.buffer.res.get(),
+            argument_buffer_offset,
+            vk_count_buffer.buffer.res.get(),
+            count_buffer_offset,
+            max_draw_count,
+            stride
+        );
+    }
+    else
+    {
+        assert(count_buffer_offset == 0);
+        m_command_list->drawIndirect(
+            vk_argument_buffer.buffer.res.get(),
+            argument_buffer_offset,
+            max_draw_count,
+            stride
+        );
+    }
 }
 
 void VKCommandList::DrawIndexedIndirectCount(
@@ -163,15 +176,28 @@ void VKCommandList::DrawIndexedIndirectCount(
     uint32_t stride)
 {
     decltype(auto) vk_argument_buffer = argument_buffer->As<VKResource>();
-    decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
-    m_command_list->drawIndexedIndirectCount(
-        vk_argument_buffer.buffer.res.get(),
-        argument_buffer_offset,
-        vk_count_buffer.buffer.res.get(),
-        count_buffer_offset,
-        max_draw_count,
-        stride
-    );
+    if (count_buffer)
+    {
+        decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
+        m_command_list->drawIndexedIndirectCount(
+            vk_argument_buffer.buffer.res.get(),
+            argument_buffer_offset,
+            vk_count_buffer.buffer.res.get(),
+            count_buffer_offset,
+            max_draw_count,
+            stride
+        );
+    }
+    else
+    {
+        assert(count_buffer_offset == 0);
+        m_command_list->drawIndexedIndirect(
+            vk_argument_buffer.buffer.res.get(),
+            argument_buffer_offset,
+            max_draw_count,
+            stride
+        );
+    }
 }
 
 void VKCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)

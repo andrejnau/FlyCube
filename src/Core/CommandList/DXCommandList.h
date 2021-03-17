@@ -62,6 +62,15 @@ public:
     ComPtr<ID3D12GraphicsCommandList> GetCommandList();
 
 private:
+    void ExecuteIndirect(
+        D3D12_INDIRECT_ARGUMENT_TYPE type,
+        const std::shared_ptr<Resource>& argument_buffer,
+        uint64_t argument_buffer_offset,
+        const std::shared_ptr<Resource>& count_buffer,
+        uint64_t count_buffer_offset,
+        uint32_t max_draw_count,
+        uint32_t stride);
+
     void BeginRenderPassImpl(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc);
     void OMSetFramebuffer(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc);
     void IASetVertexBufferImpl(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride);

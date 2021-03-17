@@ -261,7 +261,8 @@ void DXCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, u
     m_command_list->DrawIndexedInstanced(index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
-void DXCommandList::DrawIndirectCount(
+void DXCommandList::ExecuteIndirect(
+    D3D12_INDIRECT_ARGUMENT_TYPE type,
     const std::shared_ptr<Resource>& argument_buffer,
     uint64_t argument_buffer_offset,
     const std::shared_ptr<Resource>& count_buffer,
@@ -270,14 +271,41 @@ void DXCommandList::DrawIndirectCount(
     uint32_t stride)
 {
     decltype(auto) dx_argument_buffer = argument_buffer->As<DXResource>();
-    decltype(auto) dx_count_buffer = count_buffer->As<DXResource>();
+    ID3D12Resource* dx_count_buffer = nullptr;
+    if (count_buffer)
+    {
+        dx_count_buffer = count_buffer->As<DXResource>().resource.Get();
+    }
+    else
+    {
+        assert(count_buffer_offset == 0);
+    }
     m_command_list->ExecuteIndirect(
-        m_device.GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TYPE_DRAW, stride),
+        m_device.GetCommandSignature(type, stride),
         max_draw_count,
         dx_argument_buffer.resource.Get(),
         argument_buffer_offset,
-        dx_count_buffer.resource.Get(),
+        dx_count_buffer,
         count_buffer_offset
+    );
+}
+
+void DXCommandList::DrawIndirectCount(
+    const std::shared_ptr<Resource>& argument_buffer,
+    uint64_t argument_buffer_offset,
+    const std::shared_ptr<Resource>& count_buffer,
+    uint64_t count_buffer_offset,
+    uint32_t max_draw_count,
+    uint32_t stride)
+{
+    ExecuteIndirect(
+        D3D12_INDIRECT_ARGUMENT_TYPE_DRAW,
+        argument_buffer,
+        argument_buffer_offset,
+        count_buffer,
+        count_buffer_offset,
+        max_draw_count,
+        stride
     );
 }
 
@@ -289,15 +317,14 @@ void DXCommandList::DrawIndexedIndirectCount(
     uint32_t max_draw_count,
     uint32_t stride)
 {
-    decltype(auto) dx_argument_buffer = argument_buffer->As<DXResource>();
-    decltype(auto) dx_count_buffer = count_buffer->As<DXResource>();
-    m_command_list->ExecuteIndirect(
-        m_device.GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED, stride),
-        max_draw_count,
-        dx_argument_buffer.resource.Get(),
+    ExecuteIndirect(
+        D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED,
+        argument_buffer,
         argument_buffer_offset,
-        dx_count_buffer.resource.Get(),
-        count_buffer_offset
+        count_buffer,
+        count_buffer_offset,
+        max_draw_count,
+        stride
     );
 }
 
