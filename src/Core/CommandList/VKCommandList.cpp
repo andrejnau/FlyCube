@@ -134,6 +134,16 @@ void VKCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, u
     m_command_list->drawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
+void VKCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
+{
+    DrawIndirectCount(argument_buffer, argument_buffer_offset, {}, 0, 1, sizeof(DrawIndirectCommand));
+}
+
+void VKCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
+{
+    DrawIndexedIndirectCount(argument_buffer, argument_buffer_offset, {}, 0, 1, sizeof(DrawIndexedIndirectCommand));
+}
+
 void VKCommandList::DrawIndirectCount(
     const std::shared_ptr<Resource>& argument_buffer,
     uint64_t argument_buffer_offset,

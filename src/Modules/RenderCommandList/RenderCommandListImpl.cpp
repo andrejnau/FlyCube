@@ -181,6 +181,20 @@ void RenderCommandListImpl::DrawIndexed(uint32_t index_count, uint32_t instance_
     m_command_list->DrawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
+void RenderCommandListImpl::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
+{
+    ApplyPipeline();
+    ApplyBindingSet();
+    m_command_list->DrawIndirect(argument_buffer, argument_buffer_offset);
+}
+
+void RenderCommandListImpl::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
+{
+    ApplyPipeline();
+    ApplyBindingSet();
+    m_command_list->DrawIndexedIndirect(argument_buffer, argument_buffer_offset);
+}
+
 void RenderCommandListImpl::DrawIndirectCount(
     const std::shared_ptr<Resource>& argument_buffer,
     uint64_t argument_buffer_offset,

@@ -290,6 +290,16 @@ void DXCommandList::ExecuteIndirect(
     );
 }
 
+void DXCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
+{
+    DrawIndirectCount(argument_buffer, argument_buffer_offset, {}, 0, 1, sizeof(DrawIndirectCommand));
+}
+
+void DXCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
+{
+    DrawIndexedIndirectCount(argument_buffer, argument_buffer_offset, {}, 0, 1, sizeof(DrawIndexedIndirectCommand));
+}
+
 void DXCommandList::DrawIndirectCount(
     const std::shared_ptr<Resource>& argument_buffer,
     uint64_t argument_buffer_offset,
