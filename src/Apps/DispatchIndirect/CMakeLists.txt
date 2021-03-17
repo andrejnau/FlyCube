@@ -20,7 +20,7 @@ set_property(SOURCE ${compute_shaders} PROPERTY VS_SHADER_FLAGS "/Zi /auto-bindi
 
 set(shaders_files ${compute_shaders})
 
-include(${project_root}/3rdparty/FlyCube/cmake/shader_parser.cmake)
+include(shader_parser)
 
 source_group("Shader Files" FILES ${shaders_files})
 source_group("Shader Ref Files" FILES ${shaders_ref})
