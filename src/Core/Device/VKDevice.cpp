@@ -97,6 +97,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     std::set<std::string> req_extension = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_RAY_QUERY_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
         VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
@@ -123,6 +124,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
             m_is_dxr_supported = true;
         if (std::string(extension.extensionName.data()) == VK_NV_MESH_SHADER_EXTENSION_NAME)
             m_is_mesh_shading_supported = true;
+        if (std::string(extension.extensionName.data()) == VK_KHR_RAY_QUERY_EXTENSION_NAME)
+            m_is_ray_query_supported = true;
     }
 
     if (m_is_variable_rate_shading_supported)
@@ -201,10 +204,16 @@ VKDevice::VKDevice(VKAdapter& adapter)
     vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_feature = {};
     acceleration_structure_feature.accelerationStructure = true;
 
+    vk::PhysicalDeviceRayQueryFeaturesKHR rayquery_pipeline_feature = {};
+    rayquery_pipeline_feature.rayQuery = true;
+
     if (m_is_dxr_supported)
     {
         add_extension(raytracing_pipeline_feature);
         add_extension(acceleration_structure_feature);
+
+        if (m_is_ray_query_supported)
+            add_extension(rayquery_pipeline_feature);
     }
 
     vk::DeviceCreateInfo device_create_info = {};
@@ -579,6 +588,11 @@ std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(uint32_t instance_count, Bu
 bool VKDevice::IsDxrSupported() const
 {
     return m_is_dxr_supported;
+}
+
+bool VKDevice::IsRayQuerySupported() const
+{
+    return m_is_ray_query_supported;
 }
 
 bool VKDevice::IsVariableRateShadingSupported() const

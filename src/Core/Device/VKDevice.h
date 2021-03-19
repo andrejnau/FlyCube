@@ -34,6 +34,7 @@ public:
     std::shared_ptr<Resource> CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) override;
     std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags) override;
     bool IsDxrSupported() const override;
+    bool IsRayQuerySupported() const override;
     bool IsVariableRateShadingSupported() const override;
     bool IsMeshShadingSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
@@ -69,6 +70,7 @@ private:
     bool m_is_variable_rate_shading_supported = false;
     uint32_t m_shading_rate_image_tile_size = 0;
     bool m_is_dxr_supported = false;
+    bool m_is_ray_query_supported = false;
     bool m_is_mesh_shading_supported = false;
     uint32_t m_shader_group_handle_size = 0;
     uint32_t m_shader_record_alignment = 0;
