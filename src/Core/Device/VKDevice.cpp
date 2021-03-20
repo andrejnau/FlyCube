@@ -81,15 +81,18 @@ VKDevice::VKDevice(VKAdapter& adapter)
         const auto& queue = queue_families[i];
         if (queue.queueCount > 0 && has_all_bits(queue.queueFlags, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer))
         {
-            m_per_queue_data[CommandListType::kGraphics].queue_family_index = i;
+            m_queues_info[CommandListType::kGraphics].queue_family_index = i;
+            m_queues_info[CommandListType::kGraphics].queue_count = queue.queueCount;
         }
         else if (queue.queueCount > 0 && has_all_bits(queue.queueFlags, vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer) && !has_any_bits(queue.queueFlags, vk::QueueFlagBits::eGraphics))
         {
-            m_per_queue_data[CommandListType::kCompute].queue_family_index = i;
+            m_queues_info[CommandListType::kCompute].queue_family_index = i;
+            m_queues_info[CommandListType::kCompute].queue_count = queue.queueCount;
         }
         else if (queue.queueCount > 0 && has_all_bits(queue.queueFlags, vk::QueueFlagBits::eTransfer) && !has_any_bits(queue.queueFlags, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute))
         {
-            m_per_queue_data[CommandListType::kCopy].queue_family_index = i;
+            m_queues_info[CommandListType::kCopy].queue_family_index = i;
+            m_queues_info[CommandListType::kCopy].queue_count = queue.queueCount;
         }
     }
 
@@ -150,10 +153,10 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
     const float queue_priority = 1.0f;
     std::vector<vk::DeviceQueueCreateInfo> queues_create_info;
-    for (const auto& queue_data : m_per_queue_data)
+    for (const auto& queue_info : m_queues_info)
     {
         vk::DeviceQueueCreateInfo& queue_create_info = queues_create_info.emplace_back();
-        queue_create_info.queueFamilyIndex = queue_data.second.queue_family_index;
+        queue_create_info.queueFamilyIndex = queue_info.second.queue_family_index;
         queue_create_info.queueCount = 1;
         queue_create_info.pQueuePriorities = &queue_priority;
     }
@@ -227,13 +230,13 @@ VKDevice::VKDevice(VKAdapter& adapter)
     m_device = m_physical_device.createDeviceUnique(device_create_info);
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device.get());
 
-    for (auto& queue_data : m_per_queue_data)
+    for (auto& queue_info : m_queues_info)
     {
         vk::CommandPoolCreateInfo cmd_pool_create_info = {};
         cmd_pool_create_info.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-        cmd_pool_create_info.queueFamilyIndex = queue_data.second.queue_family_index;
-        queue_data.second.cmd_pool = m_device->createCommandPoolUnique(cmd_pool_create_info);
-        m_command_queues[queue_data.first] = std::make_shared<VKCommandQueue>(*this, queue_data.first, queue_data.second.queue_family_index);
+        cmd_pool_create_info.queueFamilyIndex = queue_info.second.queue_family_index;
+        m_cmd_pools.emplace(queue_info.first, m_device->createCommandPoolUnique(cmd_pool_create_info));
+        m_command_queues[queue_info.first] = std::make_shared<VKCommandQueue>(*this, queue_info.first, queue_info.second.queue_family_index);
     }
 }
 
@@ -244,7 +247,7 @@ std::shared_ptr<Memory> VKDevice::AllocateMemory(uint64_t size, MemoryType memor
 
 std::shared_ptr<CommandQueue> VKDevice::GetCommandQueue(CommandListType type)
 {
-    return m_command_queues.at(type);
+    return m_command_queues.at(GetAvailableCommandListType(type));
 }
 
 uint32_t VKDevice::GetTextureDataPitchAlignment() const
@@ -650,9 +653,18 @@ vk::Device VKDevice::GetDevice()
     return m_device.get();
 }
 
+CommandListType VKDevice::GetAvailableCommandListType(CommandListType type)
+{
+    if (m_queues_info.count(type))
+    {
+        return type;
+    }
+    return CommandListType::kGraphics;
+}
+
 vk::CommandPool VKDevice::GetCmdPool(CommandListType type)
 {
-    return m_per_queue_data.at(type).cmd_pool.get();
+    return m_cmd_pools.at(GetAvailableCommandListType(type)).get();
 }
 
 vk::ImageAspectFlags VKDevice::GetAspectFlags(vk::Format format) const

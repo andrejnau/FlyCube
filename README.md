@@ -1,18 +1,44 @@
-## High-level graphics api
-This api is written in C++ on top of Directx 12 and Vulkan. Provides main features but hide some details.
+# FlyCube
+FlyCube is a two-level graphics API is written in C++ on top of `DirectX 12` and `Vulkan`.
 
-* Supported features
-  * Ray Tracing
-  * Bindless
-  * Mesh shading
-  * Variable rate shading
-  * HLSL as shader language for all backends
-    * Compilation in DXBC, DXIL, SPIRV
-  * Automatic resource state tracking
-    * Per command list resource state tracking
-    * Creating patch command list for sync with global resource state on execute
+### The low-level graphics API features
+* Ray tracing
+* Mesh shading
+* Variable rate shading
+* Bindless resource binding
+* HLSL as a shader language for all backends
+  * Compilation in DXIL or SPIRV depend on selected backend
 
-### High-level graphics api example
+### The high-level graphics API features
+* Provides main features, but hide some details
+* Automatic resource state tracking
+  * Per command list resource state tracking
+  * Creating patch command list for sync with global resource state on execute
+* Build time generated shader helper
+  * Based on shader reflection
+  * Easy to use resources binding
+  * Constant buffers proxy for compile time access to members
+
+### Utilities
+  * Application skeleton
+    * Window creating
+    * Keyboard/mouse events source
+  * Camera
+  * Geometry utils
+    * 3D models loading with `assimp`
+  * Texture utils
+    * Images loading with `gli` and `SOIL`
+
+### Cloning repository
+```
+git clone --recursive https://github.com/andrejnau/FlyCube.git
+```
+
+### Build requirements
+* Windows SDK Version 10.0.19041.0
+* Vulkan SDK 1.2.162.0 if you build this with VULKAN_SUPPORT=ON (enabled by default)
+
+### An example of the high-level graphics API usage
 ```cpp
 Settings settings = ParseArgs(argc, argv);
 AppBox app("Triangle", settings);
@@ -52,7 +78,7 @@ for (uint32_t i = 0; i < settings.frame_count; ++i)
     command_list->IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);
     command_list->IASetVertexBuffer(program.vs.ia.POSITION, pos);
     command_list->BeginRenderPass(render_pass_desc);
-    command_list->DrawIndexed(3, 0, 0);
+    command_list->DrawIndexed(3, 1, 0, 0, 0);
     command_list->EndRenderPass();
     command_list->Close();
     command_lists.emplace_back(command_list);
@@ -63,9 +89,10 @@ while (!app.PollEvents())
     device->ExecuteCommandLists({ command_lists[device->GetFrameIndex()] });
     device->Present();
 }
+device->WaitForIdle();
 ```
 
-### Low-level graphics api example
+### An example of the low-level graphics API usage
 ```cpp
 Settings settings = ParseArgs(argc, argv);
 AppBox app("CoreTriangle", settings);
@@ -110,13 +137,18 @@ copy_command_queue->ExecuteCommandLists({ upload_command_list });
 copy_command_queue->Signal(fence, ++fence_value);
 command_queue->Wait(fence, fence_value);
 
+std::shared_ptr<Shader> vertex_shader = device->CompileShader({ ASSETS_PATH"shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex, "6_0" });
+std::shared_ptr<Shader> pixel_shader = device->CompileShader({ ASSETS_PATH"shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel, "6_0" });
+std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
+
 ViewDesc constant_view_desc = {};
 constant_view_desc.view_type = ViewType::kConstantBuffer;
 std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, constant_view_desc);
-std::shared_ptr<Shader> vertex_shader = device->CompileShader({ "shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex, "6_0" });
-std::shared_ptr<Shader> pixel_shader = device->CompileShader({ "shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel, "6_0" });
-std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
-std::shared_ptr<BindingSet> binding_set = program->CreateBindingSet({ { pixel_shader->GetBindKey("Settings"), constant_buffer_view } });
+BindKey settings_key = pixel_shader->GetBindKey("Settings");
+std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ settings_key });
+std::shared_ptr<BindingSet> binding_set = device->CreateBindingSet(layout);
+binding_set->WriteBindings({ { settings_key, constant_buffer_view } });
+
 RenderPassDesc render_pass_desc = {
     { { swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
 };
@@ -124,7 +156,8 @@ std::shared_ptr<RenderPass> render_pass = device->CreateRenderPass(render_pass_d
 ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
 GraphicsPipelineDesc pipeline_desc = {
     program,
-    { { 0, vertex_shader->GetVertexInputLocation("POSITION"), gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
+    layout,
+    { { 0, vertex_shader->GetInputLayoutLocation("POSITION"), gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
     render_pass
 };
 std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
@@ -149,7 +182,7 @@ for (uint32_t i = 0; i < frame_count; ++i)
     command_list->IASetVertexBuffer(0, vertex_buffer);
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
     command_list->BeginRenderPass(render_pass, framebuffers.back(), clear_desc);
-    command_list->DrawIndexed(3, 0, 0);
+    command_list->DrawIndexed(3, 1, 0, 0, 0);
     command_list->EndRenderPass();
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });
     command_list->Close();
@@ -168,44 +201,20 @@ command_queue->Signal(fence, ++fence_value);
 fence->Wait(fence_value);
 ```
 
-## Utilities features
-  * Application skeleton
-    * Window creating
-    * Keyboard/Mouse events source
-  * Camera
-  * Geometry utils
-    * 3D models loading with assimp
-  * Texture utils
-    * Images loading with gli and SOIL
-  * Generated shader helper by shader reflection
-    * Easy to use resources binding
-    * Constant buffers proxy for compile time access to members
+### Advanced sample
+[SponzaPbr](https://github.com/andrejnau/SponzaPbr) was originally part of the repository. It is my sandbox for rendering techniques.
+* Features
+  * Deferred rendering
+  * Physically based rendering
+  * Image based lighting
+  * Ambient occlusion
+    * Raytracing
+    * Screen space
+  * Normal mapping
+  * Point shadow mapping
+  * Skeletal animation
+  * Multisample anti-aliasing
+  * Tone mapping
+  * Simple imgui based UI settings
 
-## Advanced sample
-[SponzaPbr](https://github.com/andrejnau/SponzaPbr)
 ![sponza.png](screenshots/sponza.png)
-
-## Cloning repository
-```
-git clone --recursive https://github.com/andrejnau/FlyCube.git
-```
-
-or
-
-```
-git clone https://github.com/andrejnau/FlyCube.git
-cd FlyCube
-git submodule update --init --recursive
-```
-
-## Build
-```
-mkdir build
-cd build
-cmake ..
-cmake --build . --config RelWithDebInfo
-```
-
-## Requirements
-* Windows SDK Version 10.0.19041.0
-* Vulkan SDK 1.2.162.0 if you build this with VULKAN_SUPPORT=ON (enabled by default)

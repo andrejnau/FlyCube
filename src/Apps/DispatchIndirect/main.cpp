@@ -69,5 +69,6 @@ int main(int argc, char* argv[])
         device->ExecuteCommandLists({ command_lists[frameIndex] });
         device->Present();
     }
+    device->WaitForIdle();
     return 0;
 }
