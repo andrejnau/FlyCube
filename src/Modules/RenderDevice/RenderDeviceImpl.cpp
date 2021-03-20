@@ -98,6 +98,11 @@ bool RenderDeviceImpl::IsDxrSupported() const
     return m_device->IsDxrSupported();
 }
 
+bool RenderDeviceImpl::IsRayQuerySupported() const
+{
+    return m_device->IsRayQuerySupported();
+}
+
 bool RenderDeviceImpl::IsVariableRateShadingSupported() const
 {
     return m_device->IsVariableRateShadingSupported();
