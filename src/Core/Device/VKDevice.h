@@ -45,6 +45,7 @@ public:
 
     VKAdapter& GetAdapter();
     vk::Device GetDevice();
+    CommandListType GetAvailableCommandListType(CommandListType type);
     vk::CommandPool GetCmdPool(CommandListType type);
     vk::ImageAspectFlags GetAspectFlags(vk::Format format) const;
     VKGPUBindlessDescriptorPoolTyped& GetGPUBindlessDescriptorPool(vk::DescriptorType type);
@@ -58,12 +59,13 @@ private:
     VKAdapter& m_adapter;
     const vk::PhysicalDevice& m_physical_device;
     vk::UniqueDevice m_device;
-    struct PerQueueData
+    struct QueueInfo
     {
-        uint32_t queue_family_index = -1;
-        vk::UniqueCommandPool cmd_pool;
+        uint32_t queue_family_index;
+        uint32_t queue_count;
     };
-    std::map<CommandListType, PerQueueData> m_per_queue_data;
+    std::map<CommandListType, QueueInfo> m_queues_info;
+    std::map<CommandListType, vk::UniqueCommandPool> m_cmd_pools;
     std::map<CommandListType, std::shared_ptr<VKCommandQueue>> m_command_queues;
     std::map<vk::DescriptorType, VKGPUBindlessDescriptorPoolTyped> m_gpu_bindless_descriptor_pool;
     VKGPUDescriptorPool m_gpu_descriptor_pool;
