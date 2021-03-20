@@ -10,8 +10,6 @@
 
 // https://nvpro-samples.github.io/vk_mini_path_tracer/index.html
 
-#pragma optimize("", off)
-
 int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
