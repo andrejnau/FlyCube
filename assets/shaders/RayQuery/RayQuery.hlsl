@@ -9,8 +9,6 @@
 
 RWTexture2D<float4> imageData;
 RaytracingAccelerationStructure tlas;
-Buffer<float3> Vertices;
-Buffer<uint> Indices;
 
 [numthreads(8, 8, 1)]
 void MainCS(uint3 Gid  : SV_GroupID,          // current group index (dispatched by c++)
@@ -97,23 +95,6 @@ void MainCS(uint3 Gid  : SV_GroupID,          // current group index (dispatched
     // be tMax = 10000.0). "true" says "get the committed intersection."
     //const float t = rayQueryGetIntersectionTEXT(rayQuery, true);
     const float t = rayQuery.CommittedRayT();
-
-//    vec3 pixelColor;
-//    // Get the type of committed (true) intersection - nothing, a triangle, or
-//    // a generated object
-//    if(rayQueryGetIntersectionTypeEXT(rayQuery, true) == gl_RayQueryCommittedIntersectionTriangleEXT)
-//    {
-//        // Create a vec3(0, b.x, b.y)
-//        pixelColor = vec3(0.0, rayQueryGetIntersectionBarycentricsEXT(rayQuery, true));
-//        // Set the first element to 1 - b.x - b.y, setting pixelColor to
-//        // (1 - b.x - b.y, b.x, b.y).
-//        pixelColor.x = 1 - pixelColor.y - pixelColor.z;
-//    }
-//    else
-//    {
-//        // Ray hit the sky
-//        pixelColor = vec3(0.0, 0.0, 0.5);
-//    }
 
 
     // Give the pixel the color (t/10, t/10, t/10):
