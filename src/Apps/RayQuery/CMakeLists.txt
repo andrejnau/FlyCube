@@ -9,7 +9,6 @@ set(sources
 )
 
 set(compute_shaders
-    ${shaders_path}/Noise.hlsl
     ${shaders_path}/RayQuery.hlsl
 )
 
