@@ -93,7 +93,6 @@ void MainCS(uint3 Gid  : SV_GroupID,          // current group index (dispatched
 
     // Get the t-value of the intersection (if there's no intersection, this will
     // be tMax = 10000.0). "true" says "get the committed intersection."
-    //const float t = rayQueryGetIntersectionTEXT(rayQuery, true);
     const float t = rayQuery.CommittedRayT();
 
 
