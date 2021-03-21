@@ -216,7 +216,10 @@ VKDevice::VKDevice(VKAdapter& adapter)
         add_extension(acceleration_structure_feature);
 
         if (m_is_ray_query_supported)
+        {
+            raytracing_pipeline_feature.rayTraversalPrimitiveCulling = true;
             add_extension(rayquery_pipeline_feature);
+        }
     }
 
     vk::DeviceCreateInfo device_create_info = {};
