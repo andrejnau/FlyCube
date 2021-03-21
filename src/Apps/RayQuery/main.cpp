@@ -26,8 +26,8 @@ int main(int argc, char* argv[])
     std::shared_ptr<RenderCommandList> upload_command_list = device->CreateRenderCommandList();
 
     // UAV
-    const static int uavWidth = 512;
-    const static int uavHeight = 512;
+    const static int uavWidth = rect.width;
+    const static int uavHeight = rect.height;
     std::shared_ptr<Resource> uav = device->CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kShaderResource | BindFlag::kCopySource,
                                                           device->GetFormat(), 1, uavWidth, uavHeight);
 
@@ -58,6 +58,8 @@ int main(int argc, char* argv[])
     device->ExecuteCommandLists({ upload_command_list });
 
     ProgramHolder<RayQuery> program(*device);
+    program.cs.cbuffer.resolution.screenWidth = uavWidth;
+    program.cs.cbuffer.resolution.screenHeight = uavHeight;
 
     std::vector<std::shared_ptr<RenderCommandList>> command_lists;
     for (uint32_t i = 0; i < settings.frame_count; ++i)
@@ -65,12 +67,11 @@ int main(int argc, char* argv[])
         decltype(auto) command_list = device->CreateRenderCommandList();
         command_list->BeginEvent("RayQuery Pass");
         command_list->UseProgram(program);
-//        command_list->Attach(program.lib.uav.imageData, uav);
-//        command_list->Attach(program.lib.srv.tlas, top);
+        command_list->Attach(program.cs.cbv.resolution, program.cs.cbuffer.resolution);
         command_list->Attach(program.cs.uav.imageData, uav);
         command_list->Attach(program.cs.srv.tlas, top);
-        command_list->Dispatch(uavWidth/8, uavHeight/8, 1);
-        command_list->CopyTexture(uav, device->GetBackBuffer(i), { { uavWidth, uavHeight, 1 } });
+        command_list->Dispatch((uint32_t(uavWidth) + 8 - 1)/8, (uint32_t(uavHeight) + 8 - 1)/8, 1);
+        command_list->CopyTexture(uav, device->GetBackBuffer(i), { { (uint32_t)uavWidth, (uint32_t)uavHeight, 1 } });
         command_list->EndEvent();
         command_list->Close();
         command_lists.emplace_back(command_list);
