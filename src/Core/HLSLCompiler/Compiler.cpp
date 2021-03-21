@@ -105,6 +105,7 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
         arguments.emplace_back(L"-fspv-target-env=vulkan1.1");
         arguments.emplace_back(L"-fspv-extension=SPV_NV_mesh_shader");
         arguments.emplace_back(L"-fspv-extension=SPV_NV_ray_tracing");
+        arguments.emplace_back(L"-fspv-extension=SPV_KHR_ray_query");
         arguments.emplace_back(L"-fspv-extension=SPV_EXT_shader_viewport_index_layer");
         arguments.emplace_back(L"-fspv-extension=SPV_GOOGLE_hlsl_functionality1");
         arguments.emplace_back(L"-fspv-extension=SPV_GOOGLE_user_type");
