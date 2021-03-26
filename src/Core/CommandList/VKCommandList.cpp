@@ -490,7 +490,7 @@ void VKCommandList::BuildBottomLevelAS(
     if (src)
     {
         decltype(auto) vk_src = src->As<VKResource>();
-        vk_src_as = vk_src.as.acceleration_structure.get();
+        vk_src_as = vk_src.acceleration_structure_handle.get();
     }
 
     std::vector<vk::AccelerationStructureBuildRangeInfoKHR> ranges;
@@ -509,7 +509,7 @@ void VKCommandList::BuildBottomLevelAS(
     vk::AccelerationStructureBuildGeometryInfoKHR infos = {};
     infos.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
     infos.flags = Convert(flags);
-    infos.dstAccelerationStructure = vk_dst.as.acceleration_structure.get();
+    infos.dstAccelerationStructure = vk_dst.acceleration_structure_handle.get();
     infos.srcAccelerationStructure = vk_src_as;
     if (vk_src_as)
         infos.mode = vk::BuildAccelerationStructureModeKHR::eUpdate;
@@ -548,7 +548,7 @@ void VKCommandList::BuildTopLevelAS(
     if (src)
     {
         decltype(auto) vk_src = src->As<VKResource>();
-        vk_src_as = vk_src.as.acceleration_structure.get();
+        vk_src_as = vk_src.acceleration_structure_handle.get();
     }
 
     vk::AccelerationStructureBuildRangeInfoKHR acceleration_structure_build_range_info = {};
@@ -558,7 +558,7 @@ void VKCommandList::BuildTopLevelAS(
     vk::AccelerationStructureBuildGeometryInfoKHR infos = {};
     infos.type = vk::AccelerationStructureTypeKHR::eTopLevel;
     infos.flags = Convert(flags);
-    infos.dstAccelerationStructure = vk_dst.as.acceleration_structure.get();
+    infos.dstAccelerationStructure = vk_dst.acceleration_structure_handle.get();
     infos.srcAccelerationStructure = vk_src_as;
     if (vk_src_as)
         infos.mode = vk::BuildAccelerationStructureModeKHR::eUpdate;
@@ -589,8 +589,8 @@ void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
         info.mode = vk::CopyAccelerationStructureModeKHR::eClone;
         break;
     }
-    info.dst = vk_dst.as.acceleration_structure.get();
-    info.src = vk_src.as.acceleration_structure.get();
+    info.dst = vk_dst.acceleration_structure_handle.get();
+    info.src = vk_src.acceleration_structure_handle.get();
     m_command_list->copyAccelerationStructureKHR(info);
 }
 

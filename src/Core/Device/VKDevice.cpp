@@ -562,17 +562,18 @@ vk::AccelerationStructureTypeKHR Convert(AccelerationStructureType type)
     return {};
 }
 
-std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(AccelerationStructureType type, uint64_t size)
+std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(AccelerationStructureType type, const std::shared_ptr<Resource>& resource, uint64_t offset)
 {
-    std::shared_ptr<VKResource> res = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kAccelerationStructure, size));
+    std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
     res->resource_type = ResourceType::kAccelerationStructure;
+    res->acceleration_structures_memory = resource;
 
     vk::AccelerationStructureCreateInfoKHR acceleration_structure_create_info = {};
-    acceleration_structure_create_info.buffer = res->buffer.res.get();
-    acceleration_structure_create_info.offset = 0;
-    acceleration_structure_create_info.size = size;
+    acceleration_structure_create_info.buffer = resource->As<VKResource>().buffer.res.get();
+    acceleration_structure_create_info.offset = offset;
+    acceleration_structure_create_info.size = 0;
     acceleration_structure_create_info.type = Convert(type);
-    res->as.acceleration_structure = m_device->createAccelerationStructureKHRUnique(acceleration_structure_create_info);
+    res->acceleration_structure_handle = m_device->createAccelerationStructureKHRUnique(acceleration_structure_create_info);
 
     return res;
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-inline uint32_t Align(uint32_t size, uint32_t alignment)
+inline uint64_t Align(uint64_t size, uint64_t alignment)
 {
     return (size + (alignment - 1)) & ~(alignment - 1);
 }

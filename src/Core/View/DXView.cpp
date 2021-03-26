@@ -4,7 +4,7 @@
 #include <cassert>
 #include <d3d12.h>
 
-D3D12_SHADER_RESOURCE_VIEW_DESC DX12GeSRVDesc(const ViewDesc& view_desc, const D3D12_RESOURCE_DESC& res_desc)
+D3D12_SHADER_RESOURCE_VIEW_DESC DX12GetSRVDesc(const ViewDesc& view_desc, const D3D12_RESOURCE_DESC& res_desc)
 {
     D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
     srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -339,14 +339,17 @@ void DXView::CreateSrv(const ViewDesc& view_desc, const DXResource* res, DXCPUDe
 {
     if (!res)
         return;
-    D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = DX12GeSRVDesc(view_desc, res->resource->GetDesc());
-    if (srv_desc.ViewDimension == D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE)
+    if (view_desc.dimension == ResourceDimension::kRaytracingAccelerationStructure)
     {
-        srv_desc.RaytracingAccelerationStructure.Location = res->resource->GetGPUVirtualAddress();
+        D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+        srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srv_desc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+        srv_desc.RaytracingAccelerationStructure.Location = res->acceleration_structure_handle;
         m_device.GetDevice()->CreateShaderResourceView(nullptr, &srv_desc, m_handle.GetCpuHandle());
     }
     else
     {
+        D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = DX12GetSRVDesc(view_desc, res->resource->GetDesc());
         m_device.GetDevice()->CreateShaderResourceView(res->resource.Get(), &srv_desc, m_handle.GetCpuHandle());
     }
 }

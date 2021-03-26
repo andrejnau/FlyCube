@@ -28,6 +28,7 @@ public:
     ComPtr<ID3D12Resource> resource;
     D3D12_RESOURCE_DESC desc = {};
     D3D12_SAMPLER_DESC sampler_desc = {};
+    D3D12_GPU_VIRTUAL_ADDRESS acceleration_structure_handle = {};
 
 private:
     DXDevice& m_device;

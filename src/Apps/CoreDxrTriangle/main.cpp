@@ -3,6 +3,7 @@
 #include <Instance/Instance.h>
 #include <stdexcept>
 #include <glm/gtx/transform.hpp>
+#include <Utilities/Common.h>
 
 int main(int argc, char* argv[])
 {
@@ -50,15 +51,25 @@ int main(int argc, char* argv[])
         RaytracingGeometryFlags::kOpaque
     };
 
+    const uint32_t bottom_count = 2;
     auto blas_prebuild_info = device->GetBLASPrebuildInfo({ raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
-    std::shared_ptr<Resource> bottom = device->CreateAccelerationStructure(AccelerationStructureType::kBottomLevel, blas_prebuild_info.acceleration_structure_size);
-    bottom->CommitMemory(MemoryType::kDefault);
-    bottom->SetName("bottom");
+    auto tlas_prebuild_info = device->GetTLASPrebuildInfo(bottom_count, BuildAccelerationStructureFlags::kNone);
+    uint64_t acceleration_structures_size = Align(blas_prebuild_info.acceleration_structure_size, kAccelerationStructureAlignment) + tlas_prebuild_info.acceleration_structure_size;
+    std::shared_ptr<Resource> acceleration_structures_memory = device->CreateBuffer(BindFlag::kAccelerationStructure, acceleration_structures_size);
+    acceleration_structures_memory->CommitMemory(MemoryType::kDefault);
+    acceleration_structures_memory->SetName("acceleration_structures_memory");
+
+    std::shared_ptr<Resource> bottom = device->CreateAccelerationStructure(
+        AccelerationStructureType::kBottomLevel,
+        acceleration_structures_memory,
+        0
+    );
 
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4x4>> geometry = {
         { bottom, glm::transpose(glm::translate(glm::vec3(-0.5f, 0.0f, 0.0f))) },
         { bottom, glm::transpose(glm::translate(glm::vec3(0.5f, 0.0f, 0.0f))) },
     };
+    assert(geometry.size() == bottom_count);
     std::vector<RaytracingGeometryInstance> instances;
     for (const auto& mesh : geometry)
     {
@@ -69,10 +80,11 @@ int main(int argc, char* argv[])
         instance.acceleration_structure_handle = mesh.first->GetAccelerationStructureHandle();
     }
 
-    auto tlas_prebuild_info = device->GetTLASPrebuildInfo(instances.size(), BuildAccelerationStructureFlags::kNone);
-    std::shared_ptr<Resource> top = device->CreateAccelerationStructure(AccelerationStructureType::kTopLevel, tlas_prebuild_info.acceleration_structure_size);
-    top->CommitMemory(MemoryType::kDefault);
-    top->SetName("top");
+    std::shared_ptr<Resource> top = device->CreateAccelerationStructure(
+        AccelerationStructureType::kTopLevel,
+        acceleration_structures_memory,
+        Align(blas_prebuild_info.acceleration_structure_size, kAccelerationStructureAlignment)
+    );
 
     auto scratch = device->CreateBuffer(BindFlag::kRayTracing, blas_prebuild_info.build_scratch_data_size + tlas_prebuild_info.build_scratch_data_size);
     scratch->CommitMemory(MemoryType::kDefault);

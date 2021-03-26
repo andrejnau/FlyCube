@@ -111,12 +111,15 @@ uint32_t DXResource::GetSampleCount() const
 
 uint64_t DXResource::GetAccelerationStructureHandle() const
 {
-    return resource->GetGPUVirtualAddress();
+    return acceleration_structure_handle;
 }
 
 void DXResource::SetName(const std::string& name)
 {
-    resource->SetName(utf8_to_wstring(name).c_str());
+    if (resource)
+    {
+        resource->SetName(utf8_to_wstring(name).c_str());
+    }
 }
 
 uint8_t* DXResource::Map()

@@ -68,17 +68,17 @@ std::shared_ptr<Resource> RenderDeviceImpl::CreateSampler(const SamplerDesc& des
 std::shared_ptr<Resource> RenderDeviceImpl::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
 {
     auto prebuild_info = m_device->GetBLASPrebuildInfo(descs, flags);
-    std::shared_ptr<Resource> res = m_device->CreateAccelerationStructure(AccelerationStructureType::kBottomLevel, prebuild_info.acceleration_structure_size);
-    res->CommitMemory(MemoryType::kDefault);
-    return res;
+    std::shared_ptr<Resource> memory = m_device->CreateBuffer(BindFlag::kAccelerationStructure, prebuild_info.acceleration_structure_size);
+    memory->CommitMemory(MemoryType::kDefault);
+    return m_device->CreateAccelerationStructure(AccelerationStructureType::kBottomLevel, memory, 0);
 }
 
 std::shared_ptr<Resource> RenderDeviceImpl::CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags)
 {
     auto prebuild_info = m_device->GetTLASPrebuildInfo(instance_count, flags);
-    std::shared_ptr<Resource> res = m_device->CreateAccelerationStructure(AccelerationStructureType::kTopLevel, prebuild_info.acceleration_structure_size);
-    res->CommitMemory(MemoryType::kDefault);
-    return res;
+    std::shared_ptr<Resource> memory = m_device->CreateBuffer(BindFlag::kAccelerationStructure, prebuild_info.acceleration_structure_size);
+    memory->CommitMemory(MemoryType::kDefault);
+    return m_device->CreateAccelerationStructure(AccelerationStructureType::kTopLevel, memory, 0);
 }
 
 std::shared_ptr<View> RenderDeviceImpl::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)

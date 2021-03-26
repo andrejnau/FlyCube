@@ -23,6 +23,7 @@ public:
 
     gli::format format = gli::FORMAT_UNDEFINED;
     ResourceType resource_type = ResourceType::kUnknown;
+    std::shared_ptr<Resource> acceleration_structures_memory;
 
 protected:
     std::shared_ptr<Memory> m_memory;

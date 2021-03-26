@@ -14,7 +14,7 @@ void VKResource::CommitMemory(MemoryType memory_type)
     MemoryRequirements mem_requirements = GetMemoryRequirements();
     vk::MemoryDedicatedAllocateInfoKHR dedicated_allocate_info = {};
     vk::MemoryDedicatedAllocateInfoKHR* p_dedicated_allocate_info = nullptr;
-    if (resource_type == ResourceType::kBuffer || resource_type == ResourceType::kAccelerationStructure)
+    if (resource_type == ResourceType::kBuffer)
     {
         dedicated_allocate_info.buffer = buffer.res.get();
         p_dedicated_allocate_info = &dedicated_allocate_info;
@@ -34,7 +34,7 @@ void VKResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
     m_memory_type = m_memory->GetMemoryType();
     m_vk_memory = m_memory->As<VKMemory>().GetMemory();
 
-    if (resource_type == ResourceType::kBuffer || resource_type == ResourceType::kAccelerationStructure)
+    if (resource_type == ResourceType::kBuffer)
     {
         m_device.GetDevice().bindBufferMemory(buffer.res.get(), m_vk_memory, offset);
     }
@@ -73,7 +73,7 @@ uint32_t VKResource::GetSampleCount() const
 
 uint64_t VKResource::GetAccelerationStructureHandle() const
 {
-    return m_device.GetDevice().getAccelerationStructureAddressKHR({ as.acceleration_structure.get() });
+    return m_device.GetDevice().getAccelerationStructureAddressKHR({ acceleration_structure_handle.get() });
 }
 
 void VKResource::SetName(const std::string& name)
@@ -89,11 +89,6 @@ void VKResource::SetName(const std::string& name)
     {
         info.objectType = image.res.objectType;
         info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkImage>(image.res));
-    }
-    else if (resource_type == ResourceType::kAccelerationStructure)
-    {
-        info.objectType = as.acceleration_structure.get().objectType;
-        info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkAccelerationStructureKHR>(as.acceleration_structure.get()));
     }
     m_device.GetDevice().setDebugUtilsObjectNameEXT(info);
 }
@@ -118,7 +113,7 @@ bool VKResource::AllowCommonStatePromotion(ResourceState state_after)
 MemoryRequirements VKResource::GetMemoryRequirements() const
 {
     vk::MemoryRequirements2 mem_requirements = {};
-    if (resource_type == ResourceType::kBuffer || resource_type == ResourceType::kAccelerationStructure)
+    if (resource_type == ResourceType::kBuffer)
     {
         vk::BufferMemoryRequirementsInfo2KHR buffer_mem_req = {};
         buffer_mem_req.buffer = buffer.res.get();

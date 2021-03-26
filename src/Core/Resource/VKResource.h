@@ -53,10 +53,7 @@ public:
         vk::UniqueSampler res;
     } sampler;
 
-    struct AccelerationStructure
-    {
-        vk::UniqueAccelerationStructureKHR acceleration_structure;
-    } as;
+    vk::UniqueAccelerationStructureKHR acceleration_structure_handle = {};
 
 private:
     VKDevice& m_device;

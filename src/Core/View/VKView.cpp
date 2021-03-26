@@ -109,7 +109,7 @@ void VKView::WriteView(vk::WriteDescriptorSet& descriptor_write,
         list_as.emplace_back();
         vk::WriteDescriptorSetAccelerationStructureKHR& descriptorAccelerationStructureInfo = list_as.back();
         descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
-        descriptorAccelerationStructureInfo.pAccelerationStructures = &m_resource->as.acceleration_structure.get();
+        descriptorAccelerationStructureInfo.pAccelerationStructures = &m_resource->acceleration_structure_handle.get();
         descriptor_write.pNext = &descriptorAccelerationStructureInfo;
         break;
     }

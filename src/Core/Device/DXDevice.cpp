@@ -365,10 +365,12 @@ std::shared_ptr<Pipeline> DXDevice::CreateRayTracingPipeline(const RayTracingPip
     return std::make_shared<DXRayTracingPipeline>(*this, desc);
 }
 
-std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(AccelerationStructureType type, uint64_t size)
+std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(AccelerationStructureType type, const std::shared_ptr<Resource>& resource, uint64_t offset)
 {
-    std::shared_ptr<DXResource> res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kAccelerationStructure, size));
+    std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
     res->resource_type = ResourceType::kAccelerationStructure;
+    res->acceleration_structures_memory = resource;
+    res->acceleration_structure_handle = resource->As<DXResource>().resource->GetGPUVirtualAddress() + offset;
     return res;
 }
 

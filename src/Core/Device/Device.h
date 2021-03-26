@@ -47,7 +47,7 @@ public:
     virtual std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
     virtual std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) = 0;
     virtual std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) = 0;
-    virtual std::shared_ptr<Resource> CreateAccelerationStructure(AccelerationStructureType type, uint64_t size) = 0;
+    virtual std::shared_ptr<Resource> CreateAccelerationStructure(AccelerationStructureType type, const std::shared_ptr<Resource>& resource, uint64_t offset) = 0;
     virtual bool IsDxrSupported() const = 0;
     virtual bool IsRayQuerySupported() const = 0;
     virtual bool IsVariableRateShadingSupported() const = 0;

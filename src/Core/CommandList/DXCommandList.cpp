@@ -544,10 +544,10 @@ void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATI
     if (src)
     {
         decltype(auto) dx_src = src->As<DXResource>();
-        acceleration_structure_desc.SourceAccelerationStructureData = dx_src.resource->GetGPUVirtualAddress();
+        acceleration_structure_desc.SourceAccelerationStructureData = dx_src.acceleration_structure_handle;
         acceleration_structure_desc.Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
     }
-    acceleration_structure_desc.DestAccelerationStructureData = dx_dst.resource->GetGPUVirtualAddress();
+    acceleration_structure_desc.DestAccelerationStructureData = dx_dst.acceleration_structure_handle;
     acceleration_structure_desc.ScratchAccelerationStructureData = dx_scratch.resource->GetGPUVirtualAddress() + scratch_offset;
     m_command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
 }
@@ -611,8 +611,8 @@ void DXCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
         assert(false);
     }
     m_command_list4->CopyRaytracingAccelerationStructure(
-        dx_dst.resource->GetGPUVirtualAddress(),
-        dx_src.resource->GetGPUVirtualAddress(),
+        dx_dst.acceleration_structure_handle,
+        dx_src.acceleration_structure_handle,
         dx_mode
     );
 }
