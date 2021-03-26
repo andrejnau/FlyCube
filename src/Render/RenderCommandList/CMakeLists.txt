@@ -25,6 +25,7 @@ target_link_libraries(RenderCommandList
     GPUDescriptorPool
     Fence
     Utilities
+    ObjectCache
 )
 
 set_target_properties(RenderCommandList PROPERTIES FOLDER "Render")

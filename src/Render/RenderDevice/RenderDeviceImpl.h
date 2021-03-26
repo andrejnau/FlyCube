@@ -17,6 +17,7 @@
 
 #include <RenderCommandList/RenderCommandList.h>
 #include <RenderDevice/RenderDevice.h>
+#include <ObjectCache/ObjectCache.h>
 
 class RenderDeviceImpl : public RenderDevice
 {
@@ -69,4 +70,5 @@ private:
     std::shared_ptr<Fence> m_fence;
     std::vector<std::shared_ptr<CommandList>> m_command_list_pool;
     std::deque<std::pair<uint64_t /*fence_value*/, size_t /*offset*/>> m_fence_value_by_cmd;
+    std::unique_ptr<ObjectCache> m_object_cache;
 };

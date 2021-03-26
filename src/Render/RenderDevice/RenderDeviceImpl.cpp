@@ -12,6 +12,7 @@ RenderDeviceImpl::RenderDeviceImpl(const Settings& settings, GLFWwindow* window)
     m_adapter = std::move(m_instance->EnumerateAdapters()[settings.required_gpu_index]);
     m_device = m_adapter->CreateDevice();
     m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
+    m_object_cache = std::make_unique<ObjectCache>(*m_device);
 
     glfwGetWindowSize(window, &m_width, &m_height);
     m_swapchain = m_device->CreateSwapchain(window, m_width, m_height, m_frame_count, settings.vsync);
@@ -41,7 +42,7 @@ std::shared_ptr<Resource> RenderDeviceImpl::GetBackBuffer(uint32_t buffer)
 
 std::shared_ptr<RenderCommandList> RenderDeviceImpl::CreateRenderCommandList(CommandListType type)
 {
-    return std::make_shared<RenderCommandListImpl>(*m_device, CommandListType::kGraphics);
+    return std::make_shared<RenderCommandListImpl>(*m_device, *m_object_cache, CommandListType::kGraphics);
 }
 
 std::shared_ptr<Resource> RenderDeviceImpl::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)

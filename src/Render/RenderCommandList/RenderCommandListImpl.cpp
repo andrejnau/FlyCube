@@ -2,8 +2,9 @@
 #include <Utilities/FormatHelper.h>
 #include <Utilities/DXGIFormatHelper.h>
 
-RenderCommandListImpl::RenderCommandListImpl(Device& device, CommandListType type)
+RenderCommandListImpl::RenderCommandListImpl(Device& device, ObjectCache& object_cache, CommandListType type)
     : m_device(device)
+    , m_object_cache(object_cache)
 {
     m_command_list = m_device.CreateCommandList(type);
 }
@@ -24,6 +25,10 @@ void RenderCommandListImpl::Reset()
     m_binding_sets.clear();
     m_resource_lazy_view_descs.clear();
     m_command_list->Reset();
+
+    m_graphic_pipeline_desc = {};
+    m_compute_pipeline_desc = {};
+    m_ray_tracing_pipeline_desc = {};
 }
 
 void RenderCommandListImpl::Close()
@@ -169,29 +174,25 @@ void RenderCommandListImpl::EndEvent()
 
 void RenderCommandListImpl::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
-    ApplyPipeline();
-    ApplyBindingSet();
+    Apply();
     m_command_list->Draw(vertex_count, instance_count, first_vertex, first_instance);
 }
 
 void RenderCommandListImpl::DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
 {
-    ApplyPipeline();
-    ApplyBindingSet();
+    Apply();
     m_command_list->DrawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
 void RenderCommandListImpl::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
-    ApplyPipeline();
-    ApplyBindingSet();
+    Apply();
     m_command_list->DrawIndirect(argument_buffer, argument_buffer_offset);
 }
 
 void RenderCommandListImpl::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
-    ApplyPipeline();
-    ApplyBindingSet();
+    Apply();
     m_command_list->DrawIndexedIndirect(argument_buffer, argument_buffer_offset);
 }
 
@@ -203,8 +204,7 @@ void RenderCommandListImpl::DrawIndirectCount(
     uint32_t max_draw_count,
     uint32_t stride)
 {
-    ApplyPipeline();
-    ApplyBindingSet();
+    Apply();
     m_command_list->DrawIndirectCount(
         argument_buffer,
         argument_buffer_offset,
@@ -223,8 +223,7 @@ void RenderCommandListImpl::DrawIndexedIndirectCount(
     uint32_t max_draw_count,
     uint32_t stride)
 {
-    ApplyPipeline();
-    ApplyBindingSet();
+    Apply();
     m_command_list->DrawIndexedIndirectCount(
         argument_buffer,
         argument_buffer_offset,
@@ -237,30 +236,25 @@ void RenderCommandListImpl::DrawIndexedIndirectCount(
 
 void RenderCommandListImpl::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
 {
-    ApplyPipeline();
-    ApplyBindingSet();
+    Apply();
     m_command_list->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
 void RenderCommandListImpl::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
-    ApplyPipeline();
-    ApplyBindingSet();
+    Apply();
     m_command_list->DispatchIndirect(argument_buffer, argument_buffer_offset);
 }
 
 void RenderCommandListImpl::DispatchMesh(uint32_t thread_group_count_x)
 {
-    ApplyPipeline();
-    ApplyBindingSet();
+    Apply();
     m_command_list->DispatchMesh(thread_group_count_x);
 }
 
 void RenderCommandListImpl::DispatchRays(uint32_t width, uint32_t height, uint32_t depth)
 {
-    ApplyPipeline();
-    ApplyBindingSet();
-    m_cmd_resources.emplace_back(m_shader_table);
+    Apply();
     m_command_list->DispatchRays(m_shader_tables, width, height, depth);
 }
 
@@ -347,30 +341,23 @@ void RenderCommandListImpl::CopyAccelerationStructure(const std::shared_ptr<Reso
 
 void RenderCommandListImpl::UseProgram(const std::shared_ptr<Program>& program)
 {
-    m_graphic_pipeline_desc = {};
-    m_compute_pipeline_desc = {};
-    m_ray_tracing_pipeline_desc = {};
-
     m_program = program;
-    decltype(auto) bindings = m_program->GetBindings();
-    auto it = m_layout_cache.find(bindings);
-    if (it == m_layout_cache.end())
-    {
-        it = m_layout_cache.emplace(bindings, m_device.CreateBindingSetLayout(bindings)).first;
-    }
-    m_layout = it->second;
+    m_layout = m_object_cache.GetBindingSetLayout(m_program->GetBindings());
+
     if (m_program->HasShader(ShaderType::kCompute))
     {
+        m_pipeline_type = PipelineType::kCompute;
         m_compute_pipeline_desc.program = m_program;
         m_compute_pipeline_desc.layout = m_layout;
     }
     else if (m_program->HasShader(ShaderType::kLibrary))
     {
+        m_pipeline_type = PipelineType::kRayTracing;
         m_ray_tracing_pipeline_desc.program = m_program;
         m_ray_tracing_pipeline_desc.layout = m_layout;
 
-        m_shader_tables = {};
         std::vector<RayTracingShaderGroup>& groups = m_ray_tracing_pipeline_desc.groups;
+        m_shader_tables = {};
         m_shader_tables.raygen.stride = m_device.GetShaderTableAlignment();
         m_shader_tables.miss.stride = m_device.GetShaderTableAlignment();
         m_shader_tables.callable.stride = m_device.GetShaderTableAlignment();
@@ -419,6 +406,7 @@ void RenderCommandListImpl::UseProgram(const std::shared_ptr<Program>& program)
     }
     else
     {
+        m_pipeline_type = PipelineType::kGraphics;
         m_graphic_pipeline_desc.program = m_program;
         m_graphic_pipeline_desc.layout = m_layout;
         if (m_program->HasShader(ShaderType::kVertex))
@@ -428,106 +416,85 @@ void RenderCommandListImpl::UseProgram(const std::shared_ptr<Program>& program)
     m_bound_deferred_view.clear();
 }
 
+void RenderCommandListImpl::CreateShaderTable(std::shared_ptr<Pipeline> pipeline)
+{
+    decltype(auto) shader_handles = pipeline->GetRayTracingShaderGroupHandles(0, m_ray_tracing_pipeline_desc.groups.size());
+
+    uint64_t table_size = m_shader_tables.raygen.size + m_shader_tables.miss.size + m_shader_tables.callable.size + m_shader_tables.hit.size;
+    m_shader_table = m_device.CreateBuffer(BindFlag::kShaderTable, table_size);
+    m_shader_table->CommitMemory(MemoryType::kUpload);
+
+    m_shader_tables.raygen.resource = m_shader_table;
+    m_shader_tables.miss.resource = m_shader_table;
+    m_shader_tables.callable.resource = m_shader_table;
+    m_shader_tables.hit.resource = m_shader_table;
+
+    m_shader_tables.raygen.offset = 0;
+    m_shader_tables.miss.offset = m_shader_tables.raygen.offset + m_shader_tables.raygen.size;
+    m_shader_tables.callable.offset = m_shader_tables.miss.offset + m_shader_tables.miss.size;
+    m_shader_tables.hit.offset = m_shader_tables.callable.offset + m_shader_tables.callable.size;
+
+    size_t group_id = 0;
+    uint64_t raygen_offset = 0;
+    uint64_t miss_offset = 0;
+    uint64_t callable_offset = 0;
+    uint64_t hit_offset = 0;
+    for (const auto& shader : m_program->GetShaders())
+    {
+        for (const auto& entry_point : shader->GetReflection()->GetEntryPoints())
+        {
+            switch (entry_point.kind)
+            {
+            case ShaderKind::kRayGeneration:
+                m_shader_table->UpdateUploadBuffer(m_shader_tables.raygen.offset + raygen_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
+                raygen_offset += m_device.GetShaderTableAlignment();
+                break;
+            case ShaderKind::kMiss:
+                m_shader_table->UpdateUploadBuffer(m_shader_tables.miss.offset + miss_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
+                miss_offset += m_device.GetShaderTableAlignment();
+                break;
+            case ShaderKind::kCallable:
+                m_shader_table->UpdateUploadBuffer(m_shader_tables.callable.offset + callable_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
+                callable_offset += m_device.GetShaderTableAlignment();
+                break;
+            case ShaderKind::kAnyHit:
+            case ShaderKind::kClosestHit:
+            case ShaderKind::kIntersection:
+                m_shader_table->UpdateUploadBuffer(m_shader_tables.hit.offset + hit_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
+                hit_offset += m_device.GetShaderTableAlignment();
+                break;
+            }
+            ++group_id;
+        }
+    }
+}
+
+void RenderCommandListImpl::Apply()
+{
+    ApplyPipeline();
+    if (m_pipeline_type == PipelineType::kRayTracing)
+    {
+        CreateShaderTable(m_pipeline);
+        m_cmd_resources.emplace_back(m_shader_table);
+    }
+    ApplyBindingSet();
+}
+
 void RenderCommandListImpl::ApplyPipeline()
 {
-    std::shared_ptr<Pipeline> pipeline;
-    if (m_program->HasShader(ShaderType::kCompute))
+    switch (m_pipeline_type)
     {
-        auto it = m_compute_pipeline_cache.find(m_compute_pipeline_desc);
-        if (it == m_compute_pipeline_cache.end())
-        {
-            pipeline = m_device.CreateComputePipeline(m_compute_pipeline_desc);
-            m_compute_pipeline_cache.emplace(std::piecewise_construct,
-                std::forward_as_tuple(m_compute_pipeline_desc),
-                std::forward_as_tuple(pipeline));
-        }
-        else
-        {
-            pipeline = it->second;
-        }
+    case PipelineType::kGraphics:
+        m_pipeline = m_object_cache.GetPipeline(m_graphic_pipeline_desc);
+        break;
+    case PipelineType::kCompute:
+        m_pipeline = m_object_cache.GetPipeline(m_compute_pipeline_desc);
+        break;
+    case PipelineType::kRayTracing:
+        m_pipeline = m_object_cache.GetPipeline(m_ray_tracing_pipeline_desc);
+        break;
     }
-    else if (m_program->HasShader(ShaderType::kLibrary))
-    {
-        auto it = m_ray_tracing_pipeline_cache.find(m_ray_tracing_pipeline_desc);
-        if (it == m_ray_tracing_pipeline_cache.end())
-        {
-            pipeline = m_device.CreateRayTracingPipeline(m_ray_tracing_pipeline_desc);
-            m_ray_tracing_pipeline_cache.emplace(std::piecewise_construct,
-                std::forward_as_tuple(m_ray_tracing_pipeline_desc),
-                std::forward_as_tuple(pipeline));
-        }
-        else
-        {
-            pipeline = it->second;
-        }
-
-        decltype(auto) shader_handles = pipeline->GetRayTracingShaderGroupHandles(0, m_ray_tracing_pipeline_desc.groups.size());
-
-        uint64_t table_size = m_shader_tables.raygen.size + m_shader_tables.miss.size + m_shader_tables.callable.size + m_shader_tables.hit.size;
-        m_shader_table = m_device.CreateBuffer(BindFlag::kShaderTable, table_size);
-        m_shader_table->CommitMemory(MemoryType::kUpload);
-
-        m_shader_tables.raygen.resource = m_shader_table;
-        m_shader_tables.miss.resource = m_shader_table;
-        m_shader_tables.callable.resource = m_shader_table;
-        m_shader_tables.hit.resource = m_shader_table;
-
-        m_shader_tables.raygen.offset = 0;
-        m_shader_tables.miss.offset = m_shader_tables.raygen.offset + m_shader_tables.raygen.size;
-        m_shader_tables.callable.offset = m_shader_tables.miss.offset + m_shader_tables.miss.size;
-        m_shader_tables.hit.offset = m_shader_tables.callable.offset + m_shader_tables.callable.size;
-
-        size_t group_id = 0;
-        uint64_t raygen_offset = 0;
-        uint64_t miss_offset = 0;
-        uint64_t callable_offset = 0;
-        uint64_t hit_offset = 0;
-        for (const auto& shader : m_program->GetShaders())
-        {
-            for (const auto& entry_point : shader->GetReflection()->GetEntryPoints())
-            {
-                switch (entry_point.kind)
-                {
-                case ShaderKind::kRayGeneration:
-                    m_shader_table->UpdateUploadBuffer(m_shader_tables.raygen.offset + raygen_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
-                    raygen_offset += m_device.GetShaderTableAlignment();
-                    break;
-                case ShaderKind::kMiss:
-                    m_shader_table->UpdateUploadBuffer(m_shader_tables.miss.offset + miss_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
-                    miss_offset += m_device.GetShaderTableAlignment();
-                    break;
-                case ShaderKind::kCallable:
-                    m_shader_table->UpdateUploadBuffer(m_shader_tables.callable.offset + callable_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
-                    callable_offset += m_device.GetShaderTableAlignment();
-                    break;
-                case ShaderKind::kAnyHit:
-                case ShaderKind::kClosestHit:
-                case ShaderKind::kIntersection:
-                    m_shader_table->UpdateUploadBuffer(m_shader_tables.hit.offset + hit_offset, shader_handles.data() + m_device.GetShaderGroupHandleSize() * group_id, m_device.GetShaderGroupHandleSize());
-                    hit_offset += m_device.GetShaderTableAlignment();
-                    break;
-                }
-                ++group_id;
-            }
-        }
-    }
-    else
-    {
-        auto it = m_graphics_pipeline_cache.find(m_graphic_pipeline_desc);
-        if (it == m_graphics_pipeline_cache.end())
-        {
-            pipeline = m_device.CreateGraphicsPipeline(m_graphic_pipeline_desc);
-            m_graphics_pipeline_cache.emplace(std::piecewise_construct,
-                std::forward_as_tuple(m_graphic_pipeline_desc),
-                std::forward_as_tuple(pipeline));
-        }
-        else
-        {
-            pipeline = it->second;
-        }
-    }
-
-    m_command_list->BindPipeline(pipeline);
+    m_command_list->BindPipeline(m_pipeline);
 }
 
 void RenderCommandListImpl::ApplyBindingSet()
@@ -548,18 +515,7 @@ void RenderCommandListImpl::ApplyBindingSet()
         desc.view = x.second;
     }
 
-    std::shared_ptr<BindingSet> binding_set;
-    auto it = m_binding_set_cache.find({ m_layout, descs });
-    if (it != m_binding_set_cache.end())
-    {
-        binding_set = it->second;
-    }
-    else
-    {
-        binding_set = m_device.CreateBindingSet(m_layout);
-        binding_set->WriteBindings(descs);
-        m_binding_set_cache[{ m_layout, descs }] = binding_set;
-    }
+    std::shared_ptr<BindingSet> binding_set = m_object_cache.GetBindingSet(m_layout, descs);
     m_command_list->BindBindingSet(binding_set);
     m_binding_sets.emplace_back(binding_set);
 }
@@ -651,20 +607,7 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
         clear_desc.stencil = desc.depth_stencil.clear_stencil;
     }
 
-    std::shared_ptr<RenderPass> render_pass;
-    auto render_pass_it = m_render_pass_cache.find(render_pass_desc);
-    if (render_pass_it == m_render_pass_cache.end())
-    {
-        render_pass = m_device.CreateRenderPass(render_pass_desc);
-        m_render_pass_cache.emplace(std::piecewise_construct,
-            std::forward_as_tuple(render_pass_desc),
-            std::forward_as_tuple(render_pass));
-    }
-    else
-    {
-        render_pass = render_pass_it->second;
-    }
-
+    std::shared_ptr<RenderPass> render_pass = m_object_cache.GetRenderPass(render_pass_desc);
     m_graphic_pipeline_desc.render_pass = render_pass;
 
     std::vector<std::shared_ptr<View>> rtvs;
@@ -710,7 +653,6 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
 void RenderCommandListImpl::EndRenderPass()
 {
     m_command_list->EndRenderPass();
-   // m_graphic_pipeline_desc.render_pass = {};
 }
 
 void RenderCommandListImpl::Attach(const BindKey& bind_key, const std::shared_ptr<DeferredView>& view)

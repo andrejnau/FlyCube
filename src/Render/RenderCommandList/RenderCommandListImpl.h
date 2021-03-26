@@ -1,6 +1,7 @@
 #pragma once
 #include <RenderCommandList/RenderCommandList.h>
 #include <Device/Device.h>
+#include <ObjectCache/ObjectCache.h>
 
 struct LazyResourceBarrierDesc
 {
@@ -17,7 +18,7 @@ constexpr bool kUseFakeClose = true;
 class RenderCommandListImpl : public RenderCommandList
 {
 public:
-    RenderCommandListImpl(Device& device, CommandListType type);
+    RenderCommandListImpl(Device& device, ObjectCache& object_cache, CommandListType type);
     const std::shared_ptr<CommandList>& GetCommandList();
     void LazyResourceBarrier(const std::vector<LazyResourceBarrierDesc>& barriers);
     const std::map<std::shared_ptr<Resource>, ResourceStateTracker>& GetResourceStateTrackers() const;
@@ -84,11 +85,14 @@ private:
     std::shared_ptr<View> CreateView(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc);
     void SetBinding(const BindKey& bind_key, const std::shared_ptr<View>& view);
     void UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch);
+    void Apply();
     void ApplyPipeline();
     void ApplyBindingSet();
     ResourceStateTracker& GetResourceStateTracker(const std::shared_ptr<Resource>& resource);
+    void CreateShaderTable(std::shared_ptr<Pipeline> pipeline);
 
     Device& m_device;
+    ObjectCache& m_object_cache;
     std::shared_ptr<CommandList> m_command_list;
     uint32_t m_viewport_width = 0;
     uint32_t m_viewport_height = 0;
@@ -100,15 +104,11 @@ private:
     std::shared_ptr<Program> m_program;
     std::vector<std::shared_ptr<BindingSet>> m_binding_sets;
 
-    std::map<GraphicsPipelineDesc, std::shared_ptr<Pipeline>> m_graphics_pipeline_cache;
-    std::map<ComputePipelineDesc, std::shared_ptr<Pipeline>> m_compute_pipeline_cache;
-    std::map<RayTracingPipelineDesc, std::shared_ptr<Pipeline>> m_ray_tracing_pipeline_cache;
     std::map<std::tuple<uint32_t, uint32_t, std::vector<std::shared_ptr<View>>, std::shared_ptr<View>>, std::shared_ptr<Framebuffer>> m_framebuffers;
     std::map<std::tuple<BindKey, std::shared_ptr<Resource>, LazyViewDesc>, std::shared_ptr<View>> m_views;
     ComputePipelineDesc m_compute_pipeline_desc = {};
     RayTracingPipelineDesc m_ray_tracing_pipeline_desc = {};
     GraphicsPipelineDesc m_graphic_pipeline_desc = {};
-    std::map<RenderPassDesc, std::shared_ptr<RenderPass>> m_render_pass_cache;
 
     std::vector<std::shared_ptr<Resource>> m_cmd_resources;
 
@@ -116,8 +116,9 @@ private:
     std::vector<ResourceBarrierDesc> m_lazy_barriers;
     uint64_t m_fence_value = 0;
     std::shared_ptr<BindingSetLayout> m_layout;
-    std::map<std::vector<BindKey>, std::shared_ptr<BindingSetLayout>> m_layout_cache;
-    std::map<std::pair<std::shared_ptr<BindingSetLayout>, std::vector<BindingDesc>>, std::shared_ptr<BindingSet>> m_binding_set_cache;
+
     RayTracingShaderTables m_shader_tables = {};
     std::shared_ptr<Resource> m_shader_table;
+    PipelineType m_pipeline_type = PipelineType::kGraphics;
+    std::shared_ptr<Pipeline> m_pipeline;
 };
