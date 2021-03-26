@@ -186,12 +186,14 @@ void RenderCommandListImpl::DrawIndexed(uint32_t index_count, uint32_t instance_
 void RenderCommandListImpl::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
     Apply();
+    BufferBarrier(argument_buffer, ResourceState::kIndirectArgument);
     m_command_list->DrawIndirect(argument_buffer, argument_buffer_offset);
 }
 
 void RenderCommandListImpl::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
     Apply();
+    BufferBarrier(argument_buffer, ResourceState::kIndirectArgument);
     m_command_list->DrawIndexedIndirect(argument_buffer, argument_buffer_offset);
 }
 
@@ -204,6 +206,7 @@ void RenderCommandListImpl::DrawIndirectCount(
     uint32_t stride)
 {
     Apply();
+    BufferBarrier(argument_buffer, ResourceState::kIndirectArgument);
     m_command_list->DrawIndirectCount(
         argument_buffer,
         argument_buffer_offset,
@@ -223,6 +226,7 @@ void RenderCommandListImpl::DrawIndexedIndirectCount(
     uint32_t stride)
 {
     Apply();
+    BufferBarrier(argument_buffer, ResourceState::kIndirectArgument);
     m_command_list->DrawIndexedIndirectCount(
         argument_buffer,
         argument_buffer_offset,
@@ -242,6 +246,7 @@ void RenderCommandListImpl::Dispatch(uint32_t thread_group_count_x, uint32_t thr
 void RenderCommandListImpl::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
     Apply();
+    BufferBarrier(argument_buffer, ResourceState::kIndirectArgument);
     m_command_list->DispatchIndirect(argument_buffer, argument_buffer_offset);
 }
 
