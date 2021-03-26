@@ -82,7 +82,6 @@ private:
     void ImageBarrier(const std::shared_ptr<Resource>& resource, uint32_t base_mip_level, uint32_t level_count, uint32_t base_array_layer, uint32_t layer_count, ResourceState state);
     void OnAttachSRV(const BindKey& bind_key, const std::shared_ptr<View>& view);
     void OnAttachUAV(const BindKey& bind_key, const std::shared_ptr<View>& view);
-    std::shared_ptr<View> CreateView(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc);
     void SetBinding(const BindKey& bind_key, const std::shared_ptr<View>& view);
     void UpdateDefaultSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch);
     void Apply();
@@ -104,7 +103,6 @@ private:
     std::shared_ptr<Program> m_program;
     std::vector<std::shared_ptr<BindingSet>> m_binding_sets;
 
-    std::map<std::tuple<BindKey, std::shared_ptr<Resource>, LazyViewDesc>, std::shared_ptr<View>> m_views;
     ComputePipelineDesc m_compute_pipeline_desc = {};
     RayTracingPipelineDesc m_ray_tracing_pipeline_desc = {};
     GraphicsPipelineDesc m_graphic_pipeline_desc = {};

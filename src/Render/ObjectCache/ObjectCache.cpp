@@ -1,4 +1,5 @@
 #include "ObjectCache.h"
+#include <Utilities/DXGIFormatHelper.h>
 
 ObjectCache::ObjectCache(Device& device)
     : m_device(device)
@@ -101,4 +102,54 @@ std::shared_ptr<Framebuffer> ObjectCache::GetFramebuffer(
             std::forward_as_tuple(framebuffer)).first;
     }
     return it->second;
+}
+
+std::shared_ptr<View> ObjectCache::GetView(const std::shared_ptr<Program>& program, const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
+{
+    auto it = m_views.find({ program, bind_key, resource, view_desc });
+    if (it != m_views.end())
+        return it->second;
+    ViewDesc desc = {};
+    static_cast<LazyViewDesc&>(desc) = view_desc;
+    desc.view_type = bind_key.view_type;
+
+    bool shader_binding = true;
+    switch (bind_key.view_type)
+    {
+    case ViewType::kRenderTarget:
+    case ViewType::kDepthStencil:
+    case ViewType::kShadingRateSource:
+        shader_binding = false;
+        break;
+    }
+
+    if (shader_binding)
+    {
+        decltype(auto) shader = program->GetShader(bind_key.shader_type);
+        ResourceBindingDesc binding_desc = shader->GetResourceBinding(bind_key);
+        desc.dimension = binding_desc.dimension;
+        desc.stride = binding_desc.stride;
+        if (resource && bind_key.view_type == ViewType::kTexture)
+        {
+            // TODO
+            DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(resource->GetFormat()).DXGIFormat.DDS);
+            if (IsTypelessDepthStencil(MakeTypelessDepthStencil(dx_format)))
+            {
+                switch (binding_desc.return_type)
+                {
+                case ReturnType::kFloat:
+                    desc.plane_slice = 0;
+                    break;
+                case ReturnType::kUint:
+                    desc.plane_slice = 1;
+                    break;
+                default:
+                    assert(false);
+                }
+            }
+        }
+    }
+    auto view = m_device.CreateView(resource, desc);
+    m_views.emplace(std::piecewise_construct, std::forward_as_tuple(program, bind_key, resource, view_desc), std::forward_as_tuple(view));
+    return view;
 }

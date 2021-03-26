@@ -1,6 +1,5 @@
 #include "RenderCommandList/RenderCommandListImpl.h"
 #include <Utilities/FormatHelper.h>
-#include <Utilities/DXGIFormatHelper.h>
 
 RenderCommandListImpl::RenderCommandListImpl(Device& device, ObjectCache& object_cache, CommandListType type)
     : m_device(device)
@@ -503,7 +502,7 @@ void RenderCommandListImpl::ApplyBindingSet()
     {
         auto view = x.second->GetView(*this);
         m_resource_lazy_view_descs.emplace_back(view);
-        Attach(x.first, CreateView(x.first, view->resource, view->view_desc));
+        Attach(x.first, m_object_cache.GetView(m_program, x.first, view->resource, view->view_desc));
     }
 
     std::vector<BindingDesc> descs;
@@ -527,55 +526,6 @@ void RenderCommandListImpl::SetBinding(const BindKey& bind_key, const std::share
         m_bound_resources.emplace(bind_key, view);
     else
         it->second = view;
-}
-
-std::shared_ptr<View> RenderCommandListImpl::CreateView(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
-{
-    auto it = m_views.find({ bind_key, resource, view_desc });
-    if (it != m_views.end())
-        return it->second;
-    ViewDesc desc = {};
-    static_cast<LazyViewDesc&>(desc) = view_desc;
-    desc.view_type = bind_key.view_type;
-
-    bool shader_binding = true;
-    switch (bind_key.view_type)
-    {
-    case ViewType::kRenderTarget:
-    case ViewType::kDepthStencil:
-    case ViewType::kShadingRateSource:
-        shader_binding = false;
-        break;
-    }
-
-    if (shader_binding)
-    {
-        decltype(auto) shader = m_program->GetShader(bind_key.shader_type);
-        ResourceBindingDesc binding_desc = shader->GetResourceBinding(bind_key);
-        desc.dimension = binding_desc.dimension;
-        desc.stride = binding_desc.stride;
-        if (resource && bind_key.view_type == ViewType::kTexture)
-        {
-            DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(resource->GetFormat()).DXGIFormat.DDS);
-            if (IsTypelessDepthStencil(MakeTypelessDepthStencil(dx_format)))
-            {
-                switch (binding_desc.return_type)
-                {
-                case ReturnType::kFloat:
-                    desc.plane_slice = 0;
-                    break;
-                case ReturnType::kUint:
-                    desc.plane_slice = 1;
-                    break;
-                default:
-                    assert(false);
-                }
-            }
-        }
-    }
-    auto view = m_device.CreateView(resource, desc);
-    m_views.emplace(std::piecewise_construct, std::forward_as_tuple(bind_key, resource, view_desc), std::forward_as_tuple(view));
-    return view;
 }
 
 void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
@@ -617,7 +567,7 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
         }
 
         BindKey bind_key = { ShaderType::kPixel, ViewType::kRenderTarget, i, 0 };
-        view = CreateView(bind_key, desc.colors[i].texture, desc.colors[i].view_desc);
+        view = m_object_cache.GetView(m_program, bind_key, desc.colors[i].texture, desc.colors[i].view_desc);
         ViewBarrier(view, ResourceState::kRenderTarget);
     }
 
@@ -625,7 +575,7 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
     if (desc.depth_stencil.texture)
     {
         BindKey bind_key = { ShaderType::kPixel, ViewType::kDepthStencil, 0, 0 };
-        dsv = CreateView(bind_key, desc.depth_stencil.texture, desc.depth_stencil.view_desc);
+        dsv = m_object_cache.GetView(m_program, bind_key, desc.depth_stencil.texture, desc.depth_stencil.view_desc);
         ViewBarrier(dsv, ResourceState::kDepthStencilWrite);
     }
 
@@ -647,7 +597,7 @@ void RenderCommandListImpl::Attach(const BindKey& bind_key, const std::shared_pt
 
 void RenderCommandListImpl::Attach(const BindKey& bind_key, const std::shared_ptr<Resource>& resource, const LazyViewDesc& view_desc)
 {
-    Attach(bind_key, CreateView(bind_key, resource, view_desc));
+    Attach(bind_key, m_object_cache.GetView(m_program, bind_key, resource, view_desc));
 }
 
 void RenderCommandListImpl::Attach(const BindKey& bind_key, const std::shared_ptr<View>& view)
