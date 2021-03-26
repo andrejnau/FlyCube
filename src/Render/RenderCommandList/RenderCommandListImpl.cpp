@@ -76,11 +76,11 @@ void RenderCommandListImpl::UpdateSubresource(const std::shared_ptr<Resource>& r
     case MemoryType::kUpload:
         return resource->UpdateUploadBuffer(0, data, resource->GetWidth());
     case MemoryType::kDefault:
-        return UpdateSubresourceDefault(resource, subresource, data, row_pitch, depth_pitch);
+        return UpdateDefaultSubresource(resource, subresource, data, row_pitch, depth_pitch);
     }
 }
 
-void RenderCommandListImpl::UpdateSubresourceDefault(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
+void RenderCommandListImpl::UpdateDefaultSubresource(const std::shared_ptr<Resource>& resource, uint32_t subresource, const void* data, uint32_t row_pitch, uint32_t depth_pitch)
 {
     std::shared_ptr<Resource>& upload_resource = m_cmd_resources.emplace_back();
 
@@ -133,10 +133,10 @@ void RenderCommandListImpl::UpdateSubresourceDefault(const std::shared_ptr<Resou
 
 void RenderCommandListImpl::SetViewport(float x, float y, float width, float height)
 {
-    m_command_list->SetViewport(x, y, width, height);
-    m_command_list->SetScissorRect(x, y, width, height);
     m_viewport_width = width;
     m_viewport_height = height;
+    m_command_list->SetViewport(x, y, width, height);
+    m_command_list->SetScissorRect(x, y, width, height);
 }
 
 void RenderCommandListImpl::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)
@@ -607,9 +607,6 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
         clear_desc.stencil = desc.depth_stencil.clear_stencil;
     }
 
-    std::shared_ptr<RenderPass> render_pass = m_object_cache.GetRenderPass(render_pass_desc);
-    m_graphic_pipeline_desc.render_pass = render_pass;
-
     std::vector<std::shared_ptr<View>> rtvs;
     for (size_t i = 0; i < desc.colors.size(); ++i)
     {
@@ -629,24 +626,12 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
     {
         BindKey bind_key = { ShaderType::kPixel, ViewType::kDepthStencil, 0, 0 };
         dsv = CreateView(bind_key, desc.depth_stencil.texture, desc.depth_stencil.view_desc);
-    }
-    ViewBarrier(dsv, ResourceState::kDepthStencilWrite);
-
-    auto key = std::make_tuple(m_viewport_width, m_viewport_height, rtvs, dsv);
-    std::shared_ptr<Framebuffer> framebuffer;
-    auto framebuffer_it = m_framebuffers.find(key);
-    if (framebuffer_it == m_framebuffers.end())
-    {
-        framebuffer = m_device.CreateFramebuffer(render_pass, m_viewport_width, m_viewport_height, rtvs, dsv);
-        m_framebuffers.emplace(std::piecewise_construct,
-            std::forward_as_tuple(key),
-            std::forward_as_tuple(framebuffer));
-    }
-    else
-    {
-        framebuffer = framebuffer_it->second;
+        ViewBarrier(dsv, ResourceState::kDepthStencilWrite);
     }
 
+    std::shared_ptr<RenderPass> render_pass = m_object_cache.GetRenderPass(render_pass_desc);
+    std::shared_ptr<Framebuffer> framebuffer = m_object_cache.GetFramebuffer(render_pass, m_viewport_width, m_viewport_height, rtvs, dsv);
+    m_graphic_pipeline_desc.render_pass = render_pass;
     m_command_list->BeginRenderPass(render_pass, framebuffer, clear_desc);
 }
 
