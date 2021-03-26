@@ -710,7 +710,7 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
 void RenderCommandListImpl::EndRenderPass()
 {
     m_command_list->EndRenderPass();
-    m_graphic_pipeline_desc.render_pass = {};
+   // m_graphic_pipeline_desc.render_pass = {};
 }
 
 void RenderCommandListImpl::Attach(const BindKey& bind_key, const std::shared_ptr<DeferredView>& view)

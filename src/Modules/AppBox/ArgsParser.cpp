@@ -17,7 +17,7 @@ std::vector<ApiType> GetSupportedApis()
 Settings ParseArgs(int argc, char* argv[])
 {
     Settings settings;
-    settings.api_type = GetSupportedApis()[0];
+    settings.api_type = GetSupportedApis()[1];
     settings.vsync = true;
     for (int i = 1; i < argc; ++i)
     {

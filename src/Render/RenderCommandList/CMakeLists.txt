@@ -27,4 +27,4 @@ target_link_libraries(RenderCommandList
     Utilities
 )
 
-set_target_properties(RenderCommandList PROPERTIES FOLDER "Modules")
+set_target_properties(RenderCommandList PROPERTIES FOLDER "Render")
