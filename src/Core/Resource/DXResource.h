@@ -28,7 +28,6 @@ public:
     ComPtr<ID3D12Resource> resource;
     D3D12_RESOURCE_DESC desc = {};
     D3D12_SAMPLER_DESC sampler_desc = {};
-    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS as_flags = {};
 
 private:
     DXDevice& m_device;

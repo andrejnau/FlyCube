@@ -49,7 +49,9 @@ int main(int argc, char* argv[])
         { index_buffer, gli::format::FORMAT_R32_UINT_PACK32, 3 },
         RaytracingGeometryFlags::kOpaque
     };
-    std::shared_ptr<Resource> bottom = device->CreateBottomLevelAS({ raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
+
+    auto blas_prebuild_info = device->GetBLASPrebuildInfo({ raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
+    std::shared_ptr<Resource> bottom = device->CreateAccelerationStructure(AccelerationStructureType::kBottomLevel, blas_prebuild_info.acceleration_structure_size);
     bottom->CommitMemory(MemoryType::kDefault);
     bottom->SetName("bottom");
 
@@ -67,17 +69,16 @@ int main(int argc, char* argv[])
         instance.acceleration_structure_handle = mesh.first->GetAccelerationStructureHandle();
     }
 
-    std::shared_ptr<Resource> top = device->CreateTopLevelAS(instances.size(), BuildAccelerationStructureFlags::kNone);
+    auto tlas_prebuild_info = device->GetTLASPrebuildInfo(instances.size(), BuildAccelerationStructureFlags::kNone);
+    std::shared_ptr<Resource> top = device->CreateAccelerationStructure(AccelerationStructureType::kTopLevel, tlas_prebuild_info.acceleration_structure_size);
     top->CommitMemory(MemoryType::kDefault);
     top->SetName("top");
-    RaytracingASPrebuildInfo prebuild_info_top = top->GetRaytracingASPrebuildInfo();
-    RaytracingASPrebuildInfo prebuild_info_bottom = bottom->GetRaytracingASPrebuildInfo();
 
-    auto scratch = device->CreateBuffer(BindFlag::kRayTracing, prebuild_info_bottom.build_scratch_data_size + prebuild_info_top.build_scratch_data_size);
+    auto scratch = device->CreateBuffer(BindFlag::kRayTracing, blas_prebuild_info.build_scratch_data_size + tlas_prebuild_info.build_scratch_data_size);
     scratch->CommitMemory(MemoryType::kDefault);
     scratch->SetName("scratch");
 
-    upload_command_list->BuildBottomLevelAS({}, bottom, scratch, 0, { raytracing_geometry_desc });
+    upload_command_list->BuildBottomLevelAS({}, bottom, scratch, 0, { raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
     upload_command_list->UAVResourceBarrier(bottom);
     upload_command_list->CopyAccelerationStructure(bottom, bottom, CopyAccelerationStructureMode::kCompact);
 
@@ -85,7 +86,7 @@ int main(int argc, char* argv[])
     instance_data->CommitMemory(MemoryType::kUpload);
     instance_data->SetName("instance_data");
     instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
-    upload_command_list->BuildTopLevelAS({}, top, scratch, prebuild_info_bottom.build_scratch_data_size, instance_data, 0, instances.size());
+    upload_command_list->BuildTopLevelAS({}, top, scratch, blas_prebuild_info.build_scratch_data_size, instance_data, 0, instances.size(), BuildAccelerationStructureFlags::kNone);
     upload_command_list->UAVResourceBarrier(top);
 
     std::shared_ptr<Resource> uav = device->CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kCopySource, swapchain->GetFormat(), 1, rect.width, rect.height);
@@ -130,6 +131,7 @@ int main(int argc, char* argv[])
 
     std::shared_ptr<Resource> shader_table = device->CreateBuffer(BindFlag::kShaderTable, device->GetShaderTableAlignment() * groups.size());
     shader_table->CommitMemory(MemoryType::kUpload);
+    shader_table->SetName("shader_table");
 
     RayTracingShaderTables shader_tables = {};
     shader_tables.raygen = { shader_table, 0 * device->GetShaderTableAlignment(), device->GetShaderTableAlignment(), device->GetShaderTableAlignment() };

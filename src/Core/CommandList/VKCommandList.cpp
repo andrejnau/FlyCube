@@ -469,8 +469,13 @@ void VKCommandList::RSSetShadingRateImage(const std::shared_ptr<View>& view)
     }
 }
 
-void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,
-                                       const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset, const std::vector<RaytracingGeometryDesc>& descs)
+void VKCommandList::BuildBottomLevelAS(
+    const std::shared_ptr<Resource>& src,
+    const std::shared_ptr<Resource>& dst,
+    const std::shared_ptr<Resource>& scratch,
+    uint64_t scratch_offset,
+    const std::vector<RaytracingGeometryDesc>& descs,
+    BuildAccelerationStructureFlags flags)
 {
     std::vector<vk::AccelerationStructureGeometryKHR> geometry_descs;
     for (const auto& desc : descs)
@@ -503,7 +508,7 @@ void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, con
 
     vk::AccelerationStructureBuildGeometryInfoKHR infos = {};
     infos.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
-    infos.flags = vk_dst.as.flags;
+    infos.flags = Convert(flags);
     infos.dstAccelerationStructure = vk_dst.as.acceleration_structure.get();
     infos.srcAccelerationStructure = vk_src_as;
     if (vk_src_as)
@@ -517,8 +522,15 @@ void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, con
     m_command_list->buildAccelerationStructuresKHR(1, &infos, range_infos.data());
 }
 
-void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset,
-                                    const std::shared_ptr<Resource>& instance_data, uint64_t instance_offset, uint32_t instance_count)
+void VKCommandList::BuildTopLevelAS(
+    const std::shared_ptr<Resource>& src,
+    const std::shared_ptr<Resource>& dst,
+    const std::shared_ptr<Resource>& scratch,
+    uint64_t scratch_offset,
+    const std::shared_ptr<Resource>& instance_data,
+    uint64_t instance_offset,
+    uint32_t instance_count,
+    BuildAccelerationStructureFlags flags)
 {
     decltype(auto) vk_instance_data = instance_data->As<VKResource>();
     vk::DeviceAddress instance_address = m_device.GetDevice().getBufferAddress(vk_instance_data.buffer.res.get()) + instance_offset;
@@ -545,7 +557,7 @@ void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const 
 
     vk::AccelerationStructureBuildGeometryInfoKHR infos = {};
     infos.type = vk::AccelerationStructureTypeKHR::eTopLevel;
-    infos.flags = vk_dst.as.flags;
+    infos.flags = Convert(flags);
     infos.dstAccelerationStructure = vk_dst.as.acceleration_structure.get();
     infos.srcAccelerationStructure = vk_src_as;
     if (vk_src_as)

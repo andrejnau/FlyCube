@@ -29,7 +29,6 @@ public:
     virtual uint16_t GetLevelCount() const = 0;
     virtual uint32_t GetSampleCount() const = 0;
     virtual uint64_t GetAccelerationStructureHandle() const = 0;
-    virtual const RaytracingASPrebuildInfo& GetRaytracingASPrebuildInfo() const = 0;
     virtual void SetName(const std::string& name) = 0;
     virtual void UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes) = 0;
     virtual void UpdateUploadBufferWithTextureData(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,

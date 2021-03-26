@@ -47,8 +47,7 @@ public:
     virtual std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
     virtual std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) = 0;
     virtual std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) = 0;
-    virtual std::shared_ptr<Resource> CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) = 0;
-    virtual std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags) = 0;
+    virtual std::shared_ptr<Resource> CreateAccelerationStructure(AccelerationStructureType type, uint64_t size) = 0;
     virtual bool IsDxrSupported() const = 0;
     virtual bool IsRayQuerySupported() const = 0;
     virtual bool IsVariableRateShadingSupported() const = 0;
@@ -58,4 +57,6 @@ public:
     virtual uint32_t GetShaderGroupHandleSize() const = 0;
     virtual uint32_t GetShaderRecordAlignment() const = 0;
     virtual uint32_t GetShaderTableAlignment() const = 0;
+    virtual RaytracingASPrebuildInfo GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const = 0;
+    virtual RaytracingASPrebuildInfo GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const = 0;
 };

@@ -31,8 +31,7 @@ public:
     std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) override;
-    std::shared_ptr<Resource> CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) override;
-    std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags) override;
+    std::shared_ptr<Resource> CreateAccelerationStructure(AccelerationStructureType type, uint64_t size) override;
     bool IsDxrSupported() const override;
     bool IsRayQuerySupported() const override;
     bool IsVariableRateShadingSupported() const override;
@@ -42,6 +41,8 @@ public:
     uint32_t GetShaderGroupHandleSize() const override;
     uint32_t GetShaderRecordAlignment() const override;
     uint32_t GetShaderTableAlignment() const override;
+    RaytracingASPrebuildInfo GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const override;
+    RaytracingASPrebuildInfo GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const override;
 
     VKAdapter& GetAdapter();
     vk::Device GetDevice();
@@ -51,10 +52,10 @@ public:
     VKGPUBindlessDescriptorPoolTyped& GetGPUBindlessDescriptorPool(vk::DescriptorType type);
     VKGPUDescriptorPool& GetGPUDescriptorPool();
     uint32_t FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties);
-    vk::AccelerationStructureGeometryKHR FillRaytracingGeometryTriangles(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags);
+    vk::AccelerationStructureGeometryKHR FillRaytracingGeometryTriangles(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags) const;
 
 private:
-    std::shared_ptr<Resource> CreateAccelerationStructure(const vk::AccelerationStructureBuildGeometryInfoKHR& acceleration_structure_info, const std::vector<uint32_t>& max_primitive_counts);
+    RaytracingASPrebuildInfo GetAccelerationStructurePrebuildInfo(const vk::AccelerationStructureBuildGeometryInfoKHR& acceleration_structure_info, const std::vector<uint32_t>& max_primitive_counts) const;
 
     VKAdapter& m_adapter;
     const vk::PhysicalDevice& m_physical_device;
@@ -80,3 +81,4 @@ private:
 };
 
 vk::ImageLayout ConvertState(ResourceState state);
+vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags flags);

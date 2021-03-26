@@ -365,6 +365,13 @@ std::shared_ptr<Pipeline> DXDevice::CreateRayTracingPipeline(const RayTracingPip
     return std::make_shared<DXRayTracingPipeline>(*this, desc);
 }
 
+std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(AccelerationStructureType type, uint64_t size)
+{
+    std::shared_ptr<DXResource> res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kAccelerationStructure, size));
+    res->resource_type = ResourceType::kAccelerationStructure;
+    return res;
+}
+
 D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags)
 {
     D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
@@ -399,15 +406,15 @@ D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vert
     return geometry_desc;
 }
 
-std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs)
+RaytracingASPrebuildInfo DXDevice::GetAccelerationStructurePrebuildInfo(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs) const
 {
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
     m_device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
-    std::shared_ptr<DXResource> res = std::static_pointer_cast<DXResource>(CreateBuffer(BindFlag::kAccelerationStructure, info.ResultDataMaxSizeInBytes));
-    res->resource_type = inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL ? ResourceType::kBottomLevelAS : ResourceType::kTopLevelAS;
-    res->prebuild_info = { info.ScratchDataSizeInBytes, info.UpdateScratchDataSizeInBytes };
-    res->as_flags = inputs.Flags;
-    return res;
+    RaytracingASPrebuildInfo prebuild_info = {};
+    prebuild_info.acceleration_structure_size = info.ResultDataMaxSizeInBytes;
+    prebuild_info.build_scratch_data_size = info.ScratchDataSizeInBytes;
+    prebuild_info.update_scratch_data_size = info.UpdateScratchDataSizeInBytes;
+    return prebuild_info;
 }
 
 D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStructureFlags flags)
@@ -424,33 +431,6 @@ D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStr
     if (flags & BuildAccelerationStructureFlags::kMinimizeMemory)
         dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
     return dx_flags;
-}
-
-std::shared_ptr<Resource> DXDevice::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
-{
-    std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometry_descs;
-    for (const auto& desc : descs)
-    {
-        geometry_descs.emplace_back(FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags));
-    }
-    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
-    inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-    inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-    inputs.NumDescs = geometry_descs.size();
-    inputs.pGeometryDescs = geometry_descs.data();
-    inputs.Flags = Convert(flags);
-    return CreateAccelerationStructure(inputs);
-}
-
-std::shared_ptr<Resource> DXDevice::CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags)
-{
-    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
-    inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-    inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-    inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-    inputs.NumDescs = instance_count;
-    inputs.Flags = Convert(flags);
-    return CreateAccelerationStructure(inputs);
 }
 
 bool DXDevice::IsDxrSupported() const
@@ -502,6 +482,33 @@ uint32_t DXDevice::GetShaderRecordAlignment() const
 uint32_t DXDevice::GetShaderTableAlignment() const
 {
     return D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+}
+
+RaytracingASPrebuildInfo DXDevice::GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const
+{
+    std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometry_descs;
+    for (const auto& desc : descs)
+    {
+        geometry_descs.emplace_back(FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags));
+    }
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
+    inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+    inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    inputs.NumDescs = geometry_descs.size();
+    inputs.pGeometryDescs = geometry_descs.data();
+    inputs.Flags = Convert(flags);
+    return GetAccelerationStructurePrebuildInfo(inputs);
+}
+
+RaytracingASPrebuildInfo DXDevice::GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const
+{
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
+    inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+    inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+    inputs.NumDescs = instance_count;
+    inputs.Flags = Convert(flags);
+    return GetAccelerationStructurePrebuildInfo(inputs);
 }
 
 DXAdapter& DXDevice::GetAdapter()

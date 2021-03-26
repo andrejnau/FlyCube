@@ -12,7 +12,6 @@ public:
     ResourceType GetResourceType() const override final;
     gli::format GetFormat() const override final;
     MemoryType GetMemoryType() const override final;
-    const RaytracingASPrebuildInfo& GetRaytracingASPrebuildInfo() const override final;
 
     void UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes) override final;
     void UpdateUploadBufferWithTextureData(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
@@ -24,7 +23,6 @@ public:
 
     gli::format format = gli::FORMAT_UNDEFINED;
     ResourceType resource_type = ResourceType::kUnknown;
-    RaytracingASPrebuildInfo prebuild_info = {};
 
 protected:
     std::shared_ptr<Memory> m_memory;

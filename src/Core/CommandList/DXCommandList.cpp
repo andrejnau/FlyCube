@@ -539,8 +539,6 @@ void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATI
     decltype(auto) dx_dst = dst->As<DXResource>();
     decltype(auto) dx_scratch = scratch->As<DXResource>();
 
-    inputs.Flags = dx_dst.as_flags;
-
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC acceleration_structure_desc = {};
     acceleration_structure_desc.Inputs = inputs;
     if (src)
@@ -554,8 +552,13 @@ void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATI
     m_command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
 }
 
-void DXCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst,
-                                       const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset, const std::vector<RaytracingGeometryDesc>& descs)
+void DXCommandList::BuildBottomLevelAS(
+    const std::shared_ptr<Resource>& src,
+    const std::shared_ptr<Resource>& dst,
+    const std::shared_ptr<Resource>& scratch,
+    uint64_t scratch_offset,
+    const std::vector<RaytracingGeometryDesc>& descs,
+    BuildAccelerationStructureFlags flags)
 {
     std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometry_descs;
     for (const auto& desc : descs)
@@ -564,20 +567,28 @@ void DXCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src, con
     }
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+    inputs.Flags = Convert(flags);
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
     inputs.NumDescs = geometry_descs.size();
     inputs.pGeometryDescs = geometry_descs.data();
     BuildAccelerationStructure(inputs, src, dst, scratch, scratch_offset);
 }
 
-void DXCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset,
-                                    const std::shared_ptr<Resource>& instance_data, uint64_t instance_offset, uint32_t instance_count)
+void DXCommandList::BuildTopLevelAS(
+    const std::shared_ptr<Resource>& src,
+    const std::shared_ptr<Resource>& dst,
+    const std::shared_ptr<Resource>& scratch,
+    uint64_t scratch_offset,
+    const std::shared_ptr<Resource>& instance_data,
+    uint64_t instance_offset,
+    uint32_t instance_count,
+    BuildAccelerationStructureFlags flags)
 {
     decltype(auto) dx_instance_data = instance_data->As<DXResource>();
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+    inputs.Flags = Convert(flags);
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-    inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
     inputs.NumDescs = instance_count;
     inputs.InstanceDescs = dx_instance_data.resource->GetGPUVirtualAddress() + instance_offset;
     BuildAccelerationStructure(inputs, src, dst, scratch, scratch_offset);

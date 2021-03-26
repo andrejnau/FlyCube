@@ -303,10 +303,10 @@ void RenderCommandListImpl::BuildBottomLevelAS(const std::shared_ptr<Resource>& 
             BufferBarrier(desc.index.res, ResourceState::kNonPixelShaderResource);
     }
 
-    RaytracingASPrebuildInfo prebuild_info = dst->GetRaytracingASPrebuildInfo();
+    RaytracingASPrebuildInfo prebuild_info = m_device.GetBLASPrebuildInfo(descs, flags);
     auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size);
     scratch->CommitMemory(MemoryType::kDefault);
-    m_command_list->BuildBottomLevelAS(src, dst, scratch, 0, descs);
+    m_command_list->BuildBottomLevelAS(src, dst, scratch, 0, descs, flags);
     m_command_list->UAVResourceBarrier(dst);
     m_cmd_resources.emplace_back(scratch);
 }
@@ -327,11 +327,11 @@ void RenderCommandListImpl::BuildTopLevelAS(const std::shared_ptr<Resource>& src
     instance_data->CommitMemory(MemoryType::kUpload);
     instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
 
-    RaytracingASPrebuildInfo prebuild_info = dst->GetRaytracingASPrebuildInfo();
+    RaytracingASPrebuildInfo prebuild_info = m_device.GetTLASPrebuildInfo(instances.size(), flags);
     auto scratch = m_device.CreateBuffer(BindFlag::kRayTracing, src ? prebuild_info.update_scratch_data_size : prebuild_info.build_scratch_data_size);
     scratch->CommitMemory(MemoryType::kDefault);
 
-    m_command_list->BuildTopLevelAS(src, dst, scratch, 0, instance_data, 0, geometry.size());
+    m_command_list->BuildTopLevelAS(src, dst, scratch, 0, instance_data, 0, geometry.size(), flags);
     m_command_list->UAVResourceBarrier(dst);
 
     m_cmd_resources.emplace_back(scratch);

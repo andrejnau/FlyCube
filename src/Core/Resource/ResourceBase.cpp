@@ -20,11 +20,6 @@ MemoryType ResourceBase::GetMemoryType() const
     return m_memory_type;
 }
 
-const RaytracingASPrebuildInfo& ResourceBase::GetRaytracingASPrebuildInfo() const
-{
-    return prebuild_info;
-}
-
 void ResourceBase::UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes)
 {
     void* dst_data = Map() + buffer_offset;

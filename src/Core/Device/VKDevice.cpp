@@ -486,7 +486,7 @@ std::shared_ptr<Pipeline> VKDevice::CreateRayTracingPipeline(const RayTracingPip
     return std::make_shared<VKRayTracingPipeline>(*this, desc);
 }
 
-vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags)
+vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags) const
 {
     vk::AccelerationStructureGeometryKHR geometry_desc = {};
     geometry_desc.geometryType = vk::GeometryTypeNV::eTriangles;
@@ -522,23 +522,15 @@ vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(c
     return geometry_desc;
 }
 
-std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const vk::AccelerationStructureBuildGeometryInfoKHR& acceleration_structure_info, const std::vector<uint32_t>& max_primitive_counts)
+RaytracingASPrebuildInfo VKDevice::GetAccelerationStructurePrebuildInfo(const vk::AccelerationStructureBuildGeometryInfoKHR& acceleration_structure_info, const std::vector<uint32_t>& max_primitive_counts) const
 {
     vk::AccelerationStructureBuildSizesInfoKHR size_info = {};
     m_device->getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, &acceleration_structure_info, max_primitive_counts.data(), &size_info);
-
-    std::shared_ptr<VKResource> res = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kAccelerationStructure, size_info.accelerationStructureSize));
-    res->prebuild_info.build_scratch_data_size = size_info.buildScratchSize;
-    res->prebuild_info.update_scratch_data_size = size_info.updateScratchSize;
-    res->resource_type = acceleration_structure_info.type == vk::AccelerationStructureTypeKHR::eBottomLevel ? ResourceType::kBottomLevelAS : ResourceType::kTopLevelAS;
-
-    vk::AccelerationStructureCreateInfoKHR acceleration_structure_create_info = {};
-    acceleration_structure_create_info.buffer = res->buffer.res.get();
-    acceleration_structure_create_info.size = size_info.accelerationStructureSize;
-    acceleration_structure_create_info.type = acceleration_structure_info.type;
-    res->as.acceleration_structure = m_device->createAccelerationStructureKHRUnique(acceleration_structure_create_info);
-    res->as.flags = acceleration_structure_info.flags;
-    return res;
+    RaytracingASPrebuildInfo prebuild_info = {};
+    prebuild_info.acceleration_structure_size = size_info.accelerationStructureSize;
+    prebuild_info.build_scratch_data_size = size_info.buildScratchSize;
+    prebuild_info.update_scratch_data_size = size_info.updateScratchSize;
+    return prebuild_info;
 }
 
 vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags flags)
@@ -557,38 +549,32 @@ vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags f
     return vk_flags;
 }
 
-std::shared_ptr<Resource> VKDevice::CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags)
+vk::AccelerationStructureTypeKHR Convert(AccelerationStructureType type)
 {
-    std::vector<vk::AccelerationStructureGeometryKHR> geometry_descs;
-    std::vector<uint32_t> max_primitive_counts;
-    for (const auto& desc : descs)
+    switch (type)
     {
-        geometry_descs.emplace_back(FillRaytracingGeometryTriangles(desc.vertex, desc.index, desc.flags));
-        if (desc.index.res)
-            max_primitive_counts.emplace_back(desc.index.count / 3);
-        else
-            max_primitive_counts.emplace_back(desc.vertex.count / 3);
+    case AccelerationStructureType::kTopLevel:
+        return vk::AccelerationStructureTypeKHR::eTopLevel;
+    case AccelerationStructureType::kBottomLevel:
+        return vk::AccelerationStructureTypeKHR::eBottomLevel;
     }
-    vk::AccelerationStructureBuildGeometryInfoKHR acceleration_structure_info = {};
-    acceleration_structure_info.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
-    acceleration_structure_info.geometryCount = geometry_descs.size();
-    acceleration_structure_info.pGeometries = geometry_descs.data();
-    acceleration_structure_info.flags = Convert(flags);
-    return CreateAccelerationStructure(acceleration_structure_info, max_primitive_counts);
+    assert(false);
+    return {};
 }
 
-std::shared_ptr<Resource> VKDevice::CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags)
+std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(AccelerationStructureType type, uint64_t size)
 {
-    vk::AccelerationStructureGeometryKHR geometry_info{};
-    geometry_info.geometryType = vk::GeometryTypeKHR::eInstances;
-    geometry_info.geometry.setInstances({});
+    std::shared_ptr<VKResource> res = std::static_pointer_cast<VKResource>(CreateBuffer(BindFlag::kAccelerationStructure, size));
+    res->resource_type = ResourceType::kAccelerationStructure;
 
-    vk::AccelerationStructureBuildGeometryInfoKHR acceleration_structure_info = {};
-    acceleration_structure_info.type = vk::AccelerationStructureTypeKHR::eTopLevel;
-    acceleration_structure_info.pGeometries = &geometry_info;
-    acceleration_structure_info.geometryCount = 1;
-    acceleration_structure_info.flags = Convert(flags);
-    return CreateAccelerationStructure(acceleration_structure_info, { instance_count });
+    vk::AccelerationStructureCreateInfoKHR acceleration_structure_create_info = {};
+    acceleration_structure_create_info.buffer = res->buffer.res.get();
+    acceleration_structure_create_info.offset = 0;
+    acceleration_structure_create_info.size = size;
+    acceleration_structure_create_info.type = Convert(type);
+    res->as.acceleration_structure = m_device->createAccelerationStructureKHRUnique(acceleration_structure_create_info);
+
+    return res;
 }
 
 bool VKDevice::IsDxrSupported() const
@@ -644,6 +630,40 @@ uint32_t VKDevice::GetShaderRecordAlignment() const
 uint32_t VKDevice::GetShaderTableAlignment() const
 {
     return m_shader_table_alignment;
+}
+
+RaytracingASPrebuildInfo VKDevice::GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const
+{
+    std::vector<vk::AccelerationStructureGeometryKHR> geometry_descs;
+    std::vector<uint32_t> max_primitive_counts;
+    for (const auto& desc : descs)
+    {
+        geometry_descs.emplace_back(FillRaytracingGeometryTriangles(desc.vertex, desc.index, desc.flags));
+        if (desc.index.res)
+            max_primitive_counts.emplace_back(desc.index.count / 3);
+        else
+            max_primitive_counts.emplace_back(desc.vertex.count / 3);
+    }
+    vk::AccelerationStructureBuildGeometryInfoKHR acceleration_structure_info = {};
+    acceleration_structure_info.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
+    acceleration_structure_info.geometryCount = geometry_descs.size();
+    acceleration_structure_info.pGeometries = geometry_descs.data();
+    acceleration_structure_info.flags = Convert(flags);
+    return GetAccelerationStructurePrebuildInfo(acceleration_structure_info, max_primitive_counts);
+}
+
+RaytracingASPrebuildInfo VKDevice::GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const
+{
+    vk::AccelerationStructureGeometryKHR geometry_info{};
+    geometry_info.geometryType = vk::GeometryTypeKHR::eInstances;
+    geometry_info.geometry.setInstances({});
+
+    vk::AccelerationStructureBuildGeometryInfoKHR acceleration_structure_info = {};
+    acceleration_structure_info.type = vk::AccelerationStructureTypeKHR::eTopLevel;
+    acceleration_structure_info.pGeometries = &geometry_info;
+    acceleration_structure_info.geometryCount = 1;
+    acceleration_structure_info.flags = Convert(flags);
+    return GetAccelerationStructurePrebuildInfo(acceleration_structure_info, { instance_count });
 }
 
 VKAdapter& VKDevice::GetAdapter()

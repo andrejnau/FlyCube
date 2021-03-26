@@ -34,8 +34,7 @@ public:
     std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) override;
-    std::shared_ptr<Resource> CreateBottomLevelAS(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) override;
-    std::shared_ptr<Resource> CreateTopLevelAS(uint32_t instance_count, BuildAccelerationStructureFlags flags) override;
+    std::shared_ptr<Resource> CreateAccelerationStructure(AccelerationStructureType type, uint64_t size) override;
     bool IsDxrSupported() const override;
     bool IsRayQuerySupported() const override;
     bool IsVariableRateShadingSupported() const override;
@@ -45,6 +44,8 @@ public:
     uint32_t GetShaderGroupHandleSize() const override;
     uint32_t GetShaderRecordAlignment() const override;
     uint32_t GetShaderTableAlignment() const override;
+    RaytracingASPrebuildInfo GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const override;
+    RaytracingASPrebuildInfo GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const override;
 
     DXAdapter& GetAdapter();
     ComPtr<ID3D12Device> GetDevice();
@@ -56,7 +57,7 @@ public:
     ID3D12CommandSignature* GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TYPE type, uint32_t stride);
 
 private:
-    std::shared_ptr<Resource> CreateAccelerationStructure(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs);
+    RaytracingASPrebuildInfo GetAccelerationStructurePrebuildInfo(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs) const;
 
     DXAdapter& m_adapter;
     ComPtr<ID3D12Device> m_device;
@@ -78,3 +79,4 @@ private:
 D3D12_RESOURCE_STATES ConvertState(ResourceState state);
 D3D12_HEAP_TYPE GetHeapType(MemoryType memory_type);
 D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags);
+D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStructureFlags flags);

@@ -118,8 +118,7 @@ enum class ResourceType
     kBuffer,
     kTexture,
     kSampler,
-    kBottomLevelAS,
-    kTopLevelAS,
+    kAccelerationStructure,
 };
 
 namespace BindFlag
@@ -674,8 +673,15 @@ enum class ShadingRate : uint8_t
 
 struct RaytracingASPrebuildInfo
 {
+    uint64_t acceleration_structure_size = 0;
     uint64_t build_scratch_data_size = 0;
     uint64_t update_scratch_data_size = 0;
+};
+
+enum class AccelerationStructureType
+{
+    kTopLevel,
+    kBottomLevel,
 };
 
 enum class CommandListType
