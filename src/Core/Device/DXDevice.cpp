@@ -316,7 +316,7 @@ std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
 
 std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
-    return std::make_shared<DXView>(*this, resource, view_desc);
+    return std::make_shared<DXView>(*this, std::static_pointer_cast<DXResource>(resource), view_desc);
 }
 
 std::shared_ptr<BindingSetLayout> DXDevice::CreateBindingSetLayout(const std::vector<BindKey>& descs)
