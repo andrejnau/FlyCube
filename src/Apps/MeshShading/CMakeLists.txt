@@ -29,12 +29,12 @@ set_property(SOURCE ${mesh_shaders} PROPERTY VS_SHADER_FLAGS "/Zi /auto-binding-
 set(shaders_files ${pixel_shaders} ${mesh_shaders})
 
 include(shader_parser)
+gen_shaders_ref(${target} "${shaders_files}" shaders_ref)
 
 source_group("Shader Files" FILES ${shaders_files})
 source_group("Shader Ref Files" FILES ${shaders_ref})
 
 add_executable(${target} WIN32 ${headers} ${sources} ${shaders_files} ${shaders_ref})
-gen_shaders_ref(${target} "${shaders_files}" shaders_ref)
 
 if (WIN32)
     set_target_properties(${target} PROPERTIES
