@@ -461,7 +461,7 @@ void VKCommandList::RSSetShadingRateImage(const std::shared_ptr<View>& view)
     if (view)
     {
         decltype(auto) vk_view = view->As<VKView>();
-        m_command_list->bindShadingRateImageNV(vk_view.GetSrv(), vk::ImageLayout::eShadingRateOptimalNV);
+        m_command_list->bindShadingRateImageNV(vk_view.GetImageView(), vk::ImageLayout::eShadingRateOptimalNV);
     }
     else
     {

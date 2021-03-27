@@ -223,7 +223,7 @@ ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, co
     }
     desc.dimension = GetResourceDimension(resource_type);
     desc.return_type = GetReturnType(compiler, resource_type);
-    if (desc.dimension == ResourceDimension::kBuffer)
+    if (desc.dimension == ResourceDimension::kBuffer && !resource_type.member_types.empty())
     {
         desc.stride = compiler.get_declared_struct_size(resource_type);
     }

@@ -16,24 +16,20 @@ public:
     uint32_t GetBaseArrayLayer() const override;
     uint32_t GetLayerCount() const override;
 
-    const vk::ImageViewCreateInfo& GeViewInfo() const;
-    vk::ImageView GetRtv() const;
-    vk::ImageView GetSrv() const;
-
-    void WriteView(vk::WriteDescriptorSet& descriptor_write,
-                   std::list<vk::DescriptorImageInfo>& list_image_info,
-                   std::list<vk::DescriptorBufferInfo>& list_buffer_info,
-                   std::list<vk::WriteDescriptorSetAccelerationStructureKHR>& list_as);
+    vk::ImageView GetImageView() const;
+    vk::WriteDescriptorSet GetDescriptor() const;
 
 private:
-    void CreateSrv(const ViewDesc& view_desc, const VKResource& res);
-    void CreateRTV(const ViewDesc& view_desc, const VKResource& res);
+    void CreateView();
+    void CreateImageView();
 
     VKDevice& m_device;
     std::shared_ptr<VKResource> m_resource;
     ViewDesc m_view_desc;
-    vk::ImageViewCreateInfo m_view_info = {};
-    vk::UniqueImageView m_srv = {};
-    vk::UniqueImageView m_om = {};
+    vk::UniqueImageView m_image_view;
     std::shared_ptr<VKGPUDescriptorPoolRange> m_range;
+    vk::DescriptorImageInfo m_descriptor_image = {};
+    vk::DescriptorBufferInfo m_descriptor_buffer = {};
+    vk::WriteDescriptorSetAccelerationStructureKHR m_descriptor_acceleration_structure = {};
+    vk::WriteDescriptorSet m_descriptor = {};
 };

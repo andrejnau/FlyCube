@@ -120,6 +120,10 @@ std::shared_ptr<View> ObjectCache::GetView(const std::shared_ptr<Program>& progr
     case ViewType::kDepthStencil:
     case ViewType::kShadingRateSource:
         shader_binding = false;
+        if (resource->GetLayerCount() > 1)
+            desc.dimension = ResourceDimension::kTexture2DArray;
+        else
+            desc.dimension = ResourceDimension::kTexture2D;
         break;
     }
 

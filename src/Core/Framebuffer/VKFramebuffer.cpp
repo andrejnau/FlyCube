@@ -19,7 +19,7 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<RenderPass>
         decltype(auto) resource = vk_view.GetResource();
         if (!resource)
             return;
-        attachment_views.emplace_back(vk_view.GetRtv());
+        attachment_views.emplace_back(vk_view.GetImageView());
 
         decltype(auto) vk_resource = resource->As<VKResource>();
         if (!m_extent.width || !m_extent.height)

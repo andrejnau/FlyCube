@@ -80,6 +80,7 @@ int main(int argc, char* argv[])
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
         ViewDesc back_buffer_view_desc = {};
         back_buffer_view_desc.view_type = ViewType::kRenderTarget;
+        back_buffer_view_desc.dimension = ResourceDimension::kTexture2D;
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
         framebuffers.emplace_back(device->CreateFramebuffer(render_pass, rect.width, rect.height, { back_buffer_view }));
         command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
