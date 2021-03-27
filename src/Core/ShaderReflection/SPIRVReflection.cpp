@@ -105,27 +105,20 @@ ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::S
     }
     case spirv_cross::SPIRType::Struct:
     {
-        if (type.storage == spv::StorageClassUniform || type.storage == spv::StorageClassStorageBuffer)
+        if (type.storage == spv::StorageClassStorageBuffer)
         {
-            if (compiler.has_decoration(type.self, spv::DecorationBufferBlock))
+            spirv_cross::Bitset flags = compiler.get_buffer_block_flags(resource_id);
+            bool is_readonly = flags.get(spv::DecorationNonWritable);
+            if (is_readonly)
             {
-                spirv_cross::Bitset flags = compiler.get_buffer_block_flags(resource_id);
-                bool is_readonly = flags.get(spv::DecorationNonWritable);
-                if (is_readonly)
-                {
-                    return ViewType::kStructuredBuffer;
-                }
-                else
-                {
-                    return ViewType::kRWStructuredBuffer;
-                }
+                return ViewType::kStructuredBuffer;
             }
-            else if (compiler.has_decoration(type.self, spv::DecorationBlock))
+            else
             {
-                return ViewType::kConstantBuffer;
+                return ViewType::kRWStructuredBuffer;
             }
         }
-        else if (type.storage == spv::StorageClassPushConstant)
+        else if (type.storage == spv::StorageClassPushConstant || type.storage == spv::StorageClassUniform)
         {
             return ViewType::kConstantBuffer;
         }

@@ -62,7 +62,7 @@ const BindKey& ShaderBase::GetBindKey(const std::string& name) const
     if (it != m_bind_keys.end())
         return it->second;
     assert(m_blob_type == ShaderBlobType::kSPIRV);
-    return m_bind_keys.at("type_" + name);
+    return m_bind_keys.at("type." + name);
 }
 
 const std::vector<ResourceBindingDesc>& ShaderBase::GetResourceBindings() const

@@ -507,7 +507,6 @@ RaytracingASPrebuildInfo DXDevice::GetTLASPrebuildInfo(uint32_t instance_count, 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-    inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
     inputs.NumDescs = instance_count;
     inputs.Flags = Convert(flags);
     return GetAccelerationStructurePrebuildInfo(inputs);

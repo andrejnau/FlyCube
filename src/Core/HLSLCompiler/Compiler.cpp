@@ -98,29 +98,25 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     std::deque<std::wstring> dynamic_arguments;
     arguments.push_back(L"/Zi");
     arguments.push_back(L"/Qembed_debug");
+    uint32_t space = 0;
     if (blob_type == ShaderBlobType::kSPIRV)
     {
         arguments.emplace_back(L"-spirv");
-        arguments.emplace_back(L"-fvk-use-dx-layout");
-        arguments.emplace_back(L"-fspv-target-env=vulkan1.1");
+        arguments.emplace_back(L"-fspv-target-env=vulkan1.2");
+        arguments.emplace_back(L"-fspv-extension=KHR");
         arguments.emplace_back(L"-fspv-extension=SPV_NV_mesh_shader");
-        arguments.emplace_back(L"-fspv-extension=SPV_NV_ray_tracing");
-        arguments.emplace_back(L"-fspv-extension=SPV_KHR_ray_query");
+        arguments.emplace_back(L"-fspv-extension=SPV_EXT_descriptor_indexing");
         arguments.emplace_back(L"-fspv-extension=SPV_EXT_shader_viewport_index_layer");
         arguments.emplace_back(L"-fspv-extension=SPV_GOOGLE_hlsl_functionality1");
         arguments.emplace_back(L"-fspv-extension=SPV_GOOGLE_user_type");
-        arguments.emplace_back(L"-fspv-extension=SPV_EXT_descriptor_indexing");
-        arguments.emplace_back(L"-fspv-extension=SPV_KHR_shader_draw_parameters");
+        arguments.emplace_back(L"-fvk-use-dx-layout");
         arguments.emplace_back(L"-fspv-reflect");
-        arguments.emplace_back(L"-auto-binding-space");
-        dynamic_arguments.emplace_back(std::to_wstring(static_cast<uint32_t>(shader.type)));
-        arguments.emplace_back(dynamic_arguments.back().c_str());
+        space = static_cast<uint32_t>(shader.type);
     }
-    else
-    {
-        arguments.emplace_back(L"-auto-binding-space");
-        arguments.emplace_back(L"0");
-    }
+
+    arguments.emplace_back(L"-auto-binding-space");
+    dynamic_arguments.emplace_back(std::to_wstring(space));
+    arguments.emplace_back(dynamic_arguments.back().c_str());
 
     ComPtr<IDxcOperationResult> result;
     IncludeHandler include_handler(library, shader_dir);

@@ -22,6 +22,7 @@ static bool SkipIt(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objec
         "VUID-vkCmdDrawIndexed-None-02721",
         "VUID-vkCmdDrawIndexed-None-02699",
         "VUID-vkCmdTraceRaysKHR-None-02699",
+        "VUID-VkShaderModuleCreateInfo-pCode-04147",
     };
     for (auto& str : muted_warnings)
     {

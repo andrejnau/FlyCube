@@ -36,7 +36,7 @@ git clone --recursive https://github.com/andrejnau/FlyCube.git
 
 ### Build requirements
 * Windows SDK Version 10.0.19041.0
-* Vulkan SDK 1.2.162.0 if you build this with VULKAN_SUPPORT=ON (enabled by default)
+* Vulkan SDK 1.2.170.0 if you build this with VULKAN_SUPPORT=ON (enabled by default)
 
 ### An example of the high-level graphics API usage
 ```cpp
