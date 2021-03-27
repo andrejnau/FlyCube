@@ -123,16 +123,16 @@ std::shared_ptr<View> ObjectCache::GetView(const std::shared_ptr<Program>& progr
         if (resource->GetSampleCount() == 1)
         {
             if (resource->GetLayerCount() > 1)
-                desc.dimension = ResourceDimension::kTexture2DArray;
+                desc.dimension = ViewDimension::kTexture2DArray;
             else
-                desc.dimension = ResourceDimension::kTexture2D;
+                desc.dimension = ViewDimension::kTexture2D;
         }
         else
         {
             if (resource->GetLayerCount() > 1)
-                desc.dimension = ResourceDimension::kTexture2DMSArray;
+                desc.dimension = ViewDimension::kTexture2DMSArray;
             else
-                desc.dimension = ResourceDimension::kTexture2DMS;
+                desc.dimension = ViewDimension::kTexture2DMS;
         }
         break;
     }

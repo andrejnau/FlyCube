@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
     device->ExecuteCommandLists({ upload_command_list });
 
     ViewDesc shading_rate_view_desc = {};
-    shading_rate_view_desc.dimension = ResourceDimension::kTexture2D;
+    shading_rate_view_desc.dimension = ViewDimension::kTexture2D;
     shading_rate_view_desc.view_type = ViewType::kShadingRateSource;
     std::shared_ptr<View> shading_rate_view = device->CreateView(shading_rate_texture, shading_rate_view_desc);
 

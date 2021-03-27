@@ -50,8 +50,10 @@ void DXView::CreateView()
     case ViewType::kTexture:
     case ViewType::kBuffer:
     case ViewType::kStructuredBuffer:
-    case ViewType::kAccelerationStructure:
         CreateSRV();
+        break;
+    case ViewType::kAccelerationStructure:
+        CreateRAS();
         break;
     case ViewType::kRWTexture:
     case ViewType::kRWBuffer:
@@ -78,7 +80,6 @@ void DXView::CreateView()
 
 void DXView::CreateSRV()
 {
-    ID3D12Resource* srv_resource = m_resource->resource.Get();
     D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
     srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srv_desc.Format = m_resource->desc.Format;
@@ -106,13 +107,13 @@ void DXView::CreateSRV()
 
     switch (m_view_desc.dimension)
     {
-    case ResourceDimension::kTexture1D:
+    case ViewDimension::kTexture1D:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
         setup_mips(srv_desc.Texture1D.MostDetailedMip, srv_desc.Texture1D.MipLevels);
         break;
     }
-    case ResourceDimension::kTexture1DArray:
+    case ViewDimension::kTexture1DArray:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
         srv_desc.Texture1DArray.FirstArraySlice = 0;
@@ -120,14 +121,14 @@ void DXView::CreateSRV()
         setup_mips(srv_desc.Texture1DArray.MostDetailedMip, srv_desc.Texture1DArray.MipLevels);
         break;
     }
-    case ResourceDimension::kTexture2D:
+    case ViewDimension::kTexture2D:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         srv_desc.Texture2D.PlaneSlice = m_view_desc.plane_slice;
         setup_mips(srv_desc.Texture2D.MostDetailedMip, srv_desc.Texture2D.MipLevels);
         break;
     }
-    case ResourceDimension::kTexture2DArray:
+    case ViewDimension::kTexture2DArray:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
         srv_desc.Texture2DArray.PlaneSlice = m_view_desc.plane_slice;
@@ -136,31 +137,31 @@ void DXView::CreateSRV()
         setup_mips(srv_desc.Texture2DArray.MostDetailedMip, srv_desc.Texture2DArray.MipLevels);
         break;
     }
-    case ResourceDimension::kTexture2DMS:
+    case ViewDimension::kTexture2DMS:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
         break;
     }
-    case ResourceDimension::kTexture2DMSArray:
+    case ViewDimension::kTexture2DMSArray:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMSARRAY;
         srv_desc.Texture2DMSArray.FirstArraySlice = 0;
         srv_desc.Texture2DMSArray.ArraySize = m_resource->desc.DepthOrArraySize;
         break;
     }
-    case ResourceDimension::kTexture3D:
+    case ViewDimension::kTexture3D:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
         setup_mips(srv_desc.Texture3D.MostDetailedMip, srv_desc.Texture3D.MipLevels);
         break;
     }
-    case ResourceDimension::kTextureCube:
+    case ViewDimension::kTextureCube:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
         setup_mips(srv_desc.TextureCube.MostDetailedMip, srv_desc.TextureCube.MipLevels);
         break;
     }
-    case ResourceDimension::kTextureCubeArray:
+    case ViewDimension::kTextureCubeArray:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
         srv_desc.TextureCubeArray.First2DArrayFace = 0;
@@ -168,19 +169,12 @@ void DXView::CreateSRV()
         setup_mips(srv_desc.TextureCubeArray.MostDetailedMip, srv_desc.TextureCubeArray.MipLevels);
         break;
     }
-    case ResourceDimension::kBuffer:
+    case ViewDimension::kBuffer:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
         srv_desc.Buffer.FirstElement = m_view_desc.offset / m_view_desc.stride;
         srv_desc.Buffer.NumElements = (m_resource->desc.Width - m_view_desc.offset) / m_view_desc.stride;
         srv_desc.Buffer.StructureByteStride = m_view_desc.stride;
-        break;
-    }
-    case ResourceDimension::kRaytracingAccelerationStructure:
-    {
-        srv_resource = nullptr;
-        srv_desc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
-        srv_desc.RaytracingAccelerationStructure.Location = m_resource->acceleration_structure_handle;
         break;
     }
     default:
@@ -190,7 +184,16 @@ void DXView::CreateSRV()
     }
     }
 
-    m_device.GetDevice()->CreateShaderResourceView(srv_resource, &srv_desc, m_handle->GetCpuHandle());
+    m_device.GetDevice()->CreateShaderResourceView(m_resource->resource.Get(), &srv_desc, m_handle->GetCpuHandle());
+}
+
+void DXView::CreateRAS()
+{
+    D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+    srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srv_desc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+    srv_desc.RaytracingAccelerationStructure.Location = m_resource->acceleration_structure_handle;
+    m_device.GetDevice()->CreateShaderResourceView(nullptr, &srv_desc, m_handle->GetCpuHandle());
 }
 
 void DXView::CreateUAV()
@@ -200,13 +203,13 @@ void DXView::CreateUAV()
 
     switch (m_view_desc.dimension)
     {
-    case ResourceDimension::kTexture1D:
+    case ViewDimension::kTexture1D:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
         uav_desc.Texture1D.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture1DArray:
+    case ViewDimension::kTexture1DArray:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1DARRAY;
         uav_desc.Texture1DArray.FirstArraySlice = 0;
@@ -214,14 +217,14 @@ void DXView::CreateUAV()
         uav_desc.Texture1DArray.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture2D:
+    case ViewDimension::kTexture2D:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
         uav_desc.Texture2D.PlaneSlice = m_view_desc.plane_slice;
         uav_desc.Texture2D.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture2DArray:
+    case ViewDimension::kTexture2DArray:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
         uav_desc.Texture2DArray.PlaneSlice = m_view_desc.plane_slice;
@@ -230,13 +233,13 @@ void DXView::CreateUAV()
         uav_desc.Texture2DArray.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture3D:
+    case ViewDimension::kTexture3D:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
         uav_desc.Texture3D.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kBuffer:
+    case ViewDimension::kBuffer:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
         uav_desc.Buffer.FirstElement = m_view_desc.offset / m_view_desc.stride;
@@ -261,13 +264,13 @@ void DXView::CreateRTV()
 
     switch (m_view_desc.dimension)
     {
-    case ResourceDimension::kTexture1D:
+    case ViewDimension::kTexture1D:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
         rtv_desc.Texture1D.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture1DArray:
+    case ViewDimension::kTexture1DArray:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1DARRAY;
         rtv_desc.Texture1DArray.FirstArraySlice = 0;
@@ -275,14 +278,14 @@ void DXView::CreateRTV()
         rtv_desc.Texture1DArray.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture2D:
+    case ViewDimension::kTexture2D:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
         rtv_desc.Texture2D.PlaneSlice = m_view_desc.plane_slice;
         rtv_desc.Texture2D.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture2DArray:
+    case ViewDimension::kTexture2DArray:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
         rtv_desc.Texture2DArray.PlaneSlice = m_view_desc.plane_slice;
@@ -291,25 +294,25 @@ void DXView::CreateRTV()
         rtv_desc.Texture2DArray.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture2DMS:
+    case ViewDimension::kTexture2DMS:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
         break;
     }
-    case ResourceDimension::kTexture2DMSArray:
+    case ViewDimension::kTexture2DMSArray:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
         rtv_desc.Texture2DMSArray.FirstArraySlice = 0;
         rtv_desc.Texture2DMSArray.ArraySize = m_resource->desc.DepthOrArraySize;
         break;
     }
-    case ResourceDimension::kTexture3D:
+    case ViewDimension::kTexture3D:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
         rtv_desc.Texture3D.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kBuffer:
+    case ViewDimension::kBuffer:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_BUFFER;
         rtv_desc.Buffer.FirstElement = m_view_desc.offset / m_view_desc.stride;
@@ -333,13 +336,13 @@ void DXView::CreateDSV()
 
     switch (m_view_desc.dimension)
     {
-    case ResourceDimension::kTexture1D:
+    case ViewDimension::kTexture1D:
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
         dsv_desc.Texture1D.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture1DArray:
+    case ViewDimension::kTexture1DArray:
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1DARRAY;
         dsv_desc.Texture1DArray.FirstArraySlice = 0;
@@ -347,13 +350,13 @@ void DXView::CreateDSV()
         dsv_desc.Texture1DArray.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture2D:
+    case ViewDimension::kTexture2D:
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
         dsv_desc.Texture2D.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture2DArray:
+    case ViewDimension::kTexture2DArray:
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
         dsv_desc.Texture2DArray.FirstArraySlice = 0;
@@ -361,12 +364,12 @@ void DXView::CreateDSV()
         dsv_desc.Texture2DArray.MipSlice = m_view_desc.level;
         break;
     }
-    case ResourceDimension::kTexture2DMS:
+    case ViewDimension::kTexture2DMS:
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
         break;
     }
-    case ResourceDimension::kTexture2DMSArray:
+    case ViewDimension::kTexture2DMSArray:
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY;
         dsv_desc.Texture2DMSArray.FirstArraySlice = 0;

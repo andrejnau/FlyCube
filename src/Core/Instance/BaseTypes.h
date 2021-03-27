@@ -46,7 +46,7 @@ namespace enum_class
 using ResourceState = enum_class::ResourceState;
 ENABLE_BITMASK_OPERATORS(ResourceState);
 
-enum class ResourceDimension
+enum class ViewDimension
 {
     kUnknown,
     kBuffer,
@@ -59,7 +59,6 @@ enum class ResourceDimension
     kTexture3D,
     kTextureCube,
     kTextureCubeArray,
-    kRaytracingAccelerationStructure
 };
 
 enum class SamplerFilter
@@ -276,7 +275,7 @@ struct LazyViewDesc
 struct ViewDesc : public LazyViewDesc
 {
     ViewType view_type = ViewType::kUnknown;
-    ResourceDimension dimension = ResourceDimension::kUnknown;
+    ViewDimension dimension = ViewDimension::kUnknown;
     uint32_t stride = 0;
     uint32_t offset = 0;
     bool bindless = false;
@@ -517,7 +516,7 @@ struct ResourceBindingDesc
     uint32_t slot;
     uint32_t space;
     uint32_t count;
-    ResourceDimension dimension;
+    ViewDimension dimension;
     ReturnType return_type;
     uint32_t stride;
 };

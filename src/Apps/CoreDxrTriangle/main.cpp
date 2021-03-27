@@ -113,12 +113,11 @@ int main(int argc, char* argv[])
 
     ViewDesc top_view_desc = {};
     top_view_desc.view_type = ViewType::kAccelerationStructure;
-    top_view_desc.dimension = ResourceDimension::kRaytracingAccelerationStructure;
     std::shared_ptr<View> top_view = device->CreateView(top, top_view_desc);
 
     ViewDesc uav_view_desc = {};
     uav_view_desc.view_type = ViewType::kRWTexture;
-    uav_view_desc.dimension = ResourceDimension::kTexture2D;
+    uav_view_desc.dimension = ViewDimension::kTexture2D;
     std::shared_ptr<View> uav_view = device->CreateView(uav, uav_view_desc);
 
     std::shared_ptr<Shader> library = device->CompileShader({ ASSETS_PATH"shaders/CoreDxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
@@ -163,7 +162,7 @@ int main(int argc, char* argv[])
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
         ViewDesc back_buffer_view_desc = {};
         back_buffer_view_desc.view_type = ViewType::kRenderTarget;
-        back_buffer_view_desc.dimension = ResourceDimension::kTexture2D;
+        back_buffer_view_desc.dimension = ViewDimension::kTexture2D;
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
         command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
         std::shared_ptr<CommandList> command_list = command_lists[i];

@@ -131,58 +131,54 @@ ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::S
     }
 }
 
-ResourceDimension GetImageDimension(const spv::Dim& dim, const spirv_cross::SPIRType& resource_type)
+ViewDimension GetImageDimension(const spv::Dim& dim, const spirv_cross::SPIRType& resource_type)
 {
     switch (dim)
     {
     case spv::Dim::Dim1D:
     {
         if (resource_type.image.arrayed)
-            return ResourceDimension::kTexture1DArray;
+            return ViewDimension::kTexture1DArray;
         else
-            return ResourceDimension::kTexture1D;
+            return ViewDimension::kTexture1D;
     }
     case spv::Dim::Dim2D:
     {
         if (resource_type.image.arrayed)
-            return ResourceDimension::kTexture2DArray;
+            return ViewDimension::kTexture2DArray;
         else
-            return ResourceDimension::kTexture2D;
+            return ViewDimension::kTexture2D;
     }
     case spv::Dim::Dim3D:
     {
-        return ResourceDimension::kTexture3D;
+        return ViewDimension::kTexture3D;
     }
     case spv::Dim::DimCube:
     {
         if (resource_type.image.arrayed)
-            return ResourceDimension::kTextureCubeArray;
+            return ViewDimension::kTextureCubeArray;
         else
-            return ResourceDimension::kTextureCube;
+            return ViewDimension::kTextureCube;
     }
     default:
         assert(false);
-        return ResourceDimension::kUnknown;
+        return ViewDimension::kUnknown;
     }
 }
 
-ResourceDimension GetResourceDimension(const spirv_cross::SPIRType& resource_type)
+ViewDimension GetViewDimension(const spirv_cross::SPIRType& resource_type)
 {
-    if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Struct)
-    {
-        return ResourceDimension::kBuffer;
-    }
-    else if (resource_type.basetype == spirv_cross::SPIRType::BaseType::AccelerationStructure)
-    {
-        return ResourceDimension::kRaytracingAccelerationStructure;
-    }
-    else if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Image)
+    if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Image)
     {
         return GetImageDimension(resource_type.image.dim, resource_type);
     }
+    else if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Struct)
+    {
+        return ViewDimension::kBuffer;
+    }
     else
     {
-        return ResourceDimension::kUnknown;
+        return ViewDimension::kUnknown;
     }
 }
 
@@ -221,9 +217,9 @@ ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, co
     {
         desc.count = std::numeric_limits<uint32_t>::max();
     }
-    desc.dimension = GetResourceDimension(resource_type);
+    desc.dimension = GetViewDimension(resource_type);
     desc.return_type = GetReturnType(compiler, resource_type);
-    if (desc.dimension == ResourceDimension::kBuffer && !resource_type.member_types.empty())
+    if (desc.dimension == ViewDimension::kBuffer && !resource_type.member_types.empty())
     {
         desc.stride = compiler.get_declared_struct_size(resource_type);
     }

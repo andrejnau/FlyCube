@@ -207,37 +207,35 @@ ViewType GetViewType(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
     }
 }
 
-ResourceDimension GetResourceDimension(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
+ViewDimension GetViewDimension(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
 {
-    if (bind_desc.Type == D3D_SIT_RTACCELERATIONSTRUCTURE)
-        return ResourceDimension::kRaytracingAccelerationStructure;
     switch (bind_desc.Dimension)
     {
     case D3D_SRV_DIMENSION_UNKNOWN:
-        return ResourceDimension::kUnknown;
+        return ViewDimension::kUnknown;
     case D3D_SRV_DIMENSION_BUFFER:
-        return ResourceDimension::kBuffer;
+        return ViewDimension::kBuffer;
     case D3D_SRV_DIMENSION_TEXTURE1D:
-        return ResourceDimension::kTexture1D;
+        return ViewDimension::kTexture1D;
     case D3D_SRV_DIMENSION_TEXTURE1DARRAY:
-        return ResourceDimension::kTexture1DArray;
+        return ViewDimension::kTexture1DArray;
     case D3D_SRV_DIMENSION_TEXTURE2D:
-        return ResourceDimension::kTexture2D;
+        return ViewDimension::kTexture2D;
     case D3D_SRV_DIMENSION_TEXTURE2DARRAY:
-        return ResourceDimension::kTexture2DArray;
+        return ViewDimension::kTexture2DArray;
     case D3D_SRV_DIMENSION_TEXTURE2DMS:
-        return ResourceDimension::kTexture2DMS;
+        return ViewDimension::kTexture2DMS;
     case D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:
-        return ResourceDimension::kTexture2DMSArray;
+        return ViewDimension::kTexture2DMSArray;
     case D3D_SRV_DIMENSION_TEXTURE3D:
-        return ResourceDimension::kTexture3D;
+        return ViewDimension::kTexture3D;
     case D3D_SRV_DIMENSION_TEXTURECUBE:
-        return ResourceDimension::kTextureCube;
+        return ViewDimension::kTextureCube;
     case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
-        return ResourceDimension::kTextureCubeArray;
+        return ViewDimension::kTextureCubeArray;
     default:
         assert(false);
-        return ResourceDimension::kUnknown;
+        return ViewDimension::kUnknown;
     }
 }
 
@@ -280,7 +278,7 @@ ResourceBindingDesc GetBindingDesc(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc
     {
         desc.count = std::numeric_limits<uint32_t>::max();
     }
-    desc.dimension = GetResourceDimension(bind_desc);
+    desc.dimension = GetViewDimension(bind_desc);
     desc.return_type = GetReturnType(bind_desc);
     desc.stride = GetStride(bind_desc, reflection);
     return desc;

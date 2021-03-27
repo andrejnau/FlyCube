@@ -28,25 +28,25 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
     }
 }
 
-vk::ImageViewType GetImageViewType(ResourceDimension dimension)
+vk::ImageViewType GetImageViewType(ViewDimension dimension)
 {
     switch (dimension)
     {
-    case ResourceDimension::kTexture1D:
+    case ViewDimension::kTexture1D:
         return vk::ImageViewType::e1D;
-    case ResourceDimension::kTexture1DArray:
+    case ViewDimension::kTexture1DArray:
         return vk::ImageViewType::e1DArray;
-    case ResourceDimension::kTexture2D:
-    case ResourceDimension::kTexture2DMS:
+    case ViewDimension::kTexture2D:
+    case ViewDimension::kTexture2DMS:
         return vk::ImageViewType::e2D;
-    case ResourceDimension::kTexture2DArray:
-    case ResourceDimension::kTexture2DMSArray:
+    case ViewDimension::kTexture2DArray:
+    case ViewDimension::kTexture2DMSArray:
         return vk::ImageViewType::e2DArray;
-    case ResourceDimension::kTexture3D:
+    case ViewDimension::kTexture3D:
         return vk::ImageViewType::e3D;
-    case ResourceDimension::kTextureCube:
+    case ViewDimension::kTextureCube:
         return vk::ImageViewType::eCube;
-    case ResourceDimension::kTextureCubeArray:
+    case ViewDimension::kTextureCubeArray:
         return vk::ImageViewType::eCubeArray;
     }
     assert(false);

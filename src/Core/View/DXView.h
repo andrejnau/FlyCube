@@ -23,6 +23,7 @@ public:
 private:
     void CreateView();
     void CreateSRV();
+    void CreateRAS();
     void CreateUAV();
     void CreateRTV();
     void CreateDSV();
