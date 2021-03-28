@@ -185,7 +185,7 @@ std::shared_ptr<Fence> DXDevice::CreateFence(uint64_t initial_value)
     return std::make_shared<DXFence>(*this, initial_value);
 }
 
-std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
+std::shared_ptr<Resource> DXDevice::CreateTexture(TextureType type, uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
 {
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
     if (bind_flag & BindFlag::kShaderResource)
@@ -198,7 +198,18 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(uint32_t bind_flag, gli::forma
     res->format = format;
 
     D3D12_RESOURCE_DESC desc = {};
-    desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    switch (type)
+    {
+    case TextureType::k1D:
+        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+        break;
+    case TextureType::k2D:
+        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+        break;
+    case TextureType::k3D:
+        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+        break;
+    }
     desc.Width = width;
     desc.Height = height;
     desc.DepthOrArraySize = depth;

@@ -2,7 +2,7 @@
 
 #include <string>
 
-enum class TextureType
+enum class TextureAssetsType
 {
     kAlbedo,
     kNormal,
@@ -15,6 +15,6 @@ enum class TextureType
 
 struct TextureInfo
 {
-    TextureType type;
+    TextureAssetsType type;
     std::string path;
 };

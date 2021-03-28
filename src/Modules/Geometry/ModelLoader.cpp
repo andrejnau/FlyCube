@@ -168,15 +168,15 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
         std::vector<TextureInfo> textures;
         // map_Kd
-        LoadMaterialTextures(mat, aiTextureType_DIFFUSE, TextureType::kAlbedo, textures);
+        LoadMaterialTextures(mat, aiTextureType_DIFFUSE, TextureAssetsType::kAlbedo, textures);
         // map_bump
-        LoadMaterialTextures(mat, aiTextureType_NORMALS, TextureType::kNormal, textures);
+        LoadMaterialTextures(mat, aiTextureType_NORMALS, TextureAssetsType::kNormal, textures);
         // map_Ns
-        LoadMaterialTextures(mat, aiTextureType_SHININESS, TextureType::kRoughness, textures);
+        LoadMaterialTextures(mat, aiTextureType_SHININESS, TextureAssetsType::kRoughness, textures);
         // map_Ks
-        LoadMaterialTextures(mat, aiTextureType_SPECULAR, TextureType::kMetalness, textures);
+        LoadMaterialTextures(mat, aiTextureType_SPECULAR, TextureAssetsType::kMetalness, textures);
         // map_d
-        LoadMaterialTextures(mat, aiTextureType_OPACITY, TextureType::kOpacity, textures);
+        LoadMaterialTextures(mat, aiTextureType_OPACITY, TextureAssetsType::kOpacity, textures);
 
         FindSimilarTextures(cur_mesh.material.name, textures);
 
@@ -204,51 +204,51 @@ void ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
 void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<TextureInfo>& textures)
 {
-    static std::pair<std::string, TextureType> texture_types[] = {
-        { "albedo",     TextureType::kAlbedo     },
-        { "_albedo",    TextureType::kAlbedo     },
-        { "_Albedo",    TextureType::kAlbedo     },
-        { "_color",     TextureType::kAlbedo     },
-        { "_diff",      TextureType::kAlbedo     },
-        { "_diffuse",   TextureType::kAlbedo     },
-        { "_BaseColor", TextureType::kAlbedo     },
-        { "_nmap",      TextureType::kNormal     },
-        { "normal",     TextureType::kNormal     },
-        { "_normal",    TextureType::kNormal     },
-        { "_Normal",    TextureType::kNormal     },
-        { "_rough",     TextureType::kRoughness  },
-        { "roughness",  TextureType::kRoughness  },
-        { "_roughness", TextureType::kRoughness  },
-        { "_Roughness", TextureType::kRoughness  },
-        { "_gloss",     TextureType::kGlossiness },
-        { "_metalness", TextureType::kMetalness  },
-        { "_metallic",  TextureType::kMetalness  },
-        { "metallic",   TextureType::kMetalness  },
-        { "_Metallic",  TextureType::kMetalness  },   
-        { "_ao",        TextureType::kOcclusion  },
-        { "ao",         TextureType::kOcclusion  },
-        { "_mask",      TextureType::kOpacity    },
-        { "_opacity",   TextureType::kOpacity    },
+    static std::pair<std::string, TextureAssetsType> texture_types[] = {
+        { "albedo",     TextureAssetsType::kAlbedo     },
+        { "_albedo",    TextureAssetsType::kAlbedo     },
+        { "_Albedo",    TextureAssetsType::kAlbedo     },
+        { "_color",     TextureAssetsType::kAlbedo     },
+        { "_diff",      TextureAssetsType::kAlbedo     },
+        { "_diffuse",   TextureAssetsType::kAlbedo     },
+        { "_BaseColor", TextureAssetsType::kAlbedo     },
+        { "_nmap",      TextureAssetsType::kNormal     },
+        { "normal",     TextureAssetsType::kNormal     },
+        { "_normal",    TextureAssetsType::kNormal     },
+        { "_Normal",    TextureAssetsType::kNormal     },
+        { "_rough",     TextureAssetsType::kRoughness  },
+        { "roughness",  TextureAssetsType::kRoughness  },
+        { "_roughness", TextureAssetsType::kRoughness  },
+        { "_Roughness", TextureAssetsType::kRoughness  },
+        { "_gloss",     TextureAssetsType::kGlossiness },
+        { "_metalness", TextureAssetsType::kMetalness  },
+        { "_metallic",  TextureAssetsType::kMetalness  },
+        { "metallic",   TextureAssetsType::kMetalness  },
+        { "_Metallic",  TextureAssetsType::kMetalness  },   
+        { "_ao",        TextureAssetsType::kOcclusion  },
+        { "ao",         TextureAssetsType::kOcclusion  },
+        { "_mask",      TextureAssetsType::kOpacity    },
+        { "_opacity",   TextureAssetsType::kOpacity    },
     };
-    std::set<TextureType> used;
+    std::set<TextureAssetsType> used;
     for (auto& cur_texture : textures)
     {
         used.insert(cur_texture.type);
     }
 
-    if (!used.count(TextureType::kAlbedo))
+    if (!used.count(TextureAssetsType::kAlbedo))
     {
         for (auto & ext : { ".dds", ".png", ".jpg" })
         {
             std::string cur_path = m_directory + "/textures/" + mat_name + "_albedo" + ext;
             if (std::ifstream(cur_path).good())
             {
-                textures.push_back({ TextureType::kAlbedo, cur_path });
+                textures.push_back({ TextureAssetsType::kAlbedo, cur_path });
             }
             cur_path = m_directory + "/" + "albedo" + ext;
             if (std::ifstream(cur_path).good())
             {
-                textures.push_back({ TextureType::kAlbedo, cur_path });
+                textures.push_back({ TextureAssetsType::kAlbedo, cur_path });
             }
         }
     }
@@ -287,7 +287,7 @@ void ModelLoader::FindSimilarTextures(const std::string& mat_name, std::vector<T
     textures.insert(textures.end(), added_textures.begin(), added_textures.end());
 }
 
-void ModelLoader::LoadMaterialTextures(aiMaterial* mat, aiTextureType aitype, TextureType type, std::vector<TextureInfo>& textures)
+void ModelLoader::LoadMaterialTextures(aiMaterial* mat, aiTextureType aitype, TextureAssetsType type, std::vector<TextureInfo>& textures)
 {
     for (uint32_t i = 0; i < mat->GetTextureCount(aitype); ++i)
     {

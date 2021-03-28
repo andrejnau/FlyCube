@@ -122,25 +122,25 @@ Material::Material(TextureCache& cache, const IMesh::Material& material, std::ve
         auto tex = cache.Load(textures[i].path);
         switch (textures[i].type)
         {
-        case TextureType::kAlbedo:
+        case TextureAssetsType::kAlbedo:
             texture.albedo = tex;
             break;
-        case TextureType::kNormal:
+        case TextureAssetsType::kNormal:
             texture.normal = tex;
             break;
-        case TextureType::kRoughness:
+        case TextureAssetsType::kRoughness:
             texture.roughness = tex;
             break;
-        case TextureType::kGlossiness:
+        case TextureAssetsType::kGlossiness:
             texture.glossiness = tex;
             break;
-        case TextureType::kMetalness:
+        case TextureAssetsType::kMetalness:
             texture.metalness = tex;
             break;
-        case TextureType::kOcclusion:
+        case TextureAssetsType::kOcclusion:
             texture.occlusion = tex;
             break;
-        case TextureType::kOpacity:
+        case TextureAssetsType::kOpacity:
             texture.opacity = tex;
             break;
         }

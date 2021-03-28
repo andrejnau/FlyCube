@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
     upload_command_list->BuildTopLevelAS({}, top, scratch, blas_prebuild_info.build_scratch_data_size, instance_data, 0, instances.size(), BuildAccelerationStructureFlags::kNone);
     upload_command_list->UAVResourceBarrier(top);
 
-    std::shared_ptr<Resource> uav = device->CreateTexture(BindFlag::kUnorderedAccess | BindFlag::kCopySource, swapchain->GetFormat(), 1, rect.width, rect.height);
+    std::shared_ptr<Resource> uav = device->CreateTexture(TextureType::k2D, BindFlag::kUnorderedAccess | BindFlag::kCopySource, swapchain->GetFormat(), 1, rect.width, rect.height, 1, 1);
     uav->CommitMemory(MemoryType::kDefault);
     uav->SetName("uav");
     upload_command_list->ResourceBarrier({ { uav, uav->GetInitialState(), ResourceState::kUnorderedAccess } });

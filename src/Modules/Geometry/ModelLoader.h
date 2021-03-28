@@ -19,7 +19,7 @@ private:
     void ProcessNode(aiNode* node, const aiScene* scene);
     void ProcessMesh(aiMesh* mesh, const aiScene* scene);
     void FindSimilarTextures(const std::string& mat_name, std::vector<TextureInfo>& textures);
-    void LoadMaterialTextures(aiMaterial* mat, aiTextureType aitype, TextureType type, std::vector<TextureInfo>& textures);
+    void LoadMaterialTextures(aiMaterial* mat, aiTextureType aitype, TextureAssetsType type, std::vector<TextureInfo>& textures);
 
 private:
     std::string m_path;

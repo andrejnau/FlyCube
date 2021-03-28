@@ -120,6 +120,13 @@ enum class ResourceType
     kAccelerationStructure,
 };
 
+enum class TextureType
+{
+    k1D,
+    k2D,
+    k3D,
+};
+
 namespace BindFlag
 {
     enum

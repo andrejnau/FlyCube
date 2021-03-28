@@ -273,7 +273,7 @@ std::shared_ptr<Fence> VKDevice::CreateFence(uint64_t initial_value)
     return std::make_shared<VKTimelineSemaphore>(*this, initial_value);
 }
 
-std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
+std::shared_ptr<Resource> VKDevice::CreateTexture(TextureType type, uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
 {
     std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
     res->format = format;
@@ -302,12 +302,29 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(uint32_t bind_flag, gli::forma
         usage |= vk::ImageUsageFlagBits::eShadingRateImageNV;
 
     vk::ImageCreateInfo image_info = {};
-    image_info.imageType = vk::ImageType::e2D;
+    switch (type)
+    {
+    case TextureType::k1D:
+        image_info.imageType = vk::ImageType::e1D;
+        break;
+    case TextureType::k2D:
+        image_info.imageType = vk::ImageType::e2D;
+        break;
+    case TextureType::k3D:
+        image_info.imageType = vk::ImageType::e3D;
+        break;
+    }
     image_info.extent.width = width;
     image_info.extent.height = height;
-    image_info.extent.depth = 1;
+    if (type == TextureType::k3D)
+        image_info.extent.depth = depth;
+    else
+        image_info.extent.depth = 1;
     image_info.mipLevels = mip_levels;
-    image_info.arrayLayers = depth;
+    if (type == TextureType::k3D)
+        image_info.arrayLayers = 1;
+    else
+        image_info.arrayLayers = depth;
     image_info.format = res->image.format;
     image_info.tiling = vk::ImageTiling::eOptimal;
     image_info.initialLayout = vk::ImageLayout::eUndefined;

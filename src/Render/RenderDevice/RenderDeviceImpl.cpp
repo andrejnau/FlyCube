@@ -47,7 +47,7 @@ std::shared_ptr<RenderCommandList> RenderDeviceImpl::CreateRenderCommandList(Com
 
 std::shared_ptr<Resource> RenderDeviceImpl::CreateTexture(uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
 {
-    auto res = m_device->CreateTexture(bind_flag, format, sample_count, width, height, depth, mip_levels);
+    auto res = m_device->CreateTexture(TextureType::k2D, bind_flag, format, sample_count, width, height, depth, mip_levels);
     res->CommitMemory(MemoryType::kDefault);
     return res;
 }
