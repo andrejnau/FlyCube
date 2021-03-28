@@ -22,11 +22,13 @@ public:
 private:
     void CreateView();
     void CreateImageView();
+    void CreateBufferView();
 
     VKDevice& m_device;
     std::shared_ptr<VKResource> m_resource;
     ViewDesc m_view_desc;
     vk::UniqueImageView m_image_view;
+    vk::UniqueBufferView m_buffer_view;
     std::shared_ptr<VKGPUDescriptorPoolRange> m_range;
     vk::DescriptorImageInfo m_descriptor_image = {};
     vk::DescriptorBufferInfo m_descriptor_buffer = {};

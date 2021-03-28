@@ -96,8 +96,13 @@ void VKView::CreateView()
     case ViewType::kRWStructuredBuffer:
         m_descriptor_buffer.buffer = m_resource->buffer.res.get();
         m_descriptor_buffer.offset = m_view_desc.offset;
-        m_descriptor_buffer.range = VK_WHOLE_SIZE;
+        m_descriptor_buffer.range = m_view_desc.buffer_size;
         m_descriptor.pBufferInfo = &m_descriptor_buffer;
+        break;
+    case ViewType::kBuffer:
+    case ViewType::kRWBuffer:
+        CreateBufferView();
+        m_descriptor.pTexelBufferView = &m_buffer_view.get();
         break;
     default:
         assert(false);
@@ -133,6 +138,16 @@ void VKView::CreateImageView()
     m_image_view = m_device.GetDevice().createImageViewUnique(image_view_desc);
 }
 
+void VKView::CreateBufferView()
+{
+    vk::BufferViewCreateInfo buffer_view_desc = {};
+    buffer_view_desc.buffer = m_resource->buffer.res.get();
+    buffer_view_desc.format = static_cast<vk::Format>(m_view_desc.buffer_format);
+    buffer_view_desc.offset = m_view_desc.offset;
+    buffer_view_desc.range = m_view_desc.buffer_size;
+    m_buffer_view = m_device.GetDevice().createBufferViewUnique(buffer_view_desc);
+}
+
 std::shared_ptr<Resource> VKView::GetResource()
 {
     return m_resource;
@@ -147,26 +162,22 @@ uint32_t VKView::GetDescriptorId() const
 
 uint32_t VKView::GetBaseMipLevel() const
 {
-    return m_view_desc.level;
+    return m_view_desc.base_mip_level;
 }
 
 uint32_t VKView::GetLevelCount() const
 {
-    if (m_view_desc.count == -1)
-        return m_resource->GetLevelCount() - m_view_desc.level;
-    else
-        return m_view_desc.count;
-    return std::min<uint32_t>(m_view_desc.count, m_resource->GetLevelCount() - m_view_desc.level);
+    return std::min<uint32_t>(m_view_desc.level_count, m_resource->GetLevelCount() - m_view_desc.base_mip_level);
 }
 
 uint32_t VKView::GetBaseArrayLayer() const
 {
-    return 0;
+    return m_view_desc.base_array_layer;
 }
 
 uint32_t VKView::GetLayerCount() const
 {
-    return m_resource->GetLayerCount();
+    return std::min<uint32_t>(m_view_desc.layer_count, m_resource->GetLayerCount() - m_view_desc.base_array_layer);
 }
 
 vk::ImageView VKView::GetImageView() const

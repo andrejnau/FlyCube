@@ -346,9 +346,15 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
     if (bind_flag & BindFlag::kConstantBuffer)
         buffer_info.usage |= vk::BufferUsageFlagBits::eUniformBuffer;
     if (bind_flag & BindFlag::kUnorderedAccess)
+    {
         buffer_info.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
+        buffer_info.usage |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
+    }
     if (bind_flag & BindFlag::kShaderResource)
+    {
         buffer_info.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
+        buffer_info.usage |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
+    }
     if (bind_flag & BindFlag::kAccelerationStructure)
         buffer_info.usage |= vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR;
     if (bind_flag & BindFlag::kCopySource)

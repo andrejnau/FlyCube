@@ -32,9 +32,9 @@ struct VertexOut
     uint   MeshletIndex : COLOR0;
 };
 
-StructuredBuffer<float3>  Position;
+Buffer<float3>            Position;
 StructuredBuffer<float3>  Normal;
-StructuredBuffer<uint>    VertexIndices;
+Buffer<uint>              VertexIndices;
 
 VertexOut GetVertexAttributes(uint meshletIndex, uint vertexIndex)
 {

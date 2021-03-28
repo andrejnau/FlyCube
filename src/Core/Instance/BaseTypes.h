@@ -265,25 +265,32 @@ struct LazyViewDesc
 {
     size_t level = 0;
     size_t count = static_cast<size_t>(-1);
+    gli::format buffer_format = gli::format::FORMAT_UNDEFINED;
 
     auto MakeTie() const
     {
-        return std::tie(level, count);
+        return std::tie(level, count, buffer_format);
     }
 };
 
-struct ViewDesc : public LazyViewDesc
+struct ViewDesc
 {
     ViewType view_type = ViewType::kUnknown;
     ViewDimension dimension = ViewDimension::kUnknown;
-    uint32_t stride = 0;
-    uint32_t offset = 0;
-    bool bindless = false;
+    uint32_t base_mip_level = 0;
+    uint32_t level_count = static_cast<uint32_t>(-1);
+    uint32_t base_array_layer = 0;
+    uint32_t layer_count = static_cast<uint32_t>(-1);
     uint32_t plane_slice = 0;
+    uint64_t offset = 0;
+    uint32_t structure_stride = 0;
+    uint64_t buffer_size = static_cast<uint64_t>(-1);
+    gli::format buffer_format = gli::format::FORMAT_UNDEFINED;
+    bool bindless = false;
 
     auto MakeTie() const
     {
-        return std::tie(level, count, view_type, dimension, stride, offset, bindless, plane_slice);
+        return std::tie(view_type, dimension, base_mip_level, level_count, base_array_layer, layer_count, plane_slice, offset, structure_stride, buffer_size, buffer_format, bindless);
     }
 };
 
@@ -506,7 +513,8 @@ enum class ReturnType
     kUnknown,
     kFloat,
     kUint,
-    kSint,
+    kInt,
+    kDouble,
 };
 
 struct ResourceBindingDesc
@@ -518,7 +526,7 @@ struct ResourceBindingDesc
     uint32_t count;
     ViewDimension dimension;
     ReturnType return_type;
-    uint32_t stride;
+    uint32_t structure_stride;
 };
 
 enum class PipelineType

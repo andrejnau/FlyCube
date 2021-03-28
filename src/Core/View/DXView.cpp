@@ -98,11 +98,8 @@ void DXView::CreateSRV()
 
     auto setup_mips = [&](uint32_t& most_detailed_mip, uint32_t& mip_levels)
     {
-        most_detailed_mip = m_view_desc.level;
-        if (m_view_desc.count == -1)
-            mip_levels = m_resource->desc.MipLevels - most_detailed_mip;
-        else
-            mip_levels = m_view_desc.count;
+        most_detailed_mip = GetBaseMipLevel();
+        mip_levels = GetLevelCount();
     };
 
     switch (m_view_desc.dimension)
@@ -116,8 +113,8 @@ void DXView::CreateSRV()
     case ViewDimension::kTexture1DArray:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
-        srv_desc.Texture1DArray.FirstArraySlice = 0;
-        srv_desc.Texture1DArray.ArraySize = m_resource->desc.DepthOrArraySize;
+        srv_desc.Texture1DArray.FirstArraySlice = GetBaseArrayLayer();
+        srv_desc.Texture1DArray.ArraySize = GetLayerCount();
         setup_mips(srv_desc.Texture1DArray.MostDetailedMip, srv_desc.Texture1DArray.MipLevels);
         break;
     }
@@ -132,8 +129,8 @@ void DXView::CreateSRV()
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
         srv_desc.Texture2DArray.PlaneSlice = m_view_desc.plane_slice;
-        srv_desc.Texture2DArray.FirstArraySlice = 0;
-        srv_desc.Texture2DArray.ArraySize = m_resource->desc.DepthOrArraySize;
+        srv_desc.Texture2DArray.FirstArraySlice = GetBaseArrayLayer();
+        srv_desc.Texture2DArray.ArraySize = GetLayerCount();
         setup_mips(srv_desc.Texture2DArray.MostDetailedMip, srv_desc.Texture2DArray.MipLevels);
         break;
     }
@@ -145,8 +142,8 @@ void DXView::CreateSRV()
     case ViewDimension::kTexture2DMSArray:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMSARRAY;
-        srv_desc.Texture2DMSArray.FirstArraySlice = 0;
-        srv_desc.Texture2DMSArray.ArraySize = m_resource->desc.DepthOrArraySize;
+        srv_desc.Texture2DMSArray.FirstArraySlice = GetBaseArrayLayer();
+        srv_desc.Texture2DMSArray.ArraySize = GetLayerCount();
         break;
     }
     case ViewDimension::kTexture3D:
@@ -164,17 +161,29 @@ void DXView::CreateSRV()
     case ViewDimension::kTextureCubeArray:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
-        srv_desc.TextureCubeArray.First2DArrayFace = 0;
-        srv_desc.TextureCubeArray.NumCubes = m_resource->desc.DepthOrArraySize / 6;
+        srv_desc.TextureCubeArray.First2DArrayFace = GetBaseArrayLayer() / 6;
+        srv_desc.TextureCubeArray.NumCubes = GetLayerCount() / 6;
         setup_mips(srv_desc.TextureCubeArray.MostDetailedMip, srv_desc.TextureCubeArray.MipLevels);
         break;
     }
     case ViewDimension::kBuffer:
     {
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-        srv_desc.Buffer.FirstElement = m_view_desc.offset / m_view_desc.stride;
-        srv_desc.Buffer.NumElements = (m_resource->desc.Width - m_view_desc.offset) / m_view_desc.stride;
-        srv_desc.Buffer.StructureByteStride = m_view_desc.stride;
+        uint32_t stride = 0;
+        if (m_view_desc.view_type == ViewType::kBuffer)
+        {
+            srv_desc.Format = static_cast<DXGI_FORMAT>(gli::dx().translate(m_view_desc.buffer_format).DXGIFormat.DDS);
+            stride = gli::detail::bits_per_pixel(m_view_desc.buffer_format) / 8;
+        }
+        else
+        {
+            assert(m_view_desc.view_type == ViewType::kStructuredBuffer);
+            srv_desc.Buffer.StructureByteStride = m_view_desc.structure_stride;
+            stride = srv_desc.Buffer.StructureByteStride;
+        }
+        uint64_t size = std::min(m_resource->desc.Width, m_view_desc.buffer_size);
+        srv_desc.Buffer.FirstElement = m_view_desc.offset / stride;
+        srv_desc.Buffer.NumElements = (size - m_view_desc.offset) / (stride);
         break;
     }
     default:
@@ -206,45 +215,57 @@ void DXView::CreateUAV()
     case ViewDimension::kTexture1D:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
-        uav_desc.Texture1D.MipSlice = m_view_desc.level;
+        uav_desc.Texture1D.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture1DArray:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1DARRAY;
-        uav_desc.Texture1DArray.FirstArraySlice = 0;
-        uav_desc.Texture1DArray.ArraySize = m_resource->desc.DepthOrArraySize;
-        uav_desc.Texture1DArray.MipSlice = m_view_desc.level;
+        uav_desc.Texture1DArray.FirstArraySlice = GetBaseArrayLayer();
+        uav_desc.Texture1DArray.ArraySize = GetLayerCount();
+        uav_desc.Texture1DArray.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture2D:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
         uav_desc.Texture2D.PlaneSlice = m_view_desc.plane_slice;
-        uav_desc.Texture2D.MipSlice = m_view_desc.level;
+        uav_desc.Texture2D.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture2DArray:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
         uav_desc.Texture2DArray.PlaneSlice = m_view_desc.plane_slice;
-        uav_desc.Texture2DArray.FirstArraySlice = 0;
-        uav_desc.Texture2DArray.ArraySize = m_resource->desc.DepthOrArraySize;
-        uav_desc.Texture2DArray.MipSlice = m_view_desc.level;
+        uav_desc.Texture2DArray.FirstArraySlice = GetBaseArrayLayer();
+        uav_desc.Texture2DArray.ArraySize = GetLayerCount();
+        uav_desc.Texture2DArray.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture3D:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
-        uav_desc.Texture3D.MipSlice = m_view_desc.level;
+        uav_desc.Texture3D.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kBuffer:
     {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-        uav_desc.Buffer.FirstElement = m_view_desc.offset / m_view_desc.stride;
-        uav_desc.Buffer.NumElements = (m_resource->desc.Width - m_view_desc.offset) / m_view_desc.stride;
-        uav_desc.Buffer.StructureByteStride = m_view_desc.stride;
+        uint32_t stride = 0;
+        if (m_view_desc.view_type == ViewType::kRWBuffer)
+        {
+            uav_desc.Format = static_cast<DXGI_FORMAT>(gli::dx().translate(m_view_desc.buffer_format).DXGIFormat.DDS);
+            stride = gli::detail::bits_per_pixel(m_view_desc.buffer_format) / 8;
+        }
+        else
+        {
+            assert(m_view_desc.view_type == ViewType::kRWStructuredBuffer);
+            uav_desc.Buffer.StructureByteStride = m_view_desc.structure_stride;
+            stride = uav_desc.Buffer.StructureByteStride;
+        }
+        uint64_t size = std::min(m_resource->desc.Width, m_view_desc.buffer_size);
+        uav_desc.Buffer.FirstElement = m_view_desc.offset / stride;
+        uav_desc.Buffer.NumElements = (size - m_view_desc.offset) / (stride);
         break;
     }
     default:
@@ -267,31 +288,31 @@ void DXView::CreateRTV()
     case ViewDimension::kTexture1D:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
-        rtv_desc.Texture1D.MipSlice = m_view_desc.level;
+        rtv_desc.Texture1D.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture1DArray:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1DARRAY;
-        rtv_desc.Texture1DArray.FirstArraySlice = 0;
-        rtv_desc.Texture1DArray.ArraySize = m_resource->desc.DepthOrArraySize;
-        rtv_desc.Texture1DArray.MipSlice = m_view_desc.level;
+        rtv_desc.Texture1DArray.FirstArraySlice = GetBaseArrayLayer();
+        rtv_desc.Texture1DArray.ArraySize = GetLayerCount();
+        rtv_desc.Texture1DArray.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture2D:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
         rtv_desc.Texture2D.PlaneSlice = m_view_desc.plane_slice;
-        rtv_desc.Texture2D.MipSlice = m_view_desc.level;
+        rtv_desc.Texture2D.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture2DArray:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
         rtv_desc.Texture2DArray.PlaneSlice = m_view_desc.plane_slice;
-        rtv_desc.Texture2DArray.FirstArraySlice = 0;
-        rtv_desc.Texture2DArray.ArraySize = m_resource->desc.DepthOrArraySize;
-        rtv_desc.Texture2DArray.MipSlice = m_view_desc.level;
+        rtv_desc.Texture2DArray.FirstArraySlice = GetBaseArrayLayer();
+        rtv_desc.Texture2DArray.ArraySize = GetLayerCount();
+        rtv_desc.Texture2DArray.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture2DMS:
@@ -302,21 +323,14 @@ void DXView::CreateRTV()
     case ViewDimension::kTexture2DMSArray:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
-        rtv_desc.Texture2DMSArray.FirstArraySlice = 0;
-        rtv_desc.Texture2DMSArray.ArraySize = m_resource->desc.DepthOrArraySize;
+        rtv_desc.Texture2DMSArray.FirstArraySlice = GetBaseArrayLayer();
+        rtv_desc.Texture2DMSArray.ArraySize = GetLayerCount();
         break;
     }
     case ViewDimension::kTexture3D:
     {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
-        rtv_desc.Texture3D.MipSlice = m_view_desc.level;
-        break;
-    }
-    case ViewDimension::kBuffer:
-    {
-        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_BUFFER;
-        rtv_desc.Buffer.FirstElement = m_view_desc.offset / m_view_desc.stride;
-        rtv_desc.Buffer.NumElements = (m_resource->desc.Width - m_view_desc.offset) / m_view_desc.stride;
+        rtv_desc.Texture3D.MipSlice = GetBaseMipLevel();
         break;
     }
     default:
@@ -339,29 +353,29 @@ void DXView::CreateDSV()
     case ViewDimension::kTexture1D:
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
-        dsv_desc.Texture1D.MipSlice = m_view_desc.level;
+        dsv_desc.Texture1D.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture1DArray:
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1DARRAY;
-        dsv_desc.Texture1DArray.FirstArraySlice = 0;
-        dsv_desc.Texture1DArray.ArraySize = m_resource->desc.DepthOrArraySize;
-        dsv_desc.Texture1DArray.MipSlice = m_view_desc.level;
+        dsv_desc.Texture1DArray.FirstArraySlice = GetBaseArrayLayer();
+        dsv_desc.Texture1DArray.ArraySize = GetLayerCount();
+        dsv_desc.Texture1DArray.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture2D:
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-        dsv_desc.Texture2D.MipSlice = m_view_desc.level;
+        dsv_desc.Texture2D.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture2DArray:
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
-        dsv_desc.Texture2DArray.FirstArraySlice = 0;
-        dsv_desc.Texture2DArray.ArraySize = m_resource->desc.DepthOrArraySize;
-        dsv_desc.Texture2DArray.MipSlice = m_view_desc.level;
+        dsv_desc.Texture2DArray.FirstArraySlice = GetBaseArrayLayer();
+        dsv_desc.Texture2DArray.ArraySize = GetLayerCount();
+        dsv_desc.Texture2DArray.MipSlice = GetBaseMipLevel();
         break;
     }
     case ViewDimension::kTexture2DMS:
@@ -372,8 +386,8 @@ void DXView::CreateDSV()
     case ViewDimension::kTexture2DMSArray:
     {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY;
-        dsv_desc.Texture2DMSArray.FirstArraySlice = 0;
-        dsv_desc.Texture2DMSArray.ArraySize = m_resource->desc.DepthOrArraySize;
+        dsv_desc.Texture2DMSArray.FirstArraySlice = GetLayerCount();
+        dsv_desc.Texture2DMSArray.ArraySize = GetLayerCount();
         break;
     }
     default:
@@ -390,7 +404,7 @@ void DXView::CreateCBV()
 {
     D3D12_CONSTANT_BUFFER_VIEW_DESC cvb_desc = {};
     cvb_desc.BufferLocation = m_resource->resource->GetGPUVirtualAddress();
-    cvb_desc.SizeInBytes = m_resource->resource->GetDesc().Width;
+    cvb_desc.SizeInBytes = std::min(m_resource->desc.Width, m_view_desc.buffer_size);
     assert(cvb_desc.SizeInBytes % 256 == 0);
     m_device.GetDevice()->CreateConstantBufferView(&cvb_desc, m_handle->GetCpuHandle());
 }
@@ -414,20 +428,20 @@ uint32_t DXView::GetDescriptorId() const
 
 uint32_t DXView::GetBaseMipLevel() const
 {
-    return m_view_desc.level;
+    return m_view_desc.base_mip_level;
 }
 
 uint32_t DXView::GetLevelCount() const
 {
-    return std::min<uint32_t>(m_view_desc.count, m_resource->GetLevelCount() - m_view_desc.level);
+    return std::min<uint32_t>(m_view_desc.level_count, m_resource->GetLevelCount() - m_view_desc.base_mip_level);
 }
 
 uint32_t DXView::GetBaseArrayLayer() const
 {
-    return 0;
+    return m_view_desc.base_array_layer;
 }
 
 uint32_t DXView::GetLayerCount() const
 {
-    return m_resource->GetLayerCount();
+    return std::min<uint32_t>(m_view_desc.layer_count, m_resource->GetLayerCount() - m_view_desc.base_array_layer);
 }

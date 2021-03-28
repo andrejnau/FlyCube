@@ -36,7 +36,7 @@ void VKBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
         descriptor.dstBinding = binding.bind_key.slot;
         descriptor.dstArrayElement = 0;
         descriptor.descriptorCount = 1;
-        if (descriptor.pImageInfo || descriptor.pBufferInfo || descriptor.pNext)
+        if (descriptor.pImageInfo || descriptor.pBufferInfo || descriptor.pTexelBufferView || descriptor.pNext)
         {
             descriptors.emplace_back(descriptor);
         }

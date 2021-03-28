@@ -64,9 +64,9 @@ int main(int argc, char* argv[])
         command_list->Attach(program.ms.cbv.Constants, program.ms.cbuffer.Constants);
         command_list->Attach(program.ms.cbv.MeshInfo, program.ms.cbuffer.MeshInfo);
 
-        command_list->Attach(program.ms.srv.Position, model.ia.positions.GetBuffer());
+        command_list->Attach(program.ms.srv.Position, model.ia.positions.GetBuffer(), { 0, 0, gli::format::FORMAT_RGB32_SFLOAT_PACK32 });
         command_list->Attach(program.ms.srv.Normal, model.ia.normals.GetBuffer());
-        command_list->Attach(program.ms.srv.VertexIndices, model.ia.indices.GetBuffer());
+        command_list->Attach(program.ms.srv.VertexIndices, model.ia.indices.GetBuffer(), { 0, 0, gli::format::FORMAT_R32_UINT_PACK32 });
 
         command_list->BeginRenderPass(render_pass_desc);
         for (auto& range : model.ia.ranges)

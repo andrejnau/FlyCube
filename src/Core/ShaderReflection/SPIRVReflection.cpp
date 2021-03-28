@@ -80,6 +80,23 @@ std::vector<InputParameterDesc> ParseInputParameters(const spirv_cross::Compiler
     return input_parameters;
 }
 
+bool IsBufferDimension(spv::Dim dimension)
+{
+    switch (dimension)
+    {
+    case spv::Dim::DimBuffer:
+        return true;
+    case spv::Dim::Dim1D:
+    case spv::Dim::Dim2D:
+    case spv::Dim::Dim3D:
+    case spv::Dim::DimCube:
+        return false;
+    default:
+        assert(false);
+        return false;
+    }
+}
+
 ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& type, uint32_t resource_id)
 {
     switch (type.basetype)
@@ -89,15 +106,23 @@ ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::S
         return ViewType::kAccelerationStructure;
     }
     case spirv_cross::SPIRType::SampledImage:
-    {
-        return ViewType::kTexture;
-    }
     case spirv_cross::SPIRType::Image:
     {
-        if (type.image.sampled == 2 && type.image.dim != spv::DimSubpassData)
-            return ViewType::kRWTexture;
+        bool is_readonly = (type.image.sampled != 2);
+        if (IsBufferDimension(type.image.dim))
+        {
+            if (is_readonly)
+                return ViewType::kBuffer;
+            else
+                return ViewType::kRWBuffer;
+        }
         else
-            return ViewType::kTexture;
+        {
+            if (is_readonly)
+                return ViewType::kTexture;
+            else
+                return ViewType::kRWTexture;
+        }
     }
     case spirv_cross::SPIRType::Sampler:
     {
@@ -131,7 +156,7 @@ ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::S
     }
 }
 
-ViewDimension GetImageDimension(const spv::Dim& dim, const spirv_cross::SPIRType& resource_type)
+ViewDimension GetDimension(spv::Dim dim, const spirv_cross::SPIRType& resource_type)
 {
     switch (dim)
     {
@@ -160,6 +185,10 @@ ViewDimension GetImageDimension(const spv::Dim& dim, const spirv_cross::SPIRType
         else
             return ViewDimension::kTextureCube;
     }
+    case spv::Dim::DimBuffer:
+    {
+        return ViewDimension::kBuffer;
+    }
     default:
         assert(false);
         return ViewDimension::kUnknown;
@@ -170,7 +199,7 @@ ViewDimension GetViewDimension(const spirv_cross::SPIRType& resource_type)
 {
     if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Image)
     {
-        return GetImageDimension(resource_type.image.dim, resource_type);
+        return GetDimension(resource_type.image.dim, resource_type);
     }
     else if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Struct)
     {
@@ -186,18 +215,17 @@ ReturnType GetReturnType(const spirv_cross::CompilerHLSL& compiler, const spirv_
 {
     if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Image)
     {
-        auto& image_type = compiler.get_type(resource_type.image.type);
-        if (image_type.basetype == spirv_cross::SPIRType::BaseType::Float)
+        decltype(auto) image_type = compiler.get_type(resource_type.image.type);
+        switch (image_type.basetype)
         {
+        case spirv_cross::SPIRType::BaseType::Float:
             return ReturnType::kFloat;
-        }
-        else if (image_type.basetype == spirv_cross::SPIRType::BaseType::UInt)
-        {
+        case spirv_cross::SPIRType::BaseType::UInt:
             return ReturnType::kUint;
-        }
-        else if (image_type.basetype == spirv_cross::SPIRType::BaseType::Int)
-        {
-            return ReturnType::kSint;
+        case spirv_cross::SPIRType::BaseType::Int:
+            return ReturnType::kInt;
+        case spirv_cross::SPIRType::BaseType::Double:
+            return ReturnType::kDouble;
         }
         assert(false);
     }
@@ -219,9 +247,12 @@ ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, co
     }
     desc.dimension = GetViewDimension(resource_type);
     desc.return_type = GetReturnType(compiler, resource_type);
-    if (desc.dimension == ViewDimension::kBuffer && !resource_type.member_types.empty())
+    switch (desc.type)
     {
-        desc.stride = compiler.get_declared_struct_size(resource_type);
+    case ViewType::kStructuredBuffer:
+    case ViewType::kRWStructuredBuffer:
+        desc.structure_stride = compiler.get_declared_struct_size(resource_type);
+        break;
     }
     return desc;
 }

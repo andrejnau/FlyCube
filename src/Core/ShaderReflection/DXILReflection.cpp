@@ -164,6 +164,28 @@ void DXILReflection::ParseRuntimeData(ComPtr<IDxcContainerReflection> reflection
     }
 }
 
+bool IsBufferDimension(D3D_SRV_DIMENSION dimension)
+{
+    switch (dimension)
+    {
+    case D3D_SRV_DIMENSION_BUFFER:
+        return true;
+    case D3D_SRV_DIMENSION_TEXTURE1D:
+    case D3D_SRV_DIMENSION_TEXTURE1DARRAY:
+    case D3D_SRV_DIMENSION_TEXTURE2D:
+    case D3D_SRV_DIMENSION_TEXTURE2DARRAY:
+    case D3D_SRV_DIMENSION_TEXTURE2DMS:
+    case D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:
+    case D3D_SRV_DIMENSION_TEXTURE3D:
+    case D3D_SRV_DIMENSION_TEXTURECUBE:
+    case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
+        return false;
+    default:
+        assert(false);
+        return false;
+    }
+}
+
 ViewType GetViewType(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
 {
     switch (bind_desc.Type)
@@ -173,7 +195,16 @@ ViewType GetViewType(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
     case D3D_SIT_SAMPLER:
         return ViewType::kSampler;
     case D3D_SIT_TEXTURE:
-        return ViewType::kTexture;
+    {
+        if (IsBufferDimension(bind_desc.Dimension))
+        {
+            return ViewType::kBuffer;
+        }
+        else
+        {
+            return ViewType::kTexture;
+        }
+    }
     case D3D_SIT_STRUCTURED:
         return ViewType::kStructuredBuffer;
     case D3D_SIT_RTACCELERATIONSTRUCTURE:
@@ -182,23 +213,13 @@ ViewType GetViewType(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
         return ViewType::kRWStructuredBuffer;
     case D3D_SIT_UAV_RWTYPED:
     {
-        switch (bind_desc.Dimension)
+        if (IsBufferDimension(bind_desc.Dimension))
         {
-        case D3D_SRV_DIMENSION_BUFFER:
             return ViewType::kRWBuffer;
-        case D3D_SRV_DIMENSION_TEXTURE1D:
-        case D3D_SRV_DIMENSION_TEXTURE1DARRAY:
-        case D3D_SRV_DIMENSION_TEXTURE2D:
-        case D3D_SRV_DIMENSION_TEXTURE2DARRAY:
-        case D3D_SRV_DIMENSION_TEXTURE2DMS:
-        case D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:
-        case D3D_SRV_DIMENSION_TEXTURE3D:
-        case D3D_SRV_DIMENSION_TEXTURECUBE:
-        case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
+        }
+        else
+        {
             return ViewType::kRWTexture;
-        default:
-            assert(false);
-            break;
         }
     }
     default:
@@ -239,30 +260,64 @@ ViewDimension GetViewDimension(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
     }
 }
 
-ReturnType GetReturnType(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
+ReturnType GetReturnType(ViewType view_type, const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
 {
+    auto check_type = [&](ReturnType return_type)
+    {
+        switch (view_type)
+        {
+        case ViewType::kBuffer:
+        case ViewType::kRWBuffer:
+        case ViewType::kTexture:
+        case ViewType::kRWTexture:
+            assert(return_type != ReturnType::kUnknown);
+            break;
+        case ViewType::kAccelerationStructure:
+            return ReturnType::kUnknown;
+        default:
+            assert(return_type == ReturnType::kUnknown);
+            break;
+        }
+        return return_type;
+    };
+
     switch (bind_desc.ReturnType)
     {
     case D3D_RETURN_TYPE_FLOAT:
-        return ReturnType::kFloat;
+        return check_type(ReturnType::kFloat);
     case D3D_RETURN_TYPE_UINT:
-        return ReturnType::kUint;
+        return check_type(ReturnType::kUint);
     case D3D_RETURN_TYPE_SINT:
-        return ReturnType::kSint;
+        return check_type(ReturnType::kInt);
+    case D3D_RETURN_TYPE_DOUBLE:
+        return check_type(ReturnType::kDouble);
     default:
-        return ReturnType::kUnknown;
+        return check_type(ReturnType::kUnknown);
     }
 }
 
 template<typename T>
-uint32_t GetStride(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc, T* reflection)
+uint32_t GetStructureStride(ViewType view_type, const D3D12_SHADER_INPUT_BIND_DESC& bind_desc, T* reflection)
 {
-    ID3D12ShaderReflectionConstantBuffer* cbuffer = reflection->GetConstantBufferByName(bind_desc.Name);
-    if (!cbuffer)
+    switch (view_type)
+    {
+    case ViewType::kStructuredBuffer:
+    case ViewType::kRWStructuredBuffer:
+        break;
+    default:
         return 0;
-    D3D12_SHADER_BUFFER_DESC cbuffer_desc = {};
-    cbuffer->GetDesc(&cbuffer_desc);
-    return cbuffer_desc.Size;
+    }
+
+    ID3D12ShaderReflectionConstantBuffer* cbuffer = reflection->GetConstantBufferByName(bind_desc.Name);
+    if (cbuffer)
+    {
+        D3D12_SHADER_BUFFER_DESC cbuffer_desc = {};
+        if (SUCCEEDED(cbuffer->GetDesc(&cbuffer_desc)))
+        {
+            return cbuffer_desc.Size;
+        }
+    }
+    return 0;
 }
 
 template<typename T>
@@ -279,8 +334,8 @@ ResourceBindingDesc GetBindingDesc(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc
         desc.count = std::numeric_limits<uint32_t>::max();
     }
     desc.dimension = GetViewDimension(bind_desc);
-    desc.return_type = GetReturnType(bind_desc);
-    desc.stride = GetStride(bind_desc, reflection);
+    desc.return_type = GetReturnType(desc.type, bind_desc);
+    desc.structure_stride = GetStructureStride(desc.type, bind_desc, reflection);
     return desc;
 }
 
