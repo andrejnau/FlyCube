@@ -20,7 +20,6 @@ VKCommandList::VKCommandList(VKDevice& device, CommandListType type)
     std::vector<vk::UniqueCommandBuffer> cmd_bufs = device.GetDevice().allocateCommandBuffersUnique(cmd_buf_alloc_info);
     m_command_list = std::move(cmd_bufs.front());
     vk::CommandBufferBeginInfo begin_info = {};
-    begin_info.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
     m_command_list->begin(begin_info);
 }
 

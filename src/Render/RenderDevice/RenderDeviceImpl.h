@@ -52,6 +52,8 @@ public:
     void ExecuteCommandListsImpl(const std::vector<std::shared_ptr<RenderCommandList>>& command_lists);
 
 private:
+    void InsertPresentBarrier();
+
     GLFWwindow* m_window;
     bool m_vsync;
     uint32_t m_frame_count;
@@ -63,9 +65,8 @@ private:
     std::shared_ptr<Device> m_device;
     std::shared_ptr<CommandQueue> m_command_queue;
     std::shared_ptr<Swapchain> m_swapchain;
-    std::vector<std::shared_ptr<CommandList>> m_swapchain_command_lists;
-    std::vector<uint64_t> m_swapchain_fence_values;
-    std::shared_ptr<CommandList> m_swapchain_command_list;
+    std::vector<std::shared_ptr<CommandList>> m_barrier_command_lists;
+    std::vector<uint64_t> m_frame_fence_values;
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
     std::vector<std::shared_ptr<CommandList>> m_command_list_pool;
