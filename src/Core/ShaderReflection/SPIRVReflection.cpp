@@ -251,8 +251,18 @@ ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, co
     {
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer:
-        desc.structure_stride = compiler.get_declared_struct_size(resource_type);
+    {
+        bool is_block = compiler.get_decoration_bitset(resource_type.self).get(spv::DecorationBlock) ||
+                        compiler.get_decoration_bitset(resource_type.self).get(spv::DecorationBufferBlock);
+        bool is_sized_block = is_block && (compiler.get_storage_class(resource.id) == spv::StorageClassUniform ||
+                                           compiler.get_storage_class(resource.id) == spv::StorageClassUniformConstant ||
+                                           compiler.get_storage_class(resource.id) == spv::StorageClassStorageBuffer);
+        assert(is_sized_block);
+        decltype(auto) base_type = compiler.get_type(resource.base_type_id);
+        desc.structure_stride = compiler.get_declared_struct_size_runtime_array(base_type, 1) - compiler.get_declared_struct_size_runtime_array(base_type, 0);
+        assert(desc.structure_stride);
         break;
+    }
     }
     return desc;
 }

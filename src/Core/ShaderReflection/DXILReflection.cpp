@@ -308,16 +308,26 @@ uint32_t GetStructureStride(ViewType view_type, const D3D12_SHADER_INPUT_BIND_DE
         return 0;
     }
 
-    ID3D12ShaderReflectionConstantBuffer* cbuffer = reflection->GetConstantBufferByName(bind_desc.Name);
-    if (cbuffer)
+    auto get_buffer_stride = [&](const std::string& name)
     {
-        D3D12_SHADER_BUFFER_DESC cbuffer_desc = {};
-        if (SUCCEEDED(cbuffer->GetDesc(&cbuffer_desc)))
+        ID3D12ShaderReflectionConstantBuffer* cbuffer = reflection->GetConstantBufferByName(name.c_str());
+        if (cbuffer)
         {
-            return cbuffer_desc.Size;
+            D3D12_SHADER_BUFFER_DESC cbuffer_desc = {};
+            if (SUCCEEDED(cbuffer->GetDesc(&cbuffer_desc)))
+            {
+                return cbuffer_desc.Size;
+            }
         }
+        return 0u;
+    };
+    uint32_t stride = get_buffer_stride(bind_desc.Name);
+    if (!stride)
+    {
+        stride = get_buffer_stride(std::string(bind_desc.Name) + "[0]");
     }
-    return 0;
+    assert(stride);
+    return stride;
 }
 
 template<typename T>
