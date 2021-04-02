@@ -16,7 +16,6 @@ public:
     const ResourceBindingDesc& GetResourceBinding(const BindKey& bind_key) const override;
     const std::vector<InputLayoutDesc>& GetInputLayouts() const override;
     uint32_t GetInputLayoutLocation(const std::string& semantic_name) const override;
-    const std::string& GetSemanticName(uint32_t location) const override;
     const std::vector<BindKey>& GetBindings() const override;
     const std::shared_ptr<ShaderReflection>& GetReflection() const override;
 
@@ -31,6 +30,5 @@ protected:
     std::map<std::string, BindKey> m_bind_keys;
     std::vector<InputLayoutDesc> m_input_layout_descs;
     std::map<std::string, uint32_t> m_locations;
-    std::map<uint32_t, std::string> m_semantic_names;
     std::shared_ptr<ShaderReflection> m_reflection;
 };

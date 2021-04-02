@@ -248,7 +248,7 @@ void DXGraphicsPipeline::ParseInputLayout(const std::shared_ptr<Shader>& shader)
     for (auto& vertex : m_desc.input)
     {
         D3D12_INPUT_ELEMENT_DESC layout = {};
-        std::string semantic_name = shader->GetSemanticName(vertex.location);
+        std::string semantic_name = vertex.semantic_name;
         uint32_t semantic_slot = 0;
         uint32_t pow = 1;
         while (!semantic_name.empty() && std::isdigit(semantic_name.back()))

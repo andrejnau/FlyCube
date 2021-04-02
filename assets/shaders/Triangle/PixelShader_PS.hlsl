@@ -3,7 +3,7 @@ struct VS_OUTPUT
     float4 pos: SV_POSITION;
 };
 
-cbuffer Settings
+cbuffer Settings : register(b0, space0)
 {
     float4 color;
 };

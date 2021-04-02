@@ -120,7 +120,7 @@ std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kCons
 constant_buffer->CommitMemory(MemoryType::kDefault);
 
 std::shared_ptr<Resource> upload_buffer = device->CreateBuffer(BindFlag::kCopySource, index_buffer->GetWidth() + vertex_buffer->GetWidth() + constant_buffer->GetWidth());
-auto mem_requirements = upload_buffer->GetMemoryRequirements();
+MemoryRequirements mem_requirements = upload_buffer->GetMemoryRequirements();
 std::shared_ptr<Memory> memory = device->AllocateMemory(mem_requirements.size, MemoryType::kUpload, mem_requirements.memory_type_bits);
 upload_buffer->BindMemory(memory, 0);
 upload_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
@@ -144,7 +144,7 @@ std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_
 ViewDesc constant_view_desc = {};
 constant_view_desc.view_type = ViewType::kConstantBuffer;
 std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, constant_view_desc);
-BindKey settings_key = pixel_shader->GetBindKey("Settings");
+BindKey settings_key = { ShaderType::kPixel, ViewType::kConstantBuffer, 0, 0, 1 };
 std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ settings_key });
 std::shared_ptr<BindingSet> binding_set = device->CreateBindingSet(layout);
 binding_set->WriteBindings({ { settings_key, constant_buffer_view } });
@@ -157,7 +157,7 @@ ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
 GraphicsPipelineDesc pipeline_desc = {
     program,
     layout,
-    { { 0, vertex_shader->GetInputLayoutLocation("POSITION"), gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
+    { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
     render_pass
 };
 std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
@@ -167,14 +167,13 @@ std::vector<std::shared_ptr<CommandList>> command_lists;
 std::vector<std::shared_ptr<Framebuffer>> framebuffers;
 for (uint32_t i = 0; i < frame_count; ++i)
 {
-    std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
     ViewDesc back_buffer_view_desc = {};
     back_buffer_view_desc.view_type = ViewType::kRenderTarget;
     back_buffer_view_desc.dimension = ViewDimension::kTexture2D;
+    std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
     std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
-    framebuffers.emplace_back(device->CreateFramebuffer(render_pass, rect.width, rect.height, { back_buffer_view }));
-    command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
-    std::shared_ptr<CommandList> command_list = command_lists[i];
+    std::shared_ptr<Framebuffer> framebuffer = framebuffers.emplace_back(device->CreateFramebuffer(render_pass, rect.width, rect.height, { back_buffer_view }));
+    std::shared_ptr<CommandList> command_list = command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
     command_list->BindPipeline(pipeline);
     command_list->BindBindingSet(binding_set);
     command_list->SetViewport(0, 0, rect.width, rect.height);
@@ -182,7 +181,7 @@ for (uint32_t i = 0; i < frame_count; ++i)
     command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
     command_list->IASetVertexBuffer(0, vertex_buffer);
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
-    command_list->BeginRenderPass(render_pass, framebuffers.back(), clear_desc);
+    command_list->BeginRenderPass(render_pass, framebuffer, clear_desc);
     command_list->DrawIndexed(3, 1, 0, 0, 0);
     command_list->EndRenderPass();
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });

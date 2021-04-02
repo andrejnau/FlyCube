@@ -240,11 +240,9 @@ void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDes
 {
     for (auto& vertex : m_desc.input)
     {
-        m_binding_desc.emplace_back();
-        auto& binding = m_binding_desc.back();
-        m_attribute_desc.emplace_back();
-        auto& attribute = m_attribute_desc.back();
-        attribute.location = vertex.location;
+        decltype(auto) binding = m_binding_desc.emplace_back();
+        decltype(auto) attribute =  m_attribute_desc.emplace_back();
+        attribute.location = m_desc.program->GetShader(ShaderType::kVertex)->GetInputLayoutLocation(vertex.semantic_name);
         attribute.binding = binding.binding = vertex.slot;
         binding.inputRate = vk::VertexInputRate::eVertex;
         binding.stride = vertex.stride;

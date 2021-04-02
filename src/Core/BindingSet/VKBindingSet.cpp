@@ -32,7 +32,7 @@ void VKBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
         decltype(auto) vk_view = binding.view->As<VKView>();
         vk::WriteDescriptorSet descriptor = vk_view.GetDescriptor();
         descriptor.descriptorType = GetDescriptorType(binding.bind_key.view_type);
-        descriptor.dstSet = m_descriptor_sets[static_cast<size_t>(binding.bind_key.shader_type)];
+        descriptor.dstSet = m_descriptor_sets[binding.bind_key.space];
         descriptor.dstBinding = binding.bind_key.slot;
         descriptor.dstArrayElement = 0;
         descriptor.descriptorCount = 1;
