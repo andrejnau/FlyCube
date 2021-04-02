@@ -762,6 +762,11 @@ using IndirectCountType = uint32_t;
 
 constexpr uint64_t kAccelerationStructureAlignment = 256;
 
+enum class QueryHeapType
+{
+    kAccelerationStructureCompactedSize
+};
+
 template<typename T>
 auto operator< (const T& l, const T& r) -> std::enable_if_t<std::is_same_v<decltype(l.MakeTie() < r.MakeTie()), bool>, bool>
 {

@@ -69,6 +69,16 @@ public:
                              const std::vector<BufferToTextureCopyRegion>& regions) override;
     void CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture,
                      const std::vector<TextureCopyRegion>& regions) override;
+    void WriteAccelerationStructuresProperties(
+        const std::vector<std::shared_ptr<Resource>>& acceleration_structures,
+        const std::shared_ptr<QueryHeap>& query_heap,
+        uint32_t first_query) override;
+    void ResolveQueryData(
+        const std::shared_ptr<QueryHeap>& query_heap,
+        uint32_t first_query,
+        uint32_t query_count,
+        const std::shared_ptr<Resource>& dst_buffer,
+        uint64_t dst_offset) override;
 
     vk::CommandBuffer GetCommandList();
 

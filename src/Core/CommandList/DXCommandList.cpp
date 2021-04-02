@@ -10,6 +10,7 @@
 #include <RenderPass/DXRenderPass.h>
 #include <Framebuffer/DXFramebuffer.h>
 #include <BindingSet/DXBindingSet.h>
+#include <QueryHeap/DXRayTracingQueryHeap.h>
 #include <dxgi1_6.h>
 #include <d3d12.h>
 #include <d3dx12.h>
@@ -690,6 +691,55 @@ void DXCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture, co
 
         m_command_list->CopyTextureRegion(&dst, region.dst_offset.x, region.dst_offset.y, region.dst_offset.z, &src, &src_box);
     }
+}
+
+void DXCommandList::WriteAccelerationStructuresProperties(
+    const std::vector<std::shared_ptr<Resource>>& acceleration_structures,
+    const std::shared_ptr<QueryHeap>& query_heap,
+    uint32_t first_query)
+{
+    if (query_heap->GetType() != QueryHeapType::kAccelerationStructureCompactedSize)
+    {
+        assert(false);
+        return;
+    }
+    decltype(auto) dx_query_heap = query_heap->As<DXRayTracingQueryHeap>();
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_DESC desc = {};
+    desc.InfoType = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_COMPACTED_SIZE;
+    desc.DestBuffer = dx_query_heap.GetResource()->GetGPUVirtualAddress() + first_query * sizeof(uint64_t);
+    std::vector<D3D12_GPU_VIRTUAL_ADDRESS> dx_acceleration_structures;
+    dx_acceleration_structures.reserve(acceleration_structures.size());
+    for (const auto& acceleration_structure : acceleration_structures)
+    {
+        dx_acceleration_structures.emplace_back(acceleration_structure->As<DXResource>().acceleration_structure_handle);
+    }
+    m_command_list4->EmitRaytracingAccelerationStructurePostbuildInfo(&desc, dx_acceleration_structures.size(), dx_acceleration_structures.data());
+}
+
+void DXCommandList::ResolveQueryData(
+    const std::shared_ptr<QueryHeap>& query_heap,
+    uint32_t first_query,
+    uint32_t query_count,
+    const std::shared_ptr<Resource>& dst_buffer,
+    uint64_t dst_offset)
+{
+    if (query_heap->GetType() != QueryHeapType::kAccelerationStructureCompactedSize)
+    {
+        assert(false);
+        return;
+    }
+
+    decltype(auto) dx_query_heap = query_heap->As<DXRayTracingQueryHeap>();
+    decltype(auto) dx_dst_buffer = dst_buffer->As<DXResource>();
+    m_command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dx_query_heap.GetResource().Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE, 0));
+    m_command_list->CopyBufferRegion(
+        dx_dst_buffer.resource.Get(),
+        dst_offset,
+        dx_query_heap.GetResource().Get(),
+        first_query * sizeof(uint64_t),
+        query_count * sizeof(uint64_t)
+    );
+    m_command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dx_query_heap.GetResource().Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, 0));
 }
 
 ComPtr<ID3D12GraphicsCommandList> DXCommandList::GetCommandList()

@@ -65,6 +65,32 @@ int main(int argc, char* argv[])
         0
     );
 
+    auto scratch = device->CreateBuffer(BindFlag::kRayTracing, std::max(blas_prebuild_info.build_scratch_data_size, tlas_prebuild_info.build_scratch_data_size));
+    scratch->CommitMemory(MemoryType::kDefault);
+    scratch->SetName("scratch");
+
+    auto blas_compacted_size_buffer = device->CreateBuffer(BindFlag::kCopyDest, sizeof(uint64_t));
+    blas_compacted_size_buffer->CommitMemory(MemoryType::kReadback);
+    blas_compacted_size_buffer->SetName("blas_compacted_size_buffer");
+
+    auto query_heap = device->CreateQueryHeap(QueryHeapType::kAccelerationStructureCompactedSize, 1);
+
+    upload_command_list->BuildBottomLevelAS({}, bottom, scratch, 0, { raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
+    upload_command_list->UAVResourceBarrier(bottom);
+    upload_command_list->WriteAccelerationStructuresProperties({ bottom }, query_heap, 0);
+    upload_command_list->ResolveQueryData(query_heap, 0, 1, blas_compacted_size_buffer, 0);
+    upload_command_list->Close();
+
+    upload_command_queue->ExecuteCommandLists({ upload_command_list });
+    upload_command_queue->Signal(fence, ++fence_value);
+    fence->Wait(fence_value);
+
+    uint64_t blas_compacted_size = *reinterpret_cast<uint64_t*>(blas_compacted_size_buffer->Map());
+    blas_compacted_size_buffer->Unmap();
+
+    upload_command_list->Reset();
+    upload_command_list->CopyAccelerationStructure(bottom, bottom, CopyAccelerationStructureMode::kCompact);
+
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4x4>> geometry = {
         { bottom, glm::transpose(glm::translate(glm::vec3(-0.5f, 0.0f, 0.0f))) },
         { bottom, glm::transpose(glm::translate(glm::vec3(0.5f, 0.0f, 0.0f))) },
@@ -83,22 +109,14 @@ int main(int argc, char* argv[])
     std::shared_ptr<Resource> top = device->CreateAccelerationStructure(
         AccelerationStructureType::kTopLevel,
         acceleration_structures_memory,
-        Align(blas_prebuild_info.acceleration_structure_size, kAccelerationStructureAlignment)
+        Align(blas_compacted_size, kAccelerationStructureAlignment)
     );
-
-    auto scratch = device->CreateBuffer(BindFlag::kRayTracing, blas_prebuild_info.build_scratch_data_size + tlas_prebuild_info.build_scratch_data_size);
-    scratch->CommitMemory(MemoryType::kDefault);
-    scratch->SetName("scratch");
-
-    upload_command_list->BuildBottomLevelAS({}, bottom, scratch, 0, { raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
-    upload_command_list->UAVResourceBarrier(bottom);
-    upload_command_list->CopyAccelerationStructure(bottom, bottom, CopyAccelerationStructureMode::kCompact);
 
     auto instance_data = device->CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()));
     instance_data->CommitMemory(MemoryType::kUpload);
     instance_data->SetName("instance_data");
     instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
-    upload_command_list->BuildTopLevelAS({}, top, scratch, blas_prebuild_info.build_scratch_data_size, instance_data, 0, instances.size(), BuildAccelerationStructureFlags::kNone);
+    upload_command_list->BuildTopLevelAS({}, top, scratch, 0, instance_data, 0, instances.size(), BuildAccelerationStructureFlags::kNone);
     upload_command_list->UAVResourceBarrier(top);
 
     std::shared_ptr<Resource> uav = device->CreateTexture(TextureType::k2D, BindFlag::kUnorderedAccess | BindFlag::kCopySource, swapchain->GetFormat(), 1, rect.width, rect.height, 1, 1);

@@ -13,6 +13,7 @@
 #include <RenderPass/VKRenderPass.h>
 #include <Framebuffer/VKFramebuffer.h>
 #include <Memory/VKMemory.h>
+#include <QueryHeap/VKQueryHeap.h>
 #include <Shader/ShaderBase.h>
 #include <View/VKView.h>
 #include <Adapter/VKAdapter.h>
@@ -599,6 +600,11 @@ std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(AccelerationStru
     res->acceleration_structure_handle = m_device->createAccelerationStructureKHRUnique(acceleration_structure_create_info);
 
     return res;
+}
+
+std::shared_ptr<QueryHeap> VKDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)
+{
+    return std::make_shared<VKQueryHeap>(*this, type, count);
 }
 
 bool VKDevice::IsDxrSupported() const

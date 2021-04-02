@@ -47,6 +47,8 @@ void DXResource::CommitMemory(MemoryType memory_type)
     // TODO
     if (m_memory_type == MemoryType::kUpload)
         SetInitialState(ResourceState::kGenericRead);
+    else if (m_memory_type == MemoryType::kReadback)
+        SetInitialState(ResourceState::kCopyDest);
 
     D3D12_HEAP_FLAGS flags = D3D12_HEAP_FLAG_NONE;
     if (m_device.IsCreateNotZeroedAvailable())

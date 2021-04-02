@@ -40,6 +40,7 @@ target_link_libraries(Device
     Fence
     Memory
     Utilities
+    QueryHeap
 )
 
 if (VULKAN_SUPPORT)

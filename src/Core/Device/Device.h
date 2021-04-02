@@ -12,6 +12,7 @@
 #include <BindingSetLayout/BindingSetLayout.h>
 #include <RenderPass/RenderPass.h>
 #include <CommandQueue/CommandQueue.h>
+#include <QueryHeap/QueryHeap.h>
 #include <memory>
 #include <vector>
 #include <GLFW/glfw3.h>
@@ -48,6 +49,7 @@ public:
     virtual std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) = 0;
     virtual std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) = 0;
     virtual std::shared_ptr<Resource> CreateAccelerationStructure(AccelerationStructureType type, const std::shared_ptr<Resource>& resource, uint64_t offset) = 0;
+    virtual std::shared_ptr<QueryHeap> CreateQueryHeap(QueryHeapType type, uint32_t count) = 0;
     virtual bool IsDxrSupported() const = 0;
     virtual bool IsRayQuerySupported() const = 0;
     virtual bool IsVariableRateShadingSupported() const = 0;

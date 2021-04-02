@@ -6,9 +6,6 @@ class ResourceBase : public Resource
 public:
     ResourceBase();
 
-    virtual uint8_t* Map() = 0;
-    virtual void Unmap() = 0;
-
     ResourceType GetResourceType() const override final;
     gli::format GetFormat() const override final;
     MemoryType GetMemoryType() const override final;

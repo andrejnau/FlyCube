@@ -15,6 +15,7 @@
 #include <RenderPass/DXRenderPass.h>
 #include <Framebuffer/DXFramebuffer.h>
 #include <CommandQueue/DXCommandQueue.h>
+#include <QueryHeap/DXRayTracingQueryHeap.h>
 #include <Utilities/DXUtility.h>
 #include <Utilities/DXGIFormatHelper.h>
 #include <dxgi1_6.h>
@@ -383,6 +384,15 @@ std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(AccelerationStru
     res->acceleration_structures_memory = resource;
     res->acceleration_structure_handle = resource->As<DXResource>().resource->GetGPUVirtualAddress() + offset;
     return res;
+}
+
+std::shared_ptr<QueryHeap> DXDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)
+{
+    if (type == QueryHeapType::kAccelerationStructureCompactedSize)
+    {
+        return std::make_shared<DXRayTracingQueryHeap>(*this, type, count);
+    }
+    return {};
 }
 
 D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags)

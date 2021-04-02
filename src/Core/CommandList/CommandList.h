@@ -6,6 +6,7 @@
 #include <Instance/BaseTypes.h>
 #include <Framebuffer/Framebuffer.h>
 #include <BindingSet/BindingSet.h>
+#include <QueryHeap/QueryHeap.h>
 #include <memory>
 #include <array>
 #include <gli/format.hpp>
@@ -74,4 +75,14 @@ public:
                                      const std::vector<BufferToTextureCopyRegion>& regions) = 0;
     virtual void CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture,
                              const std::vector<TextureCopyRegion>& regions) = 0;
+    virtual void WriteAccelerationStructuresProperties(
+        const std::vector<std::shared_ptr<Resource>>& acceleration_structures,
+        const std::shared_ptr<QueryHeap>& query_heap,
+        uint32_t first_query) = 0;
+    virtual void ResolveQueryData(
+        const std::shared_ptr<QueryHeap>& query_heap,
+        uint32_t first_query,
+        uint32_t query_count,
+        const std::shared_ptr<Resource>& dst_buffer,
+        uint64_t dst_offset) = 0;
 };

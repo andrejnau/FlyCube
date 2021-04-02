@@ -13,6 +13,8 @@ VKMemory::VKMemory(VKDevice& device, uint64_t size, MemoryType memory_type, uint
         properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
     else if (memory_type == MemoryType::kUpload)
         properties = vk::MemoryPropertyFlagBits::eHostVisible;
+    else if (memory_type == MemoryType::kReadback)
+        properties = vk::MemoryPropertyFlagBits::eHostVisible;
 
     vk::MemoryAllocateInfo alloc_info = {};
     alloc_info.pNext = &alloc_flag_info;

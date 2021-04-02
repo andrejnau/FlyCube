@@ -8,6 +8,7 @@
 #include <Pipeline/VKRayTracingPipeline.h>
 #include <Framebuffer/VKFramebuffer.h>
 #include <BindingSet/VKBindingSet.h>
+#include <QueryHeap/VKQueryHeap.h>
 #include <Utilities/VKUtility.h>
 
 VKCommandList::VKCommandList(VKDevice& device, CommandListType type)
@@ -676,6 +677,51 @@ void VKCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture, co
         vk_region.extent.depth = region.extent.depth;
     }
     m_command_list->copyImage(vk_src_texture.image.res, vk::ImageLayout::eTransferSrcOptimal, vk_dst_texture.image.res, vk::ImageLayout::eTransferDstOptimal, vk_regions);
+}
+
+void VKCommandList::WriteAccelerationStructuresProperties(
+    const std::vector<std::shared_ptr<Resource>>& acceleration_structures,
+    const std::shared_ptr<QueryHeap>& query_heap,
+    uint32_t first_query)
+{
+    std::vector<vk::AccelerationStructureKHR> vk_acceleration_structures;
+    vk_acceleration_structures.reserve(acceleration_structures.size());
+    for (const auto& acceleration_structure : acceleration_structures)
+    {
+        vk_acceleration_structures.emplace_back(acceleration_structure->As<VKResource>().acceleration_structure_handle.get());
+    }
+    decltype(auto) vk_query_heap = query_heap->As<VKQueryHeap>();
+    auto query_type = vk_query_heap.GetQueryType();
+    assert(query_type == vk::QueryType::eAccelerationStructureCompactedSizeKHR);
+    m_command_list->resetQueryPool(vk_query_heap.GetQueryPool(), first_query, acceleration_structures.size());
+    m_command_list->writeAccelerationStructuresPropertiesKHR(
+        vk_acceleration_structures.size(),
+        vk_acceleration_structures.data(),
+        query_type,
+        vk_query_heap.GetQueryPool(),
+        first_query
+    );
+}
+
+void VKCommandList::ResolveQueryData(
+    const std::shared_ptr<QueryHeap>& query_heap,
+    uint32_t first_query,
+    uint32_t query_count,
+    const std::shared_ptr<Resource>& dst_buffer,
+    uint64_t dst_offset)
+{
+    decltype(auto) vk_query_heap = query_heap->As<VKQueryHeap>();
+    auto query_type = vk_query_heap.GetQueryType();
+    assert(query_type == vk::QueryType::eAccelerationStructureCompactedSizeKHR);
+    m_command_list->copyQueryPoolResults(
+        vk_query_heap.GetQueryPool(),
+        first_query,
+        query_count,
+        dst_buffer->As<VKResource>().buffer.res.get(),
+        dst_offset,
+        sizeof(uint64_t),
+        vk::QueryResultFlagBits::eWait
+    );
 }
 
 vk::CommandBuffer VKCommandList::GetCommandList()
