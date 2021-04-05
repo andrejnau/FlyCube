@@ -46,6 +46,8 @@ public:
             { "closest", ShaderKind::kClosestHit },
         };
         auto entry_points = reflection->GetEntryPoints();
+        sort(entry_points.begin(), entry_points.end());
+        sort(expect.begin(), expect.end());
         REQUIRE(entry_points.size() == expect.size());
         for (size_t i = 0; i < entry_points.size(); ++i)
         {
@@ -78,6 +80,10 @@ public:
         };
         auto entry_points = reflection->GetEntryPoints();
         REQUIRE(entry_points == expect);
+
+        auto bindings = reflection->GetBindings();
+        REQUIRE(bindings.size() == 1);
+        REQUIRE(bindings.front().name == "Settings");
     }
 
 private:

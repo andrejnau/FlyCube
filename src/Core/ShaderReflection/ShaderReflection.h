@@ -36,6 +36,11 @@ inline bool operator== (const EntryPoint& lhs, const EntryPoint& rhs)
     return std::tie(lhs.name, lhs.kind) == std::tie(rhs.name, rhs.kind);
 }
 
+inline bool operator< (const EntryPoint& lhs, const EntryPoint& rhs)
+{
+    return std::tie(lhs.name, lhs.kind) < std::tie(rhs.name, rhs.kind);
+}
+
 inline auto MakeTie(const ResourceBindingDesc& desc)
 {
     return std::tie(desc.name, desc.type, desc.slot, desc.space, desc.dimension);

@@ -236,7 +236,7 @@ ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, co
 {
     ResourceBindingDesc desc = {};
     decltype(auto) resource_type = compiler.get_type(resource.type_id);
-    desc.name = resource.name;
+    desc.name = compiler.get_name(resource.id);
     desc.type = GetViewType(compiler, resource_type, resource.id);
     desc.slot = compiler.get_decoration(resource.id, spv::DecorationBinding);
     desc.space = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
