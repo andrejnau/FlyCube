@@ -3,10 +3,9 @@
 #include <View/VKView.h>
 #include <Pipeline/VKGraphicsPipeline.h>
 
-VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<RenderPass>& render_pass, uint32_t width, uint32_t height,
-                             const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
-    : FramebufferBase(rtvs, dsv)
-    , m_extent(width, height)
+VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
+    : FramebufferBase(desc)
+    , m_extent(desc.width, desc.height)
 {
     vk::FramebufferCreateInfo framebuffer_info = {};
     std::vector<vk::ImageView> attachment_views;
@@ -26,15 +25,16 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const std::shared_ptr<RenderPass>
             m_extent = vk::Extent2D(vk_resource.image.size.width, vk_resource.image.size.height);
         framebuffer_info.layers = std::max<uint32_t>(framebuffer_info.layers, vk_resource.image.array_layers);
     };
-    for (auto& rtv : rtvs)
+    for (auto& rtv : desc.colors)
     {
         add_view(rtv);
     }
-    add_view(dsv);
+    add_view(desc.depth_stencil);
+    add_view(desc.shading_rate_image);
 
     framebuffer_info.width = m_extent.width;
     framebuffer_info.height = m_extent.height;
-    framebuffer_info.renderPass = render_pass->As<VKRenderPass>().GetRenderPass();
+    framebuffer_info.renderPass = desc.render_pass->As<VKRenderPass>().GetRenderPass();
     framebuffer_info.attachmentCount = attachment_views.size();
     framebuffer_info.pAttachments = attachment_views.data();
     m_framebuffer = device.GetDevice().createFramebufferUnique(framebuffer_info);

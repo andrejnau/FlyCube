@@ -334,6 +334,8 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
             // Make sure any shader reads from the image have been finished
             image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
             break;
+        case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR:
+            image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eFragmentShadingRateAttachmentReadKHR;
         default:
             // Other source layouts aren't handled (yet)
             break;
@@ -375,6 +377,9 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
                 image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eHostWrite | vk::AccessFlagBits::eTransferWrite;
             }
             image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+            break;
+        case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR:
+            image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eFragmentShadingRateAttachmentReadKHR;
             break;
         default:
             // Other source layouts aren't handled (yet)
@@ -456,17 +461,71 @@ void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
     m_command_list->bindVertexBuffers(slot, 1, vertex_buffers, offsets);
 }
 
-void VKCommandList::RSSetShadingRateImage(const std::shared_ptr<View>& view)
+void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
 {
-    if (view)
+    vk::Extent2D fragment_size = { 1, 1 };
+    switch (shading_rate)
     {
-        decltype(auto) vk_view = view->As<VKView>();
-        m_command_list->bindShadingRateImageNV(vk_view.GetImageView(), vk::ImageLayout::eShadingRateOptimalNV);
+    case ShadingRate::k1x1:
+        fragment_size.width = 1;
+        fragment_size.height = 1;
+        break;
+    case ShadingRate::k1x2:
+        fragment_size.width = 1;
+        fragment_size.height = 2;
+        break;
+    case ShadingRate::k2x1:
+        fragment_size.width = 2;
+        fragment_size.height = 1;
+        break;
+    case ShadingRate::k2x2:
+        fragment_size.width = 2;
+        fragment_size.height = 2;
+        break;
+    case ShadingRate::k2x4:
+        fragment_size.width = 2;
+        fragment_size.height = 4;
+        break;
+    case ShadingRate::k4x2:
+        fragment_size.width = 4;
+        fragment_size.height = 2;
+        break;
+    case ShadingRate::k4x4:
+        fragment_size.width = 4;
+        fragment_size.height = 4;
+        break;
+    default:
+        assert(false);
+        break;
     }
-    else
+
+    std::array<vk::FragmentShadingRateCombinerOpKHR, 2> vk_combiners;
+    for (size_t i = 0; i < vk_combiners.size(); ++i)
     {
-        m_command_list->bindShadingRateImageNV({}, vk::ImageLayout::eShadingRateOptimalNV);
+        switch (combiners[i])
+        {
+        case ShadingRateCombiner::kPassthrough:
+            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eKeep;
+            break;
+        case ShadingRateCombiner::kOverride:
+            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eReplace;
+            break;
+        case ShadingRateCombiner::kMin:
+            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eMin;
+            break;
+        case ShadingRateCombiner::kMax:
+            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eMax;
+            break;
+        case ShadingRateCombiner::kSum:
+            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eMul;
+            break;
+        default:
+            assert(false);
+            break;
+        }
     }
+
+    m_command_list->setFragmentShadingRateKHR(&fragment_size, vk_combiners.data());
 }
 
 void VKCommandList::BuildBottomLevelAS(

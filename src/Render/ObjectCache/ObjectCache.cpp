@@ -85,20 +85,14 @@ std::shared_ptr<BindingSet> ObjectCache::GetBindingSet(const std::shared_ptr<Bin
     return it->second;
 }
 
-std::shared_ptr<Framebuffer> ObjectCache::GetFramebuffer(
-    const std::shared_ptr<RenderPass>& render_pass,
-    uint32_t width,
-    uint32_t height,
-    const std::vector<std::shared_ptr<View>>& rtvs,
-    const std::shared_ptr<View>& dsv)
+std::shared_ptr<Framebuffer> ObjectCache::GetFramebuffer(const FramebufferDesc& desc)
 {
-    auto key = std::make_tuple(render_pass, width, height, rtvs, dsv);
-    auto it = m_framebuffers.find(key);
+    auto it = m_framebuffers.find(desc);
     if (it == m_framebuffers.end())
     {
-        auto framebuffer = m_device.CreateFramebuffer(render_pass, width, height, rtvs, dsv);
+        auto framebuffer = m_device.CreateFramebuffer(desc);
         it = m_framebuffers.emplace(std::piecewise_construct,
-            std::forward_as_tuple(key),
+            std::forward_as_tuple(desc),
             std::forward_as_tuple(framebuffer)).first;
     }
     return it->second;

@@ -117,6 +117,13 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         BeginRenderPassImpl(render_pass, framebuffer, clear_desc);
     else
         OMSetFramebuffer(render_pass, framebuffer, clear_desc);
+
+    decltype(auto) shading_rate_image_view = framebuffer->As<FramebufferBase>().GetDesc().shading_rate_image;
+    if (shading_rate_image_view)
+    {
+        decltype(auto) dx_shading_rate_image = shading_rate_image_view->GetResource()->As<DXResource>();
+        m_command_list5->RSSetShadingRateImage(dx_shading_rate_image.resource.Get());
+    }
 }
 
 D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE Convert(RenderPassLoadOp op)
@@ -147,8 +154,8 @@ void DXCommandList::BeginRenderPassImpl(const std::shared_ptr<RenderPass>& rende
 {
     decltype(auto) dx_render_pass = render_pass->As<DXRenderPass>();
     decltype(auto) dx_framebuffer = framebuffer->As<DXFramebuffer>();
-    auto& rtvs = dx_framebuffer.GetRtvs();
-    auto& dsv = dx_framebuffer.GetDsv();
+    auto& rtvs = dx_framebuffer.GetDesc().colors;
+    auto& dsv = dx_framebuffer.GetDesc().depth_stencil;
 
     auto get_handle = [](const std::shared_ptr<View>& view)
     {
@@ -198,8 +205,8 @@ void DXCommandList::OMSetFramebuffer(const std::shared_ptr<RenderPass>& render_p
 {
     decltype(auto) dx_render_pass = render_pass->As<DXRenderPass>();
     decltype(auto) dx_framebuffer = framebuffer->As<DXFramebuffer>();
-    auto& rtvs = dx_framebuffer.GetRtvs();
-    auto& dsv = dx_framebuffer.GetDsv();
+    auto& rtvs = dx_framebuffer.GetDesc().colors;
+    auto& dsv = dx_framebuffer.GetDesc().depth_stencil;
 
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv(rtvs.size());
     auto get_handle = [](const std::shared_ptr<View>& view)
@@ -510,29 +517,9 @@ void DXCommandList::IASetVertexBufferImpl(uint32_t slot, const std::shared_ptr<R
     m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
 }
 
-void DXCommandList::RSSetShadingRateImage(const std::shared_ptr<View>& view)
+void DXCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
 {
-    std::shared_ptr<Resource> resource;
-    if (view)
-    {
-        decltype(auto) dx_view = view->As<DXView>();
-        resource = dx_view.GetResource();
-    }
-
-    if (resource)
-    {
-        decltype(auto) dx_resource = resource->As<DXResource>();
-        const std::array<D3D12_SHADING_RATE_COMBINER, 2> combiners = {
-            D3D12_SHADING_RATE_COMBINER_PASSTHROUGH, D3D12_SHADING_RATE_COMBINER_OVERRIDE
-        };
-        m_command_list5->RSSetShadingRate(D3D12_SHADING_RATE_1X1, combiners.data());
-        m_command_list5->RSSetShadingRateImage(dx_resource.resource.Get());
-    }
-    else
-    {
-        m_command_list5->RSSetShadingRate(D3D12_SHADING_RATE_1X1, nullptr);
-        m_command_list5->RSSetShadingRateImage(nullptr);
-    }
+    m_command_list5->RSSetShadingRate(static_cast<D3D12_SHADING_RATE>(shading_rate), reinterpret_cast<const D3D12_SHADING_RATE_COMBINER*>(combiners.data()));
 }
 
 void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs, const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, const std::shared_ptr<Resource>& scratch, uint64_t scratch_offset)

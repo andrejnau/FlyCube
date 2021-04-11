@@ -375,10 +375,29 @@ struct RenderPassDesc
     std::vector<RenderPassColorDesc> colors;
     RenderPassDepthStencilDesc depth_stencil;
     uint32_t sample_count = 1;
+    bool shading_rate_image = false;
 
     auto MakeTie() const
     {
-        return std::tie(colors, depth_stencil, sample_count);
+        return std::tie(colors, depth_stencil, sample_count, shading_rate_image);
+    }
+};
+
+class RenderPass;
+class View;
+
+struct FramebufferDesc
+{
+    std::shared_ptr<RenderPass> render_pass;
+    uint32_t width;
+    uint32_t height;
+    std::vector<std::shared_ptr<View>> colors;
+    std::shared_ptr<View> depth_stencil;
+    std::shared_ptr<View> shading_rate_image;
+
+    auto MakeTie() const
+    {
+        return std::tie(render_pass, width, height, colors, depth_stencil, shading_rate_image);
     }
 };
 
@@ -683,6 +702,15 @@ enum class ShadingRate : uint8_t
     k2x4 = 0x6,
     k4x2 = 0x9,
     k4x4 = 0xa,
+};
+
+enum class ShadingRateCombiner
+{
+    kPassthrough = 0,
+    kOverride = 1,
+    kMin = 2,
+    kMax = 3,
+    kSum = 4,
 };
 
 struct RaytracingASPrebuildInfo

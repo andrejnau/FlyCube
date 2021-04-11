@@ -47,7 +47,7 @@ vk::ImageLayout ConvertState(ResourceState state)
         { ResourceState::kPixelShaderResource, vk::ImageLayout::eShaderReadOnlyOptimal },
         { ResourceState::kCopyDest, vk::ImageLayout::eTransferDstOptimal },
         { ResourceState::kCopySource, vk::ImageLayout::eTransferSrcOptimal },
-        { ResourceState::kShadingRateSource, vk::ImageLayout::eShadingRateOptimalNV },
+        { ResourceState::kShadingRateSource, vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR },
         { ResourceState::kPresent, vk::ImageLayout::ePresentSrcKHR },
         { ResourceState::kUndefined, vk::ImageLayout::eUndefined },
     };
@@ -108,12 +108,13 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_KHR_MAINTENANCE3_EXTENSION_NAME,
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-        VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME,
+        VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
         VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
         VK_KHR_MAINTENANCE1_EXTENSION_NAME,
         VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
         VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
         VK_NV_MESH_SHADER_EXTENSION_NAME,
+        VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
     };
 
     std::vector<const char*> found_extension;
@@ -122,7 +123,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         if (req_extension.count(extension.extensionName.data()))
             found_extension.push_back(extension.extensionName);
 
-        if (std::string(extension.extensionName.data()) == VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME)
+        if (std::string(extension.extensionName.data()) == VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)
             m_is_variable_rate_shading_supported = true;
         if (std::string(extension.extensionName.data()) == VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
             m_is_dxr_supported = true;
@@ -132,15 +133,47 @@ VKDevice::VKDevice(VKAdapter& adapter)
             m_is_ray_query_supported = true;
     }
 
+    void* device_create_info_next = nullptr;
+    auto add_extension = [&](auto& extension)
+    {
+        extension.pNext = device_create_info_next;
+        device_create_info_next = &extension;
+    };
+
     if (m_is_variable_rate_shading_supported)
     {
-        vk::PhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_properties = {};
+        std::map<ShadingRate, vk::Extent2D> shading_rate_palette = {
+            { ShadingRate::k1x1, { 1, 1 } },
+            { ShadingRate::k1x2, { 1, 2 } },
+            { ShadingRate::k2x1, { 2, 1 } },
+            { ShadingRate::k2x2, { 2, 2 } },
+            { ShadingRate::k2x4, { 2, 4 } },
+            { ShadingRate::k4x2, { 4, 2 } },
+            { ShadingRate::k4x4, { 4, 4 } },
+        };
+        decltype(auto) fragment_shading_rates = m_adapter.GetPhysicalDevice().getFragmentShadingRatesKHR();
+        for (const auto& fragment_shading_rate : fragment_shading_rates)
+        {
+            uint32_t rate_x = fragment_shading_rate.fragmentSize.width >> 1;
+            uint32_t rate_y = fragment_shading_rate.fragmentSize.height >> 1;
+            auto shading_rate  = rate_x << 2 | rate_y;
+            assert(shading_rate_palette[(ShadingRate)shading_rate] == fragment_shading_rate.fragmentSize);
+        }
+
+        vk::PhysicalDeviceFragmentShadingRatePropertiesKHR shading_rate_image_properties = {};
         vk::PhysicalDeviceProperties2 device_props2 = {};
         device_props2.pNext = &shading_rate_image_properties;
         m_adapter.GetPhysicalDevice().getProperties2(&device_props2);
-        assert(shading_rate_image_properties.shadingRateTexelSize.width == shading_rate_image_properties.shadingRateTexelSize.height);
-        m_shading_rate_image_tile_size = shading_rate_image_properties.shadingRateTexelSize.width;
+        assert(shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize == shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize);
+        assert(shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize.width == shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize.height);
+        assert(shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width == shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.height);
+        m_shading_rate_image_tile_size = shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width;
+
+        vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features = {};
+        fragment_shading_rate_features.attachmentFragmentShadingRate = true;
+        add_extension(fragment_shading_rate_features);
     }
+
     if (m_is_dxr_supported)
     {
         vk::PhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = {};
@@ -172,13 +205,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.imageCubeArray = true;
     device_features.shaderImageGatherExtended = true;
 
-    void* device_create_info_next = nullptr;
-    auto add_extension = [&](auto& extension)
-    {
-        extension.pNext = device_create_info_next;
-        device_create_info_next = &extension;
-    };
-
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
     device_vulkan12_features.drawIndirectCount = true;
     device_vulkan12_features.bufferDeviceAddress = true;
@@ -186,13 +212,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_vulkan12_features.runtimeDescriptorArray = true;
     device_vulkan12_features.descriptorBindingVariableDescriptorCount = true;
     add_extension(device_vulkan12_features);
-
-    vk::PhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_feature = {};
-    shading_rate_image_feature.shadingRateImage = true;
-    if (m_is_variable_rate_shading_supported)
-    {
-        add_extension(shading_rate_image_feature);
-    }
 
     vk::PhysicalDeviceMeshShaderFeaturesNV mesh_shader_feature = {};
     mesh_shader_feature.taskShader = true;
@@ -300,7 +319,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(TextureType type, uint32_t bin
     if (bind_flag & BindFlag::kCopySource)
         usage |= vk::ImageUsageFlagBits::eTransferSrc;
     if (bind_flag & BindFlag::kShadingRateSource)
-        usage |= vk::ImageUsageFlagBits::eShadingRateImageNV;
+        usage |= vk::ImageUsageFlagBits::eFragmentShadingRateAttachmentKHR;
 
     vk::ImageCreateInfo image_info = {};
     switch (type)
@@ -479,10 +498,9 @@ std::shared_ptr<RenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& des
     return std::make_shared<VKRenderPass>(*this, desc);
 }
 
-std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const std::shared_ptr<RenderPass>& render_pass, uint32_t width, uint32_t height,
-                                                         const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
+std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& desc)
 {
-    return std::make_shared<VKFramebuffer>(*this, render_pass, width, height, rtvs, dsv);
+    return std::make_shared<VKFramebuffer>(*this, desc);
 }
 
 std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)

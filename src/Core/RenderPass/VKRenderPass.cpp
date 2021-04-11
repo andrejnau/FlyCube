@@ -38,8 +38,8 @@ VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
         m_desc.colors.pop_back();
     }
 
-    std::vector<vk::AttachmentDescription> attachment_descriptions;
-    auto add_attachment = [&](vk::AttachmentReference& reference, gli::format format, vk::ImageLayout layout, RenderPassLoadOp load_op, RenderPassStoreOp store_op)
+    std::vector<vk::AttachmentDescription2> attachment_descriptions;
+    auto add_attachment = [&](vk::AttachmentReference2& reference, gli::format format, vk::ImageLayout layout, RenderPassLoadOp load_op, RenderPassStoreOp store_op)
     {
         if (format == gli::FORMAT_UNDEFINED)
         {
@@ -47,13 +47,13 @@ VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
             return;
         }
         attachment_descriptions.emplace_back();
-        vk::AttachmentDescription& description = attachment_descriptions.back();
+        vk::AttachmentDescription2& description = attachment_descriptions.back();
         description.format = static_cast<vk::Format>(format);
         description.samples = static_cast<vk::SampleCountFlagBits>(m_desc.sample_count);
         description.loadOp = Convert(load_op);
         description.storeOp = Convert(store_op);
-        description.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-        description.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+        description.stencilLoadOp = vk::AttachmentLoadOp::eLoad;
+        description.stencilStoreOp = vk::AttachmentStoreOp::eStore;
         description.initialLayout = layout;
         description.finalLayout = layout;
 
@@ -61,31 +61,50 @@ VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
         reference.layout = layout;
     };
 
-    std::vector<vk::AttachmentReference> color_attachment_references;
+    vk::SubpassDescription2 sub_pass = {};
+    sub_pass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+
+    std::vector<vk::AttachmentReference2> color_attachment_references;
     for (auto& rtv : m_desc.colors)
     {
         add_attachment(color_attachment_references.emplace_back(), rtv.format, vk::ImageLayout::eColorAttachmentOptimal, rtv.load_op, rtv.store_op);
     }
 
-    vk::SubpassDescription sub_pass = {};
-    sub_pass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
     sub_pass.colorAttachmentCount = color_attachment_references.size();
     sub_pass.pColorAttachments = color_attachment_references.data();
 
-    vk::AttachmentReference depth_attachment_references = {};
+    vk::AttachmentReference2 depth_attachment_reference = {};
     if (m_desc.depth_stencil.format != gli::FORMAT_UNDEFINED)
     {
-        add_attachment(depth_attachment_references, m_desc.depth_stencil.format, vk::ImageLayout::eDepthStencilAttachmentOptimal, m_desc.depth_stencil.depth_load_op, m_desc.depth_stencil.depth_store_op);
-        sub_pass.pDepthStencilAttachment = &depth_attachment_references;
+        add_attachment(depth_attachment_reference, m_desc.depth_stencil.format, vk::ImageLayout::eDepthStencilAttachmentOptimal, m_desc.depth_stencil.depth_load_op, m_desc.depth_stencil.depth_store_op);
+        sub_pass.pDepthStencilAttachment = &depth_attachment_reference;
     }
 
-    vk::RenderPassCreateInfo render_pass_info = {};
+    if (m_desc.shading_rate_image)
+    {
+        vk::AttachmentReference2 shading_rate_image_attachment_reference = {};
+        add_attachment(
+            shading_rate_image_attachment_reference,
+            gli::format::FORMAT_R8_UINT_PACK8,
+            vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR,
+            RenderPassLoadOp::kLoad,
+            RenderPassStoreOp::kStore
+        );
+
+        vk::FragmentShadingRateAttachmentInfoKHR fragment_shading_rate_attachment_info = {};
+        fragment_shading_rate_attachment_info.pFragmentShadingRateAttachment = &shading_rate_image_attachment_reference;
+        fragment_shading_rate_attachment_info.shadingRateAttachmentTexelSize.width = device.GetShadingRateImageTileSize();
+        fragment_shading_rate_attachment_info.shadingRateAttachmentTexelSize.height = device.GetShadingRateImageTileSize();
+        sub_pass.pNext = &fragment_shading_rate_attachment_info;
+    }
+
+    vk::RenderPassCreateInfo2 render_pass_info = {};
     render_pass_info.attachmentCount = attachment_descriptions.size();
     render_pass_info.pAttachments = attachment_descriptions.data();
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &sub_pass;
 
-    m_render_pass = device.GetDevice().createRenderPassUnique(render_pass_info);
+    m_render_pass = device.GetDevice().createRenderPass2Unique(render_pass_info);
 }
 
 const RenderPassDesc& VKRenderPass::GetDesc() const

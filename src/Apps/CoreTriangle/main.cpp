@@ -69,7 +69,12 @@ int main(int argc, char* argv[])
         back_buffer_view_desc.dimension = ViewDimension::kTexture2D;
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
-        std::shared_ptr<Framebuffer> framebuffer = framebuffers.emplace_back(device->CreateFramebuffer(render_pass, rect.width, rect.height, { back_buffer_view }));
+        FramebufferDesc framebuffer_desc = {};
+        framebuffer_desc.render_pass = render_pass;
+        framebuffer_desc.width = rect.width;
+        framebuffer_desc.height = rect.width;
+        framebuffer_desc.colors = { back_buffer_view };
+        std::shared_ptr<Framebuffer> framebuffer = framebuffers.emplace_back(device->CreateFramebuffer(framebuffer_desc));
         std::shared_ptr<CommandList> command_list = command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);

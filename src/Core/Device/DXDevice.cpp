@@ -346,10 +346,9 @@ std::shared_ptr<RenderPass> DXDevice::CreateRenderPass(const RenderPassDesc& des
     return std::make_shared<DXRenderPass>(*this, desc);
 }
 
-std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const std::shared_ptr<RenderPass>& render_pass, uint32_t width, uint32_t height,
-                                                         const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv)
+std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const FramebufferDesc& desc)
 {
-    return std::make_shared<DXFramebuffer>(rtvs, dsv);
+    return std::make_shared<DXFramebuffer>(desc);
 }
 
 std::shared_ptr<Shader> DXDevice::CompileShader(const ShaderDesc& desc)

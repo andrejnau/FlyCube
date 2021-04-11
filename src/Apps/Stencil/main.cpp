@@ -51,10 +51,6 @@ int main(int argc, char* argv[])
     upload_command_list->Close();
     device->ExecuteCommandLists({ upload_command_list });
 
-    ViewDesc shading_rate_view_desc = {};
-    shading_rate_view_desc.dimension = ViewDimension::kTexture2D;
-    shading_rate_view_desc.view_type = ViewType::kShadingRateSource;
-
     std::vector<std::shared_ptr<RenderCommandList>> command_lists;
     for (uint32_t i = 0; i < settings.frame_count; ++i)
     {

@@ -23,6 +23,7 @@ void RenderCommandListImpl::Reset()
     m_bound_deferred_view.clear();
     m_binding_sets.clear();
     m_resource_lazy_view_descs.clear();
+    m_shading_rate_image.reset();
     m_command_list->Reset();
 
     m_graphic_pipeline_desc = {};
@@ -158,7 +159,7 @@ void RenderCommandListImpl::IASetVertexBuffer(uint32_t slot, const std::shared_p
 void RenderCommandListImpl::RSSetShadingRateImage(const std::shared_ptr<View>& view)
 {
     ViewBarrier(view, ResourceState::kShadingRateSource);
-    m_command_list->RSSetShadingRateImage(view);
+    m_shading_rate_image = view;
 }
 
 void RenderCommandListImpl::BeginEvent(const std::string& name)
@@ -562,6 +563,8 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
         clear_desc.stencil = desc.depth_stencil.clear_stencil;
     }
 
+    render_pass_desc.shading_rate_image = !!m_shading_rate_image;
+
     std::vector<std::shared_ptr<View>> rtvs;
     for (size_t i = 0; i < desc.colors.size(); ++i)
     {
@@ -585,8 +588,26 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
     }
 
     std::shared_ptr<RenderPass> render_pass = m_object_cache.GetRenderPass(render_pass_desc);
-    std::shared_ptr<Framebuffer> framebuffer = m_object_cache.GetFramebuffer(render_pass, m_viewport_width, m_viewport_height, rtvs, dsv);
     m_graphic_pipeline_desc.render_pass = render_pass;
+
+    FramebufferDesc framebuffer_desc = {};
+    framebuffer_desc.render_pass = render_pass;
+    framebuffer_desc.width = m_viewport_width;
+    framebuffer_desc.height = m_viewport_height;
+    framebuffer_desc.colors = rtvs;
+    framebuffer_desc.depth_stencil = dsv;
+    framebuffer_desc.shading_rate_image = m_shading_rate_image;
+    std::shared_ptr<Framebuffer> framebuffer = m_object_cache.GetFramebuffer(framebuffer_desc);
+
+    std::array<ShadingRateCombiner, 2> combiners = {
+        ShadingRateCombiner::kPassthrough, ShadingRateCombiner::kPassthrough
+    };
+    if (m_shading_rate_image)
+    {
+        combiners[1] = ShadingRateCombiner::kOverride;
+    }
+    m_command_list->RSSetShadingRate(ShadingRate::k1x1, combiners);
+
     m_command_list->BeginRenderPass(render_pass, framebuffer, clear_desc);
 }
 

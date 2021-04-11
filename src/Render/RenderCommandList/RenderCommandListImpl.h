@@ -118,4 +118,5 @@ private:
     std::shared_ptr<Resource> m_shader_table;
     PipelineType m_pipeline_type = PipelineType::kGraphics;
     std::shared_ptr<Pipeline> m_pipeline;
+    std::shared_ptr<View> m_shading_rate_image;
 };

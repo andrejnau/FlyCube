@@ -7,11 +7,9 @@ class FramebufferBase
     : public Framebuffer
 {
 public:
-    FramebufferBase(const std::vector<std::shared_ptr<View>>& rtvs, const std::shared_ptr<View>& dsv);
-    const std::vector<std::shared_ptr<View>>& GetRtvs() const;
-    const std::shared_ptr<View> GetDsv() const;
+    FramebufferBase(const FramebufferDesc& desc);
+    const FramebufferDesc& GetDesc() const;
 
 private:
-    std::vector<std::shared_ptr<View>> m_rtvs;
-    std::shared_ptr<View> m_dsv;
+    FramebufferDesc m_desc;
 };
