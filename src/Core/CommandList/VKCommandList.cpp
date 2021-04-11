@@ -100,6 +100,7 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     {
         vk::ClearValue clear_value = {};
         clear_value.depthStencil.depth = clear_desc.depth;
+        clear_value.depthStencil.stencil = clear_desc.stencil;
         clear_values.emplace_back(clear_value);
     }
     render_pass_info.clearValueCount = clear_values.size();

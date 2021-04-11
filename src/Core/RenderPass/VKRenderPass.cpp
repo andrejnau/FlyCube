@@ -52,8 +52,6 @@ VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
         description.samples = static_cast<vk::SampleCountFlagBits>(m_desc.sample_count);
         description.loadOp = Convert(load_op);
         description.storeOp = Convert(store_op);
-        description.stencilLoadOp = vk::AttachmentLoadOp::eLoad;
-        description.stencilStoreOp = vk::AttachmentStoreOp::eStore;
         description.initialLayout = layout;
         description.finalLayout = layout;
 
@@ -77,6 +75,12 @@ VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
     if (m_desc.depth_stencil.format != gli::FORMAT_UNDEFINED)
     {
         add_attachment(depth_attachment_reference, m_desc.depth_stencil.format, vk::ImageLayout::eDepthStencilAttachmentOptimal, m_desc.depth_stencil.depth_load_op, m_desc.depth_stencil.depth_store_op);
+        if (depth_attachment_reference.attachment != VK_ATTACHMENT_UNUSED)
+        {
+            vk::AttachmentDescription2& description = attachment_descriptions[depth_attachment_reference.attachment];
+            description.stencilLoadOp = Convert(m_desc.depth_stencil.stencil_load_op);
+            description.stencilStoreOp = Convert(m_desc.depth_stencil.stencil_store_op);
+        }
         sub_pass.pDepthStencilAttachment = &depth_attachment_reference;
     }
 
