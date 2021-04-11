@@ -606,7 +606,11 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
     {
         combiners[1] = ShadingRateCombiner::kOverride;
     }
-    m_command_list->RSSetShadingRate(ShadingRate::k1x1, combiners);
+    if (m_shading_rate_combiner != combiners[1])
+    {
+        m_command_list->RSSetShadingRate(ShadingRate::k1x1, combiners);
+        m_shading_rate_combiner = combiners[1];
+    }
 
     m_command_list->BeginRenderPass(render_pass, framebuffer, clear_desc);
 }

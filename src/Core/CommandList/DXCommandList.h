@@ -104,13 +104,13 @@ private:
     DXDevice& m_device;
     ComPtr<ID3D12CommandAllocator> m_command_allocator;
     ComPtr<ID3D12GraphicsCommandList> m_command_list;
-    std::vector<ComPtr<ID3D12DescriptorHeap>> m_heaps;
-    std::shared_ptr<DXPipeline> m_state;
-    std::shared_ptr<BindingSet> m_binding_set;
-    std::map<uint32_t, std::shared_ptr<Resource>> m_lazy_vertex;
-    bool m_use_render_passes = true;
     ComPtr<ID3D12GraphicsCommandList4> m_command_list4;
     ComPtr<ID3D12GraphicsCommandList5> m_command_list5;
     ComPtr<ID3D12GraphicsCommandList6> m_command_list6;
     bool m_closed = false;
+    std::vector<ComPtr<ID3D12DescriptorHeap>> m_heaps;
+    std::shared_ptr<DXPipeline> m_state;
+    std::shared_ptr<BindingSet> m_binding_set;
+    std::map<uint32_t, std::shared_ptr<Resource>> m_lazy_vertex;
+    std::shared_ptr<View> m_shading_rate_image_view;
 };

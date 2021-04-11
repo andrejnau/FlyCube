@@ -119,4 +119,5 @@ private:
     PipelineType m_pipeline_type = PipelineType::kGraphics;
     std::shared_ptr<Pipeline> m_pipeline;
     std::shared_ptr<View> m_shading_rate_image;
+    ShadingRateCombiner m_shading_rate_combiner = ShadingRateCombiner::kPassthrough;
 };

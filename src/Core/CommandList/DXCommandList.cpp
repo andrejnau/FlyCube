@@ -20,8 +20,6 @@
 DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
     : m_device(device)
 {
-    m_use_render_passes = m_use_render_passes && m_device.IsRenderPassesSupported();
-
     D3D12_COMMAND_LIST_TYPE dx_type;
     switch (type)
     {
@@ -51,11 +49,12 @@ void DXCommandList::Reset()
     Close();
     ASSERT_SUCCEEDED(m_command_allocator->Reset());
     ASSERT_SUCCEEDED(m_command_list->Reset(m_command_allocator.Get(), nullptr));
+    m_closed = false;
     m_heaps.clear();
     m_state.reset();
     m_binding_set.reset();
     m_lazy_vertex.clear();
-    m_closed = false;
+    m_shading_rate_image_view.reset();
 }
 
 void DXCommandList::Close()
@@ -113,17 +112,31 @@ void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
 
 void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc)
 {
-    if (m_use_render_passes)
+    if (m_device.IsRenderPassesSupported())
+    {
         BeginRenderPassImpl(render_pass, framebuffer, clear_desc);
+    }
     else
+    {
         OMSetFramebuffer(render_pass, framebuffer, clear_desc);
+    }
 
     decltype(auto) shading_rate_image_view = framebuffer->As<FramebufferBase>().GetDesc().shading_rate_image;
+    if (shading_rate_image_view == m_shading_rate_image_view)
+    {
+        return;
+    }
+
     if (shading_rate_image_view)
     {
         decltype(auto) dx_shading_rate_image = shading_rate_image_view->GetResource()->As<DXResource>();
         m_command_list5->RSSetShadingRateImage(dx_shading_rate_image.resource.Get());
     }
+    else
+    {
+        m_command_list5->RSSetShadingRateImage(nullptr);
+    }
+    m_shading_rate_image_view = shading_rate_image_view;
 }
 
 D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE Convert(RenderPassLoadOp op)
@@ -239,8 +252,10 @@ void DXCommandList::OMSetFramebuffer(const std::shared_ptr<RenderPass>& render_p
 
 void DXCommandList::EndRenderPass()
 {
-    if (!m_use_render_passes)
+    if (!m_device.IsRenderPassesSupported())
+    {
         return;
+    }
     m_command_list4->EndRenderPass();
 }
 

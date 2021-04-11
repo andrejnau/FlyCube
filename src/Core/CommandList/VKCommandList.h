@@ -87,7 +87,7 @@ private:
 
     VKDevice& m_device;
     vk::UniqueCommandBuffer m_command_list;
+    bool m_closed = false;
     std::shared_ptr<VKPipeline> m_state;
     std::shared_ptr<BindingSet> m_binding_set;
-    bool m_closed = false;
 };

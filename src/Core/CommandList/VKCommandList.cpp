@@ -27,11 +27,11 @@ VKCommandList::VKCommandList(VKDevice& device, CommandListType type)
 void VKCommandList::Reset()
 {
     Close();
-    m_state.reset();
-    m_binding_set.reset();
     vk::CommandBufferBeginInfo begin_info = {};
     m_command_list->begin(begin_info);
     m_closed = false;
+    m_state.reset();
+    m_binding_set.reset();
 }
 
 void VKCommandList::Close()
