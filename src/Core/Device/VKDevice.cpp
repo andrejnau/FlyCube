@@ -154,11 +154,14 @@ VKDevice::VKDevice(VKAdapter& adapter)
         decltype(auto) fragment_shading_rates = m_adapter.GetPhysicalDevice().getFragmentShadingRatesKHR();
         for (const auto& fragment_shading_rate : fragment_shading_rates)
         {
-            uint32_t rate_x = fragment_shading_rate.fragmentSize.width >> 1;
-            uint32_t rate_y = fragment_shading_rate.fragmentSize.height >> 1;
-            auto shading_rate  = rate_x << 2 | rate_y;
-            assert(shading_rate_palette[(ShadingRate)shading_rate] == fragment_shading_rate.fragmentSize);
+            vk::Extent2D size = fragment_shading_rate.fragmentSize;
+            uint8_t shading_rate = ((size.width >> 1) << 2) | (size.height >> 1);
+            assert((1 << ((shading_rate >> 2) & 3)) == size.width);
+            assert((1 << (shading_rate & 3)) == size.height);
+            assert(shading_rate_palette.at((ShadingRate)shading_rate) == size);
+            shading_rate_palette.erase((ShadingRate)shading_rate);
         }
+        assert(shading_rate_palette.empty());
 
         vk::PhysicalDeviceFragmentShadingRatePropertiesKHR shading_rate_image_properties = {};
         vk::PhysicalDeviceProperties2 device_props2 = {};
