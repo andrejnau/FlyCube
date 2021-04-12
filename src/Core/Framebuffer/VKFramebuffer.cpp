@@ -21,9 +21,7 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
         attachment_views.emplace_back(vk_view.GetImageView());
 
         decltype(auto) vk_resource = resource->As<VKResource>();
-        if (!m_extent.width || !m_extent.height)
-            m_extent = vk::Extent2D(vk_resource.image.size.width, vk_resource.image.size.height);
-        framebuffer_info.layers = std::max<uint32_t>(framebuffer_info.layers, vk_resource.image.array_layers);
+        framebuffer_info.layers = std::max(framebuffer_info.layers, vk_resource.image.array_layers);
     };
     for (auto& rtv : desc.colors)
     {

@@ -563,7 +563,14 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
         clear_desc.stencil = desc.depth_stencil.clear_stencil;
     }
 
-    render_pass_desc.shading_rate_image = !!m_shading_rate_image;
+    if (m_shading_rate_image)
+    {
+        render_pass_desc.shading_rate_format = m_shading_rate_image->GetResource()->GetFormat();
+    }
+    else
+    {
+        render_pass_desc.shading_rate_format = gli::format::FORMAT_UNDEFINED;
+    }
 
     std::vector<std::shared_ptr<View>> rtvs;
     for (size_t i = 0; i < desc.colors.size(); ++i)

@@ -346,7 +346,7 @@ enum class RenderPassStoreOp
 
 struct RenderPassColorDesc
 {
-    gli::format format;
+    gli::format format = gli::format::FORMAT_UNDEFINED;
     RenderPassLoadOp load_op = RenderPassLoadOp::kLoad;
     RenderPassStoreOp store_op = RenderPassStoreOp::kStore;
 
@@ -358,7 +358,7 @@ struct RenderPassColorDesc
 
 struct RenderPassDepthStencilDesc
 {
-    gli::format format;
+    gli::format format = gli::format::FORMAT_UNDEFINED;
     RenderPassLoadOp depth_load_op = RenderPassLoadOp::kLoad;
     RenderPassStoreOp depth_store_op = RenderPassStoreOp::kStore;
     RenderPassLoadOp stencil_load_op = RenderPassLoadOp::kLoad;
@@ -374,12 +374,12 @@ struct RenderPassDesc
 {
     std::vector<RenderPassColorDesc> colors;
     RenderPassDepthStencilDesc depth_stencil;
+    gli::format shading_rate_format = gli::format::FORMAT_UNDEFINED;
     uint32_t sample_count = 1;
-    bool shading_rate_image = false;
 
     auto MakeTie() const
     {
-        return std::tie(colors, depth_stencil, sample_count, shading_rate_image);
+        return std::tie(colors, depth_stencil, shading_rate_format, sample_count);
     }
 };
 

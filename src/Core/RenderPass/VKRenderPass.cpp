@@ -46,8 +46,7 @@ VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
             reference.attachment = VK_ATTACHMENT_UNUSED;
             return;
         }
-        attachment_descriptions.emplace_back();
-        vk::AttachmentDescription2& description = attachment_descriptions.back();
+        vk::AttachmentDescription2& description = attachment_descriptions.emplace_back();
         description.format = static_cast<vk::Format>(format);
         description.samples = static_cast<vk::SampleCountFlagBits>(m_desc.sample_count);
         description.loadOp = Convert(load_op);
@@ -84,12 +83,12 @@ VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
         sub_pass.pDepthStencilAttachment = &depth_attachment_reference;
     }
 
-    if (m_desc.shading_rate_image)
+    if (m_desc.shading_rate_format != gli::FORMAT_UNDEFINED)
     {
         vk::AttachmentReference2 shading_rate_image_attachment_reference = {};
         add_attachment(
             shading_rate_image_attachment_reference,
-            gli::format::FORMAT_R8_UINT_PACK8,
+            m_desc.shading_rate_format,
             vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR,
             RenderPassLoadOp::kLoad,
             RenderPassStoreOp::kStore

@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
         FramebufferDesc framebuffer_desc = {};
         framebuffer_desc.render_pass = render_pass;
         framebuffer_desc.width = rect.width;
-        framebuffer_desc.height = rect.width;
+        framebuffer_desc.height = rect.height;
         framebuffer_desc.colors = { back_buffer_view };
         std::shared_ptr<Framebuffer> framebuffer = framebuffers.emplace_back(device->CreateFramebuffer(framebuffer_desc));
         std::shared_ptr<CommandList> command_list = command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));

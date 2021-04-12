@@ -37,9 +37,9 @@ public:
         vk::UniqueImage res_owner;
         vk::Format format = vk::Format::eUndefined;
         vk::Extent2D size = {};
-        size_t level_count = 1;
-        size_t sample_count = 1;
-        size_t array_layers = 1;
+        uint32_t level_count = 1;
+        uint32_t sample_count = 1;
+        uint32_t array_layers = 1;
     } image;
 
     struct Buffer
