@@ -33,7 +33,20 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
         library->SetDXILLibrary(&byte);
         for (const auto& entry_point : shader->GetReflection()->GetEntryPoints())
         {
-            m_shader_ids[shader->GetId(entry_point.name)] = utf8_to_wstring(entry_point.name);
+            uint64_t shader_id = shader->GetId(entry_point.name);
+            std::wstring shader_name = utf8_to_wstring(entry_point.name);
+            if (m_shader_names.count(shader_name))
+            {
+                std::wstring new_shader_name = GenerateUniqueName(shader_name + L"_renamed_" + std::to_wstring(shader_id));
+                library->DefineExport(new_shader_name.c_str(), shader_name.c_str());
+                shader_name = new_shader_name;
+            }
+            else
+            {
+                library->DefineExport(shader_name.c_str());
+            }
+            m_shader_names.insert(shader_name);
+            m_shader_ids[shader_id] = shader_name;
         }
     }
 
@@ -46,7 +59,7 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
             continue;
         }
         decltype(auto) hit_group = subobjects.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
-        std::wstring name = L"hit_group_" + std::to_wstring(hit_group_count++);
+        std::wstring name = GenerateUniqueName(L"hit_group_" + std::to_wstring(hit_group_count++));
         hit_group->SetHitGroupExport(name.c_str());
         switch (m_desc.groups[i].type)
         {
@@ -91,6 +104,16 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
     m_device.GetDevice().As(&device5);
     ASSERT_SUCCEEDED(device5->CreateStateObject(subobjects, IID_PPV_ARGS(&m_pipeline_state)));
     m_pipeline_state.As(&m_state_ojbect_props);
+}
+
+std::wstring DXRayTracingPipeline::GenerateUniqueName(std::wstring name)
+{
+    static uint64_t id = 0;
+    while (m_shader_names.count(name))
+    {
+        name += L"_" + std::to_wstring(++id);
+    }
+    return name;
 }
 
 PipelineType DXRayTracingPipeline::GetPipelineType() const

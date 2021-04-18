@@ -157,7 +157,6 @@ int main(int argc, char* argv[])
     groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, library_hit->GetId("closest_red") });
     groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, library_hit->GetId("closest_green") });
     groups.push_back({ RayTracingShaderGroupType::kGeneral, library_callable->GetId("callable") });
-
     std::shared_ptr<Pipeline> pipeline = device->CreateRayTracingPipeline({ program, layout, groups });
 
     std::shared_ptr<Resource> shader_table = device->CreateBuffer(BindFlag::kShaderTable, device->GetShaderTableAlignment() * groups.size());
