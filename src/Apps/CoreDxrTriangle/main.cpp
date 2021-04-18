@@ -140,7 +140,8 @@ int main(int argc, char* argv[])
 
     std::shared_ptr<Shader> library = device->CompileShader({ ASSETS_PATH"shaders/CoreDxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
     std::shared_ptr<Shader> library_hit = device->CompileShader({ ASSETS_PATH"shaders/CoreDxrTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" });
-    std::shared_ptr<Program> program = device->CreateProgram({ library, library_hit });
+    std::shared_ptr<Shader> library_callable = device->CompileShader({ ASSETS_PATH"shaders/CoreDxrTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" });
+    std::shared_ptr<Program> program = device->CreateProgram({ library, library_hit, library_callable });
     BindKey geometry_key = library->GetBindKey("geometry");
     BindKey result_key = library->GetBindKey("result");
     std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ geometry_key, result_key });
@@ -155,6 +156,7 @@ int main(int argc, char* argv[])
     groups.push_back({ RayTracingShaderGroupType::kGeneral, library->GetId("miss") });
     groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, library_hit->GetId("closest_red") });
     groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, library_hit->GetId("closest_green") });
+    groups.push_back({ RayTracingShaderGroupType::kGeneral, library_callable->GetId("callable") });
 
     std::shared_ptr<Pipeline> pipeline = device->CreateRayTracingPipeline({ program, layout, groups });
 
@@ -162,16 +164,17 @@ int main(int argc, char* argv[])
     shader_table->CommitMemory(MemoryType::kUpload);
     shader_table->SetName("shader_table");
 
+    decltype(auto) shader_handles = pipeline->GetRayTracingShaderGroupHandles(0, groups.size());
+    for (size_t i = 0; i < groups.size(); ++i)
+    {
+        shader_table->UpdateUploadBuffer(i * device->GetShaderTableAlignment(), shader_handles.data() + i * device->GetShaderGroupHandleSize(), device->GetShaderGroupHandleSize());
+    }
+
     RayTracingShaderTables shader_tables = {};
     shader_tables.raygen = { shader_table, 0 * device->GetShaderTableAlignment(), device->GetShaderTableAlignment(), device->GetShaderTableAlignment() };
     shader_tables.miss = { shader_table, 1 * device->GetShaderTableAlignment(), device->GetShaderTableAlignment(), device->GetShaderTableAlignment() };
     shader_tables.hit = { shader_table, 2 * device->GetShaderTableAlignment(), 2 * device->GetShaderTableAlignment(), device->GetShaderTableAlignment() };
-
-    decltype(auto) shader_handles = pipeline->GetRayTracingShaderGroupHandles(0, groups.size());
-    shader_table->UpdateUploadBuffer(shader_tables.raygen.offset, shader_handles.data() + device->GetShaderGroupHandleSize() * 0, device->GetShaderGroupHandleSize());
-    shader_table->UpdateUploadBuffer(shader_tables.miss.offset, shader_handles.data() + device->GetShaderGroupHandleSize() * 1, device->GetShaderGroupHandleSize());
-    shader_table->UpdateUploadBuffer(shader_tables.hit.offset, shader_handles.data() + device->GetShaderGroupHandleSize() * 2, device->GetShaderGroupHandleSize());
-    shader_table->UpdateUploadBuffer(shader_tables.hit.offset + shader_tables.hit.stride, shader_handles.data() + device->GetShaderGroupHandleSize() * 3, device->GetShaderGroupHandleSize());
+    shader_tables.callable = { shader_table, 4 * device->GetShaderTableAlignment(), device->GetShaderTableAlignment(), device->GetShaderTableAlignment() };
 
     std::array<uint64_t, frame_count> fence_values = {};
     std::vector<std::shared_ptr<CommandList>> command_lists;

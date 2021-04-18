@@ -10,6 +10,7 @@ set(sources
 
 set(lib_shaders
     ${shaders_path}/RayTracing.hlsl
+    ${shaders_path}/RayTracingCallable.hlsl
     ${shaders_path}/RayTracingHit.hlsl
 )
 

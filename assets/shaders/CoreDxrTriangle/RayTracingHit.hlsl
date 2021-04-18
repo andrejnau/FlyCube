@@ -12,5 +12,5 @@ void closest_red(inout RayPayload payload, in BuiltInTriangleIntersectionAttribu
 [shader("closesthit")]
 void closest_green(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
 {
-    payload.color = float3(0, 1, 0);
+    CallShader(0, payload);
 }
