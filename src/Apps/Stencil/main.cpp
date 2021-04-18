@@ -3,8 +3,8 @@
 #include <Geometry/Geometry.h>
 #include <Camera/Camera.h>
 #include <Utilities/FormatHelper.h>
-#include <ProgramRef/ResolvePS.h>
-#include <ProgramRef/VertexShaderVS.h>
+#include <ProgramRef/Resolve.h>
+#include <ProgramRef/VertexShader.h>
 #include <glm/gtx/transform.hpp>
 #include <stdexcept>
 
@@ -36,13 +36,13 @@ int main(int argc, char* argv[])
     Model model(*device, *upload_command_list, ASSETS_PATH"model/export3dcoat/export3dcoat.obj");
     model.matrix = glm::scale(glm::vec3(0.1f)) * glm::translate(glm::vec3(0.0f, 30.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    ProgramHolder<VertexShaderVS> program(*device);
+    ProgramHolder<VertexShader> program(*device);
     program.vs.cbuffer.ConstantBuf.model = glm::transpose(model.matrix);
     program.vs.cbuffer.ConstantBuf.view = glm::transpose(camera.GetViewMatrix());
     program.vs.cbuffer.ConstantBuf.projection = glm::transpose(camera.GetProjectionMatrix());
     program.vs.cbuffer.ConstantBuf.normalMatrix = glm::transpose(glm::transpose(glm::inverse(model.matrix)));
 
-    ProgramHolder<ResolvePS, VertexShaderVS> resolve_program(*device);
+    ProgramHolder<Resolve, VertexShader> resolve_program(*device);
     resolve_program.vs.cbuffer.ConstantBuf.model = glm::transpose(model_square.matrix);
     resolve_program.vs.cbuffer.ConstantBuf.view = glm::transpose(glm::mat4(1));
     resolve_program.vs.cbuffer.ConstantBuf.projection = glm::transpose(glm::mat4(1));

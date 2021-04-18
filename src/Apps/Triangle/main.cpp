@@ -1,8 +1,8 @@
 #include <AppBox/AppBox.h>
 #include <AppBox/ArgsParser.h>
 #include <RenderDevice/RenderDevice.h>
-#include <ProgramRef/PixelShaderPS.h>
-#include <ProgramRef/VertexShaderVS.h>
+#include <ProgramRef/PixelShader.h>
+#include <ProgramRef/VertexShader.h>
 
 int main(int argc, char* argv[])
 {
@@ -27,15 +27,15 @@ int main(int argc, char* argv[])
     upload_command_list->Close();
     device->ExecuteCommandLists({ upload_command_list });
 
-    ProgramHolder<PixelShaderPS, VertexShaderVS> program(*device);
+    ProgramHolder<PixelShader, VertexShader> program(*device);
     program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
 
     std::vector<std::shared_ptr<RenderCommandList>> command_lists;
     for (uint32_t i = 0; i < settings.frame_count; ++i)
     {
         RenderPassBeginDesc render_pass_desc = {};
-        render_pass_desc.colors[0].texture = device->GetBackBuffer(i);
-        render_pass_desc.colors[0].clear_color = { 0.0f, 0.2f, 0.4f, 1.0f };
+        render_pass_desc.colors[program.ps.om.rtv0].texture = device->GetBackBuffer(i);
+        render_pass_desc.colors[program.ps.om.rtv0].clear_color = { 0.0f, 0.2f, 0.4f, 1.0f };
 
         decltype(auto) command_list = device->CreateRenderCommandList();
         command_list->UseProgram(program);

@@ -3,8 +3,8 @@
 #include <Geometry/Geometry.h>
 #include <Camera/Camera.h>
 #include <Utilities/FormatHelper.h>
-#include <ProgramRef/PixelShaderPS.h>
-#include <ProgramRef/VertexShaderVS.h>
+#include <ProgramRef/PixelShader.h>
+#include <ProgramRef/VertexShader.h>
 #include <glm/gtx/transform.hpp>
 #include <stdexcept>
 
@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
     Model model(*device, *upload_command_list, ASSETS_PATH"model/export3dcoat/export3dcoat.obj");
     model.matrix = glm::scale(glm::vec3(0.1f)) * glm::translate(glm::vec3(0.0f, 30.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    ProgramHolder<PixelShaderPS, VertexShaderVS> program(*device);
+    ProgramHolder<PixelShader, VertexShader> program(*device);
     program.vs.cbuffer.ConstantBuf.model = glm::transpose(model.matrix);
     program.vs.cbuffer.ConstantBuf.view = glm::transpose(camera.GetViewMatrix());
     program.vs.cbuffer.ConstantBuf.projection = glm::transpose(camera.GetProjectionMatrix());

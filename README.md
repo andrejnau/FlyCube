@@ -55,15 +55,15 @@ upload_command_list->UpdateSubresource(pos, 0, pbuf.data(), 0, 0);
 upload_command_list->Close();
 device->ExecuteCommandLists({ upload_command_list });
 
-ProgramHolder<PixelShaderPS, VertexShaderVS> program(*device);
+ProgramHolder<PixelShader, VertexShader> program(*device);
 program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
 
 std::vector<std::shared_ptr<RenderCommandList>> command_lists;
 for (uint32_t i = 0; i < settings.frame_count; ++i)
 {
     RenderPassBeginDesc render_pass_desc = {};
-    render_pass_desc.colors[0].texture = device->GetBackBuffer(i);
-    render_pass_desc.colors[0].clear_color = { 0.0f, 0.2f, 0.4f, 1.0f };
+    render_pass_desc.colors[program.ps.om.rtv0].texture = device->GetBackBuffer(i);
+    render_pass_desc.colors[program.ps.om.rtv0].clear_color = { 0.0f, 0.2f, 0.4f, 1.0f };
 
     decltype(auto) command_list = device->CreateRenderCommandList();
     command_list->UseProgram(program);
@@ -112,8 +112,8 @@ std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kCons
 constant_buffer->CommitMemory(MemoryType::kUpload);
 constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));
 
-std::shared_ptr<Shader> vertex_shader = device->CompileShader({ ASSETS_PATH"shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex, "6_0" });
-std::shared_ptr<Shader> pixel_shader = device->CompileShader({ ASSETS_PATH"shaders/Triangle/PixelShader_PS.hlsl", "main",  ShaderType::kPixel, "6_0" });
+std::shared_ptr<Shader> vertex_shader = device->CompileShader({ ASSETS_PATH"shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" });
+std::shared_ptr<Shader> pixel_shader = device->CompileShader({ ASSETS_PATH"shaders/Triangle/PixelShader.hlsl", "main",  ShaderType::kPixel, "6_0" });
 std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
 
 ViewDesc constant_view_desc = {};

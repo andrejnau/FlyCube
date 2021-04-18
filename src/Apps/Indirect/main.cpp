@@ -1,8 +1,8 @@
 #include <AppBox/AppBox.h>
 #include <AppBox/ArgsParser.h>
 #include <RenderDevice/RenderDevice.h>
-#include <ProgramRef/PixelShaderPS.h>
-#include <ProgramRef/VertexShaderVS.h>
+#include <ProgramRef/PixelShader.h>
+#include <ProgramRef/VertexShader.h>
 
 int main(int argc, char* argv[])
 {
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
     upload_command_list->Close();
     device->ExecuteCommandLists({ upload_command_list });
 
-    ProgramHolder<PixelShaderPS, VertexShaderVS> program(*device);
+    ProgramHolder<PixelShader, VertexShader> program(*device);
     program.ps.cbuffer.Settings.color = glm::vec4(1, 0, 0, 1);
 
     std::vector<std::shared_ptr<RenderCommandList>> command_lists;

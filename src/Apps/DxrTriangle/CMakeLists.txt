@@ -8,14 +8,6 @@ set(sources
     ${source_path}/main.cpp
 )
 
-set(pixel_shaders
-    ${shaders_path}/Graphics_PS.hlsl
-)
-
-set(vertex_shaders
-    ${shaders_path}/Graphics_VS.hlsl
-)
-
 set(lib_shaders
     ${shaders_path}/RayTracing.hlsl
 )

@@ -8,6 +8,7 @@
 #include <dxc/DxilContainer/DxilRuntimeReflection.inl>
 #include <dia2.h>
 #include <algorithm>
+#include <set>
 
 ShaderKind ConvertShaderKind(hlsl::DXIL::ShaderKind kind)
 {
@@ -134,19 +135,29 @@ DXILReflection::DXILReflection(const void* data, size_t size)
     }
 }
 
-const std::vector<EntryPoint> DXILReflection::GetEntryPoints() const
+const std::vector<EntryPoint>& DXILReflection::GetEntryPoints() const
 {
     return m_entry_points;
 }
 
-const std::vector<ResourceBindingDesc> DXILReflection::GetBindings() const
+const std::vector<ResourceBindingDesc>& DXILReflection::GetBindings() const
 {
     return m_bindings;
 }
 
-const std::vector<InputParameterDesc> DXILReflection::GetInputParameters() const
+const std::vector<VariableLayout>& DXILReflection::GetVariableLayouts() const
+{
+    return m_layouts;
+}
+
+const std::vector<InputParameterDesc>& DXILReflection::GetInputParameters() const
 {
     return m_input_parameters;
+}
+
+const std::vector<OutputParameterDesc>& DXILReflection::GetOutputParameters() const
+{
+    return m_output_parameters;
 }
 
 void DXILReflection::ParseRuntimeData(ComPtr<IDxcContainerReflection> reflection, uint32_t idx)
@@ -349,6 +360,71 @@ ResourceBindingDesc GetBindingDesc(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc
     return desc;
 }
 
+VariableLayout GetVariableLayout(const std::string& name, uint32_t offset, uint32_t size, ID3D12ShaderReflectionType* variable_type)
+{
+    D3D12_SHADER_TYPE_DESC type_desc = {};
+    variable_type->GetDesc(&type_desc);
+
+    VariableLayout layout = {};
+    layout.name = name;
+    layout.offset = offset + type_desc.Offset;
+    layout.size = size;
+    layout.rows = type_desc.Rows;
+    layout.columns = type_desc.Columns;
+    layout.elements = type_desc.Elements;
+    switch (type_desc.Type)
+    {
+    case D3D_SHADER_VARIABLE_TYPE::D3D_SVT_FLOAT:
+        layout.type = VariableType::kFloat;
+        break;
+    case D3D_SHADER_VARIABLE_TYPE::D3D_SVT_INT:
+        layout.type = VariableType::kInt;
+        break;
+    case D3D_SHADER_VARIABLE_TYPE::D3D_SVT_UINT:
+        layout.type = VariableType::kUint;
+        break;
+    case D3D_SHADER_VARIABLE_TYPE::D3D_SVT_BOOL:
+        layout.type = VariableType::kBool;
+        break;
+    default:
+        assert(false);
+        break;
+    }
+    return layout;
+}
+
+template<typename ReflectionType>
+VariableLayout GetBufferLayout(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc, ReflectionType* reflection)
+{
+    if (bind_desc.Type != D3D_SIT_CBUFFER)
+    {
+        return {};
+    }
+    ID3D12ShaderReflectionConstantBuffer* cbuffer = reflection->GetConstantBufferByName(bind_desc.Name);
+    if (!cbuffer)
+    {
+        assert(false);
+        return {};
+    }
+
+    D3D12_SHADER_BUFFER_DESC cbuffer_desc = {};
+    cbuffer->GetDesc(&cbuffer_desc);
+
+    VariableLayout layout = {};
+    layout.name = bind_desc.Name;
+    layout.type = VariableType::kStruct;
+    layout.offset = 0;
+    layout.size = cbuffer_desc.Size;
+    for (UINT i = 0; i < cbuffer_desc.Variables; ++i)
+    {
+        ID3D12ShaderReflectionVariable* variable = cbuffer->GetVariableByIndex(i);
+        D3D12_SHADER_VARIABLE_DESC variable_desc = {};
+        variable->GetDesc(&variable_desc);
+        layout.members.emplace_back(GetVariableLayout(variable_desc.Name, variable_desc.StartOffset, variable_desc.Size, variable->GetType()));
+    }
+    return layout;
+}
+
 template<typename T, typename U>
 std::vector<ResourceBindingDesc> ParseReflection(const T& desc, U* reflection)
 {
@@ -363,9 +439,28 @@ std::vector<ResourceBindingDesc> ParseReflection(const T& desc, U* reflection)
     return res;
 }
 
+template<typename T, typename U>
+std::vector<VariableLayout> ParseLayout(const T& desc, U* reflection)
+{
+    std::vector<VariableLayout> res;
+    res.reserve(desc.BoundResources);
+    for (uint32_t i = 0; i < desc.BoundResources; ++i)
+    {
+        D3D12_SHADER_INPUT_BIND_DESC bind_desc = {};
+        ASSERT_SUCCEEDED(reflection->GetResourceBindingDesc(i, &bind_desc));
+        res.emplace_back(GetBufferLayout(bind_desc, reflection));
+    }
+    return res;
+}
+
 std::vector<InputParameterDesc> ParseInputParameters(const D3D12_SHADER_DESC& desc, ComPtr<ID3D12ShaderReflection> shader_reflection)
 {
     std::vector<InputParameterDesc> input_parameters;
+    D3D12_SHADER_VERSION_TYPE type = static_cast<D3D12_SHADER_VERSION_TYPE>((desc.Version & 0xFFFF0000) >> 16);
+    if (type != D3D12_SHADER_VERSION_TYPE::D3D12_SHVER_VERTEX_SHADER)
+    {
+        return input_parameters;
+    }
     for (uint32_t i = 0; i < desc.InputParameters; ++i)
     {
         D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
@@ -415,6 +510,27 @@ std::vector<InputParameterDesc> ParseInputParameters(const D3D12_SHADER_DESC& de
     return input_parameters;
 }
 
+std::vector<OutputParameterDesc> ParseOutputParameters(const D3D12_SHADER_DESC& desc, ComPtr<ID3D12ShaderReflection> shader_reflection)
+{
+    std::vector<OutputParameterDesc> output_parameters;
+    D3D12_SHADER_VERSION_TYPE type = static_cast<D3D12_SHADER_VERSION_TYPE>((desc.Version & 0xFFFF0000) >> 16);
+    if (type != D3D12_SHADER_VERSION_TYPE::D3D12_SHVER_PIXEL_SHADER)
+    {
+        return output_parameters;
+    }
+    for (uint32_t i = 0; i < desc.OutputParameters; ++i)
+    {
+        D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
+        ASSERT_SUCCEEDED(shader_reflection->GetOutputParameterDesc(i, &param_desc));
+        assert(param_desc.SemanticName == std::string("SV_TARGET"));
+        assert(param_desc.SystemValueType == D3D_NAME_TARGET);
+        assert(param_desc.SemanticIndex == param_desc.Register);
+        decltype(auto) output = output_parameters.emplace_back();
+        output.slot = param_desc.Register;
+    }
+    return output_parameters;
+}
+
 void DXILReflection::ParseShaderReflection(ComPtr<ID3D12ShaderReflection> shader_reflection)
 {
     D3D12_SHADER_DESC desc = {};
@@ -422,24 +538,41 @@ void DXILReflection::ParseShaderReflection(ComPtr<ID3D12ShaderReflection> shader
     hlsl::DXIL::ShaderKind kind = hlsl::GetVersionShaderType(desc.Version);
     m_entry_points.push_back({ "", ConvertShaderKind(kind) });
     m_bindings = ParseReflection(desc, shader_reflection.Get());
+    m_layouts = ParseLayout(desc, shader_reflection.Get());
+    assert(m_bindings.size() == m_layouts.size());
     m_input_parameters = ParseInputParameters(desc, shader_reflection);
+    m_output_parameters = ParseOutputParameters(desc, shader_reflection);
 }
 
 void DXILReflection::ParseLibraryReflection(ComPtr<ID3D12LibraryReflection> library_reflection)
 {
     D3D12_LIBRARY_DESC library_desc = {};
     ASSERT_SUCCEEDED(library_reflection->GetDesc(&library_desc));
+    std::map<std::string, size_t> exist;
     for (uint32_t i = 0; i < library_desc.FunctionCount; ++i)
     {
         ID3D12FunctionReflection* function_reflection = library_reflection->GetFunctionByIndex(i);
         D3D12_FUNCTION_DESC function_desc = {};
         ASSERT_SUCCEEDED(function_reflection->GetDesc(&function_desc));
         auto function_bindings = ParseReflection(function_desc, function_reflection);
-        m_bindings.insert(m_bindings.end(), function_bindings.begin(), function_bindings.end());
+        auto function_layouts = ParseLayout(function_desc, function_reflection);
+        assert(function_bindings.size() == function_layouts.size());
+        for (size_t i = 0; i < function_bindings.size(); ++i)
+        {
+            auto it = exist.find(function_bindings[i].name);
+            if (it == exist.end())
+            {
+                exist[function_bindings[i].name] = m_bindings.size();
+                m_bindings.emplace_back(function_bindings[i]);
+                m_layouts.emplace_back(function_layouts[i]);
+            }
+            else
+            {
+                assert(function_bindings[i] == m_bindings[it->second]);
+                assert(function_layouts[i] == m_layouts[it->second]);
+            }
+        }
     }
-
-    std::sort(m_bindings.begin(), m_bindings.end());
-    m_bindings.erase(std::unique(m_bindings.begin(), m_bindings.end()), m_bindings.end());
 }
 
 void DXILReflection::ParseDebugInfo(dxc::DxcDllSupport& dxc_support, ComPtr<IDxcBlob> pdb)

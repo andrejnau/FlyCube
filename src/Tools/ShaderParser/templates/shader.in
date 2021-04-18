@@ -47,26 +47,26 @@ struct {{ShaderName}}Desc
 class {{ShaderName}} : public {{ShaderName}}Desc
 {
 public:{{#CBuffers}}
-    struct {{BufferName}}
+    struct {{Name}}
     {
-{{#Variables}}        {{&Type}} {{Name}};
-{{/Variables}}    };
+{{#CBufferVariables}}        {{&VariableType}} {{VariableName}};
+{{/CBufferVariables}}    };
 {{/CBuffers}}{{#CBuffers}}
-    BufferLayout {{BufferName}}_layout = {
-        {{BufferSize}},
-        { {{#Variables}}{{VariableSize}}, {{/Variables}} },
-        { {{#Variables}}offsetof({{BufferName}}, {{Name}}), {{/Variables}} },
-        { {{#Variables}}{{StartOffset}}, {{/Variables}} }
+    BufferLayout {{Name}}_layout = {
+        {{CBufferSize}},
+        { {{#CBufferVariables}}{{VariableSize}}, {{/CBufferVariables}} },
+        { {{#CBufferVariables}}offsetof({{Name}}, {{VariableName}}), {{/CBufferVariables}} },
+        { {{#CBufferVariables}}{{VariableOffset}}, {{/CBufferVariables}} }
     };
 {{/CBuffers}}{{#HasCBuffers}}
     struct Cbuffer
     {
         Cbuffer({{ShaderName}}& shader, RenderDevice& device){{#CBuffers}}
-            {{BufferSeparator}} {{BufferName}}(device, shader.{{BufferName}}_layout){{/CBuffers}}
+            {{CBufferSeparator}} {{Name}}(device, shader.{{Name}}_layout){{/CBuffers}}
         {
         }
 {{#CBuffers}}
-        ConstantBuffer<{{BufferName}}> {{BufferName}};{{/CBuffers}}
+        ConstantBuffer<{{Name}}> {{Name}};{{/CBuffers}}
     } cbuffer;
 
     {{ShaderName}}(RenderDevice& device)

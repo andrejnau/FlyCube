@@ -9,11 +9,11 @@ set(sources
 )
 
 set(pixel_shaders
-    ${shaders_path}/Resolve_PS.hlsl
+    ${shaders_path}/Resolve.hlsl
 )
 
 set(vertex_shaders
-    ${shaders_path}/VertexShader_VS.hlsl
+    ${shaders_path}/VertexShader.hlsl
 )
 
 set_property(SOURCE ${pixel_shaders} PROPERTY VS_SHADER_ENTRYPOINT main)
