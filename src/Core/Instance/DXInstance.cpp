@@ -4,6 +4,9 @@
 #include <dxgi1_6.h>
 #include <d3d12.h>
 
+extern "C" { _declspec(dllexport) extern const UINT D3D12SDKVersion = 4; }
+extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = u8".\\D3D12\\"; }
+
 DXInstance::DXInstance()
 {
 #if 0
