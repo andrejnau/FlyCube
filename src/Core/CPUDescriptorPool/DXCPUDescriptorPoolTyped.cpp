@@ -40,5 +40,4 @@ void DXCPUDescriptorPoolTyped::ResizeHeap(size_t req_size)
     m_size = heap_desc.NumDescriptors;
     m_heap = heap;
     m_cpu_handle = m_heap->GetCPUDescriptorHandleForHeapStart();
-    m_gpu_handle = m_heap->GetGPUDescriptorHandleForHeapStart();
 }

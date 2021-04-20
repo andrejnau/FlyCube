@@ -25,5 +25,4 @@ private:
     size_t m_size;
     ComPtr<ID3D12DescriptorHeap> m_heap;
     D3D12_CPU_DESCRIPTOR_HANDLE m_cpu_handle;
-    D3D12_GPU_DESCRIPTOR_HANDLE m_gpu_handle;
 };
