@@ -31,3 +31,6 @@
 [submodule "3rdparty/d3dx12"]
 	path = 3rdparty/d3dx12
 	url = https://github.com/andrejnau/d3dx12.git
+[submodule "3rdparty/DirectX-Headers"]
+	path = 3rdparty/DirectX-Headers
+	url = https://github.com/microsoft/DirectX-Headers.git

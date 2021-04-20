@@ -4,7 +4,7 @@
 #include <Device/DXDevice.h>
 #include <deque>
 #include <stdexcept>
-#include <d3dx12.h>
+#include <directx/d3dx12.h>
 
 D3D12_SHADER_VISIBILITY GetVisibility(ShaderType shader_type)
 {

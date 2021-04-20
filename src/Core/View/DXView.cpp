@@ -2,7 +2,7 @@
 #include <Device/DXDevice.h>
 #include <Utilities/DXGIFormatHelper.h>
 #include <cassert>
-#include <d3d12.h>
+#include <directx/d3d12.h>
 
 DXView::DXView(DXDevice& device, const std::shared_ptr<DXResource>& resource, const ViewDesc& m_view_desc)
     : m_device(device)

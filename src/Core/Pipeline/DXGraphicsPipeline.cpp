@@ -5,7 +5,7 @@
 #include <BindingSetLayout/DXBindingSetLayout.h>
 #include <View/DXView.h>
 #include <Utilities/DXGIFormatHelper.h>
-#include <d3dx12.h>
+#include <directx/d3dx12.h>
 
 CD3DX12_RASTERIZER_DESC GetRasterizerDesc(const GraphicsPipelineDesc& desc)
 {

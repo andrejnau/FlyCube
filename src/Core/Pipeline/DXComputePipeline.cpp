@@ -6,7 +6,7 @@
 #include <BindingSetLayout/DXBindingSetLayout.h>
 #include <View/DXView.h>
 #include <Utilities/DXGIFormatHelper.h>
-#include <d3dx12.h>
+#include <directx/d3dx12.h>
 
 DXComputePipeline::DXComputePipeline(DXDevice& device, const ComputePipelineDesc& desc)
     : m_device(device)

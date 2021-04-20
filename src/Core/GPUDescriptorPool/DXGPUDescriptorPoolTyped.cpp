@@ -1,6 +1,6 @@
 #include "GPUDescriptorPool/DXGPUDescriptorPoolTyped.h"
 #include <Device/DXDevice.h>
-#include <d3dx12.h>
+#include <directx/d3dx12.h>
 
 DXGPUDescriptorPoolTyped::DXGPUDescriptorPoolTyped(DXDevice& device, D3D12_DESCRIPTOR_HEAP_TYPE type)
     : m_device(device)

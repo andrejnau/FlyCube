@@ -1,7 +1,7 @@
 #include "GPUDescriptorPool/DXGPUDescriptorPoolRange.h"
 #include "GPUDescriptorPool/DXGPUDescriptorPoolTyped.h"
 #include <Device/DXDevice.h>
-#include <d3dx12.h>
+#include <directx/d3dx12.h>
 
 DXGPUDescriptorPoolRange::DXGPUDescriptorPoolRange(
     DXGPUDescriptorPoolTyped& pool,

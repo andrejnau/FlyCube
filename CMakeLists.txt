@@ -31,7 +31,7 @@ endif()
 
 if (DIRECTX_SUPPORT)
     add_definitions(-DDIRECTX_SUPPORT)
-    include(3rdparty/d3dx12)
+    include(3rdparty/directx)
 endif()
 
 add_subdirectory(src)

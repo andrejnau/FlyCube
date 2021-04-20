@@ -19,7 +19,7 @@
 #include <Utilities/DXUtility.h>
 #include <Utilities/DXGIFormatHelper.h>
 #include <dxgi1_6.h>
-#include <d3dx12.h>
+#include <directx/d3dx12.h>
 #include <gli/dx.hpp>
 
 D3D12_RESOURCE_STATES ConvertState(ResourceState state)

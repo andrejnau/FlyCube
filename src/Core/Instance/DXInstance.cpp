@@ -2,7 +2,7 @@
 #include <Adapter/DXAdapter.h>
 #include <Utilities/DXUtility.h>
 #include <dxgi1_6.h>
-#include <d3d12.h>
+#include <directx/d3d12.h>
 
 extern "C" { _declspec(dllexport) extern const UINT D3D12SDKVersion = 4; }
 extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = u8".\\D3D12\\"; }

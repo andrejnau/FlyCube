@@ -6,7 +6,7 @@
 #include <memory>
 #include <functional>
 #include <wrl.h>
-#include <d3d12.h>
+#include <directx/d3d12.h>
 using namespace Microsoft::WRL;
 
 class DXDevice;

@@ -3,8 +3,8 @@
 #include <Utilities/DXUtility.h>
 #include <Utilities/FileUtility.h>
 #include <dxgi1_6.h>
-#include <d3d12.h>
-#include <d3dx12.h>
+#include <directx/d3d12.h>
+#include <directx/d3dx12.h>
 
 DXRayTracingQueryHeap::DXRayTracingQueryHeap(DXDevice& device, QueryHeapType type, uint32_t count)
     : m_device(device)

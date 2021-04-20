@@ -1,6 +1,6 @@
 #include "GPUDescriptorPool/DXGPUDescriptorPool.h"
 #include <Device/DXDevice.h>
-#include <d3dx12.h>
+#include <directx/d3dx12.h>
 #include <stdexcept>
 
 DXGPUDescriptorPool::DXGPUDescriptorPool(DXDevice& device)

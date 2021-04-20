@@ -3,7 +3,7 @@
 #include <Memory/DXMemory.h>
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXGIFormatHelper.h>
-#include <d3dx12.h>
+#include <directx/d3dx12.h>
 #include <optional>
 
 std::optional<D3D12_CLEAR_VALUE> GetClearValue(const D3D12_RESOURCE_DESC& desc)
