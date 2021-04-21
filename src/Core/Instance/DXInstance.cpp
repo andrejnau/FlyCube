@@ -4,8 +4,10 @@
 #include <dxgi1_6.h>
 #include <directx/d3d12.h>
 
+#ifdef USE_AGILITY_SDK
 extern "C" { _declspec(dllexport) extern const UINT D3D12SDKVersion = 4; }
 extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = u8".\\D3D12\\"; }
+#endif
 
 DXInstance::DXInstance()
 {
