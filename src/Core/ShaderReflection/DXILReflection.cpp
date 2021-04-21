@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <dxc/DXIL/DxilConstants.h>
 #include <dxc/DxilContainer/DxilContainer.h>
+#include <dxc/DXIL/DxilConstants.h>
 #include <dxc/DxilContainer/DxilRuntimeReflection.inl>
 #include <dia2.h>
 #include <algorithm>
@@ -125,7 +126,22 @@ DXILReflection::DXILReflection(const void* data, size_t size)
         }
         else if (kind == hlsl::DxilFourCC::DFCC_ShaderDebugInfoDXIL)
         {
-            reflection->GetPartContent(i, &pdb);
+            ASSERT_SUCCEEDED(reflection->GetPartContent(i, &pdb));
+        }
+        else if (kind == hlsl::DxilFourCC::DFCC_FeatureInfo)
+        {
+            ComPtr<IDxcBlob> part;
+            ASSERT_SUCCEEDED(reflection->GetPartContent(i, &part));
+            assert(part->GetBufferSize() == sizeof(DxilShaderFeatureInfo));
+            auto feature_info = reinterpret_cast<DxilShaderFeatureInfo const*>(part->GetBufferPointer());
+            if (feature_info->FeatureFlags & hlsl::DXIL::ShaderFeatureInfo_ResourceDescriptorHeapIndexing)
+            {
+                m_shader_feature_info.resource_descriptor_heap_indexing = true;
+            }
+            if (feature_info->FeatureFlags & hlsl::DXIL::ShaderFeatureInfo_SamplerDescriptorHeapIndexing)
+            {
+                m_shader_feature_info.sampler_descriptor_heap_indexing = true;
+            }
         }
     }
 
@@ -158,6 +174,11 @@ const std::vector<InputParameterDesc>& DXILReflection::GetInputParameters() cons
 const std::vector<OutputParameterDesc>& DXILReflection::GetOutputParameters() const
 {
     return m_output_parameters;
+}
+
+const ShaderFeatureInfo& DXILReflection::GetShaderFeatureInfo() const
+{
+    return m_shader_feature_info;
 }
 
 void DXILReflection::ParseRuntimeData(ComPtr<IDxcContainerReflection> reflection, uint32_t idx)

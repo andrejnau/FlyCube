@@ -104,6 +104,12 @@ inline bool operator< (const VariableLayout& lhs, const VariableLayout& rhs)
     return MakeTie(lhs) < MakeTie(rhs);
 }
 
+struct ShaderFeatureInfo
+{
+    bool resource_descriptor_heap_indexing = false;
+    bool sampler_descriptor_heap_indexing = false;
+};
+
 class ShaderReflection : public QueryInterface
 {
 public:
@@ -113,6 +119,7 @@ public:
     virtual const std::vector<VariableLayout>& GetVariableLayouts() const = 0;
     virtual const std::vector<InputParameterDesc>& GetInputParameters() const = 0;
     virtual const std::vector<OutputParameterDesc>& GetOutputParameters() const = 0;
+    virtual const ShaderFeatureInfo& GetShaderFeatureInfo() const = 0;
 };
 
 std::shared_ptr<ShaderReflection> CreateShaderReflection(ShaderBlobType type, const void* data, size_t size);

@@ -14,6 +14,7 @@ public:
     const std::vector<VariableLayout>& GetVariableLayouts() const override;
     const std::vector<InputParameterDesc>& GetInputParameters() const override;
     const std::vector<OutputParameterDesc>& GetOutputParameters() const override;
+    const ShaderFeatureInfo& GetShaderFeatureInfo() const override;
 
 private:
     void ParseRuntimeData(ComPtr<IDxcContainerReflection> reflection, uint32_t idx);
@@ -27,4 +28,5 @@ private:
     std::vector<VariableLayout> m_layouts;
     std::vector<InputParameterDesc> m_input_parameters;
     std::vector<OutputParameterDesc> m_output_parameters;
+    ShaderFeatureInfo m_shader_feature_info = {};
 };

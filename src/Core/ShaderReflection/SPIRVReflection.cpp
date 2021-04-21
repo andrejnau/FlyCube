@@ -395,3 +395,8 @@ const std::vector<OutputParameterDesc>& SPIRVReflection::GetOutputParameters() c
 {
     return m_output_parameters;
 }
+
+const ShaderFeatureInfo& SPIRVReflection::GetShaderFeatureInfo() const
+{
+    return m_shader_feature_info;
+}

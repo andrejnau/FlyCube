@@ -51,7 +51,7 @@ if (DIRECTX_SUPPORT)
         d3d12
         dxgi
         dxguid
-        Microsoft::DirectX-Headers
+        DirectX-Headers
     )
 endif()
 
