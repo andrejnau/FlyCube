@@ -1,12 +1,50 @@
 #include "Instance/DXInstance.h"
 #include <Adapter/DXAdapter.h>
 #include <Utilities/DXUtility.h>
+#include <Utilities/FileUtility.h>
 #include <dxgi1_6.h>
 #include <directx/d3d12.h>
+#include <filesystem>
 
-#ifdef USE_AGILITY_SDK
-extern "C" { _declspec(dllexport) extern const UINT D3D12SDKVersion = 4; }
-extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = u8".\\D3D12\\"; }
+bool EnableAgilitySDKIfExist(uint32_t version, const std::string_view& path)
+{
+    auto d3d12_core = std::filesystem::u8path(GetExecutableDir()) / path / "D3D12Core.dll";
+    if (!std::filesystem::exists(d3d12_core))
+    {
+        return false;
+    }
+
+    HMODULE d3d12 = GetModuleHandleA("d3d12.dll");
+    assert(d3d12);
+    auto D3D12GetInterfacePfn = (PFN_D3D12_GET_INTERFACE)GetProcAddress(d3d12, "D3D12GetInterface");
+    if (!D3D12GetInterfacePfn)
+    {
+        return false;
+    }
+
+    ComPtr<ID3D12SDKConfiguration> sdk_configuration;
+    if (FAILED(D3D12GetInterfacePfn(CLSID_D3D12SDKConfiguration, IID_PPV_ARGS(&sdk_configuration))))
+    {
+        return false;
+    }
+    if (FAILED(sdk_configuration->SetSDKVersion(version, path.data())))
+    {
+        return false;
+    }
+    return true;
+}
+
+#ifdef AGILITY_SDK_REQUIRED
+#define EXPORT_AGILITY_SDK extern "C" _declspec(dllexport) extern
+#else
+#define EXPORT_AGILITY_SDK
+#endif
+
+EXPORT_AGILITY_SDK const UINT D3D12SDKVersion = 4;
+EXPORT_AGILITY_SDK const char* D3D12SDKPath = u8".\\D3D12\\";
+
+#ifndef AGILITY_SDK_REQUIRED
+static bool optional_agility_sdk = EnableAgilitySDKIfExist(D3D12SDKVersion, D3D12SDKPath);
 #endif
 
 DXInstance::DXInstance()

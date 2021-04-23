@@ -52,6 +52,7 @@ if (DIRECTX_SUPPORT)
         dxgi
         dxguid
         DirectX-Headers
+        DirectX-Guids
     )
 endif()
 
