@@ -93,7 +93,7 @@ std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[setti
 std::shared_ptr<Device> device = adapter->CreateDevice();
 std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
 constexpr uint32_t frame_count = 3;
-std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count, settings.vsync);
+std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeWindow(), rect.width, rect.height, frame_count, settings.vsync);
 uint64_t fence_value = 0;
 std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
