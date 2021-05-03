@@ -5,8 +5,8 @@
 #include <memory>
 #include <vector>
 #include <functional>
-#include <RenderDevice/RenderDevice.h>
-#include <Utilities/BufferLayout.h>
+#include "RenderDevice/RenderDevice.h"
+#include "RenderDevice/BufferLayout.h"
 
 template<ShaderType, typename T> class ShaderHolderImpl {};
 

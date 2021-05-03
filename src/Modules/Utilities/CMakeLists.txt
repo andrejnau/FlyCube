@@ -11,13 +11,11 @@ add_library(Utilities
     DXGIFormatHelper.h
     FormatHelper.cpp
     FormatHelper.h
-    BufferLayout.cpp
-    BufferLayout.h
-    ProgramHolder.h
 )
 
 target_link_libraries(Utilities
-    RenderDevice
+    gli
+    glm
 )
 
 target_include_directories(Utilities

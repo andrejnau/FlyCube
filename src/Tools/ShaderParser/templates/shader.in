@@ -1,7 +1,7 @@
 #pragma once
 #include <RenderDevice/RenderDevice.h>
-#include <Utilities/ProgramHolder.h>
-#include <Utilities/BufferLayout.h>
+#include <RenderDevice/ProgramHolder.h>
+#include <RenderDevice/BufferLayout.h>
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>

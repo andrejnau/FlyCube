@@ -10,8 +10,8 @@ add_executable(${target}
 )
 
 target_link_libraries(${target}
-    Utilities
     HLSLCompiler
+    ShaderReflection
     mustache
 )
 
