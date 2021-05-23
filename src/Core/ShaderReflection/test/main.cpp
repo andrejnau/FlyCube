@@ -57,7 +57,7 @@ public:
     }
 
 private:
-    ShaderDesc m_desc = { ASSETS_PATH"shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_5" };
+    ShaderDesc m_desc = { ASSETS_PATH"shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" };
 };
 
 class TrianglePS : public ShaderTestCase
@@ -87,7 +87,7 @@ public:
     }
 
 private:
-    ShaderDesc m_desc = { ASSETS_PATH"shaders/Triangle/PixelShader_PS.hlsl", "main", ShaderType::kPixel, "6_5" };
+    ShaderDesc m_desc = { ASSETS_PATH"shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_3" };
 };
 
 class TriangleVS : public ShaderTestCase
@@ -113,7 +113,7 @@ public:
     }
 
 private:
-    ShaderDesc m_desc = { ASSETS_PATH"shaders/Triangle/VertexShader_VS.hlsl", "main", ShaderType::kVertex, "6_5" };
+    ShaderDesc m_desc = { ASSETS_PATH"shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_3" };
 };
 
 TEST_CASE("ShaderReflection")
