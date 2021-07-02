@@ -87,6 +87,20 @@ std::shared_ptr<BindingSet> ObjectCache::GetBindingSet(const std::shared_ptr<Bin
 
 std::shared_ptr<Framebuffer> ObjectCache::GetFramebuffer(const FramebufferDesc& desc)
 {
+    for (const auto& view : desc.colors)
+    {
+        if (!view)
+        {
+            continue;
+        }
+
+        decltype(auto) res = view->GetResource();
+        if (res->IsBackBuffer())
+        {
+            return m_device.CreateFramebuffer(desc);
+        }
+    }
+
     auto it = m_framebuffers.find(desc);
     if (it == m_framebuffers.end())
     {
@@ -180,6 +194,9 @@ std::shared_ptr<View> ObjectCache::GetView(const std::shared_ptr<Program>& progr
     }
 
     auto view = m_device.CreateView(resource, desc);
-    m_views.emplace(std::piecewise_construct, std::forward_as_tuple(program, bind_key, resource, view_desc), std::forward_as_tuple(view));
+    if (!resource || !resource->IsBackBuffer())
+    {
+        m_views.emplace(std::piecewise_construct, std::forward_as_tuple(program, bind_key, resource, view_desc), std::forward_as_tuple(view));
+    }
     return view;
 }

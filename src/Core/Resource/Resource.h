@@ -38,4 +38,5 @@ public:
     virtual bool AllowCommonStatePromotion(ResourceState state_after) = 0;
     virtual ResourceState GetInitialState() const = 0;
     virtual MemoryRequirements GetMemoryRequirements() const = 0;
+    virtual bool IsBackBuffer() const = 0;
 };

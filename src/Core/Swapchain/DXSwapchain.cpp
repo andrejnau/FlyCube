@@ -36,6 +36,7 @@ DXSwapchain::DXSwapchain(DXCommandQueue& command_queue, Window window, uint32_t 
         res->SetInitialState(ResourceState::kPresent);
         res->resource = back_buffer;
         res->desc = back_buffer->GetDesc();
+        res->is_back_buffer = true;
         m_back_buffers.emplace_back(res);
     }
 }
