@@ -18,6 +18,7 @@ void RenderCommandListImpl::Reset()
     m_lazy_barriers.clear();
     m_resource_state_tracker.clear();
 
+    m_framebuffers.clear();
     m_cmd_resources.clear();
     m_bound_resources.clear();
     m_bound_deferred_view.clear();
@@ -605,6 +606,7 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
     framebuffer_desc.depth_stencil = dsv;
     framebuffer_desc.shading_rate_image = m_shading_rate_image;
     std::shared_ptr<Framebuffer> framebuffer = m_object_cache.GetFramebuffer(framebuffer_desc);
+    m_framebuffers.emplace_back(framebuffer);
 
     std::array<ShadingRateCombiner, 2> combiners = {
         ShadingRateCombiner::kPassthrough, ShadingRateCombiner::kPassthrough

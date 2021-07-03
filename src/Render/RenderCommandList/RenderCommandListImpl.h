@@ -92,6 +92,7 @@ private:
 
     Device& m_device;
     ObjectCache& m_object_cache;
+    std::vector<std::shared_ptr<Framebuffer>> m_framebuffers;
     std::shared_ptr<CommandList> m_command_list;
     uint32_t m_viewport_width = 0;
     uint32_t m_viewport_height = 0;
