@@ -23,8 +23,8 @@ private:
     const uint8_t* m_src_data;
     BufferLayout& m_layout;
     std::vector<uint8_t> m_dst_data;
-    std::shared_ptr<ResourceLazyViewDesc> m_last_view;
     std::vector<std::shared_ptr<Resource>> m_free_resources;
+    std::shared_ptr<ResourceLazyViewDesc> m_last_view;
 };
 
 template<typename T>
