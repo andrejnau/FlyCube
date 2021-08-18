@@ -44,6 +44,7 @@ endif()
 
 if (DIRECTX_SUPPORT)
     target_link_libraries(ShaderReflection
+        DirectX-Headers
         d3d12
         dxgi
         dxguid

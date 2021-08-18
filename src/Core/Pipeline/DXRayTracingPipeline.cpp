@@ -7,7 +7,7 @@
 #include <Utilities/DXGIFormatHelper.h>
 #include <directx/d3d12.h>
 #include <directx/d3dx12.h>
-#include <d3d12shader.h>
+#include <directx/d3d12shader.h>
 #include <Utilities/FileUtility.h>
 #include <HLSLCompiler/DXCLoader.h>
 #include <dxc/DXIL/DxilConstants.h>

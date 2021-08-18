@@ -26,7 +26,6 @@ if (VULKAN_SUPPORT)
 endif()
 
 target_link_libraries(HLSLCompiler
-    d3dcompiler
     dxc
 )
 

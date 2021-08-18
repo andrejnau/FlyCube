@@ -1,7 +1,7 @@
 #pragma once
 #include "ShaderReflection/ShaderReflection.h"
 #include <HLSLCompiler/DXCLoader.h>
-#include <d3d12shader.h>
+#include <directx/d3d12shader.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
 

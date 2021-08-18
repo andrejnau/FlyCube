@@ -6,6 +6,7 @@
 #include <View/DXView.h>
 #include <Utilities/DXGIFormatHelper.h>
 #include <directx/d3dx12.h>
+#include <cctype>
 
 CD3DX12_RASTERIZER_DESC GetRasterizerDesc(const GraphicsPipelineDesc& desc)
 {

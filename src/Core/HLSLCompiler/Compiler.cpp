@@ -5,7 +5,6 @@
 #include <deque>
 #include <iostream>
 #include <vector>
-#include <d3dcompiler.h>
 #include <cassert>
 #include <wrl.h>
 using namespace Microsoft::WRL;
