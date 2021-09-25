@@ -41,13 +41,6 @@ jobs:
           CXX: ${{ matrix.cxx }}
           CC: ${{ matrix.cc }}
 
-      - name: cache-vulkansdk
-        id: cache-vulkansdk
-        uses: actions/cache@v2
-        with:
-          path: "VulkanSDK"
-          key: VulkanSDK-${{ env.vulkan-ver }}-Installer
-
       - name: vulkansdk
         if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
         run: |
