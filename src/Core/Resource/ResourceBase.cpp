@@ -1,4 +1,5 @@
 #include "Resource/ResourceBase.h"
+#include <cstring>
 
 ResourceBase::ResourceBase()
     : m_resource_state_tracker(*this)

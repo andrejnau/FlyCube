@@ -47,7 +47,7 @@ struct {{ShaderName}}Desc
 class {{ShaderName}} : public {{ShaderName}}Desc
 {
 public:{{#CBuffers}}
-    struct {{Name}}
+    struct {{Name}}_t
     {
 {{#CBufferVariables}}        {{&VariableType}} {{VariableName}};
 {{/CBufferVariables}}    };
@@ -55,7 +55,7 @@ public:{{#CBuffers}}
     BufferLayout {{Name}}_layout = {
         {{CBufferSize}},
         { {{#CBufferVariables}}{{VariableSize}}, {{/CBufferVariables}} },
-        { {{#CBufferVariables}}offsetof({{Name}}, {{VariableName}}), {{/CBufferVariables}} },
+        { {{#CBufferVariables}}offsetof({{Name}}_t, {{VariableName}}), {{/CBufferVariables}} },
         { {{#CBufferVariables}}{{VariableOffset}}, {{/CBufferVariables}} }
     };
 {{/CBuffers}}{{#HasCBuffers}}
@@ -66,7 +66,7 @@ public:{{#CBuffers}}
         {
         }
 {{#CBuffers}}
-        ConstantBuffer<{{Name}}> {{Name}};{{/CBuffers}}
+        ConstantBuffer<{{Name}}_t> {{Name}};{{/CBuffers}}
     } cbuffer;
 
     {{ShaderName}}(RenderDevice& device)

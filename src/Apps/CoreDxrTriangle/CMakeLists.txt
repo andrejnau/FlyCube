@@ -45,8 +45,7 @@ target_link_libraries(${target}
     SOIL
     AppBox
     Utilities
-    Program
-    Pipeline
+    Instance
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")

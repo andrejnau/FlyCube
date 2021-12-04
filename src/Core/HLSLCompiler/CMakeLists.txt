@@ -26,6 +26,12 @@ if (VULKAN_SUPPORT)
     )
 endif()
 
+if (UNIX)
+    target_link_libraries(HLSLCompiler
+        dl
+    )
+endif()
+
 target_link_libraries(HLSLCompiler
     dxc
 )

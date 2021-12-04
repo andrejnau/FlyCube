@@ -15,16 +15,7 @@ target_include_directories(RenderCommandList
 )
 
 target_link_libraries(RenderCommandList
-    ApiType
-    Swapchain
-    Shader
-    CommandList
-    Program
-    Framebuffer
-    Pipeline
-    GPUDescriptorPool
-    Fence
-    Utilities
+    Instance
     ObjectCache
 )
 
