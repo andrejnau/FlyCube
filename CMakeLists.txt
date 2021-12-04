@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 project(FlyCube)
 
+include(CMakeDependentOption)
+option(VULKAN_SUPPORT "Vulkan Support" ON)
+cmake_dependent_option(DIRECTX_SUPPORT "DirectX 12 Support" ON "WIN32" OFF)
+cmake_dependent_option(AGILITY_SDK_REQUIRED "Use Agility SDK" OFF "WIN32" OFF)
+
 set(project_root "${CMAKE_CURRENT_SOURCE_DIR}")
 set(assets_path "${project_root}/assets/")
 add_definitions(-DASSETS_PATH="${assets_path}")
@@ -8,12 +13,6 @@ add_definitions(-DASSETS_PATH="${assets_path}")
 list(PREPEND CMAKE_MODULE_PATH "${project_root}/cmake")
 include(cmake_settings)
 include(compiler_settings)
-
-set(VULKAN_SUPPORT ON)
-if (WIN32)
-    set(DIRECTX_SUPPORT ON)
-    set(AGILITY_SDK_REQUIRED OFF)
-endif()
 
 include(3rdparty/glfw)
 include(3rdparty/soil)
@@ -30,7 +29,6 @@ if (VULKAN_SUPPORT)
     include(3rdparty/vulkan)
     include(3rdparty/spirv-cross)
 endif()
-
 if (DIRECTX_SUPPORT)
     add_definitions(-DDIRECTX_SUPPORT)
 endif()
