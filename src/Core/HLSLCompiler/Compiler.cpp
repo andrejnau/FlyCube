@@ -6,8 +6,6 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
-#include <wrl.h>
-using namespace Microsoft::WRL;
 
 static std::string GetShaderTarget(ShaderType type, const std::string& model)
 {
@@ -36,7 +34,7 @@ static std::string GetShaderTarget(ShaderType type, const std::string& model)
 class IncludeHandler : public IDxcIncludeHandler
 {
 public:
-    IncludeHandler(ComPtr<IDxcLibrary> library, const std::wstring& base_path)
+    IncludeHandler(CComPtr<IDxcLibrary> library, const std::wstring& base_path)
         : m_library(library)
         , m_base_path(base_path)
     {
@@ -51,7 +49,7 @@ public:
         _COM_Outptr_result_maybenull_ IDxcBlob **ppIncludeSource) override
     {
         std::wstring path = m_base_path + pFilename;
-        ComPtr<IDxcBlobEncoding> source;
+        CComPtr<IDxcBlobEncoding> source;
         HRESULT hr = m_library->CreateBlobFromFile(
             path.c_str(),
             nullptr,
@@ -63,7 +61,7 @@ public:
     }
 
 private:
-    ComPtr<IDxcLibrary> m_library;
+    CComPtr<IDxcLibrary> m_library;
     const std::wstring& m_base_path;
 };
 
@@ -74,9 +72,9 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     std::wstring shader_path = utf8_to_wstring(shader.shader_path);
     std::wstring shader_dir = shader_path.substr(0, shader_path.find_last_of(L"\\/") + 1);
 
-    ComPtr<IDxcLibrary> library;
-    dxc_support.CreateInstance(CLSID_DxcLibrary, library.GetAddressOf());
-    ComPtr<IDxcBlobEncoding> source;
+    CComPtr<IDxcLibrary> library;
+    dxc_support.CreateInstance(CLSID_DxcLibrary, &library);
+    CComPtr<IDxcBlobEncoding> source;
     ASSERT_SUCCEEDED(library->CreateBlobFromFile(
         shader_path.c_str(),
         nullptr,
@@ -117,12 +115,12 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     dynamic_arguments.emplace_back(std::to_wstring(space));
     arguments.emplace_back(dynamic_arguments.back().c_str());
 
-    ComPtr<IDxcOperationResult> result;
+    CComPtr<IDxcOperationResult> result;
     IncludeHandler include_handler(library, shader_dir);
-    ComPtr<IDxcCompiler> compiler;
-    dxc_support.CreateInstance(CLSID_DxcCompiler, compiler.GetAddressOf());
+    CComPtr<IDxcCompiler> compiler;
+    dxc_support.CreateInstance(CLSID_DxcCompiler, &compiler);
     ASSERT_SUCCEEDED(compiler->Compile(
-        source.Get(),
+        source,
         L"main.hlsl",
         entrypoint.c_str(),
         target.c_str(),
@@ -137,13 +135,13 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     std::vector<uint8_t> blob;
     if (SUCCEEDED(hr))
     {
-        ComPtr<IDxcBlob> dxc_blob;
+        CComPtr<IDxcBlob> dxc_blob;
         ASSERT_SUCCEEDED(result->GetResult(&dxc_blob));
         blob.assign((uint8_t*)dxc_blob->GetBufferPointer(), (uint8_t*)dxc_blob->GetBufferPointer() + dxc_blob->GetBufferSize());
     }
     else
     {
-        ComPtr<IDxcBlobEncoding> errors;
+        CComPtr<IDxcBlobEncoding> errors;
         result->GetErrorBuffer(&errors);
         OutputDebugStringA(reinterpret_cast<char*>(errors->GetBufferPointer()));
         std::cout << reinterpret_cast<char*>(errors->GetBufferPointer()) << std::endl;

@@ -16,6 +16,7 @@ add_library(Utilities
 target_link_libraries(Utilities
     gli
     glm
+    DirectX-Headers
 )
 
 target_include_directories(Utilities

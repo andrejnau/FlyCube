@@ -5,15 +5,13 @@
 #include <vector>
 #include <string>
 #include <filesystem>
-#include <wrl.h>
-using namespace Microsoft::WRL;
 
 HRESULT Test(dxc::DxcDllSupport& dll_support, ShaderBlobType target)
 {
     std::string test_shader = "[shader(\"pixel\")]void main(){}";
-    ComPtr<IDxcLibrary> library;
-    IFR(dll_support.CreateInstance(CLSID_DxcLibrary, library.GetAddressOf()));
-    ComPtr<IDxcBlobEncoding> source;
+    CComPtr<IDxcLibrary> library;
+    IFR(dll_support.CreateInstance(CLSID_DxcLibrary, &library));
+    CComPtr<IDxcBlobEncoding> source;
     IFR(library->CreateBlobWithEncodingFromPinned(test_shader.data(), test_shader.size(), CP_ACP, &source));
 
     std::vector<LPCWSTR> args;
@@ -22,11 +20,11 @@ HRESULT Test(dxc::DxcDllSupport& dll_support, ShaderBlobType target)
         args.emplace_back(L"-spirv");
     }
 
-    ComPtr<IDxcOperationResult> result;
-    ComPtr<IDxcCompiler> compiler;
-    IFR(dll_support.CreateInstance(CLSID_DxcCompiler, compiler.GetAddressOf()));
+    CComPtr<IDxcOperationResult> result;
+    CComPtr<IDxcCompiler> compiler;
+    IFR(dll_support.CreateInstance(CLSID_DxcCompiler, &compiler));
     IFR(compiler->Compile(
-        source.Get(),
+        source,
         L"main.hlsl",
         L"",
         L"lib_6_3",
@@ -43,12 +41,19 @@ HRESULT Test(dxc::DxcDllSupport& dll_support, ShaderBlobType target)
 
 std::unique_ptr<dxc::DxcDllSupport> Load(const std::string& path, ShaderBlobType target)
 {
+#if defined(_WIN32)
     auto dxcompiler_path = std::filesystem::u8path(path) / "dxcompiler.dll";
+#elif defined(__APPLE__)
+    auto dxcompiler_path = std::filesystem::u8path(path) / "libdxcompiler.dylib";
+#else
+    auto dxcompiler_path = std::filesystem::u8path(path) / "libdxcompiler.so";
+#endif
     if (!std::filesystem::exists(dxcompiler_path))
     {
         return {};
     }
 
+#ifdef _WIN32
     auto dxil_path = std::filesystem::u8path(path) / "dxil.dll";
     if (target == ShaderBlobType::kDXIL && !std::filesystem::exists(dxil_path))
     {
@@ -62,6 +67,7 @@ std::unique_ptr<dxc::DxcDllSupport> Load(const std::string& path, ShaderBlobType
         SetDllDirectoryW(prev_dll_dir.data());
     };
     SetDllDirectoryW(std::filesystem::u8path(path).wstring().c_str());
+#endif
 
     auto dll_support = std::make_unique<dxc::DxcDllSupport>();
     if (FAILED(dll_support->InitializeForDll(dxcompiler_path.wstring().c_str(), "DxcCreateInstance")))
@@ -82,7 +88,13 @@ std::unique_ptr<dxc::DxcDllSupport> GetDxcSupportImpl(ShaderBlobType target)
         GetExecutableDir(),
         DXC_CUSTOM_LOCATION,
         DXC_DEFAULT_LOCATION,
-        GetEnv("VULKAN_SDK") + "/Bin"
+    #if defined(_WIN32)
+        GetEnv("VULKAN_SDK") + "/Bin",
+    #elif defined(__APPLE__)
+        GetEnv("VULKAN_SDK") + "/macOS/lib",
+    #else
+        GetEnv("VULKAN_SDK") + "/lib",
+    #endif
     };
     for (const auto& path : localions)
     {

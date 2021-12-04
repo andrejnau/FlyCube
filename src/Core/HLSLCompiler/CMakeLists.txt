@@ -5,6 +5,7 @@ list(APPEND headers
 list(APPEND sources
     Compiler.cpp
     DXCLoader.cpp
+    DXCWinAdapter.cpp
 )
 
 add_library(HLSLCompiler ${headers} ${sources})

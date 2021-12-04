@@ -45,14 +45,16 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
     static size_t error_count = 0;
     if (error_count >= error_limit || SkipIt(flags, objectType, pMessage))
         return VK_FALSE;
-#ifdef _WIN32
     if (error_count < error_limit)
     {
         std::stringstream buf;
         buf << pLayerPrefix << " " << to_string(static_cast<vk::DebugReportFlagBitsEXT>(flags)) << " " << pMessage << std::endl;
-        OutputDebugStringA(buf.str().c_str());
+        #ifdef _WIN32
+            OutputDebugStringA(buf.str().c_str());
+        #else
+            printf("%s\n", buf.str().c_str());
+        #endif    
     }
-#endif
     ++error_count;
     return VK_FALSE;
 }
@@ -65,7 +67,11 @@ VKInstance::VKInstance()
     auto layers = vk::enumerateInstanceLayerProperties();
 
     std::set<std::string> req_layers;
-    static const bool debug_enabled = IsDebuggerPresent();
+    #ifdef _WIN32
+        static const bool debug_enabled = IsDebuggerPresent();
+    #else
+        static const bool debug_enabled = false;
+    #endif
     if (debug_enabled)
         req_layers.insert("VK_LAYER_KHRONOS_validation");
     std::vector<const char*> found_layers;
@@ -86,6 +92,11 @@ VKInstance::VKInstance()
         VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
     #elif defined(VK_USE_PLATFORM_XCB_KHR)
         VK_KHR_XCB_SURFACE_EXTENSION_NAME,
+    #elif defined(VK_USE_PLATFORM_MACOS_MVK)
+        VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
+    #endif
+    #if defined(VK_USE_PLATFORM_METAL_EXT)
+        VK_EXT_METAL_SURFACE_EXTENSION_NAME,
     #endif
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,

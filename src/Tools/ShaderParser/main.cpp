@@ -33,7 +33,11 @@ public:
         m_build_folder = argv[arg_index++];
 
         model.replace(model.find("."), 1, "_");
-        m_option.blob_type = ShaderBlobType::kDXIL;
+        #ifdef _WIN32
+            m_option.blob_type = ShaderBlobType::kDXIL;
+        #else
+            m_option.blob_type = ShaderBlobType::kSPIRV;
+        #endif
         m_option.type = GetShaderType(type);
         m_option.model = model;
         m_option.mustache_template = ReadFile(template_path);

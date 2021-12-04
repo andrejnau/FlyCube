@@ -198,13 +198,15 @@ VKDevice::VKDevice(VKAdapter& adapter)
         queue_create_info.pQueuePriorities = &queue_priority;
     }
 
+    auto physical_device_features = m_adapter.GetPhysicalDevice().getFeatures();
+
     vk::PhysicalDeviceFeatures device_features = {};
     device_features.textureCompressionBC = true;
     device_features.vertexPipelineStoresAndAtomics = true;
     device_features.samplerAnisotropy = true;
     device_features.fragmentStoresAndAtomics = true;
     device_features.sampleRateShading = true;
-    device_features.geometryShader = true;
+    device_features.geometryShader = physical_device_features.geometryShader;
     device_features.imageCubeArray = true;
     device_features.shaderImageGatherExtended = true;
 

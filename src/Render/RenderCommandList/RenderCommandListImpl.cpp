@@ -582,7 +582,7 @@ void RenderCommandListImpl::BeginRenderPass(const RenderPassBeginDesc& desc)
             continue;
         }
 
-        BindKey bind_key = { ShaderType::kPixel, ViewType::kRenderTarget, i, 0 };
+        BindKey bind_key = { ShaderType::kPixel, ViewType::kRenderTarget, (uint32_t)i, 0 };
         view = m_object_cache.GetView(m_program, bind_key, desc.colors[i].texture, desc.colors[i].view_desc);
         ViewBarrier(view, ResourceState::kRenderTarget);
     }

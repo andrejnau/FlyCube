@@ -1,6 +1,7 @@
 #include "AppBox/AppBox.h"
 #include <sstream>
 #include <cassert>
+#include <cmath>
 
 AppBox::AppBox(const std::string& title, Settings setting)
     : m_setting(setting)
@@ -37,6 +38,7 @@ AppBox::AppBox(const std::string& title, Settings setting)
     int xpos = (monitor_desc->width - m_width) / 2;
     int ypos = (monitor_desc->height - m_height) / 2;
     glfwSetWindowPos(m_window, xpos, ypos);
+    glfwGetFramebufferSize(m_window, (int*)&m_width, (int*)&m_height);
 }
 
 AppBox::~AppBox()

@@ -16,7 +16,13 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdarg>
-#include <Windows.h>
+
+#ifdef _WIN32
+    #include <Windows.h>
+    #define DEBUGBREAK __debugbreak()
+#else
+    #define DEBUGBREAK
+#endif
 
 #ifndef CUSTOM_FAILED
     #define CUSTOM_FAILED FAILED
@@ -32,7 +38,7 @@ namespace DXUtility
         char buffer[256];
         va_list ap;
         va_start(ap, format);
-        vsprintf_s(buffer, 256, format, ap);
+        vsnprintf(buffer, 256, format, ap);
         Print(buffer);
     }
 
@@ -52,7 +58,7 @@ namespace DXUtility
         char buffer[256];
         va_list ap;
         va_start(ap, format);
-        vsprintf_s(buffer, 256, format, ap);
+        vsnprintf(buffer, 256, format, ap);
         Print(buffer);
         Print("\n");
     }
@@ -83,7 +89,7 @@ namespace DXUtility
 #undef HALT
 #endif
 
-#define HALT( ... ) ERROR( __VA_ARGS__ ) __debugbreak();
+#define HALT( ... ) ERROR( __VA_ARGS__ ) DEBUGBREAK;
 
 #ifdef NDEBUG
 
@@ -104,7 +110,7 @@ namespace DXUtility
             DXUtility::PrintSubMessage("\'" #isFalse "\' is false"); \
             DXUtility::PrintSubMessage(__VA_ARGS__); \
             DXUtility::Print("\n"); \
-            __debugbreak(); \
+            DEBUGBREAK; \
         }
 
 #define ASSERT_SUCCEEDED( expr, ... ) \
@@ -116,7 +122,7 @@ namespace DXUtility
                     DXUtility::PrintSubMessage("hr = 0x%08X", hr); \
                     DXUtility::PrintSubMessage(__VA_ARGS__); \
                     DXUtility::Print("\n"); \
-                    __debugbreak(); \
+                    DEBUGBREAK; \
             } \
         }
 
@@ -144,4 +150,4 @@ namespace DXUtility
 
 #endif
 
-#define BreakIfFailed( hr ) if (CUSTOM_FAILED(hr)) __debugbreak()
+#define BreakIfFailed( hr ) if (CUSTOM_FAILED(hr)) DEBUGBREAK

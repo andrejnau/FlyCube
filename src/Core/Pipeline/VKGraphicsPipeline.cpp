@@ -182,8 +182,11 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     std::vector<vk::DynamicState> dynamic_state_enables = {
         vk::DynamicState::eViewport,
         vk::DynamicState::eScissor,
-        vk::DynamicState::eFragmentShadingRateKHR,
     };
+
+    if (m_device.IsVariableRateShadingSupported())
+        dynamic_state_enables.emplace_back(vk::DynamicState::eFragmentShadingRateKHR);
+
     vk::PipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
     pipelineDynamicStateCreateInfo.pDynamicStates = dynamic_state_enables.data();
     pipelineDynamicStateCreateInfo.dynamicStateCount = dynamic_state_enables.size();
