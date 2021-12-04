@@ -281,7 +281,7 @@ uint32_t VKDevice::GetTextureDataPitchAlignment() const
     return 1;
 }
 
-std::shared_ptr<Swapchain> VKDevice::CreateSwapchain(Window window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+std::shared_ptr<Swapchain> VKDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
 {
     return std::make_shared<VKSwapchain>(*m_command_queues.at(CommandListType::kGraphics), window, width, height, frame_count, vsync);
 }

@@ -32,6 +32,7 @@ target_link_libraries(Swapchain
     Device
     Resource
     Utilities
+    glfw
 )
 
 if (VULKAN_SUPPORT)

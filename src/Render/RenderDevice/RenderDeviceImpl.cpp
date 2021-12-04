@@ -2,8 +2,6 @@
 #include <Utilities/FormatHelper.h>
 #include <RenderCommandList/RenderCommandListImpl.h>
 #include <Resource/ResourceBase.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
 
 RenderDeviceImpl::RenderDeviceImpl(const Settings& settings, GLFWwindow* window)
     : m_window(window)
@@ -17,7 +15,7 @@ RenderDeviceImpl::RenderDeviceImpl(const Settings& settings, GLFWwindow* window)
     m_object_cache = std::make_unique<ObjectCache>(*m_device);
 
     glfwGetWindowSize(window, &m_width, &m_height);
-    m_swapchain = m_device->CreateSwapchain(glfwGetWin32Window(window), m_width, m_height, m_frame_count, settings.vsync);
+    m_swapchain = m_device->CreateSwapchain(window, m_width, m_height, m_frame_count, settings.vsync);
     m_fence = m_device->CreateFence(m_fence_value);
     for (uint32_t i = 0; i < m_frame_count; ++i)
     {
@@ -250,7 +248,7 @@ void RenderDeviceImpl::Resize(uint32_t width, uint32_t height)
     m_width = width;
     m_height = height;
     m_swapchain.reset();
-    m_swapchain = m_device->CreateSwapchain(glfwGetWin32Window(m_window), m_width, m_height, m_frame_count, m_vsync);
+    m_swapchain = m_device->CreateSwapchain(m_window, m_width, m_height, m_frame_count, m_vsync);
     m_frame_index = 0;
 }
 

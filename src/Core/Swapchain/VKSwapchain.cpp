@@ -1,3 +1,4 @@
+#define GLFW_INCLUDE_VULKAN
 #include "Swapchain/VKSwapchain.h"
 #include <Device/VKDevice.h>
 #include <CommandQueue/VKCommandQueue.h>
@@ -7,17 +8,17 @@
 #include <Utilities/VKUtility.h>
 #include <Resource/VKResource.h>
 
-VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, Window window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
     : m_command_queue(command_queue)
     , m_device(command_queue.GetDevice())
 {
     VKAdapter& adapter = m_device.GetAdapter();
     VKInstance& instance = adapter.GetInstance();
 
-    vk::Win32SurfaceCreateInfoKHR surface_desc = {};
-    surface_desc.hinstance = GetModuleHandle(nullptr);
-    surface_desc.hwnd = reinterpret_cast<HWND>(window);
-    m_surface = instance.GetInstance().createWin32SurfaceKHRUnique(surface_desc);
+    VkSurfaceKHR surface = 0;
+    ASSERT_SUCCEEDED(glfwCreateWindowSurface(instance.GetInstance(), window, nullptr, &surface));
+    vk::ObjectDestroy<vk::Instance, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE> deleter(instance.GetInstance());
+    m_surface = vk::UniqueSurfaceKHR(surface, deleter);
 
     auto surface_formats = adapter.GetPhysicalDevice().getSurfaceFormatsKHR(m_surface.get());
     ASSERT(!surface_formats.empty());

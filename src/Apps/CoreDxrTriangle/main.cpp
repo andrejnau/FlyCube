@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
     std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
     std::shared_ptr<CommandQueue> upload_command_queue = device->GetCommandQueue(CommandListType::kGraphics);
     constexpr uint32_t frame_count = 3;
-    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeWindow(), rect.width, rect.height, frame_count, settings.vsync);
+    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetWindow(), rect.width, rect.height, frame_count, settings.vsync);
     uint64_t fence_value = 0;
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 

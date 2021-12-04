@@ -5,9 +5,11 @@
 #include <Instance/DXInstance.h>
 #include <Resource/DXResource.h>
 #include <Utilities/DXUtility.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 #include <gli/dx.hpp>
 
-DXSwapchain::DXSwapchain(DXCommandQueue& command_queue, Window window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+DXSwapchain::DXSwapchain(DXCommandQueue& command_queue, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
     : m_command_queue(command_queue)
     , m_vsync(vsync)
 {
@@ -23,8 +25,8 @@ DXSwapchain::DXSwapchain(DXCommandQueue& command_queue, Window window, uint32_t 
     swap_chain_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
-    ASSERT_SUCCEEDED(instance.GetFactory()->CreateSwapChainForHwnd(command_queue.GetQueue().Get(), reinterpret_cast<HWND>(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
-    ASSERT_SUCCEEDED(instance.GetFactory()->MakeWindowAssociation(reinterpret_cast<HWND>(window), DXGI_MWA_NO_WINDOW_CHANGES));
+    ASSERT_SUCCEEDED(instance.GetFactory()->CreateSwapChainForHwnd(command_queue.GetQueue().Get(), glfwGetWin32Window(window), &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
+    ASSERT_SUCCEEDED(instance.GetFactory()->MakeWindowAssociation(glfwGetWin32Window(window), DXGI_MWA_NO_WINDOW_CHANGES));
     tmp_swap_chain.As(&m_swap_chain);
 
     for (size_t i = 0; i < frame_count; ++i)

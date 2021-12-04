@@ -25,7 +25,6 @@ public:
 
     AppRect GetAppRect() const;
     GLFWwindow* GetWindow() const;
-    void* GetNativeWindow() const;
     void SetGpuName(const std::string& gpu_name);
     void SubscribeEvents(InputEvents* input_listener, WindowEvents* window_listener);
 
