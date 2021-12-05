@@ -49,7 +49,7 @@ jobs:
           $installer.WaitForExit();
 
       - name: Run CMake+Ninja
-        uses: lukka/run-cmake@main
+        uses: lukka/run-cmake@v3
         id: runcmake
         with:
           cmakeGenerator: 'Ninja'
