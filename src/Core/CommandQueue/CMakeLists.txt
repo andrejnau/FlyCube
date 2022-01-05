@@ -20,6 +20,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTCommandQueue.h
+    )
+    list(APPEND sources
+        MTCommandQueue.mm
+    )
+endif()
+
 add_library(CommandQueue ${headers} ${sources})
 
 target_include_directories(CommandQueue

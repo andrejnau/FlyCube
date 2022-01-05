@@ -25,6 +25,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTInstance.h
+    )
+    list(APPEND sources
+        MTInstance.mm
+    )
+endif()
+
 add_library(Instance ${headers} ${sources})
 
 target_include_directories(Instance
@@ -53,6 +62,12 @@ if (DIRECTX_SUPPORT)
         dxguid
         DirectX-Headers
         DirectX-Guids
+    )
+endif()
+
+if (METAL_SUPPORT)
+    target_link_libraries(Instance
+        "-framework Metal"
     )
 endif()
 

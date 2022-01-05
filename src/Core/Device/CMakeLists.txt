@@ -20,6 +20,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTDevice.h
+    )
+    list(APPEND sources
+        MTDevice.mm
+    )
+endif()
+
 add_library(Device ${headers} ${sources})
 
 target_include_directories(Device

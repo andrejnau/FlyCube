@@ -15,6 +15,9 @@ AppBox::AppBox(const std::string& title, Settings setting)
     case ApiType::kVulkan:
         api_str = "[Vulkan]";
         break;
+    case ApiType::kMetal:
+        api_str = "[Metal]";
+        break;
     }
     m_title = api_str + " " + title;
 
