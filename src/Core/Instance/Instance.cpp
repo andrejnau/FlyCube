@@ -5,6 +5,9 @@
 #ifdef VULKAN_SUPPORT
 #include "Instance/VKInstance.h"
 #endif
+#ifdef METAL_SUPPORT
+#include "Instance/MTInstance.h"
+#endif
 #include <cassert>
 
 std::shared_ptr<Instance> CreateInstance(ApiType type)
@@ -18,6 +21,10 @@ std::shared_ptr<Instance> CreateInstance(ApiType type)
 #ifdef VULKAN_SUPPORT
     case ApiType::kVulkan:
         return std::make_shared<VKInstance>();
+#endif
+#ifdef METAL_SUPPORT
+    case ApiType::kMetal:
+        return std::make_shared<MTInstance>();
 #endif
     }
     assert(false);

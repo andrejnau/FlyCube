@@ -20,6 +20,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTAdapter.h
+    )
+    list(APPEND sources
+        MTAdapter.mm
+    )
+endif()
+
 add_library(Adapter ${headers} ${sources})
 
 target_include_directories(Adapter
