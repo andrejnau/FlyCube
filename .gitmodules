@@ -34,3 +34,6 @@
 [submodule "3rdparty/DirectX-Headers"]
 	path = 3rdparty/DirectX-Headers
 	url = https://github.com/microsoft/DirectX-Headers.git
+[submodule "3rdparty/Vulkan-Headers"]
+	path = 3rdparty/Vulkan-Headers
+	url = https://github.com/KhronosGroup/Vulkan-Headers.git

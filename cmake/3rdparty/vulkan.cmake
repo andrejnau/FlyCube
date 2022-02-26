@@ -1,12 +1,7 @@
-find_package(Vulkan REQUIRED)
+add_subdirectory(${project_root}/3rdparty/Vulkan-Headers Vulkan-Headers EXCLUDE_FROM_ALL)
 
-add_library(vulkan STATIC IMPORTED)
-set_target_properties(vulkan PROPERTIES
-    IMPORTED_LOCATION "${Vulkan_LIBRARIES}"
-)
-set_target_properties(vulkan PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${Vulkan_INCLUDE_DIR}"
-)
+add_library(vulkan INTERFACE)
+target_link_libraries(vulkan INTERFACE Vulkan-Headers)
 
 set_property(TARGET vulkan APPEND PROPERTY
     INTERFACE_COMPILE_DEFINITIONS
