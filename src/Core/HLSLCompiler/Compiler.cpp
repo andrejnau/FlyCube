@@ -2,6 +2,7 @@
 #include "HLSLCompiler/DXCLoader.h"
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXUtility.h>
+#include <nowide/convert.hpp>
 #include <deque>
 #include <iostream>
 #include <vector>
@@ -69,7 +70,7 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
 {
     decltype(auto) dxc_support = GetDxcSupport(blob_type);
 
-    std::wstring shader_path = utf8_to_wstring(shader.shader_path);
+    std::wstring shader_path = nowide::widen(shader.shader_path);
     std::wstring shader_dir = shader_path.substr(0, shader_path.find_last_of(L"\\/") + 1);
 
     CComPtr<IDxcLibrary> library;
@@ -81,13 +82,13 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
         &source)
     );
 
-    std::wstring target = utf8_to_wstring(GetShaderTarget(shader.type, shader.model));
-    std::wstring entrypoint = utf8_to_wstring(shader.entrypoint);
+    std::wstring target = nowide::widen(GetShaderTarget(shader.type, shader.model));
+    std::wstring entrypoint = nowide::widen(shader.entrypoint);
     std::vector<std::pair<std::wstring, std::wstring>> defines_store;
     std::vector<DxcDefine> defines;
     for (const auto& define : shader.define)
     {
-        defines_store.emplace_back(utf8_to_wstring(define.first), utf8_to_wstring(define.second));
+        defines_store.emplace_back(nowide::widen(define.first), nowide::widen(define.second));
         defines.push_back({ defines_store.back().first.c_str(), defines_store.back().second.c_str() });
     }
 

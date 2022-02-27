@@ -31,6 +31,7 @@ target_link_libraries(CommandList
     ApiType
     Device
     Utilities
+    nowide
 )
 
 if (VULKAN_SUPPORT)

@@ -16,6 +16,7 @@
 #include <directx/d3dx12.h>
 #include <gli/dx.hpp>
 #include <pix.h>
+#include <nowide/convert.hpp>
 
 DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
     : m_device(device)
@@ -263,8 +264,7 @@ void DXCommandList::BeginEvent(const std::string& name)
 {
     if (!m_device.IsUnderGraphicsDebugger())
         return;
-    std::wstring wname = utf8_to_wstring(name);
-    PIXBeginEvent(m_command_list.Get(), 0, wname.c_str());
+    PIXBeginEvent(m_command_list.Get(), 0, nowide::widen(name).c_str());
 }
 
 void DXCommandList::EndEvent()

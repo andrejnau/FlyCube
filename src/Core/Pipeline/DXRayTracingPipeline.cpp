@@ -13,6 +13,7 @@
 #include <dxc/DXIL/DxilConstants.h>
 #include <dxc/DxilContainer/DxilContainer.h>
 #include <dxc/DxilContainer/DxilRuntimeReflection.h>
+#include <nowide/convert.hpp>
 
 DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPipelineDesc& desc)
     : m_device(device)
@@ -34,7 +35,7 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
         for (const auto& entry_point : shader->GetReflection()->GetEntryPoints())
         {
             uint64_t shader_id = shader->GetId(entry_point.name);
-            std::wstring shader_name = utf8_to_wstring(entry_point.name);
+            std::wstring shader_name = nowide::widen(entry_point.name);
             if (m_shader_names.count(shader_name))
             {
                 std::wstring new_shader_name = GenerateUniqueName(shader_name + L"_renamed_" + std::to_wstring(shader_id));

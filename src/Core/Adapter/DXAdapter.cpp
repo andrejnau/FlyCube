@@ -4,6 +4,7 @@
 #include <Utilities/FileUtility.h>
 #include <dxgi1_6.h>
 #include <directx/d3d12.h>
+#include <nowide/convert.hpp>
 
 DXAdapter::DXAdapter(DXInstance& instance, const ComPtr<IDXGIAdapter1>& adapter)
     : m_instance(instance)
@@ -11,7 +12,7 @@ DXAdapter::DXAdapter(DXInstance& instance, const ComPtr<IDXGIAdapter1>& adapter)
 {
     DXGI_ADAPTER_DESC desc = {};
     adapter->GetDesc(&desc);
-    m_name = wstring_to_utf8(desc.Description);
+    m_name = nowide::narrow(desc.Description);
 }
 
 const std::string& DXAdapter::GetName() const

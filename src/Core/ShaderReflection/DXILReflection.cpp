@@ -8,6 +8,7 @@
 #include <dxc/DXIL/DxilConstants.h>
 #include <dxc/DxilContainer/DxilRuntimeReflection.inl>
 #include <dia2.h>
+#include <nowide/convert.hpp>
 #include <algorithm>
 #include <set>
 
@@ -83,7 +84,7 @@ std::string FindStrValue(ComPtr<IDiaTable> table, const std::wstring& name)
         VARIANT value = {};
         symbol->get_value(&value);
         if (value.vt == VT_BSTR)
-            return wstring_to_utf8(value.bstrVal);
+            return nowide::narrow(value.bstrVal);
     }
     return "";
 }

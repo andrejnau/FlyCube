@@ -37,3 +37,6 @@
 [submodule "3rdparty/Vulkan-Headers"]
 	path = 3rdparty/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+[submodule "3rdparty/nowide"]
+	path = 3rdparty/nowide
+	url = https://github.com/boostorg/nowide

@@ -4,6 +4,7 @@
 #include <Utilities/FileUtility.h>
 #include <Utilities/DXGIFormatHelper.h>
 #include <directx/d3dx12.h>
+#include <nowide/convert.hpp>
 #include <optional>
 
 std::optional<D3D12_CLEAR_VALUE> GetClearValue(const D3D12_RESOURCE_DESC& desc)
@@ -120,7 +121,7 @@ void DXResource::SetName(const std::string& name)
 {
     if (resource)
     {
-        resource->SetName(utf8_to_wstring(name).c_str());
+        resource->SetName(nowide::widen(name).c_str());
     }
 }
 

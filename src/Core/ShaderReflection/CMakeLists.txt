@@ -33,6 +33,7 @@ target_include_directories(ShaderReflection
 target_link_libraries(ShaderReflection
     Utilities
     HLSLCompiler
+    nowide
 )
 
 if (VULKAN_SUPPORT)

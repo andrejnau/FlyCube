@@ -17,6 +17,7 @@ target_include_directories(HLSLCompiler
 
 target_link_libraries(HLSLCompiler
     Utilities
+    nowide
 )
 
 if (VULKAN_SUPPORT)
