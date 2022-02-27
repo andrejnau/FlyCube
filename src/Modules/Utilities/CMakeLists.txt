@@ -1,8 +1,8 @@
 add_library(Utilities
     Common.h
     DXUtility.h
-    FileUtility.h
-    FileUtility.cpp
+    SystemUtils.cpp
+    SystemUtils.h
     Logger.h
     ScopeGuard.h
     Singleton.h
@@ -17,6 +17,7 @@ target_link_libraries(Utilities
     gli
     glm
     DirectX-Headers
+    nowide
 )
 
 target_include_directories(Utilities

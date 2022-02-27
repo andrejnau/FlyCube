@@ -3,7 +3,7 @@
 #include <Resource/DXResource.h>
 #include <View/DXView.h>
 #include <Utilities/DXUtility.h>
-#include <Utilities/FileUtility.h>
+#include <Utilities/SystemUtils.h>
 #include <Pipeline/DXGraphicsPipeline.h>
 #include <Pipeline/DXComputePipeline.h>
 #include <Pipeline/DXRayTracingPipeline.h>

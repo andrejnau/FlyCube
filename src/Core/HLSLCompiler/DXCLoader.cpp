@@ -1,5 +1,5 @@
 #include "HLSLCompiler/DXCLoader.h"
-#include <Utilities/FileUtility.h>
+#include <Utilities/SystemUtils.h>
 #include <Utilities/ScopeGuard.h>
 #include <dxc/Support/Global.h>
 #include <vector>
@@ -89,11 +89,11 @@ std::unique_ptr<dxc::DxcDllSupport> GetDxcSupportImpl(ShaderBlobType target)
         DXC_CUSTOM_LOCATION,
         DXC_DEFAULT_LOCATION,
     #if defined(_WIN32)
-        GetEnv("VULKAN_SDK") + "/Bin",
+        GetEnvironmentVar("VULKAN_SDK") + "/Bin",
     #elif defined(__APPLE__)
-        GetEnv("VULKAN_SDK") + "/macOS/lib",
+        GetEnvironmentVar("VULKAN_SDK") + "/macOS/lib",
     #else
-        GetEnv("VULKAN_SDK") + "/lib",
+        GetEnvironmentVar("VULKAN_SDK") + "/lib",
     #endif
     };
     for (const auto& path : localions)

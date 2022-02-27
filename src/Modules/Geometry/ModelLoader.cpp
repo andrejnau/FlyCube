@@ -1,12 +1,12 @@
 #include "Geometry/ModelLoader.h"
 #include "Geometry/Model.h"
-#include <Utilities/FileUtility.h>
-#include <vector>
-#include <set>
-
+#include <Utilities/SystemUtils.h>
 #include <assimp/DefaultIOStream.h>
 #include <assimp/DefaultIOSystem.h>
 #include <assimp/MemoryIOWrapper.h>
+#include <vector>
+#include <set>
+#include <fstream>
 
 class MyIOSystem : public Assimp::DefaultIOSystem
 {

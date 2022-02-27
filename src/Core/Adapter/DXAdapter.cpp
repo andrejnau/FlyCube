@@ -1,7 +1,7 @@
 #include "Adapter/DXAdapter.h"
 #include <Device/DXDevice.h>
 #include <Utilities/DXUtility.h>
-#include <Utilities/FileUtility.h>
+#include <Utilities/SystemUtils.h>
 #include <dxgi1_6.h>
 #include <directx/d3d12.h>
 #include <nowide/convert.hpp>

@@ -1,6 +1,6 @@
 #include "ShaderReflection/DXILReflection.h"
 #include <Utilities/DXUtility.h>
-#include <Utilities/FileUtility.h>
+#include <Utilities/SystemUtils.h>
 #include <HLSLCompiler/DXCLoader.h>
 #include <assert.h>
 #include <dxc/DXIL/DxilConstants.h>

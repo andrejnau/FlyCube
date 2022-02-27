@@ -1,7 +1,7 @@
 #include "QueryHeap/DXRayTracingQueryHeap.h"
 #include <Device/DXDevice.h>
 #include <Utilities/DXUtility.h>
-#include <Utilities/FileUtility.h>
+#include <Utilities/SystemUtils.h>
 #include <dxgi1_6.h>
 #include <directx/d3d12.h>
 #include <directx/d3dx12.h>

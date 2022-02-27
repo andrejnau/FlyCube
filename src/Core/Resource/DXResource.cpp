@@ -1,7 +1,7 @@
 #include "Resource/DXResource.h"
 #include <Device/DXDevice.h>
 #include <Memory/DXMemory.h>
-#include <Utilities/FileUtility.h>
+#include <Utilities/SystemUtils.h>
 #include <Utilities/DXGIFormatHelper.h>
 #include <directx/d3dx12.h>
 #include <nowide/convert.hpp>
