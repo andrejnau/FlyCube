@@ -2,6 +2,7 @@
 #ifdef _WIN32
 #include <Windows.h>
 #else
+#include <linux/limits.h>
 #include <unistd.h>
 #include <stdlib.h>
 #endif
