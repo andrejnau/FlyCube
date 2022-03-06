@@ -10,7 +10,7 @@ std::vector<std::shared_ptr<Adapter>> MTInstance::EnumerateAdapters()
 {
     std::vector<std::shared_ptr<Adapter>> adapters;
     NSArray<id<MTLDevice>>* devices = MTLCopyAllDevices();
-    for (auto device : devices)
+    for (id<MTLDevice> device : devices)
     {
         adapters.emplace_back(std::make_shared<MTAdapter>(device));
     }

@@ -27,6 +27,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTResource.h
+    )
+    list(APPEND sources
+        MTResource.mm
+    )
+endif()
+
 add_library(Resource ${headers} ${sources})
 
 target_include_directories(Resource

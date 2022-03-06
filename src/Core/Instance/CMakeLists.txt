@@ -68,6 +68,7 @@ endif()
 if (METAL_SUPPORT)
     target_link_libraries(Instance
         "-framework Metal"
+        "-framework QuartzCore"
     )
 endif()
 
