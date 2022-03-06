@@ -20,6 +20,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTSwapchain.h
+    )
+    list(APPEND sources
+        MTSwapchain.mm
+    )
+endif()
+
 add_library(Swapchain ${headers} ${sources})
 
 target_include_directories(Swapchain

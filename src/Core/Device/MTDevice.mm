@@ -1,5 +1,6 @@
 #include "Device/MTDevice.h"
 #include <CommandQueue/MTCommandQueue.h>
+#include <Swapchain/MTSwapchain.h>
 
 MTDevice::MTDevice(const id<MTLDevice>& device)
     : m_device(device)
@@ -23,7 +24,7 @@ uint32_t MTDevice::GetTextureDataPitchAlignment() const
 
 std::shared_ptr<Swapchain> MTDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
 {
-    return {};
+    return std::make_shared<MTSwapchain>(*this, window, width, height, frame_count, vsync);
 }
 
 std::shared_ptr<CommandList> MTDevice::CreateCommandList(CommandListType type)

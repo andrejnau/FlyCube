@@ -1,6 +1,7 @@
 #pragma once
 #include "Device/Device.h"
 #import <Metal/Metal.h>
+#import <QuartzCore/QuartzCore.h>
 
 class MTDevice : public Device
 {
@@ -38,6 +39,11 @@ public:
     uint32_t GetShaderTableAlignment() const override;
     RaytracingASPrebuildInfo GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const override;
     RaytracingASPrebuildInfo GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const override;
+
+    const id<MTLDevice>& GetDevice() const
+    {
+        return m_device;
+    }
     
 private:
     id<MTLDevice> m_device;
