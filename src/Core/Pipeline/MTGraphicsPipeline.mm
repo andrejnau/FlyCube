@@ -10,7 +10,8 @@ std::string FixEntryPoint(const std::string& entry_point)
 }
 
 MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineDesc& desc)
-    : m_desc(desc)
+    : m_device(device)
+    , m_desc(desc)
 {
     decltype(auto) mtl_device = device.GetDevice();
     MTLRenderPipelineDescriptor* pipeline_descriptor = [[MTLRenderPipelineDescriptor alloc] init];
@@ -47,6 +48,7 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
             {
             case ShaderType::kVertex:
                 pipeline_descriptor.vertexFunction = function;
+                pipeline_descriptor.vertexDescriptor = GetVertexDescriptor(shader);
                 break;
             case ShaderType::kPixel:
                 pipeline_descriptor.fragmentFunction = function;
@@ -55,11 +57,29 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
         }
     }
     
-    auto pipeline = [mtl_device newRenderPipelineStateWithDescriptor:pipeline_descriptor error:&error];
-    if (!pipeline)
+    m_pipeline = [mtl_device newRenderPipelineStateWithDescriptor:pipeline_descriptor error:&error];
+    if (!m_pipeline)
     {
         NSLog(@"Error occurred when creating render pipeline state: %@", error);
     }
+}
+
+MTLVertexDescriptor* MTGraphicsPipeline::GetVertexDescriptor(const std::shared_ptr<Shader>& shader)
+{
+    MVKPixelFormats& pixel_formats = m_device.GetMVKPixelFormats();
+    MTLVertexDescriptor* vertex_descriptor = [MTLVertexDescriptor new];
+    for (size_t i = 0; i < m_desc.input.size(); ++i)
+    {
+        decltype(auto) vertex = m_desc.input[i];
+        decltype(auto) attribute = vertex_descriptor.attributes[i];
+        decltype(auto) layout = vertex_descriptor.layouts[i];
+        attribute.offset = 0;
+        attribute.bufferIndex = vertex.slot;
+        attribute.format = pixel_formats.getMTLVertexFormat(static_cast<VkFormat>(vertex.format));
+        layout.stride = vertex.stride;
+        layout.stepFunction = MTLVertexStepFunctionPerVertex;
+    }
+    return vertex_descriptor;
 }
 
 PipelineType MTGraphicsPipeline::GetPipelineType() const

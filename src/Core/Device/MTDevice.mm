@@ -7,6 +7,7 @@
 
 MTDevice::MTDevice(const id<MTLDevice>& device)
     : m_device(device)
+    , m_mvk_pixel_formats(this)
 {
 }
 
