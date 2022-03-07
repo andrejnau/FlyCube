@@ -8,6 +8,15 @@ list(APPEND sources
     DXCWinAdapter.cpp
 )
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MSLConverter.h
+    )
+    list(APPEND sources
+        MSLConverter.cpp
+    )
+endif()
+
 add_library(HLSLCompiler ${headers} ${sources})
 
 target_include_directories(HLSLCompiler
@@ -27,6 +36,12 @@ if (VULKAN_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    target_link_libraries(HLSLCompiler
+        spirv-cross-msl
+    )
+endif()
+
 if (UNIX)
     target_link_libraries(HLSLCompiler
         dl
@@ -38,3 +53,5 @@ target_link_libraries(HLSLCompiler
 )
 
 set_target_properties(HLSLCompiler PROPERTIES FOLDER "Core")
+
+add_subdirectory(test)
