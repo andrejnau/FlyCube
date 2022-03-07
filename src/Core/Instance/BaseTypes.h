@@ -108,7 +108,8 @@ enum class ViewType
 enum class ShaderBlobType
 {
     kDXIL,
-    kSPIRV
+    kSPIRV,
+    kMSLSource
 };
 
 enum class ResourceType
