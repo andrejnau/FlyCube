@@ -2,8 +2,37 @@
 #include "Device/Device.h"
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
+#include <MVKPixelFormats.h>
 
-class MTDevice : public Device
+class MVKPhysicalDeviceImpl : public MVKPhysicalDevice
+{
+public:
+    MVKPhysicalDeviceImpl()
+    {
+        m_features.stencilViews = false;
+        m_features.renderLinearTextures = false;
+        m_features.clearColorFloatRounding = MVK_FLOAT_ROUNDING_NEAREST;
+    }
+
+    virtual ~MVKPhysicalDeviceImpl() = default;
+
+    MVKVulkanAPIObject* getVulkanAPIObject() override
+    {
+        return this;
+    }
+
+    const MVKPhysicalDeviceMetalFeatures* getMetalFeatures() override
+    {
+        return &m_features;
+    }
+
+protected:
+    MVKPhysicalDeviceMetalFeatures m_features = {};
+};
+
+class MTDevice
+    : public Device
+    , protected MVKPhysicalDeviceImpl
 {
 public:
     MTDevice(const id<MTLDevice>& device);
@@ -44,7 +73,17 @@ public:
     {
         return m_device;
     }
-    
+
+    id<MTLDevice> getMTLDevice() override {
+        return GetDevice();
+    }
+
+    MVKPixelFormats& GetMVKPixelFormats()
+    {
+        return m_mvk_pixel_formats;
+    }
+
 private:
     id<MTLDevice> m_device;
+    MVKPixelFormats m_mvk_pixel_formats;
 };

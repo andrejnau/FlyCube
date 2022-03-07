@@ -72,4 +72,10 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    target_link_libraries(Pipeline
+        MVKPixelFormats
+    )
+endif()
+
 set_target_properties(Pipeline PROPERTIES FOLDER "Core")
