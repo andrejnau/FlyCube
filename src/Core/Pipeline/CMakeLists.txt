@@ -33,6 +33,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTGraphicsPipeline.h
+    )
+    list(APPEND sources
+        MTGraphicsPipeline.mm
+    )
+endif()
+
 add_library(Pipeline ${headers} ${sources})
 
 target_include_directories(Pipeline
