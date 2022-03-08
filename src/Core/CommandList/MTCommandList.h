@@ -79,6 +79,8 @@ public:
         const std::shared_ptr<Resource>& dst_buffer,
         uint64_t dst_offset) override;
 
+    id<MTLCommandBuffer> GetCommandBuffer();
+
 private:
     MTDevice& m_device;
     id<MTLCommandBuffer> m_command_buffer = nullptr;
