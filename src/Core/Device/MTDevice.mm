@@ -13,6 +13,7 @@ MTDevice::MTDevice(const id<MTLDevice>& device)
     : m_device(device)
     , m_mvk_pixel_formats(this)
 {
+    m_command_queue = std::make_shared<MTCommandQueue>(m_device);
 }
 
 std::shared_ptr<Memory> MTDevice::AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits)
@@ -22,7 +23,7 @@ std::shared_ptr<Memory> MTDevice::AllocateMemory(uint64_t size, MemoryType memor
 
 std::shared_ptr<CommandQueue> MTDevice::GetCommandQueue(CommandListType type)
 {
-    return std::make_shared<MTCommandQueue>(m_device);
+    return m_command_queue;
 }
 
 uint32_t MTDevice::GetTextureDataPitchAlignment() const
@@ -82,7 +83,7 @@ std::shared_ptr<RenderPass> MTDevice::CreateRenderPass(const RenderPassDesc& des
 
 std::shared_ptr<Framebuffer> MTDevice::CreateFramebuffer(const FramebufferDesc& desc)
 {
-    return std::make_shared<MTFramebuffer>(*this, desc);
+    return std::make_shared<MTFramebuffer>(desc);
 }
 
 std::shared_ptr<Shader> MTDevice::CompileShader(const ShaderDesc& desc)
@@ -173,4 +174,24 @@ RaytracingASPrebuildInfo MTDevice::GetBLASPrebuildInfo(const std::vector<Raytrac
 RaytracingASPrebuildInfo MTDevice::GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const
 {
     return {};
+}
+
+const id<MTLDevice>& MTDevice::GetDevice() const
+{
+    return m_device;
+}
+
+id<MTLDevice> MTDevice::getMTLDevice()
+{
+    return GetDevice();
+}
+
+MVKPixelFormats& MTDevice::GetMVKPixelFormats()
+{
+    return m_mvk_pixel_formats;
+}
+
+id<MTLCommandQueue> MTDevice::GetMTCommandQueue() const
+{
+    return m_command_queue->GetCommandQueue();
 }

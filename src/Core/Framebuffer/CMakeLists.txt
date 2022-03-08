@@ -26,9 +26,6 @@ if (METAL_SUPPORT)
     list(APPEND headers
         MTFramebuffer.h
     )
-    list(APPEND sources
-        MTFramebuffer.mm
-    )
 endif()
 
 add_library(Framebuffer ${headers} ${sources})

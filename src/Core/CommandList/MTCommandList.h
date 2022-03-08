@@ -1,5 +1,6 @@
 #pragma once
 #include "CommandList/CommandList.h"
+#import <Metal/Metal.h>
 
 class MTDevice;
 
@@ -80,4 +81,6 @@ public:
 
 private:
     MTDevice& m_device;
+    id<MTLCommandBuffer> m_command_buffer = nullptr;
+    id<MTLRenderCommandEncoder> m_render_encoder = nullptr;
 };
