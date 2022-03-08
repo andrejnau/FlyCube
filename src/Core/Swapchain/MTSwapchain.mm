@@ -25,6 +25,8 @@ id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_t heigh
 MTSwapchain::MTSwapchain(MTDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
     : m_device(device)
     , m_frame_count(frame_count)
+    , m_width(width)
+    , m_height(height)
 {
     NSWindow* nswin = glfwGetCocoaWindow(window);
     m_layer = [CAMetalLayer layer];
@@ -33,6 +35,7 @@ MTSwapchain::MTSwapchain(MTDevice& device, GLFWwindow* window, uint32_t width, u
     m_layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
     m_layer.maximumDrawableCount = frame_count;
     m_layer.displaySyncEnabled = vsync;
+    m_layer.framebufferOnly = NO;
     nswin.contentView.layer = m_layer;
     nswin.contentView.wantsLayer = YES;
 
@@ -61,4 +64,25 @@ uint32_t MTSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t si
 
 void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
+    id<CAMetalDrawable> drawable = [m_layer nextDrawable];
+
+    auto back_buffer = m_back_buffers[m_frame_index % m_frame_count];
+    auto resource = back_buffer->As<MTResource>();
+    auto queue = m_device.GetMTCommandQueue();
+
+    auto command_buffer = [queue commandBuffer];
+    id<MTLBlitCommandEncoder> blitEncoder = [command_buffer blitCommandEncoder];   
+    [blitEncoder copyFromTexture:resource.texture
+                 sourceSlice:0
+                 sourceLevel:0
+                 sourceOrigin:{0, 0, 0}
+                 sourceSize:{m_width, m_height, 1}
+                 toTexture:drawable.texture
+                 destinationSlice:0
+                 destinationLevel:0
+                 destinationOrigin:{0, 0, 0}];
+    [blitEncoder endEncoding];
+    [command_buffer presentDrawable:drawable];
+    [command_buffer commit];
+    [command_buffer waitUntilCompleted];
 }

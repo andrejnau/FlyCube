@@ -99,6 +99,7 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
 
 void MTCommandList::EndRenderPass()
 {
+    [m_render_encoder endEncoding];
 }
 
 void MTCommandList::BeginEvent(const std::string& name)
@@ -244,4 +245,9 @@ void MTCommandList::ResolveQueryData(
     const std::shared_ptr<Resource>& dst_buffer,
     uint64_t dst_offset)
 {
+}
+
+id<MTLCommandBuffer> MTCommandList::GetCommandBuffer()
+{
+    return m_command_buffer;
 }
