@@ -343,7 +343,7 @@ std::shared_ptr<BindingSet> DXDevice::CreateBindingSet(const std::shared_ptr<Bin
 
 std::shared_ptr<RenderPass> DXDevice::CreateRenderPass(const RenderPassDesc& desc)
 {
-    return std::make_shared<DXRenderPass>(*this, desc);
+    return std::make_shared<DXRenderPass>(desc);
 }
 
 std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const FramebufferDesc& desc)

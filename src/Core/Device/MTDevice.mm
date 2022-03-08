@@ -5,6 +5,9 @@
 #include <Program/ProgramBase.h>
 #include <Pipeline/MTGraphicsPipeline.h>
 #include <CommandList/MTCommandList.h>
+#include <Framebuffer/MTFramebuffer.h>
+#include <RenderPass/MTRenderPass.h>
+#include <View/MTView.h>
 
 MTDevice::MTDevice(const id<MTLDevice>& device)
     : m_device(device)
@@ -59,7 +62,7 @@ std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
 
 std::shared_ptr<View> MTDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
-    return {};
+    return std::make_shared<MTView>(*this, std::static_pointer_cast<MTResource>(resource), view_desc);
 }
 
 std::shared_ptr<BindingSetLayout> MTDevice::CreateBindingSetLayout(const std::vector<BindKey>& descs)
@@ -74,12 +77,12 @@ std::shared_ptr<BindingSet> MTDevice::CreateBindingSet(const std::shared_ptr<Bin
 
 std::shared_ptr<RenderPass> MTDevice::CreateRenderPass(const RenderPassDesc& desc)
 {
-    return {};
+    return std::make_shared<MTRenderPass>(desc);
 }
 
 std::shared_ptr<Framebuffer> MTDevice::CreateFramebuffer(const FramebufferDesc& desc)
 {
-    return {};
+    return std::make_shared<MTFramebuffer>(*this, desc);
 }
 
 std::shared_ptr<Shader> MTDevice::CompileShader(const ShaderDesc& desc)

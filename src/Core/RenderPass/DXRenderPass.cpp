@@ -1,7 +1,7 @@
 #pragma once
 #include "RenderPass/DXRenderPass.h"
 
-DXRenderPass::DXRenderPass(DXDevice& device, const RenderPassDesc& desc)
+DXRenderPass::DXRenderPass(const RenderPassDesc& desc)
     : m_desc(desc)
 {
 }

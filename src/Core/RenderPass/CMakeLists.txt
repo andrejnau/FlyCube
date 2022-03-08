@@ -20,6 +20,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTRenderPass.h
+    )
+    list(APPEND sources
+        MTRenderPass.mm
+    )
+endif()
+
 add_library(RenderPass ${headers} ${sources})
 
 target_include_directories(RenderPass
