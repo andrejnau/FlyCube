@@ -4,6 +4,7 @@
 #include <Shader/ShaderBase.h>
 #include <Program/ProgramBase.h>
 #include <Pipeline/MTGraphicsPipeline.h>
+#include <CommandList/MTCommandList.h>
 
 MTDevice::MTDevice(const id<MTLDevice>& device)
     : m_device(device)
@@ -33,7 +34,7 @@ std::shared_ptr<Swapchain> MTDevice::CreateSwapchain(GLFWwindow* window, uint32_
 
 std::shared_ptr<CommandList> MTDevice::CreateCommandList(CommandListType type)
 {
-    return {};
+    return std::make_shared<MTCommandList>(*this, type);
 }
 
 std::shared_ptr<Fence> MTDevice::CreateFence(uint64_t initial_value)
