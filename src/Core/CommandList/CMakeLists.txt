@@ -20,6 +20,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (VULKAN_SUPPORT)
+    list(APPEND headers
+        MTCommandList.h
+    )
+    list(APPEND sources
+        MTCommandList.mm
+    )
+endif()
+
 add_library(CommandList ${headers} ${sources})
 
 target_include_directories(CommandList
