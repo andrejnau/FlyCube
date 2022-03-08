@@ -30,6 +30,8 @@ protected:
     MVKPhysicalDeviceMetalFeatures m_features = {};
 };
 
+class MTCommandQueue;
+
 class MTDevice
     : public Device
     , protected MVKPhysicalDeviceImpl
@@ -69,21 +71,13 @@ public:
     RaytracingASPrebuildInfo GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const override;
     RaytracingASPrebuildInfo GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const override;
 
-    const id<MTLDevice>& GetDevice() const
-    {
-        return m_device;
-    }
-
-    id<MTLDevice> getMTLDevice() override {
-        return GetDevice();
-    }
-
-    MVKPixelFormats& GetMVKPixelFormats()
-    {
-        return m_mvk_pixel_formats;
-    }
+    const id<MTLDevice>& GetDevice() const;
+    id<MTLDevice> getMTLDevice() override;
+    MVKPixelFormats& GetMVKPixelFormats();
+    id<MTLCommandQueue> GetMTCommandQueue() const;
 
 private:
     id<MTLDevice> m_device;
     MVKPixelFormats m_mvk_pixel_formats;
+    std::shared_ptr<MTCommandQueue> m_command_queue;
 };

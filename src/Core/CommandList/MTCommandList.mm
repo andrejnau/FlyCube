@@ -1,9 +1,14 @@
 #include "CommandList/MTCommandList.h"
 #include <Device/MTDevice.h>
+#include <View/MTView.h>
+#include <Resource/MTResource.h>
+#include <Framebuffer/FramebufferBase.h>
 
 MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
     : m_device(device)
 {
+    decltype(auto) command_queue = device.GetMTCommandQueue();
+    m_command_buffer = [command_queue commandBuffer];
 }
 
 void MTCommandList::Reset()
@@ -22,8 +27,74 @@ void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
 {
 }
 
+static MTLLoadAction Convert(RenderPassLoadOp op)
+{
+    switch (op)
+    {
+    case RenderPassLoadOp::kLoad:
+        return MTLLoadActionLoad;
+    case RenderPassLoadOp::kClear:
+        return MTLLoadActionClear;
+    case RenderPassLoadOp::kDontCare:
+        return MTLLoadActionDontCare;
+    }
+    assert(false);
+    return MTLLoadActionLoad;
+}
+
+static MTLStoreAction Convert(RenderPassStoreOp op)
+{
+    switch (op)
+    {
+    case RenderPassStoreOp::kStore:
+        return MTLStoreActionStore;
+    case RenderPassStoreOp::kDontCare:
+        return MTLStoreActionDontCare;
+    }
+    assert(false);
+    return MTLStoreActionStore;
+}
+
 void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc)
 {
+    MTLRenderPassDescriptor* render_pass_descriptor = [MTLRenderPassDescriptor new];
+
+    const RenderPassDesc& render_pass_desc = render_pass->GetDesc();
+    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
+    {
+        decltype(auto) attachment = render_pass_descriptor.colorAttachments[i];
+        decltype(auto) render_pass_color = render_pass_desc.colors[i];
+        attachment.loadAction = Convert(render_pass_color.load_op);
+        attachment.storeAction = Convert(render_pass_color.store_op);
+    }
+    for (size_t i = 0; i < clear_desc.colors.size(); ++i)
+    {
+        decltype(auto) attachment = render_pass_descriptor.colorAttachments[i];
+        attachment.clearColor = MTLClearColorMake(clear_desc.colors[i].r,
+                                                  clear_desc.colors[i].g,
+                                                  clear_desc.colors[i].b,
+                                                  clear_desc.colors[i].a);
+    }
+
+    const FramebufferDesc& framebuffer_desc = framebuffer->As<FramebufferBase>().GetDesc();
+    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
+    {
+        decltype(auto) attachment = render_pass_descriptor.colorAttachments[i];
+        decltype(auto) mt_view = framebuffer_desc.colors[i]->As<MTView>();
+        attachment.level = mt_view.GetBaseMipLevel();
+        attachment.slice = mt_view.GetBaseArrayLayer();
+        decltype(auto) resource = mt_view.GetResource();
+        if (!resource)
+            continue;
+        decltype(auto) mt_resource = resource->As<MTResource>();
+        attachment.texture = mt_resource.texture;
+    }
+
+    m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
+    if (!m_render_encoder)
+    {
+        NSLog(@"Error: failed to create render command encoder");
+    }
 }
 
 void MTCommandList::EndRenderPass()
