@@ -2,7 +2,7 @@
 #include <Device/VKDevice.h>
 #include <View/VKView.h>
 
-vk::AttachmentLoadOp Convert(RenderPassLoadOp op)
+static vk::AttachmentLoadOp Convert(RenderPassLoadOp op)
 {
     switch (op)
     {
@@ -17,7 +17,7 @@ vk::AttachmentLoadOp Convert(RenderPassLoadOp op)
     return vk::AttachmentLoadOp::eLoad;
 }
 
-vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
+static vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
 {
     switch (op)
     {

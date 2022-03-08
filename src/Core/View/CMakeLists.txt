@@ -20,6 +20,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTView.h
+    )
+    list(APPEND sources
+        MTView.mm
+    )
+endif()
+
 add_library(View ${headers} ${sources})
 
 target_include_directories(View

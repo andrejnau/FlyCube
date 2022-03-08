@@ -1,0 +1,23 @@
+#pragma once
+#include "View/View.h"
+#include <Resource/MTResource.h>
+
+class MTDevice;
+class MTResource;
+
+class MTView : public View
+{
+public:
+    MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, const ViewDesc& view_desc);
+    std::shared_ptr<Resource> GetResource() override;
+    uint32_t GetDescriptorId() const override;
+    uint32_t GetBaseMipLevel() const override;
+    uint32_t GetLevelCount() const override;
+    uint32_t GetBaseArrayLayer() const override;
+    uint32_t GetLayerCount() const override;
+
+private:
+    MTDevice& m_device;
+    std::shared_ptr<MTResource> m_resource;
+    ViewDesc m_view_desc;
+};
