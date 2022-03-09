@@ -20,21 +20,21 @@ int main(int argc, char* argv[])
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * index_data.size());
-    /*index_buffer->CommitMemory(MemoryType::kUpload);
-    index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());*/
+    index_buffer->CommitMemory(MemoryType::kUpload);
+    index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
 
     std::vector<glm::vec3> vertex_data = { glm::vec3(-0.5, -0.5, 0.0), glm::vec3(0.0,  0.5, 0.0), glm::vec3(0.5, -0.5, 0.0) };
     std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest, sizeof(vertex_data.front()) * vertex_data.size());
-    /*vertex_buffer->CommitMemory(MemoryType::kUpload);
-    vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());*/
+    vertex_buffer->CommitMemory(MemoryType::kUpload);
+    vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 
     glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
     std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kConstantBuffer | BindFlag::kCopyDest, sizeof(constant_data));
     /*constant_buffer->CommitMemory(MemoryType::kUpload);
     constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));*/
 
-    std::shared_ptr<Shader> vertex_shader = device->CompileShader({ ASSETS_PATH"shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" });
-    std::shared_ptr<Shader> pixel_shader = device->CompileShader({ ASSETS_PATH"shaders/Triangle/PixelShader.hlsl", "main",  ShaderType::kPixel, "6_0" });
+    std::shared_ptr<Shader> vertex_shader = device->CompileShader({ ASSETS_PATH"shaders/MetalTestApp/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" });
+    std::shared_ptr<Shader> pixel_shader = device->CompileShader({ ASSETS_PATH"shaders/MetalTestApp/PixelShader.hlsl", "main",  ShaderType::kPixel, "6_0" });
     std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
 
     ViewDesc constant_view_desc = {};
@@ -77,15 +77,15 @@ int main(int argc, char* argv[])
         framebuffer_desc.height = rect.height;
         framebuffer_desc.colors = { back_buffer_view };
         std::shared_ptr<Framebuffer> framebuffer = device->CreateFramebuffer(framebuffer_desc);
-        std::shared_ptr<CommandList> command_list = device->CreateCommandList(CommandListType::kGraphics);
+        std::shared_ptr<CommandList> command_list = device->CreateCommandList(CommandListType::kGraphics); 
+        command_list->BeginRenderPass(render_pass, framebuffer, clear_desc);
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);
         command_list->SetViewport(0, 0, rect.width, rect.height);
         command_list->SetScissorRect(0, 0, rect.width, rect.height);
         command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, vertex_buffer);
-        command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
-        command_list->BeginRenderPass(render_pass, framebuffer, clear_desc);
+        command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });        
         command_list->DrawIndexed(3, 1, 0, 0, 0);
         command_list->EndRenderPass();
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });

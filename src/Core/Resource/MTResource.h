@@ -25,7 +25,16 @@ public:
     bool AllowCommonStatePromotion(ResourceState state_after) override;
     MemoryRequirements GetMemoryRequirements() const override;
 
-    id<MTLTexture> texture;
+    struct Texture
+    {
+        id<MTLTexture> res;
+    } texture;
+
+    struct Buffer
+    {
+        id<MTLBuffer> res;
+        uint32_t size = 0;
+    } buffer;
 
 private:
     MTDevice& m_device;

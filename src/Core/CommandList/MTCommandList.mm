@@ -3,6 +3,7 @@
 #include <View/MTView.h>
 #include <Resource/MTResource.h>
 #include <Framebuffer/FramebufferBase.h>
+#include <Pipeline/MTGraphicsPipeline.h>
 
 MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
     : m_device(device)
@@ -21,6 +22,9 @@ void MTCommandList::Close()
 
 void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
+    assert(state);
+    decltype(auto) mtl_state = state->As<MTGraphicsPipeline>();
+    [m_render_encoder setRenderPipelineState:mtl_state.GetPipeline()];
 }
 
 void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
@@ -87,7 +91,7 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         if (!resource)
             continue;
         decltype(auto) mt_resource = resource->As<MTResource>();
-        attachment.texture = mt_resource.texture;
+        attachment.texture = mt_resource.texture.res;
     }
 
     m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
@@ -114,8 +118,31 @@ void MTCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_
 {
 }
 
+static MTLIndexType GetIndexType(gli::format format)
+{
+    switch (format)
+    {
+    case gli::format::FORMAT_R16_UINT_PACK16:
+        return MTLIndexTypeUInt16;
+    case gli::format::FORMAT_R32_UINT_PACK32:
+        return MTLIndexTypeUInt32;
+    default:
+        assert(false);
+        return MTLIndexTypeUInt16;
+    }
+}
+
 void MTCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
 {
+    assert(m_index_buffer);
+    decltype(auto) index = m_index_buffer->As<MTResource>();
+    [m_render_encoder
+        drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+            indexCount:index_count
+            indexType:GetIndexType(m_index_format)
+            indexBuffer:index.buffer.res
+            indexBufferOffset:0
+            instanceCount:1];
 }
 
 void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
@@ -172,6 +199,14 @@ void MTCommandList::UAVResourceBarrier(const std::shared_ptr<Resource>& /*resour
 
 void MTCommandList::SetViewport(float x, float y, float width, float height)
 {
+    MTLViewport viewport;
+    viewport.originX = x;
+    viewport.originY = y;
+    viewport.width = width;
+    viewport.height = height;
+    viewport.znear = 0.0;
+    viewport.zfar = 1.0;
+    [m_render_encoder setViewport:viewport];
 }
 
 void MTCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)
@@ -180,10 +215,16 @@ void MTCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, ui
 
 void MTCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {
+    m_index_buffer = resource;
+    m_index_format = format;
 }
 
 void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
+    decltype(auto) vertex = resource->As<MTResource>();
+    [m_render_encoder
+        setVertexBuffer:vertex.buffer.res
+            offset:0 atIndex:slot];
 }
 
 void MTCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)

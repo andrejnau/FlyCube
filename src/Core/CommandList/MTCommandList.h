@@ -85,4 +85,6 @@ private:
     MTDevice& m_device;
     id<MTLCommandBuffer> m_command_buffer = nullptr;
     id<MTLRenderCommandEncoder> m_render_encoder = nullptr;
+    std::shared_ptr<Resource> m_index_buffer;
+    gli::format m_index_format;
 };

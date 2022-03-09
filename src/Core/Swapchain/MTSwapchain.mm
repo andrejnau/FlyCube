@@ -42,7 +42,10 @@ MTSwapchain::MTSwapchain(MTDevice& device, GLFWwindow* window, uint32_t width, u
     for (size_t i = 0; i < frame_count; ++i)
     {
         std::shared_ptr<MTResource> res = std::make_shared<MTResource>(m_device);
-        res->texture = CrateTexture(device.GetDevice(), width, height);
+        res->texture.res = CrateTexture(device.GetDevice(), width, height);
+        res->is_back_buffer = true;
+        res->resource_type = ResourceType::kTexture;
+        res->format = GetFormat();
         m_back_buffers.emplace_back(res);
     }
 }
@@ -72,7 +75,7 @@ void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
 
     auto command_buffer = [queue commandBuffer];
     id<MTLBlitCommandEncoder> blitEncoder = [command_buffer blitCommandEncoder];   
-    [blitEncoder copyFromTexture:resource.texture
+    [blitEncoder copyFromTexture:resource.texture.res
                  sourceSlice:0
                  sourceLevel:0
                  sourceOrigin:{0, 0, 0}

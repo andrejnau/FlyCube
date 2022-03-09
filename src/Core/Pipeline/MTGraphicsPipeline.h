@@ -12,6 +12,8 @@ public:
     MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineDesc& desc);
     PipelineType GetPipelineType() const override;
     std::vector<uint8_t> GetRayTracingShaderGroupHandles(uint32_t first_group, uint32_t group_count) const override;
+    
+    id<MTLRenderPipelineState> GetPipeline();
 
 private:
     MTLVertexDescriptor* GetVertexDescriptor(const std::shared_ptr<Shader>& shader);

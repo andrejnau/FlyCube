@@ -53,8 +53,19 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
             case ShaderType::kPixel:
                 pipeline_descriptor.fragmentFunction = function;
                 break;
+            default:
+                break;
             }
         }
+    }
+    
+    MVKPixelFormats& pixel_formats = m_device.GetMVKPixelFormats();
+    const RenderPassDesc& render_pass_desc = desc.render_pass->GetDesc();
+    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
+    {
+        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED)
+            continue;
+        pipeline_descriptor.colorAttachments[i].pixelFormat = pixel_formats.getMTLPixelFormat(static_cast<VkFormat>(render_pass_desc.colors[i].format));
     }
     
     m_pipeline = [mtl_device newRenderPipelineStateWithDescriptor:pipeline_descriptor error:&error];
@@ -90,4 +101,9 @@ PipelineType MTGraphicsPipeline::GetPipelineType() const
 std::vector<uint8_t> MTGraphicsPipeline::GetRayTracingShaderGroupHandles(uint32_t first_group, uint32_t group_count) const
 {
     return {};
+}
+
+id<MTLRenderPipelineState> MTGraphicsPipeline::GetPipeline()
+{
+    return m_pipeline;
 }

@@ -8,6 +8,7 @@
 #include <Framebuffer/MTFramebuffer.h>
 #include <RenderPass/MTRenderPass.h>
 #include <View/MTView.h>
+#include <Resource/MTResource.h>
 
 MTDevice::MTDevice(const id<MTLDevice>& device)
     : m_device(device)
@@ -53,7 +54,13 @@ std::shared_ptr<Resource> MTDevice::CreateTexture(TextureType type, uint32_t bin
 
 std::shared_ptr<Resource> MTDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
 {
-    return {};
+    if (buffer_size == 0)
+        return {};
+
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
+    res->resource_type = ResourceType::kBuffer;
+    res->buffer.size = buffer_size;
+    return res;
 }
 
 std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
