@@ -8,6 +8,13 @@ MTResource::MTResource(MTDevice& device)
 
 void MTResource::CommitMemory(MemoryType memory_type)
 {
+    m_memory_type = memory_type;
+    decltype(auto) mtl_device = m_device.GetDevice();
+    if (resource_type == ResourceType::kBuffer)
+    {
+        MTLResourceOptions options = {};
+        buffer.res = [mtl_device newBufferWithLength:buffer.size options:options];
+    }
 }
 
 void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset)
@@ -50,6 +57,8 @@ void MTResource::SetName(const std::string& name)
 
 uint8_t* MTResource::Map()
 {
+    if (resource_type == ResourceType::kBuffer)
+        return (uint8_t*)buffer.res.contents;
     return nullptr;
 }
 
