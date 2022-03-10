@@ -83,10 +83,10 @@ MTLVertexDescriptor* MTGraphicsPipeline::GetVertexDescriptor(const std::shared_p
     {
         decltype(auto) vertex = m_desc.input[i];
         decltype(auto) attribute = vertex_descriptor.attributes[i];
-        decltype(auto) layout = vertex_descriptor.layouts[i];
         attribute.offset = 0;
-        attribute.bufferIndex = vertex.slot;
+        attribute.bufferIndex = m_device.GetMaxPerStageBufferCount() - vertex.slot - 1;
         attribute.format = pixel_formats.getMTLVertexFormat(static_cast<VkFormat>(vertex.format));
+        decltype(auto) layout = vertex_descriptor.layouts[attribute.bufferIndex];
         layout.stride = vertex.stride;
         layout.stepFunction = MTLVertexStepFunctionPerVertex;
     }

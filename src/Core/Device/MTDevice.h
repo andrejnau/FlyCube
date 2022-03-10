@@ -74,6 +74,7 @@ public:
     const id<MTLDevice>& GetDevice() const;
     MVKPixelFormats& GetMVKPixelFormats();
     id<MTLCommandQueue> GetMTCommandQueue() const;
+    uint32_t GetMaxPerStageBufferCount() const;
 
 private:
     id<MTLDevice> getMTLDevice() override;
