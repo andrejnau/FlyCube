@@ -202,3 +202,8 @@ id<MTLCommandQueue> MTDevice::GetMTCommandQueue() const
 {
     return m_command_queue->GetCommandQueue();
 }
+
+uint32_t MTDevice::GetMaxPerStageBufferCount() const
+{
+    return 31;
+}

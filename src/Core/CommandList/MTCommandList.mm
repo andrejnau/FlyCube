@@ -224,7 +224,7 @@ void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
     decltype(auto) vertex = resource->As<MTResource>();
     [m_render_encoder
         setVertexBuffer:vertex.buffer.res
-            offset:0 atIndex:slot];
+            offset:0 atIndex:m_device.GetMaxPerStageBufferCount() - slot - 1];
 }
 
 void MTCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
