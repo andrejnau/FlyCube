@@ -133,9 +133,9 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         }
         for (const auto& vertex : m_vertices)
         {
-            [m_render_encoder
-                setVertexBuffer:vertex.second
-                    offset:0 atIndex:vertex.first];
+            [m_render_encoder setVertexBuffer:vertex.second
+                                       offset:0
+                                      atIndex:vertex.first];
         }
         if (m_binding_set)
         {
@@ -162,6 +162,7 @@ void MTCommandList::EndEvent()
 
 void MTCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
+    assert(false);
 }
 
 static MTLIndexType GetIndexType(gli::format format)
@@ -184,22 +185,23 @@ void MTCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, u
     decltype(auto) index = m_index_buffer->As<MTResource>().buffer.res;
     MTLIndexType index_format = GetIndexType(m_index_format);
     ApplyAndRecord([=] {
-        [m_render_encoder
-            drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                indexCount:index_count
-                indexType:index_format
-                indexBuffer:index
-                indexBufferOffset:0
-                instanceCount:1];
+        [m_render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                     indexCount:index_count
+                                      indexType:index_format
+                                    indexBuffer:index
+                              indexBufferOffset:0
+                                  instanceCount:1];
     });
 }
 
 void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
+    assert(false);
 }
 
 void MTCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
+    assert(false);
 }
 
 void MTCommandList::DrawIndirectCount(
@@ -224,10 +226,12 @@ void MTCommandList::DrawIndexedIndirectCount(
 
 void MTCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
 {
+    assert(false);
 }
 
 void MTCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
+    assert(false);
 }
 
 void MTCommandList::DispatchMesh(uint32_t thread_group_count_x)
@@ -236,6 +240,7 @@ void MTCommandList::DispatchMesh(uint32_t thread_group_count_x)
 
 void MTCommandList::DispatchRays(const RayTracingShaderTables& shader_tables, uint32_t width, uint32_t height, uint32_t depth)
 {
+    assert(false);
 }
 
 void MTCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
@@ -281,14 +286,15 @@ void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
         return;
 
     ApplyAndRecord([=] {
-        [m_render_encoder
-            setVertexBuffer:vertex
-                offset:0 atIndex:index];
+        [m_render_encoder setVertexBuffer:vertex
+                                   offset:0
+                                  atIndex:index];
     });
 }
 
 void MTCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
 {
+    assert(false);
 }
 
 void MTCommandList::BuildBottomLevelAS(
@@ -299,6 +305,7 @@ void MTCommandList::BuildBottomLevelAS(
     const std::vector<RaytracingGeometryDesc>& descs,
     BuildAccelerationStructureFlags flags)
 {
+    assert(false);
 }
 
 void MTCommandList::BuildTopLevelAS(
@@ -311,25 +318,30 @@ void MTCommandList::BuildTopLevelAS(
     uint32_t instance_count,
     BuildAccelerationStructureFlags flags)
 {
+    assert(false);
 }
 
 void MTCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)
 {
+    assert(false);
 }
 
 void MTCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
                                const std::vector<BufferCopyRegion>& regions)
 {
+    assert(false);
 }
 
 void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
                                         const std::vector<BufferToTextureCopyRegion>& regions)
 {
+    assert(false);
 }
 
 void MTCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture,
                                 const std::vector<TextureCopyRegion>& regions)
 {
+    assert(false);
 }
 
 void MTCommandList::WriteAccelerationStructuresProperties(
@@ -337,6 +349,7 @@ void MTCommandList::WriteAccelerationStructuresProperties(
     const std::shared_ptr<QueryHeap>& query_heap,
     uint32_t first_query)
 {
+    assert(false);
 }
 
 void MTCommandList::ResolveQueryData(
@@ -346,6 +359,7 @@ void MTCommandList::ResolveQueryData(
     const std::shared_ptr<Resource>& dst_buffer,
     uint64_t dst_offset)
 {
+    assert(false);
 }
 
 id<MTLCommandBuffer> MTCommandList::GetCommandBuffer()

@@ -13,17 +13,19 @@ void MTResource::CommitMemory(MemoryType memory_type)
     if (resource_type == ResourceType::kBuffer)
     {
         MTLResourceOptions options = {};
-        buffer.res = [mtl_device newBufferWithLength:buffer.size options:options];
+        buffer.res = [mtl_device newBufferWithLength:buffer.size
+                                             options:options];
     }
 }
 
 void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset)
 {
+    assert(false);
 }
 
 uint64_t MTResource::GetWidth() const
 {
-    return 1;
+    return buffer.size;
 }
 
 uint32_t MTResource::GetHeight() const

@@ -25,9 +25,9 @@ void MTBindingSet::SetPixelShaderView(id<MTLRenderCommandEncoder> render_encoder
         id<MTLBuffer> buffer = {};
         if (mt_resource)
             buffer = mt_resource->buffer.res;
-        [render_encoder
-            setFragmentBuffer:buffer
-                offset:0 atIndex:0];
+        [render_encoder setFragmentBuffer:buffer
+                                   offset:0
+                                  atIndex:0];
         break;
     }
     case ViewType::kSampler:
@@ -70,9 +70,9 @@ void MTBindingSet::SetVertexShaderView(id<MTLRenderCommandEncoder> render_encode
         id<MTLBuffer> buffer = {};
         if (mt_resource)
             buffer = mt_resource->buffer.res;
-        [render_encoder
-            setVertexBuffer:buffer
-                offset:0 atIndex:index];
+        [render_encoder setVertexBuffer:buffer
+                                 offset:0
+                                atIndex:index];
         break;
     }
     case ViewType::kSampler:
