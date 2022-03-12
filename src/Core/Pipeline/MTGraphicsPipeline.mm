@@ -24,7 +24,9 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
         decltype(auto) source = GetMSLShader(blob);
         NSString* ns_source = [NSString stringWithUTF8String:source.c_str()];
 
-        id<MTLLibrary> library = [mtl_device newLibraryWithSource:ns_source options:nil error:&error];
+        id<MTLLibrary> library = [mtl_device newLibraryWithSource:ns_source
+                                                          options:nil
+                                                            error:&error];
         if (library == nil)
         {
             NSLog(@"Error: failed to create Metal library: %@", error);
@@ -37,7 +39,9 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
         {
             NSString* ns_entry_point = [NSString stringWithUTF8String:FixEntryPoint(entry_point.name).c_str()];
             MTLFunctionConstantValues* constant_values = [MTLFunctionConstantValues new];
-            id<MTLFunction> function = [library newFunctionWithName:ns_entry_point constantValues:constant_values error:&error];
+            id<MTLFunction> function = [library newFunctionWithName:ns_entry_point
+                                                     constantValues:constant_values
+                                                              error:&error];
             if (function == nil)
             {
                 NSLog(@"Error: failed to create Metal function: %@", error);
@@ -68,7 +72,8 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
         pipeline_descriptor.colorAttachments[i].pixelFormat = pixel_formats.getMTLPixelFormat(static_cast<VkFormat>(render_pass_desc.colors[i].format));
     }
     
-    m_pipeline = [mtl_device newRenderPipelineStateWithDescriptor:pipeline_descriptor error:&error];
+    m_pipeline = [mtl_device newRenderPipelineStateWithDescriptor:pipeline_descriptor
+                                                            error:&error];
     if (!m_pipeline)
     {
         NSLog(@"Error occurred when creating render pipeline state: %@", error);

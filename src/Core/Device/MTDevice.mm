@@ -53,6 +53,7 @@ std::shared_ptr<Fence> MTDevice::CreateFence(uint64_t initial_value)
 
 std::shared_ptr<Resource> MTDevice::CreateTexture(TextureType type, uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
 {
+    assert(false);
     return {};
 }
 
@@ -69,6 +70,7 @@ std::shared_ptr<Resource> MTDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
 std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
 {
+    assert(false);
     return {};
 }
 
@@ -114,21 +116,25 @@ std::shared_ptr<Pipeline> MTDevice::CreateGraphicsPipeline(const GraphicsPipelin
 
 std::shared_ptr<Pipeline> MTDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
 {
+    assert(false);
     return {};
 }
 
 std::shared_ptr<Pipeline> MTDevice::CreateRayTracingPipeline(const RayTracingPipelineDesc& desc)
 {
+    assert(false);
     return {};
 }
 
 std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(AccelerationStructureType type, const std::shared_ptr<Resource>& resource, uint64_t offset)
 {
+    assert(false);
     return {};
 }
 
 std::shared_ptr<QueryHeap> MTDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)
 {
+    assert(false);
     return {};
 }
 

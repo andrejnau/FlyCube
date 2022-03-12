@@ -74,17 +74,17 @@ void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
     auto queue = m_device.GetMTCommandQueue();
 
     auto command_buffer = [queue commandBuffer];
-    id<MTLBlitCommandEncoder> blitEncoder = [command_buffer blitCommandEncoder];   
-    [blitEncoder copyFromTexture:resource.texture.res
-                 sourceSlice:0
-                 sourceLevel:0
-                 sourceOrigin:{0, 0, 0}
-                 sourceSize:{m_width, m_height, 1}
-                 toTexture:drawable.texture
+    id<MTLBlitCommandEncoder> blit_encoder = [command_buffer blitCommandEncoder];
+    [blit_encoder copyFromTexture:resource.texture.res
+                      sourceSlice:0
+                      sourceLevel:0
+                     sourceOrigin:{0, 0, 0}
+                       sourceSize:{m_width, m_height, 1}
+                        toTexture:drawable.texture
                  destinationSlice:0
                  destinationLevel:0
-                 destinationOrigin:{0, 0, 0}];
-    [blitEncoder endEncoding];
+                destinationOrigin:{0, 0, 0}];
+    [blit_encoder endEncoding];
     [command_buffer presentDrawable:drawable];
     [command_buffer commit];
     [command_buffer waitUntilCompleted];
