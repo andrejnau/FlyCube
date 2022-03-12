@@ -14,7 +14,7 @@ RenderDeviceImpl::RenderDeviceImpl(const Settings& settings, GLFWwindow* window)
     m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
     m_object_cache = std::make_unique<ObjectCache>(*m_device);
 
-    glfwGetWindowSize(window, &m_width, &m_height);
+    glfwGetFramebufferSize(m_window, &m_width, &m_height);
     m_swapchain = m_device->CreateSwapchain(window, m_width, m_height, m_frame_count, settings.vsync);
     m_fence = m_device->CreateFence(m_fence_value);
     for (uint32_t i = 0; i < m_frame_count; ++i)
