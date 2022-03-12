@@ -14,7 +14,16 @@ MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
 
 void MTCommandList::Reset()
 {
+    decltype(auto) command_queue = m_device.GetMTCommandQueue();
+    m_command_buffer = [command_queue commandBuffer];
+    m_render_encoder = nullptr;
+    m_index_buffer.reset();
+    m_index_format = gli::FORMAT_UNDEFINED;
+    m_viewport = {};
+    m_vertices.clear();
+    m_state.reset();
     m_recorded_cmds = {};
+    m_executed = false;    
 }
 
 void MTCommandList::Close()
@@ -23,8 +32,13 @@ void MTCommandList::Close()
 
 void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
-    assert(state);
-    decltype(auto) mtl_pipeline = state->As<MTGraphicsPipeline>().GetPipeline();
+    if (state == m_state)
+        return;
+    m_state = std::static_pointer_cast<MTGraphicsPipeline>(state);
+    if (!m_render_encoder)
+        return;
+
+    decltype(auto) mtl_pipeline = m_state->GetPipeline();
     ApplyAndRecord([=] {
         [m_render_encoder setRenderPipelineState:mtl_pipeline];
     });
@@ -99,6 +113,17 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
 
     ApplyAndRecord([=] {
         m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
+        [m_render_encoder setViewport:m_viewport];
+        if (m_state)
+        {
+            [m_render_encoder setRenderPipelineState:m_state->GetPipeline()];
+        }
+        for (const auto& vertex : m_vertices)
+        {
+            [m_render_encoder
+                setVertexBuffer:vertex.second
+                    offset:0 atIndex:vertex.first];
+        }
     });
 }
 
@@ -106,6 +131,7 @@ void MTCommandList::EndRenderPass()
 {
     ApplyAndRecord([=] {
         [m_render_encoder endEncoding];
+        m_render_encoder = nullptr;
     });
 }
 
@@ -205,15 +231,17 @@ void MTCommandList::UAVResourceBarrier(const std::shared_ptr<Resource>& /*resour
 
 void MTCommandList::SetViewport(float x, float y, float width, float height)
 {
-    MTLViewport viewport;
-    viewport.originX = x;
-    viewport.originY = y;
-    viewport.width = width;
-    viewport.height = height;
-    viewport.znear = 0.0;
-    viewport.zfar = 1.0;
+    m_viewport.originX = x;
+    m_viewport.originY = y;
+    m_viewport.width = width;
+    m_viewport.height = height;
+    m_viewport.znear = 0.0;
+    m_viewport.zfar = 1.0;
+    if (!m_render_encoder)
+        return;
+
     ApplyAndRecord([=] {
-        [m_render_encoder setViewport:viewport];
+        [m_render_encoder setViewport:m_viewport];
     });
 }
 
@@ -231,6 +259,10 @@ void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
 {
     decltype(auto) vertex = resource->As<MTResource>().buffer.res;
     uint32_t index = m_device.GetMaxPerStageBufferCount() - slot - 1;
+    m_vertices[index] = vertex;
+    if (!m_render_encoder)
+        return;
+
     ApplyAndRecord([=] {
         [m_render_encoder
             setVertexBuffer:vertex
