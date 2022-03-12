@@ -30,8 +30,8 @@ int main(int argc, char* argv[])
 
     glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
     std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kConstantBuffer | BindFlag::kCopyDest, sizeof(constant_data));
-    /*constant_buffer->CommitMemory(MemoryType::kUpload);
-    constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));*/
+    constant_buffer->CommitMemory(MemoryType::kUpload);
+    constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));
 
     std::shared_ptr<Shader> vertex_shader = device->CompileShader({ ASSETS_PATH"shaders/MetalTestApp/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" });
     std::shared_ptr<Shader> pixel_shader = device->CompileShader({ ASSETS_PATH"shaders/MetalTestApp/PixelShader.hlsl", "main",  ShaderType::kPixel, "6_0" });
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     BindKey settings_key = { ShaderType::kPixel, ViewType::kConstantBuffer, 0, 0, 1 };
     std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ settings_key });
     std::shared_ptr<BindingSet> binding_set = device->CreateBindingSet(layout);
-    // binding_set->WriteBindings({ { settings_key, constant_view } });
+    binding_set->WriteBindings({ { settings_key, constant_view } });
 
     RenderPassDesc render_pass_desc = {
         { { swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
     {
         uint32_t frame_index = swapchain->NextImage(fence, ++fence_value);
         command_queue->Wait(fence, fence_value);
-        //fence->Wait(fence_values[frame_index]);
+        fence->Wait(fence_values[frame_index]);
 
         ViewDesc back_buffer_view_desc = {};
         back_buffer_view_desc.view_type = ViewType::kRenderTarget;
@@ -96,6 +96,6 @@ int main(int argc, char* argv[])
         swapchain->Present(fence, fence_values[frame_index]);
     }
     command_queue->Signal(fence, ++fence_value);
-    //fence->Wait(fence_value);
+    fence->Wait(fence_value);
     return 0;
 }
