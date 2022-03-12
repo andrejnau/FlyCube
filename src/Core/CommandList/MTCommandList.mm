@@ -329,7 +329,18 @@ void MTCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
 void MTCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
                                const std::vector<BufferCopyRegion>& regions)
 {
-    assert(false);
+    id<MTLBlitCommandEncoder> blit_encoder = [m_command_buffer blitCommandEncoder];
+    decltype(auto) mt_src_buffer = src_buffer->As<MTResource>();
+    decltype(auto) mt_dst_buffer = dst_buffer->As<MTResource>();
+    for (const auto& region : regions)
+    {
+        [blit_encoder copyFromBuffer:mt_src_buffer.buffer.res
+                        sourceOffset:region.src_offset
+                            toBuffer:mt_dst_buffer.buffer.res
+                   destinationOffset:region.dst_offset
+                                size:region.num_bytes];
+    }
+    [blit_encoder endEncoding];
 }
 
 void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
