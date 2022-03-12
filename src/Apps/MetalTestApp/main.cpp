@@ -60,38 +60,42 @@ int main(int argc, char* argv[])
     std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
 
     std::array<uint64_t, frame_count> fence_values = {};
-    while (!app.PollEvents())
+    std::vector<std::shared_ptr<CommandList>> command_lists;
+    std::vector<std::shared_ptr<Framebuffer>> framebuffers;
+    for (uint32_t i = 0; i < frame_count; ++i)
     {
-        uint32_t frame_index = swapchain->NextImage(fence, ++fence_value);
-        command_queue->Wait(fence, fence_value);
-        fence->Wait(fence_values[frame_index]);
-
         ViewDesc back_buffer_view_desc = {};
         back_buffer_view_desc.view_type = ViewType::kRenderTarget;
         back_buffer_view_desc.dimension = ViewDimension::kTexture2D;
-        std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(frame_index);
+        std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
         FramebufferDesc framebuffer_desc = {};
         framebuffer_desc.render_pass = render_pass;
         framebuffer_desc.width = rect.width;
         framebuffer_desc.height = rect.height;
         framebuffer_desc.colors = { back_buffer_view };
-        std::shared_ptr<Framebuffer> framebuffer = device->CreateFramebuffer(framebuffer_desc);
-        std::shared_ptr<CommandList> command_list = device->CreateCommandList(CommandListType::kGraphics); 
-        command_list->BeginRenderPass(render_pass, framebuffer, clear_desc);
+        std::shared_ptr<Framebuffer> framebuffer = framebuffers.emplace_back(device->CreateFramebuffer(framebuffer_desc));
+        std::shared_ptr<CommandList> command_list = command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);
         command_list->SetViewport(0, 0, rect.width, rect.height);
         command_list->SetScissorRect(0, 0, rect.width, rect.height);
         command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, vertex_buffer);
-        command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });        
+        command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
+        command_list->BeginRenderPass(render_pass, framebuffer, clear_desc);
         command_list->DrawIndexed(3, 1, 0, 0, 0);
         command_list->EndRenderPass();
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });
         command_list->Close();
+    }
 
-        command_queue->ExecuteCommandLists({ command_list });
+    while (!app.PollEvents())
+    {
+        uint32_t frame_index = swapchain->NextImage(fence, ++fence_value);
+        command_queue->Wait(fence, fence_value);
+        fence->Wait(fence_values[frame_index]);
+        command_queue->ExecuteCommandLists({ command_lists[frame_index] });
         command_queue->Signal(fence, fence_values[frame_index] = ++fence_value);
         swapchain->Present(fence, fence_values[frame_index]);
     }

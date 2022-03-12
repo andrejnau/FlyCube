@@ -1,10 +1,12 @@
 #pragma once
 #include "CommandList/CommandList.h"
 #import <Metal/Metal.h>
+#include <map>
 #include <deque>
 #include <functional>
 
 class MTDevice;
+class MTGraphicsPipeline;
 
 class MTCommandList : public CommandList
 {
@@ -91,7 +93,10 @@ private:
     id<MTLCommandBuffer> m_command_buffer = nullptr;
     id<MTLRenderCommandEncoder> m_render_encoder = nullptr;
     std::shared_ptr<Resource> m_index_buffer;
-    gli::format m_index_format;
+    gli::format m_index_format = gli::FORMAT_UNDEFINED;
+    MTLViewport m_viewport = {};
+    std::map<uint32_t, id<MTLBuffer>> m_vertices;
+    std::shared_ptr<MTGraphicsPipeline> m_state;
     std::deque<std::function<void()>> m_recorded_cmds;
     bool m_executed = false;
 };
