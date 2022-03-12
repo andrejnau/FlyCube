@@ -1,6 +1,8 @@
 #pragma once
 #include "CommandList/CommandList.h"
 #import <Metal/Metal.h>
+#include <deque>
+#include <functional>
 
 class MTDevice;
 
@@ -80,11 +82,16 @@ public:
         uint64_t dst_offset) override;
 
     id<MTLCommandBuffer> GetCommandBuffer();
+    void OnSubmit();
 
 private:
+    void ApplyAndRecord(std::function<void()>&& cmd);
+
     MTDevice& m_device;
     id<MTLCommandBuffer> m_command_buffer = nullptr;
     id<MTLRenderCommandEncoder> m_render_encoder = nullptr;
     std::shared_ptr<Resource> m_index_buffer;
     gli::format m_index_format;
+    std::deque<std::function<void()>> m_recorded_cmds;
+    bool m_executed = false;
 };
