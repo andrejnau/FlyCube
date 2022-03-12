@@ -15,6 +15,8 @@ public:
     uint32_t GetLevelCount() const override;
     uint32_t GetBaseArrayLayer() const override;
     uint32_t GetLayerCount() const override;
+    
+    std::shared_ptr<MTResource> GetMTResource();
 
 private:
     MTDevice& m_device;

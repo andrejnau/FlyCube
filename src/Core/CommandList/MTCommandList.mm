@@ -4,6 +4,7 @@
 #include <Resource/MTResource.h>
 #include <Framebuffer/FramebufferBase.h>
 #include <Pipeline/MTGraphicsPipeline.h>
+#include <BindingSet/MTBindingSet.h>
 
 MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
     : m_device(device)
@@ -22,8 +23,9 @@ void MTCommandList::Reset()
     m_viewport = {};
     m_vertices.clear();
     m_state.reset();
+    m_binding_set.reset();
     m_recorded_cmds = {};
-    m_executed = false;    
+    m_executed = false;
 }
 
 void MTCommandList::Close()
@@ -46,6 +48,15 @@ void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 
 void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
+    if (binding_set == m_binding_set)
+        return;
+    m_binding_set = std::static_pointer_cast<MTBindingSet>(binding_set);
+    if (!m_render_encoder)
+        return;
+    
+    ApplyAndRecord([=] {
+        m_binding_set->Apply(m_render_encoder, m_state);
+    });
 }
 
 static MTLLoadAction Convert(RenderPassLoadOp op)
@@ -100,6 +111,8 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     const FramebufferDesc& framebuffer_desc = framebuffer->As<FramebufferBase>().GetDesc();
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
     {
+        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED)
+            continue;
         decltype(auto) attachment = render_pass_descriptor.colorAttachments[i];
         decltype(auto) mt_view = framebuffer_desc.colors[i]->As<MTView>();
         attachment.level = mt_view.GetBaseMipLevel();
@@ -123,6 +136,10 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
             [m_render_encoder
                 setVertexBuffer:vertex.second
                     offset:0 atIndex:vertex.first];
+        }
+        if (m_binding_set)
+        {
+            m_binding_set->Apply(m_render_encoder, m_state);
         }
     });
 }

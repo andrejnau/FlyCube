@@ -107,3 +107,8 @@ id<MTLRenderPipelineState> MTGraphicsPipeline::GetPipeline()
 {
     return m_pipeline;
 }
+
+const GraphicsPipelineDesc& MTGraphicsPipeline::GetDesc() const
+{
+    return m_desc;
+}
