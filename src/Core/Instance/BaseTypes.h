@@ -516,7 +516,7 @@ struct BindKey
     ViewType view_type = ViewType::kUnknown;
     uint32_t slot = 0;
     uint32_t space = 0;
-    uint32_t count = 0;
+    uint32_t count = 1;
 
     auto MakeTie() const
     {

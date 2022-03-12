@@ -38,3 +38,8 @@ uint32_t MTView::GetLayerCount() const
 {
     return std::min<uint32_t>(m_view_desc.layer_count, m_resource->GetLayerCount() - m_view_desc.base_array_layer);
 }
+
+std::shared_ptr<MTResource> MTView::GetMTResource()
+{
+    return m_resource;
+}

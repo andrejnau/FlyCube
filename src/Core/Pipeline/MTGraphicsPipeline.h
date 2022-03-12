@@ -15,6 +15,8 @@ public:
     
     id<MTLRenderPipelineState> GetPipeline();
 
+    const GraphicsPipelineDesc& GetDesc() const;
+
 private:
     MTLVertexDescriptor* GetVertexDescriptor(const std::shared_ptr<Shader>& shader);
 
