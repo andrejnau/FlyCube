@@ -14,6 +14,7 @@ MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
 
 void MTCommandList::Reset()
 {
+    m_recorded_cmds = {};
 }
 
 void MTCommandList::Close()
@@ -23,8 +24,10 @@ void MTCommandList::Close()
 void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
     assert(state);
-    decltype(auto) mtl_state = state->As<MTGraphicsPipeline>();
-    [m_render_encoder setRenderPipelineState:mtl_state.GetPipeline()];
+    decltype(auto) mtl_pipeline = state->As<MTGraphicsPipeline>().GetPipeline();
+    ApplyAndRecord([=] {
+        [m_render_encoder setRenderPipelineState:mtl_pipeline];
+    });
 }
 
 void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
@@ -94,16 +97,16 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         attachment.texture = mt_resource.texture.res;
     }
 
-    m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
-    if (!m_render_encoder)
-    {
-        NSLog(@"Error: failed to create render command encoder");
-    }
+    ApplyAndRecord([=] {
+        m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
+    });
 }
 
 void MTCommandList::EndRenderPass()
 {
-    [m_render_encoder endEncoding];
+    ApplyAndRecord([=] {
+        [m_render_encoder endEncoding];
+    });
 }
 
 void MTCommandList::BeginEvent(const std::string& name)
@@ -135,14 +138,17 @@ static MTLIndexType GetIndexType(gli::format format)
 void MTCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
 {
     assert(m_index_buffer);
-    decltype(auto) index = m_index_buffer->As<MTResource>();
-    [m_render_encoder
-        drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-            indexCount:index_count
-            indexType:GetIndexType(m_index_format)
-            indexBuffer:index.buffer.res
-            indexBufferOffset:0
-            instanceCount:1];
+    decltype(auto) index = m_index_buffer->As<MTResource>().buffer.res;
+    MTLIndexType index_format = GetIndexType(m_index_format);
+    ApplyAndRecord([=] {
+        [m_render_encoder
+            drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                indexCount:index_count
+                indexType:index_format
+                indexBuffer:index
+                indexBufferOffset:0
+                instanceCount:1];
+    });
 }
 
 void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
@@ -206,7 +212,9 @@ void MTCommandList::SetViewport(float x, float y, float width, float height)
     viewport.height = height;
     viewport.znear = 0.0;
     viewport.zfar = 1.0;
-    [m_render_encoder setViewport:viewport];
+    ApplyAndRecord([=] {
+        [m_render_encoder setViewport:viewport];
+    });
 }
 
 void MTCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)
@@ -221,10 +229,13 @@ void MTCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
 
 void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
-    decltype(auto) vertex = resource->As<MTResource>();
-    [m_render_encoder
-        setVertexBuffer:vertex.buffer.res
-            offset:0 atIndex:m_device.GetMaxPerStageBufferCount() - slot - 1];
+    decltype(auto) vertex = resource->As<MTResource>().buffer.res;
+    uint32_t index = m_device.GetMaxPerStageBufferCount() - slot - 1;
+    ApplyAndRecord([=] {
+        [m_render_encoder
+            setVertexBuffer:vertex
+                offset:0 atIndex:index];
+    });
 }
 
 void MTCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
@@ -291,4 +302,24 @@ void MTCommandList::ResolveQueryData(
 id<MTLCommandBuffer> MTCommandList::GetCommandBuffer()
 {
     return m_command_buffer;
+}
+
+void MTCommandList::OnSubmit()
+{
+    if (m_executed)
+    {
+        decltype(auto) command_queue = m_device.GetMTCommandQueue();
+        m_command_buffer = [command_queue commandBuffer];
+        for (const auto& cmd : m_recorded_cmds)
+        {
+            cmd();
+        }
+    }
+    m_executed = true;
+}
+
+void MTCommandList::ApplyAndRecord(std::function<void()>&& cmd)
+{
+    cmd();
+    m_recorded_cmds.push_back(std::move(cmd));
 }

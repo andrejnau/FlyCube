@@ -22,6 +22,7 @@ void MTCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<Comma
         if (!command_list)
             continue;
         decltype(auto) mt_command_list = command_list->As<MTCommandList>();
+        mt_command_list.OnSubmit();
         [mt_command_list.GetCommandBuffer() commit];
         [mt_command_list.GetCommandBuffer() waitUntilCompleted];
     }
