@@ -9,6 +9,10 @@
 #include <RenderPass/MTRenderPass.h>
 #include <View/MTView.h>
 #include <Resource/MTResource.h>
+#include <Fence/MTFence.h>
+#include <BindingSetLayout/MTBindingSetLayout.h>
+#include <BindingSet/MTBindingSet.h>
+#include <Memory/MTMemory.h>
 
 MTDevice::MTDevice(const id<MTLDevice>& device)
     : m_device(device)
@@ -19,7 +23,7 @@ MTDevice::MTDevice(const id<MTLDevice>& device)
 
 std::shared_ptr<Memory> MTDevice::AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits)
 {
-    return {};
+    return std::make_shared<MTMemory>(*this, size, memory_type, memory_type_bits);
 }
 
 std::shared_ptr<CommandQueue> MTDevice::GetCommandQueue(CommandListType type)
@@ -44,7 +48,7 @@ std::shared_ptr<CommandList> MTDevice::CreateCommandList(CommandListType type)
 
 std::shared_ptr<Fence> MTDevice::CreateFence(uint64_t initial_value)
 {
-    return {};
+    return std::make_shared<MTFence>(*this, initial_value);
 }
 
 std::shared_ptr<Resource> MTDevice::CreateTexture(TextureType type, uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
@@ -75,12 +79,12 @@ std::shared_ptr<View> MTDevice::CreateView(const std::shared_ptr<Resource>& reso
 
 std::shared_ptr<BindingSetLayout> MTDevice::CreateBindingSetLayout(const std::vector<BindKey>& descs)
 {
-    return {};
+    return std::make_shared<MTBindingSetLayout>(*this, descs);
 }
 
 std::shared_ptr<BindingSet> MTDevice::CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout)
 {
-    return {};
+    return std::make_shared<MTBindingSet>(*this, std::static_pointer_cast<MTBindingSetLayout>(layout));
 }
 
 std::shared_ptr<RenderPass> MTDevice::CreateRenderPass(const RenderPassDesc& desc)

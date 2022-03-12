@@ -20,6 +20,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTBindingSetLayout.h
+    )
+    list(APPEND sources
+        MTBindingSetLayout.mm
+    )
+endif()
+
 add_library(BindingSetLayout ${headers} ${sources})
 
 target_include_directories(BindingSetLayout

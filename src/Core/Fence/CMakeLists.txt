@@ -20,6 +20,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTFence.h
+    )
+    list(APPEND sources
+        MTFence.mm
+    )
+endif()
+
 add_library(Fence ${headers} ${sources})
 
 target_include_directories(Fence

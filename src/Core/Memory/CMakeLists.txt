@@ -20,6 +20,15 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTMemory.h
+    )
+    list(APPEND sources
+        MTMemory.mm
+    )
+endif()
+
 add_library(Memory ${headers} ${sources})
 
 target_include_directories(Memory
