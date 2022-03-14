@@ -44,6 +44,11 @@ public:
         uint32_t size = 0;
     } buffer;
 
+    struct Sampler
+    {
+        id<MTLSamplerState> res;
+    } sampler;
+
 private:
     MTDevice& m_device;
 };
