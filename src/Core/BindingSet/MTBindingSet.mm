@@ -31,8 +31,14 @@ void MTBindingSet::SetPixelShaderView(id<MTLRenderCommandEncoder> render_encoder
         break;
     }
     case ViewType::kSampler:
-        assert(false);
+    {
+        id<MTLSamplerState> sampler = {};
+        if (mt_resource)
+            sampler = mt_resource->sampler.res;
+        [render_encoder setFragmentSamplerState:sampler
+                                        atIndex:index];
         break;
+    }
     case ViewType::kTexture:
     {
         id<MTLTexture> texture = {};

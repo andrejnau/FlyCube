@@ -8,7 +8,7 @@ struct VS_OUTPUT
 };
 
 Texture2D albedoMap;
-SamplerState g_sampler[1];
+SamplerState g_sampler;
 
 float4 getTexture(Texture2D _texture, SamplerState _sample, float2 _tex_coord, bool _need_gamma = false)
 {
@@ -25,5 +25,5 @@ float4 LinearTosRGBA(float3 color)
 
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
-    return LinearTosRGBA(getTexture(albedoMap, g_sampler[0], input.texCoord, true).rgb);
+    return LinearTosRGBA(getTexture(albedoMap, g_sampler, input.texCoord, true).rgb);
 }

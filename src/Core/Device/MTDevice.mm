@@ -80,8 +80,32 @@ std::shared_ptr<Resource> MTDevice::CreateBuffer(uint32_t bind_flag, uint32_t bu
 
 std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
 {
-    assert(false);
-    return {};
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
+    res->resource_type = ResourceType::kSampler;
+    
+    // TODO: Fix sampler param mapping
+    MTLSamplerDescriptor* sampler_descriptor = [MTLSamplerDescriptor new];
+    sampler_descriptor.minFilter = MTLSamplerMinMagFilterLinear;
+    sampler_descriptor.magFilter = MTLSamplerMinMagFilterLinear;
+    sampler_descriptor.sAddressMode = MTLSamplerAddressModeClampToEdge;
+    sampler_descriptor.tAddressMode = MTLSamplerAddressModeClampToEdge;
+    sampler_descriptor.mipFilter = MTLSamplerMipFilterNotMipmapped;
+    
+    switch (desc.func)
+    {
+    case SamplerComparisonFunc::kNever:
+        sampler_descriptor.compareFunction = MTLCompareFunctionNever;
+        break;
+    case SamplerComparisonFunc::kAlways:
+        sampler_descriptor.compareFunction = MTLCompareFunctionAlways;
+        break;
+    case SamplerComparisonFunc::kLess:
+        sampler_descriptor.compareFunction = MTLCompareFunctionLess;
+        break;
+    }
+    
+    res->sampler.res = [m_device newSamplerStateWithDescriptor:sampler_descriptor];
+    return res;
 }
 
 std::shared_ptr<View> MTDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)

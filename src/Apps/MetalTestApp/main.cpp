@@ -73,6 +73,7 @@ int main(int argc, char* argv[])
         {
             auto& material = model.GetMaterial(range.id);
             command_list->Attach(program.ps.srv.albedoMap, material.texture.albedo);
+            command_list->Attach(program.ps.sampler.g_sampler, sampler);
             command_list->DrawIndexed(range.index_count, 1, range.start_index_location, range.base_vertex_location, 0);
         }
         command_list->EndRenderPass();
