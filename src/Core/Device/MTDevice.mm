@@ -53,8 +53,18 @@ std::shared_ptr<Fence> MTDevice::CreateFence(uint64_t initial_value)
 
 std::shared_ptr<Resource> MTDevice::CreateTexture(TextureType type, uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
 {
-    assert(false);
-    return {};
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
+    res->resource_type = ResourceType::kTexture;
+    res->format = format;
+    res->texture.type = type;
+    res->texture.bind_flag = bind_flag;
+    res->texture.format = GetMVKPixelFormats().getMTLPixelFormat(static_cast<VkFormat>(format));
+    res->texture.sample_count = sample_count;
+    res->texture.width = width;
+    res->texture.height = height;
+    res->texture.depth = depth;
+    res->texture.mip_levels = mip_levels;
+    return res;
 }
 
 std::shared_ptr<Resource> MTDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)

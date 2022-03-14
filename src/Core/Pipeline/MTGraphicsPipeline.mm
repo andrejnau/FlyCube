@@ -13,7 +13,7 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
     : m_device(device)
     , m_desc(desc)
 {
-    decltype(auto) mtl_device = device.GetDevice();
+    decltype(auto) mt_device = device.GetDevice();
     MTLRenderPipelineDescriptor* pipeline_descriptor = [[MTLRenderPipelineDescriptor alloc] init];
     NSError* error = nil;
 
@@ -24,7 +24,7 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
         decltype(auto) source = GetMSLShader(blob);
         NSString* ns_source = [NSString stringWithUTF8String:source.c_str()];
 
-        id<MTLLibrary> library = [mtl_device newLibraryWithSource:ns_source
+        id<MTLLibrary> library = [mt_device newLibraryWithSource:ns_source
                                                           options:nil
                                                             error:&error];
         if (library == nil)
@@ -71,8 +71,20 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
             continue;
         pipeline_descriptor.colorAttachments[i].pixelFormat = pixel_formats.getMTLPixelFormat(static_cast<VkFormat>(render_pass_desc.colors[i].format));
     }
+    decltype(auto) depth_stencil_format = render_pass_desc.depth_stencil.format;
+    if (depth_stencil_format != gli::format::FORMAT_UNDEFINED)
+    {
+        if (gli::is_depth(depth_stencil_format))
+        {
+            pipeline_descriptor.depthAttachmentPixelFormat = pixel_formats.getMTLPixelFormat(static_cast<VkFormat>(depth_stencil_format));
+        }
+        if (gli::is_stencil(depth_stencil_format))
+        {
+            pipeline_descriptor.stencilAttachmentPixelFormat = pixel_formats.getMTLPixelFormat(static_cast<VkFormat>(depth_stencil_format));
+        }
+    }
     
-    m_pipeline = [mtl_device newRenderPipelineStateWithDescriptor:pipeline_descriptor
+    m_pipeline = [mt_device newRenderPipelineStateWithDescriptor:pipeline_descriptor
                                                             error:&error];
     if (!m_pipeline)
     {

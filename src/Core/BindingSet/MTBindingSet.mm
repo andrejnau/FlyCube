@@ -27,15 +27,21 @@ void MTBindingSet::SetPixelShaderView(id<MTLRenderCommandEncoder> render_encoder
             buffer = mt_resource->buffer.res;
         [render_encoder setFragmentBuffer:buffer
                                    offset:0
-                                  atIndex:0];
+                                  atIndex:index];
         break;
     }
     case ViewType::kSampler:
         assert(false);
         break;
     case ViewType::kTexture:
-        assert(false);
+    {
+        id<MTLTexture> texture = {};
+        if (mt_resource)
+            texture = mt_resource->texture.res;
+        [render_encoder setFragmentTexture:texture
+                                   atIndex:index];
         break;
+    }
     case ViewType::kRWTexture:
         assert(false);
         break;
