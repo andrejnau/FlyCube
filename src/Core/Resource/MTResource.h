@@ -28,6 +28,14 @@ public:
     struct Texture
     {
         id<MTLTexture> res;
+        TextureType type = TextureType::k2D;
+        uint32_t bind_flag = 0;
+        MTLPixelFormat format = MTLPixelFormatInvalid;
+        uint32_t sample_count = 1;
+        int width = 1;
+        int height = 1;
+        int depth = 1;
+        int mip_levels = 1;
     } texture;
 
     struct Buffer

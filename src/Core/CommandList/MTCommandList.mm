@@ -90,38 +90,57 @@ static MTLStoreAction Convert(RenderPassStoreOp op)
 void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc)
 {
     MTLRenderPassDescriptor* render_pass_descriptor = [MTLRenderPassDescriptor new];
-
     const RenderPassDesc& render_pass_desc = render_pass->GetDesc();
-    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
-    {
-        decltype(auto) attachment = render_pass_descriptor.colorAttachments[i];
-        decltype(auto) render_pass_color = render_pass_desc.colors[i];
-        attachment.loadAction = Convert(render_pass_color.load_op);
-        attachment.storeAction = Convert(render_pass_color.store_op);
-    }
-    for (size_t i = 0; i < clear_desc.colors.size(); ++i)
-    {
-        decltype(auto) attachment = render_pass_descriptor.colorAttachments[i];
-        attachment.clearColor = MTLClearColorMake(clear_desc.colors[i].r,
-                                                  clear_desc.colors[i].g,
-                                                  clear_desc.colors[i].b,
-                                                  clear_desc.colors[i].a);
-    }
-
     const FramebufferDesc& framebuffer_desc = framebuffer->As<FramebufferBase>().GetDesc();
-    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
+    
+    auto add_attachment = [&](auto& attachment, gli::format format, RenderPassLoadOp load_op, RenderPassStoreOp store_op, const std::shared_ptr<View>& view)
     {
-        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED)
-            continue;
-        decltype(auto) attachment = render_pass_descriptor.colorAttachments[i];
-        decltype(auto) mt_view = framebuffer_desc.colors[i]->As<MTView>();
+        if (format == gli::format::FORMAT_UNDEFINED || !view)
+            return;
+        attachment.loadAction = Convert(load_op);
+        attachment.storeAction = Convert(store_op);
+        
+        decltype(auto) mt_view = view->As<MTView>();
         attachment.level = mt_view.GetBaseMipLevel();
         attachment.slice = mt_view.GetBaseArrayLayer();
         decltype(auto) resource = mt_view.GetResource();
         if (!resource)
-            continue;
+            return;
         decltype(auto) mt_resource = resource->As<MTResource>();
         attachment.texture = mt_resource.texture.res;
+    };
+    
+    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
+    {
+        decltype(auto) color_attachment = render_pass_descriptor.colorAttachments[i];
+        decltype(auto) color_desc = render_pass_desc.colors[i];
+        add_attachment(color_attachment, color_desc.format, color_desc.load_op, color_desc.store_op, framebuffer_desc.colors[i]);
+    }
+    for (size_t i = 0; i < clear_desc.colors.size(); ++i)
+    {
+        decltype(auto) color_attachment = render_pass_descriptor.colorAttachments[i];
+        color_attachment.clearColor = MTLClearColorMake(clear_desc.colors[i].r,
+                                                        clear_desc.colors[i].g,
+                                                        clear_desc.colors[i].b,
+                                                        clear_desc.colors[i].a);
+    }
+    
+    decltype(auto) depth_stencil_desc = render_pass_desc.depth_stencil;
+    if (depth_stencil_desc.format != gli::format::FORMAT_UNDEFINED)
+    {
+        decltype(auto) depth_attachment = render_pass_descriptor.depthAttachment;
+        if (gli::is_depth(depth_stencil_desc.format))
+        {
+            add_attachment(depth_attachment, depth_stencil_desc.format, depth_stencil_desc.depth_load_op, depth_stencil_desc.depth_store_op, framebuffer_desc.depth_stencil);
+        }
+        depth_attachment.clearDepth = clear_desc.depth;
+
+        decltype(auto) stencil_attachment = render_pass_descriptor.stencilAttachment;
+        if (gli::is_stencil(depth_stencil_desc.format))
+        {
+            add_attachment(stencil_attachment, depth_stencil_desc.format, depth_stencil_desc.stencil_load_op, depth_stencil_desc.stencil_store_op, framebuffer_desc.depth_stencil);
+        }
+        stencil_attachment.clearStencil = clear_desc.stencil;
     }
 
     ApplyAndRecord([=] {
@@ -346,7 +365,34 @@ void MTCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, cons
 void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
                                         const std::vector<BufferToTextureCopyRegion>& regions)
 {
-    assert(false);
+    id<MTLBlitCommandEncoder> blit_encoder = [m_command_buffer blitCommandEncoder];
+    decltype(auto) mt_src_buffer = src_buffer->As<MTResource>();
+    decltype(auto) mt_dst_texture = dst_texture->As<MTResource>();
+    auto format = dst_texture->GetFormat();
+    for (const auto& region : regions)
+    {
+        uint32_t bytes_per_image = 0;
+        if (gli::is_compressed(format))
+        {
+            auto extent = gli::block_extent(format);
+            bytes_per_image = region.buffer_row_pitch * ((region.texture_extent.height + gli::block_extent(format).y - 1) / gli::block_extent(format).y);
+        }
+        else
+        {
+            bytes_per_image = region.buffer_row_pitch * region.texture_extent.height;
+        }
+        MTLSize region_size = {region.texture_extent.width, region.texture_extent.height, region.texture_extent.depth};
+        [blit_encoder copyFromBuffer:mt_src_buffer.buffer.res
+                        sourceOffset:region.buffer_offset
+                   sourceBytesPerRow:region.buffer_row_pitch
+                 sourceBytesPerImage:bytes_per_image
+                          sourceSize:region_size
+                           toTexture:mt_dst_texture.texture.res
+                    destinationSlice:region.texture_array_layer
+                    destinationLevel:region.texture_mip_level
+                   destinationOrigin:{(uint32_t)region.texture_offset.x, (uint32_t)region.texture_offset.y, (uint32_t)region.texture_offset.z}];
+    }
+    [blit_encoder endEncoding];
 }
 
 void MTCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture,
