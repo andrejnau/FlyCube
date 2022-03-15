@@ -352,51 +352,55 @@ void MTCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
 void MTCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
                                const std::vector<BufferCopyRegion>& regions)
 {
-    id<MTLBlitCommandEncoder> blit_encoder = [m_command_buffer blitCommandEncoder];
-    decltype(auto) mt_src_buffer = src_buffer->As<MTResource>();
-    decltype(auto) mt_dst_buffer = dst_buffer->As<MTResource>();
-    for (const auto& region : regions)
-    {
-        [blit_encoder copyFromBuffer:mt_src_buffer.buffer.res
-                        sourceOffset:region.src_offset
-                            toBuffer:mt_dst_buffer.buffer.res
-                   destinationOffset:region.dst_offset
-                                size:region.num_bytes];
-    }
-    [blit_encoder endEncoding];
+    ApplyAndRecord([&command_buffer = m_command_buffer, src_buffer, dst_buffer, regions] {
+        id<MTLBlitCommandEncoder> blit_encoder = [command_buffer blitCommandEncoder];
+        decltype(auto) mt_src_buffer = src_buffer->As<MTResource>();
+        decltype(auto) mt_dst_buffer = dst_buffer->As<MTResource>();
+        for (const auto& region : regions)
+        {
+            [blit_encoder copyFromBuffer:mt_src_buffer.buffer.res
+                            sourceOffset:region.src_offset
+                                toBuffer:mt_dst_buffer.buffer.res
+                       destinationOffset:region.dst_offset
+                                    size:region.num_bytes];
+        }
+        [blit_encoder endEncoding];
+    });
 }
 
 void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
                                         const std::vector<BufferToTextureCopyRegion>& regions)
 {
-    id<MTLBlitCommandEncoder> blit_encoder = [m_command_buffer blitCommandEncoder];
-    decltype(auto) mt_src_buffer = src_buffer->As<MTResource>();
-    decltype(auto) mt_dst_texture = dst_texture->As<MTResource>();
-    auto format = dst_texture->GetFormat();
-    for (const auto& region : regions)
-    {
-        uint32_t bytes_per_image = 0;
-        if (gli::is_compressed(format))
+    ApplyAndRecord([&command_buffer = m_command_buffer, src_buffer, dst_texture, regions] {
+        id<MTLBlitCommandEncoder> blit_encoder = [command_buffer blitCommandEncoder];
+        decltype(auto) mt_src_buffer = src_buffer->As<MTResource>();
+        decltype(auto) mt_dst_texture = dst_texture->As<MTResource>();
+        auto format = dst_texture->GetFormat();
+        for (const auto& region : regions)
         {
-            auto extent = gli::block_extent(format);
-            bytes_per_image = region.buffer_row_pitch * ((region.texture_extent.height + gli::block_extent(format).y - 1) / gli::block_extent(format).y);
+            uint32_t bytes_per_image = 0;
+            if (gli::is_compressed(format))
+            {
+                auto extent = gli::block_extent(format);
+                bytes_per_image = region.buffer_row_pitch * ((region.texture_extent.height + gli::block_extent(format).y - 1) / gli::block_extent(format).y);
+            }
+            else
+            {
+                bytes_per_image = region.buffer_row_pitch * region.texture_extent.height;
+            }
+            MTLSize region_size = {region.texture_extent.width, region.texture_extent.height, region.texture_extent.depth};
+            [blit_encoder copyFromBuffer:mt_src_buffer.buffer.res
+                            sourceOffset:region.buffer_offset
+                       sourceBytesPerRow:region.buffer_row_pitch
+                     sourceBytesPerImage:bytes_per_image
+                              sourceSize:region_size
+                               toTexture:mt_dst_texture.texture.res
+                        destinationSlice:region.texture_array_layer
+                        destinationLevel:region.texture_mip_level
+                       destinationOrigin:{(uint32_t)region.texture_offset.x, (uint32_t)region.texture_offset.y, (uint32_t)region.texture_offset.z}];
         }
-        else
-        {
-            bytes_per_image = region.buffer_row_pitch * region.texture_extent.height;
-        }
-        MTLSize region_size = {region.texture_extent.width, region.texture_extent.height, region.texture_extent.depth};
-        [blit_encoder copyFromBuffer:mt_src_buffer.buffer.res
-                        sourceOffset:region.buffer_offset
-                   sourceBytesPerRow:region.buffer_row_pitch
-                 sourceBytesPerImage:bytes_per_image
-                          sourceSize:region_size
-                           toTexture:mt_dst_texture.texture.res
-                    destinationSlice:region.texture_array_layer
-                    destinationLevel:region.texture_mip_level
-                   destinationOrigin:{(uint32_t)region.texture_offset.x, (uint32_t)region.texture_offset.y, (uint32_t)region.texture_offset.z}];
-    }
-    [blit_encoder endEncoding];
+        [blit_encoder endEncoding];
+    });
 }
 
 void MTCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture,
