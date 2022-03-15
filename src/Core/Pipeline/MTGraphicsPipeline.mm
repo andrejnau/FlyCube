@@ -2,11 +2,91 @@
 #include <Device/MTDevice.h>
 #include <HLSLCompiler/MSLConverter.h>
 
-std::string FixEntryPoint(const std::string& entry_point)
+static std::string FixEntryPoint(const std::string& entry_point)
 {
     if (entry_point == "main")
         return "main0";
     return entry_point;
+}
+
+static MTLCompareFunction Convert(ComparisonFunc func)
+{
+    switch (func)
+    {
+    case ComparisonFunc::kNever:
+        return MTLCompareFunctionNever;
+    case ComparisonFunc::kLess:
+        return MTLCompareFunctionLess;
+    case ComparisonFunc::kEqual:
+        return MTLCompareFunctionEqual;
+    case ComparisonFunc::kLessEqual:
+        return MTLCompareFunctionLessEqual;
+    case ComparisonFunc::kGreater:
+        return MTLCompareFunctionGreater;
+    case ComparisonFunc::kNotEqual:
+        return MTLCompareFunctionNotEqual;
+    case ComparisonFunc::kGreaterEqual:
+        return MTLCompareFunctionGreaterEqual;
+    case ComparisonFunc::kAlways:
+        return MTLCompareFunctionAlways;
+    default:
+        assert(false);
+        return MTLCompareFunctionLess;
+    }
+}
+
+static MTLStencilOperation Convert(StencilOp op)
+{
+    switch (op)
+    {
+    case StencilOp::kKeep:
+        return MTLStencilOperationKeep;
+    case StencilOp::kZero:
+        return MTLStencilOperationZero;
+    case StencilOp::kReplace:
+        return MTLStencilOperationReplace;
+    case StencilOp::kIncrSat:
+        return MTLStencilOperationIncrementClamp;
+    case StencilOp::kDecrSat:
+        return MTLStencilOperationDecrementClamp;
+    case StencilOp::kInvert:
+        return MTLStencilOperationInvert;
+    case StencilOp::kIncr:
+        return MTLStencilOperationIncrementWrap;
+    case StencilOp::kDecr:
+        return MTLStencilOperationDecrementWrap;
+    default:
+        assert(false);
+        return MTLStencilOperationKeep;
+    }
+}
+
+static MTLStencilDescriptor* GetStencilDesc(const StencilOpDesc& desc, uint8_t read_mask, uint8_t write_mask)
+{
+    MTLStencilDescriptor* stencil_descriptor = [[MTLStencilDescriptor alloc] init];
+    stencil_descriptor.stencilCompareFunction = Convert(desc.func);
+    stencil_descriptor.stencilFailureOperation = Convert(desc.fail_op);
+    stencil_descriptor.depthFailureOperation = Convert(desc.depth_fail_op);
+    stencil_descriptor.depthStencilPassOperation = Convert(desc.pass_op);
+    stencil_descriptor.readMask = read_mask;
+    stencil_descriptor.writeMask = write_mask;
+    return stencil_descriptor;
+}
+
+static MTLDepthStencilDescriptor* GetDepthStencilDesc(const DepthStencilDesc& desc, gli::format depth_stencil_format)
+{
+    MTLDepthStencilDescriptor* depth_stencil_descriptor = [[MTLDepthStencilDescriptor alloc] init];
+    depth_stencil_descriptor.depthCompareFunction = Convert(desc.depth_func);
+    depth_stencil_descriptor.depthWriteEnabled = desc.depth_write_enable;
+    if (depth_stencil_format == gli::format::FORMAT_UNDEFINED || !gli::is_depth(depth_stencil_format))
+    {
+        depth_stencil_descriptor.depthCompareFunction = MTLCompareFunctionAlways;
+        depth_stencil_descriptor.depthWriteEnabled = false;
+    }
+
+    depth_stencil_descriptor.frontFaceStencil = GetStencilDesc(desc.front_face, desc.stencil_read_mask, desc.stencil_write_mask);
+    depth_stencil_descriptor.backFaceStencil = GetStencilDesc(desc.back_face, desc.stencil_read_mask, desc.stencil_write_mask);
+    return depth_stencil_descriptor;
 }
 
 MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineDesc& desc)
@@ -90,6 +170,8 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
     {
         NSLog(@"Error occurred when creating render pipeline state: %@", error);
     }
+  
+    m_depth_stencil = [m_device.GetDevice() newDepthStencilStateWithDescriptor:GetDepthStencilDesc(desc.depth_stencil_desc, depth_stencil_format)];
 }
 
 MTLVertexDescriptor* MTGraphicsPipeline::GetVertexDescriptor(const std::shared_ptr<Shader>& shader)
@@ -123,6 +205,11 @@ std::vector<uint8_t> MTGraphicsPipeline::GetRayTracingShaderGroupHandles(uint32_
 id<MTLRenderPipelineState> MTGraphicsPipeline::GetPipeline()
 {
     return m_pipeline;
+}
+
+id<MTLDepthStencilState> MTGraphicsPipeline::GetDepthStencil()
+{
+    return m_depth_stencil;
 }
 
 const GraphicsPipelineDesc& MTGraphicsPipeline::GetDesc() const

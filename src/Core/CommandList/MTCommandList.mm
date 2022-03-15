@@ -41,8 +41,10 @@ void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
         return;
 
     decltype(auto) mt_pipeline = m_state->GetPipeline();
-    ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline] {
+    decltype(auto) mt_depth_stencil = m_state->GetDepthStencil();
+    ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline, mt_depth_stencil] {
         [render_encoder setRenderPipelineState:mt_pipeline];
+        [render_encoder setDepthStencilState:mt_depth_stencil];
     });
 }
 
@@ -150,6 +152,7 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         if (state)
         {
             [render_encoder setRenderPipelineState:state->GetPipeline()];
+            [render_encoder setDepthStencilState:state->GetDepthStencil()];
         }
         for (const auto& vertex : vertices)
         {
