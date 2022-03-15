@@ -40,9 +40,9 @@ void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
     if (!m_render_encoder)
         return;
 
-    decltype(auto) mtl_pipeline = m_state->GetPipeline();
-    ApplyAndRecord([=] {
-        [m_render_encoder setRenderPipelineState:mtl_pipeline];
+    decltype(auto) mt_pipeline = m_state->GetPipeline();
+    ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline] {
+        [render_encoder setRenderPipelineState:mt_pipeline];
     });
 }
 
@@ -54,8 +54,8 @@ void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     if (!m_render_encoder)
         return;
     
-    ApplyAndRecord([=] {
-        m_binding_set->Apply(m_render_encoder, m_state);
+    ApplyAndRecord([&render_encoder = m_render_encoder, binding_set = m_binding_set, state = m_state] {
+        binding_set->Apply(render_encoder, state);
     });
 }
 
@@ -143,31 +143,32 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         stencil_attachment.clearStencil = clear_desc.stencil;
     }
 
-    ApplyAndRecord([=] {
-        m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
-        [m_render_encoder setViewport:m_viewport];
-        if (m_state)
+    ApplyAndRecord([&render_encoder = m_render_encoder, &command_buffer = m_command_buffer, render_pass_descriptor,
+                    viewport = m_viewport, state = m_state, vertices = m_vertices, binding_set = m_binding_set] {
+        render_encoder = [command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
+        [render_encoder setViewport:viewport];
+        if (state)
         {
-            [m_render_encoder setRenderPipelineState:m_state->GetPipeline()];
+            [render_encoder setRenderPipelineState:state->GetPipeline()];
         }
-        for (const auto& vertex : m_vertices)
+        for (const auto& vertex : vertices)
         {
-            [m_render_encoder setVertexBuffer:vertex.second
+            [render_encoder setVertexBuffer:vertex.second
                                        offset:0
                                       atIndex:vertex.first];
         }
-        if (m_binding_set)
+        if (binding_set)
         {
-            m_binding_set->Apply(m_render_encoder, m_state);
+            binding_set->Apply(render_encoder, state);
         }
     });
 }
 
 void MTCommandList::EndRenderPass()
 {
-    ApplyAndRecord([=] {
-        [m_render_encoder endEncoding];
-        m_render_encoder = nullptr;
+    ApplyAndRecord([&render_encoder = m_render_encoder, &state = m_state] {
+        [render_encoder endEncoding];
+        render_encoder = nullptr;
     });
 }
 
@@ -203,8 +204,8 @@ void MTCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, u
     assert(m_index_buffer);
     decltype(auto) index = m_index_buffer->As<MTResource>().buffer.res;
     MTLIndexType index_format = GetIndexType(m_index_format);
-    ApplyAndRecord([=] {
-        [m_render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+    ApplyAndRecord([&render_encoder = m_render_encoder, index_count, index_format, index] {
+        [render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                      indexCount:index_count
                                       indexType:index_format
                                     indexBuffer:index
@@ -281,8 +282,8 @@ void MTCommandList::SetViewport(float x, float y, float width, float height)
     if (!m_render_encoder)
         return;
 
-    ApplyAndRecord([=] {
-        [m_render_encoder setViewport:m_viewport];
+    ApplyAndRecord([&render_encoder = m_render_encoder, viewport = m_viewport] {
+        [render_encoder setViewport:viewport];
     });
 }
 
@@ -304,8 +305,8 @@ void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
     if (!m_render_encoder)
         return;
 
-    ApplyAndRecord([=] {
-        [m_render_encoder setVertexBuffer:vertex
+    ApplyAndRecord([&render_encoder = m_render_encoder, vertex, index] {
+        [render_encoder setVertexBuffer:vertex
                                    offset:0
                                   atIndex:index];
     });
