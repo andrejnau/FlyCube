@@ -219,12 +219,28 @@ void MTCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, u
 
 void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
-    assert(false);
+    decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
+    ApplyAndRecord([&render_encoder = m_render_encoder, mt_argument_buffer, argument_buffer_offset] {
+        [render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
+                        indirectBuffer:mt_argument_buffer
+                  indirectBufferOffset:argument_buffer_offset];
+    });
 }
 
 void MTCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
-    assert(false);
+    decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
+    MTLIndexType index_format = GetIndexType(m_index_format);
+    assert(m_index_buffer);
+    decltype(auto) index = m_index_buffer->As<MTResource>().buffer.res;
+    ApplyAndRecord([&render_encoder = m_render_encoder, mt_argument_buffer, argument_buffer_offset, index_format, index] {
+        [render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                    indexType:index_format
+                                  indexBuffer:index
+                            indexBufferOffset:0
+                               indirectBuffer:mt_argument_buffer
+                         indirectBufferOffset:argument_buffer_offset];
+    });
 }
 
 void MTCommandList::DrawIndirectCount(
@@ -235,6 +251,7 @@ void MTCommandList::DrawIndirectCount(
     uint32_t max_draw_count,
     uint32_t stride)
 {
+    assert(false);
 }
 
 void MTCommandList::DrawIndexedIndirectCount(
@@ -245,6 +262,7 @@ void MTCommandList::DrawIndexedIndirectCount(
     uint32_t max_draw_count,
     uint32_t stride)
 {
+    assert(false);
 }
 
 void MTCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
@@ -259,6 +277,7 @@ void MTCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_b
 
 void MTCommandList::DispatchMesh(uint32_t thread_group_count_x)
 {
+    assert(false);
 }
 
 void MTCommandList::DispatchRays(const RayTracingShaderTables& shader_tables, uint32_t width, uint32_t height, uint32_t depth)
