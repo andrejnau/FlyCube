@@ -40,3 +40,6 @@
 [submodule "3rdparty/nowide"]
 	path = 3rdparty/nowide
 	url = https://github.com/boostorg/nowide
+[submodule "3rdparty/MVKPixelFormats"]
+	path = 3rdparty/MVKPixelFormats
+	url = https://github.com/andrejnau/MVKPixelFormats.git
