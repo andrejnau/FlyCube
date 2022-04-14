@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <array>
 
 enum class ShaderKind
 {
@@ -108,6 +109,7 @@ struct ShaderFeatureInfo
 {
     bool resource_descriptor_heap_indexing = false;
     bool sampler_descriptor_heap_indexing = false;
+    std::array<uint32_t, 3> numthreads = {};
 };
 
 class ShaderReflection : public QueryInterface

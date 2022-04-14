@@ -35,9 +35,11 @@ endif()
 
 if (METAL_SUPPORT)
     list(APPEND headers
+        MTComputePipeline.h
         MTGraphicsPipeline.h
     )
     list(APPEND sources
+        MTComputePipeline.mm
         MTGraphicsPipeline.mm
     )
 endif()

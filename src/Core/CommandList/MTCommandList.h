@@ -97,7 +97,7 @@ private:
     gli::format m_index_format = gli::FORMAT_UNDEFINED;
     MTLViewport m_viewport = {};
     std::map<uint32_t, id<MTLBuffer>> m_vertices;
-    std::shared_ptr<MTGraphicsPipeline> m_state;
+    std::shared_ptr<Pipeline> m_state;
     std::shared_ptr<MTBindingSet> m_binding_set;
     std::deque<std::function<void()>> m_recorded_cmds;
     bool m_executed = false;
