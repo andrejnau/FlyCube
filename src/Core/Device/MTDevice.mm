@@ -3,6 +3,7 @@
 #include <Swapchain/MTSwapchain.h>
 #include <Shader/ShaderBase.h>
 #include <Program/ProgramBase.h>
+#include <Pipeline/MTComputePipeline.h>
 #include <Pipeline/MTGraphicsPipeline.h>
 #include <CommandList/MTCommandList.h>
 #include <Framebuffer/MTFramebuffer.h>
@@ -150,8 +151,7 @@ std::shared_ptr<Pipeline> MTDevice::CreateGraphicsPipeline(const GraphicsPipelin
 
 std::shared_ptr<Pipeline> MTDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
 {
-    assert(false);
-    return {};
+    return std::make_shared<MTComputePipeline>(*this, desc);
 }
 
 std::shared_ptr<Pipeline> MTDevice::CreateRayTracingPipeline(const RayTracingPipelineDesc& desc)

@@ -3,6 +3,7 @@
 #include <View/MTView.h>
 #include <Resource/MTResource.h>
 #include <Framebuffer/FramebufferBase.h>
+#include <Pipeline/MTComputePipeline.h>
 #include <Pipeline/MTGraphicsPipeline.h>
 #include <BindingSet/MTBindingSet.h>
 
@@ -36,12 +37,18 @@ void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
     if (state == m_state)
         return;
-    m_state = std::static_pointer_cast<MTGraphicsPipeline>(state);
+    m_state = state;
+    
     if (!m_render_encoder)
         return;
+    if (m_state->GetPipelineType() != PipelineType::kGraphics)
+    {
+        return;
+    }
 
-    decltype(auto) mt_pipeline = m_state->GetPipeline();
-    decltype(auto) mt_depth_stencil = m_state->GetDepthStencil();
+    decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
+    decltype(auto) mt_pipeline = mt_state.GetPipeline();
+    decltype(auto) mt_depth_stencil = mt_state.GetDepthStencil();
     ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline, mt_depth_stencil] {
         [render_encoder setRenderPipelineState:mt_pipeline];
         [render_encoder setDepthStencilState:mt_depth_stencil];
@@ -149,10 +156,12 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
                     viewport = m_viewport, state = m_state, vertices = m_vertices, binding_set = m_binding_set] {
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
         [render_encoder setViewport:viewport];
-        if (state)
+        
+        if (state && state->GetPipelineType() == PipelineType::kGraphics)
         {
-            [render_encoder setRenderPipelineState:state->GetPipeline()];
-            [render_encoder setDepthStencilState:state->GetDepthStencil()];
+            decltype(auto) mt_state = state->As<MTGraphicsPipeline>();
+            [render_encoder setRenderPipelineState:mt_state.GetPipeline()];
+            [render_encoder setDepthStencilState:mt_state.GetDepthStencil()];
         }
         for (const auto& vertex : vertices)
         {
@@ -172,6 +181,8 @@ void MTCommandList::EndRenderPass()
     ApplyAndRecord([&render_encoder = m_render_encoder, &state = m_state] {
         [render_encoder endEncoding];
         render_encoder = nullptr;
+        //TODO: Hack to avoid validateFramebufferWithRenderPipelineState assertion
+        state.reset();
     });
 }
 
@@ -267,12 +278,39 @@ void MTCommandList::DrawIndexedIndirectCount(
 
 void MTCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
 {
-    assert(false);
+    ApplyAndRecord([&command_buffer = m_command_buffer, thread_group_count_x, thread_group_count_y, thread_group_count_z, binding_set = m_binding_set, state = m_state] {
+        id<MTLComputeCommandEncoder> compute_encoder = [command_buffer computeCommandEncoder];
+        if (binding_set)
+        {
+            binding_set->Apply(compute_encoder, state);
+        }
+        decltype(auto) mt_state = state->As<MTComputePipeline>();
+        decltype(auto) mt_pipeline = mt_state.GetPipeline();
+        [compute_encoder setComputePipelineState:mt_pipeline];
+        MTLSize threadgroups_per_grid = {thread_group_count_x, thread_group_count_y, thread_group_count_z};
+        [compute_encoder dispatchThreadgroups:threadgroups_per_grid
+                        threadsPerThreadgroup:mt_state.GetNumthreads()];
+        [compute_encoder endEncoding];
+    });
 }
 
 void MTCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
-    assert(false);
+    decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
+    ApplyAndRecord([&command_buffer = m_command_buffer, mt_argument_buffer, argument_buffer_offset, binding_set = m_binding_set, state = m_state] {
+        id<MTLComputeCommandEncoder> compute_encoder = [command_buffer computeCommandEncoder];
+        if (binding_set)
+        {
+            binding_set->Apply(compute_encoder, state);
+        }
+        decltype(auto) mt_state = state->As<MTComputePipeline>();
+        decltype(auto) mt_pipeline = mt_state.GetPipeline();
+        [compute_encoder setComputePipelineState:mt_pipeline];
+        [compute_encoder dispatchThreadgroupsWithIndirectBuffer:mt_argument_buffer
+                                           indirectBufferOffset:argument_buffer_offset
+                                          threadsPerThreadgroup:mt_state.GetNumthreads()];
+        [compute_encoder endEncoding];
+    });
 }
 
 void MTCommandList::DispatchMesh(uint32_t thread_group_count_x)
@@ -425,7 +463,28 @@ void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
 void MTCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture,
                                 const std::vector<TextureCopyRegion>& regions)
 {
-    assert(false);
+    ApplyAndRecord([&command_buffer = m_command_buffer, src_texture, dst_texture, regions] {
+        id<MTLBlitCommandEncoder> blit_encoder = [command_buffer blitCommandEncoder];
+        decltype(auto) mt_src_texture = src_texture->As<MTResource>();
+        decltype(auto) mt_dst_texture = dst_texture->As<MTResource>();
+        auto format = dst_texture->GetFormat();
+        for (const auto& region : regions)
+        {
+            MTLSize region_size = {region.extent.width, region.extent.height, region.extent.depth};
+            MTLOrigin src_origin = {(uint32_t)region.src_offset.x, (uint32_t)region.src_offset.y, (uint32_t)region.src_offset.z};
+            MTLOrigin dst_origin = {(uint32_t)region.dst_offset.x, (uint32_t)region.dst_offset.y, (uint32_t)region.dst_offset.z};
+            [blit_encoder copyFromTexture:mt_src_texture.texture.res
+                              sourceSlice:region.src_array_layer
+                              sourceLevel:region.src_mip_level
+                             sourceOrigin:src_origin
+                               sourceSize:region_size
+                                toTexture:mt_dst_texture.texture.res
+                         destinationSlice:region.dst_array_layer
+                         destinationLevel:region.dst_mip_level
+                        destinationOrigin:dst_origin];
+        }
+        [blit_encoder endEncoding];
+    });
 }
 
 void MTCommandList::WriteAccelerationStructuresProperties(

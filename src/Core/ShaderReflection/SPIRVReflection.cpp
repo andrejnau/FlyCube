@@ -369,6 +369,11 @@ SPIRVReflection::SPIRVReflection(const void* data, size_t size)
     ParseBindings(compiler, m_bindings, m_layouts);
     m_input_parameters = ParseInputParameters(compiler);
     m_output_parameters = ParseOutputParameters(compiler);
+    
+    for (uint32_t i = 0; i < m_shader_feature_info.numthreads.size(); ++i)
+    {
+        m_shader_feature_info.numthreads[i] = compiler.get_execution_mode_argument(spv::ExecutionModeLocalSize, i);
+    }
 }
 
 const std::vector<EntryPoint>& SPIRVReflection::GetEntryPoints() const

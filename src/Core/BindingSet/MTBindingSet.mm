@@ -117,7 +117,63 @@ void MTBindingSet::SetVertexShaderView(id<MTLRenderCommandEncoder> render_encode
     }
 }
 
-void MTBindingSet::Apply(id<MTLRenderCommandEncoder> render_encoder, const std::shared_ptr<MTGraphicsPipeline>& state)
+void MTBindingSet::SetComputeShaderView(id<MTLComputeCommandEncoder> compute_encoder, ViewType view_type, const std::shared_ptr<MTView>& view, uint32_t index)
+{
+    decltype(auto) mt_resource = view->GetMTResource();
+    switch (view_type)
+    {
+    case ViewType::kConstantBuffer:
+    {
+        id<MTLBuffer> buffer = {};
+        if (mt_resource)
+            buffer = mt_resource->buffer.res;
+        [compute_encoder setBuffer:buffer
+                            offset:0
+                           atIndex:index];
+        break;
+    }
+    case ViewType::kSampler:
+    {
+        id<MTLSamplerState> sampler = {};
+        if (mt_resource)
+            sampler = mt_resource->sampler.res;
+        [compute_encoder setSamplerState:sampler
+                                 atIndex:index];
+        break;
+    }
+    case ViewType::kTexture:
+    case ViewType::kRWTexture:
+    {
+        id<MTLTexture> texture = {};
+        if (mt_resource)
+            texture = mt_resource->texture.res;
+        [compute_encoder setTexture:texture
+                            atIndex:index];
+        break;
+    }
+    case ViewType::kBuffer:
+    case ViewType::kRWBuffer:
+    case ViewType::kStructuredBuffer:
+    case ViewType::kRWStructuredBuffer:
+    {
+        id<MTLBuffer> buffer = {};
+        if (mt_resource)
+            buffer = mt_resource->buffer.res;
+        [compute_encoder setBuffer:buffer
+                            offset:0
+                           atIndex:index];
+        break;
+    }
+    case ViewType::kAccelerationStructure:
+        assert(false);
+        break;
+    default:
+        assert(false);
+        break;
+    }
+}
+
+void MTBindingSet::Apply(id<MTLRenderCommandEncoder> render_encoder, const std::shared_ptr<Pipeline>& state)
 {
     const std::vector<BindKey>& bind_keys = m_layout->GetBindKeys();
     for (const auto& binding : m_bindings)
@@ -134,6 +190,28 @@ void MTBindingSet::Apply(id<MTLRenderCommandEncoder> render_encoder, const std::
             break;
         case ShaderType::kVertex:
             SetVertexShaderView(render_encoder, bind_key.view_type, mt_view, index);
+            break;
+        default:
+            assert(false);
+            break;
+        }
+    }
+}
+
+void MTBindingSet::Apply(id<MTLComputeCommandEncoder> compute_encoder, const std::shared_ptr<Pipeline>& state)
+{
+    const std::vector<BindKey>& bind_keys = m_layout->GetBindKeys();
+    for (const auto& binding : m_bindings)
+    {
+        const BindKey& bind_key = binding.bind_key;
+        decltype(auto) mt_view = std::static_pointer_cast<MTView>(binding.view);
+        // TODO: get index
+        // decltype(auto) desc = state->GetDesc().program;
+        uint32_t index = 0;
+        switch (bind_key.shader_type)
+        {
+        case ShaderType::kCompute:
+            SetComputeShaderView(compute_encoder, bind_key.view_type, mt_view, index);
             break;
         default:
             assert(false);
