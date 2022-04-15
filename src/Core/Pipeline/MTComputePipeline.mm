@@ -1,6 +1,6 @@
 #include "Pipeline/MTComputePipeline.h"
 #include <Device/MTDevice.h>
-#include <HLSLCompiler/MSLConverter.h>
+#include <Shader/MTShader.h>
 
 static std::string FixEntryPoint(const std::string& entry_point)
 {
@@ -20,8 +20,7 @@ MTComputePipeline::MTComputePipeline(MTDevice& device, const ComputePipelineDesc
     decltype(auto) shaders = desc.program->GetShaders();
     for (const auto& shader : shaders)
     {
-        decltype(auto) blob = shader->GetBlob();
-        decltype(auto) source = GetMSLShader(blob);
+        decltype(auto) source = shader->As<MTShader>().GetSource();
         NSString* ns_source = [NSString stringWithUTF8String:source.c_str()];
 
         id<MTLLibrary> library = [mt_device newLibraryWithSource:ns_source
@@ -80,6 +79,11 @@ PipelineType MTComputePipeline::GetPipelineType() const
 std::vector<uint8_t> MTComputePipeline::GetRayTracingShaderGroupHandles(uint32_t first_group, uint32_t group_count) const
 {
     return {};
+}
+
+std::shared_ptr<Program> MTComputePipeline::GetProgram() const
+{
+    return m_desc.program;
 }
 
 id<MTLComputePipelineState> MTComputePipeline::GetPipeline()

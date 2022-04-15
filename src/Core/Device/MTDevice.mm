@@ -1,7 +1,7 @@
 #include "Device/MTDevice.h"
 #include <CommandQueue/MTCommandQueue.h>
 #include <Swapchain/MTSwapchain.h>
-#include <Shader/ShaderBase.h>
+#include <Shader/MTShader.h>
 #include <Program/ProgramBase.h>
 #include <Pipeline/MTComputePipeline.h>
 #include <Pipeline/MTGraphicsPipeline.h>
@@ -136,7 +136,7 @@ std::shared_ptr<Framebuffer> MTDevice::CreateFramebuffer(const FramebufferDesc& 
 
 std::shared_ptr<Shader> MTDevice::CompileShader(const ShaderDesc& desc)
 {
-    return std::make_shared<ShaderBase>(desc, ShaderBlobType::kSPIRV);
+    return std::make_shared<MTShader>(desc, ShaderBlobType::kSPIRV);
 }
 
 std::shared_ptr<Program> MTDevice::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)

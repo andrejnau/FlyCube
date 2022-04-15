@@ -35,6 +35,7 @@ endif()
 
 if (METAL_SUPPORT)
     list(APPEND headers
+        MTPipeline.h
         MTComputePipeline.h
         MTGraphicsPipeline.h
     )
