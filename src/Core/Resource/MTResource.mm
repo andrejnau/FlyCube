@@ -19,12 +19,56 @@ void MTResource::CommitMemory(MemoryType memory_type)
     else if (resource_type == ResourceType::kTexture)
     {
         MTLTextureDescriptor* texture_descriptor = [[MTLTextureDescriptor alloc] init];
+        switch (texture.type)
+        {
+        case TextureType::k1D:
+            if (texture.depth > 1)
+                texture_descriptor.textureType = MTLTextureType1DArray;
+            else
+                texture_descriptor.textureType = MTLTextureType1D;
+            break;
+        case TextureType::k2D:
+            if (texture.sample_count > 1)
+            {
+                if (texture.depth > 1)
+                    texture_descriptor.textureType = MTLTextureType2DMultisampleArray;
+                else
+                    texture_descriptor.textureType = MTLTextureType2DMultisample;
+            }
+            else
+            {
+                if (texture.depth > 1)
+                    texture_descriptor.textureType = MTLTextureType2DArray;
+                else
+                    texture_descriptor.textureType = MTLTextureType2D;
+            }
+            break;
+        case TextureType::k3D:
+            texture_descriptor.textureType = MTLTextureType3D;
+            break;
+        }
+        
+        MTLTextureUsage usage = {};
+        if (texture.bind_flag & BindFlag::kRenderTarget)
+            usage |= MTLTextureUsageRenderTarget;
+        if (texture.bind_flag & BindFlag::kDepthStencil)
+            usage |= MTLTextureUsageRenderTarget;
+        if (texture.bind_flag & BindFlag::kShaderResource)
+            usage |= MTLTextureUsageShaderRead;
+        if (texture.bind_flag & BindFlag::kUnorderedAccess)
+            usage |= MTLTextureUsageShaderWrite;
+        
+        // TODO: check format
+        if (texture.bind_flag & BindFlag::kDepthStencil)
+            usage |= MTLTextureUsagePixelFormatView;
+        
         texture_descriptor.pixelFormat = texture.format;
         texture_descriptor.width = texture.width;
         texture_descriptor.height = texture.height;
         texture_descriptor.mipmapLevelCount = texture.mip_levels;
+        texture_descriptor.arrayLength = texture.depth;
         texture_descriptor.sampleCount = texture.sample_count;
-        texture_descriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+        texture_descriptor.usage = usage;
         texture.res = [mt_device newTextureWithDescriptor:texture_descriptor];
     }
 }
@@ -58,7 +102,7 @@ uint16_t MTResource::GetLevelCount() const
 
 uint32_t MTResource::GetSampleCount() const
 {
-    return 1;
+    return texture.sample_count;
 }
 
 uint64_t MTResource::GetAccelerationStructureHandle() const

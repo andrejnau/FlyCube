@@ -16,10 +16,13 @@ public:
     uint32_t GetBaseArrayLayer() const override;
     uint32_t GetLayerCount() const override;
     
-    std::shared_ptr<MTResource> GetMTResource();
+    void CreateTextureView();
+    std::shared_ptr<MTResource> GetMTResource() const;
+    id<MTLTexture> GetTextureView() const;
 
 private:
     MTDevice& m_device;
     std::shared_ptr<MTResource> m_resource;
     ViewDesc m_view_desc;
+    id<MTLTexture> m_texture_view;
 };

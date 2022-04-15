@@ -185,10 +185,20 @@ ViewDimension GetDimension(spv::Dim dim, const spirv_cross::SPIRType& resource_t
     }
     case spv::Dim::Dim2D:
     {
-        if (resource_type.image.arrayed)
-            return ViewDimension::kTexture2DArray;
+        if (resource_type.image.ms)
+        {
+            if (resource_type.image.arrayed)
+                return ViewDimension::kTexture2DMSArray;
+            else
+                return ViewDimension::kTexture2DMS;
+        }
         else
-            return ViewDimension::kTexture2D;
+        {
+            if (resource_type.image.arrayed)
+                return ViewDimension::kTexture2DArray;
+            else
+                return ViewDimension::kTexture2D;
+        }
     }
     case spv::Dim::Dim3D:
     {
