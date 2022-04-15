@@ -7,6 +7,15 @@ list(APPEND sources
     ShaderBase.cpp
 )
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTShader.h
+    )
+    list(APPEND sources
+        MTShader.cpp
+    )
+endif()
+
 add_library(Shader ${headers} ${sources})
 
 target_include_directories(Shader

@@ -98,6 +98,10 @@ static MTLStoreAction Convert(RenderPassStoreOp op)
 
 void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc)
 {
+    //TODO: Hack
+    m_state.reset();
+    m_binding_set.reset();
+
     MTLRenderPassDescriptor* render_pass_descriptor = [MTLRenderPassDescriptor new];
     const RenderPassDesc& render_pass_desc = render_pass->GetDesc();
     const FramebufferDesc& framebuffer_desc = framebuffer->As<FramebufferBase>().GetDesc();
@@ -178,11 +182,9 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
 
 void MTCommandList::EndRenderPass()
 {
-    ApplyAndRecord([&render_encoder = m_render_encoder, &state = m_state] {
+    ApplyAndRecord([&render_encoder = m_render_encoder] {
         [render_encoder endEncoding];
         render_encoder = nullptr;
-        //TODO: Hack to avoid validateFramebufferWithRenderPipelineState assertion
-        state.reset();
     });
 }
 

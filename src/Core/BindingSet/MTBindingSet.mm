@@ -3,6 +3,7 @@
 #include <BindingSetLayout/MTBindingSetLayout.h>
 #include <Pipeline/MTGraphicsPipeline.h>
 #include <View/MTView.h>
+#include <Shader/MTShader.h>
 
 MTBindingSet::MTBindingSet(MTDevice& device, const std::shared_ptr<MTBindingSetLayout>& layout)
     : m_device(device)
@@ -21,6 +22,10 @@ void MTBindingSet::SetPixelShaderView(id<MTLRenderCommandEncoder> render_encoder
     switch (view_type)
     {
     case ViewType::kConstantBuffer:
+    case ViewType::kBuffer:
+    case ViewType::kRWBuffer:
+    case ViewType::kStructuredBuffer:
+    case ViewType::kRWStructuredBuffer:
     {
         id<MTLBuffer> buffer = {};
         if (mt_resource)
@@ -40,6 +45,7 @@ void MTBindingSet::SetPixelShaderView(id<MTLRenderCommandEncoder> render_encoder
         break;
     }
     case ViewType::kTexture:
+    case ViewType::kRWTexture:
     {
         id<MTLTexture> texture = {};
         if (mt_resource)
@@ -48,21 +54,6 @@ void MTBindingSet::SetPixelShaderView(id<MTLRenderCommandEncoder> render_encoder
                                    atIndex:index];
         break;
     }
-    case ViewType::kRWTexture:
-        assert(false);
-        break;
-    case ViewType::kBuffer:
-        assert(false);
-        break;
-    case ViewType::kRWBuffer:
-        assert(false);
-        break;
-    case ViewType::kStructuredBuffer:
-        assert(false);
-        break;
-    case ViewType::kRWStructuredBuffer:
-        assert(false);
-        break;
     case ViewType::kAccelerationStructure:
         assert(false);
         break;
@@ -78,6 +69,10 @@ void MTBindingSet::SetVertexShaderView(id<MTLRenderCommandEncoder> render_encode
     switch (view_type)
     {
     case ViewType::kConstantBuffer:
+    case ViewType::kBuffer:
+    case ViewType::kRWBuffer:
+    case ViewType::kStructuredBuffer:
+    case ViewType::kRWStructuredBuffer:
     {
         id<MTLBuffer> buffer = {};
         if (mt_resource)
@@ -88,26 +83,24 @@ void MTBindingSet::SetVertexShaderView(id<MTLRenderCommandEncoder> render_encode
         break;
     }
     case ViewType::kSampler:
-        assert(false);
+    {
+        id<MTLSamplerState> sampler = {};
+        if (mt_resource)
+            sampler = mt_resource->sampler.res;
+        [render_encoder setVertexSamplerState:sampler
+                                      atIndex:index];
         break;
+    }
     case ViewType::kTexture:
-        assert(false);
-        break;
     case ViewType::kRWTexture:
-        assert(false);
+    {
+        id<MTLTexture> texture = {};
+        if (mt_resource)
+            texture = mt_resource->texture.res;
+        [render_encoder setVertexTexture:texture
+                                 atIndex:index];
         break;
-    case ViewType::kBuffer:
-        assert(false);
-        break;
-    case ViewType::kRWBuffer:
-        assert(false);
-        break;
-    case ViewType::kStructuredBuffer:
-        assert(false);
-        break;
-    case ViewType::kRWStructuredBuffer:
-        assert(false);
-        break;
+    }
     case ViewType::kAccelerationStructure:
         assert(false);
         break;
@@ -180,9 +173,9 @@ void MTBindingSet::Apply(id<MTLRenderCommandEncoder> render_encoder, const std::
     {
         const BindKey& bind_key = binding.bind_key;
         decltype(auto) mt_view = std::static_pointer_cast<MTView>(binding.view);
-        // TODO: get index
-        // decltype(auto) desc = state->GetDesc().program;
-        uint32_t index = 0;
+        decltype(auto) program = state->As<MTPipeline>().GetProgram();
+        decltype(auto) shader = program->GetShader(bind_key.shader_type);
+        uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
         switch (bind_key.shader_type)
         {
         case ShaderType::kPixel:
@@ -205,9 +198,9 @@ void MTBindingSet::Apply(id<MTLComputeCommandEncoder> compute_encoder, const std
     {
         const BindKey& bind_key = binding.bind_key;
         decltype(auto) mt_view = std::static_pointer_cast<MTView>(binding.view);
-        // TODO: get index
-        // decltype(auto) desc = state->GetDesc().program;
-        uint32_t index = 0;
+        decltype(auto) program = state->As<MTPipeline>().GetProgram();
+        decltype(auto) shader = program->GetShader(bind_key.shader_type);
+        uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
         switch (bind_key.shader_type)
         {
         case ShaderType::kCompute:
