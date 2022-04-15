@@ -38,21 +38,6 @@ void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
     if (state == m_state)
         return;
     m_state = state;
-    
-    if (!m_render_encoder)
-        return;
-    if (m_state->GetPipelineType() != PipelineType::kGraphics)
-    {
-        return;
-    }
-
-    decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
-    decltype(auto) mt_pipeline = mt_state.GetPipeline();
-    decltype(auto) mt_depth_stencil = mt_state.GetDepthStencil();
-    ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline, mt_depth_stencil] {
-        [render_encoder setRenderPipelineState:mt_pipeline];
-        [render_encoder setDepthStencilState:mt_depth_stencil];
-    });
 }
 
 void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
@@ -98,10 +83,6 @@ static MTLStoreAction Convert(RenderPassStoreOp op)
 
 void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc)
 {
-    //TODO: Hack
-    m_state.reset();
-    m_binding_set.reset();
-
     MTLRenderPassDescriptor* render_pass_descriptor = [MTLRenderPassDescriptor new];
     const RenderPassDesc& render_pass_desc = render_pass->GetDesc();
     const FramebufferDesc& framebuffer_desc = framebuffer->As<FramebufferBase>().GetDesc();
@@ -121,6 +102,7 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
             return;
         decltype(auto) mt_resource = resource->As<MTResource>();
         attachment.texture = mt_resource.texture.res;
+        render_pass_descriptor.renderTargetArrayLength = std::max<uint32_t>(render_pass_descriptor.renderTargetArrayLength, view->GetLayerCount());
     };
     
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
@@ -161,12 +143,6 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
         [render_encoder setViewport:viewport];
         
-        if (state && state->GetPipelineType() == PipelineType::kGraphics)
-        {
-            decltype(auto) mt_state = state->As<MTGraphicsPipeline>();
-            [render_encoder setRenderPipelineState:mt_state.GetPipeline()];
-            [render_encoder setDepthStencilState:mt_state.GetDepthStencil()];
-        }
         for (const auto& vertex : vertices)
         {
             [render_encoder setVertexBuffer:vertex.second
@@ -186,6 +162,7 @@ void MTCommandList::EndRenderPass()
         [render_encoder endEncoding];
         render_encoder = nullptr;
     });
+    m_last_state.reset();
 }
 
 void MTCommandList::BeginEvent(const std::string& name)
@@ -217,6 +194,7 @@ static MTLIndexType GetIndexType(gli::format format)
 
 void MTCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
 {
+    ApplyState();
     assert(m_index_buffer);
     decltype(auto) index = m_index_buffer->As<MTResource>().buffer.res;
     MTLIndexType index_format = GetIndexType(m_index_format);
@@ -232,6 +210,7 @@ void MTCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, u
 
 void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
+    ApplyState();
     decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
     ApplyAndRecord([&render_encoder = m_render_encoder, mt_argument_buffer, argument_buffer_offset] {
         [render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
@@ -242,6 +221,7 @@ void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffe
 
 void MTCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
+    ApplyState();
     decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
     MTLIndexType index_format = GetIndexType(m_index_format);
     assert(m_index_buffer);
@@ -524,6 +504,25 @@ void MTCommandList::OnSubmit()
         }
     }
     m_executed = true;
+}
+
+void MTCommandList::ApplyState()
+{
+    if (!m_last_state.expired() && m_last_state.lock() == m_state)
+        return;
+    
+    assert(m_render_encoder);
+    assert(m_state->GetPipelineType() == PipelineType::kGraphics);
+
+    decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
+    decltype(auto) mt_pipeline = mt_state.GetPipeline();
+    decltype(auto) mt_depth_stencil = mt_state.GetDepthStencil();
+    ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline, mt_depth_stencil] {
+        [render_encoder setRenderPipelineState:mt_pipeline];
+        [render_encoder setDepthStencilState:mt_depth_stencil];
+    });
+    
+    m_last_state = m_state;
 }
 
 void MTCommandList::ApplyAndRecord(std::function<void()>&& cmd)

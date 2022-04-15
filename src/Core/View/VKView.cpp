@@ -28,7 +28,7 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
     }
 }
 
-vk::ImageViewType GetImageViewType(ViewDimension dimension)
+static vk::ImageViewType GetImageViewType(ViewDimension dimension)
 {
     switch (dimension)
     {

@@ -162,6 +162,8 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
             pipeline_descriptor.stencilAttachmentPixelFormat = pixel_formats.getMTLPixelFormat(static_cast<VkFormat>(depth_stencil_format));
         }
     }
+    pipeline_descriptor.inputPrimitiveTopology = MTLPrimitiveTopologyClassTriangle;
+    pipeline_descriptor.rasterSampleCount = render_pass_desc.sample_count;
     
     m_pipeline = [mt_device newRenderPipelineStateWithDescriptor:pipeline_descriptor
                                                             error:&error];
