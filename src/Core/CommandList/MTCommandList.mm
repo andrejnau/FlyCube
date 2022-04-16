@@ -45,12 +45,6 @@ void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     if (binding_set == m_binding_set)
         return;
     m_binding_set = std::static_pointer_cast<MTBindingSet>(binding_set);
-    if (!m_render_encoder)
-        return;
-    
-    ApplyAndRecord([&render_encoder = m_render_encoder, binding_set = m_binding_set, state = m_state] {
-        binding_set->Apply(render_encoder, state);
-    });
 }
 
 static MTLLoadAction Convert(RenderPassLoadOp op)
@@ -149,10 +143,6 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
                                        offset:0
                                       atIndex:vertex.first];
         }
-        if (binding_set)
-        {
-            binding_set->Apply(render_encoder, state);
-        }
     });
 }
 
@@ -163,6 +153,7 @@ void MTCommandList::EndRenderPass()
         render_encoder = nullptr;
     });
     m_last_state.reset();
+    m_last_binding_set.reset();
 }
 
 void MTCommandList::BeginEvent(const std::string& name)
@@ -506,8 +497,23 @@ void MTCommandList::OnSubmit()
     m_executed = true;
 }
 
+void MTCommandList::ApplyBindingSet()
+{
+    if (!m_last_binding_set.expired() && m_last_binding_set.lock() == m_binding_set)
+        return;
+    
+    assert(m_render_encoder);
+    assert(m_state->GetPipelineType() == PipelineType::kGraphics);
+    ApplyAndRecord([&render_encoder = m_render_encoder, binding_set = m_binding_set, state = m_state] {
+          binding_set->Apply(render_encoder, state);
+    });
+    
+    m_last_binding_set = m_binding_set;
+}
+
 void MTCommandList::ApplyState()
 {
+    ApplyBindingSet();
     if (!m_last_state.expired() && m_last_state.lock() == m_state)
         return;
     
