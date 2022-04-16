@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
     app.SetGpuName(device->GetGpuName());
 
-    auto dsv = device->CreateTexture(BindFlag::kDepthStencil | BindFlag::kShaderResource, gli::format::FORMAT_D24_UNORM_S8_UINT_PACK32, 8, rect.width, rect.height, 1);
+    auto dsv = device->CreateTexture(BindFlag::kDepthStencil | BindFlag::kShaderResource, gli::format::FORMAT_D32_SFLOAT_S8_UINT_PACK64, 4, rect.width, rect.height, 1);
     auto sampler = device->CreateSampler({
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
