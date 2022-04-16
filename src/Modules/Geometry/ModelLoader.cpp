@@ -294,6 +294,7 @@ void ModelLoader::LoadMaterialTextures(aiMaterial* mat, aiTextureType aitype, Te
         aiString texture_name;
         mat->GetTexture(aitype, i, &texture_name);
         std::string texture_path = m_directory + "/" + texture_name.C_Str();
+        std::replace(texture_path.begin(), texture_path.end(), '\\', '/');
         if (!std::ifstream(texture_path).good())
         {
             texture_path = texture_path.substr(0, texture_path.rfind('.')) + ".dds";
