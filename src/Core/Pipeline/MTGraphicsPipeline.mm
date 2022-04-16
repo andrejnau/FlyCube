@@ -165,6 +165,49 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
     pipeline_descriptor.inputPrimitiveTopology = MTLPrimitiveTopologyClassTriangle;
     pipeline_descriptor.rasterSampleCount = render_pass_desc.sample_count;
     
+    decltype(auto) blend_desc = m_desc.blend_desc;
+    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
+    {
+        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED)
+            continue;
+        
+        decltype(auto) attachment = pipeline_descriptor.colorAttachments[i];
+        attachment.blendingEnabled = blend_desc.blend_enable;
+        if (!blend_desc.blend_enable)
+            continue;
+        
+        auto convert = [](Blend type)
+        {
+            switch (type)
+            {
+            case Blend::kZero:
+                return MTLBlendFactorZero;
+            case Blend::kSrcAlpha:
+                return MTLBlendFactorSourceAlpha;
+            case Blend::kInvSrcAlpha:
+                return MTLBlendFactorOneMinusSourceAlpha;
+            }
+            throw std::runtime_error("unsupported");
+        };
+
+        auto convert_op = [](BlendOp type)
+        {
+            switch (type)
+            {
+            case BlendOp::kAdd:
+                return MTLBlendOperationAdd;
+            }
+            throw std::runtime_error("unsupported");
+        };
+
+        attachment.sourceRGBBlendFactor = convert(m_desc.blend_desc.blend_src);
+        attachment.destinationRGBBlendFactor = convert(m_desc.blend_desc.blend_dest);
+        attachment.rgbBlendOperation = convert_op(m_desc.blend_desc.blend_op);
+        attachment.sourceAlphaBlendFactor = convert(m_desc.blend_desc.blend_src_alpha);
+        attachment.destinationAlphaBlendFactor = convert(m_desc.blend_desc.blend_dest_apha);
+        attachment.alphaBlendOperation = convert_op(m_desc.blend_desc.blend_op_alpha);
+    }
+    
     m_pipeline = [mt_device newRenderPipelineStateWithDescriptor:pipeline_descriptor
                                                             error:&error];
     if (!m_pipeline)
