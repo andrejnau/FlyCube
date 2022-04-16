@@ -207,7 +207,7 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
         attachment.destinationAlphaBlendFactor = convert(m_desc.blend_desc.blend_dest_apha);
         attachment.alphaBlendOperation = convert_op(m_desc.blend_desc.blend_op_alpha);
     }
-    
+
     m_pipeline = [mt_device newRenderPipelineStateWithDescriptor:pipeline_descriptor
                                                            error:&error];
     if (!m_pipeline)
