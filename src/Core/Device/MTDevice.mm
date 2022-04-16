@@ -84,13 +84,28 @@ std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
     std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
     res->resource_type = ResourceType::kSampler;
     
-    // TODO: Fix sampler param mapping
     MTLSamplerDescriptor* sampler_descriptor = [MTLSamplerDescriptor new];
     sampler_descriptor.minFilter = MTLSamplerMinMagFilterLinear;
     sampler_descriptor.magFilter = MTLSamplerMinMagFilterLinear;
-    sampler_descriptor.sAddressMode = MTLSamplerAddressModeClampToEdge;
-    sampler_descriptor.tAddressMode = MTLSamplerAddressModeClampToEdge;
-    sampler_descriptor.mipFilter = MTLSamplerMipFilterNotMipmapped;
+    sampler_descriptor.mipFilter = MTLSamplerMipFilterLinear;
+    sampler_descriptor.maxAnisotropy = 16;
+    sampler_descriptor.borderColor = MTLSamplerBorderColorOpaqueBlack;
+    sampler_descriptor.lodMinClamp = 0;
+    sampler_descriptor.lodMaxClamp = std::numeric_limits<float>::max();
+        
+    switch (desc.mode)
+    {
+    case SamplerTextureAddressMode::kWrap:
+        sampler_descriptor.sAddressMode = MTLSamplerAddressModeRepeat;
+        sampler_descriptor.tAddressMode = MTLSamplerAddressModeRepeat;
+        sampler_descriptor.rAddressMode = MTLSamplerAddressModeRepeat;
+        break;
+    case SamplerTextureAddressMode::kClamp:
+        sampler_descriptor.sAddressMode = MTLSamplerAddressModeClampToEdge;
+        sampler_descriptor.tAddressMode = MTLSamplerAddressModeClampToEdge;
+        sampler_descriptor.rAddressMode = MTLSamplerAddressModeClampToEdge;
+        break;
+    }
     
     switch (desc.func)
     {

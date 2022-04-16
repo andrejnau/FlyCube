@@ -421,15 +421,10 @@ std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
     vk::SamplerCreateInfo samplerInfo = {};
     samplerInfo.magFilter = vk::Filter::eLinear;
     samplerInfo.minFilter = vk::Filter::eLinear;
-    samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
     samplerInfo.anisotropyEnable = true;
     samplerInfo.maxAnisotropy = 16;
     samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = vk::CompareOp::eAlways;
     samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
@@ -465,6 +460,7 @@ std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
     switch (desc.func)
     {
     case SamplerComparisonFunc::kNever:
+        samplerInfo.compareEnable = false;
         samplerInfo.compareOp = vk::CompareOp::eNever;
         break;
     case SamplerComparisonFunc::kAlways:
