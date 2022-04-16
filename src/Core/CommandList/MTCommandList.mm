@@ -7,6 +7,20 @@
 #include <Pipeline/MTGraphicsPipeline.h>
 #include <BindingSet/MTBindingSet.h>
 
+static MTLIndexType GetIndexType(gli::format format)
+{
+    switch (format)
+    {
+    case gli::format::FORMAT_R16_UINT_PACK16:
+        return MTLIndexTypeUInt16;
+    case gli::format::FORMAT_R32_UINT_PACK32:
+        return MTLIndexTypeUInt32;
+    default:
+        assert(false);
+        return MTLIndexTypeUInt16;
+    }
+}
+
 MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
     : m_device(device)
 {
@@ -167,20 +181,14 @@ void MTCommandList::EndEvent()
 void MTCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
     assert(false);
-}
-
-static MTLIndexType GetIndexType(gli::format format)
-{
-    switch (format)
-    {
-    case gli::format::FORMAT_R16_UINT_PACK16:
-        return MTLIndexTypeUInt16;
-    case gli::format::FORMAT_R32_UINT_PACK32:
-        return MTLIndexTypeUInt32;
-    default:
-        assert(false);
-        return MTLIndexTypeUInt16;
-    }
+    ApplyState();
+    ApplyAndRecord([&render_encoder = m_render_encoder, vertex_count, instance_count, first_vertex, first_instance] {
+        [render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
+                           vertexStart:first_vertex
+                           vertexCount:vertex_count
+                         instanceCount:instance_count
+                          baseInstance:first_instance];
+    });
 }
 
 void MTCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
@@ -189,13 +197,16 @@ void MTCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, u
     assert(m_index_buffer);
     decltype(auto) index = m_index_buffer->As<MTResource>().buffer.res;
     MTLIndexType index_format = GetIndexType(m_index_format);
-    ApplyAndRecord([&render_encoder = m_render_encoder, index_count, index_format, index] {
+    ApplyAndRecord([&render_encoder = m_render_encoder, index, index_count, index_format, instance_count, first_index, vertex_offset, first_instance] {
+        const uint32_t index_stride = index_format == MTLIndexTypeUInt32 ? 4 : 2;
         [render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                     indexCount:index_count
-                                      indexType:index_format
-                                    indexBuffer:index
-                              indexBufferOffset:0
-                                  instanceCount:1];
+                                   indexCount:index_count
+                                    indexType:index_format
+                                  indexBuffer:index
+                            indexBufferOffset:index_stride * first_index
+                                instanceCount:instance_count
+                                   baseVertex:vertex_offset
+                                 baseInstance:first_instance];
     });
 }
 
