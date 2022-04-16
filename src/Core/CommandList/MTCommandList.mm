@@ -145,10 +145,18 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         }
         stencil_attachment.clearStencil = clear_desc.stencil;
     }
+    
+    render_pass_descriptor.defaultRasterSampleCount = render_pass_desc.sample_count;
+    render_pass_descriptor.renderTargetWidth = framebuffer_desc.width;
+    render_pass_descriptor.renderTargetHeight = framebuffer_desc.height;
 
     ApplyAndRecord([&render_encoder = m_render_encoder, &command_buffer = m_command_buffer, render_pass_descriptor,
                     viewport = m_viewport, state = m_state, vertices = m_vertices, binding_set = m_binding_set] {
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
+        if (render_encoder == nil)
+        {
+            NSLog(@"Error: failed to create render pass");
+        }
         [render_encoder setViewport:viewport];
         
         for (const auto& vertex : vertices)
