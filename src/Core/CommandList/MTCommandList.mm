@@ -542,9 +542,16 @@ void MTCommandList::ApplyState()
     decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
     decltype(auto) mt_pipeline = mt_state.GetPipeline();
     decltype(auto) mt_depth_stencil = mt_state.GetDepthStencil();
-    ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline, mt_depth_stencil] {
+    int32_t depth_bias = mt_state.GetDesc().rasterizer_desc.depth_bias;
+    ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline, mt_depth_stencil, depth_bias] {
         [render_encoder setRenderPipelineState:mt_pipeline];
         [render_encoder setDepthStencilState:mt_depth_stencil];
+        if (depth_bias != 0)
+        {
+            [render_encoder setDepthBias:depth_bias
+                              slopeScale:0
+                                   clamp:0];
+        }
     });
     
     m_last_state = m_state;

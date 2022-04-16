@@ -209,7 +209,7 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
     }
     
     m_pipeline = [mt_device newRenderPipelineStateWithDescriptor:pipeline_descriptor
-                                                            error:&error];
+                                                           error:&error];
     if (!m_pipeline)
     {
         NSLog(@"Error occurred when creating render pipeline state: %@", error);
