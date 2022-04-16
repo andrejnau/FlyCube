@@ -105,11 +105,10 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         decltype(auto) mt_view = view->As<MTView>();
         attachment.level = mt_view.GetBaseMipLevel();
         attachment.slice = mt_view.GetBaseArrayLayer();
-        decltype(auto) resource = mt_view.GetResource();
+        decltype(auto) resource = mt_view.GetMTResource();
         if (!resource)
             return;
-        decltype(auto) mt_resource = resource->As<MTResource>();
-        attachment.texture = mt_resource.texture.res;
+        attachment.texture = resource->texture.res;
         render_pass_descriptor.renderTargetArrayLength = std::max<uint32_t>(render_pass_descriptor.renderTargetArrayLength, view->GetLayerCount());
     };
     
@@ -151,7 +150,7 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     render_pass_descriptor.renderTargetHeight = framebuffer_desc.height;
 
     ApplyAndRecord([&render_encoder = m_render_encoder, &command_buffer = m_command_buffer, render_pass_descriptor,
-                    viewport = m_viewport, state = m_state, vertices = m_vertices, binding_set = m_binding_set] {
+                    viewport = m_viewport, vertices = m_vertices] {
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
         if (render_encoder == nil)
         {
@@ -162,8 +161,8 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         for (const auto& vertex : vertices)
         {
             [render_encoder setVertexBuffer:vertex.second
-                                       offset:0
-                                      atIndex:vertex.first];
+                                     offset:0
+                                    atIndex:vertex.first];
         }
     });
 }
@@ -359,8 +358,8 @@ void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
 
     ApplyAndRecord([&render_encoder = m_render_encoder, vertex, index] {
         [render_encoder setVertexBuffer:vertex
-                                   offset:0
-                                  atIndex:index];
+                                 offset:0
+                                atIndex:index];
     });
 }
 
@@ -542,15 +541,29 @@ void MTCommandList::ApplyState()
     decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
     decltype(auto) mt_pipeline = mt_state.GetPipeline();
     decltype(auto) mt_depth_stencil = mt_state.GetDepthStencil();
-    int32_t depth_bias = mt_state.GetDesc().rasterizer_desc.depth_bias;
-    ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline, mt_depth_stencil, depth_bias] {
+    decltype(auto) rasterizer_desc = mt_state.GetDesc().rasterizer_desc;
+    ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline, mt_depth_stencil, rasterizer_desc] {
         [render_encoder setRenderPipelineState:mt_pipeline];
         [render_encoder setDepthStencilState:mt_depth_stencil];
-        if (depth_bias != 0)
+
+        if (rasterizer_desc.depth_bias != 0)
         {
-            [render_encoder setDepthBias:depth_bias
+            [render_encoder setDepthBias:rasterizer_desc.depth_bias
                               slopeScale:0
                                    clamp:0];
+        }
+
+        switch (rasterizer_desc.cull_mode)
+        {
+        case CullMode::kNone:
+            [render_encoder setCullMode:MTLCullModeNone];
+            break;
+        case CullMode::kFront:
+            [render_encoder setCullMode:MTLCullModeFront];
+            break;
+        case CullMode::kBack:
+            [render_encoder setCullMode:MTLCullModeBack];
+            break;
         }
     });
     

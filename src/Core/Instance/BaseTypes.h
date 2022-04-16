@@ -165,7 +165,7 @@ enum class CullMode
 struct RasterizerDesc
 {
     FillMode fill_mode = FillMode::kSolid;
-    CullMode cull_mode = CullMode::kBack;
+    CullMode cull_mode = CullMode::kNone;
     int32_t depth_bias = 0;
 
     auto MakeTie() const
