@@ -70,6 +70,10 @@ void MTView::CreateTextureView()
                                                      levels:levels
                                                      slices:slices
                                                     swizzle:swizzle];
+    if (m_texture_view == nil)
+    {
+        NSLog(@"Error: failed to create texture view");
+    }
 }
 
 std::shared_ptr<Resource> MTView::GetResource()
@@ -110,4 +114,9 @@ std::shared_ptr<MTResource> MTView::GetMTResource() const
 id<MTLTexture> MTView::GetTextureView() const
 {
     return m_texture_view;
+}
+
+const ViewDesc& MTView::GetViewDesc() const
+{
+    return m_view_desc;
 }
