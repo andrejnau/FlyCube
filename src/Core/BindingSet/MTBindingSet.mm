@@ -103,7 +103,7 @@ static void SetView(CommandEncoderType encoder, ShaderType shader_type, ViewType
         id<MTLBuffer> buffer = {};
         if (mt_resource)
             buffer = mt_resource->buffer.res;
-        SetBuffer(encoder, shader_type, buffer, 0, index);
+        SetBuffer(encoder, shader_type, buffer, view->GetViewDesc().offset, index);
         break;
     }
     case ViewType::kSampler:

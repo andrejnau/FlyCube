@@ -403,7 +403,7 @@ void DXView::CreateDSV()
 void DXView::CreateCBV()
 {
     D3D12_CONSTANT_BUFFER_VIEW_DESC cvb_desc = {};
-    cvb_desc.BufferLocation = m_resource->resource->GetGPUVirtualAddress();
+    cvb_desc.BufferLocation = m_resource->resource->GetGPUVirtualAddress() + m_view_desc.offset;
     cvb_desc.SizeInBytes = std::min(m_resource->desc.Width, m_view_desc.buffer_size);
     assert(cvb_desc.SizeInBytes % 256 == 0);
     m_device.GetDevice()->CreateConstantBufferView(&cvb_desc, m_handle->GetCpuHandle());

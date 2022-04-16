@@ -19,6 +19,7 @@ public:
     void CreateTextureView();
     std::shared_ptr<MTResource> GetMTResource() const;
     id<MTLTexture> GetTextureView() const;
+    const ViewDesc& GetViewDesc() const;
 
 private:
     MTDevice& m_device;
