@@ -24,5 +24,5 @@ private:
     MTDevice& m_device;
     std::shared_ptr<MTResource> m_resource;
     ViewDesc m_view_desc;
-    id<MTLTexture> m_texture_view;
+    id<MTLTexture> m_texture_view = nullptr;
 };

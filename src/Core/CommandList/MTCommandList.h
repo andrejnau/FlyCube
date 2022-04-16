@@ -89,6 +89,7 @@ public:
 
 private:
     void ApplyState();
+    void ApplyBindingSet();
     void ApplyAndRecord(std::function<void()>&& cmd);
 
     MTDevice& m_device;
@@ -101,6 +102,7 @@ private:
     std::shared_ptr<Pipeline> m_state;
     std::weak_ptr<Pipeline> m_last_state;
     std::shared_ptr<MTBindingSet> m_binding_set;
+    std::weak_ptr<MTBindingSet> m_last_binding_set;
     std::deque<std::function<void()>> m_recorded_cmds;
     bool m_executed = false;
 };
