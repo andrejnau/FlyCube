@@ -1,8 +1,8 @@
-set(target MetalTestApp)
+set(target ModelView)
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}")
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
-set(shaders_path "${assets_path}/shaders/MetalTestApp")
+set(shaders_path "${assets_path}/shaders/ModelView")
 
 set(sources
     ${source_path}/main.cpp

@@ -11,7 +11,7 @@
 int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
-    AppBox app("MetalTestApp", settings);
+    AppBox app("ModelView", settings);
     AppRect rect = app.GetAppRect();
 
     std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
