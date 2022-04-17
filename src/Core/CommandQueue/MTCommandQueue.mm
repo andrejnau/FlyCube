@@ -17,14 +17,21 @@ void MTCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
 
 void MTCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
 {
+    std::vector<id<MTLCommandBuffer>> mt_command_lists;
     for (auto& command_list : command_lists)
     {
         if (!command_list)
+        {
             continue;
+        }
         decltype(auto) mt_command_list = command_list->As<MTCommandList>();
         mt_command_list.OnSubmit();
-        [mt_command_list.GetCommandBuffer() commit];
-        [mt_command_list.GetCommandBuffer() waitUntilCompleted];
+        mt_command_lists.emplace_back(mt_command_list.GetCommandBuffer());
+        [mt_command_lists.back() commit];
+    }
+    for (auto& command_list : mt_command_lists)
+    {
+        [command_list waitUntilCompleted];
     }
 }
 

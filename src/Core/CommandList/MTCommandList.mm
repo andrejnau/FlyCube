@@ -7,7 +7,7 @@
 #include <Pipeline/MTGraphicsPipeline.h>
 #include <BindingSet/MTBindingSet.h>
 
-static MTLIndexType GetIndexType(gli::format format)
+static MTLIndexType ConvertIndexType(gli::format format)
 {
     switch (format)
     {
@@ -21,47 +21,7 @@ static MTLIndexType GetIndexType(gli::format format)
     }
 }
 
-MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
-    : m_device(device)
-{
-    decltype(auto) command_queue = device.GetMTCommandQueue();
-    m_command_buffer = [command_queue commandBuffer];
-}
-
-void MTCommandList::Reset()
-{
-    decltype(auto) command_queue = m_device.GetMTCommandQueue();
-    m_command_buffer = [command_queue commandBuffer];
-    m_render_encoder = nullptr;
-    m_index_buffer.reset();
-    m_index_format = gli::FORMAT_UNDEFINED;
-    m_viewport = {};
-    m_vertices.clear();
-    m_state.reset();
-    m_binding_set.reset();
-    m_recorded_cmds = {};
-    m_executed = false;
-}
-
-void MTCommandList::Close()
-{
-}
-
-void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
-{
-    if (state == m_state)
-        return;
-    m_state = state;
-}
-
-void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
-{
-    if (binding_set == m_binding_set)
-        return;
-    m_binding_set = std::static_pointer_cast<MTBindingSet>(binding_set);
-}
-
-static MTLLoadAction Convert(RenderPassLoadOp op)
+static MTLLoadAction ConvertLoadAction(RenderPassLoadOp op)
 {
     switch (op)
     {
@@ -71,12 +31,13 @@ static MTLLoadAction Convert(RenderPassLoadOp op)
         return MTLLoadActionClear;
     case RenderPassLoadOp::kDontCare:
         return MTLLoadActionDontCare;
+    default:
+        assert(false);
+        return MTLLoadActionLoad;
     }
-    assert(false);
-    return MTLLoadActionLoad;
 }
 
-static MTLStoreAction Convert(RenderPassStoreOp op)
+static MTLStoreAction ConvertStoreAction(RenderPassStoreOp op)
 {
     switch (op)
     {
@@ -84,9 +45,65 @@ static MTLStoreAction Convert(RenderPassStoreOp op)
         return MTLStoreActionStore;
     case RenderPassStoreOp::kDontCare:
         return MTLStoreActionDontCare;
+    default:
+        assert(false);
+        return MTLStoreActionStore;
     }
-    assert(false);
-    return MTLStoreActionStore;
+}
+
+static MTLCullMode ConvertCullMode(CullMode cull_mode)
+{
+    switch (cull_mode)
+    {
+    case CullMode::kNone:
+        return MTLCullModeNone;
+    case CullMode::kFront:
+        return MTLCullModeFront;
+    case CullMode::kBack:
+        return MTLCullModeBack;
+    default:
+        assert(false);
+        return MTLCullModeNone;
+    }
+}
+
+MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
+    : m_device(device)
+{
+    decltype(auto) command_queue = m_device.GetMTCommandQueue();
+    m_command_buffer = [command_queue commandBuffer];
+}
+
+void MTCommandList::Reset()
+{
+    Close();
+    decltype(auto) command_queue = m_device.GetMTCommandQueue();
+    m_command_buffer = [command_queue commandBuffer];
+    m_recorded_cmds = {};
+    m_executed = false;
+}
+
+void MTCommandList::Close()
+{
+    m_render_encoder = nullptr;
+    m_index_buffer.reset();
+    m_index_format = gli::FORMAT_UNDEFINED;
+    m_viewport = {};
+    m_vertices.clear();
+    m_state.reset();
+    m_last_state.reset();
+    m_binding_set.reset();
+    m_last_binding_set.reset();
+}
+
+void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
+{
+    m_state = state;
+}
+
+void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
+{
+    m_binding_set = std::static_pointer_cast<MTBindingSet>(binding_set);
 }
 
 void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc)
@@ -99,8 +116,8 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     {
         if (format == gli::format::FORMAT_UNDEFINED || !view)
             return;
-        attachment.loadAction = Convert(load_op);
-        attachment.storeAction = Convert(store_op);
+        attachment.loadAction = ConvertLoadAction(load_op);
+        attachment.storeAction = ConvertStoreAction(store_op);
         
         decltype(auto) mt_view = view->As<MTView>();
         attachment.level = mt_view.GetBaseMipLevel();
@@ -149,22 +166,26 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     render_pass_descriptor.renderTargetWidth = framebuffer_desc.width;
     render_pass_descriptor.renderTargetHeight = framebuffer_desc.height;
 
-    ApplyAndRecord([&render_encoder = m_render_encoder, &command_buffer = m_command_buffer, render_pass_descriptor,
-                    viewport = m_viewport, vertices = m_vertices] {
+    ApplyAndRecord([&render_encoder = m_render_encoder, &command_buffer = m_command_buffer, render_pass_descriptor] {
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
-        if (render_encoder == nil)
+        if (render_encoder == nullptr)
         {
             NSLog(@"Error: failed to create render pass");
         }
+    });
+    
+    ApplyAndRecord([&render_encoder = m_render_encoder, viewport = m_viewport] {
         [render_encoder setViewport:viewport];
+    });
         
-        for (const auto& vertex : vertices)
-        {
+    for (const auto& vertex : m_vertices)
+    {
+        ApplyAndRecord([&render_encoder = m_render_encoder, vertex] {
             [render_encoder setVertexBuffer:vertex.second
                                      offset:0
                                     atIndex:vertex.first];
-        }
-    });
+        });
+    }
 }
 
 void MTCommandList::EndRenderPass()
@@ -187,7 +208,6 @@ void MTCommandList::EndEvent()
 
 void MTCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
-    assert(false);
     ApplyState();
     ApplyAndRecord([&render_encoder = m_render_encoder, vertex_count, instance_count, first_vertex, first_instance] {
         [render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
@@ -202,14 +222,14 @@ void MTCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, u
 {
     ApplyState();
     assert(m_index_buffer);
-    decltype(auto) index = m_index_buffer->As<MTResource>().buffer.res;
-    MTLIndexType index_format = GetIndexType(m_index_format);
-    ApplyAndRecord([&render_encoder = m_render_encoder, index, index_count, index_format, instance_count, first_index, vertex_offset, first_instance] {
+    decltype(auto) index_buffer = m_index_buffer->As<MTResource>().buffer.res;
+    MTLIndexType index_format = ConvertIndexType(m_index_format);
+    ApplyAndRecord([&render_encoder = m_render_encoder, index_buffer, index_count, index_format, instance_count, first_index, vertex_offset, first_instance] {
         const uint32_t index_stride = index_format == MTLIndexTypeUInt32 ? 4 : 2;
         [render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                    indexCount:index_count
                                     indexType:index_format
-                                  indexBuffer:index
+                                  indexBuffer:index_buffer
                             indexBufferOffset:index_stride * first_index
                                 instanceCount:instance_count
                                    baseVertex:vertex_offset
@@ -232,13 +252,13 @@ void MTCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argumen
 {
     ApplyState();
     decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
-    MTLIndexType index_format = GetIndexType(m_index_format);
     assert(m_index_buffer);
-    decltype(auto) index = m_index_buffer->As<MTResource>().buffer.res;
-    ApplyAndRecord([&render_encoder = m_render_encoder, mt_argument_buffer, argument_buffer_offset, index_format, index] {
+    decltype(auto) index_buffer = m_index_buffer->As<MTResource>().buffer.res;
+    MTLIndexType index_format = ConvertIndexType(m_index_format);
+    ApplyAndRecord([&render_encoder = m_render_encoder, mt_argument_buffer, argument_buffer_offset, index_format, index_buffer] {
         [render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                     indexType:index_format
-                                  indexBuffer:index
+                                  indexBuffer:index_buffer
                             indexBufferOffset:0
                                indirectBuffer:mt_argument_buffer
                          indirectBufferOffset:argument_buffer_offset];
@@ -330,6 +350,7 @@ void MTCommandList::SetViewport(float x, float y, float width, float height)
     m_viewport.height = height;
     m_viewport.znear = 0.0;
     m_viewport.zfar = 1.0;
+    
     if (!m_render_encoder)
         return;
 
@@ -353,6 +374,7 @@ void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
     decltype(auto) vertex = resource->As<MTResource>().buffer.res;
     uint32_t index = m_device.GetMaxPerStageBufferCount() - slot - 1;
     m_vertices[index] = vertex;
+
     if (!m_render_encoder)
         return;
 
@@ -522,6 +544,7 @@ void MTCommandList::ApplyBindingSet()
     
     assert(m_render_encoder);
     assert(m_state->GetPipelineType() == PipelineType::kGraphics);
+
     ApplyAndRecord([&render_encoder = m_render_encoder, binding_set = m_binding_set, state = m_state] {
           binding_set->Apply(render_encoder, state);
     });
@@ -542,29 +565,16 @@ void MTCommandList::ApplyState()
     decltype(auto) mt_pipeline = mt_state.GetPipeline();
     decltype(auto) mt_depth_stencil = mt_state.GetDepthStencil();
     decltype(auto) rasterizer_desc = mt_state.GetDesc().rasterizer_desc;
-    ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline, mt_depth_stencil, rasterizer_desc] {
+    int32_t depth_bias = rasterizer_desc.depth_bias;
+    MTLCullMode cull_mode = ConvertCullMode(rasterizer_desc.cull_mode);
+
+    ApplyAndRecord([&render_encoder = m_render_encoder, mt_pipeline, mt_depth_stencil, depth_bias, cull_mode] {
         [render_encoder setRenderPipelineState:mt_pipeline];
         [render_encoder setDepthStencilState:mt_depth_stencil];
-
-        if (rasterizer_desc.depth_bias != 0)
-        {
-            [render_encoder setDepthBias:rasterizer_desc.depth_bias
-                              slopeScale:0
-                                   clamp:0];
-        }
-
-        switch (rasterizer_desc.cull_mode)
-        {
-        case CullMode::kNone:
-            [render_encoder setCullMode:MTLCullModeNone];
-            break;
-        case CullMode::kFront:
-            [render_encoder setCullMode:MTLCullModeFront];
-            break;
-        case CullMode::kBack:
-            [render_encoder setCullMode:MTLCullModeBack];
-            break;
-        }
+        [render_encoder setDepthBias:depth_bias
+                          slopeScale:0
+                               clamp:0];
+        [render_encoder setCullMode:cull_mode];
     });
     
     m_last_state = m_state;

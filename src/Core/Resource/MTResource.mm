@@ -107,6 +107,7 @@ uint32_t MTResource::GetSampleCount() const
 
 uint64_t MTResource::GetAccelerationStructureHandle() const
 {
+    assert(false);
     return 0;
 }
 
@@ -132,5 +133,6 @@ bool MTResource::AllowCommonStatePromotion(ResourceState state_after)
 
 MemoryRequirements MTResource::GetMemoryRequirements() const
 {
+    assert(false);
     return {};
 }

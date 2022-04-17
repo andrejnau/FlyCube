@@ -3,6 +3,7 @@
 #include <Instance/BaseTypes.h>
 #include <map>
 #include <string>
+#import <Metal/Metal.h>
 
 class MTShader : public ShaderBase
 {
@@ -11,6 +12,8 @@ public:
 
     const std::string& GetSource() const;
     uint32_t GetIndex(BindKey bind_key) const;
+    id<MTLLibrary> CreateLibrary(id<MTLDevice> device);
+    id<MTLFunction> CreateFunction(id<MTLLibrary> library, const std::string& entry_point);
 
 protected:
     std::string m_source;
