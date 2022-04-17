@@ -70,6 +70,7 @@ if (METAL_SUPPORT)
         "-framework Metal"
         "-framework QuartzCore"
     )
+    target_compile_options(Instance PUBLIC "-fobjc-arc")
 endif()
 
 set_target_properties(Instance PROPERTIES FOLDER "Core")
