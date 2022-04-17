@@ -209,36 +209,43 @@ bool MTDevice::IsMeshShadingSupported() const
 
 uint32_t MTDevice::GetShadingRateImageTileSize() const
 {
+    assert(false);
     return false;
 }
 
 MemoryBudget MTDevice::GetMemoryBudget() const
 {
+    assert(false);
     return {};
 }
 
 uint32_t MTDevice::GetShaderGroupHandleSize() const
 {
+    assert(false);
     return 0;
 }
 
 uint32_t MTDevice::GetShaderRecordAlignment() const
 {
+    assert(false);
     return 0;
 }
 
 uint32_t MTDevice::GetShaderTableAlignment() const
 {
+    assert(false);
     return 0;
 }
 
 RaytracingASPrebuildInfo MTDevice::GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const
 {
+    assert(false);
     return {};
 }
 
 RaytracingASPrebuildInfo MTDevice::GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const
 {
+    assert(false);
     return {};
 }
 

@@ -4,22 +4,14 @@
 #define GLFW_EXPOSE_NATIVE_COCOA
 #include <GLFW/glfw3native.h>
 
-id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
+static id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
 {
-    MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
-
-    // Indicate that each pixel has a blue, green, red, and alpha channel, where each channel is
-    // an 8-bit unsigned normalized value (i.e. 0 maps to 0.0 and 255 maps to 1.0)
-    textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
-
-    // Set the pixel dimensions of the texture
-    textureDescriptor.width = width;
-    textureDescriptor.height = height;
-    textureDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
-
-    // Create the texture from the device by using the descriptor
-    id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
-    return texture;
+    MTLTextureDescriptor* texture_descriptor = [[MTLTextureDescriptor alloc] init];
+    texture_descriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    texture_descriptor.width = width;
+    texture_descriptor.height = height;
+    texture_descriptor.usage = MTLTextureUsageRenderTarget;
+    return [device newTextureWithDescriptor:texture_descriptor];
 }
 
 MTSwapchain::MTSwapchain(MTDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)

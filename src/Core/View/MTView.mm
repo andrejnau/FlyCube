@@ -2,7 +2,7 @@
 #include <Device/MTDevice.h>
 #include <Resource/MTResource.h>
 
-static MTLTextureType GetTextureViewType(ViewDimension dimension)
+static MTLTextureType ConvertTextureType(ViewDimension dimension)
 {
     switch (dimension)
     {
@@ -24,9 +24,10 @@ static MTLTextureType GetTextureViewType(ViewDimension dimension)
         return MTLTextureTypeCube;
     case ViewDimension::kTextureCubeArray:
         return MTLTextureTypeCubeArray;
+    default:
+        assert(false);
+        return {};
     }
-    assert(false);
-    return {};
 }
 
 MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, const ViewDesc& m_view_desc)
@@ -51,7 +52,7 @@ void MTView::CreateTextureView()
 {
     decltype(auto) texture = m_resource->texture.res;
     MTLPixelFormat format = m_resource->texture.format;
-    MTLTextureType texture_type = GetTextureViewType(m_view_desc.dimension);
+    MTLTextureType texture_type = ConvertTextureType(m_view_desc.dimension);
     NSRange levels = {GetBaseMipLevel(), GetLevelCount()};
     NSRange slices = {GetBaseArrayLayer(), GetLayerCount()};
     MTLTextureSwizzleChannels swizzle = MTLTextureSwizzleChannelsDefault;
@@ -70,7 +71,7 @@ void MTView::CreateTextureView()
                                                      levels:levels
                                                      slices:slices
                                                     swizzle:swizzle];
-    if (m_texture_view == nil)
+    if (m_texture_view == nullptr)
     {
         NSLog(@"Error: failed to create texture view");
     }
@@ -83,6 +84,7 @@ std::shared_ptr<Resource> MTView::GetResource()
 
 uint32_t MTView::GetDescriptorId() const
 {
+    assert(false);
     return -1;
 }
 

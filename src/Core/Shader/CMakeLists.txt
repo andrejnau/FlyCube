@@ -12,7 +12,7 @@ if (METAL_SUPPORT)
         MTShader.h
     )
     list(APPEND sources
-        MTShader.cpp
+        MTShader.mm
     )
 endif()
 
