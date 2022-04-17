@@ -20,7 +20,7 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-if (VULKAN_SUPPORT)
+if (METAL_SUPPORT)
     list(APPEND headers
         MTCommandList.h
     )
