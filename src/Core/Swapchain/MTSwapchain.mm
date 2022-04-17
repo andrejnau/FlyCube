@@ -79,5 +79,4 @@ void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
     [blit_encoder endEncoding];
     [command_buffer presentDrawable:drawable];
     [command_buffer commit];
-    [command_buffer waitUntilCompleted];
 }
