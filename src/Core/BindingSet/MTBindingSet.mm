@@ -16,80 +16,71 @@ void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
     m_bindings = bindings;
 }
 
-template<typename CommandEncoderType>
-static void SetBuffer(CommandEncoderType encoder, ShaderType shader_type, id<MTLBuffer> buffer, uint32_t offset, uint32_t index)
+template<ShaderType shader_type, typename CommandEncoderType>
+static void SetBuffer(CommandEncoderType encoder, id<MTLBuffer> buffer, uint32_t offset, uint32_t index)
 {
-    switch (shader_type)
+    if constexpr(shader_type == ShaderType::kVertex)
     {
-    case ShaderType::kVertex:
         [encoder setVertexBuffer:buffer
                           offset:offset
                          atIndex:index];
-        break;
-    case ShaderType::kPixel:
+    }
+    else if constexpr(shader_type == ShaderType::kPixel)
+    {
         [encoder setFragmentBuffer:buffer
                             offset:offset
                            atIndex:index];
-        break;
-    case ShaderType::kCompute:
+    }
+    else if constexpr(shader_type == ShaderType::kCompute)
+    {
         [encoder setBuffer:buffer
                     offset:offset
                    atIndex:index];
-        break;
-    default:
-        assert(false);
-        break;
     }
 }
 
-template<typename CommandEncoderType>
-static void SetSamplerState(CommandEncoderType encoder, ShaderType shader_type, id<MTLSamplerState> sampler, uint32_t index)
+template<ShaderType shader_type, typename CommandEncoderType>
+static void SetSamplerState(CommandEncoderType encoder, id<MTLSamplerState> sampler, uint32_t index)
 {
-    switch (shader_type)
+    if constexpr(shader_type == ShaderType::kVertex)
     {
-    case ShaderType::kVertex:
         [encoder setVertexSamplerState:sampler
                                atIndex:index];
-        break;
-    case ShaderType::kPixel:
+    }
+    else if constexpr(shader_type == ShaderType::kPixel)
+    {
         [encoder setFragmentSamplerState:sampler
                                  atIndex:index];
-        break;
-    case ShaderType::kCompute:
+    }
+    else if constexpr(shader_type == ShaderType::kCompute)
+    {
         [encoder setSamplerState:sampler
                          atIndex:index];
-        break;
-    default:
-        assert(false);
-        break;
     }
 }
 
-template<typename CommandEncoderType>
-static void SetTexture(CommandEncoderType encoder, ShaderType shader_type, id<MTLTexture> texture, uint32_t index)
+template<ShaderType shader_type, typename CommandEncoderType>
+static void SetTexture(CommandEncoderType encoder, id<MTLTexture> texture, uint32_t index)
 {
-    switch (shader_type)
+    if constexpr(shader_type == ShaderType::kVertex)
     {
-    case ShaderType::kVertex:
         [encoder setVertexTexture:texture
                           atIndex:index];
-        break;
-    case ShaderType::kPixel:
+    }
+    else if constexpr(shader_type == ShaderType::kPixel)
+    {
         [encoder setFragmentTexture:texture
                             atIndex:index];
-        break;
-    case ShaderType::kCompute:
+    }
+    else if constexpr(shader_type == ShaderType::kCompute)
+    {
         [encoder setTexture:texture
                     atIndex:index];
-        break;
-    default:
-        assert(false);
-        break;
     }
 }
 
-template<typename CommandEncoderType>
-static void SetView(CommandEncoderType encoder, ShaderType shader_type, ViewType view_type, const std::shared_ptr<MTView>& view, uint32_t index)
+template<ShaderType shader_type, typename CommandEncoderType>
+static void SetView(CommandEncoderType encoder, ViewType view_type, const std::shared_ptr<MTView>& view, uint32_t index)
 {
     decltype(auto) mt_resource = view->GetMTResource();
     switch (view_type)
@@ -103,7 +94,7 @@ static void SetView(CommandEncoderType encoder, ShaderType shader_type, ViewType
         id<MTLBuffer> buffer = {};
         if (mt_resource)
             buffer = mt_resource->buffer.res;
-        SetBuffer(encoder, shader_type, buffer, view->GetViewDesc().offset, index);
+        SetBuffer<shader_type>(encoder, buffer, view->GetViewDesc().offset, index);
         break;
     }
     case ViewType::kSampler:
@@ -111,7 +102,7 @@ static void SetView(CommandEncoderType encoder, ShaderType shader_type, ViewType
         id<MTLSamplerState> sampler = {};
         if (mt_resource)
             sampler = mt_resource->sampler.res;
-        SetSamplerState(encoder, shader_type, sampler, index);
+        SetSamplerState<shader_type>(encoder, sampler, index);
         break;
     }
     case ViewType::kTexture:
@@ -120,7 +111,7 @@ static void SetView(CommandEncoderType encoder, ShaderType shader_type, ViewType
         id<MTLTexture> texture = view->GetTextureView();
         if (!texture && mt_resource)
             texture = mt_resource->texture.res;
-        SetTexture(encoder, shader_type, texture, index);
+        SetTexture<shader_type>(encoder, texture, index);
         break;
     }
     default:
@@ -140,7 +131,34 @@ static void ApplyImpl(CommandEncoderType encoder, const std::shared_ptr<Pipeline
         decltype(auto) program = state->As<MTPipeline>().GetProgram();
         decltype(auto) shader = program->GetShader(bind_key.shader_type);
         uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
-        SetView(encoder, bind_key.shader_type, bind_key.view_type, mt_view, index);
+        
+        if constexpr(std::is_same_v<CommandEncoderType, id<MTLRenderCommandEncoder>>)
+        {
+            switch (bind_key.shader_type)
+            {
+            case ShaderType::kVertex:
+                SetView<ShaderType::kVertex>(encoder, bind_key.view_type, mt_view, index);
+                break;
+            case ShaderType::kPixel:
+                SetView<ShaderType::kPixel>(encoder, bind_key.view_type, mt_view, index);
+                break;
+            default:
+                assert(false);
+                break;
+            }
+        }
+        else if constexpr(std::is_same_v<CommandEncoderType, id<MTLComputeCommandEncoder>>)
+        {
+            switch (bind_key.shader_type)
+            {
+            case ShaderType::kCompute:
+                SetView<ShaderType::kCompute>(encoder, bind_key.view_type, mt_view, index);
+                break;
+            default:
+                assert(false);
+                break;
+            }
+        }
     }
 }
 
