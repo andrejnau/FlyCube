@@ -50,5 +50,7 @@ public:
     } sampler;
 
 private:
+    MTLTextureDescriptor* GetTextureDescriptor(MemoryType memory_type) const;
+    
     MTDevice& m_device;
 };
