@@ -121,6 +121,16 @@ uint32_t RenderDeviceImpl::GetShadingRateImageTileSize() const
     return m_device->GetShadingRateImageTileSize();
 }
 
+bool RenderDeviceImpl::IsDrawIndirectCountSupported() const
+{
+    return m_device->IsDrawIndirectCountSupported();
+}
+
+bool RenderDeviceImpl::IsGeometryShaderSupported() const
+{
+    return m_device->IsGeometryShaderSupported();
+}
+
 void RenderDeviceImpl::ExecuteCommandLists(const std::vector<std::shared_ptr<RenderCommandList>>& command_lists)
 {
     for (auto& command_list : command_lists)
