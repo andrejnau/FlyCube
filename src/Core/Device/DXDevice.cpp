@@ -475,6 +475,16 @@ bool DXDevice::IsMeshShadingSupported() const
     return m_is_mesh_shading_supported;
 }
 
+bool DXDevice::IsDrawIndirectCountSupported() const
+{
+    return true;
+}
+
+bool DXDevice::IsGeometryShaderSupported() const
+{
+    return true;
+}
+
 uint32_t DXDevice::GetShadingRateImageTileSize() const
 {
     return m_shading_rate_image_tile_size;

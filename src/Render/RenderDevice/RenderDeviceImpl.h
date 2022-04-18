@@ -38,6 +38,8 @@ public:
     bool IsRayQuerySupported() const override;
     bool IsVariableRateShadingSupported() const override;
     bool IsMeshShadingSupported() const override;
+    bool IsDrawIndirectCountSupported() const override;
+    bool IsGeometryShaderSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
     uint32_t GetFrameIndex() const override;
     gli::format GetFormat() const override;

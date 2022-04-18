@@ -53,6 +53,8 @@ public:
     virtual bool IsRayQuerySupported() const = 0;
     virtual bool IsVariableRateShadingSupported() const = 0;
     virtual bool IsMeshShadingSupported() const = 0;
+    virtual bool IsDrawIndirectCountSupported() const = 0;
+    virtual bool IsGeometryShaderSupported() const = 0;
     virtual uint32_t GetShadingRateImageTileSize() const = 0;
     virtual MemoryBudget GetMemoryBudget() const = 0;
     virtual uint32_t GetShaderGroupHandleSize() const = 0;

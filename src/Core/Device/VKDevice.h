@@ -36,6 +36,8 @@ public:
     bool IsRayQuerySupported() const override;
     bool IsVariableRateShadingSupported() const override;
     bool IsMeshShadingSupported() const override;
+    bool IsDrawIndirectCountSupported() const override;
+    bool IsGeometryShaderSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
     MemoryBudget GetMemoryBudget() const override;
     uint32_t GetShaderGroupHandleSize() const override;
@@ -78,6 +80,8 @@ private:
     uint32_t m_shader_group_handle_size = 0;
     uint32_t m_shader_record_alignment = 0;
     uint32_t m_shader_table_alignment = 0;
+    bool m_draw_indirect_count_supported = false;
+    bool m_geometry_shader_supported = false;
 };
 
 vk::ImageLayout ConvertState(ResourceState state);

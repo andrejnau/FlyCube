@@ -29,6 +29,9 @@ int main(int argc, char* argv[])
     };
     std::shared_ptr<Resource> argument_buffer = device->CreateBuffer(BindFlag::kIndirectBuffer | BindFlag::kCopyDest, sizeof(DrawIndexedIndirectCommand));
     upload_command_list->UpdateSubresource(argument_buffer, 0, &args, 0, 0);
+    IndirectCountType count = 1;
+    std::shared_ptr<Resource> count_buffer = device->CreateBuffer(BindFlag::kIndirectBuffer | BindFlag::kCopyDest, sizeof(IndirectCountType));
+    upload_command_list->UpdateSubresource(count_buffer, 0, &count, 0, 0);
     upload_command_list->Close();
     device->ExecuteCommandLists({ upload_command_list });
 
@@ -49,7 +52,14 @@ int main(int argc, char* argv[])
         command_list->IASetIndexBuffer(index, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(program.vs.ia.POSITION, pos);
         command_list->BeginRenderPass(render_pass_desc);
-        command_list->DrawIndexedIndirect(argument_buffer, 0);
+        if (device->IsDrawIndirectCountSupported())
+        {
+            command_list->DrawIndexedIndirectCount(argument_buffer, 0, count_buffer, 0, 1, sizeof(DrawIndexedIndirectCommand));
+        }
+        else
+        {
+            command_list->DrawIndexedIndirect(argument_buffer, 0);
+        }
         command_list->EndRenderPass();
         command_list->Close();
         command_lists.emplace_back(command_list);

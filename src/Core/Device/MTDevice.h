@@ -63,6 +63,8 @@ public:
     bool IsRayQuerySupported() const override;
     bool IsVariableRateShadingSupported() const override;
     bool IsMeshShadingSupported() const override;
+    bool IsDrawIndirectCountSupported() const override;
+    bool IsGeometryShaderSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
     MemoryBudget GetMemoryBudget() const override;
     uint32_t GetShaderGroupHandleSize() const override;

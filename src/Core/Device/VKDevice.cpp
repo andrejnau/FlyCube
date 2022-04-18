@@ -131,6 +131,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
             m_is_mesh_shading_supported = true;
         if (std::string(extension.extensionName.data()) == VK_KHR_RAY_QUERY_EXTENSION_NAME)
             m_is_ray_query_supported = true;
+        if (std::string(extension.extensionName.data()) == VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)
+            m_draw_indirect_count_supported = true;
     }
 
     void* device_create_info_next = nullptr;
@@ -199,6 +201,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     }
 
     auto physical_device_features = m_adapter.GetPhysicalDevice().getFeatures();
+    m_geometry_shader_supported = physical_device_features.geometryShader;
 
     vk::PhysicalDeviceFeatures device_features = {};
     device_features.textureCompressionBC = true;
@@ -644,6 +647,16 @@ bool VKDevice::IsVariableRateShadingSupported() const
 bool VKDevice::IsMeshShadingSupported() const
 {
     return m_is_mesh_shading_supported;
+}
+
+bool VKDevice::IsDrawIndirectCountSupported() const
+{
+    return m_draw_indirect_count_supported;
+}
+
+bool VKDevice::IsGeometryShaderSupported() const
+{
+    return m_geometry_shader_supported;
 }
 
 uint32_t VKDevice::GetShadingRateImageTileSize() const

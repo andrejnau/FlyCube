@@ -207,6 +207,16 @@ bool MTDevice::IsMeshShadingSupported() const
     return false;
 }
 
+bool MTDevice::IsDrawIndirectCountSupported() const
+{
+    return false;
+}
+
+bool MTDevice::IsGeometryShaderSupported() const
+{
+    return false;
+}
+
 uint32_t MTDevice::GetShadingRateImageTileSize() const
 {
     assert(false);
