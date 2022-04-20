@@ -31,13 +31,14 @@ protected:
 };
 
 class MTCommandQueue;
+class MTInstance;
 
 class MTDevice
     : public Device
     , protected MVKPhysicalDeviceImpl
 {
 public:
-    MTDevice(const id<MTLDevice>& device);
+    MTDevice(MTInstance& instance, const id<MTLDevice>& device);
     std::shared_ptr<Memory> AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits) override;
     std::shared_ptr<CommandQueue> GetCommandQueue(CommandListType type) override;
     uint32_t GetTextureDataPitchAlignment() const override;
@@ -78,9 +79,12 @@ public:
     id<MTLCommandQueue> GetMTCommandQueue() const;
     uint32_t GetMaxPerStageBufferCount() const;
 
+    MTInstance& GetInstance();
+
 private:
     id<MTLDevice> getMTLDevice() override;
 
+    MTInstance& m_instance;
     id<MTLDevice> m_device;
     MVKPixelFormats m_mvk_pixel_formats;
     std::shared_ptr<MTCommandQueue> m_command_queue;

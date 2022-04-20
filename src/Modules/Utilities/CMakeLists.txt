@@ -1,17 +1,31 @@
-add_library(Utilities
+list(APPEND headers
     Common.h
     DXUtility.h
-    SystemUtils.cpp
     SystemUtils.h
     Logger.h
     ScopeGuard.h
     Singleton.h
     VKUtility.h
-    DXGIFormatHelper.cpp
     DXGIFormatHelper.h
-    FormatHelper.cpp
     FormatHelper.h
 )
+list(APPEND sources
+    SystemUtils.cpp
+    DXGIFormatHelper.cpp
+    FormatHelper.cpp
+)
+
+if (APPLE)
+    set_property(SOURCE AutoreleasePool.mm PROPERTY COMPILE_FLAGS "-fno-objc-arc")
+    list(APPEND headers
+        AutoreleasePool.h
+    )
+    list(APPEND sources
+        AutoreleasePool.mm
+    )
+endif()
+
+add_library(Utilities ${headers} ${sources})
 
 target_link_libraries(Utilities
     gli
@@ -19,6 +33,12 @@ target_link_libraries(Utilities
     DirectX-Headers
     nowide
 )
+
+if (APPLE)
+    target_link_libraries(Utilities
+        "-framework Foundation"
+    )
+endif()
 
 target_include_directories(Utilities
     PUBLIC

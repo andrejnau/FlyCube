@@ -1,6 +1,7 @@
 #include "Swapchain/MTSwapchain.h"
 #include <Device/MTDevice.h>
 #include <Resource/MTResource.h>
+#include <Instance/MTInstance.h>
 #define GLFW_EXPOSE_NATIVE_COCOA
 #include <GLFW/glfw3native.h>
 
@@ -59,6 +60,8 @@ uint32_t MTSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t si
 
 void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
+    m_device.GetInstance().GetAutoreleasePool()->Reset();
+
     id<CAMetalDrawable> drawable = [m_layer nextDrawable];
 
     auto back_buffer = m_back_buffers[m_frame_index % m_frame_count];
