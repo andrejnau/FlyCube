@@ -1,5 +1,5 @@
 # FlyCube
-FlyCube is a two-level graphics API is written in C++ on top of `DirectX 12` and `Vulkan`.
+FlyCube is a two-level graphics API is written in C++ on top of `DirectX 12`, `Vulkan` and `Metal`.
 
 ### The low-level graphics API features
 * Ray tracing
@@ -7,7 +7,7 @@ FlyCube is a two-level graphics API is written in C++ on top of `DirectX 12` and
 * Variable rate shading
 * Bindless resource binding
 * HLSL as a shader language for all backends
-  * Compilation in DXIL or SPIRV depend on selected backend
+  * Compilation in DXIL, SPIRV or MSL depend on selected backend
 
 ### The high-level graphics API features
 * Provides main features, but hide some details
