@@ -15,21 +15,25 @@ const std::shared_ptr<CommandList>& RenderCommandListImpl::GetCommandList()
 
 void RenderCommandListImpl::Reset()
 {
-    m_lazy_barriers.clear();
-    m_resource_state_tracker.clear();
-
+    m_command_list->Reset();
     m_framebuffers.clear();
-    m_cmd_resources.clear();
+    m_viewport_width = 0;
+    m_viewport_height = 0;
     m_bound_resources.clear();
     m_bound_deferred_view.clear();
-    m_binding_sets.clear();
     m_resource_lazy_view_descs.clear();
-    m_shading_rate_image.reset();
-    m_command_list->Reset();
-
+    m_program.reset();
+    m_binding_sets.clear();
     m_graphic_pipeline_desc = {};
     m_compute_pipeline_desc = {};
     m_ray_tracing_pipeline_desc = {};
+    m_cmd_resources.clear();
+    m_resource_state_tracker.clear();
+    m_lazy_barriers.clear();
+    m_layout.reset();
+    m_shader_table.reset();
+    m_pipeline.reset();
+    m_shading_rate_image.reset();
 }
 
 void RenderCommandListImpl::Close()
