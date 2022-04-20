@@ -1,5 +1,4 @@
 #include "ObjectCache.h"
-#include <Utilities/DXGIFormatHelper.h>
 
 ObjectCache::ObjectCache(Device& device)
     : m_device(device)
@@ -127,9 +126,8 @@ uint32_t GetPlaneSlice(const std::shared_ptr<Resource>& resource, ViewType view_
         return 0;
     }
 
-    // TODO: do not use DXGI_FORMAT here
-    DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(resource->GetFormat()).DXGIFormat.DDS);
-    if (IsTypelessDepthStencil(MakeTypelessDepthStencil(dx_format)))
+    gli::format format = resource->GetFormat();
+    if (gli::is_depth(format) || gli::is_stencil(format))
     {
         switch (return_type)
         {
