@@ -14,12 +14,14 @@
 #include <BindingSetLayout/MTBindingSetLayout.h>
 #include <BindingSet/MTBindingSet.h>
 #include <Memory/MTMemory.h>
+#include <Instance/MTInstance.h>
 
-MTDevice::MTDevice(const id<MTLDevice>& device)
-    : m_device(device)
+MTDevice::MTDevice(MTInstance& instance, const id<MTLDevice>& device)
+    : m_instance(instance)
+    , m_device(device)
     , m_mvk_pixel_formats(this)
 {
-    m_command_queue = std::make_shared<MTCommandQueue>(m_device);
+    m_command_queue = std::make_shared<MTCommandQueue>(*this);
 }
 
 std::shared_ptr<Memory> MTDevice::AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits)
@@ -282,4 +284,9 @@ id<MTLCommandQueue> MTDevice::GetMTCommandQueue() const
 uint32_t MTDevice::GetMaxPerStageBufferCount() const
 {
     return 31;
+}
+
+MTInstance& MTDevice::GetInstance()
+{
+    return m_instance;
 }
