@@ -36,13 +36,6 @@ git clone --recursive https://github.com/andrejnau/FlyCube.git
 
 ### Build requirements
 * Windows SDK Version 10.0.19041.0
-* Vulkan SDK 1.2.176.1 if you build this with VULKAN_SUPPORT=ON (enabled by default)
-
-### DirectX Shader Compiler sources
-  * Custom binaries from executable dir
-  * Custom binaries from 3rdparty/dxc/bin
-  * Windows Kits binaries, might not support SPIRV target
-  * Vulkan SDK binaries, not support DXIL target
 
 ### An example of the high-level graphics API usage
 ```cpp
