@@ -20,13 +20,18 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, GLFWwindow* window, uint
     vk::ObjectDestroy<vk::Instance, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE> deleter(instance.GetInstance());
     m_surface = vk::UniqueSurfaceKHR(surface, deleter);
 
+    vk::ColorSpaceKHR color_space = {};
     auto surface_formats = adapter.GetPhysicalDevice().getSurfaceFormatsKHR(m_surface.get());
-    ASSERT(!surface_formats.empty());
-
-    if (surface_formats.front().format != vk::Format::eUndefined)
-        m_swapchain_color_format = surface_formats.front().format;
-
-    vk::ColorSpaceKHR color_space = surface_formats.front().colorSpace;
+    for (const auto& surface : surface_formats)
+    {
+        if (!gli::is_srgb(static_cast<gli::format>(surface.format)))
+        {
+            m_swapchain_color_format = surface.format;
+            color_space = surface.colorSpace;
+            break;
+        }
+    }
+    assert(m_swapchain_color_format != vk::Format::eUndefined);
 
     vk::SurfaceCapabilitiesKHR surface_capabilities = {};
     ASSERT_SUCCEEDED(adapter.GetPhysicalDevice().getSurfaceCapabilitiesKHR(m_surface.get(), &surface_capabilities));

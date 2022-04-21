@@ -25,7 +25,7 @@ private:
     VKCommandQueue& m_command_queue;
     VKDevice& m_device;
     vk::UniqueSurfaceKHR m_surface;
-    vk::Format m_swapchain_color_format = vk::Format::eB8G8R8Unorm;
+    vk::Format m_swapchain_color_format = vk::Format::eUndefined;
     vk::UniqueSwapchainKHR m_swapchain;
     std::vector<std::shared_ptr<Resource>> m_back_buffers;
     uint32_t m_frame_index = 0;
