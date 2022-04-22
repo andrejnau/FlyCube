@@ -26,4 +26,4 @@ target_link_libraries(ObjectCache
     Utilities
 )
 
-set_target_properties(ObjectCache PROPERTIES FOLDER "Render")
+set_target_properties(ObjectCache PROPERTIES FOLDER "Modules/Render")

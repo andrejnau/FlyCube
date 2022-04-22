@@ -21,4 +21,4 @@ target_link_libraries(RenderDevice
     RenderCommandList
 )
 
-set_target_properties(RenderDevice PROPERTIES FOLDER "Render")
+set_target_properties(RenderDevice PROPERTIES FOLDER "Modules/Render")

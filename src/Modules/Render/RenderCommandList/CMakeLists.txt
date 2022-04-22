@@ -19,4 +19,4 @@ target_link_libraries(RenderCommandList
     ObjectCache
 )
 
-set_target_properties(RenderCommandList PROPERTIES FOLDER "Render")
+set_target_properties(RenderCommandList PROPERTIES FOLDER "Modules/Render")
