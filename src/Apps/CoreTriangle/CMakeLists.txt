@@ -9,6 +9,7 @@ endif()
 target_link_libraries(CoreTriangle
     AppBox
     Instance
+    FlyCubeAssets
 )
 
 set_target_properties(CoreTriangle PROPERTIES FOLDER "Apps")

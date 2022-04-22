@@ -50,6 +50,7 @@ target_include_directories(${target}
 target_link_libraries(${target}
     AppBox
     RenderDevice
+    FlyCubeAssets
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")

@@ -43,6 +43,7 @@ target_link_libraries(${target}
     AppBox
     RenderDevice
     Texture
+    FlyCubeAssets
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")

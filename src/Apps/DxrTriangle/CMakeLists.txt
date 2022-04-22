@@ -46,6 +46,7 @@ target_link_libraries(${target}
     Utilities
     Texture
     Instance
+    FlyCubeAssets
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")

@@ -44,6 +44,7 @@ target_link_libraries(${target}
     Geometry
     Texture
     Camera
+    FlyCubeAssets
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")

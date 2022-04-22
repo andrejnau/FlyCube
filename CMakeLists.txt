@@ -10,7 +10,8 @@ option(BUILD_SAMPLES "Build samples" ON)
 
 set(project_root "${CMAKE_CURRENT_SOURCE_DIR}")
 set(assets_path "${project_root}/assets/")
-add_definitions(-DASSETS_PATH="${assets_path}")
+add_library(FlyCubeAssets INTERFACE)
+target_compile_definitions(FlyCubeAssets INTERFACE ASSETS_PATH="${assets_path}")
 
 list(PREPEND CMAKE_MODULE_PATH "${project_root}/cmake")
 include(cmake_settings)
