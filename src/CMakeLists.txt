@@ -1,4 +1,6 @@
-add_subdirectory(Apps)
+if (BUILD_SAMPLES)
+    add_subdirectory(Apps)
+endif()
 add_subdirectory(Core)
 add_subdirectory(Modules)
 add_subdirectory(Tools)

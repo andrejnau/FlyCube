@@ -6,6 +6,7 @@ option(VULKAN_SUPPORT "Vulkan Support" ON)
 cmake_dependent_option(DIRECTX_SUPPORT "DirectX 12 Support" ON "WIN32" OFF)
 cmake_dependent_option(AGILITY_SDK_REQUIRED "Use Agility SDK" OFF "WIN32" OFF)
 cmake_dependent_option(METAL_SUPPORT "Metal Support" ON "APPLE" OFF)
+option(BUILD_SAMPLES "Build samples" ON)
 
 set(project_root "${CMAKE_CURRENT_SOURCE_DIR}")
 set(assets_path "${project_root}/assets/")
