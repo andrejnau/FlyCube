@@ -8,6 +8,7 @@
 #include <Pipeline/VKRayTracingPipeline.h>
 #include <Framebuffer/VKFramebuffer.h>
 #include <BindingSet/VKBindingSet.h>
+#include <Instance/VKInstance.h>
 #include <QueryHeap/VKQueryHeap.h>
 #include <Utilities/VKUtility.h>
 
@@ -115,14 +116,20 @@ void VKCommandList::EndRenderPass()
 
 void VKCommandList::BeginEvent(const std::string& name)
 {
-    vk::DebugUtilsLabelEXT label = {};
-    label.pLabelName = name.c_str();
-    m_command_list->beginDebugUtilsLabelEXT(&label);
+    if (m_device.GetAdapter().GetInstance().IsDebugUtilsSupported())
+    {
+        vk::DebugUtilsLabelEXT label = {};
+        label.pLabelName = name.c_str();
+        m_command_list->beginDebugUtilsLabelEXT(&label);
+    }
 }
 
 void VKCommandList::EndEvent()
 {
-    m_command_list->endDebugUtilsLabelEXT();
+    if (m_device.GetAdapter().GetInstance().IsDebugUtilsSupported())
+    {
+        m_command_list->endDebugUtilsLabelEXT();
+    }
 }
 
 void VKCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)

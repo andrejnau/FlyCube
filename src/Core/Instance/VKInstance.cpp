@@ -106,6 +106,9 @@ VKInstance::VKInstance()
     {
         if (req_extension.count(extension.extensionName.data()))
             found_extension.push_back(extension.extensionName);
+
+        if (std::string(extension.extensionName.data()) == VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+            m_debug_utils_supported = true;
     }
 
     vk::ApplicationInfo app_info = {};
@@ -153,4 +156,9 @@ std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
 vk::Instance& VKInstance::GetInstance()
 {
     return m_instance.get();
+}
+
+bool VKInstance::IsDebugUtilsSupported() const
+{
+    return m_debug_utils_supported;
 }
