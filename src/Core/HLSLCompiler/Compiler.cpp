@@ -144,8 +144,11 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     {
         CComPtr<IDxcBlobEncoding> errors;
         result->GetErrorBuffer(&errors);
-        OutputDebugStringA(reinterpret_cast<char*>(errors->GetBufferPointer()));
-        std::cout << reinterpret_cast<char*>(errors->GetBufferPointer()) << std::endl;
+        if (errors && errors->GetBufferSize() > 0)
+        {
+            OutputDebugStringA(reinterpret_cast<char*>(errors->GetBufferPointer()));
+            std::cout << reinterpret_cast<char*>(errors->GetBufferPointer()) << std::endl;
+        }
     }
     return blob;
 }
