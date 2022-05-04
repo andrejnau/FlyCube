@@ -41,7 +41,6 @@ target_include_directories(${target}
 target_link_libraries(${target}
     RenderDevice
     assimp
-    SOIL
     AppBox
     Utilities
     Texture

@@ -18,7 +18,6 @@ include(cmake_settings)
 include(compiler_settings)
 
 include(3rdparty/glfw)
-include(3rdparty/soil)
 include(3rdparty/assimp)
 include(3rdparty/glm)
 include(3rdparty/gli)

@@ -42,7 +42,6 @@ target_include_directories(${target}
 
 target_link_libraries(${target}
     assimp
-    SOIL
     AppBox
     Utilities
     Instance

@@ -16,9 +16,6 @@
 [submodule "3rdparty/SPIRV-Cross"]
 	path = 3rdparty/SPIRV-Cross
 	url = https://github.com/KhronosGroup/SPIRV-Cross.git
-[submodule "3rdparty/soil"]
-	path = 3rdparty/soil
-	url = https://github.com/kbranigan/Simple-OpenGL-Image-Library.git
 [submodule "3rdparty/Mustache"]
 	path = 3rdparty/Mustache
 	url = https://github.com/kainjow/Mustache.git

@@ -1,29 +1,11 @@
 #include "Texture/TextureLoader.h"
 #include <Utilities/FormatHelper.h>
 #include <gli/gli.hpp>
-#include <SOIL.h>
 
 std::shared_ptr<Resource> CreateSRVFromFile(RenderDevice& device, RenderCommandList& command_list, const std::string& path)
 {
-    //return {};  // Generate MipMaps is not yet supported
-
-    int width = 0;
-    int height = 0;
-    unsigned char* image = SOIL_load_image(path.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
-    if (!image)
-        return {};
-
-    gli::format format = gli::format::FORMAT_RGBA8_UNORM_PACK8;
-    std::shared_ptr<Resource> res = device.CreateTexture(BindFlag::kShaderResource | BindFlag::kCopyDest, format, 1, width, height);
-
-    size_t row_bytes = 0;
-    size_t num_bytes = 0;
-    GetFormatInfo(width, height, format, num_bytes, row_bytes);
-    command_list.UpdateSubresource(res, 0, image, row_bytes, num_bytes);
-
-    SOIL_free_image_data(image);
-
-    return res;
+    assert(false);
+    return {};
 }
 
 std::shared_ptr<Resource> CreateSRVFromFileDDSKTX(RenderDevice& device, RenderCommandList& command_list, const std::string& path)
