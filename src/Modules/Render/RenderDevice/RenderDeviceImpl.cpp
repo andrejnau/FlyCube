@@ -2,17 +2,13 @@
 #include <Utilities/FormatHelper.h>
 #include <RenderCommandList/RenderCommandListImpl.h>
 #include <Resource/ResourceBase.h>
-#if defined(_WIN32)
-#define GLFW_EXPOSE_NATIVE_WIN32
-#elif defined(__APPLE__)
-#define GLFW_EXPOSE_NATIVE_COCOA
-#endif
-#include <GLFW/glfw3native.h>
 
-RenderDeviceImpl::RenderDeviceImpl(const Settings& settings, GLFWwindow* window)
+RenderDeviceImpl::RenderDeviceImpl(const Settings& settings, Window window, uint32_t width, uint32_t height)
     : m_window(window)
     , m_vsync(settings.vsync)
     , m_frame_count(settings.frame_count)
+    , m_width(width)
+    , m_height(height)
 {
     m_instance = CreateInstance(settings.api_type);
     m_adapter = std::move(m_instance->EnumerateAdapters()[settings.required_gpu_index]);
@@ -20,13 +16,7 @@ RenderDeviceImpl::RenderDeviceImpl(const Settings& settings, GLFWwindow* window)
     m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
     m_object_cache = std::make_unique<ObjectCache>(*m_device);
 
-    glfwGetFramebufferSize(window, &m_width, &m_height);
-#if defined(_WIN32)
-    Window native_window = glfwGetWin32Window(window);
-#elif defined(__APPLE__)
-    Window native_window = glfwGetCocoaWindow(window);
-#endif
-    m_swapchain = m_device->CreateSwapchain(native_window, m_width, m_height, m_frame_count, settings.vsync);
+    m_swapchain = m_device->CreateSwapchain(window, m_width, m_height, m_frame_count, settings.vsync);
     m_fence = m_device->CreateFence(m_fence_value);
     for (uint32_t i = 0; i < m_frame_count; ++i)
     {
@@ -269,12 +259,7 @@ void RenderDeviceImpl::Resize(uint32_t width, uint32_t height)
     m_width = width;
     m_height = height;
     m_swapchain.reset();
-#if defined(_WIN32)
-    Window native_window = glfwGetWin32Window(m_window);
-#elif defined(__APPLE__)
-    Window native_window = glfwGetCocoaWindow(m_window);
-#endif
-    m_swapchain = m_device->CreateSwapchain(native_window, m_width, m_height, m_frame_count, m_vsync);
+    m_swapchain = m_device->CreateSwapchain(m_window, m_width, m_height, m_frame_count, m_vsync);
     m_frame_index = 0;
 }
 
@@ -318,7 +303,7 @@ uint32_t RenderDeviceImpl::GetFrameIndex() const
     return m_frame_index;
 }
 
-std::shared_ptr<RenderDevice> CreateRenderDevice(const Settings& settings, GLFWwindow* window)
+std::shared_ptr<RenderDevice> CreateRenderDevice(const Settings& settings, Window window, uint32_t width, uint32_t height)
 {
-    return std::make_shared<RenderDeviceImpl>(settings, window);
+    return std::make_shared<RenderDeviceImpl>(settings, window, width, height);
 }

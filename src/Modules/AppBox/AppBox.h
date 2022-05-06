@@ -8,7 +8,9 @@
 #include <memory>
 #include <array>
 #include <map>
-#include <GLFW/glfw3.h>
+
+typedef struct GLFWwindow GLFWwindow;
+#define GLFW_CURSOR_HIDDEN 0x00034002
 
 struct AppRect
 {
@@ -24,7 +26,6 @@ public:
     bool PollEvents();
 
     AppRect GetAppRect() const;
-    GLFWwindow* GetWindow() const;
     void* GetNativeWindow() const;
     void SetGpuName(const std::string& gpu_name);
     void SubscribeEvents(InputEvents* input_listener, WindowEvents* window_listener);

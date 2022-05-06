@@ -2,6 +2,7 @@
 #include <sstream>
 #include <cassert>
 #include <cmath>
+#include <GLFW/glfw3.h>
 #if defined(_WIN32)
 #define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__APPLE__)
@@ -120,11 +121,6 @@ bool AppBox::PollEvents()
 AppRect AppBox::GetAppRect() const
 {
     return { m_width, m_height };
-}
-
-GLFWwindow* AppBox::GetWindow() const
-{
-    return m_window;
 }
 
 void* AppBox::GetNativeWindow() const

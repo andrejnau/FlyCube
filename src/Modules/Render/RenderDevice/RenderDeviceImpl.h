@@ -6,7 +6,6 @@
 #include <memory>
 #include <ApiType/ApiType.h>
 
-#include <GLFW/glfw3.h>
 #include <memory>
 #include <array>
 #include <set>
@@ -22,7 +21,7 @@
 class RenderDeviceImpl : public RenderDevice
 {
 public:
-    RenderDeviceImpl(const Settings& settings, GLFWwindow* window);
+    RenderDeviceImpl(const Settings& settings, Window window, uint32_t width, uint32_t height);
     ~RenderDeviceImpl();
 
     std::shared_ptr<RenderCommandList> CreateRenderCommandList(CommandListType type) override;
@@ -56,7 +55,7 @@ public:
 private:
     void InsertPresentBarrier();
 
-    GLFWwindow* m_window;
+    Window m_window;
     bool m_vsync;
     uint32_t m_frame_count;
     uint32_t m_frame_index = 0;

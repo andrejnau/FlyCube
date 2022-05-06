@@ -15,7 +15,6 @@
 #include <memory>
 #include <vector>
 #include <AppBox/Settings.h>
-#include <GLFW/glfw3.h>
 #include <gli/format.hpp>
 
 class RenderDevice : public QueryInterface
@@ -49,4 +48,4 @@ public:
     virtual void Resize(uint32_t width, uint32_t height) = 0;
 };
 
-std::shared_ptr<RenderDevice> CreateRenderDevice(const Settings& settings, GLFWwindow* window);
+std::shared_ptr<RenderDevice> CreateRenderDevice(const Settings& settings, Window window, uint32_t width, uint32_t height);

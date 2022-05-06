@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
     AppBox app("ModelView", settings);
     AppRect rect = app.GetAppRect();
 
-    std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
+    std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetNativeWindow(), rect.width, rect.height);
     app.SetGpuName(device->GetGpuName());
 
     auto dsv = device->CreateTexture(BindFlag::kDepthStencil, gli::format::FORMAT_D32_SFLOAT_PACK32, 1, rect.width, rect.height, 1);

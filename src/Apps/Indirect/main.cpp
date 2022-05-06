@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
     AppBox app("Indirect", settings);
     AppRect rect = app.GetAppRect();
 
-    std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
+    std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetNativeWindow(), rect.width, rect.height);
     app.SetGpuName(device->GetGpuName());
 
     std::shared_ptr<RenderCommandList> upload_command_list = device->CreateRenderCommandList();

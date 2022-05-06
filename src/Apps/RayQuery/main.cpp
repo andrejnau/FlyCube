@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
     AppBox app("RayQuery", settings);
     AppRect rect = app.GetAppRect();
 
-    std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
+    std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetNativeWindow(), rect.width, rect.height);
     if (!device->IsDxrSupported())
         throw std::runtime_error("Ray Tracing is not supported");
     if (!device->IsRayQuerySupported())

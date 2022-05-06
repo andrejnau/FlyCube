@@ -39,7 +39,7 @@ git clone --recursive https://github.com/andrejnau/FlyCube.git
 
 ### An example of the high-level graphics API usage
 ```cpp
-std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
+std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetNativeWindow(), rect.width, rect.height);
 std::shared_ptr<RenderCommandList> upload_command_list = device->CreateRenderCommandList();
 std::vector<uint32_t> ibuf = { 0, 1, 2 };
 std::shared_ptr<Resource> index = device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * ibuf.size());

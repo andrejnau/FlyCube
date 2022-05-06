@@ -6,13 +6,21 @@
 #include "ProgramRef/Noise.h"
 #include "ProgramRef/Task.h"
 
+float GetTime()
+{
+    using float_seconds = std::chrono::duration<float>;
+    static auto start = std::chrono::high_resolution_clock::now().time_since_epoch();
+    auto now = std::chrono::high_resolution_clock::now().time_since_epoch();
+    return static_cast<float>(std::chrono::duration_cast<std::chrono::duration<float>>(now - start).count());
+}
+
 int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
     AppBox app("DispatchIndirect", settings);
     AppRect rect = app.GetAppRect();
 
-    std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
+    std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetNativeWindow(), rect.width, rect.height);
     app.SetGpuName(device->GetGpuName());
 
     std::shared_ptr<RenderCommandList> upload_command_list = device->CreateRenderCommandList();
@@ -30,7 +38,7 @@ int main(int argc, char* argv[])
     ProgramHolder<Noise> program(*device);
     ProgramHolder<Task> taskProgram(*device);
 
-    program.cs.cbuffer.computeUniformBlock.time = (float)glfwGetTime();
+    program.cs.cbuffer.computeUniformBlock.time = GetTime();
 
     std::vector<std::shared_ptr<RenderCommandList>> command_lists;
     for (uint32_t i = 0; i < settings.frame_count; ++i)
@@ -41,7 +49,7 @@ int main(int argc, char* argv[])
 
     while (!app.PollEvents())
     {
-        program.cs.cbuffer.computeUniformBlock.time = (float)glfwGetTime();
+        program.cs.cbuffer.computeUniformBlock.time = GetTime();
 
         int32_t frameIndex = device->GetFrameIndex();
         device->Wait(command_lists[frameIndex]->GetFenceValue());

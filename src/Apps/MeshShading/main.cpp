@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
     AppBox app("MeshShading", settings);
     AppRect rect = app.GetAppRect();
 
-    std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetWindow());
+    std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetNativeWindow(), rect.width, rect.height);
     if (!device->IsMeshShadingSupported())
         throw std::runtime_error("Mesh Shading is not supported");
     app.SetGpuName(device->GetGpuName());
