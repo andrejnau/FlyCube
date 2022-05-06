@@ -8,9 +8,7 @@
 #include <memory>
 #include <array>
 #include <map>
-
-typedef struct GLFWwindow GLFWwindow;
-#define GLFW_CURSOR_HIDDEN 0x00034002
+#include <GLFW/glfw3.h>
 
 struct AppRect
 {

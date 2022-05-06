@@ -55,4 +55,6 @@ endif()
 
 set_target_properties(ShaderReflection PROPERTIES FOLDER "Core")
 
-add_subdirectory(test)
+if (BUILD_UNIT_TESTS)
+    add_subdirectory(test)
+endif()

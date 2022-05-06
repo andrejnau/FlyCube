@@ -2,7 +2,7 @@
 #include <Device/MTDevice.h>
 #include <Resource/MTResource.h>
 #include <Instance/MTInstance.h>
-#import <Cocoa/Cocoa.h>
+#import <AppKit/AppKit.h>
 
 static id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
 {

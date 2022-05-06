@@ -11,6 +11,9 @@ MTInstance::MTInstance()
 
 std::vector<std::shared_ptr<Adapter>> MTInstance::EnumerateAdapters()
 {
+#if 0
+    return { std::make_shared<MTAdapter>(*this, MTLCreateSystemDefaultDevice()) };
+#else
     std::vector<std::shared_ptr<Adapter>> adapters;
     NSArray<id<MTLDevice>>* devices = MTLCopyAllDevices();
     for (id<MTLDevice> device : devices)
@@ -18,6 +21,7 @@ std::vector<std::shared_ptr<Adapter>> MTInstance::EnumerateAdapters()
         adapters.emplace_back(std::make_shared<MTAdapter>(*this, device));
     }
     return adapters;
+#endif
 }
 
 std::shared_ptr<AutoreleasePool> MTInstance::GetAutoreleasePool()

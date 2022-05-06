@@ -1,3 +1,7 @@
+if (IOS)
+    return()
+endif()
+
 list(APPEND headers
     AppBox.h
     ArgsParser.h

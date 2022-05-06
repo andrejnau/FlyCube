@@ -2,7 +2,6 @@
 #include <sstream>
 #include <cassert>
 #include <cmath>
-#include <GLFW/glfw3.h>
 #if defined(_WIN32)
 #define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__APPLE__)
