@@ -19,6 +19,7 @@ target_include_directories(RenderDevice
 
 target_link_libraries(RenderDevice
     RenderCommandList
+    glfw
 )
 
 set_target_properties(RenderDevice PROPERTIES FOLDER "Modules/Render")

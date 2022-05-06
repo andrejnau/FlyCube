@@ -2,6 +2,8 @@
 #include <sstream>
 #include <cassert>
 #include <cmath>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 
 AppBox::AppBox(const std::string& title, Settings setting)
     : m_setting(setting)
@@ -119,6 +121,11 @@ AppRect AppBox::GetAppRect() const
 GLFWwindow* AppBox::GetWindow() const
 {
     return m_window;
+}
+
+void* AppBox::GetNativeWindow() const
+{
+    return glfwGetWin32Window(m_window);
 }
 
 void AppBox::SwitchFullScreenMode()

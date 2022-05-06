@@ -2,8 +2,9 @@
 #include <Instance/QueryInterface.h>
 #include <Resource/Resource.h>
 #include <Fence/Fence.h>
-#include <GLFW/glfw3.h>
 #include <gli/format.hpp>
+
+using Window = void*;
 
 class Swapchain : public QueryInterface
 {
