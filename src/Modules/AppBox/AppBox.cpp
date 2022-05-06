@@ -2,7 +2,11 @@
 #include <sstream>
 #include <cassert>
 #include <cmath>
+#if defined(_WIN32)
 #define GLFW_EXPOSE_NATIVE_WIN32
+#elif defined(__APPLE__)
+#define GLFW_EXPOSE_NATIVE_COCOA
+#endif
 #include <GLFW/glfw3native.h>
 
 AppBox::AppBox(const std::string& title, Settings setting)
@@ -125,7 +129,11 @@ GLFWwindow* AppBox::GetWindow() const
 
 void* AppBox::GetNativeWindow() const
 {
+#if defined(_WIN32)
     return glfwGetWin32Window(m_window);
+#elif defined(__APPLE__)
+    return glfwGetCocoaWindow(m_window);
+#endif
 }
 
 void AppBox::SwitchFullScreenMode()

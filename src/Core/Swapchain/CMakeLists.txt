@@ -57,4 +57,13 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (APPLE)
+    if (VULKAN_SUPPORT)
+        set_property(SOURCE VKSwapchain.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
+    endif()
+    target_link_libraries(Swapchain
+        "-framework AppKit"
+    )
+endif()
+
 set_target_properties(Swapchain PROPERTIES FOLDER "Core")

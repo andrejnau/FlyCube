@@ -39,7 +39,7 @@ uint32_t MTDevice::GetTextureDataPitchAlignment() const
     return 1;
 }
 
-std::shared_ptr<Swapchain> MTDevice::CreateSwapchain(GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+std::shared_ptr<Swapchain> MTDevice::CreateSwapchain(Window window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
 {
     return std::make_shared<MTSwapchain>(*this, window, width, height, frame_count, vsync);
 }

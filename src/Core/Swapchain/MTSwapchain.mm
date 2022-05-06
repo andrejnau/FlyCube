@@ -2,8 +2,7 @@
 #include <Device/MTDevice.h>
 #include <Resource/MTResource.h>
 #include <Instance/MTInstance.h>
-#define GLFW_EXPOSE_NATIVE_COCOA
-#include <GLFW/glfw3native.h>
+#import <Cocoa/Cocoa.h>
 
 static id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
 {
@@ -15,13 +14,13 @@ static id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_
     return [device newTextureWithDescriptor:texture_descriptor];
 }
 
-MTSwapchain::MTSwapchain(MTDevice& device, GLFWwindow* window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+MTSwapchain::MTSwapchain(MTDevice& device, Window window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
     : m_device(device)
     , m_frame_count(frame_count)
     , m_width(width)
     , m_height(height)
 {
-    NSWindow* nswin = glfwGetCocoaWindow(window);
+    NSWindow* nswin = (__bridge NSWindow*)window;
     m_layer = [CAMetalLayer layer];
     m_layer.drawableSize = CGSizeMake(width, height);
     m_layer.device = device.GetDevice();

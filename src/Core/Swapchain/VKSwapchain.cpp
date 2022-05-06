@@ -7,6 +7,13 @@
 #include <Utilities/VKUtility.h>
 #include <Resource/VKResource.h>
 
+#if defined(_WIN32)
+#include <Windows.h>
+#elif defined(__APPLE__)
+#import <AppKit/AppKit.h>
+#import <QuartzCore/QuartzCore.h>
+#endif
+
 VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, Window window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
     : m_command_queue(command_queue)
     , m_device(command_queue.GetDevice())
@@ -14,11 +21,28 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, Window window, uint32_t 
     VKAdapter& adapter = m_device.GetAdapter();
     VKInstance& instance = adapter.GetInstance();
 
+#if defined(_WIN32)
     vk::Win32SurfaceCreateInfoKHR surface_desc = {};
     surface_desc.hinstance = GetModuleHandle(nullptr);
     surface_desc.hwnd = reinterpret_cast<HWND>(window);
     m_surface = instance.GetInstance().createWin32SurfaceKHRUnique(surface_desc);
-
+#elif defined(__APPLE__)
+    NSWindow* nswin = (__bridge NSWindow*)window;
+    CAMetalLayer* layer = [CAMetalLayer layer];
+    layer.drawableSize = CGSizeMake(width, height);
+    layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    layer.maximumDrawableCount = frame_count;
+    layer.displaySyncEnabled = vsync;
+    layer.framebufferOnly = NO;
+    [layer setContentsScale:[nswin backingScaleFactor]];
+    nswin.contentView.layer = layer;
+    nswin.contentView.wantsLayer = YES;
+    
+    vk::MacOSSurfaceCreateInfoMVK surface_desc = {};
+    surface_desc.pView = (__bridge void*)layer;
+    m_surface = instance.GetInstance().createMacOSSurfaceMVKUnique(surface_desc);
+#endif
+    
     vk::ColorSpaceKHR color_space = {};
     auto surface_formats = adapter.GetPhysicalDevice().getSurfaceFormatsKHR(m_surface.get());
     for (const auto& surface : surface_formats)
