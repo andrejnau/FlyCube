@@ -14,15 +14,7 @@ target_include_directories(ObjectCache
 )
 
 target_link_libraries(ObjectCache
-    ApiType
-    Swapchain
-    Shader
-    CommandList
-    Program
-    Framebuffer
-    Pipeline
-    GPUDescriptorPool
-    Fence
+    Instance
     Utilities
 )
 

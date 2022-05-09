@@ -91,7 +91,9 @@ std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
     sampler_descriptor.magFilter = MTLSamplerMinMagFilterLinear;
     sampler_descriptor.mipFilter = MTLSamplerMipFilterLinear;
     sampler_descriptor.maxAnisotropy = 16;
+#if TARGET_OS_OSX || TARGET_OS_IOS
     sampler_descriptor.borderColor = MTLSamplerBorderColorOpaqueBlack;
+#endif
     sampler_descriptor.lodMinClamp = 0;
     sampler_descriptor.lodMaxClamp = std::numeric_limits<float>::max();
         
@@ -149,6 +151,11 @@ std::shared_ptr<RenderPass> MTDevice::CreateRenderPass(const RenderPassDesc& des
 std::shared_ptr<Framebuffer> MTDevice::CreateFramebuffer(const FramebufferDesc& desc)
 {
     return std::make_shared<MTFramebuffer>(desc);
+}
+
+std::shared_ptr<Shader> MTDevice::CreateShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
+{
+    return std::make_shared<MTShader>(blob, blob_type, shader_type);
 }
 
 std::shared_ptr<Shader> MTDevice::CompileShader(const ShaderDesc& desc)

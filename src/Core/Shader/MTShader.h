@@ -8,6 +8,7 @@
 class MTShader : public ShaderBase
 {
 public:
+    MTShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type);
     MTShader(const ShaderDesc& desc, ShaderBlobType blob_type);
 
     const std::string& GetSource() const;

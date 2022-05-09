@@ -2,7 +2,7 @@
 #ifdef DIRECTX_SUPPORT
 #include "ShaderReflection/DXILReflection.h"
 #endif
-#ifdef VULKAN_SUPPORT
+#if defined(VULKAN_SUPPORT) || defined(METAL_SUPPORT)
 #include "ShaderReflection/SPIRVReflection.h"
 #endif
 #include <cassert>
@@ -15,7 +15,7 @@ std::shared_ptr<ShaderReflection> CreateShaderReflection(ShaderBlobType type, co
     case ShaderBlobType::kDXIL:
         return std::make_shared<DXILReflection>(data, size);
 #endif
-#ifdef VULKAN_SUPPORT
+#if defined(VULKAN_SUPPORT) || defined(METAL_SUPPORT)
     case ShaderBlobType::kSPIRV:
         return std::make_shared<SPIRVReflection>(data, size);
 #endif

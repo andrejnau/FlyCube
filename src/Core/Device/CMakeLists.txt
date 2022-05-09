@@ -45,11 +45,9 @@ target_link_libraries(Device
     Program
     Framebuffer
     Pipeline
-    GPUDescriptorPool
     Fence
     Memory
     Utilities
-    QueryHeap
 )
 
 if (VULKAN_SUPPORT)

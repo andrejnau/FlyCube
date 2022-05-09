@@ -30,5 +30,9 @@ private:
 
 std::shared_ptr<AutoreleasePool> CreateAutoreleasePool()
 {
+#if defined(USE_EXTERNAL_AUTORELEASEPOOL)
+    return std::make_shared<AutoreleasePool>();
+#else
     return std::make_shared<AutoreleasePoolImpl>();
+#endif
 }

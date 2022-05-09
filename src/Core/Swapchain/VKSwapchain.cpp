@@ -10,7 +10,6 @@
 #if defined(_WIN32)
 #include <Windows.h>
 #elif defined(__APPLE__)
-#import <AppKit/AppKit.h>
 #import <QuartzCore/QuartzCore.h>
 #endif
 
@@ -26,20 +25,9 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, Window window, uint32_t 
     surface_desc.hinstance = GetModuleHandle(nullptr);
     surface_desc.hwnd = reinterpret_cast<HWND>(window);
     m_surface = instance.GetInstance().createWin32SurfaceKHRUnique(surface_desc);
-#elif defined(__APPLE__)
-    NSWindow* nswin = (__bridge NSWindow*)window;
-    CAMetalLayer* layer = [CAMetalLayer layer];
-    layer.drawableSize = CGSizeMake(width, height);
-    layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
-    layer.maximumDrawableCount = frame_count;
-    layer.displaySyncEnabled = vsync;
-    layer.framebufferOnly = NO;
-    [layer setContentsScale:[nswin backingScaleFactor]];
-    nswin.contentView.layer = layer;
-    nswin.contentView.wantsLayer = YES;
-    
+#elif defined(__APPLE__) && TARGET_OS_OSX
     vk::MacOSSurfaceCreateInfoMVK surface_desc = {};
-    surface_desc.pView = (__bridge void*)layer;
+    surface_desc.pView = window;
     m_surface = instance.GetInstance().createMacOSSurfaceMVKUnique(surface_desc);
 #endif
     
@@ -73,7 +61,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, Window window, uint32_t 
     swap_chain_create_info.minImageCount = frame_count;
     swap_chain_create_info.imageFormat = m_swapchain_color_format;
     swap_chain_create_info.imageColorSpace = color_space;
-    swap_chain_create_info.imageExtent = surface_capabilities.currentExtent;
+    swap_chain_create_info.imageExtent = vk::Extent2D(width, height);
     swap_chain_create_info.imageArrayLayers = 1;
     swap_chain_create_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
     swap_chain_create_info.imageSharingMode = vk::SharingMode::eExclusive;

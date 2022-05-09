@@ -9,6 +9,10 @@
 #endif
 #include <GLFW/glfw3native.h>
 
+#if defined(__APPLE__)
+#import <QuartzCore/QuartzCore.h>
+#endif
+
 AppBox::AppBox(const std::string& title, Settings setting)
     : m_setting(setting)
 {
@@ -48,6 +52,13 @@ AppBox::AppBox(const std::string& title, Settings setting)
     int ypos = (monitor_desc->height - m_height) / 2;
     glfwSetWindowPos(m_window, xpos, ypos);
     glfwGetFramebufferSize(m_window, (int*)&m_width, (int*)&m_height);
+
+#if defined(__APPLE__)
+    NSWindow* nswindow = glfwGetCocoaWindow(m_window);
+    nswindow.contentView.layer = [CAMetalLayer layer];
+    nswindow.contentView.wantsLayer = YES;
+    m_layer = nswindow.contentView.layer;
+#endif
 }
 
 AppBox::~AppBox()
@@ -127,7 +138,7 @@ void* AppBox::GetNativeWindow() const
 #if defined(_WIN32)
     return glfwGetWin32Window(m_window);
 #elif defined(__APPLE__)
-    return glfwGetCocoaWindow(m_window);
+    return m_layer;
 #endif
 }
 

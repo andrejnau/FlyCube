@@ -20,6 +20,10 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
+if (NOT sources)
+    return()
+endif()
+
 add_library(QueryHeap ${headers} ${sources})
 
 target_include_directories(QueryHeap

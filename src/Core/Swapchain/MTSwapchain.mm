@@ -2,7 +2,6 @@
 #include <Device/MTDevice.h>
 #include <Resource/MTResource.h>
 #include <Instance/MTInstance.h>
-#import <AppKit/AppKit.h>
 
 static id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
 {
@@ -20,16 +19,15 @@ MTSwapchain::MTSwapchain(MTDevice& device, Window window, uint32_t width, uint32
     , m_width(width)
     , m_height(height)
 {
-    NSWindow* nswin = (__bridge NSWindow*)window;
-    m_layer = [CAMetalLayer layer];
+    m_layer = (__bridge CAMetalLayer*)window;
     m_layer.drawableSize = CGSizeMake(width, height);
     m_layer.device = device.GetDevice();
     m_layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
     m_layer.maximumDrawableCount = frame_count;
+#if TARGET_OS_OSX
     m_layer.displaySyncEnabled = vsync;
+#endif
     m_layer.framebufferOnly = NO;
-    nswin.contentView.layer = m_layer;
-    nswin.contentView.wantsLayer = YES;
 
     for (size_t i = 0; i < frame_count; ++i)
     {

@@ -45,7 +45,6 @@ target_link_libraries(Memory
     Program
     Framebuffer
     Pipeline
-    GPUDescriptorPool
     Fence
     Utilities
 )

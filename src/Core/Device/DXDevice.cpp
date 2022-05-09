@@ -351,6 +351,11 @@ std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const FramebufferDesc& 
     return std::make_shared<DXFramebuffer>(desc);
 }
 
+std::shared_ptr<Shader> DXDevice::CreateShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
+{
+    return std::make_shared<ShaderBase>(blob, blob_type, shader_type);
+}
+
 std::shared_ptr<Shader> DXDevice::CompileShader(const ShaderDesc& desc)
 {
     return std::make_shared<ShaderBase>(desc, ShaderBlobType::kDXIL);

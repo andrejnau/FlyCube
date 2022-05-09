@@ -1,4 +1,4 @@
-if (IOS)
+if (NOT BUILD_SAMPLES)
     return()
 endif()
 

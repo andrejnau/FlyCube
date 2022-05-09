@@ -1,4 +1,4 @@
-if (IOS)
+if (IOS_OR_TVOS)
     return()
 endif()
 
@@ -21,6 +21,10 @@ target_link_libraries(AppBox
     glfw
     ApiType
 )
+
+if (APPLE)
+    set_property(SOURCE AppBox.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
+endif()
 
 if (VULKAN_SUPPORT)
     target_link_libraries(AppBox

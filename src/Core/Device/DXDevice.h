@@ -28,6 +28,7 @@ public:
     std::shared_ptr<BindingSet> CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout) override;
     std::shared_ptr<RenderPass> CreateRenderPass(const RenderPassDesc& desc) override;
     std::shared_ptr<Framebuffer> CreateFramebuffer(const FramebufferDesc& desc) override;
+    std::shared_ptr<Shader> CreateShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type) override;
     std::shared_ptr<Shader> CompileShader(const ShaderDesc& desc) override;
     std::shared_ptr<Program> CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders) override;
     std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;

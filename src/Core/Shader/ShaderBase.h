@@ -7,6 +7,7 @@
 class ShaderBase : public Shader
 {
 public:
+    ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type);
     ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type);
     ShaderType GetType() const override;
     const std::vector<uint8_t>& GetBlob() const override;
@@ -20,9 +21,9 @@ public:
     const std::shared_ptr<ShaderReflection>& GetReflection() const override;
 
 protected:
-    ShaderType m_shader_type;
-    ShaderBlobType m_blob_type;
     std::vector<uint8_t> m_blob;
+    ShaderBlobType m_blob_type;
+    ShaderType m_shader_type;
     std::map<std::string, uint64_t> m_ids;
     std::vector<ResourceBindingDesc> m_bindings;
     std::vector<BindKey> m_binding_keys;

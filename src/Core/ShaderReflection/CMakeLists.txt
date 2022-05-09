@@ -5,7 +5,7 @@ list(APPEND sources
     ShaderReflection.cpp
 )
 
-if (VULKAN_SUPPORT)
+if (VULKAN_SUPPORT OR METAL_SUPPORT)
     list(APPEND headers
         SPIRVReflection.h
     )
@@ -36,7 +36,7 @@ target_link_libraries(ShaderReflection
     nowide
 )
 
-if (VULKAN_SUPPORT)
+if (VULKAN_SUPPORT OR METAL_SUPPORT)
     target_link_libraries(ShaderReflection
         spirv-cross-core
         spirv-cross-hlsl

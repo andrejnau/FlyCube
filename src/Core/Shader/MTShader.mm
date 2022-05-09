@@ -8,6 +8,12 @@ static std::string FixEntryPoint(const std::string& entry_point)
     return entry_point;
 }
 
+MTShader::MTShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
+    : ShaderBase(blob, blob_type, shader_type)
+{
+    m_source = GetMSLShader(m_blob, m_index_mapping);
+}
+
 MTShader::MTShader(const ShaderDesc& desc, ShaderBlobType blob_type)
     : ShaderBase(desc, blob_type)
 {

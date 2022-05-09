@@ -44,7 +44,6 @@ target_link_libraries(CommandQueue
     Program
     Framebuffer
     Pipeline
-    GPUDescriptorPool
     Fence
     Utilities
 )

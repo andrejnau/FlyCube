@@ -24,6 +24,10 @@ if (VULKAN_SUPPORT)
     )
 endif()
 
+if (NOT sources)
+    return()
+endif()
+
 add_library(GPUDescriptorPool ${headers} ${sources})
 
 target_include_directories(GPUDescriptorPool

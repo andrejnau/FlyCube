@@ -11,9 +11,7 @@ MTInstance::MTInstance()
 
 std::vector<std::shared_ptr<Adapter>> MTInstance::EnumerateAdapters()
 {
-#if 0
-    return { std::make_shared<MTAdapter>(*this, MTLCreateSystemDefaultDevice()) };
-#else
+#if TARGET_OS_OSX
     std::vector<std::shared_ptr<Adapter>> adapters;
     NSArray<id<MTLDevice>>* devices = MTLCopyAllDevices();
     for (id<MTLDevice> device : devices)
@@ -21,6 +19,8 @@ std::vector<std::shared_ptr<Adapter>> MTInstance::EnumerateAdapters()
         adapters.emplace_back(std::make_shared<MTAdapter>(*this, device));
     }
     return adapters;
+#else
+    return { std::make_shared<MTAdapter>(*this, MTLCreateSystemDefaultDevice()) };
 #endif
 }
 

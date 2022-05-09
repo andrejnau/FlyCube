@@ -507,6 +507,11 @@ std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& 
     return std::make_shared<VKFramebuffer>(*this, desc);
 }
 
+std::shared_ptr<Shader> VKDevice::CreateShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
+{
+    return std::make_shared<ShaderBase>(blob, blob_type, shader_type);
+}
+
 std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)
 {
     return std::make_shared<ShaderBase>(desc, ShaderBlobType::kSPIRV);

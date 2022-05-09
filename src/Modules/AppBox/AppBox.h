@@ -54,4 +54,7 @@ private:
     int m_mouse_mode = GLFW_CURSOR_HIDDEN;
     std::string m_gpu_name;
     std::string m_fps;
+#if defined(__APPLE__)
+    void* m_layer = nullptr;
+#endif
 };

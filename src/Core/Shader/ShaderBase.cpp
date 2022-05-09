@@ -8,10 +8,15 @@ static uint64_t GenId()
 }
 
 ShaderBase::ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type)
-    : m_shader_type(desc.type)
-    , m_blob_type(blob_type)
+    : ShaderBase(Compile(desc, blob_type), blob_type, desc.type)
 {
-    m_blob = Compile(desc, blob_type);
+}
+
+ShaderBase::ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
+    : m_blob(blob)
+    , m_blob_type(blob_type)
+    , m_shader_type(shader_type)
+{
     m_reflection = CreateShaderReflection(blob_type, m_blob.data(), m_blob.size());
     m_bindings = m_reflection->GetBindings();
     for (uint32_t i = 0; i < m_bindings.size(); ++i)

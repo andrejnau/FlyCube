@@ -109,7 +109,6 @@ enum class ShaderBlobType
 {
     kDXIL,
     kSPIRV,
-    kMSLSource
 };
 
 enum class ResourceType

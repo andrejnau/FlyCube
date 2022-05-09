@@ -112,6 +112,8 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     const RenderPassDesc& render_pass_desc = render_pass->GetDesc();
     const FramebufferDesc& framebuffer_desc = framebuffer->As<FramebufferBase>().GetDesc();
     
+    bool has_attachment = false;
+    
     auto add_attachment = [&](auto& attachment, gli::format format, RenderPassLoadOp load_op, RenderPassStoreOp store_op, const std::shared_ptr<View>& view)
     {
         if (format == gli::format::FORMAT_UNDEFINED || !view)
@@ -126,7 +128,12 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         if (!resource)
             return;
         attachment.texture = resource->texture.res;
-        render_pass_descriptor.renderTargetArrayLength = std::max<uint32_t>(render_pass_descriptor.renderTargetArrayLength, view->GetLayerCount());
+        
+        if ([m_device.GetDevice() supportsFamily: MTLGPUFamilyApple5])
+        {
+            render_pass_descriptor.renderTargetArrayLength = std::max<uint32_t>(render_pass_descriptor.renderTargetArrayLength, view->GetLayerCount());
+        }
+        has_attachment = true;
     };
     
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
@@ -162,7 +169,10 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         stencil_attachment.clearStencil = clear_desc.stencil;
     }
     
-    render_pass_descriptor.defaultRasterSampleCount = render_pass_desc.sample_count;
+    if (!has_attachment)
+    {
+        render_pass_descriptor.defaultRasterSampleCount = render_pass_desc.sample_count;
+    }
     render_pass_descriptor.renderTargetWidth = framebuffer_desc.width;
     render_pass_descriptor.renderTargetHeight = framebuffer_desc.height;
 
@@ -210,11 +220,21 @@ void MTCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_
 {
     ApplyState();
     ApplyAndRecord([&render_encoder = m_render_encoder, vertex_count, instance_count, first_vertex, first_instance] {
-        [render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
-                           vertexStart:first_vertex
-                           vertexCount:vertex_count
-                         instanceCount:instance_count
-                          baseInstance:first_instance];
+        if (first_instance > 0)
+        {
+            [render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
+                               vertexStart:first_vertex
+                               vertexCount:vertex_count
+                             instanceCount:instance_count
+                              baseInstance:first_instance];
+        }
+        else
+        {
+            [render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
+                               vertexStart:first_vertex
+                               vertexCount:vertex_count
+                             instanceCount:instance_count];
+        }
     });
 }
 
@@ -226,14 +246,26 @@ void MTCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, u
     MTLIndexType index_format = ConvertIndexType(m_index_format);
     ApplyAndRecord([&render_encoder = m_render_encoder, index_buffer, index_count, index_format, instance_count, first_index, vertex_offset, first_instance] {
         const uint32_t index_stride = index_format == MTLIndexTypeUInt32 ? 4 : 2;
-        [render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                   indexCount:index_count
-                                    indexType:index_format
-                                  indexBuffer:index_buffer
-                            indexBufferOffset:index_stride * first_index
-                                instanceCount:instance_count
-                                   baseVertex:vertex_offset
-                                 baseInstance:first_instance];
+        if (vertex_offset != 0 || first_instance > 0)
+        {
+            [render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                       indexCount:index_count
+                                        indexType:index_format
+                                      indexBuffer:index_buffer
+                                indexBufferOffset:index_stride * first_index
+                                    instanceCount:instance_count
+                                       baseVertex:vertex_offset
+                                     baseInstance:first_instance];
+        }
+        else
+        {
+            [render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                       indexCount:index_count
+                                        indexType:index_format
+                                      indexBuffer:index_buffer
+                                indexBufferOffset:index_stride * first_index
+                                    instanceCount:instance_count];
+        }
     });
 }
 

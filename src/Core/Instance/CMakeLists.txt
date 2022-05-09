@@ -45,8 +45,11 @@ target_link_libraries(Instance
     Adapter
     ApiType
     Utilities
+    Device
     gli
     glm
+    $<$<TARGET_EXISTS:GPUDescriptorPool>:GPUDescriptorPool>
+    $<$<TARGET_EXISTS:QueryHeap>:QueryHeap>
 )
 
 if (VULKAN_SUPPORT)
