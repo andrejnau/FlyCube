@@ -153,6 +153,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
             { ShadingRate::k4x2, { 4, 2 } },
             { ShadingRate::k4x4, { 4, 4 } },
         };
+    #ifndef USE_STATIC_MOLTENVK
         decltype(auto) fragment_shading_rates = m_adapter.GetPhysicalDevice().getFragmentShadingRatesKHR();
         for (const auto& fragment_shading_rate : fragment_shading_rates)
         {
@@ -163,6 +164,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
             assert(shading_rate_palette.at((ShadingRate)shading_rate) == size);
             shading_rate_palette.erase((ShadingRate)shading_rate);
         }
+    #endif
         assert(shading_rate_palette.empty());
 
         vk::PhysicalDeviceFragmentShadingRatePropertiesKHR shading_rate_image_properties = {};
@@ -204,14 +206,14 @@ VKDevice::VKDevice(VKAdapter& adapter)
     m_geometry_shader_supported = physical_device_features.geometryShader;
 
     vk::PhysicalDeviceFeatures device_features = {};
-    device_features.textureCompressionBC = true;
-    device_features.vertexPipelineStoresAndAtomics = true;
-    device_features.samplerAnisotropy = true;
-    device_features.fragmentStoresAndAtomics = true;
-    device_features.sampleRateShading = true;
+    device_features.textureCompressionBC = physical_device_features.textureCompressionBC;
+    device_features.vertexPipelineStoresAndAtomics = physical_device_features.vertexPipelineStoresAndAtomics;
+    device_features.samplerAnisotropy = physical_device_features.samplerAnisotropy;
+    device_features.fragmentStoresAndAtomics = physical_device_features.fragmentStoresAndAtomics;
+    device_features.sampleRateShading = physical_device_features.sampleRateShading;
     device_features.geometryShader = physical_device_features.geometryShader;
-    device_features.imageCubeArray = true;
-    device_features.shaderImageGatherExtended = true;
+    device_features.imageCubeArray = physical_device_features.imageCubeArray;
+    device_features.shaderImageGatherExtended = physical_device_features.shaderImageGatherExtended;
 
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
     device_vulkan12_features.drawIndirectCount = true;
@@ -259,7 +261,9 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_create_info.ppEnabledExtensionNames = found_extension.data();
 
     m_device = m_physical_device.createDeviceUnique(device_create_info);
+#ifndef USE_STATIC_MOLTENVK
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device.get());
+#endif
 
     for (auto& queue_info : m_queues_info)
     {
@@ -555,14 +559,18 @@ vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(c
     auto vk_index_res = std::static_pointer_cast<VKResource>(index.res);
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
+#ifndef USE_STATIC_MOLTENVK
     geometry_desc.geometry.triangles.vertexData = m_device->getBufferAddress({ vk_vertex_res->buffer.res.get() }) + vertex.offset * vertex_stride;
+#endif
     geometry_desc.geometry.triangles.vertexStride = vertex_stride;
     geometry_desc.geometry.triangles.vertexFormat = static_cast<vk::Format>(vertex.format);
     geometry_desc.geometry.triangles.maxVertex = vertex.count;
     if (vk_index_res)
     {
         auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
+    #ifndef USE_STATIC_MOLTENVK
         geometry_desc.geometry.triangles.indexData = m_device->getBufferAddress({ vk_index_res->buffer.res.get() }) + index.offset * index_stride;
+    #endif
         geometry_desc.geometry.triangles.indexType = GetVkIndexType(index.format);
     }
     else
@@ -576,7 +584,9 @@ vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(c
 RaytracingASPrebuildInfo VKDevice::GetAccelerationStructurePrebuildInfo(const vk::AccelerationStructureBuildGeometryInfoKHR& acceleration_structure_info, const std::vector<uint32_t>& max_primitive_counts) const
 {
     vk::AccelerationStructureBuildSizesInfoKHR size_info = {};
+#ifndef USE_STATIC_MOLTENVK
     m_device->getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, &acceleration_structure_info, max_primitive_counts.data(), &size_info);
+#endif
     RaytracingASPrebuildInfo prebuild_info = {};
     prebuild_info.acceleration_structure_size = size_info.accelerationStructureSize;
     prebuild_info.build_scratch_data_size = size_info.buildScratchSize;
@@ -624,7 +634,9 @@ std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(AccelerationStru
     acceleration_structure_create_info.offset = offset;
     acceleration_structure_create_info.size = 0;
     acceleration_structure_create_info.type = Convert(type);
+#ifndef USE_STATIC_MOLTENVK
     res->acceleration_structure_handle = m_device->createAccelerationStructureKHRUnique(acceleration_structure_create_info);
+#endif
 
     return res;
 }

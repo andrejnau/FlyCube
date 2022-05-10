@@ -57,7 +57,9 @@ VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const RayTracingPip
     ray_pipeline_info.maxPipelineRayRecursionDepth = 1;
     ray_pipeline_info.layout = m_pipeline_layout;
 
+#ifndef USE_STATIC_MOLTENVK
     m_pipeline = m_device.GetDevice().createRayTracingPipelineKHRUnique({}, {}, ray_pipeline_info);
+#endif
 }
 
 PipelineType VKRayTracingPipeline::GetPipelineType() const
@@ -68,6 +70,8 @@ PipelineType VKRayTracingPipeline::GetPipelineType() const
 std::vector<uint8_t> VKRayTracingPipeline::GetRayTracingShaderGroupHandles(uint32_t first_group, uint32_t group_count) const
 {
     std::vector<uint8_t> shader_handles_storage(group_count * m_device.GetShaderGroupHandleSize());
+#ifndef USE_STATIC_MOLTENVK
     m_device.GetDevice().getRayTracingShaderGroupHandlesKHR(m_pipeline.get(), first_group, group_count, shader_handles_storage.size(), shader_handles_storage.data());
+#endif
     return shader_handles_storage;
 }

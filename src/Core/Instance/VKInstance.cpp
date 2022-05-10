@@ -4,7 +4,9 @@
 #include <string>
 #include <sstream>
 
+#ifndef USE_STATIC_MOLTENVK
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+#endif
 
 static bool SkipIt(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type, const std::string& message)
 {
@@ -61,8 +63,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 
 VKInstance::VKInstance()
 {
+#ifndef USE_STATIC_MOLTENVK
     PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = m_dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+#endif
 
     auto layers = vk::enumerateInstanceLayerProperties();
 
@@ -70,7 +74,7 @@ VKInstance::VKInstance()
     #ifdef _WIN32
         static const bool debug_enabled = IsDebuggerPresent();
     #else
-        static const bool debug_enabled = false;
+        static const bool debug_enabled = true;
     #endif
     if (debug_enabled)
         req_layers.insert("VK_LAYER_KHRONOS_validation");
@@ -119,7 +123,9 @@ VKInstance::VKInstance()
     create_info.ppEnabledExtensionNames = found_extension.data();
 
     m_instance = vk::createInstanceUnique(create_info);
+#ifndef USE_STATIC_MOLTENVK
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance.get());
+#endif
     if (debug_enabled)
     {
         vk::DebugReportCallbackCreateInfoEXT callback_create_info = {};

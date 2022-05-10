@@ -6,7 +6,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS")
 endif()
 
 include(CMakeDependentOption)
-cmake_dependent_option(VULKAN_SUPPORT "Vulkan Support" OFF "IOS_OR_TVOS" ON)
+option(VULKAN_SUPPORT "Vulkan Support" ON)
 cmake_dependent_option(DIRECTX_SUPPORT "DirectX 12 Support" ON "WIN32" OFF)
 cmake_dependent_option(AGILITY_SDK_REQUIRED "Use Agility SDK" OFF "WIN32" OFF)
 cmake_dependent_option(METAL_SUPPORT "Metal Support" ON "APPLE" OFF)

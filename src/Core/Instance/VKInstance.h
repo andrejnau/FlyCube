@@ -12,7 +12,9 @@ public:
     bool IsDebugUtilsSupported() const;
 
 private:
+#ifndef USE_STATIC_MOLTENVK
     vk::DynamicLoader m_dl;
+#endif
     vk::UniqueInstance m_instance;
     vk::UniqueDebugReportCallbackEXT m_callback;
     bool m_debug_utils_supported = false;

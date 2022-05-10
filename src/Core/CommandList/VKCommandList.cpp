@@ -164,6 +164,7 @@ void VKCommandList::DrawIndirectCount(
     if (count_buffer)
     {
         decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
+    #ifndef USE_STATIC_MOLTENVK
         m_command_list->drawIndirectCount(
             vk_argument_buffer.buffer.res.get(),
             argument_buffer_offset,
@@ -172,6 +173,7 @@ void VKCommandList::DrawIndirectCount(
             max_draw_count,
             stride
         );
+    #endif
     }
     else
     {
@@ -197,6 +199,7 @@ void VKCommandList::DrawIndexedIndirectCount(
     if (count_buffer)
     {
         decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
+    #ifndef USE_STATIC_MOLTENVK
         m_command_list->drawIndexedIndirectCount(
             vk_argument_buffer.buffer.res.get(),
             argument_buffer_offset,
@@ -205,6 +208,7 @@ void VKCommandList::DrawIndexedIndirectCount(
             max_draw_count,
             stride
         );
+    #endif
     }
     else
     {
@@ -234,7 +238,9 @@ void VKCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_b
 
 void VKCommandList::DispatchMesh(uint32_t thread_group_count_x)
 {
+#ifndef USE_STATIC_MOLTENVK
     m_command_list->drawMeshTasksNV(thread_group_count_x, 0);
+#endif
 }
 
 static vk::StridedDeviceAddressRegionKHR GetStridedDeviceAddressRegion(VKDevice& device, const RayTracingShaderTable& table)
@@ -245,7 +251,9 @@ static vk::StridedDeviceAddressRegionKHR GetStridedDeviceAddressRegion(VKDevice&
     }
     decltype(auto) vk_resource = table.resource->As<VKResource>();
     vk::StridedDeviceAddressRegionKHR vk_table = {};
+#ifndef USE_STATIC_MOLTENVK
     vk_table.deviceAddress = device.GetDevice().getBufferAddress({ vk_resource.buffer.res.get() }) + table.offset;
+#endif
     vk_table.size = table.size;
     vk_table.stride = table.stride;
     return vk_table;
@@ -253,6 +261,7 @@ static vk::StridedDeviceAddressRegionKHR GetStridedDeviceAddressRegion(VKDevice&
 
 void VKCommandList::DispatchRays(const RayTracingShaderTables& shader_tables, uint32_t width, uint32_t height, uint32_t depth)
 {
+#ifndef USE_STATIC_MOLTENVK
     m_command_list->traceRaysKHR(
         GetStridedDeviceAddressRegion(m_device, shader_tables.raygen),
         GetStridedDeviceAddressRegion(m_device, shader_tables.miss),
@@ -262,6 +271,7 @@ void VKCommandList::DispatchRays(const RayTracingShaderTables& shader_tables, ui
         height,
         depth
     );
+#endif
 }
 
 void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
@@ -533,7 +543,9 @@ void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<
         }
     }
 
+#ifndef USE_STATIC_MOLTENVK
     m_command_list->setFragmentShadingRateKHR(&fragment_size, vk_combiners.data());
+#endif
 }
 
 void VKCommandList::BuildBottomLevelAS(
@@ -582,11 +594,15 @@ void VKCommandList::BuildBottomLevelAS(
         infos.mode = vk::BuildAccelerationStructureModeKHR::eUpdate;
     else
         infos.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
+#ifndef USE_STATIC_MOLTENVK
     infos.scratchData = m_device.GetDevice().getBufferAddress({ vk_scratch.buffer.res.get() }) + scratch_offset;
+#endif
     infos.pGeometries = geometry_descs.data();
     infos.geometryCount = geometry_descs.size();
 
+#ifndef USE_STATIC_MOLTENVK
     m_command_list->buildAccelerationStructuresKHR(1, &infos, range_infos.data());
+#endif
 }
 
 void VKCommandList::BuildTopLevelAS(
@@ -600,8 +616,10 @@ void VKCommandList::BuildTopLevelAS(
     BuildAccelerationStructureFlags flags)
 {
     decltype(auto) vk_instance_data = instance_data->As<VKResource>();
-    vk::DeviceAddress instance_address = m_device.GetDevice().getBufferAddress(vk_instance_data.buffer.res.get()) + instance_offset;
-
+    vk::DeviceAddress instance_address = {};
+#ifndef USE_STATIC_MOLTENVK
+    instance_address = m_device.GetDevice().getBufferAddress(vk_instance_data.buffer.res.get()) + instance_offset;
+#endif
     vk::AccelerationStructureGeometryKHR top_as_geometry = {};
     top_as_geometry.geometryType = vk::GeometryTypeKHR::eInstances;
     top_as_geometry.geometry.setInstances({});
@@ -631,11 +649,15 @@ void VKCommandList::BuildTopLevelAS(
         infos.mode = vk::BuildAccelerationStructureModeKHR::eUpdate;
     else
         infos.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
+#ifndef USE_STATIC_MOLTENVK
     infos.scratchData = m_device.GetDevice().getBufferAddress({ vk_scratch.buffer.res.get() }) + scratch_offset;
+#endif
     infos.pGeometries = &top_as_geometry;
     infos.geometryCount = 1;
 
+#ifndef USE_STATIC_MOLTENVK
     m_command_list->buildAccelerationStructuresKHR(1, &infos, offset_infos.data());
+#endif
 }
 
 void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)
@@ -658,7 +680,9 @@ void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
     }
     info.dst = vk_dst.acceleration_structure_handle.get();
     info.src = vk_src.acceleration_structure_handle.get();
+#ifndef USE_STATIC_MOLTENVK
     m_command_list->copyAccelerationStructureKHR(info);
+#endif
 }
 
 void VKCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
@@ -761,6 +785,7 @@ void VKCommandList::WriteAccelerationStructuresProperties(
     auto query_type = vk_query_heap.GetQueryType();
     assert(query_type == vk::QueryType::eAccelerationStructureCompactedSizeKHR);
     m_command_list->resetQueryPool(vk_query_heap.GetQueryPool(), first_query, acceleration_structures.size());
+#ifndef USE_STATIC_MOLTENVK
     m_command_list->writeAccelerationStructuresPropertiesKHR(
         vk_acceleration_structures.size(),
         vk_acceleration_structures.data(),
@@ -768,6 +793,7 @@ void VKCommandList::WriteAccelerationStructuresProperties(
         vk_query_heap.GetQueryPool(),
         first_query
     );
+#endif
 }
 
 void VKCommandList::ResolveQueryData(

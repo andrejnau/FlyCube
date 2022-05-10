@@ -25,6 +25,10 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, Window window, uint32_t 
     surface_desc.hinstance = GetModuleHandle(nullptr);
     surface_desc.hwnd = reinterpret_cast<HWND>(window);
     m_surface = instance.GetInstance().createWin32SurfaceKHRUnique(surface_desc);
+#elif defined(__APPLE__) && (TARGET_OS_IOS || TARGET_OS_TV)
+    vk::IOSSurfaceCreateInfoMVK surface_desc = {};
+    surface_desc.pView = window;
+    m_surface = instance.GetInstance().createIOSSurfaceMVKUnique(surface_desc);
 #elif defined(__APPLE__) && TARGET_OS_OSX
     vk::MacOSSurfaceCreateInfoMVK surface_desc = {};
     surface_desc.pView = window;
