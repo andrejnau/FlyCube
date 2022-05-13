@@ -59,14 +59,13 @@ void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
 {
     m_device.GetInstance().GetAutoreleasePool()->Reset();
 
-    id<CAMetalDrawable> drawable = [m_layer nextDrawable];
-
     auto back_buffer = m_back_buffers[m_frame_index % m_frame_count];
     auto resource = back_buffer->As<MTResource>();
     auto queue = m_device.GetMTCommandQueue();
 
     auto command_buffer = [queue commandBuffer];
     id<MTLBlitCommandEncoder> blit_encoder = [command_buffer blitCommandEncoder];
+    id<CAMetalDrawable> drawable = [m_layer nextDrawable];
     [blit_encoder copyFromTexture:resource.texture.res
                       sourceSlice:0
                       sourceLevel:0
@@ -77,7 +76,9 @@ void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
                  destinationLevel:0
                 destinationOrigin:{0, 0, 0}];
     [blit_encoder endEncoding];
-    [command_buffer presentDrawable:drawable];
+    [command_buffer addScheduledHandler: ^(id<MTLCommandBuffer>) {
+        [drawable present];
+    }];
     [command_buffer commit];
     [command_buffer waitUntilCompleted];
 }
