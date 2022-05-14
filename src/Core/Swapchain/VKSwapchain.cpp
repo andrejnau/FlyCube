@@ -11,6 +11,8 @@
 #include <Windows.h>
 #elif defined(__APPLE__)
 #import <QuartzCore/QuartzCore.h>
+#else
+#include <X11/Xlib-xcb.h>
 #endif
 
 VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, WindowHandle window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
@@ -29,6 +31,11 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, WindowHandle window, uin
     vk::MetalSurfaceCreateInfoEXT surface_desc = {};
     surface_desc.pLayer = (__bridge CAMetalLayer*)window;
     m_surface = instance.GetInstance().createMetalSurfaceEXTUnique(surface_desc);
+#else
+    vk::XcbSurfaceCreateInfoKHR surface_desc = {};
+    surface_desc.setConnection(XGetXCBConnection(XOpenDisplay(nullptr)));
+    surface_desc.setWindow((ptrdiff_t)window);
+    m_surface = instance.GetInstance().createXcbSurfaceKHRUnique(surface_desc);
 #endif
     
     vk::ColorSpaceKHR color_space = {};

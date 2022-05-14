@@ -63,4 +63,10 @@ if (APPLE)
     endif()
 endif()
 
+if (UNIX)
+    target_link_libraries(Swapchain
+        X11-xcb
+    )
+endif()
+
 set_target_properties(Swapchain PROPERTIES FOLDER "Core")

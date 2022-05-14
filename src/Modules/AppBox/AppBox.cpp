@@ -6,6 +6,8 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__APPLE__)
 #define GLFW_EXPOSE_NATIVE_COCOA
+#else
+#define GLFW_EXPOSE_NATIVE_X11
 #endif
 #include <GLFW/glfw3native.h>
 
@@ -144,6 +146,8 @@ void* AppBox::GetNativeWindow() const
     return glfwGetWin32Window(m_window);
 #elif defined(__APPLE__)
     return m_layer;
+#else
+    return (void*)glfwGetX11Window(m_window);
 #endif
 }
 
