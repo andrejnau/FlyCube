@@ -153,8 +153,7 @@ uint32_t MTResource::GetSampleCount() const
 
 uint64_t MTResource::GetAccelerationStructureHandle() const
 {
-    assert(false);
-    return 0;
+    return acceleration_structure_handle;
 }
 
 void MTResource::SetName(const std::string& name)

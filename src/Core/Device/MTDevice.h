@@ -81,6 +81,8 @@ public:
     uint32_t GetMaxPerStageBufferCount() const;
 
     MTInstance& GetInstance();
+    
+    NSMutableArray<id<MTLAccelerationStructure>>* acceleration_structures = [NSMutableArray array];
 
 private:
     id<MTLDevice> getMTLDevice() override;
@@ -90,3 +92,5 @@ private:
     MVKPixelFormats m_mvk_pixel_formats;
     std::shared_ptr<MTCommandQueue> m_command_queue;
 };
+
+MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags);

@@ -17,8 +17,6 @@ int main(int argc, char* argv[])
     AppRect rect = app.GetAppRect();
 
     std::shared_ptr<RenderDevice> device = CreateRenderDevice(settings, app.GetNativeWindow(), rect.width, rect.height);
-    if (!device->IsDxrSupported())
-        throw std::runtime_error("Ray Tracing is not supported");
     if (!device->IsRayQuerySupported())
         throw std::runtime_error("Ray Query is not supported");
     app.SetGpuName(device->GetGpuName());
@@ -43,9 +41,8 @@ int main(int argc, char* argv[])
             { positions, gli::format::FORMAT_RGB32_SFLOAT_PACK32, (uint32_t)model.meshes[0].positions.size(), 0 },
             { indices, gli::format::FORMAT_R32_UINT_PACK32, (uint32_t)model.meshes[0].indices.size(), 0 },
             RaytracingGeometryFlags::kOpaque };
-    std::shared_ptr<Resource> bottom = device->CreateBottomLevelAS({ raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
-    upload_command_list->BuildBottomLevelAS({}, bottom, { raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
-    //upload_command_list->CopyAccelerationStructure(bottom, bottom, CopyAccelerationStructureMode::kCompact);
+    std::shared_ptr<Resource> bottom = device->CreateBottomLevelAS({ raytracing_geometry_desc }, BuildAccelerationStructureFlags::kNone);
+    upload_command_list->BuildBottomLevelAS({}, bottom, { raytracing_geometry_desc }, BuildAccelerationStructureFlags::kNone);
 
     // build TLAS
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4>> geometry = {

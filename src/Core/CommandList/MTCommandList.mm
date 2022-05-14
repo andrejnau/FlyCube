@@ -430,7 +430,27 @@ void MTCommandList::BuildBottomLevelAS(
     const std::vector<RaytracingGeometryDesc>& descs,
     BuildAccelerationStructureFlags flags)
 {
-    assert(false);
+    NSMutableArray* geometry_descs = [NSMutableArray array];
+    for (const auto& desc : descs)
+    {
+        MTLAccelerationStructureTriangleGeometryDescriptor* geometry_desc = FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags);
+        [geometry_descs addObject:geometry_desc];
+    }
+  
+    MTLPrimitiveAccelerationStructureDescriptor* acceleration_structure_desc = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
+    acceleration_structure_desc.geometryDescriptors = geometry_descs;
+    
+    decltype(auto) mt_dst = dst->As<MTResource>();
+    decltype(auto) mt_scratch = scratch->As<MTResource>();
+    
+    ApplyAndRecord([&command_buffer = m_command_buffer, mt_dst, mt_scratch, scratch_offset, acceleration_structure_desc] {
+        id<MTLAccelerationStructureCommandEncoder> command_encoder = [command_buffer accelerationStructureCommandEncoder];
+        [command_encoder buildAccelerationStructure:mt_dst.acceleration_structure
+                                        descriptor:acceleration_structure_desc
+                                     scratchBuffer:mt_scratch.buffer.res
+                               scratchBufferOffset:scratch_offset];
+        [command_encoder endEncoding];
+    });
 }
 
 void MTCommandList::BuildTopLevelAS(
@@ -443,7 +463,37 @@ void MTCommandList::BuildTopLevelAS(
     uint32_t instance_count,
     BuildAccelerationStructureFlags flags)
 {
-    assert(false);
+    decltype(auto) mt_instance_data = instance_data->As<MTResource>();
+    
+    MTLInstanceAccelerationStructureDescriptor* acceleration_structure_desc = [MTLInstanceAccelerationStructureDescriptor descriptor];
+    acceleration_structure_desc.instancedAccelerationStructures = m_device.acceleration_structures;
+    acceleration_structure_desc.instanceCount = instance_count;
+    acceleration_structure_desc.instanceDescriptorBuffer = mt_instance_data.buffer.res;
+    acceleration_structure_desc.instanceDescriptorBufferOffset = instance_offset;
+    
+    // TODO: patch on GPU
+    uint8_t* instance_buffer = static_cast<uint8_t*>(acceleration_structure_desc.instanceDescriptorBuffer.contents);
+    for (uint32_t i = 0; i < instance_count; ++i) {
+        RaytracingGeometryInstance& instance = *reinterpret_cast<RaytracingGeometryInstance*>(instance_buffer);
+        MTLAccelerationStructureInstanceDescriptor desc = {};
+        auto matrix = glm::mat4x3(instance.transform);
+        memcpy(&desc.transformationMatrix, &matrix, sizeof(desc.transformationMatrix));
+        desc.mask = instance.instance_mask;
+        *reinterpret_cast<MTLAccelerationStructureInstanceDescriptor*>(instance_buffer) = desc;
+        instance_buffer += sizeof(RaytracingGeometryInstance);
+    }
+    
+    decltype(auto) mt_dst = dst->As<MTResource>();
+    decltype(auto) mt_scratch = scratch->As<MTResource>();
+    
+    ApplyAndRecord([&command_buffer = m_command_buffer, mt_dst, mt_scratch, scratch_offset, acceleration_structure_desc] {
+        id<MTLAccelerationStructureCommandEncoder> command_encoder = [command_buffer accelerationStructureCommandEncoder];
+        [command_encoder buildAccelerationStructure:mt_dst.acceleration_structure
+                                        descriptor:acceleration_structure_desc
+                                     scratchBuffer:mt_scratch.buffer.res
+                               scratchBufferOffset:scratch_offset];
+        [command_encoder endEncoding];
+    });
 }
 
 void MTCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)

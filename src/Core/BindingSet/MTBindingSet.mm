@@ -80,6 +80,26 @@ static void SetTexture(CommandEncoderType encoder, id<MTLTexture> texture, uint3
 }
 
 template<ShaderType shader_type, typename CommandEncoderType>
+static void SetAccelerationStructure(CommandEncoderType encoder, id<MTLAccelerationStructure> acceleration_structure, uint32_t index)
+{
+    if constexpr(shader_type == ShaderType::kVertex)
+    {
+        [encoder setVertexAccelerationStructure:acceleration_structure
+                                  atBufferIndex:index];
+    }
+    else if constexpr(shader_type == ShaderType::kPixel)
+    {
+        [encoder setFragmentAccelerationStructure:acceleration_structure
+                                    atBufferIndex:index];
+    }
+    else if constexpr(shader_type == ShaderType::kCompute)
+    {
+        [encoder setAccelerationStructure:acceleration_structure
+                            atBufferIndex:index];
+    }
+}
+
+template<ShaderType shader_type, typename CommandEncoderType>
 static void SetView(CommandEncoderType encoder, ViewType view_type, const std::shared_ptr<MTView>& view, uint32_t index)
 {
     decltype(auto) mt_resource = view->GetMTResource();
@@ -112,6 +132,14 @@ static void SetView(CommandEncoderType encoder, ViewType view_type, const std::s
         if (!texture && mt_resource)
             texture = mt_resource->texture.res;
         SetTexture<shader_type>(encoder, texture, index);
+        break;
+    }
+    case ViewType::kAccelerationStructure:
+    {
+        id<MTLAccelerationStructure> acceleration_structure = {};
+        if (mt_resource)
+            acceleration_structure = mt_resource->acceleration_structure;
+        SetAccelerationStructure<shader_type>(encoder, acceleration_structure, index);
         break;
     }
     default:

@@ -186,8 +186,15 @@ std::shared_ptr<Pipeline> MTDevice::CreateRayTracingPipeline(const RayTracingPip
 
 std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(AccelerationStructureType type, const std::shared_ptr<Resource>& resource, uint64_t offset)
 {
-    assert(false);
-    return {};
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
+    res->resource_type = ResourceType::kAccelerationStructure;
+    res->acceleration_structure = [m_device newAccelerationStructureWithSize:resource->GetWidth() - offset];
+    if (type == AccelerationStructureType::kBottomLevel)
+    {
+        res->acceleration_structure_handle = [acceleration_structures count];
+        [acceleration_structures addObject:res->acceleration_structure];
+    }
+    return res;
 }
 
 std::shared_ptr<QueryHeap> MTDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)
@@ -203,7 +210,7 @@ bool MTDevice::IsDxrSupported() const
 
 bool MTDevice::IsRayQuerySupported() const
 {
-    return false;
+    return true;
 }
 
 bool MTDevice::IsVariableRateShadingSupported() const
@@ -256,16 +263,74 @@ uint32_t MTDevice::GetShaderTableAlignment() const
     return 0;
 }
 
+MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags)
+{
+    MTLAccelerationStructureTriangleGeometryDescriptor* geometry_desc =
+    [MTLAccelerationStructureTriangleGeometryDescriptor descriptor];
+
+    auto vertex_res = std::static_pointer_cast<MTResource>(vertex.res);
+    auto index_res = std::static_pointer_cast<MTResource>(index.res);
+
+    switch (flags)
+    {
+    case RaytracingGeometryFlags::kOpaque:
+        geometry_desc.opaque = true;
+        break;
+    case RaytracingGeometryFlags::kNoDuplicateAnyHitInvocation:
+        geometry_desc.allowDuplicateIntersectionFunctionInvocation = false;
+        break;
+    }
+
+    auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
+    geometry_desc.vertexBuffer = vertex_res->buffer.res;
+    geometry_desc.vertexBufferOffset = vertex.offset * vertex_stride;
+    geometry_desc.vertexStride = vertex_stride;
+    geometry_desc.triangleCount = vertex.count / 3;
+    
+    if (index_res)
+    {
+        auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
+        geometry_desc.indexBuffer = index_res->buffer.res;
+        geometry_desc.indexBufferOffset = index.offset * index_stride;
+        geometry_desc.triangleCount = index.count / 3;
+    }
+
+    return geometry_desc;
+}
+
 RaytracingASPrebuildInfo MTDevice::GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const
 {
-    assert(false);
-    return {};
+    NSMutableArray* geometry_descs = [NSMutableArray array];
+    for (const auto& desc : descs)
+    {
+        MTLAccelerationStructureTriangleGeometryDescriptor* geometry_desc = FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags);
+        [geometry_descs addObject:geometry_desc];
+    }
+  
+    MTLPrimitiveAccelerationStructureDescriptor* acceleration_structure_desc = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
+    acceleration_structure_desc.geometryDescriptors = geometry_descs;
+    
+    MTLAccelerationStructureSizes sizes = [m_device accelerationStructureSizesWithDescriptor:acceleration_structure_desc];
+    
+    RaytracingASPrebuildInfo prebuild_info = {};
+    prebuild_info.acceleration_structure_size = sizes.accelerationStructureSize;
+    prebuild_info.build_scratch_data_size = sizes.buildScratchBufferSize;
+    prebuild_info.update_scratch_data_size = sizes.refitScratchBufferSize;
+    return prebuild_info;
 }
 
 RaytracingASPrebuildInfo MTDevice::GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const
 {
-    assert(false);
-    return {};
+    MTLInstanceAccelerationStructureDescriptor* acceleration_structure_desc = [MTLInstanceAccelerationStructureDescriptor descriptor];
+    acceleration_structure_desc.instanceCount = instance_count;
+    
+    MTLAccelerationStructureSizes sizes = [m_device accelerationStructureSizesWithDescriptor:acceleration_structure_desc];
+    
+    RaytracingASPrebuildInfo prebuild_info = {};
+    prebuild_info.acceleration_structure_size = sizes.accelerationStructureSize;
+    prebuild_info.build_scratch_data_size = sizes.buildScratchBufferSize;
+    prebuild_info.update_scratch_data_size = sizes.refitScratchBufferSize;
+    return prebuild_info;
 }
 
 const id<MTLDevice>& MTDevice::GetDevice() const

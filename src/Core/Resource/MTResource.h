@@ -49,6 +49,9 @@ public:
         id<MTLSamplerState> res;
     } sampler;
 
+    id<MTLAccelerationStructure> acceleration_structure;
+    uint64_t acceleration_structure_handle = 0;
+
 private:
     MTLTextureDescriptor* GetTextureDescriptor(MemoryType memory_type) const;
     

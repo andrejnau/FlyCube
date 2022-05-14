@@ -43,8 +43,21 @@ private:
     ShaderDesc m_desc = { ASSETS_PATH"shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_3" };
 };
 
+class RayQuery : public ShaderTestCase
+{
+public:
+    const ShaderDesc& GetShaderDesc() const override
+    {
+        return m_desc;
+    }
+
+private:
+    ShaderDesc m_desc = { ASSETS_PATH"shaders/RayQuery/RayQuery.hlsl", "MainCS", ShaderType::kCompute, "6_3" };
+};
+
 TEST_CASE("ShaderReflection")
 {
     RunTest(TrianglePS{});
     RunTest(TriangleVS{});
+    RunTest(RayQuery{});
 }
