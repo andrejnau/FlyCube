@@ -133,6 +133,11 @@ AppRect AppBox::GetAppRect() const
     return { m_width, m_height };
 }
 
+GLFWwindow* AppBox::GetWindow() const
+{
+    return m_window;
+}
+
 void* AppBox::GetNativeWindow() const
 {
 #if defined(_WIN32)
