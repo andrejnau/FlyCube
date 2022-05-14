@@ -4,7 +4,7 @@
 #include <Fence/Fence.h>
 #include <gli/format.hpp>
 
-using Window = void*;
+using WindowHandle = void*;
 
 class Swapchain : public QueryInterface
 {

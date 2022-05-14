@@ -7,7 +7,7 @@
 #include <Utilities/DXUtility.h>
 #include <gli/dx.hpp>
 
-DXSwapchain::DXSwapchain(DXCommandQueue& command_queue, Window window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+DXSwapchain::DXSwapchain(DXCommandQueue& command_queue, WindowHandle window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
     : m_command_queue(command_queue)
     , m_vsync(vsync)
 {

@@ -21,7 +21,7 @@
 class RenderDeviceImpl : public RenderDevice
 {
 public:
-    RenderDeviceImpl(const Settings& settings, Window window, uint32_t width, uint32_t height);
+    RenderDeviceImpl(const Settings& settings, WindowHandle window, uint32_t width, uint32_t height);
     ~RenderDeviceImpl();
 
     std::shared_ptr<RenderCommandList> CreateRenderCommandList(CommandListType type) override;
@@ -55,7 +55,7 @@ public:
 private:
     void InsertPresentBarrier();
 
-    Window m_window;
+    WindowHandle m_window;
     bool m_vsync;
     uint32_t m_frame_count;
     uint32_t m_frame_index = 0;

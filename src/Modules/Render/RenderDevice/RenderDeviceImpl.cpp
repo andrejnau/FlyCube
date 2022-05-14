@@ -3,7 +3,7 @@
 #include <RenderCommandList/RenderCommandListImpl.h>
 #include <Resource/ResourceBase.h>
 
-RenderDeviceImpl::RenderDeviceImpl(const Settings& settings, Window window, uint32_t width, uint32_t height)
+RenderDeviceImpl::RenderDeviceImpl(const Settings& settings, WindowHandle window, uint32_t width, uint32_t height)
     : m_window(window)
     , m_vsync(settings.vsync)
     , m_frame_count(settings.frame_count)
@@ -303,7 +303,7 @@ uint32_t RenderDeviceImpl::GetFrameIndex() const
     return m_frame_index;
 }
 
-std::shared_ptr<RenderDevice> CreateRenderDevice(const Settings& settings, Window window, uint32_t width, uint32_t height)
+std::shared_ptr<RenderDevice> CreateRenderDevice(const Settings& settings, WindowHandle window, uint32_t width, uint32_t height)
 {
     return std::make_shared<RenderDeviceImpl>(settings, window, width, height);
 }

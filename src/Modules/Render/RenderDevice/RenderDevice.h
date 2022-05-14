@@ -48,4 +48,4 @@ public:
     virtual void Resize(uint32_t width, uint32_t height) = 0;
 };
 
-std::shared_ptr<RenderDevice> CreateRenderDevice(const Settings& settings, Window window, uint32_t width, uint32_t height);
+std::shared_ptr<RenderDevice> CreateRenderDevice(const Settings& settings, WindowHandle window, uint32_t width, uint32_t height);

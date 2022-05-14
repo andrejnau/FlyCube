@@ -14,7 +14,7 @@ class VKSwapchain
     : public Swapchain
 {
 public:
-    VKSwapchain(VKCommandQueue& command_queue, Window window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync);
+    VKSwapchain(VKCommandQueue& command_queue, WindowHandle window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync);
     ~VKSwapchain();
     gli::format GetFormat() const override;
     std::shared_ptr<Resource> GetBackBuffer(uint32_t buffer) override;

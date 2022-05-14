@@ -13,7 +13,7 @@ static id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_
     return [device newTextureWithDescriptor:texture_descriptor];
 }
 
-MTSwapchain::MTSwapchain(MTDevice& device, Window window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+MTSwapchain::MTSwapchain(MTDevice& device, WindowHandle window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
     : m_device(device)
     , m_frame_count(frame_count)
     , m_width(width)

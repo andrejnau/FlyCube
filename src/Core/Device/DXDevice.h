@@ -17,7 +17,7 @@ public:
     std::shared_ptr<Memory> AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits) override;
     std::shared_ptr<CommandQueue> GetCommandQueue(CommandListType type) override;
     uint32_t GetTextureDataPitchAlignment() const override;
-    std::shared_ptr<Swapchain> CreateSwapchain(Window window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync) override;
+    std::shared_ptr<Swapchain> CreateSwapchain(WindowHandle window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync) override;
     std::shared_ptr<CommandList> CreateCommandList(CommandListType type) override;
     std::shared_ptr<Fence> CreateFence(uint64_t initial_value) override;
     std::shared_ptr<Resource> CreateTexture(TextureType type, uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels) override;
