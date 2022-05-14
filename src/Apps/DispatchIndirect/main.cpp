@@ -2,9 +2,9 @@
 #include "AppBox/ArgsParser.h"
 #include "RenderDevice/RenderDevice.h"
 #include "Texture/TextureLoader.h"
-
 #include "ProgramRef/Noise.h"
 #include "ProgramRef/Task.h"
+#include <chrono>
 
 float GetTime()
 {
