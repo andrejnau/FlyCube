@@ -472,6 +472,7 @@ void MTCommandList::BuildTopLevelAS(
     acceleration_structure_desc.instanceDescriptorBufferOffset = instance_offset;
     
     // TODO: patch on GPU
+    static_assert(sizeof(RaytracingGeometryInstance) == sizeof(MTLAccelerationStructureInstanceDescriptor));
     uint8_t* instance_buffer = static_cast<uint8_t*>(acceleration_structure_desc.instanceDescriptorBuffer.contents);
     for (uint32_t i = 0; i < instance_count; ++i) {
         RaytracingGeometryInstance& instance = *reinterpret_cast<RaytracingGeometryInstance*>(instance_buffer);
