@@ -60,8 +60,7 @@ if (WIN32)
 elseif(APPLE)
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_COMPILE_DEFINITIONS
-            VK_USE_PLATFORM_IOS_MVK
-            VK_USE_PLATFORM_MACOS_MVK
+            VK_USE_PLATFORM_METAL_EXT
     )
 else()
     set_property(TARGET vulkan APPEND PROPERTY
