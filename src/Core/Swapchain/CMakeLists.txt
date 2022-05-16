@@ -61,9 +61,7 @@ if (APPLE)
     if (VULKAN_SUPPORT)
         set_property(SOURCE VKSwapchain.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
     endif()
-endif()
-
-if (UNIX)
+elseif (UNIX)
     target_link_libraries(Swapchain
         X11-xcb
     )
