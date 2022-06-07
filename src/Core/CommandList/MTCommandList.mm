@@ -169,10 +169,17 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         }
         stencil_attachment.clearStencil = clear_desc.stencil;
     }
-    
+
     if (!has_attachment)
     {
-        render_pass_descriptor.defaultRasterSampleCount = render_pass_desc.sample_count;
+        decltype(auto) dummy_texture = framebuffer->As<FramebufferBase>().GetDummyAttachment();
+        if (!dummy_texture)
+        {
+            dummy_texture = m_device.CreateTexture(TextureType::k2D, BindFlag::kRenderTarget, gli::format::FORMAT_R8_UNORM_PACK8, render_pass_desc.sample_count, framebuffer_desc.width, framebuffer_desc.height, 1, 1);
+            dummy_texture->CommitMemory(MemoryType::kDefault);
+        }
+        decltype(auto) color_attachment = render_pass_descriptor.colorAttachments[0];
+        color_attachment.texture = dummy_texture->As<MTResource>().texture.res;
     }
     render_pass_descriptor.renderTargetWidth = framebuffer_desc.width;
     render_pass_descriptor.renderTargetHeight = framebuffer_desc.height;
