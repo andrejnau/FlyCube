@@ -129,7 +129,8 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
             return;
         attachment.texture = resource->texture.res;
         
-        if ([m_device.GetDevice() supportsFamily: MTLGPUFamilyApple5])
+        if ([m_device.GetDevice() supportsFamily: MTLGPUFamilyApple5] ||
+            [m_device.GetDevice() supportsFamily: MTLGPUFamilyCommon3])
         {
             render_pass_descriptor.renderTargetArrayLength = std::max<uint32_t>(render_pass_descriptor.renderTargetArrayLength, view->GetLayerCount());
         }

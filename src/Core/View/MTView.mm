@@ -57,22 +57,31 @@ void MTView::CreateTextureView()
     MTLTextureType texture_type = ConvertTextureType(m_view_desc.dimension);
     NSRange levels = {GetBaseMipLevel(), GetLevelCount()};
     NSRange slices = {GetBaseArrayLayer(), GetLayerCount()};
-    MTLTextureSwizzleChannels swizzle = MTLTextureSwizzleChannelsDefault;
     
     if (m_view_desc.plane_slice == 1)
     {
-        swizzle.green = MTLTextureSwizzleRed;
         if (format == MTLPixelFormatDepth32Float_Stencil8)
         {
             format = MTLPixelFormatX32_Stencil8;
         }
-    }
         
-    m_texture_view = [texture newTextureViewWithPixelFormat:format
-                                                textureType:texture_type
-                                                     levels:levels
-                                                     slices:slices
-                                                    swizzle:swizzle];
+        MTLTextureSwizzleChannels swizzle = MTLTextureSwizzleChannelsDefault;
+        swizzle.green = MTLTextureSwizzleRed;
+        
+        m_texture_view = [texture newTextureViewWithPixelFormat:format
+                                                    textureType:texture_type
+                                                         levels:levels
+                                                         slices:slices
+                                                        swizzle:swizzle];
+    }
+    else
+    {
+        m_texture_view = [texture newTextureViewWithPixelFormat:format
+                                                    textureType:texture_type
+                                                         levels:levels
+                                                         slices:slices];
+    }
+
     if (m_texture_view == nullptr)
     {
         NSLog(@"Error: failed to create texture view");

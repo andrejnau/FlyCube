@@ -1,4 +1,5 @@
 #include "ShaderReflection/SPIRVReflection.h"
+#include <Utilities/Common.h>
 
 ShaderKind ConvertShaderKind(spv::ExecutionModel execution_model)
 {
@@ -335,7 +336,7 @@ VariableLayout GetBufferLayout(ViewType view_type, const spirv_cross::CompilerHL
     VariableLayout layout = {};
     decltype(auto) type = compiler.get_type(resource.base_type_id);
     layout.name = compiler.get_name(resource.id);
-    layout.size = compiler.get_declared_struct_size(type);
+    layout.size = Align(compiler.get_declared_struct_size(type), 16);
     assert(type.basetype == spirv_cross::SPIRType::BaseType::Struct);
     for (size_t i = 0; i < type.member_types.size(); ++i)
     {
