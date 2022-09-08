@@ -217,7 +217,9 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
     device_vulkan12_features.drawIndirectCount = true;
+#ifndef USE_STATIC_MOLTENVK
     device_vulkan12_features.bufferDeviceAddress = true;
+#endif
     device_vulkan12_features.timelineSemaphore = true;
     device_vulkan12_features.runtimeDescriptorArray = true;
     device_vulkan12_features.descriptorBindingVariableDescriptorCount = true;
