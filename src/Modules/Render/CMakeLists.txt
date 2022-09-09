@@ -1,3 +1,0 @@
-add_subdirectory(ObjectCache)
-add_subdirectory(RenderDevice)
-add_subdirectory(RenderCommandList)

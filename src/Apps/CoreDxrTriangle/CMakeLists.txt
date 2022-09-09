@@ -8,26 +8,7 @@ set(sources
     ${source_path}/main.cpp
 )
 
-set(lib_shaders
-    ${shaders_path}/RayTracing.hlsl
-    ${shaders_path}/RayTracingCallable.hlsl
-    ${shaders_path}/RayTracingHit.hlsl
-)
-
-set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_ENTRYPOINT " ")
-set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_TYPE Library)
-set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_MODEL 6.3)
-set_property(SOURCE ${lib_shaders} PROPERTY VS_SHADER_FLAGS "/Zi /auto-binding-space 0")
-
-set(shaders_files ${lib_shaders})
-
-include(shader_parser)
-gen_shaders_ref(${target} "${shaders_files}" shaders_ref)
-
-source_group("Shader Files" FILES ${shaders_files})
-source_group("Shader Ref Files" FILES ${shaders_ref})
-
-add_executable(${target} WIN32 ${headers} ${sources} ${shaders_files} ${shaders_ref})
+add_executable(${target} WIN32 ${headers} ${sources})
 
 if (WIN32)
     set_target_properties(${target} PROPERTIES
@@ -41,7 +22,6 @@ target_include_directories(${target}
 )
 
 target_link_libraries(${target}
-    assimp
     AppBox
     Utilities
     Instance

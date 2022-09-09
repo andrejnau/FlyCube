@@ -1,9 +1,3 @@
-[submodule "3rdparty/imgui"]
-	path = 3rdparty/imgui
-	url = https://github.com/ocornut/imgui.git
-[submodule "3rdparty/assimp"]
-	path = 3rdparty/assimp
-	url = https://github.com/assimp/assimp.git
 [submodule "3rdparty/glfw"]
 	path = 3rdparty/glfw
 	url = https://github.com/glfw/glfw.git
@@ -16,18 +10,12 @@
 [submodule "3rdparty/SPIRV-Cross"]
 	path = 3rdparty/SPIRV-Cross
 	url = https://github.com/KhronosGroup/SPIRV-Cross.git
-[submodule "3rdparty/Mustache"]
-	path = 3rdparty/Mustache
-	url = https://github.com/kainjow/Mustache.git
 [submodule "3rdparty/Catch2"]
 	path = 3rdparty/Catch2
 	url = https://github.com/catchorg/Catch2.git
 [submodule "3rdparty/dxc"]
 	path = 3rdparty/dxc
 	url = https://github.com/andrejnau/dxc
-[submodule "3rdparty/d3dx12"]
-	path = 3rdparty/d3dx12
-	url = https://github.com/andrejnau/d3dx12.git
 [submodule "3rdparty/DirectX-Headers"]
 	path = 3rdparty/DirectX-Headers
 	url = https://github.com/microsoft/DirectX-Headers.git
