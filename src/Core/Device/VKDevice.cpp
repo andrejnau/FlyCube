@@ -113,7 +113,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_KHR_MAINTENANCE1_EXTENSION_NAME,
         VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
         VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
-        VK_NV_MESH_SHADER_EXTENSION_NAME,
+        VK_EXT_MESH_SHADER_EXTENSION_NAME,
         VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
     };
 
@@ -127,7 +127,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
             m_is_variable_rate_shading_supported = true;
         if (std::string(extension.extensionName.data()) == VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
             m_is_dxr_supported = true;
-        if (std::string(extension.extensionName.data()) == VK_NV_MESH_SHADER_EXTENSION_NAME)
+        if (std::string(extension.extensionName.data()) == VK_EXT_MESH_SHADER_EXTENSION_NAME)
             m_is_mesh_shading_supported = true;
         if (std::string(extension.extensionName.data()) == VK_KHR_RAY_QUERY_EXTENSION_NAME)
             m_is_ray_query_supported = true;

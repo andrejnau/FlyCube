@@ -13,7 +13,7 @@ VKComputePipeline::VKComputePipeline(VKDevice& device, const ComputePipelineDesc
     assert(m_shader_stage_create_info.size() == 1);
     pipeline_info.stage = m_shader_stage_create_info.front();
     pipeline_info.layout = m_pipeline_layout;
-    m_pipeline = m_device.GetDevice().createComputePipelineUnique({}, pipeline_info);
+    auto [result, m_pipeline] = m_device.GetDevice().createComputePipelineUnique({}, pipeline_info);
 }
 
 PipelineType VKComputePipeline::GetPipelineType() const

@@ -205,7 +205,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     pipeline_info.renderPass = GetRenderPass();
     pipeline_info.pDynamicState = &pipelineDynamicStateCreateInfo;
 
-    m_pipeline = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info);
+    auto [result, m_pipeline] = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info);
 }
 
 PipelineType VKGraphicsPipeline::GetPipelineType() const

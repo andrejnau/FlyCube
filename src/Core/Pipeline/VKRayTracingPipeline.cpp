@@ -58,7 +58,7 @@ VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const RayTracingPip
     ray_pipeline_info.layout = m_pipeline_layout;
 
 #ifndef USE_STATIC_MOLTENVK
-    m_pipeline = m_device.GetDevice().createRayTracingPipelineKHRUnique({}, {}, ray_pipeline_info);
+    auto [result, m_pipeline] = m_device.GetDevice().createRayTracingPipelineKHRUnique({}, {}, ray_pipeline_info);
 #endif
 }
 

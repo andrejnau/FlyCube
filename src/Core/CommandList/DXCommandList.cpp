@@ -384,6 +384,11 @@ void DXCommandList::DispatchMesh(uint32_t thread_group_count_x)
     m_command_list6->DispatchMesh(thread_group_count_x, 1, 1);
 }
 
+void DXCommandList::DispatchMesh(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
+{
+    m_command_list6->DispatchMesh(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+}
+
 static D3D12_GPU_VIRTUAL_ADDRESS GetVirtualAddress(const RayTracingShaderTable& table)
 {
     if (!table.resource)

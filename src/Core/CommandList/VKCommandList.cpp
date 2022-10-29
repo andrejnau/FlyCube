@@ -239,7 +239,14 @@ void VKCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_b
 void VKCommandList::DispatchMesh(uint32_t thread_group_count_x)
 {
 #ifndef USE_STATIC_MOLTENVK
-    m_command_list->drawMeshTasksNV(thread_group_count_x, 0);
+    m_command_list->drawMeshTasksEXT(thread_group_count_x, 1, 1);
+#endif
+}
+
+void VKCommandList::DispatchMesh(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
+{
+#ifndef USE_STATIC_MOLTENVK
+    m_command_list->drawMeshTasksEXT(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 #endif
 }
 
