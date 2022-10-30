@@ -369,6 +369,11 @@ void MTCommandList::DispatchMesh(uint32_t thread_group_count_x)
     assert(false);
 }
 
+void MTCommandList::DispatchMesh(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
+{
+    assert(false);
+}
+
 void MTCommandList::DispatchRays(const RayTracingShaderTables& shader_tables, uint32_t width, uint32_t height, uint32_t depth)
 {
     assert(false);
