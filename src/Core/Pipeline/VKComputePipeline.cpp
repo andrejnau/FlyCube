@@ -13,7 +13,11 @@ VKComputePipeline::VKComputePipeline(VKDevice& device, const ComputePipelineDesc
     assert(m_shader_stage_create_info.size() == 1);
     pipeline_info.stage = m_shader_stage_create_info.front();
     pipeline_info.layout = m_pipeline_layout;
-    auto [result, m_pipeline] = m_device.GetDevice().createComputePipelineUnique({}, pipeline_info);
+    auto resultValue = m_device.GetDevice().createComputePipelineUnique({}, pipeline_info);
+    if (resultValue.result == vk::Result::eSuccess)
+        m_pipeline = std::move(resultValue.value);
+    else
+        assert(false);
 }
 
 PipelineType VKComputePipeline::GetPipelineType() const

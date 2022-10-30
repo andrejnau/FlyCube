@@ -205,7 +205,11 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     pipeline_info.renderPass = GetRenderPass();
     pipeline_info.pDynamicState = &pipelineDynamicStateCreateInfo;
 
-    auto [result, m_pipeline] = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info);
+    auto resultValue = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info);
+    if (resultValue.result == vk::Result::eSuccess)
+        m_pipeline = std::move(resultValue.value);
+    else
+        assert(false);
 }
 
 PipelineType VKGraphicsPipeline::GetPipelineType() const

@@ -58,7 +58,11 @@ VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const RayTracingPip
     ray_pipeline_info.layout = m_pipeline_layout;
 
 #ifndef USE_STATIC_MOLTENVK
-    auto [result, m_pipeline] = m_device.GetDevice().createRayTracingPipelineKHRUnique({}, {}, ray_pipeline_info);
+    auto resultValue = m_device.GetDevice().createRayTracingPipelineKHRUnique({}, {}, ray_pipeline_info);
+    if (resultValue.result == vk::Result::eSuccess)
+        m_pipeline = std::move(resultValue.value);
+    else
+        assert(false);
 #endif
 }
 
