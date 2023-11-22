@@ -114,7 +114,7 @@ fence->Wait(fence_value);
 ```
 
 ### Advanced sample
-[SponzaPbr](https://github.com/andrejnau/SponzaPbr) was originally part of the repository. It is my sandbox for rendering techniques.
+[SponzaPbr](https://github.com/andrejnau/SponzaPbr) was originally part of the repository. This is my sandbox for rendering techniques.
 * Features
   * Deferred rendering
   * Physically based rendering
