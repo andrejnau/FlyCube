@@ -1,12 +1,12 @@
 #pragma once
-#include <memory>
-#include <functional>
 #include <vulkan/vulkan.hpp>
+
+#include <functional>
+#include <memory>
 
 class VKGPUBindlessDescriptorPoolTyped;
 
-class VKGPUDescriptorPoolRange
-{
+class VKGPUDescriptorPoolRange {
 public:
     VKGPUDescriptorPoolRange(VKGPUBindlessDescriptorPoolTyped& pool,
                              vk::DescriptorSet descriptor_set,

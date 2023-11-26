@@ -1,15 +1,16 @@
 #pragma once
-#include <map>
-#include <algorithm>
-#include <vulkan/vulkan.hpp>
 #include "GPUDescriptorPool/VKGPUDescriptorPoolRange.h"
+
+#include <vulkan/vulkan.hpp>
+
+#include <algorithm>
+#include <map>
 
 constexpr uint32_t max_bindless_heap_size = 10000;
 
 class VKDevice;
 
-class VKGPUBindlessDescriptorPoolTyped
-{
+class VKGPUBindlessDescriptorPoolTyped {
 public:
     VKGPUBindlessDescriptorPoolTyped(VKDevice& device, vk::DescriptorType type);
     VKGPUDescriptorPoolRange Allocate(uint32_t count);
@@ -23,8 +24,7 @@ private:
     vk::DescriptorType m_type;
     uint32_t m_size = 0;
     uint32_t m_offset = 0;
-    struct Descriptor
-    {
+    struct Descriptor {
         vk::UniqueDescriptorPool pool;
         vk::UniqueDescriptorSetLayout set_layout;
         vk::UniqueDescriptorSet set;

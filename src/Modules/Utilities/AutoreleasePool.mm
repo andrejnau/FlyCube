@@ -1,8 +1,8 @@
 #include "Utilities/AutoreleasePool.h"
+
 #import <Foundation/NSAutoreleasePool.h>
 
-class AutoreleasePoolImpl : public AutoreleasePool
-{
+class AutoreleasePoolImpl : public AutoreleasePool {
 public:
     ~AutoreleasePoolImpl()
     {
@@ -18,8 +18,7 @@ public:
 private:
     void Drain()
     {
-        if (m_autorelease_pool)
-        {
+        if (m_autorelease_pool) {
             [m_autorelease_pool drain];
             m_autorelease_pool = nullptr;
         }

@@ -6,11 +6,12 @@
 #include <mach-o/dyld.h>
 #else
 #include <linux/limits.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <unistd.h>
 #endif
 
 #include <nowide/convert.hpp>
+
 #include <vector>
 
 std::string GetExecutablePath()
@@ -21,11 +22,13 @@ std::string GetExecutablePath()
     return nowide::narrow(buf);
 #elif defined(__APPLE__)
     uint32_t buf_size = 0;
-    if (_NSGetExecutablePath(nullptr, &buf_size) != -1)
+    if (_NSGetExecutablePath(nullptr, &buf_size) != -1) {
         return {};
+    }
     std::vector<char> buf(buf_size);
-    if (_NSGetExecutablePath(buf.data(), &buf_size) != 0)
+    if (_NSGetExecutablePath(buf.data(), &buf_size) != 0) {
         return {};
+    }
     return buf.data();
 #else
     char buf[PATH_MAX] = {};
@@ -45,12 +48,14 @@ std::string GetEnvironmentVar(const std::string& name)
 #ifdef _WIN32
     std::wstring name_utf16 = nowide::widen(name);
     DWORD value_size = GetEnvironmentVariableW(name_utf16.c_str(), nullptr, 0);
-    if (value_size == 0)
+    if (value_size == 0) {
         return {};
+    }
 
     std::vector<wchar_t> value_buffer(value_size);
-    if (GetEnvironmentVariableW(name_utf16.c_str(), value_buffer.data(), value_size) != value_size - 1)
+    if (GetEnvironmentVariableW(name_utf16.c_str(), value_buffer.data(), value_size) != value_size - 1) {
         return {};
+    }
 
     return nowide::narrow(value_buffer.data());
 #else

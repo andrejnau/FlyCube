@@ -3,8 +3,7 @@
 
 class SWDevice;
 
-class SWCommandQueue : public CommandQueue
-{
+class SWCommandQueue : public CommandQueue {
 public:
     SWCommandQueue(SWDevice& device, CommandListType type);
     void Wait(const std::shared_ptr<Fence>& fence, uint64_t value) override;

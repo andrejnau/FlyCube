@@ -1,19 +1,20 @@
 #pragma once
 #include "Resource/ResourceBase.h"
-#include <vulkan/vulkan.hpp>
+
 #include <glm/glm.hpp>
+#include <vulkan/vulkan.hpp>
+
 #include <map>
 
 static bool operator<(const VkImageSubresourceRange& lhs, const VkImageSubresourceRange& rhs)
 {
     return std::tie(lhs.aspectMask, lhs.baseArrayLayer, lhs.baseMipLevel, lhs.layerCount, lhs.levelCount) <
-        std::tie(rhs.aspectMask, rhs.baseArrayLayer, rhs.baseMipLevel, rhs.layerCount, rhs.levelCount);
+           std::tie(rhs.aspectMask, rhs.baseArrayLayer, rhs.baseMipLevel, rhs.layerCount, rhs.levelCount);
 };
 
 class VKDevice;
 
-class VKResource : public ResourceBase
-{
+class VKResource : public ResourceBase {
 public:
     VKResource(VKDevice& device);
 
@@ -31,8 +32,7 @@ public:
     bool AllowCommonStatePromotion(ResourceState state_after) override;
     MemoryRequirements GetMemoryRequirements() const override;
 
-    struct Image
-    {
+    struct Image {
         vk::Image res;
         vk::UniqueImage res_owner;
         vk::Format format = vk::Format::eUndefined;
@@ -42,14 +42,12 @@ public:
         uint32_t array_layers = 1;
     } image;
 
-    struct Buffer
-    {
+    struct Buffer {
         vk::UniqueBuffer res;
         uint32_t size = 0;
     } buffer;
 
-    struct Sampler
-    {
+    struct Sampler {
         vk::UniqueSampler res;
     } sampler;
 
@@ -58,7 +56,10 @@ public:
 #else
     struct {
         vk::AccelerationStructureKHR value = {};
-        vk::AccelerationStructureKHR& get() { return value; }
+        vk::AccelerationStructureKHR& get()
+        {
+            return value;
+        }
     } acceleration_structure_handle = {};
 #endif
 

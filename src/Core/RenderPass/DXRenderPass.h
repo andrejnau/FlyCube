@@ -1,8 +1,7 @@
 #pragma once
 #include "RenderPass/RenderPass.h"
 
-class DXRenderPass : public RenderPass
-{
+class DXRenderPass : public RenderPass {
 public:
     DXRenderPass(const RenderPassDesc& desc);
     const RenderPassDesc& GetDesc() const override;

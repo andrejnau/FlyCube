@@ -1,7 +1,8 @@
 #include "AppBox/AppBox.h"
-#include <sstream>
+
 #include <cassert>
 #include <cmath>
+#include <sstream>
 #if defined(_WIN32)
 #define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__APPLE__)
@@ -19,8 +20,7 @@ AppBox::AppBox(const std::string& title, Settings setting)
     : m_setting(setting)
 {
     std::string api_str;
-    switch (setting.api_type)
-    {
+    switch (setting.api_type) {
     case ApiType::kDX12:
         api_str = "[DX12]";
         break;
@@ -70,8 +70,9 @@ AppBox::AppBox(const std::string& title, Settings setting)
 
 AppBox::~AppBox()
 {
-    if (m_window)
+    if (m_window) {
         glfwDestroyWindow(m_window);
+    }
     glfwTerminate();
 }
 
@@ -87,17 +88,16 @@ void AppBox::UpdateFps()
     double current_time = glfwGetTime();
     double delta = current_time - m_last_time;
     double eps = 1e-6;
-    if (delta + eps > 1.0)
-    {
+    if (delta + eps > 1.0) {
         std::stringstream buf;
-        if (m_last_time > 0)
-        {
+        if (m_last_time > 0) {
             double fps = m_frame_number / delta;
             buf << "[";
-            if (m_setting.round_fps)
+            if (m_setting.round_fps) {
                 buf << static_cast<int64_t>(std::round(fps));
-            else
+            } else {
                 buf << fps;
+            }
             buf << " FPS]";
             m_fps = buf.str();
         }
@@ -111,13 +111,15 @@ void AppBox::UpdateTitle()
     std::stringstream buf;
     buf << m_title;
 
-    if (!m_gpu_name.empty())
+    if (!m_gpu_name.empty()) {
         buf << " " << m_gpu_name;
+    }
 
     UpdateFps();
 
-    if (!m_fps.empty())
+    if (!m_fps.empty()) {
         buf << " " << m_fps;
+    }
 
     glfwSetWindowTitle(m_window, buf.str().c_str());
 }
@@ -158,12 +160,9 @@ void* AppBox::GetNativeWindow() const
 
 void AppBox::SwitchFullScreenMode()
 {
-    if (glfwGetWindowMonitor(m_window))
-    {
+    if (glfwGetWindowMonitor(m_window)) {
         glfwSetWindowMonitor(m_window, nullptr, m_window_box[0], m_window_box[1], m_window_box[2], m_window_box[3], 0);
-    }
-    else
-    {
+    } else {
         glfwGetWindowPos(m_window, &m_window_box[0], &m_window_box[1]);
         glfwGetWindowSize(m_window, &m_window_box[2], &m_window_box[3]);
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
@@ -174,13 +173,15 @@ void AppBox::SwitchFullScreenMode()
 
 void AppBox::OnSizeChanged(GLFWwindow* m_window, int width, int height)
 {
-    if (width == 0 && height == 0)
+    if (width == 0 && height == 0) {
         return;
+    }
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
     self->m_width = width;
     self->m_height = height;
-    if (self->m_window_listener)
+    if (self->m_window_listener) {
         self->m_window_listener->OnResize(width, height);
+    }
 }
 
 void AppBox::OnKey(GLFWwindow* m_window, int key, int scancode, int action, int mods)
@@ -188,51 +189,50 @@ void AppBox::OnKey(GLFWwindow* m_window, int key, int scancode, int action, int 
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
     self->m_keys[key] = action;
 
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         self->m_exit_request = true;
+    }
 
-    if (self->m_keys[GLFW_KEY_RIGHT_ALT] == GLFW_PRESS &&
-        self->m_keys[GLFW_KEY_ENTER] == GLFW_PRESS)
-    {
+    if (self->m_keys[GLFW_KEY_RIGHT_ALT] == GLFW_PRESS && self->m_keys[GLFW_KEY_ENTER] == GLFW_PRESS) {
         self->SwitchFullScreenMode();
     }
 
-    if (key == GLFW_KEY_L && action == GLFW_PRESS)
-    {
-        if (self->m_mouse_mode == GLFW_CURSOR_HIDDEN)
+    if (key == GLFW_KEY_L && action == GLFW_PRESS) {
+        if (self->m_mouse_mode == GLFW_CURSOR_HIDDEN) {
             self->m_mouse_mode = GLFW_CURSOR_DISABLED;
-        else
+        } else {
             self->m_mouse_mode = GLFW_CURSOR_HIDDEN;
+        }
 
-        if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL)
+        if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL) {
             glfwSetInputMode(m_window, GLFW_CURSOR, self->m_mouse_mode);
+        }
     }
 
-    if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
-    {
-        if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
+    if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
+        if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
             glfwSetInputMode(m_window, GLFW_CURSOR, self->m_mouse_mode);
-        else
+        } else {
             glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
     }
 
-    if (self->m_input_listener)
+    if (self->m_input_listener) {
         self->m_input_listener->OnKey(key, action);
+    }
 }
 
 void AppBox::OnMouse(GLFWwindow* m_window, double xpos, double ypos)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
-    if (!self->m_input_listener)
+    if (!self->m_input_listener) {
         return;
+    }
     static bool first_event = true;
-    if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL)
-    {
+    if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL) {
         self->m_input_listener->OnMouse(first_event, xpos, ypos);
         first_event = false;
-    }
-    else
-    {
+    } else {
         self->m_input_listener->OnMouse(first_event, xpos, ypos);
         first_event = true;
     }
@@ -241,23 +241,26 @@ void AppBox::OnMouse(GLFWwindow* m_window, double xpos, double ypos)
 void AppBox::OnMouseButton(GLFWwindow* m_window, int button, int action, int mods)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
-    if (!self->m_input_listener)
+    if (!self->m_input_listener) {
         return;
+    }
     self->m_input_listener->OnMouseButton(button, action);
 }
 
 void AppBox::OnScroll(GLFWwindow* m_window, double xoffset, double yoffset)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
-    if (!self->m_input_listener)
+    if (!self->m_input_listener) {
         return;
+    }
     self->m_input_listener->OnScroll(xoffset, yoffset);
 }
 
 void AppBox::OnInputChar(GLFWwindow* m_window, uint32_t ch)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
-    if (!self->m_input_listener)
+    if (!self->m_input_listener) {
         return;
+    }
     self->m_input_listener->OnInputChar(ch);
 }

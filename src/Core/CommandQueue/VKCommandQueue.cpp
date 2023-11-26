@@ -1,7 +1,8 @@
 #include "CommandQueue/VKCommandQueue.h"
-#include <CommandList/VKCommandList.h>
-#include <Fence/VKTimelineSemaphore.h>
-#include <Device/VKDevice.h>
+
+#include "CommandList/VKCommandList.h"
+#include "Device/VKDevice.h"
+#include "Fence/VKTimelineSemaphore.h"
 
 VKCommandQueue::VKCommandQueue(VKDevice& device, CommandListType type, uint32_t queue_family_index)
     : m_device(device)
@@ -43,10 +44,10 @@ void VKCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
 void VKCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
 {
     std::vector<vk::CommandBuffer> vk_command_lists;
-    for (auto& command_list : command_lists)
-    {
-        if (!command_list)
+    for (auto& command_list : command_lists) {
+        if (!command_list) {
             continue;
+        }
         decltype(auto) vk_command_list = command_list->As<VKCommandList>();
         vk_command_lists.emplace_back(vk_command_list.GetCommandList());
     }

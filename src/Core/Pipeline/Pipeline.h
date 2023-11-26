@@ -1,10 +1,10 @@
 #pragma once
-#include <Instance/QueryInterface.h>
-#include <Instance/BaseTypes.h>
+#include "Instance/BaseTypes.h"
+#include "Instance/QueryInterface.h"
+
 #include <memory>
 
-class Pipeline : public QueryInterface
-{
+class Pipeline : public QueryInterface {
 public:
     virtual ~Pipeline() = default;
     virtual PipelineType GetPipelineType() const = 0;

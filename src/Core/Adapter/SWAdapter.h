@@ -3,8 +3,7 @@
 
 class SWInstance;
 
-class SWAdapter : public Adapter
-{
+class SWAdapter : public Adapter {
 public:
     SWAdapter(SWInstance& instance);
     const std::string& GetName() const override;

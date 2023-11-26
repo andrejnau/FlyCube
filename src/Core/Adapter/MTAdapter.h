@@ -1,11 +1,11 @@
 #pragma once
 #include "Adapter.h"
+
 #import <Metal/Metal.h>
 
 class MTInstance;
 
-class MTAdapter : public Adapter
-{
+class MTAdapter : public Adapter {
 public:
     MTAdapter(MTInstance& instance, const id<MTLDevice>& device);
     const std::string& GetName() const override;

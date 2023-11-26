@@ -1,7 +1,8 @@
 #include "Swapchain/MTSwapchain.h"
-#include <Device/MTDevice.h>
-#include <Resource/MTResource.h>
-#include <Instance/MTInstance.h>
+
+#include "Device/MTDevice.h"
+#include "Instance/MTInstance.h"
+#include "Resource/MTResource.h"
 
 static id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
 {
@@ -13,7 +14,12 @@ static id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_
     return [device newTextureWithDescriptor:texture_descriptor];
 }
 
-MTSwapchain::MTSwapchain(MTDevice& device, WindowHandle window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+MTSwapchain::MTSwapchain(MTDevice& device,
+                         WindowHandle window,
+                         uint32_t width,
+                         uint32_t height,
+                         uint32_t frame_count,
+                         bool vsync)
     : m_device(device)
     , m_frame_count(frame_count)
     , m_width(width)
@@ -29,8 +35,7 @@ MTSwapchain::MTSwapchain(MTDevice& device, WindowHandle window, uint32_t width, 
 #endif
     m_layer.framebufferOnly = NO;
 
-    for (size_t i = 0; i < frame_count; ++i)
-    {
+    for (size_t i = 0; i < frame_count; ++i) {
         std::shared_ptr<MTResource> res = std::make_shared<MTResource>(m_device);
         res->texture.res = CrateTexture(device.GetDevice(), width, height);
         res->is_back_buffer = true;
@@ -69,14 +74,14 @@ void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
     [blit_encoder copyFromTexture:resource.texture.res
                       sourceSlice:0
                       sourceLevel:0
-                     sourceOrigin:{0, 0, 0}
-                       sourceSize:{m_width, m_height, 1}
+                     sourceOrigin:{ 0, 0, 0 }
+                       sourceSize:{ m_width, m_height, 1 }
                         toTexture:drawable.texture
                  destinationSlice:0
                  destinationLevel:0
-                destinationOrigin:{0, 0, 0}];
+                destinationOrigin:{ 0, 0, 0 }];
     [blit_encoder endEncoding];
-    [command_buffer addScheduledHandler: ^(id<MTLCommandBuffer>) {
+    [command_buffer addScheduledHandler:^(id<MTLCommandBuffer>) {
         [drawable present];
     }];
     [command_buffer commit];

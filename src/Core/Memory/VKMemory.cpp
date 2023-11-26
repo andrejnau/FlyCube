@@ -1,7 +1,12 @@
 #include "Memory/VKMemory.h"
-#include <Device/VKDevice.h>
 
-VKMemory::VKMemory(VKDevice& device, uint64_t size, MemoryType memory_type, uint32_t memory_type_bits, const vk::MemoryDedicatedAllocateInfoKHR* dedicated_allocate_info)
+#include "Device/VKDevice.h"
+
+VKMemory::VKMemory(VKDevice& device,
+                   uint64_t size,
+                   MemoryType memory_type,
+                   uint32_t memory_type_bits,
+                   const vk::MemoryDedicatedAllocateInfoKHR* dedicated_allocate_info)
     : m_memory_type(memory_type)
 {
     vk::MemoryAllocateFlagsInfo alloc_flag_info = {};
@@ -9,12 +14,13 @@ VKMemory::VKMemory(VKDevice& device, uint64_t size, MemoryType memory_type, uint
     alloc_flag_info.flags = vk::MemoryAllocateFlagBits::eDeviceAddress;
 
     vk::MemoryPropertyFlags properties = {};
-    if (memory_type == MemoryType::kDefault)
+    if (memory_type == MemoryType::kDefault) {
         properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
-    else if (memory_type == MemoryType::kUpload)
+    } else if (memory_type == MemoryType::kUpload) {
         properties = vk::MemoryPropertyFlagBits::eHostVisible;
-    else if (memory_type == MemoryType::kReadback)
+    } else if (memory_type == MemoryType::kReadback) {
         properties = vk::MemoryPropertyFlagBits::eHostVisible;
+    }
 
     vk::MemoryAllocateInfo alloc_info = {};
     alloc_info.pNext = &alloc_flag_info;

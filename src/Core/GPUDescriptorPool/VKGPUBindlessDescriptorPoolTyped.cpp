@@ -1,5 +1,7 @@
 #include "GPUDescriptorPool/VKGPUBindlessDescriptorPoolTyped.h"
-#include <Device/VKDevice.h>
+
+#include "Device/VKDevice.h"
+
 #include <stdexcept>
 
 VKGPUBindlessDescriptorPoolTyped::VKGPUBindlessDescriptorPoolTyped(VKDevice& device, vk::DescriptorType type)
@@ -10,11 +12,13 @@ VKGPUBindlessDescriptorPoolTyped::VKGPUBindlessDescriptorPoolTyped(VKDevice& dev
 
 void VKGPUBindlessDescriptorPoolTyped::ResizeHeap(uint32_t req_size)
 {
-    if (req_size > max_bindless_heap_size)
+    if (req_size > max_bindless_heap_size) {
         throw std::runtime_error("Requested size for bindless pool more than max_bindless_heap_size");
+    }
 
-    if (m_size >= req_size)
+    if (m_size >= req_size) {
         return;
+    }
 
     Descriptor descriptor;
 
@@ -61,8 +65,7 @@ void VKGPUBindlessDescriptorPoolTyped::ResizeHeap(uint32_t req_size)
 
     descriptor.set = std::move(m_device.GetDevice().allocateDescriptorSetsUnique(alloc_info).front());
 
-    if (m_size)
-    {
+    if (m_size) {
         vk::CopyDescriptorSet copy_descriptors;
         copy_descriptors.srcSet = m_descriptor.set.get();
         copy_descriptors.dstSet = descriptor.set.get();
@@ -79,15 +82,15 @@ void VKGPUBindlessDescriptorPoolTyped::ResizeHeap(uint32_t req_size)
 VKGPUDescriptorPoolRange VKGPUBindlessDescriptorPoolTyped::Allocate(uint32_t count)
 {
     auto it = m_empty_ranges.lower_bound(count);
-    if (it != m_empty_ranges.end())
-    {
+    if (it != m_empty_ranges.end()) {
         size_t offset = it->second;
         size_t size = it->first;
         m_empty_ranges.erase(it);
         return VKGPUDescriptorPoolRange(*this, m_descriptor.set.get(), offset, size, m_type);
     }
-    if (m_offset + count > m_size)
+    if (m_offset + count > m_size) {
         ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
+    }
     m_offset += count;
     return VKGPUDescriptorPoolRange(*this, m_descriptor.set.get(), m_offset - count, count, m_type);
 }

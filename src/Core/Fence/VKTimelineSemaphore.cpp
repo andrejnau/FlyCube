@@ -1,5 +1,6 @@
 #include "Fence/VKTimelineSemaphore.h"
-#include <Device/VKDevice.h>
+
+#include "Device/VKDevice.h"
 
 VKTimelineSemaphore::VKTimelineSemaphore(VKDevice& device, uint64_t initial_value)
     : m_device(device)

@@ -1,5 +1,6 @@
 #include "BindingSetLayout/SWBindingSetLayout.h"
-#include <Device/SWDevice.h>
+
+#include "Device/SWDevice.h"
 
 SWBindingSetLayout::SWBindingSetLayout(SWDevice& device, const std::vector<BindKey>& descs)
     : m_device(device)

@@ -1,13 +1,13 @@
 #pragma once
 #include "Adapter/Adapter.h"
+
 #include <dxgi.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
 class DXInstance;
 
-class DXAdapter : public Adapter
-{
+class DXAdapter : public Adapter {
 public:
     DXAdapter(DXInstance& instance, const ComPtr<IDXGIAdapter1>& adapter);
     const std::string& GetName() const override;

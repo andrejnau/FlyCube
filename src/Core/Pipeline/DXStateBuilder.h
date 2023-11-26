@@ -1,11 +1,11 @@
 #pragma once
-#include <vector>
 #include <directx/d3d12.h>
 
-class DXStateBuilder
-{
+#include <vector>
+
+class DXStateBuilder {
 public:
-    template<typename T, typename U>
+    template <typename T, typename U>
     void AddState(const U& state)
     {
         size_t offset = m_data.size();

@@ -1,15 +1,16 @@
 #pragma once
+#include "Instance/BaseTypes.h"
 #include "Pipeline/DXPipeline.h"
-#include <Instance/BaseTypes.h>
+
 #include <directx/d3d12.h>
 #include <wrl.h>
+
 #include <set>
 using namespace Microsoft::WRL;
 
 class DXDevice;
 
-class DXRayTracingPipeline : public DXPipeline
-{
+class DXRayTracingPipeline : public DXPipeline {
 public:
     DXRayTracingPipeline(DXDevice& device, const RayTracingPipelineDesc& desc);
     PipelineType GetPipelineType() const override;

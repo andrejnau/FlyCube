@@ -1,11 +1,11 @@
 #pragma once
+#include "Instance/BaseTypes.h"
 #include "Shader/Shader.h"
-#include <Instance/BaseTypes.h>
-#include <ShaderReflection/ShaderReflection.h>
+#include "ShaderReflection/ShaderReflection.h"
+
 #include <map>
 
-class ShaderBase : public Shader
-{
+class ShaderBase : public Shader {
 public:
     ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type);
     ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type);

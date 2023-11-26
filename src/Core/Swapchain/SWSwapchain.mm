@@ -1,9 +1,15 @@
 #include "Swapchain/SWSwapchain.h"
-#include <Device/SWDevice.h>
-#include <Resource/SWResource.h>
-#include <Instance/SWInstance.h>
 
-SWSwapchain::SWSwapchain(SWDevice& device, WindowHandle window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+#include "Device/SWDevice.h"
+#include "Instance/SWInstance.h"
+#include "Resource/SWResource.h"
+
+SWSwapchain::SWSwapchain(SWDevice& device,
+                         WindowHandle window,
+                         uint32_t width,
+                         uint32_t height,
+                         uint32_t frame_count,
+                         bool vsync)
     : m_device(device)
     , m_frame_count(frame_count)
     , m_width(width)
@@ -28,6 +34,4 @@ uint32_t SWSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t si
     return m_frame_index++ % m_frame_count;
 }
 
-void SWSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
-{
-}
+void SWSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value) {}

@@ -1,11 +1,10 @@
 #pragma once
+#include "Resource/SWResource.h"
 #include "View/View.h"
-#include <Resource/SWResource.h>
 
 class SWDevice;
 
-class SWView : public View
-{
+class SWView : public View {
 public:
     SWView(SWDevice& device, const std::shared_ptr<SWResource>& resource, const ViewDesc& view_desc);
     std::shared_ptr<Resource> GetResource() override;

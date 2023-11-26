@@ -1,11 +1,12 @@
 #include "Swapchain/VKSwapchain.h"
-#include <Device/VKDevice.h>
-#include <CommandQueue/VKCommandQueue.h>
-#include <Adapter/VKAdapter.h>
-#include <Instance/VKInstance.h>
-#include <Fence/VKTimelineSemaphore.h>
-#include <Utilities/VKUtility.h>
-#include <Resource/VKResource.h>
+
+#include "Adapter/VKAdapter.h"
+#include "CommandQueue/VKCommandQueue.h"
+#include "Device/VKDevice.h"
+#include "Fence/VKTimelineSemaphore.h"
+#include "Instance/VKInstance.h"
+#include "Resource/VKResource.h"
+#include "Utilities/VKUtility.h"
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -15,7 +16,12 @@
 #include <X11/Xlib-xcb.h>
 #endif
 
-VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, WindowHandle window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
+                         WindowHandle window,
+                         uint32_t width,
+                         uint32_t height,
+                         uint32_t frame_count,
+                         bool vsync)
     : m_command_queue(command_queue)
     , m_device(command_queue.GetDevice())
 {
@@ -37,13 +43,11 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, WindowHandle window, uin
     surface_desc.setWindow((ptrdiff_t)window);
     m_surface = instance.GetInstance().createXcbSurfaceKHRUnique(surface_desc);
 #endif
-    
+
     vk::ColorSpaceKHR color_space = {};
     auto surface_formats = adapter.GetPhysicalDevice().getSurfaceFormatsKHR(m_surface.get());
-    for (const auto& surface : surface_formats)
-    {
-        if (!gli::is_srgb(static_cast<gli::format>(surface.format)))
-        {
+    for (const auto& surface : surface_formats) {
+        if (!gli::is_srgb(static_cast<gli::format>(surface.format))) {
             m_swapchain_color_format = surface.format;
             color_space = surface.colorSpace;
             break;
@@ -58,7 +62,8 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, WindowHandle window, uin
     ASSERT(surface_capabilities.currentExtent.height == height);
 
     vk::Bool32 is_supported_surface = VK_FALSE;
-    adapter.GetPhysicalDevice().getSurfaceSupportKHR(command_queue.GetQueueFamilyIndex(), m_surface.get(), &is_supported_surface);
+    adapter.GetPhysicalDevice().getSurfaceSupportKHR(command_queue.GetQueueFamilyIndex(), m_surface.get(),
+                                                     &is_supported_surface);
     ASSERT(is_supported_surface);
 
     auto modes = adapter.GetPhysicalDevice().getSurfacePresentModesKHR(m_surface.get());
@@ -74,19 +79,18 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, WindowHandle window, uin
     swap_chain_create_info.imageSharingMode = vk::SharingMode::eExclusive;
     swap_chain_create_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
     swap_chain_create_info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-    if (vsync)
-    {
-        if (std::count(modes.begin(), modes.end(), vk::PresentModeKHR::eFifoRelaxed))
+    if (vsync) {
+        if (std::count(modes.begin(), modes.end(), vk::PresentModeKHR::eFifoRelaxed)) {
             swap_chain_create_info.presentMode = vk::PresentModeKHR::eFifoRelaxed;
-        else
+        } else {
             swap_chain_create_info.presentMode = vk::PresentModeKHR::eFifo;
-    }
-    else
-    {
-        if (std::count(modes.begin(), modes.end(), vk::PresentModeKHR::eMailbox))
+        }
+    } else {
+        if (std::count(modes.begin(), modes.end(), vk::PresentModeKHR::eMailbox)) {
             swap_chain_create_info.presentMode = vk::PresentModeKHR::eMailbox;
-        else
+        } else {
             swap_chain_create_info.presentMode = vk::PresentModeKHR::eImmediate;
+        }
     }
     swap_chain_create_info.clipped = true;
 
@@ -95,8 +99,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue, WindowHandle window, uin
     std::vector<vk::Image> m_images = m_device.GetDevice().getSwapchainImagesKHR(m_swapchain.get());
 
     m_command_list = m_device.CreateCommandList(CommandListType::kGraphics);
-    for (uint32_t i = 0; i < frame_count; ++i)
-    {
+    for (uint32_t i = 0; i < frame_count; ++i) {
         std::shared_ptr<VKResource> res = std::make_shared<VKResource>(m_device);
         res->format = GetFormat();
         res->image.res = m_images[i];
@@ -135,7 +138,8 @@ std::shared_ptr<Resource> VKSwapchain::GetBackBuffer(uint32_t buffer)
 
 uint32_t VKSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
 {
-    m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, m_image_available_semaphore.get(), nullptr, &m_frame_index);
+    m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, m_image_available_semaphore.get(), nullptr,
+                                             &m_frame_index);
 
     decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
     uint64_t tmp = std::numeric_limits<uint64_t>::max();

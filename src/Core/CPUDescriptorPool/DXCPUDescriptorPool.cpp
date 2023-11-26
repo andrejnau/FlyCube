@@ -1,5 +1,7 @@
 #include "CPUDescriptorPool/DXCPUDescriptorPool.h"
-#include <Device/DXDevice.h>
+
+#include "Device/DXDevice.h"
+
 #include <directx/d3dx12.h>
 
 DXCPUDescriptorPool::DXCPUDescriptorPool(DXDevice& device)
@@ -19,8 +21,7 @@ std::shared_ptr<DXCPUDescriptorHandle> DXCPUDescriptorPool::AllocateDescriptor(V
 
 DXCPUDescriptorPoolTyped& DXCPUDescriptorPool::SelectHeap(ViewType view_type)
 {
-    switch (view_type)
-    {
+    switch (view_type) {
     case ViewType::kAccelerationStructure:
     case ViewType::kConstantBuffer:
     case ViewType::kTexture:

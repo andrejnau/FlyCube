@@ -1,26 +1,26 @@
 #pragma once
-#include <Instance/BaseTypes.h>
-#include <Utilities/DXUtility.h>
+#include "Instance/BaseTypes.h"
+#include "Utilities/DXUtility.h"
+
+#include <directx/d3d12.h>
+#include <wrl.h>
+
 #include <algorithm>
 #include <map>
 #include <memory>
-#include <wrl.h>
-#include <directx/d3d12.h>
 using namespace Microsoft::WRL;
 
 class DXDevice;
 
-class DXCPUDescriptorHandle
-{
+class DXCPUDescriptorHandle {
 public:
-    DXCPUDescriptorHandle(
-        DXDevice& device,
-        ComPtr<ID3D12DescriptorHeap>& heap,
-        D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle,
-        size_t offset,
-        size_t size,
-        uint32_t increment_size,
-        D3D12_DESCRIPTOR_HEAP_TYPE type);
+    DXCPUDescriptorHandle(DXDevice& device,
+                          ComPtr<ID3D12DescriptorHeap>& heap,
+                          D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle,
+                          size_t offset,
+                          size_t size,
+                          uint32_t increment_size,
+                          D3D12_DESCRIPTOR_HEAP_TYPE type);
     D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(size_t offset = 0) const;
 
 private:

@@ -1,12 +1,12 @@
 #pragma once
-#include <Instance/BaseTypes.h>
-#include <map>
+#include "Instance/BaseTypes.h"
+
 #include <functional>
+#include <map>
 
 class Resource;
 
-class ResourceStateTracker
-{
+class ResourceStateTracker {
 public:
     ResourceStateTracker(Resource& resource);
     bool HasResourceState() const;

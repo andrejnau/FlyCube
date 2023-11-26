@@ -1,8 +1,7 @@
 #pragma once
 #include <cstdint>
 
-class InputEvents
-{
+class InputEvents {
 public:
     virtual ~InputEvents() = default;
     virtual void OnKey(int key, int action) {}

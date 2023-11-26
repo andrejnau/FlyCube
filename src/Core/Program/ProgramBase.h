@@ -1,11 +1,11 @@
 #pragma once
 #include "Program/Program.h"
-#include <set>
+
 #include <map>
+#include <set>
 #include <vector>
 
-class ProgramBase : public Program
-{
+class ProgramBase : public Program {
 public:
     ProgramBase(const std::vector<std::shared_ptr<Shader>>& shaders);
 

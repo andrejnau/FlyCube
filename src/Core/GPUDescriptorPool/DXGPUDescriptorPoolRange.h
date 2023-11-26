@@ -1,33 +1,33 @@
 #pragma once
-#include <Instance/BaseTypes.h>
-#include <Utilities/DXUtility.h>
+#include "Instance/BaseTypes.h"
+#include "Utilities/DXUtility.h"
+
+#include <directx/d3d12.h>
+#include <wrl.h>
+
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <memory>
-#include <functional>
-#include <wrl.h>
-#include <directx/d3d12.h>
 using namespace Microsoft::WRL;
 
 class DXDevice;
 class DXGPUDescriptorPoolTyped;
 
-class DXGPUDescriptorPoolRange
-{
+class DXGPUDescriptorPoolRange {
 public:
     using Ptr = std::shared_ptr<DXGPUDescriptorPoolRange>;
-    DXGPUDescriptorPoolRange(
-        DXGPUDescriptorPoolTyped& pool,
-        DXDevice& device,
-        ComPtr<ID3D12DescriptorHeap>& heap,
-        D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle,
-        D3D12_GPU_DESCRIPTOR_HANDLE& gpu_handle,
-        ComPtr<ID3D12DescriptorHeap>& heap_readable,
-        D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle_readable,
-        size_t offset,
-        size_t size,
-        uint32_t increment_size,
-        D3D12_DESCRIPTOR_HEAP_TYPE type);
+    DXGPUDescriptorPoolRange(DXGPUDescriptorPoolTyped& pool,
+                             DXDevice& device,
+                             ComPtr<ID3D12DescriptorHeap>& heap,
+                             D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle,
+                             D3D12_GPU_DESCRIPTOR_HANDLE& gpu_handle,
+                             ComPtr<ID3D12DescriptorHeap>& heap_readable,
+                             D3D12_CPU_DESCRIPTOR_HANDLE& cpu_handle_readable,
+                             size_t offset,
+                             size_t size,
+                             uint32_t increment_size,
+                             D3D12_DESCRIPTOR_HEAP_TYPE type);
     DXGPUDescriptorPoolRange(DXGPUDescriptorPoolRange&& oth);
     ~DXGPUDescriptorPoolRange();
     void CopyCpuHandle(size_t dst_offset, D3D12_CPU_DESCRIPTOR_HANDLE handle);

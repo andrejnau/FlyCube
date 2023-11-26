@@ -1,11 +1,11 @@
 #include "Pipeline/VKPipeline.h"
-#include <Device/VKDevice.h>
-#include <BindingSetLayout/VKBindingSetLayout.h>
+
+#include "BindingSetLayout/VKBindingSetLayout.h"
+#include "Device/VKDevice.h"
 
 vk::ShaderStageFlagBits ExecutionModel2Bit(ShaderKind kind)
 {
-    switch (kind)
-    {
+    switch (kind) {
     case ShaderKind::kVertex:
         return vk::ShaderStageFlagBits::eVertex;
     case ShaderKind::kPixel:
@@ -35,15 +35,16 @@ vk::ShaderStageFlagBits ExecutionModel2Bit(ShaderKind kind)
     return {};
 }
 
-VKPipeline::VKPipeline(VKDevice& device, const std::shared_ptr<Program>& program, const std::shared_ptr<BindingSetLayout>& layout)
+VKPipeline::VKPipeline(VKDevice& device,
+                       const std::shared_ptr<Program>& program,
+                       const std::shared_ptr<BindingSetLayout>& layout)
     : m_device(device)
 {
     decltype(auto) vk_layout = layout->As<VKBindingSetLayout>();
     m_pipeline_layout = vk_layout.GetPipelineLayout();
 
     decltype(auto) shaders = program->GetShaders();
-    for (const auto& shader : shaders)
-    {
+    for (const auto& shader : shaders) {
         decltype(auto) blob = shader->GetBlob();
         vk::ShaderModuleCreateInfo shader_module_info = {};
         shader_module_info.codeSize = blob.size();
@@ -52,8 +53,7 @@ VKPipeline::VKPipeline(VKDevice& device, const std::shared_ptr<Program>& program
 
         decltype(auto) reflection = shader->GetReflection();
         decltype(auto) entry_points = reflection->GetEntryPoints();
-        for (const auto& entry_point : entry_points)
-        {
+        for (const auto& entry_point : entry_points) {
             m_shader_ids[shader->GetId(entry_point.name)] = m_shader_stage_create_info.size();
             decltype(auto) shader_stage_create_info = m_shader_stage_create_info.emplace_back();
             shader_stage_create_info.stage = ExecutionModel2Bit(entry_point.kind);

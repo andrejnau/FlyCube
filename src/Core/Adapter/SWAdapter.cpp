@@ -1,5 +1,6 @@
 #include "Adapter/SWAdapter.h"
-#include <Device/SWDevice.h>
+
+#include "Device/SWDevice.h"
 
 SWAdapter::SWAdapter(SWInstance& instance)
     : m_name("SW")

@@ -4,9 +4,7 @@
 class SWDevice;
 class SWBindingSetLayout;
 
-class SWBindingSet
-    : public BindingSet
-{
+class SWBindingSet : public BindingSet {
 public:
     SWBindingSet(SWDevice& device, const std::shared_ptr<SWBindingSetLayout>& layout);
 

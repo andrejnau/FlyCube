@@ -1,18 +1,19 @@
 #pragma once
 #include "CPUDescriptorPool/DXCPUDescriptorHandle.h"
-#include <Instance/BaseTypes.h>
-#include <Utilities/DXUtility.h>
+#include "Instance/BaseTypes.h"
+#include "Utilities/DXUtility.h"
+
+#include <directx/d3d12.h>
+#include <wrl.h>
+
 #include <algorithm>
 #include <map>
 #include <memory>
-#include <wrl.h>
-#include <directx/d3d12.h>
 using namespace Microsoft::WRL;
 
 class DXDevice;
 
-class DXCPUDescriptorPoolTyped
-{
+class DXCPUDescriptorPoolTyped {
 public:
     DXCPUDescriptorPoolTyped(DXDevice& device, D3D12_DESCRIPTOR_HEAP_TYPE type);
     std::shared_ptr<DXCPUDescriptorHandle> Allocate(size_t count);

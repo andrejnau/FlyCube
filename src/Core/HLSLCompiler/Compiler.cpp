@@ -1,17 +1,19 @@
 #include "HLSLCompiler/Compiler.h"
+
 #include "HLSLCompiler/DXCLoader.h"
-#include <Utilities/SystemUtils.h>
-#include <Utilities/DXUtility.h>
+#include "Utilities/DXUtility.h"
+#include "Utilities/SystemUtils.h"
+
 #include <nowide/convert.hpp>
+
+#include <cassert>
 #include <deque>
 #include <iostream>
 #include <vector>
-#include <cassert>
 
 static std::string GetShaderTarget(ShaderType type, const std::string& model)
 {
-    switch (type)
-    {
+    switch (type) {
     case ShaderType::kPixel:
         return "ps_" + model;
     case ShaderType::kVertex:
@@ -32,8 +34,7 @@ static std::string GetShaderTarget(ShaderType type, const std::string& model)
     }
 }
 
-class IncludeHandler : public IDxcIncludeHandler
-{
+class IncludeHandler : public IDxcIncludeHandler {
 public:
     IncludeHandler(CComPtr<IDxcLibrary> library, const std::wstring& base_path)
         : m_library(library)
@@ -41,23 +42,28 @@ public:
     {
     }
 
-    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void **ppvObject) override { return E_NOTIMPL; }
-    ULONG STDMETHODCALLTYPE AddRef() override { return E_NOTIMPL; }
-    ULONG STDMETHODCALLTYPE Release() override { return E_NOTIMPL; }
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void** ppvObject) override
+    {
+        return E_NOTIMPL;
+    }
+    ULONG STDMETHODCALLTYPE AddRef() override
+    {
+        return E_NOTIMPL;
+    }
+    ULONG STDMETHODCALLTYPE Release() override
+    {
+        return E_NOTIMPL;
+    }
 
-    HRESULT STDMETHODCALLTYPE LoadSource(
-        _In_ LPCWSTR pFilename,
-        _COM_Outptr_result_maybenull_ IDxcBlob **ppIncludeSource) override
+    HRESULT STDMETHODCALLTYPE LoadSource(_In_ LPCWSTR pFilename,
+                                         _COM_Outptr_result_maybenull_ IDxcBlob** ppIncludeSource) override
     {
         std::wstring path = m_base_path + pFilename;
         CComPtr<IDxcBlobEncoding> source;
-        HRESULT hr = m_library->CreateBlobFromFile(
-            path.c_str(),
-            nullptr,
-            &source
-        );
-        if (SUCCEEDED(hr) && ppIncludeSource)
+        HRESULT hr = m_library->CreateBlobFromFile(path.c_str(), nullptr, &source);
+        if (SUCCEEDED(hr) && ppIncludeSource) {
             *ppIncludeSource = source.Detach();
+        }
         return hr;
     }
 
@@ -76,18 +82,13 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     CComPtr<IDxcLibrary> library;
     dxc_support.CreateInstance(CLSID_DxcLibrary, &library);
     CComPtr<IDxcBlobEncoding> source;
-    ASSERT_SUCCEEDED(library->CreateBlobFromFile(
-        shader_path.c_str(),
-        nullptr,
-        &source)
-    );
+    ASSERT_SUCCEEDED(library->CreateBlobFromFile(shader_path.c_str(), nullptr, &source));
 
     std::wstring target = nowide::widen(GetShaderTarget(shader.type, shader.model));
     std::wstring entrypoint = nowide::widen(shader.entrypoint);
     std::vector<std::pair<std::wstring, std::wstring>> defines_store;
     std::vector<DxcDefine> defines;
-    for (const auto& define : shader.define)
-    {
+    for (const auto& define : shader.define) {
         defines_store.emplace_back(nowide::widen(define.first), nowide::widen(define.second));
         defines.push_back({ defines_store.back().first.c_str(), defines_store.back().second.c_str() });
     }
@@ -97,8 +98,7 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     arguments.push_back(L"/Zi");
     arguments.push_back(L"/Qembed_debug");
     uint32_t space = 0;
-    if (blob_type == ShaderBlobType::kSPIRV)
-    {
+    if (blob_type == ShaderBlobType::kSPIRV) {
         arguments.emplace_back(L"-spirv");
         arguments.emplace_back(L"-fspv-target-env=vulkan1.2");
         arguments.emplace_back(L"-fspv-extension=KHR");
@@ -120,32 +120,22 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     IncludeHandler include_handler(library, shader_dir);
     CComPtr<IDxcCompiler> compiler;
     dxc_support.CreateInstance(CLSID_DxcCompiler, &compiler);
-    ASSERT_SUCCEEDED(compiler->Compile(
-        source,
-        L"main.hlsl",
-        entrypoint.c_str(),
-        target.c_str(),
-        arguments.data(), static_cast<UINT32>(arguments.size()),
-        defines.data(), static_cast<UINT32>(defines.size()),
-        &include_handler,
-        &result
-    ));
+    ASSERT_SUCCEEDED(compiler->Compile(source, L"main.hlsl", entrypoint.c_str(), target.c_str(), arguments.data(),
+                                       static_cast<UINT32>(arguments.size()), defines.data(),
+                                       static_cast<UINT32>(defines.size()), &include_handler, &result));
 
     HRESULT hr = {};
     result->GetStatus(&hr);
     std::vector<uint8_t> blob;
-    if (SUCCEEDED(hr))
-    {
+    if (SUCCEEDED(hr)) {
         CComPtr<IDxcBlob> dxc_blob;
         ASSERT_SUCCEEDED(result->GetResult(&dxc_blob));
-        blob.assign((uint8_t*)dxc_blob->GetBufferPointer(), (uint8_t*)dxc_blob->GetBufferPointer() + dxc_blob->GetBufferSize());
-    }
-    else
-    {
+        blob.assign((uint8_t*)dxc_blob->GetBufferPointer(),
+                    (uint8_t*)dxc_blob->GetBufferPointer() + dxc_blob->GetBufferSize());
+    } else {
         CComPtr<IDxcBlobEncoding> errors;
         result->GetErrorBuffer(&errors);
-        if (errors && errors->GetBufferSize() > 0)
-        {
+        if (errors && errors->GetBufferSize() > 0) {
             OutputDebugStringA(reinterpret_cast<char*>(errors->GetBufferPointer()));
             std::cout << reinterpret_cast<char*>(errors->GetBufferPointer()) << std::endl;
         }

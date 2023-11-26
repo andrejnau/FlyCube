@@ -1,13 +1,13 @@
 #pragma once
 #include "Resource/ResourceBase.h"
+
 #include <directx/d3d12.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
 class DXDevice;
 
-class DXResource : public ResourceBase
-{
+class DXResource : public ResourceBase {
 public:
     DXResource(DXDevice& device);
 

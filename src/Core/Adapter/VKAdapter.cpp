@@ -1,5 +1,6 @@
 #include "Adapter/VKAdapter.h"
-#include <Device/VKDevice.h>
+
+#include "Device/VKDevice.h"
 
 VKAdapter::VKAdapter(VKInstance& instance, const vk::PhysicalDevice& physical_device)
     : m_instance(instance)

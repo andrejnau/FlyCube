@@ -13,6 +13,7 @@
 //--------------------------------------------------------------------------------------
 
 #include "Utilities/DXGIFormatHelper.h"
+
 #include <algorithm>
 
 //--------------------------------------------------------------------------------------
@@ -20,8 +21,7 @@
 //--------------------------------------------------------------------------------------
 size_t BitsPerPixel(DXGI_FORMAT fmt)
 {
-    switch (fmt)
-    {
+    switch (fmt) {
     case DXGI_FORMAT_R32G32B32A32_TYPELESS:
     case DXGI_FORMAT_R32G32B32A32_FLOAT:
     case DXGI_FORMAT_R32G32B32A32_UINT:
@@ -167,13 +167,12 @@ size_t BitsPerPixel(DXGI_FORMAT fmt)
 //--------------------------------------------------------------------------------------
 // Get surface information for a particular format
 //--------------------------------------------------------------------------------------
-void GetSurfaceInfo(
-    size_t width,
-    size_t height,
-    gli::format format,
-    size_t* outNumBytes,
-    size_t* outRowBytes,
-    size_t* outNumRows)
+void GetSurfaceInfo(size_t width,
+                    size_t height,
+                    gli::format format,
+                    size_t* outNumBytes,
+                    size_t* outRowBytes,
+                    size_t* outNumRows)
 {
     DXGI_FORMAT fmt = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
 
@@ -185,8 +184,7 @@ void GetSurfaceInfo(
     bool packed = false;
     bool planar = false;
     size_t bpe = 0;
-    switch (fmt)
-    {
+    switch (fmt) {
     case DXGI_FORMAT_BC1_TYPELESS:
     case DXGI_FORMAT_BC1_UNORM:
     case DXGI_FORMAT_BC1_UNORM_SRGB:
@@ -242,66 +240,51 @@ void GetSurfaceInfo(
         break;
     }
 
-    if (bc)
-    {
+    if (bc) {
         size_t numBlocksWide = 0;
-        if (width > 0)
-        {
+        if (width > 0) {
             numBlocksWide = std::max<size_t>(1, (width + 3) / 4);
         }
         size_t numBlocksHigh = 0;
-        if (height > 0)
-        {
+        if (height > 0) {
             numBlocksHigh = std::max<size_t>(1, (height + 3) / 4);
         }
         rowBytes = numBlocksWide * bpe;
         numRows = numBlocksHigh;
         numBytes = rowBytes * numBlocksHigh;
-    }
-    else if (packed)
-    {
+    } else if (packed) {
         rowBytes = ((width + 1) >> 1) * bpe;
         numRows = height;
         numBytes = rowBytes * height;
-    }
-    else if (fmt == DXGI_FORMAT_NV11)
-    {
+    } else if (fmt == DXGI_FORMAT_NV11) {
         rowBytes = ((width + 3) >> 2) * 4;
         numRows = height * 2; // Direct3D makes this simplifying assumption, although it is larger than the 4:1:1 data
         numBytes = rowBytes * numRows;
-    }
-    else if (planar)
-    {
+    } else if (planar) {
         rowBytes = ((width + 1) >> 1) * bpe;
         numBytes = (rowBytes * height) + ((rowBytes * height + 1) >> 1);
         numRows = height + ((height + 1) >> 1);
-    }
-    else
-    {
+    } else {
         size_t bpp = BitsPerPixel(fmt);
         rowBytes = (width * bpp + 7) / 8; // round up to nearest byte
         numRows = height;
         numBytes = rowBytes * height;
     }
 
-    if (outNumBytes)
-    {
+    if (outNumBytes) {
         *outNumBytes = numBytes;
     }
-    if (outRowBytes)
-    {
+    if (outRowBytes) {
         *outRowBytes = rowBytes;
     }
-    if (outNumRows)
-    {
+    if (outNumRows) {
         *outNumRows = numRows;
     }
 }
 
 DXGI_FORMAT MakeTypelessDepthStencil(DXGI_FORMAT fmt)
 {
-    switch (static_cast<int>(fmt))
-    {
+    switch (static_cast<int>(fmt)) {
     case DXGI_FORMAT_D16_UNORM:
         return DXGI_FORMAT_R16_TYPELESS;
     case DXGI_FORMAT_D24_UNORM_S8_UINT:
@@ -317,8 +300,7 @@ DXGI_FORMAT MakeTypelessDepthStencil(DXGI_FORMAT fmt)
 
 bool IsTypelessDepthStencil(DXGI_FORMAT format)
 {
-    switch (format)
-    {
+    switch (format) {
     case DXGI_FORMAT_R16_TYPELESS:
     case DXGI_FORMAT_R32_TYPELESS:
     case DXGI_FORMAT_R32G8X24_TYPELESS:
@@ -335,8 +317,7 @@ bool IsTypelessDepthStencil(DXGI_FORMAT format)
 
 DXGI_FORMAT DepthReadFromTypeless(DXGI_FORMAT format)
 {
-    switch (format)
-    {
+    switch (format) {
     case DXGI_FORMAT_R16_TYPELESS:
         return DXGI_FORMAT_R16_UNORM;
     case DXGI_FORMAT_R32_TYPELESS:
@@ -352,8 +333,7 @@ DXGI_FORMAT DepthReadFromTypeless(DXGI_FORMAT format)
 
 DXGI_FORMAT StencilReadFromTypeless(DXGI_FORMAT format)
 {
-    switch (format)
-    {
+    switch (format) {
     case DXGI_FORMAT_R32G8X24_TYPELESS:
         return DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
     case DXGI_FORMAT_R24G8_TYPELESS:
@@ -365,8 +345,7 @@ DXGI_FORMAT StencilReadFromTypeless(DXGI_FORMAT format)
 
 DXGI_FORMAT DepthStencilFromTypeless(DXGI_FORMAT format)
 {
-    switch (format)
-    {
+    switch (format) {
     case DXGI_FORMAT_R16_TYPELESS:
         return DXGI_FORMAT_D16_UNORM;
     case DXGI_FORMAT_R32_TYPELESS:

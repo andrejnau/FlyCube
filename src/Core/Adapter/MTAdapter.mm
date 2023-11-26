@@ -1,6 +1,7 @@
 #include "Adapter/MTAdapter.h"
-#include <Device/MTDevice.h>
-#include <Instance/MTInstance.h>
+
+#include "Device/MTDevice.h"
+#include "Instance/MTInstance.h"
 
 MTAdapter::MTAdapter(MTInstance& instance, const id<MTLDevice>& device)
     : m_instance(instance)

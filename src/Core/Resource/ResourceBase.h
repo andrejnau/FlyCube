@@ -1,8 +1,7 @@
 #pragma once
 #include "Resource/Resource.h"
 
-class ResourceBase : public Resource
-{
+class ResourceBase : public Resource {
 public:
     ResourceBase();
 
@@ -11,8 +10,14 @@ public:
     MemoryType GetMemoryType() const override final;
 
     void UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes) override final;
-    void UpdateUploadBufferWithTextureData(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
-        const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices) override final;
+    void UpdateUploadBufferWithTextureData(uint64_t buffer_offset,
+                                           uint32_t buffer_row_pitch,
+                                           uint32_t buffer_depth_pitch,
+                                           const void* src_data,
+                                           uint32_t src_row_pitch,
+                                           uint32_t src_depth_pitch,
+                                           uint32_t num_rows,
+                                           uint32_t num_slices) override final;
     ResourceState GetInitialState() const override final;
     bool IsBackBuffer() const override final;
 

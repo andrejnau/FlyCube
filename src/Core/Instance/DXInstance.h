@@ -1,11 +1,11 @@
 #pragma once
 #include "Instance.h"
+
 #include <dxgi1_4.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
-class DXInstance : public Instance
-{
+class DXInstance : public Instance {
 public:
     DXInstance();
     std::vector<std::shared_ptr<Adapter>> EnumerateAdapters() override;

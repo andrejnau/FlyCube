@@ -15,8 +15,7 @@
 
 std::shared_ptr<Instance> CreateInstance(ApiType type)
 {
-    switch (type)
-    {
+    switch (type) {
 #ifdef DIRECTX_SUPPORT
     case ApiType::kDX12:
         return std::make_shared<DXInstance>();

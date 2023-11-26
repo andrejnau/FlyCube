@@ -1,20 +1,19 @@
 #include "View/VKView.h"
-#include <Device/VKDevice.h>
-#include <Resource/VKResource.h>
-#include <BindingSetLayout/VKBindingSetLayout.h>
+
+#include "BindingSetLayout/VKBindingSetLayout.h"
+#include "Device/VKDevice.h"
+#include "Resource/VKResource.h"
 
 VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, const ViewDesc& view_desc)
     : m_device(device)
     , m_resource(resource)
     , m_view_desc(view_desc)
 {
-    if (resource)
-    {
+    if (resource) {
         CreateView();
     }
 
-    if (view_desc.bindless)
-    {
+    if (view_desc.bindless) {
         vk::DescriptorType type = GetDescriptorType(view_desc.view_type);
         decltype(auto) pool = device.GetGPUBindlessDescriptorPool(type);
         m_range = std::make_shared<VKGPUDescriptorPoolRange>(pool.Allocate(1));
@@ -30,8 +29,7 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
 
 static vk::ImageViewType GetImageViewType(ViewDimension dimension)
 {
-    switch (dimension)
-    {
+    switch (dimension) {
     case ViewDimension::kTexture1D:
         return vk::ImageViewType::e1D;
     case ViewDimension::kTexture1DArray:
@@ -55,30 +53,26 @@ static vk::ImageViewType GetImageViewType(ViewDimension dimension)
 
 void VKView::CreateView()
 {
-    switch (m_view_desc.view_type)
-    {
+    switch (m_view_desc.view_type) {
     case ViewType::kSampler:
         m_descriptor_image.sampler = m_resource->sampler.res.get();
         m_descriptor.pImageInfo = &m_descriptor_image;
         break;
-    case ViewType::kTexture:
-    {
+    case ViewType::kTexture: {
         CreateImageView();
         m_descriptor_image.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         m_descriptor_image.imageView = m_image_view.get();
         m_descriptor.pImageInfo = &m_descriptor_image;
         break;
     }
-    case ViewType::kRWTexture:
-    {
+    case ViewType::kRWTexture: {
         CreateImageView();
         m_descriptor_image.imageLayout = vk::ImageLayout::eGeneral;
         m_descriptor_image.imageView = m_image_view.get();
         m_descriptor.pImageInfo = &m_descriptor_image;
         break;
     }
-    case ViewType::kAccelerationStructure:
-    {
+    case ViewType::kAccelerationStructure: {
         m_descriptor_acceleration_structure.accelerationStructureCount = 1;
         m_descriptor_acceleration_structure.pAccelerationStructures = &m_resource->acceleration_structure_handle.get();
         m_descriptor.pNext = &m_descriptor_acceleration_structure;
@@ -86,8 +80,7 @@ void VKView::CreateView()
     }
     case ViewType::kShadingRateSource:
     case ViewType::kRenderTarget:
-    case ViewType::kDepthStencil:
-    {
+    case ViewType::kDepthStencil: {
         CreateImageView();
         break;
     }
@@ -122,14 +115,11 @@ void VKView::CreateImageView()
     image_view_desc.subresourceRange.layerCount = GetLayerCount();
     image_view_desc.subresourceRange.aspectMask = m_device.GetAspectFlags(image_view_desc.format);
 
-    if (image_view_desc.subresourceRange.aspectMask & (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil))
-    {
-        if (m_view_desc.plane_slice == 0)
-        {
+    if (image_view_desc.subresourceRange.aspectMask &
+        (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil)) {
+        if (m_view_desc.plane_slice == 0) {
             image_view_desc.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-        }
-        else
-        {
+        } else {
             image_view_desc.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eStencil;
             image_view_desc.components.g = vk::ComponentSwizzle::eR;
         }
@@ -155,8 +145,9 @@ std::shared_ptr<Resource> VKView::GetResource()
 
 uint32_t VKView::GetDescriptorId() const
 {
-    if (m_range)
+    if (m_range) {
         return m_range->GetOffset();
+    }
     return -1;
 }
 

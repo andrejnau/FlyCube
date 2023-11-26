@@ -1,18 +1,18 @@
 #pragma once
+#include "Instance/BaseTypes.h"
 #include "Memory/Memory.h"
-#include <Instance/BaseTypes.h>
+
 #import <Metal/Metal.h>
 
 MTLStorageMode ConvertStorageMode(MemoryType memory_type);
 
 class MTDevice;
 
-class MTMemory : public Memory
-{
+class MTMemory : public Memory {
 public:
     MTMemory(MTDevice& device, uint64_t size, MemoryType memory_type, uint32_t memory_type_bits);
     MemoryType GetMemoryType() const override;
-    
+
     id<MTLHeap> GetHeap() const;
 
 private:

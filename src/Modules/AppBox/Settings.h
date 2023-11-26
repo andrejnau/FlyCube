@@ -1,8 +1,7 @@
 #pragma once
-#include <ApiType/ApiType.h>
+#include "ApiType/ApiType.h"
 
-struct Settings
-{
+struct Settings {
     ApiType api_type = ApiType::kVulkan;
     bool vsync = true;
     bool round_fps = false;

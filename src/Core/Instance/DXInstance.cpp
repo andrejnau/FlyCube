@@ -1,34 +1,33 @@
 #include "Instance/DXInstance.h"
-#include <Adapter/DXAdapter.h>
-#include <Utilities/DXUtility.h>
-#include <Utilities/SystemUtils.h>
-#include <dxgi1_6.h>
+
+#include "Adapter/DXAdapter.h"
+#include "Utilities/DXUtility.h"
+#include "Utilities/SystemUtils.h"
+
 #include <directx/d3d12.h>
+#include <dxgi1_6.h>
+
 #include <filesystem>
 
 bool EnableAgilitySDKIfExist(uint32_t version, const std::string_view& path)
 {
     auto d3d12_core = std::filesystem::u8path(GetExecutableDir()) / path / "D3D12Core.dll";
-    if (!std::filesystem::exists(d3d12_core))
-    {
+    if (!std::filesystem::exists(d3d12_core)) {
         return false;
     }
 
     HMODULE d3d12 = GetModuleHandleA("d3d12.dll");
     assert(d3d12);
     auto D3D12GetInterfacePfn = (PFN_D3D12_GET_INTERFACE)GetProcAddress(d3d12, "D3D12GetInterface");
-    if (!D3D12GetInterfacePfn)
-    {
+    if (!D3D12GetInterfacePfn) {
         return false;
     }
 
     ComPtr<ID3D12SDKConfiguration> sdk_configuration;
-    if (FAILED(D3D12GetInterfacePfn(CLSID_D3D12SDKConfiguration, IID_PPV_ARGS(&sdk_configuration))))
-    {
+    if (FAILED(D3D12GetInterfacePfn(CLSID_D3D12SDKConfiguration, IID_PPV_ARGS(&sdk_configuration)))) {
         return false;
     }
-    if (FAILED(sdk_configuration->SetSDKVersion(version, path.data())))
-    {
+    if (FAILED(sdk_configuration->SetSDKVersion(version, path.data()))) {
         return false;
     }
     return true;
@@ -61,11 +60,9 @@ DXInstance::DXInstance()
 
     uint32_t flags = 0;
     static const bool debug_enabled = IsDebuggerPresent();
-    if (debug_enabled)
-    {
+    if (debug_enabled) {
         ComPtr<ID3D12Debug> debug_controller;
-        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller))))
-        {
+        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)))) {
             debug_controller->EnableDebugLayer();
         }
         /*ComPtr<ID3D12Debug1> debug_controller1;
@@ -85,22 +82,23 @@ std::vector<std::shared_ptr<Adapter>> DXInstance::EnumerateAdapters()
     ComPtr<IDXGIFactory6> dxgi_factory6;
     m_dxgi_factory.As(&dxgi_factory6);
 
-    auto NextAdapted = [&](uint32_t adapter_index, ComPtr<IDXGIAdapter1>& adapter)
-    {
-        if (dxgi_factory6)
-            return dxgi_factory6->EnumAdapterByGpuPreference(adapter_index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter));
-        else
+    auto NextAdapted = [&](uint32_t adapter_index, ComPtr<IDXGIAdapter1>& adapter) {
+        if (dxgi_factory6) {
+            return dxgi_factory6->EnumAdapterByGpuPreference(adapter_index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
+                                                             IID_PPV_ARGS(&adapter));
+        } else {
             return m_dxgi_factory->EnumAdapters1(adapter_index, &adapter);
+        }
     };
 
     ComPtr<IDXGIAdapter1> adapter;
     uint32_t gpu_index = 0;
-    for (uint32_t adapter_index = 0; DXGI_ERROR_NOT_FOUND != NextAdapted(adapter_index, adapter); ++adapter_index)
-    {
+    for (uint32_t adapter_index = 0; DXGI_ERROR_NOT_FOUND != NextAdapted(adapter_index, adapter); ++adapter_index) {
         DXGI_ADAPTER_DESC1 desc = {};
         adapter->GetDesc1(&desc);
-        if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+        if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
             continue;
+        }
 
         adapters.emplace_back(std::make_shared<DXAdapter>(*this, adapter));
     }

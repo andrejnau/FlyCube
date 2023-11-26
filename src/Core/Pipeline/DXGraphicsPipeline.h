@@ -1,6 +1,7 @@
 #pragma once
+#include "Instance/BaseTypes.h"
 #include "Pipeline/DXPipeline.h"
-#include <Instance/BaseTypes.h>
+
 #include <directx/d3d12.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
@@ -8,8 +9,7 @@ using namespace Microsoft::WRL;
 class DXDevice;
 class Shader;
 
-class DXGraphicsPipeline : public DXPipeline
-{
+class DXGraphicsPipeline : public DXPipeline {
 public:
     DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineDesc& desc);
     PipelineType GetPipelineType() const override;

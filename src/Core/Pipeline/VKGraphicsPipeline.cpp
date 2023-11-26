@@ -1,12 +1,13 @@
 #include "Pipeline/VKGraphicsPipeline.h"
-#include <Device/VKDevice.h>
-#include <Program/VKProgram.h>
+
+#include "Device/VKDevice.h"
+#include "Program/VKProgram.h"
+
 #include <map>
 
 vk::CompareOp Convert(ComparisonFunc func)
 {
-    switch (func)
-    {
+    switch (func) {
     case ComparisonFunc::kNever:
         return vk::CompareOp::eNever;
     case ComparisonFunc::kLess:
@@ -31,8 +32,7 @@ vk::CompareOp Convert(ComparisonFunc func)
 
 vk::StencilOp Convert(StencilOp op)
 {
-    switch (op)
-    {
+    switch (op) {
     case StencilOp::kKeep:
         return vk::StencilOp::eKeep;
     case StencilOp::kZero:
@@ -71,8 +71,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     : VKPipeline(device, desc.program, desc.layout)
     , m_desc(desc)
 {
-    if (desc.program->HasShader(ShaderType::kVertex))
-    {
+    if (desc.program->HasShader(ShaderType::kVertex)) {
         CreateInputLayout(m_binding_desc, m_attribute_desc);
     }
 
@@ -98,8 +97,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     rasterizer.frontFace = vk::FrontFace::eClockwise;
     rasterizer.depthBiasEnable = m_desc.rasterizer_desc.depth_bias != 0;
     rasterizer.depthBiasConstantFactor = m_desc.rasterizer_desc.depth_bias;
-    switch (m_desc.rasterizer_desc.fill_mode)
-    {
+    switch (m_desc.rasterizer_desc.fill_mode) {
     case FillMode::kWireframe:
         rasterizer.polygonMode = vk::PolygonMode::eLine;
         break;
@@ -107,8 +105,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
         rasterizer.polygonMode = vk::PolygonMode::eFill;
         break;
     }
-    switch (m_desc.rasterizer_desc.cull_mode)
-    {
+    switch (m_desc.rasterizer_desc.cull_mode) {
     case CullMode::kNone:
         rasterizer.cullMode = vk::CullModeFlagBits::eNone;
         break;
@@ -121,15 +118,13 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     }
 
     vk::PipelineColorBlendAttachmentState color_blend_attachment = {};
-    color_blend_attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    color_blend_attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                                            vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     color_blend_attachment.blendEnable = m_desc.blend_desc.blend_enable;
 
-    if (color_blend_attachment.blendEnable)
-    {
-        auto convert = [](Blend type)
-        {
-            switch (type)
-            {
+    if (color_blend_attachment.blendEnable) {
+        auto convert = [](Blend type) {
+            switch (type) {
             case Blend::kZero:
                 return vk::BlendFactor::eZero;
             case Blend::kSrcAlpha:
@@ -140,10 +135,8 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
             throw std::runtime_error("unsupported");
         };
 
-        auto convert_op = [](BlendOp type)
-        {
-            switch (type)
-            {
+        auto convert_op = [](BlendOp type) {
+            switch (type) {
             case BlendOp::kAdd:
                 return vk::BlendOp::eAdd;
             }
@@ -158,7 +151,8 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
         color_blend_attachment.alphaBlendOp = convert_op(m_desc.blend_desc.blend_op_alpha);
     }
 
-    std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments(render_pass_desc.colors.size(), color_blend_attachment);
+    std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments(render_pass_desc.colors.size(),
+                                                                               color_blend_attachment);
 
     vk::PipelineColorBlendStateCreateInfo color_blending = {};
     color_blending.logicOpEnable = VK_FALSE;
@@ -176,16 +170,19 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     depth_stencil.depthCompareOp = Convert(m_desc.depth_stencil_desc.depth_func);
     depth_stencil.depthBoundsTestEnable = m_desc.depth_stencil_desc.depth_bounds_test_enable;
     depth_stencil.stencilTestEnable = m_desc.depth_stencil_desc.stencil_enable;
-    depth_stencil.back = Convert(m_desc.depth_stencil_desc.back_face, m_desc.depth_stencil_desc.stencil_read_mask, m_desc.depth_stencil_desc.stencil_write_mask);
-    depth_stencil.front = Convert(m_desc.depth_stencil_desc.front_face, m_desc.depth_stencil_desc.stencil_read_mask, m_desc.depth_stencil_desc.stencil_write_mask);
+    depth_stencil.back = Convert(m_desc.depth_stencil_desc.back_face, m_desc.depth_stencil_desc.stencil_read_mask,
+                                 m_desc.depth_stencil_desc.stencil_write_mask);
+    depth_stencil.front = Convert(m_desc.depth_stencil_desc.front_face, m_desc.depth_stencil_desc.stencil_read_mask,
+                                  m_desc.depth_stencil_desc.stencil_write_mask);
 
     std::vector<vk::DynamicState> dynamic_state_enables = {
         vk::DynamicState::eViewport,
         vk::DynamicState::eScissor,
     };
 
-    if (m_device.IsVariableRateShadingSupported())
+    if (m_device.IsVariableRateShadingSupported()) {
         dynamic_state_enables.emplace_back(vk::DynamicState::eFragmentShadingRateKHR);
+    }
 
     vk::PipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
     pipelineDynamicStateCreateInfo.pDynamicStates = dynamic_state_enables.data();
@@ -218,13 +215,14 @@ vk::RenderPass VKGraphicsPipeline::GetRenderPass() const
     return m_desc.render_pass->As<VKRenderPass>().GetRenderPass();
 }
 
-void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDescription>& m_binding_desc, std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
+void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDescription>& m_binding_desc,
+                                           std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
 {
-    for (auto& vertex : m_desc.input)
-    {
+    for (auto& vertex : m_desc.input) {
         decltype(auto) binding = m_binding_desc.emplace_back();
-        decltype(auto) attribute =  m_attribute_desc.emplace_back();
-        attribute.location = m_desc.program->GetShader(ShaderType::kVertex)->GetInputLayoutLocation(vertex.semantic_name);
+        decltype(auto) attribute = m_attribute_desc.emplace_back();
+        attribute.location =
+            m_desc.program->GetShader(ShaderType::kVertex)->GetInputLayoutLocation(vertex.semantic_name);
         attribute.binding = binding.binding = vertex.slot;
         binding.inputRate = vk::VertexInputRate::eVertex;
         binding.stride = vertex.stride;

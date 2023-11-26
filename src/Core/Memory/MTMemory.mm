@@ -1,10 +1,10 @@
 #include "Memory/MTMemory.h"
-#include <Device/MTDevice.h>
+
+#include "Device/MTDevice.h"
 
 MTLStorageMode ConvertStorageMode(MemoryType memory_type)
 {
-    switch (memory_type)
-    {
+    switch (memory_type) {
     case MemoryType::kDefault:
         return MTLStorageModePrivate;
     case MemoryType::kUpload:

@@ -1,12 +1,13 @@
 #pragma once
+#include "Instance/BaseTypes.h"
 #include "Shader/ShaderBase.h"
-#include <Instance/BaseTypes.h>
-#include <map>
-#include <string>
+
 #import <Metal/Metal.h>
 
-class MTShader : public ShaderBase
-{
+#include <map>
+#include <string>
+
+class MTShader : public ShaderBase {
 public:
     MTShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type);
     MTShader(const ShaderDesc& desc, ShaderBlobType blob_type);

@@ -3,9 +3,7 @@
 
 class SWDevice;
 
-class SWBindingSetLayout
-    : public BindingSetLayout
-{
+class SWBindingSetLayout : public BindingSetLayout {
 public:
     SWBindingSetLayout(SWDevice& device, const std::vector<BindKey>& descs);
 

@@ -1,16 +1,17 @@
 #include "CommandList/VKCommandList.h"
-#include <Device/VKDevice.h>
-#include <Adapter/VKAdapter.h>
-#include <Resource/VKResource.h>
-#include <View/VKView.h>
-#include <Pipeline/VKGraphicsPipeline.h>
-#include <Pipeline/VKComputePipeline.h>
-#include <Pipeline/VKRayTracingPipeline.h>
-#include <Framebuffer/VKFramebuffer.h>
-#include <BindingSet/VKBindingSet.h>
-#include <Instance/VKInstance.h>
-#include <QueryHeap/VKQueryHeap.h>
-#include <Utilities/VKUtility.h>
+
+#include "Adapter/VKAdapter.h"
+#include "BindingSet/VKBindingSet.h"
+#include "Device/VKDevice.h"
+#include "Framebuffer/VKFramebuffer.h"
+#include "Instance/VKInstance.h"
+#include "Pipeline/VKComputePipeline.h"
+#include "Pipeline/VKGraphicsPipeline.h"
+#include "Pipeline/VKRayTracingPipeline.h"
+#include "QueryHeap/VKQueryHeap.h"
+#include "Resource/VKResource.h"
+#include "Utilities/VKUtility.h"
+#include "View/VKView.h"
 
 VKCommandList::VKCommandList(VKDevice& device, CommandListType type)
     : m_device(device)
@@ -37,8 +38,7 @@ void VKCommandList::Reset()
 
 void VKCommandList::Close()
 {
-    if (!m_closed)
-    {
+    if (!m_closed) {
         m_command_list->end();
         m_closed = true;
     }
@@ -46,8 +46,7 @@ void VKCommandList::Close()
 
 vk::PipelineBindPoint GetPipelineBindPoint(PipelineType type)
 {
-    switch (type)
-    {
+    switch (type) {
     case PipelineType::kGraphics:
         return vk::PipelineBindPoint::eGraphics;
     case PipelineType::kCompute:
@@ -61,25 +60,31 @@ vk::PipelineBindPoint GetPipelineBindPoint(PipelineType type)
 
 void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
-    if (state == m_state)
+    if (state == m_state) {
         return;
+    }
     m_state = std::static_pointer_cast<VKPipeline>(state);
     m_command_list->bindPipeline(GetPipelineBindPoint(m_state->GetPipelineType()), m_state->GetPipeline());
 }
 
 void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
-    if (binding_set == m_binding_set)
+    if (binding_set == m_binding_set) {
         return;
+    }
     m_binding_set = binding_set;
     decltype(auto) vk_binding_set = binding_set->As<VKBindingSet>();
     decltype(auto) descriptor_sets = vk_binding_set.GetDescriptorSets();
-    if (descriptor_sets.empty())
+    if (descriptor_sets.empty()) {
         return;
-    m_command_list->bindDescriptorSets(GetPipelineBindPoint(m_state->GetPipelineType()), m_state->GetPipelineLayout(), 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
+    }
+    m_command_list->bindDescriptorSets(GetPipelineBindPoint(m_state->GetPipelineType()), m_state->GetPipelineLayout(),
+                                       0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
 }
 
-void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass, const std::shared_ptr<Framebuffer>& framebuffer, const ClearDesc& clear_desc)
+void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass,
+                                    const std::shared_ptr<Framebuffer>& framebuffer,
+                                    const ClearDesc& clear_desc)
 {
     decltype(auto) vk_framebuffer = framebuffer->As<VKFramebuffer>();
     decltype(auto) vk_render_pass = render_pass->As<VKRenderPass>();
@@ -88,8 +93,7 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     render_pass_info.framebuffer = vk_framebuffer.GetFramebuffer();
     render_pass_info.renderArea.extent = vk_framebuffer.GetExtent();
     std::vector<vk::ClearValue> clear_values;
-    for (size_t i = 0; i < clear_desc.colors.size(); ++i)
-    {
+    for (size_t i = 0; i < clear_desc.colors.size(); ++i) {
         auto& clear_value = clear_values.emplace_back();
         clear_value.color.float32[0] = clear_desc.colors[i].r;
         clear_value.color.float32[1] = clear_desc.colors[i].g;
@@ -97,8 +101,7 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         clear_value.color.float32[3] = clear_desc.colors[i].a;
     }
     clear_values.resize(vk_render_pass.GetDesc().colors.size());
-    if (vk_render_pass.GetDesc().depth_stencil.format != gli::FORMAT_UNDEFINED)
-    {
+    if (vk_render_pass.GetDesc().depth_stencil.format != gli::FORMAT_UNDEFINED) {
         vk::ClearValue clear_value = {};
         clear_value.depthStencil.depth = clear_desc.depth;
         clear_value.depthStencil.stencil = clear_desc.stencil;
@@ -116,8 +119,7 @@ void VKCommandList::EndRenderPass()
 
 void VKCommandList::BeginEvent(const std::string& name)
 {
-    if (m_device.GetAdapter().GetInstance().IsDebugUtilsSupported())
-    {
+    if (m_device.GetAdapter().GetInstance().IsDebugUtilsSupported()) {
         vk::DebugUtilsLabelEXT label = {};
         label.pLabelName = name.c_str();
         m_command_list->beginDebugUtilsLabelEXT(&label);
@@ -126,8 +128,7 @@ void VKCommandList::BeginEvent(const std::string& name)
 
 void VKCommandList::EndEvent()
 {
-    if (m_device.GetAdapter().GetInstance().IsDebugUtilsSupported())
-    {
+    if (m_device.GetAdapter().GetInstance().IsDebugUtilsSupported()) {
         m_command_list->endDebugUtilsLabelEXT();
     }
 }
@@ -137,7 +138,11 @@ void VKCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_
     m_command_list->draw(vertex_count, instance_count, first_vertex, first_instance);
 }
 
-void VKCommandList::DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
+void VKCommandList::DrawIndexed(uint32_t index_count,
+                                uint32_t instance_count,
+                                uint32_t first_index,
+                                int32_t vertex_offset,
+                                uint32_t first_instance)
 {
     m_command_list->drawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
 }
@@ -147,82 +152,59 @@ void VKCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffe
     DrawIndirectCount(argument_buffer, argument_buffer_offset, {}, 0, 1, sizeof(DrawIndirectCommand));
 }
 
-void VKCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
+void VKCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer,
+                                        uint64_t argument_buffer_offset)
 {
     DrawIndexedIndirectCount(argument_buffer, argument_buffer_offset, {}, 0, 1, sizeof(DrawIndexedIndirectCommand));
 }
 
-void VKCommandList::DrawIndirectCount(
-    const std::shared_ptr<Resource>& argument_buffer,
-    uint64_t argument_buffer_offset,
-    const std::shared_ptr<Resource>& count_buffer,
-    uint64_t count_buffer_offset,
-    uint32_t max_draw_count,
-    uint32_t stride)
+void VKCommandList::DrawIndirectCount(const std::shared_ptr<Resource>& argument_buffer,
+                                      uint64_t argument_buffer_offset,
+                                      const std::shared_ptr<Resource>& count_buffer,
+                                      uint64_t count_buffer_offset,
+                                      uint32_t max_draw_count,
+                                      uint32_t stride)
 {
     decltype(auto) vk_argument_buffer = argument_buffer->As<VKResource>();
-    if (count_buffer)
-    {
+    if (count_buffer) {
         decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
-    #ifndef USE_STATIC_MOLTENVK
-        m_command_list->drawIndirectCount(
-            vk_argument_buffer.buffer.res.get(),
-            argument_buffer_offset,
-            vk_count_buffer.buffer.res.get(),
-            count_buffer_offset,
-            max_draw_count,
-            stride
-        );
-    #endif
-    }
-    else
-    {
+#ifndef USE_STATIC_MOLTENVK
+        m_command_list->drawIndirectCount(vk_argument_buffer.buffer.res.get(), argument_buffer_offset,
+                                          vk_count_buffer.buffer.res.get(), count_buffer_offset, max_draw_count,
+                                          stride);
+#endif
+    } else {
         assert(count_buffer_offset == 0);
-        m_command_list->drawIndirect(
-            vk_argument_buffer.buffer.res.get(),
-            argument_buffer_offset,
-            max_draw_count,
-            stride
-        );
+        m_command_list->drawIndirect(vk_argument_buffer.buffer.res.get(), argument_buffer_offset, max_draw_count,
+                                     stride);
     }
 }
 
-void VKCommandList::DrawIndexedIndirectCount(
-    const std::shared_ptr<Resource>& argument_buffer,
-    uint64_t argument_buffer_offset,
-    const std::shared_ptr<Resource>& count_buffer,
-    uint64_t count_buffer_offset,
-    uint32_t max_draw_count,
-    uint32_t stride)
+void VKCommandList::DrawIndexedIndirectCount(const std::shared_ptr<Resource>& argument_buffer,
+                                             uint64_t argument_buffer_offset,
+                                             const std::shared_ptr<Resource>& count_buffer,
+                                             uint64_t count_buffer_offset,
+                                             uint32_t max_draw_count,
+                                             uint32_t stride)
 {
     decltype(auto) vk_argument_buffer = argument_buffer->As<VKResource>();
-    if (count_buffer)
-    {
+    if (count_buffer) {
         decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
-    #ifndef USE_STATIC_MOLTENVK
-        m_command_list->drawIndexedIndirectCount(
-            vk_argument_buffer.buffer.res.get(),
-            argument_buffer_offset,
-            vk_count_buffer.buffer.res.get(),
-            count_buffer_offset,
-            max_draw_count,
-            stride
-        );
-    #endif
-    }
-    else
-    {
+#ifndef USE_STATIC_MOLTENVK
+        m_command_list->drawIndexedIndirectCount(vk_argument_buffer.buffer.res.get(), argument_buffer_offset,
+                                                 vk_count_buffer.buffer.res.get(), count_buffer_offset, max_draw_count,
+                                                 stride);
+#endif
+    } else {
         assert(count_buffer_offset == 0);
-        m_command_list->drawIndexedIndirect(
-            vk_argument_buffer.buffer.res.get(),
-            argument_buffer_offset,
-            max_draw_count,
-            stride
-        );
+        m_command_list->drawIndexedIndirect(vk_argument_buffer.buffer.res.get(), argument_buffer_offset, max_draw_count,
+                                            stride);
     }
 }
 
-void VKCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_group_count_y, uint32_t thread_group_count_z)
+void VKCommandList::Dispatch(uint32_t thread_group_count_x,
+                             uint32_t thread_group_count_y,
+                             uint32_t thread_group_count_z)
 {
     m_command_list->dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
@@ -230,10 +212,7 @@ void VKCommandList::Dispatch(uint32_t thread_group_count_x, uint32_t thread_grou
 void VKCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
     decltype(auto) vk_argument_buffer = argument_buffer->As<VKResource>();
-    m_command_list->dispatchIndirect(
-        vk_argument_buffer.buffer.res.get(),
-        argument_buffer_offset
-    );
+    m_command_list->dispatchIndirect(vk_argument_buffer.buffer.res.get(), argument_buffer_offset);
 }
 
 void VKCommandList::DispatchMesh(uint32_t thread_group_count_x)
@@ -243,10 +222,10 @@ void VKCommandList::DispatchMesh(uint32_t thread_group_count_x)
 #endif
 }
 
-static vk::StridedDeviceAddressRegionKHR GetStridedDeviceAddressRegion(VKDevice& device, const RayTracingShaderTable& table)
+static vk::StridedDeviceAddressRegionKHR GetStridedDeviceAddressRegion(VKDevice& device,
+                                                                       const RayTracingShaderTable& table)
 {
-    if (!table.resource)
-    {
+    if (!table.resource) {
         return {};
     }
     decltype(auto) vk_resource = table.resource->As<VKResource>();
@@ -259,41 +238,39 @@ static vk::StridedDeviceAddressRegionKHR GetStridedDeviceAddressRegion(VKDevice&
     return vk_table;
 }
 
-void VKCommandList::DispatchRays(const RayTracingShaderTables& shader_tables, uint32_t width, uint32_t height, uint32_t depth)
+void VKCommandList::DispatchRays(const RayTracingShaderTables& shader_tables,
+                                 uint32_t width,
+                                 uint32_t height,
+                                 uint32_t depth)
 {
 #ifndef USE_STATIC_MOLTENVK
-    m_command_list->traceRaysKHR(
-        GetStridedDeviceAddressRegion(m_device, shader_tables.raygen),
-        GetStridedDeviceAddressRegion(m_device, shader_tables.miss),
-        GetStridedDeviceAddressRegion(m_device, shader_tables.hit),
-        GetStridedDeviceAddressRegion(m_device, shader_tables.callable),
-        width,
-        height,
-        depth
-    );
+    m_command_list->traceRaysKHR(GetStridedDeviceAddressRegion(m_device, shader_tables.raygen),
+                                 GetStridedDeviceAddressRegion(m_device, shader_tables.miss),
+                                 GetStridedDeviceAddressRegion(m_device, shader_tables.hit),
+                                 GetStridedDeviceAddressRegion(m_device, shader_tables.callable), width, height, depth);
 #endif
 }
 
 void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
 {
     std::vector<vk::ImageMemoryBarrier> image_memory_barriers;
-    for (const auto& barrier : barriers)
-    {
-        if (!barrier.resource)
-        {
+    for (const auto& barrier : barriers) {
+        if (!barrier.resource) {
             assert(false);
             continue;
         }
 
         decltype(auto) vk_resource = barrier.resource->As<VKResource>();
         VKResource::Image& image = vk_resource.image;
-        if (!image.res)
+        if (!image.res) {
             continue;
+        }
 
         vk::ImageLayout vk_state_before = ConvertState(barrier.state_before);
         vk::ImageLayout vk_state_after = ConvertState(barrier.state_after);
-        if (vk_state_before == vk_state_after)
+        if (vk_state_before == vk_state_after) {
             continue;
+        }
 
         vk::ImageMemoryBarrier& image_memory_barrier = image_memory_barriers.emplace_back();
         image_memory_barrier.oldLayout = vk_state_before;
@@ -312,8 +289,7 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
         // Source layouts (old)
         // Source access mask controls actions that have to be finished on the old layout
         // before it will be transitioned to the new layout
-        switch (image_memory_barrier.oldLayout)
-        {
+        switch (image_memory_barrier.oldLayout) {
         case vk::ImageLayout::eUndefined:
             // Image layout is undefined (or does not matter)
             // Only valid as initial layout
@@ -337,7 +313,7 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
             image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
             break;
         case vk::ImageLayout::eTransferSrcOptimal:
-            // Image is a transfer source 
+            // Image is a transfer source
             // Make sure any reads from the image have been finished
             image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
             break;
@@ -361,8 +337,7 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
 
         // Target layouts (new)
         // Destination access mask controls the dependency for the new image layout
-        switch (image_memory_barrier.newLayout)
-        {
+        switch (image_memory_barrier.newLayout) {
         case vk::ImageLayout::eTransferDstOptimal:
             // Image will be used as a transfer destination
             // Make sure any writes to the image have been finished
@@ -384,15 +359,16 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
         case vk::ImageLayout::eDepthAttachmentOptimal:
             // Image layout will be used as a depth/stencil attachment
             // Make sure any writes to depth/stencil buffer have been finished
-            image_memory_barrier.dstAccessMask = image_memory_barrier.dstAccessMask | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+            image_memory_barrier.dstAccessMask =
+                image_memory_barrier.dstAccessMask | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
             break;
 
         case vk::ImageLayout::eShaderReadOnlyOptimal:
             // Image will be read in a shader (sampler, input attachment)
             // Make sure any writes to the image have been finished
-            if (!image_memory_barrier.srcAccessMask)
-            {
-                image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eHostWrite | vk::AccessFlagBits::eTransferWrite;
+            if (!image_memory_barrier.srcAccessMask) {
+                image_memory_barrier.srcAccessMask =
+                    vk::AccessFlagBits::eHostWrite | vk::AccessFlagBits::eTransferWrite;
             }
             image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
             break;
@@ -405,26 +381,23 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
         }
     }
 
-    if (!image_memory_barriers.empty())
-    {
-        m_command_list->pipelineBarrier(
-            vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands,
-            vk::DependencyFlagBits::eByRegion,
-            0, nullptr,
-            0, nullptr,
-            image_memory_barriers.size(), image_memory_barriers.data());
+    if (!image_memory_barriers.empty()) {
+        m_command_list->pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands,
+                                        vk::PipelineStageFlagBits::eAllCommands, vk::DependencyFlagBits::eByRegion, 0,
+                                        nullptr, 0, nullptr, image_memory_barriers.size(),
+                                        image_memory_barriers.data());
     }
 }
 
 void VKCommandList::UAVResourceBarrier(const std::shared_ptr<Resource>& /*resource*/)
 {
     vk::MemoryBarrier memory_barrier = {};
-    memory_barrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR
-                                 | vk::AccessFlagBits::eAccelerationStructureReadKHR
-                                 | vk::AccessFlagBits::eShaderWrite
-                                 | vk::AccessFlagBits::eShaderRead;
+    memory_barrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR |
+                                   vk::AccessFlagBits::eAccelerationStructureReadKHR |
+                                   vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eShaderRead;
     memory_barrier.dstAccessMask = memory_barrier.srcAccessMask;
-    m_command_list->pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, vk::DependencyFlagBits::eByRegion, 1, &memory_barrier, 0, 0, 0, 0);
+    m_command_list->pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands,
+                                    vk::DependencyFlagBits::eByRegion, 1, &memory_barrier, 0, 0, 0, 0);
 }
 
 void VKCommandList::SetViewport(float x, float y, float width, float height)
@@ -452,8 +425,7 @@ void VKCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, ui
 static vk::IndexType GetVkIndexType(gli::format format)
 {
     vk::Format vk_format = static_cast<vk::Format>(format);
-    switch (vk_format)
-    {
+    switch (vk_format) {
     case vk::Format::eR16Uint:
         return vk::IndexType::eUint16;
     case vk::Format::eR32Uint:
@@ -482,8 +454,7 @@ void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
 void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
 {
     vk::Extent2D fragment_size = { 1, 1 };
-    switch (shading_rate)
-    {
+    switch (shading_rate) {
     case ShadingRate::k1x1:
         fragment_size.width = 1;
         fragment_size.height = 1;
@@ -518,10 +489,8 @@ void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<
     }
 
     std::array<vk::FragmentShadingRateCombinerOpKHR, 2> vk_combiners;
-    for (size_t i = 0; i < vk_combiners.size(); ++i)
-    {
-        switch (combiners[i])
-        {
+    for (size_t i = 0; i < vk_combiners.size(); ++i) {
+        switch (combiners[i]) {
         case ShadingRateCombiner::kPassthrough:
             vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eKeep;
             break;
@@ -548,17 +517,15 @@ void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<
 #endif
 }
 
-void VKCommandList::BuildBottomLevelAS(
-    const std::shared_ptr<Resource>& src,
-    const std::shared_ptr<Resource>& dst,
-    const std::shared_ptr<Resource>& scratch,
-    uint64_t scratch_offset,
-    const std::vector<RaytracingGeometryDesc>& descs,
-    BuildAccelerationStructureFlags flags)
+void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
+                                       const std::shared_ptr<Resource>& dst,
+                                       const std::shared_ptr<Resource>& scratch,
+                                       uint64_t scratch_offset,
+                                       const std::vector<RaytracingGeometryDesc>& descs,
+                                       BuildAccelerationStructureFlags flags)
 {
     std::vector<vk::AccelerationStructureGeometryKHR> geometry_descs;
-    for (const auto& desc : descs)
-    {
+    for (const auto& desc : descs) {
         geometry_descs.emplace_back(m_device.FillRaytracingGeometryTriangles(desc.vertex, desc.index, desc.flags));
     }
 
@@ -566,34 +533,35 @@ void VKCommandList::BuildBottomLevelAS(
     decltype(auto) vk_scratch = scratch->As<VKResource>();
 
     vk::AccelerationStructureKHR vk_src_as = {};
-    if (src)
-    {
+    if (src) {
         decltype(auto) vk_src = src->As<VKResource>();
         vk_src_as = vk_src.acceleration_structure_handle.get();
     }
 
     std::vector<vk::AccelerationStructureBuildRangeInfoKHR> ranges;
-    for (const auto& desc : descs)
-    {
+    for (const auto& desc : descs) {
         vk::AccelerationStructureBuildRangeInfoKHR& offset = ranges.emplace_back();
-        if (desc.index.res)
+        if (desc.index.res) {
             offset.primitiveCount = desc.index.count / 3;
-        else
+        } else {
             offset.primitiveCount = desc.vertex.count / 3;
+        }
     }
     std::vector<const vk::AccelerationStructureBuildRangeInfoKHR*> range_infos(ranges.size());
-    for (size_t i = 0; i < ranges.size(); ++i)
+    for (size_t i = 0; i < ranges.size(); ++i) {
         range_infos[i] = &ranges[i];
+    }
 
     vk::AccelerationStructureBuildGeometryInfoKHR infos = {};
     infos.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
     infos.flags = Convert(flags);
     infos.dstAccelerationStructure = vk_dst.acceleration_structure_handle.get();
     infos.srcAccelerationStructure = vk_src_as;
-    if (vk_src_as)
+    if (vk_src_as) {
         infos.mode = vk::BuildAccelerationStructureModeKHR::eUpdate;
-    else
+    } else {
         infos.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
+    }
 #ifndef USE_STATIC_MOLTENVK
     infos.scratchData = m_device.GetDevice().getBufferAddress({ vk_scratch.buffer.res.get() }) + scratch_offset;
 #endif
@@ -605,15 +573,14 @@ void VKCommandList::BuildBottomLevelAS(
 #endif
 }
 
-void VKCommandList::BuildTopLevelAS(
-    const std::shared_ptr<Resource>& src,
-    const std::shared_ptr<Resource>& dst,
-    const std::shared_ptr<Resource>& scratch,
-    uint64_t scratch_offset,
-    const std::shared_ptr<Resource>& instance_data,
-    uint64_t instance_offset,
-    uint32_t instance_count,
-    BuildAccelerationStructureFlags flags)
+void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
+                                    const std::shared_ptr<Resource>& dst,
+                                    const std::shared_ptr<Resource>& scratch,
+                                    uint64_t scratch_offset,
+                                    const std::shared_ptr<Resource>& instance_data,
+                                    uint64_t instance_offset,
+                                    uint32_t instance_count,
+                                    BuildAccelerationStructureFlags flags)
 {
     decltype(auto) vk_instance_data = instance_data->As<VKResource>();
     vk::DeviceAddress instance_address = {};
@@ -630,25 +597,27 @@ void VKCommandList::BuildTopLevelAS(
     decltype(auto) vk_scratch = scratch->As<VKResource>();
 
     vk::AccelerationStructureKHR vk_src_as = {};
-    if (src)
-    {
+    if (src) {
         decltype(auto) vk_src = src->As<VKResource>();
         vk_src_as = vk_src.acceleration_structure_handle.get();
     }
 
     vk::AccelerationStructureBuildRangeInfoKHR acceleration_structure_build_range_info = {};
     acceleration_structure_build_range_info.primitiveCount = instance_count;
-    std::vector<vk::AccelerationStructureBuildRangeInfoKHR*> offset_infos = { &acceleration_structure_build_range_info };
+    std::vector<vk::AccelerationStructureBuildRangeInfoKHR*> offset_infos = {
+        &acceleration_structure_build_range_info
+    };
 
     vk::AccelerationStructureBuildGeometryInfoKHR infos = {};
     infos.type = vk::AccelerationStructureTypeKHR::eTopLevel;
     infos.flags = Convert(flags);
     infos.dstAccelerationStructure = vk_dst.acceleration_structure_handle.get();
     infos.srcAccelerationStructure = vk_src_as;
-    if (vk_src_as)
+    if (vk_src_as) {
         infos.mode = vk::BuildAccelerationStructureModeKHR::eUpdate;
-    else
+    } else {
         infos.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
+    }
 #ifndef USE_STATIC_MOLTENVK
     infos.scratchData = m_device.GetDevice().getBufferAddress({ vk_scratch.buffer.res.get() }) + scratch_offset;
 #endif
@@ -660,13 +629,14 @@ void VKCommandList::BuildTopLevelAS(
 #endif
 }
 
-void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src, const std::shared_ptr<Resource>& dst, CopyAccelerationStructureMode mode)
+void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src,
+                                              const std::shared_ptr<Resource>& dst,
+                                              CopyAccelerationStructureMode mode)
 {
     decltype(auto) vk_src = src->As<VKResource>();
     decltype(auto) vk_dst = dst->As<VKResource>();
     vk::CopyAccelerationStructureInfoKHR info = {};
-    switch (mode)
-    {
+    switch (mode) {
     case CopyAccelerationStructureMode::kClone:
         info.mode = vk::CopyAccelerationStructureModeKHR::eClone;
         break;
@@ -685,38 +655,37 @@ void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
 #endif
 }
 
-void VKCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_buffer,
+void VKCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
+                               const std::shared_ptr<Resource>& dst_buffer,
                                const std::vector<BufferCopyRegion>& regions)
 {
     decltype(auto) vk_src_buffer = src_buffer->As<VKResource>();
     decltype(auto) vk_dst_buffer = dst_buffer->As<VKResource>();
     std::vector<vk::BufferCopy> vk_regions;
-    for (const auto& region : regions)
-    {
+    for (const auto& region : regions) {
         vk_regions.emplace_back(region.src_offset, region.dst_offset, region.num_bytes);
     }
     m_command_list->copyBuffer(vk_src_buffer.buffer.res.get(), vk_dst_buffer.buffer.res.get(), vk_regions);
 }
 
-void VKCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer, const std::shared_ptr<Resource>& dst_texture,
+void VKCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer,
+                                        const std::shared_ptr<Resource>& dst_texture,
                                         const std::vector<BufferToTextureCopyRegion>& regions)
 {
     decltype(auto) vk_src_buffer = src_buffer->As<VKResource>();
     decltype(auto) vk_dst_texture = dst_texture->As<VKResource>();
     std::vector<vk::BufferImageCopy> vk_regions;
     auto format = dst_texture->GetFormat();
-    for (const auto& region : regions)
-    {
+    for (const auto& region : regions) {
         auto& vk_region = vk_regions.emplace_back();
         vk_region.bufferOffset = region.buffer_offset;
-        if (gli::is_compressed(format))
-        {
+        if (gli::is_compressed(format)) {
             auto extent = gli::block_extent(format);
             vk_region.bufferRowLength = region.buffer_row_pitch / gli::block_size(format) * extent.x;
-            vk_region.bufferImageHeight = ((region.texture_extent.height + gli::block_extent(format).y - 1) / gli::block_extent(format).y) * extent.x;
-        }
-        else
-        {
+            vk_region.bufferImageHeight =
+                ((region.texture_extent.height + gli::block_extent(format).y - 1) / gli::block_extent(format).y) *
+                extent.x;
+        } else {
             vk_region.bufferRowLength = region.buffer_row_pitch / (gli::detail::bits_per_pixel(format) / 8);
             vk_region.bufferImageHeight = region.texture_extent.height;
         }
@@ -731,21 +700,18 @@ void VKCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
         vk_region.imageExtent.height = region.texture_extent.height;
         vk_region.imageExtent.depth = region.texture_extent.depth;
     }
-    m_command_list->copyBufferToImage(
-        vk_src_buffer.buffer.res.get(),
-        vk_dst_texture.image.res,
-        vk::ImageLayout::eTransferDstOptimal,
-        vk_regions);
+    m_command_list->copyBufferToImage(vk_src_buffer.buffer.res.get(), vk_dst_texture.image.res,
+                                      vk::ImageLayout::eTransferDstOptimal, vk_regions);
 }
 
-void VKCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture, const std::shared_ptr<Resource>& dst_texture,
+void VKCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture,
+                                const std::shared_ptr<Resource>& dst_texture,
                                 const std::vector<TextureCopyRegion>& regions)
 {
     decltype(auto) vk_src_texture = src_texture->As<VKResource>();
     decltype(auto) vk_dst_texture = dst_texture->As<VKResource>();
     std::vector<vk::ImageCopy> vk_regions;
-    for (const auto& region : regions)
-    {
+    for (const auto& region : regions) {
         auto& vk_region = vk_regions.emplace_back();
         vk_region.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
         vk_region.srcSubresource.mipLevel = region.src_mip_level;
@@ -767,7 +733,8 @@ void VKCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture, co
         vk_region.extent.height = region.extent.height;
         vk_region.extent.depth = region.extent.depth;
     }
-    m_command_list->copyImage(vk_src_texture.image.res, vk::ImageLayout::eTransferSrcOptimal, vk_dst_texture.image.res, vk::ImageLayout::eTransferDstOptimal, vk_regions);
+    m_command_list->copyImage(vk_src_texture.image.res, vk::ImageLayout::eTransferSrcOptimal, vk_dst_texture.image.res,
+                              vk::ImageLayout::eTransferDstOptimal, vk_regions);
 }
 
 void VKCommandList::WriteAccelerationStructuresProperties(
@@ -777,44 +744,33 @@ void VKCommandList::WriteAccelerationStructuresProperties(
 {
     std::vector<vk::AccelerationStructureKHR> vk_acceleration_structures;
     vk_acceleration_structures.reserve(acceleration_structures.size());
-    for (const auto& acceleration_structure : acceleration_structures)
-    {
-        vk_acceleration_structures.emplace_back(acceleration_structure->As<VKResource>().acceleration_structure_handle.get());
+    for (const auto& acceleration_structure : acceleration_structures) {
+        vk_acceleration_structures.emplace_back(
+            acceleration_structure->As<VKResource>().acceleration_structure_handle.get());
     }
     decltype(auto) vk_query_heap = query_heap->As<VKQueryHeap>();
     auto query_type = vk_query_heap.GetQueryType();
     assert(query_type == vk::QueryType::eAccelerationStructureCompactedSizeKHR);
     m_command_list->resetQueryPool(vk_query_heap.GetQueryPool(), first_query, acceleration_structures.size());
 #ifndef USE_STATIC_MOLTENVK
-    m_command_list->writeAccelerationStructuresPropertiesKHR(
-        vk_acceleration_structures.size(),
-        vk_acceleration_structures.data(),
-        query_type,
-        vk_query_heap.GetQueryPool(),
-        first_query
-    );
+    m_command_list->writeAccelerationStructuresPropertiesKHR(vk_acceleration_structures.size(),
+                                                             vk_acceleration_structures.data(), query_type,
+                                                             vk_query_heap.GetQueryPool(), first_query);
 #endif
 }
 
-void VKCommandList::ResolveQueryData(
-    const std::shared_ptr<QueryHeap>& query_heap,
-    uint32_t first_query,
-    uint32_t query_count,
-    const std::shared_ptr<Resource>& dst_buffer,
-    uint64_t dst_offset)
+void VKCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_heap,
+                                     uint32_t first_query,
+                                     uint32_t query_count,
+                                     const std::shared_ptr<Resource>& dst_buffer,
+                                     uint64_t dst_offset)
 {
     decltype(auto) vk_query_heap = query_heap->As<VKQueryHeap>();
     auto query_type = vk_query_heap.GetQueryType();
     assert(query_type == vk::QueryType::eAccelerationStructureCompactedSizeKHR);
-    m_command_list->copyQueryPoolResults(
-        vk_query_heap.GetQueryPool(),
-        first_query,
-        query_count,
-        dst_buffer->As<VKResource>().buffer.res.get(),
-        dst_offset,
-        sizeof(uint64_t),
-        vk::QueryResultFlagBits::eWait
-    );
+    m_command_list->copyQueryPoolResults(vk_query_heap.GetQueryPool(), first_query, query_count,
+                                         dst_buffer->As<VKResource>().buffer.res.get(), dst_offset, sizeof(uint64_t),
+                                         vk::QueryResultFlagBits::eWait);
 }
 
 vk::CommandBuffer VKCommandList::GetCommandList()

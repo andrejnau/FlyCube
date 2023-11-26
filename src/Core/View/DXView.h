@@ -1,14 +1,13 @@
 #pragma once
+#include "CPUDescriptorPool/DXCPUDescriptorHandle.h"
+#include "GPUDescriptorPool/DXGPUDescriptorPoolRange.h"
+#include "Resource/DXResource.h"
 #include "View/View.h"
-#include <Resource/DXResource.h>
-#include <CPUDescriptorPool/DXCPUDescriptorHandle.h>
-#include <GPUDescriptorPool/DXGPUDescriptorPoolRange.h>
 
 class DXDevice;
 class DXResource;
 
-class DXView : public View
-{
+class DXView : public View {
 public:
     DXView(DXDevice& device, const std::shared_ptr<DXResource>& resource, const ViewDesc& view_desc);
     std::shared_ptr<Resource> GetResource() override;

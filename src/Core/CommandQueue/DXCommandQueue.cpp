@@ -1,16 +1,16 @@
 #include "CommandQueue/DXCommandQueue.h"
-#include <Device/DXDevice.h>
-#include <CommandList/DXCommandList.h>
-#include <Fence/DXFence.h>
-#include <Resource/DXResource.h>
-#include <Utilities/DXUtility.h>
+
+#include "CommandList/DXCommandList.h"
+#include "Device/DXDevice.h"
+#include "Fence/DXFence.h"
+#include "Resource/DXResource.h"
+#include "Utilities/DXUtility.h"
 
 DXCommandQueue::DXCommandQueue(DXDevice& device, CommandListType type)
     : m_device(device)
 {
     D3D12_COMMAND_LIST_TYPE dx_type;
-    switch (type)
-    {
+    switch (type) {
     case CommandListType::kGraphics:
         dx_type = D3D12_COMMAND_LIST_TYPE_DIRECT;
         break;
@@ -45,15 +45,16 @@ void DXCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
 void DXCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
 {
     std::vector<ID3D12CommandList*> dx_command_lists;
-    for (auto& command_list : command_lists)
-    {
-        if (!command_list)
+    for (auto& command_list : command_lists) {
+        if (!command_list) {
             continue;
+        }
         decltype(auto) dx_command_list = command_list->As<DXCommandList>();
         dx_command_lists.emplace_back(dx_command_list.GetCommandList().Get());
     }
-    if (!dx_command_lists.empty())
+    if (!dx_command_lists.empty()) {
         m_command_queue->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
+    }
 }
 
 DXDevice& DXCommandQueue::GetDevice()

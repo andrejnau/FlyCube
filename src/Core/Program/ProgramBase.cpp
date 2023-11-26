@@ -1,11 +1,11 @@
 #include "Program/ProgramBase.h"
+
 #include <deque>
 
 ProgramBase::ProgramBase(const std::vector<std::shared_ptr<Shader>>& shaders)
     : m_shaders(shaders)
 {
-    for (const auto& shader : m_shaders)
-    {
+    for (const auto& shader : m_shaders) {
         m_shaders_by_type[shader->GetType()] = shader;
         decltype(auto) bindings = shader->GetBindings();
         m_bindings.insert(m_bindings.begin(), bindings.begin(), bindings.end());
@@ -24,8 +24,7 @@ bool ProgramBase::HasShader(ShaderType type) const
 std::shared_ptr<Shader> ProgramBase::GetShader(ShaderType type) const
 {
     auto it = m_shaders_by_type.find(type);
-    if (it != m_shaders_by_type.end())
-    {
+    if (it != m_shaders_by_type.end()) {
         return it->second;
     }
     return {};

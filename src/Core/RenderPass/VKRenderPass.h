@@ -1,11 +1,11 @@
 #pragma once
 #include "RenderPass/RenderPass.h"
+
 #include <vulkan/vulkan.hpp>
 
 class VKDevice;
 
-class VKRenderPass : public RenderPass
-{
+class VKRenderPass : public RenderPass {
 public:
     VKRenderPass(VKDevice& device, const RenderPassDesc& desc);
     const RenderPassDesc& GetDesc() const override;

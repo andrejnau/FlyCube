@@ -1,12 +1,12 @@
 #pragma once
-#include <Instance/QueryInterface.h>
-#include <BindingSet/BindingSet.h>
-#include <Instance/BaseTypes.h>
-#include <Shader/Shader.h>
+#include "BindingSet/BindingSet.h"
+#include "Instance/BaseTypes.h"
+#include "Instance/QueryInterface.h"
+#include "Shader/Shader.h"
+
 #include <memory>
 
-class Program : public QueryInterface
-{
+class Program : public QueryInterface {
 public:
     virtual ~Program() = default;
     virtual bool HasShader(ShaderType type) const = 0;

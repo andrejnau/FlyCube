@@ -1,7 +1,8 @@
 #include "Framebuffer/VKFramebuffer.h"
-#include <Device/VKDevice.h>
-#include <View/VKView.h>
-#include <Pipeline/VKGraphicsPipeline.h>
+
+#include "Device/VKDevice.h"
+#include "Pipeline/VKGraphicsPipeline.h"
+#include "View/VKView.h"
 
 VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
     : FramebufferBase(desc)
@@ -10,21 +11,21 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
     vk::FramebufferCreateInfo framebuffer_info = {};
     std::vector<vk::ImageView> attachment_views;
     framebuffer_info.layers = 1;
-    auto add_view = [&](const std::shared_ptr<View>& view)
-    {
-        if (!view)
+    auto add_view = [&](const std::shared_ptr<View>& view) {
+        if (!view) {
             return;
+        }
         decltype(auto) vk_view = view->As<VKView>();
         decltype(auto) resource = vk_view.GetResource();
-        if (!resource)
+        if (!resource) {
             return;
+        }
         attachment_views.emplace_back(vk_view.GetImageView());
 
         decltype(auto) vk_resource = resource->As<VKResource>();
         framebuffer_info.layers = std::max(framebuffer_info.layers, vk_resource.image.array_layers);
     };
-    for (auto& rtv : desc.colors)
-    {
+    for (auto& rtv : desc.colors) {
         add_view(rtv);
     }
     add_view(desc.depth_stencil);

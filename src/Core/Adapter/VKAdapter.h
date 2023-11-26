@@ -1,11 +1,11 @@
 #pragma once
 #include "Adapter.h"
+
 #include <vulkan/vulkan.hpp>
 
 class VKInstance;
 
-class VKAdapter : public Adapter
-{
+class VKAdapter : public Adapter {
 public:
     VKAdapter(VKInstance& instance, const vk::PhysicalDevice& physical_device);
     const std::string& GetName() const override;

@@ -3,8 +3,7 @@
 
 class MTDevice;
 
-class MTFence : public Fence
-{
+class MTFence : public Fence {
 public:
     MTFence(MTDevice& device, uint64_t initial_value);
     uint64_t GetCompletedValue() override;

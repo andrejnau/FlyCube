@@ -1,11 +1,12 @@
 #pragma once
 #include "ShaderReflection/ShaderReflection.h"
-#include <vector>
-#include <string>
+
 #include <spirv_hlsl.hpp>
 
-class SPIRVReflection : public ShaderReflection
-{
+#include <string>
+#include <vector>
+
+class SPIRVReflection : public ShaderReflection {
 public:
     SPIRVReflection(const void* data, size_t size);
     const std::vector<EntryPoint>& GetEntryPoints() const override;

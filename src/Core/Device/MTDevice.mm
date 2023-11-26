@@ -1,20 +1,21 @@
 #include "Device/MTDevice.h"
-#include <CommandQueue/MTCommandQueue.h>
-#include <Swapchain/MTSwapchain.h>
-#include <Shader/MTShader.h>
-#include <Program/ProgramBase.h>
-#include <Pipeline/MTComputePipeline.h>
-#include <Pipeline/MTGraphicsPipeline.h>
-#include <CommandList/MTCommandList.h>
-#include <Framebuffer/MTFramebuffer.h>
-#include <RenderPass/MTRenderPass.h>
-#include <View/MTView.h>
-#include <Resource/MTResource.h>
-#include <Fence/MTFence.h>
-#include <BindingSetLayout/MTBindingSetLayout.h>
-#include <BindingSet/MTBindingSet.h>
-#include <Memory/MTMemory.h>
-#include <Instance/MTInstance.h>
+
+#include "BindingSet/MTBindingSet.h"
+#include "BindingSetLayout/MTBindingSetLayout.h"
+#include "CommandList/MTCommandList.h"
+#include "CommandQueue/MTCommandQueue.h"
+#include "Fence/MTFence.h"
+#include "Framebuffer/MTFramebuffer.h"
+#include "Instance/MTInstance.h"
+#include "Memory/MTMemory.h"
+#include "Pipeline/MTComputePipeline.h"
+#include "Pipeline/MTGraphicsPipeline.h"
+#include "Program/ProgramBase.h"
+#include "RenderPass/MTRenderPass.h"
+#include "Resource/MTResource.h"
+#include "Shader/MTShader.h"
+#include "Swapchain/MTSwapchain.h"
+#include "View/MTView.h"
 
 MTDevice::MTDevice(MTInstance& instance, const id<MTLDevice>& device)
     : m_instance(instance)
@@ -39,7 +40,11 @@ uint32_t MTDevice::GetTextureDataPitchAlignment() const
     return 1;
 }
 
-std::shared_ptr<Swapchain> MTDevice::CreateSwapchain(WindowHandle window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+std::shared_ptr<Swapchain> MTDevice::CreateSwapchain(WindowHandle window,
+                                                     uint32_t width,
+                                                     uint32_t height,
+                                                     uint32_t frame_count,
+                                                     bool vsync)
 {
     return std::make_shared<MTSwapchain>(*this, window, width, height, frame_count, vsync);
 }
@@ -54,7 +59,14 @@ std::shared_ptr<Fence> MTDevice::CreateFence(uint64_t initial_value)
     return std::make_shared<MTFence>(*this, initial_value);
 }
 
-std::shared_ptr<Resource> MTDevice::CreateTexture(TextureType type, uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
+std::shared_ptr<Resource> MTDevice::CreateTexture(TextureType type,
+                                                  uint32_t bind_flag,
+                                                  gli::format format,
+                                                  uint32_t sample_count,
+                                                  int width,
+                                                  int height,
+                                                  int depth,
+                                                  int mip_levels)
 {
     std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
     res->resource_type = ResourceType::kTexture;
@@ -72,8 +84,9 @@ std::shared_ptr<Resource> MTDevice::CreateTexture(TextureType type, uint32_t bin
 
 std::shared_ptr<Resource> MTDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
 {
-    if (buffer_size == 0)
+    if (buffer_size == 0) {
         return {};
+    }
 
     std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
     res->resource_type = ResourceType::kBuffer;
@@ -85,7 +98,7 @@ std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
 {
     std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
     res->resource_type = ResourceType::kSampler;
-    
+
     MTLSamplerDescriptor* sampler_descriptor = [MTLSamplerDescriptor new];
     sampler_descriptor.minFilter = MTLSamplerMinMagFilterLinear;
     sampler_descriptor.magFilter = MTLSamplerMinMagFilterLinear;
@@ -96,9 +109,8 @@ std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
 #endif
     sampler_descriptor.lodMinClamp = 0;
     sampler_descriptor.lodMaxClamp = std::numeric_limits<float>::max();
-        
-    switch (desc.mode)
-    {
+
+    switch (desc.mode) {
     case SamplerTextureAddressMode::kWrap:
         sampler_descriptor.sAddressMode = MTLSamplerAddressModeRepeat;
         sampler_descriptor.tAddressMode = MTLSamplerAddressModeRepeat;
@@ -110,9 +122,8 @@ std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
         sampler_descriptor.rAddressMode = MTLSamplerAddressModeClampToEdge;
         break;
     }
-    
-    switch (desc.func)
-    {
+
+    switch (desc.func) {
     case SamplerComparisonFunc::kNever:
         sampler_descriptor.compareFunction = MTLCompareFunctionNever;
         break;
@@ -123,7 +134,7 @@ std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
         sampler_descriptor.compareFunction = MTLCompareFunctionLess;
         break;
     }
-    
+
     res->sampler.res = [m_device newSamplerStateWithDescriptor:sampler_descriptor];
     return res;
 }
@@ -153,7 +164,9 @@ std::shared_ptr<Framebuffer> MTDevice::CreateFramebuffer(const FramebufferDesc& 
     return std::make_shared<MTFramebuffer>(desc);
 }
 
-std::shared_ptr<Shader> MTDevice::CreateShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
+std::shared_ptr<Shader> MTDevice::CreateShader(const std::vector<uint8_t>& blob,
+                                               ShaderBlobType blob_type,
+                                               ShaderType shader_type)
 {
     return std::make_shared<MTShader>(blob, blob_type, shader_type);
 }
@@ -184,13 +197,14 @@ std::shared_ptr<Pipeline> MTDevice::CreateRayTracingPipeline(const RayTracingPip
     return {};
 }
 
-std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(AccelerationStructureType type, const std::shared_ptr<Resource>& resource, uint64_t offset)
+std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(AccelerationStructureType type,
+                                                                const std::shared_ptr<Resource>& resource,
+                                                                uint64_t offset)
 {
     std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
     res->resource_type = ResourceType::kAccelerationStructure;
     res->acceleration_structure = [m_device newAccelerationStructureWithSize:resource->GetWidth() - offset];
-    if (type == AccelerationStructureType::kBottomLevel)
-    {
+    if (type == AccelerationStructureType::kBottomLevel) {
         res->acceleration_structure_handle = [acceleration_structures count];
         [acceleration_structures addObject:res->acceleration_structure];
     }
@@ -263,16 +277,17 @@ uint32_t MTDevice::GetShaderTableAlignment() const
     return 0;
 }
 
-MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags)
+MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(const BufferDesc& vertex,
+                                                                               const BufferDesc& index,
+                                                                               RaytracingGeometryFlags flags)
 {
     MTLAccelerationStructureTriangleGeometryDescriptor* geometry_desc =
-    [MTLAccelerationStructureTriangleGeometryDescriptor descriptor];
+        [MTLAccelerationStructureTriangleGeometryDescriptor descriptor];
 
     auto vertex_res = std::static_pointer_cast<MTResource>(vertex.res);
     auto index_res = std::static_pointer_cast<MTResource>(index.res);
 
-    switch (flags)
-    {
+    switch (flags) {
     case RaytracingGeometryFlags::kOpaque:
         geometry_desc.opaque = true;
         break;
@@ -286,9 +301,8 @@ MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(c
     geometry_desc.vertexBufferOffset = vertex.offset * vertex_stride;
     geometry_desc.vertexStride = vertex_stride;
     geometry_desc.triangleCount = vertex.count / 3;
-    
-    if (index_res)
-    {
+
+    if (index_res) {
         auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
         geometry_desc.indexBuffer = index_res->buffer.res;
         geometry_desc.indexBufferOffset = index.offset * index_stride;
@@ -298,20 +312,23 @@ MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(c
     return geometry_desc;
 }
 
-RaytracingASPrebuildInfo MTDevice::GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const
+RaytracingASPrebuildInfo MTDevice::GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs,
+                                                       BuildAccelerationStructureFlags flags) const
 {
     NSMutableArray* geometry_descs = [NSMutableArray array];
-    for (const auto& desc : descs)
-    {
-        MTLAccelerationStructureTriangleGeometryDescriptor* geometry_desc = FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags);
+    for (const auto& desc : descs) {
+        MTLAccelerationStructureTriangleGeometryDescriptor* geometry_desc =
+            FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags);
         [geometry_descs addObject:geometry_desc];
     }
-  
-    MTLPrimitiveAccelerationStructureDescriptor* acceleration_structure_desc = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
+
+    MTLPrimitiveAccelerationStructureDescriptor* acceleration_structure_desc =
+        [MTLPrimitiveAccelerationStructureDescriptor descriptor];
     acceleration_structure_desc.geometryDescriptors = geometry_descs;
-    
-    MTLAccelerationStructureSizes sizes = [m_device accelerationStructureSizesWithDescriptor:acceleration_structure_desc];
-    
+
+    MTLAccelerationStructureSizes sizes =
+        [m_device accelerationStructureSizesWithDescriptor:acceleration_structure_desc];
+
     RaytracingASPrebuildInfo prebuild_info = {};
     prebuild_info.acceleration_structure_size = sizes.accelerationStructureSize;
     prebuild_info.build_scratch_data_size = sizes.buildScratchBufferSize;
@@ -319,13 +336,16 @@ RaytracingASPrebuildInfo MTDevice::GetBLASPrebuildInfo(const std::vector<Raytrac
     return prebuild_info;
 }
 
-RaytracingASPrebuildInfo MTDevice::GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const
+RaytracingASPrebuildInfo MTDevice::GetTLASPrebuildInfo(uint32_t instance_count,
+                                                       BuildAccelerationStructureFlags flags) const
 {
-    MTLInstanceAccelerationStructureDescriptor* acceleration_structure_desc = [MTLInstanceAccelerationStructureDescriptor descriptor];
+    MTLInstanceAccelerationStructureDescriptor* acceleration_structure_desc =
+        [MTLInstanceAccelerationStructureDescriptor descriptor];
     acceleration_structure_desc.instanceCount = instance_count;
-    
-    MTLAccelerationStructureSizes sizes = [m_device accelerationStructureSizesWithDescriptor:acceleration_structure_desc];
-    
+
+    MTLAccelerationStructureSizes sizes =
+        [m_device accelerationStructureSizesWithDescriptor:acceleration_structure_desc];
+
     RaytracingASPrebuildInfo prebuild_info = {};
     prebuild_info.acceleration_structure_size = sizes.accelerationStructureSize;
     prebuild_info.build_scratch_data_size = sizes.buildScratchBufferSize;

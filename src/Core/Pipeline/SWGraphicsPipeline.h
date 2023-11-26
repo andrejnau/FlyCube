@@ -1,11 +1,10 @@
 #pragma once
+#include "Instance/BaseTypes.h"
 #include "Pipeline/Pipeline.h"
-#include <Instance/BaseTypes.h>
 
 class SWDevice;
 
-class SWGraphicsPipeline : public Pipeline
-{
+class SWGraphicsPipeline : public Pipeline {
 public:
     SWGraphicsPipeline(SWDevice& device, const GraphicsPipelineDesc& desc);
     PipelineType GetPipelineType() const override;

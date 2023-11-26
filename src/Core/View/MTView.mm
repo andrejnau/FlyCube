@@ -1,11 +1,11 @@
 #include "View/MTView.h"
-#include <Device/MTDevice.h>
-#include <Resource/MTResource.h>
+
+#include "Device/MTDevice.h"
+#include "Resource/MTResource.h"
 
 static MTLTextureType ConvertTextureType(ViewDimension dimension)
 {
-    switch (dimension)
-    {
+    switch (dimension) {
     case ViewDimension::kTexture1D:
         return MTLTextureType1D;
     case ViewDimension::kTexture1DArray:
@@ -37,10 +37,10 @@ MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, co
     , m_resource(resource)
     , m_view_desc(m_view_desc)
 {
-    if (!m_resource)
+    if (!m_resource) {
         return;
-    switch (m_view_desc.view_type)
-    {
+    }
+    switch (m_view_desc.view_type) {
     case ViewType::kTexture:
     case ViewType::kRWTexture:
         CreateTextureView();
@@ -55,35 +55,30 @@ void MTView::CreateTextureView()
     decltype(auto) texture = m_resource->texture.res;
     MTLPixelFormat format = m_resource->texture.format;
     MTLTextureType texture_type = ConvertTextureType(m_view_desc.dimension);
-    NSRange levels = {GetBaseMipLevel(), GetLevelCount()};
-    NSRange slices = {GetBaseArrayLayer(), GetLayerCount()};
-    
-    if (m_view_desc.plane_slice == 1)
-    {
-        if (format == MTLPixelFormatDepth32Float_Stencil8)
-        {
+    NSRange levels = { GetBaseMipLevel(), GetLevelCount() };
+    NSRange slices = { GetBaseArrayLayer(), GetLayerCount() };
+
+    if (m_view_desc.plane_slice == 1) {
+        if (format == MTLPixelFormatDepth32Float_Stencil8) {
             format = MTLPixelFormatX32_Stencil8;
         }
-        
+
         MTLTextureSwizzleChannels swizzle = MTLTextureSwizzleChannelsDefault;
         swizzle.green = MTLTextureSwizzleRed;
-        
+
         m_texture_view = [texture newTextureViewWithPixelFormat:format
                                                     textureType:texture_type
                                                          levels:levels
                                                          slices:slices
                                                         swizzle:swizzle];
-    }
-    else
-    {
+    } else {
         m_texture_view = [texture newTextureViewWithPixelFormat:format
                                                     textureType:texture_type
                                                          levels:levels
                                                          slices:slices];
     }
 
-    if (m_texture_view == nullptr)
-    {
+    if (m_texture_view == nullptr) {
         NSLog(@"Error: failed to create texture view");
     }
 }

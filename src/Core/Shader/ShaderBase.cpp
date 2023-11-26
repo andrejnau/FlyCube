@@ -1,5 +1,6 @@
 #include "Shader/ShaderBase.h"
-#include <HLSLCompiler/Compiler.h>
+
+#include "HLSLCompiler/Compiler.h"
 
 static uint64_t GenId()
 {
@@ -19,17 +20,16 @@ ShaderBase::ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_typ
 {
     m_reflection = CreateShaderReflection(blob_type, m_blob.data(), m_blob.size());
     m_bindings = m_reflection->GetBindings();
-    for (uint32_t i = 0; i < m_bindings.size(); ++i)
-    {
-        BindKey bind_key = { m_shader_type, m_bindings[i].type, m_bindings[i].slot, m_bindings[i].space, m_bindings[i].count };
+    for (uint32_t i = 0; i < m_bindings.size(); ++i) {
+        BindKey bind_key = { m_shader_type, m_bindings[i].type, m_bindings[i].slot, m_bindings[i].space,
+                             m_bindings[i].count };
         m_bind_keys[m_bindings[i].name] = bind_key;
         m_mapping[bind_key] = i;
         m_binding_keys.emplace_back(bind_key);
     }
 
     decltype(auto) input_parameters = m_reflection->GetInputParameters();
-    for (uint32_t i = 0; i < input_parameters.size(); ++i)
-    {
+    for (uint32_t i = 0; i < input_parameters.size(); ++i) {
         decltype(auto) layout = m_input_layout_descs.emplace_back();
         layout.slot = i;
         layout.semantic_name = input_parameters[i].semantic_name;
@@ -38,8 +38,7 @@ ShaderBase::ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_typ
         m_locations[input_parameters[i].semantic_name] = input_parameters[i].location;
     }
 
-    for (const auto& entry_point : m_reflection->GetEntryPoints())
-    {
+    for (const auto& entry_point : m_reflection->GetEntryPoints()) {
         m_ids.emplace(entry_point.name, GenId());
     }
 }

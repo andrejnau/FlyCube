@@ -1,13 +1,13 @@
 #pragma once
+#include "Instance/BaseTypes.h"
 #include "Pipeline/MTPipeline.h"
-#include <Instance/BaseTypes.h>
+
 #import <Metal/Metal.h>
 
 class MTDevice;
 class Shader;
 
-class MTGraphicsPipeline : public MTPipeline
-{
+class MTGraphicsPipeline : public MTPipeline {
 public:
     MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineDesc& desc);
     PipelineType GetPipelineType() const override;

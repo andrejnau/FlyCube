@@ -1,10 +1,9 @@
+#include "HLSLCompiler/Compiler.h"
+#include "ShaderReflection/ShaderReflection.h"
+
 #include <catch2/catch_all.hpp>
 
-#include <ShaderReflection/ShaderReflection.h>
-#include <HLSLCompiler/Compiler.h>
-
-class ShaderTestCase
-{
+class ShaderTestCase {
 public:
     virtual const ShaderDesc& GetShaderDesc() const = 0;
     virtual void Test(ShaderBlobType type, const void* data, size_t size) const = 0;
@@ -25,8 +24,7 @@ void RunTest(const ShaderTestCase& test_case)
 #endif
 }
 
-class RayTracing : public ShaderTestCase
-{
+class RayTracing : public ShaderTestCase {
 public:
     const ShaderDesc& GetShaderDesc() const override
     {
@@ -42,25 +40,23 @@ public:
 
         std::vector<EntryPoint> expect = {
             { "ray_gen", ShaderKind::kRayGeneration },
-            { "miss",    ShaderKind::kMiss },
+            { "miss", ShaderKind::kMiss },
         };
         auto entry_points = reflection->GetEntryPoints();
         sort(entry_points.begin(), entry_points.end());
         sort(expect.begin(), expect.end());
         REQUIRE(entry_points.size() == expect.size());
-        for (size_t i = 0; i < entry_points.size(); ++i)
-        {
+        for (size_t i = 0; i < entry_points.size(); ++i) {
             REQUIRE(entry_points[i].name == expect[i].name);
             REQUIRE(entry_points[i].kind == expect[i].kind);
         }
     }
 
 private:
-    ShaderDesc m_desc = { ASSETS_PATH"shaders/CoreDxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" };
+    ShaderDesc m_desc = { ASSETS_PATH "shaders/CoreDxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" };
 };
 
-class TrianglePS : public ShaderTestCase
-{
+class TrianglePS : public ShaderTestCase {
 public:
     const ShaderDesc& GetShaderDesc() const override
     {
@@ -86,11 +82,10 @@ public:
     }
 
 private:
-    ShaderDesc m_desc = { ASSETS_PATH"shaders/CoreTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_3" };
+    ShaderDesc m_desc = { ASSETS_PATH "shaders/CoreTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_3" };
 };
 
-class TriangleVS : public ShaderTestCase
-{
+class TriangleVS : public ShaderTestCase {
 public:
     const ShaderDesc& GetShaderDesc() const override
     {
@@ -112,7 +107,7 @@ public:
     }
 
 private:
-    ShaderDesc m_desc = { ASSETS_PATH"shaders/CoreTriangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_3" };
+    ShaderDesc m_desc = { ASSETS_PATH "shaders/CoreTriangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_3" };
 };
 
 TEST_CASE("ShaderReflection")

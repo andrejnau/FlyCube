@@ -1,23 +1,23 @@
 #pragma once
+#include "ApiType/ApiType.h"
 #include "AppBox/InputEvents.h"
-#include "AppBox/WindowEvents.h"
 #include "AppBox/Settings.h"
-#include <ApiType/ApiType.h>
-#include <functional>
-#include <string>
-#include <memory>
-#include <array>
-#include <map>
+#include "AppBox/WindowEvents.h"
+
 #include <GLFW/glfw3.h>
 
-struct AppRect
-{
+#include <array>
+#include <functional>
+#include <map>
+#include <memory>
+#include <string>
+
+struct AppRect {
     uint32_t width;
     uint32_t height;
 };
 
-class AppBox
-{
+class AppBox {
 public:
     AppBox(const std::string& title, Settings setting);
     ~AppBox();

@@ -1,12 +1,13 @@
 #pragma once
 #include "Resource/ResourceBase.h"
+
 #include <glm/glm.hpp>
+
 #include <map>
 
 class SWDevice;
 
-class SWResource : public ResourceBase
-{
+class SWResource : public ResourceBase {
 public:
     SWResource(SWDevice& device);
 

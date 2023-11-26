@@ -1,7 +1,8 @@
 #include "View/SWView.h"
-#include <Device/SWDevice.h>
-#include <Resource/SWResource.h>
-#include <BindingSetLayout/SWBindingSetLayout.h>
+
+#include "BindingSetLayout/SWBindingSetLayout.h"
+#include "Device/SWDevice.h"
+#include "Resource/SWResource.h"
 
 SWView::SWView(SWDevice& device, const std::shared_ptr<SWResource>& resource, const ViewDesc& view_desc)
     : m_device(device)

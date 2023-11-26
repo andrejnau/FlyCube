@@ -1,10 +1,10 @@
 #include "ShaderReflection/SPIRVReflection.h"
-#include <Utilities/Common.h>
+
+#include "Utilities/Common.h"
 
 ShaderKind ConvertShaderKind(spv::ExecutionModel execution_model)
 {
-    switch (execution_model)
-    {
+    switch (execution_model) {
     case spv::ExecutionModel::ExecutionModelVertex:
         return ShaderKind::kVertex;
     case spv::ExecutionModel::ExecutionModelFragment:
@@ -38,48 +38,44 @@ std::vector<InputParameterDesc> ParseInputParameters(const spirv_cross::Compiler
 {
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
     std::vector<InputParameterDesc> input_parameters;
-    for (const auto& resource : resources.stage_inputs)
-    {
+    for (const auto& resource : resources.stage_inputs) {
         decltype(auto) input = input_parameters.emplace_back();
         input.location = compiler.get_decoration(resource.id, spv::DecorationLocation);
         input.semantic_name = compiler.get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE);
-        if (!input.semantic_name.empty() && input.semantic_name.back() == '0')
-        {
+        if (!input.semantic_name.empty() && input.semantic_name.back() == '0') {
             input.semantic_name.pop_back();
         }
         decltype(auto) type = compiler.get_type(resource.base_type_id);
-        if (type.basetype == spirv_cross::SPIRType::Float)
-        {
-            if (type.vecsize == 1)
+        if (type.basetype == spirv_cross::SPIRType::Float) {
+            if (type.vecsize == 1) {
                 input.format = gli::format::FORMAT_R32_SFLOAT_PACK32;
-            else if (type.vecsize == 2)
+            } else if (type.vecsize == 2) {
                 input.format = gli::format::FORMAT_RG32_SFLOAT_PACK32;
-            else if (type.vecsize == 3)
+            } else if (type.vecsize == 3) {
                 input.format = gli::format::FORMAT_RGB32_SFLOAT_PACK32;
-            else if (type.vecsize == 4)
+            } else if (type.vecsize == 4) {
                 input.format = gli::format::FORMAT_RGBA32_SFLOAT_PACK32;
-        }
-        else if (type.basetype == spirv_cross::SPIRType::UInt)
-        {
-            if (type.vecsize == 1)
+            }
+        } else if (type.basetype == spirv_cross::SPIRType::UInt) {
+            if (type.vecsize == 1) {
                 input.format = gli::format::FORMAT_R32_UINT_PACK32;
-            else if (type.vecsize == 2)
+            } else if (type.vecsize == 2) {
                 input.format = gli::format::FORMAT_RG32_UINT_PACK32;
-            else if (type.vecsize == 3)
+            } else if (type.vecsize == 3) {
                 input.format = gli::format::FORMAT_RGB32_UINT_PACK32;
-            else if (type.vecsize == 4)
+            } else if (type.vecsize == 4) {
                 input.format = gli::format::FORMAT_RGBA32_UINT_PACK32;
-        }
-        else if (type.basetype == spirv_cross::SPIRType::Int)
-        {
-            if (type.vecsize == 1)
+            }
+        } else if (type.basetype == spirv_cross::SPIRType::Int) {
+            if (type.vecsize == 1) {
                 input.format = gli::format::FORMAT_R32_SINT_PACK32;
-            else if (type.vecsize == 2)
+            } else if (type.vecsize == 2) {
                 input.format = gli::format::FORMAT_RG32_SINT_PACK32;
-            else if (type.vecsize == 3)
+            } else if (type.vecsize == 3) {
                 input.format = gli::format::FORMAT_RGB32_SINT_PACK32;
-            else if (type.vecsize == 4)
+            } else if (type.vecsize == 4) {
                 input.format = gli::format::FORMAT_RGBA32_SINT_PACK32;
+            }
         }
     }
     return input_parameters;
@@ -89,8 +85,7 @@ std::vector<OutputParameterDesc> ParseOutputParameters(const spirv_cross::Compil
 {
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
     std::vector<OutputParameterDesc> output_parameters;
-    for (const auto& resource : resources.stage_outputs)
-    {
+    for (const auto& resource : resources.stage_outputs) {
         decltype(auto) output = output_parameters.emplace_back();
         output.slot = compiler.get_decoration(resource.id, spv::DecorationLocation);
     }
@@ -99,8 +94,7 @@ std::vector<OutputParameterDesc> ParseOutputParameters(const spirv_cross::Compil
 
 bool IsBufferDimension(spv::Dim dimension)
 {
-    switch (dimension)
-    {
+    switch (dimension) {
     case spv::Dim::DimBuffer:
         return true;
     case spv::Dim::Dim1D:
@@ -116,52 +110,40 @@ bool IsBufferDimension(spv::Dim dimension)
 
 ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& type, uint32_t resource_id)
 {
-    switch (type.basetype)
-    {
-    case spirv_cross::SPIRType::AccelerationStructure:
-    {
+    switch (type.basetype) {
+    case spirv_cross::SPIRType::AccelerationStructure: {
         return ViewType::kAccelerationStructure;
     }
     case spirv_cross::SPIRType::SampledImage:
-    case spirv_cross::SPIRType::Image:
-    {
+    case spirv_cross::SPIRType::Image: {
         bool is_readonly = (type.image.sampled != 2);
-        if (IsBufferDimension(type.image.dim))
-        {
-            if (is_readonly)
+        if (IsBufferDimension(type.image.dim)) {
+            if (is_readonly) {
                 return ViewType::kBuffer;
-            else
+            } else {
                 return ViewType::kRWBuffer;
-        }
-        else
-        {
-            if (is_readonly)
+            }
+        } else {
+            if (is_readonly) {
                 return ViewType::kTexture;
-            else
+            } else {
                 return ViewType::kRWTexture;
+            }
         }
     }
-    case spirv_cross::SPIRType::Sampler:
-    {
+    case spirv_cross::SPIRType::Sampler: {
         return ViewType::kSampler;
     }
-    case spirv_cross::SPIRType::Struct:
-    {
-        if (type.storage == spv::StorageClassStorageBuffer)
-        {
+    case spirv_cross::SPIRType::Struct: {
+        if (type.storage == spv::StorageClassStorageBuffer) {
             spirv_cross::Bitset flags = compiler.get_buffer_block_flags(resource_id);
             bool is_readonly = flags.get(spv::DecorationNonWritable);
-            if (is_readonly)
-            {
+            if (is_readonly) {
                 return ViewType::kStructuredBuffer;
-            }
-            else
-            {
+            } else {
                 return ViewType::kRWStructuredBuffer;
             }
-        }
-        else if (type.storage == spv::StorageClassPushConstant || type.storage == spv::StorageClassUniform)
-        {
+        } else if (type.storage == spv::StorageClassPushConstant || type.storage == spv::StorageClassUniform) {
             return ViewType::kConstantBuffer;
         }
         assert(false);
@@ -175,45 +157,40 @@ ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::S
 
 ViewDimension GetDimension(spv::Dim dim, const spirv_cross::SPIRType& resource_type)
 {
-    switch (dim)
-    {
-    case spv::Dim::Dim1D:
-    {
-        if (resource_type.image.arrayed)
+    switch (dim) {
+    case spv::Dim::Dim1D: {
+        if (resource_type.image.arrayed) {
             return ViewDimension::kTexture1DArray;
-        else
+        } else {
             return ViewDimension::kTexture1D;
+        }
     }
-    case spv::Dim::Dim2D:
-    {
-        if (resource_type.image.ms)
-        {
-            if (resource_type.image.arrayed)
+    case spv::Dim::Dim2D: {
+        if (resource_type.image.ms) {
+            if (resource_type.image.arrayed) {
                 return ViewDimension::kTexture2DMSArray;
-            else
+            } else {
                 return ViewDimension::kTexture2DMS;
-        }
-        else
-        {
-            if (resource_type.image.arrayed)
+            }
+        } else {
+            if (resource_type.image.arrayed) {
                 return ViewDimension::kTexture2DArray;
-            else
+            } else {
                 return ViewDimension::kTexture2D;
+            }
         }
     }
-    case spv::Dim::Dim3D:
-    {
+    case spv::Dim::Dim3D: {
         return ViewDimension::kTexture3D;
     }
-    case spv::Dim::DimCube:
-    {
-        if (resource_type.image.arrayed)
+    case spv::Dim::DimCube: {
+        if (resource_type.image.arrayed) {
             return ViewDimension::kTextureCubeArray;
-        else
+        } else {
             return ViewDimension::kTextureCube;
+        }
     }
-    case spv::Dim::DimBuffer:
-    {
+    case spv::Dim::DimBuffer: {
         return ViewDimension::kBuffer;
     }
     default:
@@ -224,27 +201,20 @@ ViewDimension GetDimension(spv::Dim dim, const spirv_cross::SPIRType& resource_t
 
 ViewDimension GetViewDimension(const spirv_cross::SPIRType& resource_type)
 {
-    if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Image)
-    {
+    if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Image) {
         return GetDimension(resource_type.image.dim, resource_type);
-    }
-    else if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Struct)
-    {
+    } else if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Struct) {
         return ViewDimension::kBuffer;
-    }
-    else
-    {
+    } else {
         return ViewDimension::kUnknown;
     }
 }
 
 ReturnType GetReturnType(const spirv_cross::CompilerHLSL& compiler, const spirv_cross::SPIRType& resource_type)
 {
-    if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Image)
-    {
+    if (resource_type.basetype == spirv_cross::SPIRType::BaseType::Image) {
         decltype(auto) image_type = compiler.get_type(resource_type.image.type);
-        switch (image_type.basetype)
-        {
+        switch (image_type.basetype) {
         case spirv_cross::SPIRType::BaseType::Float:
             return ReturnType::kFloat;
         case spirv_cross::SPIRType::BaseType::UInt:
@@ -268,25 +238,24 @@ ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, co
     desc.slot = compiler.get_decoration(resource.id, spv::DecorationBinding);
     desc.space = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
     desc.count = 1;
-    if (!type.array.empty() && type.array.front() == 0)
-    {
+    if (!type.array.empty() && type.array.front() == 0) {
         desc.count = std::numeric_limits<uint32_t>::max();
     }
     desc.dimension = GetViewDimension(type);
     desc.return_type = GetReturnType(compiler, type);
-    switch (desc.type)
-    {
+    switch (desc.type) {
     case ViewType::kStructuredBuffer:
-    case ViewType::kRWStructuredBuffer:
-    {
+    case ViewType::kRWStructuredBuffer: {
         bool is_block = compiler.get_decoration_bitset(type.self).get(spv::DecorationBlock) ||
                         compiler.get_decoration_bitset(type.self).get(spv::DecorationBufferBlock);
-        bool is_sized_block = is_block && (compiler.get_storage_class(resource.id) == spv::StorageClassUniform ||
-                                           compiler.get_storage_class(resource.id) == spv::StorageClassUniformConstant ||
-                                           compiler.get_storage_class(resource.id) == spv::StorageClassStorageBuffer);
+        bool is_sized_block =
+            is_block && (compiler.get_storage_class(resource.id) == spv::StorageClassUniform ||
+                         compiler.get_storage_class(resource.id) == spv::StorageClassUniformConstant ||
+                         compiler.get_storage_class(resource.id) == spv::StorageClassStorageBuffer);
         assert(is_sized_block);
         decltype(auto) base_type = compiler.get_type(resource.base_type_id);
-        desc.structure_stride = compiler.get_declared_struct_size_runtime_array(base_type, 1) - compiler.get_declared_struct_size_runtime_array(base_type, 0);
+        desc.structure_stride = compiler.get_declared_struct_size_runtime_array(base_type, 1) -
+                                compiler.get_declared_struct_size_runtime_array(base_type, 0);
         assert(desc.structure_stride);
         break;
     }
@@ -300,13 +269,11 @@ VariableLayout GetBufferMemberLayout(const spirv_cross::CompilerHLSL& compiler, 
     VariableLayout layout = {};
     layout.columns = type.vecsize;
     layout.rows = type.columns;
-    if (!type.array.empty())
-    {
+    if (!type.array.empty()) {
         assert(type.array.size() == 1);
         layout.elements = type.array.front();
     }
-    switch (type.basetype)
-    {
+    switch (type.basetype) {
     case spirv_cross::SPIRType::BaseType::Float:
         layout.type = VariableType::kFloat;
         break;
@@ -326,10 +293,11 @@ VariableLayout GetBufferMemberLayout(const spirv_cross::CompilerHLSL& compiler, 
     return layout;
 }
 
-VariableLayout GetBufferLayout(ViewType view_type, const spirv_cross::CompilerHLSL& compiler, const spirv_cross::Resource& resource)
+VariableLayout GetBufferLayout(ViewType view_type,
+                               const spirv_cross::CompilerHLSL& compiler,
+                               const spirv_cross::Resource& resource)
 {
-    if (view_type != ViewType::kConstantBuffer)
-    {
+    if (view_type != ViewType::kConstantBuffer) {
         return {};
     }
 
@@ -338,8 +306,7 @@ VariableLayout GetBufferLayout(ViewType view_type, const spirv_cross::CompilerHL
     layout.name = compiler.get_name(resource.id);
     layout.size = Align(compiler.get_declared_struct_size(type), 16);
     assert(type.basetype == spirv_cross::SPIRType::BaseType::Struct);
-    for (size_t i = 0; i < type.member_types.size(); ++i)
-    {
+    for (size_t i = 0; i < type.member_types.size(); ++i) {
         auto& member = layout.members.emplace_back(GetBufferMemberLayout(compiler, type.member_types[i]));
         member.name = compiler.get_member_name(resource.base_type_id, i);
         member.offset = compiler.type_struct_member_offset(type, i);
@@ -348,13 +315,13 @@ VariableLayout GetBufferLayout(ViewType view_type, const spirv_cross::CompilerHL
     return layout;
 }
 
-void ParseBindings(const spirv_cross::CompilerHLSL& compiler, std::vector<ResourceBindingDesc>& bindings, std::vector<VariableLayout>& layouts)
+void ParseBindings(const spirv_cross::CompilerHLSL& compiler,
+                   std::vector<ResourceBindingDesc>& bindings,
+                   std::vector<VariableLayout>& layouts)
 {
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-    auto enumerate_resources = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources)
-    {
-        for (const auto& resource : resources)
-        {
+    auto enumerate_resources = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources) {
+        for (const auto& resource : resources) {
             bindings.emplace_back(GetBindingDesc(compiler, resource));
             layouts.emplace_back(GetBufferLayout(bindings.back().type, compiler, resource));
         }
@@ -373,16 +340,14 @@ SPIRVReflection::SPIRVReflection(const void* data, size_t size)
 {
     spirv_cross::CompilerHLSL compiler(m_blob);
     auto entry_points = compiler.get_entry_points_and_stages();
-    for (const auto& entry_point : entry_points)
-    {
+    for (const auto& entry_point : entry_points) {
         m_entry_points.push_back({ entry_point.name.c_str(), ConvertShaderKind(entry_point.execution_model) });
     }
     ParseBindings(compiler, m_bindings, m_layouts);
     m_input_parameters = ParseInputParameters(compiler);
     m_output_parameters = ParseOutputParameters(compiler);
-    
-    for (uint32_t i = 0; i < m_shader_feature_info.numthreads.size(); ++i)
-    {
+
+    for (uint32_t i = 0; i < m_shader_feature_info.numthreads.size(); ++i) {
         m_shader_feature_info.numthreads[i] = compiler.get_execution_mode_argument(spv::ExecutionModeLocalSize, i);
     }
 }

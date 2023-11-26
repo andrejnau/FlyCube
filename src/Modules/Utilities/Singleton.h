@@ -1,14 +1,14 @@
 #pragma once
 
 template <typename T>
-class Singleton
-{
+class Singleton {
 public:
     static T& Instance()
     {
         static T instance;
         return instance;
     }
+
 protected:
     Singleton() = default;
     virtual ~Singleton() = default;

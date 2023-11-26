@@ -1,9 +1,9 @@
 #pragma once
 #include "Instance/Instance.h"
+
 #include <vulkan/vulkan.hpp>
 
-class VKInstance : public Instance
-{
+class VKInstance : public Instance {
 public:
     VKInstance();
     std::vector<std::shared_ptr<Adapter>> EnumerateAdapters() override;

@@ -3,11 +3,10 @@
 #include <deque>
 #include <functional>
 
-class ScopeGuard
-{
+class ScopeGuard {
 public:
     using HandlerType = std::function<void()>;
-    
+
     ScopeGuard(const HandlerType& fn)
     {
         m_deque.push_front(fn);
@@ -15,13 +14,12 @@ public:
 
     ~ScopeGuard()
     {
-        for (auto & handler : m_deque)
-        {
+        for (auto& handler : m_deque) {
             handler();
         }
     }
 
-    ScopeGuard& operator += (const HandlerType& fn)
+    ScopeGuard& operator+=(const HandlerType& fn)
     {
         m_deque.push_front(fn);
         return *this;

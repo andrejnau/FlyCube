@@ -1,15 +1,15 @@
 #include "HLSLCompiler/MSLConverter.h"
+
 #include "HLSLCompiler/Compiler.h"
+
 #include <spirv_msl.hpp>
 
 std::map<std::string, uint32_t> ParseBindings(const spirv_cross::CompilerMSL& compiler)
 {
     std::map<std::string, uint32_t> mapping;
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-    auto enumerate_resources = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources)
-    {
-        for (const auto& resource : resources)
-        {
+    auto enumerate_resources = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources) {
+        for (const auto& resource : resources) {
             std::string name = compiler.get_name(resource.id);
             uint32_t index = compiler.get_automatic_msl_resource_binding(resource.id);
             mapping[name] = index;

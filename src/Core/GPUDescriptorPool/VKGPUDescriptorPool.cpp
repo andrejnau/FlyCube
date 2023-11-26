@@ -1,5 +1,6 @@
 #include "GPUDescriptorPool/VKGPUDescriptorPool.h"
-#include <Device/VKDevice.h>
+
+#include "Device/VKDevice.h"
 
 VKGPUDescriptorPool::VKGPUDescriptorPool(VKDevice& device)
     : m_device(device)
@@ -9,8 +10,7 @@ VKGPUDescriptorPool::VKGPUDescriptorPool(VKDevice& device)
 vk::UniqueDescriptorPool VKGPUDescriptorPool::CreateDescriptorPool(const std::map<vk::DescriptorType, size_t>& count)
 {
     std::vector<vk::DescriptorPoolSize> pool_sizes;
-    for (auto & x : count)
-    {
+    for (auto& x : count) {
         pool_sizes.emplace_back();
         vk::DescriptorPoolSize& pool_size = pool_sizes.back();
         pool_size.type = x.first;
@@ -18,8 +18,7 @@ vk::UniqueDescriptorPool VKGPUDescriptorPool::CreateDescriptorPool(const std::ma
     }
 
     // TODO: fix me
-    if (count.empty())
-    {
+    if (count.empty()) {
         pool_sizes.emplace_back();
         vk::DescriptorPoolSize& pool_size = pool_sizes.back();
         pool_size.type = vk::DescriptorType::eSampler;
@@ -35,7 +34,8 @@ vk::UniqueDescriptorPool VKGPUDescriptorPool::CreateDescriptorPool(const std::ma
     return m_device.GetDevice().createDescriptorPoolUnique(pool_info);
 }
 
-DescriptorSetPool VKGPUDescriptorPool::AllocateDescriptorSet(const vk::DescriptorSetLayout& set_layout, const std::map<vk::DescriptorType, size_t>& count)
+DescriptorSetPool VKGPUDescriptorPool::AllocateDescriptorSet(const vk::DescriptorSetLayout& set_layout,
+                                                             const std::map<vk::DescriptorType, size_t>& count)
 {
     DescriptorSetPool res = {};
     res.pool = CreateDescriptorPool(count);

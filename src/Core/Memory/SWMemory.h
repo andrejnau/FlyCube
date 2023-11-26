@@ -1,9 +1,8 @@
 #pragma once
+#include "Instance/BaseTypes.h"
 #include "Memory/Memory.h"
-#include <Instance/BaseTypes.h>
 
-class SWMemory : public Memory
-{
+class SWMemory : public Memory {
 public:
     SWMemory(uint64_t size, MemoryType memory_type);
     MemoryType GetMemoryType() const override;

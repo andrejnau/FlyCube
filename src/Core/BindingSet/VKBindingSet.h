@@ -1,14 +1,13 @@
 #pragma once
 #include "BindingSet/BindingSet.h"
-#include <GPUDescriptorPool/VKGPUDescriptorPool.h>
+#include "GPUDescriptorPool/VKGPUDescriptorPool.h"
+
 #include <vulkan/vulkan.hpp>
 
 class VKDevice;
 class VKBindingSetLayout;
 
-class VKBindingSet
-    : public BindingSet
-{
+class VKBindingSet : public BindingSet {
 public:
     VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetLayout>& layout);
 

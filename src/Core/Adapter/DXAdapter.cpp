@@ -1,9 +1,11 @@
 #include "Adapter/DXAdapter.h"
-#include <Device/DXDevice.h>
-#include <Utilities/DXUtility.h>
-#include <Utilities/SystemUtils.h>
-#include <dxgi1_6.h>
+
+#include "Device/DXDevice.h"
+#include "Utilities/DXUtility.h"
+#include "Utilities/SystemUtils.h"
+
 #include <directx/d3d12.h>
+#include <dxgi1_6.h>
 #include <nowide/convert.hpp>
 
 DXAdapter::DXAdapter(DXInstance& instance, const ComPtr<IDXGIAdapter1>& adapter)

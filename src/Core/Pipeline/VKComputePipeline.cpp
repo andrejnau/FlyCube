@@ -1,8 +1,10 @@
 #include "Pipeline/VKComputePipeline.h"
+
+#include "Device/VKDevice.h"
 #include "Pipeline/VKGraphicsPipeline.h"
-#include <Device/VKDevice.h>
-#include <Program/VKProgram.h>
-#include <Shader/Shader.h>
+#include "Program/VKProgram.h"
+#include "Shader/Shader.h"
+
 #include <map>
 
 VKComputePipeline::VKComputePipeline(VKDevice& device, const ComputePipelineDesc& desc)

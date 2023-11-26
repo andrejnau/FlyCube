@@ -1,15 +1,18 @@
 #pragma once
 #include "Pipeline/Pipeline.h"
-#include <Program/Program.h>
+#include "Program/Program.h"
+
 #include <vulkan/vulkan.hpp>
+
 #include <deque>
 
 class VKDevice;
 
-class VKPipeline : public Pipeline
-{
+class VKPipeline : public Pipeline {
 public:
-    VKPipeline(VKDevice& device, const std::shared_ptr<Program>& program, const std::shared_ptr<BindingSetLayout>& layout);
+    VKPipeline(VKDevice& device,
+               const std::shared_ptr<Program>& program,
+               const std::shared_ptr<BindingSetLayout>& layout);
     vk::PipelineLayout GetPipelineLayout() const;
     vk::Pipeline GetPipeline() const;
     std::vector<uint8_t> GetRayTracingShaderGroupHandles(uint32_t first_group, uint32_t group_count) const override;

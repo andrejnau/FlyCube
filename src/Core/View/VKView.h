@@ -1,12 +1,11 @@
 #pragma once
+#include "GPUDescriptorPool/VKGPUDescriptorPoolRange.h"
+#include "Resource/VKResource.h"
 #include "View/View.h"
-#include <Resource/VKResource.h>
-#include <GPUDescriptorPool/VKGPUDescriptorPoolRange.h>
 
 class VKDevice;
 
-class VKView : public View
-{
+class VKView : public View {
 public:
     VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, const ViewDesc& view_desc);
     std::shared_ptr<Resource> GetResource() override;

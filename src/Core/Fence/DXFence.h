@@ -1,14 +1,14 @@
 #pragma once
 #include "Fence/Fence.h"
-#include <dxgi.h>
+
 #include <directx/d3d12.h>
+#include <dxgi.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
 class DXDevice;
 
-class DXFence : public Fence
-{
+class DXFence : public Fence {
 public:
     DXFence(DXDevice& device, uint64_t initial_value);
     uint64_t GetCompletedValue() override;

@@ -1,25 +1,27 @@
 #include "Device/DXDevice.h"
-#include <Adapter/DXAdapter.h>
-#include <Swapchain/DXSwapchain.h>
-#include <CommandList/DXCommandList.h>
-#include <Memory/DXMemory.h>
-#include <Shader/ShaderBase.h>
-#include <Fence/DXFence.h>
-#include <View/DXView.h>
-#include <Program/DXProgram.h>
-#include <Pipeline/DXGraphicsPipeline.h>
-#include <Pipeline/DXComputePipeline.h>
-#include <Pipeline/DXRayTracingPipeline.h>
-#include <BindingSetLayout/DXBindingSetLayout.h>
-#include <BindingSet/DXBindingSet.h>
-#include <RenderPass/DXRenderPass.h>
-#include <Framebuffer/DXFramebuffer.h>
-#include <CommandQueue/DXCommandQueue.h>
-#include <QueryHeap/DXRayTracingQueryHeap.h>
-#include <Utilities/DXUtility.h>
-#include <Utilities/DXGIFormatHelper.h>
-#include <dxgi1_6.h>
+
+#include "Adapter/DXAdapter.h"
+#include "BindingSet/DXBindingSet.h"
+#include "BindingSetLayout/DXBindingSetLayout.h"
+#include "CommandList/DXCommandList.h"
+#include "CommandQueue/DXCommandQueue.h"
+#include "Fence/DXFence.h"
+#include "Framebuffer/DXFramebuffer.h"
+#include "Memory/DXMemory.h"
+#include "Pipeline/DXComputePipeline.h"
+#include "Pipeline/DXGraphicsPipeline.h"
+#include "Pipeline/DXRayTracingPipeline.h"
+#include "Program/DXProgram.h"
+#include "QueryHeap/DXRayTracingQueryHeap.h"
+#include "RenderPass/DXRenderPass.h"
+#include "Shader/ShaderBase.h"
+#include "Swapchain/DXSwapchain.h"
+#include "Utilities/DXGIFormatHelper.h"
+#include "Utilities/DXUtility.h"
+#include "View/DXView.h"
+
 #include <directx/d3dx12.h>
+#include <dxgi1_6.h>
 #include <gli/dx.hpp>
 
 D3D12_RESOURCE_STATES ConvertState(ResourceState state)
@@ -44,10 +46,8 @@ D3D12_RESOURCE_STATES ConvertState(ResourceState state)
     };
 
     D3D12_RESOURCE_STATES res = {};
-    for (const auto& m : mapping)
-    {
-        if (state & m.first)
-        {
+    for (const auto& m : mapping) {
+        if (state & m.first) {
             res |= m.second;
             state &= ~m.first;
         }
@@ -58,8 +58,7 @@ D3D12_RESOURCE_STATES ConvertState(ResourceState state)
 
 D3D12_HEAP_TYPE GetHeapType(MemoryType memory_type)
 {
-    switch (memory_type)
-    {
+    switch (memory_type) {
     case MemoryType::kDefault:
         return D3D12_HEAP_TYPE_DEFAULT;
     case MemoryType::kUpload:
@@ -85,35 +84,39 @@ DXDevice::DXDevice(DXAdapter& adapter)
     m_device.As(&m_device5);
 
     ComPtr<IUnknown> renderdoc;
-    if (SUCCEEDED(m_device->QueryInterface(renderdoc_uuid, &renderdoc)))
+    if (SUCCEEDED(m_device->QueryInterface(renderdoc_uuid, &renderdoc))) {
         m_is_under_graphics_debugger |= !!renderdoc;
+    }
 
     ComPtr<IUnknown> pix;
-    if (SUCCEEDED(DXGIGetDebugInterface1(0, pix_uuid, &pix)))
+    if (SUCCEEDED(DXGIGetDebugInterface1(0, pix_uuid, &pix))) {
         m_is_under_graphics_debugger |= !!pix;
+    }
 
     ComPtr<IUnknown> gpa;
-    if (SUCCEEDED(m_device->QueryInterface(gpa_uuid, &gpa)))
+    if (SUCCEEDED(m_device->QueryInterface(gpa_uuid, &gpa))) {
         m_is_under_graphics_debugger |= !!gpa;
+    }
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature_support5 = {};
-    if (SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support5, sizeof(feature_support5))))
-    {
+    if (SUCCEEDED(
+            m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support5, sizeof(feature_support5)))) {
         m_is_dxr_supported = feature_support5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
         m_is_render_passes_supported = feature_support5.RenderPassesTier >= D3D12_RENDER_PASS_TIER_0;
         m_is_ray_query_supported = feature_support5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_1;
     }
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS6 feature_support6 = {};
-    if (SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS6, &feature_support6, sizeof(feature_support6))))
-    {
-        m_is_variable_rate_shading_supported = feature_support6.VariableShadingRateTier >= D3D12_VARIABLE_SHADING_RATE_TIER_2;
+    if (SUCCEEDED(
+            m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS6, &feature_support6, sizeof(feature_support6)))) {
+        m_is_variable_rate_shading_supported =
+            feature_support6.VariableShadingRateTier >= D3D12_VARIABLE_SHADING_RATE_TIER_2;
         m_shading_rate_image_tile_size = feature_support6.ShadingRateImageTileSize;
     }
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS7 feature_support7 = {};
-    if (SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &feature_support7, sizeof(feature_support7))))
-    {
+    if (SUCCEEDED(
+            m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &feature_support7, sizeof(feature_support7)))) {
         m_is_create_not_zeroed_available = true;
         m_is_mesh_shading_supported = feature_support7.MeshShaderTier >= D3D12_MESH_SHADER_TIER_1;
     }
@@ -123,21 +126,17 @@ DXDevice::DXDevice(DXAdapter& adapter)
     m_command_queues[CommandListType::kCopy] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCopy);
 
     static const bool debug_enabled = IsDebuggerPresent();
-    if (debug_enabled)
-    {
+    if (debug_enabled) {
         ComPtr<ID3D12InfoQueue> info_queue;
-        if (SUCCEEDED(m_device.As(&info_queue)))
-        {
+        if (SUCCEEDED(m_device.As(&info_queue))) {
             info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
             info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
 
-            D3D12_MESSAGE_SEVERITY severities[] =
-            {
+            D3D12_MESSAGE_SEVERITY severities[] = {
                 D3D12_MESSAGE_SEVERITY_INFO,
             };
 
-            D3D12_MESSAGE_ID deny_ids[] =
-            {
+            D3D12_MESSAGE_ID deny_ids[] = {
                 D3D12_MESSAGE_ID_COPY_DESCRIPTORS_INVALID_RANGES,
             };
 
@@ -152,7 +151,8 @@ DXDevice::DXDevice(DXAdapter& adapter)
         /*ComPtr<ID3D12DebugDevice2> debug_device;
         m_device.As(&debug_device);
         D3D12_DEBUG_FEATURE debug_feature = D3D12_DEBUG_FEATURE_CONSERVATIVE_RESOURCE_STATE_TRACKING;
-        debug_device->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS, &debug_feature, sizeof(debug_feature));*/
+        debug_device->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS, &debug_feature,
+        sizeof(debug_feature));*/
     }
 }
 
@@ -171,9 +171,14 @@ uint32_t DXDevice::GetTextureDataPitchAlignment() const
     return D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
 }
 
-std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(WindowHandle window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(WindowHandle window,
+                                                     uint32_t width,
+                                                     uint32_t height,
+                                                     uint32_t frame_count,
+                                                     bool vsync)
 {
-    return std::make_shared<DXSwapchain>(*m_command_queues.at(CommandListType::kGraphics), window, width, height, frame_count, vsync);
+    return std::make_shared<DXSwapchain>(*m_command_queues.at(CommandListType::kGraphics), window, width, height,
+                                         frame_count, vsync);
 }
 
 std::shared_ptr<CommandList> DXDevice::CreateCommandList(CommandListType type)
@@ -186,11 +191,17 @@ std::shared_ptr<Fence> DXDevice::CreateFence(uint64_t initial_value)
     return std::make_shared<DXFence>(*this, initial_value);
 }
 
-std::shared_ptr<Resource> DXDevice::CreateTexture(TextureType type, uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
+std::shared_ptr<Resource> DXDevice::CreateTexture(TextureType type,
+                                                  uint32_t bind_flag,
+                                                  gli::format format,
+                                                  uint32_t sample_count,
+                                                  int width,
+                                                  int height,
+                                                  int depth,
+                                                  int mip_levels)
 {
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
-    if (bind_flag & BindFlag::kShaderResource)
-    {
+    if (bind_flag & BindFlag::kShaderResource) {
         dx_format = MakeTypelessDepthStencil(dx_format);
     }
 
@@ -199,8 +210,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(TextureType type, uint32_t bin
     res->format = format;
 
     D3D12_RESOURCE_DESC desc = {};
-    switch (type)
-    {
+    switch (type) {
     case TextureType::k1D:
         desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
         break;
@@ -224,12 +234,15 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(TextureType type, uint32_t bin
     desc.SampleDesc.Count = sample_count;
     desc.SampleDesc.Quality = ms_check_desc.NumQualityLevels - 1;
 
-    if (bind_flag & BindFlag::kRenderTarget)
+    if (bind_flag & BindFlag::kRenderTarget) {
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-    if (bind_flag & BindFlag::kDepthStencil)
+    }
+    if (bind_flag & BindFlag::kDepthStencil) {
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-    if (bind_flag & BindFlag::kUnorderedAccess)
+    }
+    if (bind_flag & BindFlag::kUnorderedAccess) {
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
 
     res->desc = desc;
     res->SetInitialState(ResourceState::kCommon);
@@ -238,33 +251,31 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(TextureType type, uint32_t bin
 
 std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
 {
-    if (buffer_size == 0)
+    if (buffer_size == 0) {
         return {};
+    }
 
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
 
-    if (bind_flag & BindFlag::kConstantBuffer)
+    if (bind_flag & BindFlag::kConstantBuffer) {
         buffer_size = (buffer_size + 255) & ~255;
+    }
 
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
 
     res->resource_type = ResourceType::kBuffer;
 
     ResourceState state = ResourceState::kCommon;
-    if (bind_flag & BindFlag::kRenderTarget)
-    {
+    if (bind_flag & BindFlag::kRenderTarget) {
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     }
-    if (bind_flag & BindFlag::kDepthStencil)
-    {
+    if (bind_flag & BindFlag::kDepthStencil) {
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     }
-    if (bind_flag & BindFlag::kUnorderedAccess)
-    {
+    if (bind_flag & BindFlag::kUnorderedAccess) {
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
-    if (bind_flag & BindFlag::kAccelerationStructure)
-    {
+    if (bind_flag & BindFlag::kAccelerationStructure) {
         state = ResourceState::kRaytracingAccelerationStructure;
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
@@ -279,8 +290,7 @@ std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
     D3D12_SAMPLER_DESC& sampler_desc = res->sampler_desc;
 
-    switch (desc.filter)
-    {
+    switch (desc.filter) {
     case SamplerFilter::kAnisotropic:
         sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
         break;
@@ -292,8 +302,7 @@ std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
         break;
     }
 
-    switch (desc.mode)
-    {
+    switch (desc.mode) {
     case SamplerTextureAddressMode::kWrap:
         sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -306,8 +315,7 @@ std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
         break;
     }
 
-    switch (desc.func)
-    {
+    switch (desc.func) {
     case SamplerComparisonFunc::kNever:
         sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
         break;
@@ -351,7 +359,9 @@ std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const FramebufferDesc& 
     return std::make_shared<DXFramebuffer>(desc);
 }
 
-std::shared_ptr<Shader> DXDevice::CreateShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
+std::shared_ptr<Shader> DXDevice::CreateShader(const std::vector<uint8_t>& blob,
+                                               ShaderBlobType blob_type,
+                                               ShaderType shader_type)
 {
     return std::make_shared<ShaderBase>(blob, blob_type, shader_type);
 }
@@ -381,7 +391,9 @@ std::shared_ptr<Pipeline> DXDevice::CreateRayTracingPipeline(const RayTracingPip
     return std::make_shared<DXRayTracingPipeline>(*this, desc);
 }
 
-std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(AccelerationStructureType type, const std::shared_ptr<Resource>& resource, uint64_t offset)
+std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(AccelerationStructureType type,
+                                                                const std::shared_ptr<Resource>& resource,
+                                                                uint64_t offset)
 {
     std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
     res->resource_type = ResourceType::kAccelerationStructure;
@@ -392,14 +404,15 @@ std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(AccelerationStru
 
 std::shared_ptr<QueryHeap> DXDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)
 {
-    if (type == QueryHeapType::kAccelerationStructureCompactedSize)
-    {
+    if (type == QueryHeapType::kAccelerationStructureCompactedSize) {
         return std::make_shared<DXRayTracingQueryHeap>(*this, type, count);
     }
     return {};
 }
 
-D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex, const BufferDesc& index, RaytracingGeometryFlags flags)
+D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex,
+                                                          const BufferDesc& index,
+                                                          RaytracingGeometryFlags flags)
 {
     D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
 
@@ -407,8 +420,7 @@ D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vert
     auto index_res = std::static_pointer_cast<DXResource>(index.res);
 
     geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-    switch (flags)
-    {
+    switch (flags) {
     case RaytracingGeometryFlags::kOpaque:
         geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
         break;
@@ -418,22 +430,24 @@ D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vert
     }
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
-    geometry_desc.Triangles.VertexBuffer.StartAddress = vertex_res->resource->GetGPUVirtualAddress() + vertex.offset * vertex_stride;
+    geometry_desc.Triangles.VertexBuffer.StartAddress =
+        vertex_res->resource->GetGPUVirtualAddress() + vertex.offset * vertex_stride;
     geometry_desc.Triangles.VertexBuffer.StrideInBytes = vertex_stride;
     geometry_desc.Triangles.VertexFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(vertex.format).DXGIFormat.DDS);
     geometry_desc.Triangles.VertexCount = vertex.count;
-    if (index_res)
-    {
+    if (index_res) {
         auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
         geometry_desc.Triangles.IndexBuffer = index_res->resource->GetGPUVirtualAddress() + index.offset * index_stride;
-        geometry_desc.Triangles.IndexFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(index.format).DXGIFormat.DDS);
+        geometry_desc.Triangles.IndexFormat =
+            static_cast<DXGI_FORMAT>(gli::dx().translate(index.format).DXGIFormat.DDS);
         geometry_desc.Triangles.IndexCount = index.count;
     }
 
     return geometry_desc;
 }
 
-RaytracingASPrebuildInfo DXDevice::GetAccelerationStructurePrebuildInfo(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs) const
+RaytracingASPrebuildInfo DXDevice::GetAccelerationStructurePrebuildInfo(
+    const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs) const
 {
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
     m_device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
@@ -447,16 +461,21 @@ RaytracingASPrebuildInfo DXDevice::GetAccelerationStructurePrebuildInfo(const D3
 D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStructureFlags flags)
 {
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS dx_flags = {};
-    if (flags & BuildAccelerationStructureFlags::kAllowUpdate)
+    if (flags & BuildAccelerationStructureFlags::kAllowUpdate) {
         dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
-    if (flags & BuildAccelerationStructureFlags::kAllowCompaction)
+    }
+    if (flags & BuildAccelerationStructureFlags::kAllowCompaction) {
         dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
-    if (flags & BuildAccelerationStructureFlags::kPreferFastTrace)
+    }
+    if (flags & BuildAccelerationStructureFlags::kPreferFastTrace) {
         dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-    if (flags & BuildAccelerationStructureFlags::kPreferFastBuild)
+    }
+    if (flags & BuildAccelerationStructureFlags::kPreferFastBuild) {
         dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
-    if (flags & BuildAccelerationStructureFlags::kMinimizeMemory)
+    }
+    if (flags & BuildAccelerationStructureFlags::kMinimizeMemory) {
         dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
+    }
     return dx_flags;
 }
 
@@ -503,7 +522,8 @@ MemoryBudget DXDevice::GetMemoryBudget() const
     adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &local_memory_info);
     DXGI_QUERY_VIDEO_MEMORY_INFO non_local_memory_info = {};
     adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL, &non_local_memory_info);
-    return { local_memory_info.Budget + non_local_memory_info.Budget, local_memory_info.CurrentUsage + non_local_memory_info.CurrentUsage };
+    return { local_memory_info.Budget + non_local_memory_info.Budget,
+             local_memory_info.CurrentUsage + non_local_memory_info.CurrentUsage };
 }
 
 uint32_t DXDevice::GetShaderGroupHandleSize() const
@@ -521,11 +541,11 @@ uint32_t DXDevice::GetShaderTableAlignment() const
     return D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 }
 
-RaytracingASPrebuildInfo DXDevice::GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const
+RaytracingASPrebuildInfo DXDevice::GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs,
+                                                       BuildAccelerationStructureFlags flags) const
 {
     std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometry_descs;
-    for (const auto& desc : descs)
-    {
+    for (const auto& desc : descs) {
         geometry_descs.emplace_back(FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags));
     }
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
@@ -537,7 +557,8 @@ RaytracingASPrebuildInfo DXDevice::GetBLASPrebuildInfo(const std::vector<Raytrac
     return GetAccelerationStructurePrebuildInfo(inputs);
 }
 
-RaytracingASPrebuildInfo DXDevice::GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const
+RaytracingASPrebuildInfo DXDevice::GetTLASPrebuildInfo(uint32_t instance_count,
+                                                       BuildAccelerationStructureFlags flags) const
 {
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
@@ -585,8 +606,7 @@ bool DXDevice::IsCreateNotZeroedAvailable() const
 ID3D12CommandSignature* DXDevice::GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TYPE type, uint32_t stride)
 {
     auto it = m_command_signature_cache.find({ type, stride });
-    if (it != m_command_signature_cache.end())
-    {
+    if (it != m_command_signature_cache.end()) {
         return it->second.Get();
     }
 
@@ -597,15 +617,9 @@ ID3D12CommandSignature* DXDevice::GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TY
     desc.pArgumentDescs = &arg;
     desc.ByteStride = stride;
     ComPtr<ID3D12CommandSignature> command_signature;
-    ASSERT_SUCCEEDED(m_device->CreateCommandSignature(
-        &desc,
-        nullptr,
-        IID_PPV_ARGS(&command_signature)
-    ));
+    ASSERT_SUCCEEDED(m_device->CreateCommandSignature(&desc, nullptr, IID_PPV_ARGS(&command_signature)));
 
-    m_command_signature_cache.emplace(std::piecewise_construct,
-        std::forward_as_tuple(type, stride),
-        std::forward_as_tuple(command_signature)
-    );
+    m_command_signature_cache.emplace(std::piecewise_construct, std::forward_as_tuple(type, stride),
+                                      std::forward_as_tuple(command_signature));
     return command_signature.Get();
 }

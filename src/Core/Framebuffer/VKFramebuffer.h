@@ -1,12 +1,12 @@
 #pragma once
 #include "Framebuffer/FramebufferBase.h"
+
 #include <vulkan/vulkan.hpp>
 
 class VKDevice;
 class VKGraphicsPipeline;
 
-class VKFramebuffer : public FramebufferBase
-{
+class VKFramebuffer : public FramebufferBase {
 public:
     VKFramebuffer(VKDevice& device, const FramebufferDesc& desc);
 

@@ -1,11 +1,11 @@
 #pragma once
 #include "QueryHeap/QueryHeap.h"
+
 #include <vulkan/vulkan.hpp>
 
 class VKDevice;
 
-class VKQueryHeap : public QueryHeap
-{
+class VKQueryHeap : public QueryHeap {
 public:
     VKQueryHeap(VKDevice& device, QueryHeapType type, uint32_t count);
 

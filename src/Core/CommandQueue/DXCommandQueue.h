@@ -1,13 +1,13 @@
 #pragma once
 #include "CommandQueue/CommandQueue.h"
+
 #include <directx/d3d12.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
 class DXDevice;
 
-class DXCommandQueue : public CommandQueue
-{
+class DXCommandQueue : public CommandQueue {
 public:
     DXCommandQueue(DXDevice& device, CommandListType type);
     void Wait(const std::shared_ptr<Fence>& fence, uint64_t value) override;

@@ -1,18 +1,20 @@
 #include "Pipeline/DXGraphicsPipeline.h"
+
+#include "BindingSetLayout/DXBindingSetLayout.h"
+#include "Device/DXDevice.h"
 #include "Pipeline/DXStateBuilder.h"
-#include <Device/DXDevice.h>
-#include <Program/DXProgram.h>
-#include <BindingSetLayout/DXBindingSetLayout.h>
-#include <View/DXView.h>
-#include <Utilities/DXGIFormatHelper.h>
+#include "Program/DXProgram.h"
+#include "Utilities/DXGIFormatHelper.h"
+#include "View/DXView.h"
+
 #include <directx/d3dx12.h>
+
 #include <cctype>
 
 CD3DX12_RASTERIZER_DESC GetRasterizerDesc(const GraphicsPipelineDesc& desc)
 {
     CD3DX12_RASTERIZER_DESC rasterizer_desc(D3D12_DEFAULT);
-    switch (desc.rasterizer_desc.fill_mode)
-    {
+    switch (desc.rasterizer_desc.fill_mode) {
     case FillMode::kWireframe:
         rasterizer_desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
         break;
@@ -20,8 +22,7 @@ CD3DX12_RASTERIZER_DESC GetRasterizerDesc(const GraphicsPipelineDesc& desc)
         rasterizer_desc.FillMode = D3D12_FILL_MODE_SOLID;
         break;
     }
-    switch (desc.rasterizer_desc.cull_mode)
-    {
+    switch (desc.rasterizer_desc.cull_mode) {
     case CullMode::kNone:
         rasterizer_desc.CullMode = D3D12_CULL_MODE_NONE;
         break;
@@ -39,10 +40,8 @@ CD3DX12_RASTERIZER_DESC GetRasterizerDesc(const GraphicsPipelineDesc& desc)
 CD3DX12_BLEND_DESC GetBlendDesc(const GraphicsPipelineDesc& desc)
 {
     CD3DX12_BLEND_DESC blend_desc(D3D12_DEFAULT);
-    auto convert = [](Blend type)
-    {
-        switch (type)
-        {
+    auto convert = [](Blend type) {
+        switch (type) {
         case Blend::kZero:
             return D3D12_BLEND_ZERO;
         case Blend::kSrcAlpha:
@@ -52,20 +51,18 @@ CD3DX12_BLEND_DESC GetBlendDesc(const GraphicsPipelineDesc& desc)
         }
         return static_cast<D3D12_BLEND>(0);
     };
-    auto convert_op = [](BlendOp type)
-    {
-        switch (type)
-        {
+    auto convert_op = [](BlendOp type) {
+        switch (type) {
         case BlendOp::kAdd:
             return D3D12_BLEND_OP_ADD;
         }
         return static_cast<D3D12_BLEND_OP>(0);
     };
     const RenderPassDesc& render_pass_desc = desc.render_pass->GetDesc();
-    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
-    {
-        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED)
+    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
+        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED) {
             continue;
+        }
         decltype(auto) rt_desc = blend_desc.RenderTarget[i];
         rt_desc.BlendEnable = desc.blend_desc.blend_enable;
         rt_desc.BlendOp = convert_op(desc.blend_desc.blend_op);
@@ -81,8 +78,7 @@ CD3DX12_BLEND_DESC GetBlendDesc(const GraphicsPipelineDesc& desc)
 
 D3D12_COMPARISON_FUNC Convert(ComparisonFunc func)
 {
-    switch (func)
-    {
+    switch (func) {
     case ComparisonFunc::kNever:
         return D3D12_COMPARISON_FUNC_NEVER;
     case ComparisonFunc::kLess:
@@ -107,8 +103,7 @@ D3D12_COMPARISON_FUNC Convert(ComparisonFunc func)
 
 D3D12_STENCIL_OP Convert(StencilOp op)
 {
-    switch (op)
-    {
+    switch (op) {
     case StencilOp::kKeep:
         return D3D12_STENCIL_OP_KEEP;
     case StencilOp::kZero:
@@ -145,7 +140,8 @@ CD3DX12_DEPTH_STENCIL_DESC1 GetDepthStencilDesc(const DepthStencilDesc& desc, DX
 {
     CD3DX12_DEPTH_STENCIL_DESC1 depth_stencil_desc(D3D12_DEFAULT);
     depth_stencil_desc.DepthEnable = desc.depth_test_enable;
-    depth_stencil_desc.DepthWriteMask = desc.depth_write_enable ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+    depth_stencil_desc.DepthWriteMask =
+        desc.depth_write_enable ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
     depth_stencil_desc.DepthBoundsTestEnable = desc.depth_bounds_test_enable;
     depth_stencil_desc.DepthFunc = Convert(desc.depth_func);
     depth_stencil_desc.StencilEnable = desc.stencil_enable;
@@ -154,8 +150,7 @@ CD3DX12_DEPTH_STENCIL_DESC1 GetDepthStencilDesc(const DepthStencilDesc& desc, DX
     depth_stencil_desc.FrontFace = Convert(desc.front_face);
     depth_stencil_desc.BackFace = Convert(desc.back_face);
 
-    if (dsv_format == DXGI_FORMAT_UNKNOWN)
-    {
+    if (dsv_format == DXGI_FORMAT_UNKNOWN) {
         depth_stencil_desc.DepthEnable = false;
     }
 
@@ -166,12 +161,13 @@ D3D12_RT_FORMAT_ARRAY GetRTVFormats(const GraphicsPipelineDesc& desc)
 {
     const RenderPassDesc& render_pass_desc = desc.render_pass->GetDesc();
     D3D12_RT_FORMAT_ARRAY rt_formats = {};
-    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i)
-    {
-        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED)
+    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
+        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED) {
             continue;
+        }
         rt_formats.NumRenderTargets = i + 1;
-        rt_formats.RTFormats[i] = static_cast<DXGI_FORMAT>(gli::dx().translate(render_pass_desc.colors[i].format).DXGIFormat.DDS);
+        rt_formats.RTFormats[i] =
+            static_cast<DXGI_FORMAT>(gli::dx().translate(render_pass_desc.colors[i].format).DXGIFormat.DDS);
     }
     return rt_formats;
 }
@@ -179,8 +175,9 @@ D3D12_RT_FORMAT_ARRAY GetRTVFormats(const GraphicsPipelineDesc& desc)
 DXGI_FORMAT GetDSVFormat(const GraphicsPipelineDesc& desc)
 {
     const RenderPassDesc& render_pass_desc = desc.render_pass->GetDesc();
-    if (render_pass_desc.depth_stencil.format == gli::format::FORMAT_UNDEFINED)
+    if (render_pass_desc.depth_stencil.format == gli::format::FORMAT_UNDEFINED) {
         return DXGI_FORMAT_UNKNOWN;
+    }
     return static_cast<DXGI_FORMAT>(gli::dx().translate(render_pass_desc.depth_stencil.format).DXGIFormat.DDS);
 }
 
@@ -199,17 +196,14 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     decltype(auto) dx_program = m_desc.program->As<DXProgram>();
     decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
     m_root_signature = dx_layout.GetRootSignature();
-    for (const auto& shader : dx_program.GetShaders())
-    {
+    for (const auto& shader : dx_program.GetShaders()) {
         D3D12_SHADER_BYTECODE ShaderBytecode = {};
         decltype(auto) blob = shader->GetBlob();
         ShaderBytecode.pShaderBytecode = blob.data();
         ShaderBytecode.BytecodeLength = blob.size();
 
-        switch (shader->GetType())
-        {
-        case ShaderType::kVertex:
-        {
+        switch (shader->GetType()) {
+        case ShaderType::kVertex: {
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_VS>(ShaderBytecode);
             ParseInputLayout(shader);
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT>(GetInputLayoutDesc());
@@ -233,7 +227,8 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
         }
     }
 
-    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL1>(GetDepthStencilDesc(desc.depth_stencil_desc, GetDSVFormat(desc)));
+    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL1>(
+        GetDepthStencilDesc(desc.depth_stencil_desc, GetDSVFormat(desc)));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC>(GetSampleDesc(desc));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER>(GetRasterizerDesc(desc));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC>(GetBlendDesc(desc));
@@ -246,14 +241,12 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
 
 void DXGraphicsPipeline::ParseInputLayout(const std::shared_ptr<Shader>& shader)
 {
-    for (auto& vertex : m_desc.input)
-    {
+    for (auto& vertex : m_desc.input) {
         D3D12_INPUT_ELEMENT_DESC layout = {};
         std::string semantic_name = vertex.semantic_name;
         uint32_t semantic_slot = 0;
         uint32_t pow = 1;
-        while (!semantic_name.empty() && std::isdigit(semantic_name.back()))
-        {
+        while (!semantic_name.empty() && std::isdigit(semantic_name.back())) {
             semantic_slot = (semantic_name.back() - '0') * pow + semantic_slot;
             semantic_name.pop_back();
             pow *= 10;

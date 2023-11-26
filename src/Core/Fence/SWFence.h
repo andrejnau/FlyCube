@@ -3,8 +3,7 @@
 
 class SWDevice;
 
-class SWFence : public Fence
-{
+class SWFence : public Fence {
 public:
     SWFence(SWDevice& device, uint64_t initial_value);
     uint64_t GetCompletedValue() override;

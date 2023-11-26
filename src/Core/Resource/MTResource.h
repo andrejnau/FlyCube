@@ -1,13 +1,14 @@
 #pragma once
 #include "Resource/ResourceBase.h"
-#include <glm/glm.hpp>
-#include <map>
+
 #import <Metal/Metal.h>
+#include <glm/glm.hpp>
+
+#include <map>
 
 class MTDevice;
 
-class MTResource : public ResourceBase
-{
+class MTResource : public ResourceBase {
 public:
     MTResource(MTDevice& device);
 
@@ -25,8 +26,7 @@ public:
     bool AllowCommonStatePromotion(ResourceState state_after) override;
     MemoryRequirements GetMemoryRequirements() const override;
 
-    struct Texture
-    {
+    struct Texture {
         id<MTLTexture> res;
         TextureType type = TextureType::k2D;
         uint32_t bind_flag = 0;
@@ -38,14 +38,12 @@ public:
         int mip_levels = 1;
     } texture;
 
-    struct Buffer
-    {
+    struct Buffer {
         id<MTLBuffer> res;
         uint32_t size = 0;
     } buffer;
 
-    struct Sampler
-    {
+    struct Sampler {
         id<MTLSamplerState> res;
     } sampler;
 
@@ -54,6 +52,6 @@ public:
 
 private:
     MTLTextureDescriptor* GetTextureDescriptor(MemoryType memory_type) const;
-    
+
     MTDevice& m_device;
 };

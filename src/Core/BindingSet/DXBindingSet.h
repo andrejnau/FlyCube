@@ -1,6 +1,7 @@
 #pragma once
 #include "BindingSet/BindingSet.h"
-#include <Program/DXProgram.h>
+#include "Program/DXProgram.h"
+
 #include <directx/d3d12.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
@@ -9,9 +10,7 @@ class DXDevice;
 class DXBindingSetLayout;
 class DXGPUDescriptorPoolRange;
 
-class DXBindingSet
-    : public BindingSet
-{
+class DXBindingSet : public BindingSet {
 public:
     DXBindingSet(DXDevice& device, const std::shared_ptr<DXBindingSetLayout>& layout);
 

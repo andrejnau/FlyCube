@@ -1,6 +1,7 @@
 #include "BindingSet/SWBindingSet.h"
-#include <Device/SWDevice.h>
-#include <BindingSetLayout/SWBindingSetLayout.h>
+
+#include "BindingSetLayout/SWBindingSetLayout.h"
+#include "Device/SWDevice.h"
 
 SWBindingSet::SWBindingSet(SWDevice& device, const std::shared_ptr<SWBindingSetLayout>& layout)
     : m_device(device)
@@ -8,6 +9,4 @@ SWBindingSet::SWBindingSet(SWDevice& device, const std::shared_ptr<SWBindingSetL
 {
 }
 
-void SWBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
-{
-}
+void SWBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings) {}

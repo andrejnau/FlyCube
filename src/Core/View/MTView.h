@@ -1,12 +1,11 @@
 #pragma once
+#include "Resource/MTResource.h"
 #include "View/View.h"
-#include <Resource/MTResource.h>
 
 class MTDevice;
 class MTResource;
 
-class MTView : public View
-{
+class MTView : public View {
 public:
     MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, const ViewDesc& view_desc);
     std::shared_ptr<Resource> GetResource() override;
@@ -15,7 +14,7 @@ public:
     uint32_t GetLevelCount() const override;
     uint32_t GetBaseArrayLayer() const override;
     uint32_t GetLayerCount() const override;
-    
+
     void CreateTextureView();
     std::shared_ptr<MTResource> GetMTResource() const;
     id<MTLTexture> GetTextureView() const;

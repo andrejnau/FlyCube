@@ -1,12 +1,12 @@
 #pragma once
+#include "HLSLCompiler/DXCLoader.h"
 #include "ShaderReflection/ShaderReflection.h"
-#include <HLSLCompiler/DXCLoader.h>
+
 #include <directx/d3d12shader.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
-class DXILReflection : public ShaderReflection
-{
+class DXILReflection : public ShaderReflection {
 public:
     DXILReflection(const void* data, size_t size);
     const std::vector<EntryPoint>& GetEntryPoints() const override;

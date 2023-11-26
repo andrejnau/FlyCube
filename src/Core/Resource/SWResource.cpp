@@ -1,7 +1,8 @@
 #include "Resource/SWResource.h"
-#include <View/SWView.h>
-#include <Device/SWDevice.h>
-#include <Memory/SWMemory.h>
+
+#include "Device/SWDevice.h"
+#include "Memory/SWMemory.h"
+#include "View/SWView.h"
 
 SWResource::SWResource(SWDevice& device)
     : m_device(device)
@@ -51,18 +52,14 @@ uint64_t SWResource::GetAccelerationStructureHandle() const
     return 0;
 }
 
-void SWResource::SetName(const std::string& name)
-{
-}
+void SWResource::SetName(const std::string& name) {}
 
 uint8_t* SWResource::Map()
 {
     return nullptr;
 }
 
-void SWResource::Unmap()
-{
-}
+void SWResource::Unmap() {}
 
 bool SWResource::AllowCommonStatePromotion(ResourceState state_after)
 {

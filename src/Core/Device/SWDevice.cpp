@@ -1,18 +1,19 @@
 #include "Device/SWDevice.h"
+
 #include "Adapter/SWAdapter.h"
-#include "Swapchain/SWSwapchain.h"
-#include "CommandList/SWCommandList.h"
-#include "Fence/SWFence.h"
-#include "View/SWView.h"
-#include "Resource/SWResource.h"
-#include "BindingSetLayout/SWBindingSetLayout.h"
 #include "BindingSet/SWBindingSet.h"
-#include "RenderPass/DXRenderPass.h"
-#include "Framebuffer/DXFramebuffer.h"
-#include "Program/ProgramBase.h"
-#include "Pipeline/SWGraphicsPipeline.h"
-#include "Shader/ShaderBase.h"
+#include "BindingSetLayout/SWBindingSetLayout.h"
+#include "CommandList/SWCommandList.h"
 #include "CommandQueue/SWCommandQueue.h"
+#include "Fence/SWFence.h"
+#include "Framebuffer/DXFramebuffer.h"
+#include "Pipeline/SWGraphicsPipeline.h"
+#include "Program/ProgramBase.h"
+#include "RenderPass/DXRenderPass.h"
+#include "Resource/SWResource.h"
+#include "Shader/ShaderBase.h"
+#include "Swapchain/SWSwapchain.h"
+#include "View/SWView.h"
 
 SWDevice::SWDevice(SWAdapter& adapter)
     : m_adapter(adapter)
@@ -34,7 +35,11 @@ uint32_t SWDevice::GetTextureDataPitchAlignment() const
     return 0;
 }
 
-std::shared_ptr<Swapchain> SWDevice::CreateSwapchain(WindowHandle window, uint32_t width, uint32_t height, uint32_t frame_count, bool vsync)
+std::shared_ptr<Swapchain> SWDevice::CreateSwapchain(WindowHandle window,
+                                                     uint32_t width,
+                                                     uint32_t height,
+                                                     uint32_t frame_count,
+                                                     bool vsync)
 {
     return std::make_shared<SWSwapchain>(*this, window, width, height, frame_count, vsync);
 }
@@ -49,7 +54,14 @@ std::shared_ptr<Fence> SWDevice::CreateFence(uint64_t initial_value)
     return std::make_shared<SWFence>(*this, initial_value);
 }
 
-std::shared_ptr<Resource> SWDevice::CreateTexture(TextureType type, uint32_t bind_flag, gli::format format, uint32_t sample_count, int width, int height, int depth, int mip_levels)
+std::shared_ptr<Resource> SWDevice::CreateTexture(TextureType type,
+                                                  uint32_t bind_flag,
+                                                  gli::format format,
+                                                  uint32_t sample_count,
+                                                  int width,
+                                                  int height,
+                                                  int depth,
+                                                  int mip_levels)
 {
     return {};
 }
@@ -89,7 +101,9 @@ std::shared_ptr<Framebuffer> SWDevice::CreateFramebuffer(const FramebufferDesc& 
     return std::make_shared<DXFramebuffer>(desc);
 }
 
-std::shared_ptr<Shader> SWDevice::CreateShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
+std::shared_ptr<Shader> SWDevice::CreateShader(const std::vector<uint8_t>& blob,
+                                               ShaderBlobType blob_type,
+                                               ShaderType shader_type)
 {
     return std::make_shared<ShaderBase>(blob, blob_type, shader_type);
 }
@@ -119,7 +133,9 @@ std::shared_ptr<Pipeline> SWDevice::CreateRayTracingPipeline(const RayTracingPip
     return {};
 }
 
-std::shared_ptr<Resource> SWDevice::CreateAccelerationStructure(AccelerationStructureType type, const std::shared_ptr<Resource>& resource, uint64_t offset)
+std::shared_ptr<Resource> SWDevice::CreateAccelerationStructure(AccelerationStructureType type,
+                                                                const std::shared_ptr<Resource>& resource,
+                                                                uint64_t offset)
 {
     return {};
 }
@@ -184,12 +200,14 @@ uint32_t SWDevice::GetShaderTableAlignment() const
     return 0;
 }
 
-RaytracingASPrebuildInfo SWDevice::GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs, BuildAccelerationStructureFlags flags) const
+RaytracingASPrebuildInfo SWDevice::GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs,
+                                                       BuildAccelerationStructureFlags flags) const
 {
     return {};
 }
 
-RaytracingASPrebuildInfo SWDevice::GetTLASPrebuildInfo(uint32_t instance_count, BuildAccelerationStructureFlags flags) const
+RaytracingASPrebuildInfo SWDevice::GetTLASPrebuildInfo(uint32_t instance_count,
+                                                       BuildAccelerationStructureFlags flags) const
 {
     return {};
 }

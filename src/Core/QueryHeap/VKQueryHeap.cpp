@@ -1,5 +1,6 @@
 #include "QueryHeap/VKQueryHeap.h"
-#include <Device/VKDevice.h>
+
+#include "Device/VKDevice.h"
 
 VKQueryHeap::VKQueryHeap(VKDevice& device, QueryHeapType type, uint32_t count)
     : m_device(device)

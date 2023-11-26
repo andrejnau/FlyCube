@@ -1,11 +1,11 @@
 #pragma once
 #include "CommandQueue/CommandQueue.h"
+
 #import <Metal/Metal.h>
 
 class MTDevice;
 
-class MTCommandQueue : public CommandQueue
-{
+class MTCommandQueue : public CommandQueue {
 public:
     MTCommandQueue(MTDevice& device);
     void Wait(const std::shared_ptr<Fence>& fence, uint64_t value) override;

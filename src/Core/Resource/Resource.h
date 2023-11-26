@@ -1,21 +1,21 @@
 #pragma once
+#include "Instance/QueryInterface.h"
+#include "Memory/Memory.h"
 #include "Resource/ResourceStateTracker.h"
-#include <Instance/QueryInterface.h>
-#include <Memory/Memory.h>
-#include <View/View.h>
-#include <memory>
-#include <string>
+#include "View/View.h"
+
 #include <gli/format.hpp>
 
-struct MemoryRequirements
-{
+#include <memory>
+#include <string>
+
+struct MemoryRequirements {
     uint64_t size;
     uint64_t alignment;
     uint32_t memory_type_bits;
 };
 
-class Resource : public QueryInterface
-{
+class Resource : public QueryInterface {
 public:
     virtual ~Resource() = default;
     virtual void CommitMemory(MemoryType memory_type) = 0;
@@ -33,8 +33,14 @@ public:
     virtual uint8_t* Map() = 0;
     virtual void Unmap() = 0;
     virtual void UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes) = 0;
-    virtual void UpdateUploadBufferWithTextureData(uint64_t buffer_offset, uint32_t buffer_row_pitch, uint32_t buffer_depth_pitch,
-                                   const void* src_data, uint32_t src_row_pitch, uint32_t src_depth_pitch, uint32_t num_rows, uint32_t num_slices) = 0;
+    virtual void UpdateUploadBufferWithTextureData(uint64_t buffer_offset,
+                                                   uint32_t buffer_row_pitch,
+                                                   uint32_t buffer_depth_pitch,
+                                                   const void* src_data,
+                                                   uint32_t src_row_pitch,
+                                                   uint32_t src_depth_pitch,
+                                                   uint32_t num_rows,
+                                                   uint32_t num_slices) = 0;
     virtual bool AllowCommonStatePromotion(ResourceState state_after) = 0;
     virtual ResourceState GetInitialState() const = 0;
     virtual MemoryRequirements GetMemoryRequirements() const = 0;

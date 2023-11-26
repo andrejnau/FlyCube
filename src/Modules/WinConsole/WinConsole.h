@@ -2,8 +2,7 @@
 
 #include <Windows.h>
 
-class WinConsole
-{
+class WinConsole {
 public:
     WinConsole()
         : m_in_stream(nullptr)

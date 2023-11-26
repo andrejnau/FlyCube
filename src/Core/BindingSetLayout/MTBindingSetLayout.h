@@ -3,9 +3,7 @@
 
 class MTDevice;
 
-class MTBindingSetLayout
-    : public BindingSetLayout
-{
+class MTBindingSetLayout : public BindingSetLayout {
 public:
     MTBindingSetLayout(MTDevice& device, const std::vector<BindKey>& descs);
 

@@ -1,4 +1,5 @@
 #include "AppBox/ArgsParser.h"
+
 #include <string>
 #include <vector>
 
@@ -25,25 +26,25 @@ Settings ParseArgs(int argc, char* argv[])
     Settings settings;
     settings.api_type = GetSupportedApis()[0];
     settings.vsync = true;
-    for (int i = 1; i < argc; ++i)
-    {
+    for (int i = 1; i < argc; ++i) {
         std::string arg(argv[i]);
-        if (arg == "--dx12")
+        if (arg == "--dx12") {
             settings.api_type = ApiType::kDX12;
-        else if (arg == "--vk")
+        } else if (arg == "--vk") {
             settings.api_type = ApiType::kVulkan;
-        else if (arg == "--mt")
+        } else if (arg == "--mt") {
             settings.api_type = ApiType::kMetal;
-        else if (arg == "--sw")
+        } else if (arg == "--sw") {
             settings.api_type = ApiType::kSoftware;
-        else if (arg == "--vsync")
+        } else if (arg == "--vsync") {
             settings.vsync = true;
-        else if (arg == "--no_vsync")
+        } else if (arg == "--no_vsync") {
             settings.vsync = false;
-        else if (arg == "--round_fps")
+        } else if (arg == "--round_fps") {
             settings.round_fps = true;
-        else if (arg == "--gpu")
+        } else if (arg == "--gpu") {
             settings.required_gpu_index = std::stoul(argv[++i]);
+        }
     }
     return settings;
 }

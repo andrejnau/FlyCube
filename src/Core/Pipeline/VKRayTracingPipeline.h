@@ -1,14 +1,14 @@
 #pragma once
+#include "Instance/BaseTypes.h"
 #include "Pipeline/VKPipeline.h"
-#include <Instance/BaseTypes.h>
+#include "RenderPass/VKRenderPass.h"
+#include "ShaderReflection/ShaderReflection.h"
+
 #include <vulkan/vulkan.hpp>
-#include <RenderPass/VKRenderPass.h>
-#include <ShaderReflection/ShaderReflection.h>
 
 class VKDevice;
 
-class VKRayTracingPipeline : public VKPipeline
-{
+class VKRayTracingPipeline : public VKPipeline {
 public:
     VKRayTracingPipeline(VKDevice& device, const RayTracingPipelineDesc& desc);
     PipelineType GetPipelineType() const override;

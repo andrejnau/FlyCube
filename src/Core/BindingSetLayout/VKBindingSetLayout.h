@@ -1,12 +1,11 @@
 #pragma once
 #include "BindingSetLayout/BindingSetLayout.h"
+
 #include <vulkan/vulkan.hpp>
 
 class VKDevice;
 
-class VKBindingSetLayout
-    : public BindingSetLayout
-{
+class VKBindingSetLayout : public BindingSetLayout {
 public:
     VKBindingSetLayout(VKDevice& device, const std::vector<BindKey>& descs);
 
