@@ -6,3 +6,5 @@ if (WIN32)
 endif()
 target_link_libraries(HLSLCompilerTest PRIVATE HLSLCompiler Catch2WithMain FlyCubeAssets)
 set_target_properties(HLSLCompilerTest PROPERTIES FOLDER "Tests")
+
+add_test(NAME HLSLCompilerTest COMMAND HLSLCompilerTest)

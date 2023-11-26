@@ -54,6 +54,6 @@ target_link_libraries(HLSLCompiler
 
 set_target_properties(HLSLCompiler PROPERTIES FOLDER "Core")
 
-if (BUILD_UNIT_TESTS)
+if (BUILD_TESTING)
     add_subdirectory(test)
 endif()
