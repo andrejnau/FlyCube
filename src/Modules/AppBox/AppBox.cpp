@@ -30,6 +30,9 @@ AppBox::AppBox(const std::string& title, Settings setting)
     case ApiType::kMetal:
         api_str = "[Metal]";
         break;
+    case ApiType::kSoftware:
+        api_str = "[Software]";
+        break;
     }
     m_title = api_str + " " + title;
 
@@ -57,7 +60,9 @@ AppBox::AppBox(const std::string& title, Settings setting)
 
 #if defined(__APPLE__)
     NSWindow* nswindow = glfwGetCocoaWindow(m_window);
-    nswindow.contentView.layer = [CAMetalLayer layer];
+    if (m_setting.api_type != ApiType::kSoftware) {
+        nswindow.contentView.layer = [CAMetalLayer layer];
+    }
     nswindow.contentView.wantsLayer = YES;
     m_layer = nswindow.contentView.layer;
 #endif

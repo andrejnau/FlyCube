@@ -29,6 +29,15 @@ if (METAL_SUPPORT)
     )
 endif()
 
+if (SOFTWARE_SUPPORT)
+    list(APPEND headers
+        SWSwapchain.h
+    )
+    list(APPEND sources
+        SWSwapchain.mm
+    )
+endif()
+
 add_library(Swapchain ${headers} ${sources})
 
 target_include_directories(Swapchain

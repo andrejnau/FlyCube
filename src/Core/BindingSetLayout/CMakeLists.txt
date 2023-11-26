@@ -29,6 +29,15 @@ if (METAL_SUPPORT)
     )
 endif()
 
+if (SOFTWARE_SUPPORT)
+    list(APPEND headers
+        SWBindingSetLayout.h
+    )
+    list(APPEND sources
+        SWBindingSetLayout.cpp
+    )
+endif()
+
 add_library(BindingSetLayout ${headers} ${sources})
 
 target_include_directories(BindingSetLayout

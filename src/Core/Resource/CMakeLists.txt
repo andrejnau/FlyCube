@@ -36,6 +36,15 @@ if (METAL_SUPPORT)
     )
 endif()
 
+if (SOFTWARE_SUPPORT)
+    list(APPEND headers
+        SWResource.h
+    )
+    list(APPEND sources
+        SWResource.cpp
+    )
+endif()
+
 add_library(Resource ${headers} ${sources})
 
 target_include_directories(Resource

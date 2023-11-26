@@ -45,6 +45,15 @@ if (METAL_SUPPORT)
     )
 endif()
 
+if (SOFTWARE_SUPPORT)
+    list(APPEND headers
+        SWGraphicsPipeline.h
+    )
+    list(APPEND sources
+        SWGraphicsPipeline.cpp
+    )
+endif()
+
 add_library(Pipeline ${headers} ${sources})
 
 target_include_directories(Pipeline

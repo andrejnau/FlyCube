@@ -29,6 +29,15 @@ if (METAL_SUPPORT)
     )
 endif()
 
+if (SOFTWARE_SUPPORT)
+    list(APPEND headers
+        SWCommandList.h
+    )
+    list(APPEND sources
+        SWCommandList.cpp
+    )
+endif()
+
 add_library(CommandList ${headers} ${sources})
 
 target_include_directories(CommandList

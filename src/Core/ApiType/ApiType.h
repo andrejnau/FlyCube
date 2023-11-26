@@ -5,5 +5,6 @@ enum class ApiType
 {
     kVulkan,
     kDX12,
-    kMetal
+    kMetal,
+    kSoftware,
 };

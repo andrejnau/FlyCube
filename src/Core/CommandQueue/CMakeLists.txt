@@ -29,6 +29,15 @@ if (METAL_SUPPORT)
     )
 endif()
 
+if (SOFTWARE_SUPPORT)
+    list(APPEND headers
+        SWCommandQueue.h
+    )
+    list(APPEND sources
+        SWCommandQueue.cpp
+    )
+endif()
+
 add_library(CommandQueue ${headers} ${sources})
 
 target_include_directories(CommandQueue

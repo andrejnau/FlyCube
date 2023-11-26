@@ -14,6 +14,9 @@ std::vector<ApiType> GetSupportedApis()
 #ifdef VULKAN_SUPPORT
     res.emplace_back(ApiType::kVulkan);
 #endif
+#ifdef SOFTWARE_SUPPORT
+    res.emplace_back(ApiType::kSoftware);
+#endif
     return res;
 }
 
@@ -31,6 +34,8 @@ Settings ParseArgs(int argc, char* argv[])
             settings.api_type = ApiType::kVulkan;
         else if (arg == "--mt")
             settings.api_type = ApiType::kMetal;
+        else if (arg == "--sw")
+            settings.api_type = ApiType::kSoftware;
         else if (arg == "--vsync")
             settings.vsync = true;
         else if (arg == "--no_vsync")

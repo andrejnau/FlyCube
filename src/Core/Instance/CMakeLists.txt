@@ -34,6 +34,15 @@ if (METAL_SUPPORT)
     )
 endif()
 
+if (SOFTWARE_SUPPORT)
+    list(APPEND headers
+        SWInstance.h
+    )
+    list(APPEND sources
+        SWInstance.cpp
+    )
+endif()
+
 add_library(Instance ${headers} ${sources})
 
 target_include_directories(Instance
