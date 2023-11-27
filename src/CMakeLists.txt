@@ -1,5 +1,5 @@
 if (BUILD_SAMPLES)
     add_subdirectory(Apps)
 endif()
-add_subdirectory(Core)
+add_subdirectory(FlyCube)
 add_subdirectory(Modules)
