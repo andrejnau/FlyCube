@@ -24,7 +24,7 @@ void VKTimelineSemaphore::Wait(uint64_t value)
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &m_timeline_semaphore.get();
     wait_info.pValues = &value;
-    m_device.GetDevice().waitSemaphoresKHR(wait_info, UINT64_MAX);
+    std::ignore = m_device.GetDevice().waitSemaphoresKHR(wait_info, UINT64_MAX);
 }
 
 void VKTimelineSemaphore::Signal(uint64_t value)

@@ -31,7 +31,7 @@ public:
         return m_desc;
     }
 
-    void Test(ShaderBlobType type, const void* data, size_t size) const
+    void Test(ShaderBlobType type, const void* data, size_t size) const override
     {
         REQUIRE(data);
         REQUIRE(size);
@@ -63,7 +63,7 @@ public:
         return m_desc;
     }
 
-    void Test(ShaderBlobType type, const void* data, size_t size) const
+    void Test(ShaderBlobType type, const void* data, size_t size) const override
     {
         REQUIRE(data);
         REQUIRE(size);
@@ -92,7 +92,7 @@ public:
         return m_desc;
     }
 
-    void Test(ShaderBlobType type, const void* data, size_t size) const
+    void Test(ShaderBlobType type, const void* data, size_t size) const override
     {
         REQUIRE(data);
         REQUIRE(size);

@@ -62,8 +62,8 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
     ASSERT(surface_capabilities.currentExtent.height == height);
 
     vk::Bool32 is_supported_surface = VK_FALSE;
-    adapter.GetPhysicalDevice().getSurfaceSupportKHR(command_queue.GetQueueFamilyIndex(), m_surface.get(),
-                                                     &is_supported_surface);
+    std::ignore = adapter.GetPhysicalDevice().getSurfaceSupportKHR(command_queue.GetQueueFamilyIndex(), m_surface.get(),
+                                                                   &is_supported_surface);
     ASSERT(is_supported_surface);
 
     auto modes = adapter.GetPhysicalDevice().getSurfacePresentModesKHR(m_surface.get());
@@ -138,8 +138,8 @@ std::shared_ptr<Resource> VKSwapchain::GetBackBuffer(uint32_t buffer)
 
 uint32_t VKSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
 {
-    m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX, m_image_available_semaphore.get(), nullptr,
-                                             &m_frame_index);
+    std::ignore = m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX,
+                                                           m_image_available_semaphore.get(), nullptr, &m_frame_index);
 
     decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
     uint64_t tmp = std::numeric_limits<uint64_t>::max();
@@ -156,7 +156,7 @@ uint32_t VKSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t si
     signal_submit_info.pWaitDstStageMask = &waitDstStageMask;
     signal_submit_info.signalSemaphoreCount = 1;
     signal_submit_info.pSignalSemaphores = &vk_fence.GetFence();
-    m_command_queue.GetQueue().submit(1, &signal_submit_info, {});
+    std::ignore = m_command_queue.GetQueue().submit(1, &signal_submit_info, {});
 
     return m_frame_index;
 }
@@ -178,7 +178,7 @@ void VKSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
     signal_submit_info.pWaitDstStageMask = &waitDstStageMask;
     signal_submit_info.signalSemaphoreCount = 1;
     signal_submit_info.pSignalSemaphores = &m_rendering_finished_semaphore.get();
-    m_command_queue.GetQueue().submit(1, &signal_submit_info, {});
+    std::ignore = m_command_queue.GetQueue().submit(1, &signal_submit_info, {});
 
     vk::PresentInfoKHR present_info = {};
     present_info.swapchainCount = 1;
@@ -186,5 +186,5 @@ void VKSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
     present_info.pImageIndices = &m_frame_index;
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores = &m_rendering_finished_semaphore.get();
-    m_command_queue.GetQueue().presentKHR(present_info);
+    std::ignore = m_command_queue.GetQueue().presentKHR(present_info);
 }

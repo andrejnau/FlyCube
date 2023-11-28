@@ -24,7 +24,7 @@ void VKCommandQueue::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
     signal_submit_info.pWaitSemaphores = &vk_fence.GetFence();
     vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
     signal_submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
-    m_queue.submit(1, &signal_submit_info, {});
+    std::ignore = m_queue.submit(1, &signal_submit_info, {});
 }
 
 void VKCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
@@ -38,7 +38,7 @@ void VKCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
     signal_submit_info.pNext = &timeline_info;
     signal_submit_info.signalSemaphoreCount = 1;
     signal_submit_info.pSignalSemaphores = &vk_fence.GetFence();
-    m_queue.submit(1, &signal_submit_info, {});
+    std::ignore = m_queue.submit(1, &signal_submit_info, {});
 }
 
 void VKCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
@@ -59,7 +59,7 @@ void VKCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<Comma
     vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
     submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
 
-    m_queue.submit(1, &submit_info, {});
+    std::ignore = m_queue.submit(1, &submit_info, {});
 }
 
 VKDevice& VKCommandQueue::GetDevice()

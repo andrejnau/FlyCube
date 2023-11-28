@@ -94,7 +94,8 @@ void VKResource::SetName(const std::string& name)
 uint8_t* VKResource::Map()
 {
     uint8_t* dst_data = nullptr;
-    m_device.GetDevice().mapMemory(m_vk_memory, 0, VK_WHOLE_SIZE, {}, reinterpret_cast<void**>(&dst_data));
+    std::ignore =
+        m_device.GetDevice().mapMemory(m_vk_memory, 0, VK_WHOLE_SIZE, {}, reinterpret_cast<void**>(&dst_data));
     return dst_data;
 }
 
