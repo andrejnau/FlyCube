@@ -9,13 +9,18 @@ FlyCube is a low-level graphics API is written in C++ on top of `DirectX 12`, `V
 * HLSL as a shader language for all backends
   * Compilation in DXIL, SPIRV or MSL depend on selected backend
 
+### Supported platforms
+
+|                | DirectX 12               | Vulkan                        | Metal                    |
+|----------------|--------------------------|-------------------------------|--------------------------|
+| Windows        | :heavy_check_mark:       | :heavy_check_mark:            | :heavy_multiplication_x: |
+| macOS/iOS/tvOS | :heavy_multiplication_x: | :heavy_check_mark: (MoltenVK) | :heavy_check_mark:       |
+| Linux          | :heavy_multiplication_x: | :heavy_check_mark:            | :heavy_multiplication_x: |
+
 ### Cloning repository
 ```
 git clone --recursive https://github.com/andrejnau/FlyCube.git
 ```
-
-### Build requirements
-* Windows SDK Version 10.0.19041.0
 
 ### An example of the low-level graphics API usage
 ```cpp
