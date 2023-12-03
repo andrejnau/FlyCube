@@ -13,13 +13,17 @@ if (APPLE)
             USE_STATIC_MOLTENVK
     )
 
-    if (DEFINED ENV{VULKAN_SDK})
-        message("VULKAN_SDK is $ENV{VULKAN_SDK}")
+    if (CUSTOM_MOLTENVK)
+        set(moltenvk_xcframework "${CUSTOM_MOLTENVK}/MoltenVK.xcframework")
+    elseif(CUSTOM_VULKAN_SDK)
+        set(moltenvk_xcframework "${CUSTOM_VULKAN_SDK}/MoltenVK/MoltenVK.xcframework")
+    elseif(DEFINED ENV{VULKAN_SDK})
+        set(moltenvk_xcframework "$ENV{VULKAN_SDK}/MoltenVK/MoltenVK.xcframework")
     else()
-        message(FATAL_ERROR "VULKAN_SDK is not set")
+        message(FATAL_ERROR "MoltenVK.xcframework is missing")
     endif()
-    
-    set(moltenvk_xcframework "$ENV{VULKAN_SDK}/MoltenVK/MoltenVK.xcframework")
+    message("MoltenVK.xcframework location is ${moltenvk_xcframework}")
+
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_LINK_LIBRARIES
             "${moltenvk_xcframework}"
