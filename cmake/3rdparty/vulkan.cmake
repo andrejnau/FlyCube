@@ -20,48 +20,10 @@ if (APPLE)
     endif()
     
     set(moltenvk_xcframework "$ENV{VULKAN_SDK}/MoltenVK/MoltenVK.xcframework")
-
-    add_library(vulkan_libs_iOS-iphoneos UNKNOWN IMPORTED)
-    set_property(TARGET vulkan_libs_iOS-iphoneos APPEND PROPERTY
-        IMPORTED_LOCATION
-            "${moltenvk_xcframework}/ios-arm64/libMoltenVK.a"
+    set_property(TARGET vulkan APPEND PROPERTY
+        INTERFACE_LINK_LIBRARIES
+            "${moltenvk_xcframework}"
     )
-
-    add_library(vulkan_libs_iOS-iphonesimulator UNKNOWN IMPORTED)
-    set_property(TARGET vulkan_libs_iOS-iphonesimulator APPEND PROPERTY
-        IMPORTED_LOCATION
-            "${moltenvk_xcframework}/ios-arm64_x86_64-simulator/libMoltenVK.a"
-    )
-
-    add_library(vulkan_libs_Darwin UNKNOWN IMPORTED)
-    set_property(TARGET vulkan_libs_Darwin APPEND PROPERTY
-        IMPORTED_LOCATION
-            "${moltenvk_xcframework}/macos-arm64_x86_64/libMoltenVK.a"
-    )
-
-    add_library(vulkan_libs_tvOS-appletvos UNKNOWN IMPORTED)
-    set_property(TARGET vulkan_libs_tvOS-appletvos APPEND PROPERTY
-        IMPORTED_LOCATION
-            "${moltenvk_xcframework}/tvos-arm64_arm64e/libMoltenVK.a"
-    )
-
-    add_library(vulkan_libs_tvOS-appletvsimulator UNKNOWN IMPORTED)
-    set_property(TARGET vulkan_libs_tvOS-appletvsimulator APPEND PROPERTY
-        IMPORTED_LOCATION
-            "${moltenvk_xcframework}/tvos-arm64_x86_64-simulator/libMoltenVK.a"
-    )
-
-    if (CMAKE_GENERATOR STREQUAL "Xcode")
-        set_property(TARGET vulkan APPEND PROPERTY
-            INTERFACE_LINK_LIBRARIES
-                "vulkan_libs_$<PLATFORM_ID>$(EFFECTIVE_PLATFORM_NAME)"
-        )
-    else()
-        set_property(TARGET vulkan APPEND PROPERTY
-            INTERFACE_LINK_LIBRARIES
-                "vulkan_libs_$<PLATFORM_ID>"
-        )
-    endif()
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_LINK_LIBRARIES
             "-framework IOSurface"
