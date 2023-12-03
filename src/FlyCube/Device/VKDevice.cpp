@@ -207,8 +207,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.shaderImageGatherExtended = physical_device_features.shaderImageGatherExtended;
 
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
-    device_vulkan12_features.drawIndirectCount = true;
 #ifndef USE_STATIC_MOLTENVK
+    device_vulkan12_features.drawIndirectCount = true;
     device_vulkan12_features.bufferDeviceAddress = true;
 #endif
     device_vulkan12_features.timelineSemaphore = true;
