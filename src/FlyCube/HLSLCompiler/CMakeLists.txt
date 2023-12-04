@@ -51,7 +51,7 @@ target_link_libraries(HLSLCompiler
     dxc
 )
 
-set_target_properties(HLSLCompiler PROPERTIES FOLDER "Core")
+set_target_properties(HLSLCompiler PROPERTIES FOLDER "FlyCube")
 
 if (BUILD_TESTING)
     add_subdirectory(test)

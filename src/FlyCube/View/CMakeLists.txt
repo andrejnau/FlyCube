@@ -65,4 +65,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(View PROPERTIES FOLDER "Core")
+set_target_properties(View PROPERTIES FOLDER "FlyCube")

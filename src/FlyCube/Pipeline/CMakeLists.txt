@@ -90,4 +90,4 @@ if (METAL_SUPPORT)
     )
 endif()
 
-set_target_properties(Pipeline PROPERTIES FOLDER "Core")
+set_target_properties(Pipeline PROPERTIES FOLDER "FlyCube")

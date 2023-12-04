@@ -34,4 +34,4 @@ target_link_libraries(CPUDescriptorPool
     dxguid
 )
 
-set_target_properties(CPUDescriptorPool PROPERTIES FOLDER "Core")
+set_target_properties(CPUDescriptorPool PROPERTIES FOLDER "FlyCube")

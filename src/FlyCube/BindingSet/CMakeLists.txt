@@ -67,4 +67,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(BindingSet PROPERTIES FOLDER "Core")
+set_target_properties(BindingSet PROPERTIES FOLDER "FlyCube")

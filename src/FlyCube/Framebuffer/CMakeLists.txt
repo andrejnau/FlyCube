@@ -55,4 +55,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(Framebuffer PROPERTIES FOLDER "Core")
+set_target_properties(Framebuffer PROPERTIES FOLDER "FlyCube")

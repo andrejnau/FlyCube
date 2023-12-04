@@ -71,4 +71,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(CommandQueue PROPERTIES FOLDER "Core")
+set_target_properties(CommandQueue PROPERTIES FOLDER "FlyCube")

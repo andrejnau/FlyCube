@@ -29,4 +29,4 @@ target_link_libraries(Shader
     ShaderReflection
 )
 
-set_target_properties(Shader PROPERTIES FOLDER "Core")
+set_target_properties(Shader PROPERTIES FOLDER "FlyCube")

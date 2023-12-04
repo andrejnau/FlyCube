@@ -85,4 +85,4 @@ if (METAL_SUPPORT)
     target_compile_options(Instance PUBLIC "-fobjc-arc")
 endif()
 
-set_target_properties(Instance PROPERTIES FOLDER "Core")
+set_target_properties(Instance PROPERTIES FOLDER "FlyCube")

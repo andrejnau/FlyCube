@@ -74,4 +74,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(Device PROPERTIES FOLDER "Core")
+set_target_properties(Device PROPERTIES FOLDER "FlyCube")

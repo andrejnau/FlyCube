@@ -57,4 +57,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(GPUDescriptorPool PROPERTIES FOLDER "Core")
+set_target_properties(GPUDescriptorPool PROPERTIES FOLDER "FlyCube")

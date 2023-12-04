@@ -51,4 +51,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(QueryHeap PROPERTIES FOLDER "Core")
+set_target_properties(QueryHeap PROPERTIES FOLDER "FlyCube")

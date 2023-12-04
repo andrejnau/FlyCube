@@ -76,4 +76,4 @@ elseif (UNIX)
     )
 endif()
 
-set_target_properties(Swapchain PROPERTIES FOLDER "Core")
+set_target_properties(Swapchain PROPERTIES FOLDER "FlyCube")

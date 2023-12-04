@@ -54,4 +54,4 @@ if (DIRECTX_SUPPORT)
     )
 endif()
 
-set_target_properties(Program PROPERTIES FOLDER "Core")
+set_target_properties(Program PROPERTIES FOLDER "FlyCube")
