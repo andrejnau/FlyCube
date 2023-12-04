@@ -86,9 +86,6 @@ std::unique_ptr<dxc::DxcDllSupport> GetDxcSupportImpl(ShaderBlobType target)
     std::vector<std::string> localions = {
         GetExecutableDir(),
         DXC_CUSTOM_LOCATION,
-#if defined(_WIN32)
-        WINDOWS_KITS_LOCATION,
-#endif
     };
     for (const auto& path : localions) {
         auto res = Load(path, target);
