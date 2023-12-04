@@ -177,12 +177,12 @@ void DXILReflection::ParseRuntimeData(ComPtr<IDxcContainerReflection> reflection
     reflection->GetPartContent(idx, &part_blob);
     hlsl::RDAT::DxilRuntimeData context;
     context.InitFromRDAT(part_blob->GetBufferPointer(), part_blob->GetBufferSize());
-    hlsl::RDAT::FunctionTableReader* func_table_reader = context.GetFunctionTableReader();
-    for (uint32_t j = 0; j < func_table_reader->GetNumFunctions(); ++j) {
-        hlsl::RDAT::FunctionReader func_reader = func_table_reader->GetItem(j);
-        auto kind = func_reader.GetShaderKind();
-        m_entry_points.push_back({ func_reader.GetUnmangledName(), ConvertShaderKind(kind),
-                                   func_reader.GetPayloadSizeInBytes(), func_reader.GetAttributeSizeInBytes() });
+    decltype(auto) func_table_reader = context.GetFunctionTable();
+    for (uint32_t i = 0; i < func_table_reader.Count(); ++i) {
+        decltype(auto) func_reader = func_table_reader[i];
+        auto kind = func_reader.getShaderKind();
+        m_entry_points.push_back({ func_reader.getUnmangledName(), ConvertShaderKind(kind),
+                                   func_reader.getPayloadSizeInBytes(), func_reader.getAttributeSizeInBytes() });
     }
 }
 
