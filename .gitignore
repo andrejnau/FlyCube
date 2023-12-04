@@ -7,3 +7,4 @@
 local_model
 install
 .DS_Store
+CMakeUserPresets.json

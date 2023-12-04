@@ -1,0 +1,11 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "MoltenVK",
+            "cacheVariables": {
+                "MOLTEN_VK_SUPPORT": "ON"
+            }
+        }
+    ]
+}
