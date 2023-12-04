@@ -2,9 +2,7 @@ list(APPEND headers
     Common.h
     DXUtility.h
     SystemUtils.h
-    Logger.h
     ScopeGuard.h
-    Singleton.h
     VKUtility.h
     DXGIFormatHelper.h
     FormatHelper.h
