@@ -5,7 +5,6 @@ list(APPEND headers
 list(APPEND sources
     Compiler.cpp
     DXCLoader.cpp
-    DXCWinAdapter.cpp
 )
 
 if (METAL_SUPPORT)

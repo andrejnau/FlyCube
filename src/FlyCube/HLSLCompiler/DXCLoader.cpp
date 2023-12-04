@@ -58,10 +58,10 @@ std::unique_ptr<dxc::DxcDllSupport> Load(const std::string& path, ShaderBlobType
     if (target == ShaderBlobType::kDXIL) {
         dll_support_dxil = std::make_unique<dxc::DxcDllSupport>();
         if (std::filesystem::exists(dxil_path)) {
-            dll_support_dxil->InitializeForDll(dxil_path.wstring().c_str(), "DxcCreateInstance");
+            dll_support_dxil->InitializeForDll(dxil_path.string().c_str(), "DxcCreateInstance");
         } else {
             auto windows_kits_dxil_path = std::filesystem::u8path(WINDOWS_KITS_LOCATION) / "dxil.dll";
-            dll_support_dxil->InitializeForDll(windows_kits_dxil_path.wstring().c_str(), "DxcCreateInstance");
+            dll_support_dxil->InitializeForDll(windows_kits_dxil_path.string().c_str(), "DxcCreateInstance");
         }
 
         if (!dll_support_dxil->IsEnabled()) {
@@ -71,7 +71,7 @@ std::unique_ptr<dxc::DxcDllSupport> Load(const std::string& path, ShaderBlobType
 #endif
 
     auto dll_support = std::make_unique<dxc::DxcDllSupport>();
-    if (FAILED(dll_support->InitializeForDll(dxcompiler_path.wstring().c_str(), "DxcCreateInstance"))) {
+    if (FAILED(dll_support->InitializeForDll(dxcompiler_path.string().c_str(), "DxcCreateInstance"))) {
         return {};
     }
     if (FAILED(Test(*dll_support, target))) {
