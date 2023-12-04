@@ -1,3 +1,6 @@
 {
-    "cmake.useCMakePresets": "never"
+    "cmake.useCMakePresets": "never",
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "files.trimTrailingWhitespace": true,
 }
