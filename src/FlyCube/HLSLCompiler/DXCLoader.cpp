@@ -59,9 +59,6 @@ std::unique_ptr<dxc::DxcDllSupport> Load(const std::string& path, ShaderBlobType
         dll_support_dxil = std::make_unique<dxc::DxcDllSupport>();
         if (std::filesystem::exists(dxil_path)) {
             dll_support_dxil->InitializeForDll(dxil_path.string().c_str(), "DxcCreateInstance");
-        } else {
-            auto windows_kits_dxil_path = std::filesystem::u8path(WINDOWS_KITS_LOCATION) / "dxil.dll";
-            dll_support_dxil->InitializeForDll(windows_kits_dxil_path.string().c_str(), "DxcCreateInstance");
         }
 
         if (!dll_support_dxil->IsEnabled()) {
