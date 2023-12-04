@@ -1,10 +1,5 @@
-/build*
-/linux_build*
-*.*~
-*.*.user*
-*.log
-/.vs
-local_model
-install
 .DS_Store
+/build*/
+/install/
+/out/
 CMakeUserPresets.json
