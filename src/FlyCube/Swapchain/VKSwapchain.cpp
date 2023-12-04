@@ -12,7 +12,7 @@
 #include <Windows.h>
 #elif defined(__APPLE__)
 #import <QuartzCore/QuartzCore.h>
-#else
+#elif !defined(__ANDROID__)
 #include <X11/Xlib-xcb.h>
 #endif
 
@@ -37,7 +37,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
     vk::MetalSurfaceCreateInfoEXT surface_desc = {};
     surface_desc.pLayer = (__bridge CAMetalLayer*)window;
     m_surface = instance.GetInstance().createMetalSurfaceEXTUnique(surface_desc);
-#else
+#elif !defined(__ANDROID__)
     vk::XcbSurfaceCreateInfoKHR surface_desc = {};
     surface_desc.setConnection(XGetXCBConnection(XOpenDisplay(nullptr)));
     surface_desc.setWindow((ptrdiff_t)window);

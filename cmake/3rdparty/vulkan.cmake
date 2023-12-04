@@ -57,7 +57,7 @@ elseif(APPLE)
         INTERFACE_COMPILE_DEFINITIONS
             VK_USE_PLATFORM_METAL_EXT
     )
-else()
+elseif(NOT ANDROID)
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_COMPILE_DEFINITIONS
             VK_USE_PLATFORM_XCB_KHR

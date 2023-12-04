@@ -1,4 +1,4 @@
-if (IOS_OR_TVOS)
+if (NOT BUILD_SAMPLES)
     return()
 endif()
 

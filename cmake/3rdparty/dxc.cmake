@@ -16,7 +16,7 @@ configure_file(
 )
 target_include_directories(dxc INTERFACE "${get_include}")
 
-if (APPLE)
+if (APPLE OR ANDROID)
     target_compile_definitions(dxc INTERFACE __EMULATE_UUID)
 endif()
 
