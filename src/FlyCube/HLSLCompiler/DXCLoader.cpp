@@ -81,18 +81,6 @@ std::unique_ptr<dxc::DxcDllSupport> Load(const std::string& path, ShaderBlobType
     return dll_support;
 }
 
-std::string GetVulkanSdkLocalion()
-{
-    std::string sdk_localion = GetEnvironmentVar("VULKAN_SDK");
-#if defined(_WIN32)
-    return sdk_localion + "/Bin";
-#elif defined(__APPLE__)
-    return sdk_localion + "/macOS/lib";
-#else
-    return sdk_localion + "/lib";
-#endif
-}
-
 std::unique_ptr<dxc::DxcDllSupport> GetDxcSupportImpl(ShaderBlobType target)
 {
     std::vector<std::string> localions = {
@@ -101,7 +89,6 @@ std::unique_ptr<dxc::DxcDllSupport> GetDxcSupportImpl(ShaderBlobType target)
 #if defined(_WIN32)
         WINDOWS_KITS_LOCATION,
 #endif
-        GetVulkanSdkLocalion(),
     };
     for (const auto& path : localions) {
         auto res = Load(path, target);
