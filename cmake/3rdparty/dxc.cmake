@@ -1,10 +1,21 @@
 add_library(dxc INTERFACE)
+
 if (APPLE)
-    target_include_directories(dxc INTERFACE "${project_root}/3rdparty/dxc/include_macos")
+    set(dxc_include_dir "${project_root}/3rdparty/dxc/include_macos")
 else()
-    target_include_directories(dxc INTERFACE "${project_root}/3rdparty/dxc/include")
+    set(dxc_include_dir "${project_root}/3rdparty/dxc/include")
 endif()
+
+target_include_directories(dxc INTERFACE "${dxc_include_dir}")
 target_compile_definitions(dxc INTERFACE DXC_CUSTOM_LOCATION="${project_root}/3rdparty/dxc/bin")
+
+set(get_include "${CMAKE_BINARY_DIR}/gen/include")
+configure_file(
+    "${dxc_include_dir}/dxc/config.h.cmake"
+    "${get_include}/dxc/config.h"
+)
+target_include_directories(dxc INTERFACE "${get_include}")
+
 if (WIN32)
     if (CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION)
         set(windows_kits_location "C:/Program Files (x86)/Windows Kits/10/Bin/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}/x64")
