@@ -21,6 +21,7 @@ add_library(FlyCubeAssets INTERFACE)
 target_compile_definitions(FlyCubeAssets INTERFACE ASSETS_PATH="${assets_path}")
 
 list(PREPEND CMAKE_MODULE_PATH "${project_root}/cmake")
+include(codesign_settings_apple OPTIONAL)
 include(cmake_settings)
 include(compiler_settings)
 

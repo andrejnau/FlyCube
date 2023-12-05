@@ -1,5 +1,6 @@
 .DS_Store
 /build*/
+/cmake/codesign_settings_apple.cmake
+/CMakeUserPresets.json
 /install/
 /out/
-CMakeUserPresets.json

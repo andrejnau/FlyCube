@@ -12,6 +12,7 @@
         },
         {
             "name": "iOS",
+            "generator": "Xcode",
             "cacheVariables": {
                 "CMAKE_SYSTEM_NAME": "iOS",
                 "CMAKE_OSX_SYSROOT": "iphoneos"
@@ -19,6 +20,7 @@
         },
         {
             "name": "iSimulator",
+            "generator": "Xcode",
             "cacheVariables": {
                 "CMAKE_SYSTEM_NAME": "iOS",
                 "CMAKE_OSX_SYSROOT": "iphonesimulator"
@@ -26,6 +28,7 @@
         },
         {
             "name": "tvOS",
+            "generator": "Xcode",
             "cacheVariables": {
                 "CMAKE_SYSTEM_NAME": "tvOS",
                 "CMAKE_OSX_SYSROOT": "appletvos"
@@ -33,6 +36,7 @@
         },
         {
             "name": "tvSimulator",
+            "generator": "Xcode",
             "cacheVariables": {
                 "CMAKE_SYSTEM_NAME": "tvOS",
                 "CMAKE_OSX_SYSROOT": "appletvsimulator"
