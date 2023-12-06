@@ -12,7 +12,7 @@ cmake_dependent_option(DIRECTX_SUPPORT "DirectX 12 support" ON "WIN32" OFF)
 option(AGILITY_SDK_REQUIRED "Use Agility SDK" OFF)
 cmake_dependent_option(METAL_SUPPORT "Metal support" ON "APPLE" OFF)
 option(SOFTWARE_SUPPORT "Software rendering support" OFF)
-cmake_dependent_option(BUILD_SAMPLES "Build samples" ON "NOT IOS_OR_TVOS AND NOT ANDROID" OFF)
+cmake_dependent_option(BUILD_SAMPLES "Build samples" ON "NOT ANDROID" OFF)
 cmake_dependent_option(BUILD_TESTING "Build unit tests" ON "NOT IOS_OR_TVOS" OFF)
 
 set(project_root "${CMAKE_CURRENT_SOURCE_DIR}")

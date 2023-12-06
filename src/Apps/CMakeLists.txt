@@ -1,4 +1,9 @@
 if (NOT APPLE)
     add_subdirectory(CoreDxrTriangle)
 endif()
-add_subdirectory(CoreTriangle)
+
+if (IOS_OR_TVOS)
+    add_subdirectory(CoreTriangleUIKit)
+else()
+    add_subdirectory(CoreTriangle)
+endif()
