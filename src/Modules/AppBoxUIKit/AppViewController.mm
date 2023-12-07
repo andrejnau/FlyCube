@@ -28,7 +28,8 @@
 - (void)resize:(CGSize)size
 {
     AppSize app_size(size.width, size.height);
-    app_renderer->Resize(app_size);
+    AppView* view = (AppView*)self.view;
+    app_renderer->Resize(app_size, (__bridge WindowHandle)view.metal_layer);
 }
 
 - (void)render

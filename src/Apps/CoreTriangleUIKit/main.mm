@@ -7,8 +7,11 @@
 
 class TriangleRenderer : public AppRenderer {
 public:
+    TriangleRenderer();
     void Init(const AppSize& app_size, WindowHandle window) override;
+    void Resize(const AppSize& app_size, WindowHandle window) override;
     void Render() override;
+    void WaitForIdle();
     ~TriangleRenderer() override;
 
     std::shared_ptr<Instance> instance;
@@ -20,17 +23,21 @@ public:
     std::shared_ptr<Fence> fence;
     static constexpr uint32_t frame_count = 3;
     std::array<uint64_t, frame_count> fence_values = {};
-    std::vector<std::shared_ptr<CommandList>> command_lists;
+    std::array<std::shared_ptr<CommandList>, frame_count> command_lists;
 };
 
-void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
+TriangleRenderer::TriangleRenderer()
 {
     instance = CreateInstance(ApiType::kMetal);
     adapter = std::move(instance->EnumerateAdapters().front());
     device = adapter->CreateDevice();
     command_queue = device->GetCommandQueue(CommandListType::kGraphics);
-    swapchain = device->CreateSwapchain(window, app_size.width(), app_size.height(), frame_count, false);
     fence = device->CreateFence(fence_value);
+}
+
+void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
+{
+    swapchain = device->CreateSwapchain(window, app_size.width(), app_size.height(), frame_count, false);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer =
@@ -98,8 +105,8 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         framebuffer_desc.colors = { back_buffer_view };
         std::shared_ptr<Framebuffer> framebuffer =
             framebuffers.emplace_back(device->CreateFramebuffer(framebuffer_desc));
-        std::shared_ptr<CommandList> command_list =
-            command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
+        decltype(auto) command_list = command_lists[i];
+        command_list = device->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
@@ -115,6 +122,12 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     }
 }
 
+void TriangleRenderer::Resize(const AppSize& app_size, WindowHandle window)
+{
+    WaitForIdle();
+    Init(app_size, window);
+}
+
 void TriangleRenderer::Render()
 {
     uint32_t frame_index = swapchain->NextImage(fence, ++fence_value);
@@ -125,10 +138,15 @@ void TriangleRenderer::Render()
     swapchain->Present(fence, fence_values[frame_index]);
 }
 
-TriangleRenderer::~TriangleRenderer()
+void TriangleRenderer::WaitForIdle()
 {
     command_queue->Signal(fence, ++fence_value);
     fence->Wait(fence_value);
+}
+
+TriangleRenderer::~TriangleRenderer()
+{
+    WaitForIdle();
 }
 
 int main(int argc, char* argv[])

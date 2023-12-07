@@ -30,7 +30,7 @@ class AppRenderer {
 public:
     virtual ~AppRenderer() = default;
     virtual void Init(const AppSize& app_size, WindowHandle window) = 0;
-    virtual void Resize(const AppSize& app_size) {}
+    virtual void Resize(const AppSize& app_size, WindowHandle window) {}
     virtual void Render() = 0;
 };
 
