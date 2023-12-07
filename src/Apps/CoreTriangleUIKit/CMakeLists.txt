@@ -34,6 +34,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
    set_target_properties(CoreTriangleUIKit PROPERTIES
       MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/iOS/Info.plist"
    )
+   set_target_properties(CoreTriangleUIKit PROPERTIES
+      XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2" # iPhone, iPad
+   )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
    set_target_properties(CoreTriangleUIKit PROPERTIES
       MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/tvOS/Info.plist"
