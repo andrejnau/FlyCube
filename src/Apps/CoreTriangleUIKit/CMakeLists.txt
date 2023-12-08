@@ -7,16 +7,6 @@ list(APPEND resources
    VertexShader.spv
 )
 
-if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-   list(APPEND resources
-      iOS/Base.lproj/Main.storyboard
-   )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
-   list(APPEND resources
-      tvOS/Base.lproj/Main.storyboard
-   )
-endif()
-
 set_source_files_properties(${resources} PROPERTIES
    MACOSX_PACKAGE_LOCATION Resources
 )
@@ -28,6 +18,7 @@ add_executable(CoreTriangleUIKit MACOSX_BUNDLE
 
 target_link_libraries(CoreTriangleUIKit
    AppBoxUIKit
+   Instance
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")

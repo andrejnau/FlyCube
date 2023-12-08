@@ -1,10 +1,13 @@
 #include "AppBoxUIKit/AppBox.h"
 
-#include "AppBoxUIKit/AppDelegate.h"
-
+#import <MetalKit/MetalKit.h>
 #import <UIKit/UIKit.h>
 
 #include <cassert>
+
+// clang-format off
+#import "AppBoxUIKitSwift.h"
+// clang-format on
 
 // static
 AppBox& AppBox::GetInstance()
