@@ -1,6 +1,6 @@
 #import "MetalRenderer.h"
 
-#include "AppBoxUIKit/AppBox.h"
+#include "AppBoxApple/AppBox.h"
 
 @implementation MetalRenderer {
     AppRenderer* app_renderer;

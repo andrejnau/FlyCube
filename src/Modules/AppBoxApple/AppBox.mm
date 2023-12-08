@@ -1,4 +1,4 @@
-#include "AppBoxUIKit/AppBox.h"
+#include "AppBoxApple/AppBox.h"
 
 #include <cassert>
 
@@ -9,7 +9,7 @@
 #endif
 
 // clang-format off
-#import "AppBoxUIKitSwift.h"
+#import "AppBoxAppleSwift.h"
 // clang-format on
 
 // static

@@ -3,7 +3,7 @@ if (NOT IOS_OR_TVOS)
 endif()
 
 if (CMAKE_GENERATOR MATCHES "Xcode")
-    add_subdirectory(AppBoxUIKit)
+    add_subdirectory(AppBoxApple)
 endif()
 
 add_subdirectory(Utilities)

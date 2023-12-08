@@ -17,7 +17,7 @@ add_executable(CoreTriangleUIKit MACOSX_BUNDLE
 )
 
 target_link_libraries(CoreTriangleUIKit
-   AppBoxUIKit
+   AppBoxApple
    Instance
 )
 
