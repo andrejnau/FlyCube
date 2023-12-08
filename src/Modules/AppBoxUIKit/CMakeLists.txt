@@ -7,11 +7,20 @@ list(APPEND headers
 
 list(APPEND sources
    AppBox.mm
-   AppDelegate.swift
    ContentView.swift
    MetalRenderer.mm
    MetalView.swift
 )
+
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR MAKE_SYSTEM_NAME STREQUAL "tvOS")
+   list(APPEND sources
+      AppDelegateUI.swift
+   )
+else()
+   list(APPEND sources
+      AppDelegateNS.swift
+   )
+endif()
 
 add_library(AppBoxUIKit
    ${headers}
@@ -31,7 +40,16 @@ target_include_directories(AppBoxUIKit
 target_link_libraries(AppBoxUIKit
    "-framework Metal"
    "-framework QuartzCore"
-   "-framework UIKit"
 )
+
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR MAKE_SYSTEM_NAME STREQUAL "tvOS")
+   target_link_libraries(AppBoxUIKit
+      "-framework UIKit"
+   )
+else()
+   target_link_libraries(AppBoxUIKit
+      "-framework AppKit"
+   )
+endif()
 
 set_target_properties(AppBoxUIKit PROPERTIES FOLDER "Modules")

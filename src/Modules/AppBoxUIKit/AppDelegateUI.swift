@@ -1,7 +1,6 @@
 import SwiftUI
 import UIKit
 
-@objc
 class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
