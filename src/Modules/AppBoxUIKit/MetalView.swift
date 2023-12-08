@@ -12,7 +12,7 @@ struct MetalView: ViewRepresentable {
 
     func makeView(context: Context) -> MTKView {
         let view = MTKView(frame: .zero, device: nil)
-        view.delegate = renderer
+        configure(view: view, using: renderer)
         return view
     }
 

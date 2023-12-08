@@ -24,8 +24,8 @@ MTSwapchain::MTSwapchain(MTDevice& device,
     , m_frame_count(frame_count)
     , m_width(width)
     , m_height(height)
+    , m_layer((__bridge CAMetalLayer*)window)
 {
-    m_layer = (__bridge CAMetalLayer*)window;
     m_layer.drawableSize = CGSizeMake(width, height);
     m_layer.device = device.GetDevice();
     m_layer.pixelFormat = MTLPixelFormatBGRA8Unorm;

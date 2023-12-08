@@ -24,10 +24,10 @@ public:
 
 private:
     MTDevice& m_device;
-    CAMetalLayer* m_layer = nullptr;
     std::vector<std::shared_ptr<Resource>> m_back_buffers;
     uint32_t m_frame_index = 0;
     uint32_t m_frame_count = 0;
     uint32_t m_width = 0;
     uint32_t m_height = 0;
+    CAMetalLayer* m_layer = nullptr;
 };
