@@ -6,6 +6,6 @@ if (NOT IOS_OR_TVOS)
     add_subdirectory(CoreTriangle)
 endif()
 
-if (CMAKE_GENERATOR MATCHES "Xcode" AND IOS_OR_TVOS)
+if (CMAKE_GENERATOR MATCHES "Xcode")
     add_subdirectory(CoreTriangleUIKit)
 endif()

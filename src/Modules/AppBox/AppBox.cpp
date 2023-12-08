@@ -59,6 +59,8 @@ AppBox::AppBox(const std::string& title, Settings setting)
     glfwGetFramebufferSize(m_window, (int*)&m_width, (int*)&m_height);
 
 #if defined(__APPLE__)
+    m_autorelease_pool = CreateAutoreleasePool();
+
     NSWindow* nswindow = glfwGetCocoaWindow(m_window);
     if (m_setting.api_type != ApiType::kSoftware) {
         nswindow.contentView.layer = [CAMetalLayer layer];
@@ -132,6 +134,7 @@ void AppBox::SubscribeEvents(InputEvents* input_listener, WindowEvents* window_l
 
 bool AppBox::PollEvents()
 {
+    m_autorelease_pool->Reset();
     UpdateTitle();
     glfwPollEvents();
     return glfwWindowShouldClose(m_window) || m_exit_request;

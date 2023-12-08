@@ -12,6 +12,10 @@
 #include <memory>
 #include <string>
 
+#if defined(__APPLE__)
+#include "Utilities/AutoreleasePool.h"
+#endif
+
 struct AppRect {
     uint32_t width;
     uint32_t height;
@@ -56,6 +60,7 @@ private:
     std::string m_gpu_name;
     std::string m_fps;
 #if defined(__APPLE__)
+    std::shared_ptr<AutoreleasePool> m_autorelease_pool;
     void* m_layer = nullptr;
 #endif
 };

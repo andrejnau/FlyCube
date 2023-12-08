@@ -62,8 +62,6 @@ uint32_t MTSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t si
 
 void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
-    m_device.GetInstance().GetAutoreleasePool()->Reset();
-
     auto back_buffer = m_back_buffers[m_frame_index % m_frame_count];
     auto resource = back_buffer->As<MTResource>();
     auto queue = m_device.GetMTCommandQueue();

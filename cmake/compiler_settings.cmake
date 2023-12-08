@@ -9,10 +9,6 @@ if (MSVC)
     add_definitions(-DNOMINMAX)
 endif()
 
-if (IOS_OR_TVOS)
-    add_definitions(-DUSE_EXTERNAL_AUTORELEASEPOOL=1)
-endif()
-
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     add_definitions(-DTARGET_IOS=1)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "tvOS")

@@ -14,13 +14,13 @@ list(APPEND sources
 )
 
 if (APPLE)
-    set_property(SOURCE AutoreleasePool.mm PROPERTY COMPILE_FLAGS "-fno-objc-arc")
     list(APPEND headers
         AutoreleasePool.h
     )
     list(APPEND sources
         AutoreleasePool.mm
     )
+    set_property(SOURCE AutoreleasePool.mm PROPERTY COMPILE_FLAGS "-fno-objc-arc")
 endif()
 
 add_library(Utilities ${headers} ${sources})
