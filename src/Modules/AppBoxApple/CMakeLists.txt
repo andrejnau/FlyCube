@@ -1,5 +1,9 @@
 enable_language(Swift)
 
+if (CMAKE_Swift_COMPILER_VERSION VERSION_LESS 5.9)
+   message(FATAL_ERROR "Bidirectional C++ Interop requires Swift 5.9 or greater. Have ${CMAKE_Swift_COMPILER_VERSION}")
+endif()
+
 list(APPEND headers
    AppBox.h
    MetalRenderer.h
