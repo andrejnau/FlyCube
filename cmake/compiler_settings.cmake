@@ -16,3 +16,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
 else()
     add_definitions(-DTARGET_MACOS=1)
 endif()
+
+if (CMAKE_SIZEOF_VOID_P STREQUAL "4")
+    message(FATAL_ERROR "x86 build is not supported")
+endif()
