@@ -4,6 +4,7 @@
 #include "Utilities/DXGIFormatHelper.h"
 
 #include <directx/d3d12.h>
+#include <gli/gli.hpp>
 
 #include <cassert>
 

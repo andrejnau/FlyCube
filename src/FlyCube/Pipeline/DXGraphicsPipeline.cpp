@@ -4,10 +4,10 @@
 #include "Device/DXDevice.h"
 #include "Pipeline/DXStateBuilder.h"
 #include "Program/DXProgram.h"
-#include "Utilities/DXGIFormatHelper.h"
 #include "View/DXView.h"
 
 #include <directx/d3dx12.h>
+#include <gli/gli.hpp>
 
 #include <cctype>
 

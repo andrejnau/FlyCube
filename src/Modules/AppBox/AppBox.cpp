@@ -134,7 +134,9 @@ void AppBox::SubscribeEvents(InputEvents* input_listener, WindowEvents* window_l
 
 bool AppBox::PollEvents()
 {
+#if defined(__APPLE__)
     m_autorelease_pool->Reset();
+#endif
     UpdateTitle();
     glfwPollEvents();
     return glfwWindowShouldClose(m_window) || m_exit_request;
