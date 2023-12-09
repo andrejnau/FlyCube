@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <fstream>
+#include <iterator>
 #include <vector>
 
 inline uint64_t Align(uint64_t size, uint64_t alignment)

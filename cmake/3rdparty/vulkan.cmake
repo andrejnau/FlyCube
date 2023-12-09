@@ -8,6 +8,10 @@ if (NOT VULKAN_SUPPORT)
 endif()
 
 if (APPLE)
+    if (CMAKE_VERSION VERSION_LESS "3.28")
+        message(FATAL_ERROR "CMake 3.28 is required for linking with MoltenVK.xcframework")
+    endif()
+
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_COMPILE_DEFINITIONS
             USE_STATIC_MOLTENVK
