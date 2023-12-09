@@ -2,12 +2,20 @@
     "version": 3,
     "configurePresets": [
         {
-            "name": "Default"
+            "name": "default"
         },
         {
-            "name": "MoltenVK",
+            "name": "gcc",
             "cacheVariables": {
-                "MOLTEN_VK_SUPPORT": "ON"
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "clang",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
             }
         },
         {
