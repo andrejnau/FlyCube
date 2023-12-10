@@ -16,7 +16,7 @@ list(APPEND sources
    MetalView.swift
 )
 
-if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR MAKE_SYSTEM_NAME STREQUAL "tvOS")
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS")
    list(APPEND sources
       AppDelegateUI.swift
    )
@@ -46,7 +46,7 @@ target_link_libraries(AppBoxApple
    "-framework QuartzCore"
 )
 
-if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR MAKE_SYSTEM_NAME STREQUAL "tvOS")
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS")
    target_link_libraries(AppBoxApple
       "-framework UIKit"
    )
