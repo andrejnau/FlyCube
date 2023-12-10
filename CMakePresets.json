@@ -19,6 +19,10 @@
             }
         },
         {
+            "name": "macOS",
+            "generator": "Xcode"
+        },
+        {
             "name": "iOS",
             "generator": "Xcode",
             "cacheVariables": {
