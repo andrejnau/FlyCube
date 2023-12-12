@@ -12,7 +12,7 @@ public:
     bool IsDebugUtilsSupported() const;
 
 private:
-#ifndef USE_STATIC_MOLTENVK
+#if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
     vk::DynamicLoader m_dl;
 #endif
     vk::UniqueInstance m_instance;

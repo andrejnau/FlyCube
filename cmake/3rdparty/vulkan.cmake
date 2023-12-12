@@ -7,20 +7,13 @@ if (NOT VULKAN_SUPPORT)
     return()
 endif()
 
-if (APPLE)
+if (STATIC_MOLTEN_VK)
     if (CMAKE_VERSION VERSION_LESS "3.28")
         message(FATAL_ERROR "CMake 3.28 is required for linking with MoltenVK.xcframework")
     endif()
 
-    set_property(TARGET vulkan APPEND PROPERTY
-        INTERFACE_COMPILE_DEFINITIONS
-            USE_STATIC_MOLTENVK
-    )
-
     if (CUSTOM_MOLTENVK)
         set(moltenvk_xcframework "${CUSTOM_MOLTENVK}/MoltenVK.xcframework")
-    elseif(CUSTOM_VULKAN_SDK)
-        set(moltenvk_xcframework "${CUSTOM_VULKAN_SDK}/MoltenVK/MoltenVK.xcframework")
     elseif(DEFINED ENV{VULKAN_SDK})
         set(moltenvk_xcframework "$ENV{VULKAN_SDK}/MoltenVK/MoltenVK.xcframework")
     else()
@@ -35,14 +28,7 @@ if (APPLE)
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_LINK_LIBRARIES
             "-framework IOSurface"
-            "-framework CoreGraphics"
     )
-    if (NOT IOS_OR_TVOS)
-        set_property(TARGET vulkan APPEND PROPERTY
-            INTERFACE_LINK_LIBRARIES
-                "-framework IOKit"
-        )
-    endif()
 else()
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_COMPILE_DEFINITIONS
@@ -60,7 +46,10 @@ elseif(APPLE)
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_COMPILE_DEFINITIONS
             VK_USE_PLATFORM_METAL_EXT
+            USE_MOLTENVK
     )
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+    set(CMAKE_INSTALL_RPATH "/usr/local/lib")
 elseif(NOT ANDROID)
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_COMPILE_DEFINITIONS

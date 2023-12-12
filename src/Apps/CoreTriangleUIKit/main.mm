@@ -23,7 +23,19 @@ public:
     std::shared_ptr<Fence> fence;
     static constexpr uint32_t frame_count = 3;
     std::array<uint64_t, frame_count> fence_values = {};
+    std::vector<std::shared_ptr<Framebuffer>> framebuffers;
     std::array<std::shared_ptr<CommandList>, frame_count> command_lists;
+    std::shared_ptr<Resource> index_buffer;
+    std::shared_ptr<Resource> vertex_buffer;
+    std::shared_ptr<Resource> constant_buffer;
+    std::shared_ptr<Shader> vertex_shader;
+    std::shared_ptr<Shader> pixel_shader;
+    std::shared_ptr<Program> program;
+    std::shared_ptr<RenderPass> render_pass;
+    std::shared_ptr<Pipeline> pipeline;
+    std::shared_ptr<View> constant_view;
+    std::shared_ptr<BindingSetLayout> layout;
+    std::shared_ptr<BindingSet> binding_set;
 };
 
 TriangleRenderer::TriangleRenderer()
@@ -40,7 +52,7 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     swapchain = device->CreateSwapchain(window, app_size.width(), app_size.height(), frame_count, false);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
-    std::shared_ptr<Resource> index_buffer =
+    index_buffer =
         device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * index_data.size());
     index_buffer->CommitMemory(MemoryType::kUpload);
     index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
@@ -50,38 +62,37 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         glm::vec3(0.0, 0.5, 0.0),
         glm::vec3(0.5, -0.5, 0.0),
     };
-    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest,
-                                                                   sizeof(vertex_data.front()) * vertex_data.size());
+    vertex_buffer = device->CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest,
+                                         sizeof(vertex_data.front()) * vertex_data.size());
     vertex_buffer->CommitMemory(MemoryType::kUpload);
     vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 
     glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
-    std::shared_ptr<Resource> constant_buffer =
-        device->CreateBuffer(BindFlag::kConstantBuffer | BindFlag::kCopyDest, sizeof(constant_data));
+    constant_buffer = device->CreateBuffer(BindFlag::kConstantBuffer | BindFlag::kCopyDest, sizeof(constant_data));
     constant_buffer->CommitMemory(MemoryType::kUpload);
     constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));
 
     auto vertex_path = [[NSBundle mainBundle] pathForResource:@"VertexShader" ofType:@"spv"];
     auto pixel_path = [[NSBundle mainBundle] pathForResource:@"PixelShader" ofType:@"spv"];
-    std::shared_ptr<Shader> vertex_shader =
+    vertex_shader =
         device->CreateShader(ReadBinaryFile([vertex_path UTF8String]), ShaderBlobType::kSPIRV, ShaderType::kVertex);
-    std::shared_ptr<Shader> pixel_shader =
+    pixel_shader =
         device->CreateShader(ReadBinaryFile([pixel_path UTF8String]), ShaderBlobType::kSPIRV, ShaderType::kPixel);
-    std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
+    program = device->CreateProgram({ vertex_shader, pixel_shader });
 
     ViewDesc constant_view_desc = {};
     constant_view_desc.view_type = ViewType::kConstantBuffer;
     constant_view_desc.dimension = ViewDimension::kBuffer;
-    std::shared_ptr<View> constant_view = device->CreateView(constant_buffer, constant_view_desc);
+    constant_view = device->CreateView(constant_buffer, constant_view_desc);
     BindKey settings_key = { ShaderType::kPixel, ViewType::kConstantBuffer, 0, 0, 1 };
-    std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ settings_key });
-    std::shared_ptr<BindingSet> binding_set = device->CreateBindingSet(layout);
+    layout = device->CreateBindingSetLayout({ settings_key });
+    binding_set = device->CreateBindingSet(layout);
     binding_set->WriteBindings({ { settings_key, constant_view } });
 
     RenderPassDesc render_pass_desc = {
         { { swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
-    std::shared_ptr<RenderPass> render_pass = device->CreateRenderPass(render_pass_desc);
+    render_pass = device->CreateRenderPass(render_pass_desc);
     ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
     GraphicsPipelineDesc pipeline_desc = {
         program,
@@ -89,9 +100,8 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
         render_pass,
     };
-    std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
+    pipeline = device->CreateGraphicsPipeline(pipeline_desc);
 
-    std::vector<std::shared_ptr<Framebuffer>> framebuffers;
     for (uint32_t i = 0; i < frame_count; ++i) {
         ViewDesc back_buffer_view_desc = {};
         back_buffer_view_desc.view_type = ViewType::kRenderTarget;

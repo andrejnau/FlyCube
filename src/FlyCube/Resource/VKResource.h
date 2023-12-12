@@ -51,7 +51,7 @@ public:
         vk::UniqueSampler res;
     } sampler;
 
-#ifndef USE_STATIC_MOLTENVK
+#ifndef USE_MOLTENVK
     vk::UniqueAccelerationStructureKHR acceleration_structure_handle = {};
 #else
     struct {

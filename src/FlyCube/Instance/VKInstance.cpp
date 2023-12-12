@@ -6,7 +6,7 @@
 #include <sstream>
 #include <string>
 
-#ifndef USE_STATIC_MOLTENVK
+#if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 #endif
 
@@ -66,7 +66,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT 
 
 VKInstance::VKInstance()
 {
-#ifndef USE_STATIC_MOLTENVK
+#if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
     PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr =
         m_dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
@@ -104,8 +104,10 @@ VKInstance::VKInstance()
 #endif
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+        VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
     };
     std::vector<const char*> found_extension;
+    vk::InstanceCreateInfo create_info;
     for (const auto& extension : extensions) {
         if (req_extension.count(extension.extensionName.data())) {
             found_extension.push_back(extension.extensionName);
@@ -114,12 +116,14 @@ VKInstance::VKInstance()
         if (std::string(extension.extensionName.data()) == VK_EXT_DEBUG_UTILS_EXTENSION_NAME) {
             m_debug_utils_supported = true;
         }
+        if (std::string(extension.extensionName.data()) == VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) {
+            create_info.flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
+        }
     }
 
     vk::ApplicationInfo app_info = {};
     app_info.apiVersion = VK_API_VERSION_1_2;
 
-    vk::InstanceCreateInfo create_info;
     create_info.pApplicationInfo = &app_info;
     create_info.enabledLayerCount = static_cast<uint32_t>(found_layers.size());
     create_info.ppEnabledLayerNames = found_layers.data();
@@ -127,7 +131,7 @@ VKInstance::VKInstance()
     create_info.ppEnabledExtensionNames = found_extension.data();
 
     m_instance = vk::createInstanceUnique(create_info);
-#ifndef USE_STATIC_MOLTENVK
+#if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance.get());
 #endif
     if (debug_enabled) {
