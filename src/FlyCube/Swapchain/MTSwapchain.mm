@@ -21,6 +21,7 @@ MTSwapchain::MTSwapchain(MTDevice& device,
                          uint32_t frame_count,
                          bool vsync)
     : m_device(device)
+    , m_frame_index(frame_count - 1)
     , m_frame_count(frame_count)
     , m_width(width)
     , m_height(height)
@@ -57,12 +58,12 @@ std::shared_ptr<Resource> MTSwapchain::GetBackBuffer(uint32_t buffer)
 
 uint32_t MTSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
 {
-    return m_frame_index++ % m_frame_count;
+    return m_frame_index = (m_frame_index + 1) % m_frame_count;
 }
 
 void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
-    auto back_buffer = m_back_buffers[m_frame_index % m_frame_count];
+    auto back_buffer = m_back_buffers[m_frame_index];
     auto resource = back_buffer->As<MTResource>();
     auto queue = m_device.GetMTCommandQueue();
 
