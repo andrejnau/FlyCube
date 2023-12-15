@@ -93,12 +93,12 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     render_pass_info.framebuffer = vk_framebuffer.GetFramebuffer();
     render_pass_info.renderArea.extent = vk_framebuffer.GetExtent();
     std::vector<vk::ClearValue> clear_values;
-    for (size_t i = 0; i < clear_desc.colors.size(); ++i) {
+    for (const auto& color : clear_desc.colors) {
         auto& clear_value = clear_values.emplace_back();
-        clear_value.color.float32[0] = clear_desc.colors[i].r;
-        clear_value.color.float32[1] = clear_desc.colors[i].g;
-        clear_value.color.float32[2] = clear_desc.colors[i].b;
-        clear_value.color.float32[3] = clear_desc.colors[i].a;
+        clear_value.color.float32[0] = color.r;
+        clear_value.color.float32[1] = color.g;
+        clear_value.color.float32[2] = color.b;
+        clear_value.color.float32[3] = color.a;
     }
     clear_values.resize(vk_render_pass.GetDesc().colors.size());
     if (vk_render_pass.GetDesc().depth_stencil.format != gli::FORMAT_UNDEFINED) {
@@ -397,7 +397,7 @@ void VKCommandList::UAVResourceBarrier(const std::shared_ptr<Resource>& /*resour
                                    vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eShaderRead;
     memory_barrier.dstAccessMask = memory_barrier.srcAccessMask;
     m_command_list->pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands,
-                                    vk::DependencyFlagBits::eByRegion, 1, &memory_barrier, 0, 0, 0, 0);
+                                    vk::DependencyFlagBits::eByRegion, 1, &memory_barrier, 0, nullptr, 0, nullptr);
 }
 
 void VKCommandList::SetViewport(float x, float y, float width, float height)

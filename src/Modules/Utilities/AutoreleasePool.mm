@@ -4,7 +4,7 @@
 
 class AutoreleasePoolImpl : public AutoreleasePool {
 public:
-    ~AutoreleasePoolImpl()
+    ~AutoreleasePoolImpl() override
     {
         Drain();
     }
