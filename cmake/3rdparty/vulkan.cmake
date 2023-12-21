@@ -29,6 +29,10 @@ if (STATIC_MOLTEN_VK)
         INTERFACE_LINK_LIBRARIES
             "-framework IOSurface"
     )
+    set_property(TARGET vulkan APPEND PROPERTY
+        INTERFACE_COMPILE_DEFINITIONS
+            USE_STATIC_MOLTENVK
+    )
 else()
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_COMPILE_DEFINITIONS
@@ -46,7 +50,6 @@ elseif(APPLE)
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_COMPILE_DEFINITIONS
             VK_USE_PLATFORM_METAL_EXT
-            USE_MOLTENVK
     )
     set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
     set(CMAKE_INSTALL_RPATH "/usr/local/lib")
