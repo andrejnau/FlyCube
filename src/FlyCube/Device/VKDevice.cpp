@@ -207,10 +207,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.shaderImageGatherExtended = physical_device_features.shaderImageGatherExtended;
 
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
-#ifndef __APPLE__
-    device_vulkan12_features.drawIndirectCount = true;
+    device_vulkan12_features.drawIndirectCount = m_draw_indirect_count_supported;
     device_vulkan12_features.bufferDeviceAddress = true;
-#endif
     device_vulkan12_features.timelineSemaphore = true;
     device_vulkan12_features.runtimeDescriptorArray = true;
     device_vulkan12_features.descriptorBindingVariableDescriptorCount = true;
