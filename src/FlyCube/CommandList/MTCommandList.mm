@@ -467,7 +467,7 @@ id<MTLBuffer> MTCommandList::PatchInstanceData(const std::shared_ptr<Resource>& 
         auto matrix = glm::mat4x3(instance.transform);
         memcpy(&patched_instance.transformationMatrix, &matrix, sizeof(patched_instance.transformationMatrix));
         patched_instance.mask = instance.instance_mask;
-        patched_instance.accelerationStructureID = *(MTLResourceID*)&instance.acceleration_structure_handle;
+        patched_instance.accelerationStructureID = { instance.acceleration_structure_handle };
     }
 
     return buffer;
