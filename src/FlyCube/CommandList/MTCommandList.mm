@@ -447,6 +447,32 @@ void MTCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
         });
 }
 
+// TODO: patch on GPU
+id<MTLBuffer> MTCommandList::PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
+                                               uint64_t instance_offset,
+                                               uint32_t instance_count)
+{
+    MTLResourceOptions buffer_options = MTLStorageModeShared << MTLResourceStorageModeShift;
+    NSUInteger buffer_size = instance_count * sizeof(MTLIndirectAccelerationStructureInstanceDescriptor);
+    id<MTLBuffer> buffer = [m_device.GetDevice() newBufferWithLength:buffer_size options:buffer_options];
+
+    uint8_t* instance_ptr =
+        static_cast<uint8_t*>(instance_data->As<MTResource>().buffer.res.contents) + instance_offset;
+    uint8_t* patched_instance_ptr = static_cast<uint8_t*>(buffer.contents);
+    for (uint32_t i = 0; i < instance_count; ++i) {
+        RaytracingGeometryInstance& instance = reinterpret_cast<RaytracingGeometryInstance*>(instance_ptr)[i];
+        MTLIndirectAccelerationStructureInstanceDescriptor& patched_instance =
+            reinterpret_cast<MTLIndirectAccelerationStructureInstanceDescriptor*>(patched_instance_ptr)[i];
+
+        auto matrix = glm::mat4x3(instance.transform);
+        memcpy(&patched_instance.transformationMatrix, &matrix, sizeof(patched_instance.transformationMatrix));
+        patched_instance.mask = instance.instance_mask;
+        patched_instance.accelerationStructureID = *(MTLResourceID*)&instance.acceleration_structure_handle;
+    }
+
+    return buffer;
+}
+
 void MTCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
                                     const std::shared_ptr<Resource>& dst,
                                     const std::shared_ptr<Resource>& scratch,
@@ -456,27 +482,13 @@ void MTCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
                                     uint32_t instance_count,
                                     BuildAccelerationStructureFlags flags)
 {
-    decltype(auto) mt_instance_data = instance_data->As<MTResource>();
-
     MTLInstanceAccelerationStructureDescriptor* acceleration_structure_desc =
         [MTLInstanceAccelerationStructureDescriptor descriptor];
-    acceleration_structure_desc.instancedAccelerationStructures = m_device.acceleration_structures;
     acceleration_structure_desc.instanceCount = instance_count;
-    acceleration_structure_desc.instanceDescriptorBuffer = mt_instance_data.buffer.res;
-    acceleration_structure_desc.instanceDescriptorBufferOffset = instance_offset;
-
-    // TODO: patch on GPU
-    static_assert(sizeof(RaytracingGeometryInstance) == sizeof(MTLAccelerationStructureInstanceDescriptor));
-    uint8_t* instance_buffer = static_cast<uint8_t*>(acceleration_structure_desc.instanceDescriptorBuffer.contents);
-    for (uint32_t i = 0; i < instance_count; ++i) {
-        RaytracingGeometryInstance& instance = *reinterpret_cast<RaytracingGeometryInstance*>(instance_buffer);
-        MTLAccelerationStructureInstanceDescriptor desc = {};
-        auto matrix = glm::mat4x3(instance.transform);
-        memcpy(&desc.transformationMatrix, &matrix, sizeof(desc.transformationMatrix));
-        desc.mask = instance.instance_mask;
-        *reinterpret_cast<MTLAccelerationStructureInstanceDescriptor*>(instance_buffer) = desc;
-        instance_buffer += sizeof(RaytracingGeometryInstance);
-    }
+    acceleration_structure_desc.instanceDescriptorBuffer =
+        PatchInstanceData(instance_data, instance_offset, instance_count);
+    acceleration_structure_desc.instanceDescriptorBufferOffset = 0;
+    acceleration_structure_desc.instanceDescriptorType = MTLAccelerationStructureInstanceDescriptorTypeIndirect;
 
     decltype(auto) mt_dst = dst->As<MTResource>();
     decltype(auto) mt_scratch = scratch->As<MTResource>();

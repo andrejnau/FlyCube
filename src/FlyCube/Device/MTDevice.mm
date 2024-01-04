@@ -204,10 +204,7 @@ std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(AccelerationStru
     std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
     res->resource_type = ResourceType::kAccelerationStructure;
     res->acceleration_structure = [m_device newAccelerationStructureWithSize:resource->GetWidth() - offset];
-    if (type == AccelerationStructureType::kBottomLevel) {
-        res->acceleration_structure_handle = [acceleration_structures count];
-        [acceleration_structures addObject:res->acceleration_structure];
-    }
+    res->acceleration_structure_handle = [res->acceleration_structure gpuResourceID];
     return res;
 }
 

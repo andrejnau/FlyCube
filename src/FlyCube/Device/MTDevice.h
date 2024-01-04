@@ -96,8 +96,6 @@ public:
 
     MTInstance& GetInstance();
 
-    NSMutableArray<id<MTLAccelerationStructure>>* acceleration_structures = [NSMutableArray array];
-
 private:
     id<MTLDevice> getMTLDevice() override;
 

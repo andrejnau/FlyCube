@@ -141,7 +141,7 @@ uint32_t MTResource::GetSampleCount() const
 
 uint64_t MTResource::GetAccelerationStructureHandle() const
 {
-    return acceleration_structure_handle;
+    return *(uint64_t*)&acceleration_structure_handle;
 }
 
 void MTResource::SetName(const std::string& name) {}

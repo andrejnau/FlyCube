@@ -98,6 +98,9 @@ public:
     void OnSubmit();
 
 private:
+    id<MTLBuffer> PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
+                                    uint64_t instance_offset,
+                                    uint32_t instance_count);
     void ApplyState();
     void ApplyBindingSet();
     void ApplyAndRecord(std::function<void()>&& cmd);
