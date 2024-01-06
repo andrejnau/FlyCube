@@ -84,5 +84,4 @@ void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
         [drawable present];
     }];
     [command_buffer commit];
-    [command_buffer waitUntilCompleted];
 }
