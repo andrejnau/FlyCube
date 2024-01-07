@@ -4,6 +4,11 @@
 
 #include <spirv_msl.hpp>
 
+bool UseArgumentBuffers()
+{
+    return false;
+}
+
 std::map<std::string, uint32_t> ParseBindings(const spirv_cross::CompilerMSL& compiler)
 {
     std::map<std::string, uint32_t> mapping;
@@ -31,7 +36,9 @@ std::string GetMSLShader(const std::vector<uint8_t>& blob, std::map<std::string,
     spirv_cross::CompilerMSL compiler((const uint32_t*)blob.data(), blob.size() / sizeof(uint32_t));
     auto options = compiler.get_msl_options();
     options.set_msl_version(2, 3);
-    // TODO: Fill options
+    options.argument_buffers = UseArgumentBuffers();
+    options.force_active_argument_buffer_resources = options.argument_buffers;
+    options.argument_buffers_tier = spirv_cross::CompilerMSL::Options::ArgumentBuffersTier::Tier2;
     compiler.set_msl_options(options);
     auto msl_source = compiler.compile();
     mapping = ParseBindings(compiler);

@@ -20,6 +20,12 @@ MTShader::MTShader(const ShaderDesc& desc, ShaderBlobType blob_type)
     : ShaderBase(desc, blob_type)
 {
     m_source = GetMSLShader(m_blob, m_index_mapping);
+    if (UseArgumentBuffers()) {
+        for (const auto& [name, bind_key] : m_bind_keys) {
+            uint32_t index = m_index_mapping.at(name);
+            assert(index == bind_key.slot);
+        }
+    }
 }
 
 const std::string& MTShader::GetSource() const
