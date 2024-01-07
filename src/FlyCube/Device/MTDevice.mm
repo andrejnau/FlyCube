@@ -100,6 +100,7 @@ std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
     res->resource_type = ResourceType::kSampler;
 
     MTLSamplerDescriptor* sampler_descriptor = [MTLSamplerDescriptor new];
+    sampler_descriptor.supportArgumentBuffers = YES;
     sampler_descriptor.minFilter = MTLSamplerMinMagFilterLinear;
     sampler_descriptor.magFilter = MTLSamplerMinMagFilterLinear;
     sampler_descriptor.mipFilter = MTLSamplerMipFilterLinear;
