@@ -16,10 +16,8 @@ static MTLTextureType ConvertTextureType(ViewDimension dimension)
         return MTLTextureType2DMultisample;
     case ViewDimension::kTexture2DArray:
         return MTLTextureType2DArray;
-#if TARGET_OS_OSX || TARGET_OS_IOS
     case ViewDimension::kTexture2DMSArray:
         return MTLTextureType2DMultisampleArray;
-#endif
     case ViewDimension::kTexture3D:
         return MTLTextureType3D;
     case ViewDimension::kTextureCube:

@@ -105,9 +105,7 @@ std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
     sampler_descriptor.magFilter = MTLSamplerMinMagFilterLinear;
     sampler_descriptor.mipFilter = MTLSamplerMipFilterLinear;
     sampler_descriptor.maxAnisotropy = 16;
-#if TARGET_OS_OSX || TARGET_OS_IOS
     sampler_descriptor.borderColor = MTLSamplerBorderColorOpaqueBlack;
-#endif
     sampler_descriptor.lodMinClamp = 0;
     sampler_descriptor.lodMaxClamp = std::numeric_limits<float>::max();
 

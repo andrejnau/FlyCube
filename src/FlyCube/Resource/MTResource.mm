@@ -22,11 +22,7 @@ MTLTextureDescriptor* MTResource::GetTextureDescriptor(MemoryType memory_type) c
     case TextureType::k2D:
         if (texture.sample_count > 1) {
             if (texture.depth > 1) {
-#if TARGET_OS_OSX || TARGET_OS_IOS
                 texture_descriptor.textureType = MTLTextureType2DMultisampleArray;
-#else
-                assert(false);
-#endif
             } else {
                 texture_descriptor.textureType = MTLTextureType2DMultisample;
             }
