@@ -1,11 +1,13 @@
 #include "Device/MTDevice.h"
 
-#include "BindingSet/MTBindingSet.h"
+#include "BindingSet/MTArgumentBuffer.h"
+#include "BindingSet/MTDirectArguments.h"
 #include "BindingSetLayout/MTBindingSetLayout.h"
 #include "CommandList/MTCommandList.h"
 #include "CommandQueue/MTCommandQueue.h"
 #include "Fence/MTFence.h"
 #include "Framebuffer/MTFramebuffer.h"
+#include "HLSLCompiler/MSLConverter.h"
 #include "Instance/MTInstance.h"
 #include "Memory/MTMemory.h"
 #include "Pipeline/MTComputePipeline.h"
@@ -150,7 +152,11 @@ std::shared_ptr<BindingSetLayout> MTDevice::CreateBindingSetLayout(const std::ve
 
 std::shared_ptr<BindingSet> MTDevice::CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout)
 {
-    return std::make_shared<MTBindingSet>(*this, std::static_pointer_cast<MTBindingSetLayout>(layout));
+    if (UseArgumentBuffers()) {
+        return std::make_shared<MTArgumentBuffer>(*this, std::static_pointer_cast<MTBindingSetLayout>(layout));
+    } else {
+        return std::make_shared<MTDirectArguments>(*this, std::static_pointer_cast<MTBindingSetLayout>(layout));
+    }
 }
 
 std::shared_ptr<RenderPass> MTDevice::CreateRenderPass(const RenderPassDesc& desc)
