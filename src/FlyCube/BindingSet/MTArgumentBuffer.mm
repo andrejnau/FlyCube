@@ -64,56 +64,18 @@ void MTArgumentBuffer::WriteBindings(const std::vector<BindingDesc>& bindings)
 
     const std::vector<BindKey>& bind_keys = m_layout->GetBindKeys();
     for (const auto& binding : m_bindings) {
-        const BindKey& bind_key = binding.bind_key;
         decltype(auto) view = std::static_pointer_cast<MTView>(binding.view);
-        decltype(auto) mt_resource = view->GetMTResource();
+        decltype(auto) bind_key = binding.bind_key;
+        assert(view->GetViewDesc().view_type == bind_key.view_type);
+
         uint32_t index = bind_key.slot;
         uint32_t slots = m_slots_count[{ bind_key.shader_type, bind_key.space }];
         assert(index < slots);
-        uint64_t* arguments = (uint64_t*)m_argument_buffers[{ bind_key.shader_type, bind_key.space }].contents;
-        if (!mt_resource) {
-            arguments[index] = 0;
-            continue;
-        }
+        uint64_t* arguments =
+            static_cast<uint64_t*>(m_argument_buffers[{ bind_key.shader_type, bind_key.space }].contents);
+        arguments[index] = view->GetGpuAddress();
 
-        id<MTLResource> resource = {};
-        switch (bind_key.view_type) {
-        case ViewType::kConstantBuffer:
-        case ViewType::kBuffer:
-        case ViewType::kRWBuffer:
-        case ViewType::kStructuredBuffer:
-        case ViewType::kRWStructuredBuffer: {
-            id<MTLBuffer> buffer = buffer = mt_resource->buffer.res;
-            arguments[index] = [buffer gpuAddress] + view->GetViewDesc().offset;
-            resource = buffer;
-            break;
-        }
-        case ViewType::kSampler: {
-            id<MTLSamplerState> sampler = sampler = mt_resource->sampler.res;
-            arguments[index] = [sampler gpuResourceID]._impl;
-            break;
-        }
-        case ViewType::kTexture:
-        case ViewType::kRWTexture: {
-            id<MTLTexture> texture = view->GetTextureView();
-            if (!texture) {
-                texture = mt_resource->texture.res;
-            }
-            arguments[index] = [texture gpuResourceID]._impl;
-            resource = texture;
-            break;
-        }
-        case ViewType::kAccelerationStructure: {
-            id<MTLAccelerationStructure> acceleration_structure = mt_resource->acceleration_structure;
-            arguments[index] = [acceleration_structure gpuResourceID]._impl;
-            resource = acceleration_structure;
-            break;
-        }
-        default:
-            assert(false);
-            break;
-        }
-
+        id<MTLResource> resource = view->GetNativeResource();
         if (!resource) {
             continue;
         }

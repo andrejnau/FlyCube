@@ -126,3 +126,72 @@ const ViewDesc& MTView::GetViewDesc() const
 {
     return m_view_desc;
 }
+
+id<MTLResource> MTView::GetNativeResource() const
+{
+    if (!m_resource) {
+        return {};
+    }
+
+    switch (m_view_desc.view_type) {
+    case ViewType::kConstantBuffer:
+    case ViewType::kBuffer:
+    case ViewType::kRWBuffer:
+    case ViewType::kStructuredBuffer:
+    case ViewType::kRWStructuredBuffer:
+        return m_resource->buffer.res;
+    case ViewType::kSampler:
+        return {};
+    case ViewType::kTexture:
+    case ViewType::kRWTexture: {
+        id<MTLTexture> texture = GetTextureView();
+        if (!texture) {
+            texture = m_resource->texture.res;
+        }
+        return texture;
+    }
+    case ViewType::kAccelerationStructure: {
+        return m_resource->acceleration_structure;
+    }
+    default:
+        assert(false);
+        return {};
+    }
+}
+
+uint64_t MTView::GetGpuAddress() const
+{
+    if (!m_resource) {
+        return 0;
+    }
+
+    switch (m_view_desc.view_type) {
+    case ViewType::kConstantBuffer:
+    case ViewType::kBuffer:
+    case ViewType::kRWBuffer:
+    case ViewType::kStructuredBuffer:
+    case ViewType::kRWStructuredBuffer: {
+        id<MTLBuffer> buffer = buffer = m_resource->buffer.res;
+        return [buffer gpuAddress] + GetViewDesc().offset;
+    }
+    case ViewType::kSampler: {
+        id<MTLSamplerState> sampler = sampler = m_resource->sampler.res;
+        return [sampler gpuResourceID]._impl;
+    }
+    case ViewType::kTexture:
+    case ViewType::kRWTexture: {
+        id<MTLTexture> texture = GetTextureView();
+        if (!texture) {
+            texture = m_resource->texture.res;
+        }
+        return [texture gpuResourceID]._impl;
+    }
+    case ViewType::kAccelerationStructure: {
+        id<MTLAccelerationStructure> acceleration_structure = m_resource->acceleration_structure;
+        return [acceleration_structure gpuResourceID]._impl;
+    }
+    default:
+        assert(false);
+        return 0;
+    }
+}

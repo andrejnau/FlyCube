@@ -19,6 +19,8 @@ public:
     std::shared_ptr<MTResource> GetMTResource() const;
     id<MTLTexture> GetTextureView() const;
     const ViewDesc& GetViewDesc() const;
+    id<MTLResource> GetNativeResource() const;
+    uint64_t GetGpuAddress() const;
 
 private:
     MTDevice& m_device;
