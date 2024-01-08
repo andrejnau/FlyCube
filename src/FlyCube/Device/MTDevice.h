@@ -1,5 +1,6 @@
 #pragma once
 #include "Device/Device.h"
+#include "GPUDescriptorPool/MTGPUBindlessArgumentBuffer.h"
 
 #include <MVKPixelFormats.h>
 #import <Metal/Metal.h>
@@ -95,6 +96,7 @@ public:
     uint32_t GetMaxPerStageBufferCount() const;
 
     MTInstance& GetInstance();
+    MTGPUBindlessArgumentBuffer& GetBindlessArgumentBuffer();
 
 private:
     id<MTLDevice> getMTLDevice() override;
@@ -103,6 +105,7 @@ private:
     id<MTLDevice> m_device;
     MVKPixelFormats m_mvk_pixel_formats;
     std::shared_ptr<MTCommandQueue> m_command_queue;
+    MTGPUBindlessArgumentBuffer m_bindless_argument_buffer;
 };
 
 MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(const BufferDesc& vertex,

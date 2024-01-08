@@ -23,6 +23,7 @@ MTDevice::MTDevice(MTInstance& instance, const id<MTLDevice>& device)
     : m_instance(instance)
     , m_device(device)
     , m_mvk_pixel_formats(this)
+    , m_bindless_argument_buffer(*this)
 {
     m_command_queue = std::make_shared<MTCommandQueue>(*this);
 }
@@ -383,4 +384,9 @@ uint32_t MTDevice::GetMaxPerStageBufferCount() const
 MTInstance& MTDevice::GetInstance()
 {
     return m_instance;
+}
+
+MTGPUBindlessArgumentBuffer& MTDevice::GetBindlessArgumentBuffer()
+{
+    return m_bindless_argument_buffer;
 }

@@ -24,6 +24,17 @@ if (VULKAN_SUPPORT)
     )
 endif()
 
+if (METAL_SUPPORT)
+    list(APPEND headers
+        MTGPUArgumentBufferRange.h
+        MTGPUBindlessArgumentBuffer.h
+    )
+    list(APPEND sources
+        MTGPUArgumentBufferRange.mm
+        MTGPUBindlessArgumentBuffer.mm
+    )
+endif()
+
 if (NOT sources)
     return()
 endif()

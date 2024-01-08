@@ -22,26 +22,6 @@ MTLRenderStages GetStage(ShaderType type)
     }
 }
 
-MTLResourceUsage GetUsage(ViewType type)
-{
-    switch (type) {
-    case ViewType::kAccelerationStructure:
-    case ViewType::kBuffer:
-    case ViewType::kConstantBuffer:
-    case ViewType::kSampler:
-    case ViewType::kStructuredBuffer:
-    case ViewType::kTexture:
-        return MTLResourceUsageRead;
-    case ViewType::kRWBuffer:
-    case ViewType::kRWStructuredBuffer:
-    case ViewType::kRWTexture:
-        return MTLResourceUsageWrite;
-    default:
-        assert(false);
-        return MTLResourceUsageRead | MTLResourceUsageWrite;
-    }
-}
-
 void ValidateIRemappedSlots(const std::shared_ptr<Pipeline>& state, const std::vector<BindingDesc>& bindings)
 {
 #ifndef NDEBUG
@@ -49,8 +29,8 @@ void ValidateIRemappedSlots(const std::shared_ptr<Pipeline>& state, const std::v
         const BindKey& bind_key = binding.bind_key;
         decltype(auto) program = state->As<MTPipeline>().GetProgram();
         decltype(auto) shader = program->GetShader(bind_key.shader_type);
-        uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
-        assert(bind_key.GetRemappedSlot() == index);
+        uint32_t index = bind_key.GetRemappedSlot();
+        assert(index == shader->As<MTShader>().GetIndex(bind_key));
     }
 #endif
 }
@@ -63,8 +43,7 @@ MTArgumentBuffer::MTArgumentBuffer(MTDevice& device, const std::shared_ptr<MTBin
 {
     const std::vector<BindKey>& bind_keys = m_layout->GetBindKeys();
     for (BindKey bind_key : bind_keys) {
-        assert(bind_key.count != ~0);
-        if (bind_key.space >= spirv_cross::kMaxArgumentBuffers) {
+        if (bind_key.space >= spirv_cross::kMaxArgumentBuffers || bind_key.count == ~0) {
             m_direct_bind_keys.push_back(bind_key);
             continue;
         }
@@ -89,7 +68,9 @@ void MTArgumentBuffer::WriteBindings(const std::vector<BindingDesc>& bindings)
     for (const auto& binding : m_bindings) {
         decltype(auto) bind_key = binding.bind_key;
         if (bind_key.space >= spirv_cross::kMaxArgumentBuffers) {
-            m_direct_bindings.push_back(binding);
+            if (bind_key.count != ~0) {
+                m_direct_bindings.push_back(binding);
+            }
             continue;
         }
         decltype(auto) view = std::static_pointer_cast<MTView>(binding.view);
@@ -107,7 +88,7 @@ void MTArgumentBuffer::WriteBindings(const std::vector<BindingDesc>& bindings)
             continue;
         }
 
-        MTLResourceUsage usage = GetUsage(bind_key.view_type);
+        MTLResourceUsage usage = view->GetUsage();
         if (bind_key.shader_type == ShaderType::kCompute) {
             m_compure_resouces[usage].push_back(resource);
         } else {
@@ -138,7 +119,7 @@ void MTArgumentBuffer::Apply(id<MTLRenderCommandEncoder> render_encoder, const s
                                usage:stages_usage.second
                               stages:stages_usage.first];
     }
-    MTDirectArguments::ApplyDirectArgs(render_encoder, state, m_direct_bind_keys, m_direct_bindings);
+    MTDirectArguments::ApplyDirectArgs(render_encoder, state, m_direct_bind_keys, m_direct_bindings, m_device);
 }
 
 void MTArgumentBuffer::Apply(id<MTLComputeCommandEncoder> compute_encoder, const std::shared_ptr<Pipeline>& state)
@@ -157,5 +138,5 @@ void MTArgumentBuffer::Apply(id<MTLComputeCommandEncoder> compute_encoder, const
     for (const auto& [usage, resources] : m_compure_resouces) {
         [compute_encoder useResources:resources.data() count:resources.size() usage:usage];
     }
-    MTDirectArguments::ApplyDirectArgs(compute_encoder, state, m_direct_bind_keys, m_direct_bindings);
+    MTDirectArguments::ApplyDirectArgs(compute_encoder, state, m_direct_bind_keys, m_direct_bindings, m_device);
 }

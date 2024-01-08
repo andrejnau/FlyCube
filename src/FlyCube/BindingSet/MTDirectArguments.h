@@ -20,7 +20,8 @@ public:
     static void ApplyDirectArgs(CommandEncoderType encoder,
                                 const std::shared_ptr<Pipeline>& state,
                                 const std::vector<BindKey>& bind_keys,
-                                const std::vector<BindingDesc>& bindings);
+                                const std::vector<BindingDesc>& bindings,
+                                MTDevice& device);
 
 private:
     MTDevice& m_device;

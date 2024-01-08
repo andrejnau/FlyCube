@@ -30,10 +30,10 @@ static MTLTextureType ConvertTextureType(ViewDimension dimension)
     }
 }
 
-MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, const ViewDesc& m_view_desc)
+MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, const ViewDesc& view_desc)
     : m_device(device)
     , m_resource(resource)
-    , m_view_desc(m_view_desc)
+    , m_view_desc(view_desc)
 {
     if (!m_resource) {
         return;
@@ -45,6 +45,17 @@ MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, co
         break;
     default:
         break;
+    }
+
+    if (m_view_desc.bindless) {
+        decltype(auto) argument_buffer = m_device.GetBindlessArgumentBuffer();
+        m_range = std::make_shared<MTGPUArgumentBufferRange>(argument_buffer.Allocate(1));
+        uint64_t* arguments = static_cast<uint64_t*>(m_range->GetArgumentBuffer().contents);
+        arguments[m_range->GetOffset()] = GetGpuAddress();
+        id<MTLResource> resource = GetNativeResource();
+        if (resource) {
+            m_range->SetResourceUsage(m_range->GetOffset(), resource, GetUsage());
+        }
     }
 }
 
@@ -88,6 +99,9 @@ std::shared_ptr<Resource> MTView::GetResource()
 
 uint32_t MTView::GetDescriptorId() const
 {
+    if (m_range) {
+        return m_range->GetOffset();
+    }
     assert(false);
     return -1;
 }
@@ -193,5 +207,25 @@ uint64_t MTView::GetGpuAddress() const
     default:
         assert(false);
         return 0;
+    }
+}
+
+MTLResourceUsage MTView::GetUsage() const
+{
+    switch (m_view_desc.view_type) {
+    case ViewType::kAccelerationStructure:
+    case ViewType::kBuffer:
+    case ViewType::kConstantBuffer:
+    case ViewType::kSampler:
+    case ViewType::kStructuredBuffer:
+    case ViewType::kTexture:
+        return MTLResourceUsageRead;
+    case ViewType::kRWBuffer:
+    case ViewType::kRWStructuredBuffer:
+    case ViewType::kRWTexture:
+        return MTLResourceUsageWrite;
+    default:
+        assert(false);
+        return MTLResourceUsageRead | MTLResourceUsageWrite;
     }
 }

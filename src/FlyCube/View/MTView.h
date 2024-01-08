@@ -4,6 +4,7 @@
 
 class MTDevice;
 class MTResource;
+class MTGPUArgumentBufferRange;
 
 class MTView : public View {
 public:
@@ -21,10 +22,12 @@ public:
     const ViewDesc& GetViewDesc() const;
     id<MTLResource> GetNativeResource() const;
     uint64_t GetGpuAddress() const;
+    MTLResourceUsage GetUsage() const;
 
 private:
     MTDevice& m_device;
     std::shared_ptr<MTResource> m_resource;
     ViewDesc m_view_desc;
     id<MTLTexture> m_texture_view = nullptr;
+    std::shared_ptr<MTGPUArgumentBufferRange> m_range;
 };
