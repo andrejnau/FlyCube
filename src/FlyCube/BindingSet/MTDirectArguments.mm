@@ -2,7 +2,7 @@
 
 #include "BindingSetLayout/MTBindingSetLayout.h"
 #include "Device/MTDevice.h"
-#include "Pipeline/MTGraphicsPipeline.h"
+#include "Pipeline/MTPipeline.h"
 #include "Shader/MTShader.h"
 #include "View/MTView.h"
 

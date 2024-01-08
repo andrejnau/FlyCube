@@ -11,36 +11,28 @@ static std::string FixEntryPoint(const std::string& entry_point)
 }
 
 MTShader::MTShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
-    : ShaderBase(blob, blob_type, shader_type)
+    : ShaderBase(blob, blob_type, shader_type, /*is_msl*/ true)
 {
-    m_source = GetMSLShader(m_blob, m_index_mapping);
 }
 
 MTShader::MTShader(const ShaderDesc& desc, ShaderBlobType blob_type)
-    : ShaderBase(desc, blob_type)
+    : ShaderBase(desc, blob_type, /*is_msl*/ true)
 {
-    m_source = GetMSLShader(m_blob, m_index_mapping);
-    if (UseArgumentBuffers()) {
-        for (const auto& [name, bind_key] : m_bind_keys) {
-            uint32_t index = m_index_mapping.at(name);
-            assert(index == bind_key.slot);
-        }
-    }
 }
 
 const std::string& MTShader::GetSource() const
 {
-    return m_source;
+    return m_msl_source;
 }
 
 uint32_t MTShader::GetIndex(BindKey bind_key) const
 {
-    return m_index_mapping.at(m_bindings.at(m_mapping.at(bind_key)).name);
+    return m_slot_remapping.at(m_bindings.at(m_mapping.at(bind_key)).name);
 }
 
 id<MTLLibrary> MTShader::CreateLibrary(id<MTLDevice> device)
 {
-    NSString* ns_source = [NSString stringWithUTF8String:m_source.c_str()];
+    NSString* ns_source = [NSString stringWithUTF8String:m_msl_source.c_str()];
     NSError* error = nullptr;
     id<MTLLibrary> library = [device newLibraryWithSource:ns_source options:nullptr error:&error];
     if (library == nullptr) {

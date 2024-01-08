@@ -16,8 +16,4 @@ public:
     uint32_t GetIndex(BindKey bind_key) const;
     id<MTLLibrary> CreateLibrary(id<MTLDevice> device);
     id<MTLFunction> CreateFunction(id<MTLLibrary> library, const std::string& entry_point);
-
-protected:
-    std::string m_source;
-    std::map<std::string, uint32_t> m_index_mapping;
 };

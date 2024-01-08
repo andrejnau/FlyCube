@@ -2,6 +2,8 @@
 
 #include "BindingSetLayout/MTBindingSetLayout.h"
 #include "Device/MTDevice.h"
+#include "Pipeline/MTPipeline.h"
+#include "Shader/MTShader.h"
 #include "View/MTView.h"
 
 namespace {
@@ -39,6 +41,19 @@ MTLResourceUsage GetUsage(ViewType type)
     }
 }
 
+void ValidateIRemappedSlots(const std::shared_ptr<Pipeline>& state, const std::vector<BindingDesc>& bindings)
+{
+#ifndef NDEBUG
+    for (const auto& binding : bindings) {
+        const BindKey& bind_key = binding.bind_key;
+        decltype(auto) program = state->As<MTPipeline>().GetProgram();
+        decltype(auto) shader = program->GetShader(bind_key.shader_type);
+        uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
+        assert(bind_key.GetRemappedSlot() == index);
+    }
+#endif
+}
+
 } // namespace
 
 MTArgumentBuffer::MTArgumentBuffer(MTDevice& device, const std::shared_ptr<MTBindingSetLayout>& layout)
@@ -48,7 +63,7 @@ MTArgumentBuffer::MTArgumentBuffer(MTDevice& device, const std::shared_ptr<MTBin
     const std::vector<BindKey>& bind_keys = m_layout->GetBindKeys();
     for (BindKey bind_key : bind_keys) {
         auto shader_space = std::make_pair(bind_key.shader_type, bind_key.space);
-        m_slots_count[shader_space] = std::max(m_slots_count[shader_space], bind_key.slot + 1);
+        m_slots_count[shader_space] = std::max(m_slots_count[shader_space], bind_key.GetRemappedSlot() + 1);
     }
     for (const auto& [shader_space, slots] : m_slots_count) {
         m_argument_buffers[shader_space] = [m_device.GetDevice() newBufferWithLength:slots * sizeof(uint64_t)
@@ -68,7 +83,7 @@ void MTArgumentBuffer::WriteBindings(const std::vector<BindingDesc>& bindings)
         decltype(auto) bind_key = binding.bind_key;
         assert(view->GetViewDesc().view_type == bind_key.view_type);
 
-        uint32_t index = bind_key.slot;
+        uint32_t index = bind_key.GetRemappedSlot();
         uint32_t slots = m_slots_count[{ bind_key.shader_type, bind_key.space }];
         assert(index < slots);
         uint64_t* arguments =
@@ -91,6 +106,7 @@ void MTArgumentBuffer::WriteBindings(const std::vector<BindingDesc>& bindings)
 
 void MTArgumentBuffer::Apply(id<MTLRenderCommandEncoder> render_encoder, const std::shared_ptr<Pipeline>& state)
 {
+    ValidateIRemappedSlots(state, m_bindings);
     for (const auto& [key, slots] : m_slots_count) {
         switch (key.first) {
         case ShaderType::kVertex:
@@ -114,6 +130,7 @@ void MTArgumentBuffer::Apply(id<MTLRenderCommandEncoder> render_encoder, const s
 
 void MTArgumentBuffer::Apply(id<MTLComputeCommandEncoder> compute_encoder, const std::shared_ptr<Pipeline>& state)
 {
+    ValidateIRemappedSlots(state, m_bindings);
     for (const auto& [key, slots] : m_slots_count) {
         switch (key.first) {
         case ShaderType::kCompute:
