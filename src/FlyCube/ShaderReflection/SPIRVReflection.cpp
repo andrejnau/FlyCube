@@ -238,7 +238,10 @@ ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, co
     desc.slot = compiler.get_decoration(resource.id, spv::DecorationBinding);
     desc.space = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
     desc.count = 1;
-    if (!type.array.empty() && type.array.front() == 0) {
+    if (!type.array.empty()) {
+        desc.count = type.array.front();
+    }
+    if (desc.count == 0) {
         desc.count = std::numeric_limits<uint32_t>::max();
     }
     desc.dimension = GetViewDimension(type);

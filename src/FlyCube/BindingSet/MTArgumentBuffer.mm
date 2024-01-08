@@ -63,12 +63,14 @@ MTArgumentBuffer::MTArgumentBuffer(MTDevice& device, const std::shared_ptr<MTBin
 {
     const std::vector<BindKey>& bind_keys = m_layout->GetBindKeys();
     for (BindKey bind_key : bind_keys) {
+        assert(bind_key.count != ~0);
         if (bind_key.space >= spirv_cross::kMaxArgumentBuffers) {
             m_direct_bind_keys.push_back(bind_key);
             continue;
         }
         auto shader_space = std::make_pair(bind_key.shader_type, bind_key.space);
-        m_slots_count[shader_space] = std::max(m_slots_count[shader_space], bind_key.GetRemappedSlot() + 1);
+        m_slots_count[shader_space] =
+            std::max(m_slots_count[shader_space], bind_key.GetRemappedSlot() + bind_key.count);
     }
     for (const auto& [shader_space, slots] : m_slots_count) {
         m_argument_buffers[shader_space] = [m_device.GetDevice() newBufferWithLength:slots * sizeof(uint64_t)
