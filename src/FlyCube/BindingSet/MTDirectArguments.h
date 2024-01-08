@@ -16,6 +16,12 @@ public:
     void Apply(id<MTLRenderCommandEncoder> render_encoder, const std::shared_ptr<Pipeline>& state) override;
     void Apply(id<MTLComputeCommandEncoder> compute_encoder, const std::shared_ptr<Pipeline>& state) override;
 
+    template <typename CommandEncoderType>
+    static void ApplyDirectArgs(CommandEncoderType encoder,
+                                const std::shared_ptr<Pipeline>& state,
+                                const std::vector<BindKey>& bind_keys,
+                                const std::vector<BindingDesc>& bindings);
+
 private:
     MTDevice& m_device;
     std::shared_ptr<MTBindingSetLayout> m_layout;

@@ -116,12 +116,11 @@ static void SetView(CommandEncoderType encoder, ViewType view_type, const std::s
 }
 
 template <typename CommandEncoderType>
-static void ApplyImpl(CommandEncoderType encoder,
-                      const std::shared_ptr<Pipeline>& state,
-                      const std::shared_ptr<MTBindingSetLayout>& layout,
-                      const std::vector<BindingDesc>& bindings)
+void MTDirectArguments::ApplyDirectArgs(CommandEncoderType encoder,
+                                        const std::shared_ptr<Pipeline>& state,
+                                        const std::vector<BindKey>& bind_keys,
+                                        const std::vector<BindingDesc>& bindings)
 {
-    const std::vector<BindKey>& bind_keys = layout->GetBindKeys();
     for (const auto& binding : bindings) {
         const BindKey& bind_key = binding.bind_key;
         decltype(auto) mt_view = std::static_pointer_cast<MTView>(binding.view);
@@ -156,10 +155,10 @@ static void ApplyImpl(CommandEncoderType encoder,
 
 void MTDirectArguments::Apply(id<MTLRenderCommandEncoder> render_encoder, const std::shared_ptr<Pipeline>& state)
 {
-    ApplyImpl(render_encoder, state, m_layout, m_bindings);
+    ApplyDirectArgs(render_encoder, state, m_layout->GetBindKeys(), m_bindings);
 }
 
 void MTDirectArguments::Apply(id<MTLComputeCommandEncoder> compute_encoder, const std::shared_ptr<Pipeline>& state)
 {
-    ApplyImpl(compute_encoder, state, m_layout, m_bindings);
+    ApplyDirectArgs(compute_encoder, state, m_layout->GetBindKeys(), m_bindings);
 }

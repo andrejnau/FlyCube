@@ -24,4 +24,6 @@ private:
     std::map<std::pair<ShaderType, uint32_t>, uint32_t> m_slots_count;
     std::map<MTLResourceUsage, std::vector<id<MTLResource>>> m_compure_resouces;
     std::map<std::pair<MTLRenderStages, MTLResourceUsage>, std::vector<id<MTLResource>>> m_graphics_resouces;
+    std::vector<BindKey> m_direct_bind_keys;
+    std::vector<BindingDesc> m_direct_bindings;
 };

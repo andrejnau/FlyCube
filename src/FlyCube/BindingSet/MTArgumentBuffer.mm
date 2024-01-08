@@ -1,5 +1,6 @@
 #include "BindingSet/MTArgumentBuffer.h"
 
+#include "BindingSet/MTDirectArguments.h"
 #include "BindingSetLayout/MTBindingSetLayout.h"
 #include "Device/MTDevice.h"
 #include "Pipeline/MTPipeline.h"
@@ -62,6 +63,10 @@ MTArgumentBuffer::MTArgumentBuffer(MTDevice& device, const std::shared_ptr<MTBin
 {
     const std::vector<BindKey>& bind_keys = m_layout->GetBindKeys();
     for (BindKey bind_key : bind_keys) {
+        if (bind_key.space >= spirv_cross::kMaxArgumentBuffers) {
+            m_direct_bind_keys.push_back(bind_key);
+            continue;
+        }
         auto shader_space = std::make_pair(bind_key.shader_type, bind_key.space);
         m_slots_count[shader_space] = std::max(m_slots_count[shader_space], bind_key.GetRemappedSlot() + 1);
     }
@@ -74,13 +79,18 @@ MTArgumentBuffer::MTArgumentBuffer(MTDevice& device, const std::shared_ptr<MTBin
 void MTArgumentBuffer::WriteBindings(const std::vector<BindingDesc>& bindings)
 {
     m_bindings = bindings;
+    m_direct_bindings.clear();
     m_compure_resouces.clear();
     m_graphics_resouces.clear();
 
     const std::vector<BindKey>& bind_keys = m_layout->GetBindKeys();
     for (const auto& binding : m_bindings) {
-        decltype(auto) view = std::static_pointer_cast<MTView>(binding.view);
         decltype(auto) bind_key = binding.bind_key;
+        if (bind_key.space >= spirv_cross::kMaxArgumentBuffers) {
+            m_direct_bindings.push_back(binding);
+            continue;
+        }
+        decltype(auto) view = std::static_pointer_cast<MTView>(binding.view);
         assert(view->GetViewDesc().view_type == bind_key.view_type);
 
         uint32_t index = bind_key.GetRemappedSlot();
@@ -126,6 +136,7 @@ void MTArgumentBuffer::Apply(id<MTLRenderCommandEncoder> render_encoder, const s
                                usage:stages_usage.second
                               stages:stages_usage.first];
     }
+    MTDirectArguments::ApplyDirectArgs(render_encoder, state, m_direct_bind_keys, m_direct_bindings);
 }
 
 void MTArgumentBuffer::Apply(id<MTLComputeCommandEncoder> compute_encoder, const std::shared_ptr<Pipeline>& state)
@@ -144,4 +155,5 @@ void MTArgumentBuffer::Apply(id<MTLComputeCommandEncoder> compute_encoder, const
     for (const auto& [usage, resources] : m_compure_resouces) {
         [compute_encoder useResources:resources.data() count:resources.size() usage:usage];
     }
+    MTDirectArguments::ApplyDirectArgs(compute_encoder, state, m_direct_bind_keys, m_direct_bindings);
 }
