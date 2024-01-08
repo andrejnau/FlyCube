@@ -4,6 +4,43 @@
 #include "Device/MTDevice.h"
 #include "View/MTView.h"
 
+namespace {
+
+MTLRenderStages GetStage(ShaderType type)
+{
+    switch (type) {
+    case ShaderType::kPixel:
+        return MTLRenderStageFragment;
+    case ShaderType::kVertex:
+        return MTLRenderStageVertex;
+    default:
+        assert(false);
+        return 0;
+    }
+}
+
+MTLResourceUsage GetUsage(ViewType type)
+{
+    switch (type) {
+    case ViewType::kAccelerationStructure:
+    case ViewType::kBuffer:
+    case ViewType::kConstantBuffer:
+    case ViewType::kSampler:
+    case ViewType::kStructuredBuffer:
+    case ViewType::kTexture:
+        return MTLResourceUsageRead;
+    case ViewType::kRWBuffer:
+    case ViewType::kRWStructuredBuffer:
+    case ViewType::kRWTexture:
+        return MTLResourceUsageWrite;
+    default:
+        assert(false);
+        return MTLResourceUsageRead | MTLResourceUsageWrite;
+    }
+}
+
+} // namespace
+
 MTArgumentBuffer::MTArgumentBuffer(MTDevice& device, const std::shared_ptr<MTBindingSetLayout>& layout)
     : m_device(device)
     , m_layout(layout)
@@ -22,6 +59,8 @@ MTArgumentBuffer::MTArgumentBuffer(MTDevice& device, const std::shared_ptr<MTBin
 void MTArgumentBuffer::WriteBindings(const std::vector<BindingDesc>& bindings)
 {
     m_bindings = bindings;
+    m_compure_resouces.clear();
+    m_graphics_resouces.clear();
 
     const std::vector<BindKey>& bind_keys = m_layout->GetBindKeys();
     for (const auto& binding : m_bindings) {
@@ -32,54 +71,58 @@ void MTArgumentBuffer::WriteBindings(const std::vector<BindingDesc>& bindings)
         uint32_t slots = m_slots_count[{ bind_key.shader_type, bind_key.space }];
         assert(index < slots);
         uint64_t* arguments = (uint64_t*)m_argument_buffers[{ bind_key.shader_type, bind_key.space }].contents;
+        if (!mt_resource) {
+            arguments[index] = 0;
+            continue;
+        }
 
+        id<MTLResource> resource = {};
         switch (bind_key.view_type) {
         case ViewType::kConstantBuffer:
         case ViewType::kBuffer:
         case ViewType::kRWBuffer:
         case ViewType::kStructuredBuffer:
         case ViewType::kRWStructuredBuffer: {
-            id<MTLBuffer> buffer = {};
-            if (mt_resource) {
-                buffer = mt_resource->buffer.res;
-            }
+            id<MTLBuffer> buffer = buffer = mt_resource->buffer.res;
             arguments[index] = [buffer gpuAddress] + view->GetViewDesc().offset;
-            m_resouces.push_back(buffer);
+            resource = buffer;
             break;
         }
         case ViewType::kSampler: {
-            id<MTLSamplerState> sampler = {};
-            if (mt_resource) {
-                sampler = mt_resource->sampler.res;
-            }
-            auto res_id = [sampler gpuResourceID];
-            arguments[index] = res_id._impl;
+            id<MTLSamplerState> sampler = sampler = mt_resource->sampler.res;
+            arguments[index] = [sampler gpuResourceID]._impl;
             break;
         }
         case ViewType::kTexture:
         case ViewType::kRWTexture: {
             id<MTLTexture> texture = view->GetTextureView();
-            if (!texture && mt_resource) {
+            if (!texture) {
                 texture = mt_resource->texture.res;
             }
-            auto res_id = [texture gpuResourceID];
-            arguments[index] = res_id._impl;
-            m_resouces.push_back(texture);
+            arguments[index] = [texture gpuResourceID]._impl;
+            resource = texture;
             break;
         }
         case ViewType::kAccelerationStructure: {
-            id<MTLAccelerationStructure> acceleration_structure = {};
-            if (mt_resource) {
-                acceleration_structure = mt_resource->acceleration_structure;
-            }
-            auto res_id = [acceleration_structure gpuResourceID];
-            arguments[index] = res_id._impl;
-            m_resouces.push_back(acceleration_structure);
+            id<MTLAccelerationStructure> acceleration_structure = mt_resource->acceleration_structure;
+            arguments[index] = [acceleration_structure gpuResourceID]._impl;
+            resource = acceleration_structure;
             break;
         }
         default:
             assert(false);
             break;
+        }
+
+        if (!resource) {
+            continue;
+        }
+
+        MTLResourceUsage usage = GetUsage(bind_key.view_type);
+        if (bind_key.shader_type == ShaderType::kCompute) {
+            m_compure_resouces[usage].push_back(resource);
+        } else {
+            m_graphics_resouces[{ GetStage(bind_key.shader_type), usage }].push_back(resource);
         }
     }
 }
@@ -99,10 +142,12 @@ void MTArgumentBuffer::Apply(id<MTLRenderCommandEncoder> render_encoder, const s
             break;
         }
     }
-    [render_encoder useResources:m_resouces.data()
-                           count:m_resouces.size()
-                           usage:MTLResourceUsageRead | MTLResourceUsageWrite
-                          stages:MTLRenderStageVertex | MTLRenderStageFragment];
+    for (const auto& [stages_usage, resources] : m_graphics_resouces) {
+        [render_encoder useResources:resources.data()
+                               count:resources.size()
+                               usage:stages_usage.second
+                              stages:stages_usage.first];
+    }
 }
 
 void MTArgumentBuffer::Apply(id<MTLComputeCommandEncoder> compute_encoder, const std::shared_ptr<Pipeline>& state)
@@ -117,7 +162,7 @@ void MTArgumentBuffer::Apply(id<MTLComputeCommandEncoder> compute_encoder, const
             break;
         }
     }
-    [compute_encoder useResources:m_resouces.data()
-                            count:m_resouces.size()
-                            usage:MTLResourceUsageRead | MTLResourceUsageWrite];
+    for (const auto& [usage, resources] : m_compure_resouces) {
+        [compute_encoder useResources:resources.data() count:resources.size() usage:usage];
+    }
 }
