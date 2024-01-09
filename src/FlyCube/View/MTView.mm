@@ -131,11 +131,6 @@ std::shared_ptr<MTResource> MTView::GetMTResource() const
     return m_resource;
 }
 
-id<MTLTexture> MTView::GetTextureView() const
-{
-    return m_texture_view;
-}
-
 const ViewDesc& MTView::GetViewDesc() const
 {
     return m_view_desc;
@@ -153,19 +148,15 @@ id<MTLResource> MTView::GetNativeResource() const
     case ViewType::kRWBuffer:
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer:
-        return m_resource->buffer.res;
+        return GetBuffer();
     case ViewType::kSampler:
         return {};
     case ViewType::kTexture:
     case ViewType::kRWTexture: {
-        id<MTLTexture> texture = GetTextureView();
-        if (!texture) {
-            texture = m_resource->texture.res;
-        }
-        return texture;
+        return GetTexture();
     }
     case ViewType::kAccelerationStructure: {
-        return m_resource->acceleration_structure;
+        return GetAccelerationStructure();
     }
     default:
         assert(false);
@@ -185,24 +176,17 @@ uint64_t MTView::GetGpuAddress() const
     case ViewType::kRWBuffer:
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer: {
-        id<MTLBuffer> buffer = buffer = m_resource->buffer.res;
-        return [buffer gpuAddress] + GetViewDesc().offset;
+        return [GetBuffer() gpuAddress] + GetViewDesc().offset;
     }
     case ViewType::kSampler: {
-        id<MTLSamplerState> sampler = sampler = m_resource->sampler.res;
-        return [sampler gpuResourceID]._impl;
+        return [GetSampler() gpuResourceID]._impl;
     }
     case ViewType::kTexture:
     case ViewType::kRWTexture: {
-        id<MTLTexture> texture = GetTextureView();
-        if (!texture) {
-            texture = m_resource->texture.res;
-        }
-        return [texture gpuResourceID]._impl;
+        return [GetTexture() gpuResourceID]._impl;
     }
     case ViewType::kAccelerationStructure: {
-        id<MTLAccelerationStructure> acceleration_structure = m_resource->acceleration_structure;
-        return [acceleration_structure gpuResourceID]._impl;
+        return [GetAccelerationStructure() gpuResourceID]._impl;
     }
     default:
         assert(false);
@@ -228,4 +212,38 @@ MTLResourceUsage MTView::GetUsage() const
         assert(false);
         return MTLResourceUsageRead | MTLResourceUsageWrite;
     }
+}
+
+id<MTLBuffer> MTView::GetBuffer() const
+{
+    if (m_resource) {
+        return m_resource->buffer.res;
+    }
+    return {};
+}
+
+id<MTLSamplerState> MTView::GetSampler() const
+{
+    if (m_resource) {
+        return m_resource->sampler.res;
+    }
+    return {};
+}
+
+id<MTLTexture> MTView::GetTexture() const
+{
+    if (m_texture_view) {
+        return m_texture_view;
+    } else if (m_resource) {
+        return m_resource->texture.res;
+    }
+    return {};
+}
+
+id<MTLAccelerationStructure> MTView::GetAccelerationStructure() const
+{
+    if (m_resource) {
+        return m_resource->acceleration_structure;
+    }
+    return {};
 }

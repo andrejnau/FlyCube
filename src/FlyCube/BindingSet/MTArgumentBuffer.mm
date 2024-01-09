@@ -22,19 +22,6 @@ MTLRenderStages GetStage(ShaderType type)
     }
 }
 
-void ValidateIRemappedSlots(const std::shared_ptr<Pipeline>& state, const std::vector<BindingDesc>& bindings)
-{
-#ifndef NDEBUG
-    for (const auto& binding : bindings) {
-        const BindKey& bind_key = binding.bind_key;
-        decltype(auto) program = state->As<MTPipeline>().GetProgram();
-        decltype(auto) shader = program->GetShader(bind_key.shader_type);
-        uint32_t index = bind_key.GetRemappedSlot();
-        assert(index == shader->As<MTShader>().GetIndex(bind_key));
-    }
-#endif
-}
-
 } // namespace
 
 MTArgumentBuffer::MTArgumentBuffer(MTDevice& device, const std::shared_ptr<MTBindingSetLayout>& layout)
@@ -99,7 +86,7 @@ void MTArgumentBuffer::WriteBindings(const std::vector<BindingDesc>& bindings)
 
 void MTArgumentBuffer::Apply(id<MTLRenderCommandEncoder> render_encoder, const std::shared_ptr<Pipeline>& state)
 {
-    ValidateIRemappedSlots(state, m_bindings);
+    MTDirectArguments::ValidateRemappedSlots(state, m_layout->GetBindKeys());
     for (const auto& [key, slots] : m_slots_count) {
         switch (key.first) {
         case ShaderType::kVertex:
@@ -119,12 +106,12 @@ void MTArgumentBuffer::Apply(id<MTLRenderCommandEncoder> render_encoder, const s
                                usage:stages_usage.second
                               stages:stages_usage.first];
     }
-    MTDirectArguments::ApplyDirectArgs(render_encoder, state, m_direct_bind_keys, m_direct_bindings, m_device);
+    MTDirectArguments::ApplyDirectArgs(render_encoder, m_direct_bind_keys, m_direct_bindings, m_device);
 }
 
 void MTArgumentBuffer::Apply(id<MTLComputeCommandEncoder> compute_encoder, const std::shared_ptr<Pipeline>& state)
 {
-    ValidateIRemappedSlots(state, m_bindings);
+    MTDirectArguments::ValidateRemappedSlots(state, m_layout->GetBindKeys());
     for (const auto& [key, slots] : m_slots_count) {
         switch (key.first) {
         case ShaderType::kCompute:
@@ -138,5 +125,5 @@ void MTArgumentBuffer::Apply(id<MTLComputeCommandEncoder> compute_encoder, const
     for (const auto& [usage, resources] : m_compure_resouces) {
         [compute_encoder useResources:resources.data() count:resources.size() usage:usage];
     }
-    MTDirectArguments::ApplyDirectArgs(compute_encoder, state, m_direct_bind_keys, m_direct_bindings, m_device);
+    MTDirectArguments::ApplyDirectArgs(compute_encoder, m_direct_bind_keys, m_direct_bindings, m_device);
 }

@@ -18,10 +18,11 @@ public:
 
     template <typename CommandEncoderType>
     static void ApplyDirectArgs(CommandEncoderType encoder,
-                                const std::shared_ptr<Pipeline>& state,
                                 const std::vector<BindKey>& bind_keys,
                                 const std::vector<BindingDesc>& bindings,
                                 MTDevice& device);
+
+    static void ValidateRemappedSlots(const std::shared_ptr<Pipeline>& state, const std::vector<BindKey>& bind_keys);
 
 private:
     MTDevice& m_device;

@@ -8,114 +8,90 @@
 
 namespace {
 
-template <ShaderType shader_type, typename CommandEncoderType>
-constexpr bool is_vertex()
+template <typename CommandEncoderType>
+constexpr bool is_compute_encoder()
 {
-    return shader_type == ShaderType::kVertex && std::is_same_v<CommandEncoderType, id<MTLRenderCommandEncoder>>;
+    return std::is_same_v<CommandEncoderType, id<MTLComputeCommandEncoder>>;
 }
 
-template <ShaderType shader_type, typename CommandEncoderType>
-constexpr bool is_pixel()
+template <typename CommandEncoderType>
+void SetBuffer(ShaderType shader_type,
+               CommandEncoderType encoder,
+               id<MTLBuffer> buffer,
+               uint32_t offset,
+               uint32_t index)
 {
-    return shader_type == ShaderType::kPixel && std::is_same_v<CommandEncoderType, id<MTLRenderCommandEncoder>>;
-}
-
-template <ShaderType shader_type, typename CommandEncoderType>
-constexpr bool is_compute()
-{
-    return shader_type == ShaderType::kCompute && std::is_same_v<CommandEncoderType, id<MTLComputeCommandEncoder>>;
-}
-
-template <ShaderType shader_type, typename CommandEncoderType>
-void SetBuffer(CommandEncoderType encoder, id<MTLBuffer> buffer, uint32_t offset, uint32_t index)
-{
-    if constexpr (is_vertex<shader_type, CommandEncoderType>()) {
-        [encoder setVertexBuffer:buffer offset:offset atIndex:index];
-    } else if constexpr (is_pixel<shader_type, CommandEncoderType>()) {
-        [encoder setFragmentBuffer:buffer offset:offset atIndex:index];
-    } else if constexpr (is_compute<shader_type, CommandEncoderType>()) {
+    if constexpr (is_compute_encoder<CommandEncoderType>()) {
         [encoder setBuffer:buffer offset:offset atIndex:index];
+    } else if (shader_type == ShaderType::kVertex) {
+        [encoder setVertexBuffer:buffer offset:offset atIndex:index];
+    } else if (shader_type == ShaderType::kPixel) {
+        [encoder setFragmentBuffer:buffer offset:offset atIndex:index];
     }
 }
 
-template <ShaderType shader_type, typename CommandEncoderType>
-void SetSamplerState(CommandEncoderType encoder, id<MTLSamplerState> sampler, uint32_t index)
+template <typename CommandEncoderType>
+void SetSamplerState(ShaderType shader_type, CommandEncoderType encoder, id<MTLSamplerState> sampler, uint32_t index)
 {
-    if constexpr (is_vertex<shader_type, CommandEncoderType>()) {
-        [encoder setVertexSamplerState:sampler atIndex:index];
-    } else if constexpr (is_pixel<shader_type, CommandEncoderType>()) {
-        [encoder setFragmentSamplerState:sampler atIndex:index];
-    } else if constexpr (is_compute<shader_type, CommandEncoderType>()) {
+    if constexpr (is_compute_encoder<CommandEncoderType>()) {
         [encoder setSamplerState:sampler atIndex:index];
+    } else if (shader_type == ShaderType::kVertex) {
+        [encoder setVertexSamplerState:sampler atIndex:index];
+    } else if (shader_type == ShaderType::kPixel) {
+        [encoder setFragmentSamplerState:sampler atIndex:index];
     }
 }
 
-template <ShaderType shader_type, typename CommandEncoderType>
-void SetTexture(CommandEncoderType encoder, id<MTLTexture> texture, uint32_t index)
+template <typename CommandEncoderType>
+void SetTexture(ShaderType shader_type, CommandEncoderType encoder, id<MTLTexture> texture, uint32_t index)
 {
-    if constexpr (is_vertex<shader_type, CommandEncoderType>()) {
-        [encoder setVertexTexture:texture atIndex:index];
-    } else if constexpr (is_pixel<shader_type, CommandEncoderType>()) {
-        [encoder setFragmentTexture:texture atIndex:index];
-    } else if constexpr (is_compute<shader_type, CommandEncoderType>()) {
+    if constexpr (is_compute_encoder<CommandEncoderType>()) {
         [encoder setTexture:texture atIndex:index];
+    } else if (shader_type == ShaderType::kVertex) {
+        [encoder setVertexTexture:texture atIndex:index];
+    } else if (shader_type == ShaderType::kPixel) {
+        [encoder setFragmentTexture:texture atIndex:index];
     }
 }
 
-template <ShaderType shader_type, typename CommandEncoderType>
-void SetAccelerationStructure(CommandEncoderType encoder,
+template <typename CommandEncoderType>
+void SetAccelerationStructure(ShaderType shader_type,
+                              CommandEncoderType encoder,
                               id<MTLAccelerationStructure> acceleration_structure,
                               uint32_t index)
 {
-    if constexpr (is_vertex<shader_type, CommandEncoderType>()) {
-        [encoder setVertexAccelerationStructure:acceleration_structure atBufferIndex:index];
-    } else if constexpr (is_pixel<shader_type, CommandEncoderType>()) {
-        [encoder setFragmentAccelerationStructure:acceleration_structure atBufferIndex:index];
-    } else if constexpr (is_compute<shader_type, CommandEncoderType>()) {
+    if constexpr (is_compute_encoder<CommandEncoderType>()) {
         [encoder setAccelerationStructure:acceleration_structure atBufferIndex:index];
+    } else if (shader_type == ShaderType::kVertex) {
+        [encoder setVertexAccelerationStructure:acceleration_structure atBufferIndex:index];
+    } else if (shader_type == ShaderType::kPixel) {
+        [encoder setFragmentAccelerationStructure:acceleration_structure atBufferIndex:index];
     }
 }
 
-template <ShaderType shader_type, typename CommandEncoderType>
-void SetView(CommandEncoderType encoder, ViewType view_type, const std::shared_ptr<MTView>& view, uint32_t index)
+template <typename CommandEncoderType>
+void SetView(ShaderType shader_type, CommandEncoderType encoder, const std::shared_ptr<MTView>& view, uint32_t index)
 {
-    decltype(auto) mt_resource = view->GetMTResource();
-    switch (view_type) {
+    switch (view->GetViewDesc().view_type) {
     case ViewType::kConstantBuffer:
     case ViewType::kBuffer:
     case ViewType::kRWBuffer:
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer: {
-        id<MTLBuffer> buffer = {};
-        if (mt_resource) {
-            buffer = mt_resource->buffer.res;
-        }
-        SetBuffer<shader_type>(encoder, buffer, view->GetViewDesc().offset, index);
+        SetBuffer(shader_type, encoder, view->GetBuffer(), view->GetViewDesc().offset, index);
         break;
     }
     case ViewType::kSampler: {
-        id<MTLSamplerState> sampler = {};
-        if (mt_resource) {
-            sampler = mt_resource->sampler.res;
-        }
-        SetSamplerState<shader_type>(encoder, sampler, index);
+        SetSamplerState(shader_type, encoder, view->GetSampler(), index);
         break;
     }
     case ViewType::kTexture:
     case ViewType::kRWTexture: {
-        id<MTLTexture> texture = view->GetTextureView();
-        if (!texture && mt_resource) {
-            texture = mt_resource->texture.res;
-        }
-        SetTexture<shader_type>(encoder, texture, index);
+        SetTexture(shader_type, encoder, view->GetTexture(), index);
         break;
     }
     case ViewType::kAccelerationStructure: {
-        id<MTLAccelerationStructure> acceleration_structure = {};
-        if (mt_resource) {
-            acceleration_structure = mt_resource->acceleration_structure;
-        }
-        SetAccelerationStructure<shader_type>(encoder, acceleration_structure, index);
+        SetAccelerationStructure(shader_type, encoder, view->GetAccelerationStructure(), index);
         break;
     }
     default:
@@ -139,84 +115,69 @@ void MTDirectArguments::WriteBindings(const std::vector<BindingDesc>& bindings)
 
 template <typename CommandEncoderType>
 void MTDirectArguments::ApplyDirectArgs(CommandEncoderType encoder,
-                                        const std::shared_ptr<Pipeline>& state,
                                         const std::vector<BindKey>& bind_keys,
                                         const std::vector<BindingDesc>& bindings,
                                         MTDevice& device)
 {
     for (const auto& binding : bindings) {
         const BindKey& bind_key = binding.bind_key;
-        decltype(auto) mt_view = std::static_pointer_cast<MTView>(binding.view);
-        decltype(auto) program = state->As<MTPipeline>().GetProgram();
-        decltype(auto) shader = program->GetShader(bind_key.shader_type);
-        uint32_t index = bind_key.GetRemappedSlot();
-        assert(index == shader->As<MTShader>().GetIndex(bind_key));
-
-        switch (bind_key.shader_type) {
-        case ShaderType::kVertex:
-            SetView<ShaderType::kVertex>(encoder, bind_key.view_type, mt_view, index);
-            break;
-        case ShaderType::kPixel:
-            SetView<ShaderType::kPixel>(encoder, bind_key.view_type, mt_view, index);
-            break;
-        case ShaderType::kCompute:
-            SetView<ShaderType::kCompute>(encoder, bind_key.view_type, mt_view, index);
-            break;
-        default:
-            assert(false);
-            break;
+        if (bind_key.count == ~0) {
+            continue;
         }
+        decltype(auto) mt_view = std::static_pointer_cast<MTView>(binding.view);
+        uint32_t index = bind_key.GetRemappedSlot();
+        SetView(bind_key.shader_type, encoder, mt_view, index);
     }
+
     bool has_bindless = false;
     for (const auto& bind_key : bind_keys) {
         if (bind_key.space < spirv_cross::kMaxArgumentBuffers || bind_key.count != ~0) {
             continue;
         }
         has_bindless = true;
-        decltype(auto) program = state->As<MTPipeline>().GetProgram();
-        decltype(auto) shader = program->GetShader(bind_key.shader_type);
         uint32_t index = bind_key.GetRemappedSlot();
-        assert(index == shader->As<MTShader>().GetIndex(bind_key));
-
         auto buffer = device.GetBindlessArgumentBuffer().GetArgumentBuffer();
-        switch (bind_key.shader_type) {
-        case ShaderType::kVertex:
-            SetBuffer<ShaderType::kVertex>(encoder, buffer, 0, index);
-            break;
-        case ShaderType::kPixel:
-            SetBuffer<ShaderType::kPixel>(encoder, buffer, 0, index);
-            break;
-        case ShaderType::kCompute:
-            SetBuffer<ShaderType::kCompute>(encoder, buffer, 0, index);
-            break;
-        default:
-            assert(false);
-            break;
-        }
+        SetBuffer(bind_key.shader_type, encoder, buffer, 0, index);
     }
+
     if (has_bindless) {
         decltype(auto) resources_usage = device.GetBindlessArgumentBuffer().GetResourcesUsage();
         for (const auto& resource_usage : resources_usage) {
             if (!resource_usage.first) {
                 continue;
             }
-            if constexpr (std::is_same_v<CommandEncoderType, id<MTLRenderCommandEncoder>>) {
+            if constexpr (is_compute_encoder<CommandEncoderType>()) {
+                [encoder useResource:resource_usage.first usage:resource_usage.second];
+            } else {
                 [encoder useResource:resource_usage.first
                                usage:resource_usage.second
                               stages:MTLRenderStageVertex | MTLRenderStageFragment];
-            } else if constexpr (std::is_same_v<CommandEncoderType, id<MTLComputeCommandEncoder>>) {
-                [encoder useResource:resource_usage.first usage:resource_usage.second];
             }
         }
     }
 }
 
+void MTDirectArguments::ValidateRemappedSlots(const std::shared_ptr<Pipeline>& state,
+                                              const std::vector<BindKey>& bind_keys)
+{
+#ifndef NDEBUG
+    decltype(auto) program = state->As<MTPipeline>().GetProgram();
+    for (const auto& bind_key : bind_keys) {
+        decltype(auto) shader = program->GetShader(bind_key.shader_type);
+        uint32_t index = bind_key.GetRemappedSlot();
+        assert(index == shader->As<MTShader>().GetIndex(bind_key));
+    }
+#endif
+}
+
 void MTDirectArguments::Apply(id<MTLRenderCommandEncoder> render_encoder, const std::shared_ptr<Pipeline>& state)
 {
-    ApplyDirectArgs(render_encoder, state, m_layout->GetBindKeys(), m_bindings, m_device);
+    ValidateRemappedSlots(state, m_layout->GetBindKeys());
+    ApplyDirectArgs(render_encoder, m_layout->GetBindKeys(), m_bindings, m_device);
 }
 
 void MTDirectArguments::Apply(id<MTLComputeCommandEncoder> compute_encoder, const std::shared_ptr<Pipeline>& state)
 {
-    ApplyDirectArgs(compute_encoder, state, m_layout->GetBindKeys(), m_bindings, m_device);
+    ValidateRemappedSlots(state, m_layout->GetBindKeys());
+    ApplyDirectArgs(compute_encoder, m_layout->GetBindKeys(), m_bindings, m_device);
 }

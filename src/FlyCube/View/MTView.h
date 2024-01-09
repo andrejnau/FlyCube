@@ -18,11 +18,14 @@ public:
 
     void CreateTextureView();
     std::shared_ptr<MTResource> GetMTResource() const;
-    id<MTLTexture> GetTextureView() const;
     const ViewDesc& GetViewDesc() const;
     id<MTLResource> GetNativeResource() const;
     uint64_t GetGpuAddress() const;
     MTLResourceUsage GetUsage() const;
+    id<MTLBuffer> GetBuffer() const;
+    id<MTLSamplerState> GetSampler() const;
+    id<MTLTexture> GetTexture() const;
+    id<MTLAccelerationStructure> GetAccelerationStructure() const;
 
 private:
     MTDevice& m_device;
