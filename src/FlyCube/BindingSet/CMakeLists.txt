@@ -22,13 +22,10 @@ endif()
 
 if (METAL_SUPPORT)
     list(APPEND headers
-        MTArgumentBuffer.h
         MTBindingSet.h
-        MTDirectArguments.mm
     )
     list(APPEND sources
-        MTArgumentBuffer.mm
-        MTDirectArguments.mm
+        MTBindingSet.mm
     )
 endif()
 
