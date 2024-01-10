@@ -3,7 +3,7 @@
 #include "BindingSetLayout/DXBindingSetLayout.h"
 #include "Device/DXDevice.h"
 #include "HLSLCompiler/DXCLoader.h"
-#include "Program/DXProgram.h"
+#include "Program/ProgramBase.h"
 #include "Shader/Shader.h"
 #include "Utilities/DXGIFormatHelper.h"
 #include "Utilities/SystemUtils.h"

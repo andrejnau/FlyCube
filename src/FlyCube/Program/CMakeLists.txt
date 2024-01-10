@@ -7,24 +7,6 @@ list(APPEND sources
     ProgramBase.cpp
 )
 
-if (VULKAN_SUPPORT)
-    list(APPEND headers
-        VKProgram.h
-    )
-    list(APPEND sources
-        VKProgram.cpp
-    )
-endif()
-
-if (DIRECTX_SUPPORT)
-    list(APPEND headers
-        DXProgram.h
-    )
-    list(APPEND sources
-        DXProgram.cpp
-    )
-endif()
-
 add_library(Program ${headers} ${sources})
 
 target_include_directories(Program

@@ -11,7 +11,7 @@
 #include "Pipeline/DXComputePipeline.h"
 #include "Pipeline/DXGraphicsPipeline.h"
 #include "Pipeline/DXRayTracingPipeline.h"
-#include "Program/DXProgram.h"
+#include "Program/ProgramBase.h"
 #include "QueryHeap/DXRayTracingQueryHeap.h"
 #include "RenderPass/DXRenderPass.h"
 #include "Shader/ShaderBase.h"
@@ -434,7 +434,7 @@ std::shared_ptr<Shader> DXDevice::CompileShader(const ShaderDesc& desc)
 
 std::shared_ptr<Program> DXDevice::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
 {
-    return std::make_shared<DXProgram>(*this, shaders);
+    return std::make_shared<ProgramBase>(shaders);
 }
 
 std::shared_ptr<Pipeline> DXDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)

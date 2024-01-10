@@ -12,7 +12,7 @@
 #include "Pipeline/VKComputePipeline.h"
 #include "Pipeline/VKGraphicsPipeline.h"
 #include "Pipeline/VKRayTracingPipeline.h"
-#include "Program/VKProgram.h"
+#include "Program/ProgramBase.h"
 #include "QueryHeap/VKQueryHeap.h"
 #include "RenderPass/VKRenderPass.h"
 #include "Shader/ShaderBase.h"
@@ -576,7 +576,7 @@ std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)
 
 std::shared_ptr<Program> VKDevice::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
 {
-    return std::make_shared<VKProgram>(*this, shaders);
+    return std::make_shared<ProgramBase>(shaders);
 }
 
 std::shared_ptr<Pipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)

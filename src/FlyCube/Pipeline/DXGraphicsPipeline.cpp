@@ -3,7 +3,7 @@
 #include "BindingSetLayout/DXBindingSetLayout.h"
 #include "Device/DXDevice.h"
 #include "Pipeline/DXStateBuilder.h"
-#include "Program/DXProgram.h"
+#include "Program/ProgramBase.h"
 #include "View/DXView.h"
 
 #include <directx/d3dx12.h>
@@ -193,7 +193,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
 {
     DXStateBuilder graphics_state_builder;
 
-    decltype(auto) dx_program = m_desc.program->As<DXProgram>();
+    decltype(auto) dx_program = m_desc.program->As<ProgramBase>();
     decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
     m_root_signature = dx_layout.GetRootSignature();
     for (const auto& shader : dx_program.GetShaders()) {
