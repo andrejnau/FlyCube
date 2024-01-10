@@ -26,6 +26,12 @@
 
 namespace {
 
+const GUID kRenderdocUuid = { 0xa7aa6116, 0x9c8d, 0x4bba, { 0x90, 0x83, 0xb4, 0xd8, 0x16, 0xb7, 0x1b, 0x78 } };
+const GUID kPixUuid = { 0x9f251514, 0x9d4d, 0x4902, { 0x9d, 0x60, 0x18, 0x98, 0x8a, 0xb7, 0xd4, 0xb5 } };
+const GUID kGpaUuid = { 0xccffef16, 0x7b69, 0x468f, { 0xbc, 0xe3, 0xcd, 0x95, 0x33, 0x69, 0xa3, 0x9a } };
+
+} // namespace
+
 D3D12_RESOURCE_STATES ConvertState(ResourceState state)
 {
     static std::pair<ResourceState, D3D12_RESOURCE_STATES> mapping[] = {
@@ -73,11 +79,62 @@ D3D12_HEAP_TYPE GetHeapType(MemoryType memory_type)
     }
 }
 
-const GUID renderdoc_uuid = { 0xa7aa6116, 0x9c8d, 0x4bba, { 0x90, 0x83, 0xb4, 0xd8, 0x16, 0xb7, 0x1b, 0x78 } };
-const GUID pix_uuid = { 0x9f251514, 0x9d4d, 0x4902, { 0x9d, 0x60, 0x18, 0x98, 0x8a, 0xb7, 0xd4, 0xb5 } };
-const GUID gpa_uuid = { 0xccffef16, 0x7b69, 0x468f, { 0xbc, 0xe3, 0xcd, 0x95, 0x33, 0x69, 0xa3, 0x9a } };
+D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex,
+                                                          const BufferDesc& index,
+                                                          RaytracingGeometryFlags flags)
+{
+    D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
 
-} // namespace
+    auto vertex_res = std::static_pointer_cast<DXResource>(vertex.res);
+    auto index_res = std::static_pointer_cast<DXResource>(index.res);
+
+    geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+    switch (flags) {
+    case RaytracingGeometryFlags::kOpaque:
+        geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+        break;
+    case RaytracingGeometryFlags::kNoDuplicateAnyHitInvocation:
+        geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
+        break;
+    }
+
+    auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
+    geometry_desc.Triangles.VertexBuffer.StartAddress =
+        vertex_res->resource->GetGPUVirtualAddress() + vertex.offset * vertex_stride;
+    geometry_desc.Triangles.VertexBuffer.StrideInBytes = vertex_stride;
+    geometry_desc.Triangles.VertexFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(vertex.format).DXGIFormat.DDS);
+    geometry_desc.Triangles.VertexCount = vertex.count;
+    if (index_res) {
+        auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
+        geometry_desc.Triangles.IndexBuffer = index_res->resource->GetGPUVirtualAddress() + index.offset * index_stride;
+        geometry_desc.Triangles.IndexFormat =
+            static_cast<DXGI_FORMAT>(gli::dx().translate(index.format).DXGIFormat.DDS);
+        geometry_desc.Triangles.IndexCount = index.count;
+    }
+
+    return geometry_desc;
+}
+
+D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStructureFlags flags)
+{
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS dx_flags = {};
+    if (flags & BuildAccelerationStructureFlags::kAllowUpdate) {
+        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+    }
+    if (flags & BuildAccelerationStructureFlags::kAllowCompaction) {
+        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
+    }
+    if (flags & BuildAccelerationStructureFlags::kPreferFastTrace) {
+        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+    }
+    if (flags & BuildAccelerationStructureFlags::kPreferFastBuild) {
+        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
+    }
+    if (flags & BuildAccelerationStructureFlags::kMinimizeMemory) {
+        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
+    }
+    return dx_flags;
+}
 
 DXDevice::DXDevice(DXAdapter& adapter)
     : m_adapter(adapter)
@@ -88,17 +145,17 @@ DXDevice::DXDevice(DXAdapter& adapter)
     m_device.As(&m_device5);
 
     ComPtr<IUnknown> renderdoc;
-    if (SUCCEEDED(m_device->QueryInterface(renderdoc_uuid, &renderdoc))) {
+    if (SUCCEEDED(m_device->QueryInterface(kRenderdocUuid, &renderdoc))) {
         m_is_under_graphics_debugger |= !!renderdoc;
     }
 
     ComPtr<IUnknown> pix;
-    if (SUCCEEDED(DXGIGetDebugInterface1(0, pix_uuid, &pix))) {
+    if (SUCCEEDED(DXGIGetDebugInterface1(0, kPixUuid, &pix))) {
         m_is_under_graphics_debugger |= !!pix;
     }
 
     ComPtr<IUnknown> gpa;
-    if (SUCCEEDED(m_device->QueryInterface(gpa_uuid, &gpa))) {
+    if (SUCCEEDED(m_device->QueryInterface(kGpaUuid, &gpa))) {
         m_is_under_graphics_debugger |= !!gpa;
     }
 
@@ -414,42 +471,6 @@ std::shared_ptr<QueryHeap> DXDevice::CreateQueryHeap(QueryHeapType type, uint32_
     return {};
 }
 
-D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex,
-                                                          const BufferDesc& index,
-                                                          RaytracingGeometryFlags flags)
-{
-    D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
-
-    auto vertex_res = std::static_pointer_cast<DXResource>(vertex.res);
-    auto index_res = std::static_pointer_cast<DXResource>(index.res);
-
-    geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-    switch (flags) {
-    case RaytracingGeometryFlags::kOpaque:
-        geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-        break;
-    case RaytracingGeometryFlags::kNoDuplicateAnyHitInvocation:
-        geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
-        break;
-    }
-
-    auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
-    geometry_desc.Triangles.VertexBuffer.StartAddress =
-        vertex_res->resource->GetGPUVirtualAddress() + vertex.offset * vertex_stride;
-    geometry_desc.Triangles.VertexBuffer.StrideInBytes = vertex_stride;
-    geometry_desc.Triangles.VertexFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(vertex.format).DXGIFormat.DDS);
-    geometry_desc.Triangles.VertexCount = vertex.count;
-    if (index_res) {
-        auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
-        geometry_desc.Triangles.IndexBuffer = index_res->resource->GetGPUVirtualAddress() + index.offset * index_stride;
-        geometry_desc.Triangles.IndexFormat =
-            static_cast<DXGI_FORMAT>(gli::dx().translate(index.format).DXGIFormat.DDS);
-        geometry_desc.Triangles.IndexCount = index.count;
-    }
-
-    return geometry_desc;
-}
-
 RaytracingASPrebuildInfo DXDevice::GetAccelerationStructurePrebuildInfo(
     const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs) const
 {
@@ -460,27 +481,6 @@ RaytracingASPrebuildInfo DXDevice::GetAccelerationStructurePrebuildInfo(
     prebuild_info.build_scratch_data_size = info.ScratchDataSizeInBytes;
     prebuild_info.update_scratch_data_size = info.UpdateScratchDataSizeInBytes;
     return prebuild_info;
-}
-
-D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStructureFlags flags)
-{
-    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS dx_flags = {};
-    if (flags & BuildAccelerationStructureFlags::kAllowUpdate) {
-        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
-    }
-    if (flags & BuildAccelerationStructureFlags::kAllowCompaction) {
-        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
-    }
-    if (flags & BuildAccelerationStructureFlags::kPreferFastTrace) {
-        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-    }
-    if (flags & BuildAccelerationStructureFlags::kPreferFastBuild) {
-        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
-    }
-    if (flags & BuildAccelerationStructureFlags::kMinimizeMemory) {
-        dx_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
-    }
-    return dx_flags;
 }
 
 bool DXDevice::IsDxrSupported() const

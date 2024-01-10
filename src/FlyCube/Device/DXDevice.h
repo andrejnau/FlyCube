@@ -11,6 +11,13 @@ using namespace Microsoft::WRL;
 class DXAdapter;
 class DXCommandQueue;
 
+D3D12_RESOURCE_STATES ConvertState(ResourceState state);
+D3D12_HEAP_TYPE GetHeapType(MemoryType memory_type);
+D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex,
+                                                          const BufferDesc& index,
+                                                          RaytracingGeometryFlags flags);
+D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStructureFlags flags);
+
 class DXDevice : public Device {
 public:
     DXDevice(DXAdapter& adapter);
@@ -97,10 +104,3 @@ private:
     std::map<std::pair<D3D12_INDIRECT_ARGUMENT_TYPE, uint32_t>, ComPtr<ID3D12CommandSignature>>
         m_command_signature_cache;
 };
-
-D3D12_RESOURCE_STATES ConvertState(ResourceState state);
-D3D12_HEAP_TYPE GetHeapType(MemoryType memory_type);
-D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex,
-                                                          const BufferDesc& index,
-                                                          RaytracingGeometryFlags flags);
-D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStructureFlags flags);
