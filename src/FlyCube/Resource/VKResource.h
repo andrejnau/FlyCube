@@ -6,11 +6,11 @@
 
 #include <map>
 
-static bool operator<(const VkImageSubresourceRange& lhs, const VkImageSubresourceRange& rhs)
+inline bool operator<(const VkImageSubresourceRange& lhs, const VkImageSubresourceRange& rhs)
 {
     return std::tie(lhs.aspectMask, lhs.baseArrayLayer, lhs.baseMipLevel, lhs.layerCount, lhs.levelCount) <
            std::tie(rhs.aspectMask, rhs.baseArrayLayer, rhs.baseMipLevel, rhs.layerCount, rhs.levelCount);
-};
+}
 
 class VKDevice;
 

@@ -4,30 +4,9 @@
 #include "Device/VKDevice.h"
 #include "Resource/VKResource.h"
 
-VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, const ViewDesc& view_desc)
-    : m_device(device)
-    , m_resource(resource)
-    , m_view_desc(view_desc)
-{
-    if (resource) {
-        CreateView();
-    }
+namespace {
 
-    if (view_desc.bindless) {
-        vk::DescriptorType type = GetDescriptorType(view_desc.view_type);
-        decltype(auto) pool = device.GetGPUBindlessDescriptorPool(type);
-        m_range = std::make_shared<VKGPUDescriptorPoolRange>(pool.Allocate(1));
-
-        m_descriptor.dstSet = m_range->GetDescriptoSet();
-        m_descriptor.dstArrayElement = m_range->GetOffset();
-        m_descriptor.descriptorType = type;
-        m_descriptor.dstBinding = 0;
-        m_descriptor.descriptorCount = 1;
-        m_device.GetDevice().updateDescriptorSets(1, &m_descriptor, 0, nullptr);
-    }
-}
-
-static vk::ImageViewType GetImageViewType(ViewDimension dimension)
+vk::ImageViewType GetImageViewType(ViewDimension dimension)
 {
     switch (dimension) {
     case ViewDimension::kTexture1D:
@@ -49,6 +28,31 @@ static vk::ImageViewType GetImageViewType(ViewDimension dimension)
     }
     assert(false);
     return {};
+}
+
+} // namespace
+
+VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, const ViewDesc& view_desc)
+    : m_device(device)
+    , m_resource(resource)
+    , m_view_desc(view_desc)
+{
+    if (resource) {
+        CreateView();
+    }
+
+    if (view_desc.bindless) {
+        vk::DescriptorType type = GetDescriptorType(view_desc.view_type);
+        decltype(auto) pool = device.GetGPUBindlessDescriptorPool(type);
+        m_range = std::make_shared<VKGPUDescriptorPoolRange>(pool.Allocate(1));
+
+        m_descriptor.dstSet = m_range->GetDescriptoSet();
+        m_descriptor.dstArrayElement = m_range->GetOffset();
+        m_descriptor.descriptorType = type;
+        m_descriptor.dstBinding = 0;
+        m_descriptor.descriptorCount = 1;
+        m_device.GetDevice().updateDescriptorSets(1, &m_descriptor, 0, nullptr);
+    }
 }
 
 void VKView::CreateView()

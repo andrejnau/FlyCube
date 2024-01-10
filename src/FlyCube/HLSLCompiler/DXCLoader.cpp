@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+namespace {
+
 HRESULT Test(dxc::DxcDllSupport& dll_support, ShaderBlobType target)
 {
     std::string test_shader = "[shader(\"pixel\")]void main(){}";
@@ -93,6 +95,8 @@ std::unique_ptr<dxc::DxcDllSupport> GetDxcSupportImpl(ShaderBlobType target)
     assert(false);
     return {};
 }
+
+} // namespace
 
 dxc::DxcDllSupport& GetDxcSupport(ShaderBlobType target)
 {

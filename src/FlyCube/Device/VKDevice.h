@@ -8,6 +8,9 @@
 class VKAdapter;
 class VKCommandQueue;
 
+vk::ImageLayout ConvertState(ResourceState state);
+vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags flags);
+
 class VKDevice : public Device {
 public:
     VKDevice(VKAdapter& adapter);
@@ -104,6 +107,3 @@ private:
     bool m_draw_indirect_count_supported = false;
     bool m_geometry_shader_supported = false;
 };
-
-vk::ImageLayout ConvertState(ResourceState state);
-vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags flags);

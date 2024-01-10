@@ -3,7 +3,9 @@
 #include "Device/VKDevice.h"
 #include "View/VKView.h"
 
-static vk::AttachmentLoadOp Convert(RenderPassLoadOp op)
+namespace {
+
+vk::AttachmentLoadOp Convert(RenderPassLoadOp op)
 {
     switch (op) {
     case RenderPassLoadOp::kLoad:
@@ -17,7 +19,7 @@ static vk::AttachmentLoadOp Convert(RenderPassLoadOp op)
     return vk::AttachmentLoadOp::eLoad;
 }
 
-static vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
+vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
 {
     switch (op) {
     case RenderPassStoreOp::kStore:
@@ -28,6 +30,8 @@ static vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
     assert(false);
     return vk::AttachmentStoreOp::eStore;
 }
+
+} // namespace
 
 VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
     : m_desc(desc)

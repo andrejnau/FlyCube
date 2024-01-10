@@ -11,7 +11,9 @@
 #include <iostream>
 #include <vector>
 
-static std::string GetShaderTarget(ShaderType type, const std::string& model)
+namespace {
+
+std::string GetShaderTarget(ShaderType type, const std::string& model)
 {
     switch (type) {
     case ShaderType::kPixel:
@@ -33,6 +35,8 @@ static std::string GetShaderTarget(ShaderType type, const std::string& model)
         return "";
     }
 }
+
+} // namespace
 
 class IncludeHandler : public IDxcIncludeHandler {
 public:

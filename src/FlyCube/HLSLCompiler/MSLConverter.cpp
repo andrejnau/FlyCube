@@ -4,10 +4,7 @@
 
 #include <spirv_msl.hpp>
 
-bool UseArgumentBuffers()
-{
-    return false;
-}
+namespace {
 
 std::map<std::string, uint32_t> ParseBindings(const spirv_cross::CompilerMSL& compiler)
 {
@@ -28,6 +25,13 @@ std::map<std::string, uint32_t> ParseBindings(const spirv_cross::CompilerMSL& co
     enumerate_resources(resources.atomic_counters);
     enumerate_resources(resources.acceleration_structures);
     return mapping;
+}
+
+} // namespace
+
+bool UseArgumentBuffers()
+{
+    return false;
 }
 
 std::string GetMSLShader(const std::vector<uint8_t>& blob, std::map<std::string, uint32_t>& mapping)

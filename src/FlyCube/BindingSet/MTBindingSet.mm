@@ -23,7 +23,7 @@ MTLRenderStages GetStage(ShaderType type)
 }
 
 template <typename CommandEncoderType>
-constexpr bool is_compute_encoder()
+constexpr bool IsComputeEncoder()
 {
     return std::is_same_v<CommandEncoderType, id<MTLComputeCommandEncoder>>;
 }
@@ -35,7 +35,7 @@ void SetBuffer(ShaderType shader_type,
                uint32_t offset,
                uint32_t index)
 {
-    if constexpr (is_compute_encoder<CommandEncoderType>()) {
+    if constexpr (IsComputeEncoder<CommandEncoderType>()) {
         [encoder setBuffer:buffer offset:offset atIndex:index];
     } else if (shader_type == ShaderType::kVertex) {
         [encoder setVertexBuffer:buffer offset:offset atIndex:index];
@@ -47,7 +47,7 @@ void SetBuffer(ShaderType shader_type,
 template <typename CommandEncoderType>
 void SetSamplerState(ShaderType shader_type, CommandEncoderType encoder, id<MTLSamplerState> sampler, uint32_t index)
 {
-    if constexpr (is_compute_encoder<CommandEncoderType>()) {
+    if constexpr (IsComputeEncoder<CommandEncoderType>()) {
         [encoder setSamplerState:sampler atIndex:index];
     } else if (shader_type == ShaderType::kVertex) {
         [encoder setVertexSamplerState:sampler atIndex:index];
@@ -59,7 +59,7 @@ void SetSamplerState(ShaderType shader_type, CommandEncoderType encoder, id<MTLS
 template <typename CommandEncoderType>
 void SetTexture(ShaderType shader_type, CommandEncoderType encoder, id<MTLTexture> texture, uint32_t index)
 {
-    if constexpr (is_compute_encoder<CommandEncoderType>()) {
+    if constexpr (IsComputeEncoder<CommandEncoderType>()) {
         [encoder setTexture:texture atIndex:index];
     } else if (shader_type == ShaderType::kVertex) {
         [encoder setVertexTexture:texture atIndex:index];
@@ -74,7 +74,7 @@ void SetAccelerationStructure(ShaderType shader_type,
                               id<MTLAccelerationStructure> acceleration_structure,
                               uint32_t index)
 {
-    if constexpr (is_compute_encoder<CommandEncoderType>()) {
+    if constexpr (IsComputeEncoder<CommandEncoderType>()) {
         [encoder setAccelerationStructure:acceleration_structure atBufferIndex:index];
     } else if (shader_type == ShaderType::kVertex) {
         [encoder setVertexAccelerationStructure:acceleration_structure atBufferIndex:index];
@@ -91,23 +91,19 @@ void SetView(ShaderType shader_type, CommandEncoderType encoder, const std::shar
     case ViewType::kBuffer:
     case ViewType::kRWBuffer:
     case ViewType::kStructuredBuffer:
-    case ViewType::kRWStructuredBuffer: {
+    case ViewType::kRWStructuredBuffer:
         SetBuffer(shader_type, encoder, view->GetBuffer(), view->GetViewDesc().offset, index);
         break;
-    }
-    case ViewType::kSampler: {
+    case ViewType::kSampler:
         SetSamplerState(shader_type, encoder, view->GetSampler(), index);
         break;
-    }
     case ViewType::kTexture:
-    case ViewType::kRWTexture: {
+    case ViewType::kRWTexture:
         SetTexture(shader_type, encoder, view->GetTexture(), index);
         break;
-    }
-    case ViewType::kAccelerationStructure: {
+    case ViewType::kAccelerationStructure:
         SetAccelerationStructure(shader_type, encoder, view->GetAccelerationStructure(), index);
         break;
-    }
     default:
         assert(false);
         break;
@@ -159,7 +155,7 @@ void ApplyDirectArguments(CommandEncoderType encoder,
             if (!resource_usage.first) {
                 continue;
             }
-            if constexpr (is_compute_encoder<CommandEncoderType>()) {
+            if constexpr (IsComputeEncoder<CommandEncoderType>()) {
                 [encoder useResource:resource_usage.first usage:resource_usage.second];
             } else {
                 [encoder useResource:resource_usage.first

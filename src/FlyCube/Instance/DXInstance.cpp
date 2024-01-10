@@ -9,6 +9,8 @@
 
 #include <filesystem>
 
+namespace {
+
 bool EnableAgilitySDKIfExist(uint32_t version, const std::string_view& path)
 {
     auto d3d12_core = std::filesystem::u8path(GetExecutableDir()) / path / "D3D12Core.dll";
@@ -32,6 +34,8 @@ bool EnableAgilitySDKIfExist(uint32_t version, const std::string_view& path)
     }
     return true;
 }
+
+} // namespace
 
 #ifdef AGILITY_SDK_REQUIRED
 #define EXPORT_AGILITY_SDK extern "C" _declspec(dllexport) extern

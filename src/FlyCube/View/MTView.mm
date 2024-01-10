@@ -3,7 +3,9 @@
 #include "Device/MTDevice.h"
 #include "Resource/MTResource.h"
 
-static MTLTextureType ConvertTextureType(ViewDimension dimension)
+namespace {
+
+MTLTextureType ConvertTextureType(ViewDimension dimension)
 {
     switch (dimension) {
     case ViewDimension::kTexture1D:
@@ -30,6 +32,8 @@ static MTLTextureType ConvertTextureType(ViewDimension dimension)
     }
 }
 
+} // namespace
+
 MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, const ViewDesc& view_desc)
     : m_device(device)
     , m_resource(resource)
@@ -38,12 +42,11 @@ MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, co
     if (!m_resource) {
         return;
     }
+
     switch (m_view_desc.view_type) {
     case ViewType::kTexture:
     case ViewType::kRWTexture:
         CreateTextureView();
-        break;
-    default:
         break;
     }
 
@@ -52,10 +55,7 @@ MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, co
         m_range = std::make_shared<MTGPUArgumentBufferRange>(argument_buffer.Allocate(1));
         uint64_t* arguments = static_cast<uint64_t*>(m_range->GetArgumentBuffer().contents);
         arguments[m_range->GetOffset()] = GetGpuAddress();
-        id<MTLResource> resource = GetNativeResource();
-        if (resource) {
-            m_range->SetResourceUsage(m_range->GetOffset(), resource, GetUsage());
-        }
+        m_range->SetResourceUsage(m_range->GetOffset(), GetNativeResource(), GetUsage());
     }
 }
 
@@ -124,11 +124,6 @@ uint32_t MTView::GetBaseArrayLayer() const
 uint32_t MTView::GetLayerCount() const
 {
     return std::min<uint32_t>(m_view_desc.layer_count, m_resource->GetLayerCount() - m_view_desc.base_array_layer);
-}
-
-std::shared_ptr<MTResource> MTView::GetMTResource() const
-{
-    return m_resource;
 }
 
 const ViewDesc& MTView::GetViewDesc() const

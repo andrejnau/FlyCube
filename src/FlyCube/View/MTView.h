@@ -16,8 +16,6 @@ public:
     uint32_t GetBaseArrayLayer() const override;
     uint32_t GetLayerCount() const override;
 
-    void CreateTextureView();
-    std::shared_ptr<MTResource> GetMTResource() const;
     const ViewDesc& GetViewDesc() const;
     id<MTLResource> GetNativeResource() const;
     uint64_t GetGpuAddress() const;
@@ -28,6 +26,8 @@ public:
     id<MTLAccelerationStructure> GetAccelerationStructure() const;
 
 private:
+    void CreateTextureView();
+
     MTDevice& m_device;
     std::shared_ptr<MTResource> m_resource;
     ViewDesc m_view_desc;

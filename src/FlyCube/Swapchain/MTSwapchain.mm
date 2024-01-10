@@ -4,7 +4,9 @@
 #include "Instance/MTInstance.h"
 #include "Resource/MTResource.h"
 
-static id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
+namespace {
+
+id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
 {
     MTLTextureDescriptor* texture_descriptor = [[MTLTextureDescriptor alloc] init];
     texture_descriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
@@ -13,6 +15,8 @@ static id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_
     texture_descriptor.usage = MTLTextureUsageRenderTarget;
     return [device newTextureWithDescriptor:texture_descriptor];
 }
+
+} // namespace
 
 MTSwapchain::MTSwapchain(MTDevice& device,
                          WindowHandle window,

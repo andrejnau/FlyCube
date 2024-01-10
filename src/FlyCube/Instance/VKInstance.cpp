@@ -10,7 +10,9 @@
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 #endif
 
-static bool SkipIt(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type, const std::string& message)
+namespace {
+
+bool SkipIt(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type, const std::string& message)
 {
     if (object_type == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT && flags != VK_DEBUG_REPORT_ERROR_BIT_EXT) {
         return true;
@@ -36,14 +38,14 @@ static bool SkipIt(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objec
     return false;
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT flags,
-                                                          VkDebugReportObjectTypeEXT objectType,
-                                                          uint64_t object,
-                                                          size_t location,
-                                                          int32_t messageCode,
-                                                          const char* pLayerPrefix,
-                                                          const char* pMessage,
-                                                          void* pUserData)
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT flags,
+                                                   VkDebugReportObjectTypeEXT objectType,
+                                                   uint64_t object,
+                                                   size_t location,
+                                                   int32_t messageCode,
+                                                   const char* pLayerPrefix,
+                                                   const char* pMessage,
+                                                   void* pUserData)
 {
     constexpr size_t error_limit = 1024;
     static size_t error_count = 0;
@@ -63,6 +65,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT 
     ++error_count;
     return VK_FALSE;
 }
+
+} // namespace
 
 VKInstance::VKInstance()
 {

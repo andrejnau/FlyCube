@@ -3,11 +3,15 @@
 #include "HLSLCompiler/Compiler.h"
 #include "HLSLCompiler/MSLConverter.h"
 
-static uint64_t GenId()
+namespace {
+
+uint64_t GenId()
 {
     static uint64_t id = 0;
     return ++id;
 }
+
+} // namespace
 
 ShaderBase::ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type, bool is_msl)
     : ShaderBase(Compile(desc, blob_type), blob_type, desc.type, is_msl)

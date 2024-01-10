@@ -22,7 +22,9 @@
 
 #include <set>
 
-static vk::IndexType GetVkIndexType(gli::format format)
+namespace {
+
+vk::IndexType GetVkIndexType(gli::format format)
 {
     vk::Format vk_format = static_cast<vk::Format>(format);
     switch (vk_format) {
@@ -35,6 +37,20 @@ static vk::IndexType GetVkIndexType(gli::format format)
         return {};
     }
 }
+
+vk::AccelerationStructureTypeKHR Convert(AccelerationStructureType type)
+{
+    switch (type) {
+    case AccelerationStructureType::kTopLevel:
+        return vk::AccelerationStructureTypeKHR::eTopLevel;
+    case AccelerationStructureType::kBottomLevel:
+        return vk::AccelerationStructureTypeKHR::eBottomLevel;
+    }
+    assert(false);
+    return {};
+}
+
+} // namespace
 
 vk::ImageLayout ConvertState(ResourceState state)
 {
@@ -60,6 +76,27 @@ vk::ImageLayout ConvertState(ResourceState state)
     }
     assert(false);
     return vk::ImageLayout::eGeneral;
+}
+
+vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags flags)
+{
+    vk::BuildAccelerationStructureFlagsKHR vk_flags = {};
+    if (flags & BuildAccelerationStructureFlags::kAllowUpdate) {
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate;
+    }
+    if (flags & BuildAccelerationStructureFlags::kAllowCompaction) {
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::eAllowCompaction;
+    }
+    if (flags & BuildAccelerationStructureFlags::kPreferFastTrace) {
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace;
+    }
+    if (flags & BuildAccelerationStructureFlags::kPreferFastBuild) {
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastBuild;
+    }
+    if (flags & BuildAccelerationStructureFlags::kMinimizeMemory) {
+        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::eLowMemory;
+    }
+    return vk_flags;
 }
 
 VKDevice::VKDevice(VKAdapter& adapter)
@@ -608,39 +645,6 @@ RaytracingASPrebuildInfo VKDevice::GetAccelerationStructurePrebuildInfo(
     prebuild_info.build_scratch_data_size = size_info.buildScratchSize;
     prebuild_info.update_scratch_data_size = size_info.updateScratchSize;
     return prebuild_info;
-}
-
-vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags flags)
-{
-    vk::BuildAccelerationStructureFlagsKHR vk_flags = {};
-    if (flags & BuildAccelerationStructureFlags::kAllowUpdate) {
-        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate;
-    }
-    if (flags & BuildAccelerationStructureFlags::kAllowCompaction) {
-        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::eAllowCompaction;
-    }
-    if (flags & BuildAccelerationStructureFlags::kPreferFastTrace) {
-        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace;
-    }
-    if (flags & BuildAccelerationStructureFlags::kPreferFastBuild) {
-        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastBuild;
-    }
-    if (flags & BuildAccelerationStructureFlags::kMinimizeMemory) {
-        vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::eLowMemory;
-    }
-    return vk_flags;
-}
-
-vk::AccelerationStructureTypeKHR Convert(AccelerationStructureType type)
-{
-    switch (type) {
-    case AccelerationStructureType::kTopLevel:
-        return vk::AccelerationStructureTypeKHR::eTopLevel;
-    case AccelerationStructureType::kBottomLevel:
-        return vk::AccelerationStructureTypeKHR::eBottomLevel;
-    }
-    assert(false);
-    return {};
 }
 
 std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(AccelerationStructureType type,

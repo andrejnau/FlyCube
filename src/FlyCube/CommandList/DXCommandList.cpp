@@ -20,6 +20,19 @@
 #include <nowide/convert.hpp>
 #include <pix.h>
 
+namespace {
+
+D3D12_GPU_VIRTUAL_ADDRESS GetVirtualAddress(const RayTracingShaderTable& table)
+{
+    if (!table.resource) {
+        return 0;
+    }
+    decltype(auto) dx_resource = table.resource->As<DXResource>();
+    return dx_resource.resource->GetGPUVirtualAddress() + table.offset;
+}
+
+} // namespace
+
 DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
     : m_device(device)
 {
@@ -362,15 +375,6 @@ void DXCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_b
 void DXCommandList::DispatchMesh(uint32_t thread_group_count_x)
 {
     m_command_list6->DispatchMesh(thread_group_count_x, 1, 1);
-}
-
-static D3D12_GPU_VIRTUAL_ADDRESS GetVirtualAddress(const RayTracingShaderTable& table)
-{
-    if (!table.resource) {
-        return 0;
-    }
-    decltype(auto) dx_resource = table.resource->As<DXResource>();
-    return dx_resource.resource->GetGPUVirtualAddress() + table.offset;
 }
 
 void DXCommandList::DispatchRays(const RayTracingShaderTables& shader_tables,

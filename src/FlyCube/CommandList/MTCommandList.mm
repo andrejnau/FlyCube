@@ -8,7 +8,9 @@
 #include "Resource/MTResource.h"
 #include "View/MTView.h"
 
-static MTLIndexType ConvertIndexType(gli::format format)
+namespace {
+
+MTLIndexType ConvertIndexType(gli::format format)
 {
     switch (format) {
     case gli::format::FORMAT_R16_UINT_PACK16:
@@ -21,7 +23,7 @@ static MTLIndexType ConvertIndexType(gli::format format)
     }
 }
 
-static MTLLoadAction ConvertLoadAction(RenderPassLoadOp op)
+MTLLoadAction ConvertLoadAction(RenderPassLoadOp op)
 {
     switch (op) {
     case RenderPassLoadOp::kLoad:
@@ -36,7 +38,7 @@ static MTLLoadAction ConvertLoadAction(RenderPassLoadOp op)
     }
 }
 
-static MTLStoreAction ConvertStoreAction(RenderPassStoreOp op)
+MTLStoreAction ConvertStoreAction(RenderPassStoreOp op)
 {
     switch (op) {
     case RenderPassStoreOp::kStore:
@@ -49,7 +51,7 @@ static MTLStoreAction ConvertStoreAction(RenderPassStoreOp op)
     }
 }
 
-static MTLCullMode ConvertCullMode(CullMode cull_mode)
+MTLCullMode ConvertCullMode(CullMode cull_mode)
 {
     switch (cull_mode) {
     case CullMode::kNone:
@@ -63,6 +65,8 @@ static MTLCullMode ConvertCullMode(CullMode cull_mode)
         return MTLCullModeNone;
     }
 }
+
+} // namespace
 
 MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
     : m_device(device)
@@ -107,7 +111,7 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
                                     const std::shared_ptr<Framebuffer>& framebuffer,
                                     const ClearDesc& clear_desc)
 {
-    MTLRenderPassDescriptor* render_pass_descriptor = [MTLRenderPassDescriptor new];
+    MTLRenderPassDescriptor* render_pass_descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     const RenderPassDesc& render_pass_desc = render_pass->GetDesc();
     const FramebufferDesc& framebuffer_desc = framebuffer->As<FramebufferBase>().GetDesc();
 
@@ -124,11 +128,10 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         decltype(auto) mt_view = view->As<MTView>();
         attachment.level = mt_view.GetBaseMipLevel();
         attachment.slice = mt_view.GetBaseArrayLayer();
-        decltype(auto) resource = mt_view.GetMTResource();
-        if (!resource) {
+        attachment.texture = mt_view.GetTexture();
+        if (!attachment.texture) {
             return;
         }
-        attachment.texture = resource->texture.res;
 
         if ([m_device.GetDevice() supportsFamily:MTLGPUFamilyApple5] ||
             [m_device.GetDevice() supportsFamily:MTLGPUFamilyCommon3]) {

@@ -3,7 +3,9 @@
 #include "Device/MTDevice.h"
 #include "Shader/MTShader.h"
 
-static std::string FixEntryPoint(const std::string& entry_point)
+namespace {
+
+std::string FixEntryPoint(const std::string& entry_point)
 {
     if (entry_point == "main") {
         return "main0";
@@ -11,7 +13,7 @@ static std::string FixEntryPoint(const std::string& entry_point)
     return entry_point;
 }
 
-static MTLCompareFunction ConvertCompareFunction(ComparisonFunc func)
+MTLCompareFunction ConvertCompareFunction(ComparisonFunc func)
 {
     switch (func) {
     case ComparisonFunc::kNever:
@@ -36,7 +38,7 @@ static MTLCompareFunction ConvertCompareFunction(ComparisonFunc func)
     }
 }
 
-static MTLStencilOperation ConvertStencilOperation(StencilOp op)
+MTLStencilOperation ConvertStencilOperation(StencilOp op)
 {
     switch (op) {
     case StencilOp::kKeep:
@@ -61,7 +63,7 @@ static MTLStencilOperation ConvertStencilOperation(StencilOp op)
     }
 }
 
-static MTLStencilDescriptor* GetStencilDesc(const StencilOpDesc& desc, uint8_t read_mask, uint8_t write_mask)
+MTLStencilDescriptor* GetStencilDesc(const StencilOpDesc& desc, uint8_t read_mask, uint8_t write_mask)
 {
     MTLStencilDescriptor* stencil_descriptor = [[MTLStencilDescriptor alloc] init];
     stencil_descriptor.stencilCompareFunction = ConvertCompareFunction(desc.func);
@@ -73,7 +75,7 @@ static MTLStencilDescriptor* GetStencilDesc(const StencilOpDesc& desc, uint8_t r
     return stencil_descriptor;
 }
 
-static MTLDepthStencilDescriptor* GetDepthStencilDesc(const DepthStencilDesc& desc, gli::format depth_stencil_format)
+MTLDepthStencilDescriptor* GetDepthStencilDesc(const DepthStencilDesc& desc, gli::format depth_stencil_format)
 {
     MTLDepthStencilDescriptor* depth_stencil_descriptor = [[MTLDepthStencilDescriptor alloc] init];
     depth_stencil_descriptor.depthCompareFunction = ConvertCompareFunction(desc.depth_func);
@@ -89,6 +91,8 @@ static MTLDepthStencilDescriptor* GetDepthStencilDesc(const DepthStencilDesc& de
         GetStencilDesc(desc.back_face, desc.stencil_read_mask, desc.stencil_write_mask);
     return depth_stencil_descriptor;
 }
+
+} // namespace
 
 MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineDesc& desc)
     : m_device(device)

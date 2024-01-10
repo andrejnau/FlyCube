@@ -13,6 +13,37 @@
 #include "Utilities/VKUtility.h"
 #include "View/VKView.h"
 
+namespace {
+
+vk::StridedDeviceAddressRegionKHR GetStridedDeviceAddressRegion(VKDevice& device, const RayTracingShaderTable& table)
+{
+    if (!table.resource) {
+        return {};
+    }
+    decltype(auto) vk_resource = table.resource->As<VKResource>();
+    vk::StridedDeviceAddressRegionKHR vk_table = {};
+    vk_table.deviceAddress = device.GetDevice().getBufferAddress({ vk_resource.buffer.res.get() }) + table.offset;
+    vk_table.size = table.size;
+    vk_table.stride = table.stride;
+    return vk_table;
+}
+
+vk::IndexType GetVkIndexType(gli::format format)
+{
+    vk::Format vk_format = static_cast<vk::Format>(format);
+    switch (vk_format) {
+    case vk::Format::eR16Uint:
+        return vk::IndexType::eUint16;
+    case vk::Format::eR32Uint:
+        return vk::IndexType::eUint32;
+    default:
+        assert(false);
+        return {};
+    }
+}
+
+} // namespace
+
 VKCommandList::VKCommandList(VKDevice& device, CommandListType type)
     : m_device(device)
 {
@@ -218,20 +249,6 @@ void VKCommandList::DispatchMesh(uint32_t thread_group_count_x)
 #endif
 }
 
-static vk::StridedDeviceAddressRegionKHR GetStridedDeviceAddressRegion(VKDevice& device,
-                                                                       const RayTracingShaderTable& table)
-{
-    if (!table.resource) {
-        return {};
-    }
-    decltype(auto) vk_resource = table.resource->As<VKResource>();
-    vk::StridedDeviceAddressRegionKHR vk_table = {};
-    vk_table.deviceAddress = device.GetDevice().getBufferAddress({ vk_resource.buffer.res.get() }) + table.offset;
-    vk_table.size = table.size;
-    vk_table.stride = table.stride;
-    return vk_table;
-}
-
 void VKCommandList::DispatchRays(const RayTracingShaderTables& shader_tables,
                                  uint32_t width,
                                  uint32_t height,
@@ -414,20 +431,6 @@ void VKCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, ui
     rect.extent.width = right;
     rect.extent.height = bottom;
     m_command_list->setScissor(0, 1, &rect);
-}
-
-static vk::IndexType GetVkIndexType(gli::format format)
-{
-    vk::Format vk_format = static_cast<vk::Format>(format);
-    switch (vk_format) {
-    case vk::Format::eR16Uint:
-        return vk::IndexType::eUint16;
-    case vk::Format::eR32Uint:
-        return vk::IndexType::eUint32;
-    default:
-        assert(false);
-        return {};
-    }
 }
 
 void VKCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
