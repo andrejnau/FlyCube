@@ -5,14 +5,6 @@
 
 namespace {
 
-std::string FixEntryPoint(const std::string& entry_point)
-{
-    if (entry_point == "main") {
-        return "main0";
-    }
-    return entry_point;
-}
-
 MTLCompareFunction ConvertCompareFunction(ComparisonFunc func)
 {
     switch (func) {

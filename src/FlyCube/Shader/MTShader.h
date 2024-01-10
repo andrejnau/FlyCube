@@ -7,6 +7,8 @@
 #include <map>
 #include <string>
 
+std::string FixEntryPoint(const std::string& entry_point);
+
 class MTShader : public ShaderBase {
 public:
     MTShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type);

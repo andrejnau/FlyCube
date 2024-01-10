@@ -2,8 +2,6 @@
 
 #include "HLSLCompiler/MSLConverter.h"
 
-namespace {
-
 std::string FixEntryPoint(const std::string& entry_point)
 {
     if (entry_point == "main") {
@@ -11,8 +9,6 @@ std::string FixEntryPoint(const std::string& entry_point)
     }
     return entry_point;
 }
-
-} // namespace
 
 MTShader::MTShader(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
     : ShaderBase(blob, blob_type, shader_type, /*is_msl*/ true)
