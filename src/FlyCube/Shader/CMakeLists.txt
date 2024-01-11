@@ -24,9 +24,10 @@ target_include_directories(Shader
 )
 
 target_link_libraries(Shader
-    Utilities
+    Device
     HLSLCompiler
     ShaderReflection
+    Utilities
 )
 
 set_target_properties(Shader PROPERTIES FOLDER "FlyCube")

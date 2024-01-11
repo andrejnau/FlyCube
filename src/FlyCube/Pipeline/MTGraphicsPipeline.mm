@@ -96,7 +96,7 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
 
     for (const auto& shader : shaders) {
         decltype(auto) mt_shader = shader->As<MTShader>();
-        id<MTLLibrary> library = mt_shader.CreateLibrary(mt_device);
+        id<MTLLibrary> library = mt_shader.GetLibrary();
         decltype(auto) reflection = shader->GetReflection();
         for (const auto& entry_point : reflection->GetEntryPoints()) {
             id<MTLFunction> function = mt_shader.CreateFunction(library, entry_point.name);

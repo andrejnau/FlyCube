@@ -168,12 +168,12 @@ std::shared_ptr<Shader> MTDevice::CreateShader(const std::vector<uint8_t>& blob,
                                                ShaderBlobType blob_type,
                                                ShaderType shader_type)
 {
-    return std::make_shared<MTShader>(blob, blob_type, shader_type);
+    return std::make_shared<MTShader>(*this, blob, blob_type, shader_type);
 }
 
 std::shared_ptr<Shader> MTDevice::CompileShader(const ShaderDesc& desc)
 {
-    return std::make_shared<MTShader>(desc, ShaderBlobType::kSPIRV);
+    return std::make_shared<MTShader>(*this, desc, ShaderBlobType::kSPIRV);
 }
 
 std::shared_ptr<Program> MTDevice::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
