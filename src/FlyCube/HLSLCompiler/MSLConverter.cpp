@@ -49,9 +49,8 @@ std::string GetMSLShader(const std::vector<uint8_t>& blob, std::map<std::string,
     return msl_source;
 }
 
-std::string GetMSLShader(const ShaderDesc& shader)
+std::string GetMSLShader(const ShaderDesc& shader, std::map<std::string, uint32_t>& mapping)
 {
     std::vector<uint8_t> blob = Compile(shader, ShaderBlobType::kSPIRV);
-    std::map<std::string, uint32_t> mapping;
     return GetMSLShader(blob, mapping);
 }

@@ -17,10 +17,10 @@ void RunTest(const ShaderTestCase& test_case)
     test_case.Test(ShaderBlobType::kDXIL, dxil_blob.data(), dxil_blob.size());
 #endif
 
-#ifdef VULKAN_SUPPORT
+#if defined(VULKAN_SUPPORT) || defined(METAL_SUPPORT)
     auto spirv_blob = Compile(test_case.GetShaderDesc(), ShaderBlobType::kSPIRV);
     REQUIRE(!spirv_blob.empty());
-    test_case.Test(ShaderBlobType::kSPIRV, spirv_blob.data(), spirv_blob.size() * sizeof(spirv_blob.front()));
+    test_case.Test(ShaderBlobType::kSPIRV, spirv_blob.data(), spirv_blob.size());
 #endif
 }
 

@@ -17,12 +17,12 @@ target_include_directories(HLSLCompiler
 )
 
 target_link_libraries(HLSLCompiler
-    Utilities
+    dxc
     nowide
     spirv-cross-core
     spirv-cross-hlsl
     spirv-cross-msl
-    dxc
+    Utilities
 )
 
 if (UNIX)
