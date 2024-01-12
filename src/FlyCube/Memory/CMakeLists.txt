@@ -29,15 +29,6 @@ if (METAL_SUPPORT)
     )
 endif()
 
-if (SOFTWARE_SUPPORT)
-    list(APPEND headers
-        SWMemory.h
-    )
-    list(APPEND sources
-        SWMemory.cpp
-    )
-endif()
-
 add_library(Memory ${headers} ${sources})
 
 target_include_directories(Memory

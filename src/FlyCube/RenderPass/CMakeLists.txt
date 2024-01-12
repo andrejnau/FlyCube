@@ -29,15 +29,6 @@ if (METAL_SUPPORT)
     )
 endif()
 
-if (SOFTWARE_SUPPORT)
-    list(APPEND headers
-        DXRenderPass.h
-    )
-    list(APPEND sources
-        DXRenderPass.cpp
-    )
-endif()
-
 add_library(RenderPass ${headers} ${sources})
 
 target_include_directories(RenderPass

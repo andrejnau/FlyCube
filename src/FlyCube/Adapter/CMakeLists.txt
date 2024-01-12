@@ -29,15 +29,6 @@ if (METAL_SUPPORT)
     )
 endif()
 
-if (SOFTWARE_SUPPORT)
-    list(APPEND headers
-        SWAdapter.h
-    )
-    list(APPEND sources
-        SWAdapter.cpp
-    )
-endif()
-
 add_library(Adapter ${headers} ${sources})
 
 target_include_directories(Adapter

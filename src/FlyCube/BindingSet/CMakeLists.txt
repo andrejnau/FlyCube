@@ -29,15 +29,6 @@ if (METAL_SUPPORT)
     )
 endif()
 
-if (SOFTWARE_SUPPORT)
-    list(APPEND headers
-        SWBindingSet.h
-    )
-    list(APPEND sources
-        SWBindingSet.cpp
-    )
-endif()
-
 add_library(BindingSet ${headers} ${sources})
 
 target_include_directories(BindingSet

@@ -29,15 +29,6 @@ if (METAL_SUPPORT)
     )
 endif()
 
-if (SOFTWARE_SUPPORT)
-    list(APPEND headers
-        SWFence.h
-    )
-    list(APPEND sources
-        SWFence.cpp
-    )
-endif()
-
 add_library(Fence ${headers} ${sources})
 
 target_include_directories(Fence

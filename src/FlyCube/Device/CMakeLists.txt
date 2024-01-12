@@ -29,15 +29,6 @@ if (METAL_SUPPORT)
     )
 endif()
 
-if (SOFTWARE_SUPPORT)
-    list(APPEND headers
-        SWDevice.h
-    )
-    list(APPEND sources
-        SWDevice.cpp
-    )
-endif()
-
 add_library(Device ${headers} ${sources})
 
 target_include_directories(Device

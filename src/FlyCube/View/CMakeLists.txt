@@ -29,15 +29,6 @@ if (METAL_SUPPORT)
     )
 endif()
 
-if (SOFTWARE_SUPPORT)
-    list(APPEND headers
-        SWView.h
-    )
-    list(APPEND sources
-        SWView.cpp
-    )
-endif()
-
 add_library(View ${headers} ${sources})
 
 target_include_directories(View

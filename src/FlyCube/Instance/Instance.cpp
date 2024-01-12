@@ -8,9 +8,6 @@
 #ifdef METAL_SUPPORT
 #include "Instance/MTInstance.h"
 #endif
-#ifdef SOFTWARE_SUPPORT
-#include "Instance/SWInstance.h"
-#endif
 #include <cassert>
 
 std::shared_ptr<Instance> CreateInstance(ApiType type)
@@ -27,10 +24,6 @@ std::shared_ptr<Instance> CreateInstance(ApiType type)
 #ifdef METAL_SUPPORT
     case ApiType::kMetal:
         return std::make_shared<MTInstance>();
-#endif
-#ifdef SOFTWARE_SUPPORT
-    case ApiType::kSoftware:
-        return std::make_shared<SWInstance>();
 #endif
     }
     assert(false);
