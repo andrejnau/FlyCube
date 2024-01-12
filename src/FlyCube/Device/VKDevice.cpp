@@ -848,22 +848,20 @@ uint32_t VKDevice::GetMaxDescriptorSetBindings(vk::DescriptorType type) const
 {
     switch (type) {
     case vk::DescriptorType::eSampler:
-        return m_device_properties.limits.maxDescriptorSetSamplers;
+        return m_device_properties.limits.maxPerStageDescriptorSamplers;
     case vk::DescriptorType::eCombinedImageSampler:
     case vk::DescriptorType::eSampledImage:
     case vk::DescriptorType::eUniformTexelBuffer:
-        return m_device_properties.limits.maxDescriptorSetSampledImages;
+        return m_device_properties.limits.maxPerStageDescriptorSampledImages;
     case vk::DescriptorType::eUniformBuffer:
-        return m_device_properties.limits.maxDescriptorSetUniformBuffers;
     case vk::DescriptorType::eUniformBufferDynamic:
-        return m_device_properties.limits.maxDescriptorSetUniformBuffersDynamic;
+        return m_device_properties.limits.maxPerStageDescriptorUniformBuffers;
     case vk::DescriptorType::eStorageBuffer:
-        return m_device_properties.limits.maxDescriptorSetStorageBuffers;
     case vk::DescriptorType::eStorageBufferDynamic:
-        return m_device_properties.limits.maxDescriptorSetStorageBuffersDynamic;
+        return m_device_properties.limits.maxPerStageDescriptorStorageBuffers;
     case vk::DescriptorType::eStorageImage:
     case vk::DescriptorType::eStorageTexelBuffer:
-        return m_device_properties.limits.maxDescriptorSetStorageImages;
+        return m_device_properties.limits.maxPerStageDescriptorStorageImages;
     default:
         assert(false);
         return 0;
