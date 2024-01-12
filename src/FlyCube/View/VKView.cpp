@@ -46,7 +46,7 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
         decltype(auto) pool = device.GetGPUBindlessDescriptorPool(type);
         m_range = std::make_shared<VKGPUDescriptorPoolRange>(pool.Allocate(1));
 
-        m_descriptor.dstSet = m_range->GetDescriptoSet();
+        m_descriptor.dstSet = m_range->GetDescriptorSet();
         m_descriptor.dstArrayElement = m_range->GetOffset();
         m_descriptor.descriptorType = type;
         m_descriptor.dstBinding = 0;

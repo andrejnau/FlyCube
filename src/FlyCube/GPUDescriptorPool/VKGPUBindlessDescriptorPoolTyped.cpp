@@ -86,13 +86,13 @@ VKGPUDescriptorPoolRange VKGPUBindlessDescriptorPoolTyped::Allocate(uint32_t cou
         size_t offset = it->second;
         size_t size = it->first;
         m_empty_ranges.erase(it);
-        return VKGPUDescriptorPoolRange(*this, m_descriptor.set.get(), offset, size, m_type);
+        return VKGPUDescriptorPoolRange(*this, offset, size);
     }
     if (m_offset + count > m_size) {
         ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
     }
     m_offset += count;
-    return VKGPUDescriptorPoolRange(*this, m_descriptor.set.get(), m_offset - count, count, m_type);
+    return VKGPUDescriptorPoolRange(*this, m_offset - count, count);
 }
 
 void VKGPUBindlessDescriptorPoolTyped::OnRangeDestroy(uint32_t offset, uint32_t size)
