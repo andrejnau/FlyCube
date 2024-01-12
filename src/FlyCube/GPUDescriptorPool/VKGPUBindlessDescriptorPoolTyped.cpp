@@ -12,9 +12,7 @@ VKGPUBindlessDescriptorPoolTyped::VKGPUBindlessDescriptorPoolTyped(VKDevice& dev
 
 void VKGPUBindlessDescriptorPoolTyped::ResizeHeap(uint32_t req_size)
 {
-    if (req_size > max_bindless_heap_size) {
-        throw std::runtime_error("Requested size for bindless pool more than max_bindless_heap_size");
-    }
+    req_size = std::min(req_size, m_device.GetMaxDescriptorSetBindings(m_type));
 
     if (m_size >= req_size) {
         return;
@@ -37,7 +35,7 @@ void VKGPUBindlessDescriptorPoolTyped::ResizeHeap(uint32_t req_size)
     vk::DescriptorSetLayoutBinding binding = {};
     binding.binding = 0;
     binding.descriptorType = m_type;
-    binding.descriptorCount = max_bindless_heap_size;
+    binding.descriptorCount = m_device.GetMaxDescriptorSetBindings(binding.descriptorType);
     binding.stageFlags = vk::ShaderStageFlagBits::eAll;
 
     vk::DescriptorBindingFlags binding_flag = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
@@ -90,6 +88,9 @@ VKGPUDescriptorPoolRange VKGPUBindlessDescriptorPoolTyped::Allocate(uint32_t cou
     }
     if (m_offset + count > m_size) {
         ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
+        if (m_offset + count > m_size) {
+            throw std::runtime_error("Failed to resize VKGPUBindlessDescriptorPoolTyped");
+        }
     }
     m_offset += count;
     return VKGPUDescriptorPoolRange(*this, m_offset - count, count);

@@ -66,7 +66,7 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device, const std::vector<BindK
 
         decltype(auto) binding_flag = bindings_flags_by_set[bind_key.space].emplace_back();
         if (bind_key.count == std::numeric_limits<uint32_t>::max()) {
-            binding.descriptorCount = max_bindless_heap_size;
+            binding.descriptorCount = device.GetMaxDescriptorSetBindings(binding.descriptorType);
             binding_flag = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
             m_bindless_type.emplace(bind_key.space, binding.descriptorType);
             binding.stageFlags = vk::ShaderStageFlagBits::eAll;

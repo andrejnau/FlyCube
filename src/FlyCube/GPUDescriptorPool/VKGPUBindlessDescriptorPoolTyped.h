@@ -6,8 +6,6 @@
 #include <algorithm>
 #include <map>
 
-constexpr uint32_t max_bindless_heap_size = 10000;
-
 class VKDevice;
 
 class VKGPUBindlessDescriptorPoolTyped {

@@ -104,6 +104,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     , m_physical_device(adapter.GetPhysicalDevice())
     , m_gpu_descriptor_pool(*this)
 {
+    m_device_properties = m_physical_device.getProperties();
     auto queue_families = m_physical_device.getQueueFamilyProperties();
     auto has_all_bits = [](auto flags, auto bits) { return (flags & bits) == bits; };
     auto has_any_bits = [](auto flags, auto bits) { return flags & bits; };
@@ -841,4 +842,30 @@ VKGPUBindlessDescriptorPoolTyped& VKDevice::GetGPUBindlessDescriptorPool(vk::Des
 VKGPUDescriptorPool& VKDevice::GetGPUDescriptorPool()
 {
     return m_gpu_descriptor_pool;
+}
+
+uint32_t VKDevice::GetMaxDescriptorSetBindings(vk::DescriptorType type) const
+{
+    switch (type) {
+    case vk::DescriptorType::eSampler:
+        return m_device_properties.limits.maxDescriptorSetSamplers;
+    case vk::DescriptorType::eCombinedImageSampler:
+    case vk::DescriptorType::eSampledImage:
+    case vk::DescriptorType::eUniformTexelBuffer:
+        return m_device_properties.limits.maxDescriptorSetSampledImages;
+    case vk::DescriptorType::eUniformBuffer:
+        return m_device_properties.limits.maxDescriptorSetUniformBuffers;
+    case vk::DescriptorType::eUniformBufferDynamic:
+        return m_device_properties.limits.maxDescriptorSetUniformBuffersDynamic;
+    case vk::DescriptorType::eStorageBuffer:
+        return m_device_properties.limits.maxDescriptorSetStorageBuffers;
+    case vk::DescriptorType::eStorageBufferDynamic:
+        return m_device_properties.limits.maxDescriptorSetStorageBuffersDynamic;
+    case vk::DescriptorType::eStorageImage:
+    case vk::DescriptorType::eStorageTexelBuffer:
+        return m_device_properties.limits.maxDescriptorSetStorageImages;
+    default:
+        assert(false);
+        return 0;
+    }
 }

@@ -79,6 +79,8 @@ public:
                                                                          const BufferDesc& index,
                                                                          RaytracingGeometryFlags flags) const;
 
+    uint32_t GetMaxDescriptorSetBindings(vk::DescriptorType type) const;
+
 private:
     RaytracingASPrebuildInfo GetAccelerationStructurePrebuildInfo(
         const vk::AccelerationStructureBuildGeometryInfoKHR& acceleration_structure_info,
@@ -106,4 +108,5 @@ private:
     uint32_t m_shader_table_alignment = 0;
     bool m_draw_indirect_count_supported = false;
     bool m_geometry_shader_supported = false;
+    vk::PhysicalDeviceProperties m_device_properties = {};
 };
