@@ -19,7 +19,7 @@ add_library(AppBox ${headers} ${sources})
 
 target_link_libraries(AppBox
     glfw
-    ApiType
+    FlyCube
 )
 
 if (APPLE)

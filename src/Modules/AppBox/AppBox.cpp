@@ -61,7 +61,7 @@ AppBox::AppBox(const std::string& title, Settings setting)
     NSWindow* nswindow = glfwGetCocoaWindow(m_window);
     nswindow.contentView.layer = [CAMetalLayer layer];
     nswindow.contentView.wantsLayer = YES;
-    m_layer = nswindow.contentView.layer;
+    m_layer = (__bridge void*)nswindow.contentView.layer;
 #endif
 }
 

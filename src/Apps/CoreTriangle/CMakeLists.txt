@@ -8,7 +8,7 @@ endif()
 
 target_link_libraries(CoreTriangle
     AppBox
-    Instance
+    FlyCube
     FlyCubeAssets
 )
 

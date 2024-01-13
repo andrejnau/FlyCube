@@ -4,7 +4,7 @@ if (WIN32)
         LINK_FLAGS "/ENTRY:wmainCRTStartup"
     )
 endif()
-target_link_libraries(ShaderReflectionTest PRIVATE ShaderReflection Catch2WithMain FlyCubeAssets)
+target_link_libraries(ShaderReflectionTest PRIVATE FlyCube Catch2WithMain FlyCubeAssets)
 set_target_properties(ShaderReflectionTest PROPERTIES FOLDER "Tests")
 
 add_test(NAME ShaderReflectionTest COMMAND ShaderReflectionTest)

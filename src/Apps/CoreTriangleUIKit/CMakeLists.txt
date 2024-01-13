@@ -18,7 +18,7 @@ add_executable(CoreTriangleUIKit MACOSX_BUNDLE
 
 target_link_libraries(CoreTriangleUIKit
    AppBoxApple
-   Instance
+   FlyCube
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
