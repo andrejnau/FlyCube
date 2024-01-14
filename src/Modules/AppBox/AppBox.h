@@ -3,6 +3,7 @@
 #include "AppBox/InputEvents.h"
 #include "AppBox/Settings.h"
 #include "AppBox/WindowEvents.h"
+#include "AppLoop/AppSize.h"
 
 #include <GLFW/glfw3.h>
 
@@ -11,23 +12,19 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <string_view>
 
 #if defined(__APPLE__)
 #include "Utilities/AutoreleasePool.h"
 #endif
 
-struct AppRect {
-    uint32_t width;
-    uint32_t height;
-};
-
 class AppBox {
 public:
-    AppBox(const std::string& title, Settings setting);
+    AppBox(const std::string_view& title, const Settings& setting);
     ~AppBox();
     bool PollEvents();
 
-    AppRect GetAppRect() const;
+    AppSize GetAppSize() const;
     GLFWwindow* GetWindow() const;
     void* GetNativeWindow() const;
     void SetGpuName(const std::string& gpu_name);

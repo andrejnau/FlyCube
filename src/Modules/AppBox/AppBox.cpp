@@ -16,7 +16,7 @@
 #import <QuartzCore/QuartzCore.h>
 #endif
 
-AppBox::AppBox(const std::string& title, Settings setting)
+AppBox::AppBox(const std::string_view& title, const Settings& setting)
     : m_setting(setting)
 {
     std::string api_str;
@@ -31,7 +31,8 @@ AppBox::AppBox(const std::string& title, Settings setting)
         api_str = "[Metal]";
         break;
     }
-    m_title = api_str + " " + title;
+    m_title = api_str + " ";
+    m_title += title;
 
     glfwInit();
 
@@ -137,7 +138,7 @@ bool AppBox::PollEvents()
     return glfwWindowShouldClose(m_window) || m_exit_request;
 }
 
-AppRect AppBox::GetAppRect() const
+AppSize AppBox::GetAppSize() const
 {
     return { m_width, m_height };
 }

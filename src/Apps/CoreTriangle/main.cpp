@@ -6,7 +6,7 @@ int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
     AppBox app("CoreTriangle", settings);
-    AppRect rect = app.GetAppRect();
+    AppSize app_size = app.GetAppSize();
 
     std::shared_ptr<Instance> instance = CreateInstance(settings.api_type);
     std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[settings.required_gpu_index]);
@@ -14,8 +14,8 @@ int main(int argc, char* argv[])
     std::shared_ptr<Device> device = adapter->CreateDevice();
     std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
     constexpr uint32_t frame_count = 3;
-    std::shared_ptr<Swapchain> swapchain =
-        device->CreateSwapchain(app.GetNativeWindow(), rect.width, rect.height, frame_count, settings.vsync);
+    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeWindow(), app_size.width(),
+                                                                   app_size.height(), frame_count, settings.vsync);
     uint64_t fence_value = 0;
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
@@ -80,8 +80,8 @@ int main(int argc, char* argv[])
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
         FramebufferDesc framebuffer_desc = {};
         framebuffer_desc.render_pass = render_pass;
-        framebuffer_desc.width = rect.width;
-        framebuffer_desc.height = rect.height;
+        framebuffer_desc.width = app_size.width();
+        framebuffer_desc.height = app_size.height();
         framebuffer_desc.colors = { back_buffer_view };
         std::shared_ptr<Framebuffer> framebuffer =
             framebuffers.emplace_back(device->CreateFramebuffer(framebuffer_desc));
@@ -89,8 +89,8 @@ int main(int argc, char* argv[])
             command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);
-        command_list->SetViewport(0, 0, rect.width, rect.height);
-        command_list->SetScissorRect(0, 0, rect.width, rect.height);
+        command_list->SetViewport(0, 0, app_size.width(), app_size.height());
+        command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, vertex_buffer);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });

@@ -5,12 +5,11 @@ if (CMAKE_Swift_COMPILER_VERSION VERSION_LESS 5.9)
 endif()
 
 list(APPEND headers
-   AppBox.h
    MetalRenderer.h
 )
 
 list(APPEND sources
-   AppBox.mm
+   AppLoop.mm
    ContentView.swift
    MetalRenderer.mm
    MetalView.swift
@@ -26,34 +25,34 @@ else()
    )
 endif()
 
-add_library(AppBoxApple
+add_library(AppLoopSwiftUI
    ${headers}
    ${sources}
 )
 
-set_target_properties(AppBoxApple PROPERTIES
+set_target_properties(AppLoopSwiftUI PROPERTIES
    XCODE_ATTRIBUTE_SWIFT_OBJC_BRIDGING_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/SwiftBridgingHeader.h"
-   XCODE_ATTRIBUTE_SWIFT_OBJC_INTERFACE_HEADER_NAME "AppBoxAppleSwift.h"
+   XCODE_ATTRIBUTE_SWIFT_OBJC_INTERFACE_HEADER_NAME "SwiftInterfaceHeader.h"
 )
 
-target_include_directories(AppBoxApple
-    PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}/.."
+target_include_directories(AppLoopSwiftUI
+   PUBLIC
+      "${CMAKE_CURRENT_SOURCE_DIR}/../.."
 )
 
-target_link_libraries(AppBoxApple
+target_link_libraries(AppLoopSwiftUI
    "-framework Metal"
    "-framework QuartzCore"
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS")
-   target_link_libraries(AppBoxApple
+   target_link_libraries(AppLoopSwiftUI
       "-framework UIKit"
    )
 else()
-   target_link_libraries(AppBoxApple
+   target_link_libraries(AppLoopSwiftUI
       "-framework AppKit"
    )
 endif()
 
-set_target_properties(AppBoxApple PROPERTIES FOLDER "Modules")
+set_target_properties(AppLoopSwiftUI PROPERTIES FOLDER "Modules/AppLoop")

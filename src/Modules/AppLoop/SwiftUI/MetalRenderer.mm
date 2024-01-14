@@ -1,6 +1,6 @@
 #import "MetalRenderer.h"
 
-#include "AppBoxApple/AppBox.h"
+#include "AppLoop/AppLoop.h"
 
 @implementation MetalRenderer {
     AppRenderer* app_renderer;
@@ -10,7 +10,7 @@
 {
     AppSize app_size(size.width, size.height);
     if (!app_renderer) {
-        app_renderer = &AppBox::GetInstance().GetRenderer();
+        app_renderer = &AppLoop::GetRenderer();
         app_renderer->Init(app_size, (__bridge void*)view.layer);
     } else {
         app_renderer->Resize(app_size, (__bridge void*)view.layer);

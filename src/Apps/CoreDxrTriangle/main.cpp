@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
     AppBox app("CoreDxrTriangle", settings);
-    AppRect rect = app.GetAppRect();
+    AppSize app_size = app.GetAppSize();
 
     std::shared_ptr<Instance> instance = CreateInstance(settings.api_type);
     std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[settings.required_gpu_index]);
@@ -24,8 +24,8 @@ int main(int argc, char* argv[])
     std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
     std::shared_ptr<CommandQueue> upload_command_queue = device->GetCommandQueue(CommandListType::kGraphics);
     constexpr uint32_t frame_count = 3;
-    std::shared_ptr<Swapchain> swapchain =
-        device->CreateSwapchain(app.GetNativeWindow(), rect.width, rect.height, frame_count, settings.vsync);
+    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeWindow(), app_size.width(),
+                                                                   app_size.height(), frame_count, settings.vsync);
     uint64_t fence_value = 0;
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
 
     std::shared_ptr<Resource> uav =
         device->CreateTexture(TextureType::k2D, BindFlag::kUnorderedAccess | BindFlag::kCopySource,
-                              swapchain->GetFormat(), 1, rect.width, rect.height, 1, 1);
+                              swapchain->GetFormat(), 1, app_size.width(), app_size.height(), 1, 1);
     uav->CommitMemory(MemoryType::kDefault);
     uav->SetName("uav");
     upload_command_list->ResourceBarrier({ { uav, uav->GetInitialState(), ResourceState::kUnorderedAccess } });
@@ -231,10 +231,10 @@ int main(int argc, char* argv[])
         std::shared_ptr<CommandList> command_list = command_lists[i];
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);
-        command_list->DispatchRays(shader_tables, rect.width, rect.height, 1);
+        command_list->DispatchRays(shader_tables, app_size.width(), app_size.height(), 1);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kCopyDest } });
         command_list->ResourceBarrier({ { uav, ResourceState::kUnorderedAccess, ResourceState::kCopySource } });
-        command_list->CopyTexture(uav, back_buffer, { { rect.width, rect.height, 1 } });
+        command_list->CopyTexture(uav, back_buffer, { { app_size.width(), app_size.height(), 1 } });
         command_list->ResourceBarrier({ { uav, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kCopyDest, ResourceState::kPresent } });
         command_list->Close();

@@ -1,5 +1,5 @@
 #include "ApiType/ApiType.h"
-#include "AppBoxApple/AppBox.h"
+#include "AppLoop/AppLoop.h"
 #include "Instance/Instance.h"
 #include "Utilities/Common.h"
 
@@ -11,7 +11,14 @@ public:
     void Init(const AppSize& app_size, WindowHandle window) override;
     void Resize(const AppSize& app_size, WindowHandle window) override;
     void Render() override;
+
+    std::string_view GetTitle() const override
+    {
+        return "Triangle";
+    }
+
     void WaitForIdle();
+
     ~TriangleRenderer() override;
 
     std::shared_ptr<Instance> instance;
@@ -161,5 +168,5 @@ TriangleRenderer::~TriangleRenderer()
 
 int main(int argc, char* argv[])
 {
-    AppBox::GetInstance().Run(std::make_unique<TriangleRenderer>(), argc, argv);
+    AppLoop::Run(std::make_unique<TriangleRenderer>(), argc, argv);
 }

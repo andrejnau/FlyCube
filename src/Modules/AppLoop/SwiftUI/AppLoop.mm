@@ -1,4 +1,4 @@
-#include "AppBoxApple/AppBox.h"
+#include "AppLoop/AppLoop.h"
 
 #include <cassert>
 
@@ -9,23 +9,23 @@
 #endif
 
 // clang-format off
-#import "AppBoxAppleSwift.h"
+#import "SwiftInterfaceHeader.h"
 // clang-format on
 
 // static
-AppBox& AppBox::GetInstance()
+AppLoop& AppLoop::GetInstance()
 {
-    static AppBox instance;
+    static AppLoop instance;
     return instance;
 }
 
-AppRenderer& AppBox::GetRenderer()
+AppRenderer& AppLoop::GetRendererImpl()
 {
     assert(m_renderer);
     return *m_renderer;
 }
 
-int AppBox::Run(std::unique_ptr<AppRenderer> renderer, int argc, char* argv[])
+int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv[])
 {
     m_renderer = std::move(renderer);
     @autoreleasepool {
