@@ -30,11 +30,13 @@ HRESULT Test(dxc::DxcDllSupport& dll_support, ShaderBlobType target)
     IFR(compiler->Compile(source, L"main.hlsl", L"", L"lib_6_3", args.data(), args.size(), nullptr, 0, nullptr,
                           &result));
 
+#if defined(_WIN32) // Ignore missing DXIL signing library on other platforms
     CComPtr<IDxcBlobEncoding> errors;
     result->GetErrorBuffer(&errors);
     if (errors && errors->GetBufferSize() > 0) {
         return E_FAIL;
     }
+#endif
 
     HRESULT hr = {};
     result->GetStatus(&hr);
@@ -54,7 +56,7 @@ std::unique_ptr<dxc::DxcDllSupport> Load(const std::string& path, ShaderBlobType
         return {};
     }
 
-#ifdef _WIN32
+#if defined(_WIN32)
     auto dxil_path = std::filesystem::u8path(path) / "dxil.dll";
     std::unique_ptr<dxc::DxcDllSupport> dll_support_dxil;
     if (target == ShaderBlobType::kDXIL) {

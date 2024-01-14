@@ -12,21 +12,15 @@ public:
 
 void RunTest(const ShaderTestCase& test_case)
 {
-#ifdef DIRECTX_SUPPORT
     auto dxil_blob = Compile(test_case.GetShaderDesc(), ShaderBlobType::kDXIL);
     REQUIRE(!dxil_blob.empty());
-#endif
 
-#if defined(VULKAN_SUPPORT) || defined(METAL_SUPPORT)
     auto spirv_blob = Compile(test_case.GetShaderDesc(), ShaderBlobType::kSPIRV);
     REQUIRE(!spirv_blob.empty());
-#endif
 
-#ifdef METAL_SUPPORT
     std::map<std::string, uint32_t> mapping;
     auto source = GetMSLShader(spirv_blob, mapping);
     REQUIRE(!source.empty());
-#endif
 }
 
 class TrianglePS : public ShaderTestCase {

@@ -2,7 +2,7 @@
 #include "HLSLCompiler/DXCLoader.h"
 #include "ShaderReflection/ShaderReflection.h"
 
-#ifndef _WIN32
+#if !defined(_WIN32)
 #define interface struct
 #endif
 #include <directx/d3d12shader.h>
