@@ -12,7 +12,7 @@ IncludeCategories:
     Priority:        1
     SortPriority:    0
     CaseSensitive:   false
-  - Regex:           '^<.*(\.h|\.hpp)>'
+  - Regex:           '^<.*(\.h|\.hpp|\.inl)>'
     Priority:        2
     SortPriority:    0
     CaseSensitive:   false

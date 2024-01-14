@@ -1,17 +1,18 @@
 #include "ShaderReflection/DXILReflection.h"
 
-#include "HLSLCompiler/DXCLoader.h"
 #include "Utilities/DXUtility.h"
-#include "Utilities/SystemUtils.h"
 
 #include <assert.h>
-#include <dia2.h>
 #include <dxc/DXIL/DxilConstants.h>
 #include <dxc/DxilContainer/DxilContainer.h>
+#include <dxc/DxilContainer/DxilRuntimeReflection.inl>
 #include <nowide/convert.hpp>
 
+#ifdef _WIN32
+#include <dia2.h>
+#endif
+
 #include <algorithm>
-#include <dxc/DxilContainer/DxilRuntimeReflection.inl>
 #include <set>
 
 ShaderKind ConvertShaderKind(hlsl::DXIL::ShaderKind kind)
@@ -46,15 +47,16 @@ ShaderKind ConvertShaderKind(hlsl::DXIL::ShaderKind kind)
     return ShaderKind::kUnknown;
 }
 
-ComPtr<IDiaTable> FindTable(ComPtr<IDiaSession> session, const std::wstring& name)
+#ifdef _WIN32
+CComPtr<IDiaTable> FindTable(CComPtr<IDiaSession> session, const std::wstring& name)
 {
-    ComPtr<IDiaEnumTables> enum_tables;
+    CComPtr<IDiaEnumTables> enum_tables;
     session->getEnumTables(&enum_tables);
     LONG count = 0;
     enum_tables->get_Count(&count);
     for (LONG i = 0; i < count; ++i) {
         ULONG fetched = 0;
-        ComPtr<IDiaTable> table;
+        CComPtr<IDiaTable> table;
         enum_tables->Next(1, &table, &fetched);
         CComBSTR table_name;
         table->get_name(&table_name);
@@ -65,7 +67,7 @@ ComPtr<IDiaTable> FindTable(ComPtr<IDiaSession> session, const std::wstring& nam
     return nullptr;
 }
 
-std::string FindStrValue(ComPtr<IDiaTable> table, const std::wstring& name)
+std::string FindStrValue(CComPtr<IDiaTable> table, const std::wstring& name)
 {
     LONG count = 0;
     table->get_Count(&count);
@@ -91,19 +93,20 @@ std::string FindStrValue(ComPtr<IDiaTable> table, const std::wstring& name)
     }
     return "";
 }
+#endif
 
 DXILReflection::DXILReflection(const void* data, size_t size)
 {
     decltype(auto) dxc_support = GetDxcSupport(ShaderBlobType::kDXIL);
-    ComPtr<IDxcLibrary> library;
-    dxc_support.CreateInstance(CLSID_DxcLibrary, library.GetAddressOf());
-    ComPtr<IDxcBlobEncoding> source;
+    CComPtr<IDxcLibrary> library;
+    dxc_support.CreateInstance(CLSID_DxcLibrary, &library);
+    CComPtr<IDxcBlobEncoding> source;
     ASSERT_SUCCEEDED(library->CreateBlobWithEncodingOnHeapCopy(data, size, CP_ACP, &source));
-    ComPtr<IDxcContainerReflection> reflection;
-    dxc_support.CreateInstance(CLSID_DxcContainerReflection, reflection.GetAddressOf());
-    ASSERT_SUCCEEDED(reflection->Load(source.Get()));
+    CComPtr<IDxcContainerReflection> reflection;
+    dxc_support.CreateInstance(CLSID_DxcContainerReflection, &reflection);
+    ASSERT_SUCCEEDED(reflection->Load(source));
 
-    ComPtr<IDxcBlob> pdb;
+    CComPtr<IDxcBlob> pdb;
     uint32_t part_count = 0;
     ASSERT_SUCCEEDED(reflection->GetPartCount(&part_count));
     for (uint32_t i = 0; i < part_count; ++i) {
@@ -112,8 +115,8 @@ DXILReflection::DXILReflection(const void* data, size_t size)
         if (kind == hlsl::DxilFourCC::DFCC_RuntimeData) {
             ParseRuntimeData(reflection, i);
         } else if (kind == hlsl::DxilFourCC::DFCC_DXIL) {
-            ComPtr<ID3D12ShaderReflection> shader_reflection;
-            ComPtr<ID3D12LibraryReflection> library_reflection;
+            CComPtr<ID3D12ShaderReflection> shader_reflection;
+            CComPtr<ID3D12LibraryReflection> library_reflection;
             if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&shader_reflection)))) {
                 ParseShaderReflection(shader_reflection);
             } else if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&library_reflection)))) {
@@ -123,7 +126,7 @@ DXILReflection::DXILReflection(const void* data, size_t size)
         } else if (kind == hlsl::DxilFourCC::DFCC_ShaderDebugInfoDXIL) {
             ASSERT_SUCCEEDED(reflection->GetPartContent(i, &pdb));
         } else if (kind == hlsl::DxilFourCC::DFCC_FeatureInfo) {
-            ComPtr<IDxcBlob> part;
+            CComPtr<IDxcBlob> part;
             ASSERT_SUCCEEDED(reflection->GetPartContent(i, &part));
             assert(part->GetBufferSize() == sizeof(DxilShaderFeatureInfo));
             auto feature_info = reinterpret_cast<DxilShaderFeatureInfo const*>(part->GetBufferPointer());
@@ -171,9 +174,9 @@ const ShaderFeatureInfo& DXILReflection::GetShaderFeatureInfo() const
     return m_shader_feature_info;
 }
 
-void DXILReflection::ParseRuntimeData(ComPtr<IDxcContainerReflection> reflection, uint32_t idx)
+void DXILReflection::ParseRuntimeData(CComPtr<IDxcContainerReflection> reflection, uint32_t idx)
 {
-    ComPtr<IDxcBlob> part_blob;
+    CComPtr<IDxcBlob> part_blob;
     reflection->GetPartContent(idx, &part_blob);
     hlsl::RDAT::DxilRuntimeData context;
     context.InitFromRDAT(part_blob->GetBufferPointer(), part_blob->GetBufferSize());
@@ -443,7 +446,7 @@ std::vector<VariableLayout> ParseLayout(const T& desc, U* reflection)
 }
 
 std::vector<InputParameterDesc> ParseInputParameters(const D3D12_SHADER_DESC& desc,
-                                                     ComPtr<ID3D12ShaderReflection> shader_reflection)
+                                                     CComPtr<ID3D12ShaderReflection> shader_reflection)
 {
     std::vector<InputParameterDesc> input_parameters;
     D3D12_SHADER_VERSION_TYPE type = static_cast<D3D12_SHADER_VERSION_TYPE>((desc.Version & 0xFFFF0000) >> 16);
@@ -497,7 +500,7 @@ std::vector<InputParameterDesc> ParseInputParameters(const D3D12_SHADER_DESC& de
 }
 
 std::vector<OutputParameterDesc> ParseOutputParameters(const D3D12_SHADER_DESC& desc,
-                                                       ComPtr<ID3D12ShaderReflection> shader_reflection)
+                                                       CComPtr<ID3D12ShaderReflection> shader_reflection)
 {
     std::vector<OutputParameterDesc> output_parameters;
     D3D12_SHADER_VERSION_TYPE type = static_cast<D3D12_SHADER_VERSION_TYPE>((desc.Version & 0xFFFF0000) >> 16);
@@ -516,20 +519,20 @@ std::vector<OutputParameterDesc> ParseOutputParameters(const D3D12_SHADER_DESC& 
     return output_parameters;
 }
 
-void DXILReflection::ParseShaderReflection(ComPtr<ID3D12ShaderReflection> shader_reflection)
+void DXILReflection::ParseShaderReflection(CComPtr<ID3D12ShaderReflection> shader_reflection)
 {
     D3D12_SHADER_DESC desc = {};
     ASSERT_SUCCEEDED(shader_reflection->GetDesc(&desc));
     hlsl::DXIL::ShaderKind kind = hlsl::GetVersionShaderType(desc.Version);
     m_entry_points.push_back({ "", ConvertShaderKind(kind) });
-    m_bindings = ParseReflection(desc, shader_reflection.Get());
-    m_layouts = ParseLayout(desc, shader_reflection.Get());
+    m_bindings = ParseReflection(desc, shader_reflection.p);
+    m_layouts = ParseLayout(desc, shader_reflection.p);
     assert(m_bindings.size() == m_layouts.size());
     m_input_parameters = ParseInputParameters(desc, shader_reflection);
     m_output_parameters = ParseOutputParameters(desc, shader_reflection);
 }
 
-void DXILReflection::ParseLibraryReflection(ComPtr<ID3D12LibraryReflection> library_reflection)
+void DXILReflection::ParseLibraryReflection(CComPtr<ID3D12LibraryReflection> library_reflection)
 {
     D3D12_LIBRARY_DESC library_desc = {};
     ASSERT_SUCCEEDED(library_reflection->GetDesc(&library_desc));
@@ -555,20 +558,22 @@ void DXILReflection::ParseLibraryReflection(ComPtr<ID3D12LibraryReflection> libr
     }
 }
 
-void DXILReflection::ParseDebugInfo(dxc::DxcDllSupport& dxc_support, ComPtr<IDxcBlob> pdb)
+void DXILReflection::ParseDebugInfo(dxc::DxcDllSupport& dxc_support, CComPtr<IDxcBlob> pdb)
 {
-    ComPtr<IDxcLibrary> library;
-    ASSERT_SUCCEEDED(dxc_support.CreateInstance(CLSID_DxcLibrary, library.GetAddressOf()));
-    ComPtr<IStream> stream;
-    ASSERT_SUCCEEDED(library->CreateStreamFromBlobReadOnly(pdb.Get(), &stream));
+#ifdef _WIN32
+    CComPtr<IDxcLibrary> library;
+    ASSERT_SUCCEEDED(dxc_support.CreateInstance(CLSID_DxcLibrary, &library));
+    CComPtr<IStream> stream;
+    ASSERT_SUCCEEDED(library->CreateStreamFromBlobReadOnly(pdb, &stream));
 
-    ComPtr<IDiaDataSource> dia;
-    ASSERT_SUCCEEDED(dxc_support.CreateInstance(CLSID_DxcDiaDataSource, dia.GetAddressOf()));
-    ASSERT_SUCCEEDED(dia->loadDataFromIStream(stream.Get()));
-    ComPtr<IDiaSession> session;
+    CComPtr<IDiaDataSource> dia;
+    ASSERT_SUCCEEDED(dxc_support.CreateInstance(CLSID_DxcDiaDataSource, &dia));
+    ASSERT_SUCCEEDED(dia->loadDataFromIStream(stream));
+    CComPtr<IDiaSession> session;
     ASSERT_SUCCEEDED(dia->openSession(&session));
 
-    ComPtr<IDiaTable> symbols_table = FindTable(session, L"Symbols");
+    CComPtr<IDiaTable> symbols_table = FindTable(session, L"Symbols");
     assert(m_entry_points.size() == 1);
     m_entry_points.front().name = FindStrValue(symbols_table, L"hlslEntry");
+#endif
 }

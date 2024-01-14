@@ -2,9 +2,10 @@
 #include "HLSLCompiler/DXCLoader.h"
 #include "ShaderReflection/ShaderReflection.h"
 
+#ifndef _WIN32
+#define interface struct
+#endif
 #include <directx/d3d12shader.h>
-#include <wrl.h>
-using namespace Microsoft::WRL;
 
 class DXILReflection : public ShaderReflection {
 public:
@@ -17,10 +18,10 @@ public:
     const ShaderFeatureInfo& GetShaderFeatureInfo() const override;
 
 private:
-    void ParseRuntimeData(ComPtr<IDxcContainerReflection> reflection, uint32_t idx);
-    void ParseShaderReflection(ComPtr<ID3D12ShaderReflection> shader_reflection);
-    void ParseLibraryReflection(ComPtr<ID3D12LibraryReflection> library_reflection);
-    void ParseDebugInfo(dxc::DxcDllSupport& dxc_support, ComPtr<IDxcBlob> pdb);
+    void ParseRuntimeData(CComPtr<IDxcContainerReflection> reflection, uint32_t idx);
+    void ParseShaderReflection(CComPtr<ID3D12ShaderReflection> shader_reflection);
+    void ParseLibraryReflection(CComPtr<ID3D12LibraryReflection> library_reflection);
+    void ParseDebugInfo(dxc::DxcDllSupport& dxc_support, CComPtr<IDxcBlob> pdb);
 
     bool m_is_library = false;
     std::vector<EntryPoint> m_entry_points;

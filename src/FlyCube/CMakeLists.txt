@@ -216,8 +216,8 @@ list(APPEND Shader
 )
 
 list(APPEND ShaderReflection
-    $<$<BOOL:${DIRECTX_SUPPORT}>:ShaderReflection/DXILReflection.cpp>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:ShaderReflection/DXILReflection.h>
+    ShaderReflection/DXILReflection.cpp
+    ShaderReflection/DXILReflection.h
     ShaderReflection/ShaderReflection.cpp
     ShaderReflection/ShaderReflection.h
     ShaderReflection/SPIRVReflection.cpp
