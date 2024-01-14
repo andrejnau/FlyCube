@@ -2,6 +2,8 @@
 
 #include "Utilities/Common.h"
 
+namespace {
+
 ShaderKind ConvertShaderKind(spv::ExecutionModel execution_model)
 {
     switch (execution_model) {
@@ -337,6 +339,8 @@ void ParseBindings(const spirv_cross::CompilerHLSL& compiler,
     enumerate_resources(resources.atomic_counters);
     enumerate_resources(resources.acceleration_structures);
 }
+
+} // namespace
 
 SPIRVReflection::SPIRVReflection(const void* data, size_t size)
     : m_blob((const uint32_t*)data, (const uint32_t*)data + size / sizeof(uint32_t))
