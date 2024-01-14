@@ -302,6 +302,10 @@ target_include_directories(FlyCube
         "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
+if (APPLE)
+    target_compile_options(FlyCube PUBLIC "-fobjc-arc")
+endif()
+
 if (BUILD_TESTING)
     add_subdirectory(HLSLCompiler/test)
     add_subdirectory(ShaderReflection/test)
