@@ -12,6 +12,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false)
+        window.title = MetalRenderer.getAppTitle()
         window.contentView = NSHostingView(rootView: ContentView())
         window.center()
         window.makeKeyAndOrderFront(nil)

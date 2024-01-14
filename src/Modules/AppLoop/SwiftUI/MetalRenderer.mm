@@ -6,6 +6,11 @@
     AppRenderer* app_renderer;
 }
 
++ (NSString*)getAppTitle
+{
+    return [[NSString alloc] initWithUTF8String:AppLoop::GetRenderer().GetTitle().data()];
+}
+
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size
 {
     AppSize app_size(size.width, size.height);
