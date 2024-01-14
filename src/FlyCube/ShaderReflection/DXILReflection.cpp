@@ -8,10 +8,6 @@
 #include <dxc/DxilContainer/DxilRuntimeReflection.inl>
 #include <nowide/convert.hpp>
 
-#ifdef _WIN32
-#include <dia2.h>
-#endif
-
 #include <algorithm>
 #include <set>
 
@@ -46,54 +42,6 @@ ShaderKind ConvertShaderKind(hlsl::DXIL::ShaderKind kind)
     assert(false);
     return ShaderKind::kUnknown;
 }
-
-#ifdef _WIN32
-CComPtr<IDiaTable> FindTable(CComPtr<IDiaSession> session, const std::wstring& name)
-{
-    CComPtr<IDiaEnumTables> enum_tables;
-    session->getEnumTables(&enum_tables);
-    LONG count = 0;
-    enum_tables->get_Count(&count);
-    for (LONG i = 0; i < count; ++i) {
-        ULONG fetched = 0;
-        CComPtr<IDiaTable> table;
-        enum_tables->Next(1, &table, &fetched);
-        CComBSTR table_name;
-        table->get_name(&table_name);
-        if (table_name.m_str == name) {
-            return table;
-        }
-    }
-    return nullptr;
-}
-
-std::string FindStrValue(CComPtr<IDiaTable> table, const std::wstring& name)
-{
-    LONG count = 0;
-    table->get_Count(&count);
-    for (LONG i = 0; i < count; ++i) {
-        CComPtr<IUnknown> item;
-        table->Item(i, &item);
-        CComPtr<IDiaSymbol> symbol;
-        if (FAILED(item.QueryInterface(&symbol))) {
-            continue;
-        }
-
-        CComBSTR item_name;
-        symbol->get_name(&item_name);
-        if (!item_name || item_name.m_str != name) {
-            continue;
-        }
-
-        VARIANT value = {};
-        symbol->get_value(&value);
-        if (value.vt == VT_BSTR) {
-            return nowide::narrow(value.bstrVal);
-        }
-    }
-    return "";
-}
-#endif
 
 DXILReflection::DXILReflection(const void* data, size_t size)
 {
@@ -560,20 +508,11 @@ void DXILReflection::ParseLibraryReflection(CComPtr<ID3D12LibraryReflection> lib
 
 void DXILReflection::ParseDebugInfo(dxc::DxcDllSupport& dxc_support, CComPtr<IDxcBlob> pdb)
 {
-#ifdef _WIN32
-    CComPtr<IDxcLibrary> library;
-    ASSERT_SUCCEEDED(dxc_support.CreateInstance(CLSID_DxcLibrary, &library));
-    CComPtr<IStream> stream;
-    ASSERT_SUCCEEDED(library->CreateStreamFromBlobReadOnly(pdb, &stream));
-
-    CComPtr<IDiaDataSource> dia;
-    ASSERT_SUCCEEDED(dxc_support.CreateInstance(CLSID_DxcDiaDataSource, &dia));
-    ASSERT_SUCCEEDED(dia->loadDataFromIStream(stream));
-    CComPtr<IDiaSession> session;
-    ASSERT_SUCCEEDED(dia->openSession(&session));
-
-    CComPtr<IDiaTable> symbols_table = FindTable(session, L"Symbols");
+    CComPtr<IDxcPdbUtils2> pdb_utils;
+    ASSERT_SUCCEEDED(dxc_support.CreateInstance(CLSID_DxcPdbUtils, &pdb_utils));
+    ASSERT_SUCCEEDED(pdb_utils->Load(pdb));
+    CComPtr<IDxcBlobWide> entry_point;
+    ASSERT_SUCCEEDED(pdb_utils->GetEntryPoint(&entry_point));
     assert(m_entry_points.size() == 1);
-    m_entry_points.front().name = FindStrValue(symbols_table, L"hlslEntry");
-#endif
+    m_entry_points.front().name = nowide::narrow(entry_point->GetStringPointer());
 }

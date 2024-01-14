@@ -280,7 +280,6 @@ endif()
 
 target_link_libraries(FlyCube
     $<$<BOOL:${DIRECTX_SUPPORT}>:d3d12>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:dia>
     $<$<BOOL:${DIRECTX_SUPPORT}>:DirectX-Headers>
     $<$<BOOL:${DIRECTX_SUPPORT}>:dxgi>
     $<$<BOOL:${DIRECTX_SUPPORT}>:dxguid>
