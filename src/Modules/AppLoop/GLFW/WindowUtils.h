@@ -5,6 +5,6 @@
 
 #include <string_view>
 
-GLFWwindow* CreateWindow(const std::string_view& title);
+GLFWwindow* CreateWindowWithDefaultSize(const std::string_view& title);
 AppSize GetSurfaceSize(GLFWwindow* window);
 void* GetNativeWindow(GLFWwindow* window);
