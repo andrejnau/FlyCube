@@ -90,13 +90,9 @@ void AppBox::UpdateFps()
         std::stringstream buf;
         if (m_last_time > 0) {
             double fps = m_frame_number / delta;
-            buf << "[";
-            if (m_setting.round_fps) {
-                buf << static_cast<int64_t>(std::round(fps));
-            } else {
-                buf << fps;
-            }
-            buf << " FPS]";
+            buf << "(";
+            buf << static_cast<int64_t>(std::round(fps));
+            buf << " FPS)";
             m_fps = buf.str();
         }
         m_frame_number = 0;

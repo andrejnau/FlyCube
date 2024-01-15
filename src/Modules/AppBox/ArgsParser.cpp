@@ -35,8 +35,6 @@ Settings ParseArgs(int argc, char* argv[])
             settings.vsync = true;
         } else if (arg == "--no_vsync") {
             settings.vsync = false;
-        } else if (arg == "--round_fps") {
-            settings.round_fps = true;
         } else if (arg == "--gpu") {
             settings.required_gpu_index = std::stoul(argv[++i]);
         }
