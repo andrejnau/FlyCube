@@ -1,5 +1,6 @@
 #include "ApiType/ApiType.h"
 #include "AppLoop/AppLoop.h"
+#include "AppSettings/ArgsParser.h"
 #include "Instance/Instance.h"
 #include "Utilities/Common.h"
 
@@ -7,7 +8,7 @@
 
 class TriangleRenderer : public AppRenderer {
 public:
-    TriangleRenderer();
+    TriangleRenderer(const Settings& settings);
     void Init(const AppSize& app_size, WindowHandle window) override;
     void Resize(const AppSize& app_size, WindowHandle window) override;
     void Render() override;
@@ -21,6 +22,7 @@ public:
 
     ~TriangleRenderer() override;
 
+    Settings m_settings;
     std::shared_ptr<Instance> instance;
     std::shared_ptr<Adapter> adapter;
     std::shared_ptr<Device> device;
@@ -45,10 +47,11 @@ public:
     std::shared_ptr<BindingSet> binding_set;
 };
 
-TriangleRenderer::TriangleRenderer()
+TriangleRenderer::TriangleRenderer(const Settings& settings)
+    : m_settings(settings)
 {
-    instance = CreateInstance(ApiType::kMetal);
-    adapter = std::move(instance->EnumerateAdapters().front());
+    instance = CreateInstance(m_settings.api_type);
+    adapter = std::move(instance->EnumerateAdapters()[m_settings.required_gpu_index]);
     device = adapter->CreateDevice();
     command_queue = device->GetCommandQueue(CommandListType::kGraphics);
     fence = device->CreateFence(fence_value);
@@ -56,7 +59,7 @@ TriangleRenderer::TriangleRenderer()
 
 void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
 {
-    swapchain = device->CreateSwapchain(window, app_size.width(), app_size.height(), frame_count, false);
+    swapchain = device->CreateSwapchain(window, app_size.width(), app_size.height(), frame_count, m_settings.vsync);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     index_buffer =
@@ -168,5 +171,6 @@ TriangleRenderer::~TriangleRenderer()
 
 int main(int argc, char* argv[])
 {
-    AppLoop::Run(std::make_unique<TriangleRenderer>(), argc, argv);
+    Settings settings = ParseArgs(argc, argv);
+    AppLoop::Run(std::make_unique<TriangleRenderer>(settings), argc, argv);
 }

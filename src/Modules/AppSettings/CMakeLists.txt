@@ -1,7 +1,3 @@
-if (IOS_OR_TVOS)
-    return()
-endif()
-
 list(APPEND headers
     ArgsParser.h
     Settings.h

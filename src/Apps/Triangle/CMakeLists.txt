@@ -18,6 +18,7 @@ add_executable(Triangle MACOSX_BUNDLE
 
 target_link_libraries(Triangle
    AppLoop
+   AppSettings
    FlyCube
 )
 
