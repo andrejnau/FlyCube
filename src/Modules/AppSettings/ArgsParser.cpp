@@ -1,7 +1,9 @@
-#include "AppBox/ArgsParser.h"
+#include "AppSettings/ArgsParser.h"
 
 #include <string>
 #include <vector>
+
+namespace {
 
 std::vector<ApiType> GetSupportedApis()
 {
@@ -17,6 +19,8 @@ std::vector<ApiType> GetSupportedApis()
 #endif
     return res;
 }
+
+} // namespace
 
 Settings ParseArgs(int argc, char* argv[])
 {

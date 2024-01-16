@@ -4,22 +4,20 @@ endif()
 
 list(APPEND headers
     AppBox.h
-    ArgsParser.h
     InputEvents.h
-    Settings.h
     WindowEvents.h
 )
 
 list(APPEND sources
     AppBox.cpp
-    ArgsParser.cpp
 )
 
 add_library(AppBox ${headers} ${sources})
 
 target_link_libraries(AppBox
-    glfw
+    AppSettings
     FlyCube
+    glfw
 )
 
 if (APPLE)

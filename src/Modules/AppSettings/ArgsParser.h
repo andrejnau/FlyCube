@@ -1,6 +1,4 @@
 #pragma once
-#include "AppBox/Settings.h"
-
-#include <cstdint>
+#include "AppSettings/Settings.h"
 
 Settings ParseArgs(int argc, char* argv[]);

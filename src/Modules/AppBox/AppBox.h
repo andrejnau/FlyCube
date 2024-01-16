@@ -1,9 +1,9 @@
 #pragma once
 #include "ApiType/ApiType.h"
 #include "AppBox/InputEvents.h"
-#include "AppBox/Settings.h"
 #include "AppBox/WindowEvents.h"
 #include "AppLoop/AppSize.h"
+#include "AppSettings/Settings.h"
 
 #include <GLFW/glfw3.h>
 

@@ -3,4 +3,5 @@ if (NOT IOS_OR_TVOS)
 endif()
 
 add_subdirectory(AppLoop)
+add_subdirectory(AppSettings)
 add_subdirectory(Utilities)
