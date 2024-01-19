@@ -238,6 +238,19 @@ if (APPLE AND VULKAN_SUPPORT)
     set_property(SOURCE Swapchain/VKSwapchain.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
 endif()
 
+list(APPEND Utilities
+    Utilities/Common.h
+    Utilities/DXGIFormatHelper.cpp
+    Utilities/DXGIFormatHelper.h
+    Utilities/DXUtility.h
+    Utilities/FormatHelper.cpp
+    Utilities/FormatHelper.h
+    Utilities/ScopeGuard.h
+    Utilities/SystemUtils.cpp
+    Utilities/SystemUtils.h
+    Utilities/VKUtility.h
+)
+
 list(APPEND View
     $<$<BOOL:${DIRECTX_SUPPORT}>:View/DXView.cpp>
     $<$<BOOL:${DIRECTX_SUPPORT}>:View/DXView.h>
@@ -271,6 +284,7 @@ add_library(FlyCube
     ${Shader}
     ${ShaderReflection}
     ${Swapchain}
+    ${Utilities}
     ${View}
 )
 
@@ -281,7 +295,6 @@ endif()
 target_link_libraries(FlyCube
     $<$<BOOL:${APPLE}>:-framework\ QuartzCore>
     $<$<BOOL:${DIRECTX_SUPPORT}>:d3d12>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:DirectX-Headers>
     $<$<BOOL:${DIRECTX_SUPPORT}>:dxgi>
     $<$<BOOL:${DIRECTX_SUPPORT}>:dxguid>
     $<$<BOOL:${METAL_SUPPORT}>:-framework\ Metal>
@@ -289,12 +302,14 @@ target_link_libraries(FlyCube
     $<$<BOOL:${UNIX_AND_NOT_APPLE}>:dl>
     $<$<BOOL:${UNIX_AND_NOT_APPLE}>:X11-xcb>
     $<$<BOOL:${VULKAN_SUPPORT}>:vulkan>
+    DirectX-Headers
     dxc
+    gli
+    glm
     nowide
     spirv-cross-core
     spirv-cross-hlsl
     spirv-cross-msl
-    Utilities
 )
 
 target_include_directories(FlyCube
