@@ -28,7 +28,16 @@ if (STATIC_MOLTEN_VK)
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_LINK_LIBRARIES
             "-framework IOSurface"
+            "-framework Metal"
+            "-framework QuartzCore"
     )
+    if (NOT IOS_OR_TVOS)
+        set_property(TARGET vulkan APPEND PROPERTY
+            INTERFACE_LINK_LIBRARIES
+                "-framework AppKit"
+                "-framework IOKit"
+        )
+    endif()
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_COMPILE_DEFINITIONS
             USE_STATIC_MOLTENVK

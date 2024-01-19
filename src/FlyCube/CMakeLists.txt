@@ -279,12 +279,12 @@ if (UNIX AND NOT APPLE)
 endif()
 
 target_link_libraries(FlyCube
+    $<$<BOOL:${APPLE}>:-framework\ QuartzCore>
     $<$<BOOL:${DIRECTX_SUPPORT}>:d3d12>
     $<$<BOOL:${DIRECTX_SUPPORT}>:DirectX-Headers>
     $<$<BOOL:${DIRECTX_SUPPORT}>:dxgi>
     $<$<BOOL:${DIRECTX_SUPPORT}>:dxguid>
     $<$<BOOL:${METAL_SUPPORT}>:-framework\ Metal>
-    $<$<BOOL:${METAL_SUPPORT}>:-framework\ QuartzCore>
     $<$<BOOL:${METAL_SUPPORT}>:MVKPixelFormats>
     $<$<BOOL:${UNIX_AND_NOT_APPLE}>:dl>
     $<$<BOOL:${UNIX_AND_NOT_APPLE}>:X11-xcb>
