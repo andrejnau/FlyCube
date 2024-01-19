@@ -15,7 +15,7 @@
 #include <string_view>
 
 #if defined(__APPLE__)
-#include "Utilities/AutoreleasePool.h"
+#include "AppBox/AutoreleasePool.h"
 #endif
 
 class AppBox {

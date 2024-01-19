@@ -13,16 +13,6 @@ list(APPEND sources
     FormatHelper.cpp
 )
 
-if (APPLE)
-    list(APPEND headers
-        AutoreleasePool.h
-    )
-    list(APPEND sources
-        AutoreleasePool.mm
-    )
-    set_property(SOURCE AutoreleasePool.mm PROPERTY COMPILE_FLAGS "-fno-objc-arc")
-endif()
-
 add_library(Utilities ${headers} ${sources})
 
 target_link_libraries(Utilities
@@ -31,12 +21,6 @@ target_link_libraries(Utilities
     DirectX-Headers
     nowide
 )
-
-if (APPLE)
-    target_link_libraries(Utilities
-        "-framework Foundation"
-    )
-endif()
 
 target_include_directories(Utilities
     PUBLIC

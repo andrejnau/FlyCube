@@ -12,6 +12,16 @@ list(APPEND sources
     AppBox.cpp
 )
 
+if (APPLE)
+    list(APPEND headers
+        AutoreleasePool.h
+    )
+    list(APPEND sources
+        AutoreleasePool.mm
+    )
+    set_property(SOURCE AutoreleasePool.mm PROPERTY COMPILE_FLAGS "-fno-objc-arc")
+endif()
+
 add_library(AppBox ${headers} ${sources})
 
 target_link_libraries(AppBox
@@ -22,6 +32,9 @@ target_link_libraries(AppBox
 
 if (APPLE)
     set_property(SOURCE AppBox.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
+    target_link_libraries(AppBox
+        "-framework Foundation"
+    )
 endif()
 
 if (VULKAN_SUPPORT)
