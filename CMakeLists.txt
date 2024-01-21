@@ -53,3 +53,14 @@ if (BUILD_TESTING)
 endif()
 
 add_subdirectory(src)
+
+if (CMAKE_CROSSCOMPILING AND IOS_OR_TVOS AND BUILD_SAMPLES)
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" "${CMAKE_CURRENT_SOURCE_DIR}" -BmacOS
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" --build macOS --config Release --target ShaderCompilerCLI -j 16
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+endif()

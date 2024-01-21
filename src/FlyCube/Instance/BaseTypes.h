@@ -248,6 +248,8 @@ struct ShaderDesc {
     std::string model;
     std::map<std::string, std::string> define;
 
+    ShaderDesc() = default;
+
     ShaderDesc(const std::string& shader_path, const std::string& entrypoint, ShaderType type, const std::string& model)
         : shader_path(shader_path)
         , entrypoint(entrypoint)

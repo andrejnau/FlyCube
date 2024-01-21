@@ -82,8 +82,8 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     constant_buffer->CommitMemory(MemoryType::kUpload);
     constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));
 
-    auto vertex_path = [[NSBundle mainBundle] pathForResource:@"VertexShader" ofType:@"spv"];
-    auto pixel_path = [[NSBundle mainBundle] pathForResource:@"PixelShader" ofType:@"spv"];
+    auto vertex_path = [[NSBundle mainBundle] pathForResource:@"VertexShader" ofType:@"spirv"];
+    auto pixel_path = [[NSBundle mainBundle] pathForResource:@"PixelShader" ofType:@"spirv"];
     vertex_shader =
         device->CreateShader(ReadBinaryFile([vertex_path UTF8String]), ShaderBlobType::kSPIRV, ShaderType::kVertex);
     pixel_shader =
