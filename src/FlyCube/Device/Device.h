@@ -81,4 +81,5 @@ public:
                                                          BuildAccelerationStructureFlags flags) const = 0;
     virtual RaytracingASPrebuildInfo GetTLASPrebuildInfo(uint32_t instance_count,
                                                          BuildAccelerationStructureFlags flags) const = 0;
+    virtual ShaderBlobType GetSupportedShaderBlobType() const = 0;
 };

@@ -73,6 +73,7 @@ public:
                                                  BuildAccelerationStructureFlags flags) const override;
     RaytracingASPrebuildInfo GetTLASPrebuildInfo(uint32_t instance_count,
                                                  BuildAccelerationStructureFlags flags) const override;
+    ShaderBlobType GetSupportedShaderBlobType() const override;
 
     DXAdapter& GetAdapter();
     ComPtr<ID3D12Device> GetDevice();

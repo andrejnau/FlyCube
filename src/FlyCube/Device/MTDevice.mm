@@ -350,6 +350,11 @@ RaytracingASPrebuildInfo MTDevice::GetTLASPrebuildInfo(uint32_t instance_count,
     return prebuild_info;
 }
 
+ShaderBlobType MTDevice::GetSupportedShaderBlobType() const
+{
+    return ShaderBlobType::kSPIRV;
+}
+
 const id<MTLDevice>& MTDevice::GetDevice() const
 {
     return m_device;

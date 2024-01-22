@@ -89,6 +89,7 @@ public:
                                                  BuildAccelerationStructureFlags flags) const override;
     RaytracingASPrebuildInfo GetTLASPrebuildInfo(uint32_t instance_count,
                                                  BuildAccelerationStructureFlags flags) const override;
+    ShaderBlobType GetSupportedShaderBlobType() const override;
 
     const id<MTLDevice>& GetDevice() const;
     MVKPixelFormats& GetMVKPixelFormats();

@@ -572,6 +572,11 @@ RaytracingASPrebuildInfo DXDevice::GetTLASPrebuildInfo(uint32_t instance_count,
     return GetAccelerationStructurePrebuildInfo(inputs);
 }
 
+ShaderBlobType DXDevice::GetSupportedShaderBlobType() const
+{
+    return ShaderBlobType::kDXIL;
+}
+
 DXAdapter& DXDevice::GetAdapter()
 {
     return m_adapter;

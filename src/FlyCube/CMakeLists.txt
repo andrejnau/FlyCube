@@ -239,6 +239,7 @@ if (APPLE AND VULKAN_SUPPORT)
 endif()
 
 list(APPEND Utilities
+    Utilities/Common.cpp
     Utilities/Common.h
     Utilities/DXGIFormatHelper.cpp
     Utilities/DXGIFormatHelper.h
@@ -250,6 +251,10 @@ list(APPEND Utilities
     Utilities/SystemUtils.h
     Utilities/VKUtility.h
 )
+
+if (APPLE AND VULKAN_SUPPORT)
+    set_property(SOURCE Utilities/Common.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
+endif()
 
 list(APPEND View
     $<$<BOOL:${DIRECTX_SUPPORT}>:View/DXView.cpp>
@@ -293,6 +298,7 @@ if (UNIX AND NOT APPLE)
 endif()
 
 target_link_libraries(FlyCube
+    $<$<BOOL:${APPLE}>:-framework\ Foundation>
     $<$<BOOL:${APPLE}>:-framework\ QuartzCore>
     $<$<BOOL:${DIRECTX_SUPPORT}>:d3d12>
     $<$<BOOL:${DIRECTX_SUPPORT}>:dxgi>

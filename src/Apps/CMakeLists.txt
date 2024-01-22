@@ -6,6 +6,4 @@ if (NOT IOS_OR_TVOS)
     add_subdirectory(CoreTriangle)
 endif()
 
-if (APPLE)
-    add_subdirectory(Triangle)
-endif()
+add_subdirectory(Triangle)

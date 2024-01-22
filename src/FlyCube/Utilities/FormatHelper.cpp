@@ -1,9 +1,6 @@
 #include "Utilities/FormatHelper.h"
 
-inline uint32_t Align(uint32_t size, uint32_t alignment)
-{
-    return (size + (alignment - 1)) & ~(alignment - 1);
-}
+#include "Utilities/Common.h"
 
 void GetFormatInfo(size_t width,
                    size_t height,

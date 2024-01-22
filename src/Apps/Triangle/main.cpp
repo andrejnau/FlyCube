@@ -4,8 +4,6 @@
 #include "Instance/Instance.h"
 #include "Utilities/Common.h"
 
-#import <Foundation/Foundation.h>
-
 class TriangleRenderer : public AppRenderer {
 public:
     TriangleRenderer(const Settings& settings);
@@ -82,12 +80,17 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     constant_buffer->CommitMemory(MemoryType::kUpload);
     constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));
 
-    auto vertex_path = [[NSBundle mainBundle] pathForResource:@"VertexShader" ofType:@"spirv"];
-    auto pixel_path = [[NSBundle mainBundle] pathForResource:@"PixelShader" ofType:@"spirv"];
-    vertex_shader =
-        device->CreateShader(ReadBinaryFile([vertex_path UTF8String]), ShaderBlobType::kSPIRV, ShaderType::kVertex);
-    pixel_shader =
-        device->CreateShader(ReadBinaryFile([pixel_path UTF8String]), ShaderBlobType::kSPIRV, ShaderType::kPixel);
+    ShaderBlobType blob_type = device->GetSupportedShaderBlobType();
+    std::string shader_blob_ext;
+    if (blob_type == ShaderBlobType::kDXIL) {
+        shader_blob_ext = ".dxil";
+    } else {
+        shader_blob_ext = ".spirv";
+    }
+    std::string vertex_path = GetAssertPath("asserts/Triangle/VertexShader.hlsl" + shader_blob_ext);
+    std::string pixel_path = GetAssertPath("asserts/Triangle/PixelShader.hlsl" + shader_blob_ext);
+    vertex_shader = device->CreateShader(ReadBinaryFile(vertex_path), ShaderBlobType::kSPIRV, ShaderType::kVertex);
+    pixel_shader = device->CreateShader(ReadBinaryFile(pixel_path), ShaderBlobType::kSPIRV, ShaderType::kPixel);
     program = device->CreateProgram({ vertex_shader, pixel_shader });
 
     ViewDesc constant_view_desc = {};

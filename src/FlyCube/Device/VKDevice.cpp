@@ -774,6 +774,11 @@ RaytracingASPrebuildInfo VKDevice::GetTLASPrebuildInfo(uint32_t instance_count,
     return GetAccelerationStructurePrebuildInfo(acceleration_structure_info, { instance_count });
 }
 
+ShaderBlobType VKDevice::GetSupportedShaderBlobType() const
+{
+    return ShaderBlobType::kSPIRV;
+}
+
 VKAdapter& VKDevice::GetAdapter()
 {
     return m_adapter;

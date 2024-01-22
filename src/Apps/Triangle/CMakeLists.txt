@@ -1,5 +1,5 @@
 list(APPEND sources
-   main.mm
+   main.cpp
 )
 
 set(shaders_path "${assets_path}/shaders/CoreTriangle")
@@ -19,16 +19,19 @@ set_property(SOURCE ${pixel_shaders} PROPERTY SHADER_TYPE Pixel)
 set(shaders_files ${pixel_shaders} ${vertex_shaders})
 
 include(compile_shaders)
-compile_shaders(Triangle "${shaders_files}" resources)
+compile_shaders(Triangle "${shaders_path}" "asserts/Triangle" "${shaders_files}" resources)
 
-set_source_files_properties(${resources} PROPERTIES
-   MACOSX_PACKAGE_LOCATION Resources
-)
-
-add_executable(Triangle MACOSX_BUNDLE
+add_executable(Triangle WIN32 MACOSX_BUNDLE
    ${resources}
+   ${shaders_files}
    ${sources}
 )
+
+if (WIN32)
+    set_target_properties(Triangle PROPERTIES
+        LINK_FLAGS "/ENTRY:mainCRTStartup"
+    )
+endif()
 
 target_link_libraries(Triangle
    AppLoop
