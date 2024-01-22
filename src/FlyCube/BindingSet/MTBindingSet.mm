@@ -173,6 +173,7 @@ MTBindingSet::MTBindingSet(MTDevice& device, const std::shared_ptr<MTBindingSetL
     , m_layout(layout)
 {
     if (!UseArgumentBuffers()) {
+        m_direct_bind_keys = m_layout->GetBindKeys();
         return;
     }
 
