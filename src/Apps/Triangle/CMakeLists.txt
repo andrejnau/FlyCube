@@ -19,7 +19,7 @@ set_property(SOURCE ${pixel_shaders} PROPERTY SHADER_TYPE Pixel)
 set(shaders_files ${pixel_shaders} ${vertex_shaders})
 
 include(compile_shaders)
-compile_shaders(Triangle "${shaders_path}" "asserts/Triangle" "${shaders_files}" resources)
+compile_shaders("${shaders_path}" "asserts/Triangle" "${shaders_files}" resources)
 
 add_executable(Triangle WIN32 MACOSX_BUNDLE
    ${resources}

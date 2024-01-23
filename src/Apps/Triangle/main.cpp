@@ -89,8 +89,8 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     }
     std::string vertex_path = GetAssertPath("asserts/Triangle/VertexShader.hlsl" + shader_blob_ext);
     std::string pixel_path = GetAssertPath("asserts/Triangle/PixelShader.hlsl" + shader_blob_ext);
-    vertex_shader = device->CreateShader(ReadBinaryFile(vertex_path), ShaderBlobType::kSPIRV, ShaderType::kVertex);
-    pixel_shader = device->CreateShader(ReadBinaryFile(pixel_path), ShaderBlobType::kSPIRV, ShaderType::kPixel);
+    vertex_shader = device->CreateShader(ReadBinaryFile(vertex_path), blob_type, ShaderType::kVertex);
+    pixel_shader = device->CreateShader(ReadBinaryFile(pixel_path), blob_type, ShaderType::kPixel);
     program = device->CreateProgram({ vertex_shader, pixel_shader });
 
     ViewDesc constant_view_desc = {};
