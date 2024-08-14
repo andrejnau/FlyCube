@@ -40,9 +40,10 @@ ShaderKind ConvertShaderKind(hlsl::DXIL::ShaderKind kind)
         return ShaderKind::kMesh;
     case hlsl::DXIL::ShaderKind::Amplification:
         return ShaderKind::kAmplification;
+    default:
+        assert(false);
+        return ShaderKind::kUnknown;
     }
-    assert(false);
-    return ShaderKind::kUnknown;
 }
 
 bool IsBufferDimension(D3D_SRV_DIMENSION dimension)

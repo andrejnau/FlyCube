@@ -48,6 +48,8 @@ MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, co
     case ViewType::kRWTexture:
         CreateTextureView();
         break;
+    default:
+        break;
     }
 
     if (m_view_desc.bindless) {

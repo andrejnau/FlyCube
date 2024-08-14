@@ -30,9 +30,10 @@ vk::ShaderStageFlagBits ExecutionModel2Bit(ShaderKind kind)
         return vk::ShaderStageFlagBits::eMissKHR;
     case ShaderKind::kCallable:
         return vk::ShaderStageFlagBits::eCallableKHR;
+    default:
+        assert(false);
+        return {};
     }
-    assert(false);
-    return {};
 }
 
 VKPipeline::VKPipeline(VKDevice& device,

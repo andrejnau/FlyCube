@@ -25,7 +25,8 @@ std::shared_ptr<Instance> CreateInstance(ApiType type)
     case ApiType::kMetal:
         return std::make_shared<MTInstance>();
 #endif
+    default:
+        assert(false);
+        return nullptr;
     }
-    assert(false);
-    return nullptr;
 }

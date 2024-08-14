@@ -608,6 +608,8 @@ vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(c
     case RaytracingGeometryFlags::kNoDuplicateAnyHitInvocation:
         geometry_desc.flags = vk::GeometryFlagBitsKHR::eNoDuplicateAnyHitInvocation;
         break;
+    default:
+        break;
     }
 
     auto vk_vertex_res = std::static_pointer_cast<VKResource>(vertex.res);

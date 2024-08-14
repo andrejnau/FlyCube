@@ -25,9 +25,10 @@ vk::ImageViewType GetImageViewType(ViewDimension dimension)
         return vk::ImageViewType::eCube;
     case ViewDimension::kTextureCubeArray:
         return vk::ImageViewType::eCubeArray;
+    default:
+        assert(false);
+        return {};
     }
-    assert(false);
-    return {};
 }
 
 } // namespace

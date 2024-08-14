@@ -47,9 +47,10 @@ vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
         return vk::ShaderStageFlagBits::eMeshNV;
     case ShaderType::kLibrary:
         return vk::ShaderStageFlagBits::eAll;
+    default:
+        assert(false);
+        return {};
     }
-    assert(false);
-    return {};
 }
 
 VKBindingSetLayout::VKBindingSetLayout(VKDevice& device, const std::vector<BindKey>& descs)

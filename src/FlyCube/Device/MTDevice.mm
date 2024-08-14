@@ -291,6 +291,8 @@ MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(c
     case RaytracingGeometryFlags::kNoDuplicateAnyHitInvocation:
         geometry_desc.allowDuplicateIntersectionFunctionInvocation = false;
         break;
+    default:
+        break;
     }
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;

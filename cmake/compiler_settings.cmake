@@ -16,7 +16,6 @@ else()
     add_compile_options(
         $<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-declarations>
         $<$<COMPILE_LANGUAGE:CXX>:-Wno-shorten-64-to-32>
-        $<$<COMPILE_LANGUAGE:CXX>:-Wno-switch>
         $<$<COMPILE_LANGUAGE:CXX>:-Wno-unguarded-availability-new>
     )
 endif()

@@ -31,9 +31,10 @@ ShaderKind ConvertShaderKind(spv::ExecutionModel execution_model)
         return ShaderKind::kAmplification;
     case spv::ExecutionModel::ExecutionModelMeshNV:
         return ShaderKind::kMesh;
+    default:
+        assert(false);
+        return ShaderKind::kUnknown;
     }
-    assert(false);
-    return ShaderKind::kUnknown;
 }
 
 std::vector<InputParameterDesc> ParseInputParameters(const spirv_cross::Compiler& compiler)
@@ -225,8 +226,10 @@ ReturnType GetReturnType(const spirv_cross::CompilerHLSL& compiler, const spirv_
             return ReturnType::kInt;
         case spirv_cross::SPIRType::BaseType::Double:
             return ReturnType::kDouble;
+        default:
+            assert(false);
+            break;
         }
-        assert(false);
     }
     return ReturnType::kUnknown;
 }
@@ -264,6 +267,8 @@ ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, co
         assert(desc.structure_stride);
         break;
     }
+    default:
+        break;
     }
     return desc;
 }
