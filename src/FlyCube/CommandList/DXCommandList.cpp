@@ -20,6 +20,8 @@
 #include <nowide/convert.hpp>
 #include <pix.h>
 
+#include <stdexcept>
+
 namespace {
 
 D3D12_GPU_VIRTUAL_ADDRESS GetVirtualAddress(const RayTracingShaderTable& table)
@@ -155,6 +157,8 @@ D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE Convert(RenderPassLoadOp op)
         return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR;
     case RenderPassLoadOp::kDontCare:
         return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
+    default:
+        throw std::runtime_error("Wrong RenderPassLoadOp type");
     }
 }
 
@@ -165,6 +169,8 @@ D3D12_RENDER_PASS_ENDING_ACCESS_TYPE Convert(RenderPassStoreOp op)
         return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE;
     case RenderPassStoreOp::kDontCare:
         return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
+    default:
+        throw std::runtime_error("Wrong RenderPassStoreOp type");
     }
 }
 

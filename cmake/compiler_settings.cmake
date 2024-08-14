@@ -10,7 +10,6 @@ if (MSVC)
     add_definitions(-DNOMINMAX)
     add_compile_options(
         /wd4005
-        /wd4715
         /wd4838
     )
 else()
