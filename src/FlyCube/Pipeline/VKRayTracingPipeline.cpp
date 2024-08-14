@@ -70,7 +70,7 @@ std::vector<uint8_t> VKRayTracingPipeline::GetRayTracingShaderGroupHandles(uint3
 {
     std::vector<uint8_t> shader_handles_storage(group_count * m_device.GetShaderGroupHandleSize());
 #ifndef USE_STATIC_MOLTENVK
-    m_device.GetDevice().getRayTracingShaderGroupHandlesKHR(
+    std::ignore = m_device.GetDevice().getRayTracingShaderGroupHandlesKHR(
         m_pipeline.get(), first_group, group_count, shader_handles_storage.size(), shader_handles_storage.data());
 #endif
     return shader_handles_storage;

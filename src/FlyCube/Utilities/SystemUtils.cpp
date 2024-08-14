@@ -32,7 +32,9 @@ std::string GetExecutablePath()
     return buf.data();
 #else
     char buf[PATH_MAX] = {};
-    readlink("/proc/self/exe", buf, std::size(buf) - 1);
+    if (readlink("/proc/self/exe", buf, std::size(buf) - 1) == -1) {
+        return {};
+    }
     return buf;
 #endif
 }
