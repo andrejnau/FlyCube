@@ -96,6 +96,9 @@ public:
                           uint64_t dst_offset) override;
 
     void SetName(const std::string& name) override;
+    
+    void SetGraphicsConstant(uint32_t root_parameter_index, uint32_t value, uint32_t byte_offset);
+    void SetComputeConstant(uint32_t root_parameter_index, uint32_t value, uint32_t byte_offset);
 
     ComPtr<ID3D12GraphicsCommandList> GetCommandList();
 

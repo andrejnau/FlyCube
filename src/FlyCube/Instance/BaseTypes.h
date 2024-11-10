@@ -408,6 +408,7 @@ struct BindKey {
     uint32_t space = 0;
     uint32_t count = 1;
     uint32_t remapped_slot = ~0;
+    bool is_root_constant = false;
 
     uint32_t GetRemappedSlot() const
     {
@@ -419,7 +420,7 @@ struct BindKey {
 
     auto MakeTie() const
     {
-        return std::tie(shader_type, view_type, slot, space, count);
+        return std::tie(shader_type, view_type, slot, space, count, is_root_constant);
     }
 };
 
