@@ -93,6 +93,8 @@ public:
                           const std::shared_ptr<Resource>& dst_buffer,
                           uint64_t dst_offset) override;
 
+    void SetName(const std::string& name);
+
     ComPtr<ID3D12GraphicsCommandList> GetCommandList();
 
 private:

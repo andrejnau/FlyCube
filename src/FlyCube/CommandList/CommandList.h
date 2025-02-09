@@ -102,4 +102,5 @@ public:
                                   uint32_t query_count,
                                   const std::shared_ptr<Resource>& dst_buffer,
                                   uint64_t dst_offset) = 0;
+    virtual void SetName(const std::string& name) = 0;
 };
