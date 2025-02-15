@@ -18,12 +18,19 @@ public:
     id<MTLDepthStencilState> GetDepthStencil();
 
     const GraphicsPipelineDesc& GetDesc() const;
+    const MTLSize& GetAmplificationNumthreads() const;
+    const MTLSize& GetMeshNumthreads() const;
 
 private:
+    template <bool is_mesh_pipeline>
+    void CreatePipeline();
     MTLVertexDescriptor* GetVertexDescriptor(const std::shared_ptr<Shader>& shader);
 
     MTDevice& m_device;
     GraphicsPipelineDesc m_desc;
     id<MTLRenderPipelineState> m_pipeline;
     id<MTLDepthStencilState> m_depth_stencil;
+
+    MTLSize m_amplification_numthreads = {};
+    MTLSize m_mesh_numthreads = {};
 };

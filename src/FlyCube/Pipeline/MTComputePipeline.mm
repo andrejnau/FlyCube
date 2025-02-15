@@ -68,7 +68,7 @@ const ComputePipelineDesc& MTComputePipeline::GetDesc() const
     return m_desc;
 }
 
-const MTLSize MTComputePipeline::GetNumthreads() const
+const MTLSize& MTComputePipeline::GetNumthreads() const
 {
     return m_numthreads;
 }

@@ -359,7 +359,15 @@ void MTCommandList::DispatchMesh(uint32_t thread_group_count_x,
                                  uint32_t thread_group_count_y,
                                  uint32_t thread_group_count_z)
 {
-    assert(false);
+    ApplyState();
+    ApplyAndRecord([&render_encoder = m_render_encoder, state = m_state, thread_group_count_x, thread_group_count_y,
+                    thread_group_count_z] {
+        decltype(auto) mt_state = state->As<MTGraphicsPipeline>();
+        [render_encoder
+                   drawMeshThreadgroups:MTLSizeMake(thread_group_count_x, thread_group_count_y, thread_group_count_z)
+            threadsPerObjectThreadgroup:mt_state.GetAmplificationNumthreads()
+              threadsPerMeshThreadgroup:mt_state.GetMeshNumthreads()];
+    });
 }
 
 void MTCommandList::DispatchRays(const RayTracingShaderTables& shader_tables,

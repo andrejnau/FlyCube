@@ -231,6 +231,7 @@ bool MTDevice::IsVariableRateShadingSupported() const
 
 bool MTDevice::IsMeshShadingSupported() const
 {
+    // return [m_device supportsFamily:MTLGPUFamilyMac2] || [m_device supportsFamily:MTLGPUFamilyApple7];
     return false;
 }
 

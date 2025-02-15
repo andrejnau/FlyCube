@@ -204,7 +204,7 @@ MTLResourceUsage MTView::GetUsage() const
     case ViewType::kRWBuffer:
     case ViewType::kRWStructuredBuffer:
     case ViewType::kRWTexture:
-        return MTLResourceUsageWrite;
+        return MTLResourceUsageRead | MTLResourceUsageWrite;
     default:
         assert(false);
         return MTLResourceUsageRead | MTLResourceUsageWrite;

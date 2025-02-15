@@ -12,10 +12,14 @@ namespace {
 MTLRenderStages GetStage(ShaderType type)
 {
     switch (type) {
-    case ShaderType::kPixel:
-        return MTLRenderStageFragment;
     case ShaderType::kVertex:
         return MTLRenderStageVertex;
+    case ShaderType::kPixel:
+        return MTLRenderStageFragment;
+    case ShaderType::kAmplification:
+        return MTLRenderStageObject;
+    case ShaderType::kMesh:
+        return MTLRenderStageMesh;
     default:
         assert(false);
         return 0;
@@ -41,6 +45,12 @@ void SetBuffer(ShaderType shader_type,
         [encoder setVertexBuffer:buffer offset:offset atIndex:index];
     } else if (shader_type == ShaderType::kPixel) {
         [encoder setFragmentBuffer:buffer offset:offset atIndex:index];
+    } else if (shader_type == ShaderType::kAmplification) {
+        [encoder setObjectBuffer:buffer offset:offset atIndex:index];
+    } else if (shader_type == ShaderType::kMesh) {
+        [encoder setMeshBuffer:buffer offset:offset atIndex:index];
+    } else {
+        assert(false);
     }
 }
 
@@ -53,6 +63,12 @@ void SetSamplerState(ShaderType shader_type, CommandEncoderType encoder, id<MTLS
         [encoder setVertexSamplerState:sampler atIndex:index];
     } else if (shader_type == ShaderType::kPixel) {
         [encoder setFragmentSamplerState:sampler atIndex:index];
+    } else if (shader_type == ShaderType::kAmplification) {
+        [encoder setObjectSamplerState:sampler atIndex:index];
+    } else if (shader_type == ShaderType::kMesh) {
+        [encoder setMeshSamplerState:sampler atIndex:index];
+    } else {
+        assert(false);
     }
 }
 
@@ -65,6 +81,12 @@ void SetTexture(ShaderType shader_type, CommandEncoderType encoder, id<MTLTextur
         [encoder setVertexTexture:texture atIndex:index];
     } else if (shader_type == ShaderType::kPixel) {
         [encoder setFragmentTexture:texture atIndex:index];
+    } else if (shader_type == ShaderType::kAmplification) {
+        [encoder setObjectTexture:texture atIndex:index];
+    } else if (shader_type == ShaderType::kMesh) {
+        [encoder setMeshTexture:texture atIndex:index];
+    } else {
+        assert(false);
     }
 }
 
@@ -80,6 +102,8 @@ void SetAccelerationStructure(ShaderType shader_type,
         [encoder setVertexAccelerationStructure:acceleration_structure atBufferIndex:index];
     } else if (shader_type == ShaderType::kPixel) {
         [encoder setFragmentAccelerationStructure:acceleration_structure atBufferIndex:index];
+    } else {
+        assert(false);
     }
 }
 
@@ -160,7 +184,8 @@ void ApplyDirectArguments(CommandEncoderType encoder,
             } else {
                 [encoder useResource:resource_usage.first
                                usage:resource_usage.second
-                              stages:MTLRenderStageVertex | MTLRenderStageFragment];
+                              stages:MTLRenderStageVertex | MTLRenderStageFragment | MTLRenderStageObject |
+                                     MTLRenderStageMesh];
             }
         }
     }
