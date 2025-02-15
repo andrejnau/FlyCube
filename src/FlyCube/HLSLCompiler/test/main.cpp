@@ -3,11 +3,9 @@
 
 #include <catch2/catch_all.hpp>
 
-#include <iostream>
-
 class ShaderTestCase {
 public:
-    virtual const ShaderDesc& GetShaderDesc() const = 0;
+    virtual ShaderDesc GetShaderDesc() const = 0;
 };
 
 void RunTest(const ShaderTestCase& test_case)
@@ -25,28 +23,31 @@ void RunTest(const ShaderTestCase& test_case)
 
 class TrianglePS : public ShaderTestCase {
 public:
-    const ShaderDesc& GetShaderDesc() const override
+    ShaderDesc GetShaderDesc() const override
     {
-        return m_desc;
+        return { ASSETS_PATH "shaders/CoreTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_3" };
     }
-
-private:
-    ShaderDesc m_desc = { ASSETS_PATH "shaders/CoreTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_3" };
 };
 
 class TriangleVS : public ShaderTestCase {
 public:
-    const ShaderDesc& GetShaderDesc() const override
+    ShaderDesc GetShaderDesc() const override
     {
-        return m_desc;
+        return { ASSETS_PATH "shaders/CoreTriangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_3" };
     }
+};
 
-private:
-    ShaderDesc m_desc = { ASSETS_PATH "shaders/CoreTriangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_3" };
+class MeshletMS : public ShaderTestCase {
+public:
+    ShaderDesc GetShaderDesc() const override
+    {
+        return { ASSETS_PATH "shaders/tests/MeshletMS.hlsl", "main", ShaderType::kMesh, "6_5" };
+    }
 };
 
 TEST_CASE("ShaderReflection")
 {
     RunTest(TrianglePS{});
     RunTest(TriangleVS{});
+    RunTest(MeshletMS{});
 }

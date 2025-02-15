@@ -143,7 +143,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_KHR_MAINTENANCE1_EXTENSION_NAME,
         VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
         VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
-        VK_NV_MESH_SHADER_EXTENSION_NAME,
+        VK_EXT_MESH_SHADER_EXTENSION_NAME,
         VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
     };
 
@@ -159,7 +159,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         if (std::string(extension.extensionName.data()) == VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) {
             m_is_dxr_supported = true;
         }
-        if (std::string(extension.extensionName.data()) == VK_NV_MESH_SHADER_EXTENSION_NAME) {
+        if (std::string(extension.extensionName.data()) == VK_EXT_MESH_SHADER_EXTENSION_NAME) {
             m_is_mesh_shading_supported = true;
         }
         if (std::string(extension.extensionName.data()) == VK_KHR_RAY_QUERY_EXTENSION_NAME) {
@@ -600,7 +600,7 @@ vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(c
                                                                                RaytracingGeometryFlags flags) const
 {
     vk::AccelerationStructureGeometryKHR geometry_desc = {};
-    geometry_desc.geometryType = vk::GeometryTypeNV::eTriangles;
+    geometry_desc.geometryType = vk::GeometryTypeKHR::eTriangles;
     switch (flags) {
     case RaytracingGeometryFlags::kOpaque:
         geometry_desc.flags = vk::GeometryFlagBitsKHR::eOpaque;

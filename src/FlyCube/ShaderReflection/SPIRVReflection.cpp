@@ -15,21 +15,21 @@ ShaderKind ConvertShaderKind(spv::ExecutionModel execution_model)
         return ShaderKind::kGeometry;
     case spv::ExecutionModel::ExecutionModelGLCompute:
         return ShaderKind::kCompute;
-    case spv::ExecutionModel::ExecutionModelRayGenerationNV:
+    case spv::ExecutionModel::ExecutionModelRayGenerationKHR:
         return ShaderKind::kRayGeneration;
-    case spv::ExecutionModel::ExecutionModelIntersectionNV:
+    case spv::ExecutionModel::ExecutionModelIntersectionKHR:
         return ShaderKind::kIntersection;
-    case spv::ExecutionModel::ExecutionModelAnyHitNV:
+    case spv::ExecutionModel::ExecutionModelAnyHitKHR:
         return ShaderKind::kAnyHit;
-    case spv::ExecutionModel::ExecutionModelClosestHitNV:
+    case spv::ExecutionModel::ExecutionModelClosestHitKHR:
         return ShaderKind::kClosestHit;
-    case spv::ExecutionModel::ExecutionModelMissNV:
+    case spv::ExecutionModel::ExecutionModelMissKHR:
         return ShaderKind::kMiss;
-    case spv::ExecutionModel::ExecutionModelCallableNV:
+    case spv::ExecutionModel::ExecutionModelCallableKHR:
         return ShaderKind::kCallable;
-    case spv::ExecutionModel::ExecutionModelTaskNV:
+    case spv::ExecutionModel::ExecutionModelTaskEXT:
         return ShaderKind::kAmplification;
-    case spv::ExecutionModel::ExecutionModelMeshNV:
+    case spv::ExecutionModel::ExecutionModelMeshEXT:
         return ShaderKind::kMesh;
     default:
         assert(false);
