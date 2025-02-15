@@ -618,7 +618,9 @@ void MTCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
 
 void MTCommandList::SetName(const std::string& name)
 {
-    m_command_buffer.label = [NSString stringWithUTF8String:name.c_str()];
+    ApplyAndRecord([&command_buffer = m_command_buffer, name] {
+        command_buffer.label = [NSString stringWithUTF8String:name.c_str()];
+    });
 }
 
 id<MTLCommandBuffer> MTCommandList::GetCommandBuffer()
