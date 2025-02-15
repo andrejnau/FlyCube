@@ -764,6 +764,15 @@ void VKCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
                                          vk::QueryResultFlagBits::eWait);
 }
 
+void VKCommandList::SetName(const std::string& name)
+{
+    vk::DebugUtilsObjectNameInfoEXT info = {};
+    info.pObjectName = name.c_str();
+    info.objectType = vk::ObjectType::eCommandBuffer;
+    info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkCommandBuffer>(m_command_list.get()));
+    m_device.GetDevice().setDebugUtilsObjectNameEXT(info);
+}
+
 vk::CommandBuffer VKCommandList::GetCommandList()
 {
     return m_command_list.get();

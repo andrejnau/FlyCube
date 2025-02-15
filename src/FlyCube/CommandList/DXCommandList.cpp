@@ -734,3 +734,8 @@ ComPtr<ID3D12GraphicsCommandList> DXCommandList::GetCommandList()
 {
     return m_command_list;
 }
+
+void DXCommandList::SetName(const std::string& name)
+{
+    m_command_list->SetName(nowide::widen(name).c_str());
+}

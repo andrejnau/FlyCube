@@ -88,8 +88,10 @@ public:
                           uint32_t query_count,
                           const std::shared_ptr<Resource>& dst_buffer,
                           uint64_t dst_offset) override;
+    void SetName(const std::string& name);
 
     vk::CommandBuffer GetCommandList();
+
 
 private:
     void BuildAccelerationStructure(vk::AccelerationStructureCreateInfoKHR& build_info,
