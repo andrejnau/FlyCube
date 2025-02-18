@@ -2,7 +2,7 @@ list(APPEND sources
    main.cpp
 )
 
-set(shaders_path "${assets_path}/shaders/CoreTriangle")
+set(shaders_path "${assets_path}/shaders/Triangle")
 
 set(pixel_shaders
     ${shaders_path}/PixelShader.hlsl

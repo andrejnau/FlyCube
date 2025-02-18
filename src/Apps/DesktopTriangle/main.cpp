@@ -5,7 +5,7 @@
 int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
-    AppBox app("CoreTriangle", settings);
+    AppBox app("DesktopTriangle", settings);
     AppSize app_size = app.GetAppSize();
 
     std::shared_ptr<Instance> instance = CreateInstance(settings.api_type);
@@ -41,10 +41,10 @@ int main(int argc, char* argv[])
     constant_buffer->CommitMemory(MemoryType::kUpload);
     constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));
 
-    std::shared_ptr<Shader> vertex_shader = device->CompileShader(
-        { ASSETS_PATH "shaders/CoreTriangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" });
-    std::shared_ptr<Shader> pixel_shader = device->CompileShader(
-        { ASSETS_PATH "shaders/CoreTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_0" });
+    std::shared_ptr<Shader> vertex_shader =
+        device->CompileShader({ ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" });
+    std::shared_ptr<Shader> pixel_shader =
+        device->CompileShader({ ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_0" });
     std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
 
     ViewDesc constant_view_desc = {};

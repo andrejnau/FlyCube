@@ -11,7 +11,7 @@
 int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
-    AppBox app("CoreDxrTriangle", settings);
+    AppBox app("DesktopDxrTriangle", settings);
     AppSize app_size = app.GetAppSize();
 
     std::shared_ptr<Instance> instance = CreateInstance(settings.api_type);
@@ -157,12 +157,12 @@ int main(int argc, char* argv[])
     uav_view_desc.dimension = ViewDimension::kTexture2D;
     std::shared_ptr<View> uav_view = device->CreateView(uav, uav_view_desc);
 
-    std::shared_ptr<Shader> library = device->CompileShader(
-        { ASSETS_PATH "shaders/CoreDxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
+    std::shared_ptr<Shader> library =
+        device->CompileShader({ ASSETS_PATH "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
     std::shared_ptr<Shader> library_hit = device->CompileShader(
-        { ASSETS_PATH "shaders/CoreDxrTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" });
+        { ASSETS_PATH "shaders/DxrTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" });
     std::shared_ptr<Shader> library_callable = device->CompileShader(
-        { ASSETS_PATH "shaders/CoreDxrTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" });
+        { ASSETS_PATH "shaders/DxrTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" });
     std::shared_ptr<Program> program = device->CreateProgram({ library, library_hit, library_callable });
     BindKey geometry_key = library->GetBindKey("geometry");
     BindKey result_key = library->GetBindKey("result");

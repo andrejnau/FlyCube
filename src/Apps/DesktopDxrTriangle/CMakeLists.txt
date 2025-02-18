@@ -1,8 +1,8 @@
-set(target CoreDxrTriangle)
+set(target DesktopDxrTriangle)
 
 set(include_path "${CMAKE_CURRENT_SOURCE_DIR}")
 set(source_path "${CMAKE_CURRENT_SOURCE_DIR}")
-set(shaders_path "${assets_path}/shaders/CoreDxrTriangle")
+set(shaders_path "${assets_path}/shaders/DesktopDxrTriangle")
 
 set(sources
     ${source_path}/main.cpp
