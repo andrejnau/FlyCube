@@ -10,12 +10,9 @@
 #import <Foundation/Foundation.h>
 #endif
 
-uint64_t Align(uint64_t size, uint64_t alignment)
-{
-    return (size + (alignment - 1)) & ~(alignment - 1);
-}
+namespace {
 
-std::vector<uint8_t> ReadBinaryFile(const std::string& filepath)
+std::vector<uint8_t> LoadBinaryFile(const std::string& filepath)
 {
     std::ifstream file(filepath, std::ios::binary);
     file.unsetf(std::ios::skipws);
@@ -31,6 +28,24 @@ std::vector<uint8_t> ReadBinaryFile(const std::string& filepath)
     return data;
 }
 
+std::string GetShaderBlob(const std::string& filepath, ShaderBlobType blob_type)
+{
+    std::string shader_blob_ext;
+    if (blob_type == ShaderBlobType::kDXIL) {
+        shader_blob_ext = ".dxil";
+    } else {
+        shader_blob_ext = ".spirv";
+    }
+    return GetAssertPath(filepath + shader_blob_ext);
+}
+
+} // namespace
+
+uint64_t Align(uint64_t size, uint64_t alignment)
+{
+    return (size + (alignment - 1)) & ~(alignment - 1);
+}
+
 std::string GetAssertPath(const std::string& filepath)
 {
 #if defined(__APPLE__)
@@ -43,4 +58,9 @@ std::string GetAssertPath(const std::string& filepath)
     }
 #endif
     return GetExecutableDir() + "\\" + filepath;
+}
+
+std::vector<uint8_t> LoadShaderBlob(const std::string& filepath, ShaderBlobType blob_type)
+{
+    return LoadBinaryFile(GetShaderBlob(filepath, blob_type));
 }

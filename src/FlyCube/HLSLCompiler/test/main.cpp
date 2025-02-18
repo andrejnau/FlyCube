@@ -10,30 +10,34 @@ public:
 
 void RunTest(const ShaderTestCase& test_case)
 {
-    auto dxil_blob = Compile(test_case.GetShaderDesc(), ShaderBlobType::kDXIL);
+    ShaderDesc desc = test_case.GetShaderDesc();
+
+    auto dxil_blob = Compile(desc, ShaderBlobType::kDXIL);
     REQUIRE(!dxil_blob.empty());
 
-    auto spirv_blob = Compile(test_case.GetShaderDesc(), ShaderBlobType::kSPIRV);
+    auto spirv_blob = Compile(desc, ShaderBlobType::kSPIRV);
     REQUIRE(!spirv_blob.empty());
 
-    std::map<std::string, uint32_t> mapping;
-    auto source = GetMSLShader(spirv_blob, mapping);
-    REQUIRE(!source.empty());
-}
-
-class TrianglePS : public ShaderTestCase {
-public:
-    ShaderDesc GetShaderDesc() const override
-    {
-        return { ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_3" };
+    if (desc.type != ShaderType::kLibrary) {
+        std::map<std::string, uint32_t> mapping;
+        auto source = GetMSLShader(spirv_blob, mapping);
+        REQUIRE(!source.empty());
     }
-};
+}
 
 class TriangleVS : public ShaderTestCase {
 public:
     ShaderDesc GetShaderDesc() const override
     {
         return { ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_3" };
+    }
+};
+
+class TrianglePS : public ShaderTestCase {
+public:
+    ShaderDesc GetShaderDesc() const override
+    {
+        return { ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_3" };
     }
 };
 
@@ -61,20 +65,29 @@ public:
     }
 };
 
-class MeshletMS : public ShaderTestCase {
+class MeshTriangleMS : public ShaderTestCase {
 public:
     ShaderDesc GetShaderDesc() const override
     {
-        return { ASSETS_PATH "shaders/tests/MeshletMS.hlsl", "main", ShaderType::kMesh, "6_5" };
+        return { ASSETS_PATH "shaders/MeshTriangle/MeshShader.hlsl", "main", ShaderType::kMesh, "6_5" };
+    }
+};
+
+class MeshTrianglePS : public ShaderTestCase {
+public:
+    ShaderDesc GetShaderDesc() const override
+    {
+        return { ASSETS_PATH "shaders/MeshTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_5" };
     }
 };
 
 TEST_CASE("ShaderReflection")
 {
-    RunTest(TrianglePS{});
     RunTest(TriangleVS{});
+    RunTest(TrianglePS{});
     RunTest(RayTracing{});
     RunTest(RayTracingHit{});
     RunTest(RayTracingCallable{});
-    RunTest(MeshletMS{});
+    RunTest(MeshTriangleMS{});
+    RunTest(MeshTrianglePS{});
 }

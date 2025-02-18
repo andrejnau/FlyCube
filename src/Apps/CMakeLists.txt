@@ -6,4 +6,5 @@ if (NOT IOS_OR_TVOS)
     add_subdirectory(DesktopTriangle)
 endif()
 
+add_subdirectory(MeshTriangle)
 add_subdirectory(Triangle)

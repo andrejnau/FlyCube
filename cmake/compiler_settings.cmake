@@ -11,6 +11,7 @@ if (MSVC)
     add_compile_options(
         /wd4005
         /wd4838
+        /wd5051
     )
 else()
     add_compile_options(

@@ -660,7 +660,9 @@ void MTCommandList::ApplyBindingSet()
     assert(m_state->GetPipelineType() == PipelineType::kGraphics);
 
     ApplyAndRecord([&render_encoder = m_render_encoder, binding_set = m_binding_set, state = m_state] {
-        binding_set->Apply(render_encoder, state);
+        if (binding_set) {
+            binding_set->Apply(render_encoder, state);
+        }
     });
 
     m_last_binding_set = m_binding_set;
