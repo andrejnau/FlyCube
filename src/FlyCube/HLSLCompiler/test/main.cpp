@@ -3,15 +3,8 @@
 
 #include <catch2/catch_all.hpp>
 
-class ShaderTestCase {
-public:
-    virtual ShaderDesc GetShaderDesc() const = 0;
-};
-
-void RunTest(const ShaderTestCase& test_case)
+void RunTest(const ShaderDesc& desc)
 {
-    ShaderDesc desc = test_case.GetShaderDesc();
-
     auto dxil_blob = Compile(desc, ShaderBlobType::kDXIL);
     REQUIRE(!dxil_blob.empty());
 
@@ -25,69 +18,37 @@ void RunTest(const ShaderTestCase& test_case)
     }
 }
 
-class TriangleVS : public ShaderTestCase {
-public:
-    ShaderDesc GetShaderDesc() const override
-    {
-        return { ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_3" };
-    }
-};
-
-class TrianglePS : public ShaderTestCase {
-public:
-    ShaderDesc GetShaderDesc() const override
-    {
-        return { ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_3" };
-    }
-};
-
-class RayTracing : public ShaderTestCase {
-public:
-    ShaderDesc GetShaderDesc() const override
-    {
-        return { ASSETS_PATH "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" };
-    }
-};
-
-class RayTracingHit : public ShaderTestCase {
-public:
-    ShaderDesc GetShaderDesc() const override
-    {
-        return { ASSETS_PATH "shaders/DxrTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" };
-    }
-};
-
-class RayTracingCallable : public ShaderTestCase {
-public:
-    ShaderDesc GetShaderDesc() const override
-    {
-        return { ASSETS_PATH "shaders/DxrTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" };
-    }
-};
-
-class MeshTriangleMS : public ShaderTestCase {
-public:
-    ShaderDesc GetShaderDesc() const override
-    {
-        return { ASSETS_PATH "shaders/MeshTriangle/MeshShader.hlsl", "main", ShaderType::kMesh, "6_5" };
-    }
-};
-
-class MeshTrianglePS : public ShaderTestCase {
-public:
-    ShaderDesc GetShaderDesc() const override
-    {
-        return { ASSETS_PATH "shaders/MeshTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_5" };
-    }
-};
-
-TEST_CASE("ShaderReflection")
+TEST_CASE("TriangleVS")
 {
-    RunTest(TriangleVS{});
-    RunTest(TrianglePS{});
-    RunTest(RayTracing{});
-    RunTest(RayTracingHit{});
-    RunTest(RayTracingCallable{});
-    RunTest(MeshTriangleMS{});
-    RunTest(MeshTrianglePS{});
+    RunTest({ ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_3" });
+}
+
+TEST_CASE("TrianglePS")
+{
+    RunTest({ ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_3" });
+}
+
+TEST_CASE("RayTracing")
+{
+    RunTest({ ASSETS_PATH "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
+}
+
+TEST_CASE("RayTracingHit")
+{
+    RunTest({ ASSETS_PATH "shaders/DxrTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" });
+}
+
+TEST_CASE("RayTracingCallable")
+{
+    RunTest({ ASSETS_PATH "shaders/DxrTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" });
+}
+
+TEST_CASE("MeshTriangleMS")
+{
+    RunTest({ ASSETS_PATH "shaders/MeshTriangle/MeshShader.hlsl", "main", ShaderType::kMesh, "6_5" });
+}
+
+TEST_CASE("MeshTrianglePS")
+{
+    RunTest({ ASSETS_PATH "shaders/MeshTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_5" });
 }

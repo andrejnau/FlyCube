@@ -52,6 +52,11 @@ private:
     ShaderDesc m_desc = { ASSETS_PATH "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" };
 };
 
+TEST_CASE("RayTracing")
+{
+    RunTest(RayTracing{});
+}
+
 class TrianglePS : public ShaderTestCase {
 public:
     const ShaderDesc& GetShaderDesc() const override
@@ -81,6 +86,11 @@ private:
     ShaderDesc m_desc = { ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_3" };
 };
 
+TEST_CASE("TrianglePS")
+{
+    RunTest(TrianglePS{});
+}
+
 class TriangleVS : public ShaderTestCase {
 public:
     const ShaderDesc& GetShaderDesc() const override
@@ -106,9 +116,7 @@ private:
     ShaderDesc m_desc = { ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_3" };
 };
 
-TEST_CASE("ShaderReflection")
+TEST_CASE("TriangleVS")
 {
-    RunTest(RayTracing{});
-    RunTest(TrianglePS{});
     RunTest(TriangleVS{});
 }
