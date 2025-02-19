@@ -4,11 +4,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 if (MSVC)
-    add_compile_options("/MP")
-    add_definitions(-DUNICODE -D_UNICODE)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    add_definitions(-DNOMINMAX)
+    add_compile_definitions(
+        UNICODE
+        _UNICODE
+        _CRT_SECURE_NO_WARNINGS
+        NOMINMAX
+    )
     add_compile_options(
+        /MP
         /wd4005
         /wd4838
         /wd5051
@@ -22,11 +25,11 @@ else()
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    add_definitions(-DTARGET_IOS=1)
+    add_compile_definitions(TARGET_IOS=1)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
-    add_definitions(-DTARGET_TVOS=1)
+    add_compile_definitions(TARGET_TVOS=1)
 else()
-    add_definitions(-DTARGET_MACOS=1)
+    add_compile_definitions(TARGET_MACOS=1)
 endif()
 
 if (CMAKE_SIZEOF_VOID_P STREQUAL "4")
