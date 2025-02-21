@@ -31,15 +31,12 @@ private:
     std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists;
     std::shared_ptr<Resource> m_index_buffer;
     std::shared_ptr<Resource> m_vertex_buffer;
-    std::shared_ptr<Resource> m_constant_buffer;
     std::shared_ptr<Shader> m_vertex_shader;
     std::shared_ptr<Shader> m_pixel_shader;
     std::shared_ptr<Program> m_program;
+    std::shared_ptr<BindingSetLayout> m_layout;
     std::shared_ptr<RenderPass> m_render_pass;
     std::shared_ptr<Pipeline> m_pipeline;
-    std::shared_ptr<View> m_constant_view;
-    std::shared_ptr<BindingSetLayout> m_layout;
-    std::shared_ptr<BindingSet> m_binding_set;
 };
 
 TriangleRenderer::TriangleRenderer(const Settings& settings)
@@ -77,27 +74,13 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_vertex_buffer->CommitMemory(MemoryType::kUpload);
     m_vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 
-    glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
-    m_constant_buffer = m_device->CreateBuffer(BindFlag::kConstantBuffer | BindFlag::kCopyDest, sizeof(constant_data));
-    m_constant_buffer->CommitMemory(MemoryType::kUpload);
-    m_constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));
-
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
-
-    std::vector<uint8_t> vertex_blob = LoadShaderBlob("asserts/Triangle/VertexShader.hlsl", blob_type);
-    std::vector<uint8_t> pixel_blob = LoadShaderBlob("asserts/Triangle/PixelShader.hlsl", blob_type);
+    std::vector<uint8_t> vertex_blob = LoadShaderBlob("assets/Triangle/VertexShader.hlsl", blob_type);
+    std::vector<uint8_t> pixel_blob = LoadShaderBlob("assets/Triangle/PixelShaderNoBindings.hlsl", blob_type);
     m_vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
     m_program = m_device->CreateProgram({ m_vertex_shader, m_pixel_shader });
-
-    ViewDesc constant_view_desc = {};
-    constant_view_desc.view_type = ViewType::kConstantBuffer;
-    constant_view_desc.dimension = ViewDimension::kBuffer;
-    m_constant_view = m_device->CreateView(m_constant_buffer, constant_view_desc);
-    BindKey settings_key = { ShaderType::kPixel, ViewType::kConstantBuffer, 0, 0, 1 };
-    m_layout = m_device->CreateBindingSetLayout({ settings_key });
-    m_binding_set = m_device->CreateBindingSet(m_layout);
-    m_binding_set->WriteBindings({ { settings_key, m_constant_view } });
+    m_layout = m_device->CreateBindingSetLayout({});
 
     RenderPassDesc render_pass_desc = {
         { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
@@ -128,7 +111,6 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         decltype(auto) command_list = m_command_lists[i];
         command_list = m_device->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(m_pipeline);
-        command_list->BindBindingSet(m_binding_set);
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->IASetIndexBuffer(m_index_buffer, gli::format::FORMAT_R32_UINT_PACK32);

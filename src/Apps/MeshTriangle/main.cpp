@@ -34,6 +34,7 @@ private:
     std::shared_ptr<Shader> m_mesh_shader;
     std::shared_ptr<Shader> m_pixel_shader;
     std::shared_ptr<Program> m_program;
+    std::shared_ptr<BindingSetLayout> m_layout;
     std::shared_ptr<RenderPass> m_render_pass;
     std::shared_ptr<Pipeline> m_pipeline;
 };
@@ -61,11 +62,12 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
-    std::vector<uint8_t> mesh_blob = LoadShaderBlob("asserts/MeshTriangle/MeshShader.hlsl", blob_type);
-    std::vector<uint8_t> pixel_blob = LoadShaderBlob("asserts/MeshTriangle/PixelShader.hlsl", blob_type);
+    std::vector<uint8_t> mesh_blob = LoadShaderBlob("assets/MeshTriangle/MeshShader.hlsl", blob_type);
+    std::vector<uint8_t> pixel_blob = LoadShaderBlob("assets/MeshTriangle/PixelShader.hlsl", blob_type);
     m_mesh_shader = m_device->CreateShader(mesh_blob, blob_type, ShaderType::kMesh);
     m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
     m_program = m_device->CreateProgram({ m_mesh_shader, m_pixel_shader });
+    m_layout = m_device->CreateBindingSetLayout({});
 
     RenderPassDesc render_pass_desc = {
         { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
@@ -74,7 +76,7 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
     GraphicsPipelineDesc pipeline_desc = {
         m_program,
-        /*layout=*/{},
+        m_layout,
         /*input=*/{},
         m_render_pass,
     };

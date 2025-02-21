@@ -627,7 +627,7 @@ vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(c
             m_device->getBufferAddress({ vk_index_res->buffer.res.get() }) + index.offset * index_stride;
         geometry_desc.geometry.triangles.indexType = GetVkIndexType(index.format);
     } else {
-        geometry_desc.geometry.triangles.indexType = vk::IndexType::eNoneNV;
+        geometry_desc.geometry.triangles.indexType = vk::IndexType::eNoneKHR;
     }
 
     return geometry_desc;

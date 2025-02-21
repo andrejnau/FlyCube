@@ -8,12 +8,26 @@
 
 #if defined(__APPLE__)
 #import <Foundation/Foundation.h>
+#elif defined(__ANDROID__)
+#include <android/asset_manager.h>
 #endif
 
 namespace {
 
+#if defined(__ANDROID__)
+AAssetManager* g_asset_manager = nullptr;
+#endif
+
 std::vector<uint8_t> LoadBinaryFile(const std::string& filepath)
 {
+#if defined(__ANDROID__)
+    AAsset* file = AAssetManager_open(g_asset_manager, filepath.c_str(), AASSET_MODE_BUFFER);
+    auto filesize = AAsset_getLength64(file);
+    std::vector<uint8_t> data(filesize);
+    AAsset_read(file, data.data(), filesize);
+    AAsset_close(file);
+    return data;
+#else
     std::ifstream file(filepath, std::ios::binary);
     file.unsetf(std::ios::skipws);
 
@@ -26,6 +40,7 @@ std::vector<uint8_t> LoadBinaryFile(const std::string& filepath)
     data.reserve(filesize);
     data.insert(data.begin(), std::istream_iterator<uint8_t>(file), std::istream_iterator<uint8_t>());
     return data;
+#endif
 }
 
 std::string GetShaderBlob(const std::string& filepath, ShaderBlobType blob_type)
@@ -56,6 +71,8 @@ std::string GetAssertPath(const std::string& filepath)
     if (resource) {
         return [resource UTF8String];
     }
+#elif defined(__ANDROID__)
+    return filepath;
 #endif
     return GetExecutableDir() + "\\" + filepath;
 }
@@ -64,3 +81,10 @@ std::vector<uint8_t> LoadShaderBlob(const std::string& filepath, ShaderBlobType 
 {
     return LoadBinaryFile(GetShaderBlob(filepath, blob_type));
 }
+
+#if defined(__ANDROID__)
+void SetAAssetManager(AAssetManager* mgr)
+{
+    g_asset_manager = mgr;
+}
+#endif

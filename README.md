@@ -15,7 +15,7 @@ FlyCube is a low-level graphics API is written in C++ on top of `DirectX 12`, `V
 |----------------|--------------------------|-------------------------------|--------------------------|
 | Windows        | :heavy_check_mark:       | :heavy_check_mark:            | :heavy_multiplication_x: |
 | macOS/iOS/tvOS | :heavy_multiplication_x: | :heavy_check_mark: (MoltenVK) | :heavy_check_mark:       |
-| Linux          | :heavy_multiplication_x: | :heavy_check_mark:            | :heavy_multiplication_x: |
+| Linux/Android  | :heavy_multiplication_x: | :heavy_check_mark:            | :heavy_multiplication_x: |
 
 ### Cloning repository
 ```

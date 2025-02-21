@@ -15,9 +15,9 @@ vk::ShaderStageFlagBits ExecutionModel2Bit(ShaderKind kind)
     case ShaderKind::kGeometry:
         return vk::ShaderStageFlagBits::eGeometry;
     case ShaderKind::kAmplification:
-        return vk::ShaderStageFlagBits::eTaskNV;
+        return vk::ShaderStageFlagBits::eTaskEXT;
     case ShaderKind::kMesh:
-        return vk::ShaderStageFlagBits::eMeshNV;
+        return vk::ShaderStageFlagBits::eMeshEXT;
     case ShaderKind::kRayGeneration:
         return vk::ShaderStageFlagBits::eRaygenKHR;
     case ShaderKind::kIntersection:

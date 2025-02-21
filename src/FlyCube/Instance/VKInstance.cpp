@@ -10,6 +10,10 @@
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 #endif
 
+#if defined(__ANDROID__)
+#include <android/log.h>
+#endif
+
 namespace {
 
 bool SkipIt(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type, const std::string& message)
@@ -56,8 +60,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT flags,
         std::stringstream buf;
         buf << pLayerPrefix << " " << to_string(static_cast<vk::DebugReportFlagBitsEXT>(flags)) << " " << pMessage
             << std::endl;
-#ifdef _WIN32
+#if defined(_WIN32)
         OutputDebugStringA(buf.str().c_str());
+#elif defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_DEBUG, "Vulkan-Debug-Message: ", "%s", buf.str().c_str());
 #else
         printf("%s\n", buf.str().c_str());
 #endif
@@ -105,6 +111,8 @@ VKInstance::VKInstance()
         VK_KHR_XCB_SURFACE_EXTENSION_NAME,
 #elif defined(VK_USE_PLATFORM_METAL_EXT)
         VK_EXT_METAL_SURFACE_EXTENSION_NAME,
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+        VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
 #endif
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,

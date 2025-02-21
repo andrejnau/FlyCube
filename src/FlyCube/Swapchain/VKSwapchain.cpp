@@ -37,7 +37,11 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
     vk::MetalSurfaceCreateInfoEXT surface_desc = {};
     surface_desc.pLayer = (__bridge CAMetalLayer*)window;
     m_surface = instance.GetInstance().createMetalSurfaceEXTUnique(surface_desc);
-#elif !defined(__ANDROID__)
+#elif defined(__ANDROID__)
+    vk::AndroidSurfaceCreateInfoKHR surface_desc = {};
+    surface_desc.window = reinterpret_cast<struct ANativeWindow*>(window);
+    m_surface = instance.GetInstance().createAndroidSurfaceKHRUnique(surface_desc);
+#else
     vk::XcbSurfaceCreateInfoKHR surface_desc = {};
     surface_desc.setConnection(XGetXCBConnection(XOpenDisplay(nullptr)));
     surface_desc.setWindow((ptrdiff_t)window);

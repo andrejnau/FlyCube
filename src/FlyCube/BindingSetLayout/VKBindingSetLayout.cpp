@@ -42,9 +42,9 @@ vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
     case ShaderType::kCompute:
         return vk::ShaderStageFlagBits::eCompute;
     case ShaderType::kAmplification:
-        return vk::ShaderStageFlagBits::eTaskNV;
+        return vk::ShaderStageFlagBits::eTaskEXT;
     case ShaderType::kMesh:
-        return vk::ShaderStageFlagBits::eMeshNV;
+        return vk::ShaderStageFlagBits::eMeshEXT;
     case ShaderType::kLibrary:
         return vk::ShaderStageFlagBits::eAll;
     default:

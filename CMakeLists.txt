@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.26)
 project(FlyCube)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS")
@@ -11,8 +11,8 @@ option(VULKAN_SUPPORT "Vulkan support" ON)
 cmake_dependent_option(DIRECTX_SUPPORT "DirectX 12 support" ON "WIN32" OFF)
 option(AGILITY_SDK_REQUIRED "Use Agility SDK" OFF)
 cmake_dependent_option(METAL_SUPPORT "Metal support" ON "APPLE" OFF)
-cmake_dependent_option(BUILD_SAMPLES "Build samples" ON "NOT ANDROID" OFF)
-cmake_dependent_option(BUILD_TESTING "Build unit tests" ON "NOT IOS_OR_TVOS" OFF)
+option(BUILD_SAMPLES "Build samples" ON)
+cmake_dependent_option(BUILD_TESTING "Build unit tests" ON "NOT IOS_OR_TVOS AND NOT ANDROID" OFF)
 
 set(project_root "${CMAKE_CURRENT_SOURCE_DIR}")
 set(assets_path "${project_root}/assets/")
@@ -52,15 +52,15 @@ if (BUILD_TESTING)
     enable_testing()
 endif()
 
-add_subdirectory(src)
-
-if (CMAKE_CROSSCOMPILING AND IOS_OR_TVOS AND BUILD_SAMPLES)
+if (CMAKE_CROSSCOMPILING AND (IOS_OR_TVOS OR ANDROID) AND BUILD_SAMPLES)
     execute_process(
-        COMMAND "${CMAKE_COMMAND}" "${CMAKE_CURRENT_SOURCE_DIR}" -BmacOS
+        COMMAND "${CMAKE_COMMAND}" "${CMAKE_CURRENT_SOURCE_DIR}" -BhostPlatform
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
     execute_process(
-        COMMAND "${CMAKE_COMMAND}" --build macOS --config Release --target ShaderCompilerCLI -j 16
+        COMMAND "${CMAKE_COMMAND}" --build hostPlatform --config Release --target ShaderCompilerCLI -j 16
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
 endif()
+
+add_subdirectory(src)

@@ -6,6 +6,12 @@ if (CMAKE_GENERATOR MATCHES "Xcode")
         INTERFACE
             AppLoopSwiftUI
     )
+elseif(ANDROID)
+    add_subdirectory(Android)
+    target_link_libraries(AppLoop
+        INTERFACE
+            AppLoopAndroid
+    )
 else()
     add_subdirectory(GLFW)
     target_link_libraries(AppLoop

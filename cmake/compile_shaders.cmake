@@ -1,13 +1,13 @@
 function(compile_shaders base_dir output_subdir shaders output_var)
-    if (CMAKE_CROSSCOMPILING AND IOS_OR_TVOS)
-        set(shader_compiler_cli "${CMAKE_BINARY_DIR}/macOS/bin/ShaderCompilerCLI")
+    if (ANDROID)
+        set(output_dir_pref "${ANDROID_ASSETS_DIR}/")
     else()
-        set(shader_compiler_cli "$<TARGET_FILE:ShaderCompilerCLI>")
+        set(output_dir_pref "${CMAKE_BINARY_DIR}/bin/")
     endif()
     if (CMAKE_CONFIGURATION_TYPES)
-        set(output_dir "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${output_subdir}/")
+        set(output_dir "${output_dir_pref}/$<CONFIG>/${output_subdir}/")
     else()
-        set(output_dir "${CMAKE_BINARY_DIR}/bin/${output_subdir}/")
+        set(output_dir "${output_dir_pref}/${output_subdir}/")
     endif()
     set(gen_dir "${CMAKE_BINARY_DIR}/compiled_shaders/${output_subdir}/")
     unset(compiled_shaders)
@@ -22,8 +22,8 @@ function(compile_shaders base_dir output_subdir shaders output_var)
         add_custom_command(OUTPUT ${spirv} ${dxil}
             COMMAND ${CMAKE_COMMAND} -E echo ${shader_name} ${full_shader_path} ${entrypoint} ${type} ${model} ${gen_dir}
             COMMAND ${CMAKE_COMMAND} -E make_directory ${gen_dir}/${shader_folder}
-            COMMAND ${shader_compiler_cli} ${shader_name} ${full_shader_path} ${entrypoint} ${type} ${model} ${gen_dir}
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${gen_dir}/${shader_folder} ${output_dir}/${shader_folder}
+            COMMAND $<TARGET_FILE:ShaderCompilerCLI> ${shader_name} ${full_shader_path} ${entrypoint} ${type} ${model} ${gen_dir}
+            COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${gen_dir}/${shader_folder} ${output_dir}/${shader_folder}
             DEPENDS ShaderCompilerCLI
             MAIN_DEPENDENCY "${full_shader_path}"
         )

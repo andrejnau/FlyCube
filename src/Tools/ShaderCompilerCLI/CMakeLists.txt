@@ -1,4 +1,12 @@
 if (CMAKE_CROSSCOMPILING)
+    set(shader_compiler_cli "${CMAKE_BINARY_DIR}/hostPlatform/bin/ShaderCompilerCLI")
+    if (EXISTS ${shader_compiler_cli})
+        add_executable(ShaderCompilerCLI IMPORTED GLOBAL)
+        set_target_properties(ShaderCompilerCLI PROPERTIES
+            IMPORTED_LOCATION
+                "${shader_compiler_cli}"
+        )
+    endif()
     return()
 endif()
 

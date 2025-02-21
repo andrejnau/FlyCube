@@ -14,13 +14,21 @@ set_property(SOURCE ${shaders_files} PROPERTY SHADER_ENTRYPOINT main)
 set_property(SOURCE ${shaders_files} PROPERTY SHADER_MODEL 6_5)
 
 include(compile_shaders)
-compile_shaders("${shaders_path}" "asserts/MeshTriangle" "${shaders_files}" resources)
+compile_shaders("${shaders_path}" "assets/MeshTriangle" "${shaders_files}" resources)
 
-add_executable(MeshTriangle WIN32 MACOSX_BUNDLE
-   ${resources}
-   ${shaders_files}
-   ${sources}
-)
+if (ANDROID)
+   add_library(MeshTriangle SHARED
+      ${resources}
+      ${shaders_files}
+      ${sources}
+   )
+else()
+   add_executable(MeshTriangle WIN32 MACOSX_BUNDLE
+      ${resources}
+      ${shaders_files}
+      ${sources}
+   )
+endif()
 
 if (WIN32)
     set_target_properties(MeshTriangle PROPERTIES

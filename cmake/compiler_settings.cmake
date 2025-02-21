@@ -32,6 +32,6 @@ else()
     add_compile_definitions(TARGET_MACOS=1)
 endif()
 
-if (CMAKE_SIZEOF_VOID_P STREQUAL "4")
+if (CMAKE_SIZEOF_VOID_P STREQUAL "4" AND NOT CMAKE_CROSSCOMPILING)
     message(FATAL_ERROR "x86 build is not supported")
 endif()

@@ -1,0 +1,17 @@
+[versions]
+agp = "8.8.1"
+kotlin = "1.9.24"
+coreKtx = "1.15.0"
+appcompat = "1.7.0"
+material = "1.12.0"
+gamesActivity = "1.2.2"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-games-activity = { group = "androidx.games", name = "games-activity", version.ref = "gamesActivity" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
