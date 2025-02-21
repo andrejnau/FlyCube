@@ -766,6 +766,22 @@ void VKCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
                                          vk::QueryResultFlagBits::eWait);
 }
 
+void VKCommandList::SetGraphicsConstant(uint32_t root_parameter_index, uint32_t value, uint32_t byte_offset)
+{
+    decltype(auto) pipeline_layout = m_state->GetPipelineLayout();
+    m_command_list->pushConstants(pipeline_layout,
+                                  vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+                                  byte_offset,
+                                  sizeof(value),
+                                  &value);
+}
+
+void VKCommandList::SetComputeConstant(uint32_t root_parameter_index, uint32_t value, uint32_t byte_offset)
+{
+    decltype(auto) pipeline_layout = m_state->GetPipelineLayout();
+    m_command_list->pushConstants(pipeline_layout, vk::ShaderStageFlagBits::eCompute, byte_offset, sizeof(value), &value);
+}
+
 void VKCommandList::SetName(const std::string& name)
 {
     vk::DebugUtilsObjectNameInfoEXT info = {};

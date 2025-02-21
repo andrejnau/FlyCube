@@ -626,6 +626,41 @@ void MTCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
     assert(false);
 }
 
+void MTCommandList::SetGraphicsConstant(uint32_t root_parameter_index, uint32_t value, uint32_t byte_offset)
+{
+    ApplyAndRecord([&command_buffer = m_command_buffer, value, byte_offset] {
+        // Use MTLRenderCommandEncoder for graphics (vertex/fragment) constants
+        id<MTLRenderCommandEncoder> render_encoder = [command_buffer renderCommandEncoder];
+        
+        // Set the constant value for vertex and fragment shaders (example with vertex shader)
+        [render_encoder setVertexBytes:&value
+                                length:sizeof(value)
+                                atIndex:root_parameter_index]; // root_parameter_index used as the buffer index
+        
+        // Optionally set for fragment shader if required
+        [render_encoder setFragmentBytes:&value
+                                 length:sizeof(value)
+                                 atIndex:root_parameter_index]; // root_parameter_index for fragment
+        
+        [render_encoder endEncoding];
+    });
+}
+
+void MTCommandList::SetComputeConstant(uint32_t root_parameter_index, uint32_t value, uint32_t byte_offset)
+{
+    ApplyAndRecord([&command_buffer = m_command_buffer, value, byte_offset] {
+        // Use MTLComputeCommandEncoder for compute shader constants
+        id<MTLComputeCommandEncoder> compute_encoder = [command_buffer computeCommandEncoder];
+        
+        // Set the constant value for compute shaders
+        [compute_encoder setBytes:&value
+                           length:sizeof(value)
+                           atIndex:root_parameter_index]; // root_parameter_index used as buffer index
+        
+        [compute_encoder endEncoding];
+    });
+}
+
 void MTCommandList::SetName(const std::string& name)
 {
     ApplyAndRecord([&command_buffer = m_command_buffer, name] {
