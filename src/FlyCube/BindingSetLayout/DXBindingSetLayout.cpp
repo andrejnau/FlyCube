@@ -94,6 +94,17 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
         return root_param_index;
     };
 
+    auto add_root_constant = [&](uint32_t shader_register, uint32_t register_space, uint32_t num_constants,
+                                 ShaderType shader_type) {
+        D3D12_ROOT_PARAMETER root_constant_param = {};
+        root_constant_param.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        root_constant_param.Constants.Num32BitValues = num_constants;
+        root_constant_param.Constants.ShaderRegister = shader_register;
+        root_constant_param.Constants.RegisterSpace = register_space;
+        root_constant_param.ShaderVisibility = GetVisibility(shader_type);
+        root_parameters.push_back(root_constant_param);
+    };
+
     auto add_bindless_range = [&](ShaderType shader_type, ViewType view_type, uint32_t base_slot, uint32_t space) {
         auto& descriptor_table_range = bindless_ranges.emplace_back();
         descriptor_table_range.RangeType = GetRangeType(view_type);
@@ -115,6 +126,11 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
     for (const auto& bind_key : descs) {
         if (bind_key.count == std::numeric_limits<uint32_t>::max()) {
             add_bindless_range(bind_key.shader_type, bind_key.view_type, bind_key.slot, bind_key.space);
+            continue;
+        }
+
+        if (bind_key.is_root_constant) {
+            add_root_constant(bind_key.slot, bind_key.space, 1, bind_key.shader_type);
             continue;
         }
 

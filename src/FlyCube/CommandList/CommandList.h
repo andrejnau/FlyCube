@@ -104,5 +104,7 @@ public:
                                   uint32_t query_count,
                                   const std::shared_ptr<Resource>& dst_buffer,
                                   uint64_t dst_offset) = 0;
+    virtual void SetGraphicsConstant(uint32_t root_parameter_index, uint32_t value, uint32_t byte_offset) = 0;
+    virtual void SetComputeConstant(uint32_t root_parameter_index, uint32_t value, uint32_t byte_offset) = 0;
     virtual void SetName(const std::string& name) = 0;
 };
