@@ -8,7 +8,7 @@ set(sources
     ${source_path}/main.cpp
 )
 
-add_executable(${target} WIN32 ${headers} ${sources})
+add_executable(${target} WIN32 MACOSX_BUNDLE ${headers} ${sources})
 
 if (WIN32)
     set_target_properties(${target} PROPERTIES
@@ -28,5 +28,3 @@ target_link_libraries(${target}
 )
 
 set_target_properties(${target} PROPERTIES FOLDER "Apps")
-
-install(TARGETS ${target})

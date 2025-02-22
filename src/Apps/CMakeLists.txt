@@ -1,4 +1,5 @@
 if (NOT CMAKE_CROSSCOMPILING)
+    add_subdirectory(DesktopBindless)
     add_subdirectory(DesktopDxrTriangle)
     add_subdirectory(DesktopTriangle)
 endif()

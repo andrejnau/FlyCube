@@ -1,4 +1,4 @@
-add_executable(DesktopTriangle WIN32 main.cpp)
+add_executable(DesktopTriangle WIN32 MACOSX_BUNDLE main.cpp)
 
 if (WIN32)
     set_target_properties(DesktopTriangle PROPERTIES
@@ -13,5 +13,3 @@ target_link_libraries(DesktopTriangle
 )
 
 set_target_properties(DesktopTriangle PROPERTIES FOLDER "Apps")
-
-install(TARGETS DesktopTriangle)

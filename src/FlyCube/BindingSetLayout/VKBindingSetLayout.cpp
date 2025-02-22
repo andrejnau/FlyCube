@@ -2,6 +2,8 @@
 
 #include "Device/VKDevice.h"
 
+#include <set>
+
 vk::DescriptorType GetDescriptorType(ViewType view_type)
 {
     switch (view_type) {
@@ -57,8 +59,12 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device, const std::vector<BindK
 {
     std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> bindings_by_set;
     std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>> bindings_flags_by_set;
+    std::map<uint32_t, std::set<uint32_t>> used_bindings_by_set;
 
     for (const auto& bind_key : descs) {
+        assert(!used_bindings_by_set[bind_key.space].count(bind_key.slot));
+        used_bindings_by_set[bind_key.space].insert(bind_key.slot);
+
         decltype(auto) binding = bindings_by_set[bind_key.space].emplace_back();
         binding.binding = bind_key.slot;
         binding.descriptorType = GetDescriptorType(bind_key.view_type);

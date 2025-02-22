@@ -137,38 +137,47 @@ void SetView(ShaderType shader_type, CommandEncoderType encoder, const std::shar
 void ValidateRemappedSlots(const std::shared_ptr<Pipeline>& state, const std::vector<BindKey>& bind_keys)
 {
 #ifndef NDEBUG
-    decltype(auto) program = state->As<MTPipeline>().GetProgram();
-    for (const auto& bind_key : bind_keys) {
-        decltype(auto) shader = program->GetShader(bind_key.shader_type);
-        uint32_t index = bind_key.GetRemappedSlot();
-        assert(index == shader->As<MTShader>().GetIndex(bind_key));
+    if (UseArgumentBuffers()) {
+        decltype(auto) program = state->As<MTPipeline>().GetProgram();
+        for (const auto& bind_key : bind_keys) {
+            decltype(auto) shader = program->GetShader(bind_key.shader_type);
+            uint32_t index = bind_key.GetRemappedSlot();
+            assert(index == shader->As<MTShader>().GetIndex(bind_key));
+        }
     }
 #endif
 }
 
 template <typename CommandEncoderType>
-void ApplyDirectArguments(CommandEncoderType encoder,
+void ApplyDirectArguments(const std::shared_ptr<Pipeline>& state,
+                          CommandEncoderType encoder,
                           const std::vector<BindKey>& bind_keys,
                           const std::vector<BindingDesc>& bindings,
                           MTDevice& device)
 {
+    decltype(auto) program = state->As<MTPipeline>().GetProgram();
     for (const auto& binding : bindings) {
         const BindKey& bind_key = binding.bind_key;
         if (bind_key.count == ~0) {
             continue;
         }
         decltype(auto) mt_view = std::static_pointer_cast<MTView>(binding.view);
-        uint32_t index = bind_key.GetRemappedSlot();
+        decltype(auto) shader = program->GetShader(bind_key.shader_type);
+        uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
         SetView(bind_key.shader_type, encoder, mt_view, index);
     }
 
     bool has_bindless = false;
     for (const auto& bind_key : bind_keys) {
-        if (bind_key.space < spirv_cross::kMaxArgumentBuffers || bind_key.count != ~0) {
+        if (bind_key.count != ~0) {
             continue;
         }
+        if (UseArgumentBuffers()) {
+            assert(bind_key.space >= spirv_cross::kMaxArgumentBuffers);
+        }
         has_bindless = true;
-        uint32_t index = bind_key.GetRemappedSlot();
+        decltype(auto) shader = program->GetShader(bind_key.shader_type);
+        uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
         auto buffer = device.GetBindlessArgumentBuffer().GetArgumentBuffer();
         SetBuffer(bind_key.shader_type, encoder, buffer, 0, index);
     }
@@ -273,7 +282,7 @@ void MTBindingSet::Apply(id<MTLRenderCommandEncoder> render_encoder, const std::
                                usage:stages_usage.second
                               stages:stages_usage.first];
     }
-    ApplyDirectArguments(render_encoder, m_direct_bind_keys, m_direct_bindings, m_device);
+    ApplyDirectArguments(state, render_encoder, m_direct_bind_keys, m_direct_bindings, m_device);
 }
 
 void MTBindingSet::Apply(id<MTLComputeCommandEncoder> compute_encoder, const std::shared_ptr<Pipeline>& state)
@@ -285,5 +294,5 @@ void MTBindingSet::Apply(id<MTLComputeCommandEncoder> compute_encoder, const std
     for (const auto& [usage, resources] : m_compure_resouces) {
         [compute_encoder useResources:resources.data() count:resources.size() usage:usage];
     }
-    ApplyDirectArguments(compute_encoder, m_direct_bind_keys, m_direct_bindings, m_device);
+    ApplyDirectArguments(state, compute_encoder, m_direct_bind_keys, m_direct_bindings, m_device);
 }

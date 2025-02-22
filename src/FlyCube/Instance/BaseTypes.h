@@ -401,6 +401,8 @@ struct RayTracingShaderTables {
     RayTracingShaderTable callable;
 };
 
+inline constexpr uint32_t kBindlessCount = ~0;
+
 struct BindKey {
     ShaderType shader_type = ShaderType::kUnknown;
     ViewType view_type = ViewType::kUnknown;
