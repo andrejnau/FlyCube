@@ -33,8 +33,8 @@ ShaderBase::ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_typ
         if (is_msl) {
             remapped_slot = m_slot_remapping.at(m_bindings[i].name);
         }
-        BindKey bind_key = { m_shader_type,       m_bindings[i].type,  m_bindings[i].slot,
-                             m_bindings[i].space, m_bindings[i].count, remapped_slot };
+        BindKey bind_key = { m_shader_type, m_bindings[i].type, m_bindings[i].slot, m_bindings[i].space,
+                             m_bindings[i].count };
         m_bind_keys[m_bindings[i].name] = bind_key;
         m_mapping[bind_key] = i;
         m_binding_keys.emplace_back(bind_key);

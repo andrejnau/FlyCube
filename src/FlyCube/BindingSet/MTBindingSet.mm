@@ -9,6 +9,12 @@
 
 namespace {
 
+uint32_t GetRemappedSlot(BindKey key)
+{
+    assert(UseArgumentBuffers());
+    return key.slot;
+}
+
 MTLRenderStages GetStage(ShaderType type)
 {
     switch (type) {
@@ -141,7 +147,7 @@ void ValidateRemappedSlots(const std::shared_ptr<Pipeline>& state, const std::ve
         decltype(auto) program = state->As<MTPipeline>().GetProgram();
         for (const auto& bind_key : bind_keys) {
             decltype(auto) shader = program->GetShader(bind_key.shader_type);
-            uint32_t index = bind_key.GetRemappedSlot();
+            uint32_t index = GetRemappedSlot(bind_key);
             assert(index == shader->As<MTShader>().GetIndex(bind_key));
         }
     }
@@ -218,8 +224,7 @@ MTBindingSet::MTBindingSet(MTDevice& device, const std::shared_ptr<MTBindingSetL
             continue;
         }
         auto shader_space = std::make_pair(bind_key.shader_type, bind_key.space);
-        m_slots_count[shader_space] =
-            std::max(m_slots_count[shader_space], bind_key.GetRemappedSlot() + bind_key.count);
+        m_slots_count[shader_space] = std::max(m_slots_count[shader_space], GetRemappedSlot(bind_key) + bind_key.count);
     }
     for (const auto& [shader_space, slots] : m_slots_count) {
         m_argument_buffers[shader_space] = [m_device.GetDevice() newBufferWithLength:slots * sizeof(uint64_t)
@@ -249,7 +254,7 @@ void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
         decltype(auto) view = std::static_pointer_cast<MTView>(binding.view);
         assert(view->GetViewDesc().view_type == bind_key.view_type);
 
-        uint32_t index = bind_key.GetRemappedSlot();
+        uint32_t index = GetRemappedSlot(bind_key);
         uint32_t slots = m_slots_count[{ bind_key.shader_type, bind_key.space }];
         assert(index < slots);
         uint64_t* arguments =
