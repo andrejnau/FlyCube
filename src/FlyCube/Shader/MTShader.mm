@@ -35,7 +35,7 @@ const std::string& MTShader::GetSource() const
 
 uint32_t MTShader::GetIndex(BindKey bind_key) const
 {
-    return m_slot_remapping.at(m_bindings.at(m_mapping.at(bind_key)).name);
+    return m_slot_remapping.at(GetResourceBinding(bind_key).name);
 }
 
 id<MTLLibrary> MTShader::GetLibrary() const

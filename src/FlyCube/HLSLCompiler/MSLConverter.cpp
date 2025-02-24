@@ -24,6 +24,7 @@ std::map<std::string, uint32_t> ParseBindings(const spirv_cross::CompilerMSL& co
     enumerate_resources(resources.separate_samplers);
     enumerate_resources(resources.atomic_counters);
     enumerate_resources(resources.acceleration_structures);
+    enumerate_resources(resources.push_constant_buffers);
     return mapping;
 }
 

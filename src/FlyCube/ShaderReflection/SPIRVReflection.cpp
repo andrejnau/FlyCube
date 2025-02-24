@@ -343,6 +343,7 @@ void ParseBindings(const spirv_cross::CompilerHLSL& compiler,
     enumerate_resources(resources.separate_samplers);
     enumerate_resources(resources.atomic_counters);
     enumerate_resources(resources.acceleration_structures);
+    enumerate_resources(resources.push_constant_buffers);
 }
 
 } // namespace

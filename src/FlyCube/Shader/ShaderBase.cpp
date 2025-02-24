@@ -82,7 +82,8 @@ const std::vector<ResourceBindingDesc>& ShaderBase::GetResourceBindings() const
 
 const ResourceBindingDesc& ShaderBase::GetResourceBinding(const BindKey& bind_key) const
 {
-    return m_bindings.at(m_mapping.at(bind_key));
+    size_t index = m_mapping.at(bind_key);
+    return m_bindings.at(index);
 }
 
 const std::vector<InputLayoutDesc>& ShaderBase::GetInputLayouts() const
