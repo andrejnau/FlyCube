@@ -55,11 +55,11 @@ endif()
 if (CMAKE_CROSSCOMPILING AND (IOS_OR_TVOS OR ANDROID) AND BUILD_SAMPLES)
     execute_process(
         COMMAND "${CMAKE_COMMAND}" "${CMAKE_CURRENT_SOURCE_DIR}" -BhostPlatform
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
     execute_process(
         COMMAND "${CMAKE_COMMAND}" --build hostPlatform --config Release --target ShaderCompilerCLI -j 16
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
 endif()
 

@@ -9,7 +9,7 @@ endif()
 target_include_directories(dxc INTERFACE "${dxc_include_dir}")
 target_compile_definitions(dxc INTERFACE DXC_CUSTOM_LOCATION="${project_root}/3rdparty/dxc/bin")
 
-set(get_include "${CMAKE_BINARY_DIR}/gen/include")
+set(get_include "${PROJECT_BINARY_DIR}/gen/include")
 configure_file(
     "${dxc_include_dir}/dxc/config.h.cmake"
     "${get_include}/dxc/config.h"
