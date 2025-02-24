@@ -51,7 +51,9 @@ int main(int argc, char* argv[])
     bindless_view_desc.view_type = ViewType::kStructuredBuffer;
     bindless_view_desc.dimension = ViewDimension::kBuffer;
     bindless_view_desc.bindless = true;
+    bindless_view_desc.structure_stride = 4;
     std::shared_ptr<View> index_buffer_view = device->CreateView(index_buffer, bindless_view_desc);
+    bindless_view_desc.structure_stride = 12;
     std::shared_ptr<View> vertex_buffer_view = device->CreateView(vertex_buffer, bindless_view_desc);
 
     std::pair<uint32_t, uint32_t> vertex_constant_data = { index_buffer_view->GetDescriptorId(),
