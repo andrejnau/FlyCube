@@ -722,9 +722,9 @@ void DXCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
 
     decltype(auto) dx_query_heap = query_heap->As<DXRayTracingQueryHeap>();
     decltype(auto) dx_dst_buffer = dst_buffer->As<DXResource>();
-    m_command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dx_query_heap.GetResource().Get(),
-                                                                             D3D12_RESOURCE_STATE_COMMON,
-                                                                             D3D12_RESOURCE_STATE_COPY_SOURCE, 0));
+    m_command_list->ResourceBarrier(
+        1, &CD3DX12_RESOURCE_BARRIER::Transition(dx_query_heap.GetResource().Get(), D3D12_RESOURCE_STATE_COMMON,
+                                                 D3D12_RESOURCE_STATE_COPY_SOURCE, 0));
     m_command_list->CopyBufferRegion(dx_dst_buffer.resource.Get(), dst_offset, dx_query_heap.GetResource().Get(),
                                      first_query * sizeof(uint64_t), query_count * sizeof(uint64_t));
     m_command_list->ResourceBarrier(
