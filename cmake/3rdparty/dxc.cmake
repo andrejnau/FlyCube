@@ -19,3 +19,7 @@ target_include_directories(dxc INTERFACE "${get_include}")
 if (NOT WIN32)
     target_compile_definitions(dxc INTERFACE __EMULATE_UUID)
 endif()
+
+if (CMAKE_SIZEOF_VOID_P STREQUAL "4" AND NOT CMAKE_CROSSCOMPILING)
+    message(FATAL_ERROR "x86 build is not supported due to lack of dxc binaries for this platform")
+endif()

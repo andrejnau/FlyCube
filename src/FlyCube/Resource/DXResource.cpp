@@ -56,10 +56,9 @@ void DXResource::CommitMemory(MemoryType memory_type)
     if (m_device.IsCreateNotZeroedAvailable()) {
         flags |= D3D12_HEAP_FLAG_CREATE_NOT_ZEROED;
     }
-
-    m_device.GetDevice()->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(GetHeapType(m_memory_type)), flags, &desc,
-                                                  ConvertState(GetInitialState()), p_clear_value,
-                                                  IID_PPV_ARGS(&resource));
+    auto heap_properties = CD3DX12_HEAP_PROPERTIES(GetHeapType(m_memory_type));
+    m_device.GetDevice()->CreateCommittedResource(&heap_properties, flags, &desc, ConvertState(GetInitialState()),
+                                                  p_clear_value, IID_PPV_ARGS(&resource));
 }
 
 void DXResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset)

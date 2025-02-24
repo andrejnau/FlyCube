@@ -45,19 +45,20 @@ HRESULT Test(dxc::DxcDllSupport& dll_support, ShaderBlobType target)
 
 std::unique_ptr<dxc::DxcDllSupport> Load(const std::string& path, ShaderBlobType target)
 {
+    std::u8string u8path(path.begin(), path.end());
 #if defined(_WIN32)
-    auto dxcompiler_path = std::filesystem::u8path(path) / "dxcompiler.dll";
+    auto dxcompiler_path = std::filesystem::path(u8path) / "dxcompiler.dll";
 #elif defined(__APPLE__)
-    auto dxcompiler_path = std::filesystem::u8path(path) / "libdxcompiler.dylib";
+    auto dxcompiler_path = std::filesystem::path(u8path) / "libdxcompiler.dylib";
 #else
-    auto dxcompiler_path = std::filesystem::u8path(path) / "libdxcompiler.so";
+    auto dxcompiler_path = std::filesystem::path(u8path) / "libdxcompiler.so";
 #endif
     if (!std::filesystem::exists(dxcompiler_path)) {
         return {};
     }
 
 #if defined(_WIN32)
-    auto dxil_path = std::filesystem::u8path(path) / "dxil.dll";
+    auto dxil_path = std::filesystem::path(u8path) / "dxil.dll";
     std::unique_ptr<dxc::DxcDllSupport> dll_support_dxil;
     if (target == ShaderBlobType::kDXIL) {
         dll_support_dxil = std::make_unique<dxc::DxcDllSupport>();

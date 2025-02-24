@@ -35,7 +35,8 @@ DXComputePipeline::DXComputePipeline(DXDevice& device, const ComputePipelineDesc
 
     ComPtr<ID3D12Device2> device2;
     m_device.GetDevice().As(&device2);
-    ASSERT_SUCCEEDED(device2->CreatePipelineState(&compute_state_builder.GetDesc(), IID_PPV_ARGS(&m_pipeline_state)));
+    auto pipeline_desc = compute_state_builder.GetDesc();
+    ASSERT_SUCCEEDED(device2->CreatePipelineState(&pipeline_desc, IID_PPV_ARGS(&m_pipeline_state)));
 }
 
 PipelineType DXComputePipeline::GetPipelineType() const
