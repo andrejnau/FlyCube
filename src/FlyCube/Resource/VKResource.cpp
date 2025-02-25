@@ -70,11 +70,7 @@ uint32_t VKResource::GetSampleCount() const
 
 uint64_t VKResource::GetAccelerationStructureHandle() const
 {
-#ifndef USE_STATIC_MOLTENVK
     return m_device.GetDevice().getAccelerationStructureAddressKHR({ acceleration_structure_handle.get() });
-#else
-    return 0;
-#endif
 }
 
 void VKResource::SetName(const std::string& name)

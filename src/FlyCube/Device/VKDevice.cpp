@@ -182,7 +182,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
             { ShadingRate::k2x2, { 2, 2 } }, { ShadingRate::k2x4, { 2, 4 } }, { ShadingRate::k4x2, { 4, 2 } },
             { ShadingRate::k4x4, { 4, 4 } },
         };
-#ifndef USE_STATIC_MOLTENVK
         decltype(auto) fragment_shading_rates = m_adapter.GetPhysicalDevice().getFragmentShadingRatesKHR();
         for (const auto& fragment_shading_rate : fragment_shading_rates) {
             vk::Extent2D size = fragment_shading_rate.fragmentSize;
@@ -192,7 +191,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
             assert(shading_rate_palette.at((ShadingRate)shading_rate) == size);
             shading_rate_palette.erase((ShadingRate)shading_rate);
         }
-#endif
         assert(shading_rate_palette.empty());
 
         vk::PhysicalDeviceFragmentShadingRatePropertiesKHR shading_rate_image_properties = {};
@@ -638,11 +636,9 @@ RaytracingASPrebuildInfo VKDevice::GetAccelerationStructurePrebuildInfo(
     const std::vector<uint32_t>& max_primitive_counts) const
 {
     vk::AccelerationStructureBuildSizesInfoKHR size_info = {};
-#ifndef USE_STATIC_MOLTENVK
     m_device->getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice,
                                                     &acceleration_structure_info, max_primitive_counts.data(),
                                                     &size_info);
-#endif
     RaytracingASPrebuildInfo prebuild_info = {};
     prebuild_info.acceleration_structure_size = size_info.accelerationStructureSize;
     prebuild_info.build_scratch_data_size = size_info.buildScratchSize;
@@ -663,10 +659,8 @@ std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(AccelerationStru
     acceleration_structure_create_info.offset = offset;
     acceleration_structure_create_info.size = 0;
     acceleration_structure_create_info.type = Convert(type);
-#ifndef USE_STATIC_MOLTENVK
     res->acceleration_structure_handle =
         m_device->createAccelerationStructureKHRUnique(acceleration_structure_create_info);
-#endif
 
     return res;
 }

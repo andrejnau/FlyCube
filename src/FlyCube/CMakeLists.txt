@@ -124,6 +124,7 @@ list(APPEND Instance
     $<$<BOOL:${DIRECTX_SUPPORT}>:Instance/DXInstance.h>
     $<$<BOOL:${METAL_SUPPORT}>:Instance/MTInstance.h>
     $<$<BOOL:${METAL_SUPPORT}>:Instance/MTInstance.mm>
+    $<$<BOOL:${STATIC_MOLTEN_VK}>:Instance/MoltenVKStubs.cpp>
     $<$<BOOL:${VULKAN_SUPPORT}>:Instance/VKInstance.cpp>
     $<$<BOOL:${VULKAN_SUPPORT}>:Instance/VKInstance.h>
     Instance/BaseTypes.h

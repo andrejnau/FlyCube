@@ -246,9 +246,7 @@ void VKCommandList::DispatchMesh(uint32_t thread_group_count_x,
                                  uint32_t thread_group_count_y,
                                  uint32_t thread_group_count_z)
 {
-#ifndef USE_STATIC_MOLTENVK
     m_command_list->drawMeshTasksEXT(thread_group_count_x, thread_group_count_y, thread_group_count_z);
-#endif
 }
 
 void VKCommandList::DispatchRays(const RayTracingShaderTables& shader_tables,
@@ -256,12 +254,10 @@ void VKCommandList::DispatchRays(const RayTracingShaderTables& shader_tables,
                                  uint32_t height,
                                  uint32_t depth)
 {
-#ifndef USE_STATIC_MOLTENVK
     m_command_list->traceRaysKHR(GetStridedDeviceAddressRegion(m_device, shader_tables.raygen),
                                  GetStridedDeviceAddressRegion(m_device, shader_tables.miss),
                                  GetStridedDeviceAddressRegion(m_device, shader_tables.hit),
                                  GetStridedDeviceAddressRegion(m_device, shader_tables.callable), width, height, depth);
-#endif
 }
 
 void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
@@ -511,9 +507,7 @@ void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<
         }
     }
 
-#ifndef USE_STATIC_MOLTENVK
     m_command_list->setFragmentShadingRateKHR(&fragment_size, vk_combiners.data());
-#endif
 }
 
 void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
@@ -565,9 +559,7 @@ void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
     infos.pGeometries = geometry_descs.data();
     infos.geometryCount = geometry_descs.size();
 
-#ifndef USE_STATIC_MOLTENVK
     m_command_list->buildAccelerationStructuresKHR(1, &infos, range_infos.data());
-#endif
 }
 
 void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
@@ -617,9 +609,7 @@ void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
     infos.pGeometries = &top_as_geometry;
     infos.geometryCount = 1;
 
-#ifndef USE_STATIC_MOLTENVK
     m_command_list->buildAccelerationStructuresKHR(1, &infos, offset_infos.data());
-#endif
 }
 
 void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src,
@@ -643,9 +633,7 @@ void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
     }
     info.dst = vk_dst.acceleration_structure_handle.get();
     info.src = vk_src.acceleration_structure_handle.get();
-#ifndef USE_STATIC_MOLTENVK
     m_command_list->copyAccelerationStructureKHR(info);
-#endif
 }
 
 void VKCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
@@ -745,11 +733,9 @@ void VKCommandList::WriteAccelerationStructuresProperties(
     auto query_type = vk_query_heap.GetQueryType();
     assert(query_type == vk::QueryType::eAccelerationStructureCompactedSizeKHR);
     m_command_list->resetQueryPool(vk_query_heap.GetQueryPool(), first_query, acceleration_structures.size());
-#ifndef USE_STATIC_MOLTENVK
     m_command_list->writeAccelerationStructuresPropertiesKHR(vk_acceleration_structures.size(),
                                                              vk_acceleration_structures.data(), query_type,
                                                              vk_query_heap.GetQueryPool(), first_query);
-#endif
 }
 
 void VKCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_heap,

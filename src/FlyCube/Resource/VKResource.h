@@ -51,17 +51,7 @@ public:
         vk::UniqueSampler res;
     } sampler;
 
-#ifndef USE_STATIC_MOLTENVK
     vk::UniqueAccelerationStructureKHR acceleration_structure_handle = {};
-#else
-    struct {
-        vk::AccelerationStructureKHR value = {};
-        vk::AccelerationStructureKHR& get()
-        {
-            return value;
-        }
-    } acceleration_structure_handle = {};
-#endif
 
 private:
     VKDevice& m_device;

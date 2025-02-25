@@ -13,13 +13,30 @@ if (STATIC_MOLTEN_VK)
     endif()
 
     if (CUSTOM_MOLTENVK)
-        set(moltenvk_xcframework "${CUSTOM_MOLTENVK}/MoltenVK.xcframework")
-    elseif(DEFINED ENV{VULKAN_SDK})
-        set(moltenvk_xcframework "$ENV{VULKAN_SDK}/MoltenVK/MoltenVK.xcframework")
+        list(APPEND moltenvk_xcframeworks
+            "${CUSTOM_MOLTENVK}/MoltenVK.xcframework"
+        )
+    endif()
+    if(DEFINED ENV{VULKAN_SDK})
+        list(APPEND moltenvk_xcframeworks
+            "$ENV{VULKAN_SDK}/lib/MoltenVK.xcframework"
+            "$ENV{VULKAN_SDK}/macOS/lib/MoltenVK.xcframework"
+            "$ENV{VULKAN_SDK}/MoltenVK/MoltenVK.xcframework"
+        )
+    endif()
+
+    foreach(path ${moltenvk_xcframeworks})
+        if (EXISTS "${path}")
+            set(moltenvk_xcframework "${path}")
+            break()
+        endif()
+    endforeach()
+
+    if (EXISTS ${moltenvk_xcframework})
+        message("MoltenVK.xcframework location is ${moltenvk_xcframework}")
     else()
         message(FATAL_ERROR "MoltenVK.xcframework is missing")
     endif()
-    message("MoltenVK.xcframework location is ${moltenvk_xcframework}")
 
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_LINK_LIBRARIES
@@ -38,10 +55,6 @@ if (STATIC_MOLTEN_VK)
                 "-framework IOKit"
         )
     endif()
-    set_property(TARGET vulkan APPEND PROPERTY
-        INTERFACE_COMPILE_DEFINITIONS
-            USE_STATIC_MOLTENVK
-    )
 else()
     set_property(TARGET vulkan APPEND PROPERTY
         INTERFACE_COMPILE_DEFINITIONS
