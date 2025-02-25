@@ -13,15 +13,15 @@ int main(int argc, char* argv[])
     app.SetGpuName(adapter->GetName());
     std::shared_ptr<Device> device = adapter->CreateDevice();
     std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
-    constexpr uint32_t frame_count = 3;
+    static constexpr uint32_t kFrameCount = 3;
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeWindow(), app_size.width(),
-                                                                   app_size.height(), frame_count, settings.vsync);
+                                                                   app_size.height(), kFrameCount, settings.vsync);
     uint64_t fence_value = 0;
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer =
-        device->CreateBuffer(BindFlag::kCopyDest, sizeof(uint32_t) * index_data.size());
+        device->CreateBuffer(BindFlag::kCopyDest, sizeof(index_data.front()) * index_data.size());
     index_buffer->CommitMemory(MemoryType::kUpload);
     index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
 
@@ -47,14 +47,21 @@ int main(int argc, char* argv[])
         device->CompileShader({ ASSETS_PATH "shaders/Bindless/PixelShader.hlsl", "main", ShaderType::kPixel, "6_0" });
     std::shared_ptr<Program> program = device->CreateProgram({ vertex_shader, pixel_shader });
 
-    ViewDesc bindless_view_desc = {};
-    bindless_view_desc.view_type = ViewType::kStructuredBuffer;
-    bindless_view_desc.dimension = ViewDimension::kBuffer;
-    bindless_view_desc.bindless = true;
-    bindless_view_desc.structure_stride = 4;
-    std::shared_ptr<View> index_buffer_view = device->CreateView(index_buffer, bindless_view_desc);
-    bindless_view_desc.structure_stride = 12;
-    std::shared_ptr<View> vertex_buffer_view = device->CreateView(vertex_buffer, bindless_view_desc);
+    ViewDesc index_buffer_view_desc = {
+        .view_type = ViewType::kStructuredBuffer,
+        .dimension = ViewDimension::kBuffer,
+        .structure_stride = sizeof(index_data.front()),
+        .bindless = true,
+    };
+    std::shared_ptr<View> index_buffer_view = device->CreateView(index_buffer, index_buffer_view_desc);
+
+    ViewDesc vertex_buffer_view_desc = {
+        .view_type = ViewType::kStructuredBuffer,
+        .dimension = ViewDimension::kBuffer,
+        .structure_stride = sizeof(vertex_data.front()),
+        .bindless = true,
+    };
+    std::shared_ptr<View> vertex_buffer_view = device->CreateView(vertex_buffer, vertex_buffer_view_desc);
 
     std::pair<uint32_t, uint32_t> vertex_constant_data = { index_buffer_view->GetDescriptorId(),
                                                            vertex_buffer_view->GetDescriptorId() };
@@ -63,30 +70,43 @@ int main(int argc, char* argv[])
     vertex_constant_buffer->CommitMemory(MemoryType::kUpload);
     vertex_constant_buffer->UpdateUploadBuffer(0, &vertex_constant_data, sizeof(vertex_constant_data));
 
-    ViewDesc constant_buffer_view_desc = {};
-    constant_buffer_view_desc.view_type = ViewType::kConstantBuffer;
-    constant_buffer_view_desc.dimension = ViewDimension::kBuffer;
+    ViewDesc constant_buffer_view_desc = {
+        .view_type = ViewType::kConstantBuffer,
+        .dimension = ViewDimension::kBuffer,
+    };
     std::shared_ptr<View> pixel_constant_buffer_view =
         device->CreateView(pixel_constant_buffer, constant_buffer_view_desc);
     std::shared_ptr<View> vertex_constant_buffer_view =
         device->CreateView(vertex_constant_buffer, constant_buffer_view_desc);
 
-    BindKey pixel_constant_buffer_key = { ShaderType::kPixel, ViewType::kConstantBuffer,
-                                          /*slot=*/1,
-                                          /*space=*/0,
-                                          /*count=*/1 };
-    BindKey vertex_constant_buffer_key = { ShaderType::kVertex, ViewType::kConstantBuffer,
-                                           /*slot=*/0,
-                                           /*space=*/0,
-                                           /*count=*/1 };
-    BindKey vertex_structured_buffers_uint_key = { ShaderType::kVertex, ViewType::kStructuredBuffer,
-                                                   /*slot=*/0,
-                                                   /*space=*/1,
-                                                   /*count=*/kBindlessCount };
-    BindKey vertex_structured_buffers_float3_key = { ShaderType::kVertex, ViewType::kStructuredBuffer,
-                                                     /*slot=*/0,
-                                                     /*space=*/2,
-                                                     /*count=*/kBindlessCount };
+    BindKey pixel_constant_buffer_key = {
+        .shader_type = ShaderType::kPixel,
+        .view_type = ViewType::kConstantBuffer,
+        .slot = 1,
+        .space = 0,
+        .count = 1,
+    };
+    BindKey vertex_constant_buffer_key = {
+        .shader_type = ShaderType::kVertex,
+        .view_type = ViewType::kConstantBuffer,
+        .slot = 0,
+        .space = 0,
+        .count = 1,
+    };
+    BindKey vertex_structured_buffers_uint_key = {
+        .shader_type = ShaderType::kVertex,
+        .view_type = ViewType::kStructuredBuffer,
+        .slot = 0,
+        .space = 1,
+        .count = kBindlessCount,
+    };
+    BindKey vertex_structured_buffers_float3_key = {
+        .shader_type = ShaderType::kVertex,
+        .view_type = ViewType::kStructuredBuffer,
+        .slot = 0,
+        .space = 2,
+        .count = kBindlessCount,
+    };
     std::shared_ptr<BindingSetLayout> layout =
         device->CreateBindingSetLayout({ pixel_constant_buffer_key, vertex_constant_buffer_key,
                                          vertex_structured_buffers_uint_key, vertex_structured_buffers_float3_key });
@@ -99,28 +119,25 @@ int main(int argc, char* argv[])
     };
     std::shared_ptr<RenderPass> render_pass = device->CreateRenderPass(render_pass_desc);
     ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
-    GraphicsPipelineDesc pipeline_desc = {
-        program,
-        layout,
-        {},
-        render_pass,
-    };
+    GraphicsPipelineDesc pipeline_desc = { program, layout, {}, render_pass };
     std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
 
-    std::array<uint64_t, frame_count> fence_values = {};
+    std::array<uint64_t, kFrameCount> fence_values = {};
     std::vector<std::shared_ptr<CommandList>> command_lists;
     std::vector<std::shared_ptr<Framebuffer>> framebuffers;
-    for (uint32_t i = 0; i < frame_count; ++i) {
-        ViewDesc back_buffer_view_desc = {};
-        back_buffer_view_desc.view_type = ViewType::kRenderTarget;
-        back_buffer_view_desc.dimension = ViewDimension::kTexture2D;
+    for (uint32_t i = 0; i < kFrameCount; ++i) {
+        ViewDesc back_buffer_view_desc = {
+            .view_type = ViewType::kRenderTarget,
+            .dimension = ViewDimension::kTexture2D,
+        };
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
-        FramebufferDesc framebuffer_desc = {};
-        framebuffer_desc.render_pass = render_pass;
-        framebuffer_desc.width = app_size.width();
-        framebuffer_desc.height = app_size.height();
-        framebuffer_desc.colors = { back_buffer_view };
+        FramebufferDesc framebuffer_desc = {
+            .render_pass = render_pass,
+            .width = app_size.width(),
+            .height = app_size.height(),
+            .colors = { back_buffer_view },
+        };
         std::shared_ptr<Framebuffer> framebuffer =
             framebuffers.emplace_back(device->CreateFramebuffer(framebuffer_desc));
         std::shared_ptr<CommandList> command_list =

@@ -59,8 +59,8 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
-    m_index_buffer =
-        m_device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * index_data.size());
+    m_index_buffer = m_device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest,
+                                            sizeof(index_data.front()) * index_data.size());
     m_index_buffer->CommitMemory(MemoryType::kUpload);
     m_index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
 
@@ -96,16 +96,18 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
 
     for (uint32_t i = 0; i < kFrameCount; ++i) {
-        ViewDesc back_buffer_view_desc = {};
-        back_buffer_view_desc.view_type = ViewType::kRenderTarget;
-        back_buffer_view_desc.dimension = ViewDimension::kTexture2D;
+        ViewDesc back_buffer_view_desc = {
+            .view_type = ViewType::kRenderTarget,
+            .dimension = ViewDimension::kTexture2D,
+        };
         std::shared_ptr<Resource> back_buffer = m_swapchain->GetBackBuffer(i);
         std::shared_ptr<View> back_buffer_view = m_device->CreateView(back_buffer, back_buffer_view_desc);
-        FramebufferDesc framebuffer_desc = {};
-        framebuffer_desc.render_pass = m_render_pass;
-        framebuffer_desc.width = app_size.width();
-        framebuffer_desc.height = app_size.height();
-        framebuffer_desc.colors = { back_buffer_view };
+        FramebufferDesc framebuffer_desc = {
+            .render_pass = m_render_pass,
+            .width = app_size.width(),
+            .height = app_size.height(),
+            .colors = { back_buffer_view },
+        };
         std::shared_ptr<Framebuffer> framebuffer =
             m_framebuffers.emplace_back(m_device->CreateFramebuffer(framebuffer_desc));
         decltype(auto) command_list = m_command_lists[i];

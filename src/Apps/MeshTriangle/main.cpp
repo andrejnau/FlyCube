@@ -74,25 +74,22 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     };
     m_render_pass = m_device->CreateRenderPass(render_pass_desc);
     ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
-    GraphicsPipelineDesc pipeline_desc = {
-        m_program,
-        m_layout,
-        /*input=*/{},
-        m_render_pass,
-    };
+    GraphicsPipelineDesc pipeline_desc = { m_program, m_layout, {}, m_render_pass };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
 
     for (uint32_t i = 0; i < kFrameCount; ++i) {
-        ViewDesc back_buffer_view_desc = {};
-        back_buffer_view_desc.view_type = ViewType::kRenderTarget;
-        back_buffer_view_desc.dimension = ViewDimension::kTexture2D;
+        ViewDesc back_buffer_view_desc = {
+            .view_type = ViewType::kRenderTarget,
+            .dimension = ViewDimension::kTexture2D,
+        };
         std::shared_ptr<Resource> back_buffer = m_swapchain->GetBackBuffer(i);
         std::shared_ptr<View> back_buffer_view = m_device->CreateView(back_buffer, back_buffer_view_desc);
-        FramebufferDesc framebuffer_desc = {};
-        framebuffer_desc.render_pass = m_render_pass;
-        framebuffer_desc.width = app_size.width();
-        framebuffer_desc.height = app_size.height();
-        framebuffer_desc.colors = { back_buffer_view };
+        FramebufferDesc framebuffer_desc = {
+            .render_pass = m_render_pass,
+            .width = app_size.width(),
+            .height = app_size.height(),
+            .colors = { back_buffer_view },
+        };
         std::shared_ptr<Framebuffer> framebuffer =
             m_framebuffers.emplace_back(m_device->CreateFramebuffer(framebuffer_desc));
         decltype(auto) command_list = m_command_lists[i];

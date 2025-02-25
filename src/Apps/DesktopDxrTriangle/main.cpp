@@ -23,15 +23,15 @@ int main(int argc, char* argv[])
     }
     std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
     std::shared_ptr<CommandQueue> upload_command_queue = device->GetCommandQueue(CommandListType::kGraphics);
-    constexpr uint32_t frame_count = 3;
+    static constexpr uint32_t kFrameCount = 3;
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeWindow(), app_size.width(),
-                                                                   app_size.height(), frame_count, settings.vsync);
+                                                                   app_size.height(), kFrameCount, settings.vsync);
     uint64_t fence_value = 0;
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
-    std::shared_ptr<Resource> index_buffer =
-        device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(uint32_t) * index_data.size());
+    std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest,
+                                                                  sizeof(index_data.front()) * index_data.size());
     index_buffer->CommitMemory(MemoryType::kDefault);
     index_buffer->SetName("index_buffer");
     std::vector<glm::vec3> vertex_data = {
@@ -148,13 +148,15 @@ int main(int argc, char* argv[])
     upload_command_queue->Signal(fence, ++fence_value);
     command_queue->Wait(fence, fence_value);
 
-    ViewDesc top_view_desc = {};
-    top_view_desc.view_type = ViewType::kAccelerationStructure;
+    ViewDesc top_view_desc = {
+        .view_type = ViewType::kAccelerationStructure,
+    };
     std::shared_ptr<View> top_view = device->CreateView(top, top_view_desc);
 
-    ViewDesc uav_view_desc = {};
-    uav_view_desc.view_type = ViewType::kRWTexture;
-    uav_view_desc.dimension = ViewDimension::kTexture2D;
+    ViewDesc uav_view_desc = {
+        .view_type = ViewType::kRWTexture,
+        .dimension = ViewDimension::kTexture2D,
+    };
     std::shared_ptr<View> uav_view = device->CreateView(uav, uav_view_desc);
 
     std::shared_ptr<Shader> library =
@@ -193,39 +195,25 @@ int main(int argc, char* argv[])
                                          device->GetShaderGroupHandleSize());
     }
 
-    RayTracingShaderTables shader_tables = {};
-    shader_tables.raygen = {
-        shader_table,
-        0 * device->GetShaderTableAlignment(),
-        device->GetShaderTableAlignment(),
-        device->GetShaderTableAlignment(),
-    };
-    shader_tables.miss = {
-        shader_table,
-        1 * device->GetShaderTableAlignment(),
-        device->GetShaderTableAlignment(),
-        device->GetShaderTableAlignment(),
-    };
-    shader_tables.hit = {
-        shader_table,
-        2 * device->GetShaderTableAlignment(),
-        2 * device->GetShaderTableAlignment(),
-        device->GetShaderTableAlignment(),
-    };
-    shader_tables.callable = {
-        shader_table,
-        4 * device->GetShaderTableAlignment(),
-        device->GetShaderTableAlignment(),
-        device->GetShaderTableAlignment(),
+    RayTracingShaderTables shader_tables = {
+        .raygen = { shader_table, 0 * device->GetShaderTableAlignment(), device->GetShaderTableAlignment(),
+                    device->GetShaderTableAlignment() },
+        .miss = { shader_table, 1 * device->GetShaderTableAlignment(), device->GetShaderTableAlignment(),
+                  device->GetShaderTableAlignment() },
+        .hit = { shader_table, 2 * device->GetShaderTableAlignment(), 2 * device->GetShaderTableAlignment(),
+                 device->GetShaderTableAlignment() },
+        .callable = { shader_table, 4 * device->GetShaderTableAlignment(), device->GetShaderTableAlignment(),
+                      device->GetShaderTableAlignment() }
     };
 
-    std::array<uint64_t, frame_count> fence_values = {};
+    std::array<uint64_t, kFrameCount> fence_values = {};
     std::vector<std::shared_ptr<CommandList>> command_lists;
-    for (uint32_t i = 0; i < frame_count; ++i) {
+    for (uint32_t i = 0; i < kFrameCount; ++i) {
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
-        ViewDesc back_buffer_view_desc = {};
-        back_buffer_view_desc.view_type = ViewType::kRenderTarget;
-        back_buffer_view_desc.dimension = ViewDimension::kTexture2D;
+        ViewDesc back_buffer_view_desc = {
+            .view_type = ViewType::kRenderTarget,
+            .dimension = ViewDimension::kTexture2D,
+        };
         std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
         command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
         std::shared_ptr<CommandList> command_list = command_lists[i];
