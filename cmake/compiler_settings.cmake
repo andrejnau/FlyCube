@@ -17,7 +17,6 @@ set(gpu_compile_options
 )
 set(msvc_compile_options
     /MP
-    /wd4005
     /wd4838
     /wd5051
 )
@@ -29,7 +28,6 @@ add_compile_options(
 )
 
 set(msvc_compile_definitions
-    _CRT_SECURE_NO_WARNINGS
     _UNICODE
     NOMINMAX
     UNICODE
