@@ -18,7 +18,6 @@ set(gpu_compile_options
 set(msvc_compile_options
     /MP
     /wd4838
-    /wd5051
 )
 add_compile_options(
     "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:${appleclang_clang_compile_options}>"
