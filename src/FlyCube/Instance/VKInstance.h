@@ -13,7 +13,7 @@ public:
 
 private:
 #if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
-    vk::DynamicLoader m_dl;
+    vk::detail::DynamicLoader m_dl;
 #endif
     vk::UniqueInstance m_instance;
     vk::UniqueDebugReportCallbackEXT m_callback;

@@ -16,9 +16,9 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace {
 
-bool SkipIt(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type, const std::string& message)
+bool SkipIt(vk::DebugReportFlagsEXT flags, vk::DebugReportObjectTypeEXT object_type, const std::string& message)
 {
-    if (object_type == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT && flags != VK_DEBUG_REPORT_ERROR_BIT_EXT) {
+    if (object_type == vk::DebugReportObjectTypeEXT::eInstance && flags != vk::DebugReportFlagBitsEXT::eError) {
         return true;
     }
     static std::vector<std::string> muted_warnings = {
@@ -42,14 +42,14 @@ bool SkipIt(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type,
     return false;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT flags,
-                                                   VkDebugReportObjectTypeEXT objectType,
-                                                   uint64_t object,
-                                                   size_t location,
-                                                   int32_t messageCode,
-                                                   const char* pLayerPrefix,
-                                                   const char* pMessage,
-                                                   void* pUserData)
+VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugReportCallback(vk::DebugReportFlagsEXT flags,
+                                                     vk::DebugReportObjectTypeEXT objectType,
+                                                     uint64_t object,
+                                                     size_t location,
+                                                     int32_t messageCode,
+                                                     const char* pLayerPrefix,
+                                                     const char* pMessage,
+                                                     void* pUserData)
 {
     constexpr size_t error_limit = 1024;
     static size_t error_count = 0;
@@ -58,7 +58,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT flags,
     }
     if (error_count < error_limit) {
         std::stringstream buf;
-        buf << pLayerPrefix << " " << to_string(static_cast<vk::DebugReportFlagBitsEXT>(flags)) << " " << pMessage
+        buf << pLayerPrefix << " " << std::to_string(static_cast<VkDebugReportFlagsEXT>(flags)) << " " << pMessage
             << std::endl;
 #if defined(_WIN32)
         OutputDebugStringA(buf.str().c_str());
