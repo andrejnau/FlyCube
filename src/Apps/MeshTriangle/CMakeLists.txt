@@ -30,11 +30,10 @@ else()
    )
 endif()
 
-if (WIN32)
-    set_target_properties(MeshTriangle PROPERTIES
-        LINK_FLAGS "/ENTRY:mainCRTStartup"
-    )
-endif()
+target_link_options(MeshTriangle
+    PRIVATE
+        $<$<BOOL:${WIN32}>:/ENTRY:mainCRTStartup>
+)
 
 target_link_libraries(MeshTriangle
    AppLoop

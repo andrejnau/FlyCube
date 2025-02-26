@@ -1,9 +1,8 @@
 add_executable(HLSLCompilerTest main.cpp)
-if (WIN32)
-    set_target_properties(HLSLCompilerTest PROPERTIES
-        LINK_FLAGS "/ENTRY:wmainCRTStartup"
-    )
-endif()
+target_link_options(HLSLCompilerTest
+    PRIVATE
+        $<$<BOOL:${WIN32}>:/ENTRY:wmainCRTStartup>
+)
 target_link_libraries(HLSLCompilerTest PRIVATE FlyCube Catch2WithMain FlyCubeAssets)
 set_target_properties(HLSLCompilerTest PROPERTIES FOLDER "Tests")
 

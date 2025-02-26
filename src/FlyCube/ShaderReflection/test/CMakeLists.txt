@@ -1,9 +1,8 @@
 add_executable(ShaderReflectionTest main.cpp)
-if (WIN32)
-    set_target_properties(ShaderReflectionTest PROPERTIES
-        LINK_FLAGS "/ENTRY:wmainCRTStartup"
-    )
-endif()
+target_link_options(ShaderReflectionTest
+    PRIVATE
+        $<$<BOOL:${WIN32}>:/ENTRY:wmainCRTStartup>
+)
 target_link_libraries(ShaderReflectionTest PRIVATE FlyCube Catch2WithMain FlyCubeAssets)
 set_target_properties(ShaderReflectionTest PROPERTIES FOLDER "Tests")
 

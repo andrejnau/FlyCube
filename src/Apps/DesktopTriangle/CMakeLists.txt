@@ -1,10 +1,9 @@
 add_executable(DesktopTriangle WIN32 MACOSX_BUNDLE main.cpp)
 
-if (WIN32)
-    set_target_properties(DesktopTriangle PROPERTIES
-        LINK_FLAGS "/ENTRY:mainCRTStartup"
-    )
-endif()
+target_link_options(DesktopTriangle
+    PRIVATE
+        $<$<BOOL:${WIN32}>:/ENTRY:mainCRTStartup>
+)
 
 target_link_libraries(DesktopTriangle
     AppBox
