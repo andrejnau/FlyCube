@@ -38,49 +38,46 @@ if (STATIC_MOLTEN_VK)
         message(FATAL_ERROR "MoltenVK.xcframework is missing")
     endif()
 
-    set_property(TARGET vulkan APPEND PROPERTY
-        INTERFACE_LINK_LIBRARIES
-            "${moltenvk_xcframework}"
-    )
-    set_property(TARGET vulkan APPEND PROPERTY
-        INTERFACE_LINK_LIBRARIES
+    target_link_libraries(vulkan
+        INTERFACE
             "-framework IOSurface"
             "-framework Metal"
             "-framework QuartzCore"
+            "${moltenvk_xcframework}"
     )
     if (NOT IOS_OR_TVOS)
-        set_property(TARGET vulkan APPEND PROPERTY
-            INTERFACE_LINK_LIBRARIES
+        target_link_libraries(vulkan
+            INTERFACE
                 "-framework AppKit"
                 "-framework IOKit"
         )
     endif()
 else()
-    set_property(TARGET vulkan APPEND PROPERTY
-        INTERFACE_COMPILE_DEFINITIONS
-            DVULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
+    target_compile_definitions(vulkan
+        INTERFACE
+            VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
             VK_NO_PROTOTYPES
     )
 endif()
 
 if (WIN32)
-    set_property(TARGET vulkan APPEND PROPERTY
-        INTERFACE_COMPILE_DEFINITIONS
+    target_compile_definitions(vulkan
+        INTERFACE
             VK_USE_PLATFORM_WIN32_KHR
     )
-elseif(APPLE)
-    set_property(TARGET vulkan APPEND PROPERTY
-        INTERFACE_COMPILE_DEFINITIONS
+elseif (APPLE)
+    target_compile_definitions(vulkan
+        INTERFACE
             VK_USE_PLATFORM_METAL_EXT
     )
-elseif(ANDROID)
-    set_property(TARGET vulkan APPEND PROPERTY
-        INTERFACE_COMPILE_DEFINITIONS
+elseif (ANDROID)
+    target_compile_definitions(vulkan
+        INTERFACE
             VK_USE_PLATFORM_ANDROID_KHR
     )
 else()
-    set_property(TARGET vulkan APPEND PROPERTY
-        INTERFACE_COMPILE_DEFINITIONS
+    target_compile_definitions(vulkan
+        INTERFACE
             VK_USE_PLATFORM_XCB_KHR
     )
 endif()
