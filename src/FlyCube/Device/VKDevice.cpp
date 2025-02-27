@@ -50,6 +50,12 @@ vk::AccelerationStructureTypeKHR Convert(AccelerationStructureType type)
     return {};
 }
 
+std::pair<uint32_t, uint32_t> ConvertShadingRateToPair(ShadingRate shading_rate)
+{
+    vk::Extent2D size = ConvertShadingRate(shading_rate);
+    return { size.width, size.height };
+}
+
 } // namespace
 
 vk::ImageLayout ConvertState(ResourceState state)
@@ -97,6 +103,74 @@ vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags f
         vk_flags |= vk::BuildAccelerationStructureFlagBitsKHR::eLowMemory;
     }
     return vk_flags;
+}
+
+vk::Extent2D ConvertShadingRate(ShadingRate shading_rate)
+{
+    vk::Extent2D fragment_size = { 1, 1 };
+    switch (shading_rate) {
+    case ShadingRate::k1x1:
+        fragment_size.width = 1;
+        fragment_size.height = 1;
+        break;
+    case ShadingRate::k1x2:
+        fragment_size.width = 1;
+        fragment_size.height = 2;
+        break;
+    case ShadingRate::k2x1:
+        fragment_size.width = 2;
+        fragment_size.height = 1;
+        break;
+    case ShadingRate::k2x2:
+        fragment_size.width = 2;
+        fragment_size.height = 2;
+        break;
+    case ShadingRate::k2x4:
+        fragment_size.width = 2;
+        fragment_size.height = 4;
+        break;
+    case ShadingRate::k4x2:
+        fragment_size.width = 4;
+        fragment_size.height = 2;
+        break;
+    case ShadingRate::k4x4:
+        fragment_size.width = 4;
+        fragment_size.height = 4;
+        break;
+    default:
+        assert(false);
+        break;
+    }
+    return fragment_size;
+}
+
+std::array<vk::FragmentShadingRateCombinerOpKHR, 2> ConvertShadingRateCombiners(
+    const std::array<ShadingRateCombiner, 2>& combiners)
+{
+    std::array<vk::FragmentShadingRateCombinerOpKHR, 2> vk_combiners = {};
+    for (size_t i = 0; i < vk_combiners.size(); ++i) {
+        switch (combiners[i]) {
+        case ShadingRateCombiner::kPassthrough:
+            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eKeep;
+            break;
+        case ShadingRateCombiner::kOverride:
+            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eReplace;
+            break;
+        case ShadingRateCombiner::kMin:
+            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eMin;
+            break;
+        case ShadingRateCombiner::kMax:
+            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eMax;
+            break;
+        case ShadingRateCombiner::kSum:
+            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eMul;
+            break;
+        default:
+            assert(false);
+            break;
+        }
+    }
+    return vk_combiners;
 }
 
 VKDevice::VKDevice(VKAdapter& adapter)
@@ -177,21 +251,30 @@ VKDevice::VKDevice(VKAdapter& adapter)
     };
 
     if (m_is_variable_rate_shading_supported) {
-        std::map<ShadingRate, vk::Extent2D> shading_rate_palette = {
-            { ShadingRate::k1x1, { 1, 1 } }, { ShadingRate::k1x2, { 1, 2 } }, { ShadingRate::k2x1, { 2, 1 } },
-            { ShadingRate::k2x2, { 2, 2 } }, { ShadingRate::k2x4, { 2, 4 } }, { ShadingRate::k4x2, { 4, 2 } },
-            { ShadingRate::k4x4, { 4, 4 } },
+        std::map<std::pair<uint32_t, uint32_t>, ShadingRate> expected_shading_rates = {
+            { ConvertShadingRateToPair(ShadingRate::k1x1), ShadingRate::k1x1 },
+            { ConvertShadingRateToPair(ShadingRate::k1x2), ShadingRate::k1x2 },
+            { ConvertShadingRateToPair(ShadingRate::k2x1), ShadingRate::k2x1 },
+            { ConvertShadingRateToPair(ShadingRate::k2x2), ShadingRate::k2x2 },
+            { ConvertShadingRateToPair(ShadingRate::k2x4), ShadingRate::k2x4 },
+            { ConvertShadingRateToPair(ShadingRate::k4x2), ShadingRate::k4x2 },
+            { ConvertShadingRateToPair(ShadingRate::k4x4), ShadingRate::k4x4 },
         };
         decltype(auto) fragment_shading_rates = m_adapter.GetPhysicalDevice().getFragmentShadingRatesKHR();
         for (const auto& fragment_shading_rate : fragment_shading_rates) {
             vk::Extent2D size = fragment_shading_rate.fragmentSize;
-            uint8_t shading_rate = ((size.width >> 1) << 2) | (size.height >> 1);
-            assert((1 << ((shading_rate >> 2) & 3)) == size.width);
-            assert((1 << (shading_rate & 3)) == size.height);
-            assert(shading_rate_palette.at((ShadingRate)shading_rate) == size);
-            shading_rate_palette.erase((ShadingRate)shading_rate);
+            std::pair<uint32_t, uint32_t> size_as_pair = { size.width, size.height };
+            if (!expected_shading_rates.contains(size_as_pair)) {
+                continue;
+            }
+            uint8_t shading_rate_bits = ((size.width >> 1) << 2) | (size.height >> 1);
+            assert((1 << ((shading_rate_bits >> 2) & 3)) == size.width);
+            assert((1 << (shading_rate_bits & 3)) == size.height);
+            ShadingRate shading_rate = static_cast<ShadingRate>(shading_rate_bits);
+            assert(expected_shading_rates.at(size_as_pair) == shading_rate);
+            expected_shading_rates.erase(size_as_pair);
         }
-        assert(shading_rate_palette.empty());
+        assert(expected_shading_rates.empty());
 
         vk::PhysicalDeviceFragmentShadingRatePropertiesKHR shading_rate_image_properties = {};
         vk::PhysicalDeviceProperties2 device_props2 = {};

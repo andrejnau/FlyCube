@@ -448,65 +448,8 @@ void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
 
 void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
 {
-    vk::Extent2D fragment_size = { 1, 1 };
-    switch (shading_rate) {
-    case ShadingRate::k1x1:
-        fragment_size.width = 1;
-        fragment_size.height = 1;
-        break;
-    case ShadingRate::k1x2:
-        fragment_size.width = 1;
-        fragment_size.height = 2;
-        break;
-    case ShadingRate::k2x1:
-        fragment_size.width = 2;
-        fragment_size.height = 1;
-        break;
-    case ShadingRate::k2x2:
-        fragment_size.width = 2;
-        fragment_size.height = 2;
-        break;
-    case ShadingRate::k2x4:
-        fragment_size.width = 2;
-        fragment_size.height = 4;
-        break;
-    case ShadingRate::k4x2:
-        fragment_size.width = 4;
-        fragment_size.height = 2;
-        break;
-    case ShadingRate::k4x4:
-        fragment_size.width = 4;
-        fragment_size.height = 4;
-        break;
-    default:
-        assert(false);
-        break;
-    }
-
-    std::array<vk::FragmentShadingRateCombinerOpKHR, 2> vk_combiners;
-    for (size_t i = 0; i < vk_combiners.size(); ++i) {
-        switch (combiners[i]) {
-        case ShadingRateCombiner::kPassthrough:
-            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eKeep;
-            break;
-        case ShadingRateCombiner::kOverride:
-            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eReplace;
-            break;
-        case ShadingRateCombiner::kMin:
-            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eMin;
-            break;
-        case ShadingRateCombiner::kMax:
-            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eMax;
-            break;
-        case ShadingRateCombiner::kSum:
-            vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eMul;
-            break;
-        default:
-            assert(false);
-            break;
-        }
-    }
-
+    vk::Extent2D fragment_size = ConvertShadingRate(shading_rate);
+    std::array<vk::FragmentShadingRateCombinerOpKHR, 2> vk_combiners = ConvertShadingRateCombiners(combiners);
     m_command_list->setFragmentShadingRateKHR(&fragment_size, vk_combiners.data());
 }
 

@@ -6,7 +6,7 @@ if (CMAKE_GENERATOR MATCHES "Xcode")
         INTERFACE
             AppLoopSwiftUI
     )
-elseif(ANDROID)
+elseif (ANDROID)
     add_subdirectory(Android)
     target_link_libraries(AppLoop
         INTERFACE

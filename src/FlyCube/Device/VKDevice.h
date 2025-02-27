@@ -10,6 +10,9 @@ class VKCommandQueue;
 
 vk::ImageLayout ConvertState(ResourceState state);
 vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags flags);
+vk::Extent2D ConvertShadingRate(ShadingRate shading_rate);
+std::array<vk::FragmentShadingRateCombinerOpKHR, 2> ConvertShadingRateCombiners(
+    const std::array<ShadingRateCombiner, 2>& combiners);
 
 class VKDevice : public Device {
 public:
