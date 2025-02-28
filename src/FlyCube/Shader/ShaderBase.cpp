@@ -24,17 +24,14 @@ ShaderBase::ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_typ
     , m_shader_type(shader_type)
 {
     if (is_msl) {
-        m_msl_source = GetMSLShader(m_blob, m_slot_remapping);
+        m_msl_source = GetMSLShader(shader_type, m_blob, m_slot_remapping);
     }
     m_reflection = CreateShaderReflection(blob_type, m_blob.data(), m_blob.size());
     m_bindings = m_reflection->GetBindings();
     for (uint32_t i = 0; i < m_bindings.size(); ++i) {
-        uint32_t remapped_slot = ~0;
-        if (is_msl) {
-            remapped_slot = m_slot_remapping.at(m_bindings[i].name);
-        }
         BindKey bind_key = { m_shader_type, m_bindings[i].type, m_bindings[i].slot, m_bindings[i].space,
                              m_bindings[i].count };
+        assert(!is_msl || m_slot_remapping.contains(bind_key));
         m_bind_keys[m_bindings[i].name] = bind_key;
         m_mapping[bind_key] = i;
         m_binding_keys.emplace_back(bind_key);

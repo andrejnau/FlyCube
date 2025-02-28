@@ -237,18 +237,14 @@ ReturnType GetReturnType(const spirv_cross::CompilerHLSL& compiler, const spirv_
 ResourceBindingDesc GetBindingDesc(const spirv_cross::CompilerHLSL& compiler, const spirv_cross::Resource& resource)
 {
     ResourceBindingDesc desc = {};
-    decltype(auto) type = compiler.get_type(resource.type_id);
+    auto bind_key = GetBindKey(ShaderType::kUnknown, compiler, resource);
     desc.name = compiler.get_name(resource.id);
-    desc.type = GetViewType(compiler, type, resource.id);
-    desc.slot = compiler.get_decoration(resource.id, spv::DecorationBinding);
-    desc.space = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
-    desc.count = 1;
-    if (!type.array.empty()) {
-        desc.count = type.array.front();
-    }
-    if (desc.count == 0) {
-        desc.count = std::numeric_limits<uint32_t>::max();
-    }
+    desc.type = bind_key.view_type;
+    desc.slot = bind_key.slot;
+    desc.space = bind_key.space;
+    desc.count = bind_key.count;
+
+    decltype(auto) type = compiler.get_type(resource.type_id);
     desc.dimension = GetViewDimension(type);
     desc.return_type = GetReturnType(compiler, type);
     switch (desc.type) {
@@ -347,6 +343,24 @@ void ParseBindings(const spirv_cross::CompilerHLSL& compiler,
 }
 
 } // namespace
+
+BindKey GetBindKey(ShaderType shader_type, const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
+{
+    decltype(auto) type = compiler.get_type(resource.type_id);
+    BindKey bind_key = {};
+    bind_key.shader_type = shader_type;
+    bind_key.view_type = GetViewType(compiler, type, resource.id);
+    bind_key.slot = compiler.get_decoration(resource.id, spv::DecorationBinding);
+    bind_key.space = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+    bind_key.count = 1;
+    if (!type.array.empty()) {
+        bind_key.count = type.array.front();
+    }
+    if (bind_key.count == 0) {
+        bind_key.count = kBindlessCount;
+    }
+    return bind_key;
+}
 
 SPIRVReflection::SPIRVReflection(const void* data, size_t size)
     : m_blob((const uint32_t*)data, (const uint32_t*)data + size / sizeof(uint32_t))

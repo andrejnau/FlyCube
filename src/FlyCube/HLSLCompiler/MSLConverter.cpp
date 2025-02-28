@@ -1,20 +1,22 @@
 #include "HLSLCompiler/MSLConverter.h"
 
 #include "HLSLCompiler/Compiler.h"
+#include "ShaderReflection/SPIRVReflection.h"
 
 #include <spirv_msl.hpp>
 
 namespace {
 
-std::map<std::string, uint32_t> ParseBindings(const spirv_cross::CompilerMSL& compiler)
+std::map<BindKey, uint32_t> ParseBindings(ShaderType shader_type, const spirv_cross::CompilerMSL& compiler)
 {
-    std::map<std::string, uint32_t> mapping;
+    std::map<BindKey, uint32_t> mapping;
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
     auto enumerate_resources = [&](const spirv_cross::SmallVector<spirv_cross::Resource>& resources) {
         for (const auto& resource : resources) {
-            std::string name = compiler.get_name(resource.id);
+            auto bind_key = GetBindKey(shader_type, compiler, resource);
             uint32_t index = compiler.get_automatic_msl_resource_binding(resource.id);
-            mapping[name] = index;
+            assert(!mapping.contains(bind_key));
+            mapping[bind_key] = index;
         }
     };
     enumerate_resources(resources.uniform_buffers);
@@ -35,7 +37,7 @@ bool UseArgumentBuffers()
     return false;
 }
 
-std::string GetMSLShader(const std::vector<uint8_t>& blob, std::map<std::string, uint32_t>& mapping)
+std::string GetMSLShader(ShaderType shader_type, const std::vector<uint8_t>& blob, std::map<BindKey, uint32_t>& mapping)
 {
     assert(blob.size() % sizeof(uint32_t) == 0);
     spirv_cross::CompilerMSL compiler((const uint32_t*)blob.data(), blob.size() / sizeof(uint32_t));
@@ -46,12 +48,12 @@ std::string GetMSLShader(const std::vector<uint8_t>& blob, std::map<std::string,
     options.argument_buffers_tier = spirv_cross::CompilerMSL::Options::ArgumentBuffersTier::Tier2;
     compiler.set_msl_options(options);
     auto msl_source = compiler.compile();
-    mapping = ParseBindings(compiler);
+    mapping = ParseBindings(shader_type, compiler);
     return msl_source;
 }
 
-std::string GetMSLShader(const ShaderDesc& shader, std::map<std::string, uint32_t>& mapping)
+std::string GetMSLShader(const ShaderDesc& shader, std::map<BindKey, uint32_t>& mapping)
 {
     std::vector<uint8_t> blob = Compile(shader, ShaderBlobType::kSPIRV);
-    return GetMSLShader(blob, mapping);
+    return GetMSLShader(shader.type, blob, mapping);
 }

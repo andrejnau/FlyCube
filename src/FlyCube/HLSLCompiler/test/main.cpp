@@ -28,8 +28,8 @@ void CompileToMSL(ShaderType shader_type, const std::vector<uint8_t>& spirv_blob
         return;
     }
 
-    std::map<std::string, uint32_t> mapping;
-    auto source = GetMSLShader(spirv_blob, mapping);
+    std::map<BindKey, uint32_t> mapping;
+    auto source = GetMSLShader(shader_type, spirv_blob, mapping);
     REQUIRE(!source.empty());
     REQUIRE(ValidateMSL(source));
 }

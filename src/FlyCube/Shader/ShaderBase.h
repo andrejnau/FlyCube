@@ -32,6 +32,6 @@ protected:
     std::vector<InputLayoutDesc> m_input_layout_descs;
     std::map<std::string, uint32_t> m_locations;
     std::shared_ptr<ShaderReflection> m_reflection;
-    std::map<std::string, uint32_t> m_slot_remapping;
+    std::map<BindKey, uint32_t> m_slot_remapping;
     std::string m_msl_source;
 };

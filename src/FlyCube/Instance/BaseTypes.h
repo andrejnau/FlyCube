@@ -401,7 +401,7 @@ struct RayTracingShaderTables {
     RayTracingShaderTable callable;
 };
 
-inline constexpr uint32_t kBindlessCount = ~0;
+inline constexpr uint32_t kBindlessCount = std::numeric_limits<uint32_t>::max();
 
 struct BindKey {
     ShaderType shader_type = ShaderType::kUnknown;

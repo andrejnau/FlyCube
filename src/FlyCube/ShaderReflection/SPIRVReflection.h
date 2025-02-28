@@ -6,6 +6,10 @@
 #include <string>
 #include <vector>
 
+BindKey GetBindKey(ShaderType shader_type,
+                   const spirv_cross::Compiler& compiler,
+                   const spirv_cross::Resource& resource);
+
 class SPIRVReflection : public ShaderReflection {
 public:
     SPIRVReflection(const void* data, size_t size);
