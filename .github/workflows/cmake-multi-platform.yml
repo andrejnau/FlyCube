@@ -20,11 +20,11 @@ jobs:
         include:
           - os: windows-latest
             build_preset: default
-          - os: macos-13
+          - os: macos-latest
             build_preset: macOS
-          - os: macos-13
+          - os: macos-latest
             build_preset: iSimulator
-          - os: macos-13
+          - os: macos-latest
             build_preset: tvSimulator
           - os: ubuntu-latest
             build_preset: gcc
@@ -40,7 +40,7 @@ jobs:
           submodules: recursive
 
     - uses: maxim-lobanov/setup-xcode@v1
-      if: matrix.os == 'macos-13'
+      if: matrix.os == 'macos-latest'
       with:
         xcode-version: latest-stable
 
