@@ -3,120 +3,91 @@
 
 #include <catch2/catch_all.hpp>
 
-class ShaderTestCase {
-public:
-    virtual const ShaderDesc& GetShaderDesc() const = 0;
-    virtual void Test(ShaderBlobType type, const void* data, size_t size) const = 0;
-};
+namespace {
 
-void RunTest(const ShaderTestCase& test_case)
+std::shared_ptr<ShaderReflection> CompileAndCreateShaderReflection(const ShaderDesc& desc,
+                                                                   ShaderBlobType shader_blob_type)
 {
-    auto dxil_blob = Compile(test_case.GetShaderDesc(), ShaderBlobType::kDXIL);
-    REQUIRE(!dxil_blob.empty());
-    test_case.Test(ShaderBlobType::kDXIL, dxil_blob.data(), dxil_blob.size());
-
-    auto spirv_blob = Compile(test_case.GetShaderDesc(), ShaderBlobType::kSPIRV);
-    REQUIRE(!spirv_blob.empty());
-    test_case.Test(ShaderBlobType::kSPIRV, spirv_blob.data(), spirv_blob.size());
+    CAPTURE(shader_blob_type);
+    auto blob = Compile(desc, shader_blob_type);
+    REQUIRE(!blob.empty());
+    auto reflection = CreateShaderReflection(shader_blob_type, blob.data(), blob.size());
+    REQUIRE(reflection);
+    return reflection;
 }
 
-class RayTracing : public ShaderTestCase {
-public:
-    const ShaderDesc& GetShaderDesc() const override
-    {
-        return m_desc;
+} // namespace
+
+TEST_CASE("DxrTriangle/RayTracing.hlsl")
+{
+    ShaderDesc desc = { ASSETS_PATH "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" };
+    auto blob_type = GENERATE(ShaderBlobType::kDXIL, ShaderBlobType::kSPIRV);
+    auto reflection = CompileAndCreateShaderReflection(desc, blob_type);
+
+    std::vector<EntryPoint> expect = {
+        { "ray_gen", ShaderKind::kRayGeneration },
+        { "miss", ShaderKind::kMiss },
+    };
+    auto entry_points = reflection->GetEntryPoints();
+    sort(entry_points.begin(), entry_points.end());
+    sort(expect.begin(), expect.end());
+    REQUIRE(entry_points.size() == expect.size());
+    for (size_t i = 0; i < entry_points.size(); ++i) {
+        REQUIRE(entry_points[i].name == expect[i].name);
+        REQUIRE(entry_points[i].kind == expect[i].kind);
     }
+}
 
-    void Test(ShaderBlobType type, const void* data, size_t size) const override
-    {
-        REQUIRE(data);
-        REQUIRE(size);
-        auto reflection = CreateShaderReflection(type, data, size);
-        REQUIRE(reflection);
+TEST_CASE("Triangle/PixelShader.hlsl")
+{
+    ShaderDesc desc = { ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_0" };
+    auto blob_type = GENERATE(ShaderBlobType::kDXIL, ShaderBlobType::kSPIRV);
+    auto reflection = CompileAndCreateShaderReflection(desc, blob_type);
 
-        std::vector<EntryPoint> expect = {
-            { "ray_gen", ShaderKind::kRayGeneration },
-            { "miss", ShaderKind::kMiss },
-        };
-        auto entry_points = reflection->GetEntryPoints();
-        sort(entry_points.begin(), entry_points.end());
-        sort(expect.begin(), expect.end());
-        REQUIRE(entry_points.size() == expect.size());
-        for (size_t i = 0; i < entry_points.size(); ++i) {
-            REQUIRE(entry_points[i].name == expect[i].name);
-            REQUIRE(entry_points[i].kind == expect[i].kind);
+    std::vector<EntryPoint> expect = {
+        { "main", ShaderKind::kPixel },
+    };
+    auto entry_points = reflection->GetEntryPoints();
+    REQUIRE(entry_points == expect);
+
+    auto bindings = reflection->GetBindings();
+    REQUIRE(bindings.size() == 1);
+    REQUIRE(bindings.front().name == "Settings");
+}
+
+TEST_CASE("Triangle/VertexShader.hlsl")
+{
+    ShaderDesc desc = { ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" };
+    auto blob_type = GENERATE(ShaderBlobType::kDXIL, ShaderBlobType::kSPIRV);
+    auto reflection = CompileAndCreateShaderReflection(desc, blob_type);
+
+    std::vector<EntryPoint> expect = {
+        { "main", ShaderKind::kVertex },
+    };
+    auto entry_points = reflection->GetEntryPoints();
+    REQUIRE(entry_points == expect);
+}
+
+TEST_CASE("BasicShaderReflectionTest")
+{
+    std::vector<ShaderDesc> shader_descs = {
+        { ASSETS_PATH "shaders/Bindless/PixelShader.hlsl", "main", ShaderType::kPixel, "6_0" },
+        { ASSETS_PATH "shaders/Bindless/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" },
+        { ASSETS_PATH "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" },
+        { ASSETS_PATH "shaders/DxrTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" },
+        { ASSETS_PATH "shaders/DxrTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" },
+        { ASSETS_PATH "shaders/MeshTriangle/MeshShader.hlsl", "main", ShaderType::kMesh, "6_5" },
+        { ASSETS_PATH "shaders/MeshTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_5" },
+        { ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_0" },
+        { ASSETS_PATH "shaders/Triangle/PixelShaderNoBindings.hlsl", "main", ShaderType::kPixel, "6_0" },
+        { ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" },
+    };
+    for (const auto& shader_desc : shader_descs) {
+        auto test_name = shader_desc.shader_path.substr(std::string_view{ ASSETS_PATH "shaders/" }.size());
+        DYNAMIC_SECTION(test_name)
+        {
+            auto blob_type = GENERATE(ShaderBlobType::kDXIL, ShaderBlobType::kSPIRV);
+            CompileAndCreateShaderReflection(shader_desc, blob_type);
         }
     }
-
-private:
-    ShaderDesc m_desc = { ASSETS_PATH "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" };
-};
-
-TEST_CASE("RayTracing")
-{
-    RunTest(RayTracing{});
-}
-
-class TrianglePS : public ShaderTestCase {
-public:
-    const ShaderDesc& GetShaderDesc() const override
-    {
-        return m_desc;
-    }
-
-    void Test(ShaderBlobType type, const void* data, size_t size) const override
-    {
-        REQUIRE(data);
-        REQUIRE(size);
-        auto reflection = CreateShaderReflection(type, data, size);
-        REQUIRE(reflection);
-
-        std::vector<EntryPoint> expect = {
-            { "main", ShaderKind::kPixel },
-        };
-        auto entry_points = reflection->GetEntryPoints();
-        REQUIRE(entry_points == expect);
-
-        auto bindings = reflection->GetBindings();
-        REQUIRE(bindings.size() == 1);
-        REQUIRE(bindings.front().name == "Settings");
-    }
-
-private:
-    ShaderDesc m_desc = { ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_3" };
-};
-
-TEST_CASE("TrianglePS")
-{
-    RunTest(TrianglePS{});
-}
-
-class TriangleVS : public ShaderTestCase {
-public:
-    const ShaderDesc& GetShaderDesc() const override
-    {
-        return m_desc;
-    }
-
-    void Test(ShaderBlobType type, const void* data, size_t size) const override
-    {
-        REQUIRE(data);
-        REQUIRE(size);
-        auto reflection = CreateShaderReflection(type, data, size);
-        REQUIRE(reflection);
-
-        std::vector<EntryPoint> expect = {
-            { "main", ShaderKind::kVertex },
-        };
-        auto entry_points = reflection->GetEntryPoints();
-        REQUIRE(entry_points == expect);
-    }
-
-private:
-    ShaderDesc m_desc = { ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_3" };
-};
-
-TEST_CASE("TriangleVS")
-{
-    RunTest(TriangleVS{});
 }

@@ -3,6 +3,8 @@
 
 #include <catch2/catch_all.hpp>
 
+namespace {
+
 void RunTest(const ShaderDesc& desc)
 {
     SECTION("DXIL")
@@ -27,6 +29,8 @@ void RunTest(const ShaderDesc& desc)
     }
 }
 
+} // namespace
+
 TEST_CASE("HLSLCompilerTest")
 {
     std::vector<ShaderDesc> shader_descs = {
@@ -42,7 +46,7 @@ TEST_CASE("HLSLCompilerTest")
         { ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" },
     };
     for (const auto& shader_desc : shader_descs) {
-        auto test_name = shader_desc.shader_path.substr(std::string_view{ ASSETS_PATH }.size());
+        auto test_name = shader_desc.shader_path.substr(std::string_view{ ASSETS_PATH "shaders/" }.size());
         DYNAMIC_SECTION(test_name)
         {
             RunTest(shader_desc);
