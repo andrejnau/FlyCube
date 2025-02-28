@@ -294,10 +294,6 @@ add_library(FlyCube
     ${View}
 )
 
-if (UNIX AND NOT APPLE AND NOT ANDROID)
-    set(UNIX_AND_NOT_APPLE_NOT_ANDROID ON)
-endif()
-
 target_link_libraries(FlyCube
     $<$<BOOL:${APPLE}>:-framework\ Foundation>
     $<$<BOOL:${APPLE}>:-framework\ QuartzCore>
@@ -306,8 +302,6 @@ target_link_libraries(FlyCube
     $<$<BOOL:${DIRECTX_SUPPORT}>:dxguid>
     $<$<BOOL:${METAL_SUPPORT}>:-framework\ Metal>
     $<$<BOOL:${METAL_SUPPORT}>:MVKPixelFormats>
-    $<$<BOOL:${UNIX_AND_NOT_APPLE_NOT_ANDROID}>:dl>
-    $<$<BOOL:${UNIX_AND_NOT_APPLE_NOT_ANDROID}>:X11-xcb>
     $<$<BOOL:${VULKAN_SUPPORT}>:vulkan>
     DirectX-Headers
     dxc
@@ -318,6 +312,10 @@ target_link_libraries(FlyCube
     spirv-cross-hlsl
     spirv-cross-msl
 )
+
+if (NOT WIN32 AND NOT APPLE AND NOT ANDROID)
+    target_link_libraries(FlyCube X11 X11-xcb)
+endif()
 
 target_include_directories(FlyCube
     PUBLIC
