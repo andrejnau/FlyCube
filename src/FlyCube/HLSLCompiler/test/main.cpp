@@ -3,7 +3,37 @@
 
 #include <catch2/catch_all.hpp>
 
+#if defined(__APPLE__)
+#import <Metal/Metal.h>
+#endif
+
 namespace {
+
+#if defined(__APPLE__)
+bool ValidateMSL(const std::string& source)
+{
+    NSString* ns_source = [NSString stringWithUTF8String:source.c_str()];
+    NSError* error = nullptr;
+    id<MTLLibrary> library =
+        [MTLCreateSystemDefaultDevice() newLibraryWithSource:ns_source options:nullptr error:&error];
+    if (library == nullptr) {
+        NSLog(@"Error: failed to create Metal library: %@", error);
+    }
+    return !!library;
+}
+
+void CompileToMSL(ShaderType shader_type, const std::vector<uint8_t>& spirv_blob)
+{
+    if (shader_type == ShaderType::kLibrary) {
+        return;
+    }
+
+    std::map<std::string, uint32_t> mapping;
+    auto source = GetMSLShader(spirv_blob, mapping);
+    REQUIRE(!source.empty());
+    REQUIRE(ValidateMSL(source));
+}
+#endif
 
 void RunTest(const ShaderDesc& desc)
 {
@@ -18,14 +48,12 @@ void RunTest(const ShaderDesc& desc)
         auto spirv_blob = Compile(desc, ShaderBlobType::kSPIRV);
         REQUIRE(!spirv_blob.empty());
 
+#if defined(__APPLE__)
         SECTION("MSL")
         {
-            if (desc.type != ShaderType::kLibrary) {
-                std::map<std::string, uint32_t> mapping;
-                auto source = GetMSLShader(spirv_blob, mapping);
-                REQUIRE(!source.empty());
-            }
+            CompileToMSL(desc.type, spirv_blob);
         }
+#endif
     }
 }
 
