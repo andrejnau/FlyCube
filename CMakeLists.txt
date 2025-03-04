@@ -54,7 +54,7 @@ endif()
 
 if (CMAKE_CROSSCOMPILING AND (IOS_OR_TVOS OR ANDROID) AND BUILD_SAMPLES)
     execute_process(
-        COMMAND "${CMAKE_COMMAND}" "${CMAKE_CURRENT_SOURCE_DIR}" -BhostPlatform
+        COMMAND "${CMAKE_COMMAND}" "${CMAKE_CURRENT_SOURCE_DIR}" -BhostPlatform -DCMAKE_BUILD_TYPE=Release
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
     execute_process(
