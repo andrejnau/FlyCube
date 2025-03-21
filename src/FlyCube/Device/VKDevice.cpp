@@ -250,6 +250,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         device_create_info_next = &extension;
     };
 
+    vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features = {};
     if (m_is_variable_rate_shading_supported) {
         std::map<std::pair<uint32_t, uint32_t>, ShadingRate> expected_shading_rates = {
             { ConvertShadingRateToPair(ShadingRate::k1x1), ShadingRate::k1x1 },
@@ -288,7 +289,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
                shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.height);
         m_shading_rate_image_tile_size = shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width;
 
-        vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features = {};
         fragment_shading_rate_features.attachmentFragmentShadingRate = true;
         add_extension(fragment_shading_rate_features);
     }
