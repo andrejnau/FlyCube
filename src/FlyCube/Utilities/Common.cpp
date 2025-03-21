@@ -74,7 +74,7 @@ std::string GetAssertPath(const std::string& filepath)
 #elif defined(__ANDROID__)
     return filepath;
 #endif
-    return GetExecutableDir() + "\\" + filepath;
+    return GetExecutableDir() + "/" + filepath;
 }
 
 std::vector<uint8_t> LoadShaderBlob(const std::string& filepath, ShaderBlobType blob_type)
