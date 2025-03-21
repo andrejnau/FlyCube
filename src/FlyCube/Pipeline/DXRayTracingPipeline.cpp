@@ -85,7 +85,7 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
     uint32_t max_attribute_size = 0;
     for (size_t i = 0; i < entry_points.size(); ++i) {
         max_payload_size = std::max(max_payload_size, entry_points[i].payload_size);
-        max_attribute_size = std::max(max_payload_size, entry_points[i].attribute_size);
+        max_attribute_size = std::max(max_attribute_size, entry_points[i].attribute_size);
     }
     shader_config->Config(max_payload_size, max_attribute_size);
 
