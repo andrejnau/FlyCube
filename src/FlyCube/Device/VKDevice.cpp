@@ -229,10 +229,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
         if (req_extension.count(extension.extensionName.data())) {
             enabled_extension.push_back(extension.extensionName);
         }
-
-        if (std::string(extension.extensionName.data()) == VK_EXT_MESH_SHADER_EXTENSION_NAME) {
-            m_is_mesh_shading_supported = true;
-        }
     }
 
     void* device_create_info_next = nullptr;
@@ -335,10 +331,16 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_vulkan12_features.descriptorBindingVariableDescriptorCount = true;
     add_extension(device_vulkan12_features);
 
-    vk::PhysicalDeviceMeshShaderFeaturesNV mesh_shader_feature = {};
-    mesh_shader_feature.taskShader = true;
-    mesh_shader_feature.meshShader = true;
-    if (m_is_mesh_shading_supported) {
+    vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_feature = {};
+    if (found_extension.contains(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
+        vk::PhysicalDeviceMeshShaderFeaturesEXT query_mesh_shader_feature = {};
+        vk::PhysicalDeviceFeatures2 device_features2 = {};
+        device_features2.pNext = &query_mesh_shader_feature;
+        m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
+
+        mesh_shader_feature.taskShader = query_mesh_shader_feature.taskShader;
+        mesh_shader_feature.meshShader = query_mesh_shader_feature.meshShader;
+        m_is_mesh_shading_supported = mesh_shader_feature.taskShader && mesh_shader_feature.meshShader;
         add_extension(mesh_shader_feature);
     }
 
