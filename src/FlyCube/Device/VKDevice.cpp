@@ -233,9 +233,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
         if (std::string(extension.extensionName.data()) == VK_EXT_MESH_SHADER_EXTENSION_NAME) {
             m_is_mesh_shading_supported = true;
         }
-        if (std::string(extension.extensionName.data()) == VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME) {
-            m_draw_indirect_count_supported = true;
-        }
     }
 
     void* device_create_info_next = nullptr;
@@ -323,6 +320,12 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.geometryShader = physical_device_features.geometryShader;
     device_features.imageCubeArray = physical_device_features.imageCubeArray;
     device_features.shaderImageGatherExtended = physical_device_features.shaderImageGatherExtended;
+
+    vk::PhysicalDeviceVulkan12Features query_device_vulkan12_features = {};
+    vk::PhysicalDeviceFeatures2 device_features2 = {};
+    device_features2.pNext = &query_device_vulkan12_features;
+    m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
+    m_draw_indirect_count_supported = query_device_vulkan12_features.drawIndirectCount;
 
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
     device_vulkan12_features.drawIndirectCount = m_draw_indirect_count_supported;
