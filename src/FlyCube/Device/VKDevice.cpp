@@ -225,9 +225,9 @@ VKDevice::VKDevice(VKAdapter& adapter)
     std::vector<const char*> enabled_extension;
     std::set<std::string_view> found_extension;
     for (const auto& extension : extensions) {
-        found_extension.insert(extension.extensionName.data());
         if (req_extension.count(extension.extensionName.data())) {
             enabled_extension.push_back(extension.extensionName);
+            found_extension.insert(extension.extensionName.data());
         }
     }
 
