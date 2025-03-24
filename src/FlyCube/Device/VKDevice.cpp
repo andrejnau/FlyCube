@@ -230,14 +230,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
             enabled_extension.push_back(extension.extensionName);
         }
 
-        if (std::string(extension.extensionName.data()) == VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) {
-            m_is_dxr_supported = true;
-        }
         if (std::string(extension.extensionName.data()) == VK_EXT_MESH_SHADER_EXTENSION_NAME) {
             m_is_mesh_shading_supported = true;
-        }
-        if (std::string(extension.extensionName.data()) == VK_KHR_RAY_QUERY_EXTENSION_NAME) {
-            m_is_ray_query_supported = true;
         }
         if (std::string(extension.extensionName.data()) == VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME) {
             m_draw_indirect_count_supported = true;
@@ -308,16 +302,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
         add_extension(fragment_shading_rate_features);
     }
 
-    if (m_is_dxr_supported) {
-        vk::PhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = {};
-        vk::PhysicalDeviceProperties2 device_props2 = {};
-        device_props2.pNext = &ray_tracing_properties;
-        m_physical_device.getProperties2(&device_props2);
-        m_shader_group_handle_size = ray_tracing_properties.shaderGroupHandleSize;
-        m_shader_record_alignment = ray_tracing_properties.shaderGroupHandleSize;
-        m_shader_table_alignment = ray_tracing_properties.shaderGroupBaseAlignment;
-    }
-
     const float queue_priority = 1.0f;
     std::vector<vk::DeviceQueueCreateInfo> queues_create_info;
     for (const auto& queue_info : m_queues_info) {
@@ -355,23 +339,53 @@ VKDevice::VKDevice(VKAdapter& adapter)
         add_extension(mesh_shader_feature);
     }
 
-    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_pipeline_feature = {};
-    raytracing_pipeline_feature.rayTracingPipeline = true;
-
     vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_feature = {};
-    acceleration_structure_feature.accelerationStructure = true;
+    if (found_extension.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
+        vk::PhysicalDeviceAccelerationStructureFeaturesKHR query_acceleration_structure_feature = {};
+        vk::PhysicalDeviceFeatures2 device_features2 = {};
+        device_features2.pNext = &query_acceleration_structure_feature;
+        m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
 
-    vk::PhysicalDeviceRayQueryFeaturesKHR rayquery_pipeline_feature = {};
-    rayquery_pipeline_feature.rayQuery = true;
-
-    if (m_is_dxr_supported) {
-        add_extension(raytracing_pipeline_feature);
+        acceleration_structure_feature.accelerationStructure =
+            query_acceleration_structure_feature.accelerationStructure;
         add_extension(acceleration_structure_feature);
+    }
 
-        if (m_is_ray_query_supported) {
-            raytracing_pipeline_feature.rayTraversalPrimitiveCulling = true;
-            add_extension(rayquery_pipeline_feature);
-        }
+    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_pipeline_feature = {};
+    if (found_extension.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
+        acceleration_structure_feature.accelerationStructure) {
+        vk::PhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = {};
+        vk::PhysicalDeviceProperties2 device_props2 = {};
+        device_props2.pNext = &ray_tracing_properties;
+        m_physical_device.getProperties2(&device_props2);
+        m_shader_group_handle_size = ray_tracing_properties.shaderGroupHandleSize;
+        m_shader_record_alignment = ray_tracing_properties.shaderGroupHandleSize;
+        m_shader_table_alignment = ray_tracing_properties.shaderGroupBaseAlignment;
+
+        vk::PhysicalDeviceRayTracingPipelineFeaturesKHR query_raytracing_pipeline_feature = {};
+        vk::PhysicalDeviceFeatures2 device_features2 = {};
+        device_features2.pNext = &query_raytracing_pipeline_feature;
+        m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
+
+        raytracing_pipeline_feature.rayTracingPipeline = query_raytracing_pipeline_feature.rayTracingPipeline;
+        raytracing_pipeline_feature.rayTraversalPrimitiveCulling =
+            query_raytracing_pipeline_feature.rayTraversalPrimitiveCulling;
+        m_is_dxr_supported =
+            raytracing_pipeline_feature.rayTracingPipeline && raytracing_pipeline_feature.rayTraversalPrimitiveCulling;
+        add_extension(raytracing_pipeline_feature);
+    }
+
+    vk::PhysicalDeviceRayQueryFeaturesKHR rayquery_feature = {};
+    if (found_extension.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
+        acceleration_structure_feature.accelerationStructure) {
+        vk::PhysicalDeviceRayQueryFeaturesKHR query_rayquery_feature = {};
+        vk::PhysicalDeviceFeatures2 device_features2 = {};
+        device_features2.pNext = &query_rayquery_feature;
+        m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
+
+        rayquery_feature.rayQuery = query_rayquery_feature.rayQuery;
+        m_is_ray_query_supported = rayquery_feature.rayQuery;
+        add_extension(rayquery_feature);
     }
 
     vk::DeviceCreateInfo device_create_info = {};
