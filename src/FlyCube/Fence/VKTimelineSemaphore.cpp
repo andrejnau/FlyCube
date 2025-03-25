@@ -15,7 +15,11 @@ VKTimelineSemaphore::VKTimelineSemaphore(VKDevice& device, uint64_t initial_valu
 
 uint64_t VKTimelineSemaphore::GetCompletedValue()
 {
-    return m_device.GetDevice().getSemaphoreCounterValueKHR(m_timeline_semaphore.get());
+    if (m_device.UseTimelineSemaphoreKHR()) {
+        return m_device.GetDevice().getSemaphoreCounterValueKHR(m_timeline_semaphore.get());
+    } else {
+        return m_device.GetDevice().getSemaphoreCounterValue(m_timeline_semaphore.get());
+    }
 }
 
 void VKTimelineSemaphore::Wait(uint64_t value)
@@ -24,7 +28,11 @@ void VKTimelineSemaphore::Wait(uint64_t value)
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &m_timeline_semaphore.get();
     wait_info.pValues = &value;
-    std::ignore = m_device.GetDevice().waitSemaphoresKHR(wait_info, UINT64_MAX);
+    if (m_device.UseTimelineSemaphoreKHR()) {
+        std::ignore = m_device.GetDevice().waitSemaphoresKHR(wait_info, UINT64_MAX);
+    } else {
+        std::ignore = m_device.GetDevice().waitSemaphores(wait_info, UINT64_MAX);
+    }
 }
 
 void VKTimelineSemaphore::Signal(uint64_t value)
@@ -32,7 +40,11 @@ void VKTimelineSemaphore::Signal(uint64_t value)
     vk::SemaphoreSignalInfo signal_info = {};
     signal_info.semaphore = m_timeline_semaphore.get();
     signal_info.value = value;
-    m_device.GetDevice().signalSemaphoreKHR(signal_info);
+    if (m_device.UseTimelineSemaphoreKHR()) {
+        m_device.GetDevice().signalSemaphoreKHR(signal_info);
+    } else {
+        m_device.GetDevice().signalSemaphore(signal_info);
+    }
 }
 
 const vk::Semaphore& VKTimelineSemaphore::GetFence() const

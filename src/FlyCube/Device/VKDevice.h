@@ -84,6 +84,7 @@ public:
                                                                          RaytracingGeometryFlags flags) const;
 
     uint32_t GetMaxDescriptorSetBindings(vk::DescriptorType type) const;
+    bool UseTimelineSemaphoreKHR() const;
 
 private:
     RaytracingASPrebuildInfo GetAccelerationStructurePrebuildInfo(
@@ -112,5 +113,6 @@ private:
     uint32_t m_shader_table_alignment = 0;
     bool m_draw_indirect_count_supported = false;
     bool m_geometry_shader_supported = false;
+    bool m_use_timeline_semaphore_khr = false;
     vk::PhysicalDeviceProperties m_device_properties = {};
 };

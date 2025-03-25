@@ -323,10 +323,14 @@ VKDevice::VKDevice(VKAdapter& adapter)
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
     device_vulkan12_features.drawIndirectCount = m_draw_indirect_count_supported;
     device_vulkan12_features.bufferDeviceAddress = true;
-    device_vulkan12_features.timelineSemaphore = true;
+    device_vulkan12_features.timelineSemaphore = query_device_vulkan12_features.timelineSemaphore;
     device_vulkan12_features.runtimeDescriptorArray = true;
     device_vulkan12_features.descriptorBindingVariableDescriptorCount = true;
     add_extension(device_vulkan12_features);
+
+    assert(device_vulkan12_features.timelineSemaphore ||
+           found_extension.contains(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
+    m_use_timeline_semaphore_khr = !device_vulkan12_features.timelineSemaphore;
 
     vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_feature = {};
     if (found_extension.contains(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
@@ -981,4 +985,9 @@ uint32_t VKDevice::GetMaxDescriptorSetBindings(vk::DescriptorType type) const
         assert(false);
         return 0;
     }
+}
+
+bool VKDevice::UseTimelineSemaphoreKHR() const
+{
+    return m_use_timeline_semaphore_khr;
 }
