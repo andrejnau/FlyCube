@@ -105,7 +105,11 @@ VKRenderPass::VKRenderPass(VKDevice& device, const RenderPassDesc& desc)
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &sub_pass;
 
-    m_render_pass = device.GetDevice().createRenderPass2KHRUnique(render_pass_info);
+    if (device.IsAtLeastVulkan12()) {
+        m_render_pass = device.GetDevice().createRenderPass2Unique(render_pass_info);
+    } else {
+        m_render_pass = device.GetDevice().createRenderPass2KHRUnique(render_pass_info);
+    }
 }
 
 const RenderPassDesc& VKRenderPass::GetDesc() const

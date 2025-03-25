@@ -104,7 +104,7 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     uint32_t space = 0;
     if (blob_type == ShaderBlobType::kSPIRV) {
         arguments.emplace_back(L"-spirv");
-        arguments.emplace_back(L"-fspv-target-env=vulkan1.2");
+        arguments.emplace_back(L"-fspv-target-env=vulkan1.1spirv1.4");
         arguments.emplace_back(L"-fspv-extension=KHR");
         arguments.emplace_back(L"-fspv-extension=SPV_EXT_mesh_shader");
         arguments.emplace_back(L"-fspv-extension=SPV_EXT_descriptor_indexing");

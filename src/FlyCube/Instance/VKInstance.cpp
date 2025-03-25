@@ -135,7 +135,8 @@ VKInstance::VKInstance()
     }
 
     vk::ApplicationInfo app_info = {};
-    app_info.apiVersion = VK_API_VERSION_1_2;
+    app_info.apiVersion = std::max(VK_API_VERSION_1_1, vk::enumerateInstanceVersion());
+    m_api_version = app_info.apiVersion;
 
     create_info.pApplicationInfo = &app_info;
     create_info.enabledLayerCount = static_cast<uint32_t>(found_layers.size());
@@ -165,6 +166,9 @@ std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
     auto devices = m_instance->enumeratePhysicalDevices();
     for (const auto& device : devices) {
         vk::PhysicalDeviceProperties device_properties = device.getProperties();
+        if (device_properties.apiVersion < VK_API_VERSION_1_1) {
+            continue;
+        }
         if (device_properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
             device_properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
             adapters.emplace_back(std::make_shared<VKAdapter>(*this, device));
@@ -181,6 +185,11 @@ std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
 vk::Instance& VKInstance::GetInstance()
 {
     return m_instance.get();
+}
+
+uint32_t VKInstance::GetApiVersion() const
+{
+    return m_api_version;
 }
 
 bool VKInstance::IsDebugUtilsSupported() const

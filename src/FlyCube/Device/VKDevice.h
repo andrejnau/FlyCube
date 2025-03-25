@@ -84,8 +84,15 @@ public:
                                                                          RaytracingGeometryFlags flags) const;
 
     uint32_t GetMaxDescriptorSetBindings(vk::DescriptorType type) const;
-    bool UseTimelineSemaphoreKHR() const;
+    bool IsAtLeastVulkan12() const;
     bool HasBufferDeviceAddress() const;
+
+    template <typename Feature>
+    Feature GetFeatures2()
+    {
+        auto [_, feature] = m_physical_device.getFeatures2<vk::PhysicalDeviceFeatures2, Feature>();
+        return feature;
+    }
 
 private:
     RaytracingASPrebuildInfo GetAccelerationStructurePrebuildInfo(
@@ -114,7 +121,7 @@ private:
     uint32_t m_shader_table_alignment = 0;
     bool m_geometry_shader_supported = false;
     bool m_draw_indirect_count_supported = false;
-    bool m_use_timeline_semaphore_khr = false;
+    bool m_is_at_least_vulkan12 = false;
     bool m_has_buffer_device_address = false;
     vk::PhysicalDeviceProperties m_device_properties = {};
 };

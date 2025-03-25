@@ -180,6 +180,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     , m_gpu_descriptor_pool(*this)
 {
     m_device_properties = m_physical_device.getProperties();
+    auto physical_device_features = m_physical_device.getFeatures();
     auto queue_families = m_physical_device.getQueueFamilyProperties();
     auto has_all_bits = [](auto flags, auto bits) { return (flags & bits) == bits; };
     auto has_any_bits = [](auto flags, auto bits) { return flags & bits; };
@@ -208,23 +209,29 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
         VK_EXT_MESH_SHADER_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-        VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-        VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
         VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
         VK_KHR_RAY_QUERY_EXTENSION_NAME,
         VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
         // clang-format on
     };
 
-    std::vector<const char*> enabled_extension;
+    m_is_at_least_vulkan12 = m_device_properties.apiVersion >= VK_API_VERSION_1_2 &&
+                             m_adapter.GetInstance().GetApiVersion() >= VK_API_VERSION_1_2;
+    if (!m_is_at_least_vulkan12) {
+        req_extension.insert(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        req_extension.insert(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        req_extension.insert(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        req_extension.insert(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+        req_extension.insert(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+        req_extension.insert(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+        req_extension.insert(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    }
+
     std::set<std::string_view> found_extension;
     for (const auto& extension : extensions) {
         if (req_extension.count(extension.extensionName.data())) {
-            enabled_extension.push_back(extension.extensionName);
             found_extension.insert(extension.extensionName.data());
         }
     }
@@ -237,11 +244,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
     vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features = {};
     if (found_extension.contains(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
-        vk::PhysicalDeviceFragmentShadingRateFeaturesKHR query_fragment_shading_rate_features = {};
-        vk::PhysicalDeviceFeatures2 device_features2 = {};
-        device_features2.pNext = &query_fragment_shading_rate_features;
-        m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
-
+        auto query_fragment_shading_rate_features = GetFeatures2<vk::PhysicalDeviceFragmentShadingRateFeaturesKHR>();
         if (query_fragment_shading_rate_features.pipelineFragmentShadingRate) {
             m_is_variable_rate_shading_supported = true;
             fragment_shading_rate_features.pipelineFragmentShadingRate = true;
@@ -257,7 +260,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
                 { ConvertShadingRateToPair(ShadingRate::k4x2), ShadingRate::k4x2 },
                 { ConvertShadingRateToPair(ShadingRate::k4x4), ShadingRate::k4x4 },
             };
-            decltype(auto) fragment_shading_rates = m_adapter.GetPhysicalDevice().getFragmentShadingRatesKHR();
+            decltype(auto) fragment_shading_rates = m_physical_device.getFragmentShadingRatesKHR();
             for (const auto& fragment_shading_rate : fragment_shading_rates) {
                 vk::Extent2D size = fragment_shading_rate.fragmentSize;
                 std::pair<uint32_t, uint32_t> size_as_pair = { size.width, size.height };
@@ -276,7 +279,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
             vk::PhysicalDeviceFragmentShadingRatePropertiesKHR query_shading_rate_image_properties = {};
             vk::PhysicalDeviceProperties2 device_props2 = {};
             device_props2.pNext = &query_shading_rate_image_properties;
-            m_adapter.GetPhysicalDevice().getProperties2(&device_props2);
+            m_physical_device.getProperties2(&device_props2);
             assert(query_shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize ==
                    query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize);
             assert(query_shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize.width ==
@@ -302,10 +305,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
         queue_create_info.pQueuePriorities = &queue_priority;
     }
 
-    auto physical_device_features = m_adapter.GetPhysicalDevice().getFeatures();
-    auto physical_device_properties = m_adapter.GetPhysicalDevice().getProperties();
-    m_geometry_shader_supported = physical_device_features.geometryShader;
-
     vk::PhysicalDeviceFeatures device_features = {};
     device_features.textureCompressionBC = physical_device_features.textureCompressionBC;
     device_features.vertexPipelineStoresAndAtomics = physical_device_features.vertexPipelineStoresAndAtomics;
@@ -317,36 +316,45 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.shaderImageGatherExtended = physical_device_features.shaderImageGatherExtended;
 
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
-    if (physical_device_properties.apiVersion >= VK_API_VERSION_1_2) {
-        vk::PhysicalDeviceVulkan12Features query_device_vulkan12_features = {};
-        vk::PhysicalDeviceFeatures2 device_features2 = {};
-        device_features2.pNext = &query_device_vulkan12_features;
-        m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
-
+    vk::PhysicalDeviceDescriptorIndexingFeaturesEXT device_descriptor_indexing = {};
+    vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR device_buffer_device_address = {};
+    vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR device_timeline_semaphore = {};
+    if (m_is_at_least_vulkan12) {
+        auto query_device_vulkan12_features = GetFeatures2<vk::PhysicalDeviceVulkan12Features>();
         device_vulkan12_features.drawIndirectCount = query_device_vulkan12_features.drawIndirectCount;
         device_vulkan12_features.bufferDeviceAddress = query_device_vulkan12_features.bufferDeviceAddress;
-        device_vulkan12_features.timelineSemaphore = query_device_vulkan12_features.timelineSemaphore;
+        device_vulkan12_features.timelineSemaphore = true;
+        device_vulkan12_features.descriptorIndexing = query_device_vulkan12_features.descriptorIndexing;
         device_vulkan12_features.runtimeDescriptorArray = query_device_vulkan12_features.runtimeDescriptorArray;
         device_vulkan12_features.descriptorBindingVariableDescriptorCount =
             query_device_vulkan12_features.descriptorBindingVariableDescriptorCount;
         add_extension(device_vulkan12_features);
+    } else {
+        if (found_extension.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
+            auto query_descriptor_indexing = GetFeatures2<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>();
+            device_descriptor_indexing.runtimeDescriptorArray = query_descriptor_indexing.runtimeDescriptorArray;
+            add_extension(device_descriptor_indexing);
+        }
+        if (found_extension.contains(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
+            auto query_device_buffer_device_address = GetFeatures2<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+            device_buffer_device_address.bufferDeviceAddress = query_device_buffer_device_address.bufferDeviceAddress;
+            add_extension(device_buffer_device_address);
+        }
+        assert(found_extension.contains(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
+        device_timeline_semaphore.timelineSemaphore = true;
+        add_extension(device_timeline_semaphore);
+        assert(found_extension.contains(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME));
     }
 
+    m_geometry_shader_supported = physical_device_features.geometryShader;
     m_draw_indirect_count_supported = device_vulkan12_features.drawIndirectCount ||
                                       found_extension.contains(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    assert(device_vulkan12_features.timelineSemaphore ||
-           found_extension.contains(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
-    m_use_timeline_semaphore_khr = !device_vulkan12_features.timelineSemaphore;
-    m_has_buffer_device_address = device_vulkan12_features.bufferDeviceAddress ||
-                                  found_extension.contains(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    m_has_buffer_device_address =
+        device_vulkan12_features.bufferDeviceAddress || device_buffer_device_address.bufferDeviceAddress;
 
     vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_feature = {};
     if (found_extension.contains(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
-        vk::PhysicalDeviceMeshShaderFeaturesEXT query_mesh_shader_feature = {};
-        vk::PhysicalDeviceFeatures2 device_features2 = {};
-        device_features2.pNext = &query_mesh_shader_feature;
-        m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
-
+        auto query_mesh_shader_feature = GetFeatures2<vk::PhysicalDeviceMeshShaderFeaturesEXT>();
         mesh_shader_feature.taskShader = query_mesh_shader_feature.taskShader;
         mesh_shader_feature.meshShader = query_mesh_shader_feature.meshShader;
         m_is_mesh_shading_supported = mesh_shader_feature.taskShader && mesh_shader_feature.meshShader;
@@ -355,11 +363,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
     vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_feature = {};
     if (found_extension.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
-        vk::PhysicalDeviceAccelerationStructureFeaturesKHR query_acceleration_structure_feature = {};
-        vk::PhysicalDeviceFeatures2 device_features2 = {};
-        device_features2.pNext = &query_acceleration_structure_feature;
-        m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
-
+        auto query_acceleration_structure_feature = GetFeatures2<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>();
         acceleration_structure_feature.accelerationStructure =
             query_acceleration_structure_feature.accelerationStructure;
         add_extension(acceleration_structure_feature);
@@ -376,11 +380,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         m_shader_record_alignment = ray_tracing_properties.shaderGroupHandleSize;
         m_shader_table_alignment = ray_tracing_properties.shaderGroupBaseAlignment;
 
-        vk::PhysicalDeviceRayTracingPipelineFeaturesKHR query_raytracing_pipeline_feature = {};
-        vk::PhysicalDeviceFeatures2 device_features2 = {};
-        device_features2.pNext = &query_raytracing_pipeline_feature;
-        m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
-
+        auto query_raytracing_pipeline_feature = GetFeatures2<vk::PhysicalDeviceRayTracingPipelineFeaturesKHR>();
         raytracing_pipeline_feature.rayTracingPipeline = query_raytracing_pipeline_feature.rayTracingPipeline;
         raytracing_pipeline_feature.rayTraversalPrimitiveCulling =
             query_raytracing_pipeline_feature.rayTraversalPrimitiveCulling;
@@ -392,14 +392,15 @@ VKDevice::VKDevice(VKAdapter& adapter)
     vk::PhysicalDeviceRayQueryFeaturesKHR rayquery_feature = {};
     if (found_extension.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
         acceleration_structure_feature.accelerationStructure) {
-        vk::PhysicalDeviceRayQueryFeaturesKHR query_rayquery_feature = {};
-        vk::PhysicalDeviceFeatures2 device_features2 = {};
-        device_features2.pNext = &query_rayquery_feature;
-        m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
-
+        auto query_rayquery_feature = GetFeatures2<vk::PhysicalDeviceRayQueryFeaturesKHR>();
         rayquery_feature.rayQuery = query_rayquery_feature.rayQuery;
         m_is_ray_query_supported = rayquery_feature.rayQuery;
         add_extension(rayquery_feature);
+    }
+
+    std::vector<const char*> enabled_extension;
+    for (const auto& extension : found_extension) {
+        enabled_extension.push_back(extension.data());
     }
 
     vk::DeviceCreateInfo device_create_info = {};
@@ -836,7 +837,7 @@ MemoryBudget VKDevice::GetMemoryBudget() const
     vk::PhysicalDeviceMemoryBudgetPropertiesEXT memory_budget = {};
     vk::PhysicalDeviceMemoryProperties2 mem_properties = {};
     mem_properties.pNext = &memory_budget;
-    m_adapter.GetPhysicalDevice().getMemoryProperties2(&mem_properties);
+    m_physical_device.getMemoryProperties2(&mem_properties);
     MemoryBudget res = {};
     for (size_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         res.budget += memory_budget.heapBudget[i];
@@ -995,9 +996,9 @@ uint32_t VKDevice::GetMaxDescriptorSetBindings(vk::DescriptorType type) const
     }
 }
 
-bool VKDevice::UseTimelineSemaphoreKHR() const
+bool VKDevice::IsAtLeastVulkan12() const
 {
-    return m_use_timeline_semaphore_khr;
+    return m_is_at_least_vulkan12;
 }
 
 bool VKDevice::HasBufferDeviceAddress() const
