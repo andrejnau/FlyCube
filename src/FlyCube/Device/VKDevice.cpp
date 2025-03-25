@@ -211,6 +211,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
         VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
         VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
         VK_KHR_RAY_QUERY_EXTENSION_NAME,
         VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
@@ -318,19 +319,23 @@ VKDevice::VKDevice(VKAdapter& adapter)
     vk::PhysicalDeviceFeatures2 device_features2 = {};
     device_features2.pNext = &query_device_vulkan12_features;
     m_adapter.GetPhysicalDevice().getFeatures2(&device_features2);
-    m_draw_indirect_count_supported = query_device_vulkan12_features.drawIndirectCount;
 
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
-    device_vulkan12_features.drawIndirectCount = m_draw_indirect_count_supported;
-    device_vulkan12_features.bufferDeviceAddress = true;
+    device_vulkan12_features.drawIndirectCount = query_device_vulkan12_features.drawIndirectCount;
+    device_vulkan12_features.bufferDeviceAddress = query_device_vulkan12_features.bufferDeviceAddress;
     device_vulkan12_features.timelineSemaphore = query_device_vulkan12_features.timelineSemaphore;
-    device_vulkan12_features.runtimeDescriptorArray = true;
-    device_vulkan12_features.descriptorBindingVariableDescriptorCount = true;
+    device_vulkan12_features.runtimeDescriptorArray = query_device_vulkan12_features.runtimeDescriptorArray;
+    device_vulkan12_features.descriptorBindingVariableDescriptorCount =
+        query_device_vulkan12_features.descriptorBindingVariableDescriptorCount;
     add_extension(device_vulkan12_features);
 
+    m_draw_indirect_count_supported = device_vulkan12_features.drawIndirectCount ||
+                                      found_extension.contains(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     assert(device_vulkan12_features.timelineSemaphore ||
            found_extension.contains(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
     m_use_timeline_semaphore_khr = !device_vulkan12_features.timelineSemaphore;
+    m_has_buffer_device_address = device_vulkan12_features.bufferDeviceAddress ||
+                                  found_extension.contains(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 
     vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_feature = {};
     if (found_extension.contains(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
@@ -990,4 +995,9 @@ uint32_t VKDevice::GetMaxDescriptorSetBindings(vk::DescriptorType type) const
 bool VKDevice::UseTimelineSemaphoreKHR() const
 {
     return m_use_timeline_semaphore_khr;
+}
+
+bool VKDevice::HasBufferDeviceAddress() const
+{
+    return m_has_buffer_device_address;
 }

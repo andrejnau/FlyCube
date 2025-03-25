@@ -11,7 +11,9 @@ VKMemory::VKMemory(VKDevice& device,
 {
     vk::MemoryAllocateFlagsInfo alloc_flag_info = {};
     alloc_flag_info.pNext = dedicated_allocate_info;
-    alloc_flag_info.flags = vk::MemoryAllocateFlagBits::eDeviceAddress;
+    if (device.HasBufferDeviceAddress()) {
+        alloc_flag_info.flags = vk::MemoryAllocateFlagBits::eDeviceAddress;
+    }
 
     vk::MemoryPropertyFlags properties = {};
     if (memory_type == MemoryType::kDefault) {

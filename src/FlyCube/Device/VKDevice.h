@@ -85,6 +85,7 @@ public:
 
     uint32_t GetMaxDescriptorSetBindings(vk::DescriptorType type) const;
     bool UseTimelineSemaphoreKHR() const;
+    bool HasBufferDeviceAddress() const;
 
 private:
     RaytracingASPrebuildInfo GetAccelerationStructurePrebuildInfo(
@@ -111,8 +112,9 @@ private:
     uint32_t m_shader_group_handle_size = 0;
     uint32_t m_shader_record_alignment = 0;
     uint32_t m_shader_table_alignment = 0;
-    bool m_draw_indirect_count_supported = false;
     bool m_geometry_shader_supported = false;
+    bool m_draw_indirect_count_supported = false;
     bool m_use_timeline_semaphore_khr = false;
+    bool m_has_buffer_device_address = false;
     vk::PhysicalDeviceProperties m_device_properties = {};
 };
