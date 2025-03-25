@@ -161,14 +161,19 @@ VKInstance::VKInstance()
 std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
 {
     std::vector<std::shared_ptr<Adapter>> adapters;
+    std::vector<std::shared_ptr<Adapter>> sortware_adapters;
     auto devices = m_instance->enumeratePhysicalDevices();
     for (const auto& device : devices) {
         vk::PhysicalDeviceProperties device_properties = device.getProperties();
-
         if (device_properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
             device_properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
             adapters.emplace_back(std::make_shared<VKAdapter>(*this, device));
+        } else if (device_properties.deviceType == vk::PhysicalDeviceType::eCpu) {
+            sortware_adapters.emplace_back(std::make_shared<VKAdapter>(*this, device));
         }
+    }
+    if (adapters.empty()) {
+        return sortware_adapters;
     }
     return adapters;
 }
