@@ -34,8 +34,11 @@ private:
     vk::UniqueSwapchainKHR m_swapchain;
     std::vector<std::shared_ptr<Resource>> m_back_buffers;
     uint32_t m_frame_index = 0;
-    vk::UniqueSemaphore m_image_available_semaphore;
-    vk::UniqueSemaphore m_rendering_finished_semaphore;
     std::shared_ptr<CommandList> m_command_list;
-    std::shared_ptr<Fence> m_fence;
+    uint64_t m_fence_value = 0;
+    std::shared_ptr<Fence> m_swapchain_fence;
+    uint32_t m_image_available_fence_index = 0;
+    std::vector<uint64_t> m_image_available_fence_values;
+    std::vector<vk::UniqueSemaphore> m_image_available_semaphores;
+    std::vector<vk::UniqueSemaphore> m_rendering_finished_semaphores;
 };

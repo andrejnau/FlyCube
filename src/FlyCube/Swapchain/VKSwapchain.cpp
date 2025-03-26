@@ -117,17 +117,20 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
     }
     m_command_list->Close();
 
-    vk::SemaphoreCreateInfo semaphore_create_info = {};
-    m_image_available_semaphore = m_device.GetDevice().createSemaphoreUnique(semaphore_create_info);
-    m_rendering_finished_semaphore = m_device.GetDevice().createSemaphoreUnique(semaphore_create_info);
-    m_fence = m_device.CreateFence(0);
+    m_swapchain_fence = m_device.CreateFence(m_fence_value);
     command_queue.ExecuteCommandLists({ m_command_list });
-    command_queue.Signal(m_fence, 1);
+    command_queue.Signal(m_swapchain_fence, ++m_fence_value);
+
+    m_image_available_fence_values.resize(frame_count);
+    for (uint32_t i = 0; i < frame_count; ++i) {
+        m_image_available_semaphores.emplace_back(m_device.GetDevice().createSemaphoreUnique({}));
+        m_rendering_finished_semaphores.emplace_back(m_device.GetDevice().createSemaphoreUnique({}));
+    }
 }
 
 VKSwapchain::~VKSwapchain()
 {
-    m_fence->Wait(1);
+    m_swapchain_fence->Wait(m_fence_value);
 }
 
 gli::format VKSwapchain::GetFormat() const
@@ -142,53 +145,70 @@ std::shared_ptr<Resource> VKSwapchain::GetBackBuffer(uint32_t buffer)
 
 uint32_t VKSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
 {
-    std::ignore = m_device.GetDevice().acquireNextImageKHR(m_swapchain.get(), UINT64_MAX,
-                                                           m_image_available_semaphore.get(), nullptr, &m_frame_index);
+    m_swapchain_fence->Wait(m_image_available_fence_values[m_image_available_fence_index]);
+    std::ignore = m_device.GetDevice().acquireNextImageKHR(
+        m_swapchain.get(), UINT64_MAX, m_image_available_semaphores[m_image_available_fence_index].get(), nullptr,
+        &m_frame_index);
 
+    decltype(auto) vk_swapchain_fence = m_swapchain_fence->As<VKTimelineSemaphore>();
     decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
-    uint64_t tmp = std::numeric_limits<uint64_t>::max();
+
+    uint64_t wait_semaphore_values[] = { 0 };
+    vk::Semaphore wait_semaphores[] = { m_image_available_semaphores[m_image_available_fence_index].get() };
+
+    m_image_available_fence_values[m_image_available_fence_index] = ++m_fence_value;
+    uint64_t signal_semaphore_values[] = { signal_value,
+                                           m_image_available_fence_values[m_image_available_fence_index] };
+    vk::Semaphore signal_semaphores[] = { vk_fence.GetFence(), vk_swapchain_fence.GetFence() };
+
     vk::TimelineSemaphoreSubmitInfo timeline_info = {};
-    timeline_info.waitSemaphoreValueCount = 1;
-    timeline_info.pWaitSemaphoreValues = &tmp;
-    timeline_info.signalSemaphoreValueCount = 1;
-    timeline_info.pSignalSemaphoreValues = &signal_value;
+    timeline_info.waitSemaphoreValueCount = std::size(wait_semaphore_values);
+    timeline_info.pWaitSemaphoreValues = wait_semaphore_values;
+    timeline_info.signalSemaphoreValueCount = std::size(signal_semaphore_values);
+    timeline_info.pSignalSemaphoreValues = signal_semaphore_values;
     vk::SubmitInfo signal_submit_info = {};
     signal_submit_info.pNext = &timeline_info;
-    signal_submit_info.waitSemaphoreCount = 1;
-    signal_submit_info.pWaitSemaphores = &m_image_available_semaphore.get();
-    vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eTransfer;
-    signal_submit_info.pWaitDstStageMask = &waitDstStageMask;
-    signal_submit_info.signalSemaphoreCount = 1;
-    signal_submit_info.pSignalSemaphores = &vk_fence.GetFence();
+    signal_submit_info.waitSemaphoreCount = std::size(wait_semaphores);
+    signal_submit_info.pWaitSemaphores = wait_semaphores;
+    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eTransfer;
+    signal_submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
+    signal_submit_info.signalSemaphoreCount = std::size(signal_semaphores);
+    signal_submit_info.pSignalSemaphores = signal_semaphores;
     std::ignore = m_command_queue.GetQueue().submit(1, &signal_submit_info, {});
 
+    m_image_available_fence_index = (m_image_available_fence_index + 1) % m_image_available_fence_values.size();
     return m_frame_index;
 }
 
 void VKSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
     decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
-    uint64_t tmp = std::numeric_limits<uint64_t>::max();
+
+    uint64_t wait_semaphore_values[] = { wait_value };
+    vk::Semaphore wait_semaphores[] = { vk_fence.GetFence() };
+    uint64_t signal_semaphore_values[] = { 0 };
+    vk::Semaphore signal_semaphores[] = { m_rendering_finished_semaphores[m_frame_index].get() };
+
     vk::TimelineSemaphoreSubmitInfo timeline_info = {};
-    timeline_info.waitSemaphoreValueCount = 1;
-    timeline_info.pWaitSemaphoreValues = &wait_value;
-    timeline_info.signalSemaphoreValueCount = 1;
-    timeline_info.pSignalSemaphoreValues = &tmp;
+    timeline_info.waitSemaphoreValueCount = std::size(wait_semaphore_values);
+    timeline_info.pWaitSemaphoreValues = wait_semaphore_values;
+    timeline_info.signalSemaphoreValueCount = std::size(signal_semaphore_values);
+    timeline_info.pSignalSemaphoreValues = signal_semaphore_values;
     vk::SubmitInfo signal_submit_info = {};
     signal_submit_info.pNext = &timeline_info;
-    signal_submit_info.waitSemaphoreCount = 1;
-    signal_submit_info.pWaitSemaphores = &vk_fence.GetFence();
-    vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eTransfer;
-    signal_submit_info.pWaitDstStageMask = &waitDstStageMask;
-    signal_submit_info.signalSemaphoreCount = 1;
-    signal_submit_info.pSignalSemaphores = &m_rendering_finished_semaphore.get();
+    signal_submit_info.waitSemaphoreCount = std::size(wait_semaphores);
+    signal_submit_info.pWaitSemaphores = wait_semaphores;
+    vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eTransfer;
+    signal_submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
+    signal_submit_info.signalSemaphoreCount = std::size(signal_semaphores);
+    signal_submit_info.pSignalSemaphores = signal_semaphores;
     std::ignore = m_command_queue.GetQueue().submit(1, &signal_submit_info, {});
 
     vk::PresentInfoKHR present_info = {};
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &m_swapchain.get();
     present_info.pImageIndices = &m_frame_index;
-    present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &m_rendering_finished_semaphore.get();
+    present_info.waitSemaphoreCount = std::size(signal_semaphores);
+    present_info.pWaitSemaphores = signal_semaphores;
     std::ignore = m_command_queue.GetQueue().presentKHR(present_info);
 }
