@@ -12,7 +12,9 @@
 #include <Windows.h>
 #elif defined(__APPLE__)
 #import <QuartzCore/QuartzCore.h>
-#elif !defined(__ANDROID__)
+#elif defined(__ANDROID__)
+#include <android/native_window.h>
+#else
 #include <X11/Xlib-xcb.h>
 #endif
 
@@ -25,31 +27,31 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
     : m_command_queue(command_queue)
     , m_device(command_queue.GetDevice())
 {
-    VKAdapter& adapter = m_device.GetAdapter();
-    VKInstance& instance = adapter.GetInstance();
+    auto vk_instance = m_device.GetAdapter().GetInstance().GetInstance();
+    auto vk_physical_device = m_device.GetAdapter().GetPhysicalDevice();
 
 #if defined(_WIN32)
-    vk::Win32SurfaceCreateInfoKHR surface_desc = {};
-    surface_desc.hinstance = GetModuleHandle(nullptr);
-    surface_desc.hwnd = reinterpret_cast<HWND>(window);
-    m_surface = instance.GetInstance().createWin32SurfaceKHRUnique(surface_desc);
+    vk::Win32SurfaceCreateInfoKHR win32_surface_info = {};
+    win32_surface_info.hinstance = GetModuleHandle(nullptr);
+    win32_surface_info.hwnd = reinterpret_cast<HWND>(window);
+    m_surface = vk_instance.createWin32SurfaceKHRUnique(win32_surface_info);
 #elif defined(__APPLE__)
-    vk::MetalSurfaceCreateInfoEXT surface_desc = {};
-    surface_desc.pLayer = (__bridge CAMetalLayer*)window;
-    m_surface = instance.GetInstance().createMetalSurfaceEXTUnique(surface_desc);
+    vk::MetalSurfaceCreateInfoEXT metal_surface_info = {};
+    metal_surface_info.pLayer = (__bridge CAMetalLayer*)window;
+    m_surface = vk_instance.createMetalSurfaceEXTUnique(metal_surface_info);
 #elif defined(__ANDROID__)
-    vk::AndroidSurfaceCreateInfoKHR surface_desc = {};
-    surface_desc.window = reinterpret_cast<struct ANativeWindow*>(window);
-    m_surface = instance.GetInstance().createAndroidSurfaceKHRUnique(surface_desc);
+    vk::AndroidSurfaceCreateInfoKHR android_surface_info = {};
+    android_surface_info.window = reinterpret_cast<ANativeWindow*>(window);
+    m_surface = vk_instance.createAndroidSurfaceKHRUnique(android_surface_info);
 #else
-    vk::XcbSurfaceCreateInfoKHR surface_desc = {};
-    surface_desc.setConnection(XGetXCBConnection(XOpenDisplay(nullptr)));
-    surface_desc.setWindow((ptrdiff_t)window);
-    m_surface = instance.GetInstance().createXcbSurfaceKHRUnique(surface_desc);
+    vk::XcbSurfaceCreateInfoKHR xcb_surface_info = {};
+    xcb_surface_info.connection = XGetXCBConnection(XOpenDisplay(nullptr));
+    xcb_surface_info.window = reinterpret_cast<ptrdiff_t>(window);
+    m_surface = vk_instance.createXcbSurfaceKHRUnique(xcb_surface_info);
 #endif
 
     vk::ColorSpaceKHR color_space = {};
-    auto surface_formats = adapter.GetPhysicalDevice().getSurfaceFormatsKHR(m_surface.get());
+    auto surface_formats = vk_physical_device.getSurfaceFormatsKHR(m_surface.get());
     for (const auto& surface : surface_formats) {
         if (!gli::is_srgb(static_cast<gli::format>(surface.format))) {
             m_swapchain_color_format = surface.format;
@@ -60,45 +62,47 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
     assert(m_swapchain_color_format != vk::Format::eUndefined);
 
     vk::SurfaceCapabilitiesKHR surface_capabilities = {};
-    ASSERT_SUCCEEDED(adapter.GetPhysicalDevice().getSurfaceCapabilitiesKHR(m_surface.get(), &surface_capabilities));
-
+    ASSERT_SUCCEEDED(vk_physical_device.getSurfaceCapabilitiesKHR(m_surface.get(), &surface_capabilities));
     ASSERT(surface_capabilities.currentExtent.width == width);
     ASSERT(surface_capabilities.currentExtent.height == height);
 
     vk::Bool32 is_supported_surface = VK_FALSE;
-    std::ignore = adapter.GetPhysicalDevice().getSurfaceSupportKHR(command_queue.GetQueueFamilyIndex(), m_surface.get(),
-                                                                   &is_supported_surface);
+    std::ignore = vk_physical_device.getSurfaceSupportKHR(command_queue.GetQueueFamilyIndex(), m_surface.get(),
+                                                          &is_supported_surface);
     ASSERT(is_supported_surface);
 
-    auto modes = adapter.GetPhysicalDevice().getSurfacePresentModesKHR(m_surface.get());
+    auto modes = vk_physical_device.getSurfacePresentModesKHR(m_surface.get());
 
-    vk::SwapchainCreateInfoKHR swap_chain_create_info = {};
-    swap_chain_create_info.surface = m_surface.get();
-    swap_chain_create_info.minImageCount = frame_count;
-    swap_chain_create_info.imageFormat = m_swapchain_color_format;
-    swap_chain_create_info.imageColorSpace = color_space;
-    swap_chain_create_info.imageExtent = vk::Extent2D(width, height);
-    swap_chain_create_info.imageArrayLayers = 1;
-    swap_chain_create_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
-    swap_chain_create_info.imageSharingMode = vk::SharingMode::eExclusive;
-    swap_chain_create_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
-    swap_chain_create_info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+    vk::SwapchainCreateInfoKHR swapchain_info = {};
+    swapchain_info.surface = m_surface.get();
+    swapchain_info.minImageCount = frame_count;
+    swapchain_info.imageFormat = m_swapchain_color_format;
+    swapchain_info.imageColorSpace = color_space;
+    swapchain_info.imageExtent = vk::Extent2D(width, height);
+    swapchain_info.imageArrayLayers = 1;
+    swapchain_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
+    swapchain_info.imageSharingMode = vk::SharingMode::eExclusive;
+    swapchain_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
+    if (surface_capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eOpaque) {
+        swapchain_info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+    } else {
+        swapchain_info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eInherit;
+    }
     if (vsync) {
         if (std::count(modes.begin(), modes.end(), vk::PresentModeKHR::eFifoRelaxed)) {
-            swap_chain_create_info.presentMode = vk::PresentModeKHR::eFifoRelaxed;
+            swapchain_info.presentMode = vk::PresentModeKHR::eFifoRelaxed;
         } else {
-            swap_chain_create_info.presentMode = vk::PresentModeKHR::eFifo;
+            swapchain_info.presentMode = vk::PresentModeKHR::eFifo;
         }
     } else {
         if (std::count(modes.begin(), modes.end(), vk::PresentModeKHR::eMailbox)) {
-            swap_chain_create_info.presentMode = vk::PresentModeKHR::eMailbox;
+            swapchain_info.presentMode = vk::PresentModeKHR::eMailbox;
         } else {
-            swap_chain_create_info.presentMode = vk::PresentModeKHR::eImmediate;
+            swapchain_info.presentMode = vk::PresentModeKHR::eImmediate;
         }
     }
-    swap_chain_create_info.clipped = true;
-
-    m_swapchain = m_device.GetDevice().createSwapchainKHRUnique(swap_chain_create_info);
+    swapchain_info.clipped = true;
+    m_swapchain = m_device.GetDevice().createSwapchainKHRUnique(swapchain_info);
 
     std::vector<vk::Image> m_images = m_device.GetDevice().getSwapchainImagesKHR(m_swapchain.get());
 
