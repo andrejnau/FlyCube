@@ -17,30 +17,30 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace {
 
-bool SkipIt(vk::DebugReportFlagsEXT flags, vk::DebugReportObjectTypeEXT object_type, const std::string& message)
+bool SkipMessage(std::string_view message)
 {
-    if (object_type == vk::DebugReportObjectTypeEXT::eInstance && flags != vk::DebugReportFlagBitsEXT::eError) {
-        return true;
-    }
-    static std::vector<std::string> muted_warnings = {
-        "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv",
-        "VUID-vkCmdDrawIndexed-None-04007",
-        "VUID-vkDestroyDevice-device-00378",
-        "VUID-VkSubmitInfo-pWaitSemaphores-03243",
-        "VUID-VkSubmitInfo-pSignalSemaphores-03244",
-        "VUID-vkCmdPipelineBarrier-pDependencies-02285",
-        "VUID-VkImageMemoryBarrier-oldLayout-01213",
-        "VUID-vkCmdDrawIndexed-None-02721",
-        "VUID-vkCmdDrawIndexed-None-02699",
-        "VUID-vkCmdTraceRaysKHR-None-02699",
-        "VUID-VkShaderModuleCreateInfo-pCode-04147",
+    static constexpr std::string_view kMutedMessages[] = {
+        "SPV_GOOGLE_hlsl_functionality1",
+        "SPV_GOOGLE_user_type",
+        "VUID-VkDeviceCreateInfo-pProperties-04451",
     };
-    for (auto& str : muted_warnings) {
+    for (const auto& str : kMutedMessages) {
         if (message.find(str) != std::string::npos) {
             return true;
         }
     }
     return false;
+}
+
+void PrintMessage(const std::string& message)
+{
+#if defined(_WIN32)
+    OutputDebugStringA(message.c_str());
+#elif defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_DEBUG, "FlyCube", "%s", message.c_str());
+#else
+    printf("%s\n", message.c_str());
+#endif
 }
 
 VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugReportCallback(vk::DebugReportFlagsEXT flags,
@@ -52,25 +52,24 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugReportCallback(vk::DebugReportFlagsEXT fla
                                                      const char* pMessage,
                                                      void* pUserData)
 {
-    constexpr size_t error_limit = 1024;
+    std::string_view message(pMessage);
+    std::string message_prefix(message.substr(0, message.find(']')));
+    static std::set<std::string> message_prefixes;
+    if (SkipMessage(message) || message_prefixes.contains(message_prefix)) {
+        return vk::False;
+    }
+    message_prefixes.emplace(message_prefix);
+
+    static constexpr size_t kErrorLimit = 1024;
     static size_t error_count = 0;
-    if (error_count >= error_limit || SkipIt(flags, objectType, pMessage)) {
-        return VK_FALSE;
+    if (++error_count > kErrorLimit) {
+        return vk::False;
     }
-    if (error_count < error_limit) {
-        std::stringstream buf;
-        buf << pLayerPrefix << " " << std::to_string(static_cast<VkDebugReportFlagsEXT>(flags)) << " " << pMessage
-            << std::endl;
-#if defined(_WIN32)
-        OutputDebugStringA(buf.str().c_str());
-#elif defined(__ANDROID__)
-        __android_log_print(ANDROID_LOG_DEBUG, "Vulkan-Debug-Message: ", "%s", buf.str().c_str());
-#else
-        printf("%s\n", buf.str().c_str());
-#endif
-    }
-    ++error_count;
-    return VK_FALSE;
+
+    std::stringstream buf;
+    buf << "[VK_EXT_debug_report] " << pMessage << "\n";
+    PrintMessage(buf.str());
+    return vk::False;
 }
 
 } // namespace
