@@ -186,8 +186,7 @@ DXDevice::DXDevice(DXAdapter& adapter)
     m_command_queues[CommandListType::kCompute] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCompute);
     m_command_queues[CommandListType::kCopy] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCopy);
 
-    static const bool debug_enabled = IsDebuggerPresent();
-    if (debug_enabled) {
+    if (IsDebuggerPresent()) {
         ComPtr<ID3D12InfoQueue> info_queue;
         if (SUCCEEDED(m_device.As(&info_queue))) {
             info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);

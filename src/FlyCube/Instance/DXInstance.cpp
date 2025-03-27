@@ -63,8 +63,7 @@ DXInstance::DXInstance()
 #endif
 
     uint32_t flags = 0;
-    static const bool debug_enabled = IsDebuggerPresent();
-    if (debug_enabled) {
+    if (IsDebuggerPresent()) {
         ComPtr<ID3D12Debug> debug_controller;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)))) {
             debug_controller->EnableDebugLayer();

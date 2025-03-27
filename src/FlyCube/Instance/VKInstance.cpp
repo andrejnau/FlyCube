@@ -7,12 +7,12 @@
 #include <string>
 #include <string_view>
 
-#if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
-#endif
-
 #if defined(__ANDROID__)
 #include <android/log.h>
+#endif
+
+#if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 #endif
 
 namespace {
@@ -39,20 +39,17 @@ void PrintMessage(const std::string& message)
 #elif defined(__ANDROID__)
     __android_log_print(ANDROID_LOG_DEBUG, "FlyCube", "%s", message.c_str());
 #else
-    printf("%s\n", message.c_str());
+    printf("%s", message.c_str());
 #endif
 }
 
-VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugReportCallback(vk::DebugReportFlagsEXT flags,
-                                                     vk::DebugReportObjectTypeEXT objectType,
-                                                     uint64_t object,
-                                                     size_t location,
-                                                     int32_t messageCode,
-                                                     const char* pLayerPrefix,
-                                                     const char* pMessage,
-                                                     void* pUserData)
+VKAPI_ATTR vk::Bool32 VKAPI_CALL
+DebugUtilsMessengerCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                            vk::DebugUtilsMessageTypeFlagsEXT messageTypes,
+                            const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                            void* pUserData)
 {
-    std::string_view message(pMessage);
+    std::string_view message(pCallbackData->pMessage);
     std::string message_prefix(message.substr(0, message.find(']')));
     static std::set<std::string> message_prefixes;
     if (SkipMessage(message) || message_prefixes.contains(message_prefix)) {
@@ -67,9 +64,18 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugReportCallback(vk::DebugReportFlagsEXT fla
     }
 
     std::stringstream buf;
-    buf << "[VK_EXT_debug_report] " << pMessage << "\n";
+    buf << "[VK_EXT_debug_utils] " << message << "\n";
     PrintMessage(buf.str());
     return vk::False;
+}
+
+bool IsValidationEnabled()
+{
+#if defined(_WIN32)
+    return IsDebuggerPresent();
+#else
+    return true;
+#endif
 }
 
 } // namespace
@@ -82,30 +88,21 @@ VKInstance::VKInstance()
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 #endif
 
-    auto layers = vk::enumerateInstanceLayerProperties();
-
-    std::set<std::string> req_layers;
-#ifdef _WIN32
-    static const bool debug_enabled = IsDebuggerPresent();
-#else
-    static const bool debug_enabled = true;
-#endif
-    if (debug_enabled) {
-        req_layers.insert("VK_LAYER_KHRONOS_validation");
+    std::set<std::string_view> requested_layers;
+    if (IsValidationEnabled()) {
+        requested_layers.insert("VK_LAYER_KHRONOS_validation");
     }
-    std::vector<const char*> found_layers;
+
+    auto layers = vk::enumerateInstanceLayerProperties();
+    std::vector<const char*> enabled_layers;
     for (const auto& layer : layers) {
-        if (req_layers.count(layer.layerName.data())) {
-            found_layers.push_back(layer.layerName);
+        if (requested_layers.count(layer.layerName.data())) {
+            enabled_layers.push_back(layer.layerName);
         }
     }
 
-    auto extensions = vk::enumerateInstanceExtensionProperties();
-
-    std::set<std::string_view> req_extension = {
-        VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
+    std::set<std::string_view> requested_extensions = {
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
         VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
         VK_KHR_SURFACE_EXTENSION_NAME,
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -118,43 +115,49 @@ VKInstance::VKInstance()
         VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
 #endif
     };
-    std::vector<const char*> found_extension;
-    vk::InstanceCreateInfo create_info;
-    for (const auto& extension : extensions) {
-        if (req_extension.count(extension.extensionName.data())) {
-            found_extension.push_back(extension.extensionName);
-        }
 
-        if (std::string(extension.extensionName.data()) == VK_EXT_DEBUG_UTILS_EXTENSION_NAME) {
-            m_debug_utils_supported = true;
-        }
-        if (std::string(extension.extensionName.data()) == VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) {
-            create_info.flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
+    auto extensions = vk::enumerateInstanceExtensionProperties();
+    std::vector<const char*> enabled_extensions;
+    std::set<std::string_view> enabled_extension_set;
+    for (const auto& extension : extensions) {
+        if (requested_extensions.count(extension.extensionName.data())) {
+            enabled_extensions.push_back(extension.extensionName.data());
+            enabled_extension_set.insert(extension.extensionName.data());
         }
     }
 
     vk::ApplicationInfo app_info = {};
     app_info.apiVersion = std::max(VK_API_VERSION_1_1, vk::enumerateInstanceVersion());
-    m_api_version = app_info.apiVersion;
 
-    create_info.pApplicationInfo = &app_info;
-    create_info.enabledLayerCount = static_cast<uint32_t>(found_layers.size());
-    create_info.ppEnabledLayerNames = found_layers.data();
-    create_info.enabledExtensionCount = static_cast<uint32_t>(found_extension.size());
-    create_info.ppEnabledExtensionNames = found_extension.data();
+    vk::InstanceCreateInfo instance_info;
+    if (enabled_extension_set.contains(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        instance_info.flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
+    }
+    instance_info.pApplicationInfo = &app_info;
+    instance_info.enabledLayerCount = enabled_layers.size();
+    instance_info.ppEnabledLayerNames = enabled_layers.data();
+    instance_info.enabledExtensionCount = enabled_extensions.size();
+    instance_info.ppEnabledExtensionNames = enabled_extensions.data();
+    m_instance = vk::createInstanceUnique(instance_info);
 
-    m_instance = vk::createInstanceUnique(create_info);
 #if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance.get());
 #endif
-    if (debug_enabled) {
-        vk::DebugReportCallbackCreateInfoEXT callback_create_info = {};
-        callback_create_info.flags = vk::DebugReportFlagBitsEXT::eWarning |
-                                     vk::DebugReportFlagBitsEXT::ePerformanceWarning |
-                                     vk::DebugReportFlagBitsEXT::eError | vk::DebugReportFlagBitsEXT::eDebug;
-        callback_create_info.pfnCallback = &DebugReportCallback;
-        callback_create_info.pUserData = this;
-        m_callback = m_instance->createDebugReportCallbackEXTUnique(callback_create_info);
+
+    m_api_version = app_info.apiVersion;
+    m_debug_utils_supported = enabled_extension_set.contains(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+    if (IsValidationEnabled() && m_debug_utils_supported) {
+        vk::DebugUtilsMessengerCreateInfoEXT debug_utils_messenger_info = {};
+        debug_utils_messenger_info.messageSeverity =
+            vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+        debug_utils_messenger_info.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                                                 vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+                                                 vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                                                 vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding;
+        debug_utils_messenger_info.pfnUserCallback = &DebugUtilsMessengerCallback;
+        debug_utils_messenger_info.pUserData = this;
+        m_debug_utils_messenger = m_instance->createDebugUtilsMessengerEXTUnique(debug_utils_messenger_info);
     }
 }
 
@@ -162,17 +165,17 @@ std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
 {
     std::vector<std::shared_ptr<Adapter>> adapters;
     std::vector<std::shared_ptr<Adapter>> sortware_adapters;
-    auto devices = m_instance->enumeratePhysicalDevices();
-    for (const auto& device : devices) {
-        vk::PhysicalDeviceProperties device_properties = device.getProperties();
-        if (device_properties.apiVersion < VK_API_VERSION_1_1) {
+    auto physical_devices = m_instance->enumeratePhysicalDevices();
+    for (const auto& physical_device : physical_devices) {
+        vk::PhysicalDeviceProperties properties = physical_device.getProperties();
+        if (properties.apiVersion < VK_API_VERSION_1_1) {
             continue;
         }
-        if (device_properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
-            device_properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
-            adapters.emplace_back(std::make_shared<VKAdapter>(*this, device));
-        } else if (device_properties.deviceType == vk::PhysicalDeviceType::eCpu) {
-            sortware_adapters.emplace_back(std::make_shared<VKAdapter>(*this, device));
+        if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
+            properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
+            adapters.emplace_back(std::make_shared<VKAdapter>(*this, physical_device));
+        } else if (properties.deviceType == vk::PhysicalDeviceType::eCpu) {
+            sortware_adapters.emplace_back(std::make_shared<VKAdapter>(*this, physical_device));
         }
     }
     if (adapters.empty()) {
