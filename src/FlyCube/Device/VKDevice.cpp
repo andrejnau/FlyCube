@@ -208,6 +208,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         // clang-format off
         VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
         VK_EXT_MESH_SHADER_EXTENSION_NAME,
+        VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
@@ -328,6 +329,10 @@ VKDevice::VKDevice(VKAdapter& adapter)
         device_vulkan12_features.runtimeDescriptorArray = query_device_vulkan12_features.runtimeDescriptorArray;
         device_vulkan12_features.descriptorBindingVariableDescriptorCount =
             query_device_vulkan12_features.descriptorBindingVariableDescriptorCount;
+        if (found_extension.contains(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
+            device_vulkan12_features.shaderOutputLayer = true;
+            device_vulkan12_features.shaderOutputViewportIndex = true;
+        }
         add_extension(device_vulkan12_features);
     } else {
         if (found_extension.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
@@ -346,7 +351,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         assert(found_extension.contains(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME));
     }
 
-    m_geometry_shader_supported = physical_device_features.geometryShader;
+    m_geometry_shader_supported = device_features.geometryShader;
     m_draw_indirect_count_supported = device_vulkan12_features.drawIndirectCount ||
                                       found_extension.contains(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     m_has_buffer_device_address =
