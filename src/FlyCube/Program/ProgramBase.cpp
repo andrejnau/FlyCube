@@ -18,7 +18,7 @@ ProgramBase::ProgramBase(const std::vector<std::shared_ptr<Shader>>& shaders)
 
 bool ProgramBase::HasShader(ShaderType type) const
 {
-    return m_shaders_by_type.count(type);
+    return m_shaders_by_type.contains(type);
 }
 
 std::shared_ptr<Shader> ProgramBase::GetShader(ShaderType type) const

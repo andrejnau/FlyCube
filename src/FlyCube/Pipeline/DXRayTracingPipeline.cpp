@@ -36,7 +36,7 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
         for (const auto& entry_point : shader->GetReflection()->GetEntryPoints()) {
             uint64_t shader_id = shader->GetId(entry_point.name);
             std::wstring shader_name = nowide::widen(entry_point.name);
-            if (m_shader_names.count(shader_name)) {
+            if (m_shader_names.contains(shader_name)) {
                 std::wstring new_shader_name =
                     GenerateUniqueName(shader_name + L"_renamed_" + std::to_wstring(shader_id));
                 library->DefineExport(new_shader_name.c_str(), shader_name.c_str());
@@ -101,7 +101,7 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
 std::wstring DXRayTracingPipeline::GenerateUniqueName(std::wstring name)
 {
     static uint64_t id = 0;
-    while (m_shader_names.count(name)) {
+    while (m_shader_names.contains(name)) {
         name += L"_" + std::to_wstring(++id);
     }
     return name;

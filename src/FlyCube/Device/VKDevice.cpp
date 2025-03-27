@@ -232,7 +232,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
     std::set<std::string_view> found_extension;
     for (const auto& extension : extensions) {
-        if (req_extension.count(extension.extensionName.data())) {
+        if (req_extension.contains(extension.extensionName.data())) {
             found_extension.insert(extension.extensionName.data());
         }
     }
@@ -919,7 +919,7 @@ vk::Device VKDevice::GetDevice()
 
 CommandListType VKDevice::GetAvailableCommandListType(CommandListType type)
 {
-    if (m_queues_info.count(type)) {
+    if (m_queues_info.contains(type)) {
         return type;
     }
     return CommandListType::kGraphics;

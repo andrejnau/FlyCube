@@ -96,7 +96,7 @@ VKInstance::VKInstance()
     auto layers = vk::enumerateInstanceLayerProperties();
     std::vector<const char*> enabled_layers;
     for (const auto& layer : layers) {
-        if (requested_layers.count(layer.layerName.data())) {
+        if (requested_layers.contains(layer.layerName.data())) {
             enabled_layers.push_back(layer.layerName);
         }
     }
@@ -120,7 +120,7 @@ VKInstance::VKInstance()
     std::vector<const char*> enabled_extensions;
     std::set<std::string_view> enabled_extension_set;
     for (const auto& extension : extensions) {
-        if (requested_extensions.count(extension.extensionName.data())) {
+        if (requested_extensions.contains(extension.extensionName.data())) {
             enabled_extensions.push_back(extension.extensionName.data());
             enabled_extension_set.insert(extension.extensionName.data());
         }

@@ -39,7 +39,7 @@ void ResourceStateTracker::SetSubresourceState(uint32_t mip_level, uint32_t arra
         return;
     }
     std::tuple<uint32_t, uint32_t> key = { mip_level, array_layer };
-    if (m_subresource_states.count(key)) {
+    if (m_subresource_states.contains(key)) {
         if (--m_subresource_state_groups[m_subresource_states[key]] == 0) {
             m_subresource_state_groups.erase(m_subresource_states[key]);
         }

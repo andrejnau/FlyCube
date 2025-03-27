@@ -12,7 +12,7 @@ VKBindingSet::VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetL
     decltype(auto) descriptor_set_layouts = m_layout->GetDescriptorSetLayouts();
     decltype(auto) descriptor_count_by_set = m_layout->GetDescriptorCountBySet();
     for (size_t i = 0; i < descriptor_set_layouts.size(); ++i) {
-        if (bindless_type.count(i)) {
+        if (bindless_type.contains(i)) {
             m_descriptor_sets.emplace_back(
                 m_device.GetGPUBindlessDescriptorPool(bindless_type.at(i)).GetDescriptorSet());
         } else {

@@ -124,7 +124,7 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
         layout.heap_offset = m_heap_descs[heap_type];
 
         RootKey key = { heap_type, bind_key.shader_type };
-        if (!descriptor_table_offset.count(key)) {
+        if (!descriptor_table_offset.contains(key)) {
             descriptor_table_offset[key] = m_heap_descs[heap_type];
         }
 
