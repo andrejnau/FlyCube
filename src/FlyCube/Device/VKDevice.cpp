@@ -204,8 +204,9 @@ VKDevice::VKDevice(VKAdapter& adapter)
     }
 
     auto extensions = m_physical_device.enumerateDeviceExtensionProperties();
-    std::set<std::string_view> req_extension = {
+    std::set<std::string_view> requested_extensions = {
         // clang-format off
+        "VK_KHR_portability_subset",
         VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
         VK_EXT_MESH_SHADER_EXTENSION_NAME,
         VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
@@ -221,19 +222,21 @@ VKDevice::VKDevice(VKAdapter& adapter)
     m_is_at_least_vulkan12 = m_device_properties.apiVersion >= VK_API_VERSION_1_2 &&
                              m_adapter.GetInstance().GetApiVersion() >= VK_API_VERSION_1_2;
     if (!m_is_at_least_vulkan12) {
-        req_extension.insert(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-        req_extension.insert(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-        req_extension.insert(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        req_extension.insert(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-        req_extension.insert(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
-        req_extension.insert(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
-        req_extension.insert(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+        requested_extensions.insert(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        requested_extensions.insert(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        requested_extensions.insert(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        requested_extensions.insert(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+        requested_extensions.insert(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+        requested_extensions.insert(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+        requested_extensions.insert(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
     }
 
-    std::set<std::string_view> found_extension;
+    std::vector<const char*> enabled_extensions;
+    std::set<std::string_view> enabled_extension_set;
     for (const auto& extension : extensions) {
-        if (req_extension.contains(extension.extensionName.data())) {
-            found_extension.insert(extension.extensionName.data());
+        if (requested_extensions.contains(extension.extensionName.data())) {
+            enabled_extensions.push_back(extension.extensionName.data());
+            enabled_extension_set.insert(extension.extensionName.data());
         }
     }
 
@@ -244,7 +247,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     };
 
     vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features = {};
-    if (found_extension.contains(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
+    if (enabled_extension_set.contains(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
         auto query_fragment_shading_rate_features = GetFeatures2<vk::PhysicalDeviceFragmentShadingRateFeaturesKHR>();
         if (query_fragment_shading_rate_features.pipelineFragmentShadingRate) {
             m_is_variable_rate_shading_supported = true;
@@ -329,36 +332,36 @@ VKDevice::VKDevice(VKAdapter& adapter)
         device_vulkan12_features.runtimeDescriptorArray = query_device_vulkan12_features.runtimeDescriptorArray;
         device_vulkan12_features.descriptorBindingVariableDescriptorCount =
             query_device_vulkan12_features.descriptorBindingVariableDescriptorCount;
-        if (found_extension.contains(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
+        if (enabled_extension_set.contains(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
             device_vulkan12_features.shaderOutputLayer = true;
             device_vulkan12_features.shaderOutputViewportIndex = true;
         }
         add_extension(device_vulkan12_features);
     } else {
-        if (found_extension.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
+        if (enabled_extension_set.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
             auto query_descriptor_indexing = GetFeatures2<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>();
             device_descriptor_indexing.runtimeDescriptorArray = query_descriptor_indexing.runtimeDescriptorArray;
             add_extension(device_descriptor_indexing);
         }
-        if (found_extension.contains(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
+        if (enabled_extension_set.contains(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
             auto query_device_buffer_device_address = GetFeatures2<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>();
             device_buffer_device_address.bufferDeviceAddress = query_device_buffer_device_address.bufferDeviceAddress;
             add_extension(device_buffer_device_address);
         }
-        assert(found_extension.contains(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
+        assert(enabled_extension_set.contains(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
         device_timeline_semaphore.timelineSemaphore = true;
         add_extension(device_timeline_semaphore);
-        assert(found_extension.contains(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME));
+        assert(enabled_extension_set.contains(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME));
     }
 
     m_geometry_shader_supported = device_features.geometryShader;
     m_draw_indirect_count_supported = device_vulkan12_features.drawIndirectCount ||
-                                      found_extension.contains(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+                                      enabled_extension_set.contains(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     m_has_buffer_device_address =
         device_vulkan12_features.bufferDeviceAddress || device_buffer_device_address.bufferDeviceAddress;
 
     vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_feature = {};
-    if (found_extension.contains(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
+    if (enabled_extension_set.contains(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
         auto query_mesh_shader_feature = GetFeatures2<vk::PhysicalDeviceMeshShaderFeaturesEXT>();
         mesh_shader_feature.taskShader = query_mesh_shader_feature.taskShader;
         mesh_shader_feature.meshShader = query_mesh_shader_feature.meshShader;
@@ -367,7 +370,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     }
 
     vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_feature = {};
-    if (found_extension.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
+    if (enabled_extension_set.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
         auto query_acceleration_structure_feature = GetFeatures2<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>();
         acceleration_structure_feature.accelerationStructure =
             query_acceleration_structure_feature.accelerationStructure;
@@ -375,7 +378,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     }
 
     vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_pipeline_feature = {};
-    if (found_extension.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
+    if (enabled_extension_set.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
         acceleration_structure_feature.accelerationStructure) {
         vk::PhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = {};
         vk::PhysicalDeviceProperties2 device_props2 = {};
@@ -395,7 +398,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     }
 
     vk::PhysicalDeviceRayQueryFeaturesKHR rayquery_feature = {};
-    if (found_extension.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
+    if (enabled_extension_set.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
         acceleration_structure_feature.accelerationStructure) {
         auto query_rayquery_feature = GetFeatures2<vk::PhysicalDeviceRayQueryFeaturesKHR>();
         rayquery_feature.rayQuery = query_rayquery_feature.rayQuery;
@@ -403,20 +406,16 @@ VKDevice::VKDevice(VKAdapter& adapter)
         add_extension(rayquery_feature);
     }
 
-    std::vector<const char*> enabled_extension;
-    for (const auto& extension : found_extension) {
-        enabled_extension.push_back(extension.data());
-    }
-
     vk::DeviceCreateInfo device_create_info = {};
     device_create_info.pNext = device_create_info_next;
     device_create_info.queueCreateInfoCount = queues_create_info.size();
     device_create_info.pQueueCreateInfos = queues_create_info.data();
     device_create_info.pEnabledFeatures = &device_features;
-    device_create_info.enabledExtensionCount = enabled_extension.size();
-    device_create_info.ppEnabledExtensionNames = enabled_extension.data();
+    device_create_info.enabledExtensionCount = enabled_extensions.size();
+    device_create_info.ppEnabledExtensionNames = enabled_extensions.data();
 
     m_device = m_physical_device.createDeviceUnique(device_create_info);
+
 #if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device.get());
 #endif
