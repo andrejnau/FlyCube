@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer =
-        device->CreateBuffer(BindFlag::kCopyDest, sizeof(index_data.front()) * index_data.size());
+        device->CreateBuffer(BindFlag::kShaderResource, sizeof(index_data.front()) * index_data.size());
     index_buffer->CommitMemory(MemoryType::kUpload);
     index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
 
@@ -31,13 +31,13 @@ int main(int argc, char* argv[])
         glm::vec3(0.5, -0.5, 0.0),
     };
     std::shared_ptr<Resource> vertex_buffer =
-        device->CreateBuffer(BindFlag::kCopyDest, sizeof(vertex_data.front()) * vertex_data.size());
+        device->CreateBuffer(BindFlag::kShaderResource, sizeof(vertex_data.front()) * vertex_data.size());
     vertex_buffer->CommitMemory(MemoryType::kUpload);
     vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 
     glm::vec4 pixel_constant_data = glm::vec4(1, 0, 0, 1);
     std::shared_ptr<Resource> pixel_constant_buffer =
-        device->CreateBuffer(BindFlag::kConstantBuffer | BindFlag::kCopyDest, sizeof(pixel_constant_data));
+        device->CreateBuffer(BindFlag::kConstantBuffer, sizeof(pixel_constant_data));
     pixel_constant_buffer->CommitMemory(MemoryType::kUpload);
     pixel_constant_buffer->UpdateUploadBuffer(0, &pixel_constant_data, sizeof(pixel_constant_data));
 
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
     std::pair<uint32_t, uint32_t> vertex_constant_data = { index_buffer_view->GetDescriptorId(),
                                                            vertex_buffer_view->GetDescriptorId() };
     std::shared_ptr<Resource> vertex_constant_buffer =
-        device->CreateBuffer(BindFlag::kConstantBuffer | BindFlag::kCopyDest, sizeof(pixel_constant_data));
+        device->CreateBuffer(BindFlag::kConstantBuffer, sizeof(pixel_constant_data));
     vertex_constant_buffer->CommitMemory(MemoryType::kUpload);
     vertex_constant_buffer->UpdateUploadBuffer(0, &vertex_constant_data, sizeof(vertex_constant_data));
 
