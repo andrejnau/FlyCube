@@ -77,6 +77,8 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device, const std::vector<BindK
             binding_flag = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
             m_bindless_type.emplace(bind_key.space, binding.descriptorType);
             binding.stageFlags = vk::ShaderStageFlagBits::eAll;
+        } else {
+            binding_flag = vk::DescriptorBindingFlagBits::ePartiallyBound;
         }
     }
 

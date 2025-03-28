@@ -330,6 +330,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
         device_vulkan12_features.timelineSemaphore = true;
         device_vulkan12_features.descriptorIndexing = query_device_vulkan12_features.descriptorIndexing;
         device_vulkan12_features.runtimeDescriptorArray = query_device_vulkan12_features.runtimeDescriptorArray;
+        device_vulkan12_features.descriptorBindingPartiallyBound =
+            query_device_vulkan12_features.descriptorBindingPartiallyBound;
         device_vulkan12_features.descriptorBindingVariableDescriptorCount =
             query_device_vulkan12_features.descriptorBindingVariableDescriptorCount;
         if (enabled_extension_set.contains(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
@@ -341,6 +343,10 @@ VKDevice::VKDevice(VKAdapter& adapter)
         if (enabled_extension_set.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
             auto query_descriptor_indexing = GetFeatures2<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>();
             device_descriptor_indexing.runtimeDescriptorArray = query_descriptor_indexing.runtimeDescriptorArray;
+            device_descriptor_indexing.descriptorBindingPartiallyBound =
+                query_descriptor_indexing.descriptorBindingPartiallyBound;
+            device_descriptor_indexing.descriptorBindingVariableDescriptorCount =
+                query_descriptor_indexing.descriptorBindingVariableDescriptorCount;
             add_extension(device_descriptor_indexing);
         }
         if (enabled_extension_set.contains(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
