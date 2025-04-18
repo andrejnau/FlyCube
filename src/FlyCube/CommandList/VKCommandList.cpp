@@ -421,7 +421,7 @@ void VKCommandList::SetViewport(float x, float y, float width, float height)
     m_command_list->setViewport(0, 1, &viewport);
 }
 
-void VKCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)
+void VKCommandList::SetScissorRect(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom)
 {
     vk::Rect2D rect = {};
     rect.offset.x = left;

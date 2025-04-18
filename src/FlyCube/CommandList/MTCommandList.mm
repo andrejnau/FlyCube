@@ -401,7 +401,7 @@ void MTCommandList::SetViewport(float x, float y, float width, float height)
         [&render_encoder = m_render_encoder, viewport = m_viewport] { [render_encoder setViewport:viewport]; });
 }
 
-void MTCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)
+void MTCommandList::SetScissorRect(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom)
 {
     m_scissor.x = left;
     m_scissor.y = top;
