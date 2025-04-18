@@ -426,8 +426,8 @@ void VKCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, ui
     vk::Rect2D rect = {};
     rect.offset.x = left;
     rect.offset.y = top;
-    rect.extent.width = right;
-    rect.extent.height = bottom;
+    rect.extent.width = right - left;
+    rect.extent.height = bottom - top;
     m_command_list->setScissor(0, 1, &rect);
 }
 
