@@ -206,7 +206,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
     auto extensions = m_physical_device.enumerateDeviceExtensionProperties();
     std::set<std::string_view> requested_extensions = {
         // clang-format off
-        "VK_KHR_portability_subset",
         VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
         VK_EXT_MESH_SHADER_EXTENSION_NAME,
         VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,

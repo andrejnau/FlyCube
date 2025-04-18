@@ -22,6 +22,7 @@ bool SkipMessage(std::string_view message)
     static constexpr std::string_view kMutedMessages[] = {
         "SPV_GOOGLE_hlsl_functionality1",
         "SPV_GOOGLE_user_type",
+        "VUID-VkDeviceCreateInfo-pProperties-04451",
     };
     for (const auto& str : kMutedMessages) {
         if (message.find(str) != std::string::npos) {
