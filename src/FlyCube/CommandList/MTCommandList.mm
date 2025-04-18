@@ -193,6 +193,8 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
 
     ApplyAndRecord(
         [&render_encoder = m_render_encoder, viewport = m_viewport] { [render_encoder setViewport:viewport]; });
+    ApplyAndRecord(
+        [&render_encoder = m_render_encoder, scissor = m_scissor] { [render_encoder setScissorRect:scissor]; });
 
     for (const auto& vertex : m_vertices) {
         ApplyAndRecord([&render_encoder = m_render_encoder, vertex] {
@@ -399,7 +401,20 @@ void MTCommandList::SetViewport(float x, float y, float width, float height)
         [&render_encoder = m_render_encoder, viewport = m_viewport] { [render_encoder setViewport:viewport]; });
 }
 
-void MTCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom) {}
+void MTCommandList::SetScissorRect(int32_t left, int32_t top, uint32_t right, uint32_t bottom)
+{
+    m_scissor.x = left;
+    m_scissor.y = top;
+    m_scissor.width = right - left;
+    m_scissor.height = bottom - top;
+
+    if (!m_render_encoder) {
+        return;
+    }
+
+    ApplyAndRecord(
+        [&render_encoder = m_render_encoder, scissor = m_scissor] { [render_encoder setScissorRect:scissor]; });
+}
 
 void MTCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {

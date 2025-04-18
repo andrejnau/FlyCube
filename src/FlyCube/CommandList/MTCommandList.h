@@ -114,6 +114,7 @@ private:
     std::shared_ptr<Resource> m_index_buffer;
     gli::format m_index_format = gli::FORMAT_UNDEFINED;
     MTLViewport m_viewport = {};
+    MTLScissorRect m_scissor = {};
     std::map<uint32_t, id<MTLBuffer>> m_vertices;
     std::shared_ptr<Pipeline> m_state;
     std::weak_ptr<Pipeline> m_last_state;
