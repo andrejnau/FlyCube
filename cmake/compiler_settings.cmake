@@ -9,6 +9,7 @@ set(appleclang_clang_compile_options
 set(appleclang_compile_options
     -Wno-deprecated-declarations
     -Wno-deprecated-volatile
+    -Wno-missing-template-arg-list-after-template-kw
     -Wno-shorten-64-to-32
     -Wno-unguarded-availability-new
 )
