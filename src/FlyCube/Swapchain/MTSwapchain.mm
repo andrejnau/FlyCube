@@ -5,20 +5,6 @@
 #include "Instance/MTInstance.h"
 #include "Resource/MTResource.h"
 
-namespace {
-
-id<MTLTexture> CrateTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
-{
-    MTLTextureDescriptor* texture_descriptor = [[MTLTextureDescriptor alloc] init];
-    texture_descriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
-    texture_descriptor.width = width;
-    texture_descriptor.height = height;
-    texture_descriptor.usage = MTLTextureUsageRenderTarget;
-    return [device newTextureWithDescriptor:texture_descriptor];
-}
-
-} // namespace
-
 MTSwapchain::MTSwapchain(MTDevice& device,
                          WindowHandle window,
                          uint32_t width,
@@ -42,13 +28,14 @@ MTSwapchain::MTSwapchain(MTDevice& device,
     m_layer.framebufferOnly = NO;
 
     for (size_t i = 0; i < frame_count; ++i) {
-        std::shared_ptr<MTResource> res = std::make_shared<MTResource>(m_device);
-        res->texture.res = CrateTexture(device.GetDevice(), width, height);
-        [m_device.GetResidencySet() addAllocation:res->texture.res];
-        res->is_back_buffer = true;
-        res->resource_type = ResourceType::kTexture;
-        res->format = GetFormat();
-        m_back_buffers.emplace_back(res);
+        auto back_buffer = m_device.CreateTexture(TextureType::k2D, BindFlag::kRenderTarget, GetFormat(),
+                                                  /*sample_count=*/1, width, height,
+                                                  /*depth=*/1, /*mip_levels=*/1);
+        back_buffer->CommitMemory(MemoryType::kDefault);
+        auto resource = back_buffer->As<MTResource>();
+        resource.is_back_buffer = true;
+        resource.SetInitialState(ResourceState::kPresent);
+        m_back_buffers.emplace_back(std::move(back_buffer));
     }
 }
 
