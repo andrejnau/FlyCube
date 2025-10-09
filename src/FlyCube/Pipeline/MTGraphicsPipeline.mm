@@ -218,12 +218,12 @@ void MTGraphicsPipeline::CreatePipeline()
     if constexpr (is_mesh_pipeline) {
         m_pipeline = [m_device.GetDevice() newRenderPipelineStateWithMeshDescriptor:pipeline_descriptor
                                                                             options:options
-                                                                         reflection:nil
+                                                                         reflection:nullptr
                                                                               error:&error];
     } else {
         m_pipeline = [m_device.GetDevice() newRenderPipelineStateWithDescriptor:pipeline_descriptor
                                                                         options:options
-                                                                     reflection:nil
+                                                                     reflection:nullptr
                                                                           error:&error];
     }
 

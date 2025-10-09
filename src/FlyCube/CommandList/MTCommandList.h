@@ -97,20 +97,21 @@ public:
                           uint64_t dst_offset) override;
     void SetName(const std::string& name) override;
 
-    id<MTLCommandBuffer> GetCommandBuffer();
+    id<MTL4CommandBuffer> GetCommandBuffer();
     void OnSubmit();
 
 private:
-    id<MTLBuffer> PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
-                                    uint64_t instance_offset,
-                                    uint32_t instance_count);
+    MTL4BufferRange PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
+                                      uint64_t instance_offset,
+                                      uint32_t instance_count);
     void ApplyState();
     void ApplyBindingSet();
     void ApplyAndRecord(std::function<void()>&& cmd);
 
     MTDevice& m_device;
-    id<MTLCommandBuffer> m_command_buffer = nullptr;
-    id<MTLRenderCommandEncoder> m_render_encoder = nullptr;
+    id<MTL4CommandBuffer> m_command_buffer = nullptr;
+    id<MTL4CommandAllocator> m_allocator = nullptr;
+    id<MTL4RenderCommandEncoder> m_render_encoder = nullptr;
     std::shared_ptr<Resource> m_index_buffer;
     gli::format m_index_format = gli::FORMAT_UNDEFINED;
     MTLViewport m_viewport = {};
@@ -122,4 +123,6 @@ private:
     std::weak_ptr<MTBindingSet> m_last_binding_set;
     std::deque<std::function<void()>> m_recorded_cmds;
     bool m_executed = false;
+    std::map<ShaderType, id<MTL4ArgumentTable>> m_argument_tables;
+    bool m_closed = false;
 };

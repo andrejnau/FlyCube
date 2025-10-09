@@ -93,11 +93,12 @@ public:
 
     const id<MTLDevice>& GetDevice() const;
     MVKPixelFormats& GetMVKPixelFormats();
-    id<MTLCommandQueue> GetMTCommandQueue() const;
+    id<MTL4CommandQueue> GetMTCommandQueue() const;
     uint32_t GetMaxPerStageBufferCount() const;
 
     MTInstance& GetInstance();
     MTGPUBindlessArgumentBuffer& GetBindlessArgumentBuffer();
+    id<MTLResidencySet> GetResidencySet();
 
 private:
     id<MTLDevice> getMTLDevice() override;
@@ -107,6 +108,7 @@ private:
     MVKPixelFormats m_mvk_pixel_formats;
     std::shared_ptr<MTCommandQueue> m_command_queue;
     MTGPUBindlessArgumentBuffer m_bindless_argument_buffer;
+    id<MTLResidencySet> m_residency_set;
 };
 
 MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(const BufferDesc& vertex,

@@ -18,15 +18,20 @@ void MTGPUBindlessArgumentBuffer::ResizeHeap(uint32_t req_size)
 
     if (m_size && m_buffer) {
         auto queue = m_device.GetMTCommandQueue();
-        auto command_buffer = [queue commandBuffer];
-        id<MTLBlitCommandEncoder> blit_encoder = [command_buffer blitCommandEncoder];
-        [blit_encoder copyFromBuffer:m_buffer
-                        sourceOffset:0
-                            toBuffer:buffer
-                   destinationOffset:0
-                                size:m_size * sizeof(uint64_t)];
-        [blit_encoder endEncoding];
-        [command_buffer commit];
+        auto command_buffer = [m_device.GetDevice() newCommandBuffer];
+        auto allocator = [m_device.GetDevice() newCommandAllocator];
+        [command_buffer beginCommandBufferWithAllocator:allocator];
+
+        auto compute_encoder = [command_buffer computeCommandEncoder];
+        [compute_encoder copyFromBuffer:m_buffer
+                           sourceOffset:0
+                               toBuffer:buffer
+                      destinationOffset:0
+                                   size:m_size * sizeof(uint64_t)];
+        [compute_encoder endEncoding];
+
+        [command_buffer endCommandBuffer];
+        [queue commit:&command_buffer count:1];
     }
 
     m_size = req_size;

@@ -12,9 +12,9 @@ public:
     void Signal(const std::shared_ptr<Fence>& fence, uint64_t value) override;
     void ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists) override;
 
-    id<MTLCommandQueue> GetCommandQueue();
+    id<MTL4CommandQueue> GetCommandQueue();
 
 private:
     MTDevice& m_device;
-    id<MTLCommandQueue> m_command_queue;
+    id<MTL4CommandQueue> m_command_queue;
 };

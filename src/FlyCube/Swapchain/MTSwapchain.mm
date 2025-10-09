@@ -1,6 +1,7 @@
 #include "Swapchain/MTSwapchain.h"
 
 #include "Device/MTDevice.h"
+#include "Fence/MTFence.h"
 #include "Instance/MTInstance.h"
 #include "Resource/MTResource.h"
 
@@ -43,6 +44,7 @@ MTSwapchain::MTSwapchain(MTDevice& device,
     for (size_t i = 0; i < frame_count; ++i) {
         std::shared_ptr<MTResource> res = std::make_shared<MTResource>(m_device);
         res->texture.res = CrateTexture(device.GetDevice(), width, height);
+        [m_device.GetResidencySet() addAllocation:res->texture.res];
         res->is_back_buffer = true;
         res->resource_type = ResourceType::kTexture;
         res->format = GetFormat();
@@ -62,30 +64,41 @@ std::shared_ptr<Resource> MTSwapchain::GetBackBuffer(uint32_t buffer)
 
 uint32_t MTSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
 {
+    decltype(auto) mt_fence = fence->As<MTFence>();
+    auto queue = m_device.GetMTCommandQueue();
+    [queue signalEvent:mt_fence.GetSharedEvent() value:signal_value];
     return m_frame_index = (m_frame_index + 1) % m_frame_count;
 }
 
 void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
+    decltype(auto) mt_fence = fence->As<MTFence>();
     auto back_buffer = m_back_buffers[m_frame_index];
     auto resource = back_buffer->As<MTResource>();
     auto queue = m_device.GetMTCommandQueue();
-
-    auto command_buffer = [queue commandBuffer];
-    id<MTLBlitCommandEncoder> blit_encoder = [command_buffer blitCommandEncoder];
     id<CAMetalDrawable> drawable = [m_layer nextDrawable];
-    [blit_encoder copyFromTexture:resource.texture.res
-                      sourceSlice:0
-                      sourceLevel:0
-                     sourceOrigin:{ 0, 0, 0 }
-                       sourceSize:{ m_width, m_height, 1 }
-                        toTexture:drawable.texture
-                 destinationSlice:0
-                 destinationLevel:0
-                destinationOrigin:{ 0, 0, 0 }];
-    [blit_encoder endEncoding];
-    [command_buffer addScheduledHandler:^(id<MTLCommandBuffer>) {
-        [drawable present];
-    }];
-    [command_buffer commit];
+
+    auto command_buffer = [m_device.GetDevice() newCommandBuffer];
+    auto allocator = [m_device.GetDevice() newCommandAllocator];
+    [command_buffer beginCommandBufferWithAllocator:allocator];
+
+    auto compute_encoder = [command_buffer computeCommandEncoder];
+    [compute_encoder copyFromTexture:resource.texture.res
+                         sourceSlice:0
+                         sourceLevel:0
+                        sourceOrigin:{ 0, 0, 0 }
+                          sourceSize:{ m_width, m_height, 1 }
+                           toTexture:drawable.texture
+                    destinationSlice:0
+                    destinationLevel:0
+                   destinationOrigin:{ 0, 0, 0 }];
+    [compute_encoder endEncoding];
+
+    [command_buffer endCommandBuffer];
+
+    [queue waitForEvent:mt_fence.GetSharedEvent() value:wait_value];
+    [queue waitForDrawable:drawable];
+    [queue commit:&command_buffer count:1];
+    [queue signalDrawable:drawable];
+    [drawable present];
 }

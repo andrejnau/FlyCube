@@ -23,6 +23,9 @@ MTDevice::MTDevice(MTInstance& instance, const id<MTLDevice>& device)
     , m_mvk_pixel_formats(this)
     , m_bindless_argument_buffer(*this)
 {
+    NSError* error = nullptr;
+    MTLResidencySetDescriptor* residencySetDescriptor = [MTLResidencySetDescriptor new];
+    m_residency_set = [GetDevice() newResidencySetWithDescriptor:residencySetDescriptor error:&error];
     m_command_queue = std::make_shared<MTCommandQueue>(*this);
 }
 
@@ -204,6 +207,7 @@ std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(AccelerationStru
     std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
     res->resource_type = ResourceType::kAccelerationStructure;
     res->acceleration_structure = [m_device newAccelerationStructureWithSize:resource->GetWidth() - offset];
+    [GetResidencySet() addAllocation:res->acceleration_structure];
     res->acceleration_structure_handle = [res->acceleration_structure gpuResourceID];
     return res;
 }
@@ -372,7 +376,7 @@ MVKPixelFormats& MTDevice::GetMVKPixelFormats()
     return m_mvk_pixel_formats;
 }
 
-id<MTLCommandQueue> MTDevice::GetMTCommandQueue() const
+id<MTL4CommandQueue> MTDevice::GetMTCommandQueue() const
 {
     return m_command_queue->GetCommandQueue();
 }
@@ -390,4 +394,9 @@ MTInstance& MTDevice::GetInstance()
 MTGPUBindlessArgumentBuffer& MTDevice::GetBindlessArgumentBuffer()
 {
     return m_bindless_argument_buffer;
+}
+
+id<MTLResidencySet> MTDevice::GetResidencySet()
+{
+    return m_residency_set;
 }
