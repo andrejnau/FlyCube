@@ -1,6 +1,7 @@
 #include "CommandQueue/MTCommandQueue.h"
 
 #include "CommandList/MTCommandList.h"
+#include "CommandList/RecordCommandList.h"
 #include "Device/MTDevice.h"
 #include "Fence/MTFence.h"
 #include "Instance/MTInstance.h"
@@ -26,16 +27,17 @@ void MTCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
 
 void MTCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
 {
-    [m_device.GetResidencySet() commit];
+    std::vector<id<MTL4CommandBuffer>> command_buffers;
     for (auto& command_list : command_lists) {
         if (!command_list) {
             continue;
         }
-        decltype(auto) mt_command_list = command_list->As<MTCommandList>();
-        mt_command_list.OnSubmit();
-        auto commandBuffer = mt_command_list.GetCommandBuffer();
-        [m_command_queue commit:&commandBuffer count:1];
+        decltype(auto) record_command_list = command_list->As<RecordCommandList<MTCommandList>>();
+        command_buffers.push_back(record_command_list.OnSubmit()->GetCommandBuffer());
     }
+
+    [m_device.GetResidencySet() commit];
+    [m_command_queue commit:command_buffers.data() count:command_buffers.size()];
 }
 
 id<MTL4CommandQueue> MTCommandQueue::GetCommandQueue()

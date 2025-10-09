@@ -3,6 +3,7 @@
 #include "BindingSet/MTBindingSet.h"
 #include "BindingSetLayout/MTBindingSetLayout.h"
 #include "CommandList/MTCommandList.h"
+#include "CommandList/RecordCommandList.h"
 #include "CommandQueue/MTCommandQueue.h"
 #include "Fence/MTFence.h"
 #include "Framebuffer/MTFramebuffer.h"
@@ -55,7 +56,8 @@ std::shared_ptr<Swapchain> MTDevice::CreateSwapchain(WindowHandle window,
 
 std::shared_ptr<CommandList> MTDevice::CreateCommandList(CommandListType type)
 {
-    return std::make_shared<MTCommandList>(*this, type);
+    auto command_list = std::make_unique<MTCommandList>(*this, type);
+    return std::make_shared<RecordCommandList<MTCommandList>>(std::move(command_list));
 }
 
 std::shared_ptr<Fence> MTDevice::CreateFence(uint64_t initial_value)

@@ -49,6 +49,7 @@ list(APPEND CommandList
     $<$<BOOL:${VULKAN_SUPPORT}>:CommandList/VKCommandList.cpp>
     $<$<BOOL:${VULKAN_SUPPORT}>:CommandList/VKCommandList.h>
     CommandList/CommandList.h
+    CommandList/RecordCommandList.h
 )
 
 list(APPEND CommandQueue

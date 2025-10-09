@@ -3,8 +3,6 @@
 
 #import <Metal/Metal.h>
 
-#include <deque>
-#include <functional>
 #include <map>
 
 class MTDevice;
@@ -98,7 +96,6 @@ public:
     void SetName(const std::string& name) override;
 
     id<MTL4CommandBuffer> GetCommandBuffer();
-    void OnSubmit();
 
 private:
     MTL4BufferRange PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
@@ -106,7 +103,7 @@ private:
                                       uint32_t instance_count);
     void ApplyState();
     void ApplyBindingSet();
-    void ApplyAndRecord(std::function<void()>&& cmd);
+    void CreateArgumentTables();
 
     MTDevice& m_device;
     id<MTL4CommandBuffer> m_command_buffer = nullptr;
@@ -121,8 +118,6 @@ private:
     std::weak_ptr<Pipeline> m_last_state;
     std::shared_ptr<MTBindingSet> m_binding_set;
     std::weak_ptr<MTBindingSet> m_last_binding_set;
-    std::deque<std::function<void()>> m_recorded_cmds;
-    bool m_executed = false;
     std::map<ShaderType, id<MTL4ArgumentTable>> m_argument_tables;
     bool m_closed = false;
 };
