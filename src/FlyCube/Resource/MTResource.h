@@ -48,7 +48,6 @@ public:
     } sampler;
 
     id<MTLAccelerationStructure> acceleration_structure;
-    MTLResourceID acceleration_structure_handle = {};
 
 private:
     MTLTextureDescriptor* GetTextureDescriptor(MemoryType memory_type) const;

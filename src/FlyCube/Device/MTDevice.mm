@@ -210,7 +210,6 @@ std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(AccelerationStru
     res->resource_type = ResourceType::kAccelerationStructure;
     res->acceleration_structure = [m_device newAccelerationStructureWithSize:resource->GetWidth() - offset];
     [GetResidencySet() addAllocation:res->acceleration_structure];
-    res->acceleration_structure_handle = [res->acceleration_structure gpuResourceID];
     return res;
 }
 

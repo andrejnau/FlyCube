@@ -141,7 +141,7 @@ uint32_t MTResource::GetSampleCount() const
 
 uint64_t MTResource::GetAccelerationStructureHandle() const
 {
-    return acceleration_structure_handle._impl;
+    return acceleration_structure.gpuResourceID._impl;
 }
 
 void MTResource::SetName(const std::string& name) {}
