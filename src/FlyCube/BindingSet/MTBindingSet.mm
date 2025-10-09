@@ -137,6 +137,20 @@ MTBindingSet::MTBindingSet(MTDevice& device, const std::shared_ptr<MTBindingSetL
 
 void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
 {
+    m_resources.clear();
+    for (const auto& binding : bindings) {
+        decltype(auto) bind_key = binding.bind_key;
+        if (bind_key.count == ~0) {
+            continue;
+        }
+        decltype(auto) view = std::static_pointer_cast<MTView>(binding.view);
+        id<MTLResource> resource = view->GetNativeResource();
+        if (!resource) {
+            continue;
+        }
+        m_resources.push_back(resource);
+    }
+
     if (!UseArgumentBuffers()) {
         m_direct_bindings = bindings;
         return;
@@ -172,4 +186,14 @@ void MTBindingSet::Apply(const std::map<ShaderType, id<MTL4ArgumentTable>>& argu
         SetBuffer(argument_tables.at(key.first), m_argument_buffers[key], 0, key.second);
     }
     ApplyDirectArguments(state, argument_tables, m_direct_bind_keys, m_direct_bindings, m_device);
+}
+
+void MTBindingSet::AddResourcesToResidencySet(id<MTLResidencySet> residency_set)
+{
+    for (const auto& [_, resource] : m_argument_buffers) {
+        [residency_set addAllocation:resource];
+    }
+    for (const auto& resource : m_resources) {
+        [residency_set addAllocation:resource];
+    }
 }

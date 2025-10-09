@@ -69,6 +69,12 @@ void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
     auto allocator = [m_device.GetDevice() newCommandAllocator];
     [command_buffer beginCommandBufferWithAllocator:allocator];
 
+    auto residency_set = m_device.CreateResidencySet();
+    [residency_set addAllocation:resource.texture.res];
+    [residency_set addAllocation:drawable.texture];
+    [residency_set commit];
+    [command_buffer useResidencySet:residency_set];
+
     auto compute_encoder = [command_buffer computeCommandEncoder];
     [compute_encoder copyFromTexture:resource.texture.res
                          sourceSlice:0

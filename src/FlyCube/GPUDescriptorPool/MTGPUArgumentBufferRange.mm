@@ -23,3 +23,8 @@ uint32_t MTGPUArgumentBufferRange::GetOffset() const
 {
     return m_offset;
 }
+
+void MTGPUArgumentBufferRange::AddAllocation(uint32_t offset, id<MTLAllocation> allocation)
+{
+    m_argument_buffer.get().AddAllocation(offset, allocation);
+}

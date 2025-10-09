@@ -14,6 +14,8 @@ public:
     MTGPUArgumentBufferRange Allocate(uint32_t count);
     void OnRangeDestroy(uint32_t offset, uint32_t size);
     id<MTLBuffer> GetArgumentBuffer() const;
+    void AddAllocation(uint32_t offset, id<MTLAllocation> allocation);
+    id<MTLResidencySet> GetResidencySet() const;
 
 private:
     void ResizeHeap(uint32_t req_size);
@@ -23,4 +25,7 @@ private:
     uint32_t m_offset = 0;
     std::multimap<uint32_t, uint32_t> m_empty_ranges;
     id<MTLBuffer> m_buffer;
+    id<MTLResidencySet> m_residency_set;
+    std::vector<id<MTLAllocation>> m_allocations;
+    std::map<id<MTLAllocation>, size_t> m_allocations_cnt;
 };

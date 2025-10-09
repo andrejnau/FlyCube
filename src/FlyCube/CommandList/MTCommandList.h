@@ -104,19 +104,20 @@ private:
     void ApplyComputeState(id<MTL4ComputeCommandEncoder> compute_encoder);
     void ApplyGraphicsState();
     void CreateArgumentTables();
+    void AddAllocation(id<MTLAllocation> allocation);
 
     MTDevice& m_device;
     id<MTL4CommandBuffer> m_command_buffer = nullptr;
     id<MTL4CommandAllocator> m_allocator = nullptr;
     id<MTL4RenderCommandEncoder> m_render_encoder = nullptr;
-    std::shared_ptr<Resource> m_index_buffer;
+    id<MTLBuffer> m_index_buffer;
     gli::format m_index_format = gli::FORMAT_UNDEFINED;
     MTLViewport m_viewport = {};
     MTLScissorRect m_scissor = {};
-    std::map<uint32_t, id<MTLBuffer>> m_vertices;
     std::shared_ptr<Pipeline> m_state;
     std::shared_ptr<MTBindingSet> m_binding_set;
     std::map<ShaderType, id<MTL4ArgumentTable>> m_argument_tables;
+    id<MTLResidencySet> m_residency_set;
     bool m_need_apply_state = false;
     bool m_need_apply_binding_set = false;
     bool m_closed = false;

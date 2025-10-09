@@ -10,7 +10,11 @@ MTCommandQueue::MTCommandQueue(MTDevice& device)
     : m_device(device)
 {
     m_command_queue = [device.GetDevice() newMTL4CommandQueue];
-    [m_command_queue addResidencySet:m_device.GetResidencySet()];
+    auto global_residency_set = m_device.GetGlobalResidencySet();
+    if (global_residency_set) {
+        [m_command_queue addResidencySet:global_residency_set];
+    }
+    [m_command_queue addResidencySet:m_device.GetBindlessArgumentBuffer().GetResidencySet()];
 }
 
 void MTCommandQueue::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
@@ -36,7 +40,8 @@ void MTCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<Comma
         command_buffers.push_back(record_command_list.OnSubmit()->GetCommandBuffer());
     }
 
-    [m_device.GetResidencySet() commit];
+    [m_device.GetGlobalResidencySet() commit];
+    [m_device.GetBindlessArgumentBuffer().GetResidencySet() commit];
     [m_command_queue commit:command_buffers.data() count:command_buffers.size()];
 }
 

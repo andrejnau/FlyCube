@@ -4,6 +4,7 @@
 
 MTGPUBindlessArgumentBuffer::MTGPUBindlessArgumentBuffer(MTDevice& device)
     : m_device(device)
+    , m_residency_set(device.CreateResidencySet())
 {
 }
 
@@ -15,12 +16,17 @@ void MTGPUBindlessArgumentBuffer::ResizeHeap(uint32_t req_size)
 
     id<MTLBuffer> buffer = [m_device.GetDevice() newBufferWithLength:req_size * sizeof(uint64_t)
                                                              options:MTLResourceStorageModeShared];
-
     if (m_size && m_buffer) {
         auto queue = m_device.GetMTCommandQueue();
         auto command_buffer = [m_device.GetDevice() newCommandBuffer];
         auto allocator = [m_device.GetDevice() newCommandAllocator];
         [command_buffer beginCommandBufferWithAllocator:allocator];
+
+        auto residency_set = m_device.CreateResidencySet();
+        [residency_set addAllocation:m_buffer];
+        [residency_set addAllocation:buffer];
+        [residency_set commit];
+        [command_buffer useResidencySet:residency_set];
 
         auto compute_encoder = [command_buffer computeCommandEncoder];
         [compute_encoder copyFromBuffer:m_buffer
@@ -36,6 +42,8 @@ void MTGPUBindlessArgumentBuffer::ResizeHeap(uint32_t req_size)
 
     m_size = req_size;
     m_buffer = buffer;
+    m_allocations.resize(m_size);
+    [m_residency_set addAllocation:m_buffer];
 }
 
 MTGPUArgumentBufferRange MTGPUBindlessArgumentBuffer::Allocate(uint32_t count)
@@ -57,9 +65,37 @@ MTGPUArgumentBufferRange MTGPUBindlessArgumentBuffer::Allocate(uint32_t count)
 void MTGPUBindlessArgumentBuffer::OnRangeDestroy(uint32_t offset, uint32_t size)
 {
     m_empty_ranges.emplace(size, offset);
+    for (uint32_t i = offset; i < offset + size; ++i) {
+        if (!m_allocations[i]) {
+            continue;
+        }
+
+        if (--m_allocations_cnt.at(m_allocations[i]) == 0) {
+            [m_residency_set removeAllocation:m_allocations[i]];
+            m_allocations_cnt.erase(m_allocations[i]);
+        }
+        m_allocations[i] = {};
+    }
 }
 
 id<MTLBuffer> MTGPUBindlessArgumentBuffer::GetArgumentBuffer() const
 {
     return m_buffer;
+}
+
+void MTGPUBindlessArgumentBuffer::AddAllocation(uint32_t offset, id<MTLAllocation> allocation)
+{
+    if (!allocation) {
+        return;
+    }
+
+    if (++m_allocations_cnt[allocation] == 1) {
+        [m_residency_set addAllocation:allocation];
+    }
+    m_allocations[offset] = allocation;
+}
+
+id<MTLResidencySet> MTGPUBindlessArgumentBuffer::GetResidencySet() const
+{
+    return m_residency_set;
 }

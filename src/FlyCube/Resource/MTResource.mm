@@ -77,13 +77,13 @@ void MTResource::CommitMemory(MemoryType memory_type)
     if (resource_type == ResourceType::kBuffer) {
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         buffer.res = [mt_device newBufferWithLength:buffer.size options:options];
-        [m_device.GetResidencySet() addAllocation:buffer.res];
+        m_device.AddAllocationToGlobalResidencySet(buffer.res);
         if (buffer.res == nullptr) {
             NSLog(@"Error: failed to create buffer");
         }
     } else if (resource_type == ResourceType::kTexture) {
         texture.res = [mt_device newTextureWithDescriptor:GetTextureDescriptor(m_memory_type)];
-        [m_device.GetResidencySet() addAllocation:texture.res];
+        m_device.AddAllocationToGlobalResidencySet(texture.res);
         if (texture.res == nullptr) {
             NSLog(@"Error: failed to create texture");
         }
@@ -98,13 +98,13 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
     if (resource_type == ResourceType::kBuffer) {
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         buffer.res = [mt_heap newBufferWithLength:buffer.size options:options offset:offset];
-        [m_device.GetResidencySet() addAllocation:buffer.res];
+        m_device.AddAllocationToGlobalResidencySet(buffer.res);
         if (buffer.res == nullptr) {
             NSLog(@"Error: failed to create buffer");
         }
     } else if (resource_type == ResourceType::kTexture) {
         texture.res = [mt_heap newTextureWithDescriptor:GetTextureDescriptor(m_memory_type) offset:offset];
-        [m_device.GetResidencySet() addAllocation:texture.res];
+        m_device.AddAllocationToGlobalResidencySet(texture.res);
         if (texture.res == nullptr) {
             NSLog(@"Error: failed to create texture");
         }

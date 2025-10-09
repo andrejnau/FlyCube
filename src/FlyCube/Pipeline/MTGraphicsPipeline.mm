@@ -167,12 +167,6 @@ void MTGraphicsPipeline::CreatePipeline()
     }
     pipeline_descriptor.rasterSampleCount = render_pass_desc.sample_count;
 
-    if (pipeline_descriptor.depthAttachmentPixelFormat == MTLPixelFormatInvalid &&
-        pipeline_descriptor.stencilAttachmentPixelFormat == MTLPixelFormatInvalid &&
-        pipeline_descriptor.colorAttachments[0].pixelFormat == MTLPixelFormatInvalid) {
-        pipeline_descriptor.colorAttachments[0].pixelFormat = MTLPixelFormatR8Unorm;
-    }
-
     decltype(auto) blend_desc = m_desc.blend_desc;
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
         if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED) {

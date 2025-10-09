@@ -98,7 +98,9 @@ public:
 
     MTInstance& GetInstance();
     MTGPUBindlessArgumentBuffer& GetBindlessArgumentBuffer();
-    id<MTLResidencySet> GetResidencySet();
+    id<MTLResidencySet> CreateResidencySet() const;
+    id<MTLResidencySet> GetGlobalResidencySet();
+    void AddAllocationToGlobalResidencySet(id<MTLAllocation> allocation);
 
 private:
     id<MTLDevice> getMTLDevice() override;
@@ -108,7 +110,7 @@ private:
     MVKPixelFormats m_mvk_pixel_formats;
     std::shared_ptr<MTCommandQueue> m_command_queue;
     MTGPUBindlessArgumentBuffer m_bindless_argument_buffer;
-    id<MTLResidencySet> m_residency_set;
+    id<MTLResidencySet> m_global_residency_set;
 };
 
 MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(const BufferDesc& vertex,

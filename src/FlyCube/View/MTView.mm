@@ -57,6 +57,7 @@ MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, co
         m_range = std::make_shared<MTGPUArgumentBufferRange>(argument_buffer.Allocate(1));
         uint64_t* arguments = static_cast<uint64_t*>(m_range->GetArgumentBuffer().contents);
         arguments[m_range->GetOffset()] = GetGpuAddress();
+        m_range->AddAllocation(m_range->GetOffset(), GetNativeResource());
     }
 }
 
@@ -130,6 +131,34 @@ uint32_t MTView::GetLayerCount() const
 const ViewDesc& MTView::GetViewDesc() const
 {
     return m_view_desc;
+}
+
+id<MTLResource> MTView::GetNativeResource() const
+{
+    if (!m_resource) {
+        return {};
+    }
+
+    switch (m_view_desc.view_type) {
+    case ViewType::kConstantBuffer:
+    case ViewType::kBuffer:
+    case ViewType::kRWBuffer:
+    case ViewType::kStructuredBuffer:
+    case ViewType::kRWStructuredBuffer:
+        return GetBuffer();
+    case ViewType::kSampler:
+        return {};
+    case ViewType::kTexture:
+    case ViewType::kRWTexture: {
+        return GetTexture();
+    }
+    case ViewType::kAccelerationStructure: {
+        return GetAccelerationStructure();
+    }
+    default:
+        assert(false);
+        return {};
+    }
 }
 
 uint64_t MTView::GetGpuAddress() const

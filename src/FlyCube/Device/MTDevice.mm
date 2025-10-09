@@ -18,15 +18,19 @@
 #include "Swapchain/MTSwapchain.h"
 #include "View/MTView.h"
 
+namespace {
+constexpr bool kUseGlobalResidencySet = false;
+} // namespace
+
 MTDevice::MTDevice(MTInstance& instance, const id<MTLDevice>& device)
     : m_instance(instance)
     , m_device(device)
     , m_mvk_pixel_formats(this)
     , m_bindless_argument_buffer(*this)
 {
-    NSError* error = nullptr;
-    MTLResidencySetDescriptor* residencySetDescriptor = [MTLResidencySetDescriptor new];
-    m_residency_set = [GetDevice() newResidencySetWithDescriptor:residencySetDescriptor error:&error];
+    if (kUseGlobalResidencySet) {
+        m_global_residency_set = CreateResidencySet();
+    }
     m_command_queue = std::make_shared<MTCommandQueue>(*this);
 }
 
@@ -209,7 +213,7 @@ std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(AccelerationStru
     std::shared_ptr<MTResource> res = std::make_shared<MTResource>(*this);
     res->resource_type = ResourceType::kAccelerationStructure;
     res->acceleration_structure = [m_device newAccelerationStructureWithSize:resource->GetWidth() - offset];
-    [GetResidencySet() addAllocation:res->acceleration_structure];
+    AddAllocationToGlobalResidencySet(res->acceleration_structure);
     return res;
 }
 
@@ -397,7 +401,21 @@ MTGPUBindlessArgumentBuffer& MTDevice::GetBindlessArgumentBuffer()
     return m_bindless_argument_buffer;
 }
 
-id<MTLResidencySet> MTDevice::GetResidencySet()
+id<MTLResidencySet> MTDevice::CreateResidencySet() const
 {
-    return m_residency_set;
+    NSError* error = nullptr;
+    MTLResidencySetDescriptor* residencySetDescriptor = [MTLResidencySetDescriptor new];
+    return [m_device newResidencySetWithDescriptor:residencySetDescriptor error:&error];
+}
+
+id<MTLResidencySet> MTDevice::GetGlobalResidencySet()
+{
+    return m_global_residency_set;
+}
+
+void MTDevice::AddAllocationToGlobalResidencySet(id<MTLAllocation> allocation)
+{
+    if (m_global_residency_set) {
+        [m_global_residency_set addAllocation:allocation];
+    }
 }
