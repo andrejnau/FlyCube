@@ -95,7 +95,6 @@ void ApplyDirectArguments(const std::shared_ptr<Pipeline>& state,
         SetView(argument_tables.at(bind_key.shader_type), mt_view, index);
     }
 
-    bool has_bindless = false;
     for (const auto& bind_key : bind_keys) {
         if (bind_key.count != ~0) {
             continue;
@@ -103,7 +102,6 @@ void ApplyDirectArguments(const std::shared_ptr<Pipeline>& state,
         if (UseArgumentBuffers()) {
             assert(bind_key.space >= spirv_cross::kMaxArgumentBuffers);
         }
-        has_bindless = true;
         decltype(auto) shader = program->GetShader(bind_key.shader_type);
         uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
         auto buffer = device.GetBindlessArgumentBuffer().GetArgumentBuffer();
@@ -145,7 +143,6 @@ void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
     }
 
     m_direct_bindings.clear();
-    m_resouces.clear();
 
     for (const auto& binding : bindings) {
         decltype(auto) bind_key = binding.bind_key;
@@ -164,14 +161,6 @@ void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
         uint64_t* arguments =
             static_cast<uint64_t*>(m_argument_buffers[{ bind_key.shader_type, bind_key.space }].contents);
         arguments[index] = view->GetGpuAddress();
-
-        id<MTLResource> resource = view->GetNativeResource();
-        if (!resource) {
-            continue;
-        }
-
-        MTLResourceUsage usage = view->GetUsage();
-        m_resouces[{ bind_key.shader_type, usage }].push_back(resource);
     }
 }
 

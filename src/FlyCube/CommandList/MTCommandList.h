@@ -101,8 +101,8 @@ private:
     MTL4BufferRange PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
                                       uint64_t instance_offset,
                                       uint32_t instance_count);
-    void ApplyState();
-    void ApplyBindingSet();
+    void ApplyComputeState(id<MTL4ComputeCommandEncoder> compute_encoder);
+    void ApplyGraphicsState();
     void CreateArgumentTables();
 
     MTDevice& m_device;
@@ -115,9 +115,9 @@ private:
     MTLScissorRect m_scissor = {};
     std::map<uint32_t, id<MTLBuffer>> m_vertices;
     std::shared_ptr<Pipeline> m_state;
-    std::weak_ptr<Pipeline> m_last_state;
     std::shared_ptr<MTBindingSet> m_binding_set;
-    std::weak_ptr<MTBindingSet> m_last_binding_set;
     std::map<ShaderType, id<MTL4ArgumentTable>> m_argument_tables;
+    bool m_need_apply_state = false;
+    bool m_need_apply_binding_set = false;
     bool m_closed = false;
 };

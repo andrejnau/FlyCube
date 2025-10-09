@@ -118,21 +118,24 @@ void MTCommandList::Close()
     m_scissor = {};
     m_vertices = {};
     m_state.reset();
-    m_last_state.reset();
     m_binding_set.reset();
-    m_last_binding_set.reset();
     m_argument_tables = {};
+    m_need_apply_state = false;
+    m_need_apply_binding_set = false;
     m_closed = true;
 }
 
 void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
     m_state = state;
+    m_need_apply_state = true;
+    m_need_apply_binding_set = true;
 }
 
 void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
     m_binding_set = std::static_pointer_cast<MTBindingSet>(binding_set);
+    m_need_apply_binding_set = true;
 }
 
 void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass,
@@ -223,14 +226,19 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     for (const auto& vertex : m_vertices) {
         [m_argument_tables.at(ShaderType::kVertex) setAddress:vertex.second.gpuAddress atIndex:vertex.first];
     }
+
+    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kVertex) atStages:MTLRenderStageVertex];
+    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kPixel) atStages:MTLRenderStageFragment];
+    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kAmplification) atStages:MTLRenderStageObject];
+    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kMesh) atStages:MTLRenderStageMesh];
+
+    m_need_apply_state = true;
 }
 
 void MTCommandList::EndRenderPass()
 {
     [m_render_encoder endEncoding];
     m_render_encoder = nullptr;
-    m_last_state.reset();
-    m_last_binding_set.reset();
 }
 
 void MTCommandList::BeginEvent(const std::string& name) {}
@@ -239,7 +247,7 @@ void MTCommandList::EndEvent() {}
 
 void MTCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
-    ApplyState();
+    ApplyGraphicsState();
     if (first_instance > 0) {
         [m_render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
                              vertexStart:first_vertex
@@ -260,7 +268,7 @@ void MTCommandList::DrawIndexed(uint32_t index_count,
                                 int32_t vertex_offset,
                                 uint32_t first_instance)
 {
-    ApplyState();
+    ApplyGraphicsState();
     assert(m_index_buffer);
     decltype(auto) index_buffer = m_index_buffer->As<MTResource>().buffer.res;
     MTLIndexType index_format = ConvertIndexType(m_index_format);
@@ -286,7 +294,7 @@ void MTCommandList::DrawIndexed(uint32_t index_count,
 
 void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
-    ApplyState();
+    ApplyGraphicsState();
     decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
     [m_render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
                       indirectBuffer:mt_argument_buffer.gpuAddress + argument_buffer_offset];
@@ -295,7 +303,7 @@ void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffe
 void MTCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer,
                                         uint64_t argument_buffer_offset)
 {
-    ApplyState();
+    ApplyGraphicsState();
     decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
     assert(m_index_buffer);
     decltype(auto) index_buffer = m_index_buffer->As<MTResource>().buffer.res;
@@ -331,15 +339,12 @@ void MTCommandList::Dispatch(uint32_t thread_group_count_x,
                              uint32_t thread_group_count_y,
                              uint32_t thread_group_count_z)
 {
-    auto compute_encoder = [m_command_buffer computeCommandEncoder];
-    if (m_binding_set) {
-        m_binding_set->Apply(m_argument_tables, m_state);
-    }
     decltype(auto) mt_state = m_state->As<MTComputePipeline>();
-    decltype(auto) mt_pipeline = mt_state.GetPipeline();
-    [compute_encoder setComputePipelineState:mt_pipeline];
     MTLSize threadgroups_per_grid = { thread_group_count_x, thread_group_count_y, thread_group_count_z };
+
+    auto compute_encoder = [m_command_buffer computeCommandEncoder];
     [compute_encoder setArgumentTable:m_argument_tables.at(ShaderType::kCompute)];
+    ApplyComputeState(compute_encoder);
     [compute_encoder dispatchThreadgroups:threadgroups_per_grid threadsPerThreadgroup:mt_state.GetNumthreads()];
     [compute_encoder endEncoding];
 }
@@ -347,14 +352,11 @@ void MTCommandList::Dispatch(uint32_t thread_group_count_x,
 void MTCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
     decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
-    auto compute_encoder = [m_command_buffer computeCommandEncoder];
-    if (m_binding_set) {
-        m_binding_set->Apply(m_argument_tables, m_state);
-    }
     decltype(auto) mt_state = m_state->As<MTComputePipeline>();
-    decltype(auto) mt_pipeline = mt_state.GetPipeline();
-    [compute_encoder setComputePipelineState:mt_pipeline];
+
+    auto compute_encoder = [m_command_buffer computeCommandEncoder];
     [compute_encoder setArgumentTable:m_argument_tables.at(ShaderType::kCompute)];
+    ApplyComputeState(compute_encoder);
     [compute_encoder dispatchThreadgroupsWithIndirectBuffer:mt_argument_buffer.gpuAddress + argument_buffer_offset
                                       threadsPerThreadgroup:mt_state.GetNumthreads()];
     [compute_encoder endEncoding];
@@ -364,7 +366,7 @@ void MTCommandList::DispatchMesh(uint32_t thread_group_count_x,
                                  uint32_t thread_group_count_y,
                                  uint32_t thread_group_count_z)
 {
-    ApplyState();
+    ApplyGraphicsState();
     decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
     [m_render_encoder drawMeshThreadgroups:MTLSizeMake(thread_group_count_x, thread_group_count_y, thread_group_count_z)
                threadsPerObjectThreadgroup:mt_state.GetAmplificationNumthreads()
@@ -631,49 +633,35 @@ id<MTL4CommandBuffer> MTCommandList::GetCommandBuffer()
     return m_command_buffer;
 }
 
-void MTCommandList::ApplyBindingSet()
+void MTCommandList::ApplyComputeState(id<MTL4ComputeCommandEncoder> compute_encoder)
 {
-    if (!m_last_binding_set.expired() && m_last_binding_set.lock() == m_binding_set) {
-        return;
-    }
-
-    assert(m_render_encoder);
-    assert(m_state->GetPipelineType() == PipelineType::kGraphics);
-
-    if (m_binding_set) {
+    if (m_need_apply_binding_set) {
         m_binding_set->Apply(m_argument_tables, m_state);
+        m_need_apply_binding_set = false;
     }
-    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kVertex) atStages:MTLRenderStageVertex];
-    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kPixel) atStages:MTLRenderStageFragment];
-    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kAmplification) atStages:MTLRenderStageObject];
-    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kMesh) atStages:MTLRenderStageMesh];
 
-    m_last_binding_set = m_binding_set;
+    assert(m_state->GetPipelineType() == PipelineType::kCompute);
+    decltype(auto) mt_state = m_state->As<MTComputePipeline>();
+    [compute_encoder setComputePipelineState:mt_state.GetPipeline()];
 }
 
-void MTCommandList::ApplyState()
+void MTCommandList::ApplyGraphicsState()
 {
-    ApplyBindingSet();
-    if (!m_last_state.expired() && m_last_state.lock() == m_state) {
-        return;
+    if (m_need_apply_binding_set) {
+        m_binding_set->Apply(m_argument_tables, m_state);
+        m_need_apply_binding_set = false;
     }
 
-    assert(m_render_encoder);
-    assert(m_state->GetPipelineType() == PipelineType::kGraphics);
-
-    decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
-    decltype(auto) mt_pipeline = mt_state.GetPipeline();
-    decltype(auto) mt_depth_stencil = mt_state.GetDepthStencil();
-    decltype(auto) rasterizer_desc = mt_state.GetDesc().rasterizer_desc;
-    int32_t depth_bias = rasterizer_desc.depth_bias;
-    MTLCullMode cull_mode = ConvertCullMode(rasterizer_desc.cull_mode);
-
-    [m_render_encoder setRenderPipelineState:mt_pipeline];
-    [m_render_encoder setDepthStencilState:mt_depth_stencil];
-    [m_render_encoder setDepthBias:depth_bias slopeScale:0 clamp:0];
-    [m_render_encoder setCullMode:cull_mode];
-
-    m_last_state = m_state;
+    if (m_need_apply_state) {
+        assert(m_state->GetPipelineType() == PipelineType::kGraphics);
+        decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
+        decltype(auto) rasterizer_desc = mt_state.GetDesc().rasterizer_desc;
+        [m_render_encoder setRenderPipelineState:mt_state.GetPipeline()];
+        [m_render_encoder setDepthStencilState:mt_state.GetDepthStencil()];
+        [m_render_encoder setDepthBias:rasterizer_desc.depth_bias slopeScale:0 clamp:0];
+        [m_render_encoder setCullMode:ConvertCullMode(rasterizer_desc.cull_mode)];
+        m_need_apply_state = false;
+    }
 }
 
 void MTCommandList::CreateArgumentTables()
