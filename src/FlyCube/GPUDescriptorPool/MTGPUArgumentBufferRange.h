@@ -11,7 +11,6 @@ public:
     MTGPUArgumentBufferRange(MTGPUBindlessArgumentBuffer& argument_buffer, uint32_t offset, uint32_t size);
     id<MTLBuffer> GetArgumentBuffer() const;
     uint32_t GetOffset() const;
-    void SetResourceUsage(uint32_t offset, id<MTLResource> resource, MTLResourceUsage usage);
 
 private:
     std::reference_wrapper<MTGPUBindlessArgumentBuffer> m_argument_buffer;

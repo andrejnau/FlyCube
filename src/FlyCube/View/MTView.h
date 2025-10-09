@@ -17,9 +17,7 @@ public:
     uint32_t GetLayerCount() const override;
 
     const ViewDesc& GetViewDesc() const;
-    id<MTLResource> GetNativeResource() const;
     uint64_t GetGpuAddress() const;
-    MTLResourceUsage GetUsage() const;
     id<MTLBuffer> GetBuffer() const;
     id<MTLSamplerState> GetSampler() const;
     id<MTLTexture> GetTexture() const;

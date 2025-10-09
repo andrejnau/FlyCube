@@ -36,7 +36,6 @@ void MTGPUBindlessArgumentBuffer::ResizeHeap(uint32_t req_size)
 
     m_size = req_size;
     m_buffer = buffer;
-    m_use_resources.resize(m_size);
 }
 
 MTGPUArgumentBufferRange MTGPUBindlessArgumentBuffer::Allocate(uint32_t count)
@@ -58,22 +57,9 @@ MTGPUArgumentBufferRange MTGPUBindlessArgumentBuffer::Allocate(uint32_t count)
 void MTGPUBindlessArgumentBuffer::OnRangeDestroy(uint32_t offset, uint32_t size)
 {
     m_empty_ranges.emplace(size, offset);
-    for (uint32_t i = offset; i < offset + size; ++i) {
-        m_use_resources[i] = {};
-    }
 }
 
 id<MTLBuffer> MTGPUBindlessArgumentBuffer::GetArgumentBuffer() const
 {
     return m_buffer;
-}
-
-void MTGPUBindlessArgumentBuffer::SetResourceUsage(uint32_t offset, id<MTLResource> resource, MTLResourceUsage usage)
-{
-    m_use_resources[offset] = { resource, usage };
-}
-
-const std::vector<std::pair<id<MTLResource>, MTLResourceUsage>>& MTGPUBindlessArgumentBuffer::GetResourcesUsage() const
-{
-    return m_use_resources;
 }

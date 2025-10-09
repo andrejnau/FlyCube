@@ -23,8 +23,3 @@ uint32_t MTGPUArgumentBufferRange::GetOffset() const
 {
     return m_offset;
 }
-
-void MTGPUArgumentBufferRange::SetResourceUsage(uint32_t offset, id<MTLResource> resource, MTLResourceUsage usage)
-{
-    m_argument_buffer.get().SetResourceUsage(offset, resource, usage);
-}
