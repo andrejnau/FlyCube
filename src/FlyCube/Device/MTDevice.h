@@ -101,16 +101,18 @@ public:
     id<MTLResidencySet> CreateResidencySet() const;
     id<MTLResidencySet> GetGlobalResidencySet();
     void AddAllocationToGlobalResidencySet(id<MTLAllocation> allocation);
+    id<MTL4Compiler> GetCompiler();
 
 private:
     id<MTLDevice> getMTLDevice() override;
 
     MTInstance& m_instance;
-    id<MTLDevice> m_device;
+    id<MTLDevice> m_device = nullptr;
     MVKPixelFormats m_mvk_pixel_formats;
     std::shared_ptr<MTCommandQueue> m_command_queue;
     MTGPUBindlessArgumentBuffer m_bindless_argument_buffer;
-    id<MTLResidencySet> m_global_residency_set;
+    id<MTLResidencySet> m_global_residency_set = nullptr;
+    id<MTL4Compiler> m_compiler = nullptr;
 };
 
 MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(const BufferDesc& vertex,

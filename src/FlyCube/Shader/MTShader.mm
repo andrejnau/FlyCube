@@ -49,7 +49,7 @@ id<MTLFunction> MTShader::CreateFunction(id<MTLLibrary> library, const std::stri
     desc.name = [NSString stringWithUTF8String:FixEntryPoint(entry_point).c_str()];
     NSError* error = nullptr;
     id<MTLFunction> function = [library newFunctionWithDescriptor:desc error:&error];
-    if (function == nullptr) {
+    if (!function) {
         NSLog(@"Error: failed to create Metal function: %@", error);
     }
     return function;
@@ -57,10 +57,11 @@ id<MTLFunction> MTShader::CreateFunction(id<MTLLibrary> library, const std::stri
 
 void MTShader::CreateLibrary()
 {
-    NSString* ns_source = [NSString stringWithUTF8String:m_msl_source.c_str()];
+    MTL4LibraryDescriptor* library_descriptor = [MTL4LibraryDescriptor new];
+    library_descriptor.source = [NSString stringWithUTF8String:m_msl_source.c_str()];
     NSError* error = nullptr;
-    m_library = [m_device.GetDevice() newLibraryWithSource:ns_source options:nullptr error:&error];
-    if (m_library == nullptr) {
+    m_library = [m_device.GetCompiler() newLibraryWithDescriptor:library_descriptor error:&error];
+    if (!m_library) {
         NSLog(@"Error: failed to create Metal library: %@", error);
     }
 }

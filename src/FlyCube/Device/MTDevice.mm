@@ -32,6 +32,12 @@ MTDevice::MTDevice(MTInstance& instance, const id<MTLDevice>& device)
         m_global_residency_set = CreateResidencySet();
     }
     m_command_queue = std::make_shared<MTCommandQueue>(*this);
+
+    NSError* error = nullptr;
+    m_compiler = [m_device newCompilerWithDescriptor:[MTL4CompilerDescriptor new] error:&error];
+    if (!m_compiler) {
+        NSLog(@"The Metal device can't create a compiler: %@", error);
+    }
 }
 
 std::shared_ptr<Memory> MTDevice::AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits)
@@ -418,4 +424,9 @@ void MTDevice::AddAllocationToGlobalResidencySet(id<MTLAllocation> allocation)
     if (m_global_residency_set) {
         [m_global_residency_set addAllocation:allocation];
     }
+}
+
+id<MTL4Compiler> MTDevice::GetCompiler()
+{
+    return m_compiler;
 }
