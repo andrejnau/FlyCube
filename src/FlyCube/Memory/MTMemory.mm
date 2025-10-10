@@ -19,7 +19,7 @@ MTLStorageMode ConvertStorageMode(MemoryType memory_type)
 MTMemory::MTMemory(MTDevice& device, uint64_t size, MemoryType memory_type, uint32_t memory_type_bits)
     : m_memory_type(memory_type)
 {
-    MTLHeapDescriptor* heap_descriptor = [[MTLHeapDescriptor alloc] init];
+    MTLHeapDescriptor* heap_descriptor = [MTLHeapDescriptor new];
     heap_descriptor.size = size;
     heap_descriptor.storageMode = ConvertStorageMode(memory_type);
     heap_descriptor.cpuCacheMode = MTLCPUCacheModeDefaultCache;

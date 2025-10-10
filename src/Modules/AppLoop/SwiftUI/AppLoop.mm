@@ -31,7 +31,7 @@ int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv
     @autoreleasepool {
 #ifdef TARGET_MACOS
         NSApplication* app = [NSApplication sharedApplication];
-        app.delegate = [[AppDelegate alloc] init];
+        app.delegate = [AppDelegate new];
         [app run];
         return 0;
 #else

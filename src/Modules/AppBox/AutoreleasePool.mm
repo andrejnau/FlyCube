@@ -12,7 +12,7 @@ public:
     void Reset() override
     {
         Drain();
-        m_autorelease_pool = [[NSAutoreleasePool alloc] init];
+        m_autorelease_pool = [NSAutoreleasePool new];
     }
 
 private:

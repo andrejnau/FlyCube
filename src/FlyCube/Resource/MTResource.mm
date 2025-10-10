@@ -10,7 +10,7 @@ MTResource::MTResource(MTDevice& device)
 
 MTLTextureDescriptor* MTResource::GetTextureDescriptor(MemoryType memory_type) const
 {
-    MTLTextureDescriptor* texture_descriptor = [[MTLTextureDescriptor alloc] init];
+    MTLTextureDescriptor* texture_descriptor = [MTLTextureDescriptor new];
     switch (texture.type) {
     case TextureType::k1D:
         if (texture.depth > 1) {

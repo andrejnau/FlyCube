@@ -57,7 +57,7 @@ MTLStencilOperation ConvertStencilOperation(StencilOp op)
 
 MTLStencilDescriptor* GetStencilDesc(const StencilOpDesc& desc, uint8_t read_mask, uint8_t write_mask)
 {
-    MTLStencilDescriptor* stencil_descriptor = [[MTLStencilDescriptor alloc] init];
+    MTLStencilDescriptor* stencil_descriptor = [MTLStencilDescriptor new];
     stencil_descriptor.stencilCompareFunction = ConvertCompareFunction(desc.func);
     stencil_descriptor.stencilFailureOperation = ConvertStencilOperation(desc.fail_op);
     stencil_descriptor.depthFailureOperation = ConvertStencilOperation(desc.depth_fail_op);
@@ -69,7 +69,7 @@ MTLStencilDescriptor* GetStencilDesc(const StencilOpDesc& desc, uint8_t read_mas
 
 MTLDepthStencilDescriptor* GetDepthStencilDesc(const DepthStencilDesc& desc, gli::format depth_stencil_format)
 {
-    MTLDepthStencilDescriptor* depth_stencil_descriptor = [[MTLDepthStencilDescriptor alloc] init];
+    MTLDepthStencilDescriptor* depth_stencil_descriptor = [MTLDepthStencilDescriptor new];
     depth_stencil_descriptor.depthCompareFunction = ConvertCompareFunction(desc.depth_func);
     depth_stencil_descriptor.depthWriteEnabled = desc.depth_write_enable;
     if (depth_stencil_format == gli::format::FORMAT_UNDEFINED || !gli::is_depth(depth_stencil_format)) {
