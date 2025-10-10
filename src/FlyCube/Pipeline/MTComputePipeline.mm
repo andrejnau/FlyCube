@@ -8,18 +8,16 @@ MTComputePipeline::MTComputePipeline(MTDevice& device, const ComputePipelineDesc
     , m_desc(desc)
 {
     decltype(auto) mt_device = device.GetDevice();
-    MTLComputePipelineDescriptor* pipeline_descriptor = [[MTLComputePipelineDescriptor alloc] init];
+    MTL4ComputePipelineDescriptor* pipeline_descriptor = [MTL4ComputePipelineDescriptor new];
     decltype(auto) shaders = desc.program->GetShaders();
-
     for (const auto& shader : shaders) {
         decltype(auto) mt_shader = shader->As<MTShader>();
-        id<MTLLibrary> library = mt_shader.GetLibrary();
         decltype(auto) reflection = shader->GetReflection();
         for (const auto& entry_point : reflection->GetEntryPoints()) {
-            id<MTLFunction> function = mt_shader.CreateFunction(library, entry_point.name);
+            MTL4LibraryFunctionDescriptor* function_descriptor = mt_shader.CreateFunctionDescriptor(entry_point.name);
             switch (shader->GetType()) {
             case ShaderType::kCompute:
-                pipeline_descriptor.computeFunction = function;
+                pipeline_descriptor.computeFunctionDescriptor = function_descriptor;
                 break;
             default:
                 assert(false);
@@ -30,12 +28,10 @@ MTComputePipeline::MTComputePipeline(MTDevice& device, const ComputePipelineDesc
         m_numthreads = { numthreads[0], numthreads[1], numthreads[2] };
     }
 
-    MTLPipelineOption opt = MTLPipelineOptionNone;
     NSError* error = nullptr;
-    m_pipeline = [mt_device newComputePipelineStateWithDescriptor:pipeline_descriptor
-                                                          options:opt
-                                                       reflection:nullptr
-                                                            error:&error];
+    m_pipeline = [device.GetCompiler() newComputePipelineStateWithDescriptor:pipeline_descriptor
+                                                         compilerTaskOptions:nullptr
+                                                                       error:&error];
     if (!m_pipeline) {
         NSLog(@"Error occurred when creating render pipeline state: %@", error);
     }

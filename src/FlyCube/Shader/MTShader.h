@@ -16,8 +16,7 @@ public:
 
     const std::string& GetSource() const;
     uint32_t GetIndex(BindKey bind_key) const;
-    id<MTLLibrary> GetLibrary() const;
-    id<MTLFunction> CreateFunction(id<MTLLibrary> library, const std::string& entry_point);
+    MTL4LibraryFunctionDescriptor* CreateFunctionDescriptor(const std::string& entry_point);
 
 private:
     void CreateLibrary();

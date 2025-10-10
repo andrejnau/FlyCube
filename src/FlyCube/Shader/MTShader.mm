@@ -38,21 +38,12 @@ uint32_t MTShader::GetIndex(BindKey bind_key) const
     return m_slot_remapping.at(bind_key);
 }
 
-id<MTLLibrary> MTShader::GetLibrary() const
+MTL4LibraryFunctionDescriptor* MTShader::CreateFunctionDescriptor(const std::string& entry_point)
 {
-    return m_library;
-}
-
-id<MTLFunction> MTShader::CreateFunction(id<MTLLibrary> library, const std::string& entry_point)
-{
-    MTLFunctionDescriptor* desc = [MTLFunctionDescriptor functionDescriptor];
-    desc.name = [NSString stringWithUTF8String:FixEntryPoint(entry_point).c_str()];
-    NSError* error = nullptr;
-    id<MTLFunction> function = [library newFunctionWithDescriptor:desc error:&error];
-    if (!function) {
-        NSLog(@"Error: failed to create Metal function: %@", error);
-    }
-    return function;
+    MTL4LibraryFunctionDescriptor* function_descriptor = [MTL4LibraryFunctionDescriptor new];
+    function_descriptor.library = m_library;
+    function_descriptor.name = [NSString stringWithUTF8String:FixEntryPoint(entry_point).c_str()];
+    return function_descriptor;
 }
 
 void MTShader::CreateLibrary()
