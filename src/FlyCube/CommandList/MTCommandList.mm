@@ -167,16 +167,12 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         attachment.level = mt_view.GetBaseMipLevel();
         attachment.slice = mt_view.GetBaseArrayLayer();
         attachment.texture = mt_view.GetTexture();
-        if (!attachment.texture) {
-            return;
-        }
 
-        AddAllocation(attachment.texture);
+        render_pass_descriptor.renderTargetArrayLength =
+            std::max<uint32_t>(render_pass_descriptor.renderTargetArrayLength, view->GetLayerCount());
 
-        if ([m_device.GetDevice() supportsFamily:MTLGPUFamilyApple5] ||
-            [m_device.GetDevice() supportsFamily:MTLGPUFamilyCommon3]) {
-            render_pass_descriptor.renderTargetArrayLength =
-                std::max<uint32_t>(render_pass_descriptor.renderTargetArrayLength, view->GetLayerCount());
+        if (attachment.texture) {
+            AddAllocation(attachment.texture);
         }
     };
 

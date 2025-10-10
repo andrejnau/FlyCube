@@ -1,5 +1,5 @@
 # FlyCube
-FlyCube is a low-level graphics API is written in C++ on top of `DirectX 12`, `Vulkan` and `Metal`.
+FlyCube is a low-level graphics API is written in C++ on top of `DirectX 12`, `Vulkan` and `Metal 4`.
 
 ### The low-level graphics API features
 * Ray tracing
