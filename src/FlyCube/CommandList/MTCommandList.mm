@@ -155,10 +155,7 @@ void MTCommandList::Close()
         return;
     }
 
-    if (m_compute_encoder) {
-        [m_compute_encoder endEncoding];
-        m_compute_encoder = nullptr;
-    }
+    CloseComputeEncoder();
 
     [m_command_buffer endCommandBuffer];
     m_render_encoder = nullptr;
@@ -200,10 +197,7 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
                                     const std::shared_ptr<Framebuffer>& framebuffer,
                                     const ClearDesc& clear_desc)
 {
-    if (m_compute_encoder) {
-        [m_compute_encoder endEncoding];
-        m_compute_encoder = nullptr;
-    }
+    CloseComputeEncoder();
 
     MTL4RenderPassDescriptor* render_pass_descriptor = [MTL4RenderPassDescriptor new];
     const RenderPassDesc& render_pass_desc = render_pass->GetDesc();
@@ -383,9 +377,7 @@ void MTCommandList::Dispatch(uint32_t thread_group_count_x,
     decltype(auto) mt_state = m_state->As<MTComputePipeline>();
     MTLSize threadgroups_per_grid = { thread_group_count_x, thread_group_count_y, thread_group_count_z };
 
-    if (!m_compute_encoder) {
-        m_compute_encoder = [m_command_buffer computeCommandEncoder];
-    }
+    OpenComputeEncoder();
     [m_compute_encoder setArgumentTable:m_argument_tables.at(ShaderType::kCompute)];
     ApplyComputeState();
     AddComputeBarriers();
@@ -398,9 +390,7 @@ void MTCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_b
     decltype(auto) mt_state = m_state->As<MTComputePipeline>();
     AddAllocation(mt_argument_buffer);
 
-    if (!m_compute_encoder) {
-        m_compute_encoder = [m_command_buffer computeCommandEncoder];
-    }
+    OpenComputeEncoder();
     [m_compute_encoder setArgumentTable:m_argument_tables.at(ShaderType::kCompute)];
     ApplyComputeState();
     AddComputeBarriers();
@@ -519,9 +509,7 @@ void MTCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
     AddAllocation(mt_dst.acceleration_structure);
     AddAllocation(mt_scratch.buffer.res);
 
-    if (!m_compute_encoder) {
-        m_compute_encoder = [m_command_buffer computeCommandEncoder];
-    }
+    OpenComputeEncoder();
     AddComputeBarriers();
     [m_compute_encoder buildAccelerationStructure:mt_dst.acceleration_structure
                                        descriptor:acceleration_structure_desc
@@ -577,9 +565,7 @@ void MTCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
     AddAllocation(mt_dst.acceleration_structure);
     AddAllocation(mt_scratch.buffer.res);
 
-    if (!m_compute_encoder) {
-        m_compute_encoder = [m_command_buffer computeCommandEncoder];
-    }
+    OpenComputeEncoder();
     AddComputeBarriers();
     [m_compute_encoder buildAccelerationStructure:mt_dst.acceleration_structure
                                        descriptor:acceleration_structure_desc
@@ -598,9 +584,7 @@ void MTCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
                                const std::shared_ptr<Resource>& dst_buffer,
                                const std::vector<BufferCopyRegion>& regions)
 {
-    if (!m_compute_encoder) {
-        m_compute_encoder = [m_command_buffer computeCommandEncoder];
-    }
+    OpenComputeEncoder();
     decltype(auto) mt_src_buffer = src_buffer->As<MTResource>();
     decltype(auto) mt_dst_buffer = dst_buffer->As<MTResource>();
     AddAllocation(mt_src_buffer.buffer.res);
@@ -619,9 +603,7 @@ void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
                                         const std::shared_ptr<Resource>& dst_texture,
                                         const std::vector<BufferToTextureCopyRegion>& regions)
 {
-    if (!m_compute_encoder) {
-        m_compute_encoder = [m_command_buffer computeCommandEncoder];
-    }
+    OpenComputeEncoder();
     decltype(auto) mt_src_buffer = src_buffer->As<MTResource>();
     decltype(auto) mt_dst_texture = dst_texture->As<MTResource>();
     AddAllocation(mt_src_buffer.buffer.res);
@@ -657,9 +639,7 @@ void MTCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture,
                                 const std::shared_ptr<Resource>& dst_texture,
                                 const std::vector<TextureCopyRegion>& regions)
 {
-    if (!m_compute_encoder) {
-        m_compute_encoder = [m_command_buffer computeCommandEncoder];
-    }
+    OpenComputeEncoder();
     decltype(auto) mt_src_texture = src_texture->As<MTResource>();
     decltype(auto) mt_dst_texture = dst_texture->As<MTResource>();
     AddAllocation(mt_src_texture.texture.res);
@@ -778,4 +758,23 @@ void MTCommandList::CreateArgumentTables()
 void MTCommandList::AddAllocation(id<MTLAllocation> allocation)
 {
     [m_residency_set addAllocation:allocation];
+}
+
+void MTCommandList::OpenComputeEncoder()
+{
+    if (m_compute_encoder) {
+        return;
+    }
+
+    m_compute_encoder = [m_command_buffer computeCommandEncoder];
+}
+
+void MTCommandList::CloseComputeEncoder()
+{
+    if (!m_compute_encoder) {
+        return;
+    }
+
+    [m_compute_encoder endEncoding];
+    m_compute_encoder = nullptr;
 }

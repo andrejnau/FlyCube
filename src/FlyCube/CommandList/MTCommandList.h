@@ -107,6 +107,8 @@ private:
     void AddComputeBarriers();
     void CreateArgumentTables();
     void AddAllocation(id<MTLAllocation> allocation);
+    void OpenComputeEncoder();
+    void CloseComputeEncoder();
 
     MTDevice& m_device;
     id<MTL4CommandBuffer> m_command_buffer = nullptr;
