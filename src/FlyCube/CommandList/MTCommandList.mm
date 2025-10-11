@@ -172,7 +172,6 @@ void MTCommandList::Close()
     m_need_apply_binding_set = false;
     m_first_render_barrier = false;
     m_first_compure_barrier = false;
-    m_use_render_encoder_barrier = false;
     m_render_barrier_after_stages = 0;
     m_render_barrier_before_stages = 0;
     m_compute_barrier_after_stages = 0;
@@ -282,7 +281,6 @@ void MTCommandList::EndRenderPass()
 {
     [m_render_encoder endEncoding];
     m_render_encoder = nullptr;
-    m_use_render_encoder_barrier = false;
 }
 
 void MTCommandList::BeginEvent(const std::string& name) {}
@@ -758,13 +756,6 @@ void MTCommandList::AddGraphicsBarriers()
         return;
     }
 
-    if (m_use_render_encoder_barrier && (m_render_barrier_after_stages & kRenderStages) &&
-        (m_render_barrier_before_stages & kRenderStages)) {
-        [m_render_encoder barrierAfterEncoderStages:m_render_barrier_after_stages & kRenderStages
-                                beforeEncoderStages:m_render_barrier_before_stages & kRenderStages
-                                  visibilityOptions:MTL4VisibilityOptionNone];
-    }
-
     if (m_render_barrier_after_stages && m_render_barrier_before_stages) {
         [m_render_encoder barrierAfterQueueStages:m_render_barrier_after_stages
                                      beforeStages:m_render_barrier_before_stages
@@ -772,8 +763,6 @@ void MTCommandList::AddGraphicsBarriers()
         m_render_barrier_after_stages = 0;
         m_render_barrier_before_stages = 0;
     }
-
-    m_use_render_encoder_barrier = true;
 }
 
 void MTCommandList::AddComputeBarriers()
