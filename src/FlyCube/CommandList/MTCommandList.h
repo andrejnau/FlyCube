@@ -103,6 +103,8 @@ private:
                                       uint32_t instance_count);
     void ApplyComputeState(id<MTL4ComputeCommandEncoder> compute_encoder);
     void ApplyGraphicsState();
+    void AddGraphicsBarriers();
+    void AddComputeBarriers(id<MTL4ComputeCommandEncoder> compute_encoder);
     void CreateArgumentTables();
     void AddAllocation(id<MTLAllocation> allocation);
 
@@ -120,5 +122,12 @@ private:
     id<MTLResidencySet> m_residency_set;
     bool m_need_apply_state = false;
     bool m_need_apply_binding_set = false;
+    bool m_first_render_barrier = false;
+    bool m_first_compure_barrier = false;
+    bool m_use_render_encoder_barrier = false;
+    MTLStages m_render_barrier_after_stages = 0;
+    MTLStages m_render_barrier_before_stages = 0;
+    MTLStages m_compute_barrier_after_stages = 0;
+    MTLStages m_compute_barrier_before_stages = 0;
     bool m_closed = false;
 };
