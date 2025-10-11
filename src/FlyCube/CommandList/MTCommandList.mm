@@ -378,7 +378,6 @@ void MTCommandList::Dispatch(uint32_t thread_group_count_x,
     MTLSize threadgroups_per_grid = { thread_group_count_x, thread_group_count_y, thread_group_count_z };
 
     OpenComputeEncoder();
-    [m_compute_encoder setArgumentTable:m_argument_tables.at(ShaderType::kCompute)];
     ApplyComputeState();
     AddComputeBarriers();
     [m_compute_encoder dispatchThreadgroups:threadgroups_per_grid threadsPerThreadgroup:mt_state.GetNumthreads()];
@@ -391,7 +390,6 @@ void MTCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_b
     AddAllocation(mt_argument_buffer);
 
     OpenComputeEncoder();
-    [m_compute_encoder setArgumentTable:m_argument_tables.at(ShaderType::kCompute)];
     ApplyComputeState();
     AddComputeBarriers();
     [m_compute_encoder dispatchThreadgroupsWithIndirectBuffer:mt_argument_buffer.gpuAddress + argument_buffer_offset
@@ -769,6 +767,7 @@ void MTCommandList::OpenComputeEncoder()
     }
 
     m_compute_encoder = [m_command_buffer computeCommandEncoder];
+    [m_compute_encoder setArgumentTable:m_argument_tables.at(ShaderType::kCompute)];
     m_need_apply_state = true;
 }
 
