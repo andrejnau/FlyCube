@@ -101,10 +101,10 @@ private:
     MTL4BufferRange PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
                                       uint64_t instance_offset,
                                       uint32_t instance_count);
-    void ApplyComputeState(id<MTL4ComputeCommandEncoder> compute_encoder);
+    void ApplyComputeState();
     void ApplyGraphicsState();
     void AddGraphicsBarriers();
-    void AddComputeBarriers(id<MTL4ComputeCommandEncoder> compute_encoder);
+    void AddComputeBarriers();
     void CreateArgumentTables();
     void AddAllocation(id<MTLAllocation> allocation);
 
@@ -112,6 +112,7 @@ private:
     id<MTL4CommandBuffer> m_command_buffer = nullptr;
     id<MTL4CommandAllocator> m_allocator = nullptr;
     id<MTL4RenderCommandEncoder> m_render_encoder = nullptr;
+    id<MTL4ComputeCommandEncoder> m_compute_encoder = nullptr;
     id<MTLBuffer> m_index_buffer;
     gli::format m_index_format = gli::FORMAT_UNDEFINED;
     MTLViewport m_viewport = {};
