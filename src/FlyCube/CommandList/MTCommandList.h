@@ -108,6 +108,9 @@ private:
     void CreateArgumentTables();
     void AddAllocation(id<MTLAllocation> allocation);
 
+    static constexpr MTLStages kRenderStages = MTLStageVertex | MTLStageObject | MTLStageMesh | MTLStageFragment;
+    static constexpr MTLStages kComputeStages = MTLStageDispatch | MTLStageBlit | MTLStageAccelerationStructure;
+
     MTDevice& m_device;
     id<MTL4CommandBuffer> m_command_buffer = nullptr;
     id<MTL4CommandAllocator> m_allocator = nullptr;
@@ -123,11 +126,9 @@ private:
     id<MTLResidencySet> m_residency_set;
     bool m_need_apply_state = false;
     bool m_need_apply_binding_set = false;
-    bool m_first_render_barrier = false;
-    bool m_first_compure_barrier = false;
-    MTLStages m_render_barrier_after_stages = 0;
-    MTLStages m_render_barrier_before_stages = 0;
-    MTLStages m_compute_barrier_after_stages = 0;
-    MTLStages m_compute_barrier_before_stages = 0;
+    MTLStages m_render_barrier_after_stages = MTLStageAll;
+    MTLStages m_render_barrier_before_stages = kRenderStages;
+    MTLStages m_compute_barrier_after_stages = MTLStageAll;
+    MTLStages m_compute_barrier_before_stages = kComputeStages;
     bool m_closed = false;
 };

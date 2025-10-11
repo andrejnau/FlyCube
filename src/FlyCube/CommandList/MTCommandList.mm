@@ -124,8 +124,6 @@ MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
     m_command_buffer = [m_device.GetDevice() newCommandBuffer];
     m_allocator = [m_device.GetDevice() newCommandAllocator];
     [m_command_buffer beginCommandBufferWithAllocator:m_allocator];
-    m_first_render_barrier = true;
-    m_first_compure_barrier = true;
     m_closed = false;
     CreateArgumentTables();
     m_residency_set = m_device.CreateResidencySet();
@@ -138,8 +136,6 @@ void MTCommandList::Reset()
     m_command_buffer = [m_device.GetDevice() newCommandBuffer];
     [m_allocator reset];
     [m_command_buffer beginCommandBufferWithAllocator:m_allocator];
-    m_first_render_barrier = true;
-    m_first_compure_barrier = true;
     m_closed = false;
     CreateArgumentTables();
     m_residency_set = m_device.CreateResidencySet();
@@ -170,12 +166,10 @@ void MTCommandList::Close()
     m_residency_set = nullptr;
     m_need_apply_state = false;
     m_need_apply_binding_set = false;
-    m_first_render_barrier = false;
-    m_first_compure_barrier = false;
-    m_render_barrier_after_stages = 0;
-    m_render_barrier_before_stages = 0;
-    m_compute_barrier_after_stages = 0;
-    m_compute_barrier_before_stages = 0;
+    m_render_barrier_after_stages = MTLStageAll;
+    m_render_barrier_before_stages = kRenderStages;
+    m_compute_barrier_after_stages = MTLStageAll;
+    m_compute_barrier_before_stages = kComputeStages;
     m_closed = true;
 }
 
@@ -745,17 +739,6 @@ void MTCommandList::ApplyGraphicsState()
 
 void MTCommandList::AddGraphicsBarriers()
 {
-    static constexpr MTLStages kRenderStages = MTLStageVertex | MTLStageObject | MTLStageMesh | MTLStageFragment;
-    if (m_first_render_barrier) {
-        [m_render_encoder barrierAfterQueueStages:MTLStageAll
-                                     beforeStages:kRenderStages
-                                visibilityOptions:MTL4VisibilityOptionDevice];
-        m_first_render_barrier = false;
-        m_render_barrier_after_stages = 0;
-        m_render_barrier_before_stages = 0;
-        return;
-    }
-
     if (m_render_barrier_after_stages && m_render_barrier_before_stages) {
         [m_render_encoder barrierAfterQueueStages:m_render_barrier_after_stages
                                      beforeStages:m_render_barrier_before_stages
@@ -767,17 +750,6 @@ void MTCommandList::AddGraphicsBarriers()
 
 void MTCommandList::AddComputeBarriers()
 {
-    static constexpr MTLStages kComputeStages = MTLStageDispatch | MTLStageBlit | MTLStageAccelerationStructure;
-    if (m_first_compure_barrier) {
-        [m_compute_encoder barrierAfterQueueStages:MTLStageAll
-                                      beforeStages:kComputeStages
-                                 visibilityOptions:MTL4VisibilityOptionDevice];
-        m_first_compure_barrier = false;
-        m_compute_barrier_after_stages = 0;
-        m_compute_barrier_before_stages = 0;
-        return;
-    }
-
     if (m_compute_barrier_after_stages && m_compute_barrier_before_stages) {
         [m_compute_encoder barrierAfterQueueStages:m_compute_barrier_after_stages
                                       beforeStages:m_compute_barrier_before_stages
