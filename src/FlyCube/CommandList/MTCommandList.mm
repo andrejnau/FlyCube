@@ -698,9 +698,11 @@ void MTCommandList::ApplyComputeState()
         m_need_apply_binding_set = false;
     }
 
-    assert(m_state->GetPipelineType() == PipelineType::kCompute);
-    decltype(auto) mt_state = m_state->As<MTComputePipeline>();
-    [m_compute_encoder setComputePipelineState:mt_state.GetPipeline()];
+    if (m_need_apply_state) {
+        assert(m_state->GetPipelineType() == PipelineType::kCompute);
+        decltype(auto) mt_state = m_state->As<MTComputePipeline>();
+        [m_compute_encoder setComputePipelineState:mt_state.GetPipeline()];
+    }
 }
 
 void MTCommandList::ApplyGraphicsState()
@@ -767,6 +769,7 @@ void MTCommandList::OpenComputeEncoder()
     }
 
     m_compute_encoder = [m_command_buffer computeCommandEncoder];
+    m_need_apply_state = true;
 }
 
 void MTCommandList::CloseComputeEncoder()
