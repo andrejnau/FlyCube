@@ -285,18 +285,11 @@ void MTCommandList::EndEvent() {}
 void MTCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
     ApplyGraphicsState();
-    if (first_instance > 0) {
-        [m_render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
-                             vertexStart:first_vertex
-                             vertexCount:vertex_count
-                           instanceCount:instance_count
-                            baseInstance:first_instance];
-    } else {
-        [m_render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
-                             vertexStart:first_vertex
-                             vertexCount:vertex_count
-                           instanceCount:instance_count];
-    }
+    [m_render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
+                         vertexStart:first_vertex
+                         vertexCount:vertex_count
+                       instanceCount:instance_count
+                        baseInstance:first_instance];
 }
 
 void MTCommandList::DrawIndexed(uint32_t index_count,
@@ -308,23 +301,14 @@ void MTCommandList::DrawIndexed(uint32_t index_count,
     ApplyGraphicsState();
     MTLIndexType index_format = ConvertIndexType(m_index_format);
     const uint32_t index_stride = index_format == MTLIndexTypeUInt32 ? 4 : 2;
-    if (vertex_offset != 0 || first_instance > 0) {
-        [m_render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                     indexCount:index_count
-                                      indexType:index_format
-                                    indexBuffer:m_index_buffer.gpuAddress + index_stride * first_index
-                              indexBufferLength:m_index_buffer.length - index_stride * first_index
-                                  instanceCount:instance_count
-                                     baseVertex:vertex_offset
-                                   baseInstance:first_instance];
-    } else {
-        [m_render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                     indexCount:index_count
-                                      indexType:index_format
-                                    indexBuffer:m_index_buffer.gpuAddress + index_stride * first_index
-                              indexBufferLength:m_index_buffer.length - index_stride * first_index
-                                  instanceCount:instance_count];
-    }
+    [m_render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                 indexCount:index_count
+                                  indexType:index_format
+                                indexBuffer:m_index_buffer.gpuAddress + index_stride * first_index
+                          indexBufferLength:m_index_buffer.length - index_stride * first_index
+                              instanceCount:instance_count
+                                 baseVertex:vertex_offset
+                               baseInstance:first_instance];
 }
 
 void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
@@ -766,6 +750,7 @@ void MTCommandList::OpenComputeEncoder()
         return;
     }
 
+    assert(!m_render_encoder);
     m_compute_encoder = [m_command_buffer computeCommandEncoder];
     [m_compute_encoder setArgumentTable:m_argument_tables.at(ShaderType::kCompute)];
     m_need_apply_state = true;
