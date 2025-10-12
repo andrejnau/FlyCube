@@ -15,3 +15,10 @@ struct AAssetManager;
 
 void SetAAssetManager(AAssetManager* mgr);
 #endif
+
+template <typename T>
+class PassKey {
+private:
+    friend T;
+    PassKey() = default;
+};

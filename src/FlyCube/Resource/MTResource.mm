@@ -3,7 +3,7 @@
 #include "Device/MTDevice.h"
 #include "Memory/MTMemory.h"
 
-MTResource::MTResource(MTDevice& device)
+MTResource::MTResource(PassKey<MTResource> pass_key, MTDevice& device)
     : m_device(device)
 {
 }
@@ -19,7 +19,7 @@ std::shared_ptr<MTResource> MTResource::CreateTexture(MTDevice& device,
                                                       int depth,
                                                       int mip_levels)
 {
-    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(device);
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     res->resource_type = ResourceType::kTexture;
     res->format = format;
     res->m_texture.type = type;
@@ -39,7 +39,7 @@ std::shared_ptr<MTResource> MTResource::CreateBuffer(MTDevice& device, uint32_t 
         return {};
     }
 
-    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(device);
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     res->resource_type = ResourceType::kBuffer;
     res->m_buffer.size = buffer_size;
     return res;
@@ -48,7 +48,7 @@ std::shared_ptr<MTResource> MTResource::CreateBuffer(MTDevice& device, uint32_t 
 // static
 std::shared_ptr<MTResource> MTResource::CreateSampler(MTDevice& device, const SamplerDesc& desc)
 {
-    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(device);
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     res->resource_type = ResourceType::kSampler;
 
     MTLSamplerDescriptor* sampler_descriptor = [MTLSamplerDescriptor new];
@@ -96,7 +96,7 @@ std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(MTDevice& de
                                                                     const std::shared_ptr<Resource>& resource,
                                                                     uint64_t offset)
 {
-    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(device);
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     res->resource_type = ResourceType::kAccelerationStructure;
     res->m_acceleration_structure = [device.GetDevice() newAccelerationStructureWithSize:resource->GetWidth() - offset];
     device.AddAllocationToGlobalResidencySet(res->m_acceleration_structure);

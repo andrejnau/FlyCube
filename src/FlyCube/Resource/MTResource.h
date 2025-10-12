@@ -1,5 +1,6 @@
 #pragma once
 #include "Resource/ResourceBase.h"
+#include "Utilities/Common.h"
 
 #import <Metal/Metal.h>
 #include <glm/glm.hpp>
@@ -8,7 +9,7 @@ class MTDevice;
 
 class MTResource : public ResourceBase {
 public:
-    MTResource(MTDevice& device);
+    MTResource(PassKey<MTResource> pass_key, MTDevice& device);
 
     static std::shared_ptr<MTResource> CreateTexture(MTDevice& device,
                                                      TextureType type,
