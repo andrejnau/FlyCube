@@ -4,8 +4,6 @@
 #import <Metal/Metal.h>
 #include <glm/glm.hpp>
 
-#include <map>
-
 class MTDevice;
 
 class MTResource : public ResourceBase {
@@ -45,31 +43,35 @@ public:
     bool AllowCommonStatePromotion(ResourceState state_after) override;
     MemoryRequirements GetMemoryRequirements() const override;
 
-    struct Texture {
-        id<MTLTexture> res = nullptr;
-        TextureType type = TextureType::k2D;
-        uint32_t bind_flag = 0;
-        MTLPixelFormat format = MTLPixelFormatInvalid;
-        uint32_t sample_count = 1;
-        int width = 1;
-        int height = 1;
-        int depth = 1;
-        int mip_levels = 1;
-    } texture;
-
-    struct Buffer {
-        id<MTLBuffer> res = nullptr;
-        uint32_t size = 0;
-    } buffer;
-
-    struct Sampler {
-        id<MTLSamplerState> res = nullptr;
-    } sampler;
-
-    id<MTLAccelerationStructure> acceleration_structure = nullptr;
+    id<MTLTexture> GetTexture() const;
+    id<MTLBuffer> GetBuffer() const;
+    id<MTLSamplerState> GetSampler() const;
+    id<MTLAccelerationStructure> GetAccelerationStructure() const;
 
 private:
     MTLTextureDescriptor* GetTextureDescriptor(MemoryType memory_type) const;
 
     MTDevice& m_device;
+
+    struct Texture {
+        id<MTLTexture> res = nullptr;
+        TextureType type = TextureType::k2D;
+        uint32_t bind_flag = 0;
+        uint32_t sample_count = 1;
+        int width = 1;
+        int height = 1;
+        int depth = 1;
+        int mip_levels = 1;
+    } m_texture;
+
+    struct Buffer {
+        id<MTLBuffer> res = nullptr;
+        uint32_t size = 0;
+    } m_buffer;
+
+    struct Sampler {
+        id<MTLSamplerState> res = nullptr;
+    } m_sampler;
+
+    id<MTLAccelerationStructure> m_acceleration_structure = nullptr;
 };

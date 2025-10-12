@@ -250,14 +250,14 @@ MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(c
     }
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
-    geometry_desc.vertexBuffer = vertex_res->buffer.res;
+    geometry_desc.vertexBuffer = vertex_res->GetBuffer();
     geometry_desc.vertexBufferOffset = vertex.offset * vertex_stride;
     geometry_desc.vertexStride = vertex_stride;
     geometry_desc.triangleCount = vertex.count / 3;
 
     if (index_res) {
         auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
-        geometry_desc.indexBuffer = index_res->buffer.res;
+        geometry_desc.indexBuffer = index_res->GetBuffer();
         geometry_desc.indexBufferOffset = index.offset * index_stride;
         geometry_desc.triangleCount = index.count / 3;
     }

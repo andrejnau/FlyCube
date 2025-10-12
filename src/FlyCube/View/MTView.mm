@@ -63,8 +63,8 @@ MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, co
 
 void MTView::CreateTextureView()
 {
-    decltype(auto) texture = m_resource->texture.res;
-    MTLPixelFormat format = m_resource->texture.format;
+    decltype(auto) texture = m_resource->GetTexture();
+    MTLPixelFormat format = m_device.GetMVKPixelFormats().getMTLPixelFormat(static_cast<VkFormat>(m_resource->format));
     MTLTextureType texture_type = ConvertTextureType(m_view_desc.dimension);
     NSRange levels = { GetBaseMipLevel(), GetLevelCount() };
     NSRange slices = { GetBaseArrayLayer(), GetLayerCount() };
@@ -194,7 +194,7 @@ uint64_t MTView::GetGpuAddress() const
 id<MTLBuffer> MTView::GetBuffer() const
 {
     if (m_resource) {
-        return m_resource->buffer.res;
+        return m_resource->GetBuffer();
     }
     return {};
 }
@@ -202,7 +202,7 @@ id<MTLBuffer> MTView::GetBuffer() const
 id<MTLSamplerState> MTView::GetSampler() const
 {
     if (m_resource) {
-        return m_resource->sampler.res;
+        return m_resource->GetSampler();
     }
     return {};
 }
@@ -212,7 +212,7 @@ id<MTLTexture> MTView::GetTexture() const
     if (m_texture_view) {
         return m_texture_view;
     } else if (m_resource) {
-        return m_resource->texture.res;
+        return m_resource->GetTexture();
     }
     return {};
 }
@@ -220,7 +220,7 @@ id<MTLTexture> MTView::GetTexture() const
 id<MTLAccelerationStructure> MTView::GetAccelerationStructure() const
 {
     if (m_resource) {
-        return m_resource->acceleration_structure;
+        return m_resource->GetAccelerationStructure();
     }
     return {};
 }

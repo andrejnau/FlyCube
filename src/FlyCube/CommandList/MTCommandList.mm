@@ -314,7 +314,7 @@ void MTCommandList::DrawIndexed(uint32_t index_count,
 void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
     ApplyGraphicsState();
-    decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
+    decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().GetBuffer();
     AddAllocation(mt_argument_buffer);
     [m_render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
                       indirectBuffer:mt_argument_buffer.gpuAddress + argument_buffer_offset];
@@ -324,7 +324,7 @@ void MTCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argumen
                                         uint64_t argument_buffer_offset)
 {
     ApplyGraphicsState();
-    decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
+    decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().GetBuffer();
     AddAllocation(mt_argument_buffer);
     MTLIndexType index_format = ConvertIndexType(m_index_format);
     [m_render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
@@ -369,7 +369,7 @@ void MTCommandList::Dispatch(uint32_t thread_group_count_x,
 
 void MTCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
-    decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().buffer.res;
+    decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().GetBuffer();
     decltype(auto) mt_state = m_state->As<MTComputePipeline>();
     AddAllocation(mt_argument_buffer);
 
@@ -449,7 +449,7 @@ void MTCommandList::SetScissorRect(uint32_t left, uint32_t top, uint32_t right, 
 
 void MTCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
 {
-    decltype(auto) index_buffer = resource->As<MTResource>().buffer.res;
+    decltype(auto) index_buffer = resource->As<MTResource>().GetBuffer();
     AddAllocation(index_buffer);
     m_index_buffer = index_buffer;
     m_index_format = format;
@@ -457,7 +457,7 @@ void MTCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
 
 void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
 {
-    decltype(auto) vertex = resource->As<MTResource>().buffer.res;
+    decltype(auto) vertex = resource->As<MTResource>().GetBuffer();
     AddAllocation(vertex);
     uint32_t index = m_device.GetMaxPerStageBufferCount() - slot - 1;
     [m_argument_tables.at(ShaderType::kVertex) setAddress:vertex.gpuAddress atIndex:index];
@@ -488,15 +488,16 @@ void MTCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
 
     decltype(auto) mt_dst = dst->As<MTResource>();
     decltype(auto) mt_scratch = scratch->As<MTResource>();
-    AddAllocation(mt_dst.acceleration_structure);
-    AddAllocation(mt_scratch.buffer.res);
+    AddAllocation(mt_dst.GetAccelerationStructure());
+    AddAllocation(mt_scratch.GetBuffer());
 
     OpenComputeEncoder();
     AddComputeBarriers();
-    [m_compute_encoder buildAccelerationStructure:mt_dst.acceleration_structure
-                                       descriptor:acceleration_structure_desc
-                                    scratchBuffer:MTL4BufferRangeMake(mt_scratch.buffer.res.gpuAddress + scratch_offset,
-                                                                      mt_scratch.buffer.res.length - scratch_offset)];
+    [m_compute_encoder
+        buildAccelerationStructure:mt_dst.GetAccelerationStructure()
+                        descriptor:acceleration_structure_desc
+                     scratchBuffer:MTL4BufferRangeMake(mt_scratch.GetBuffer().gpuAddress + scratch_offset,
+                                                       mt_scratch.GetBuffer().length - scratch_offset)];
 }
 
 // TODO: patch on GPU
@@ -510,7 +511,7 @@ MTL4BufferRange MTCommandList::PatchInstanceData(const std::shared_ptr<Resource>
     AddAllocation(buffer);
 
     uint8_t* instance_ptr =
-        static_cast<uint8_t*>(instance_data->As<MTResource>().buffer.res.contents) + instance_offset;
+        static_cast<uint8_t*>(instance_data->As<MTResource>().GetBuffer().contents) + instance_offset;
     uint8_t* patched_instance_ptr = static_cast<uint8_t*>(buffer.contents);
     for (uint32_t i = 0; i < instance_count; ++i) {
         RaytracingGeometryInstance& instance = reinterpret_cast<RaytracingGeometryInstance*>(instance_ptr)[i];
@@ -544,15 +545,16 @@ void MTCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
 
     decltype(auto) mt_dst = dst->As<MTResource>();
     decltype(auto) mt_scratch = scratch->As<MTResource>();
-    AddAllocation(mt_dst.acceleration_structure);
-    AddAllocation(mt_scratch.buffer.res);
+    AddAllocation(mt_dst.GetAccelerationStructure());
+    AddAllocation(mt_scratch.GetBuffer());
 
     OpenComputeEncoder();
     AddComputeBarriers();
-    [m_compute_encoder buildAccelerationStructure:mt_dst.acceleration_structure
-                                       descriptor:acceleration_structure_desc
-                                    scratchBuffer:MTL4BufferRangeMake(mt_scratch.buffer.res.gpuAddress + scratch_offset,
-                                                                      mt_scratch.buffer.res.length - scratch_offset)];
+    [m_compute_encoder
+        buildAccelerationStructure:mt_dst.GetAccelerationStructure()
+                        descriptor:acceleration_structure_desc
+                     scratchBuffer:MTL4BufferRangeMake(mt_scratch.GetBuffer().gpuAddress + scratch_offset,
+                                                       mt_scratch.GetBuffer().length - scratch_offset)];
 }
 
 void MTCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src,
@@ -569,13 +571,13 @@ void MTCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
     OpenComputeEncoder();
     decltype(auto) mt_src_buffer = src_buffer->As<MTResource>();
     decltype(auto) mt_dst_buffer = dst_buffer->As<MTResource>();
-    AddAllocation(mt_src_buffer.buffer.res);
-    AddAllocation(mt_dst_buffer.buffer.res);
+    AddAllocation(mt_src_buffer.GetBuffer());
+    AddAllocation(mt_dst_buffer.GetBuffer());
     AddComputeBarriers();
     for (const auto& region : regions) {
-        [m_compute_encoder copyFromBuffer:mt_src_buffer.buffer.res
+        [m_compute_encoder copyFromBuffer:mt_src_buffer.GetBuffer()
                              sourceOffset:region.src_offset
-                                 toBuffer:mt_dst_buffer.buffer.res
+                                 toBuffer:mt_dst_buffer.GetBuffer()
                         destinationOffset:region.dst_offset
                                      size:region.num_bytes];
     }
@@ -588,8 +590,8 @@ void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
     OpenComputeEncoder();
     decltype(auto) mt_src_buffer = src_buffer->As<MTResource>();
     decltype(auto) mt_dst_texture = dst_texture->As<MTResource>();
-    AddAllocation(mt_src_buffer.buffer.res);
-    AddAllocation(mt_dst_texture.texture.res);
+    AddAllocation(mt_src_buffer.GetBuffer());
+    AddAllocation(mt_dst_texture.GetTexture());
     auto format = dst_texture->GetFormat();
     AddComputeBarriers();
     for (const auto& region : regions) {
@@ -604,12 +606,12 @@ void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
         }
         MTLSize region_size = { region.texture_extent.width, region.texture_extent.height,
                                 region.texture_extent.depth };
-        [m_compute_encoder copyFromBuffer:mt_src_buffer.buffer.res
+        [m_compute_encoder copyFromBuffer:mt_src_buffer.GetBuffer()
                              sourceOffset:region.buffer_offset
                         sourceBytesPerRow:region.buffer_row_pitch
                       sourceBytesPerImage:bytes_per_image
                                sourceSize:region_size
-                                toTexture:mt_dst_texture.texture.res
+                                toTexture:mt_dst_texture.GetTexture()
                          destinationSlice:region.texture_array_layer
                          destinationLevel:region.texture_mip_level
                         destinationOrigin:{ (uint32_t)region.texture_offset.x, (uint32_t)region.texture_offset.y,
@@ -624,8 +626,8 @@ void MTCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture,
     OpenComputeEncoder();
     decltype(auto) mt_src_texture = src_texture->As<MTResource>();
     decltype(auto) mt_dst_texture = dst_texture->As<MTResource>();
-    AddAllocation(mt_src_texture.texture.res);
-    AddAllocation(mt_dst_texture.texture.res);
+    AddAllocation(mt_src_texture.GetTexture());
+    AddAllocation(mt_dst_texture.GetTexture());
     auto format = dst_texture->GetFormat();
     AddComputeBarriers();
     for (const auto& region : regions) {
@@ -634,12 +636,12 @@ void MTCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture,
                                  (uint32_t)region.src_offset.z };
         MTLOrigin dst_origin = { (uint32_t)region.dst_offset.x, (uint32_t)region.dst_offset.y,
                                  (uint32_t)region.dst_offset.z };
-        [m_compute_encoder copyFromTexture:mt_src_texture.texture.res
+        [m_compute_encoder copyFromTexture:mt_src_texture.GetTexture()
                                sourceSlice:region.src_array_layer
                                sourceLevel:region.src_mip_level
                               sourceOrigin:src_origin
                                 sourceSize:region_size
-                                 toTexture:mt_dst_texture.texture.res
+                                 toTexture:mt_dst_texture.GetTexture()
                           destinationSlice:region.dst_array_layer
                           destinationLevel:region.dst_mip_level
                          destinationOrigin:dst_origin];
