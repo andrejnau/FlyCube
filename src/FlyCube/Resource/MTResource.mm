@@ -8,6 +8,102 @@ MTResource::MTResource(MTDevice& device)
 {
 }
 
+// static
+std::shared_ptr<MTResource> MTResource::CreateTexture(MTDevice& device,
+                                                      TextureType type,
+                                                      uint32_t bind_flag,
+                                                      gli::format format,
+                                                      uint32_t sample_count,
+                                                      int width,
+                                                      int height,
+                                                      int depth,
+                                                      int mip_levels)
+{
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(device);
+    res->resource_type = ResourceType::kTexture;
+    res->format = format;
+    res->texture.type = type;
+    res->texture.bind_flag = bind_flag;
+    res->texture.format = device.GetMVKPixelFormats().getMTLPixelFormat(static_cast<VkFormat>(format));
+    res->texture.sample_count = sample_count;
+    res->texture.width = width;
+    res->texture.height = height;
+    res->texture.depth = depth;
+    res->texture.mip_levels = mip_levels;
+    return res;
+}
+
+// static
+std::shared_ptr<MTResource> MTResource::CreateBuffer(MTDevice& device, uint32_t bind_flag, uint32_t buffer_size)
+{
+    if (buffer_size == 0) {
+        return {};
+    }
+
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(device);
+    res->resource_type = ResourceType::kBuffer;
+    res->buffer.size = buffer_size;
+    return res;
+}
+
+// static
+std::shared_ptr<MTResource> MTResource::CreateSampler(MTDevice& device, const SamplerDesc& desc)
+{
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(device);
+    res->resource_type = ResourceType::kSampler;
+
+    MTLSamplerDescriptor* sampler_descriptor = [MTLSamplerDescriptor new];
+    sampler_descriptor.supportArgumentBuffers = YES;
+    sampler_descriptor.minFilter = MTLSamplerMinMagFilterLinear;
+    sampler_descriptor.magFilter = MTLSamplerMinMagFilterLinear;
+    sampler_descriptor.mipFilter = MTLSamplerMipFilterLinear;
+    sampler_descriptor.maxAnisotropy = 16;
+    sampler_descriptor.borderColor = MTLSamplerBorderColorOpaqueBlack;
+    sampler_descriptor.lodMinClamp = 0;
+    sampler_descriptor.lodMaxClamp = std::numeric_limits<float>::max();
+
+    switch (desc.mode) {
+    case SamplerTextureAddressMode::kWrap:
+        sampler_descriptor.sAddressMode = MTLSamplerAddressModeRepeat;
+        sampler_descriptor.tAddressMode = MTLSamplerAddressModeRepeat;
+        sampler_descriptor.rAddressMode = MTLSamplerAddressModeRepeat;
+        break;
+    case SamplerTextureAddressMode::kClamp:
+        sampler_descriptor.sAddressMode = MTLSamplerAddressModeClampToEdge;
+        sampler_descriptor.tAddressMode = MTLSamplerAddressModeClampToEdge;
+        sampler_descriptor.rAddressMode = MTLSamplerAddressModeClampToEdge;
+        break;
+    }
+
+    switch (desc.func) {
+    case SamplerComparisonFunc::kNever:
+        sampler_descriptor.compareFunction = MTLCompareFunctionNever;
+        break;
+    case SamplerComparisonFunc::kAlways:
+        sampler_descriptor.compareFunction = MTLCompareFunctionAlways;
+        break;
+    case SamplerComparisonFunc::kLess:
+        sampler_descriptor.compareFunction = MTLCompareFunctionLess;
+        break;
+    }
+
+    res->sampler.res = [device.GetDevice() newSamplerStateWithDescriptor:sampler_descriptor];
+    return res;
+}
+
+// static
+std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(MTDevice& device,
+                                                                    AccelerationStructureType type,
+                                                                    const std::shared_ptr<Resource>& resource,
+                                                                    uint64_t offset)
+{
+    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(device);
+    res->resource_type = ResourceType::kAccelerationStructure;
+    res->acceleration_structure = [device.GetDevice() newAccelerationStructureWithSize:resource->GetWidth() - offset];
+    device.AddAllocationToGlobalResidencySet(res->acceleration_structure);
+    return res;
+}
+
 MTLTextureDescriptor* MTResource::GetTextureDescriptor(MemoryType memory_type) const
 {
     MTLTextureDescriptor* texture_descriptor = [MTLTextureDescriptor new];

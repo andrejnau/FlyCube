@@ -12,6 +12,25 @@ class MTResource : public ResourceBase {
 public:
     MTResource(MTDevice& device);
 
+    static std::shared_ptr<MTResource> CreateTexture(MTDevice& device,
+                                                     TextureType type,
+                                                     uint32_t bind_flag,
+                                                     gli::format format,
+                                                     uint32_t sample_count,
+                                                     int width,
+                                                     int height,
+                                                     int depth,
+                                                     int mip_levels);
+
+    static std::shared_ptr<MTResource> CreateBuffer(MTDevice& device, uint32_t bind_flag, uint32_t buffer_size);
+
+    static std::shared_ptr<MTResource> CreateSampler(MTDevice& device, const SamplerDesc& desc);
+
+    static std::shared_ptr<MTResource> CreateAccelerationStructure(MTDevice& device,
+                                                                   AccelerationStructureType type,
+                                                                   const std::shared_ptr<Resource>& resource,
+                                                                   uint64_t offset);
+
     void CommitMemory(MemoryType memory_type) override;
     void BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset) override;
     uint64_t GetWidth() const override;
@@ -27,7 +46,7 @@ public:
     MemoryRequirements GetMemoryRequirements() const override;
 
     struct Texture {
-        id<MTLTexture> res;
+        id<MTLTexture> res = nullptr;
         TextureType type = TextureType::k2D;
         uint32_t bind_flag = 0;
         MTLPixelFormat format = MTLPixelFormatInvalid;
@@ -39,15 +58,15 @@ public:
     } texture;
 
     struct Buffer {
-        id<MTLBuffer> res;
+        id<MTLBuffer> res = nullptr;
         uint32_t size = 0;
     } buffer;
 
     struct Sampler {
-        id<MTLSamplerState> res;
+        id<MTLSamplerState> res = nullptr;
     } sampler;
 
-    id<MTLAccelerationStructure> acceleration_structure;
+    id<MTLAccelerationStructure> acceleration_structure = nullptr;
 
 private:
     MTLTextureDescriptor* GetTextureDescriptor(MemoryType memory_type) const;
