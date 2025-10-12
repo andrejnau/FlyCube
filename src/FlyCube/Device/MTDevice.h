@@ -36,7 +36,7 @@ class MTInstance;
 
 class MTDevice : public Device, protected MVKPhysicalDeviceImpl {
 public:
-    MTDevice(MTInstance& instance, const id<MTLDevice>& device);
+    MTDevice(MTInstance& instance, id<MTLDevice> device);
     std::shared_ptr<Memory> AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits) override;
     std::shared_ptr<CommandQueue> GetCommandQueue(CommandListType type) override;
     uint32_t GetTextureDataPitchAlignment() const override;
@@ -91,7 +91,7 @@ public:
                                                  BuildAccelerationStructureFlags flags) const override;
     ShaderBlobType GetSupportedShaderBlobType() const override;
 
-    const id<MTLDevice>& GetDevice() const;
+    id<MTLDevice> GetDevice() const;
     MVKPixelFormats& GetMVKPixelFormats();
     id<MTL4CommandQueue> GetMTCommandQueue() const;
     uint32_t GetMaxPerStageBufferCount() const;
@@ -107,7 +107,7 @@ private:
     id<MTLDevice> getMTLDevice() override;
 
     MTInstance& m_instance;
-    id<MTLDevice> m_device = nullptr;
+    const id<MTLDevice> m_device;
     MVKPixelFormats m_mvk_pixel_formats;
     std::shared_ptr<MTCommandQueue> m_command_queue;
     MTGPUBindlessArgumentBuffer m_bindless_argument_buffer;

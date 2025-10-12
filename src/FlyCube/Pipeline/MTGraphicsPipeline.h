@@ -28,8 +28,8 @@ private:
 
     MTDevice& m_device;
     GraphicsPipelineDesc m_desc;
-    id<MTLRenderPipelineState> m_pipeline;
-    id<MTLDepthStencilState> m_depth_stencil;
+    id<MTLRenderPipelineState> m_pipeline = nullptr;
+    id<MTLDepthStencilState> m_depth_stencil = nullptr;
 
     MTLSize m_amplification_numthreads = {};
     MTLSize m_mesh_numthreads = {};

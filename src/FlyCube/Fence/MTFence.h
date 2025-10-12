@@ -16,5 +16,5 @@ public:
 
 private:
     MTDevice& m_device;
-    id<MTLSharedEvent> m_shared_event;
+    id<MTLSharedEvent> m_shared_event = nullptr;
 };

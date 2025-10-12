@@ -3,7 +3,7 @@
 #include "Device/MTDevice.h"
 #include "Instance/MTInstance.h"
 
-MTAdapter::MTAdapter(MTInstance& instance, const id<MTLDevice>& device)
+MTAdapter::MTAdapter(MTInstance& instance, id<MTLDevice> device)
     : m_instance(instance)
     , m_device(device)
     , m_name([[device name] UTF8String])

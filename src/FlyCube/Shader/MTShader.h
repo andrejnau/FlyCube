@@ -22,5 +22,5 @@ private:
     void CreateLibrary();
 
     MTDevice& m_device;
-    id<MTLLibrary> m_library;
+    id<MTLLibrary> m_library = nullptr;
 };

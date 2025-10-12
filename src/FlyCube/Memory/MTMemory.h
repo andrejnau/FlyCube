@@ -17,5 +17,5 @@ public:
 
 private:
     MemoryType m_memory_type;
-    id<MTLHeap> m_heap;
+    id<MTLHeap> m_heap = nullptr;
 };

@@ -22,7 +22,7 @@ namespace {
 constexpr bool kUseGlobalResidencySet = false;
 } // namespace
 
-MTDevice::MTDevice(MTInstance& instance, const id<MTLDevice>& device)
+MTDevice::MTDevice(MTInstance& instance, id<MTLDevice> device)
     : m_instance(instance)
     , m_device(device)
     , m_mvk_pixel_formats(this)
@@ -311,7 +311,7 @@ ShaderBlobType MTDevice::GetSupportedShaderBlobType() const
     return ShaderBlobType::kSPIRV;
 }
 
-const id<MTLDevice>& MTDevice::GetDevice() const
+id<MTLDevice> MTDevice::GetDevice() const
 {
     return m_device;
 }

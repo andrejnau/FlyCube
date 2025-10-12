@@ -115,14 +115,14 @@ private:
     id<MTL4CommandAllocator> m_allocator = nullptr;
     id<MTL4RenderCommandEncoder> m_render_encoder = nullptr;
     id<MTL4ComputeCommandEncoder> m_compute_encoder = nullptr;
-    id<MTLBuffer> m_index_buffer;
+    id<MTLBuffer> m_index_buffer = nullptr;
     gli::format m_index_format = gli::FORMAT_UNDEFINED;
     MTLViewport m_viewport = {};
     MTLScissorRect m_scissor = {};
     std::shared_ptr<Pipeline> m_state;
     std::shared_ptr<MTBindingSet> m_binding_set;
     std::map<ShaderType, id<MTL4ArgumentTable>> m_argument_tables;
-    id<MTLResidencySet> m_residency_set;
+    id<MTLResidencySet> m_residency_set = nullptr;
     bool m_need_apply_state = false;
     bool m_need_apply_binding_set = false;
     MTLStages m_render_barrier_after_stages = 0;

@@ -16,5 +16,5 @@ public:
 
 private:
     MTDevice& m_device;
-    id<MTL4CommandQueue> m_command_queue;
+    id<MTL4CommandQueue> m_command_queue = nullptr;
 };

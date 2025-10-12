@@ -24,6 +24,6 @@ private:
 
     MTDevice& m_device;
     ComputePipelineDesc m_desc;
-    id<MTLComputePipelineState> m_pipeline;
+    id<MTLComputePipelineState> m_pipeline = nullptr;
     MTLSize m_numthreads = {};
 };
