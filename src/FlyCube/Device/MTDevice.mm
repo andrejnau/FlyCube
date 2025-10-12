@@ -321,9 +321,14 @@ id<MTLDevice> MTDevice::getMTLDevice()
     return GetDevice();
 }
 
-MVKPixelFormats& MTDevice::GetMVKPixelFormats()
+MTLPixelFormat MTDevice::GetMTLPixelFormat(gli::format format)
 {
-    return m_mvk_pixel_formats;
+    return m_mvk_pixel_formats.getMTLPixelFormat(static_cast<VkFormat>(format));
+}
+
+MTLVertexFormat MTDevice::GetMTLVertexFormat(gli::format format)
+{
+    return m_mvk_pixel_formats.getMTLVertexFormat(static_cast<VkFormat>(format));
 }
 
 id<MTL4CommandQueue> MTDevice::GetMTCommandQueue() const

@@ -92,7 +92,8 @@ public:
     ShaderBlobType GetSupportedShaderBlobType() const override;
 
     id<MTLDevice> GetDevice() const;
-    MVKPixelFormats& GetMVKPixelFormats();
+    MTLPixelFormat GetMTLPixelFormat(gli::format format);
+    MTLVertexFormat GetMTLVertexFormat(gli::format format);
     id<MTL4CommandQueue> GetMTCommandQueue() const;
     uint32_t GetMaxPerStageBufferCount() const;
 

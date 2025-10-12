@@ -153,7 +153,7 @@ MTLTextureDescriptor* MTResource::GetTextureDescriptor(MemoryType memory_type) c
         usage |= MTLTextureUsagePixelFormatView;
     }
 
-    texture_descriptor.pixelFormat = m_device.GetMVKPixelFormats().getMTLPixelFormat(static_cast<VkFormat>(format));
+    texture_descriptor.pixelFormat = m_device.GetMTLPixelFormat(format);
     texture_descriptor.width = m_texture.width;
     texture_descriptor.height = m_texture.height;
     texture_descriptor.mipmapLevelCount = m_texture.mip_levels;

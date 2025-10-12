@@ -140,14 +140,13 @@ void MTGraphicsPipeline::CreatePipeline()
         }
     }
 
-    MVKPixelFormats& pixel_formats = m_device.GetMVKPixelFormats();
     const RenderPassDesc& render_pass_desc = m_desc.render_pass->GetDesc();
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
         if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED) {
             continue;
         }
         pipeline_descriptor.colorAttachments[i].pixelFormat =
-            pixel_formats.getMTLPixelFormat(static_cast<VkFormat>(render_pass_desc.colors[i].format));
+            m_device.GetMTLPixelFormat(render_pass_desc.colors[i].format);
     }
     if constexpr (!is_mesh_pipeline) {
         pipeline_descriptor.inputPrimitiveTopology = MTLPrimitiveTopologyClassTriangle;
@@ -209,14 +208,13 @@ void MTGraphicsPipeline::CreatePipeline()
 
 MTLVertexDescriptor* MTGraphicsPipeline::GetVertexDescriptor(const std::shared_ptr<Shader>& shader)
 {
-    MVKPixelFormats& pixel_formats = m_device.GetMVKPixelFormats();
     MTLVertexDescriptor* vertex_descriptor = [MTLVertexDescriptor new];
     for (size_t i = 0; i < m_desc.input.size(); ++i) {
         decltype(auto) vertex = m_desc.input[i];
         decltype(auto) attribute = vertex_descriptor.attributes[i];
         attribute.offset = 0;
         attribute.bufferIndex = m_device.GetMaxPerStageBufferCount() - vertex.slot - 1;
-        attribute.format = pixel_formats.getMTLVertexFormat(static_cast<VkFormat>(vertex.format));
+        attribute.format = m_device.GetMTLVertexFormat(vertex.format);
         decltype(auto) layout = vertex_descriptor.layouts[attribute.bufferIndex];
         layout.stride = vertex.stride;
         layout.stepFunction = MTLVertexStepFunctionPerVertex;
