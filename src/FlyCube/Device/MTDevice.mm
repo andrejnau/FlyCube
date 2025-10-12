@@ -316,11 +316,6 @@ id<MTLDevice> MTDevice::GetDevice() const
     return m_device;
 }
 
-id<MTLDevice> MTDevice::getMTLDevice()
-{
-    return GetDevice();
-}
-
 MTLPixelFormat MTDevice::GetMTLPixelFormat(gli::format format)
 {
     return m_mvk_pixel_formats.getMTLPixelFormat(static_cast<VkFormat>(format));
@@ -341,7 +336,7 @@ uint32_t MTDevice::GetMaxPerStageBufferCount() const
     return 31;
 }
 
-MTInstance& MTDevice::GetInstance()
+const MTInstance& MTDevice::GetInstance()
 {
     return m_instance;
 }
@@ -373,4 +368,19 @@ void MTDevice::AddAllocationToGlobalResidencySet(id<MTLAllocation> allocation)
 id<MTL4Compiler> MTDevice::GetCompiler()
 {
     return m_compiler;
+}
+
+MVKVulkanAPIObject* MTDevice::getVulkanAPIObject()
+{
+    return this;
+}
+
+id<MTLDevice> MTDevice::getMTLDevice()
+{
+    return m_device;
+}
+
+const MVKPhysicalDeviceMetalFeatures* MTDevice::getMetalFeatures()
+{
+    return &m_features;
 }

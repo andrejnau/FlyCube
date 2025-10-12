@@ -6,37 +6,14 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
 
-class MVKPhysicalDeviceImpl : public MVKPhysicalDevice {
-public:
-    MVKPhysicalDeviceImpl()
-    {
-        m_features.stencilViews = false;
-        m_features.renderLinearTextures = false;
-        m_features.clearColorFloatRounding = MVK_FLOAT_ROUNDING_NEAREST;
-    }
-
-    virtual ~MVKPhysicalDeviceImpl() = default;
-
-    MVKVulkanAPIObject* getVulkanAPIObject() override
-    {
-        return this;
-    }
-
-    const MVKPhysicalDeviceMetalFeatures* getMetalFeatures() override
-    {
-        return &m_features;
-    }
-
-protected:
-    MVKPhysicalDeviceMetalFeatures m_features = {};
-};
-
 class MTCommandQueue;
 class MTInstance;
 
-class MTDevice : public Device, protected MVKPhysicalDeviceImpl {
+class MTDevice : public Device, private MVKPhysicalDevice {
 public:
     MTDevice(MTInstance& instance, id<MTLDevice> device);
+
+    // Device:
     std::shared_ptr<Memory> AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits) override;
     std::shared_ptr<CommandQueue> GetCommandQueue(CommandListType type) override;
     uint32_t GetTextureDataPitchAlignment() const override;
@@ -96,8 +73,7 @@ public:
     MTLVertexFormat GetMTLVertexFormat(gli::format format);
     id<MTL4CommandQueue> GetMTCommandQueue() const;
     uint32_t GetMaxPerStageBufferCount() const;
-
-    MTInstance& GetInstance();
+    const MTInstance& GetInstance();
     MTGPUBindlessArgumentBuffer& GetBindlessArgumentBuffer();
     id<MTLResidencySet> CreateResidencySet() const;
     id<MTLResidencySet> GetGlobalResidencySet();
@@ -105,9 +81,17 @@ public:
     id<MTL4Compiler> GetCompiler();
 
 private:
+    // MVKPhysicalDevice:
+    MVKVulkanAPIObject* getVulkanAPIObject() override;
     id<MTLDevice> getMTLDevice() override;
+    const MVKPhysicalDeviceMetalFeatures* getMetalFeatures() override;
 
-    MTInstance& m_instance;
+    const MVKPhysicalDeviceMetalFeatures m_features = {
+        .stencilViews = false,
+        .renderLinearTextures = false,
+        .clearColorFloatRounding = MVK_FLOAT_ROUNDING_NEAREST,
+    };
+    const MTInstance& m_instance;
     const id<MTLDevice> m_device;
     MVKPixelFormats m_mvk_pixel_formats;
     std::shared_ptr<MTCommandQueue> m_command_queue;
