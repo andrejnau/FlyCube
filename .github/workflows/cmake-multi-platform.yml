@@ -20,11 +20,11 @@ jobs:
         include:
           - os: windows-latest
             build_preset: default
-          - os: macos-latest
+          - os: macos-26
             build_preset: macOS
-          - os: macos-latest
+          - os: macos-26
             build_preset: iSimulator
-          - os: macos-latest
+          - os: macos-26
             build_preset: tvSimulator
           - os: ubuntu-latest
             build_preset: gcc
