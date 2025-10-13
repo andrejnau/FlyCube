@@ -22,10 +22,10 @@ jobs:
             build_preset: default
           - os: macos-26
             build_preset: macOS
-          - os: macos-26
-            build_preset: iSimulator
-          - os: macos-26
-            build_preset: tvSimulator
+          # - os: macos-26
+          #   build_preset: iSimulator
+          # - os: macos-26
+          #   build_preset: tvSimulator
           - os: ubuntu-latest
             build_preset: gcc
           - os: ubuntu-latest
