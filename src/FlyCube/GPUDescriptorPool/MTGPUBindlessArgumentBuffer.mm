@@ -17,27 +17,7 @@ void MTGPUBindlessArgumentBuffer::ResizeHeap(uint32_t req_size)
     id<MTLBuffer> buffer = [m_device.GetDevice() newBufferWithLength:req_size * sizeof(uint64_t)
                                                              options:MTLResourceStorageModeShared];
     if (m_size && m_buffer) {
-        auto queue = m_device.GetMTCommandQueue();
-        auto command_buffer = [m_device.GetDevice() newCommandBuffer];
-        auto allocator = [m_device.GetDevice() newCommandAllocator];
-        [command_buffer beginCommandBufferWithAllocator:allocator];
-
-        auto residency_set = m_device.CreateResidencySet();
-        [residency_set addAllocation:m_buffer];
-        [residency_set addAllocation:buffer];
-        [residency_set commit];
-        [command_buffer useResidencySet:residency_set];
-
-        auto compute_encoder = [command_buffer computeCommandEncoder];
-        [compute_encoder copyFromBuffer:m_buffer
-                           sourceOffset:0
-                               toBuffer:buffer
-                      destinationOffset:0
-                                   size:m_size * sizeof(uint64_t)];
-        [compute_encoder endEncoding];
-
-        [command_buffer endCommandBuffer];
-        [queue commit:&command_buffer count:1];
+        memcpy(buffer.contents, m_buffer.contents, m_size * sizeof(uint64_t));
     }
 
     m_size = req_size;
