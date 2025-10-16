@@ -211,7 +211,9 @@ MTLVertexDescriptor* MTGraphicsPipeline::GetVertexDescriptor(const std::shared_p
     MTLVertexDescriptor* vertex_descriptor = [MTLVertexDescriptor new];
     for (size_t i = 0; i < m_desc.input.size(); ++i) {
         decltype(auto) vertex = m_desc.input[i];
-        decltype(auto) attribute = vertex_descriptor.attributes[i];
+        uint32_t location =
+            m_desc.program->GetShader(ShaderType::kVertex)->GetInputLayoutLocation(vertex.semantic_name);
+        decltype(auto) attribute = vertex_descriptor.attributes[location];
         attribute.offset = 0;
         attribute.bufferIndex = m_device.GetMaxPerStageBufferCount() - vertex.slot - 1;
         attribute.format = m_device.GetMTLVertexFormat(vertex.format);
