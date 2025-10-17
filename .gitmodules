@@ -28,3 +28,12 @@
 [submodule "3rdparty/MVKPixelFormats"]
 	path = 3rdparty/MVKPixelFormats
 	url = https://github.com/andrejnau/MVKPixelFormats.git
+[submodule "3rdparty/assimp"]
+	path = 3rdparty/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "3rdparty/stb_image"]
+	path = 3rdparty/stb_image
+	url = https://github.com/andrejnau/stb_image.git
+[submodule "assets/resources"]
+	path = assets/resources
+	url = https://github.com/andrejnau/FlyCubeResources.git

@@ -4,3 +4,4 @@ endif()
 
 add_subdirectory(AppLoop)
 add_subdirectory(AppSettings)
+add_subdirectory(RenderUtils)

@@ -13,8 +13,9 @@ set(appleclang_compile_options
     -Wno-shorten-64-to-32
     -Wno-unguarded-availability-new
 )
-set(gpu_compile_options
+set(gnu_compile_options
     -Wno-deprecated-enum-enum-conversion
+    -Wno-unused-result
 )
 set(msvc_compile_options
     /MP
@@ -23,7 +24,7 @@ set(msvc_compile_options
 add_compile_options(
     "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:${appleclang_clang_compile_options}>"
     "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang>:${appleclang_compile_options}>"
-    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:${gpu_compile_options}>"
+    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:${gnu_compile_options}>"
     "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:${msvc_compile_options}>"
 )
 
