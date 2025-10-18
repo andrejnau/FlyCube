@@ -55,10 +55,15 @@ MTLStencilOperation ConvertStencilOperation(StencilOp op)
     }
 }
 
-MTLStencilDescriptor* GetStencilDesc(const StencilOpDesc& desc, uint8_t read_mask, uint8_t write_mask)
+MTLStencilDescriptor* GetStencilDesc(bool stencil_enable,
+                                     const StencilOpDesc& desc,
+                                     uint8_t read_mask,
+                                     uint8_t write_mask)
 {
     MTLStencilDescriptor* stencil_descriptor = [MTLStencilDescriptor new];
-    stencil_descriptor.stencilCompareFunction = ConvertCompareFunction(desc.func);
+    if (stencil_enable) {
+        stencil_descriptor.stencilCompareFunction = ConvertCompareFunction(desc.func);
+    }
     stencil_descriptor.stencilFailureOperation = ConvertStencilOperation(desc.fail_op);
     stencil_descriptor.depthFailureOperation = ConvertStencilOperation(desc.depth_fail_op);
     stencil_descriptor.depthStencilPassOperation = ConvertStencilOperation(desc.pass_op);
@@ -70,17 +75,18 @@ MTLStencilDescriptor* GetStencilDesc(const StencilOpDesc& desc, uint8_t read_mas
 MTLDepthStencilDescriptor* GetDepthStencilDesc(const DepthStencilDesc& desc, gli::format depth_stencil_format)
 {
     MTLDepthStencilDescriptor* depth_stencil_descriptor = [MTLDepthStencilDescriptor new];
-    depth_stencil_descriptor.depthCompareFunction = ConvertCompareFunction(desc.depth_func);
-    depth_stencil_descriptor.depthWriteEnabled = desc.depth_write_enable;
-    if (depth_stencil_format == gli::format::FORMAT_UNDEFINED || !gli::is_depth(depth_stencil_format)) {
-        depth_stencil_descriptor.depthCompareFunction = MTLCompareFunctionAlways;
-        depth_stencil_descriptor.depthWriteEnabled = false;
+    if (desc.depth_test_enable && depth_stencil_format != gli::format::FORMAT_UNDEFINED &&
+        gli::is_depth(depth_stencil_format)) {
+        depth_stencil_descriptor.depthCompareFunction = ConvertCompareFunction(desc.depth_func);
     }
+    depth_stencil_descriptor.depthWriteEnabled = desc.depth_write_enable;
 
+    const bool stencil_enable = desc.stencil_enable && depth_stencil_format != gli::format::FORMAT_UNDEFINED &&
+                                gli::is_stencil(depth_stencil_format);
     depth_stencil_descriptor.frontFaceStencil =
-        GetStencilDesc(desc.front_face, desc.stencil_read_mask, desc.stencil_write_mask);
+        GetStencilDesc(stencil_enable, desc.front_face, desc.stencil_read_mask, desc.stencil_write_mask);
     depth_stencil_descriptor.backFaceStencil =
-        GetStencilDesc(desc.back_face, desc.stencil_read_mask, desc.stencil_write_mask);
+        GetStencilDesc(stencil_enable, desc.back_face, desc.stencil_read_mask, desc.stencil_write_mask);
     return depth_stencil_descriptor;
 }
 
