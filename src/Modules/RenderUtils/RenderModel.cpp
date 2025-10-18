@@ -6,6 +6,13 @@
 RenderModel::RenderModel(const std::shared_ptr<Device>& device,
                          const std::shared_ptr<CommandQueue>& command_queue,
                          std::unique_ptr<Model> model)
+    : RenderModel(device, command_queue, model.get())
+{
+}
+
+RenderModel::RenderModel(const std::shared_ptr<Device>& device,
+                         const std::shared_ptr<CommandQueue>& command_queue,
+                         Model* model)
     : m_device(device)
 {
     m_command_list = m_device->CreateCommandList(CommandListType::kCopy);
@@ -55,6 +62,10 @@ const RenderMesh& RenderModel::GetMesh(size_t index) const
 template <typename T>
 std::shared_ptr<Resource> RenderModel::CreateBuffer(uint32_t bind_flag, const std::vector<T>& data)
 {
+    if (data.empty()) {
+        return nullptr;
+    }
+
     std::shared_ptr<Resource> buffer = m_device->CreateBuffer(
         bind_flag | BindFlag::kCopyDest, static_cast<uint32_t>(sizeof(data.front()) * data.size()));
     buffer->CommitMemory(MemoryType::kDefault);
