@@ -1,4 +1,4 @@
-#include "../../../3rdparty/lygia/generative/voronoi.hlsl"
+#include "3rdparty/lygia/generative/voronoi.hlsl"
 
 struct ConstantLayout
 {
