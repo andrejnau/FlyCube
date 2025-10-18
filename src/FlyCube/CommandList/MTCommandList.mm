@@ -677,7 +677,7 @@ id<MTL4CommandBuffer> MTCommandList::GetCommandBuffer()
 
 void MTCommandList::ApplyComputeState()
 {
-    if (m_need_apply_binding_set) {
+    if (m_need_apply_binding_set && m_binding_set) {
         m_binding_set->Apply(m_argument_tables, m_state);
         m_need_apply_binding_set = false;
     }
@@ -691,7 +691,7 @@ void MTCommandList::ApplyComputeState()
 
 void MTCommandList::ApplyGraphicsState()
 {
-    if (m_need_apply_binding_set) {
+    if (m_need_apply_binding_set && m_binding_set) {
         m_binding_set->Apply(m_argument_tables, m_state);
         m_need_apply_binding_set = false;
     }
