@@ -56,7 +56,7 @@ public:
     void UAVResourceBarrier(const std::shared_ptr<Resource>& resource) override;
     void SetViewport(float x, float y, float width, float height) override;
     void SetScissorRect(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom) override;
-    void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) override;
+    void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format) override;
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override;
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) override;
     void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
@@ -116,6 +116,7 @@ private:
     id<MTL4RenderCommandEncoder> m_render_encoder = nullptr;
     id<MTL4ComputeCommandEncoder> m_compute_encoder = nullptr;
     id<MTLBuffer> m_index_buffer = nullptr;
+    uint64_t m_index_buffer_offset = 0;
     gli::format m_index_format = gli::FORMAT_UNDEFINED;
     MTLViewport m_viewport = {};
     MTLScissorRect m_scissor = {};

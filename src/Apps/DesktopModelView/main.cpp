@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
         for (size_t j = 0; j < render_model.GetMeshCount(); ++j) {
             const auto& mesh = render_model.GetMesh(j);
             command_list->BindBindingSet(binding_sets[j]);
-            command_list->IASetIndexBuffer(mesh.indices, mesh.index_format);
+            command_list->IASetIndexBuffer(mesh.indices, 0, mesh.index_format);
             command_list->IASetVertexBuffer(kPositions, mesh.positions);
             command_list->IASetVertexBuffer(kTexcoords, mesh.texcoords);
             command_list->DrawIndexed(mesh.index_count, 1, 0, 0, 0);

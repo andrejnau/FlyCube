@@ -484,14 +484,15 @@ void DXCommandList::SetScissorRect(uint32_t left, uint32_t top, uint32_t right, 
     m_command_list->RSSetScissorRects(1, &rect);
 }
 
-void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
+void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format)
 {
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
     decltype(auto) dx_resource = resource->As<DXResource>();
-    D3D12_INDEX_BUFFER_VIEW index_buffer_view = {};
-    index_buffer_view.Format = dx_format;
-    index_buffer_view.SizeInBytes = dx_resource.desc.Width;
-    index_buffer_view.BufferLocation = dx_resource.resource->GetGPUVirtualAddress();
+    D3D12_INDEX_BUFFER_VIEW index_buffer_view = {
+        .BufferLocation = dx_resource.resource->GetGPUVirtualAddress() + offset,
+        .SizeInBytes = static_cast<uint32_t>(dx_resource.desc.Width - offset),
+        .Format = dx_format,
+    };
     m_command_list->IASetIndexBuffer(&index_buffer_view);
 }
 

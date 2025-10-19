@@ -160,6 +160,7 @@ void MTCommandList::Close()
     [m_command_buffer endCommandBuffer];
     m_render_encoder = nullptr;
     m_index_buffer = nullptr;
+    m_index_buffer_offset = 0;
     m_index_format = gli::FORMAT_UNDEFINED;
     m_viewport = {};
     m_scissor = {};
@@ -301,14 +302,15 @@ void MTCommandList::DrawIndexed(uint32_t index_count,
     ApplyGraphicsState();
     MTLIndexType index_format = ConvertIndexType(m_index_format);
     const uint32_t index_stride = index_format == MTLIndexTypeUInt32 ? 4 : 2;
-    [m_render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                 indexCount:index_count
-                                  indexType:index_format
-                                indexBuffer:m_index_buffer.gpuAddress + index_stride * first_index
-                          indexBufferLength:m_index_buffer.length - index_stride * first_index
-                              instanceCount:instance_count
-                                 baseVertex:vertex_offset
-                               baseInstance:first_instance];
+    [m_render_encoder
+        drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                   indexCount:index_count
+                    indexType:index_format
+                  indexBuffer:m_index_buffer.gpuAddress + m_index_buffer_offset + index_stride * first_index
+            indexBufferLength:m_index_buffer.length - m_index_buffer_offset - index_stride * first_index
+                instanceCount:instance_count
+                   baseVertex:vertex_offset
+                 baseInstance:first_instance];
 }
 
 void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
@@ -329,8 +331,8 @@ void MTCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argumen
     MTLIndexType index_format = ConvertIndexType(m_index_format);
     [m_render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                   indexType:index_format
-                                indexBuffer:m_index_buffer.gpuAddress
-                          indexBufferLength:m_index_buffer.length
+                                indexBuffer:m_index_buffer.gpuAddress + m_index_buffer_offset
+                          indexBufferLength:m_index_buffer.length - m_index_buffer_offset
                              indirectBuffer:mt_argument_buffer.gpuAddress + argument_buffer_offset];
 }
 
@@ -447,11 +449,12 @@ void MTCommandList::SetScissorRect(uint32_t left, uint32_t top, uint32_t right, 
     [m_render_encoder setScissorRect:m_scissor];
 }
 
-void MTCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
+void MTCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format)
 {
     decltype(auto) index_buffer = resource->As<MTResource>().GetBuffer();
     AddAllocation(index_buffer);
     m_index_buffer = index_buffer;
+    m_index_buffer_offset = offset;
     m_index_format = format;
 }
 

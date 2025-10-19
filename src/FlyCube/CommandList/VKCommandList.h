@@ -53,7 +53,7 @@ public:
     void UAVResourceBarrier(const std::shared_ptr<Resource>& resource) override;
     void SetViewport(float x, float y, float width, float height) override;
     void SetScissorRect(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom) override;
-    void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) override;
+    void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format) override;
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override;
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) override;
     void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,

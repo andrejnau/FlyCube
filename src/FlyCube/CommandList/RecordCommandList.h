@@ -148,9 +148,9 @@ public:
         ApplyAndRecord(&T::SetScissorRect, left, top, right, bottom);
     }
 
-    void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format) override
+    void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format) override
     {
-        ApplyAndRecord(&T::IASetIndexBuffer, resource, format);
+        ApplyAndRecord(&T::IASetIndexBuffer, resource, offset, format);
     }
 
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override

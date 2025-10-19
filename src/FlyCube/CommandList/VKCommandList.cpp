@@ -431,11 +431,11 @@ void VKCommandList::SetScissorRect(uint32_t left, uint32_t top, uint32_t right, 
     m_command_list->setScissor(0, 1, &rect);
 }
 
-void VKCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, gli::format format)
+void VKCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format)
 {
     decltype(auto) vk_resource = resource->As<VKResource>();
     vk::IndexType index_type = GetVkIndexType(format);
-    m_command_list->bindIndexBuffer(vk_resource.buffer.res.get(), 0, index_type);
+    m_command_list->bindIndexBuffer(vk_resource.buffer.res.get(), offset, index_type);
 }
 
 void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)

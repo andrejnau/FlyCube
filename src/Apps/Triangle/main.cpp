@@ -115,7 +115,7 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         command_list->BindPipeline(m_pipeline);
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
-        command_list->IASetIndexBuffer(m_index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
+        command_list->IASetIndexBuffer(m_index_buffer, 0, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, m_vertex_buffer);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         command_list->BeginRenderPass(m_render_pass, framebuffer, clear_desc);
