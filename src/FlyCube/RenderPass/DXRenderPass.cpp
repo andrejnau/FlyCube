@@ -1,4 +1,3 @@
-#pragma once
 #include "RenderPass/DXRenderPass.h"
 
 DXRenderPass::DXRenderPass(const RenderPassDesc& desc)

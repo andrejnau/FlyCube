@@ -29,14 +29,14 @@ std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[setti
 std::shared_ptr<Device> device = adapter->CreateDevice();
 std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
 static constexpr uint32_t kFrameCount = 3;
-std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeWindow(), app_size.width(),
-                                                                app_size.height(), kFrameCount, settings.vsync);
+std::shared_ptr<Swapchain> swapchain =
+    device->CreateSwapchain(app.GetNativeWindow(), app_size.width(), app_size.height(), kFrameCount, settings.vsync);
 uint64_t fence_value = 0;
 std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
 std::vector<uint32_t> index_data = { 0, 1, 2 };
-std::shared_ptr<Resource> index_buffer = device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest,
-                                                              sizeof(index_data.front()) * index_data.size());
+std::shared_ptr<Resource> index_buffer =
+    device->CreateBuffer(BindFlag::kIndexBuffer | BindFlag::kCopyDest, sizeof(index_data.front()) * index_data.size());
 index_buffer->CommitMemory(MemoryType::kUpload);
 index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
 
@@ -46,7 +46,7 @@ std::vector<glm::vec3> vertex_data = {
     glm::vec3(0.5, -0.5, 0.0),
 };
 std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer(BindFlag::kVertexBuffer | BindFlag::kCopyDest,
-                                                                sizeof(vertex_data.front()) * vertex_data.size());
+                                                               sizeof(vertex_data.front()) * vertex_data.size());
 vertex_buffer->CommitMemory(MemoryType::kUpload);
 vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 
@@ -107,16 +107,15 @@ for (uint32_t i = 0; i < kFrameCount; ++i) {
         .height = app_size.height(),
         .colors = { back_buffer_view },
     };
-    std::shared_ptr<Framebuffer> framebuffer =
-        framebuffers.emplace_back(device->CreateFramebuffer(framebuffer_desc));
+    std::shared_ptr<Framebuffer> framebuffer = framebuffers.emplace_back(device->CreateFramebuffer(framebuffer_desc));
     std::shared_ptr<CommandList> command_list =
         command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
     command_list->BindPipeline(pipeline);
     command_list->BindBindingSet(binding_set);
     command_list->SetViewport(0, 0, app_size.width(), app_size.height());
     command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
-    command_list->IASetIndexBuffer(index_buffer, gli::format::FORMAT_R32_UINT_PACK32);
-    command_list->IASetVertexBuffer(0, vertex_buffer);
+    command_list->IASetIndexBuffer(index_buffer, 0, gli::format::FORMAT_R32_UINT_PACK32);
+    command_list->IASetVertexBuffer(0, vertex_buffer, 0);
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
     command_list->BeginRenderPass(render_pass, framebuffer, clear_desc);
     command_list->DrawIndexed(3, 1, 0, 0, 0);

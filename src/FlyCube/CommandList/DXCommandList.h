@@ -58,7 +58,7 @@ public:
     void SetViewport(float x, float y, float width, float height) override;
     void SetScissorRect(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom) override;
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format) override;
-    void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override;
+    void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset) override;
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) override;
     void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                             const std::shared_ptr<Resource>& dst,
@@ -114,7 +114,10 @@ private:
     void OMSetFramebuffer(const std::shared_ptr<RenderPass>& render_pass,
                           const std::shared_ptr<Framebuffer>& framebuffer,
                           const ClearDesc& clear_desc);
-    void IASetVertexBufferImpl(uint32_t slot, const std::shared_ptr<Resource>& resource, uint32_t stride);
+    void IASetVertexBufferImpl(uint32_t slot,
+                               const std::shared_ptr<Resource>& resource,
+                               uint64_t offset,
+                               uint32_t stride);
     void BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs,
                                     const std::shared_ptr<Resource>& src,
                                     const std::shared_ptr<Resource>& dst,
@@ -131,6 +134,6 @@ private:
     std::vector<ComPtr<ID3D12DescriptorHeap>> m_heaps;
     std::shared_ptr<DXPipeline> m_state;
     std::shared_ptr<BindingSet> m_binding_set;
-    std::map<uint32_t, std::shared_ptr<Resource>> m_lazy_vertex;
+    std::map<uint32_t, std::pair<std::shared_ptr<Resource>, uint64_t>> m_lazy_vertex;
     std::shared_ptr<View> m_shading_rate_image_view;
 };

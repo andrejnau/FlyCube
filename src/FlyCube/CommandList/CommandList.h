@@ -67,7 +67,7 @@ public:
     virtual void SetViewport(float x, float y, float width, float height) = 0;
     virtual void SetScissorRect(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom) = 0;
     virtual void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format) = 0;
-    virtual void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) = 0;
+    virtual void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset) = 0;
     virtual void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) = 0;
     virtual void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                                     const std::shared_ptr<Resource>& dst,

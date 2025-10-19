@@ -438,12 +438,12 @@ void VKCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
     m_command_list->bindIndexBuffer(vk_resource.buffer.res.get(), offset, index_type);
 }
 
-void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
+void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset)
 {
     decltype(auto) vk_resource = resource->As<VKResource>();
-    vk::Buffer vertex_buffers[] = { vk_resource.buffer.res.get() };
-    vk::DeviceSize offsets[] = { 0 };
-    m_command_list->bindVertexBuffers(slot, 1, vertex_buffers, offsets);
+    vk::Buffer buffers[] = { vk_resource.buffer.res.get() };
+    vk::DeviceSize offsets[] = { offset };
+    m_command_list->bindVertexBuffers(slot, 1, buffers, offsets);
 }
 
 void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)

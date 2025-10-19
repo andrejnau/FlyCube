@@ -153,9 +153,9 @@ public:
         ApplyAndRecord(&T::IASetIndexBuffer, resource, offset, format);
     }
 
-    void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource) override
+    void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset) override
     {
-        ApplyAndRecord(&T::IASetVertexBuffer, slot, resource);
+        ApplyAndRecord(&T::IASetVertexBuffer, slot, resource, offset);
     }
 
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) override

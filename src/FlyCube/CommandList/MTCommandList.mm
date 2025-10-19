@@ -458,12 +458,12 @@ void MTCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
     m_index_format = format;
 }
 
-void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource)
+void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset)
 {
     decltype(auto) vertex = resource->As<MTResource>().GetBuffer();
     AddAllocation(vertex);
     uint32_t index = m_device.GetMaxPerStageBufferCount() - slot - 1;
-    [m_argument_tables.at(ShaderType::kVertex) setAddress:vertex.gpuAddress atIndex:index];
+    [m_argument_tables.at(ShaderType::kVertex) setAddress:vertex.gpuAddress + offset atIndex:index];
 }
 
 void MTCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
