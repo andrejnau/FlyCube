@@ -28,13 +28,9 @@ MTSwapchain::MTSwapchain(MTDevice& device,
     m_layer.framebufferOnly = NO;
 
     for (size_t i = 0; i < frame_count; ++i) {
-        auto back_buffer = m_device.CreateTexture(TextureType::k2D, BindFlag::kRenderTarget, GetFormat(),
-                                                  /*sample_count=*/1, width, height,
-                                                  /*depth=*/1, /*mip_levels=*/1);
+        auto back_buffer =
+            MTResource::CreateSwapchainTexture(m_device, BindFlag::kRenderTarget, GetFormat(), width, height);
         back_buffer->CommitMemory(MemoryType::kDefault);
-        auto resource = back_buffer->As<MTResource>();
-        resource.is_back_buffer = true;
-        resource.SetInitialState(ResourceState::kPresent);
         m_back_buffers.emplace_back(std::move(back_buffer));
     }
 }

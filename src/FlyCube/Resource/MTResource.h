@@ -11,6 +11,12 @@ class MTResource : public ResourceBase {
 public:
     MTResource(PassKey<MTResource> pass_key, MTDevice& device);
 
+    static std::shared_ptr<MTResource> CreateSwapchainTexture(MTDevice& device,
+                                                              uint32_t bind_flag,
+                                                              gli::format format,
+                                                              uint32_t width,
+                                                              uint32_t height);
+
     static std::shared_ptr<MTResource> CreateTexture(MTDevice& device,
                                                      TextureType type,
                                                      uint32_t bind_flag,

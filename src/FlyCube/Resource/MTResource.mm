@@ -9,6 +9,27 @@ MTResource::MTResource(PassKey<MTResource> pass_key, MTDevice& device)
 }
 
 // static
+std::shared_ptr<MTResource> MTResource::CreateSwapchainTexture(MTDevice& device,
+                                                               uint32_t bind_flag,
+                                                               gli::format format,
+                                                               uint32_t width,
+                                                               uint32_t height)
+{
+    std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
+    self->resource_type = ResourceType::kTexture;
+    self->format = format;
+    self->is_back_buffer = true;
+    self->m_texture = {
+        .type = TextureType::k2D,
+        .bind_flag = bind_flag,
+        .width = static_cast<int>(width),
+        .height = static_cast<int>(height),
+    };
+    self->SetInitialState(ResourceState::kPresent);
+    return self;
+}
+
+// static
 std::shared_ptr<MTResource> MTResource::CreateTexture(MTDevice& device,
                                                       TextureType type,
                                                       uint32_t bind_flag,
