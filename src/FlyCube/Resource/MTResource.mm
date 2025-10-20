@@ -251,11 +251,6 @@ uint8_t* MTResource::Map()
 
 void MTResource::Unmap() {}
 
-bool MTResource::AllowCommonStatePromotion(ResourceState state_after)
-{
-    return false;
-}
-
 MemoryRequirements MTResource::GetMemoryRequirements() const
 {
     decltype(auto) mt_device = m_device.GetDevice();

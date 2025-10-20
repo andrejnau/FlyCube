@@ -100,11 +100,6 @@ void VKResource::Unmap()
     m_device.GetDevice().unmapMemory(m_vk_memory);
 }
 
-bool VKResource::AllowCommonStatePromotion(ResourceState state_after)
-{
-    return false;
-}
-
 MemoryRequirements VKResource::GetMemoryRequirements() const
 {
     vk::MemoryRequirements2 mem_requirements = {};

@@ -41,7 +41,6 @@ public:
     void SetName(const std::string& name) override;
     uint8_t* Map() override;
     void Unmap() override;
-    bool AllowCommonStatePromotion(ResourceState state_after) override;
     MemoryRequirements GetMemoryRequirements() const override;
 
     id<MTLTexture> GetTexture() const;
