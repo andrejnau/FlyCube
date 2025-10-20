@@ -28,8 +28,8 @@ MTSwapchain::MTSwapchain(MTDevice& device,
     m_layer.framebufferOnly = NO;
 
     for (size_t i = 0; i < frame_count; ++i) {
-        auto back_buffer =
-            MTResource::CreateSwapchainTexture(m_device, BindFlag::kRenderTarget, GetFormat(), width, height);
+        auto back_buffer = MTResource::CreateSwapchainTexture(
+            m_device, BindFlag::kRenderTarget | BindFlag::kUnorderedAccess, GetFormat(), width, height);
         back_buffer->CommitMemory(MemoryType::kDefault);
         m_back_buffers.emplace_back(std::move(back_buffer));
     }
