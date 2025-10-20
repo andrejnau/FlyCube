@@ -16,15 +16,15 @@ public:
                                                           uint32_t width,
                                                           uint32_t height);
 
-    static std::shared_ptr<VKResource> CreateTexture(VKDevice& device,
-                                                     TextureType type,
-                                                     uint32_t bind_flag,
-                                                     gli::format format,
-                                                     uint32_t sample_count,
-                                                     int width,
-                                                     int height,
-                                                     int depth,
-                                                     int mip_levels);
+    static std::shared_ptr<VKResource> CreateImage(VKDevice& device,
+                                                   TextureType type,
+                                                   uint32_t bind_flag,
+                                                   gli::format format,
+                                                   uint32_t sample_count,
+                                                   int width,
+                                                   int height,
+                                                   int depth,
+                                                   int mip_levels);
 
     static std::shared_ptr<VKResource> CreateBuffer(VKDevice& device, uint32_t bind_flag, uint32_t buffer_size);
 

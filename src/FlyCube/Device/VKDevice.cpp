@@ -467,7 +467,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(TextureType type,
                                                   int depth,
                                                   int mip_levels)
 {
-    return VKResource::CreateTexture(*this, type, bind_flag, format, sample_count, width, height, depth, mip_levels);
+    return VKResource::CreateImage(*this, type, bind_flag, format, sample_count, width, height, depth, mip_levels);
 }
 
 std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
