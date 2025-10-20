@@ -205,8 +205,6 @@ list(APPEND Resource
     Resource/Resource.h
     Resource/ResourceBase.cpp
     Resource/ResourceBase.h
-    Resource/ResourceStateTracker.cpp
-    Resource/ResourceStateTracker.h
 )
 
 list(APPEND Shader

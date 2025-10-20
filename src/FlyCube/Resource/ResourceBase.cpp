@@ -2,10 +2,7 @@
 
 #include <cstring>
 
-ResourceBase::ResourceBase()
-    : m_resource_state_tracker(*this)
-{
-}
+ResourceBase::ResourceBase() = default;
 
 ResourceType ResourceBase::GetResourceType() const
 {
@@ -62,15 +59,4 @@ bool ResourceBase::IsBackBuffer() const
 void ResourceBase::SetInitialState(ResourceState state)
 {
     m_initial_state = state;
-    m_resource_state_tracker.SetResourceState(m_initial_state);
-}
-
-ResourceStateTracker& ResourceBase::GetGlobalResourceStateTracker()
-{
-    return m_resource_state_tracker;
-}
-
-const ResourceStateTracker& ResourceBase::GetGlobalResourceStateTracker() const
-{
-    return m_resource_state_tracker;
 }

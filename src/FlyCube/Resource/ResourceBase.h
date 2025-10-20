@@ -22,8 +22,6 @@ public:
     bool IsBackBuffer() const override final;
 
     void SetInitialState(ResourceState state);
-    ResourceStateTracker& GetGlobalResourceStateTracker();
-    const ResourceStateTracker& GetGlobalResourceStateTracker() const;
 
     gli::format format = gli::FORMAT_UNDEFINED;
     ResourceType resource_type = ResourceType::kUnknown;
@@ -35,6 +33,5 @@ protected:
     MemoryType m_memory_type = MemoryType::kDefault;
 
 private:
-    ResourceStateTracker m_resource_state_tracker;
     ResourceState m_initial_state = ResourceState::kUnknown;
 };

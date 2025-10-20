@@ -1,7 +1,6 @@
 #pragma once
 #include "Instance/QueryInterface.h"
 #include "Memory/Memory.h"
-#include "Resource/ResourceStateTracker.h"
 #include "View/View.h"
 
 #include <gli/format.hpp>
