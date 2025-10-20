@@ -22,7 +22,7 @@ vk::StridedDeviceAddressRegionKHR GetStridedDeviceAddressRegion(VKDevice& device
     }
     decltype(auto) vk_resource = table.resource->As<VKResource>();
     vk::StridedDeviceAddressRegionKHR vk_table = {};
-    vk_table.deviceAddress = device.GetDevice().getBufferAddress({ vk_resource.buffer.res.get() }) + table.offset;
+    vk_table.deviceAddress = device.GetDevice().getBufferAddress({ vk_resource.GetBuffer() }) + table.offset;
     vk_table.size = table.size;
     vk_table.stride = table.stride;
     return vk_table;
@@ -199,13 +199,11 @@ void VKCommandList::DrawIndirectCount(const std::shared_ptr<Resource>& argument_
     decltype(auto) vk_argument_buffer = argument_buffer->As<VKResource>();
     if (count_buffer) {
         decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
-        m_command_list->drawIndirectCount(vk_argument_buffer.buffer.res.get(), argument_buffer_offset,
-                                          vk_count_buffer.buffer.res.get(), count_buffer_offset, max_draw_count,
-                                          stride);
+        m_command_list->drawIndirectCount(vk_argument_buffer.GetBuffer(), argument_buffer_offset,
+                                          vk_count_buffer.GetBuffer(), count_buffer_offset, max_draw_count, stride);
     } else {
         assert(count_buffer_offset == 0);
-        m_command_list->drawIndirect(vk_argument_buffer.buffer.res.get(), argument_buffer_offset, max_draw_count,
-                                     stride);
+        m_command_list->drawIndirect(vk_argument_buffer.GetBuffer(), argument_buffer_offset, max_draw_count, stride);
     }
 }
 
@@ -219,12 +217,12 @@ void VKCommandList::DrawIndexedIndirectCount(const std::shared_ptr<Resource>& ar
     decltype(auto) vk_argument_buffer = argument_buffer->As<VKResource>();
     if (count_buffer) {
         decltype(auto) vk_count_buffer = count_buffer->As<VKResource>();
-        m_command_list->drawIndexedIndirectCount(vk_argument_buffer.buffer.res.get(), argument_buffer_offset,
-                                                 vk_count_buffer.buffer.res.get(), count_buffer_offset, max_draw_count,
+        m_command_list->drawIndexedIndirectCount(vk_argument_buffer.GetBuffer(), argument_buffer_offset,
+                                                 vk_count_buffer.GetBuffer(), count_buffer_offset, max_draw_count,
                                                  stride);
     } else {
         assert(count_buffer_offset == 0);
-        m_command_list->drawIndexedIndirect(vk_argument_buffer.buffer.res.get(), argument_buffer_offset, max_draw_count,
+        m_command_list->drawIndexedIndirect(vk_argument_buffer.GetBuffer(), argument_buffer_offset, max_draw_count,
                                             stride);
     }
 }
@@ -239,7 +237,7 @@ void VKCommandList::Dispatch(uint32_t thread_group_count_x,
 void VKCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
     decltype(auto) vk_argument_buffer = argument_buffer->As<VKResource>();
-    m_command_list->dispatchIndirect(vk_argument_buffer.buffer.res.get(), argument_buffer_offset);
+    m_command_list->dispatchIndirect(vk_argument_buffer.GetBuffer(), argument_buffer_offset);
 }
 
 void VKCommandList::DispatchMesh(uint32_t thread_group_count_x,
@@ -270,8 +268,8 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
         }
 
         decltype(auto) vk_resource = barrier.resource->As<VKResource>();
-        VKResource::Image& image = vk_resource.image;
-        if (!image.res) {
+        const vk::Image& image = vk_resource.GetImage();
+        if (!image) {
             continue;
         }
 
@@ -286,10 +284,10 @@ void VKCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
         image_memory_barrier.newLayout = vk_state_after;
         image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        image_memory_barrier.image = image.res;
+        image_memory_barrier.image = image;
 
         vk::ImageSubresourceRange& range = image_memory_barrier.subresourceRange;
-        range.aspectMask = m_device.GetAspectFlags(image.format);
+        range.aspectMask = m_device.GetAspectFlags(static_cast<vk::Format>(vk_resource.GetFormat()));
         range.baseMipLevel = barrier.base_mip_level;
         range.levelCount = barrier.level_count;
         range.baseArrayLayer = barrier.base_array_layer;
@@ -435,13 +433,13 @@ void VKCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
 {
     decltype(auto) vk_resource = resource->As<VKResource>();
     vk::IndexType index_type = GetVkIndexType(format);
-    m_command_list->bindIndexBuffer(vk_resource.buffer.res.get(), offset, index_type);
+    m_command_list->bindIndexBuffer(vk_resource.GetBuffer(), offset, index_type);
 }
 
 void VKCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset)
 {
     decltype(auto) vk_resource = resource->As<VKResource>();
-    vk::Buffer buffers[] = { vk_resource.buffer.res.get() };
+    vk::Buffer buffers[] = { vk_resource.GetBuffer() };
     vk::DeviceSize offsets[] = { offset };
     m_command_list->bindVertexBuffers(slot, 1, buffers, offsets);
 }
@@ -471,7 +469,7 @@ void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
     vk::AccelerationStructureKHR vk_src_as = {};
     if (src) {
         decltype(auto) vk_src = src->As<VKResource>();
-        vk_src_as = vk_src.acceleration_structure_handle.get();
+        vk_src_as = vk_src.GetAccelerationStructure();
     }
 
     std::vector<vk::AccelerationStructureBuildRangeInfoKHR> ranges;
@@ -491,14 +489,14 @@ void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
     vk::AccelerationStructureBuildGeometryInfoKHR infos = {};
     infos.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
     infos.flags = Convert(flags);
-    infos.dstAccelerationStructure = vk_dst.acceleration_structure_handle.get();
+    infos.dstAccelerationStructure = vk_dst.GetAccelerationStructure();
     infos.srcAccelerationStructure = vk_src_as;
     if (vk_src_as) {
         infos.mode = vk::BuildAccelerationStructureModeKHR::eUpdate;
     } else {
         infos.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
     }
-    infos.scratchData = m_device.GetDevice().getBufferAddress({ vk_scratch.buffer.res.get() }) + scratch_offset;
+    infos.scratchData = m_device.GetDevice().getBufferAddress({ vk_scratch.GetBuffer() }) + scratch_offset;
     infos.pGeometries = geometry_descs.data();
     infos.geometryCount = geometry_descs.size();
 
@@ -516,7 +514,7 @@ void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
 {
     decltype(auto) vk_instance_data = instance_data->As<VKResource>();
     vk::DeviceAddress instance_address = {};
-    instance_address = m_device.GetDevice().getBufferAddress(vk_instance_data.buffer.res.get()) + instance_offset;
+    instance_address = m_device.GetDevice().getBufferAddress(vk_instance_data.GetBuffer()) + instance_offset;
     vk::AccelerationStructureGeometryKHR top_as_geometry = {};
     top_as_geometry.geometryType = vk::GeometryTypeKHR::eInstances;
     top_as_geometry.geometry.setInstances({});
@@ -529,7 +527,7 @@ void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
     vk::AccelerationStructureKHR vk_src_as = {};
     if (src) {
         decltype(auto) vk_src = src->As<VKResource>();
-        vk_src_as = vk_src.acceleration_structure_handle.get();
+        vk_src_as = vk_src.GetAccelerationStructure();
     }
 
     vk::AccelerationStructureBuildRangeInfoKHR acceleration_structure_build_range_info = {};
@@ -541,14 +539,14 @@ void VKCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
     vk::AccelerationStructureBuildGeometryInfoKHR infos = {};
     infos.type = vk::AccelerationStructureTypeKHR::eTopLevel;
     infos.flags = Convert(flags);
-    infos.dstAccelerationStructure = vk_dst.acceleration_structure_handle.get();
+    infos.dstAccelerationStructure = vk_dst.GetAccelerationStructure();
     infos.srcAccelerationStructure = vk_src_as;
     if (vk_src_as) {
         infos.mode = vk::BuildAccelerationStructureModeKHR::eUpdate;
     } else {
         infos.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
     }
-    infos.scratchData = m_device.GetDevice().getBufferAddress({ vk_scratch.buffer.res.get() }) + scratch_offset;
+    infos.scratchData = m_device.GetDevice().getBufferAddress({ vk_scratch.GetBuffer() }) + scratch_offset;
     infos.pGeometries = &top_as_geometry;
     infos.geometryCount = 1;
 
@@ -574,8 +572,8 @@ void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
         info.mode = vk::CopyAccelerationStructureModeKHR::eClone;
         break;
     }
-    info.dst = vk_dst.acceleration_structure_handle.get();
-    info.src = vk_src.acceleration_structure_handle.get();
+    info.dst = vk_dst.GetAccelerationStructure();
+    info.src = vk_src.GetAccelerationStructure();
     m_command_list->copyAccelerationStructureKHR(info);
 }
 
@@ -589,7 +587,7 @@ void VKCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
     for (const auto& region : regions) {
         vk_regions.emplace_back(region.src_offset, region.dst_offset, region.num_bytes);
     }
-    m_command_list->copyBuffer(vk_src_buffer.buffer.res.get(), vk_dst_buffer.buffer.res.get(), vk_regions);
+    m_command_list->copyBuffer(vk_src_buffer.GetBuffer(), vk_dst_buffer.GetBuffer(), vk_regions);
 }
 
 void VKCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer,
@@ -624,7 +622,7 @@ void VKCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
         vk_region.imageExtent.height = region.texture_extent.height;
         vk_region.imageExtent.depth = region.texture_extent.depth;
     }
-    m_command_list->copyBufferToImage(vk_src_buffer.buffer.res.get(), vk_dst_texture.image.res,
+    m_command_list->copyBufferToImage(vk_src_buffer.GetBuffer(), vk_dst_texture.GetImage(),
                                       vk::ImageLayout::eTransferDstOptimal, vk_regions);
 }
 
@@ -657,8 +655,8 @@ void VKCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture,
         vk_region.extent.height = region.extent.height;
         vk_region.extent.depth = region.extent.depth;
     }
-    m_command_list->copyImage(vk_src_texture.image.res, vk::ImageLayout::eTransferSrcOptimal, vk_dst_texture.image.res,
-                              vk::ImageLayout::eTransferDstOptimal, vk_regions);
+    m_command_list->copyImage(vk_src_texture.GetImage(), vk::ImageLayout::eTransferSrcOptimal,
+                              vk_dst_texture.GetImage(), vk::ImageLayout::eTransferDstOptimal, vk_regions);
 }
 
 void VKCommandList::WriteAccelerationStructuresProperties(
@@ -669,8 +667,7 @@ void VKCommandList::WriteAccelerationStructuresProperties(
     std::vector<vk::AccelerationStructureKHR> vk_acceleration_structures;
     vk_acceleration_structures.reserve(acceleration_structures.size());
     for (const auto& acceleration_structure : acceleration_structures) {
-        vk_acceleration_structures.emplace_back(
-            acceleration_structure->As<VKResource>().acceleration_structure_handle.get());
+        vk_acceleration_structures.emplace_back(acceleration_structure->As<VKResource>().GetAccelerationStructure());
     }
     decltype(auto) vk_query_heap = query_heap->As<VKQueryHeap>();
     auto query_type = vk_query_heap.GetQueryType();
@@ -691,7 +688,7 @@ void VKCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
     auto query_type = vk_query_heap.GetQueryType();
     assert(query_type == vk::QueryType::eAccelerationStructureCompactedSizeKHR);
     m_command_list->copyQueryPoolResults(vk_query_heap.GetQueryPool(), first_query, query_count,
-                                         dst_buffer->As<VKResource>().buffer.res.get(), dst_offset, sizeof(uint64_t),
+                                         dst_buffer->As<VKResource>().GetBuffer(), dst_offset, sizeof(uint64_t),
                                          vk::QueryResultFlagBits::eWait);
 }
 

@@ -39,18 +39,6 @@ vk::IndexType GetVkIndexType(gli::format format)
     }
 }
 
-vk::AccelerationStructureTypeKHR Convert(AccelerationStructureType type)
-{
-    switch (type) {
-    case AccelerationStructureType::kTopLevel:
-        return vk::AccelerationStructureTypeKHR::eTopLevel;
-    case AccelerationStructureType::kBottomLevel:
-        return vk::AccelerationStructureTypeKHR::eBottomLevel;
-    }
-    assert(false);
-    return {};
-}
-
 std::pair<uint32_t, uint32_t> ConvertShadingRateToPair(ShadingRate shading_rate)
 {
     vk::Extent2D size = ConvertShadingRate(shading_rate);
@@ -479,197 +467,17 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(TextureType type,
                                                   int depth,
                                                   int mip_levels)
 {
-    std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-    res->format = format;
-    res->resource_type = ResourceType::kTexture;
-    res->image.size.height = height;
-    res->image.size.width = width;
-    res->image.format = static_cast<vk::Format>(format);
-    res->image.level_count = mip_levels;
-    res->image.sample_count = sample_count;
-    res->image.array_layers = depth;
-
-    vk::ImageUsageFlags usage = {};
-    if (bind_flag & BindFlag::kDepthStencil) {
-        usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst;
-    }
-    if (bind_flag & BindFlag::kShaderResource) {
-        usage |= vk::ImageUsageFlagBits::eSampled;
-    }
-    if (bind_flag & BindFlag::kRenderTarget) {
-        usage |= vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
-    }
-    if (bind_flag & BindFlag::kUnorderedAccess) {
-        usage |= vk::ImageUsageFlagBits::eStorage;
-    }
-    if (bind_flag & BindFlag::kCopyDest) {
-        usage |= vk::ImageUsageFlagBits::eTransferDst;
-    }
-    if (bind_flag & BindFlag::kCopySource) {
-        usage |= vk::ImageUsageFlagBits::eTransferSrc;
-    }
-    if (bind_flag & BindFlag::kShadingRateSource) {
-        usage |= vk::ImageUsageFlagBits::eFragmentShadingRateAttachmentKHR;
-    }
-
-    vk::ImageCreateInfo image_info = {};
-    switch (type) {
-    case TextureType::k1D:
-        image_info.imageType = vk::ImageType::e1D;
-        break;
-    case TextureType::k2D:
-        image_info.imageType = vk::ImageType::e2D;
-        break;
-    case TextureType::k3D:
-        image_info.imageType = vk::ImageType::e3D;
-        break;
-    }
-    image_info.extent.width = width;
-    image_info.extent.height = height;
-    if (type == TextureType::k3D) {
-        image_info.extent.depth = depth;
-    } else {
-        image_info.extent.depth = 1;
-    }
-    image_info.mipLevels = mip_levels;
-    if (type == TextureType::k3D) {
-        image_info.arrayLayers = 1;
-    } else {
-        image_info.arrayLayers = depth;
-    }
-    image_info.format = res->image.format;
-    image_info.tiling = vk::ImageTiling::eOptimal;
-    image_info.initialLayout = vk::ImageLayout::eUndefined;
-    image_info.usage = usage;
-    image_info.samples = static_cast<vk::SampleCountFlagBits>(sample_count);
-    image_info.sharingMode = vk::SharingMode::eExclusive;
-
-    if (image_info.arrayLayers % 6 == 0) {
-        image_info.flags = vk::ImageCreateFlagBits::eCubeCompatible;
-    }
-
-    res->image.res_owner = m_device->createImageUnique(image_info);
-    res->image.res = res->image.res_owner.get();
-
-    res->SetInitialState(ResourceState::kUndefined);
-
-    return res;
+    return VKResource::CreateTexture(*this, type, bind_flag, format, sample_count, width, height, depth, mip_levels);
 }
 
 std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
 {
-    if (buffer_size == 0) {
-        return {};
-    }
-
-    std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-    res->resource_type = ResourceType::kBuffer;
-    res->buffer.size = buffer_size;
-
-    vk::BufferCreateInfo buffer_info = {};
-    buffer_info.size = buffer_size;
-    buffer_info.usage = vk::BufferUsageFlagBits::eShaderDeviceAddress;
-
-    if (bind_flag & BindFlag::kVertexBuffer) {
-        buffer_info.usage |= vk::BufferUsageFlagBits::eVertexBuffer;
-    }
-    if (bind_flag & BindFlag::kIndexBuffer) {
-        buffer_info.usage |= vk::BufferUsageFlagBits::eIndexBuffer;
-    }
-    if (bind_flag & BindFlag::kConstantBuffer) {
-        buffer_info.usage |= vk::BufferUsageFlagBits::eUniformBuffer;
-    }
-    if (bind_flag & BindFlag::kUnorderedAccess) {
-        buffer_info.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
-        buffer_info.usage |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
-    }
-    if (bind_flag & BindFlag::kShaderResource) {
-        buffer_info.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
-        buffer_info.usage |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
-    }
-    if (bind_flag & BindFlag::kAccelerationStructure) {
-        buffer_info.usage |= vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR;
-    }
-    if (bind_flag & BindFlag::kCopySource) {
-        buffer_info.usage |= vk::BufferUsageFlagBits::eTransferSrc;
-    }
-    if (bind_flag & BindFlag::kCopyDest) {
-        buffer_info.usage |= vk::BufferUsageFlagBits::eTransferDst;
-    }
-    if (bind_flag & BindFlag::kShaderTable) {
-        buffer_info.usage |= vk::BufferUsageFlagBits::eShaderBindingTableKHR;
-    }
-    if (bind_flag & BindFlag::kIndirectBuffer) {
-        buffer_info.usage |= vk::BufferUsageFlagBits::eIndirectBuffer;
-    }
-
-    res->buffer.res = m_device->createBufferUnique(buffer_info);
-    res->SetInitialState(ResourceState::kCommon);
-
-    return res;
+    return VKResource::CreateBuffer(*this, bind_flag, buffer_size);
 }
 
 std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
 {
-    std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-
-    vk::SamplerCreateInfo samplerInfo = {};
-    samplerInfo.magFilter = vk::Filter::eLinear;
-    samplerInfo.minFilter = vk::Filter::eLinear;
-    samplerInfo.anisotropyEnable = true;
-    samplerInfo.maxAnisotropy = 16;
-    samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
-    samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = std::numeric_limits<float>::max();
-
-    /*switch (desc.filter)
-    {
-    case SamplerFilter::kAnisotropic:
-        sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
-        break;
-    case SamplerFilter::kMinMagMipLinear:
-        sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-        break;
-    case SamplerFilter::kComparisonMinMagMipLinear:
-        sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-        break;
-    }*/
-
-    switch (desc.mode) {
-    case SamplerTextureAddressMode::kWrap:
-        samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
-        samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
-        samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
-        break;
-    case SamplerTextureAddressMode::kClamp:
-        samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-        samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-        samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-        break;
-    }
-
-    switch (desc.func) {
-    case SamplerComparisonFunc::kNever:
-        samplerInfo.compareEnable = false;
-        samplerInfo.compareOp = vk::CompareOp::eNever;
-        break;
-    case SamplerComparisonFunc::kAlways:
-        samplerInfo.compareEnable = true;
-        samplerInfo.compareOp = vk::CompareOp::eAlways;
-        break;
-    case SamplerComparisonFunc::kLess:
-        samplerInfo.compareEnable = true;
-        samplerInfo.compareOp = vk::CompareOp::eLess;
-        break;
-    }
-
-    res->sampler.res = m_device->createSamplerUnique(samplerInfo);
-
-    res->resource_type = ResourceType::kSampler;
-    return res;
+    return VKResource::CreateSampler(*this, desc);
 }
 
 std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
@@ -751,14 +559,14 @@ vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(c
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
     geometry_desc.geometry.triangles.vertexData =
-        m_device->getBufferAddress({ vk_vertex_res->buffer.res.get() }) + vertex.offset * vertex_stride;
+        m_device->getBufferAddress({ vk_vertex_res->GetBuffer() }) + vertex.offset * vertex_stride;
     geometry_desc.geometry.triangles.vertexStride = vertex_stride;
     geometry_desc.geometry.triangles.vertexFormat = static_cast<vk::Format>(vertex.format);
     geometry_desc.geometry.triangles.maxVertex = vertex.count;
     if (vk_index_res) {
         auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
         geometry_desc.geometry.triangles.indexData =
-            m_device->getBufferAddress({ vk_index_res->buffer.res.get() }) + index.offset * index_stride;
+            m_device->getBufferAddress({ vk_index_res->GetBuffer() }) + index.offset * index_stride;
         geometry_desc.geometry.triangles.indexType = GetVkIndexType(index.format);
     } else {
         geometry_desc.geometry.triangles.indexType = vk::IndexType::eNoneKHR;
@@ -786,19 +594,7 @@ std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(AccelerationStru
                                                                 const std::shared_ptr<Resource>& resource,
                                                                 uint64_t offset)
 {
-    std::shared_ptr<VKResource> res = std::make_shared<VKResource>(*this);
-    res->resource_type = ResourceType::kAccelerationStructure;
-    res->acceleration_structures_memory = resource;
-
-    vk::AccelerationStructureCreateInfoKHR acceleration_structure_create_info = {};
-    acceleration_structure_create_info.buffer = resource->As<VKResource>().buffer.res.get();
-    acceleration_structure_create_info.offset = offset;
-    acceleration_structure_create_info.size = 0;
-    acceleration_structure_create_info.type = Convert(type);
-    res->acceleration_structure_handle =
-        m_device->createAccelerationStructureKHRUnique(acceleration_structure_create_info);
-
-    return res;
+    return VKResource::CreateAccelerationStructure(*this, type, resource, offset);
 }
 
 std::shared_ptr<QueryHeap> VKDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)

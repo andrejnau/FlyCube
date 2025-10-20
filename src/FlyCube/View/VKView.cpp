@@ -60,7 +60,7 @@ void VKView::CreateView()
 {
     switch (m_view_desc.view_type) {
     case ViewType::kSampler:
-        m_descriptor_image.sampler = m_resource->sampler.res.get();
+        m_descriptor_image.sampler = m_resource->GetSampler();
         m_descriptor.pImageInfo = &m_descriptor_image;
         break;
     case ViewType::kTexture: {
@@ -79,7 +79,7 @@ void VKView::CreateView()
     }
     case ViewType::kAccelerationStructure: {
         m_descriptor_acceleration_structure.accelerationStructureCount = 1;
-        m_descriptor_acceleration_structure.pAccelerationStructures = &m_resource->acceleration_structure_handle.get();
+        m_descriptor_acceleration_structure.pAccelerationStructures = &m_resource->GetAccelerationStructure();
         m_descriptor.pNext = &m_descriptor_acceleration_structure;
         break;
     }
@@ -92,7 +92,7 @@ void VKView::CreateView()
     case ViewType::kConstantBuffer:
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer:
-        m_descriptor_buffer.buffer = m_resource->buffer.res.get();
+        m_descriptor_buffer.buffer = m_resource->GetBuffer();
         m_descriptor_buffer.offset = m_view_desc.offset;
         m_descriptor_buffer.range = m_view_desc.buffer_size;
         m_descriptor.pBufferInfo = &m_descriptor_buffer;
@@ -111,8 +111,8 @@ void VKView::CreateView()
 void VKView::CreateImageView()
 {
     vk::ImageViewCreateInfo image_view_desc = {};
-    image_view_desc.image = m_resource->image.res;
-    image_view_desc.format = m_resource->image.format;
+    image_view_desc.image = m_resource->GetImage();
+    image_view_desc.format = static_cast<vk::Format>(m_resource->GetFormat());
     image_view_desc.viewType = GetImageViewType(m_view_desc.dimension);
     image_view_desc.subresourceRange.baseMipLevel = GetBaseMipLevel();
     image_view_desc.subresourceRange.levelCount = GetLevelCount();
@@ -136,7 +136,7 @@ void VKView::CreateImageView()
 void VKView::CreateBufferView()
 {
     vk::BufferViewCreateInfo buffer_view_desc = {};
-    buffer_view_desc.buffer = m_resource->buffer.res.get();
+    buffer_view_desc.buffer = m_resource->GetBuffer();
     buffer_view_desc.format = static_cast<vk::Format>(m_view_desc.buffer_format);
     buffer_view_desc.offset = m_view_desc.offset;
     buffer_view_desc.range = m_view_desc.buffer_size;

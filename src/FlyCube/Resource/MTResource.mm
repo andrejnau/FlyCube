@@ -19,38 +19,39 @@ std::shared_ptr<MTResource> MTResource::CreateTexture(MTDevice& device,
                                                       int depth,
                                                       int mip_levels)
 {
-    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(PassKey<MTResource>(), device);
-    res->resource_type = ResourceType::kTexture;
-    res->format = format;
-    res->m_texture.type = type;
-    res->m_texture.bind_flag = bind_flag;
-    res->m_texture.sample_count = sample_count;
-    res->m_texture.width = width;
-    res->m_texture.height = height;
-    res->m_texture.depth = depth;
-    res->m_texture.mip_levels = mip_levels;
-    return res;
+    std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
+    self->resource_type = ResourceType::kTexture;
+    self->format = format;
+    self->m_texture = {
+        .type = type,
+        .bind_flag = bind_flag,
+        .sample_count = sample_count,
+        .width = width,
+        .height = height,
+        .depth = depth,
+        .mip_levels = mip_levels,
+    };
+    return self;
 }
 
 // static
 std::shared_ptr<MTResource> MTResource::CreateBuffer(MTDevice& device, uint32_t bind_flag, uint32_t buffer_size)
 {
     if (buffer_size == 0) {
-        return {};
+        return nullptr;
     }
 
-    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(PassKey<MTResource>(), device);
-    res->resource_type = ResourceType::kBuffer;
-    res->m_buffer.size = buffer_size;
-    return res;
+    std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
+    self->resource_type = ResourceType::kBuffer;
+    self->m_buffer = {
+        .size = buffer_size,
+    };
+    return self;
 }
 
 // static
 std::shared_ptr<MTResource> MTResource::CreateSampler(MTDevice& device, const SamplerDesc& desc)
 {
-    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(PassKey<MTResource>(), device);
-    res->resource_type = ResourceType::kSampler;
-
     MTLSamplerDescriptor* sampler_descriptor = [MTLSamplerDescriptor new];
     sampler_descriptor.supportArgumentBuffers = YES;
     sampler_descriptor.minFilter = MTLSamplerMinMagFilterLinear;
@@ -86,8 +87,12 @@ std::shared_ptr<MTResource> MTResource::CreateSampler(MTDevice& device, const Sa
         break;
     }
 
-    res->m_sampler.res = [device.GetDevice() newSamplerStateWithDescriptor:sampler_descriptor];
-    return res;
+    std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
+    self->resource_type = ResourceType::kSampler;
+    self->m_sampler = {
+        .res = [device.GetDevice() newSamplerStateWithDescriptor:sampler_descriptor],
+    };
+    return self;
 }
 
 // static
@@ -96,11 +101,12 @@ std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(MTDevice& de
                                                                     const std::shared_ptr<Resource>& resource,
                                                                     uint64_t offset)
 {
-    std::shared_ptr<MTResource> res = std::make_shared<MTResource>(PassKey<MTResource>(), device);
-    res->resource_type = ResourceType::kAccelerationStructure;
-    res->m_acceleration_structure = [device.GetDevice() newAccelerationStructureWithSize:resource->GetWidth() - offset];
-    device.AddAllocationToGlobalResidencySet(res->m_acceleration_structure);
-    return res;
+    std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
+    self->resource_type = ResourceType::kAccelerationStructure;
+    self->m_acceleration_structure =
+        [device.GetDevice() newAccelerationStructureWithSize:resource->GetWidth() - offset];
+    device.AddAllocationToGlobalResidencySet(self->m_acceleration_structure);
+    return self;
 }
 
 MTLTextureDescriptor* MTResource::GetTextureDescriptor(MemoryType memory_type) const

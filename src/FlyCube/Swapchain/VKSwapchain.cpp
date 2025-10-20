@@ -108,15 +108,9 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
 
     m_command_list = m_device.CreateCommandList(CommandListType::kGraphics);
     for (uint32_t i = 0; i < frame_count; ++i) {
-        std::shared_ptr<VKResource> res = std::make_shared<VKResource>(m_device);
-        res->format = GetFormat();
-        res->image.res = m_images[i];
-        res->image.format = m_swapchain_color_format;
-        res->image.size = vk::Extent2D(1u * width, 1u * height);
-        res->resource_type = ResourceType::kTexture;
-        res->is_back_buffer = true;
+        std::shared_ptr<VKResource> res =
+            VKResource::WrapSwapchainImage(m_device, m_images[i], GetFormat(), width, height);
         m_command_list->ResourceBarrier({ { res, ResourceState::kUndefined, ResourceState::kPresent } });
-        res->SetInitialState(ResourceState::kPresent);
         m_back_buffers.emplace_back(res);
     }
     m_command_list->Close();

@@ -23,7 +23,7 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
         attachment_views.emplace_back(vk_view.GetImageView());
 
         decltype(auto) vk_resource = resource->As<VKResource>();
-        framebuffer_info.layers = std::max(framebuffer_info.layers, vk_resource.image.array_layers);
+        framebuffer_info.layers = std::max<uint32_t>(framebuffer_info.layers, vk_resource.GetLayerCount());
     };
     for (auto& rtv : desc.colors) {
         add_view(rtv);
