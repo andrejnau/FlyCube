@@ -36,6 +36,20 @@ DXResource::DXResource(DXDevice& device)
 {
 }
 
+// static
+std::shared_ptr<DXResource> DXResource::WrapSwapchainBackBuffer(DXResource& device,
+                                                                ComPtr<ID3D12Resource> back_buffer,
+                                                                gli::format format)
+{
+    std::shared_ptr<DXResource> self = std::make_shared<DXResource>(device);
+    self->format = format;
+    self->resource = back_buffer;
+    self->desc = back_buffer->GetDesc();
+    self->is_back_buffer = true;
+    self->SetInitialState(ResourceState::kPresent);
+    return self;
+}
+
 void DXResource::CommitMemory(MemoryType memory_type)
 {
     m_memory_type = memory_type;

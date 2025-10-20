@@ -38,15 +38,11 @@ DXSwapchain::DXSwapchain(DXCommandQueue& command_queue,
     tmp_swap_chain.As(&m_swap_chain);
 
     for (size_t i = 0; i < frame_count; ++i) {
-        std::shared_ptr<DXResource> res = std::make_shared<DXResource>(command_queue.GetDevice());
         ComPtr<ID3D12Resource> back_buffer;
         ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
-        res->format = GetFormat();
-        res->SetInitialState(ResourceState::kPresent);
-        res->resource = back_buffer;
-        res->desc = back_buffer->GetDesc();
-        res->is_back_buffer = true;
-        m_back_buffers.emplace_back(res);
+        std::shared_ptr<DXResource> res =
+            DXResource::WrapSwapchainBackBuffer(command_queue.GetDevice(), back_buffer, GetFormat());
+        m_back_buffers.emplace_back(std::move(res));
     }
 }
 

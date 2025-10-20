@@ -11,6 +11,10 @@ class DXResource : public ResourceBase {
 public:
     DXResource(DXDevice& device);
 
+    static std::shared_ptr<DXResource> WrapSwapchainBackBuffer(DXResource& device,
+                                                               ComPtr<ID3D12Resource> back_buffer,
+                                                               gli::format format);
+
     void CommitMemory(MemoryType memory_type) override;
     void BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset) override;
     uint64_t GetWidth() const override;
