@@ -18,7 +18,7 @@ std::shared_ptr<MTResource> MTResource::CreateSwapchainTexture(MTDevice& device,
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->resource_type = ResourceType::kTexture;
     self->format = format;
-    self->is_back_buffer = true;
+    self->m_is_back_buffer = true;
     self->m_texture = {
         .type = TextureType::k2D,
         .bind_flag = bind_flag,

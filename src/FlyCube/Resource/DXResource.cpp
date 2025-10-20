@@ -45,7 +45,7 @@ std::shared_ptr<DXResource> DXResource::WrapSwapchainBackBuffer(DXResource& devi
     self->format = format;
     self->resource = back_buffer;
     self->desc = back_buffer->GetDesc();
-    self->is_back_buffer = true;
+    self->m_is_back_buffer = true;
     self->SetInitialState(ResourceState::kPresent);
     return self;
 }

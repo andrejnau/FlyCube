@@ -36,7 +36,7 @@ std::shared_ptr<VKResource> VKResource::WrapSwapchainImage(VKDevice& device,
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
     self->format = format;
     self->resource_type = ResourceType::kTexture;
-    self->is_back_buffer = true;
+    self->m_is_back_buffer = true;
     self->m_image = {
         .res = image,
         .size = vk::Extent2D(width, height),

@@ -26,11 +26,11 @@ public:
     gli::format format = gli::FORMAT_UNDEFINED;
     ResourceType resource_type = ResourceType::kUnknown;
     std::shared_ptr<Resource> acceleration_structures_memory;
-    bool is_back_buffer = false;
 
 protected:
     std::shared_ptr<Memory> m_memory;
     MemoryType m_memory_type = MemoryType::kDefault;
+    bool m_is_back_buffer = false;
 
 private:
     ResourceState m_initial_state = ResourceState::kUnknown;

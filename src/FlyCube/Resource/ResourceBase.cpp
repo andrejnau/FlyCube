@@ -53,7 +53,7 @@ ResourceState ResourceBase::GetInitialState() const
 
 bool ResourceBase::IsBackBuffer() const
 {
-    return is_back_buffer;
+    return m_is_back_buffer;
 }
 
 void ResourceBase::SetInitialState(ResourceState state)
