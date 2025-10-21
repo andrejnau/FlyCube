@@ -11,7 +11,7 @@ ResourceType ResourceBase::GetResourceType() const
 
 gli::format ResourceBase::GetFormat() const
 {
-    return format;
+    return m_format;
 }
 
 MemoryType ResourceBase::GetMemoryType() const

@@ -43,7 +43,8 @@ std::shared_ptr<DXResource> DXResource::WrapSwapchainBackBuffer(DXDevice& device
                                                                 gli::format format)
 {
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
-    self->format = format;
+    self->m_resource_type = ResourceType::kTexture;
+    self->m_format = format;
     self->resource = back_buffer;
     self->desc = back_buffer->GetDesc();
     self->m_is_back_buffer = true;
@@ -105,7 +106,7 @@ std::shared_ptr<DXResource> DXResource::CreateTexture(DXDevice& device,
 
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->m_resource_type = ResourceType::kTexture;
-    self->format = format;
+    self->m_format = format;
     self->desc = desc;
     self->SetInitialState(ResourceState::kCommon);
     return self;
@@ -192,6 +193,7 @@ std::shared_ptr<DXResource> DXResource::CreateSampler(DXDevice& device, const Sa
     sampler_desc.MaxAnisotropy = 1;
 
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
+    self->m_resource_type = ResourceType::kSampler;
     self->sampler_desc = sampler_desc;
     return self;
 }

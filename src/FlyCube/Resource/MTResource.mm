@@ -17,7 +17,7 @@ std::shared_ptr<MTResource> MTResource::CreateSwapchainTexture(MTDevice& device,
 {
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->m_resource_type = ResourceType::kTexture;
-    self->format = format;
+    self->m_format = format;
     self->m_is_back_buffer = true;
     self->m_texture = {
         .type = TextureType::k2D,
@@ -42,7 +42,7 @@ std::shared_ptr<MTResource> MTResource::CreateTexture(MTDevice& device,
 {
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->m_resource_type = ResourceType::kTexture;
-    self->format = format;
+    self->m_format = format;
     self->m_texture = {
         .type = type,
         .bind_flag = bind_flag,
@@ -180,7 +180,7 @@ MTLTextureDescriptor* MTResource::GetTextureDescriptor(MemoryType memory_type) c
         usage |= MTLTextureUsagePixelFormatView;
     }
 
-    texture_descriptor.pixelFormat = m_device.GetMTLPixelFormat(format);
+    texture_descriptor.pixelFormat = m_device.GetMTLPixelFormat(GetFormat());
     texture_descriptor.width = m_texture.width;
     texture_descriptor.height = m_texture.height;
     texture_descriptor.mipmapLevelCount = m_texture.mip_levels;

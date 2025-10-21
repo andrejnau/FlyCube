@@ -34,8 +34,8 @@ std::shared_ptr<VKResource> VKResource::WrapSwapchainImage(VKDevice& device,
                                                            uint32_t height)
 {
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
-    self->format = format;
     self->m_resource_type = ResourceType::kTexture;
+    self->m_format = format;
     self->m_is_back_buffer = true;
     self->m_image = {
         .res = image,
@@ -116,8 +116,8 @@ std::shared_ptr<VKResource> VKResource::CreateImage(VKDevice& device,
     }
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
-    self->format = format;
     self->m_resource_type = ResourceType::kTexture;
+    self->m_format = format;
     self->m_image_owned = device.GetDevice().createImageUnique(image_info);
     self->m_image = {
         .res = self->m_image_owned.get(),

@@ -64,7 +64,7 @@ MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, co
 void MTView::CreateTextureView()
 {
     decltype(auto) texture = m_resource->GetTexture();
-    MTLPixelFormat format = m_device.GetMTLPixelFormat(m_resource->format);
+    MTLPixelFormat format = m_device.GetMTLPixelFormat(m_resource->GetFormat());
     MTLTextureType texture_type = ConvertTextureType(m_view_desc.dimension);
     NSRange levels = { GetBaseMipLevel(), GetLevelCount() };
     NSRange slices = { GetBaseArrayLayer(), GetLayerCount() };
