@@ -239,8 +239,7 @@ void DXResource::CommitMemory(MemoryType memory_type)
 
 void DXResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset)
 {
-    m_memory = memory;
-    m_memory_type = m_memory->GetMemoryType();
+    m_memory_type = memory->GetMemoryType();
     auto clear_value = GetClearValue(desc);
     D3D12_CLEAR_VALUE* p_clear_value = nullptr;
     if (clear_value.has_value()) {
@@ -252,7 +251,7 @@ void DXResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
         SetInitialState(ResourceState::kGenericRead);
     }
 
-    decltype(auto) dx_memory = m_memory->As<DXMemory>();
+    decltype(auto) dx_memory = memory->As<DXMemory>();
     m_device.GetDevice()->CreatePlacedResource(dx_memory.GetHeap().Get(), offset, &desc,
                                                ConvertState(GetInitialState()), p_clear_value, IID_PPV_ARGS(&resource));
 }

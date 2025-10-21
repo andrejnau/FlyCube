@@ -280,16 +280,15 @@ void VKResource::CommitMemory(MemoryType memory_type)
         dedicated_allocate_info.image = GetImage();
         p_dedicated_allocate_info = &dedicated_allocate_info;
     }
-    auto memory = std::make_shared<VKMemory>(m_device, mem_requirements.size, memory_type,
-                                             mem_requirements.memory_type_bits, p_dedicated_allocate_info);
-    BindMemory(memory, 0);
+    m_commited_memory = std::make_shared<VKMemory>(m_device, mem_requirements.size, memory_type,
+                                                   mem_requirements.memory_type_bits, p_dedicated_allocate_info);
+    BindMemory(m_commited_memory, 0);
 }
 
 void VKResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset)
 {
-    m_memory = memory;
-    m_memory_type = m_memory->GetMemoryType();
-    m_vk_memory = m_memory->As<VKMemory>().GetMemory();
+    m_memory_type = memory->GetMemoryType();
+    m_vk_memory = memory->As<VKMemory>().GetMemory();
 
     if (m_resource_type == ResourceType::kBuffer) {
         m_device.GetDevice().bindBufferMemory(GetBuffer(), m_vk_memory, offset);

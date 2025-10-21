@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.hpp>
 
 class VKDevice;
+class VKMemory;
 
 class VKResource : public ResourceBase {
 public:
@@ -56,6 +57,8 @@ public:
 
 private:
     VKDevice& m_device;
+
+    std::shared_ptr<VKMemory> m_commited_memory;
     vk::DeviceMemory m_vk_memory;
 
     vk::UniqueImage m_image_owned;

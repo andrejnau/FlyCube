@@ -214,9 +214,8 @@ void MTResource::CommitMemory(MemoryType memory_type)
 
 void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset)
 {
-    m_memory = memory;
     m_memory_type = memory->GetMemoryType();
-    id<MTLHeap> mt_heap = m_memory->As<MTMemory>().GetHeap();
+    id<MTLHeap> mt_heap = memory->As<MTMemory>().GetHeap();
     if (m_resource_type == ResourceType::kBuffer) {
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         m_buffer.res = [mt_heap newBufferWithLength:m_buffer.size options:options offset:offset];
