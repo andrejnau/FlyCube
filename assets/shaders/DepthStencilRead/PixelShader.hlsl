@@ -21,7 +21,7 @@ float GetDepth(float2 texcoord) {
 float GetStencil(float2 texcoord) {
     const uint kMaxStencilValue = 15;
     uint2 stencil = stencil_buffer.Load(int3(texcoord * cbv.screen_size, 0));
-    return stencil.r / float(kMaxStencilValue);
+    return stencil.g / float(kMaxStencilValue);
 }
 
 float4 main(VsOutput input) : SV_TARGET
