@@ -205,7 +205,6 @@ std::shared_ptr<DXResource> DXResource::CreateAccelerationStructure(
 {
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->resource_type = ResourceType::kAccelerationStructure;
-    self->acceleration_structures_memory = acceleration_structures_memory;
     self->acceleration_structure_handle =
         acceleration_structures_memory->As<DXResource>().resource->GetGPUVirtualAddress() + offset;
     return self;

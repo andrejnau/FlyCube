@@ -263,7 +263,6 @@ std::shared_ptr<VKResource> VKResource::CreateAccelerationStructure(
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
     self->resource_type = ResourceType::kAccelerationStructure;
-    self->acceleration_structures_memory = acceleration_structures_memory;
     self->m_acceleration_structure =
         device.GetDevice().createAccelerationStructureKHRUnique(acceleration_structure_create_info);
     return self;
