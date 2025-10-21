@@ -100,13 +100,14 @@ D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vert
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
     geometry_desc.Triangles.VertexBuffer.StartAddress =
-        vertex_res->resource->GetGPUVirtualAddress() + vertex.offset * vertex_stride;
+        vertex_res->GetResource()->GetGPUVirtualAddress() + vertex.offset * vertex_stride;
     geometry_desc.Triangles.VertexBuffer.StrideInBytes = vertex_stride;
     geometry_desc.Triangles.VertexFormat = static_cast<DXGI_FORMAT>(gli::dx().translate(vertex.format).DXGIFormat.DDS);
     geometry_desc.Triangles.VertexCount = vertex.count;
     if (index_res) {
         auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
-        geometry_desc.Triangles.IndexBuffer = index_res->resource->GetGPUVirtualAddress() + index.offset * index_stride;
+        geometry_desc.Triangles.IndexBuffer =
+            index_res->GetResource()->GetGPUVirtualAddress() + index.offset * index_stride;
         geometry_desc.Triangles.IndexFormat =
             static_cast<DXGI_FORMAT>(gli::dx().translate(index.format).DXGIFormat.DDS);
         geometry_desc.Triangles.IndexCount = index.count;

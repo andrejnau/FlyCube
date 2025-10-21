@@ -50,15 +50,15 @@ public:
     void Unmap() override;
     MemoryRequirements GetMemoryRequirements() const override;
 
+    const ComPtr<ID3D12Resource>& GetResource() const;
     const D3D12_RESOURCE_DESC& GetResourceDesc() const;
     const D3D12_SAMPLER_DESC& GetSamplerDesc() const;
     D3D12_GPU_VIRTUAL_ADDRESS GetAccelerationStructureAddress() const;
 
-    ComPtr<ID3D12Resource> resource;
-
 private:
     DXDevice& m_device;
 
+    ComPtr<ID3D12Resource> m_resource;
     D3D12_RESOURCE_DESC m_resource_desc = {};
     D3D12_SAMPLER_DESC m_sampler_desc = {};
     D3D12_GPU_VIRTUAL_ADDRESS m_acceleration_structure_address = {};

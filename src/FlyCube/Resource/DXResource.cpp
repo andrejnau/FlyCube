@@ -45,7 +45,7 @@ std::shared_ptr<DXResource> DXResource::WrapSwapchainBackBuffer(DXDevice& device
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->m_resource_type = ResourceType::kTexture;
     self->m_format = format;
-    self->resource = back_buffer;
+    self->m_resource = back_buffer;
     self->m_resource_desc = back_buffer->GetDesc();
     self->m_is_back_buffer = true;
     self->SetInitialState(ResourceState::kPresent);
@@ -209,7 +209,7 @@ std::shared_ptr<DXResource> DXResource::CreateAccelerationStructure(
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->m_resource_type = ResourceType::kAccelerationStructure;
     self->m_acceleration_structure_address =
-        acceleration_structures_memory->As<DXResource>().resource->GetGPUVirtualAddress() + offset;
+        acceleration_structures_memory->As<DXResource>().m_resource->GetGPUVirtualAddress() + offset;
     return self;
 }
 
@@ -236,7 +236,7 @@ void DXResource::CommitMemory(MemoryType memory_type)
     auto heap_properties = CD3DX12_HEAP_PROPERTIES(GetHeapType(m_memory_type));
     m_device.GetDevice()->CreateCommittedResource(&heap_properties, flags, &m_resource_desc,
                                                   ConvertState(GetInitialState()), p_clear_value,
-                                                  IID_PPV_ARGS(&resource));
+                                                  IID_PPV_ARGS(&m_resource));
 }
 
 void DXResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset)
@@ -255,7 +255,8 @@ void DXResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
 
     decltype(auto) dx_memory = memory->As<DXMemory>();
     m_device.GetDevice()->CreatePlacedResource(dx_memory.GetHeap().Get(), offset, &m_resource_desc,
-                                               ConvertState(GetInitialState()), p_clear_value, IID_PPV_ARGS(&resource));
+                                               ConvertState(GetInitialState()), p_clear_value,
+                                               IID_PPV_ARGS(&m_resource));
 }
 
 uint64_t DXResource::GetWidth() const
@@ -290,8 +291,8 @@ uint64_t DXResource::GetAccelerationStructureHandle() const
 
 void DXResource::SetName(const std::string& name)
 {
-    if (resource) {
-        resource->SetName(nowide::widen(name).c_str());
+    if (m_resource) {
+        m_resource->SetName(nowide::widen(name).c_str());
     }
 }
 
@@ -299,14 +300,14 @@ uint8_t* DXResource::Map()
 {
     CD3DX12_RANGE range(0, 0);
     uint8_t* dst_data = nullptr;
-    ASSERT_SUCCEEDED(resource->Map(0, &range, reinterpret_cast<void**>(&dst_data)));
+    ASSERT_SUCCEEDED(m_resource->Map(0, &range, reinterpret_cast<void**>(&dst_data)));
     return dst_data;
 }
 
 void DXResource::Unmap()
 {
     CD3DX12_RANGE range(0, 0);
-    resource->Unmap(0, &range);
+    m_resource->Unmap(0, &range);
 }
 
 MemoryRequirements DXResource::GetMemoryRequirements() const
@@ -314,6 +315,11 @@ MemoryRequirements DXResource::GetMemoryRequirements() const
     D3D12_RESOURCE_ALLOCATION_INFO allocation_info =
         m_device.GetDevice()->GetResourceAllocationInfo(0, 1, &m_resource_desc);
     return { allocation_info.SizeInBytes, allocation_info.Alignment, 0 };
+}
+
+const ComPtr<ID3D12Resource>& DXResource::GetResource() const
+{
+    return m_resource;
 }
 
 const D3D12_RESOURCE_DESC& DXResource::GetResourceDesc() const

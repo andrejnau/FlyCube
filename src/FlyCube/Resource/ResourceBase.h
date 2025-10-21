@@ -8,7 +8,6 @@ public:
     ResourceType GetResourceType() const override final;
     gli::format GetFormat() const override final;
     MemoryType GetMemoryType() const override final;
-
     void UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes) override final;
     void UpdateUploadBufferWithTextureData(uint64_t buffer_offset,
                                            uint32_t buffer_row_pitch,
