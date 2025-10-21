@@ -129,11 +129,7 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
                                     const std::shared_ptr<Framebuffer>& framebuffer,
                                     const ClearDesc& clear_desc)
 {
-    if (m_device.IsRenderPassesSupported()) {
-        BeginRenderPassImpl(render_pass, framebuffer, clear_desc);
-    } else {
-        OMSetFramebuffer(render_pass, framebuffer, clear_desc);
-    }
+    BeginRenderPassImpl(render_pass, framebuffer, clear_desc);
 
     decltype(auto) shading_rate_image_view = framebuffer->As<FramebufferBase>().GetDesc().shading_rate_image;
     if (shading_rate_image_view == m_shading_rate_image_view) {
@@ -234,52 +230,8 @@ void DXCommandList::BeginRenderPassImpl(const std::shared_ptr<RenderPass>& rende
                                      D3D12_RENDER_PASS_FLAG_NONE);
 }
 
-void DXCommandList::OMSetFramebuffer(const std::shared_ptr<RenderPass>& render_pass,
-                                     const std::shared_ptr<Framebuffer>& framebuffer,
-                                     const ClearDesc& clear_desc)
-{
-    decltype(auto) dx_render_pass = render_pass->As<DXRenderPass>();
-    decltype(auto) dx_framebuffer = framebuffer->As<DXFramebuffer>();
-    auto& rtvs = dx_framebuffer.GetDesc().colors;
-    auto& dsv = dx_framebuffer.GetDesc().depth_stencil;
-
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> om_rtv(rtvs.size());
-    auto get_handle = [](const std::shared_ptr<View>& view) {
-        if (!view) {
-            return D3D12_CPU_DESCRIPTOR_HANDLE{};
-        }
-        decltype(auto) dx_view = view->As<DXView>();
-        return dx_view.GetHandle();
-    };
-    for (uint32_t slot = 0; slot < rtvs.size(); ++slot) {
-        om_rtv[slot] = get_handle(rtvs[slot]);
-        if (dx_render_pass.GetDesc().colors[slot].load_op == RenderPassLoadOp::kClear) {
-            m_command_list->ClearRenderTargetView(om_rtv[slot], &clear_desc.colors[slot].x, 0, nullptr);
-        }
-    }
-    while (!om_rtv.empty() && om_rtv.back().ptr == 0) {
-        om_rtv.pop_back();
-    }
-    D3D12_CPU_DESCRIPTOR_HANDLE om_dsv = get_handle(dsv);
-    D3D12_CLEAR_FLAGS clear_flags = {};
-    if (dx_render_pass.GetDesc().depth_stencil.depth_load_op == RenderPassLoadOp::kClear) {
-        clear_flags |= D3D12_CLEAR_FLAG_DEPTH;
-    }
-    if (dx_render_pass.GetDesc().depth_stencil.stencil_load_op == RenderPassLoadOp::kClear) {
-        clear_flags |= D3D12_CLEAR_FLAG_STENCIL;
-    }
-    if (om_dsv.ptr && clear_flags) {
-        m_command_list->ClearDepthStencilView(om_dsv, clear_flags, clear_desc.depth, clear_desc.stencil, 0, nullptr);
-    }
-    m_command_list->OMSetRenderTargets(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), FALSE,
-                                       om_dsv.ptr ? &om_dsv : nullptr);
-}
-
 void DXCommandList::EndRenderPass()
 {
-    if (!m_device.IsRenderPassesSupported()) {
-        return;
-    }
     m_command_list4->EndRenderPass();
 }
 

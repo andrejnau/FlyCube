@@ -111,9 +111,6 @@ private:
     void BeginRenderPassImpl(const std::shared_ptr<RenderPass>& render_pass,
                              const std::shared_ptr<Framebuffer>& framebuffer,
                              const ClearDesc& clear_desc);
-    void OMSetFramebuffer(const std::shared_ptr<RenderPass>& render_pass,
-                          const std::shared_ptr<Framebuffer>& framebuffer,
-                          const ClearDesc& clear_desc);
     void IASetVertexBufferImpl(uint32_t slot,
                                const std::shared_ptr<Resource>& resource,
                                uint64_t offset,

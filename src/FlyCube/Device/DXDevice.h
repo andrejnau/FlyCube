@@ -79,7 +79,6 @@ public:
     ComPtr<ID3D12Device> GetDevice();
     DXCPUDescriptorPool& GetCPUDescriptorPool();
     DXGPUDescriptorPool& GetGPUDescriptorPool();
-    bool IsRenderPassesSupported() const;
     bool IsUnderGraphicsDebugger() const;
     bool IsCreateNotZeroedAvailable() const;
     ID3D12CommandSignature* GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TYPE type, uint32_t stride);
@@ -96,7 +95,6 @@ private:
     DXGPUDescriptorPool m_gpu_descriptor_pool;
     bool m_is_dxr_supported = false;
     bool m_is_ray_query_supported = false;
-    bool m_is_render_passes_supported = false;
     bool m_is_variable_rate_shading_supported = false;
     bool m_is_mesh_shading_supported = false;
     uint32_t m_shading_rate_image_tile_size = 0;
