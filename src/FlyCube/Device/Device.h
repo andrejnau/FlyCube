@@ -64,7 +64,8 @@ public:
     virtual std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) = 0;
     virtual std::shared_ptr<Resource> CreateAccelerationStructure(AccelerationStructureType type,
                                                                   const std::shared_ptr<Resource>& resource,
-                                                                  uint64_t offset) = 0;
+                                                                  uint64_t offset,
+                                                                  uint64_t size) = 0;
     virtual std::shared_ptr<QueryHeap> CreateQueryHeap(QueryHeapType type, uint32_t count) = 0;
     virtual bool IsDxrSupported() const = 0;
     virtual bool IsRayQuerySupported() const = 0;

@@ -34,7 +34,8 @@ public:
     static std::shared_ptr<MTResource> CreateAccelerationStructure(MTDevice& device,
                                                                    AccelerationStructureType type,
                                                                    const std::shared_ptr<Resource>& resource,
-                                                                   uint64_t offset);
+                                                                   uint64_t offset,
+                                                                   uint64_t size);
 
     void CommitMemory(MemoryType memory_type) override;
     void BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset) override;

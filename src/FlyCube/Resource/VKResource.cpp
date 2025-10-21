@@ -253,12 +253,13 @@ std::shared_ptr<VKResource> VKResource::CreateAccelerationStructure(
     VKDevice& device,
     AccelerationStructureType type,
     const std::shared_ptr<Resource>& acceleration_structures_memory,
-    uint64_t offset)
+    uint64_t offset,
+    uint64_t size)
 {
     vk::AccelerationStructureCreateInfoKHR acceleration_structure_create_info = {};
     acceleration_structure_create_info.buffer = acceleration_structures_memory->As<VKResource>().GetBuffer();
     acceleration_structure_create_info.offset = offset;
-    acceleration_structure_create_info.size = 0;
+    acceleration_structure_create_info.size = size;
     acceleration_structure_create_info.type = Convert(type);
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);

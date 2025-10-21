@@ -120,12 +120,12 @@ std::shared_ptr<MTResource> MTResource::CreateSampler(MTDevice& device, const Sa
 std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(MTDevice& device,
                                                                     AccelerationStructureType type,
                                                                     const std::shared_ptr<Resource>& resource,
-                                                                    uint64_t offset)
+                                                                    uint64_t offset,
+                                                                    uint64_t size)
 {
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->m_resource_type = ResourceType::kAccelerationStructure;
-    self->m_acceleration_structure =
-        [device.GetDevice() newAccelerationStructureWithSize:resource->GetWidth() - offset];
+    self->m_acceleration_structure = [device.GetDevice() newAccelerationStructureWithSize:size];
     device.AddAllocationToGlobalResidencySet(self->m_acceleration_structure);
     return self;
 }

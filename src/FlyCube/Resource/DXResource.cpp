@@ -203,7 +203,8 @@ std::shared_ptr<DXResource> DXResource::CreateAccelerationStructure(
     DXDevice& device,
     AccelerationStructureType type,
     const std::shared_ptr<Resource>& acceleration_structures_memory,
-    uint64_t offset)
+    uint64_t offset,
+    uint64_t size)
 {
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->m_resource_type = ResourceType::kAccelerationStructure;
