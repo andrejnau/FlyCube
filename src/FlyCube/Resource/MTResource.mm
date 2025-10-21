@@ -118,15 +118,19 @@ std::shared_ptr<MTResource> MTResource::CreateSampler(MTDevice& device, const Sa
 }
 
 // static
-std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(MTDevice& device,
-                                                                    AccelerationStructureType type,
-                                                                    const std::shared_ptr<Resource>& resource,
-                                                                    uint64_t offset,
-                                                                    uint64_t size)
+std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(
+    MTDevice& device,
+    AccelerationStructureType type,
+    const std::shared_ptr<Resource>& acceleration_structures_memory,
+    uint64_t offset,
+    uint64_t size)
 {
+    decltype(auto) buffer = acceleration_structures_memory->As<MTResource>().m_buffer;
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->m_resource_type = ResourceType::kAccelerationStructure;
-    self->m_acceleration_structure = [device.GetDevice() newAccelerationStructureWithSize:size];
+    self->m_acceleration_structure = [buffer.acceleration_structure_heap
+        newAccelerationStructureWithSize:size
+                                  offset:buffer.acceleration_structure_heap_offset + offset];
     device.AddAllocationToGlobalResidencySet(self->m_acceleration_structure);
     return self;
 }
@@ -199,6 +203,9 @@ void MTResource::CommitMemory(MemoryType memory_type)
     decltype(auto) mt_device = m_device.GetDevice();
     if (m_resource_type == ResourceType::kBuffer) {
         if (m_buffer.bind_flag & BindFlag::kAccelerationStructure) {
+            MTMemory heap(m_device, m_buffer.size, memory_type);
+            m_buffer.acceleration_structure_heap = heap.GetHeap();
+            m_buffer.acceleration_structure_heap_offset = 0;
             return;
         }
 
@@ -223,6 +230,8 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
     id<MTLHeap> mt_heap = memory->As<MTMemory>().GetHeap();
     if (m_resource_type == ResourceType::kBuffer) {
         if (m_buffer.bind_flag & BindFlag::kAccelerationStructure) {
+            m_buffer.acceleration_structure_heap = mt_heap;
+            m_buffer.acceleration_structure_heap_offset = offset;
             return;
         }
 

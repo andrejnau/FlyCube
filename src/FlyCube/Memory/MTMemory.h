@@ -10,7 +10,7 @@ class MTDevice;
 
 class MTMemory : public Memory {
 public:
-    MTMemory(MTDevice& device, uint64_t size, MemoryType memory_type, uint32_t memory_type_bits);
+    MTMemory(MTDevice& device, uint64_t size, MemoryType memory_type);
     MemoryType GetMemoryType() const override;
 
     id<MTLHeap> GetHeap() const;

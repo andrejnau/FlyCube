@@ -42,7 +42,7 @@ MTDevice::MTDevice(MTInstance& instance, id<MTLDevice> device)
 
 std::shared_ptr<Memory> MTDevice::AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits)
 {
-    return std::make_shared<MTMemory>(*this, size, memory_type, memory_type_bits);
+    return std::make_shared<MTMemory>(*this, size, memory_type);
 }
 
 std::shared_ptr<CommandQueue> MTDevice::GetCommandQueue(CommandListType type)
