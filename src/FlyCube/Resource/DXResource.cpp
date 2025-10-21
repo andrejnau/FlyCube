@@ -6,6 +6,7 @@
 #include "Utilities/SystemUtils.h"
 
 #include <directx/d3dx12.h>
+#include <gli/dx.hpp>
 #include <nowide/convert.hpp>
 
 #include <optional>
@@ -31,22 +32,182 @@ std::optional<D3D12_CLEAR_VALUE> GetClearValue(const D3D12_RESOURCE_DESC& desc)
     return {};
 }
 
-DXResource::DXResource(DXDevice& device)
+DXResource::DXResource(PassKey<DXResource> pass_key, DXDevice& device)
     : m_device(device)
 {
 }
 
 // static
-std::shared_ptr<DXResource> DXResource::WrapSwapchainBackBuffer(DXResource& device,
+std::shared_ptr<DXResource> DXResource::WrapSwapchainBackBuffer(DXDevice& device,
                                                                 ComPtr<ID3D12Resource> back_buffer,
                                                                 gli::format format)
 {
-    std::shared_ptr<DXResource> self = std::make_shared<DXResource>(device);
+    std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->format = format;
     self->resource = back_buffer;
     self->desc = back_buffer->GetDesc();
     self->m_is_back_buffer = true;
     self->SetInitialState(ResourceState::kPresent);
+    return self;
+}
+
+// static
+std::shared_ptr<DXResource> DXResource::CreateTexture(DXDevice& device,
+                                                      TextureType type,
+                                                      uint32_t bind_flag,
+                                                      gli::format format,
+                                                      uint32_t sample_count,
+                                                      int width,
+                                                      int height,
+                                                      int depth,
+                                                      int mip_levels)
+{
+    DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
+    if (bind_flag & BindFlag::kShaderResource) {
+        dx_format = MakeTypelessDepthStencil(dx_format);
+    }
+
+    D3D12_RESOURCE_DESC desc = {};
+    switch (type) {
+    case TextureType::k1D:
+        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+        break;
+    case TextureType::k2D:
+        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+        break;
+    case TextureType::k3D:
+        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+        break;
+    }
+    desc.Width = width;
+    desc.Height = height;
+    desc.DepthOrArraySize = depth;
+    desc.MipLevels = mip_levels;
+    desc.Format = dx_format;
+
+    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS ms_check_desc = {};
+    ms_check_desc.Format = desc.Format;
+    ms_check_desc.SampleCount = sample_count;
+    device.GetDevice()->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &ms_check_desc,
+                                            sizeof(ms_check_desc));
+    desc.SampleDesc.Count = sample_count;
+    desc.SampleDesc.Quality = ms_check_desc.NumQualityLevels - 1;
+
+    if (bind_flag & BindFlag::kRenderTarget) {
+        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    }
+    if (bind_flag & BindFlag::kDepthStencil) {
+        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    }
+    if (bind_flag & BindFlag::kUnorderedAccess) {
+        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+
+    std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
+    self->resource_type = ResourceType::kTexture;
+    self->format = format;
+    self->desc = desc;
+    self->SetInitialState(ResourceState::kCommon);
+    return self;
+}
+
+// static
+std::shared_ptr<DXResource> DXResource::CreateBuffer(DXDevice& device, uint32_t bind_flag, uint32_t buffer_size)
+{
+    if (buffer_size == 0) {
+        return nullptr;
+    }
+
+    if (bind_flag & BindFlag::kConstantBuffer) {
+        buffer_size = (buffer_size + 255) & ~255;
+    }
+
+    D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
+
+    ResourceState state = ResourceState::kCommon;
+    if (bind_flag & BindFlag::kRenderTarget) {
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    }
+    if (bind_flag & BindFlag::kDepthStencil) {
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    }
+    if (bind_flag & BindFlag::kUnorderedAccess) {
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+    if (bind_flag & BindFlag::kAccelerationStructure) {
+        state = ResourceState::kRaytracingAccelerationStructure;
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+
+    std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
+    self->resource_type = ResourceType::kBuffer;
+    self->desc = desc;
+    self->SetInitialState(state);
+    return self;
+}
+
+// static
+std::shared_ptr<DXResource> DXResource::CreateSampler(DXDevice& device, const SamplerDesc& desc)
+{
+    D3D12_SAMPLER_DESC sampler_desc = {};
+    switch (desc.filter) {
+    case SamplerFilter::kAnisotropic:
+        sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
+        break;
+    case SamplerFilter::kMinMagMipLinear:
+        sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        break;
+    case SamplerFilter::kComparisonMinMagMipLinear:
+        sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+        break;
+    }
+
+    switch (desc.mode) {
+    case SamplerTextureAddressMode::kWrap:
+        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        break;
+    case SamplerTextureAddressMode::kClamp:
+        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        break;
+    }
+
+    switch (desc.func) {
+    case SamplerComparisonFunc::kNever:
+        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        break;
+    case SamplerComparisonFunc::kAlways:
+        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+        break;
+    case SamplerComparisonFunc::kLess:
+        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS;
+        break;
+    }
+
+    sampler_desc.MinLOD = 0;
+    sampler_desc.MaxLOD = std::numeric_limits<float>::max();
+    sampler_desc.MaxAnisotropy = 1;
+
+    std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
+    self->sampler_desc = sampler_desc;
+    return self;
+}
+
+// static
+std::shared_ptr<DXResource> DXResource::CreateAccelerationStructure(
+    DXDevice& device,
+    AccelerationStructureType type,
+    const std::shared_ptr<Resource>& acceleration_structures_memory,
+    uint64_t offset)
+{
+    std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
+    self->resource_type = ResourceType::kAccelerationStructure;
+    self->acceleration_structures_memory = acceleration_structures_memory;
+    self->acceleration_structure_handle =
+        acceleration_structures_memory->As<DXResource>().resource->GetGPUVirtualAddress() + offset;
     return self;
 }
 

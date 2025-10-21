@@ -260,138 +260,17 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(TextureType type,
                                                   int depth,
                                                   int mip_levels)
 {
-    DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
-    if (bind_flag & BindFlag::kShaderResource) {
-        dx_format = MakeTypelessDepthStencil(dx_format);
-    }
-
-    std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
-    res->resource_type = ResourceType::kTexture;
-    res->format = format;
-
-    D3D12_RESOURCE_DESC desc = {};
-    switch (type) {
-    case TextureType::k1D:
-        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
-        break;
-    case TextureType::k2D:
-        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-        break;
-    case TextureType::k3D:
-        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
-        break;
-    }
-    desc.Width = width;
-    desc.Height = height;
-    desc.DepthOrArraySize = depth;
-    desc.MipLevels = mip_levels;
-    desc.Format = dx_format;
-
-    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS ms_check_desc = {};
-    ms_check_desc.Format = desc.Format;
-    ms_check_desc.SampleCount = sample_count;
-    m_device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &ms_check_desc, sizeof(ms_check_desc));
-    desc.SampleDesc.Count = sample_count;
-    desc.SampleDesc.Quality = ms_check_desc.NumQualityLevels - 1;
-
-    if (bind_flag & BindFlag::kRenderTarget) {
-        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-    }
-    if (bind_flag & BindFlag::kDepthStencil) {
-        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-    }
-    if (bind_flag & BindFlag::kUnorderedAccess) {
-        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    }
-
-    res->desc = desc;
-    res->SetInitialState(ResourceState::kCommon);
-    return res;
+    return DXResource::CreateTexture(*this, type, bind_flag, format, sample_count, width, height, depth, mip_levels);
 }
 
 std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
 {
-    if (buffer_size == 0) {
-        return {};
-    }
-
-    std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
-
-    if (bind_flag & BindFlag::kConstantBuffer) {
-        buffer_size = (buffer_size + 255) & ~255;
-    }
-
-    auto desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
-
-    res->resource_type = ResourceType::kBuffer;
-
-    ResourceState state = ResourceState::kCommon;
-    if (bind_flag & BindFlag::kRenderTarget) {
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-    }
-    if (bind_flag & BindFlag::kDepthStencil) {
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-    }
-    if (bind_flag & BindFlag::kUnorderedAccess) {
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    }
-    if (bind_flag & BindFlag::kAccelerationStructure) {
-        state = ResourceState::kRaytracingAccelerationStructure;
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    }
-
-    res->desc = desc;
-    res->SetInitialState(state);
-    return res;
+    return DXResource::CreateBuffer(*this, bind_flag, buffer_size);
 }
 
 std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
 {
-    std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
-    D3D12_SAMPLER_DESC& sampler_desc = res->sampler_desc;
-
-    switch (desc.filter) {
-    case SamplerFilter::kAnisotropic:
-        sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
-        break;
-    case SamplerFilter::kMinMagMipLinear:
-        sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-        break;
-    case SamplerFilter::kComparisonMinMagMipLinear:
-        sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-        break;
-    }
-
-    switch (desc.mode) {
-    case SamplerTextureAddressMode::kWrap:
-        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        break;
-    case SamplerTextureAddressMode::kClamp:
-        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        break;
-    }
-
-    switch (desc.func) {
-    case SamplerComparisonFunc::kNever:
-        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-        break;
-    case SamplerComparisonFunc::kAlways:
-        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-        break;
-    case SamplerComparisonFunc::kLess:
-        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS;
-        break;
-    }
-
-    sampler_desc.MinLOD = 0;
-    sampler_desc.MaxLOD = std::numeric_limits<float>::max();
-    sampler_desc.MaxAnisotropy = 1;
-
-    return res;
+    return DXResource::CreateSampler(*this, desc);
 }
 
 std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
@@ -455,11 +334,7 @@ std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(AccelerationStru
                                                                 const std::shared_ptr<Resource>& resource,
                                                                 uint64_t offset)
 {
-    std::shared_ptr<DXResource> res = std::make_shared<DXResource>(*this);
-    res->resource_type = ResourceType::kAccelerationStructure;
-    res->acceleration_structures_memory = resource;
-    res->acceleration_structure_handle = resource->As<DXResource>().resource->GetGPUVirtualAddress() + offset;
-    return res;
+    return DXResource::CreateAccelerationStructure(*this, type, resource, offset);
 }
 
 std::shared_ptr<QueryHeap> DXDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)
