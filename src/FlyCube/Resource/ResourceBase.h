@@ -24,9 +24,9 @@ public:
     void SetInitialState(ResourceState state);
 
     gli::format format = gli::FORMAT_UNDEFINED;
-    ResourceType resource_type = ResourceType::kUnknown;
 
 protected:
+    ResourceType m_resource_type = ResourceType::kUnknown;
     std::shared_ptr<Memory> m_memory;
     MemoryType m_memory_type = MemoryType::kDefault;
     bool m_is_back_buffer = false;

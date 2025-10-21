@@ -35,7 +35,7 @@ std::shared_ptr<VKResource> VKResource::WrapSwapchainImage(VKDevice& device,
 {
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
     self->format = format;
-    self->resource_type = ResourceType::kTexture;
+    self->m_resource_type = ResourceType::kTexture;
     self->m_is_back_buffer = true;
     self->m_image = {
         .res = image,
@@ -117,7 +117,7 @@ std::shared_ptr<VKResource> VKResource::CreateImage(VKDevice& device,
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
     self->format = format;
-    self->resource_type = ResourceType::kTexture;
+    self->m_resource_type = ResourceType::kTexture;
     self->m_image_owned = device.GetDevice().createImageUnique(image_info);
     self->m_image = {
         .res = self->m_image_owned.get(),
@@ -175,7 +175,7 @@ std::shared_ptr<VKResource> VKResource::CreateBuffer(VKDevice& device, uint32_t 
     }
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
-    self->resource_type = ResourceType::kBuffer;
+    self->m_resource_type = ResourceType::kBuffer;
     self->m_buffer = {
         .res = device.GetDevice().createBufferUnique(buffer_info),
         .size = buffer_size,
@@ -241,7 +241,7 @@ std::shared_ptr<VKResource> VKResource::CreateSampler(VKDevice& device, const Sa
     }
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
-    self->resource_type = ResourceType::kSampler;
+    self->m_resource_type = ResourceType::kSampler;
     self->m_sampler = {
         .res = device.GetDevice().createSamplerUnique(sampler_info),
     };
@@ -262,7 +262,7 @@ std::shared_ptr<VKResource> VKResource::CreateAccelerationStructure(
     acceleration_structure_create_info.type = Convert(type);
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
-    self->resource_type = ResourceType::kAccelerationStructure;
+    self->m_resource_type = ResourceType::kAccelerationStructure;
     self->m_acceleration_structure =
         device.GetDevice().createAccelerationStructureKHRUnique(acceleration_structure_create_info);
     return self;
@@ -273,10 +273,10 @@ void VKResource::CommitMemory(MemoryType memory_type)
     MemoryRequirements mem_requirements = GetMemoryRequirements();
     vk::MemoryDedicatedAllocateInfoKHR dedicated_allocate_info = {};
     vk::MemoryDedicatedAllocateInfoKHR* p_dedicated_allocate_info = nullptr;
-    if (resource_type == ResourceType::kBuffer) {
+    if (m_resource_type == ResourceType::kBuffer) {
         dedicated_allocate_info.buffer = GetBuffer();
         p_dedicated_allocate_info = &dedicated_allocate_info;
-    } else if (resource_type == ResourceType::kTexture) {
+    } else if (m_resource_type == ResourceType::kTexture) {
         dedicated_allocate_info.image = GetImage();
         p_dedicated_allocate_info = &dedicated_allocate_info;
     }
@@ -291,16 +291,16 @@ void VKResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
     m_memory_type = m_memory->GetMemoryType();
     m_vk_memory = m_memory->As<VKMemory>().GetMemory();
 
-    if (resource_type == ResourceType::kBuffer) {
+    if (m_resource_type == ResourceType::kBuffer) {
         m_device.GetDevice().bindBufferMemory(GetBuffer(), m_vk_memory, offset);
-    } else if (resource_type == ResourceType::kTexture) {
+    } else if (m_resource_type == ResourceType::kTexture) {
         m_device.GetDevice().bindImageMemory(GetImage(), m_vk_memory, offset);
     }
 }
 
 uint64_t VKResource::GetWidth() const
 {
-    if (resource_type == ResourceType::kTexture) {
+    if (m_resource_type == ResourceType::kTexture) {
         return m_image.size.width;
     }
     return m_buffer.size;
@@ -335,10 +335,10 @@ void VKResource::SetName(const std::string& name)
 {
     vk::DebugUtilsObjectNameInfoEXT info = {};
     info.pObjectName = name.c_str();
-    if (resource_type == ResourceType::kBuffer) {
+    if (m_resource_type == ResourceType::kBuffer) {
         info.objectType = GetBuffer().objectType;
         info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkBuffer>(GetBuffer()));
-    } else if (resource_type == ResourceType::kTexture) {
+    } else if (m_resource_type == ResourceType::kTexture) {
         info.objectType = GetImage().objectType;
         info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkImage>(GetImage()));
     }
@@ -361,11 +361,11 @@ void VKResource::Unmap()
 MemoryRequirements VKResource::GetMemoryRequirements() const
 {
     vk::MemoryRequirements2 mem_requirements = {};
-    if (resource_type == ResourceType::kBuffer) {
+    if (m_resource_type == ResourceType::kBuffer) {
         vk::BufferMemoryRequirementsInfo2KHR buffer_mem_req = {};
         buffer_mem_req.buffer = GetBuffer();
         m_device.GetDevice().getBufferMemoryRequirements2(&buffer_mem_req, &mem_requirements);
-    } else if (resource_type == ResourceType::kTexture) {
+    } else if (m_resource_type == ResourceType::kTexture) {
         vk::ImageMemoryRequirementsInfo2KHR image_mem_req = {};
         image_mem_req.image = GetImage();
         m_device.GetDevice().getImageMemoryRequirements2(&image_mem_req, &mem_requirements);

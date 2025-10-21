@@ -16,7 +16,7 @@ std::shared_ptr<MTResource> MTResource::CreateSwapchainTexture(MTDevice& device,
                                                                uint32_t height)
 {
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
-    self->resource_type = ResourceType::kTexture;
+    self->m_resource_type = ResourceType::kTexture;
     self->format = format;
     self->m_is_back_buffer = true;
     self->m_texture = {
@@ -41,7 +41,7 @@ std::shared_ptr<MTResource> MTResource::CreateTexture(MTDevice& device,
                                                       int mip_levels)
 {
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
-    self->resource_type = ResourceType::kTexture;
+    self->m_resource_type = ResourceType::kTexture;
     self->format = format;
     self->m_texture = {
         .type = type,
@@ -63,7 +63,7 @@ std::shared_ptr<MTResource> MTResource::CreateBuffer(MTDevice& device, uint32_t 
     }
 
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
-    self->resource_type = ResourceType::kBuffer;
+    self->m_resource_type = ResourceType::kBuffer;
     self->m_buffer = {
         .size = buffer_size,
     };
@@ -109,7 +109,7 @@ std::shared_ptr<MTResource> MTResource::CreateSampler(MTDevice& device, const Sa
     }
 
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
-    self->resource_type = ResourceType::kSampler;
+    self->m_resource_type = ResourceType::kSampler;
     self->m_sampler = {
         .res = [device.GetDevice() newSamplerStateWithDescriptor:sampler_descriptor],
     };
@@ -123,7 +123,7 @@ std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(MTDevice& de
                                                                     uint64_t offset)
 {
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
-    self->resource_type = ResourceType::kAccelerationStructure;
+    self->m_resource_type = ResourceType::kAccelerationStructure;
     self->m_acceleration_structure =
         [device.GetDevice() newAccelerationStructureWithSize:resource->GetWidth() - offset];
     device.AddAllocationToGlobalResidencySet(self->m_acceleration_structure);
@@ -196,14 +196,14 @@ void MTResource::CommitMemory(MemoryType memory_type)
 {
     m_memory_type = memory_type;
     decltype(auto) mt_device = m_device.GetDevice();
-    if (resource_type == ResourceType::kBuffer) {
+    if (m_resource_type == ResourceType::kBuffer) {
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         m_buffer.res = [mt_device newBufferWithLength:m_buffer.size options:options];
         m_device.AddAllocationToGlobalResidencySet(m_buffer.res);
         if (m_buffer.res == nullptr) {
             NSLog(@"Error: failed to create m_buffer");
         }
-    } else if (resource_type == ResourceType::kTexture) {
+    } else if (m_resource_type == ResourceType::kTexture) {
         m_texture.res = [mt_device newTextureWithDescriptor:GetTextureDescriptor(m_memory_type)];
         m_device.AddAllocationToGlobalResidencySet(m_texture.res);
         if (m_texture.res == nullptr) {
@@ -217,14 +217,14 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
     m_memory = memory;
     m_memory_type = memory->GetMemoryType();
     id<MTLHeap> mt_heap = m_memory->As<MTMemory>().GetHeap();
-    if (resource_type == ResourceType::kBuffer) {
+    if (m_resource_type == ResourceType::kBuffer) {
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         m_buffer.res = [mt_heap newBufferWithLength:m_buffer.size options:options offset:offset];
         m_device.AddAllocationToGlobalResidencySet(m_buffer.res);
         if (m_buffer.res == nullptr) {
             NSLog(@"Error: failed to create m_buffer");
         }
-    } else if (resource_type == ResourceType::kTexture) {
+    } else if (m_resource_type == ResourceType::kTexture) {
         m_texture.res = [mt_heap newTextureWithDescriptor:GetTextureDescriptor(m_memory_type) offset:offset];
         m_device.AddAllocationToGlobalResidencySet(m_texture.res);
         if (m_texture.res == nullptr) {
@@ -235,7 +235,7 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
 
 uint64_t MTResource::GetWidth() const
 {
-    if (resource_type == ResourceType::kTexture) {
+    if (m_resource_type == ResourceType::kTexture) {
         return m_texture.width;
     }
     return m_buffer.size;
@@ -270,7 +270,7 @@ void MTResource::SetName(const std::string& name) {}
 
 uint8_t* MTResource::Map()
 {
-    if (resource_type == ResourceType::kBuffer) {
+    if (m_resource_type == ResourceType::kBuffer) {
         return (uint8_t*)m_buffer.res.contents;
     }
     return nullptr;
@@ -282,10 +282,10 @@ MemoryRequirements MTResource::GetMemoryRequirements() const
 {
     decltype(auto) mt_device = m_device.GetDevice();
     MTLSizeAndAlign size_align = {};
-    if (resource_type == ResourceType::kBuffer) {
+    if (m_resource_type == ResourceType::kBuffer) {
         MTLResourceOptions options = ConvertStorageMode(MemoryType::kDefault) << MTLResourceStorageModeShift;
         size_align = [mt_device heapBufferSizeAndAlignWithLength:m_buffer.size options:options];
-    } else if (resource_type == ResourceType::kTexture) {
+    } else if (m_resource_type == ResourceType::kTexture) {
         size_align = [mt_device heapTextureSizeAndAlignWithDescriptor:GetTextureDescriptor(MemoryType::kDefault)];
     }
     return { size_align.size, size_align.align, 0 };
@@ -293,24 +293,24 @@ MemoryRequirements MTResource::GetMemoryRequirements() const
 
 id<MTLTexture> MTResource::GetTexture() const
 {
-    assert(resource_type == ResourceType::kTexture);
+    assert(m_resource_type == ResourceType::kTexture);
     return m_texture.res;
 }
 
 id<MTLBuffer> MTResource::GetBuffer() const
 {
-    assert(resource_type == ResourceType::kBuffer);
+    assert(m_resource_type == ResourceType::kBuffer);
     return m_buffer.res;
 }
 
 id<MTLSamplerState> MTResource::GetSampler() const
 {
-    assert(resource_type == ResourceType::kSampler);
+    assert(m_resource_type == ResourceType::kSampler);
     return m_sampler.res;
 }
 
 id<MTLAccelerationStructure> MTResource::GetAccelerationStructure() const
 {
-    assert(resource_type == ResourceType::kAccelerationStructure);
+    assert(m_resource_type == ResourceType::kAccelerationStructure);
     return m_acceleration_structure;
 }

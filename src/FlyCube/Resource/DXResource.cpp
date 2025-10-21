@@ -104,7 +104,7 @@ std::shared_ptr<DXResource> DXResource::CreateTexture(DXDevice& device,
     }
 
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
-    self->resource_type = ResourceType::kTexture;
+    self->m_resource_type = ResourceType::kTexture;
     self->format = format;
     self->desc = desc;
     self->SetInitialState(ResourceState::kCommon);
@@ -140,7 +140,7 @@ std::shared_ptr<DXResource> DXResource::CreateBuffer(DXDevice& device, uint32_t 
     }
 
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
-    self->resource_type = ResourceType::kBuffer;
+    self->m_resource_type = ResourceType::kBuffer;
     self->desc = desc;
     self->SetInitialState(state);
     return self;
@@ -204,7 +204,7 @@ std::shared_ptr<DXResource> DXResource::CreateAccelerationStructure(
     uint64_t offset)
 {
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
-    self->resource_type = ResourceType::kAccelerationStructure;
+    self->m_resource_type = ResourceType::kAccelerationStructure;
     self->acceleration_structure_handle =
         acceleration_structures_memory->As<DXResource>().resource->GetGPUVirtualAddress() + offset;
     return self;

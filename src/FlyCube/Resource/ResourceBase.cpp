@@ -6,7 +6,7 @@ ResourceBase::ResourceBase() = default;
 
 ResourceType ResourceBase::GetResourceType() const
 {
-    return resource_type;
+    return m_resource_type;
 }
 
 gli::format ResourceBase::GetFormat() const
