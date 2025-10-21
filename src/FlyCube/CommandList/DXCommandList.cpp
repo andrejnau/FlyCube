@@ -33,6 +33,32 @@ D3D12_GPU_VIRTUAL_ADDRESS GetVirtualAddress(const RayTracingShaderTable& table)
     return dx_resource.resource->GetGPUVirtualAddress() + table.offset;
 }
 
+D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE Convert(RenderPassLoadOp op)
+{
+    switch (op) {
+    case RenderPassLoadOp::kLoad:
+        return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE;
+    case RenderPassLoadOp::kClear:
+        return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR;
+    case RenderPassLoadOp::kDontCare:
+        return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
+    default:
+        throw std::runtime_error("Wrong RenderPassLoadOp type");
+    }
+}
+
+D3D12_RENDER_PASS_ENDING_ACCESS_TYPE Convert(RenderPassStoreOp op)
+{
+    switch (op) {
+    case RenderPassStoreOp::kStore:
+        return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE;
+    case RenderPassStoreOp::kDontCare:
+        return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
+    default:
+        throw std::runtime_error("Wrong RenderPassStoreOp type");
+    }
+}
+
 } // namespace
 
 DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
@@ -125,52 +151,6 @@ void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     m_binding_set = binding_set;
 }
 
-void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass,
-                                    const std::shared_ptr<Framebuffer>& framebuffer,
-                                    const ClearDesc& clear_desc)
-{
-    BeginRenderPassImpl(render_pass, framebuffer, clear_desc);
-
-    decltype(auto) shading_rate_image_view = framebuffer->As<FramebufferBase>().GetDesc().shading_rate_image;
-    if (shading_rate_image_view == m_shading_rate_image_view) {
-        return;
-    }
-
-    if (shading_rate_image_view) {
-        decltype(auto) dx_shading_rate_image = shading_rate_image_view->GetResource()->As<DXResource>();
-        m_command_list5->RSSetShadingRateImage(dx_shading_rate_image.resource.Get());
-    } else {
-        m_command_list5->RSSetShadingRateImage(nullptr);
-    }
-    m_shading_rate_image_view = shading_rate_image_view;
-}
-
-D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE Convert(RenderPassLoadOp op)
-{
-    switch (op) {
-    case RenderPassLoadOp::kLoad:
-        return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE;
-    case RenderPassLoadOp::kClear:
-        return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR;
-    case RenderPassLoadOp::kDontCare:
-        return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
-    default:
-        throw std::runtime_error("Wrong RenderPassLoadOp type");
-    }
-}
-
-D3D12_RENDER_PASS_ENDING_ACCESS_TYPE Convert(RenderPassStoreOp op)
-{
-    switch (op) {
-    case RenderPassStoreOp::kStore:
-        return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE;
-    case RenderPassStoreOp::kDontCare:
-        return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
-    default:
-        throw std::runtime_error("Wrong RenderPassStoreOp type");
-    }
-}
-
 void DXCommandList::BeginRenderPassImpl(const std::shared_ptr<RenderPass>& render_pass,
                                         const std::shared_ptr<Framebuffer>& framebuffer,
                                         const ClearDesc& clear_desc)
@@ -228,6 +208,26 @@ void DXCommandList::BeginRenderPassImpl(const std::shared_ptr<RenderPass>& rende
 
     m_command_list4->BeginRenderPass(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), om_dsv_ptr,
                                      D3D12_RENDER_PASS_FLAG_NONE);
+}
+
+void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass,
+                                    const std::shared_ptr<Framebuffer>& framebuffer,
+                                    const ClearDesc& clear_desc)
+{
+    BeginRenderPassImpl(render_pass, framebuffer, clear_desc);
+
+    decltype(auto) shading_rate_image_view = framebuffer->As<FramebufferBase>().GetDesc().shading_rate_image;
+    if (shading_rate_image_view == m_shading_rate_image_view) {
+        return;
+    }
+
+    if (shading_rate_image_view) {
+        decltype(auto) dx_shading_rate_image = shading_rate_image_view->GetResource()->As<DXResource>();
+        m_command_list5->RSSetShadingRateImage(dx_shading_rate_image.resource.Get());
+    } else {
+        m_command_list5->RSSetShadingRateImage(nullptr);
+    }
+    m_shading_rate_image_view = shading_rate_image_view;
 }
 
 void DXCommandList::EndRenderPass()
