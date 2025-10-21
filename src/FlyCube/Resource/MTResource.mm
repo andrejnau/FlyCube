@@ -65,6 +65,7 @@ std::shared_ptr<MTResource> MTResource::CreateBuffer(MTDevice& device, uint32_t 
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->m_resource_type = ResourceType::kBuffer;
     self->m_buffer = {
+        .bind_flag = bind_flag,
         .size = buffer_size,
     };
     return self;
@@ -197,6 +198,10 @@ void MTResource::CommitMemory(MemoryType memory_type)
     m_memory_type = memory_type;
     decltype(auto) mt_device = m_device.GetDevice();
     if (m_resource_type == ResourceType::kBuffer) {
+        if (m_buffer.bind_flag & BindFlag::kAccelerationStructure) {
+            return;
+        }
+
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         m_buffer.res = [mt_device newBufferWithLength:m_buffer.size options:options];
         m_device.AddAllocationToGlobalResidencySet(m_buffer.res);
@@ -217,6 +222,10 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
     m_memory_type = memory->GetMemoryType();
     id<MTLHeap> mt_heap = memory->As<MTMemory>().GetHeap();
     if (m_resource_type == ResourceType::kBuffer) {
+        if (m_buffer.bind_flag & BindFlag::kAccelerationStructure) {
+            return;
+        }
+
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         m_buffer.res = [mt_heap newBufferWithLength:m_buffer.size options:options offset:offset];
         m_device.AddAllocationToGlobalResidencySet(m_buffer.res);

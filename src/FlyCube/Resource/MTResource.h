@@ -73,6 +73,7 @@ private:
 
     struct Buffer {
         id<MTLBuffer> res = nullptr;
+        uint32_t bind_flag = 0;
         uint32_t size = 0;
     } m_buffer;
 
