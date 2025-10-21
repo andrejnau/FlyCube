@@ -15,7 +15,7 @@ RenderModel::RenderModel(const std::shared_ptr<Device>& device,
                          Model* model)
     : m_device(device)
 {
-    m_command_list = m_device->CreateCommandList(CommandListType::kCopy);
+    m_command_list = m_device->CreateCommandList(CommandListType::kGraphics);
     m_fence = m_device->CreateFence(m_fence_value);
 
     m_meshes.resize(model->meshes.size());
