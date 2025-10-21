@@ -13,7 +13,7 @@ public:
 
     QueryHeapType GetType() const override;
 
-    ComPtr<ID3D12Resource> GetResource() const;
+    ID3D12Resource* GetResource() const;
 
 private:
     DXDevice& m_device;

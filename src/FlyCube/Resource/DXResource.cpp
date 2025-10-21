@@ -317,9 +317,9 @@ MemoryRequirements DXResource::GetMemoryRequirements() const
     return { allocation_info.SizeInBytes, allocation_info.Alignment, 0 };
 }
 
-const ComPtr<ID3D12Resource>& DXResource::GetResource() const
+ID3D12Resource* DXResource::GetResource() const
 {
-    return m_resource;
+    return m_resource.Get();
 }
 
 const D3D12_RESOURCE_DESC& DXResource::GetResourceDesc() const

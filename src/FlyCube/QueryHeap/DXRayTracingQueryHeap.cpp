@@ -23,7 +23,7 @@ QueryHeapType DXRayTracingQueryHeap::GetType() const
     return QueryHeapType::kAccelerationStructureCompactedSize;
 }
 
-ComPtr<ID3D12Resource> DXRayTracingQueryHeap::GetResource() const
+ID3D12Resource* DXRayTracingQueryHeap::GetResource() const
 {
-    return m_resource;
+    return m_resource.Get();
 }

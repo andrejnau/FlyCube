@@ -216,7 +216,7 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
 
     if (shading_rate_image_view) {
         decltype(auto) dx_shading_rate_image = shading_rate_image_view->GetResource()->As<DXResource>();
-        m_command_list5->RSSetShadingRateImage(dx_shading_rate_image.GetResource().Get());
+        m_command_list5->RSSetShadingRateImage(dx_shading_rate_image.GetResource());
     } else {
         m_command_list5->RSSetShadingRateImage(nullptr);
     }
@@ -269,12 +269,12 @@ void DXCommandList::ExecuteIndirect(D3D12_INDIRECT_ARGUMENT_TYPE type,
     decltype(auto) dx_argument_buffer = argument_buffer->As<DXResource>();
     ID3D12Resource* dx_count_buffer = nullptr;
     if (count_buffer) {
-        dx_count_buffer = count_buffer->As<DXResource>().GetResource().Get();
+        dx_count_buffer = count_buffer->As<DXResource>().GetResource();
     } else {
         assert(count_buffer_offset == 0);
     }
     m_command_list->ExecuteIndirect(m_device.GetCommandSignature(type, stride), max_draw_count,
-                                    dx_argument_buffer.GetResource().Get(), argument_buffer_offset, dx_count_buffer,
+                                    dx_argument_buffer.GetResource(), argument_buffer_offset, dx_count_buffer,
                                     count_buffer_offset);
 }
 
@@ -385,13 +385,13 @@ void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
         if (barrier.base_mip_level == 0 && barrier.level_count == dx_resource.GetResourceDesc().MipLevels &&
             barrier.base_array_layer == 0 && barrier.layer_count == dx_resource.GetResourceDesc().DepthOrArraySize) {
             dx_barriers.emplace_back(
-                CD3DX12_RESOURCE_BARRIER::Transition(dx_resource.GetResource().Get(), dx_state_before, dx_state_after));
+                CD3DX12_RESOURCE_BARRIER::Transition(dx_resource.GetResource(), dx_state_before, dx_state_after));
         } else {
             for (uint32_t i = barrier.base_mip_level; i < barrier.base_mip_level + barrier.level_count; ++i) {
                 for (uint32_t j = barrier.base_array_layer; j < barrier.base_array_layer + barrier.layer_count; ++j) {
                     uint32_t subresource = i + j * dx_resource.GetResourceDesc().MipLevels;
                     dx_barriers.emplace_back(CD3DX12_RESOURCE_BARRIER::Transition(
-                        dx_resource.GetResource().Get(), dx_state_before, dx_state_after, subresource));
+                        dx_resource.GetResource(), dx_state_before, dx_state_after, subresource));
                 }
             }
         }
@@ -407,7 +407,7 @@ void DXCommandList::UAVResourceBarrier(const std::shared_ptr<Resource>& resource
     uav_barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
     if (resource) {
         decltype(auto) dx_resource = resource->As<DXResource>();
-        uav_barrier.UAV.pResource = dx_resource.GetResource().Get();
+        uav_barrier.UAV.pResource = dx_resource.GetResource();
     }
     m_command_list4->ResourceBarrier(1, &uav_barrier);
 }
@@ -572,8 +572,8 @@ void DXCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
     decltype(auto) dx_src_buffer = src_buffer->As<DXResource>();
     decltype(auto) dx_dst_buffer = dst_buffer->As<DXResource>();
     for (const auto& region : regions) {
-        m_command_list->CopyBufferRegion(dx_dst_buffer.GetResource().Get(), region.dst_offset,
-                                         dx_src_buffer.GetResource().Get(), region.src_offset, region.num_bytes);
+        m_command_list->CopyBufferRegion(dx_dst_buffer.GetResource(), region.dst_offset, dx_src_buffer.GetResource(),
+                                         region.src_offset, region.num_bytes);
     }
 }
 
@@ -587,12 +587,12 @@ void DXCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
     for (const auto& region : regions) {
         D3D12_TEXTURE_COPY_LOCATION dst = {};
-        dst.pResource = dx_dst_texture.GetResource().Get();
+        dst.pResource = dx_dst_texture.GetResource();
         dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
         dst.SubresourceIndex = region.texture_array_layer * dx_dst_texture.GetLevelCount() + region.texture_mip_level;
 
         D3D12_TEXTURE_COPY_LOCATION src = {};
-        src.pResource = dx_src_buffer.GetResource().Get();
+        src.pResource = dx_src_buffer.GetResource();
         src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
         src.PlacedFootprint.Offset = region.buffer_offset;
         src.PlacedFootprint.Footprint.Width = region.texture_extent.width;
@@ -620,12 +620,12 @@ void DXCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture,
     decltype(auto) dx_dst_texture = dst_texture->As<DXResource>();
     for (const auto& region : regions) {
         D3D12_TEXTURE_COPY_LOCATION dst = {};
-        dst.pResource = dx_dst_texture.GetResource().Get();
+        dst.pResource = dx_dst_texture.GetResource();
         dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
         dst.SubresourceIndex = region.dst_array_layer * dx_dst_texture.GetLevelCount() + region.dst_mip_level;
 
         D3D12_TEXTURE_COPY_LOCATION src = {};
-        src.pResource = dx_src_texture.GetResource().Get();
+        src.pResource = dx_src_texture.GetResource();
         src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
         src.SubresourceIndex = region.src_array_layer * dx_src_texture.GetLevelCount() + region.src_mip_level;
 
@@ -679,12 +679,12 @@ void DXCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
     decltype(auto) dx_query_heap = query_heap->As<DXRayTracingQueryHeap>();
     decltype(auto) dx_dst_buffer = dst_buffer->As<DXResource>();
     auto common_to_copy_barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-        dx_query_heap.GetResource().Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE, 0);
+        dx_query_heap.GetResource(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE, 0);
     m_command_list->ResourceBarrier(1, &common_to_copy_barrier);
-    m_command_list->CopyBufferRegion(dx_dst_buffer.GetResource().Get(), dst_offset, dx_query_heap.GetResource().Get(),
+    m_command_list->CopyBufferRegion(dx_dst_buffer.GetResource(), dst_offset, dx_query_heap.GetResource(),
                                      first_query * sizeof(uint64_t), query_count * sizeof(uint64_t));
     auto copy_to_common_barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-        dx_query_heap.GetResource().Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON, 0);
+        dx_query_heap.GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON, 0);
     m_command_list->ResourceBarrier(1, &copy_to_common_barrier);
 }
 

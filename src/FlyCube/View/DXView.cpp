@@ -172,8 +172,7 @@ void DXView::CreateSRV()
     }
     }
 
-    m_device.GetDevice()->CreateShaderResourceView(m_resource->GetResource().Get(), &srv_desc,
-                                                   m_handle->GetCpuHandle());
+    m_device.GetDevice()->CreateShaderResourceView(m_resource->GetResource(), &srv_desc, m_handle->GetCpuHandle());
 }
 
 void DXView::CreateRAS()
@@ -244,7 +243,7 @@ void DXView::CreateUAV()
     }
     }
 
-    m_device.GetDevice()->CreateUnorderedAccessView(m_resource->GetResource().Get(), nullptr, &uav_desc,
+    m_device.GetDevice()->CreateUnorderedAccessView(m_resource->GetResource(), nullptr, &uav_desc,
                                                     m_handle->GetCpuHandle());
 }
 
@@ -301,7 +300,7 @@ void DXView::CreateRTV()
     }
     }
 
-    m_device.GetDevice()->CreateRenderTargetView(m_resource->GetResource().Get(), &rtv_desc, m_handle->GetCpuHandle());
+    m_device.GetDevice()->CreateRenderTargetView(m_resource->GetResource(), &rtv_desc, m_handle->GetCpuHandle());
 }
 
 void DXView::CreateDSV()
@@ -350,7 +349,7 @@ void DXView::CreateDSV()
     }
     }
 
-    m_device.GetDevice()->CreateDepthStencilView(m_resource->GetResource().Get(), &dsv_desc, m_handle->GetCpuHandle());
+    m_device.GetDevice()->CreateDepthStencilView(m_resource->GetResource(), &dsv_desc, m_handle->GetCpuHandle());
 }
 
 void DXView::CreateCBV()
