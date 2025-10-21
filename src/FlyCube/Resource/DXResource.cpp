@@ -194,7 +194,7 @@ std::shared_ptr<DXResource> DXResource::CreateSampler(DXDevice& device, const Sa
 
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->m_resource_type = ResourceType::kSampler;
-    self->sampler_desc = sampler_desc;
+    self->m_sampler_desc = sampler_desc;
     return self;
 }
 
@@ -312,6 +312,11 @@ MemoryRequirements DXResource::GetMemoryRequirements() const
 {
     D3D12_RESOURCE_ALLOCATION_INFO allocation_info = m_device.GetDevice()->GetResourceAllocationInfo(0, 1, &desc);
     return { allocation_info.SizeInBytes, allocation_info.Alignment, 0 };
+}
+
+const D3D12_SAMPLER_DESC& GetSamplerDesc() const
+{
+    return m_sampler_desc;
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS DXResource::GetAccelerationStructureAddress() const

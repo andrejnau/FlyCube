@@ -363,7 +363,7 @@ void DXView::CreateCBV()
 
 void DXView::CreateSampler()
 {
-    m_device.GetDevice()->CreateSampler(&m_resource->sampler_desc, m_handle->GetCpuHandle());
+    m_device.GetDevice()->CreateSampler(&m_resource->GetSamplerDesc(), m_handle->GetCpuHandle());
 }
 
 std::shared_ptr<Resource> DXView::GetResource()
