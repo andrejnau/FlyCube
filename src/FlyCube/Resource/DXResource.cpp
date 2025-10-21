@@ -208,7 +208,7 @@ std::shared_ptr<DXResource> DXResource::CreateAccelerationStructure(
 {
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->m_resource_type = ResourceType::kAccelerationStructure;
-    self->acceleration_structure_handle =
+    self->m_acceleration_structure_address =
         acceleration_structures_memory->As<DXResource>().resource->GetGPUVirtualAddress() + offset;
     return self;
 }
@@ -284,7 +284,7 @@ uint32_t DXResource::GetSampleCount() const
 
 uint64_t DXResource::GetAccelerationStructureHandle() const
 {
-    return acceleration_structure_handle;
+    return m_acceleration_structure_address;
 }
 
 void DXResource::SetName(const std::string& name)
@@ -312,4 +312,9 @@ MemoryRequirements DXResource::GetMemoryRequirements() const
 {
     D3D12_RESOURCE_ALLOCATION_INFO allocation_info = m_device.GetDevice()->GetResourceAllocationInfo(0, 1, &desc);
     return { allocation_info.SizeInBytes, allocation_info.Alignment, 0 };
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS DXResource::GetAccelerationStructureAddress() const
+{
+    return m_acceleration_structure_address;
 }

@@ -496,10 +496,10 @@ void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATI
     acceleration_structure_desc.Inputs = inputs;
     if (src) {
         decltype(auto) dx_src = src->As<DXResource>();
-        acceleration_structure_desc.SourceAccelerationStructureData = dx_src.acceleration_structure_handle;
+        acceleration_structure_desc.SourceAccelerationStructureData = dx_src.GetAccelerationStructureAddress();
         acceleration_structure_desc.Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
     }
-    acceleration_structure_desc.DestAccelerationStructureData = dx_dst.acceleration_structure_handle;
+    acceleration_structure_desc.DestAccelerationStructureData = dx_dst.GetAccelerationStructureAddress();
     acceleration_structure_desc.ScratchAccelerationStructureData =
         dx_scratch.resource->GetGPUVirtualAddress() + scratch_offset;
     m_command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
@@ -561,8 +561,8 @@ void DXCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
     default:
         assert(false);
     }
-    m_command_list4->CopyRaytracingAccelerationStructure(dx_dst.acceleration_structure_handle,
-                                                         dx_src.acceleration_structure_handle, dx_mode);
+    m_command_list4->CopyRaytracingAccelerationStructure(dx_dst.GetAccelerationStructureAddress(),
+                                                         dx_src.GetAccelerationStructureAddress(), dx_mode);
 }
 
 void DXCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
@@ -658,7 +658,8 @@ void DXCommandList::WriteAccelerationStructuresProperties(
     std::vector<D3D12_GPU_VIRTUAL_ADDRESS> dx_acceleration_structures;
     dx_acceleration_structures.reserve(acceleration_structures.size());
     for (const auto& acceleration_structure : acceleration_structures) {
-        dx_acceleration_structures.emplace_back(acceleration_structure->As<DXResource>().acceleration_structure_handle);
+        dx_acceleration_structures.emplace_back(
+            acceleration_structure->As<DXResource>().GetAccelerationStructureAddress());
     }
     m_command_list4->EmitRaytracingAccelerationStructurePostbuildInfo(&desc, dx_acceleration_structures.size(),
                                                                       dx_acceleration_structures.data());
