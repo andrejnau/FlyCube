@@ -379,17 +379,17 @@ void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
             continue;
         }
 
-        assert(barrier.base_mip_level + barrier.level_count <= dx_resource.desc.MipLevels);
-        assert(barrier.base_array_layer + barrier.layer_count <= dx_resource.desc.DepthOrArraySize);
+        assert(barrier.base_mip_level + barrier.level_count <= dx_resource.GetResourceDesc().MipLevels);
+        assert(barrier.base_array_layer + barrier.layer_count <= dx_resource.GetResourceDesc().DepthOrArraySize);
 
-        if (barrier.base_mip_level == 0 && barrier.level_count == dx_resource.desc.MipLevels &&
-            barrier.base_array_layer == 0 && barrier.layer_count == dx_resource.desc.DepthOrArraySize) {
+        if (barrier.base_mip_level == 0 && barrier.level_count == dx_resource.GetResourceDesc().MipLevels &&
+            barrier.base_array_layer == 0 && barrier.layer_count == dx_resource.GetResourceDesc().DepthOrArraySize) {
             dx_barriers.emplace_back(
                 CD3DX12_RESOURCE_BARRIER::Transition(dx_resource.resource.Get(), dx_state_before, dx_state_after));
         } else {
             for (uint32_t i = barrier.base_mip_level; i < barrier.base_mip_level + barrier.level_count; ++i) {
                 for (uint32_t j = barrier.base_array_layer; j < barrier.base_array_layer + barrier.layer_count; ++j) {
-                    uint32_t subresource = i + j * dx_resource.desc.MipLevels;
+                    uint32_t subresource = i + j * dx_resource.GetResourceDesc().MipLevels;
                     dx_barriers.emplace_back(CD3DX12_RESOURCE_BARRIER::Transition(
                         dx_resource.resource.Get(), dx_state_before, dx_state_after, subresource));
                 }
@@ -436,7 +436,7 @@ void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
     decltype(auto) dx_resource = resource->As<DXResource>();
     D3D12_INDEX_BUFFER_VIEW index_buffer_view = {
         .BufferLocation = dx_resource.resource->GetGPUVirtualAddress() + offset,
-        .SizeInBytes = static_cast<uint32_t>(dx_resource.desc.Width - offset),
+        .SizeInBytes = static_cast<uint32_t>(dx_resource.GetResourceDesc().Width - offset),
         .Format = dx_format,
     };
     m_command_list->IASetIndexBuffer(&index_buffer_view);
@@ -471,7 +471,7 @@ void DXCommandList::IASetVertexBufferImpl(uint32_t slot,
     decltype(auto) dx_resource = resource->As<DXResource>();
     D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view = {
         .BufferLocation = dx_resource.resource->GetGPUVirtualAddress() + offset,
-        .SizeInBytes = static_cast<uint32_t>(dx_resource.desc.Width - offset),
+        .SizeInBytes = static_cast<uint32_t>(dx_resource.GetResourceDesc().Width - offset),
         .StrideInBytes = stride,
     };
     m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);

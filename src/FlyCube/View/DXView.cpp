@@ -81,7 +81,7 @@ void DXView::CreateSRV()
 {
     D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
     srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srv_desc.Format = m_resource->desc.Format;
+    srv_desc.Format = m_resource->GetResourceDesc().Format;
 
     if (IsTypelessDepthStencil(srv_desc.Format)) {
         if (m_view_desc.plane_slice == 0) {
@@ -161,7 +161,7 @@ void DXView::CreateSRV()
             srv_desc.Buffer.StructureByteStride = m_view_desc.structure_stride;
             stride = srv_desc.Buffer.StructureByteStride;
         }
-        uint64_t size = std::min(m_resource->desc.Width, m_view_desc.buffer_size);
+        uint64_t size = std::min(m_resource->GetResourceDesc().Width, m_view_desc.buffer_size);
         srv_desc.Buffer.FirstElement = m_view_desc.offset / stride;
         srv_desc.Buffer.NumElements = (size - m_view_desc.offset) / (stride);
         break;
@@ -187,7 +187,7 @@ void DXView::CreateRAS()
 void DXView::CreateUAV()
 {
     D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
-    uav_desc.Format = m_resource->desc.Format;
+    uav_desc.Format = m_resource->GetResourceDesc().Format;
 
     switch (m_view_desc.dimension) {
     case ViewDimension::kTexture1D: {
@@ -232,7 +232,7 @@ void DXView::CreateUAV()
             uav_desc.Buffer.StructureByteStride = m_view_desc.structure_stride;
             stride = uav_desc.Buffer.StructureByteStride;
         }
-        uint64_t size = std::min(m_resource->desc.Width, m_view_desc.buffer_size);
+        uint64_t size = std::min(m_resource->GetResourceDesc().Width, m_view_desc.buffer_size);
         uav_desc.Buffer.FirstElement = m_view_desc.offset / stride;
         uav_desc.Buffer.NumElements = (size - m_view_desc.offset) / (stride);
         break;
@@ -250,7 +250,7 @@ void DXView::CreateUAV()
 void DXView::CreateRTV()
 {
     D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
-    rtv_desc.Format = m_resource->desc.Format;
+    rtv_desc.Format = m_resource->GetResourceDesc().Format;
 
     switch (m_view_desc.dimension) {
     case ViewDimension::kTexture1D: {
@@ -306,7 +306,7 @@ void DXView::CreateRTV()
 void DXView::CreateDSV()
 {
     D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
-    dsv_desc.Format = DepthStencilFromTypeless(m_resource->desc.Format);
+    dsv_desc.Format = DepthStencilFromTypeless(m_resource->GetResourceDesc().Format);
 
     switch (m_view_desc.dimension) {
     case ViewDimension::kTexture1D: {
@@ -356,7 +356,7 @@ void DXView::CreateCBV()
 {
     D3D12_CONSTANT_BUFFER_VIEW_DESC cvb_desc = {};
     cvb_desc.BufferLocation = m_resource->resource->GetGPUVirtualAddress() + m_view_desc.offset;
-    cvb_desc.SizeInBytes = std::min(m_resource->desc.Width, m_view_desc.buffer_size);
+    cvb_desc.SizeInBytes = std::min(m_resource->GetResourceDesc().Width, m_view_desc.buffer_size);
     assert(cvb_desc.SizeInBytes % 256 == 0);
     m_device.GetDevice()->CreateConstantBufferView(&cvb_desc, m_handle->GetCpuHandle());
 }
