@@ -131,7 +131,6 @@ std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(
     self->m_acceleration_structure = [buffer.acceleration_structure_heap
         newAccelerationStructureWithSize:size
                                   offset:buffer.acceleration_structure_heap_offset + offset];
-    device.AddAllocationToGlobalResidencySet(self->m_acceleration_structure);
     return self;
 }
 
@@ -211,13 +210,11 @@ void MTResource::CommitMemory(MemoryType memory_type)
 
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         m_buffer.res = [mt_device newBufferWithLength:m_buffer.size options:options];
-        m_device.AddAllocationToGlobalResidencySet(m_buffer.res);
         if (m_buffer.res == nullptr) {
             NSLog(@"Error: failed to create m_buffer");
         }
     } else if (m_resource_type == ResourceType::kTexture) {
         m_texture.res = [mt_device newTextureWithDescriptor:GetTextureDescriptor(m_memory_type)];
-        m_device.AddAllocationToGlobalResidencySet(m_texture.res);
         if (m_texture.res == nullptr) {
             NSLog(@"Error: failed to create m_texture");
         }
@@ -237,13 +234,11 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
 
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         m_buffer.res = [mt_heap newBufferWithLength:m_buffer.size options:options offset:offset];
-        m_device.AddAllocationToGlobalResidencySet(m_buffer.res);
         if (m_buffer.res == nullptr) {
             NSLog(@"Error: failed to create m_buffer");
         }
     } else if (m_resource_type == ResourceType::kTexture) {
         m_texture.res = [mt_heap newTextureWithDescriptor:GetTextureDescriptor(m_memory_type) offset:offset];
-        m_device.AddAllocationToGlobalResidencySet(m_texture.res);
         if (m_texture.res == nullptr) {
             NSLog(@"Error: failed to create m_texture");
         }

@@ -18,19 +18,12 @@
 #include "Swapchain/MTSwapchain.h"
 #include "View/MTView.h"
 
-namespace {
-constexpr bool kUseGlobalResidencySet = false;
-} // namespace
-
 MTDevice::MTDevice(MTInstance& instance, id<MTLDevice> device)
     : m_instance(instance)
     , m_device(device)
     , m_mvk_pixel_formats(this)
     , m_bindless_argument_buffer(*this)
 {
-    if (kUseGlobalResidencySet) {
-        m_global_residency_set = CreateResidencySet();
-    }
     m_command_queue = std::make_shared<MTCommandQueue>(*this);
 
     NSError* error = nullptr;
@@ -352,18 +345,6 @@ id<MTLResidencySet> MTDevice::CreateResidencySet() const
     NSError* error = nullptr;
     MTLResidencySetDescriptor* residencySetDescriptor = [MTLResidencySetDescriptor new];
     return [m_device newResidencySetWithDescriptor:residencySetDescriptor error:&error];
-}
-
-id<MTLResidencySet> MTDevice::GetGlobalResidencySet()
-{
-    return m_global_residency_set;
-}
-
-void MTDevice::AddAllocationToGlobalResidencySet(id<MTLAllocation> allocation)
-{
-    if (m_global_residency_set) {
-        [m_global_residency_set addAllocation:allocation];
-    }
 }
 
 id<MTL4Compiler> MTDevice::GetCompiler()

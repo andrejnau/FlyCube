@@ -26,7 +26,6 @@ MTMemory::MTMemory(MTDevice& device, uint64_t size, MemoryType memory_type)
     heap_descriptor.hazardTrackingMode = MTLHazardTrackingModeTracked;
     heap_descriptor.type = MTLHeapTypePlacement;
     m_heap = [device.GetDevice() newHeapWithDescriptor:heap_descriptor];
-    device.AddAllocationToGlobalResidencySet(m_heap);
 }
 
 MemoryType MTMemory::GetMemoryType() const

@@ -77,8 +77,6 @@ public:
     const MTInstance& GetInstance();
     MTGPUBindlessArgumentBuffer& GetBindlessArgumentBuffer();
     id<MTLResidencySet> CreateResidencySet() const;
-    id<MTLResidencySet> GetGlobalResidencySet();
-    void AddAllocationToGlobalResidencySet(id<MTLAllocation> allocation);
     id<MTL4Compiler> GetCompiler();
 
 private:
@@ -97,7 +95,6 @@ private:
     MVKPixelFormats m_mvk_pixel_formats;
     std::shared_ptr<MTCommandQueue> m_command_queue;
     MTGPUBindlessArgumentBuffer m_bindless_argument_buffer;
-    id<MTLResidencySet> m_global_residency_set = nullptr;
     id<MTL4Compiler> m_compiler = nullptr;
 };
 
