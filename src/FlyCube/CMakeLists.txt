@@ -218,6 +218,8 @@ list(APPEND Shader
 list(APPEND ShaderReflection
     ShaderReflection/DXILReflection.cpp
     ShaderReflection/DXILReflection.h
+    ShaderReflection/DXReflection.cpp
+    ShaderReflection/DXReflection.h
     ShaderReflection/ShaderReflection.cpp
     ShaderReflection/ShaderReflection.h
     ShaderReflection/SPIRVReflection.cpp
