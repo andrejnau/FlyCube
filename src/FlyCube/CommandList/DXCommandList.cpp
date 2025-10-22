@@ -10,6 +10,7 @@
 #include "RenderPass/DXRenderPass.h"
 #include "Resource/DXResource.h"
 #include "Utilities/DXUtility.h"
+#include "Utilities/NotReached.h"
 #include "Utilities/SystemUtils.h"
 #include "View/DXView.h"
 
@@ -19,8 +20,6 @@
 #include <gli/dx.hpp>
 #include <nowide/convert.hpp>
 #include <pix.h>
-
-#include <stdexcept>
 
 namespace {
 
@@ -43,7 +42,7 @@ D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE Convert(RenderPassLoadOp op)
     case RenderPassLoadOp::kDontCare:
         return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
     default:
-        throw std::runtime_error("Wrong RenderPassLoadOp type");
+        NOTREACHED();
     }
 }
 
@@ -55,7 +54,7 @@ D3D12_RENDER_PASS_ENDING_ACCESS_TYPE Convert(RenderPassStoreOp op)
     case RenderPassStoreOp::kDontCare:
         return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
     default:
-        throw std::runtime_error("Wrong RenderPassStoreOp type");
+        NOTREACHED();
     }
 }
 
@@ -76,8 +75,7 @@ DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
         dx_type = D3D12_COMMAND_LIST_TYPE_COPY;
         break;
     default:
-        assert(false);
-        break;
+        NOTREACHED();
     }
     ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandAllocator(dx_type, IID_PPV_ARGS(&m_command_allocator)));
     ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandList(0, dx_type, m_command_allocator.Get(), nullptr,
@@ -368,6 +366,7 @@ void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
             assert(false);
             continue;
         }
+
         if (barrier.state_before == ResourceState::kRaytracingAccelerationStructure) {
             continue;
         }
@@ -559,7 +558,7 @@ void DXCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
         dx_mode = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE_COMPACT;
         break;
     default:
-        assert(false);
+        NOTREACHED();
     }
     m_command_list4->CopyRaytracingAccelerationStructure(dx_dst.GetAccelerationStructureAddress(),
                                                          dx_src.GetAccelerationStructureAddress(), dx_mode);
@@ -647,10 +646,7 @@ void DXCommandList::WriteAccelerationStructuresProperties(
     const std::shared_ptr<QueryHeap>& query_heap,
     uint32_t first_query)
 {
-    if (query_heap->GetType() != QueryHeapType::kAccelerationStructureCompactedSize) {
-        assert(false);
-        return;
-    }
+    assert(query_heap->GetType() == QueryHeapType::kAccelerationStructureCompactedSize);
     decltype(auto) dx_query_heap = query_heap->As<DXRayTracingQueryHeap>();
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_DESC desc = {};
     desc.InfoType = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_COMPACTED_SIZE;
@@ -671,11 +667,7 @@ void DXCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
                                      const std::shared_ptr<Resource>& dst_buffer,
                                      uint64_t dst_offset)
 {
-    if (query_heap->GetType() != QueryHeapType::kAccelerationStructureCompactedSize) {
-        assert(false);
-        return;
-    }
-
+    assert(query_heap->GetType() == QueryHeapType::kAccelerationStructureCompactedSize);
     decltype(auto) dx_query_heap = query_heap->As<DXRayTracingQueryHeap>();
     decltype(auto) dx_dst_buffer = dst_buffer->As<DXResource>();
     auto common_to_copy_barrier = CD3DX12_RESOURCE_BARRIER::Transition(

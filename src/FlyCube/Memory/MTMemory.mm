@@ -1,6 +1,7 @@
 #include "Memory/MTMemory.h"
 
 #include "Device/MTDevice.h"
+#include "Utilities/NotReached.h"
 
 MTLStorageMode ConvertStorageMode(MemoryType memory_type)
 {
@@ -11,8 +12,7 @@ MTLStorageMode ConvertStorageMode(MemoryType memory_type)
     case MemoryType::kReadback:
         return MTLStorageModeShared;
     default:
-        assert(false);
-        return MTLStorageModeShared;
+        NOTREACHED();
     }
 }
 

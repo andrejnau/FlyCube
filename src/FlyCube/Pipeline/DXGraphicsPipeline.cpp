@@ -4,6 +4,7 @@
 #include "Device/DXDevice.h"
 #include "Pipeline/DXStateBuilder.h"
 #include "Program/ProgramBase.h"
+#include "Utilities/NotReached.h"
 #include "View/DXView.h"
 
 #include <directx/d3dx12.h>
@@ -96,8 +97,7 @@ D3D12_COMPARISON_FUNC Convert(ComparisonFunc func)
     case ComparisonFunc::kAlways:
         return D3D12_COMPARISON_FUNC_ALWAYS;
     default:
-        assert(false);
-        return D3D12_COMPARISON_FUNC_LESS;
+        NOTREACHED();
     }
 }
 
@@ -121,8 +121,7 @@ D3D12_STENCIL_OP Convert(StencilOp op)
     case StencilOp::kDecr:
         return D3D12_STENCIL_OP_DECR;
     default:
-        assert(false);
-        return D3D12_STENCIL_OP_KEEP;
+        NOTREACHED();
     }
 }
 

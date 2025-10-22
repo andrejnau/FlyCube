@@ -16,6 +16,7 @@
 #include "Resource/MTResource.h"
 #include "Shader/MTShader.h"
 #include "Swapchain/MTSwapchain.h"
+#include "Utilities/NotReached.h"
 #include "View/MTView.h"
 
 MTDevice::MTDevice(MTInstance& instance, id<MTLDevice> device)
@@ -144,8 +145,7 @@ std::shared_ptr<Pipeline> MTDevice::CreateComputePipeline(const ComputePipelineD
 
 std::shared_ptr<Pipeline> MTDevice::CreateRayTracingPipeline(const RayTracingPipelineDesc& desc)
 {
-    assert(false);
-    return {};
+    NOTREACHED();
 }
 
 std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(AccelerationStructureType type,
@@ -158,8 +158,7 @@ std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(AccelerationStru
 
 std::shared_ptr<QueryHeap> MTDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)
 {
-    assert(false);
-    return {};
+    NOTREACHED();
 }
 
 bool MTDevice::IsDxrSupported() const
@@ -194,32 +193,27 @@ bool MTDevice::IsGeometryShaderSupported() const
 
 uint32_t MTDevice::GetShadingRateImageTileSize() const
 {
-    assert(false);
-    return false;
+    NOTREACHED();
 }
 
 MemoryBudget MTDevice::GetMemoryBudget() const
 {
-    assert(false);
-    return {};
+    NOTREACHED();
 }
 
 uint32_t MTDevice::GetShaderGroupHandleSize() const
 {
-    assert(false);
-    return 0;
+    NOTREACHED();
 }
 
 uint32_t MTDevice::GetShaderRecordAlignment() const
 {
-    assert(false);
-    return 0;
+    NOTREACHED();
 }
 
 uint32_t MTDevice::GetShaderTableAlignment() const
 {
-    assert(false);
-    return 0;
+    NOTREACHED();
 }
 
 MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(const BufferDesc& vertex,

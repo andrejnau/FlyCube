@@ -2,6 +2,7 @@
 
 #include "BindingSetLayout/VKBindingSetLayout.h"
 #include "Device/VKDevice.h"
+#include "Utilities/NotReached.h"
 
 vk::ShaderStageFlagBits ExecutionModel2Bit(ShaderKind kind)
 {
@@ -31,8 +32,7 @@ vk::ShaderStageFlagBits ExecutionModel2Bit(ShaderKind kind)
     case ShaderKind::kCallable:
         return vk::ShaderStageFlagBits::eCallableKHR;
     default:
-        assert(false);
-        return {};
+        NOTREACHED();
     }
 }
 

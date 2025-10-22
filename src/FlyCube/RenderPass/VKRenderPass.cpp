@@ -1,6 +1,7 @@
 #include "RenderPass/VKRenderPass.h"
 
 #include "Device/VKDevice.h"
+#include "Utilities/NotReached.h"
 #include "View/VKView.h"
 
 namespace {
@@ -14,9 +15,9 @@ vk::AttachmentLoadOp Convert(RenderPassLoadOp op)
         return vk::AttachmentLoadOp::eClear;
     case RenderPassLoadOp::kDontCare:
         return vk::AttachmentLoadOp::eDontCare;
+    default:
+        NOTREACHED();
     }
-    assert(false);
-    return vk::AttachmentLoadOp::eLoad;
 }
 
 vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
@@ -26,9 +27,9 @@ vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
         return vk::AttachmentStoreOp::eStore;
     case RenderPassStoreOp::kDontCare:
         return vk::AttachmentStoreOp::eDontCare;
+    default:
+        NOTREACHED();
     }
-    assert(false);
-    return vk::AttachmentStoreOp::eStore;
 }
 
 } // namespace

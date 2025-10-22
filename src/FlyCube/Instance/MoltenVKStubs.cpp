@@ -1,28 +1,26 @@
-#include <vulkan/vulkan.hpp>
+#include "Utilities/NotReached.h"
 
-#include <cassert>
+#include <vulkan/vulkan.hpp>
 
 __attribute__((weak)) VkResult vkCreateAccelerationStructureKHR(VkDevice device,
                                                                 const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 VkAccelerationStructureKHR* pAccelerationStructure)
 {
-    assert(false);
-    return {};
+    NOTREACHED();
 }
 
 __attribute__((weak)) void vkDestroyAccelerationStructureKHR(VkDevice device,
                                                              VkAccelerationStructureKHR accelerationStructure,
                                                              const VkAllocationCallbacks* pAllocator)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 __attribute__((weak)) VkDeviceAddress
 vkGetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationStructureDeviceAddressInfoKHR* pInfo)
 {
-    assert(false);
-    return {};
+    NOTREACHED();
 }
 
 __attribute__((weak)) void vkGetAccelerationStructureBuildSizesKHR(
@@ -32,7 +30,7 @@ __attribute__((weak)) void vkGetAccelerationStructureBuildSizesKHR(
     const uint32_t* pMaxPrimitiveCounts,
     VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 __attribute__((weak)) VkResult vkGetRayTracingShaderGroupHandlesKHR(VkDevice device,
@@ -42,8 +40,7 @@ __attribute__((weak)) VkResult vkGetRayTracingShaderGroupHandlesKHR(VkDevice dev
                                                                     size_t dataSize,
                                                                     void* pData)
 {
-    assert(false);
-    return {};
+    NOTREACHED();
 }
 
 __attribute__((weak)) VkResult vkCreateRayTracingPipelinesKHR(VkDevice device,
@@ -54,8 +51,7 @@ __attribute__((weak)) VkResult vkCreateRayTracingPipelinesKHR(VkDevice device,
                                                               const VkAllocationCallbacks* pAllocator,
                                                               VkPipeline* pPipelines)
 {
-    assert(false);
-    return {};
+    NOTREACHED();
 }
 
 __attribute__((weak)) void vkCmdBuildAccelerationStructuresKHR(
@@ -64,13 +60,13 @@ __attribute__((weak)) void vkCmdBuildAccelerationStructuresKHR(
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 __attribute__((weak)) void vkCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                              const VkCopyAccelerationStructureInfoKHR* pInfo)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 __attribute__((weak)) void vkCmdWriteAccelerationStructuresPropertiesKHR(
@@ -81,7 +77,7 @@ __attribute__((weak)) void vkCmdWriteAccelerationStructuresPropertiesKHR(
     VkQueryPool queryPool,
     uint32_t firstQuery)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 __attribute__((weak)) void vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
@@ -93,7 +89,7 @@ __attribute__((weak)) void vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                              uint32_t height,
                                              uint32_t depth)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 __attribute__((weak)) void vkCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer,
@@ -101,7 +97,7 @@ __attribute__((weak)) void vkCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer,
                                                  uint32_t groupCountY,
                                                  uint32_t groupCountZ)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 __attribute__((weak)) VkResult
@@ -109,13 +105,12 @@ vkGetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice,
                                            uint32_t* pFragmentShadingRateCount,
                                            VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates)
 {
-    assert(false);
-    return {};
+    NOTREACHED();
 }
 
 __attribute__((weak)) void vkCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer,
                                                           const VkExtent2D* pFragmentSize,
                                                           const VkFragmentShadingRateCombinerOpKHR combinerOps[2])
 {
-    assert(false);
+    NOTREACHED();
 }

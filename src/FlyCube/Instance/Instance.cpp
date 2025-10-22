@@ -1,4 +1,7 @@
 #include "Instance/Instance.h"
+
+#include "Utilities/NotReached.h"
+
 #ifdef DIRECTX_SUPPORT
 #include "Instance/DXInstance.h"
 #endif
@@ -8,7 +11,6 @@
 #ifdef METAL_SUPPORT
 #include "Instance/MTInstance.h"
 #endif
-#include <cassert>
 
 std::shared_ptr<Instance> CreateInstance(ApiType type)
 {
@@ -26,7 +28,6 @@ std::shared_ptr<Instance> CreateInstance(ApiType type)
         return std::make_shared<MTInstance>();
 #endif
     default:
-        assert(false);
-        return nullptr;
+        NOTREACHED();
     }
 }

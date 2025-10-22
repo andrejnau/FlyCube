@@ -2,6 +2,7 @@
 
 #include "Device/MTDevice.h"
 #include "Shader/MTShader.h"
+#include "Utilities/NotReached.h"
 
 namespace {
 
@@ -25,8 +26,7 @@ MTLCompareFunction ConvertCompareFunction(ComparisonFunc func)
     case ComparisonFunc::kAlways:
         return MTLCompareFunctionAlways;
     default:
-        assert(false);
-        return MTLCompareFunctionLess;
+        NOTREACHED();
     }
 }
 
@@ -50,8 +50,7 @@ MTLStencilOperation ConvertStencilOperation(StencilOp op)
     case StencilOp::kDecr:
         return MTLStencilOperationDecrementWrap;
     default:
-        assert(false);
-        return MTLStencilOperationKeep;
+        NOTREACHED();
     }
 }
 
@@ -140,8 +139,7 @@ void MTGraphicsPipeline::CreatePipeline()
                 }
                 break;
             default:
-                assert(false);
-                break;
+                NOTREACHED();
             }
         }
     }
@@ -179,16 +177,18 @@ void MTGraphicsPipeline::CreatePipeline()
                 return MTLBlendFactorSourceAlpha;
             case Blend::kInvSrcAlpha:
                 return MTLBlendFactorOneMinusSourceAlpha;
+            default:
+                NOTREACHED();
             }
-            throw std::runtime_error("unsupported");
         };
 
         auto convert_op = [](BlendOp type) {
             switch (type) {
             case BlendOp::kAdd:
                 return MTLBlendOperationAdd;
+            default:
+                NOTREACHED();
             }
-            throw std::runtime_error("unsupported");
         };
 
         attachment.sourceRGBBlendFactor = convert(m_desc.blend_desc.blend_src);
@@ -238,8 +238,7 @@ PipelineType MTGraphicsPipeline::GetPipelineType() const
 std::vector<uint8_t> MTGraphicsPipeline::GetRayTracingShaderGroupHandles(uint32_t first_group,
                                                                          uint32_t group_count) const
 {
-    assert(false);
-    return {};
+    NOTREACHED();
 }
 
 std::shared_ptr<Program> MTGraphicsPipeline::GetProgram() const

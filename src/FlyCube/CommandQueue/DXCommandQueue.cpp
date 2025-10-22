@@ -5,6 +5,7 @@
 #include "Fence/DXFence.h"
 #include "Resource/DXResource.h"
 #include "Utilities/DXUtility.h"
+#include "Utilities/NotReached.h"
 
 DXCommandQueue::DXCommandQueue(DXDevice& device, CommandListType type)
     : m_device(device)
@@ -21,8 +22,7 @@ DXCommandQueue::DXCommandQueue(DXDevice& device, CommandListType type)
         dx_type = D3D12_COMMAND_LIST_TYPE_COPY;
         break;
     default:
-        assert(false);
-        break;
+        NOTREACHED();
     }
     D3D12_COMMAND_QUEUE_DESC queue_desc = {};
     queue_desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_HIGH;

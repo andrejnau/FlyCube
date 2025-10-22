@@ -18,6 +18,7 @@
 #include "Swapchain/DXSwapchain.h"
 #include "Utilities/DXGIFormatHelper.h"
 #include "Utilities/DXUtility.h"
+#include "Utilities/NotReached.h"
 #include "View/DXView.h"
 
 #include <directx/d3dx12.h>
@@ -74,8 +75,7 @@ D3D12_HEAP_TYPE GetHeapType(MemoryType memory_type)
     case MemoryType::kReadback:
         return D3D12_HEAP_TYPE_READBACK;
     default:
-        assert(false);
-        return D3D12_HEAP_TYPE_CUSTOM;
+        NOTREACHED();
     }
 }
 

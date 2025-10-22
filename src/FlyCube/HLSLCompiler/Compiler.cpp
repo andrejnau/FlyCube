@@ -2,11 +2,11 @@
 
 #include "HLSLCompiler/DXCLoader.h"
 #include "Utilities/DXUtility.h"
+#include "Utilities/NotReached.h"
 #include "Utilities/SystemUtils.h"
 
 #include <nowide/convert.hpp>
 
-#include <cassert>
 #include <deque>
 #include <iostream>
 #include <vector>
@@ -31,8 +31,7 @@ std::string GetShaderTarget(ShaderType type, const std::string& model)
     case ShaderType::kLibrary:
         return "lib_" + model;
     default:
-        assert(false);
-        return "";
+        NOTREACHED();
     }
 }
 

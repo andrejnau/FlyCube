@@ -1,6 +1,5 @@
 #include "AppBox/AppBox.h"
 
-#include <cassert>
 #include <cmath>
 #include <sstream>
 #if defined(_WIN32)

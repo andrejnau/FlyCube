@@ -3,11 +3,11 @@
 #include "Device/DXDevice.h"
 #include "GPUDescriptorPool/DXGPUDescriptorPoolRange.h"
 #include "Program/ProgramBase.h"
+#include "Utilities/NotReached.h"
 
 #include <directx/d3dx12.h>
 
 #include <deque>
-#include <stdexcept>
 
 D3D12_SHADER_VISIBILITY GetVisibility(ShaderType shader_type)
 {
@@ -53,7 +53,7 @@ D3D12_DESCRIPTOR_RANGE_TYPE GetRangeType(ViewType view_type)
     case ViewType::kSampler:
         return D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
     default:
-        throw std::runtime_error("wrong view type");
+        NOTREACHED();
     }
 }
 
@@ -68,7 +68,7 @@ D3D12_DESCRIPTOR_HEAP_TYPE GetHeapType(ViewType view_type)
     case D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER:
         return D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
     default:
-        throw std::runtime_error("wrong view type");
+        NOTREACHED();
     }
 }
 

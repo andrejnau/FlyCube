@@ -17,6 +17,7 @@
 #include "RenderPass/VKRenderPass.h"
 #include "Shader/ShaderBase.h"
 #include "Swapchain/VKSwapchain.h"
+#include "Utilities/NotReached.h"
 #include "Utilities/VKUtility.h"
 #include "View/VKView.h"
 
@@ -34,8 +35,7 @@ vk::IndexType GetVkIndexType(gli::format format)
     case vk::Format::eR32Uint:
         return vk::IndexType::eUint32;
     default:
-        assert(false);
-        return {};
+        NOTREACHED();
     }
 }
 
@@ -69,8 +69,7 @@ vk::ImageLayout ConvertState(ResourceState state)
             return m.second;
         }
     }
-    assert(false);
-    return vk::ImageLayout::eGeneral;
+    NOTREACHED();
 }
 
 vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags flags)
@@ -127,8 +126,7 @@ vk::Extent2D ConvertShadingRate(ShadingRate shading_rate)
         fragment_size.height = 4;
         break;
     default:
-        assert(false);
-        break;
+        NOTREACHED();
     }
     return fragment_size;
 }
@@ -155,8 +153,7 @@ std::array<vk::FragmentShadingRateCombinerOpKHR, 2> ConvertShadingRateCombiners(
             vk_combiners[i] = vk::FragmentShadingRateCombinerOpKHR::eMul;
             break;
         default:
-            assert(false);
-            break;
+            NOTREACHED();
         }
     }
     return vk_combiners;
@@ -759,7 +756,7 @@ uint32_t VKDevice::FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags 
             return i;
         }
     }
-    throw std::runtime_error("failed to find suitable memory type!");
+    NOTREACHED();
 }
 
 VKGPUBindlessDescriptorPoolTyped& VKDevice::GetGPUBindlessDescriptorPool(vk::DescriptorType type)
@@ -797,8 +794,7 @@ uint32_t VKDevice::GetMaxDescriptorSetBindings(vk::DescriptorType type) const
     case vk::DescriptorType::eStorageTexelBuffer:
         return m_device_properties.limits.maxPerStageDescriptorStorageImages;
     default:
-        assert(false);
-        return 0;
+        NOTREACHED();
     }
 }
 

@@ -2,8 +2,7 @@
 
 #include "ShaderReflection/DXILReflection.h"
 #include "ShaderReflection/SPIRVReflection.h"
-
-#include <cassert>
+#include "Utilities/NotReached.h"
 
 std::shared_ptr<ShaderReflection> CreateShaderReflection(ShaderBlobType type, const void* data, size_t size)
 {
@@ -12,7 +11,7 @@ std::shared_ptr<ShaderReflection> CreateShaderReflection(ShaderBlobType type, co
         return std::make_shared<DXILReflection>(data, size);
     case ShaderBlobType::kSPIRV:
         return std::make_shared<SPIRVReflection>(data, size);
+    default:
+        NOTREACHED();
     }
-    assert(false);
-    return nullptr;
 }

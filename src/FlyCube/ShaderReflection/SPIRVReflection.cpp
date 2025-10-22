@@ -1,6 +1,7 @@
 #include "ShaderReflection/SPIRVReflection.h"
 
 #include "Utilities/Common.h"
+#include "Utilities/NotReached.h"
 
 namespace {
 
@@ -32,8 +33,7 @@ ShaderKind ConvertShaderKind(spv::ExecutionModel execution_model)
     case spv::ExecutionModel::ExecutionModelMeshEXT:
         return ShaderKind::kMesh;
     default:
-        assert(false);
-        return ShaderKind::kUnknown;
+        NOTREACHED();
     }
 }
 
@@ -106,8 +106,7 @@ bool IsBufferDimension(spv::Dim dimension)
     case spv::Dim::DimCube:
         return false;
     default:
-        assert(false);
-        return false;
+        NOTREACHED();
     }
 }
 
@@ -149,12 +148,10 @@ ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::S
         } else if (type.storage == spv::StorageClassPushConstant || type.storage == spv::StorageClassUniform) {
             return ViewType::kConstantBuffer;
         }
-        assert(false);
-        return ViewType::kUnknown;
+        NOTREACHED();
     }
     default:
-        assert(false);
-        return ViewType::kUnknown;
+        NOTREACHED();
     }
 }
 
@@ -197,8 +194,7 @@ ViewDimension GetDimension(spv::Dim dim, const spirv_cross::SPIRType& resource_t
         return ViewDimension::kBuffer;
     }
     default:
-        assert(false);
-        return ViewDimension::kUnknown;
+        NOTREACHED();
     }
 }
 
@@ -227,8 +223,7 @@ ReturnType GetReturnType(const spirv_cross::CompilerHLSL& compiler, const spirv_
         case spirv_cross::SPIRType::BaseType::Double:
             return ReturnType::kDouble;
         default:
-            assert(false);
-            break;
+            NOTREACHED();
         }
     }
     return ReturnType::kUnknown;
@@ -293,8 +288,7 @@ VariableLayout GetBufferMemberLayout(const spirv_cross::CompilerHLSL& compiler, 
         layout.type = VariableType::kBool;
         break;
     default:
-        assert(false);
-        break;
+        NOTREACHED();
     }
     return layout;
 }

@@ -1,5 +1,6 @@
 #include "HLSLCompiler/DXCLoader.h"
 
+#include "Utilities/NotReached.h"
 #include "Utilities/ScopeGuard.h"
 #include "Utilities/SystemUtils.h"
 
@@ -90,13 +91,12 @@ std::unique_ptr<dxc::DxcDllSupport> GetDxcSupportImpl(ShaderBlobType target)
         DXC_CUSTOM_LOCATION,
     };
     for (const auto& path : localions) {
-        auto res = Load(path, target);
-        if (res) {
-            return res;
+        std::unique_ptr<dxc::DxcDllSupport> dll_support = Load(path, target);
+        if (dll_support) {
+            return dll_support;
         }
     }
-    assert(false);
-    return {};
+    NOTREACHED();
 }
 
 } // namespace

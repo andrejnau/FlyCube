@@ -1,6 +1,7 @@
 #include "CPUDescriptorPool/DXCPUDescriptorPool.h"
 
 #include "Device/DXDevice.h"
+#include "Utilities/NotReached.h"
 
 #include <directx/d3dx12.h>
 
@@ -38,6 +39,6 @@ DXCPUDescriptorPoolTyped& DXCPUDescriptorPool::SelectHeap(ViewType view_type)
     case ViewType::kDepthStencil:
         return m_dsv;
     default:
-        throw "fatal failure";
+        NOTREACHED();
     }
 }

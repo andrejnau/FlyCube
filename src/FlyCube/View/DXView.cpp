@@ -2,6 +2,7 @@
 
 #include "Device/DXDevice.h"
 #include "Utilities/DXGIFormatHelper.h"
+#include "Utilities/NotReached.h"
 
 #include <directx/d3d12.h>
 #include <gli/gli.hpp>
@@ -72,8 +73,7 @@ void DXView::CreateView()
         CreateDSV();
         break;
     default:
-        assert(false);
-        break;
+        NOTREACHED();
     }
 }
 
@@ -167,8 +167,7 @@ void DXView::CreateSRV()
         break;
     }
     default: {
-        assert(false);
-        break;
+        NOTREACHED();
     }
     }
 
@@ -238,8 +237,7 @@ void DXView::CreateUAV()
         break;
     }
     default: {
-        assert(false);
-        break;
+        NOTREACHED();
     }
     }
 
@@ -295,8 +293,7 @@ void DXView::CreateRTV()
         break;
     }
     default: {
-        assert(false);
-        break;
+        NOTREACHED();
     }
     }
 
@@ -344,8 +341,7 @@ void DXView::CreateDSV()
         break;
     }
     default: {
-        assert(false);
-        break;
+        NOTREACHED();
     }
     }
 

@@ -5,6 +5,7 @@
 #include "HLSLCompiler/MSLConverter.h"
 #include "Pipeline/MTPipeline.h"
 #include "Shader/MTShader.h"
+#include "Utilities/NotReached.h"
 #include "View/MTView.h"
 
 namespace {
@@ -58,8 +59,7 @@ void SetView(id<MTL4ArgumentTable> argument_table, const std::shared_ptr<MTView>
         SetAccelerationStructure(argument_table, view->GetAccelerationStructure(), index);
         break;
     default:
-        assert(false);
-        break;
+        NOTREACHED();
     }
 }
 

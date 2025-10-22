@@ -2,6 +2,7 @@
 
 #include "Device/MTDevice.h"
 #include "Shader/MTShader.h"
+#include "Utilities/NotReached.h"
 
 MTComputePipeline::MTComputePipeline(MTDevice& device, const ComputePipelineDesc& desc)
     : m_device(device)
@@ -20,8 +21,7 @@ MTComputePipeline::MTComputePipeline(MTDevice& device, const ComputePipelineDesc
                 pipeline_descriptor.computeFunctionDescriptor = function_descriptor;
                 break;
             default:
-                assert(false);
-                break;
+                NOTREACHED();
             }
         }
         decltype(auto) numthreads = reflection->GetShaderFeatureInfo().numthreads;
@@ -45,8 +45,7 @@ PipelineType MTComputePipeline::GetPipelineType() const
 std::vector<uint8_t> MTComputePipeline::GetRayTracingShaderGroupHandles(uint32_t first_group,
                                                                         uint32_t group_count) const
 {
-    assert(false);
-    return {};
+    NOTREACHED();
 }
 
 std::shared_ptr<Program> MTComputePipeline::GetProgram() const

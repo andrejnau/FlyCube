@@ -2,6 +2,7 @@
 
 #include "Device/VKDevice.h"
 #include "Memory/VKMemory.h"
+#include "Utilities/NotReached.h"
 #include "Utilities/VKUtility.h"
 #include "View/VKView.h"
 
@@ -14,9 +15,9 @@ vk::AccelerationStructureTypeKHR Convert(AccelerationStructureType type)
         return vk::AccelerationStructureTypeKHR::eTopLevel;
     case AccelerationStructureType::kBottomLevel:
         return vk::AccelerationStructureTypeKHR::eBottomLevel;
+    default:
+        NOTREACHED();
     }
-    assert(false);
-    return {};
 }
 
 } // namespace

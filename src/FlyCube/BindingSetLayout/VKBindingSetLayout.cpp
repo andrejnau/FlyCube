@@ -1,6 +1,7 @@
 #include "BindingSetLayout/VKBindingSetLayout.h"
 
 #include "Device/VKDevice.h"
+#include "Utilities/NotReached.h"
 
 #include <set>
 
@@ -26,10 +27,8 @@ vk::DescriptorType GetDescriptorType(ViewType view_type)
     case ViewType::kAccelerationStructure:
         return vk::DescriptorType::eAccelerationStructureKHR;
     default:
-        break;
+        NOTREACHED();
     }
-    assert(false);
-    return {};
 }
 
 vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
@@ -50,8 +49,7 @@ vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
     case ShaderType::kLibrary:
         return vk::ShaderStageFlagBits::eAll;
     default:
-        assert(false);
-        return {};
+        NOTREACHED();
     }
 }
 

@@ -10,6 +10,7 @@
 #include "Pipeline/VKRayTracingPipeline.h"
 #include "QueryHeap/VKQueryHeap.h"
 #include "Resource/VKResource.h"
+#include "Utilities/NotReached.h"
 #include "Utilities/VKUtility.h"
 #include "View/VKView.h"
 
@@ -37,8 +38,7 @@ vk::IndexType GetVkIndexType(gli::format format)
     case vk::Format::eR32Uint:
         return vk::IndexType::eUint32;
     default:
-        assert(false);
-        return {};
+        NOTREACHED();
     }
 }
 
@@ -84,9 +84,9 @@ vk::PipelineBindPoint GetPipelineBindPoint(PipelineType type)
         return vk::PipelineBindPoint::eCompute;
     case PipelineType::kRayTracing:
         return vk::PipelineBindPoint::eRayTracingKHR;
+    default:
+        NOTREACHED();
     }
-    assert(false);
-    return {};
 }
 
 void VKCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
@@ -568,9 +568,7 @@ void VKCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
         info.mode = vk::CopyAccelerationStructureModeKHR::eCompact;
         break;
     default:
-        assert(false);
-        info.mode = vk::CopyAccelerationStructureModeKHR::eClone;
-        break;
+        NOTREACHED();
     }
     info.dst = vk_dst.GetAccelerationStructure();
     info.src = vk_src.GetAccelerationStructure();

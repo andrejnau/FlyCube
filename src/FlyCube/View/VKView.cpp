@@ -3,6 +3,7 @@
 #include "BindingSetLayout/VKBindingSetLayout.h"
 #include "Device/VKDevice.h"
 #include "Resource/VKResource.h"
+#include "Utilities/NotReached.h"
 
 namespace {
 
@@ -26,8 +27,7 @@ vk::ImageViewType GetImageViewType(ViewDimension dimension)
     case ViewDimension::kTextureCubeArray:
         return vk::ImageViewType::eCubeArray;
     default:
-        assert(false);
-        return {};
+        NOTREACHED();
     }
 }
 
@@ -103,8 +103,7 @@ void VKView::CreateView()
         m_descriptor.pTexelBufferView = &m_buffer_view.get();
         break;
     default:
-        assert(false);
-        break;
+        NOTREACHED();
     }
 }
 

@@ -1,5 +1,6 @@
 #include "HLSLCompiler/Compiler.h"
 #include "Instance/BaseTypes.h"
+#include "Utilities/NotReached.h"
 
 #include <cassert>
 #include <fstream>
@@ -23,8 +24,7 @@ ShaderType GetShaderType(const std::string& target)
     } else if (target == "Library") {
         return ShaderType::kLibrary;
     }
-    assert(false);
-    return ShaderType::kUnknown;
+    NOTREACHED();
 }
 
 std::string GetShaderExtension(ShaderBlobType shader_type)
@@ -35,8 +35,7 @@ std::string GetShaderExtension(ShaderBlobType shader_type)
     case ShaderBlobType::kSPIRV:
         return ".spirv";
     default:
-        assert(false);
-        return ".blob";
+        NOTREACHED();
     }
 }
 

@@ -1,14 +1,15 @@
 #include "ShaderReflection/DXILReflection.h"
 
 #include "Utilities/DXUtility.h"
+#include "Utilities/NotReached.h"
 
-#include <assert.h>
 #include <dxc/DXIL/DxilConstants.h>
 #include <dxc/DxilContainer/DxilContainer.h>
 #include <dxc/DxilContainer/DxilRuntimeReflection.inl>
 #include <nowide/convert.hpp>
 
 #include <algorithm>
+#include <cassert>
 #include <set>
 
 namespace {
@@ -41,8 +42,7 @@ ShaderKind ConvertShaderKind(hlsl::DXIL::ShaderKind kind)
     case hlsl::DXIL::ShaderKind::Amplification:
         return ShaderKind::kAmplification;
     default:
-        assert(false);
-        return ShaderKind::kUnknown;
+        NOTREACHED();
     }
 }
 
@@ -62,8 +62,7 @@ bool IsBufferDimension(D3D_SRV_DIMENSION dimension)
     case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
         return false;
     default:
-        assert(false);
-        return false;
+        NOTREACHED();
     }
 }
 
@@ -95,8 +94,7 @@ ViewType GetViewType(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
         }
     }
     default:
-        assert(false);
-        return ViewType::kUnknown;
+        NOTREACHED();
     }
 }
 
@@ -126,8 +124,7 @@ ViewDimension GetViewDimension(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
     case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
         return ViewDimension::kTextureCubeArray;
     default:
-        assert(false);
-        return ViewDimension::kUnknown;
+        NOTREACHED();
     }
 }
 
@@ -241,7 +238,6 @@ VariableLayout GetVariableLayout(const std::string& name,
         break;
     default:
         // TODO: Add nested structure handling. Reproduced in ShaderReflectionTest.
-        // assert(false);
         break;
     }
     return layout;

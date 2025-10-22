@@ -1,10 +1,9 @@
 #include "GPUDescriptorPool/DXGPUDescriptorPool.h"
 
 #include "Device/DXDevice.h"
+#include "Utilities/NotReached.h"
 
 #include <directx/d3dx12.h>
-
-#include <stdexcept>
 
 DXGPUDescriptorPool::DXGPUDescriptorPool(DXDevice& device)
     : m_device(device)
@@ -21,7 +20,7 @@ DXGPUDescriptorPoolRange DXGPUDescriptorPool::Allocate(D3D12_DESCRIPTOR_HEAP_TYP
     case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
         return m_shader_sampler.Allocate(count);
     default:
-        throw std::runtime_error("wrong descriptor type");
+        NOTREACHED();
     }
 }
 
@@ -33,6 +32,6 @@ ComPtr<ID3D12DescriptorHeap> DXGPUDescriptorPool::GetHeap(D3D12_DESCRIPTOR_HEAP_
     case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
         return m_shader_sampler.GetHeap();
     default:
-        throw std::runtime_error("wrong descriptor type");
+        NOTREACHED();
     }
 }

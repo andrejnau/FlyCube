@@ -2,6 +2,7 @@
 
 #include "Device/VKDevice.h"
 #include "Program/ProgramBase.h"
+#include "Utilities/NotReached.h"
 
 #include <map>
 
@@ -25,8 +26,7 @@ vk::CompareOp Convert(ComparisonFunc func)
     case ComparisonFunc::kAlways:
         return vk::CompareOp::eAlways;
     default:
-        assert(false);
-        return vk::CompareOp::eLess;
+        NOTREACHED();
     }
 }
 
@@ -50,8 +50,7 @@ vk::StencilOp Convert(StencilOp op)
     case StencilOp::kDecr:
         return vk::StencilOp::eDecrementAndWrap;
     default:
-        assert(false);
-        return vk::StencilOp::eKeep;
+        NOTREACHED();
     }
 }
 
@@ -131,16 +130,18 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
                 return vk::BlendFactor::eSrcAlpha;
             case Blend::kInvSrcAlpha:
                 return vk::BlendFactor::eOneMinusSrcAlpha;
+            default:
+                NOTREACHED();
             }
-            throw std::runtime_error("unsupported");
         };
 
         auto convert_op = [](BlendOp type) {
             switch (type) {
             case BlendOp::kAdd:
                 return vk::BlendOp::eAdd;
+            default:
+                NOTREACHED();
             }
-            throw std::runtime_error("unsupported");
         };
 
         color_blend_attachment.srcColorBlendFactor = convert(m_desc.blend_desc.blend_src);

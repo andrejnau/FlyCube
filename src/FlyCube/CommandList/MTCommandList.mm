@@ -6,6 +6,7 @@
 #include "Pipeline/MTComputePipeline.h"
 #include "Pipeline/MTGraphicsPipeline.h"
 #include "Resource/MTResource.h"
+#include "Utilities/NotReached.h"
 #include "View/MTView.h"
 
 namespace {
@@ -18,8 +19,7 @@ MTLIndexType ConvertIndexType(gli::format format)
     case gli::format::FORMAT_R32_UINT_PACK32:
         return MTLIndexTypeUInt32;
     default:
-        assert(false);
-        return MTLIndexTypeUInt16;
+        NOTREACHED();
     }
 }
 
@@ -33,8 +33,7 @@ MTLLoadAction ConvertLoadAction(RenderPassLoadOp op)
     case RenderPassLoadOp::kDontCare:
         return MTLLoadActionDontCare;
     default:
-        assert(false);
-        return MTLLoadActionLoad;
+        NOTREACHED();
     }
 }
 
@@ -46,8 +45,7 @@ MTLStoreAction ConvertStoreAction(RenderPassStoreOp op)
     case RenderPassStoreOp::kDontCare:
         return MTLStoreActionDontCare;
     default:
-        assert(false);
-        return MTLStoreActionStore;
+        NOTREACHED();
     }
 }
 
@@ -61,8 +59,7 @@ MTLCullMode ConvertCullMode(CullMode cull_mode)
     case CullMode::kBack:
         return MTLCullModeBack;
     default:
-        assert(false);
-        return MTLCullModeNone;
+        NOTREACHED();
     }
 }
 
@@ -343,7 +340,7 @@ void MTCommandList::DrawIndirectCount(const std::shared_ptr<Resource>& argument_
                                       uint32_t max_draw_count,
                                       uint32_t stride)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 void MTCommandList::DrawIndexedIndirectCount(const std::shared_ptr<Resource>& argument_buffer,
@@ -353,7 +350,7 @@ void MTCommandList::DrawIndexedIndirectCount(const std::shared_ptr<Resource>& ar
                                              uint32_t max_draw_count,
                                              uint32_t stride)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 void MTCommandList::Dispatch(uint32_t thread_group_count_x,
@@ -398,7 +395,7 @@ void MTCommandList::DispatchRays(const RayTracingShaderTables& shader_tables,
                                  uint32_t height,
                                  uint32_t depth)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 void MTCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
@@ -468,7 +465,7 @@ void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
 
 void MTCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 void MTCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
@@ -564,7 +561,7 @@ void MTCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
                                               const std::shared_ptr<Resource>& dst,
                                               CopyAccelerationStructureMode mode)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 void MTCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
@@ -656,7 +653,7 @@ void MTCommandList::WriteAccelerationStructuresProperties(
     const std::shared_ptr<QueryHeap>& query_heap,
     uint32_t first_query)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 void MTCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_heap,
@@ -665,7 +662,7 @@ void MTCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
                                      const std::shared_ptr<Resource>& dst_buffer,
                                      uint64_t dst_offset)
 {
-    assert(false);
+    NOTREACHED();
 }
 
 void MTCommandList::SetName(const std::string& name)

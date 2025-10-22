@@ -3,8 +3,6 @@
 
 #include <gli/format.hpp>
 
-#include <array>
-#include <cassert>
 #include <cstdint>
 #include <map>
 #include <memory>

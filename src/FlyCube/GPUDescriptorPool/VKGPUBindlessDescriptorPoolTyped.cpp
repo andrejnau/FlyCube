@@ -2,8 +2,6 @@
 
 #include "Device/VKDevice.h"
 
-#include <stdexcept>
-
 VKGPUBindlessDescriptorPoolTyped::VKGPUBindlessDescriptorPoolTyped(VKDevice& device, vk::DescriptorType type)
     : m_device(device)
     , m_type(type)
@@ -88,9 +86,6 @@ VKGPUDescriptorPoolRange VKGPUBindlessDescriptorPoolTyped::Allocate(uint32_t cou
     }
     if (m_offset + count > m_size) {
         ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
-        if (m_offset + count > m_size) {
-            throw std::runtime_error("Failed to resize VKGPUBindlessDescriptorPoolTyped");
-        }
     }
     m_offset += count;
     return VKGPUDescriptorPoolRange(*this, m_offset - count, count);

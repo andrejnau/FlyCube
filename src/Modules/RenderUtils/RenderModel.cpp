@@ -1,6 +1,7 @@
 #include "RenderUtils/RenderModel.h"
 
 #include "Utilities/FormatHelper.h"
+#include "Utilities/NotReached.h"
 #include "stb_image.h"
 
 RenderModel::RenderModel(const std::shared_ptr<Device>& device,
@@ -165,7 +166,6 @@ void RenderModel::UpdateSubresource(const std::shared_ptr<Resource>& resource,
         break;
     }
     default:
-        assert(false);
-        break;
+        NOTREACHED();
     }
 }

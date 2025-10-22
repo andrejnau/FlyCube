@@ -2,6 +2,7 @@
 
 #include "Device/MTDevice.h"
 #include "Resource/MTResource.h"
+#include "Utilities/NotReached.h"
 
 namespace {
 
@@ -27,8 +28,7 @@ MTLTextureType ConvertTextureType(ViewDimension dimension)
     case ViewDimension::kTextureCubeArray:
         return MTLTextureTypeCubeArray;
     default:
-        assert(false);
-        return {};
+        NOTREACHED();
     }
 }
 
@@ -104,8 +104,7 @@ uint32_t MTView::GetDescriptorId() const
     if (m_range) {
         return m_range->GetOffset();
     }
-    assert(false);
-    return -1;
+    NOTREACHED();
 }
 
 uint32_t MTView::GetBaseMipLevel() const
@@ -156,8 +155,7 @@ id<MTLResource> MTView::GetNativeResource() const
         return GetAccelerationStructure();
     }
     default:
-        assert(false);
-        return {};
+        NOTREACHED();
     }
 }
 
@@ -186,8 +184,7 @@ uint64_t MTView::GetGpuAddress() const
         return [GetAccelerationStructure() gpuResourceID]._impl;
     }
     default:
-        assert(false);
-        return 0;
+        NOTREACHED();
     }
 }
 
