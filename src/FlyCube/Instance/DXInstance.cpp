@@ -11,7 +11,7 @@
 
 namespace {
 
-bool EnableAgilitySDKIfExist(uint32_t version, const std::string_view& path)
+bool EnableAgilitySdkIfExist(uint32_t version, const std::string_view& path)
 {
     auto d3d12_core = std::filesystem::u8path(GetExecutableDir()) / path / "D3D12Core.dll";
     if (!std::filesystem::exists(d3d12_core)) {
@@ -47,31 +47,23 @@ EXPORT_AGILITY_SDK const UINT D3D12SDKVersion = 4;
 EXPORT_AGILITY_SDK const char* D3D12SDKPath = ".\\D3D12\\";
 
 #ifndef AGILITY_SDK_REQUIRED
-static bool optional_agility_sdk = EnableAgilitySDKIfExist(D3D12SDKVersion, D3D12SDKPath);
+static bool g_agility_sdk_enabled = EnableAgilitySdkIfExist(D3D12SDKVersion, D3D12SDKPath);
 #endif
 
 DXInstance::DXInstance()
 {
-#if 0
-    static const GUID D3D12ExperimentalShaderModelsID = { /* 76f5573e-f13a-40f5-b297-81ce9e18933f */
-        0x76f5573e,
-        0xf13a,
-        0x40f5,
-    { 0xb2, 0x97, 0x81, 0xce, 0x9e, 0x18, 0x93, 0x3f }
-    };
-    ASSERT_SUCCEEDED(D3D12EnableExperimentalFeatures(1, &D3D12ExperimentalShaderModelsID, nullptr, nullptr));
-#endif
-
     uint32_t flags = 0;
     if (IsDebuggerPresent()) {
         ComPtr<ID3D12Debug> debug_controller;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)))) {
             debug_controller->EnableDebugLayer();
         }
-        /*ComPtr<ID3D12Debug1> debug_controller1;
+#if 0
+        ComPtr<ID3D12Debug1> debug_controller1;
         debug_controller.As(&debug_controller1);
         if (debug_controller1)
-            debug_controller1->SetEnableSynchronizedCommandQueueValidation(true);*/
+            debug_controller1->SetEnableSynchronizedCommandQueueValidation(true);
+#endif
         flags = DXGI_CREATE_FACTORY_DEBUG;
     }
 
