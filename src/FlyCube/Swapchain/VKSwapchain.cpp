@@ -63,13 +63,15 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
 
     vk::SurfaceCapabilitiesKHR surface_capabilities = {};
     ASSERT_SUCCEEDED(vk_physical_device.getSurfaceCapabilitiesKHR(m_surface.get(), &surface_capabilities));
-    ASSERT(surface_capabilities.currentExtent.width == width);
-    ASSERT(surface_capabilities.currentExtent.height == height);
+    assert(width >= surface_capabilities.minImageExtent.width);
+    assert(width <= surface_capabilities.maxImageExtent.width);
+    assert(height >= surface_capabilities.minImageExtent.height);
+    assert(height <= surface_capabilities.maxImageExtent.height);
 
     vk::Bool32 is_supported_surface = VK_FALSE;
     std::ignore = vk_physical_device.getSurfaceSupportKHR(command_queue.GetQueueFamilyIndex(), m_surface.get(),
                                                           &is_supported_surface);
-    ASSERT(is_supported_surface);
+    assert(is_supported_surface);
 
     auto modes = vk_physical_device.getSurfacePresentModesKHR(m_surface.get());
 

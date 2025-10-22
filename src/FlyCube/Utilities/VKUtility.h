@@ -1,15 +1,16 @@
 #pragma once
 
-#define CUSTOM_FAILED(hr) ((static_cast<VkResult>((hr))) != VK_SUCCESS)
-#ifdef _WIN32
-#include "DXUtility.h"
+#include "Utilities/Logging.h"
+
+#include <format>
+
+#ifdef NDEBUG
+#define ASSERT_SUCCEEDED(expr) (void)(expr)
 #else
-#define ASSERT(isTrue, ...) (void)(isTrue)
-#define WARN_ONCE_IF(isTrue, ...) (void)(isTrue)
-#define WARN_ONCE_IF_NOT(isTrue, ...) (void)(isTrue)
-#define ERROR(msg, ...)
-#define DEBUGPRINT(msg, ...) \
-    do {                     \
-    } while (0)
-#define ASSERT_SUCCEEDED(hr, ...) (void)(hr)
+#define ASSERT_SUCCEEDED(expr)                                                  \
+    if (VkResult result = static_cast<VkResult>(expr); result != VK_SUCCESS) {  \
+        Logging::Print(std::format("\nFailed in " __FILE__ ":{}\n", __LINE__)); \
+        Logging::Print(std::format("--> {:#x}\n", (int)result));                \
+        assert(false);                                                          \
+    }
 #endif
