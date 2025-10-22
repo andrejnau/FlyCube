@@ -1,7 +1,16 @@
 #include "ShaderReflection/DXReflection.h"
 
+// clang-format off
+#include <dxc/dxcapi.h>
+// clang-format on
+
 #include "Utilities/DXUtility.h"
 #include "Utilities/NotReached.h"
+
+#if !defined(_WIN32)
+#define interface struct
+#endif
+#include <directx/d3d12shader.h>
 
 namespace {
 
@@ -334,19 +343,31 @@ std::vector<OutputParameterDesc> ParseOutputParameters(const D3D12_SHADER_DESC& 
 
 } // namespace
 
-void DXReflection::ParseShaderReflection(CComPtr<ID3D12ShaderReflection> shader_reflection)
+void DXReflection::ParseReflectionPart(IDxcContainerReflection* reflection, uint32_t i)
+{
+    CComPtr<ID3D12ShaderReflection> shader_reflection;
+    CComPtr<ID3D12LibraryReflection> library_reflection;
+    if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&shader_reflection)))) {
+        ParseShaderReflection(shader_reflection);
+    } else if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&library_reflection)))) {
+        m_is_library = true;
+        ParseLibraryReflection(library_reflection);
+    }
+}
+
+void DXReflection::ParseShaderReflection(ID3D12ShaderReflection* shader_reflection)
 {
     D3D12_SHADER_DESC desc = {};
     ASSERT_SUCCEEDED(shader_reflection->GetDesc(&desc));
     m_entry_points.push_back({ "", GetVersionShaderType(desc.Version) });
-    m_bindings = ParseReflection(desc, shader_reflection.p);
-    m_layouts = ParseLayout(desc, shader_reflection.p);
+    m_bindings = ParseReflection(desc, shader_reflection);
+    m_layouts = ParseLayout(desc, shader_reflection);
     assert(m_bindings.size() == m_layouts.size());
     m_input_parameters = ParseInputParameters(desc, shader_reflection);
     m_output_parameters = ParseOutputParameters(desc, shader_reflection);
 }
 
-void DXReflection::ParseLibraryReflection(CComPtr<ID3D12LibraryReflection> library_reflection)
+void DXReflection::ParseLibraryReflection(ID3D12LibraryReflection* library_reflection)
 {
     D3D12_LIBRARY_DESC library_desc = {};
     ASSERT_SUCCEEDED(library_reflection->GetDesc(&library_desc));

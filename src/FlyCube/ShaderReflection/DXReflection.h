@@ -1,19 +1,19 @@
 #pragma once
-#include "HLSLCompiler/DXCLoader.h"
 #include "ShaderReflection/ShaderReflection.h"
 
-#if !defined(_WIN32)
-#define interface struct
-#endif
-#include <directx/d3d12shader.h>
+class ID3D12LibraryReflection;
+class ID3D12ShaderReflection;
+class IDxcContainerReflection;
 
 class DXReflection : public ShaderReflection {
 protected:
-    void ParseShaderReflection(CComPtr<ID3D12ShaderReflection> shader_reflection);
-    void ParseLibraryReflection(CComPtr<ID3D12LibraryReflection> library_reflection);
+    void ParseReflectionPart(IDxcContainerReflection* reflection, uint32_t i);
+    void ParseShaderReflection(ID3D12ShaderReflection* shader_reflection);
+    void ParseLibraryReflection(ID3D12LibraryReflection* library_reflection);
 
     virtual ShaderKind GetVersionShaderType(uint64_t version) = 0;
 
+    bool m_is_library = false;
     std::vector<EntryPoint> m_entry_points;
     std::vector<ResourceBindingDesc> m_bindings;
     std::vector<VariableLayout> m_layouts;
