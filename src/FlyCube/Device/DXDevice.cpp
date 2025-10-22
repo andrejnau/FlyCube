@@ -191,7 +191,7 @@ DXDevice::DXDevice(DXAdapter& adapter)
         ComPtr<ID3D12InfoQueue> info_queue;
         if (SUCCEEDED(m_device.As(&info_queue))) {
             info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-            info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+            // info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
 
             D3D12_MESSAGE_SEVERITY severities[] = {
                 D3D12_MESSAGE_SEVERITY_INFO,
@@ -209,11 +209,13 @@ DXDevice::DXDevice(DXAdapter& adapter)
             info_queue->PushStorageFilter(&filter);
         }
 
-        /*ComPtr<ID3D12DebugDevice2> debug_device;
+#if 0
+        ComPtr<ID3D12DebugDevice2> debug_device;
         m_device.As(&debug_device);
         D3D12_DEBUG_FEATURE debug_feature = D3D12_DEBUG_FEATURE_CONSERVATIVE_RESOURCE_STATE_TRACKING;
         debug_device->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS, &debug_feature,
-        sizeof(debug_feature));*/
+                                        sizeof(debug_feature));
+#endif
     }
 }
 
