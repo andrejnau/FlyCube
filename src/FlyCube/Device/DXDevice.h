@@ -13,8 +13,8 @@ class DXCommandQueue;
 
 D3D12_RESOURCE_STATES ConvertState(ResourceState state);
 D3D12_HEAP_TYPE GetHeapType(MemoryType memory_type);
-D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const BufferDesc& vertex,
-                                                          const BufferDesc& index,
+D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const RaytracingGeometryBufferDesc& vertex,
+                                                          const RaytracingGeometryBufferDesc& index,
                                                           RaytracingGeometryFlags flags);
 D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStructureFlags flags);
 

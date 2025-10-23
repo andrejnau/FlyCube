@@ -216,9 +216,10 @@ uint32_t MTDevice::GetShaderTableAlignment() const
     NOTREACHED();
 }
 
-MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(const BufferDesc& vertex,
-                                                                               const BufferDesc& index,
-                                                                               RaytracingGeometryFlags flags)
+MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(
+    const RaytracingGeometryBufferDesc& vertex,
+    const RaytracingGeometryBufferDesc& index,
+    RaytracingGeometryFlags flags)
 {
     MTLAccelerationStructureTriangleGeometryDescriptor* geometry_desc =
         [MTLAccelerationStructureTriangleGeometryDescriptor descriptor];

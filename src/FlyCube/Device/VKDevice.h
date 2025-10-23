@@ -80,8 +80,8 @@ public:
     VKGPUBindlessDescriptorPoolTyped& GetGPUBindlessDescriptorPool(vk::DescriptorType type);
     VKGPUDescriptorPool& GetGPUDescriptorPool();
     uint32_t FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties);
-    vk::AccelerationStructureGeometryKHR FillRaytracingGeometryTriangles(const BufferDesc& vertex,
-                                                                         const BufferDesc& index,
+    vk::AccelerationStructureGeometryKHR FillRaytracingGeometryTriangles(const RaytracingGeometryBufferDesc& vertex,
+                                                                         const RaytracingGeometryBufferDesc& index,
                                                                          RaytracingGeometryFlags flags) const;
 
     uint32_t GetMaxDescriptorSetBindings(vk::DescriptorType type) const;

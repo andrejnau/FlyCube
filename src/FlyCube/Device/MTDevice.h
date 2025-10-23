@@ -98,6 +98,7 @@ private:
     id<MTL4Compiler> m_compiler = nullptr;
 };
 
-MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(const BufferDesc& vertex,
-                                                                               const BufferDesc& index,
-                                                                               RaytracingGeometryFlags flags);
+MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(
+    const RaytracingGeometryBufferDesc& vertex,
+    const RaytracingGeometryBufferDesc& index,
+    RaytracingGeometryFlags flags);

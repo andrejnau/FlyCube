@@ -449,7 +449,7 @@ enum class PipelineType {
     kRayTracing,
 };
 
-struct BufferDesc {
+struct RaytracingGeometryBufferDesc {
     std::shared_ptr<Resource> res;
     gli::format format = gli::format::FORMAT_UNDEFINED;
     uint32_t count = 0;
@@ -467,8 +467,8 @@ enum class RaytracingInstanceFlags : uint32_t {
 enum class RaytracingGeometryFlags { kNone, kOpaque, kNoDuplicateAnyHitInvocation };
 
 struct RaytracingGeometryDesc {
-    BufferDesc vertex;
-    BufferDesc index;
+    RaytracingGeometryBufferDesc vertex;
+    RaytracingGeometryBufferDesc index;
     RaytracingGeometryFlags flags = RaytracingGeometryFlags::kNone;
 };
 

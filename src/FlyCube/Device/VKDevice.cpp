@@ -534,9 +534,10 @@ std::shared_ptr<Pipeline> VKDevice::CreateRayTracingPipeline(const RayTracingPip
     return std::make_shared<VKRayTracingPipeline>(*this, desc);
 }
 
-vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(const BufferDesc& vertex,
-                                                                               const BufferDesc& index,
-                                                                               RaytracingGeometryFlags flags) const
+vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(
+    const RaytracingGeometryBufferDesc& vertex,
+    const RaytracingGeometryBufferDesc& index,
+    RaytracingGeometryFlags flags) const
 {
     vk::AccelerationStructureGeometryKHR geometry_desc = {};
     geometry_desc.geometryType = vk::GeometryTypeKHR::eTriangles;
