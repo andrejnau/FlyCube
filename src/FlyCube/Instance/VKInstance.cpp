@@ -1,15 +1,11 @@
 #include "Instance/VKInstance.h"
 
 #include "Adapter/VKAdapter.h"
+#include "Utilities/Logging.h"
 
 #include <set>
-#include <sstream>
 #include <string>
 #include <string_view>
-
-#if defined(__ANDROID__)
-#include <android/log.h>
-#endif
 
 #if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -32,17 +28,6 @@ bool SkipMessage(std::string_view message)
     return false;
 }
 
-void PrintMessage(const std::string& message)
-{
-#if defined(_WIN32)
-    OutputDebugStringA(message.c_str());
-#elif defined(__ANDROID__)
-    __android_log_print(ANDROID_LOG_DEBUG, "FlyCube", "%s", message.c_str());
-#else
-    printf("%s", message.c_str());
-#endif
-}
-
 VKAPI_ATTR vk::Bool32 VKAPI_CALL
 DebugUtilsMessengerCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                             vk::DebugUtilsMessageTypeFlagsEXT messageTypes,
@@ -63,9 +48,7 @@ DebugUtilsMessengerCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeve
         return vk::False;
     }
 
-    std::stringstream buf;
-    buf << "[VK_EXT_debug_utils] " << message << "\n";
-    PrintMessage(buf.str());
+    Logging::Println("[VK_EXT_debug_utils] {}", message);
     return vk::False;
 }
 

@@ -1,7 +1,7 @@
 #include "AppBox/AppBox.h"
 
 #include <cmath>
-#include <sstream>
+#include <format>
 #if defined(_WIN32)
 #define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__APPLE__)
@@ -80,19 +80,12 @@ void AppBox::SetGpuName(const std::string& gpu_name)
 
 void AppBox::UpdateFps()
 {
-    std::stringstream buf;
     ++m_frame_number;
     double current_time = glfwGetTime();
     double delta = current_time - m_last_time;
-    double eps = 1e-6;
-    if (delta + eps > 1.0) {
-        std::stringstream buf;
-        if (m_last_time > 0) {
-            double fps = m_frame_number / delta;
-            buf << "(";
-            buf << static_cast<int64_t>(std::round(fps));
-            buf << " FPS)";
-            m_fps = buf.str();
+    if (delta > 1.0) {
+        if (m_last_time > 0.0) {
+            m_fps = std::format("({} FPS)", static_cast<int64_t>(std::round(m_frame_number / delta)));
         }
         m_frame_number = 0;
         m_last_time = current_time;
@@ -101,20 +94,16 @@ void AppBox::UpdateFps()
 
 void AppBox::UpdateTitle()
 {
-    std::stringstream buf;
-    buf << m_title;
-
+    std::string title = m_title;
     if (!m_gpu_name.empty()) {
-        buf << " " << m_gpu_name;
+        title += " " + m_gpu_name;
     }
-
     UpdateFps();
-
     if (!m_fps.empty()) {
-        buf << " " << m_fps;
+        title += " " + m_fps;
     }
 
-    glfwSetWindowTitle(m_window, buf.str().c_str());
+    glfwSetWindowTitle(m_window, title.c_str());
 }
 
 void AppBox::SubscribeEvents(InputEvents* input_listener, WindowEvents* window_listener)

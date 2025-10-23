@@ -248,6 +248,8 @@ list(APPEND Utilities
     Utilities/DXUtility.h
     Utilities/FormatHelper.cpp
     Utilities/FormatHelper.h
+    Utilities/Logging.cpp
+    Utilities/Logging.h
     Utilities/ScopeGuard.h
     Utilities/SystemUtils.cpp
     Utilities/SystemUtils.h

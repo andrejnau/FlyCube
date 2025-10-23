@@ -1,22 +1,27 @@
 #pragma once
 
+#include <format>
 #include <string>
-
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <cstdio>
-#endif
 
 namespace Logging {
 
-inline void Print(const std::string& msg)
+void PrintImpl(const std::string& str);
+
+template <typename... Args>
+inline void Print(std::format_string<Args...> fmt, Args&&... args)
 {
-#ifdef _WIN32
-    OutputDebugStringA(msg.c_str());
-#else
-    printf("%s", msg.c_str());
-#endif
+    PrintImpl(std::format(fmt, std::forward<Args>(args)...));
+}
+
+template <typename... Args>
+inline void Println(std::format_string<Args...> fmt, Args&&... args)
+{
+    PrintImpl(std::format(fmt, std::forward<Args>(args)...).append("\n"));
+}
+
+inline void Println()
+{
+    PrintImpl("\n");
 }
 
 } // namespace Logging

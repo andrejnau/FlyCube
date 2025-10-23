@@ -16,6 +16,7 @@ endif()
 add_executable(ShaderCompilerCLI
     ${project_root}/src/FlyCube/HLSLCompiler/Compiler.cpp
     ${project_root}/src/FlyCube/HLSLCompiler/DXCLoader.cpp
+    ${project_root}/src/FlyCube/Utilities/Logging.cpp
     ${project_root}/src/FlyCube/Utilities/SystemUtils.cpp
     main.cpp
 )

@@ -2,13 +2,13 @@
 
 #include "HLSLCompiler/DXCLoader.h"
 #include "Utilities/DXUtility.h"
+#include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
 #include "Utilities/SystemUtils.h"
 
 #include <nowide/convert.hpp>
 
 #include <deque>
-#include <iostream>
 #include <vector>
 
 namespace {
@@ -139,8 +139,7 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
         CComPtr<IDxcBlobEncoding> errors;
         result->GetErrorBuffer(&errors);
         if (errors && errors->GetBufferSize() > 0) {
-            OutputDebugStringA(reinterpret_cast<char*>(errors->GetBufferPointer()));
-            std::cout << reinterpret_cast<char*>(errors->GetBufferPointer()) << std::endl;
+            Logging::Println("{}", reinterpret_cast<char*>(errors->GetBufferPointer()));
         }
     }
     return blob;
