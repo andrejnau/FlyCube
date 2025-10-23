@@ -9,6 +9,11 @@
 
 #include <cassert>
 
+#if !defined(_WIN32)
+#define interface struct
+#endif
+#include <directx/d3d12shader.h>
+
 namespace {
 
 ShaderKind ConvertShaderKind(hlsl::DXIL::ShaderKind kind)
@@ -65,7 +70,14 @@ DXILReflection::DXILReflection(const void* data, size_t size)
         if (kind == hlsl::DxilFourCC::DFCC_RuntimeData) {
             ParseRuntimeData(reflection, i);
         } else if (kind == hlsl::DxilFourCC::DFCC_DXIL) {
-            ParseReflectionPart(reflection.p, i);
+            CComPtr<ID3D12ShaderReflection> shader_reflection;
+            CComPtr<ID3D12LibraryReflection> library_reflection;
+            if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&shader_reflection)))) {
+                ParseShaderReflection(shader_reflection);
+            } else if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&library_reflection)))) {
+                m_is_library = true;
+                ParseLibraryReflection(library_reflection);
+            }
         } else if (kind == hlsl::DxilFourCC::DFCC_ShaderDebugInfoDXIL) {
             ASSERT_SUCCEEDED(reflection->GetPartContent(i, &pdb));
         } else if (kind == hlsl::DxilFourCC::DFCC_FeatureInfo) {

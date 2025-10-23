@@ -344,18 +344,6 @@ std::vector<OutputParameterDesc> ParseOutputParameters(const D3D12_SHADER_DESC& 
 
 } // namespace
 
-void DXReflection::ParseReflectionPart(IDxcContainerReflection* reflection, uint32_t i)
-{
-    CComPtr<ID3D12ShaderReflection> shader_reflection;
-    CComPtr<ID3D12LibraryReflection> library_reflection;
-    if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&shader_reflection)))) {
-        ParseShaderReflection(shader_reflection);
-    } else if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&library_reflection)))) {
-        m_is_library = true;
-        ParseLibraryReflection(library_reflection);
-    }
-}
-
 void DXReflection::ParseShaderReflection(ID3D12ShaderReflection* shader_reflection)
 {
     D3D12_SHADER_DESC desc = {};

@@ -18,5 +18,6 @@ private:
 
     ShaderKind GetVersionShaderType(uint64_t version) override;
 
+    bool m_is_library = false;
     ShaderFeatureInfo m_shader_feature_info = {};
 };
