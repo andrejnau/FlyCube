@@ -69,16 +69,10 @@ std::shared_ptr<Fence> MTDevice::CreateFence(uint64_t initial_value)
     return std::make_shared<MTFence>(*this, initial_value);
 }
 
-std::shared_ptr<Resource> MTDevice::CreateTexture(TextureType type,
-                                                  uint32_t bind_flag,
-                                                  gli::format format,
-                                                  uint32_t sample_count,
-                                                  int width,
-                                                  int height,
-                                                  int depth,
-                                                  int mip_levels)
+std::shared_ptr<Resource> MTDevice::CreateTexture(const TextureDesc& desc)
 {
-    return MTResource::CreateTexture(*this, type, bind_flag, format, sample_count, width, height, depth, mip_levels);
+    return MTResource::CreateTexture(*this, desc.type, desc.usage, desc.format, desc.sample_count, desc.width,
+                                     desc.height, desc.depth_or_array_layers, desc.mip_levels);
 }
 
 std::shared_ptr<Resource> MTDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)

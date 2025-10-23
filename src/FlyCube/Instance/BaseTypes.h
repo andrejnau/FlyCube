@@ -68,12 +68,6 @@ enum class SamplerTextureAddressMode { kWrap, kClamp };
 
 enum class SamplerComparisonFunc { kNever, kAlways, kLess };
 
-struct SamplerDesc {
-    SamplerFilter filter;
-    SamplerTextureAddressMode mode;
-    SamplerComparisonFunc func;
-};
-
 enum class ViewType {
     kUnknown,
     kConstantBuffer,
@@ -625,3 +619,20 @@ auto operator<(const T& l, const T& r)
 {
     return l.MakeTie() < r.MakeTie();
 }
+
+struct TextureDesc {
+    TextureType type;
+    gli::format format;
+    uint32_t width;
+    uint32_t height;
+    uint32_t depth_or_array_layers;
+    uint32_t mip_levels;
+    uint32_t sample_count;
+    uint32_t usage;
+};
+
+struct SamplerDesc {
+    SamplerFilter filter;
+    SamplerTextureAddressMode mode;
+    SamplerComparisonFunc func;
+};

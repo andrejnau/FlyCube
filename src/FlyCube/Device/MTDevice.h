@@ -24,14 +24,7 @@ public:
                                                bool vsync) override;
     std::shared_ptr<CommandList> CreateCommandList(CommandListType type) override;
     std::shared_ptr<Fence> CreateFence(uint64_t initial_value) override;
-    std::shared_ptr<Resource> CreateTexture(TextureType type,
-                                            uint32_t bind_flag,
-                                            gli::format format,
-                                            uint32_t sample_count,
-                                            int width,
-                                            int height,
-                                            int depth,
-                                            int mip_levels) override;
+    std::shared_ptr<Resource> CreateTexture(const TextureDesc& desc) override;
     std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size) override;
     std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) override;
     std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) override;

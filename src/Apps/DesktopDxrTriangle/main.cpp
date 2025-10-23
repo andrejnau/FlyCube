@@ -137,9 +137,16 @@ int main(int argc, char* argv[])
                                          BuildAccelerationStructureFlags::kNone);
     upload_command_list->UAVResourceBarrier(top);
 
-    std::shared_ptr<Resource> uav =
-        device->CreateTexture(TextureType::k2D, BindFlag::kUnorderedAccess | BindFlag::kCopySource,
-                              swapchain->GetFormat(), 1, app_size.width(), app_size.height(), 1, 1);
+    std::shared_ptr<Resource> uav = device->CreateTexture({
+        .type = TextureType::k2D,
+        .format = swapchain->GetFormat(),
+        .width = app_size.width(),
+        .height = app_size.height(),
+        .depth_or_array_layers = 1,
+        .mip_levels = 1,
+        .sample_count = 1,
+        .usage = BindFlag::kUnorderedAccess | BindFlag::kCopySource,
+    });
     uav->CommitMemory(MemoryType::kDefault);
     uav->SetName("uav");
     upload_command_list->ResourceBarrier({ { uav, uav->GetInitialState(), ResourceState::kUnorderedAccess } });

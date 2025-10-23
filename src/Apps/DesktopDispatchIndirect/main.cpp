@@ -34,13 +34,18 @@ int main(int argc, char* argv[])
         cbv_view[i] = device->CreateView(cbv_buffer[i], cbv_view_desc);
     }
 
-    static constexpr int kUavWidth = 512;
-    static constexpr int kUavHeight = 512;
-    std::shared_ptr<Resource> uav_texture = device->CreateTexture(
-        TextureType::k2D, BindFlag::kUnorderedAccess | BindFlag::kCopySource, swapchain->GetFormat(),
-        /*sample_count=*/1, kUavWidth, kUavHeight,
-        /*depth=*/1,
-        /*mip_levels=*/1);
+    static constexpr uint32_t kUavWidth = 512;
+    static constexpr uint32_t kUavHeight = 512;
+    std::shared_ptr<Resource> uav_texture = device->CreateTexture({
+        .type = TextureType::k2D,
+        .format = swapchain->GetFormat(),
+        .width = kUavWidth,
+        .height = kUavHeight,
+        .depth_or_array_layers = 1,
+        .mip_levels = 1,
+        .sample_count = 1,
+        .usage = BindFlag::kUnorderedAccess | BindFlag::kCopySource,
+    });
     uav_texture->CommitMemory(MemoryType::kDefault);
     ViewDesc uav_view_desc = {
         .view_type = ViewType::kRWTexture,
