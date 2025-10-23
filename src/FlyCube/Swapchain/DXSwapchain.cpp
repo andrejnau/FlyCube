@@ -30,16 +30,16 @@ DXSwapchain::DXSwapchain(DXCommandQueue& command_queue,
     swap_chain_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
-    ASSERT_SUCCEEDED(instance.GetFactory()->CreateSwapChainForHwnd(command_queue.GetQueue().Get(),
-                                                                   reinterpret_cast<HWND>(window), &swap_chain_desc,
-                                                                   nullptr, nullptr, &tmp_swap_chain));
-    ASSERT_SUCCEEDED(
+    CHECK_HRESULT(instance.GetFactory()->CreateSwapChainForHwnd(command_queue.GetQueue().Get(),
+                                                                reinterpret_cast<HWND>(window), &swap_chain_desc,
+                                                                nullptr, nullptr, &tmp_swap_chain));
+    CHECK_HRESULT(
         instance.GetFactory()->MakeWindowAssociation(reinterpret_cast<HWND>(window), DXGI_MWA_NO_WINDOW_CHANGES));
     tmp_swap_chain.As(&m_swap_chain);
 
     for (size_t i = 0; i < frame_count; ++i) {
         ComPtr<ID3D12Resource> back_buffer;
-        ASSERT_SUCCEEDED(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
+        CHECK_HRESULT(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
         std::shared_ptr<DXResource> res =
             DXResource::WrapSwapchainBackBuffer(command_queue.GetDevice(), back_buffer, GetFormat());
         m_back_buffers.emplace_back(std::move(res));
@@ -67,8 +67,8 @@ void DXSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
 {
     m_command_queue.Wait(fence, wait_value);
     if (m_vsync) {
-        ASSERT_SUCCEEDED(m_swap_chain->Present(1, 0));
+        CHECK_HRESULT(m_swap_chain->Present(1, 0));
     } else {
-        ASSERT_SUCCEEDED(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
+        CHECK_HRESULT(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
     }
 }

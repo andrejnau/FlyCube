@@ -94,7 +94,7 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
 
     ComPtr<ID3D12Device5> device5;
     m_device.GetDevice().As(&device5);
-    ASSERT_SUCCEEDED(device5->CreateStateObject(subobjects, IID_PPV_ARGS(&m_pipeline_state)));
+    CHECK_HRESULT(device5->CreateStateObject(subobjects, IID_PPV_ARGS(&m_pipeline_state)));
     m_pipeline_state.As(&m_state_ojbect_props);
 }
 

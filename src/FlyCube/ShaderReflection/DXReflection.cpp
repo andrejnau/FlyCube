@@ -248,7 +248,7 @@ std::vector<ResourceBindingDesc> ParseReflection(const T& desc, U* reflection)
     res.reserve(desc.BoundResources);
     for (uint32_t i = 0; i < desc.BoundResources; ++i) {
         D3D12_SHADER_INPUT_BIND_DESC bind_desc = {};
-        ASSERT_SUCCEEDED(reflection->GetResourceBindingDesc(i, &bind_desc));
+        CHECK_HRESULT(reflection->GetResourceBindingDesc(i, &bind_desc));
         res.emplace_back(GetBindingDesc(bind_desc, reflection));
     }
     return res;
@@ -261,7 +261,7 @@ std::vector<VariableLayout> ParseLayout(const T& desc, U* reflection)
     res.reserve(desc.BoundResources);
     for (uint32_t i = 0; i < desc.BoundResources; ++i) {
         D3D12_SHADER_INPUT_BIND_DESC bind_desc = {};
-        ASSERT_SUCCEEDED(reflection->GetResourceBindingDesc(i, &bind_desc));
+        CHECK_HRESULT(reflection->GetResourceBindingDesc(i, &bind_desc));
         res.emplace_back(GetBufferLayout(bind_desc, reflection));
     }
     return res;
@@ -277,7 +277,7 @@ std::vector<InputParameterDesc> ParseInputParameters(const D3D12_SHADER_DESC& de
     }
     for (uint32_t i = 0; i < desc.InputParameters; ++i) {
         D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
-        ASSERT_SUCCEEDED(shader_reflection->GetInputParameterDesc(i, &param_desc));
+        CHECK_HRESULT(shader_reflection->GetInputParameterDesc(i, &param_desc));
         decltype(auto) input = input_parameters.emplace_back();
         input.semantic_name = param_desc.SemanticName;
         if (param_desc.SemanticIndex) {
@@ -331,7 +331,7 @@ std::vector<OutputParameterDesc> ParseOutputParameters(const D3D12_SHADER_DESC& 
     }
     for (uint32_t i = 0; i < desc.OutputParameters; ++i) {
         D3D12_SIGNATURE_PARAMETER_DESC param_desc = {};
-        ASSERT_SUCCEEDED(shader_reflection->GetOutputParameterDesc(i, &param_desc));
+        CHECK_HRESULT(shader_reflection->GetOutputParameterDesc(i, &param_desc));
         assert(param_desc.SemanticName == std::string("SV_TARGET"));
         assert(param_desc.SystemValueType == D3D_NAME_TARGET);
         assert(param_desc.SemanticIndex == param_desc.Register);
@@ -346,7 +346,7 @@ std::vector<OutputParameterDesc> ParseOutputParameters(const D3D12_SHADER_DESC& 
 void DXReflection::ParseShaderReflection(ID3D12ShaderReflection* shader_reflection)
 {
     D3D12_SHADER_DESC desc = {};
-    ASSERT_SUCCEEDED(shader_reflection->GetDesc(&desc));
+    CHECK_HRESULT(shader_reflection->GetDesc(&desc));
     m_entry_points.push_back({ "", GetVersionShaderType(desc.Version) });
     m_bindings = ParseReflection(desc, shader_reflection);
     m_layouts = ParseLayout(desc, shader_reflection);
@@ -358,12 +358,12 @@ void DXReflection::ParseShaderReflection(ID3D12ShaderReflection* shader_reflecti
 void DXReflection::ParseLibraryReflection(ID3D12LibraryReflection* library_reflection)
 {
     D3D12_LIBRARY_DESC library_desc = {};
-    ASSERT_SUCCEEDED(library_reflection->GetDesc(&library_desc));
+    CHECK_HRESULT(library_reflection->GetDesc(&library_desc));
     std::map<std::string, size_t> exist;
     for (uint32_t i = 0; i < library_desc.FunctionCount; ++i) {
         ID3D12FunctionReflection* function_reflection = library_reflection->GetFunctionByIndex(i);
         D3D12_FUNCTION_DESC function_desc = {};
-        ASSERT_SUCCEEDED(function_reflection->GetDesc(&function_desc));
+        CHECK_HRESULT(function_reflection->GetDesc(&function_desc));
         auto function_bindings = ParseReflection(function_desc, function_reflection);
         auto function_layouts = ParseLayout(function_desc, function_reflection);
         assert(function_bindings.size() == function_layouts.size());

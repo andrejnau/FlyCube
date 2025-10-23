@@ -62,7 +62,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
     assert(m_swapchain_color_format != vk::Format::eUndefined);
 
     vk::SurfaceCapabilitiesKHR surface_capabilities = {};
-    ASSERT_SUCCEEDED(vk_physical_device.getSurfaceCapabilitiesKHR(m_surface.get(), &surface_capabilities));
+    CHECK_VK_RESULT(vk_physical_device.getSurfaceCapabilitiesKHR(m_surface.get(), &surface_capabilities));
     assert(width >= surface_capabilities.minImageExtent.width);
     assert(width <= surface_capabilities.maxImageExtent.width);
     assert(height >= surface_capabilities.minImageExtent.height);

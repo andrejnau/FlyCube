@@ -85,7 +85,7 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     CComPtr<IDxcLibrary> library;
     dxc_support.CreateInstance(CLSID_DxcLibrary, &library);
     CComPtr<IDxcBlobEncoding> source;
-    ASSERT_SUCCEEDED(library->CreateBlobFromFile(shader_path.c_str(), nullptr, &source));
+    CHECK_HRESULT(library->CreateBlobFromFile(shader_path.c_str(), nullptr, &source));
 
     std::wstring target = nowide::widen(GetShaderTarget(shader.type, shader.model));
     std::wstring entrypoint = nowide::widen(shader.entrypoint);
@@ -123,16 +123,16 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     IncludeHandler include_handler(library, shader_dir);
     CComPtr<IDxcCompiler> compiler;
     dxc_support.CreateInstance(CLSID_DxcCompiler, &compiler);
-    ASSERT_SUCCEEDED(compiler->Compile(source, L"main.hlsl", entrypoint.c_str(), target.c_str(), arguments.data(),
-                                       static_cast<UINT32>(arguments.size()), defines.data(),
-                                       static_cast<UINT32>(defines.size()), &include_handler, &result));
+    CHECK_HRESULT(compiler->Compile(source, L"main.hlsl", entrypoint.c_str(), target.c_str(), arguments.data(),
+                                    static_cast<UINT32>(arguments.size()), defines.data(),
+                                    static_cast<UINT32>(defines.size()), &include_handler, &result));
 
     HRESULT hr = {};
     result->GetStatus(&hr);
     std::vector<uint8_t> blob;
     if (SUCCEEDED(hr)) {
         CComPtr<IDxcBlob> dxc_blob;
-        ASSERT_SUCCEEDED(result->GetResult(&dxc_blob));
+        CHECK_HRESULT(result->GetResult(&dxc_blob));
         blob.assign((uint8_t*)dxc_blob->GetBufferPointer(),
                     (uint8_t*)dxc_blob->GetBufferPointer() + dxc_blob->GetBufferSize());
     } else {

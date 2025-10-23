@@ -55,17 +55,17 @@ DXILReflection::DXILReflection(const void* data, size_t size)
     CComPtr<IDxcLibrary> library;
     dxc_support.CreateInstance(CLSID_DxcLibrary, &library);
     CComPtr<IDxcBlobEncoding> source;
-    ASSERT_SUCCEEDED(library->CreateBlobWithEncodingOnHeapCopy(data, size, CP_ACP, &source));
+    CHECK_HRESULT(library->CreateBlobWithEncodingOnHeapCopy(data, size, CP_ACP, &source));
     CComPtr<IDxcContainerReflection> reflection;
     dxc_support.CreateInstance(CLSID_DxcContainerReflection, &reflection);
-    ASSERT_SUCCEEDED(reflection->Load(source));
+    CHECK_HRESULT(reflection->Load(source));
 
     CComPtr<IDxcBlob> pdb;
     uint32_t part_count = 0;
-    ASSERT_SUCCEEDED(reflection->GetPartCount(&part_count));
+    CHECK_HRESULT(reflection->GetPartCount(&part_count));
     for (uint32_t i = 0; i < part_count; ++i) {
         uint32_t kind = 0;
-        ASSERT_SUCCEEDED(reflection->GetPartKind(i, &kind));
+        CHECK_HRESULT(reflection->GetPartKind(i, &kind));
         if (kind == hlsl::DxilFourCC::DFCC_RuntimeData) {
             ParseRuntimeData(reflection, i);
         } else if (kind == hlsl::DxilFourCC::DFCC_DXIL) {
@@ -78,10 +78,10 @@ DXILReflection::DXILReflection(const void* data, size_t size)
                 ParseLibraryReflection(library_reflection);
             }
         } else if (kind == hlsl::DxilFourCC::DFCC_ShaderDebugInfoDXIL) {
-            ASSERT_SUCCEEDED(reflection->GetPartContent(i, &pdb));
+            CHECK_HRESULT(reflection->GetPartContent(i, &pdb));
         } else if (kind == hlsl::DxilFourCC::DFCC_FeatureInfo) {
             CComPtr<IDxcBlob> part;
-            ASSERT_SUCCEEDED(reflection->GetPartContent(i, &part));
+            CHECK_HRESULT(reflection->GetPartContent(i, &part));
             assert(part->GetBufferSize() == sizeof(DxilShaderFeatureInfo));
             auto feature_info = reinterpret_cast<DxilShaderFeatureInfo const*>(part->GetBufferPointer());
             if (feature_info->FeatureFlags & hlsl::DXIL::ShaderFeatureInfo_ResourceDescriptorHeapIndexing) {
@@ -146,10 +146,10 @@ void DXILReflection::ParseRuntimeData(CComPtr<IDxcContainerReflection> reflectio
 void DXILReflection::ParseDebugInfo(dxc::DxcDllSupport& dxc_support, CComPtr<IDxcBlob> pdb)
 {
     CComPtr<IDxcPdbUtils2> pdb_utils;
-    ASSERT_SUCCEEDED(dxc_support.CreateInstance(CLSID_DxcPdbUtils, &pdb_utils));
-    ASSERT_SUCCEEDED(pdb_utils->Load(pdb));
+    CHECK_HRESULT(dxc_support.CreateInstance(CLSID_DxcPdbUtils, &pdb_utils));
+    CHECK_HRESULT(pdb_utils->Load(pdb));
     CComPtr<IDxcBlobWide> entry_point;
-    ASSERT_SUCCEEDED(pdb_utils->GetEntryPoint(&entry_point));
+    CHECK_HRESULT(pdb_utils->GetEntryPoint(&entry_point));
     assert(m_entry_points.size() == 1);
     m_entry_points.front().name = nowide::narrow(entry_point->GetStringPointer());
 }

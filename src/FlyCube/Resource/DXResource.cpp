@@ -300,7 +300,7 @@ uint8_t* DXResource::Map()
 {
     CD3DX12_RANGE range(0, 0);
     uint8_t* dst_data = nullptr;
-    ASSERT_SUCCEEDED(m_resource->Map(0, &range, reinterpret_cast<void**>(&dst_data)));
+    CHECK_HRESULT(m_resource->Map(0, &range, reinterpret_cast<void**>(&dst_data)));
     return dst_data;
 }
 

@@ -142,7 +142,7 @@ DXDevice::DXDevice(DXAdapter& adapter)
     , m_cpu_descriptor_pool(*this)
     , m_gpu_descriptor_pool(*this)
 {
-    ASSERT_SUCCEEDED(D3D12CreateDevice(m_adapter.GetAdapter().Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&m_device)));
+    CHECK_HRESULT(D3D12CreateDevice(m_adapter.GetAdapter().Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&m_device)));
     m_device.As(&m_device5);
 
     ComPtr<IUnknown> renderdoc;
@@ -499,7 +499,7 @@ ID3D12CommandSignature* DXDevice::GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TY
     desc.pArgumentDescs = &arg;
     desc.ByteStride = stride;
     ComPtr<ID3D12CommandSignature> command_signature;
-    ASSERT_SUCCEEDED(m_device->CreateCommandSignature(&desc, nullptr, IID_PPV_ARGS(&command_signature)));
+    CHECK_HRESULT(m_device->CreateCommandSignature(&desc, nullptr, IID_PPV_ARGS(&command_signature)));
 
     m_command_signature_cache.emplace(std::piecewise_construct, std::forward_as_tuple(type, stride),
                                       std::forward_as_tuple(command_signature));

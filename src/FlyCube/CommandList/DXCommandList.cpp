@@ -77,9 +77,9 @@ DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
     default:
         NOTREACHED();
     }
-    ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandAllocator(dx_type, IID_PPV_ARGS(&m_command_allocator)));
-    ASSERT_SUCCEEDED(device.GetDevice()->CreateCommandList(0, dx_type, m_command_allocator.Get(), nullptr,
-                                                           IID_PPV_ARGS(&m_command_list)));
+    CHECK_HRESULT(device.GetDevice()->CreateCommandAllocator(dx_type, IID_PPV_ARGS(&m_command_allocator)));
+    CHECK_HRESULT(device.GetDevice()->CreateCommandList(0, dx_type, m_command_allocator.Get(), nullptr,
+                                                        IID_PPV_ARGS(&m_command_list)));
 
     m_command_list.As(&m_command_list4);
     m_command_list.As(&m_command_list5);
@@ -89,8 +89,8 @@ DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
 void DXCommandList::Reset()
 {
     Close();
-    ASSERT_SUCCEEDED(m_command_allocator->Reset());
-    ASSERT_SUCCEEDED(m_command_list->Reset(m_command_allocator.Get(), nullptr));
+    CHECK_HRESULT(m_command_allocator->Reset());
+    CHECK_HRESULT(m_command_list->Reset(m_command_allocator.Get(), nullptr));
     m_closed = false;
     m_heaps.clear();
     m_state.reset();

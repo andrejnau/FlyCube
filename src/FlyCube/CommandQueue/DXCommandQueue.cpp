@@ -27,19 +27,19 @@ DXCommandQueue::DXCommandQueue(DXDevice& device, CommandListType type)
     D3D12_COMMAND_QUEUE_DESC queue_desc = {};
     queue_desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_HIGH;
     queue_desc.Type = dx_type;
-    ASSERT_SUCCEEDED(m_device.GetDevice()->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&m_command_queue)));
+    CHECK_HRESULT(m_device.GetDevice()->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&m_command_queue)));
 }
 
 void DXCommandQueue::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
 {
     decltype(auto) dx_fence = fence->As<DXFence>();
-    ASSERT_SUCCEEDED(m_command_queue->Wait(dx_fence.GetFence().Get(), value));
+    CHECK_HRESULT(m_command_queue->Wait(dx_fence.GetFence().Get(), value));
 }
 
 void DXCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
 {
     decltype(auto) dx_fence = fence->As<DXFence>();
-    ASSERT_SUCCEEDED(m_command_queue->Signal(dx_fence.GetFence().Get(), value));
+    CHECK_HRESULT(m_command_queue->Signal(dx_fence.GetFence().Get(), value));
 }
 
 void DXCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)

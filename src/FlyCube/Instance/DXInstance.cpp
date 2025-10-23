@@ -67,7 +67,7 @@ DXInstance::DXInstance()
         flags = DXGI_CREATE_FACTORY_DEBUG;
     }
 
-    ASSERT_SUCCEEDED(CreateDXGIFactory2(flags, IID_PPV_ARGS(&m_dxgi_factory)));
+    CHECK_HRESULT(CreateDXGIFactory2(flags, IID_PPV_ARGS(&m_dxgi_factory)));
 }
 
 std::vector<std::shared_ptr<Adapter>> DXInstance::EnumerateAdapters()

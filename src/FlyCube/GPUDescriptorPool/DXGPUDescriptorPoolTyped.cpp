@@ -44,10 +44,10 @@ void DXGPUDescriptorPoolTyped::ResizeHeap(size_t req_size)
     heap_desc.NumDescriptors = static_cast<uint32_t>(req_size);
     heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     heap_desc.Type = m_type;
-    ASSERT_SUCCEEDED(m_device.GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&heap)));
+    CHECK_HRESULT(m_device.GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&heap)));
 
     heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-    ASSERT_SUCCEEDED(m_device.GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&heap_readable)));
+    CHECK_HRESULT(m_device.GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&heap_readable)));
 
     if (m_size > 0) {
         m_device.GetDevice()->CopyDescriptorsSimple(m_size, heap_readable->GetCPUDescriptorHandleForHeapStart(),

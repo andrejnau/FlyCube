@@ -14,7 +14,7 @@ DXMemory::DXMemory(DXDevice& device, uint64_t size, MemoryType memory_type, uint
     if (device.IsCreateNotZeroedAvailable()) {
         desc.Flags |= D3D12_HEAP_FLAG_CREATE_NOT_ZEROED;
     }
-    ASSERT_SUCCEEDED(device.GetDevice()->CreateHeap(&desc, IID_PPV_ARGS(&m_heap)));
+    CHECK_HRESULT(device.GetDevice()->CreateHeap(&desc, IID_PPV_ARGS(&m_heap)));
 }
 
 MemoryType DXMemory::GetMemoryType() const
