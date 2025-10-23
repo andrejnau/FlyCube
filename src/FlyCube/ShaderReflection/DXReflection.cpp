@@ -1,17 +1,16 @@
 #include "ShaderReflection/DXReflection.h"
 
-// clang-format off
-#include <dxc/Support/WinIncludes.h>
-#include <dxc/Support/dxcapi.use.h>
-// clang-format on
-
 #include "Utilities/DXUtility.h"
 #include "Utilities/NotReached.h"
 
-#if !defined(_WIN32)
-#define interface struct
-#endif
+// clang-format off
+#include <wsl/winadapter.h>
+#include <wsl/wrladapter.h>
+// clang-format on
+
 #include <directx/d3d12shader.h>
+
+using Microsoft::WRL::ComPtr;
 
 namespace {
 
@@ -269,7 +268,7 @@ std::vector<VariableLayout> ParseLayout(const T& desc, U* reflection)
 }
 
 std::vector<InputParameterDesc> ParseInputParameters(const D3D12_SHADER_DESC& desc,
-                                                     CComPtr<ID3D12ShaderReflection> shader_reflection)
+                                                     ComPtr<ID3D12ShaderReflection> shader_reflection)
 {
     std::vector<InputParameterDesc> input_parameters;
     D3D12_SHADER_VERSION_TYPE type = static_cast<D3D12_SHADER_VERSION_TYPE>((desc.Version & 0xFFFF0000) >> 16);
@@ -323,7 +322,7 @@ std::vector<InputParameterDesc> ParseInputParameters(const D3D12_SHADER_DESC& de
 }
 
 std::vector<OutputParameterDesc> ParseOutputParameters(const D3D12_SHADER_DESC& desc,
-                                                       CComPtr<ID3D12ShaderReflection> shader_reflection)
+                                                       ComPtr<ID3D12ShaderReflection> shader_reflection)
 {
     std::vector<OutputParameterDesc> output_parameters;
     D3D12_SHADER_VERSION_TYPE type = static_cast<D3D12_SHADER_VERSION_TYPE>((desc.Version & 0xFFFF0000) >> 16);

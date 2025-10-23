@@ -43,7 +43,7 @@ bool EnableAgilitySdkIfExist(uint32_t version, const std::string_view& path)
 #define EXPORT_AGILITY_SDK
 #endif
 
-EXPORT_AGILITY_SDK const UINT D3D12SDKVersion = 4;
+EXPORT_AGILITY_SDK const UINT D3D12SDKVersion = 618;
 EXPORT_AGILITY_SDK const char* D3D12SDKPath = ".\\D3D12\\";
 
 #ifndef AGILITY_SDK_REQUIRED

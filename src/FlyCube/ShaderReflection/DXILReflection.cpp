@@ -9,10 +9,9 @@
 
 #include <cassert>
 
-#if !defined(_WIN32)
-#define interface struct
-#endif
+#ifdef _WIN32
 #include <directx/d3d12shader.h>
+#endif
 
 namespace {
 
@@ -70,8 +69,8 @@ DXILReflection::DXILReflection(const void* data, size_t size)
         if (kind == hlsl::DxilFourCC::DFCC_RuntimeData) {
             ParseRuntimeData(reflection, i);
         } else if (kind == hlsl::DxilFourCC::DFCC_DXIL) {
-            CComPtr<ID3D12ShaderReflection> shader_reflection;
-            CComPtr<ID3D12LibraryReflection> library_reflection;
+            ID3D12ShaderReflection* shader_reflection = nullptr;
+            ID3D12LibraryReflection* library_reflection = nullptr;
             if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&shader_reflection)))) {
                 ParseShaderReflection(shader_reflection);
             } else if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&library_reflection)))) {
