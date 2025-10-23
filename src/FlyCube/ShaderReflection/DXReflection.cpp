@@ -1,7 +1,8 @@
 #include "ShaderReflection/DXReflection.h"
 
 // clang-format off
-#include <dxc/dxcapi.h>
+#include <dxc/Support/WinIncludes.h>
+#include <dxc/Support/dxcapi.use.h>
 // clang-format on
 
 #include "Utilities/DXUtility.h"

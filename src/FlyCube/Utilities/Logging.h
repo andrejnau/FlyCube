@@ -3,7 +3,7 @@
 #include <string>
 
 #ifdef _WIN32
-#include <debugapi.h>
+#include <Windows.h>
 #else
 #include <cstdio>
 #endif

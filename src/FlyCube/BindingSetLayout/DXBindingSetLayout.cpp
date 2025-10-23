@@ -161,8 +161,7 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
     ComPtr<ID3DBlob> signature;
     ComPtr<ID3DBlob> error_blob;
     ASSERT_SUCCEEDED(
-        D3D12SerializeRootSignature(&root_signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error_blob), "%s",
-        static_cast<char*>(error_blob->GetBufferPointer()));
+        D3D12SerializeRootSignature(&root_signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error_blob));
     ASSERT_SUCCEEDED(device.GetDevice()->CreateRootSignature(
         0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signature)));
 }
