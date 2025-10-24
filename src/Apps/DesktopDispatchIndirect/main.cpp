@@ -39,16 +39,17 @@ int main(int argc, char* argv[])
 
     static constexpr uint32_t kUavWidth = 512;
     static constexpr uint32_t kUavHeight = 512;
-    std::shared_ptr<Resource> uav_texture = device->CreateTexture({
-        .type = TextureType::k2D,
-        .format = swapchain->GetFormat(),
-        .width = kUavWidth,
-        .height = kUavHeight,
-        .depth_or_array_layers = 1,
-        .mip_levels = 1,
-        .sample_count = 1,
-        .usage = BindFlag::kUnorderedAccess | BindFlag::kCopySource,
-    });
+    std::shared_ptr<Resource> uav_texture =
+        device->CreateTexture(MemoryType::kDefault, {
+                                                        .type = TextureType::k2D,
+                                                        .format = swapchain->GetFormat(),
+                                                        .width = kUavWidth,
+                                                        .height = kUavHeight,
+                                                        .depth_or_array_layers = 1,
+                                                        .mip_levels = 1,
+                                                        .sample_count = 1,
+                                                        .usage = BindFlag::kUnorderedAccess | BindFlag::kCopySource,
+                                                    });
     uav_texture->CommitMemory(MemoryType::kDefault);
     ViewDesc uav_view_desc = {
         .view_type = ViewType::kRWTexture,

@@ -286,7 +286,7 @@ std::shared_ptr<Resource> DXDevice::CreatePlacedBuffer(const std::shared_ptr<Mem
     return buffer;
 }
 
-std::shared_ptr<Resource> DXDevice::CreateTexture(const TextureDesc& desc)
+std::shared_ptr<Resource> DXDevice::CreateTexture(MemoryType memory_type, const TextureDesc& desc)
 {
     return DXResource::CreateTexture(*this, desc);
 }

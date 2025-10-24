@@ -101,7 +101,7 @@ std::shared_ptr<Resource> MTDevice::CreatePlacedBuffer(const std::shared_ptr<Mem
     return buffer;
 }
 
-std::shared_ptr<Resource> MTDevice::CreateTexture(const TextureDesc& desc)
+std::shared_ptr<Resource> MTDevice::CreateTexture(MemoryType memory_type, const TextureDesc& desc)
 {
     return MTResource::CreateTexture(*this, desc);
 }

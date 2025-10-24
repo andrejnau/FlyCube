@@ -92,16 +92,17 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
         uint32_t height = texture.extent(0).y;
         size_t mip_levels = texture.levels();
 
-        res = m_device->CreateTexture({
-            .type = TextureType::k2D,
-            .format = format,
-            .width = width,
-            .height = height,
-            .depth_or_array_layers = 1,
-            .mip_levels = static_cast<uint32_t>(mip_levels),
-            .sample_count = 1,
-            .usage = BindFlag::kShaderResource | BindFlag::kCopyDest,
-        });
+        res =
+            m_device->CreateTexture(MemoryType::kDefault, {
+                                                              .type = TextureType::k2D,
+                                                              .format = format,
+                                                              .width = width,
+                                                              .height = height,
+                                                              .depth_or_array_layers = 1,
+                                                              .mip_levels = static_cast<uint32_t>(mip_levels),
+                                                              .sample_count = 1,
+                                                              .usage = BindFlag::kShaderResource | BindFlag::kCopyDest,
+                                                          });
         res->CommitMemory(MemoryType::kDefault);
 
         for (size_t level = 0; level < mip_levels; ++level) {
@@ -116,16 +117,17 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
         int comp = 0;
         auto* data = stbi_load(full_path.c_str(), &width, &height, &comp, /*req_comp=*/4);
 
-        res = m_device->CreateTexture({
-            .type = TextureType::k2D,
-            .format = gli::FORMAT_RGBA8_UNORM_PACK8,
-            .width = static_cast<uint32_t>(width),
-            .height = static_cast<uint32_t>(height),
-            .depth_or_array_layers = 1,
-            .mip_levels = 1,
-            .sample_count = 1,
-            .usage = BindFlag::kShaderResource | BindFlag::kCopyDest,
-        });
+        res =
+            m_device->CreateTexture(MemoryType::kDefault, {
+                                                              .type = TextureType::k2D,
+                                                              .format = gli::FORMAT_RGBA8_UNORM_PACK8,
+                                                              .width = static_cast<uint32_t>(width),
+                                                              .height = static_cast<uint32_t>(height),
+                                                              .depth_or_array_layers = 1,
+                                                              .mip_levels = 1,
+                                                              .sample_count = 1,
+                                                              .usage = BindFlag::kShaderResource | BindFlag::kCopyDest,
+                                                          });
 
         res->CommitMemory(MemoryType::kDefault);
 

@@ -105,16 +105,17 @@ int main(int argc, char* argv[])
     pixel_cbv_buffer->UpdateUploadBuffer(0, pixel_cbv_data.data(),
                                          sizeof(pixel_cbv_data.front()) * pixel_cbv_data.size());
 
-    std::shared_ptr<Resource> depth_stencil_texture = device->CreateTexture({
-        .type = TextureType::k2D,
-        .format = gli::format::FORMAT_D32_SFLOAT_PACK32,
-        .width = app_size.width(),
-        .height = app_size.height(),
-        .depth_or_array_layers = 1,
-        .mip_levels = 1,
-        .sample_count = 1,
-        .usage = BindFlag::kDepthStencil,
-    });
+    std::shared_ptr<Resource> depth_stencil_texture =
+        device->CreateTexture(MemoryType::kDefault, {
+                                                        .type = TextureType::k2D,
+                                                        .format = gli::format::FORMAT_D32_SFLOAT_PACK32,
+                                                        .width = app_size.width(),
+                                                        .height = app_size.height(),
+                                                        .depth_or_array_layers = 1,
+                                                        .mip_levels = 1,
+                                                        .sample_count = 1,
+                                                        .usage = BindFlag::kDepthStencil,
+                                                    });
     depth_stencil_texture->CommitMemory(MemoryType::kDefault);
     ViewDesc depth_stencil_view_desc = {
         .view_type = ViewType::kDepthStencil,
