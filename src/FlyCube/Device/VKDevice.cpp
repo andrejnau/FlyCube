@@ -455,6 +455,16 @@ std::shared_ptr<Fence> VKDevice::CreateFence(uint64_t initial_value)
     return std::make_shared<VKTimelineSemaphore>(*this, initial_value);
 }
 
+MemoryRequirements VKDevice::GetTextureMemoryRequirements(const TextureDesc& desc)
+{
+    return VKResource::CreateImage(*this, desc)->GetMemoryRequirements();
+}
+
+MemoryRequirements VKDevice::GetMemoryBufferRequirements(const BufferDesc& desc)
+{
+    return VKResource::CreateBuffer(*this, desc)->GetMemoryRequirements();
+}
+
 std::shared_ptr<Resource> VKDevice::CreateTexture(const TextureDesc& desc)
 {
     return VKResource::CreateImage(*this, desc);

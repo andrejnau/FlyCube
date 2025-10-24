@@ -254,6 +254,16 @@ std::shared_ptr<Fence> DXDevice::CreateFence(uint64_t initial_value)
     return std::make_shared<DXFence>(*this, initial_value);
 }
 
+MemoryRequirements DXDevice::GetTextureMemoryRequirements(const TextureDesc& desc)
+{
+    return DXResource::CreateTexture(*this, desc)->GetMemoryRequirements();
+}
+
+MemoryRequirements DXDevice::GetMemoryBufferRequirements(const BufferDesc& desc)
+{
+    return DXResource::CreateBuffer(*this, desc)->GetMemoryRequirements();
+}
+
 std::shared_ptr<Resource> DXDevice::CreateTexture(const TextureDesc& desc)
 {
     return DXResource::CreateTexture(*this, desc);

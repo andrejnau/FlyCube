@@ -27,6 +27,8 @@ public:
                                                bool vsync) override;
     std::shared_ptr<CommandList> CreateCommandList(CommandListType type) override;
     std::shared_ptr<Fence> CreateFence(uint64_t initial_value) override;
+    MemoryRequirements GetTextureMemoryRequirements(const TextureDesc& desc) override;
+    MemoryRequirements GetMemoryBufferRequirements(const BufferDesc& desc) override;
     std::shared_ptr<Resource> CreateTexture(const TextureDesc& desc) override;
     std::shared_ptr<Resource> CreateBuffer(const BufferDesc& desc) override;
     std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) override;

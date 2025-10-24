@@ -69,6 +69,16 @@ std::shared_ptr<Fence> MTDevice::CreateFence(uint64_t initial_value)
     return std::make_shared<MTFence>(*this, initial_value);
 }
 
+MemoryRequirements MTDevice::GetTextureMemoryRequirements(const TextureDesc& desc)
+{
+    return MTResource::CreateTexture(*this, desc)->GetMemoryRequirements();
+}
+
+MemoryRequirements MTDevice::GetMemoryBufferRequirements(const BufferDesc& desc)
+{
+    return MTResource::CreateBuffer(*this, desc)->GetMemoryRequirements();
+}
+
 std::shared_ptr<Resource> MTDevice::CreateTexture(const TextureDesc& desc)
 {
     return MTResource::CreateTexture(*this, desc);
