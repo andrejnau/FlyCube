@@ -59,10 +59,11 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
-    m_index_buffer = m_device->CreateBuffer({
-        .size = sizeof(index_data.front()) * index_data.size(),
-        .usage = BindFlag::kIndexBuffer,
-    });
+    m_index_buffer =
+        m_device->CreateBuffer(MemoryType::kUpload, {
+                                                        .size = sizeof(index_data.front()) * index_data.size(),
+                                                        .usage = BindFlag::kIndexBuffer,
+                                                    });
     m_index_buffer->CommitMemory(MemoryType::kUpload);
     m_index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
 
@@ -71,10 +72,11 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         glm::vec3(0.0, 0.5, 0.0),
         glm::vec3(0.5, -0.5, 0.0),
     };
-    m_vertex_buffer = m_device->CreateBuffer({
-        .size = sizeof(vertex_data.front()) * vertex_data.size(),
-        .usage = BindFlag::kVertexBuffer,
-    });
+    m_vertex_buffer =
+        m_device->CreateBuffer(MemoryType::kUpload, {
+                                                        .size = sizeof(vertex_data.front()) * vertex_data.size(),
+                                                        .usage = BindFlag::kVertexBuffer,
+                                                    });
     m_vertex_buffer->CommitMemory(MemoryType::kUpload);
     m_vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 

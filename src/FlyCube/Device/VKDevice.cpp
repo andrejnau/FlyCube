@@ -492,7 +492,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(MemoryType memory_type, const 
     return VKResource::CreateImage(*this, desc);
 }
 
-std::shared_ptr<Resource> VKDevice::CreateBuffer(const BufferDesc& desc)
+std::shared_ptr<Resource> VKDevice::CreateBuffer(MemoryType memory_type, const BufferDesc& desc)
 {
     return VKResource::CreateBuffer(*this, desc);
 }

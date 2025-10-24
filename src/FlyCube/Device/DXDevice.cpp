@@ -291,7 +291,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(MemoryType memory_type, const 
     return DXResource::CreateTexture(*this, desc);
 }
 
-std::shared_ptr<Resource> DXDevice::CreateBuffer(const BufferDesc& desc)
+std::shared_ptr<Resource> DXDevice::CreateBuffer(MemoryType memory_type, const BufferDesc& desc)
 {
     return DXResource::CreateBuffer(*this, desc);
 }

@@ -106,7 +106,7 @@ std::shared_ptr<Resource> MTDevice::CreateTexture(MemoryType memory_type, const 
     return MTResource::CreateTexture(*this, desc);
 }
 
-std::shared_ptr<Resource> MTDevice::CreateBuffer(const BufferDesc& desc)
+std::shared_ptr<Resource> MTDevice::CreateBuffer(MemoryType memory_type, const BufferDesc& desc)
 {
     return MTResource::CreateBuffer(*this, desc);
 }

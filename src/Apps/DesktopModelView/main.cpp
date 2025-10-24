@@ -46,10 +46,11 @@ int main(int argc, char* argv[])
     glm::mat4 projection = GetProjectionMatrix(app_size.width(), app_size.height());
 
     std::vector<glm::mat4> vertex_cbv_data(render_model.GetMeshCount());
-    std::shared_ptr<Resource> vertex_cbv_buffer = device->CreateBuffer({
-        .size = sizeof(vertex_cbv_data.front()) * vertex_cbv_data.size(),
-        .usage = BindFlag::kConstantBuffer,
-    });
+    std::shared_ptr<Resource> vertex_cbv_buffer =
+        device->CreateBuffer(MemoryType::kUpload, {
+                                                      .size = sizeof(vertex_cbv_data.front()) * vertex_cbv_data.size(),
+                                                      .usage = BindFlag::kConstantBuffer,
+                                                  });
     vertex_cbv_buffer->CommitMemory(MemoryType::kUpload);
     std::vector<std::shared_ptr<View>> vertex_cbv_views(render_model.GetMeshCount());
     for (size_t i = 0; i < render_model.GetMeshCount(); ++i) {
@@ -87,10 +88,11 @@ int main(int argc, char* argv[])
         device->CreateView(pixel_anisotropic_sampler, pixel_anisotropic_sampler_view_desc);
 
     std::vector<uint32_t> pixel_cbv_data(render_model.GetMeshCount());
-    std::shared_ptr<Resource> pixel_cbv_buffer = device->CreateBuffer({
-        .size = sizeof(pixel_cbv_data.front()) * pixel_cbv_data.size(),
-        .usage = BindFlag::kConstantBuffer,
-    });
+    std::shared_ptr<Resource> pixel_cbv_buffer =
+        device->CreateBuffer(MemoryType::kUpload, {
+                                                      .size = sizeof(pixel_cbv_data.front()) * pixel_cbv_data.size(),
+                                                      .usage = BindFlag::kConstantBuffer,
+                                                  });
     pixel_cbv_buffer->CommitMemory(MemoryType::kUpload);
     std::vector<std::shared_ptr<View>> pixel_cbv_views(render_model.GetMeshCount());
     for (size_t i = 0; i < render_model.GetMeshCount(); ++i) {

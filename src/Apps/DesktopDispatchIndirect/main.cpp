@@ -25,10 +25,10 @@ int main(int argc, char* argv[])
     std::array<std::shared_ptr<Resource>, kFrameCount> cbv_buffer = {};
     std::array<std::shared_ptr<View>, kFrameCount> cbv_view = {};
     for (uint32_t i = 0; i < kFrameCount; ++i) {
-        cbv_buffer[i] = device->CreateBuffer({
-            .size = sizeof(float),
-            .usage = BindFlag::kConstantBuffer,
-        });
+        cbv_buffer[i] = device->CreateBuffer(MemoryType::kUpload, {
+                                                                      .size = sizeof(float),
+                                                                      .usage = BindFlag::kConstantBuffer,
+                                                                  });
         cbv_buffer[i]->CommitMemory(MemoryType::kUpload);
         ViewDesc cbv_view_desc = {
             .view_type = ViewType::kConstantBuffer,
@@ -58,10 +58,11 @@ int main(int argc, char* argv[])
     std::shared_ptr<View> uav_view = device->CreateView(uav_texture, uav_view_desc);
 
     DispatchIndirectCommand argument_data = { 64, 64, 1 };
-    std::shared_ptr<Resource> argument_buffer = device->CreateBuffer({
-        .size = sizeof(argument_data),
-        .usage = BindFlag::kIndirectBuffer,
-    });
+    std::shared_ptr<Resource> argument_buffer =
+        device->CreateBuffer(MemoryType::kUpload, {
+                                                      .size = sizeof(argument_data),
+                                                      .usage = BindFlag::kIndirectBuffer,
+                                                  });
     argument_buffer->CommitMemory(MemoryType::kUpload);
     argument_buffer->UpdateUploadBuffer(0, &argument_data, sizeof(argument_data));
 

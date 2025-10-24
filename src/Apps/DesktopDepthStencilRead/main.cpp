@@ -56,10 +56,12 @@ int main(int argc, char* argv[])
     glm::mat4 projection = GetProjectionMatrix(depth_stencil_size.x, depth_stencil_size.y);
 
     std::vector<glm::mat4> depth_stencil_pass_cbv_data(render_model.GetMeshCount());
-    std::shared_ptr<Resource> depth_stencil_pass_cbv_buffer = device->CreateBuffer({
-        .size = sizeof(depth_stencil_pass_cbv_data.front()) * depth_stencil_pass_cbv_data.size(),
-        .usage = BindFlag::kConstantBuffer,
-    });
+    std::shared_ptr<Resource> depth_stencil_pass_cbv_buffer = device->CreateBuffer(
+        MemoryType::kUpload,
+        {
+            .size = sizeof(depth_stencil_pass_cbv_data.front()) * depth_stencil_pass_cbv_data.size(),
+            .usage = BindFlag::kConstantBuffer,
+        });
     depth_stencil_pass_cbv_buffer->CommitMemory(MemoryType::kUpload);
     std::vector<std::shared_ptr<View>> depth_stencil_pass_cbv_views(render_model.GetMeshCount());
     for (size_t i = 0; i < render_model.GetMeshCount(); ++i) {
@@ -77,10 +79,11 @@ int main(int argc, char* argv[])
         sizeof(depth_stencil_pass_cbv_data.front()) * depth_stencil_pass_cbv_data.size());
 
     glm::mat4 vertex_cbv_data = glm::transpose(glm::mat4(1.0));
-    std::shared_ptr<Resource> vertex_cbv_buffer = device->CreateBuffer({
-        .size = sizeof(vertex_cbv_data),
-        .usage = BindFlag::kConstantBuffer,
-    });
+    std::shared_ptr<Resource> vertex_cbv_buffer =
+        device->CreateBuffer(MemoryType::kUpload, {
+                                                      .size = sizeof(vertex_cbv_data),
+                                                      .usage = BindFlag::kConstantBuffer,
+                                                  });
     vertex_cbv_buffer->CommitMemory(MemoryType::kUpload);
     ViewDesc vertex_cbv_view_desc = {
         .view_type = ViewType::kConstantBuffer,
@@ -90,10 +93,11 @@ int main(int argc, char* argv[])
     vertex_cbv_buffer->UpdateUploadBuffer(0, &vertex_cbv_data, sizeof(vertex_cbv_data));
 
     glm::uvec2 pixel_cbv_data = glm::uvec2(app_size.width(), app_size.height());
-    std::shared_ptr<Resource> pixel_cbv_buffer = device->CreateBuffer({
-        .size = sizeof(pixel_cbv_data),
-        .usage = BindFlag::kConstantBuffer,
-    });
+    std::shared_ptr<Resource> pixel_cbv_buffer =
+        device->CreateBuffer(MemoryType::kUpload, {
+                                                      .size = sizeof(pixel_cbv_data),
+                                                      .usage = BindFlag::kConstantBuffer,
+                                                  });
     pixel_cbv_buffer->CommitMemory(MemoryType::kUpload);
     pixel_cbv_buffer->UpdateUploadBuffer(0, &pixel_cbv_data, sizeof(pixel_cbv_data));
     ViewDesc pixel_cbv_view_desc = {

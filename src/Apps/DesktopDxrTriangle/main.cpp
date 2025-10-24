@@ -30,10 +30,11 @@ int main(int argc, char* argv[])
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
-    std::shared_ptr<Resource> index_buffer = device->CreateBuffer({
-        .size = sizeof(index_data.front()) * index_data.size(),
-        .usage = BindFlag::kIndexBuffer | BindFlag::kCopyDest,
-    });
+    std::shared_ptr<Resource> index_buffer =
+        device->CreateBuffer(MemoryType::kDefault, {
+                                                       .size = sizeof(index_data.front()) * index_data.size(),
+                                                       .usage = BindFlag::kIndexBuffer | BindFlag::kCopyDest,
+                                                   });
     index_buffer->CommitMemory(MemoryType::kDefault);
     index_buffer->SetName("index_buffer");
     std::vector<glm::vec3> vertex_data = {
@@ -41,17 +42,19 @@ int main(int argc, char* argv[])
         glm::vec3(0.0, 0.5, 0.0),
         glm::vec3(0.5, -0.5, 0.0),
     };
-    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer({
-        .size = sizeof(vertex_data.front()) * vertex_data.size(),
-        .usage = BindFlag::kVertexBuffer | BindFlag::kCopyDest,
-    });
+    std::shared_ptr<Resource> vertex_buffer =
+        device->CreateBuffer(MemoryType::kDefault, {
+                                                       .size = sizeof(vertex_data.front()) * vertex_data.size(),
+                                                       .usage = BindFlag::kVertexBuffer | BindFlag::kCopyDest,
+                                                   });
     vertex_buffer->CommitMemory(MemoryType::kDefault);
     vertex_buffer->SetName("vertex_buffer");
 
-    std::shared_ptr<Resource> upload_buffer = device->CreateBuffer({
-        .size = index_buffer->GetWidth() + vertex_buffer->GetWidth(),
-        .usage = BindFlag::kCopySource,
-    });
+    std::shared_ptr<Resource> upload_buffer =
+        device->CreateBuffer(MemoryType::kUpload, {
+                                                      .size = index_buffer->GetWidth() + vertex_buffer->GetWidth(),
+                                                      .usage = BindFlag::kCopySource,
+                                                  });
     upload_buffer->CommitMemory(MemoryType::kUpload);
     upload_buffer->SetName("upload_buffer");
     upload_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
@@ -80,10 +83,11 @@ int main(int argc, char* argv[])
     uint64_t acceleration_structures_size =
         Align(blas_prebuild_info.acceleration_structure_size, kAccelerationStructureAlignment) +
         tlas_prebuild_info.acceleration_structure_size;
-    std::shared_ptr<Resource> acceleration_structures_memory = device->CreateBuffer({
-        .size = acceleration_structures_size,
-        .usage = BindFlag::kAccelerationStructure,
-    });
+    std::shared_ptr<Resource> acceleration_structures_memory =
+        device->CreateBuffer(MemoryType::kDefault, {
+                                                       .size = acceleration_structures_size,
+                                                       .usage = BindFlag::kAccelerationStructure,
+                                                   });
     acceleration_structures_memory->CommitMemory(MemoryType::kDefault);
     acceleration_structures_memory->SetName("acceleration_structures_memory");
 
@@ -94,17 +98,19 @@ int main(int argc, char* argv[])
         .size = blas_prebuild_info.acceleration_structure_size,
     });
 
-    auto scratch = device->CreateBuffer({
-        .size = std::max(blas_prebuild_info.build_scratch_data_size, tlas_prebuild_info.build_scratch_data_size),
-        .usage = BindFlag::kRayTracing,
-    });
+    auto scratch = device->CreateBuffer(
+        MemoryType::kDefault,
+        {
+            .size = std::max(blas_prebuild_info.build_scratch_data_size, tlas_prebuild_info.build_scratch_data_size),
+            .usage = BindFlag::kRayTracing,
+        });
     scratch->CommitMemory(MemoryType::kDefault);
     scratch->SetName("scratch");
 
-    auto blas_compacted_size_buffer = device->CreateBuffer({
-        .size = sizeof(uint64_t),
-        .usage = BindFlag::kCopyDest,
-    });
+    auto blas_compacted_size_buffer = device->CreateBuffer(MemoryType::kReadback, {
+                                                                                      .size = sizeof(uint64_t),
+                                                                                      .usage = BindFlag::kCopyDest,
+                                                                                  });
     blas_compacted_size_buffer->CommitMemory(MemoryType::kReadback);
     blas_compacted_size_buffer->SetName("blas_compacted_size_buffer");
 
@@ -148,10 +154,11 @@ int main(int argc, char* argv[])
         .size = tlas_prebuild_info.acceleration_structure_size,
     });
 
-    auto instance_data = device->CreateBuffer({
-        .size = instances.size() * sizeof(instances.back()),
-        .usage = BindFlag::kRayTracing,
-    });
+    auto instance_data =
+        device->CreateBuffer(MemoryType::kUpload, {
+                                                      .size = instances.size() * sizeof(instances.back()),
+                                                      .usage = BindFlag::kRayTracing,
+                                                  });
     instance_data->CommitMemory(MemoryType::kUpload);
     instance_data->SetName("instance_data");
     instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
@@ -214,10 +221,11 @@ int main(int argc, char* argv[])
     groups.push_back({ RayTracingShaderGroupType::kGeneral, library_callable->GetId("callable") });
     std::shared_ptr<Pipeline> pipeline = device->CreateRayTracingPipeline({ program, layout, groups });
 
-    std::shared_ptr<Resource> shader_table = device->CreateBuffer({
-        .size = device->GetShaderTableAlignment() * groups.size(),
-        .usage = BindFlag::kShaderTable,
-    });
+    std::shared_ptr<Resource> shader_table =
+        device->CreateBuffer(MemoryType::kUpload, {
+                                                      .size = device->GetShaderTableAlignment() * groups.size(),
+                                                      .usage = BindFlag::kShaderTable,
+                                                  });
     shader_table->CommitMemory(MemoryType::kUpload);
     shader_table->SetName("shader_table");
 
