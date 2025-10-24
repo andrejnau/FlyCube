@@ -260,9 +260,9 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(const TextureDesc& desc)
                                      desc.height, desc.depth_or_array_layers, desc.mip_levels);
 }
 
-std::shared_ptr<Resource> DXDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
+std::shared_ptr<Resource> DXDevice::CreateBuffer(const BufferDesc& desc)
 {
-    return DXResource::CreateBuffer(*this, bind_flag, buffer_size);
+    return DXResource::CreateBuffer(*this, desc.usage, desc.size);
 }
 
 std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)

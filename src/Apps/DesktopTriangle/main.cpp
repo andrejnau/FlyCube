@@ -20,8 +20,10 @@ int main(int argc, char* argv[])
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
-    std::shared_ptr<Resource> index_buffer =
-        device->CreateBuffer(BindFlag::kIndexBuffer, sizeof(index_data.front()) * index_data.size());
+    std::shared_ptr<Resource> index_buffer = device->CreateBuffer({
+        .size = sizeof(index_data.front()) * index_data.size(),
+        .usage = BindFlag::kIndexBuffer,
+    });
     index_buffer->CommitMemory(MemoryType::kUpload);
     index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
 
@@ -30,13 +32,18 @@ int main(int argc, char* argv[])
         glm::vec3(0.0, 0.5, 0.0),
         glm::vec3(0.5, -0.5, 0.0),
     };
-    std::shared_ptr<Resource> vertex_buffer =
-        device->CreateBuffer(BindFlag::kVertexBuffer, sizeof(vertex_data.front()) * vertex_data.size());
+    std::shared_ptr<Resource> vertex_buffer = device->CreateBuffer({
+        .size = sizeof(vertex_data.front()) * vertex_data.size(),
+        .usage = BindFlag::kVertexBuffer,
+    });
     vertex_buffer->CommitMemory(MemoryType::kUpload);
     vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 
     glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
-    std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(BindFlag::kConstantBuffer, sizeof(constant_data));
+    std::shared_ptr<Resource> constant_buffer = device->CreateBuffer({
+        .size = sizeof(constant_data),
+        .usage = BindFlag::kConstantBuffer,
+    });
     constant_buffer->CommitMemory(MemoryType::kUpload);
     constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));
 

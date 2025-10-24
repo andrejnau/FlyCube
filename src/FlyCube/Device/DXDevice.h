@@ -32,7 +32,7 @@ public:
     std::shared_ptr<CommandList> CreateCommandList(CommandListType type) override;
     std::shared_ptr<Fence> CreateFence(uint64_t initial_value) override;
     std::shared_ptr<Resource> CreateTexture(const TextureDesc& desc) override;
-    std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size) override;
+    std::shared_ptr<Resource> CreateBuffer(const BufferDesc& desc) override;
     std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) override;
     std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) override;
     std::shared_ptr<BindingSetLayout> CreateBindingSetLayout(const std::vector<BindKey>& descs) override;

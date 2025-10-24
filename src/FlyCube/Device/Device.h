@@ -40,7 +40,7 @@ public:
     virtual std::shared_ptr<CommandList> CreateCommandList(CommandListType type) = 0;
     virtual std::shared_ptr<Fence> CreateFence(uint64_t initial_value) = 0;
     virtual std::shared_ptr<Resource> CreateTexture(const TextureDesc& desc) = 0;
-    virtual std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, uint32_t buffer_size) = 0;
+    virtual std::shared_ptr<Resource> CreateBuffer(const BufferDesc& desc) = 0;
     virtual std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) = 0;
     virtual std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) = 0;
     virtual std::shared_ptr<BindingSetLayout> CreateBindingSetLayout(const std::vector<BindKey>& descs) = 0;

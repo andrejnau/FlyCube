@@ -631,6 +631,11 @@ struct TextureDesc {
     uint32_t usage;
 };
 
+struct BufferDesc {
+    uint64_t size;
+    uint32_t usage;
+};
+
 struct SamplerDesc {
     SamplerFilter filter;
     SamplerTextureAddressMode mode;

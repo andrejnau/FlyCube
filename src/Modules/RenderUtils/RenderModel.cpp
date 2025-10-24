@@ -67,8 +67,10 @@ std::shared_ptr<Resource> RenderModel::CreateBuffer(uint32_t bind_flag, const st
         return nullptr;
     }
 
-    std::shared_ptr<Resource> buffer = m_device->CreateBuffer(
-        bind_flag | BindFlag::kCopyDest, static_cast<uint32_t>(sizeof(data.front()) * data.size()));
+    std::shared_ptr<Resource> buffer = m_device->CreateBuffer({
+        .size = sizeof(data.front()) * data.size(),
+        .usage = bind_flag | BindFlag::kCopyDest,
+    });
     buffer->CommitMemory(MemoryType::kDefault);
     UpdateSubresource(buffer, /*subresource=*/0, data.data(), 0, 0);
     return buffer;
@@ -146,7 +148,10 @@ void RenderModel::UpdateSubresource(const std::shared_ptr<Resource>& resource,
     switch (resource->GetResourceType()) {
     case ResourceType::kBuffer: {
         size_t buffer_size = resource->GetWidth();
-        std::shared_ptr<Resource> upload_resource = m_device->CreateBuffer(BindFlag::kCopySource, buffer_size);
+        std::shared_ptr<Resource> upload_resource = m_device->CreateBuffer({
+            .size = buffer_size,
+            .usage = BindFlag::kCopySource,
+        });
         upload_resource->CommitMemory(MemoryType::kUpload);
         upload_resource->UpdateUploadBuffer(0, data, buffer_size);
 
@@ -171,7 +176,10 @@ void RenderModel::UpdateSubresource(const std::shared_ptr<Resource>& resource,
                       row_bytes, num_rows, m_device->GetTextureDataPitchAlignment());
         region.buffer_row_pitch = row_bytes;
 
-        std::shared_ptr<Resource> upload_resource = m_device->CreateBuffer(BindFlag::kCopySource, num_bytes);
+        std::shared_ptr<Resource> upload_resource = m_device->CreateBuffer({
+            .size = num_bytes,
+            .usage = BindFlag::kCopySource,
+        });
         upload_resource->CommitMemory(MemoryType::kUpload);
         upload_resource->UpdateUploadBufferWithTextureData(0, row_bytes, num_bytes, data, row_pitch, depth_pitch,
                                                            num_rows, region.texture_extent.depth);

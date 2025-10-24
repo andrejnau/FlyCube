@@ -461,9 +461,9 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(const TextureDesc& desc)
                                    desc.height, desc.depth_or_array_layers, desc.mip_levels);
 }
 
-std::shared_ptr<Resource> VKDevice::CreateBuffer(uint32_t bind_flag, uint32_t buffer_size)
+std::shared_ptr<Resource> VKDevice::CreateBuffer(const BufferDesc& desc)
 {
-    return VKResource::CreateBuffer(*this, bind_flag, buffer_size);
+    return VKResource::CreateBuffer(*this, desc.usage, desc.size);
 }
 
 std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
