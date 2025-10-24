@@ -55,7 +55,7 @@ std::shared_ptr<DXResource> DXResource::WrapSwapchainBackBuffer(DXDevice& device
 // static
 std::shared_ptr<DXResource> DXResource::CreateTexture(DXDevice& device, const TextureDesc& desc)
 {
-    DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
+    DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(desc.format).DXGIFormat.DDS);
     if (desc.usage & BindFlag::kShaderResource) {
         dx_format = MakeTypelessDepthStencil(dx_format);
     }
@@ -116,26 +116,26 @@ std::shared_ptr<DXResource> DXResource::CreateBuffer(DXDevice& device, const Buf
         buffer_size = (buffer_size + 255) & ~255;
     }
 
-    D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
+    D3D12_RESOURCE_DESC resource_desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
 
     ResourceState state = ResourceState::kCommon;
     if (desc.usage & BindFlag::kRenderTarget) {
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+        resource_desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     }
     if (desc.usage & BindFlag::kDepthStencil) {
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+        resource_desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     }
     if (desc.usage & BindFlag::kUnorderedAccess) {
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        resource_desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
     if (desc.usage & BindFlag::kAccelerationStructure) {
         state = ResourceState::kRaytracingAccelerationStructure;
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        resource_desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->m_resource_type = ResourceType::kBuffer;
-    self->m_resource_desc = desc;
+    self->m_resource_desc = resource_desc;
     self->SetInitialState(state);
     return self;
 }
