@@ -327,12 +327,9 @@ std::shared_ptr<Pipeline> DXDevice::CreateRayTracingPipeline(const RayTracingPip
     return std::make_shared<DXRayTracingPipeline>(*this, desc);
 }
 
-std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(AccelerationStructureType type,
-                                                                const std::shared_ptr<Resource>& resource,
-                                                                uint64_t offset,
-                                                                uint64_t size)
+std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(const AccelerationStructureDesc& desc)
 {
-    return DXResource::CreateAccelerationStructure(*this, type, resource, offset, size);
+    return DXResource::CreateAccelerationStructure(*this, desc.type, desc.buffer, desc.buffer_offset, desc.size);
 }
 
 std::shared_ptr<QueryHeap> DXDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)

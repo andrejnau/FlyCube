@@ -79,9 +79,12 @@ int main(int argc, char* argv[])
     acceleration_structures_memory->CommitMemory(MemoryType::kDefault);
     acceleration_structures_memory->SetName("acceleration_structures_memory");
 
-    std::shared_ptr<Resource> bottom =
-        device->CreateAccelerationStructure(AccelerationStructureType::kBottomLevel, acceleration_structures_memory, 0,
-                                            blas_prebuild_info.acceleration_structure_size);
+    std::shared_ptr<Resource> bottom = device->CreateAccelerationStructure({
+        .type = AccelerationStructureType::kBottomLevel,
+        .buffer = acceleration_structures_memory,
+        .buffer_offset = 0,
+        .size = blas_prebuild_info.acceleration_structure_size,
+    });
 
     auto scratch = device->CreateBuffer(BindFlag::kRayTracing, std::max(blas_prebuild_info.build_scratch_data_size,
                                                                         tlas_prebuild_info.build_scratch_data_size));
@@ -125,9 +128,12 @@ int main(int argc, char* argv[])
         instance.acceleration_structure_handle = mesh.first->GetAccelerationStructureHandle();
     }
 
-    std::shared_ptr<Resource> top = device->CreateAccelerationStructure(
-        AccelerationStructureType::kTopLevel, acceleration_structures_memory,
-        Align(blas_compacted_size, kAccelerationStructureAlignment), tlas_prebuild_info.acceleration_structure_size);
+    std::shared_ptr<Resource> top = device->CreateAccelerationStructure({
+        .type = AccelerationStructureType::kTopLevel,
+        .buffer = acceleration_structures_memory,
+        .buffer_offset = Align(blas_compacted_size, kAccelerationStructureAlignment),
+        .size = tlas_prebuild_info.acceleration_structure_size,
+    });
 
     auto instance_data = device->CreateBuffer(BindFlag::kRayTracing, instances.size() * sizeof(instances.back()));
     instance_data->CommitMemory(MemoryType::kUpload);

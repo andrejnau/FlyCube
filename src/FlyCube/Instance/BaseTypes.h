@@ -636,3 +636,10 @@ struct SamplerDesc {
     SamplerTextureAddressMode mode;
     SamplerComparisonFunc func;
 };
+
+struct AccelerationStructureDesc {
+    AccelerationStructureType type;
+    std::shared_ptr<Resource> buffer;
+    uint64_t buffer_offset;
+    uint64_t size;
+};

@@ -142,12 +142,9 @@ std::shared_ptr<Pipeline> MTDevice::CreateRayTracingPipeline(const RayTracingPip
     NOTREACHED();
 }
 
-std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(AccelerationStructureType type,
-                                                                const std::shared_ptr<Resource>& resource,
-                                                                uint64_t offset,
-                                                                uint64_t size)
+std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(const AccelerationStructureDesc& desc)
 {
-    return MTResource::CreateAccelerationStructure(*this, type, resource, offset, size);
+    return MTResource::CreateAccelerationStructure(*this, desc.type, desc.buffer, desc.buffer_offset, desc.size);
 }
 
 std::shared_ptr<QueryHeap> MTDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)

@@ -582,12 +582,9 @@ RaytracingASPrebuildInfo VKDevice::GetAccelerationStructurePrebuildInfo(
     return prebuild_info;
 }
 
-std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(AccelerationStructureType type,
-                                                                const std::shared_ptr<Resource>& resource,
-                                                                uint64_t offset,
-                                                                uint64_t size)
+std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const AccelerationStructureDesc& desc)
 {
-    return VKResource::CreateAccelerationStructure(*this, type, resource, offset, size);
+    return VKResource::CreateAccelerationStructure(*this, desc.type, desc.buffer, desc.buffer_offset, desc.size);
 }
 
 std::shared_ptr<QueryHeap> VKDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)
