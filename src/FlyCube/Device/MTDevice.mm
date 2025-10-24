@@ -71,13 +71,12 @@ std::shared_ptr<Fence> MTDevice::CreateFence(uint64_t initial_value)
 
 std::shared_ptr<Resource> MTDevice::CreateTexture(const TextureDesc& desc)
 {
-    return MTResource::CreateTexture(*this, desc.type, desc.usage, desc.format, desc.sample_count, desc.width,
-                                     desc.height, desc.depth_or_array_layers, desc.mip_levels);
+    return MTResource::CreateTexture(*this, desc);
 }
 
 std::shared_ptr<Resource> MTDevice::CreateBuffer(const BufferDesc& desc)
 {
-    return MTResource::CreateBuffer(*this, desc.usage, desc.size);
+    return MTResource::CreateBuffer(*this, desc);
 }
 
 std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
@@ -144,7 +143,7 @@ std::shared_ptr<Pipeline> MTDevice::CreateRayTracingPipeline(const RayTracingPip
 
 std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(const AccelerationStructureDesc& desc)
 {
-    return MTResource::CreateAccelerationStructure(*this, desc.type, desc.buffer, desc.buffer_offset, desc.size);
+    return MTResource::CreateAccelerationStructure(*this, desc);
 }
 
 std::shared_ptr<QueryHeap> MTDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)

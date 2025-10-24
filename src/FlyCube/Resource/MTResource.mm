@@ -22,51 +22,43 @@ std::shared_ptr<MTResource> MTResource::CreateSwapchainTexture(MTDevice& device,
     self->m_texture = {
         .type = TextureType::k2D,
         .bind_flag = bind_flag,
-        .width = static_cast<int>(width),
-        .height = static_cast<int>(height),
+        .width = width,
+        .height = height,
     };
     self->SetInitialState(ResourceState::kPresent);
     return self;
 }
 
 // static
-std::shared_ptr<MTResource> MTResource::CreateTexture(MTDevice& device,
-                                                      TextureType type,
-                                                      uint32_t bind_flag,
-                                                      gli::format format,
-                                                      uint32_t sample_count,
-                                                      int width,
-                                                      int height,
-                                                      int depth,
-                                                      int mip_levels)
+std::shared_ptr<MTResource> MTResource::CreateTexture(MTDevice& device, const TextureDesc& desc)
 {
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->m_resource_type = ResourceType::kTexture;
-    self->m_format = format;
+    self->m_format = desc.format;
     self->m_texture = {
-        .type = type,
-        .bind_flag = bind_flag,
-        .sample_count = sample_count,
-        .width = width,
-        .height = height,
-        .depth = depth,
-        .mip_levels = mip_levels,
+        .type = desc.type,
+        .bind_flag = desc.usage,
+        .sample_count = desc.sample_count,
+        .width = desc.width,
+        .height = desc.height,
+        .depth_or_array_layers = desc.depth_or_array_layers,
+        .mip_levels = desc.mip_levels,
     };
     return self;
 }
 
 // static
-std::shared_ptr<MTResource> MTResource::CreateBuffer(MTDevice& device, uint32_t bind_flag, uint32_t buffer_size)
+std::shared_ptr<MTResource> MTResource::CreateBuffer(MTDevice& device, const BufferDesc& desc)
 {
-    if (buffer_size == 0) {
+    if (desc.size == 0) {
         return nullptr;
     }
 
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->m_resource_type = ResourceType::kBuffer;
     self->m_buffer = {
-        .bind_flag = bind_flag,
-        .size = buffer_size,
+        .bind_flag = desc.usage,
+        .size = desc.size,
     };
     return self;
 }
@@ -118,19 +110,15 @@ std::shared_ptr<MTResource> MTResource::CreateSampler(MTDevice& device, const Sa
 }
 
 // static
-std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(
-    MTDevice& device,
-    AccelerationStructureType type,
-    const std::shared_ptr<Resource>& acceleration_structures_memory,
-    uint64_t offset,
-    uint64_t size)
+std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(MTDevice& device,
+                                                                    const AccelerationStructureDesc& desc)
 {
-    decltype(auto) buffer = acceleration_structures_memory->As<MTResource>().m_buffer;
+    decltype(auto) buffer = desc.buffer->As<MTResource>().m_buffer;
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->m_resource_type = ResourceType::kAccelerationStructure;
     self->m_acceleration_structure = [buffer.acceleration_structure_heap
-        newAccelerationStructureWithSize:size
-                                  offset:buffer.acceleration_structure_heap_offset + offset];
+        newAccelerationStructureWithSize:desc.size
+                                  offset:buffer.acceleration_structure_heap_offset + desc.buffer_offset];
     return self;
 }
 
@@ -139,7 +127,7 @@ MTLTextureDescriptor* MTResource::GetTextureDescriptor(MemoryType memory_type) c
     MTLTextureDescriptor* texture_descriptor = [MTLTextureDescriptor new];
     switch (m_texture.type) {
     case TextureType::k1D:
-        if (m_texture.depth > 1) {
+        if (m_texture.depth_or_array_layers > 1) {
             texture_descriptor.textureType = MTLTextureType1DArray;
         } else {
             texture_descriptor.textureType = MTLTextureType1D;
@@ -147,13 +135,13 @@ MTLTextureDescriptor* MTResource::GetTextureDescriptor(MemoryType memory_type) c
         break;
     case TextureType::k2D:
         if (m_texture.sample_count > 1) {
-            if (m_texture.depth > 1) {
+            if (m_texture.depth_or_array_layers > 1) {
                 texture_descriptor.textureType = MTLTextureType2DMultisampleArray;
             } else {
                 texture_descriptor.textureType = MTLTextureType2DMultisample;
             }
         } else {
-            if (m_texture.depth > 1) {
+            if (m_texture.depth_or_array_layers > 1) {
                 texture_descriptor.textureType = MTLTextureType2DArray;
             } else {
                 texture_descriptor.textureType = MTLTextureType2D;
@@ -188,7 +176,7 @@ MTLTextureDescriptor* MTResource::GetTextureDescriptor(MemoryType memory_type) c
     texture_descriptor.width = m_texture.width;
     texture_descriptor.height = m_texture.height;
     texture_descriptor.mipmapLevelCount = m_texture.mip_levels;
-    texture_descriptor.arrayLength = m_texture.depth;
+    texture_descriptor.arrayLength = m_texture.depth_or_array_layers;
     texture_descriptor.sampleCount = m_texture.sample_count;
     texture_descriptor.usage = usage;
     texture_descriptor.storageMode = ConvertStorageMode(memory_type);
@@ -260,7 +248,7 @@ uint32_t MTResource::GetHeight() const
 
 uint16_t MTResource::GetLayerCount() const
 {
-    return m_texture.depth;
+    return m_texture.depth_or_array_layers;
 }
 
 uint16_t MTResource::GetLevelCount() const

@@ -457,13 +457,12 @@ std::shared_ptr<Fence> VKDevice::CreateFence(uint64_t initial_value)
 
 std::shared_ptr<Resource> VKDevice::CreateTexture(const TextureDesc& desc)
 {
-    return VKResource::CreateImage(*this, desc.type, desc.usage, desc.format, desc.sample_count, desc.width,
-                                   desc.height, desc.depth_or_array_layers, desc.mip_levels);
+    return VKResource::CreateImage(*this, desc);
 }
 
 std::shared_ptr<Resource> VKDevice::CreateBuffer(const BufferDesc& desc)
 {
-    return VKResource::CreateBuffer(*this, desc.usage, desc.size);
+    return VKResource::CreateBuffer(*this, desc);
 }
 
 std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
@@ -584,7 +583,7 @@ RaytracingASPrebuildInfo VKDevice::GetAccelerationStructurePrebuildInfo(
 
 std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const AccelerationStructureDesc& desc)
 {
-    return VKResource::CreateAccelerationStructure(*this, desc.type, desc.buffer, desc.buffer_offset, desc.size);
+    return VKResource::CreateAccelerationStructure(*this, desc);
 }
 
 std::shared_ptr<QueryHeap> VKDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)

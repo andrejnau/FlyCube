@@ -16,26 +16,11 @@ public:
                                                               gli::format format,
                                                               uint32_t width,
                                                               uint32_t height);
-
-    static std::shared_ptr<MTResource> CreateTexture(MTDevice& device,
-                                                     TextureType type,
-                                                     uint32_t bind_flag,
-                                                     gli::format format,
-                                                     uint32_t sample_count,
-                                                     int width,
-                                                     int height,
-                                                     int depth,
-                                                     int mip_levels);
-
-    static std::shared_ptr<MTResource> CreateBuffer(MTDevice& device, uint32_t bind_flag, uint32_t buffer_size);
-
+    static std::shared_ptr<MTResource> CreateTexture(MTDevice& device, const TextureDesc& desc);
+    static std::shared_ptr<MTResource> CreateBuffer(MTDevice& device, const BufferDesc& desc);
     static std::shared_ptr<MTResource> CreateSampler(MTDevice& device, const SamplerDesc& desc);
-
     static std::shared_ptr<MTResource> CreateAccelerationStructure(MTDevice& device,
-                                                                   AccelerationStructureType type,
-                                                                   const std::shared_ptr<Resource>& resource,
-                                                                   uint64_t offset,
-                                                                   uint64_t size);
+                                                                   const AccelerationStructureDesc& desc);
 
     void CommitMemory(MemoryType memory_type) override;
     void BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset) override;
@@ -65,16 +50,16 @@ private:
         TextureType type = TextureType::k2D;
         uint32_t bind_flag = 0;
         uint32_t sample_count = 1;
-        int width = 1;
-        int height = 1;
-        int depth = 1;
-        int mip_levels = 1;
+        uint32_t width = 1;
+        uint32_t height = 1;
+        uint32_t depth_or_array_layers = 1;
+        uint32_t mip_levels = 1;
     } m_texture;
 
     struct Buffer {
         id<MTLBuffer> res = nullptr;
         uint32_t bind_flag = 0;
-        uint32_t size = 0;
+        uint64_t size = 0;
         id<MTLHeap> acceleration_structure_heap = nullptr;
         uint64_t acceleration_structure_heap_offset = 0;
     } m_buffer;

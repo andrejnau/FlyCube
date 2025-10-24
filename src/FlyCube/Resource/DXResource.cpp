@@ -53,89 +53,82 @@ std::shared_ptr<DXResource> DXResource::WrapSwapchainBackBuffer(DXDevice& device
 }
 
 // static
-std::shared_ptr<DXResource> DXResource::CreateTexture(DXDevice& device,
-                                                      TextureType type,
-                                                      uint32_t bind_flag,
-                                                      gli::format format,
-                                                      uint32_t sample_count,
-                                                      int width,
-                                                      int height,
-                                                      int depth,
-                                                      int mip_levels)
+std::shared_ptr<DXResource> DXResource::CreateTexture(DXDevice& device, const TextureDesc& desc)
 {
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
-    if (bind_flag & BindFlag::kShaderResource) {
+    if (desc.usage & BindFlag::kShaderResource) {
         dx_format = MakeTypelessDepthStencil(dx_format);
     }
 
-    D3D12_RESOURCE_DESC desc = {};
-    switch (type) {
+    D3D12_RESOURCE_DESC resource_desc = {};
+    switch (desc.type) {
     case TextureType::k1D:
-        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+        resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
         break;
     case TextureType::k2D:
-        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+        resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
         break;
     case TextureType::k3D:
-        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+        resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
         break;
     }
-    desc.Width = width;
-    desc.Height = height;
-    desc.DepthOrArraySize = depth;
-    desc.MipLevels = mip_levels;
-    desc.Format = dx_format;
+    resource_desc.Width = desc.width;
+    resource_desc.Height = desc.height;
+    resource_desc.DepthOrArraySize = desc.depth_or_array_layers;
+    resource_desc.MipLevels = desc.mip_levels;
+    resource_desc.Format = dx_format;
 
     D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS ms_check_desc = {};
-    ms_check_desc.Format = desc.Format;
-    ms_check_desc.SampleCount = sample_count;
+    ms_check_desc.Format = resource_desc.Format;
+    ms_check_desc.SampleCount = desc.sample_count;
     device.GetDevice()->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &ms_check_desc,
                                             sizeof(ms_check_desc));
-    desc.SampleDesc.Count = sample_count;
-    desc.SampleDesc.Quality = ms_check_desc.NumQualityLevels - 1;
+    resource_desc.SampleDesc.Count = desc.sample_count;
+    resource_desc.SampleDesc.Quality = ms_check_desc.NumQualityLevels - 1;
 
-    if (bind_flag & BindFlag::kRenderTarget) {
-        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    if (desc.usage & BindFlag::kRenderTarget) {
+        resource_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     }
-    if (bind_flag & BindFlag::kDepthStencil) {
-        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    if (desc.usage & BindFlag::kDepthStencil) {
+        resource_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     }
-    if (bind_flag & BindFlag::kUnorderedAccess) {
-        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    if (desc.usage & BindFlag::kUnorderedAccess) {
+        resource_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->m_resource_type = ResourceType::kTexture;
-    self->m_format = format;
-    self->m_resource_desc = desc;
+    self->m_format = desc.format;
+    self->m_resource_desc = resource_desc;
     self->SetInitialState(ResourceState::kCommon);
     return self;
 }
 
 // static
-std::shared_ptr<DXResource> DXResource::CreateBuffer(DXDevice& device, uint32_t bind_flag, uint32_t buffer_size)
+std::shared_ptr<DXResource> DXResource::CreateBuffer(DXDevice& device, const BufferDesc& desc)
 {
+    uint64_t buffer_size = desc.size;
     if (buffer_size == 0) {
         return nullptr;
     }
 
-    if (bind_flag & BindFlag::kConstantBuffer) {
+    if (desc.usage & BindFlag::kConstantBuffer) {
         buffer_size = (buffer_size + 255) & ~255;
     }
 
     D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
 
     ResourceState state = ResourceState::kCommon;
-    if (bind_flag & BindFlag::kRenderTarget) {
+    if (desc.usage & BindFlag::kRenderTarget) {
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     }
-    if (bind_flag & BindFlag::kDepthStencil) {
+    if (desc.usage & BindFlag::kDepthStencil) {
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     }
-    if (bind_flag & BindFlag::kUnorderedAccess) {
+    if (desc.usage & BindFlag::kUnorderedAccess) {
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
-    if (bind_flag & BindFlag::kAccelerationStructure) {
+    if (desc.usage & BindFlag::kAccelerationStructure) {
         state = ResourceState::kRaytracingAccelerationStructure;
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
@@ -199,17 +192,13 @@ std::shared_ptr<DXResource> DXResource::CreateSampler(DXDevice& device, const Sa
 }
 
 // static
-std::shared_ptr<DXResource> DXResource::CreateAccelerationStructure(
-    DXDevice& device,
-    AccelerationStructureType type,
-    const std::shared_ptr<Resource>& acceleration_structures_memory,
-    uint64_t offset,
-    uint64_t size)
+std::shared_ptr<DXResource> DXResource::CreateAccelerationStructure(DXDevice& device,
+                                                                    const AccelerationStructureDesc& desc)
 {
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->m_resource_type = ResourceType::kAccelerationStructure;
     self->m_acceleration_structure_address =
-        acceleration_structures_memory->As<DXResource>().m_resource->GetGPUVirtualAddress() + offset;
+        desc.buffer->As<DXResource>().m_resource->GetGPUVirtualAddress() + desc.buffer_offset;
     return self;
 }
 
