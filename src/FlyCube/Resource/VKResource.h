@@ -11,11 +11,7 @@ class VKResource : public ResourceBase {
 public:
     VKResource(PassKey<VKResource> pass_key, VKDevice& device);
 
-    static std::shared_ptr<VKResource> WrapSwapchainImage(VKDevice& device,
-                                                          vk::Image image,
-                                                          gli::format format,
-                                                          uint32_t width,
-                                                          uint32_t height);
+    static std::shared_ptr<VKResource> WrapSwapchainImage(VKDevice& device, vk::Image image, const TextureDesc& desc);
     static std::shared_ptr<VKResource> CreateImage(VKDevice& device, const TextureDesc& desc);
     static std::shared_ptr<VKResource> CreateBuffer(VKDevice& device, const BufferDesc& desc);
     static std::shared_ptr<VKResource> CreateSampler(VKDevice& device, const SamplerDesc& desc);
@@ -50,10 +46,7 @@ private:
 
     struct Image {
         vk::Image res;
-        vk::Extent2D size = {};
-        uint32_t level_count = 1;
-        uint32_t sample_count = 1;
-        uint32_t array_layers = 1;
+        TextureDesc desc;
     } m_image;
 
     struct Buffer {

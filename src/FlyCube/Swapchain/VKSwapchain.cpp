@@ -110,10 +110,19 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
 
     m_command_list = m_device.CreateCommandList(CommandListType::kGraphics);
     for (uint32_t i = 0; i < frame_count; ++i) {
-        std::shared_ptr<VKResource> res =
-            VKResource::WrapSwapchainImage(m_device, m_images[i], GetFormat(), width, height);
-        m_command_list->ResourceBarrier({ { res, ResourceState::kUndefined, ResourceState::kPresent } });
-        m_back_buffers.emplace_back(res);
+        TextureDesc texture_desc = {
+            .type = TextureType::k2D,
+            .format = GetFormat(),
+            .width = width,
+            .height = height,
+            .depth_or_array_layers = 1,
+            .mip_levels = 1,
+            .sample_count = 1,
+            .usage = BindFlag::kRenderTarget | BindFlag::kCopyDest,
+        };
+        std::shared_ptr<VKResource> back_buffer = VKResource::WrapSwapchainImage(m_device, m_images[i], texture_desc);
+        m_command_list->ResourceBarrier({ { back_buffer, ResourceState::kUndefined, ResourceState::kPresent } });
+        m_back_buffers.emplace_back(std::move(back_buffer));
     }
     m_command_list->Close();
 

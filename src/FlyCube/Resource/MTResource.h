@@ -11,11 +11,7 @@ class MTResource : public ResourceBase {
 public:
     MTResource(PassKey<MTResource> pass_key, MTDevice& device);
 
-    static std::shared_ptr<MTResource> CreateSwapchainTexture(MTDevice& device,
-                                                              uint32_t bind_flag,
-                                                              gli::format format,
-                                                              uint32_t width,
-                                                              uint32_t height);
+    static std::shared_ptr<MTResource> CreateSwapchainTexture(MTDevice& device, const TextureDesc& desc);
     static std::shared_ptr<MTResource> CreateTexture(MTDevice& device, const TextureDesc& desc);
     static std::shared_ptr<MTResource> CreateBuffer(MTDevice& device, const BufferDesc& desc);
     static std::shared_ptr<MTResource> CreateSampler(MTDevice& device, const SamplerDesc& desc);
@@ -47,13 +43,7 @@ private:
 
     struct Texture {
         id<MTLTexture> res = nullptr;
-        TextureType type = TextureType::k2D;
-        uint32_t bind_flag = 0;
-        uint32_t sample_count = 1;
-        uint32_t width = 1;
-        uint32_t height = 1;
-        uint32_t depth_or_array_layers = 1;
-        uint32_t mip_levels = 1;
+        TextureDesc desc = {};
     } m_texture;
 
     struct Buffer {

@@ -28,19 +28,15 @@ VKResource::VKResource(PassKey<VKResource> pass_key, VKDevice& device)
 }
 
 // static
-std::shared_ptr<VKResource> VKResource::WrapSwapchainImage(VKDevice& device,
-                                                           vk::Image image,
-                                                           gli::format format,
-                                                           uint32_t width,
-                                                           uint32_t height)
+std::shared_ptr<VKResource> VKResource::WrapSwapchainImage(VKDevice& device, vk::Image image, const TextureDesc& desc)
 {
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
     self->m_resource_type = ResourceType::kTexture;
-    self->m_format = format;
+    self->m_format = desc.format;
     self->m_is_back_buffer = true;
     self->m_image = {
         .res = image,
-        .size = vk::Extent2D(width, height),
+        .desc = desc,
     };
     self->SetInitialState(ResourceState::kPresent);
     return self;
@@ -114,10 +110,7 @@ std::shared_ptr<VKResource> VKResource::CreateImage(VKDevice& device, const Text
     self->m_image_owned = device.GetDevice().createImageUnique(image_info);
     self->m_image = {
         .res = self->m_image_owned.get(),
-        .size = vk::Extent2D(desc.width, desc.height),
-        .level_count = static_cast<uint32_t>(desc.mip_levels),
-        .sample_count = desc.sample_count,
-        .array_layers = static_cast<uint32_t>(desc.depth_or_array_layers),
+        .desc = desc,
     };
     self->SetInitialState(ResourceState::kUndefined);
     return self;
@@ -290,29 +283,29 @@ void VKResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
 uint64_t VKResource::GetWidth() const
 {
     if (m_resource_type == ResourceType::kTexture) {
-        return m_image.size.width;
+        return m_image.desc.width;
     }
     return m_buffer.size;
 }
 
 uint32_t VKResource::GetHeight() const
 {
-    return m_image.size.height;
+    return m_image.desc.height;
 }
 
 uint16_t VKResource::GetLayerCount() const
 {
-    return m_image.array_layers;
+    return m_image.desc.depth_or_array_layers;
 }
 
 uint16_t VKResource::GetLevelCount() const
 {
-    return m_image.level_count;
+    return m_image.desc.mip_levels;
 }
 
 uint32_t VKResource::GetSampleCount() const
 {
-    return m_image.sample_count;
+    return m_image.desc.sample_count;
 }
 
 uint64_t VKResource::GetAccelerationStructureHandle() const

@@ -9,22 +9,10 @@ MTResource::MTResource(PassKey<MTResource> pass_key, MTDevice& device)
 }
 
 // static
-std::shared_ptr<MTResource> MTResource::CreateSwapchainTexture(MTDevice& device,
-                                                               uint32_t bind_flag,
-                                                               gli::format format,
-                                                               uint32_t width,
-                                                               uint32_t height)
+std::shared_ptr<MTResource> MTResource::CreateSwapchainTexture(MTDevice& device, const TextureDesc& desc)
 {
-    std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
-    self->m_resource_type = ResourceType::kTexture;
-    self->m_format = format;
+    std::shared_ptr<MTResource> self = MTResource::CreateTexture(device, desc);
     self->m_is_back_buffer = true;
-    self->m_texture = {
-        .type = TextureType::k2D,
-        .bind_flag = bind_flag,
-        .width = width,
-        .height = height,
-    };
     self->SetInitialState(ResourceState::kPresent);
     return self;
 }
@@ -35,15 +23,7 @@ std::shared_ptr<MTResource> MTResource::CreateTexture(MTDevice& device, const Te
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->m_resource_type = ResourceType::kTexture;
     self->m_format = desc.format;
-    self->m_texture = {
-        .type = desc.type,
-        .bind_flag = desc.usage,
-        .sample_count = desc.sample_count,
-        .width = desc.width,
-        .height = desc.height,
-        .depth_or_array_layers = desc.depth_or_array_layers,
-        .mip_levels = desc.mip_levels,
-    };
+    self->m_texture.desc = desc;
     return self;
 }
 
@@ -125,23 +105,23 @@ std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(MTDevice& de
 MTLTextureDescriptor* MTResource::GetTextureDescriptor(MemoryType memory_type) const
 {
     MTLTextureDescriptor* texture_descriptor = [MTLTextureDescriptor new];
-    switch (m_texture.type) {
+    switch (m_texture.desc.type) {
     case TextureType::k1D:
-        if (m_texture.depth_or_array_layers > 1) {
+        if (m_texture.desc.depth_or_array_layers > 1) {
             texture_descriptor.textureType = MTLTextureType1DArray;
         } else {
             texture_descriptor.textureType = MTLTextureType1D;
         }
         break;
     case TextureType::k2D:
-        if (m_texture.sample_count > 1) {
-            if (m_texture.depth_or_array_layers > 1) {
+        if (m_texture.desc.sample_count > 1) {
+            if (m_texture.desc.depth_or_array_layers > 1) {
                 texture_descriptor.textureType = MTLTextureType2DMultisampleArray;
             } else {
                 texture_descriptor.textureType = MTLTextureType2DMultisample;
             }
         } else {
-            if (m_texture.depth_or_array_layers > 1) {
+            if (m_texture.desc.depth_or_array_layers > 1) {
                 texture_descriptor.textureType = MTLTextureType2DArray;
             } else {
                 texture_descriptor.textureType = MTLTextureType2D;
@@ -154,30 +134,30 @@ MTLTextureDescriptor* MTResource::GetTextureDescriptor(MemoryType memory_type) c
     }
 
     MTLTextureUsage usage = {};
-    if (m_texture.bind_flag & BindFlag::kRenderTarget) {
+    if (m_texture.desc.usage & BindFlag::kRenderTarget) {
         usage |= MTLTextureUsageRenderTarget;
     }
-    if (m_texture.bind_flag & BindFlag::kDepthStencil) {
+    if (m_texture.desc.usage & BindFlag::kDepthStencil) {
         usage |= MTLTextureUsageRenderTarget;
     }
-    if (m_texture.bind_flag & BindFlag::kShaderResource) {
+    if (m_texture.desc.usage & BindFlag::kShaderResource) {
         usage |= MTLTextureUsageShaderRead;
     }
-    if (m_texture.bind_flag & BindFlag::kUnorderedAccess) {
+    if (m_texture.desc.usage & BindFlag::kUnorderedAccess) {
         usage |= MTLTextureUsageShaderWrite;
     }
 
     // TODO: check format
-    if (m_texture.bind_flag & BindFlag::kDepthStencil) {
+    if (m_texture.desc.usage & BindFlag::kDepthStencil) {
         usage |= MTLTextureUsagePixelFormatView;
     }
 
     texture_descriptor.pixelFormat = m_device.GetMTLPixelFormat(GetFormat());
-    texture_descriptor.width = m_texture.width;
-    texture_descriptor.height = m_texture.height;
-    texture_descriptor.mipmapLevelCount = m_texture.mip_levels;
-    texture_descriptor.arrayLength = m_texture.depth_or_array_layers;
-    texture_descriptor.sampleCount = m_texture.sample_count;
+    texture_descriptor.width = m_texture.desc.width;
+    texture_descriptor.height = m_texture.desc.height;
+    texture_descriptor.mipmapLevelCount = m_texture.desc.mip_levels;
+    texture_descriptor.arrayLength = m_texture.desc.depth_or_array_layers;
+    texture_descriptor.sampleCount = m_texture.desc.sample_count;
     texture_descriptor.usage = usage;
     texture_descriptor.storageMode = ConvertStorageMode(memory_type);
 
@@ -236,29 +216,29 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
 uint64_t MTResource::GetWidth() const
 {
     if (m_resource_type == ResourceType::kTexture) {
-        return m_texture.width;
+        return m_texture.desc.width;
     }
     return m_buffer.size;
 }
 
 uint32_t MTResource::GetHeight() const
 {
-    return m_texture.height;
+    return m_texture.desc.height;
 }
 
 uint16_t MTResource::GetLayerCount() const
 {
-    return m_texture.depth_or_array_layers;
+    return m_texture.desc.depth_or_array_layers;
 }
 
 uint16_t MTResource::GetLevelCount() const
 {
-    return m_texture.mip_levels;
+    return m_texture.desc.mip_levels;
 }
 
 uint32_t MTResource::GetSampleCount() const
 {
-    return m_texture.sample_count;
+    return m_texture.desc.sample_count;
 }
 
 uint64_t MTResource::GetAccelerationStructureHandle() const

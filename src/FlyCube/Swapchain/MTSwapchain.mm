@@ -28,8 +28,17 @@ MTSwapchain::MTSwapchain(MTDevice& device,
     m_layer.framebufferOnly = NO;
 
     for (size_t i = 0; i < frame_count; ++i) {
-        auto back_buffer = MTResource::CreateSwapchainTexture(
-            m_device, BindFlag::kRenderTarget | BindFlag::kUnorderedAccess, GetFormat(), width, height);
+        TextureDesc texture_desc = {
+            .type = TextureType::k2D,
+            .format = GetFormat(),
+            .width = width,
+            .height = height,
+            .depth_or_array_layers = 1,
+            .mip_levels = 1,
+            .sample_count = 1,
+            .usage = BindFlag::kRenderTarget | BindFlag::kUnorderedAccess,
+        };
+        std::shared_ptr<MTResource> back_buffer = MTResource::CreateSwapchainTexture(m_device, texture_desc);
         back_buffer->CommitMemory(MemoryType::kDefault);
         m_back_buffers.emplace_back(std::move(back_buffer));
     }
