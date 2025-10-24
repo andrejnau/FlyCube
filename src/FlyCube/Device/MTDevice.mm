@@ -90,6 +90,17 @@ std::shared_ptr<Resource> MTDevice::CreatePlacedTexture(const std::shared_ptr<Me
     return texture;
 }
 
+std::shared_ptr<Resource> MTDevice::CreatePlacedBuffer(const std::shared_ptr<Memory>& memory,
+                                                       uint64_t offset,
+                                                       const BufferDesc& desc)
+{
+    auto buffer = MTResource::CreateBuffer(*this, desc);
+    if (buffer) {
+        buffer->BindMemory(memory, offset);
+    }
+    return buffer;
+}
+
 std::shared_ptr<Resource> MTDevice::CreateTexture(const TextureDesc& desc)
 {
     return MTResource::CreateTexture(*this, desc);

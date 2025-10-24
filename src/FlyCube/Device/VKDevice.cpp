@@ -476,6 +476,17 @@ std::shared_ptr<Resource> VKDevice::CreatePlacedTexture(const std::shared_ptr<Me
     return texture;
 }
 
+std::shared_ptr<Resource> VKDevice::CreatePlacedBuffer(const std::shared_ptr<Memory>& memory,
+                                                       uint64_t offset,
+                                                       const BufferDesc& desc)
+{
+    auto buffer = VKResource::CreateBuffer(*this, desc);
+    if (buffer) {
+        buffer->BindMemory(memory, offset);
+    }
+    return buffer;
+}
+
 std::shared_ptr<Resource> VKDevice::CreateTexture(const TextureDesc& desc)
 {
     return VKResource::CreateImage(*this, desc);

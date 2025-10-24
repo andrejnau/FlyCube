@@ -36,6 +36,9 @@ public:
     std::shared_ptr<Resource> CreatePlacedTexture(const std::shared_ptr<Memory>& memory,
                                                   uint64_t offset,
                                                   const TextureDesc& desc) override;
+    std::shared_ptr<Resource> CreatePlacedBuffer(const std::shared_ptr<Memory>& memory,
+                                                 uint64_t offset,
+                                                 const BufferDesc& desc) override;
     std::shared_ptr<Resource> CreateTexture(const TextureDesc& desc) override;
     std::shared_ptr<Resource> CreateBuffer(const BufferDesc& desc) override;
     std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) override;

@@ -275,6 +275,17 @@ std::shared_ptr<Resource> MTDevice::CreatePlacedTexture(const std::shared_ptr<Me
     return texture;
 }
 
+std::shared_ptr<Resource> DXDevice::CreatePlacedBuffer(const std::shared_ptr<Memory>& memory,
+                                                       uint64_t offset,
+                                                       const BufferDesc& desc)
+{
+    auto buffer = DXResource::CreateBuffer(*this, desc);
+    if (buffer) {
+        buffer->BindMemory(memory, offset);
+    }
+    return buffer;
+}
+
 std::shared_ptr<Resource> DXDevice::CreateTexture(const TextureDesc& desc)
 {
     return DXResource::CreateTexture(*this, desc);
