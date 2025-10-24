@@ -465,6 +465,17 @@ MemoryRequirements VKDevice::GetMemoryBufferRequirements(const BufferDesc& desc)
     return VKResource::CreateBuffer(*this, desc)->GetMemoryRequirements();
 }
 
+std::shared_ptr<Resource> VKDevice::CreatePlacedTexture(const std::shared_ptr<Memory>& memory,
+                                                        uint64_t offset,
+                                                        const TextureDesc& desc)
+{
+    auto texture = VKResource::CreateImage(*this, desc);
+    if (texture) {
+        texture->BindMemory(memory, offset);
+    }
+    return texture;
+}
+
 std::shared_ptr<Resource> VKDevice::CreateTexture(const TextureDesc& desc)
 {
     return VKResource::CreateImage(*this, desc);

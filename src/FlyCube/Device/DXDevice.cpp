@@ -264,6 +264,17 @@ MemoryRequirements DXDevice::GetMemoryBufferRequirements(const BufferDesc& desc)
     return DXResource::CreateBuffer(*this, desc)->GetMemoryRequirements();
 }
 
+std::shared_ptr<Resource> MTDevice::CreatePlacedTexture(const std::shared_ptr<Memory>& memory,
+                                                        uint64_t offset,
+                                                        const TextureDesc& desc)
+{
+    auto texture = DXResource::CreateTexture(*this, desc);
+    if (texture) {
+        texture->BindMemory(memory, offset);
+    }
+    return texture;
+}
+
 std::shared_ptr<Resource> DXDevice::CreateTexture(const TextureDesc& desc)
 {
     return DXResource::CreateTexture(*this, desc);

@@ -79,6 +79,17 @@ MemoryRequirements MTDevice::GetMemoryBufferRequirements(const BufferDesc& desc)
     return MTResource::CreateBuffer(*this, desc)->GetMemoryRequirements();
 }
 
+std::shared_ptr<Resource> MTDevice::CreatePlacedTexture(const std::shared_ptr<Memory>& memory,
+                                                        uint64_t offset,
+                                                        const TextureDesc& desc)
+{
+    auto texture = MTResource::CreateTexture(*this, desc);
+    if (texture) {
+        texture->BindMemory(memory, offset);
+    }
+    return texture;
+}
+
 std::shared_ptr<Resource> MTDevice::CreateTexture(const TextureDesc& desc)
 {
     return MTResource::CreateTexture(*this, desc);

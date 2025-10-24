@@ -26,6 +26,9 @@ public:
     std::shared_ptr<Fence> CreateFence(uint64_t initial_value) override;
     MemoryRequirements GetTextureMemoryRequirements(const TextureDesc& desc) override;
     MemoryRequirements GetMemoryBufferRequirements(const BufferDesc& desc) override;
+    std::shared_ptr<Resource> CreatePlacedTexture(const std::shared_ptr<Memory>& memory,
+                                                  uint64_t offset,
+                                                  const TextureDesc& desc) override;
     std::shared_ptr<Resource> CreateTexture(const TextureDesc& desc) override;
     std::shared_ptr<Resource> CreateBuffer(const BufferDesc& desc) override;
     std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) override;
