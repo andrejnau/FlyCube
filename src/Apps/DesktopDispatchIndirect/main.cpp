@@ -29,7 +29,6 @@ int main(int argc, char* argv[])
                                                                       .size = sizeof(float),
                                                                       .usage = BindFlag::kConstantBuffer,
                                                                   });
-        cbv_buffer[i]->CommitMemory(MemoryType::kUpload);
         ViewDesc cbv_view_desc = {
             .view_type = ViewType::kConstantBuffer,
             .dimension = ViewDimension::kBuffer,
@@ -50,7 +49,6 @@ int main(int argc, char* argv[])
                                                         .sample_count = 1,
                                                         .usage = BindFlag::kUnorderedAccess | BindFlag::kCopySource,
                                                     });
-    uav_texture->CommitMemory(MemoryType::kDefault);
     ViewDesc uav_view_desc = {
         .view_type = ViewType::kRWTexture,
         .dimension = ViewDimension::kTexture2D,
@@ -63,7 +61,6 @@ int main(int argc, char* argv[])
                                                       .size = sizeof(argument_data),
                                                       .usage = BindFlag::kIndirectBuffer,
                                                   });
-    argument_buffer->CommitMemory(MemoryType::kUpload);
     argument_buffer->UpdateUploadBuffer(0, &argument_data, sizeof(argument_data));
 
     std::shared_ptr<Shader> shader = device->CompileShader(

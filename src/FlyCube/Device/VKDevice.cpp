@@ -489,12 +489,20 @@ std::shared_ptr<Resource> VKDevice::CreatePlacedBuffer(const std::shared_ptr<Mem
 
 std::shared_ptr<Resource> VKDevice::CreateTexture(MemoryType memory_type, const TextureDesc& desc)
 {
-    return VKResource::CreateImage(*this, desc);
+    auto texture = VKResource::CreateImage(*this, desc);
+    if (texture) {
+        texture->CommitMemory(memory_type);
+    }
+    return texture;
 }
 
 std::shared_ptr<Resource> VKDevice::CreateBuffer(MemoryType memory_type, const BufferDesc& desc)
 {
-    return VKResource::CreateBuffer(*this, desc);
+    auto buffer = VKResource::CreateBuffer(*this, desc);
+    if (buffer) {
+        buffer->CommitMemory(memory_type);
+    }
+    return buffer;
 }
 
 std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)

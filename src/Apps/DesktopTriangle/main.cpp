@@ -25,7 +25,6 @@ int main(int argc, char* argv[])
                                                       .size = sizeof(index_data.front()) * index_data.size(),
                                                       .usage = BindFlag::kIndexBuffer,
                                                   });
-    index_buffer->CommitMemory(MemoryType::kUpload);
     index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
 
     std::vector<glm::vec3> vertex_data = {
@@ -38,7 +37,6 @@ int main(int argc, char* argv[])
                                                       .size = sizeof(vertex_data.front()) * vertex_data.size(),
                                                       .usage = BindFlag::kVertexBuffer,
                                                   });
-    vertex_buffer->CommitMemory(MemoryType::kUpload);
     vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 
     glm::vec4 constant_data = glm::vec4(1, 0, 0, 1);
@@ -47,7 +45,6 @@ int main(int argc, char* argv[])
                                                       .size = sizeof(constant_data),
                                                       .usage = BindFlag::kConstantBuffer,
                                                   });
-    constant_buffer->CommitMemory(MemoryType::kUpload);
     constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));
 
     std::shared_ptr<Shader> vertex_shader =

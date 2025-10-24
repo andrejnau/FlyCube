@@ -288,12 +288,20 @@ std::shared_ptr<Resource> DXDevice::CreatePlacedBuffer(const std::shared_ptr<Mem
 
 std::shared_ptr<Resource> DXDevice::CreateTexture(MemoryType memory_type, const TextureDesc& desc)
 {
-    return DXResource::CreateTexture(*this, desc);
+    auto texture = DXResource::CreateTexture(*this, desc);
+    if (texture) {
+        texture->CommitMemory(memory_type);
+    }
+    return texture;
 }
 
 std::shared_ptr<Resource> DXDevice::CreateBuffer(MemoryType memory_type, const BufferDesc& desc)
 {
-    return DXResource::CreateBuffer(*this, desc);
+    auto buffer = DXResource::CreateBuffer(*this, desc);
+    if (buffer) {
+        buffer->CommitMemory(memory_type);
+    }
+    return buffer;
 }
 
 std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)

@@ -103,12 +103,20 @@ std::shared_ptr<Resource> MTDevice::CreatePlacedBuffer(const std::shared_ptr<Mem
 
 std::shared_ptr<Resource> MTDevice::CreateTexture(MemoryType memory_type, const TextureDesc& desc)
 {
-    return MTResource::CreateTexture(*this, desc);
+    auto texture = MTResource::CreateTexture(*this, desc);
+    if (texture) {
+        texture->CommitMemory(memory_type);
+    }
+    return texture;
 }
 
 std::shared_ptr<Resource> MTDevice::CreateBuffer(MemoryType memory_type, const BufferDesc& desc)
 {
-    return MTResource::CreateBuffer(*this, desc);
+    auto buffer = MTResource::CreateBuffer(*this, desc);
+    if (buffer) {
+        buffer->CommitMemory(memory_type);
+    }
+    return buffer;
 }
 
 std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)

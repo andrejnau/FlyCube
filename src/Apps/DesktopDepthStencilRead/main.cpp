@@ -62,7 +62,6 @@ int main(int argc, char* argv[])
             .size = sizeof(depth_stencil_pass_cbv_data.front()) * depth_stencil_pass_cbv_data.size(),
             .usage = BindFlag::kConstantBuffer,
         });
-    depth_stencil_pass_cbv_buffer->CommitMemory(MemoryType::kUpload);
     std::vector<std::shared_ptr<View>> depth_stencil_pass_cbv_views(render_model.GetMeshCount());
     for (size_t i = 0; i < render_model.GetMeshCount(); ++i) {
         ViewDesc depth_stencil_pass_cbv_view_desc = {
@@ -84,7 +83,6 @@ int main(int argc, char* argv[])
                                                       .size = sizeof(vertex_cbv_data),
                                                       .usage = BindFlag::kConstantBuffer,
                                                   });
-    vertex_cbv_buffer->CommitMemory(MemoryType::kUpload);
     ViewDesc vertex_cbv_view_desc = {
         .view_type = ViewType::kConstantBuffer,
         .dimension = ViewDimension::kBuffer,
@@ -98,7 +96,6 @@ int main(int argc, char* argv[])
                                                       .size = sizeof(pixel_cbv_data),
                                                       .usage = BindFlag::kConstantBuffer,
                                                   });
-    pixel_cbv_buffer->CommitMemory(MemoryType::kUpload);
     pixel_cbv_buffer->UpdateUploadBuffer(0, &pixel_cbv_data, sizeof(pixel_cbv_data));
     ViewDesc pixel_cbv_view_desc = {
         .view_type = ViewType::kConstantBuffer,
@@ -117,7 +114,6 @@ int main(int argc, char* argv[])
                                                         .sample_count = 1,
                                                         .usage = BindFlag::kDepthStencil | BindFlag::kShaderResource,
                                                     });
-    depth_stencil_texture->CommitMemory(MemoryType::kDefault);
     ViewDesc depth_stencil_view_desc = {
         .view_type = ViewType::kDepthStencil,
         .dimension = ViewDimension::kTexture2D,

@@ -35,7 +35,6 @@ int main(int argc, char* argv[])
                                                        .size = sizeof(index_data.front()) * index_data.size(),
                                                        .usage = BindFlag::kIndexBuffer | BindFlag::kCopyDest,
                                                    });
-    index_buffer->CommitMemory(MemoryType::kDefault);
     index_buffer->SetName("index_buffer");
     std::vector<glm::vec3> vertex_data = {
         glm::vec3(-0.5, -0.5, 0.0),
@@ -47,7 +46,6 @@ int main(int argc, char* argv[])
                                                        .size = sizeof(vertex_data.front()) * vertex_data.size(),
                                                        .usage = BindFlag::kVertexBuffer | BindFlag::kCopyDest,
                                                    });
-    vertex_buffer->CommitMemory(MemoryType::kDefault);
     vertex_buffer->SetName("vertex_buffer");
 
     std::shared_ptr<Resource> upload_buffer =
@@ -55,7 +53,6 @@ int main(int argc, char* argv[])
                                                       .size = index_buffer->GetWidth() + vertex_buffer->GetWidth(),
                                                       .usage = BindFlag::kCopySource,
                                                   });
-    upload_buffer->CommitMemory(MemoryType::kUpload);
     upload_buffer->SetName("upload_buffer");
     upload_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
     upload_buffer->UpdateUploadBuffer(index_buffer->GetWidth(), vertex_data.data(),
@@ -88,7 +85,6 @@ int main(int argc, char* argv[])
                                                        .size = acceleration_structures_size,
                                                        .usage = BindFlag::kAccelerationStructure,
                                                    });
-    acceleration_structures_memory->CommitMemory(MemoryType::kDefault);
     acceleration_structures_memory->SetName("acceleration_structures_memory");
 
     std::shared_ptr<Resource> bottom = device->CreateAccelerationStructure({
@@ -104,14 +100,12 @@ int main(int argc, char* argv[])
             .size = std::max(blas_prebuild_info.build_scratch_data_size, tlas_prebuild_info.build_scratch_data_size),
             .usage = BindFlag::kRayTracing,
         });
-    scratch->CommitMemory(MemoryType::kDefault);
     scratch->SetName("scratch");
 
     auto blas_compacted_size_buffer = device->CreateBuffer(MemoryType::kReadback, {
                                                                                       .size = sizeof(uint64_t),
                                                                                       .usage = BindFlag::kCopyDest,
                                                                                   });
-    blas_compacted_size_buffer->CommitMemory(MemoryType::kReadback);
     blas_compacted_size_buffer->SetName("blas_compacted_size_buffer");
 
     auto query_heap = device->CreateQueryHeap(QueryHeapType::kAccelerationStructureCompactedSize, 1);
@@ -159,7 +153,6 @@ int main(int argc, char* argv[])
                                                       .size = instances.size() * sizeof(instances.back()),
                                                       .usage = BindFlag::kRayTracing,
                                                   });
-    instance_data->CommitMemory(MemoryType::kUpload);
     instance_data->SetName("instance_data");
     instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
     upload_command_list->BuildTopLevelAS({}, top, scratch, 0, instance_data, 0, instances.size(),
@@ -177,7 +170,6 @@ int main(int argc, char* argv[])
                                                         .sample_count = 1,
                                                         .usage = BindFlag::kUnorderedAccess | BindFlag::kCopySource,
                                                     });
-    uav->CommitMemory(MemoryType::kDefault);
     uav->SetName("uav");
     upload_command_list->ResourceBarrier({ { uav, uav->GetInitialState(), ResourceState::kUnorderedAccess } });
     upload_command_list->Close();
@@ -226,7 +218,6 @@ int main(int argc, char* argv[])
                                                       .size = device->GetShaderTableAlignment() * groups.size(),
                                                       .usage = BindFlag::kShaderTable,
                                                   });
-    shader_table->CommitMemory(MemoryType::kUpload);
     shader_table->SetName("shader_table");
 
     decltype(auto) shader_handles = pipeline->GetRayTracingShaderGroupHandles(0, groups.size());

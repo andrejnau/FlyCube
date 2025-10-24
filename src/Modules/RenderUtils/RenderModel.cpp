@@ -72,7 +72,6 @@ std::shared_ptr<Resource> RenderModel::CreateBuffer(uint32_t bind_flag, const st
                                                          .size = sizeof(data.front()) * data.size(),
                                                          .usage = bind_flag | BindFlag::kCopyDest,
                                                      });
-    buffer->CommitMemory(MemoryType::kDefault);
     UpdateSubresource(buffer, /*subresource=*/0, data.data(), 0, 0);
     return buffer;
 }
@@ -104,7 +103,6 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
                                                               .sample_count = 1,
                                                               .usage = BindFlag::kShaderResource | BindFlag::kCopyDest,
                                                           });
-        res->CommitMemory(MemoryType::kDefault);
 
         for (size_t level = 0; level < mip_levels; ++level) {
             size_t row_bytes = 0;
@@ -130,8 +128,6 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
                                                               .usage = BindFlag::kShaderResource | BindFlag::kCopyDest,
                                                           });
 
-        res->CommitMemory(MemoryType::kDefault);
-
         size_t row_bytes = 0;
         size_t num_bytes = 0;
         GetFormatInfo(width, height, gli::FORMAT_RGBA8_UNORM_PACK8, num_bytes, row_bytes);
@@ -156,7 +152,6 @@ void RenderModel::UpdateSubresource(const std::shared_ptr<Resource>& resource,
                                                             .size = buffer_size,
                                                             .usage = BindFlag::kCopySource,
                                                         });
-        upload_resource->CommitMemory(MemoryType::kUpload);
         upload_resource->UpdateUploadBuffer(0, data, buffer_size);
 
         std::vector<BufferCopyRegion> regions;
@@ -185,7 +180,6 @@ void RenderModel::UpdateSubresource(const std::shared_ptr<Resource>& resource,
                                                             .size = num_bytes,
                                                             .usage = BindFlag::kCopySource,
                                                         });
-        upload_resource->CommitMemory(MemoryType::kUpload);
         upload_resource->UpdateUploadBufferWithTextureData(0, row_bytes, num_bytes, data, row_pitch, depth_pitch,
                                                            num_rows, region.texture_extent.depth);
         m_command_list->CopyBufferToTexture(upload_resource, resource, regions);

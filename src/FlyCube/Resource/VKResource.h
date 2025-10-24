@@ -18,7 +18,7 @@ public:
     static std::shared_ptr<VKResource> CreateAccelerationStructure(VKDevice& device,
                                                                    const AccelerationStructureDesc& desc);
 
-    void CommitMemory(MemoryType memory_type) override;
+    void CommitMemory(MemoryType memory_type);
     void BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset);
     uint64_t GetWidth() const override;
     uint32_t GetHeight() const override;

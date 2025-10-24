@@ -64,7 +64,6 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
                                                         .size = sizeof(index_data.front()) * index_data.size(),
                                                         .usage = BindFlag::kIndexBuffer,
                                                     });
-    m_index_buffer->CommitMemory(MemoryType::kUpload);
     m_index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
 
     std::vector<glm::vec3> vertex_data = {
@@ -77,7 +76,6 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
                                                         .size = sizeof(vertex_data.front()) * vertex_data.size(),
                                                         .usage = BindFlag::kVertexBuffer,
                                                     });
-    m_vertex_buffer->CommitMemory(MemoryType::kUpload);
     m_vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
