@@ -170,9 +170,7 @@ void MTResource::CommitMemory(MemoryType memory_type)
     decltype(auto) mt_device = m_device.GetDevice();
     if (m_resource_type == ResourceType::kBuffer) {
         if (m_buffer.bind_flag & BindFlag::kAccelerationStructure) {
-            MTMemory heap(m_device, m_buffer.size, memory_type);
-            m_buffer.acceleration_structure_heap = heap.GetHeap();
-            m_buffer.acceleration_structure_heap_offset = 0;
+            BindMemory(std::make_shared<MTMemory>(m_device, m_buffer.size, memory_type), 0);
             return;
         }
 
@@ -197,7 +195,6 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
         if (m_buffer.bind_flag & BindFlag::kAccelerationStructure) {
             m_buffer.acceleration_structure_heap = mt_heap;
             m_buffer.acceleration_structure_heap_offset = offset;
-            return;
         }
 
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
