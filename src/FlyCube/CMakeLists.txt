@@ -256,7 +256,7 @@ list(APPEND Utilities
     Utilities/VKUtility.h
 )
 
-if (APPLE AND VULKAN_SUPPORT)
+if (APPLE)
     set_property(SOURCE Utilities/Common.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
 endif()
 
