@@ -44,8 +44,6 @@ target_link_libraries(Triangle
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
    set_target_properties(Triangle PROPERTIES
       MACOSX_BUNDLE_INFO_PLIST "${project_root}/cmake/apple/iOS/Info.plist"
-   )
-   set_target_properties(Triangle PROPERTIES
       XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2" # iPhone, iPad
    )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
