@@ -6,6 +6,7 @@
 #include "AppBox/AutoreleasePool.h"
 #endif
 
+#include <cmath>
 #include <format>
 
 AppBox::AppBox(const std::string_view& title, const Settings& setting)

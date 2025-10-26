@@ -2,6 +2,7 @@
 
 #include "AppLoop/AppSize.h"
 
+#include <string>
 #include <string_view>
 
 class Settings;
