@@ -12,7 +12,12 @@ struct AppLoop: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView().navigationTitle(MetalRenderer.getAppTitle())
+            ContentView()
+                .navigationTitle(MetalRenderer.getAppTitle())
+                .focusable()
+                .onExitCommand {
+                    NSApplication.shared.terminate(nil)
+                }
         }.defaultSize(GetDefaultSize())
     }
     
