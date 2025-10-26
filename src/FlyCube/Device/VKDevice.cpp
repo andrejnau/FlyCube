@@ -319,8 +319,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
         device_vulkan12_features.descriptorBindingVariableDescriptorCount =
             query_device_vulkan12_features.descriptorBindingVariableDescriptorCount;
         if (enabled_extension_set.contains(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
-            device_vulkan12_features.shaderOutputLayer = true;
-            device_vulkan12_features.shaderOutputViewportIndex = true;
+            device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
+            device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
         }
         add_extension(device_vulkan12_features);
     } else {
