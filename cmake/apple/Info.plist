@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>${MACOSX_BUNDLE_EXECUTABLE_NAME}</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.example.${MACOSX_BUNDLE_EXECUTABLE_NAME}</string>
+	<string>${BUNDLE_IDENTIFIER_PREFIX}.${MACOSX_BUNDLE_EXECUTABLE_NAME}</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
