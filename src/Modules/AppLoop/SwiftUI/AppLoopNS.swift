@@ -15,6 +15,9 @@ struct AppLoop: App {
             ContentView()
                 .navigationTitle(MetalRenderer.getAppTitle())
                 .focusable()
+                .onAppear {
+                    NSApplication.shared.activate()
+                }
                 .onExitCommand {
                     NSApplication.shared.terminate(nil)
                 }
