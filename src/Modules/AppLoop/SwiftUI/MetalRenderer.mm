@@ -1,6 +1,10 @@
 #import "MetalRenderer.h"
 
 #include "AppLoop/AppLoop.h"
+#include "AppSettings/Settings.h"
+#include "Utilities/NotReached.h"
+
+#include <string>
 
 @implementation MetalRenderer {
     AppRenderer* app_renderer;
@@ -8,7 +12,25 @@
 
 + (NSString*)getAppTitle
 {
-    return [[NSString alloc] initWithUTF8String:AppLoop::GetRenderer().GetTitle().data()];
+    decltype(auto) renderer = AppLoop::GetRenderer();
+    ApiType api_type = renderer.GetSettings().api_type;
+    std::string title;
+    switch (api_type) {
+    case ApiType::kVulkan:
+        title = "[Vulkan] ";
+        break;
+    case ApiType::kMetal:
+        title = "[Metal] ";
+        break;
+    default:
+        NOTREACHED();
+    }
+    title += renderer.GetTitle();
+    decltype(auto) gpu_name = renderer.GetGpuName();
+    if (!gpu_name.empty()) {
+        title += " " + gpu_name;
+    }
+    return [[NSString alloc] initWithUTF8String:title.c_str()];
 }
 
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size

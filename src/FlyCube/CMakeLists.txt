@@ -326,7 +326,9 @@ target_include_directories(FlyCube
 )
 
 if (APPLE)
-    target_compile_options(FlyCube PUBLIC "-fobjc-arc")
+    target_compile_options(FlyCube PUBLIC
+        "$<$<COMPILE_LANGUAGE:CXX>:-fobjc-arc>"
+    )
 endif()
 
 file(GLOB folder_items LIST_DIRECTORIES true "*")

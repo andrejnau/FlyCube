@@ -43,6 +43,7 @@ target_include_directories(AppLoopSwiftUI
 target_link_libraries(AppLoopSwiftUI
    "-framework Metal"
    "-framework QuartzCore"
+   AppSettings
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS")
