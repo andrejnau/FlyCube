@@ -1,6 +1,6 @@
 #include "AppLoop/AppLoop.h"
 
-#include "AppLoop/GLFW/WindowUtils.h"
+#include "WindowUtils/WindowUtils.h"
 
 #include <cassert>
 

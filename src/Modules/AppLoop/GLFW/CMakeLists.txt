@@ -1,7 +1,5 @@
 add_library(AppLoopGLFW
     AppLoop.cpp
-    WindowUtils.cpp
-    WindowUtils.h
 )
 
 if (APPLE)
@@ -10,6 +8,7 @@ endif()
 
 target_link_libraries(AppLoopGLFW
     glfw
+    WindowUtils
 )
 
 target_include_directories(AppLoopGLFW
