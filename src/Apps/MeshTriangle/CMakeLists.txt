@@ -44,6 +44,7 @@ target_link_libraries(MeshTriangle
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
    set_target_properties(MeshTriangle PROPERTIES
       MACOSX_BUNDLE_INFO_PLIST "${project_root}/cmake/apple/iOS/Info.plist"
+      XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
    )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
    set_target_properties(MeshTriangle PROPERTIES
