@@ -48,3 +48,7 @@ add_compile_definitions(
     "$<$<PLATFORM_ID:iOS>:${ios_compile_definitions}>"
     "$<$<PLATFORM_ID:tvOS>:${tvos_compile_definitions}>"
 )
+
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(CMAKE_XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2") # iPhone, iPad
+endif()

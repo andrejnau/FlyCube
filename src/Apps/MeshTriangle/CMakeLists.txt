@@ -44,7 +44,6 @@ target_link_libraries(MeshTriangle
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
    set_target_properties(MeshTriangle PROPERTIES
       MACOSX_BUNDLE_INFO_PLIST "${project_root}/cmake/apple/iOS/Info.plist"
-      XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2" # iPhone, iPad
    )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
    set_target_properties(MeshTriangle PROPERTIES
