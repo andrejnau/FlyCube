@@ -29,6 +29,8 @@ AppSize GetDefaultWindowsSize(const AppSize& screen_size)
 
 } // namespace
 
+namespace WindowUtils {
+
 GLFWwindow* CreateWindowWithDefaultSize(const std::string_view& title)
 {
     AppSize screen_size = GetScreenSize();
@@ -67,3 +69,5 @@ void* GetNativeWindow(GLFWwindow* window)
     return (void*)glfwGetX11Window(window);
 #endif
 }
+
+} // namespace WindowUtils

@@ -1,5 +1,4 @@
 #pragma once
-#include "ApiType/ApiType.h"
 #include "AppBox/InputEvents.h"
 #include "AppBox/WindowEvents.h"
 #include "AppLoop/AppSize.h"
@@ -8,14 +7,13 @@
 #include <GLFW/glfw3.h>
 
 #include <array>
-#include <functional>
 #include <map>
 #include <memory>
 #include <string>
 #include <string_view>
 
 #if defined(__APPLE__)
-#include "AppBox/AutoreleasePool.h"
+class AutoreleasePool;
 #endif
 
 class AppBox {
@@ -46,8 +44,7 @@ private:
     InputEvents* m_input_listener = nullptr;
     WindowEvents* m_window_listener = nullptr;
     GLFWwindow* m_window = nullptr;
-    uint32_t m_width = 0;
-    uint32_t m_height = 0;
+    AppSize m_size;
     bool m_exit_request = false;
     uint32_t m_frame_number = 0;
     double m_last_time = 0;
@@ -58,6 +55,5 @@ private:
     std::string m_fps;
 #if defined(__APPLE__)
     std::shared_ptr<AutoreleasePool> m_autorelease_pool;
-    void* m_layer = nullptr;
 #endif
 };

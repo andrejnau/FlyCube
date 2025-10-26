@@ -1,19 +1,12 @@
 #include "AppBox/AppBox.h"
 
-#include <cmath>
-#include <format>
-#if defined(_WIN32)
-#define GLFW_EXPOSE_NATIVE_WIN32
-#elif defined(__APPLE__)
-#define GLFW_EXPOSE_NATIVE_COCOA
-#else
-#define GLFW_EXPOSE_NATIVE_X11
-#endif
-#include <GLFW/glfw3native.h>
+#include "WindowUtils/WindowUtils.h"
 
 #if defined(__APPLE__)
-#import <QuartzCore/QuartzCore.h>
+#include "AppBox/AutoreleasePool.h"
 #endif
+
+#include <format>
 
 AppBox::AppBox(const std::string_view& title, const Settings& setting)
     : m_setting(setting)
@@ -35,12 +28,8 @@ AppBox::AppBox(const std::string_view& title, const Settings& setting)
 
     glfwInit();
 
-    const GLFWvidmode* monitor_desc = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    m_width = static_cast<uint32_t>(monitor_desc->width / 1.5);
-    m_height = static_cast<uint32_t>(monitor_desc->height / 1.5);
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
+    m_window = WindowUtils::CreateWindowWithDefaultSize(m_title);
+    m_size = WindowUtils::GetSurfaceSize(m_window);
     glfwSetWindowUserPointer(m_window, this);
     glfwSetWindowSizeCallback(m_window, AppBox::OnSizeChanged);
     glfwSetKeyCallback(m_window, AppBox::OnKey);
@@ -50,18 +39,8 @@ AppBox::AppBox(const std::string_view& title, const Settings& setting)
     glfwSetCharCallback(m_window, AppBox::OnInputChar);
     glfwSetInputMode(m_window, GLFW_CURSOR, m_mouse_mode);
 
-    int xpos = (monitor_desc->width - m_width) / 2;
-    int ypos = (monitor_desc->height - m_height) / 2;
-    glfwSetWindowPos(m_window, xpos, ypos);
-    glfwGetFramebufferSize(m_window, (int*)&m_width, (int*)&m_height);
-
 #if defined(__APPLE__)
     m_autorelease_pool = CreateAutoreleasePool();
-
-    NSWindow* nswindow = glfwGetCocoaWindow(m_window);
-    nswindow.contentView.layer = [CAMetalLayer layer];
-    nswindow.contentView.wantsLayer = YES;
-    m_layer = (__bridge void*)nswindow.contentView.layer;
 #endif
 }
 
@@ -124,7 +103,7 @@ bool AppBox::PollEvents()
 
 AppSize AppBox::GetAppSize() const
 {
-    return { m_width, m_height };
+    return m_size;
 }
 
 GLFWwindow* AppBox::GetWindow() const
@@ -134,13 +113,7 @@ GLFWwindow* AppBox::GetWindow() const
 
 void* AppBox::GetNativeWindow() const
 {
-#if defined(_WIN32)
-    return glfwGetWin32Window(m_window);
-#elif defined(__APPLE__)
-    return m_layer;
-#else
-    return (void*)glfwGetX11Window(m_window);
-#endif
+    return WindowUtils::GetNativeWindow(m_window);
 }
 
 void AppBox::SwitchFullScreenMode()
@@ -162,8 +135,7 @@ void AppBox::OnSizeChanged(GLFWwindow* m_window, int width, int height)
         return;
     }
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
-    self->m_width = width;
-    self->m_height = height;
+    self->m_size = AppSize(width, height);
     if (self->m_window_listener) {
         self->m_window_listener->OnResize(width, height);
     }

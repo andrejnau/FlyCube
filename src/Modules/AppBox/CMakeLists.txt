@@ -28,6 +28,7 @@ target_link_libraries(AppBox
     AppSettings
     FlyCube
     glfw
+    WindowUtils
 )
 
 if (APPLE)

@@ -20,9 +20,9 @@ AppRenderer& AppLoop::GetRendererImpl()
 int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv[])
 {
     glfwInit();
-    GLFWwindow* window = CreateWindowWithDefaultSize(renderer->GetTitle());
+    GLFWwindow* window = WindowUtils::CreateWindowWithDefaultSize(renderer->GetTitle());
 
-    renderer->Init(GetSurfaceSize(window), GetNativeWindow(window));
+    renderer->Init(WindowUtils::GetSurfaceSize(window), WindowUtils::GetNativeWindow(window));
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         renderer->Render();
