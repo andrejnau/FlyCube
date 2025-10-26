@@ -29,13 +29,7 @@ int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv
 {
     m_renderer = std::move(renderer);
     @autoreleasepool {
-#ifdef TARGET_MACOS
-        NSApplication* app = [NSApplication sharedApplication];
-        app.delegate = [AppDelegate new];
-        [app run];
+        swift_main();
         return 0;
-#else
-        return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
-#endif
     }
 }

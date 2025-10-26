@@ -17,11 +17,11 @@ list(APPEND sources
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS")
    list(APPEND sources
-      AppDelegateUI.swift
+      AppLoopUI.swift
    )
 else()
    list(APPEND sources
-      AppDelegateNS.swift
+      AppLoopNS.swift
    )
 endif()
 
