@@ -11,4 +11,7 @@ target_link_libraries(DesktopDispatchIndirect
     FlyCubeAssets
 )
 
-set_target_properties(DesktopDispatchIndirect PROPERTIES FOLDER "Apps")
+set_target_properties(DesktopDispatchIndirect PROPERTIES
+    FOLDER "Apps"
+    MACOSX_BUNDLE_INFO_PLIST "${project_root}/cmake/apple/Info.plist"
+)

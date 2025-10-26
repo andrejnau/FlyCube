@@ -11,4 +11,7 @@ target_link_libraries(DesktopDxrTriangle
     FlyCubeAssets
 )
 
-set_target_properties(DesktopDxrTriangle PROPERTIES FOLDER "Apps")
+set_target_properties(DesktopDxrTriangle PROPERTIES
+    FOLDER "Apps"
+    MACOSX_BUNDLE_INFO_PLIST "${project_root}/cmake/apple/Info.plist"
+)

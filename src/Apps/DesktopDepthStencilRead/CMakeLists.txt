@@ -12,4 +12,7 @@ target_link_libraries(DesktopDepthStencilRead
     RenderUtils
 )
 
-set_target_properties(DesktopDepthStencilRead PROPERTIES FOLDER "Apps")
+set_target_properties(DesktopDepthStencilRead PROPERTIES
+    FOLDER "Apps"
+    MACOSX_BUNDLE_INFO_PLIST "${project_root}/cmake/apple/Info.plist"
+)

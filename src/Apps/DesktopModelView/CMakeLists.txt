@@ -12,4 +12,7 @@ target_link_libraries(DesktopModelView
     RenderUtils
 )
 
-set_target_properties(DesktopModelView PROPERTIES FOLDER "Apps")
+set_target_properties(DesktopModelView PROPERTIES
+    FOLDER "Apps"
+    MACOSX_BUNDLE_INFO_PLIST "${project_root}/cmake/apple/Info.plist"
+)
