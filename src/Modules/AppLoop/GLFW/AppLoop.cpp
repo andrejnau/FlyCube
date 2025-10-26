@@ -1,6 +1,6 @@
 #include "AppLoop/AppLoop.h"
 
-#include "WindowUtils/WindowUtils.h"
+#include "AppBox/AppBox.h"
 
 #include <cassert>
 
@@ -19,16 +19,11 @@ AppRenderer& AppLoop::GetRendererImpl()
 
 int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv[])
 {
-    glfwInit();
-    GLFWwindow* window = WindowUtils::CreateWindowWithDefaultSize(renderer->GetTitle());
-
-    renderer->Init(WindowUtils::GetSurfaceSize(window), WindowUtils::GetNativeWindow(window));
-    while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
+    AppBox app(renderer->GetTitle(), renderer->GetSettings());
+    renderer->Init(app.GetAppSize(), app.GetNativeWindow());
+    app.SetGpuName(renderer->GetGpuName());
+    while (!app.PollEvents()) {
         renderer->Render();
     }
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
     return 0;
 }

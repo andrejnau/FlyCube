@@ -13,6 +13,8 @@ public:
     void Resize(const AppSize& app_size, WindowHandle window) override;
     void Render() override;
     std::string_view GetTitle() const override;
+    const std::string& GetGpuName() const override;
+    const Settings& GetSettings() const override;
 
 private:
     void WaitForIdle();
@@ -149,6 +151,16 @@ void TriangleRenderer::Render()
 std::string_view TriangleRenderer::GetTitle() const
 {
     return "Triangle";
+}
+
+const std::string& TriangleRenderer::GetGpuName() const
+{
+    return m_adapter->GetName();
+}
+
+const Settings& TriangleRenderer::GetSettings() const
+{
+    return m_settings;
 }
 
 void TriangleRenderer::WaitForIdle()

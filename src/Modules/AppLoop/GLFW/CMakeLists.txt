@@ -2,13 +2,8 @@ add_library(AppLoopGLFW
     AppLoop.cpp
 )
 
-if (APPLE)
-    set_property(SOURCE WindowUtils.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
-endif()
-
 target_link_libraries(AppLoopGLFW
-    glfw
-    WindowUtils
+    AppBox
 )
 
 target_include_directories(AppLoopGLFW
