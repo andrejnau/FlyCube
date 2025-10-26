@@ -2,13 +2,23 @@ import SwiftUI
 import UIKit
 
 class AppDelegate: UIResponder, UIApplicationDelegate {
-    var window: UIWindow?
+    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+        configuration.delegateClass = SceneDelegate.self
+        return configuration
+    }
+}
 
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        let scene = application.connectedScenes.first as! UIWindowScene
-        window = UIWindow(windowScene: scene)
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+    var window: UIWindow?
+    
+    func scene(
+        _ scene: UIScene,
+        willConnectTo session: UISceneSession,
+        options connectionOptions: UIScene.ConnectionOptions
+    ) {
+        window = UIWindow(windowScene: scene as! UIWindowScene)
         window?.rootViewController = UIHostingController(rootView: ContentView())
         window?.makeKeyAndVisible()
-        return true
     }
 }
