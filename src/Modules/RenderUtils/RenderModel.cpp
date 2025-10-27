@@ -81,7 +81,7 @@ std::shared_ptr<Resource> RenderModel::CreateBuffer(uint32_t bind_flag, const st
 std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& path)
 {
     std::shared_ptr<Resource> res;
-    if (path.empty()) {
+    if (!AssetFileExists(path)) {
         return res;
     }
 

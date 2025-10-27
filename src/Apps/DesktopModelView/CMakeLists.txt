@@ -16,21 +16,14 @@ set_property(SOURCE ${shaders_files} PROPERTY SHADER_MODEL 6_0)
 include(compile_shaders)
 compile_shaders("${shaders_path}" "assets/ModelView" "${shaders_files}" resources)
 
+set(damaged_helmet_base_dir "${assets_path}/resources/models/DamagedHelmet/glTF")
 list(APPEND damaged_helmet
-    "${assets_path}/resources/models/DamagedHelmet/glTF/DamagedHelmet.bin"
-    "${assets_path}/resources/models/DamagedHelmet/glTF/DamagedHelmet.gltf"
-    "${assets_path}/resources/models/DamagedHelmet/glTF/Default_albedo.jpg"
-    "${assets_path}/resources/models/DamagedHelmet/glTF/Default_AO.jpg"
-    "${assets_path}/resources/models/DamagedHelmet/glTF/Default_emissive.jpg"
-    "${assets_path}/resources/models/DamagedHelmet/glTF/Default_metalRoughness.jpg"
-    "${assets_path}/resources/models/DamagedHelmet/glTF/Default_normal.jpg"
+    "${damaged_helmet_base_dir}/DamagedHelmet.bin"
+    "${damaged_helmet_base_dir}/DamagedHelmet.gltf"
+    "${damaged_helmet_base_dir}/Default_albedo.jpg"
 )
-set_source_files_properties(${damaged_helmet} PROPERTIES
-    MACOSX_PACKAGE_LOCATION "Resources/assets/resources/models/DamagedHelmet/glTF"
-)
-list(APPEND resources
-    ${damaged_helmet}
-)
+include(copy_assets)
+copy_assets("${damaged_helmet_base_dir}" "assets/ModelView" "${damaged_helmet}" resources)
 
 if (ANDROID)
    add_library(DesktopModelView SHARED

@@ -33,15 +33,10 @@ std::string GetAssetPath(const std::string& filepath)
 
 #if defined(__APPLE__)
     NSBundle* main_bundle = [NSBundle mainBundle];
-    if ([[main_bundle bundlePath] hasSuffix:@".app"]) {
-        auto path = GetUtf8Path(filepath);
-        auto resource = [main_bundle pathForResource:[NSString stringWithUTF8String:path.stem().c_str()]
-                                              ofType:[NSString stringWithUTF8String:path.extension().c_str()]
-                                         inDirectory:[NSString stringWithUTF8String:path.parent_path().c_str()]];
-        if (resource) {
-            return [resource UTF8String];
-        }
-        NOTREACHED();
+    const bool is_bundle = [[main_bundle bundlePath] hasSuffix:@".app"];
+    if (is_bundle) {
+        std::string resource_path = [[main_bundle resourcePath] UTF8String];
+        return resource_path + "/" + filepath;
     }
 #elif defined(__ANDROID__)
     return filepath;
