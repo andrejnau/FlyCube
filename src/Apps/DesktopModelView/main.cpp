@@ -124,8 +124,8 @@ int main(int argc, char* argv[])
     std::shared_ptr<View> depth_stencil_view = device->CreateView(depth_stencil_texture, depth_stencil_view_desc);
 
     ShaderBlobType blob_type = device->GetSupportedShaderBlobType();
-    std::vector<uint8_t> vertex_blob = LoadShaderBlob("assets/ModelView/VertexShader.hlsl", blob_type);
-    std::vector<uint8_t> pixel_blob = LoadShaderBlob("assets/ModelView/PixelShader.hlsl", blob_type);
+    std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/ModelView/VertexShader.hlsl", blob_type);
+    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/ModelView/PixelShader.hlsl", blob_type);
     std::shared_ptr<Shader> vertex_shader = device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     std::shared_ptr<Shader> pixel_shader = device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
 

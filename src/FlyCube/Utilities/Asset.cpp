@@ -49,6 +49,18 @@ std::string GetAssetPath(const std::string& filepath)
     return GetExecutableDir() + "/" + filepath;
 }
 
+std::string GetShaderBlobExt(ShaderBlobType blob_type)
+{
+    switch (blob_type) {
+    case ShaderBlobType::kDXIL:
+        return ".dxil";
+    case ShaderBlobType::kSPIRV:
+        return ".spirv";
+    default:
+        NOTREACHED();
+    }
+}
+
 } // namespace
 
 bool AssetFileExists(const std::string& filepath)
@@ -92,15 +104,9 @@ std::vector<uint8_t> AssetLoadBinaryFile(const std::string& filepath)
 #endif
 }
 
-std::vector<uint8_t> LoadShaderBlob(const std::string& filepath, ShaderBlobType blob_type)
+std::vector<uint8_t> AssetLoadShaderBlob(const std::string& filepath, ShaderBlobType blob_type)
 {
-    std::string shader_blob_ext;
-    if (blob_type == ShaderBlobType::kDXIL) {
-        shader_blob_ext = ".dxil";
-    } else {
-        shader_blob_ext = ".spirv";
-    }
-    return AssetLoadBinaryFile(filepath + shader_blob_ext);
+    return AssetLoadBinaryFile(filepath + GetShaderBlobExt(blob_type));
 }
 
 #if defined(__ANDROID__)

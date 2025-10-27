@@ -81,8 +81,8 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
-    std::vector<uint8_t> vertex_blob = LoadShaderBlob("assets/Triangle/VertexShader.hlsl", blob_type);
-    std::vector<uint8_t> pixel_blob = LoadShaderBlob("assets/Triangle/PixelShaderNoBindings.hlsl", blob_type);
+    std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/Triangle/VertexShader.hlsl", blob_type);
+    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/Triangle/PixelShaderNoBindings.hlsl", blob_type);
     m_vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
     m_program = m_device->CreateProgram({ m_vertex_shader, m_pixel_shader });

@@ -64,8 +64,8 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
-    std::vector<uint8_t> mesh_blob = LoadShaderBlob("assets/MeshTriangle/MeshShader.hlsl", blob_type);
-    std::vector<uint8_t> pixel_blob = LoadShaderBlob("assets/MeshTriangle/PixelShader.hlsl", blob_type);
+    std::vector<uint8_t> mesh_blob = AssetLoadShaderBlob("assets/MeshTriangle/MeshShader.hlsl", blob_type);
+    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/MeshTriangle/PixelShader.hlsl", blob_type);
     m_mesh_shader = m_device->CreateShader(mesh_blob, blob_type, ShaderType::kMesh);
     m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
     m_program = m_device->CreateProgram({ m_mesh_shader, m_pixel_shader });

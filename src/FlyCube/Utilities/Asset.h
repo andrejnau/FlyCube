@@ -8,7 +8,7 @@
 
 bool AssetFileExists(const std::string& filepath);
 std::vector<uint8_t> AssetLoadBinaryFile(const std::string& filepath);
-std::vector<uint8_t> LoadShaderBlob(const std::string& filepath, ShaderBlobType blob_type);
+std::vector<uint8_t> AssetLoadShaderBlob(const std::string& filepath, ShaderBlobType blob_type);
 
 #if defined(__ANDROID__)
 struct AAssetManager;
