@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
     uint64_t fence_value = 0;
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
-    std::unique_ptr<Model> model = LoadModel(ASSETS_PATH "resources/models/DamagedHelmet/glTF/DamagedHelmet.gltf");
+    std::unique_ptr<Model> model = LoadModel("assets/resources/models/DamagedHelmet/glTF/DamagedHelmet.gltf");
     RenderModel render_model(device, command_queue, std::move(model));
 
     glm::mat4 view = GetViewMatrix();
