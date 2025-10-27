@@ -3,6 +3,7 @@
 #include "Instance/Instance.h"
 #include "RenderUtils/ModelLoader.h"
 #include "RenderUtils/RenderModel.h"
+#include "Utilities/Common.h"
 
 namespace {
 
@@ -122,10 +123,11 @@ int main(int argc, char* argv[])
     };
     std::shared_ptr<View> depth_stencil_view = device->CreateView(depth_stencil_texture, depth_stencil_view_desc);
 
-    std::shared_ptr<Shader> vertex_shader = device->CompileShader(
-        { ASSETS_PATH "shaders/ModelView/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" });
-    std::shared_ptr<Shader> pixel_shader =
-        device->CompileShader({ ASSETS_PATH "shaders/ModelView/PixelShader.hlsl", "main", ShaderType::kPixel, "6_0" });
+    ShaderBlobType blob_type = device->GetSupportedShaderBlobType();
+    std::vector<uint8_t> vertex_blob = LoadShaderBlob("assets/ModelView/VertexShader.hlsl", blob_type);
+    std::vector<uint8_t> pixel_blob = LoadShaderBlob("assets/ModelView/PixelShader.hlsl", blob_type);
+    std::shared_ptr<Shader> vertex_shader = device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
+    std::shared_ptr<Shader> pixel_shader = device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
 
     BindKey vertex_cbv_key = vertex_shader->GetBindKey("cbv");
     BindKey pixel_bindless_textures_key = pixel_shader->GetBindKey("bindless_textures");

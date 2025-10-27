@@ -37,7 +37,6 @@ target_link_options(Triangle
 
 target_link_libraries(Triangle
    AppLoop
-   AppSettings
    FlyCube
 )
 

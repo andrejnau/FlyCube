@@ -37,7 +37,6 @@ target_link_options(MeshTriangle
 
 target_link_libraries(MeshTriangle
    AppLoop
-   AppSettings
    FlyCube
 )
 
