@@ -1,8 +1,10 @@
 #include "RenderUtils/RenderModel.h"
 
+#include "Utilities/Common.h"
 #include "Utilities/FormatHelper.h"
 #include "Utilities/NotReached.h"
-#include "stb_image.h"
+
+#include <stb_image.h>
 
 RenderModel::RenderModel(const std::shared_ptr<Device>& device,
                          const std::shared_ptr<CommandQueue>& command_queue,
@@ -83,9 +85,9 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
         return res;
     }
 
-    std::string full_path = ASSETS_PATH + path;
+    auto file = LoadBinaryFile(ASSETS_PATH + path);
     if (path.ends_with(".dds") || path.ends_with(".ktx") || path.ends_with(".kmg")) {
-        gli::texture texture = gli::load(full_path);
+        gli::texture texture = gli::load(reinterpret_cast<char*>(file.data()), file.size());
 
         auto format = texture.format();
         uint32_t width = texture.extent(0).x;
@@ -114,7 +116,7 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
         int width = 0;
         int height = 0;
         int comp = 0;
-        auto* data = stbi_load(full_path.c_str(), &width, &height, &comp, /*req_comp=*/4);
+        auto* data = stbi_load_from_memory(file.data(), file.size(), &width, &height, &comp, /*req_comp=*/4);
 
         res =
             m_device->CreateTexture(MemoryType::kDefault, {

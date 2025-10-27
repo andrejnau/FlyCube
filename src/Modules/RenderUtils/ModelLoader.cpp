@@ -1,6 +1,9 @@
 #include "RenderUtils/ModelLoader.h"
 
+#include "Utilities/Common.h"
+
 #include <assimp/Importer.hpp>
+#include <assimp/MemoryIOWrapper.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -8,6 +11,32 @@
 #include <cassert>
 
 namespace {
+
+class MyIOSystem : public Assimp::IOSystem {
+public:
+    bool Exists(const char* pFile) const override
+    {
+        return true;
+    }
+
+    char getOsSeparator() const override
+    {
+        return '/';
+    }
+
+    Assimp::IOStream* Open(const char* pFile, const char* pMode) override
+    {
+        auto file = LoadBinaryFile(ASSETS_PATH + std::string(pFile));
+        uint8_t* buffer = new uint8_t[file.size()];
+        memcpy(buffer, file.data(), file.size());
+        return new Assimp::MemoryIOStream(buffer, file.size(), true);
+    }
+
+    void Close(Assimp::IOStream* pFile) override
+    {
+        delete pFile;
+    }
+};
 
 glm::vec3 ToVec3(const aiVector3D& vector)
 {
@@ -19,10 +48,13 @@ public:
     ModelLoader(const std::string& path, Model& model)
         : m_path(path)
     {
-        m_scene = m_importer.ReadFile(ASSETS_PATH + path, aiProcess_Triangulate | aiProcess_GenSmoothNormals |
-                                                              aiProcess_CalcTangentSpace | aiProcess_FlipUVs |
-                                                              aiProcess_FlipWindingOrder | aiProcess_OptimizeMeshes);
-        assert(m_scene && m_scene->mRootNode && m_scene->mFlags != AI_SCENE_FLAGS_INCOMPLETE);
+        m_importer.SetIOHandler(new MyIOSystem());
+        m_scene =
+            m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
+                                          aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_OptimizeMeshes);
+        assert(m_scene);
+        assert(m_scene->mRootNode);
+        assert(m_scene->mFlags != AI_SCENE_FLAGS_INCOMPLETE);
         ProcessScene(model);
     }
 

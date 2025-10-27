@@ -18,31 +18,6 @@ namespace {
 AAssetManager* g_asset_manager = nullptr;
 #endif
 
-std::vector<uint8_t> LoadBinaryFile(const std::string& filepath)
-{
-#if defined(__ANDROID__)
-    AAsset* file = AAssetManager_open(g_asset_manager, filepath.c_str(), AASSET_MODE_BUFFER);
-    auto filesize = AAsset_getLength64(file);
-    std::vector<uint8_t> data(filesize);
-    AAsset_read(file, data.data(), filesize);
-    AAsset_close(file);
-    return data;
-#else
-    std::ifstream file(filepath, std::ios::binary);
-    file.unsetf(std::ios::skipws);
-
-    std::streampos filesize;
-    file.seekg(0, std::ios::end);
-    filesize = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    std::vector<uint8_t> data;
-    data.reserve(filesize);
-    data.insert(data.begin(), std::istream_iterator<uint8_t>(file), std::istream_iterator<uint8_t>());
-    return data;
-#endif
-}
-
 std::string GetShaderBlob(const std::string& filepath, ShaderBlobType blob_type)
 {
     std::string shader_blob_ext;
@@ -75,6 +50,31 @@ std::string GetAssertPath(const std::string& filepath)
     return filepath;
 #endif
     return GetExecutableDir() + "/" + filepath;
+}
+
+std::vector<uint8_t> LoadBinaryFile(const std::string& filepath)
+{
+#if defined(__ANDROID__)
+    AAsset* file = AAssetManager_open(g_asset_manager, filepath.c_str(), AASSET_MODE_BUFFER);
+    auto filesize = AAsset_getLength64(file);
+    std::vector<uint8_t> data(filesize);
+    AAsset_read(file, data.data(), filesize);
+    AAsset_close(file);
+    return data;
+#else
+    std::ifstream file(filepath, std::ios::binary);
+    file.unsetf(std::ios::skipws);
+
+    std::streampos filesize;
+    file.seekg(0, std::ios::end);
+    filesize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    std::vector<uint8_t> data;
+    data.reserve(filesize);
+    data.insert(data.begin(), std::istream_iterator<uint8_t>(file), std::istream_iterator<uint8_t>());
+    return data;
+#endif
 }
 
 std::vector<uint8_t> LoadShaderBlob(const std::string& filepath, ShaderBlobType blob_type)
