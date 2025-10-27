@@ -47,7 +47,7 @@ std::string GetExecutableDir()
 
 std::string GetEnvironmentVar(const std::string& name)
 {
-#ifdef _WIN32
+#if defined(_WIN32)
     std::wstring name_utf16 = nowide::widen(name);
     DWORD value_size = GetEnvironmentVariableW(name_utf16.c_str(), nullptr, 0);
     if (value_size == 0) {

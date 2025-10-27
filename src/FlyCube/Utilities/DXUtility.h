@@ -4,7 +4,7 @@
 
 #include <filesystem>
 
-#ifdef NDEBUG
+#if defined(NDEBUG)
 #define CHECK_HRESULT(expr) (void)(expr)
 #else
 #define CHECK_HRESULT(expr)                                                                                 \

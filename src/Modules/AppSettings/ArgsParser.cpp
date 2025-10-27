@@ -8,13 +8,13 @@ namespace {
 std::vector<ApiType> GetSupportedApis()
 {
     std::vector<ApiType> res;
-#ifdef DIRECTX_SUPPORT
+#if defined(DIRECTX_SUPPORT)
     res.emplace_back(ApiType::kDX12);
 #endif
-#ifdef METAL_SUPPORT
+#if defined(METAL_SUPPORT)
     res.emplace_back(ApiType::kMetal);
 #endif
-#ifdef VULKAN_SUPPORT
+#if defined(VULKAN_SUPPORT)
     res.emplace_back(ApiType::kVulkan);
 #endif
     return res;

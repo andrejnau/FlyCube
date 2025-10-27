@@ -9,7 +9,7 @@
 
 #include <cassert>
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #include <directx/d3d12shader.h>
 #endif
 

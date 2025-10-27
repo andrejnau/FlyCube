@@ -65,7 +65,7 @@ void SetView(id<MTL4ArgumentTable> argument_table, const std::shared_ptr<MTView>
 
 void ValidateRemappedSlots(const std::shared_ptr<Pipeline>& state, const std::vector<BindKey>& bind_keys)
 {
-#ifndef NDEBUG
+#if !defined(NDEBUG)
     if (UseArgumentBuffers()) {
         decltype(auto) program = state->As<MTPipeline>().GetProgram();
         for (const auto& bind_key : bind_keys) {

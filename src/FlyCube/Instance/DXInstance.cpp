@@ -37,7 +37,7 @@ bool EnableAgilitySdkIfExist(uint32_t version, const std::string_view& path)
 
 } // namespace
 
-#ifdef AGILITY_SDK_REQUIRED
+#if defined(AGILITY_SDK_REQUIRED)
 #define EXPORT_AGILITY_SDK extern "C" _declspec(dllexport) extern
 #else
 #define EXPORT_AGILITY_SDK
@@ -46,7 +46,7 @@ bool EnableAgilitySdkIfExist(uint32_t version, const std::string_view& path)
 EXPORT_AGILITY_SDK const UINT D3D12SDKVersion = 618;
 EXPORT_AGILITY_SDK const char* D3D12SDKPath = ".\\D3D12\\";
 
-#ifndef AGILITY_SDK_REQUIRED
+#if !defined(AGILITY_SDK_REQUIRED)
 static bool g_agility_sdk_enabled = EnableAgilitySdkIfExist(D3D12SDKVersion, D3D12SDKPath);
 #endif
 

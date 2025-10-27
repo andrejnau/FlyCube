@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#ifdef TARGET_MACOS
+#if defined(TARGET_MACOS)
 #import <Cocoa/Cocoa.h>
 #else
 #import <UIKit/UIKit.h>

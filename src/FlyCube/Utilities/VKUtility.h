@@ -4,7 +4,7 @@
 
 #include <filesystem>
 
-#ifdef NDEBUG
+#if defined(NDEBUG)
 #define CHECK_VK_RESULT(expr) (void)(expr)
 #else
 #define CHECK_VK_RESULT(expr)                                                                               \
