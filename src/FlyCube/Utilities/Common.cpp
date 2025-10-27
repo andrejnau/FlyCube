@@ -1,5 +1,6 @@
 #include "Utilities/Common.h"
 
+#include "Utilities/NotReached.h"
 #include "Utilities/SystemUtils.h"
 
 #include <filesystem>
@@ -18,15 +19,34 @@ namespace {
 AAssetManager* g_asset_manager = nullptr;
 #endif
 
-std::string GetShaderBlob(const std::string& filepath, ShaderBlobType blob_type)
+std::filesystem::path GetUtf8Path(const std::string& path)
 {
-    std::string shader_blob_ext;
-    if (blob_type == ShaderBlobType::kDXIL) {
-        shader_blob_ext = ".dxil";
-    } else {
-        shader_blob_ext = ".spirv";
+    std::u8string u8path(path.begin(), path.end());
+    return std::filesystem::path(u8path);
+}
+
+std::string GetAssetPath(const std::string& filepath)
+{
+    if (!filepath.starts_with("assets")) {
+        return filepath;
     }
-    return GetAssertPath(filepath + shader_blob_ext);
+
+#if defined(__APPLE__)
+    NSBundle* main_bundle = [NSBundle mainBundle];
+    if ([[main_bundle bundlePath] hasSuffix:@".app"]) {
+        auto path = GetUtf8Path(filepath);
+        auto resource = [main_bundle pathForResource:[NSString stringWithUTF8String:path.stem().c_str()]
+                                              ofType:[NSString stringWithUTF8String:path.extension().c_str()]
+                                         inDirectory:[NSString stringWithUTF8String:path.parent_path().c_str()]];
+        if (resource) {
+            return [resource UTF8String];
+        }
+        NOTREACHED();
+    }
+#elif defined(__ANDROID__)
+    return filepath;
+#endif
+    return GetExecutableDir() + "/" + filepath;
 }
 
 } // namespace
@@ -36,33 +56,33 @@ uint64_t Align(uint64_t size, uint64_t alignment)
     return (size + (alignment - 1)) & ~(alignment - 1);
 }
 
-std::string GetAssertPath(const std::string& filepath)
+bool AssetFileExists(const std::string& filepath)
 {
-#if defined(__APPLE__)
-    auto path = std::filesystem::path(filepath);
-    auto resource = [[NSBundle mainBundle] pathForResource:[NSString stringWithUTF8String:path.stem().c_str()]
-                                                    ofType:[NSString stringWithUTF8String:path.extension().c_str()]
-                                               inDirectory:[NSString stringWithUTF8String:path.parent_path().c_str()]];
-    if (resource) {
-        return [resource UTF8String];
+    std::string path = GetAssetPath(filepath);
+#if defined(__ANDROID__)
+    AAsset* file = AAssetManager_open(g_asset_manager, path.c_str(), AASSET_MODE_BUFFER);
+    if (!file) {
+        return false;
     }
-#elif defined(__ANDROID__)
-    return filepath;
+    AAsset_close(file);
+    return true;
+#else
+    return std::filesystem::exists(GetUtf8Path(path));
 #endif
-    return GetExecutableDir() + "/" + filepath;
 }
 
-std::vector<uint8_t> LoadBinaryFile(const std::string& filepath)
+std::vector<uint8_t> AssetLoadBinaryFile(const std::string& filepath)
 {
+    std::string path = GetAssetPath(filepath);
 #if defined(__ANDROID__)
-    AAsset* file = AAssetManager_open(g_asset_manager, filepath.c_str(), AASSET_MODE_BUFFER);
+    AAsset* file = AAssetManager_open(g_asset_manager, path.c_str(), AASSET_MODE_BUFFER);
     auto filesize = AAsset_getLength64(file);
     std::vector<uint8_t> data(filesize);
     AAsset_read(file, data.data(), filesize);
     AAsset_close(file);
     return data;
 #else
-    std::ifstream file(filepath, std::ios::binary);
+    std::ifstream file(GetUtf8Path(path), std::ios::binary);
     file.unsetf(std::ios::skipws);
 
     std::streampos filesize;
@@ -79,7 +99,13 @@ std::vector<uint8_t> LoadBinaryFile(const std::string& filepath)
 
 std::vector<uint8_t> LoadShaderBlob(const std::string& filepath, ShaderBlobType blob_type)
 {
-    return LoadBinaryFile(GetShaderBlob(filepath, blob_type));
+    std::string shader_blob_ext;
+    if (blob_type == ShaderBlobType::kDXIL) {
+        shader_blob_ext = ".dxil";
+    } else {
+        shader_blob_ext = ".spirv";
+    }
+    return AssetLoadBinaryFile(filepath + shader_blob_ext);
 }
 
 #if defined(__ANDROID__)

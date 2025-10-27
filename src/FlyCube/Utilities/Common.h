@@ -7,8 +7,8 @@
 #include <vector>
 
 uint64_t Align(uint64_t size, uint64_t alignment);
-std::string GetAssertPath(const std::string& filepath);
-std::vector<uint8_t> LoadBinaryFile(const std::string& filepath);
+bool AssetFileExists(const std::string& filepath);
+std::vector<uint8_t> AssetLoadBinaryFile(const std::string& filepath);
 std::vector<uint8_t> LoadShaderBlob(const std::string& filepath, ShaderBlobType blob_type);
 
 #if defined(__ANDROID__)

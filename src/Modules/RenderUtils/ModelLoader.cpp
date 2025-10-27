@@ -16,7 +16,7 @@ class MyIOSystem : public Assimp::IOSystem {
 public:
     bool Exists(const char* pFile) const override
     {
-        return true;
+        return AssetFileExists(pFile);
     }
 
     char getOsSeparator() const override
@@ -26,7 +26,7 @@ public:
 
     Assimp::IOStream* Open(const char* pFile, const char* pMode) override
     {
-        auto file = LoadBinaryFile(ASSETS_PATH + std::string(pFile));
+        auto file = AssetLoadBinaryFile(pFile);
         uint8_t* buffer = new uint8_t[file.size()];
         memcpy(buffer, file.data(), file.size());
         return new Assimp::MemoryIOStream(buffer, file.size(), true);

@@ -85,7 +85,7 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
         return res;
     }
 
-    auto file = LoadBinaryFile(ASSETS_PATH + path);
+    auto file = AssetLoadBinaryFile(path);
     if (path.ends_with(".dds") || path.ends_with(".ktx") || path.ends_with(".kmg")) {
         gli::texture texture = gli::load(reinterpret_cast<char*>(file.data()), file.size());
 
