@@ -2,7 +2,7 @@
 #include "AppLoop/AppLoop.h"
 #include "AppSettings/ArgsParser.h"
 #include "Instance/Instance.h"
-#include "Utilities/Common.h"
+#include "Utilities/Asset.h"
 
 #include <stdexcept>
 

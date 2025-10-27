@@ -1,6 +1,6 @@
 #include "RenderUtils/RenderModel.h"
 
-#include "Utilities/Common.h"
+#include "Utilities/Asset.h"
 #include "Utilities/FormatHelper.h"
 #include "Utilities/NotReached.h"
 

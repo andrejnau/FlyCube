@@ -1,6 +1,6 @@
 #include "RenderUtils/ModelLoader.h"
 
-#include "Utilities/Common.h"
+#include "Utilities/Asset.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/MemoryIOWrapper.h>

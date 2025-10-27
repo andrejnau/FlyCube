@@ -3,7 +3,7 @@
 #include "Instance/Instance.h"
 #include "RenderUtils/ModelLoader.h"
 #include "RenderUtils/RenderModel.h"
-#include "Utilities/Common.h"
+#include "Utilities/Asset.h"
 
 namespace {
 

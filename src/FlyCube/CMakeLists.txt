@@ -241,6 +241,8 @@ if (APPLE AND VULKAN_SUPPORT)
 endif()
 
 list(APPEND Utilities
+    Utilities/Asset.cpp
+    Utilities/Asset.h
     Utilities/Common.cpp
     Utilities/Common.h
     Utilities/DXGIFormatHelper.cpp
@@ -257,7 +259,7 @@ list(APPEND Utilities
 )
 
 if (APPLE)
-    set_property(SOURCE Utilities/Common.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
+    set_property(SOURCE Utilities/Asset.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
 endif()
 
 list(APPEND View
