@@ -1,6 +1,6 @@
 #pragma once
 #include "Resource/ResourceBase.h"
-#include "Utilities/Common.h"
+#include "Utilities/PassKey.h"
 
 #include <vulkan/vulkan.hpp>
 

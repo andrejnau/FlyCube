@@ -252,6 +252,7 @@ list(APPEND Utilities
     Utilities/FormatHelper.h
     Utilities/Logging.cpp
     Utilities/Logging.h
+    Utilities/PassKey.h
     Utilities/ScopeGuard.h
     Utilities/SystemUtils.cpp
     Utilities/SystemUtils.h
