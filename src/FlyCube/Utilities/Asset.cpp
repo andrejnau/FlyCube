@@ -33,15 +33,13 @@ std::string GetAssetPath(const std::string& filepath)
 
 #if defined(__APPLE__)
     NSBundle* main_bundle = [NSBundle mainBundle];
-    const bool is_bundle = [[main_bundle bundlePath] hasSuffix:@".app"];
-    if (is_bundle) {
-        std::string resource_path = [[main_bundle resourcePath] UTF8String];
-        return resource_path + "/" + filepath;
-    }
+    std::string resource_path = [[main_bundle resourcePath] UTF8String];
+    return resource_path + "/" + filepath;
 #elif defined(__ANDROID__)
     return filepath;
-#endif
+#else
     return GetExecutableDir() + "/" + filepath;
+#endif
 }
 
 std::string GetShaderBlobExt(ShaderBlobType blob_type)
