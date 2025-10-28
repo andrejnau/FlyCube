@@ -187,23 +187,6 @@ void AppBox::OnKey(GLFWwindow* window, int key, int scancode, int action, int mo
         self->SwitchFullScreenMode();
     }
 
-    if (key == GLFW_KEY_L && action == GLFW_PRESS) {
-        self->m_lock_focus = !self->m_lock_focus;
-        if (self->m_cursor_mode != CursorMode::kNormal) {
-            self->m_cursor_mode = self->m_lock_focus ? CursorMode::kDisabled : CursorMode::kHidden;
-        }
-        glfwSetInputMode(window, GLFW_CURSOR, ConvertCursorMode(self->m_cursor_mode));
-    }
-
-    if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
-        if (self->m_cursor_mode != CursorMode::kNormal) {
-            self->m_cursor_mode = CursorMode::kNormal;
-        } else {
-            self->m_cursor_mode = self->m_lock_focus ? CursorMode::kDisabled : CursorMode::kHidden;
-        }
-        glfwSetInputMode(window, GLFW_CURSOR, ConvertCursorMode(self->m_cursor_mode));
-    }
-
     if (self->m_input_listener) {
         self->m_input_listener->OnKey(key, action);
     }

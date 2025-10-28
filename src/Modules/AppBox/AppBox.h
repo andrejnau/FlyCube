@@ -55,7 +55,6 @@ private:
     std::array<int, 4> m_window_box = {};
     std::map<int, bool> m_keys;
     CursorMode m_cursor_mode = CursorMode::kNormal;
-    bool m_lock_focus = false;
     std::string m_gpu_name;
     std::string m_fps;
 #if defined(__APPLE__)
