@@ -262,6 +262,11 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
 void ModelViewRenderer::Resize(const AppSize& app_size, WindowHandle window)
 {
     WaitForIdle();
+    for (uint32_t i = 0; i < kFrameCount; ++i) {
+        m_back_buffer_views[i].reset();
+        m_framebuffers[i].reset();
+    }
+    m_swapchain.reset();
     Init(app_size, window);
 }
 
