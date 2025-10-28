@@ -4,6 +4,26 @@
 
 #include <cassert>
 
+namespace {
+
+class ResizeHandler : public WindowEvents {
+public:
+    ResizeHandler(void* window)
+        : m_window(window)
+    {
+    }
+
+    void OnResize(int width, int height) override
+    {
+        AppLoop::GetRenderer().Resize(AppSize(width, height), m_window);
+    }
+
+private:
+    void* const m_window;
+};
+
+} // namespace
+
 // static
 AppLoop& AppLoop::GetInstance()
 {
@@ -19,11 +39,14 @@ AppRenderer& AppLoop::GetRendererImpl()
 
 int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv[])
 {
-    AppBox app(renderer->GetTitle(), renderer->GetSettings());
-    app.SetGpuName(renderer->GetGpuName());
-    renderer->Init(app.GetAppSize(), app.GetNativeWindow());
+    m_renderer = std::move(renderer);
+    AppBox app(m_renderer->GetTitle(), m_renderer->GetSettings());
+    app.SetGpuName(m_renderer->GetGpuName());
+    m_renderer->Init(app.GetAppSize(), app.GetNativeWindow());
+    ResizeHandler resize_handler(app.GetNativeWindow());
+    app.SubscribeEvents(nullptr, &resize_handler);
     while (!app.PollEvents()) {
-        renderer->Render();
+        m_renderer->Render();
     }
     return 0;
 }
