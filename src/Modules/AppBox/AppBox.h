@@ -29,6 +29,8 @@ public:
     void* GetNativeWindow() const;
     void SetGpuName(const std::string& gpu_name);
     void SubscribeEvents(InputEvents* input_listener, WindowEvents* window_listener);
+    const CursorMode& GetCursorMode() const;
+    void SetCursorMode(CursorMode cursor_mode);
 
 private:
     void UpdateFps();

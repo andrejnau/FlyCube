@@ -111,6 +111,17 @@ void AppBox::SubscribeEvents(InputEvents* input_listener, WindowEvents* window_l
     m_window_listener = window_listener;
 }
 
+const CursorMode& AppBox::GetCursorMode() const
+{
+    return m_cursor_mode;
+}
+
+void AppBox::SetCursorMode(CursorMode cursor_mode)
+{
+    m_cursor_mode = cursor_mode;
+    glfwSetInputMode(m_window, GLFW_CURSOR, ConvertCursorMode(m_cursor_mode));
+}
+
 bool AppBox::PollEvents()
 {
 #if defined(__APPLE__)
