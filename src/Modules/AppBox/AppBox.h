@@ -50,7 +50,7 @@ private:
     double m_last_time = 0;
     std::array<int, 4> m_window_box = {};
     std::map<int, bool> m_keys;
-    int m_mouse_mode = GLFW_CURSOR_HIDDEN;
+    int m_mouse_mode = GLFW_CURSOR_NORMAL;
     std::string m_gpu_name;
     std::string m_fps;
 #if defined(__APPLE__)
