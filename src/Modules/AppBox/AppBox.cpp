@@ -149,6 +149,7 @@ void* AppBox::GetNativeWindow() const
 
 void AppBox::SwitchFullScreenMode()
 {
+#if !defined(__APPLE__)
     if (glfwGetWindowMonitor(m_window)) {
         glfwSetWindowMonitor(m_window, nullptr, m_window_box[0], m_window_box[1], m_window_box[2], m_window_box[3], 0);
     } else {
@@ -161,6 +162,7 @@ void AppBox::SwitchFullScreenMode()
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
         glfwSetWindowMonitor(m_window, monitor, 0, 0, xscale * mode->width, yscale * mode->height, mode->refreshRate);
     }
+#endif
 }
 
 // static
