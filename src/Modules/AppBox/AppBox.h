@@ -12,9 +12,11 @@
 #include <string>
 #include <string_view>
 
-#if defined(__APPLE__)
-class AutoreleasePool;
-#endif
+enum class CursorMode {
+    kNormal,
+    kHidden,
+    kDisabled,
+};
 
 class AppBox {
 public:
@@ -50,10 +52,11 @@ private:
     double m_last_time = 0;
     std::array<int, 4> m_window_box = {};
     std::map<int, bool> m_keys;
-    int m_mouse_mode = GLFW_CURSOR_NORMAL;
+    CursorMode m_cursor_mode = CursorMode::kNormal;
+    bool m_lock_focus = false;
     std::string m_gpu_name;
     std::string m_fps;
 #if defined(__APPLE__)
-    std::shared_ptr<AutoreleasePool> m_autorelease_pool;
+    std::shared_ptr<class AutoreleasePool> m_autorelease_pool;
 #endif
 };

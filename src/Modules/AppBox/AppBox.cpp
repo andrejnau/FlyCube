@@ -1,13 +1,32 @@
 #include "AppBox/AppBox.h"
 
+#include "Utilities/NotReached.h"
 #include "WindowUtils/WindowUtils.h"
+
+#include <cmath>
+#include <format>
 
 #if defined(__APPLE__)
 #include "AppBox/AutoreleasePool.h"
 #endif
 
-#include <cmath>
-#include <format>
+namespace {
+
+int ConvertCursorMode(CursorMode mode)
+{
+    switch (mode) {
+    case CursorMode::kNormal:
+        return GLFW_CURSOR_NORMAL;
+    case CursorMode::kHidden:
+        return GLFW_CURSOR_HIDDEN;
+    case CursorMode::kDisabled:
+        return GLFW_CURSOR_DISABLED;
+    default:
+        NOTREACHED();
+    }
+}
+
+} // namespace
 
 AppBox::AppBox(const std::string_view& title, const Settings& setting)
     : m_setting(setting)
@@ -38,7 +57,7 @@ AppBox::AppBox(const std::string_view& title, const Settings& setting)
     glfwSetMouseButtonCallback(m_window, AppBox::OnMouseButton);
     glfwSetScrollCallback(m_window, AppBox::OnScroll);
     glfwSetCharCallback(m_window, AppBox::OnInputChar);
-    glfwSetInputMode(m_window, GLFW_CURSOR, m_mouse_mode);
+    glfwSetInputMode(m_window, GLFW_CURSOR, ConvertCursorMode(m_cursor_mode));
 
 #if defined(__APPLE__)
     m_autorelease_pool = CreateAutoreleasePool();
@@ -158,23 +177,20 @@ void AppBox::OnKey(GLFWwindow* window, int key, int scancode, int action, int mo
     }
 
     if (key == GLFW_KEY_L && action == GLFW_PRESS) {
-        if (self->m_mouse_mode == GLFW_CURSOR_HIDDEN) {
-            self->m_mouse_mode = GLFW_CURSOR_DISABLED;
-        } else {
-            self->m_mouse_mode = GLFW_CURSOR_HIDDEN;
+        self->m_lock_focus = !self->m_lock_focus;
+        if (self->m_cursor_mode != CursorMode::kNormal) {
+            self->m_cursor_mode = self->m_lock_focus ? CursorMode::kDisabled : CursorMode::kHidden;
         }
-
-        if (glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL) {
-            glfwSetInputMode(window, GLFW_CURSOR, self->m_mouse_mode);
-        }
+        glfwSetInputMode(window, GLFW_CURSOR, ConvertCursorMode(self->m_cursor_mode));
     }
 
     if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
-        if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
-            glfwSetInputMode(window, GLFW_CURSOR, self->m_mouse_mode);
+        if (self->m_cursor_mode != CursorMode::kNormal) {
+            self->m_cursor_mode = CursorMode::kNormal;
         } else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            self->m_cursor_mode = self->m_lock_focus ? CursorMode::kDisabled : CursorMode::kHidden;
         }
+        glfwSetInputMode(window, GLFW_CURSOR, ConvertCursorMode(self->m_cursor_mode));
     }
 
     if (self->m_input_listener) {
