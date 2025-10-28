@@ -30,6 +30,7 @@ struct RenderMesh {
 
 class RenderModel {
 public:
+    RenderModel() = default;
     RenderModel(const std::shared_ptr<Device>& device,
                 const std::shared_ptr<CommandQueue>& command_queue,
                 std::unique_ptr<Model> model);

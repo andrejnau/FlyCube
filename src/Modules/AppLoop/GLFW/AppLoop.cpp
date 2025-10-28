@@ -20,8 +20,8 @@ AppRenderer& AppLoop::GetRendererImpl()
 int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv[])
 {
     AppBox app(renderer->GetTitle(), renderer->GetSettings());
-    renderer->Init(app.GetAppSize(), app.GetNativeWindow());
     app.SetGpuName(renderer->GetGpuName());
+    renderer->Init(app.GetAppSize(), app.GetNativeWindow());
     while (!app.PollEvents()) {
         renderer->Render();
     }

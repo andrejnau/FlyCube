@@ -45,9 +45,8 @@ target_link_options(DesktopModelView
 )
 
 target_link_libraries(DesktopModelView
-    AppBox
+    AppLoop
     FlyCube
-    FlyCubeAssets
     RenderUtils
 )
 
