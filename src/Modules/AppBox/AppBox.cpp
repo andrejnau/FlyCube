@@ -130,21 +130,23 @@ void AppBox::SwitchFullScreenMode()
     }
 }
 
-void AppBox::OnSizeChanged(GLFWwindow* m_window, int width, int height)
+// static
+void AppBox::OnSizeChanged(GLFWwindow* window, int width, int height)
 {
     if (width == 0 && height == 0) {
         return;
     }
-    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
+    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
     self->m_size = AppSize(width, height);
     if (self->m_window_listener) {
         self->m_window_listener->OnResize(width, height);
     }
 }
 
-void AppBox::OnKey(GLFWwindow* m_window, int key, int scancode, int action, int mods)
+// static
+void AppBox::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
+    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
     self->m_keys[key] = action;
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -162,16 +164,16 @@ void AppBox::OnKey(GLFWwindow* m_window, int key, int scancode, int action, int 
             self->m_mouse_mode = GLFW_CURSOR_HIDDEN;
         }
 
-        if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL) {
-            glfwSetInputMode(m_window, GLFW_CURSOR, self->m_mouse_mode);
+        if (glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL) {
+            glfwSetInputMode(window, GLFW_CURSOR, self->m_mouse_mode);
         }
     }
 
     if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
-        if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
-            glfwSetInputMode(m_window, GLFW_CURSOR, self->m_mouse_mode);
+        if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
+            glfwSetInputMode(window, GLFW_CURSOR, self->m_mouse_mode);
         } else {
-            glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
     }
 
@@ -180,14 +182,15 @@ void AppBox::OnKey(GLFWwindow* m_window, int key, int scancode, int action, int 
     }
 }
 
-void AppBox::OnMouse(GLFWwindow* m_window, double xpos, double ypos)
+// static
+void AppBox::OnMouse(GLFWwindow* window, double xpos, double ypos)
 {
-    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
+    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
     if (!self->m_input_listener) {
         return;
     }
     static bool first_event = true;
-    if (glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL) {
+    if (glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL) {
         self->m_input_listener->OnMouse(first_event, xpos, ypos);
         first_event = false;
     } else {
@@ -196,27 +199,30 @@ void AppBox::OnMouse(GLFWwindow* m_window, double xpos, double ypos)
     }
 }
 
-void AppBox::OnMouseButton(GLFWwindow* m_window, int button, int action, int mods)
+// static
+void AppBox::OnMouseButton(GLFWwindow* window, int button, int action, int mods)
 {
-    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
+    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
     if (!self->m_input_listener) {
         return;
     }
     self->m_input_listener->OnMouseButton(button, action);
 }
 
-void AppBox::OnScroll(GLFWwindow* m_window, double xoffset, double yoffset)
+// static
+void AppBox::OnScroll(GLFWwindow* window, double xoffset, double yoffset)
 {
-    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
+    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
     if (!self->m_input_listener) {
         return;
     }
     self->m_input_listener->OnScroll(xoffset, yoffset);
 }
 
-void AppBox::OnInputChar(GLFWwindow* m_window, uint32_t ch)
+// static
+void AppBox::OnInputChar(GLFWwindow* window, uint32_t ch)
 {
-    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(m_window));
+    AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
     if (!self->m_input_listener) {
         return;
     }
