@@ -26,37 +26,37 @@ include(copy_assets)
 copy_assets("${damaged_helmet_base_dir}" "assets/ModelView" "${damaged_helmet}" resources)
 
 if (ANDROID)
-   add_library(DesktopModelView SHARED
+   add_library(ModelView SHARED
       ${resources}
       ${shaders_files}
       ${sources}
    )
 else()
-   add_executable(DesktopModelView WIN32 MACOSX_BUNDLE
+   add_executable(ModelView WIN32 MACOSX_BUNDLE
       ${resources}
       ${shaders_files}
       ${sources}
    )
 endif()
 
-target_link_options(DesktopModelView
+target_link_options(ModelView
     PRIVATE
         $<$<BOOL:${WIN32}>:/ENTRY:mainCRTStartup>
 )
 
-target_link_libraries(DesktopModelView
+target_link_libraries(ModelView
     AppLoop
     FlyCube
     RenderUtils
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-   set_target_properties(DesktopModelView PROPERTIES
+   set_target_properties(ModelView PROPERTIES
       XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
    )
 endif()
 
-set_target_properties(DesktopModelView PROPERTIES
+set_target_properties(ModelView PROPERTIES
     FOLDER "Apps"
     MACOSX_BUNDLE_INFO_PLIST "${project_root}/cmake/apple/Info.plist"
 )
