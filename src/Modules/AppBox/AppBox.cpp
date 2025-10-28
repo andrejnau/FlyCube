@@ -199,14 +199,7 @@ void AppBox::OnMouse(GLFWwindow* window, double xpos, double ypos)
     if (!self->m_input_listener) {
         return;
     }
-    static bool first_event = true;
-    if (glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL) {
-        self->m_input_listener->OnMouse(first_event, xpos, ypos);
-        first_event = false;
-    } else {
-        self->m_input_listener->OnMouse(first_event, xpos, ypos);
-        first_event = true;
-    }
+    self->m_input_listener->OnMouse(xpos, ypos);
 }
 
 // static
