@@ -25,6 +25,7 @@ glm::mat4 GetProjectionMatrix(uint32_t width, uint32_t height)
 constexpr uint32_t kPositions = 0;
 constexpr uint32_t kTexcoords = 1;
 constexpr uint32_t kFrameCount = 3;
+constexpr bool kBindless = true;
 
 } // namespace
 
@@ -53,7 +54,7 @@ private:
     RenderModel m_render_model;
     std::shared_ptr<Resource> m_vertex_cbv_buffer;
     std::vector<std::shared_ptr<View>> m_vertex_cbv_views;
-    std::vector<std::shared_ptr<View>> m_pixel_bindless_textures_views;
+    std::vector<std::shared_ptr<View>> m_pixel_textures_views;
     std::shared_ptr<Resource> m_pixel_anisotropic_sampler;
     std::shared_ptr<View> m_pixel_anisotropic_sampler_view;
     std::shared_ptr<Resource> m_pixel_cbv_buffer;
@@ -100,15 +101,15 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
         m_vertex_cbv_views[i] = m_device->CreateView(m_vertex_cbv_buffer, vertex_cbv_view_desc);
     }
 
-    m_pixel_bindless_textures_views.resize(m_render_model.GetMeshCount());
+    m_pixel_textures_views.resize(m_render_model.GetMeshCount());
     for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
-        ViewDesc pixel_bindless_textures_view_desc = {
+        ViewDesc pixel_textures_view_desc = {
             .view_type = ViewType::kTexture,
             .dimension = ViewDimension::kTexture2D,
-            .bindless = true,
+            .bindless = kBindless,
         };
-        m_pixel_bindless_textures_views[i] =
-            m_device->CreateView(m_render_model.GetMesh(i).textures.base_color, pixel_bindless_textures_view_desc);
+        m_pixel_textures_views[i] =
+            m_device->CreateView(m_render_model.GetMesh(i).textures.base_color, pixel_textures_view_desc);
     }
 
     m_pixel_anisotropic_sampler = m_device->CreateSampler({
@@ -122,38 +123,51 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
     m_pixel_anisotropic_sampler_view =
         m_device->CreateView(m_pixel_anisotropic_sampler, pixel_anisotropic_sampler_view_desc);
 
-    std::vector<uint32_t> pixel_cbv_data(m_render_model.GetMeshCount());
-    m_pixel_cbv_buffer =
-        m_device->CreateBuffer(MemoryType::kUpload, {
+    if (kBindless) {
+        std::vector<uint32_t> pixel_cbv_data(m_render_model.GetMeshCount());
+        m_pixel_cbv_buffer = m_device->CreateBuffer(MemoryType::kUpload,
+                                                    {
                                                         .size = sizeof(pixel_cbv_data.front()) * pixel_cbv_data.size(),
                                                         .usage = BindFlag::kConstantBuffer,
                                                     });
-    m_pixel_cbv_views.resize(m_render_model.GetMeshCount());
-    for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
-        ViewDesc pixel_cbv_view_desc = {
-            .view_type = ViewType::kConstantBuffer,
-            .dimension = ViewDimension::kBuffer,
-            .offset = i * sizeof(pixel_cbv_data.front()),
-        };
-        m_pixel_cbv_views[i] = m_device->CreateView(m_pixel_cbv_buffer, pixel_cbv_view_desc);
-        pixel_cbv_data[i] = m_pixel_bindless_textures_views[i]->GetDescriptorId();
+        m_pixel_cbv_views.resize(m_render_model.GetMeshCount());
+        for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
+            ViewDesc pixel_cbv_view_desc = {
+                .view_type = ViewType::kConstantBuffer,
+                .dimension = ViewDimension::kBuffer,
+                .offset = i * sizeof(pixel_cbv_data.front()),
+            };
+            m_pixel_cbv_views[i] = m_device->CreateView(m_pixel_cbv_buffer, pixel_cbv_view_desc);
+            pixel_cbv_data[i] = m_pixel_textures_views[i]->GetDescriptorId();
+        }
+        m_pixel_cbv_buffer->UpdateUploadBuffer(0, pixel_cbv_data.data(),
+                                               sizeof(pixel_cbv_data.front()) * pixel_cbv_data.size());
     }
-    m_pixel_cbv_buffer->UpdateUploadBuffer(0, pixel_cbv_data.data(),
-                                           sizeof(pixel_cbv_data.front()) * pixel_cbv_data.size());
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
     std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/ModelView/VertexShader.hlsl", blob_type);
-    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/ModelView/PixelShaderBindless.hlsl", blob_type);
+    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob(
+        kBindless ? "assets/ModelView/PixelShaderBindless.hlsl" : "assets/ModelView/PixelShader.hlsl", blob_type);
     std::shared_ptr<Shader> vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     std::shared_ptr<Shader> pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
     m_program = m_device->CreateProgram({ vertex_shader, pixel_shader });
 
     BindKey vertex_cbv_key = vertex_shader->GetBindKey("cbv");
-    BindKey pixel_bindless_textures_key = pixel_shader->GetBindKey("bindless_textures");
     BindKey pixel_anisotropic_sampler_key = pixel_shader->GetBindKey("anisotropic_sampler");
-    BindKey pixel_cbv_key = pixel_shader->GetBindKey("cbv");
-    m_layout = m_device->CreateBindingSetLayout(
-        { vertex_cbv_key, pixel_bindless_textures_key, pixel_anisotropic_sampler_key, pixel_cbv_key });
+    BindKey pixel_bindless_textures_key;
+    BindKey pixel_cbv_key;
+    BindKey pixel_base_color_texture_key;
+
+    if (kBindless) {
+        pixel_bindless_textures_key = pixel_shader->GetBindKey("bindless_textures");
+        pixel_cbv_key = pixel_shader->GetBindKey("cbv");
+        m_layout = m_device->CreateBindingSetLayout(
+            { vertex_cbv_key, pixel_bindless_textures_key, pixel_anisotropic_sampler_key, pixel_cbv_key });
+    } else {
+        pixel_base_color_texture_key = pixel_shader->GetBindKey("base_color_texture");
+        m_layout = m_device->CreateBindingSetLayout(
+            { vertex_cbv_key, pixel_base_color_texture_key, pixel_anisotropic_sampler_key });
+    }
 
     m_vextex_input = { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
                        { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } };
@@ -161,11 +175,19 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
     m_binding_sets.resize(m_render_model.GetMeshCount());
     for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
         m_binding_sets[i] = m_device->CreateBindingSet(m_layout);
-        m_binding_sets[i]->WriteBindings({
-            { vertex_cbv_key, m_vertex_cbv_views[i] },
-            { pixel_anisotropic_sampler_key, m_pixel_anisotropic_sampler_view },
-            { pixel_cbv_key, m_pixel_cbv_views[i] },
-        });
+        if (kBindless) {
+            m_binding_sets[i]->WriteBindings({
+                { vertex_cbv_key, m_vertex_cbv_views[i] },
+                { pixel_anisotropic_sampler_key, m_pixel_anisotropic_sampler_view },
+                { pixel_cbv_key, m_pixel_cbv_views[i] },
+            });
+        } else {
+            m_binding_sets[i]->WriteBindings({
+                { vertex_cbv_key, m_vertex_cbv_views[i] },
+                { pixel_anisotropic_sampler_key, m_pixel_anisotropic_sampler_view },
+                { pixel_base_color_texture_key, m_pixel_textures_views[i] },
+            });
+        }
     }
 }
 
