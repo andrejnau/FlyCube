@@ -7,7 +7,7 @@ if (NOT VULKAN_SUPPORT)
     return()
 endif()
 
-if (STATIC_MOLTEN_VK)
+if (STATIC_MOLTEN_VK AND APPLE)
     if (CMAKE_VERSION VERSION_LESS "3.28")
         message(FATAL_ERROR "CMake 3.28 is required for linking with MoltenVK.xcframework")
     endif()

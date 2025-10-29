@@ -6,6 +6,7 @@ find_package(game-activity REQUIRED CONFIG)
 
 target_link_libraries(AppLoopAndroid
     android
+    AppSettings
     FlyCube
     game-activity::game-activity_static
     log
