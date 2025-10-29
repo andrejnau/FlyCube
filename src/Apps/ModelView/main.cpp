@@ -143,7 +143,7 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
     std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/ModelView/VertexShader.hlsl", blob_type);
-    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/ModelView/PixelShader.hlsl", blob_type);
+    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/ModelView/PixelShaderBindless.hlsl", blob_type);
     std::shared_ptr<Shader> vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     std::shared_ptr<Shader> pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
     m_program = m_device->CreateProgram({ vertex_shader, pixel_shader });
