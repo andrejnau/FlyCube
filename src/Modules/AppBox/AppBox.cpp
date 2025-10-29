@@ -156,11 +156,8 @@ void AppBox::SwitchFullScreenMode()
         glfwGetWindowPos(m_window, &m_window_box[0], &m_window_box[1]);
         glfwGetWindowSize(m_window, &m_window_box[2], &m_window_box[3]);
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-        float xscale = 1.0;
-        float yscale = 1.0;
-        glfwGetMonitorContentScale(monitor, &xscale, &yscale);
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-        glfwSetWindowMonitor(m_window, monitor, 0, 0, xscale * mode->width, yscale * mode->height, mode->refreshRate);
+        glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
     }
 #endif
 }
