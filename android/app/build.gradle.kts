@@ -1,3 +1,5 @@
+import org.gradle.internal.extensions.stdlib.capitalized
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -13,13 +15,6 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
-        externalNativeBuild {
-            cmake {
-                cppFlags += "-std=c++17"
-                arguments += "-DANDROID_ASSETS_DIR=${layout.buildDirectory.dir("intermediates/assets_cmake").get()}"
-            }
-        }
     }
 
     buildTypes {
@@ -47,9 +42,25 @@ android {
             version = "3.31.5"
         }
     }
-    sourceSets {
-        getByName("main") {
-            assets.srcDir(layout.buildDirectory.dir("intermediates/assets_cmake"))
+}
+
+androidComponents {
+    onVariants { variant ->
+        val variantName = variant.name.capitalized()
+        val variantBuildType = variant.buildType!!.capitalized()
+        val assetsDir =
+            layout.buildDirectory.dir("intermediates/assets_cmake/${variant.name}").get()
+
+        variant.externalNativeBuild!!.arguments.add("-DANDROID_ASSETS_DIR=${assetsDir}")
+        variant.sources.assets!!.addStaticSourceDirectory(assetsDir.asFile.absolutePath)
+
+        afterEvaluate {
+            val mergeAssetsTask = tasks.named("merge${variantName}Assets")
+            val externalNativeBuildTask =
+                tasks.named("externalNativeBuild${variantBuildType}")
+            mergeAssetsTask {
+                dependsOn(externalNativeBuildTask)
+            }
         }
     }
 }
