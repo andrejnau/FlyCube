@@ -14,13 +14,6 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        android.buildFeatures.buildConfig = true
-        fun setAppName(name: String) {
-            buildConfigField("String", "app_name", "\"${name}\"")
-            manifestPlaceholders["app_name"] = name
-        }
-        setAppName("Triangle")
-
         externalNativeBuild {
             cmake {
                 cppFlags += "-std=c++17"

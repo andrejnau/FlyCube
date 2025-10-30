@@ -4,12 +4,6 @@ import android.view.View
 import com.google.androidgamesdk.GameActivity
 
 class MainActivity : GameActivity() {
-    companion object {
-        init {
-            System.loadLibrary(BuildConfig.app_name)
-        }
-    }
-
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
