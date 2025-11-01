@@ -25,37 +25,37 @@ include(copy_assets)
 copy_assets("${damaged_helmet_base_dir}" "assets/DepthStencilRead" "${damaged_helmet}" resources)
 
 if (ANDROID)
-   add_library(DesktopDepthStencilRead SHARED
+   add_library(DepthStencilRead SHARED
       ${resources}
       ${shaders_files}
       ${sources}
    )
 else()
-   add_executable(DesktopDepthStencilRead WIN32 MACOSX_BUNDLE
+   add_executable(DepthStencilRead WIN32 MACOSX_BUNDLE
       ${resources}
       ${shaders_files}
       ${sources}
    )
 endif()
 
-target_link_options(DesktopDepthStencilRead
+target_link_options(DepthStencilRead
     PRIVATE
         $<$<BOOL:${WIN32}>:/ENTRY:mainCRTStartup>
 )
 
-target_link_libraries(DesktopDepthStencilRead
+target_link_libraries(DepthStencilRead
     AppLoop
     FlyCube
     RenderUtils
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-   set_target_properties(DesktopDepthStencilRead PROPERTIES
+   set_target_properties(DepthStencilRead PROPERTIES
       XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
    )
 endif()
 
-set_target_properties(DesktopDepthStencilRead PROPERTIES
+set_target_properties(DepthStencilRead PROPERTIES
     FOLDER "Apps"
     MACOSX_BUNDLE_INFO_PLIST "${project_root}/cmake/apple/Info.plist"
 )
