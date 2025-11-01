@@ -62,6 +62,8 @@ if (CMAKE_GENERATOR MATCHES "Xcode")
     set(CMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BUNDLE_IDENTIFIER_PREFIX}.${PRODUCT_BUNDLE_IDENTIFIER_SUFFIX}")
     set(CMAKE_XCODE_ATTRIBUTE_GENERATE_INFOPLIST_FILE "YES")
     set(CMAKE_XCODE_ATTRIBUTE_INFOPLIST_KEY_UILaunchScreen_Generation "YES")
+    set(CMAKE_XCODE_ATTRIBUTE_INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown")
+    set(CMAKE_XCODE_ATTRIBUTE_INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait")
 endif()
 
 if (ANDROID)
