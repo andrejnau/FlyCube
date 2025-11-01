@@ -301,8 +301,8 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         command_list->BindPipeline(m_depth_stencil_pass_pipeline);
         command_list->BeginRenderPass(m_depth_stencil_pass_render_pass, m_depth_stencil_pass_framebuffers[i],
                                       /*clear_desc=*/{});
-        command_list->SetViewport(0, 0, depth_stencil_size.x, app_size.height());
-        command_list->SetScissorRect(0, 0, depth_stencil_size.y, app_size.height());
+        command_list->SetViewport(0, 0, depth_stencil_size.x, depth_stencil_size.y);
+        command_list->SetScissorRect(0, 0, depth_stencil_size.x, depth_stencil_size.y);
         for (size_t j = 0; j < m_render_model.GetMeshCount(); ++j) {
             const auto& mesh = m_render_model.GetMesh(j);
             command_list->BindBindingSet(m_depth_stencil_pass_binding_sets[j]);
