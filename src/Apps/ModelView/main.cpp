@@ -59,9 +59,9 @@ private:
     std::shared_ptr<View> m_pixel_anisotropic_sampler_view;
     std::shared_ptr<Resource> m_pixel_cbv_buffer;
     std::vector<std::shared_ptr<View>> m_pixel_cbv_views;
-    std::shared_ptr<Program> m_program;
+    std::shared_ptr<Shader> m_vertex_shader;
+    std::shared_ptr<Shader> m_pixel_shader;
     std::shared_ptr<BindingSetLayout> m_layout;
-    std::vector<InputLayoutDesc> m_vextex_input;
     std::vector<std::shared_ptr<BindingSet>> m_binding_sets;
     std::array<uint64_t, kFrameCount> m_fence_values = {};
 
@@ -148,29 +148,25 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
     std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/ModelView/VertexShader.hlsl", blob_type);
     std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob(
         kBindless ? "assets/ModelView/PixelShaderBindless.hlsl" : "assets/ModelView/PixelShader.hlsl", blob_type);
-    std::shared_ptr<Shader> vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
-    std::shared_ptr<Shader> pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
-    m_program = m_device->CreateProgram({ vertex_shader, pixel_shader });
+    m_vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
+    m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
 
-    BindKey vertex_cbv_key = vertex_shader->GetBindKey("cbv");
-    BindKey pixel_anisotropic_sampler_key = pixel_shader->GetBindKey("anisotropic_sampler");
+    BindKey vertex_cbv_key = m_vertex_shader->GetBindKey("cbv");
+    BindKey pixel_anisotropic_sampler_key = m_pixel_shader->GetBindKey("anisotropic_sampler");
     BindKey pixel_bindless_textures_key;
     BindKey pixel_cbv_key;
     BindKey pixel_base_color_texture_key;
 
     if (kBindless) {
-        pixel_bindless_textures_key = pixel_shader->GetBindKey("bindless_textures");
-        pixel_cbv_key = pixel_shader->GetBindKey("cbv");
+        pixel_bindless_textures_key = m_pixel_shader->GetBindKey("bindless_textures");
+        pixel_cbv_key = m_pixel_shader->GetBindKey("cbv");
         m_layout = m_device->CreateBindingSetLayout(
             { vertex_cbv_key, pixel_bindless_textures_key, pixel_anisotropic_sampler_key, pixel_cbv_key });
     } else {
-        pixel_base_color_texture_key = pixel_shader->GetBindKey("base_color_texture");
+        pixel_base_color_texture_key = m_pixel_shader->GetBindKey("base_color_texture");
         m_layout = m_device->CreateBindingSetLayout(
             { vertex_cbv_key, pixel_base_color_texture_key, pixel_anisotropic_sampler_key });
     }
-
-    m_vextex_input = { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
-                       { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } };
 
     m_binding_sets.resize(m_render_model.GetMeshCount());
     for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
@@ -227,6 +223,11 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
     };
     m_depth_stencil_view = m_device->CreateView(m_depth_stencil_texture, depth_stencil_view_desc);
 
+    std::vector<InputLayoutDesc> vextex_input = {
+        { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
+        { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) }
+    };
+
     RenderPassDesc render_pass_desc = {
         .colors = { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
         .depth_stencil = { m_depth_stencil_texture->GetFormat(), RenderPassLoadOp::kClear,
@@ -235,9 +236,9 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_render_pass = m_device->CreateRenderPass(render_pass_desc);
 
     GraphicsPipelineDesc pipeline_desc = {
-        m_program,
+        m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
         m_layout,
-        m_vextex_input,
+        vextex_input,
         m_render_pass,
     };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);

@@ -64,9 +64,16 @@ enum class SamplerFilter {
     kComparisonMinMagMipLinear,
 };
 
-enum class SamplerTextureAddressMode { kWrap, kClamp };
+enum class SamplerTextureAddressMode {
+    kWrap,
+    kClamp,
+};
 
-enum class SamplerComparisonFunc { kNever, kAlways, kLess };
+enum class SamplerComparisonFunc {
+    kNever,
+    kAlways,
+    kLess,
+};
 
 enum class ViewType {
     kUnknown,
