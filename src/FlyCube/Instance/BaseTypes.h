@@ -570,7 +570,7 @@ enum class CommandListType {
 
 struct ClearDesc {
     std::vector<glm::vec4> colors;
-    float depth = 1.0f;
+    float depth = 1.0;
     uint8_t stencil = 0;
 };
 

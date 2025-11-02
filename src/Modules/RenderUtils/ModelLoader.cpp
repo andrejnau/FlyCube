@@ -61,7 +61,7 @@ public:
 private:
     void ProcessScene(Model& model)
     {
-        ProcessNode(m_scene->mRootNode, glm::mat4(1.0f), model);
+        ProcessNode(m_scene->mRootNode, glm::mat4(1.0), model);
     }
 
     void ProcessNode(aiNode* node, glm::mat4 transform, Model& model)

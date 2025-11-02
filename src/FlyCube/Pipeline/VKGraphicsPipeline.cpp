@@ -92,7 +92,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
 
     vk::PipelineRasterizationStateCreateInfo rasterizer = {};
     rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.lineWidth = 1.0f;
+    rasterizer.lineWidth = 1.0;
     rasterizer.frontFace = vk::FrontFace::eClockwise;
     rasterizer.depthBiasEnable = m_desc.rasterizer_desc.depth_bias != 0;
     rasterizer.depthBiasConstantFactor = m_desc.rasterizer_desc.depth_bias;

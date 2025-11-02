@@ -1,25 +1,24 @@
 RaytracingAccelerationStructure geometry;
-RWTexture2D<float4> result;
+RWTexture2D<float4> result_texture;
 
-struct RayPayload
-{
+struct RayPayload {
     float3 color;
 };
 
 [shader("raygeneration")]
 void ray_gen()
 {
-    float2 d = ((float2(DispatchRaysIndex().xy) / float2(DispatchRaysDimensions().xy)) * 2.f - 1.f);
+    float2 d = ((float2(DispatchRaysIndex().xy) / float2(DispatchRaysDimensions().xy)) * 2.0 - 1.0);
 
     RayDesc ray;
-    ray.Origin = float3(0, 0, -1);
-    ray.Direction = normalize(float3(d.x, -d.y, 1));
+    ray.Origin = float3(0.0, 0.0, -1.0);
+    ray.Direction = normalize(float3(d.x, -d.y, 1.0));
     ray.TMin = 0.001;
     ray.TMax = 10000.0;
 
     RayPayload payload;
     TraceRay(geometry, 0, 0xFF, 0, 0, 0, ray, payload);
-    result[DispatchRaysIndex().xy] = float4(payload.color, 1);
+    result_texture[DispatchRaysIndex().xy] = float4(payload.color, 1);
 }
 
 [shader("miss")]

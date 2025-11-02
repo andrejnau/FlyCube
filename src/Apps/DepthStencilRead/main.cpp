@@ -10,9 +10,9 @@ namespace {
 
 glm::mat4 GetViewMatrix()
 {
-    glm::vec3 eye = glm::vec3(0.0f, 0.0f, 3.5f);
-    glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 eye = glm::vec3(0.0, 0.0, 3.5);
+    glm::vec3 center = glm::vec3(0.0, 0.0, 0.0);
+    glm::vec3 up = glm::vec3(0.0, 1.0, 0.0);
     return glm::lookAt(eye, center, up);
 }
 
@@ -52,12 +52,12 @@ private:
     std::shared_ptr<Fence> m_fence;
     RenderModel m_render_model;
     RenderModel m_fullscreen_triangle_render_model;
-    std::shared_ptr<Resource> m_depth_stencil_pass_cbv_buffer;
-    std::vector<std::shared_ptr<View>> m_depth_stencil_pass_cbv_views;
-    std::shared_ptr<Resource> m_vertex_cbv_buffer;
-    std::shared_ptr<View> m_vertex_cbv_view;
-    std::shared_ptr<Resource> m_pixel_cbv_buffer;
-    std::shared_ptr<View> m_pixel_cbv_view;
+    std::shared_ptr<Resource> m_depth_stencil_pass_constant_buffer;
+    std::vector<std::shared_ptr<View>> m_depth_stencil_pass_constant_buffer_views;
+    std::shared_ptr<Resource> m_vertex_constant_buffer;
+    std::shared_ptr<View> m_vertex_constant_buffer_view;
+    std::shared_ptr<Resource> m_pixel_constant_buffer;
+    std::shared_ptr<View> m_pixel_constant_buffer_view;
     std::shared_ptr<Shader> m_vertex_shader;
     std::shared_ptr<Shader> m_pixel_shader;
     std::shared_ptr<BindingSetLayout> m_layout;
@@ -95,49 +95,43 @@ DepthStencilReadRenderer::DepthStencilReadRenderer(const Settings& settings)
     Model fullscreen_triangle_model = {
         .meshes = { {
             .indices = { 0, 1, 2 },
-            .positions = { glm::vec3(-1, 1, 0), glm::vec3(3, 1, 0), glm::vec3(-1, -3, 0) },
-            .texcoords = { glm::vec2(0, 0), glm::vec2(2, 0), glm::vec2(0, 2) },
+            .positions = { glm::vec3(-1.0, 1.0, 0.0), glm::vec3(3.0, 1.0, 0.0), glm::vec3(-1.0, -3.0, 0.0) },
+            .texcoords = { glm::vec2(0.0, 0.0), glm::vec2(2.0, 0.0), glm::vec2(0.0, 2.0) },
         } },
     };
     m_fullscreen_triangle_render_model = RenderModel(m_device, m_command_queue, &fullscreen_triangle_model);
 
-    m_depth_stencil_pass_cbv_buffer =
-        m_device->CreateBuffer(MemoryType::kUpload, {
-                                                        .size = sizeof(glm::mat4) * m_render_model.GetMeshCount(),
-                                                        .usage = BindFlag::kConstantBuffer,
-                                                    });
-    m_depth_stencil_pass_cbv_views.resize(m_render_model.GetMeshCount());
+    m_depth_stencil_pass_constant_buffer = m_device->CreateBuffer(
+        MemoryType::kUpload,
+        { .size = sizeof(glm::mat4) * m_render_model.GetMeshCount(), .usage = BindFlag::kConstantBuffer });
+    m_depth_stencil_pass_constant_buffer_views.resize(m_render_model.GetMeshCount());
     for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
-        ViewDesc depth_stencil_pass_cbv_view_desc = {
+        ViewDesc depth_stencil_pass_constant_buffer_view_desc = {
             .view_type = ViewType::kConstantBuffer,
             .dimension = ViewDimension::kBuffer,
             .offset = i * sizeof(glm::mat4),
         };
-        m_depth_stencil_pass_cbv_views[i] =
-            m_device->CreateView(m_depth_stencil_pass_cbv_buffer, depth_stencil_pass_cbv_view_desc);
+        m_depth_stencil_pass_constant_buffer_views[i] =
+            m_device->CreateView(m_depth_stencil_pass_constant_buffer, depth_stencil_pass_constant_buffer_view_desc);
     }
 
-    glm::mat4 vertex_cbv_data = glm::transpose(glm::mat4(1.0));
-    m_vertex_cbv_buffer = m_device->CreateBuffer(MemoryType::kUpload, {
-                                                                          .size = sizeof(vertex_cbv_data),
-                                                                          .usage = BindFlag::kConstantBuffer,
-                                                                      });
-    ViewDesc vertex_cbv_view_desc = {
+    glm::mat4 vertex_constant_buffer_data = glm::transpose(glm::mat4(1.0));
+    m_vertex_constant_buffer = m_device->CreateBuffer(
+        MemoryType::kUpload, { .size = sizeof(vertex_constant_buffer_data), .usage = BindFlag::kConstantBuffer });
+    ViewDesc vertex_constant_buffer_view_desc = {
         .view_type = ViewType::kConstantBuffer,
         .dimension = ViewDimension::kBuffer,
     };
-    m_vertex_cbv_view = m_device->CreateView(m_vertex_cbv_buffer, vertex_cbv_view_desc);
-    m_vertex_cbv_buffer->UpdateUploadBuffer(0, &vertex_cbv_data, sizeof(vertex_cbv_data));
+    m_vertex_constant_buffer_view = m_device->CreateView(m_vertex_constant_buffer, vertex_constant_buffer_view_desc);
+    m_vertex_constant_buffer->UpdateUploadBuffer(0, &vertex_constant_buffer_data, sizeof(vertex_constant_buffer_data));
 
-    m_pixel_cbv_buffer = m_device->CreateBuffer(MemoryType::kUpload, {
-                                                                         .size = sizeof(glm::uvec2),
-                                                                         .usage = BindFlag::kConstantBuffer,
-                                                                     });
-    ViewDesc pixel_cbv_view_desc = {
+    m_pixel_constant_buffer =
+        m_device->CreateBuffer(MemoryType::kUpload, { .size = sizeof(glm::uvec2), .usage = BindFlag::kConstantBuffer });
+    ViewDesc pixel_constant_buffer_view_desc = {
         .view_type = ViewType::kConstantBuffer,
         .dimension = ViewDimension::kBuffer,
     };
-    m_pixel_cbv_view = m_device->CreateView(m_pixel_cbv_buffer, pixel_cbv_view_desc);
+    m_pixel_constant_buffer_view = m_device->CreateView(m_pixel_constant_buffer, pixel_constant_buffer_view_desc);
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
     std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/DepthStencilRead/VertexShader.hlsl", blob_type);
@@ -145,18 +139,18 @@ DepthStencilReadRenderer::DepthStencilReadRenderer(const Settings& settings)
     m_vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
 
-    BindKey vertex_cbv_key = m_vertex_shader->GetBindKey("cbv");
-    BindKey pixel_cbv_key = m_pixel_shader->GetBindKey("cbv");
+    BindKey vertex_constant_buffer_key = m_vertex_shader->GetBindKey("constant_buffer");
+    BindKey pixel_constant_buffer_key = m_pixel_shader->GetBindKey("constant_buffer");
     BindKey pixel_depth_buffer_key = m_pixel_shader->GetBindKey("depth_buffer");
     BindKey pixel_stencil_buffer_key = m_pixel_shader->GetBindKey("stencil_buffer");
     m_layout = m_device->CreateBindingSetLayout(
-        { vertex_cbv_key, pixel_cbv_key, pixel_depth_buffer_key, pixel_stencil_buffer_key });
+        { vertex_constant_buffer_key, pixel_constant_buffer_key, pixel_depth_buffer_key, pixel_stencil_buffer_key });
 
     m_depth_stencil_pass_binding_sets.resize(m_render_model.GetMeshCount());
     for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
         m_depth_stencil_pass_binding_sets[i] = m_device->CreateBindingSet(m_layout);
         m_depth_stencil_pass_binding_sets[i]->WriteBindings({
-            { vertex_cbv_key, m_depth_stencil_pass_cbv_views[i] },
+            { vertex_constant_buffer_key, m_depth_stencil_pass_constant_buffer_views[i] },
         });
     }
 }
@@ -174,28 +168,29 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     glm::uvec2 depth_stencil_size = glm::uvec2(app_size.width() / 2, app_size.height());
     glm::mat4 projection = GetProjectionMatrix(depth_stencil_size.x, depth_stencil_size.y);
 
-    std::vector<glm::mat4> depth_stencil_pass_cbv_data(m_render_model.GetMeshCount());
+    std::vector<glm::mat4> depth_stencil_pass_constant_buffer_data(m_render_model.GetMeshCount());
     for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
-        depth_stencil_pass_cbv_data[i] = glm::transpose(projection * view * m_render_model.GetMesh(i).matrix);
+        depth_stencil_pass_constant_buffer_data[i] =
+            glm::transpose(projection * view * m_render_model.GetMesh(i).matrix);
     }
-    m_depth_stencil_pass_cbv_buffer->UpdateUploadBuffer(
-        0, depth_stencil_pass_cbv_data.data(),
-        sizeof(depth_stencil_pass_cbv_data.front()) * depth_stencil_pass_cbv_data.size());
+    m_depth_stencil_pass_constant_buffer->UpdateUploadBuffer(
+        0, depth_stencil_pass_constant_buffer_data.data(),
+        sizeof(depth_stencil_pass_constant_buffer_data.front()) * depth_stencil_pass_constant_buffer_data.size());
 
-    glm::uvec2 pixel_cbv_data = glm::uvec2(app_size.width(), app_size.height());
-    m_pixel_cbv_buffer->UpdateUploadBuffer(0, &pixel_cbv_data, sizeof(pixel_cbv_data));
+    glm::uvec2 pixel_constant_buffer_data = glm::uvec2(app_size.width(), app_size.height());
+    m_pixel_constant_buffer->UpdateUploadBuffer(0, &pixel_constant_buffer_data, sizeof(pixel_constant_buffer_data));
 
-    m_depth_stencil_texture =
-        m_device->CreateTexture(MemoryType::kDefault, {
-                                                          .type = TextureType::k2D,
-                                                          .format = gli::format::FORMAT_D32_SFLOAT_S8_UINT_PACK64,
-                                                          .width = depth_stencil_size.x,
-                                                          .height = depth_stencil_size.y,
-                                                          .depth_or_array_layers = 1,
-                                                          .mip_levels = 1,
-                                                          .sample_count = 1,
-                                                          .usage = BindFlag::kDepthStencil | BindFlag::kShaderResource,
-                                                      });
+    TextureDesc depth_stencil_texture_desc = {
+        .type = TextureType::k2D,
+        .format = gli::format::FORMAT_D32_SFLOAT_S8_UINT_PACK64,
+        .width = depth_stencil_size.x,
+        .height = depth_stencil_size.y,
+        .depth_or_array_layers = 1,
+        .mip_levels = 1,
+        .sample_count = 1,
+        .usage = BindFlag::kDepthStencil | BindFlag::kShaderResource,
+    };
+    m_depth_stencil_texture = m_device->CreateTexture(MemoryType::kDefault, depth_stencil_texture_desc);
     ViewDesc depth_stencil_view_desc = {
         .view_type = ViewType::kDepthStencil,
         .dimension = ViewDimension::kTexture2D,
@@ -257,15 +252,15 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
 
-    BindKey vertex_cbv_key = m_vertex_shader->GetBindKey("cbv");
-    BindKey pixel_cbv_key = m_pixel_shader->GetBindKey("cbv");
+    BindKey vertex_constant_buffer_key = m_vertex_shader->GetBindKey("constant_buffer");
+    BindKey pixel_constant_buffer_key = m_pixel_shader->GetBindKey("constant_buffer");
     BindKey pixel_depth_buffer_key = m_pixel_shader->GetBindKey("depth_buffer");
     BindKey pixel_stencil_buffer_key = m_pixel_shader->GetBindKey("stencil_buffer");
 
     m_binding_set = m_device->CreateBindingSet(m_layout);
     m_binding_set->WriteBindings({
-        { vertex_cbv_key, m_vertex_cbv_view },
-        { pixel_cbv_key, m_pixel_cbv_view },
+        { vertex_constant_buffer_key, m_vertex_constant_buffer_view },
+        { pixel_constant_buffer_key, m_pixel_constant_buffer_view },
         { pixel_depth_buffer_key, m_depth_read_view },
         { pixel_stencil_buffer_key, m_stencil_read_view },
     });

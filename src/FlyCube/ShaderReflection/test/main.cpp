@@ -52,7 +52,7 @@ TEST_CASE("Triangle/PixelShader.hlsl")
 
     auto bindings = reflection->GetBindings();
     REQUIRE(bindings.size() == 1);
-    REQUIRE(bindings.front().name == "Settings");
+    REQUIRE(bindings.front().name == "constant_buffer");
 }
 
 TEST_CASE("Triangle/VertexShader.hlsl")

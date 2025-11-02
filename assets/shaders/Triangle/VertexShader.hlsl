@@ -1,16 +1,10 @@
-struct VS_INPUT
-{
-    float3 pos : POSITION;
+struct VsOutput {
+    float4 pos : SV_POSITION;
 };
 
-struct VS_OUTPUT
+VsOutput main(float3 pos : POSITION)
 {
-    float4 pos: SV_POSITION;
-};
-
-VS_OUTPUT main(VS_INPUT input)
-{
-    VS_OUTPUT output;
-    output.pos = float4(input.pos, 1.0f);
+    VsOutput output;
+    output.pos = float4(pos, 1.0);
     return output;
 }

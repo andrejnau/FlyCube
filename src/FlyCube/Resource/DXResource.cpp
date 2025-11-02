@@ -17,13 +17,13 @@ std::optional<D3D12_CLEAR_VALUE> GetClearValue(const D3D12_RESOURCE_DESC& desc)
     if (desc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER) {
         clear_value.Format = desc.Format;
         if (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) {
-            clear_value.Color[0] = 0.0f;
-            clear_value.Color[1] = 0.0f;
-            clear_value.Color[2] = 0.0f;
-            clear_value.Color[3] = 1.0f;
+            clear_value.Color[0] = 0.0;
+            clear_value.Color[1] = 0.0;
+            clear_value.Color[2] = 0.0;
+            clear_value.Color[3] = 1.0;
             return clear_value;
         } else if (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) {
-            clear_value.DepthStencil.Depth = 1.0f;
+            clear_value.DepthStencil.Depth = 1.0;
             clear_value.DepthStencil.Stencil = 0;
             clear_value.Format = DepthStencilFromTypeless(clear_value.Format);
             return clear_value;

@@ -418,8 +418,8 @@ void DXCommandList::SetViewport(float x, float y, float width, float height)
     viewport.TopLeftY = y;
     viewport.Width = width;
     viewport.Height = height;
-    viewport.MinDepth = 0.0f;
-    viewport.MaxDepth = 1.0f;
+    viewport.MinDepth = 0.0;
+    viewport.MaxDepth = 1.0;
     m_command_list->RSSetViewports(1, &viewport);
 }
 

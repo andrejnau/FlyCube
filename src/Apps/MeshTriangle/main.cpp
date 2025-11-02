@@ -6,6 +6,12 @@
 
 #include <stdexcept>
 
+namespace {
+
+constexpr uint32_t kFrameCount = 3;
+
+} // namespace
+
 class MeshTriangleRenderer : public AppRenderer {
 public:
     MeshTriangleRenderer(const Settings& settings);
@@ -26,17 +32,17 @@ private:
     std::shared_ptr<Adapter> m_adapter;
     std::shared_ptr<Device> m_device;
     std::shared_ptr<CommandQueue> m_command_queue;
-    std::shared_ptr<Swapchain> m_swapchain;
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
-    static constexpr uint32_t kFrameCount = 3;
     std::array<uint64_t, kFrameCount> m_fence_values = {};
-    std::vector<std::shared_ptr<Framebuffer>> m_framebuffers;
-    std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists;
+    std::array<std::shared_ptr<View>, kFrameCount> m_back_buffer_views = {};
+    std::array<std::shared_ptr<Framebuffer>, kFrameCount> m_framebuffers = {};
+    std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
     std::shared_ptr<Shader> m_mesh_shader;
     std::shared_ptr<Shader> m_pixel_shader;
-    std::shared_ptr<Program> m_program;
     std::shared_ptr<BindingSetLayout> m_layout;
+
+    std::shared_ptr<Swapchain> m_swapchain;
     std::shared_ptr<RenderPass> m_render_pass;
     std::shared_ptr<Pipeline> m_pipeline;
 };
@@ -52,6 +58,13 @@ MeshTriangleRenderer::MeshTriangleRenderer(const Settings& settings)
     }
     m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
     m_fence = m_device->CreateFence(m_fence_value);
+
+    ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
+    std::vector<uint8_t> mesh_blob = AssetLoadShaderBlob("assets/MeshTriangle/MeshShader.hlsl", blob_type);
+    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/MeshTriangle/PixelShader.hlsl", blob_type);
+    m_mesh_shader = m_device->CreateShader(mesh_blob, blob_type, ShaderType::kMesh);
+    m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
+    m_layout = m_device->CreateBindingSetLayout({});
 }
 
 MeshTriangleRenderer::~MeshTriangleRenderer()
@@ -63,44 +76,42 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
 {
     m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
 
-    ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
-    std::vector<uint8_t> mesh_blob = AssetLoadShaderBlob("assets/MeshTriangle/MeshShader.hlsl", blob_type);
-    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/MeshTriangle/PixelShader.hlsl", blob_type);
-    m_mesh_shader = m_device->CreateShader(mesh_blob, blob_type, ShaderType::kMesh);
-    m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
-    m_program = m_device->CreateProgram({ m_mesh_shader, m_pixel_shader });
-    m_layout = m_device->CreateBindingSetLayout({});
-
     RenderPassDesc render_pass_desc = {
         { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
     m_render_pass = m_device->CreateRenderPass(render_pass_desc);
     ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
-    GraphicsPipelineDesc pipeline_desc = { m_program, m_layout, {}, m_render_pass };
+    GraphicsPipelineDesc pipeline_desc = {
+        m_device->CreateProgram({ m_mesh_shader, m_pixel_shader }),
+        m_layout,
+        {},
+        m_render_pass,
+    };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
 
     for (uint32_t i = 0; i < kFrameCount; ++i) {
+        std::shared_ptr<Resource> back_buffer = m_swapchain->GetBackBuffer(i);
         ViewDesc back_buffer_view_desc = {
             .view_type = ViewType::kRenderTarget,
             .dimension = ViewDimension::kTexture2D,
         };
-        std::shared_ptr<Resource> back_buffer = m_swapchain->GetBackBuffer(i);
-        std::shared_ptr<View> back_buffer_view = m_device->CreateView(back_buffer, back_buffer_view_desc);
+        m_back_buffer_views[i] = m_device->CreateView(back_buffer, back_buffer_view_desc);
+
         FramebufferDesc framebuffer_desc = {
             .render_pass = m_render_pass,
             .width = app_size.width(),
             .height = app_size.height(),
-            .colors = { back_buffer_view },
+            .colors = { m_back_buffer_views[i] },
         };
-        std::shared_ptr<Framebuffer> framebuffer =
-            m_framebuffers.emplace_back(m_device->CreateFramebuffer(framebuffer_desc));
-        decltype(auto) command_list = m_command_lists[i];
+        m_framebuffers[i] = m_device->CreateFramebuffer(framebuffer_desc);
+
+        auto& command_list = m_command_lists[i];
         command_list = m_device->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(m_pipeline);
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
-        command_list->BeginRenderPass(m_render_pass, framebuffer, clear_desc);
+        command_list->BeginRenderPass(m_render_pass, m_framebuffers[i], clear_desc);
         command_list->DispatchMesh(1, 1, 1);
         command_list->EndRenderPass();
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });
@@ -111,6 +122,11 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
 void MeshTriangleRenderer::Resize(const AppSize& app_size, WindowHandle window)
 {
     WaitForIdle();
+    for (uint32_t i = 0; i < kFrameCount; ++i) {
+        m_back_buffer_views[i].reset();
+        m_framebuffers[i].reset();
+    }
+    m_swapchain.reset();
     Init(app_size, window);
 }
 

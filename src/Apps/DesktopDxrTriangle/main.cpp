@@ -8,6 +8,12 @@
 #include <cstring>
 #include <stdexcept>
 
+namespace {
+
+constexpr uint32_t kFrameCount = 3;
+
+} // namespace
+
 int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
@@ -23,7 +29,6 @@ int main(int argc, char* argv[])
     }
     std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
     std::shared_ptr<CommandQueue> upload_command_queue = device->GetCommandQueue(CommandListType::kGraphics);
-    static constexpr uint32_t kFrameCount = 3;
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeWindow(), app_size.width(),
                                                                    app_size.height(), kFrameCount, settings.vsync);
     uint64_t fence_value = 0;
@@ -31,10 +36,8 @@ int main(int argc, char* argv[])
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer =
-        device->CreateBuffer(MemoryType::kDefault, {
-                                                       .size = sizeof(index_data.front()) * index_data.size(),
-                                                       .usage = BindFlag::kIndexBuffer | BindFlag::kCopyDest,
-                                                   });
+        device->CreateBuffer(MemoryType::kDefault, { .size = sizeof(index_data.front()) * index_data.size(),
+                                                     .usage = BindFlag::kIndexBuffer | BindFlag::kCopyDest });
     index_buffer->SetName("index_buffer");
     std::vector<glm::vec3> vertex_data = {
         glm::vec3(-0.5, -0.5, 0.0),
@@ -42,17 +45,13 @@ int main(int argc, char* argv[])
         glm::vec3(0.5, -0.5, 0.0),
     };
     std::shared_ptr<Resource> vertex_buffer =
-        device->CreateBuffer(MemoryType::kDefault, {
-                                                       .size = sizeof(vertex_data.front()) * vertex_data.size(),
-                                                       .usage = BindFlag::kVertexBuffer | BindFlag::kCopyDest,
-                                                   });
+        device->CreateBuffer(MemoryType::kDefault, { .size = sizeof(vertex_data.front()) * vertex_data.size(),
+                                                     .usage = BindFlag::kVertexBuffer | BindFlag::kCopyDest });
     vertex_buffer->SetName("vertex_buffer");
 
-    std::shared_ptr<Resource> upload_buffer =
-        device->CreateBuffer(MemoryType::kUpload, {
-                                                      .size = index_buffer->GetWidth() + vertex_buffer->GetWidth(),
-                                                      .usage = BindFlag::kCopySource,
-                                                  });
+    std::shared_ptr<Resource> upload_buffer = device->CreateBuffer(
+        MemoryType::kUpload,
+        { .size = index_buffer->GetWidth() + vertex_buffer->GetWidth(), .usage = BindFlag::kCopySource });
     upload_buffer->SetName("upload_buffer");
     upload_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
     upload_buffer->UpdateUploadBuffer(index_buffer->GetWidth(), vertex_data.data(),
@@ -80,11 +79,8 @@ int main(int argc, char* argv[])
     uint64_t acceleration_structures_size =
         Align(blas_prebuild_info.acceleration_structure_size, kAccelerationStructureAlignment) +
         tlas_prebuild_info.acceleration_structure_size;
-    std::shared_ptr<Resource> acceleration_structures_memory =
-        device->CreateBuffer(MemoryType::kDefault, {
-                                                       .size = acceleration_structures_size,
-                                                       .usage = BindFlag::kAccelerationStructure,
-                                                   });
+    std::shared_ptr<Resource> acceleration_structures_memory = device->CreateBuffer(
+        MemoryType::kDefault, { .size = acceleration_structures_size, .usage = BindFlag::kAccelerationStructure });
     acceleration_structures_memory->SetName("acceleration_structures_memory");
 
     std::shared_ptr<Resource> bottom = device->CreateAccelerationStructure({
@@ -96,16 +92,12 @@ int main(int argc, char* argv[])
 
     auto scratch = device->CreateBuffer(
         MemoryType::kDefault,
-        {
-            .size = std::max(blas_prebuild_info.build_scratch_data_size, tlas_prebuild_info.build_scratch_data_size),
-            .usage = BindFlag::kRayTracing,
-        });
+        { .size = std::max(blas_prebuild_info.build_scratch_data_size, tlas_prebuild_info.build_scratch_data_size),
+          .usage = BindFlag::kRayTracing });
     scratch->SetName("scratch");
 
-    auto blas_compacted_size_buffer = device->CreateBuffer(MemoryType::kReadback, {
-                                                                                      .size = sizeof(uint64_t),
-                                                                                      .usage = BindFlag::kCopyDest,
-                                                                                  });
+    auto blas_compacted_size_buffer =
+        device->CreateBuffer(MemoryType::kReadback, { .size = sizeof(uint64_t), .usage = BindFlag::kCopyDest });
     blas_compacted_size_buffer->SetName("blas_compacted_size_buffer");
 
     auto query_heap = device->CreateQueryHeap(QueryHeapType::kAccelerationStructureCompactedSize, 1);
@@ -128,8 +120,8 @@ int main(int argc, char* argv[])
     upload_command_list->CopyAccelerationStructure(bottom, bottom, CopyAccelerationStructureMode::kCompact);
 
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4x4>> geometry = {
-        { bottom, glm::transpose(glm::translate(glm::vec3(-0.5f, 0.0f, 0.0f))) },
-        { bottom, glm::transpose(glm::translate(glm::vec3(0.5f, 0.0f, 0.0f))) },
+        { bottom, glm::transpose(glm::translate(glm::vec3(-0.5, 0.0, 0.0))) },
+        { bottom, glm::transpose(glm::translate(glm::vec3(0.5, 0.0, 0.0))) },
     };
     assert(geometry.size() == bottom_count);
     std::vector<RaytracingGeometryInstance> instances;
@@ -148,30 +140,28 @@ int main(int argc, char* argv[])
         .size = tlas_prebuild_info.acceleration_structure_size,
     });
 
-    auto instance_data =
-        device->CreateBuffer(MemoryType::kUpload, {
-                                                      .size = instances.size() * sizeof(instances.back()),
-                                                      .usage = BindFlag::kRayTracing,
-                                                  });
+    auto instance_data = device->CreateBuffer(
+        MemoryType::kUpload, { .size = instances.size() * sizeof(instances.back()), .usage = BindFlag::kRayTracing });
     instance_data->SetName("instance_data");
     instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
     upload_command_list->BuildTopLevelAS({}, top, scratch, 0, instance_data, 0, instances.size(),
                                          BuildAccelerationStructureFlags::kNone);
     upload_command_list->UAVResourceBarrier(top);
 
-    std::shared_ptr<Resource> uav =
-        device->CreateTexture(MemoryType::kDefault, {
-                                                        .type = TextureType::k2D,
-                                                        .format = swapchain->GetFormat(),
-                                                        .width = app_size.width(),
-                                                        .height = app_size.height(),
-                                                        .depth_or_array_layers = 1,
-                                                        .mip_levels = 1,
-                                                        .sample_count = 1,
-                                                        .usage = BindFlag::kUnorderedAccess | BindFlag::kCopySource,
-                                                    });
-    uav->SetName("uav");
-    upload_command_list->ResourceBarrier({ { uav, uav->GetInitialState(), ResourceState::kUnorderedAccess } });
+    TextureDesc result_texture_desc = {
+        .type = TextureType::k2D,
+        .format = swapchain->GetFormat(),
+        .width = app_size.width(),
+        .height = app_size.height(),
+        .depth_or_array_layers = 1,
+        .mip_levels = 1,
+        .sample_count = 1,
+        .usage = BindFlag::kUnorderedAccess | BindFlag::kCopySource,
+    };
+    std::shared_ptr<Resource> result_texture = device->CreateTexture(MemoryType::kDefault, result_texture_desc);
+    result_texture->SetName("result_texture");
+    upload_command_list->ResourceBarrier(
+        { { result_texture, result_texture->GetInitialState(), ResourceState::kUnorderedAccess } });
     upload_command_list->Close();
 
     upload_command_queue->ExecuteCommandLists({ upload_command_list });
@@ -183,11 +173,11 @@ int main(int argc, char* argv[])
     };
     std::shared_ptr<View> top_view = device->CreateView(top, top_view_desc);
 
-    ViewDesc uav_view_desc = {
+    ViewDesc result_texture_view_desc = {
         .view_type = ViewType::kRWTexture,
         .dimension = ViewDimension::kTexture2D,
     };
-    std::shared_ptr<View> uav_view = device->CreateView(uav, uav_view_desc);
+    std::shared_ptr<View> result_texture_view = device->CreateView(result_texture, result_texture_view_desc);
 
     std::shared_ptr<Shader> library =
         device->CompileShader({ ASSETS_PATH "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
@@ -195,14 +185,13 @@ int main(int argc, char* argv[])
         { ASSETS_PATH "shaders/DxrTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" });
     std::shared_ptr<Shader> library_callable = device->CompileShader(
         { ASSETS_PATH "shaders/DxrTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" });
-    std::shared_ptr<Program> program = device->CreateProgram({ library, library_hit, library_callable });
     BindKey geometry_key = library->GetBindKey("geometry");
-    BindKey result_key = library->GetBindKey("result");
-    std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ geometry_key, result_key });
+    BindKey result_texture_key = library->GetBindKey("result_texture");
+    std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ geometry_key, result_texture_key });
     std::shared_ptr<BindingSet> binding_set = device->CreateBindingSet(layout);
     binding_set->WriteBindings({
         { geometry_key, top_view },
-        { result_key, uav_view },
+        { result_texture_key, result_texture_view },
     });
 
     std::vector<RayTracingShaderGroup> groups;
@@ -211,13 +200,17 @@ int main(int argc, char* argv[])
     groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, library_hit->GetId("closest_red") });
     groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, library_hit->GetId("closest_green") });
     groups.push_back({ RayTracingShaderGroupType::kGeneral, library_callable->GetId("callable") });
-    std::shared_ptr<Pipeline> pipeline = device->CreateRayTracingPipeline({ program, layout, groups });
 
-    std::shared_ptr<Resource> shader_table =
-        device->CreateBuffer(MemoryType::kUpload, {
-                                                      .size = device->GetShaderTableAlignment() * groups.size(),
-                                                      .usage = BindFlag::kShaderTable,
-                                                  });
+    RayTracingPipelineDesc pipeline_desc = {
+        device->CreateProgram({ library, library_hit, library_callable }),
+        layout,
+        groups,
+    };
+    std::shared_ptr<Pipeline> pipeline = device->CreateRayTracingPipeline(pipeline_desc);
+
+    std::shared_ptr<Resource> shader_table = device->CreateBuffer(
+        MemoryType::kUpload,
+        { .size = device->GetShaderTableAlignment() * groups.size(), .usage = BindFlag::kShaderTable });
     shader_table->SetName("shader_table");
 
     decltype(auto) shader_handles = pipeline->GetRayTracingShaderGroupHandles(0, groups.size());
@@ -239,23 +232,20 @@ int main(int argc, char* argv[])
     };
 
     std::array<uint64_t, kFrameCount> fence_values = {};
-    std::vector<std::shared_ptr<CommandList>> command_lists;
+    std::array<std::shared_ptr<CommandList>, kFrameCount> command_lists = {};
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
-        ViewDesc back_buffer_view_desc = {
-            .view_type = ViewType::kRenderTarget,
-            .dimension = ViewDimension::kTexture2D,
-        };
-        std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
-        command_lists.emplace_back(device->CreateCommandList(CommandListType::kGraphics));
-        std::shared_ptr<CommandList> command_list = command_lists[i];
+        auto& command_list = command_lists[i];
+        command_list = device->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set);
         command_list->DispatchRays(shader_tables, app_size.width(), app_size.height(), 1);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kCopyDest } });
-        command_list->ResourceBarrier({ { uav, ResourceState::kUnorderedAccess, ResourceState::kCopySource } });
-        command_list->CopyTexture(uav, back_buffer, { { app_size.width(), app_size.height(), 1 } });
-        command_list->ResourceBarrier({ { uav, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
+        command_list->ResourceBarrier(
+            { { result_texture, ResourceState::kUnorderedAccess, ResourceState::kCopySource } });
+        command_list->CopyTexture(result_texture, back_buffer, { { app_size.width(), app_size.height(), 1 } });
+        command_list->ResourceBarrier(
+            { { result_texture, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kCopyDest, ResourceState::kPresent } });
         command_list->Close();
     }

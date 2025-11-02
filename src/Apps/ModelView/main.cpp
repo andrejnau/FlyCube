@@ -10,9 +10,9 @@ namespace {
 
 glm::mat4 GetViewMatrix()
 {
-    glm::vec3 eye = glm::vec3(0.0f, 0.0f, 3.5f);
-    glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 eye = glm::vec3(0.0, 0.0, 3.5);
+    glm::vec3 center = glm::vec3(0.0, 0.0, 0.0);
+    glm::vec3 up = glm::vec3(0.0, 1.0, 0.0);
     return glm::lookAt(eye, center, up);
 }
 
@@ -52,13 +52,13 @@ private:
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
     RenderModel m_render_model;
-    std::shared_ptr<Resource> m_vertex_cbv_buffer;
-    std::vector<std::shared_ptr<View>> m_vertex_cbv_views;
+    std::shared_ptr<Resource> m_vertex_constant_buffer;
+    std::vector<std::shared_ptr<View>> m_vertex_constant_buffer_views;
     std::vector<std::shared_ptr<View>> m_pixel_textures_views;
     std::shared_ptr<Resource> m_pixel_anisotropic_sampler;
     std::shared_ptr<View> m_pixel_anisotropic_sampler_view;
-    std::shared_ptr<Resource> m_pixel_cbv_buffer;
-    std::vector<std::shared_ptr<View>> m_pixel_cbv_views;
+    std::shared_ptr<Resource> m_pixel_constant_buffer;
+    std::vector<std::shared_ptr<View>> m_pixel_constant_buffer_views;
     std::shared_ptr<Shader> m_vertex_shader;
     std::shared_ptr<Shader> m_pixel_shader;
     std::shared_ptr<BindingSetLayout> m_layout;
@@ -86,19 +86,18 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
     std::unique_ptr<Model> model = LoadModel("assets/ModelView/DamagedHelmet.gltf");
     m_render_model = RenderModel(m_device, m_command_queue, std::move(model));
 
-    m_vertex_cbv_buffer =
-        m_device->CreateBuffer(MemoryType::kUpload, {
-                                                        .size = sizeof(glm::mat4) * m_render_model.GetMeshCount(),
-                                                        .usage = BindFlag::kConstantBuffer,
-                                                    });
-    m_vertex_cbv_views.resize(m_render_model.GetMeshCount());
+    m_vertex_constant_buffer = m_device->CreateBuffer(
+        MemoryType::kUpload,
+        { .size = sizeof(glm::mat4) * m_render_model.GetMeshCount(), .usage = BindFlag::kConstantBuffer });
+    m_vertex_constant_buffer_views.resize(m_render_model.GetMeshCount());
     for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
-        ViewDesc vertex_cbv_view_desc = {
+        ViewDesc vertex_constant_buffer_view_desc = {
             .view_type = ViewType::kConstantBuffer,
             .dimension = ViewDimension::kBuffer,
             .offset = i * sizeof(glm::mat4),
         };
-        m_vertex_cbv_views[i] = m_device->CreateView(m_vertex_cbv_buffer, vertex_cbv_view_desc);
+        m_vertex_constant_buffer_views[i] =
+            m_device->CreateView(m_vertex_constant_buffer, vertex_constant_buffer_view_desc);
     }
 
     m_pixel_textures_views.resize(m_render_model.GetMeshCount());
@@ -124,24 +123,25 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
         m_device->CreateView(m_pixel_anisotropic_sampler, pixel_anisotropic_sampler_view_desc);
 
     if (kBindless) {
-        std::vector<uint32_t> pixel_cbv_data(m_render_model.GetMeshCount());
-        m_pixel_cbv_buffer = m_device->CreateBuffer(MemoryType::kUpload,
-                                                    {
-                                                        .size = sizeof(pixel_cbv_data.front()) * pixel_cbv_data.size(),
-                                                        .usage = BindFlag::kConstantBuffer,
-                                                    });
-        m_pixel_cbv_views.resize(m_render_model.GetMeshCount());
+        std::vector<uint32_t> pixel_constant_buffer_data(m_render_model.GetMeshCount());
+        m_pixel_constant_buffer = m_device->CreateBuffer(
+            MemoryType::kUpload,
+            { .size = sizeof(pixel_constant_buffer_data.front()) * pixel_constant_buffer_data.size(),
+              .usage = BindFlag::kConstantBuffer });
+        m_pixel_constant_buffer_views.resize(m_render_model.GetMeshCount());
         for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
-            ViewDesc pixel_cbv_view_desc = {
+            ViewDesc pixel_constant_buffer_view_desc = {
                 .view_type = ViewType::kConstantBuffer,
                 .dimension = ViewDimension::kBuffer,
-                .offset = i * sizeof(pixel_cbv_data.front()),
+                .offset = i * sizeof(pixel_constant_buffer_data.front()),
             };
-            m_pixel_cbv_views[i] = m_device->CreateView(m_pixel_cbv_buffer, pixel_cbv_view_desc);
-            pixel_cbv_data[i] = m_pixel_textures_views[i]->GetDescriptorId();
+            m_pixel_constant_buffer_views[i] =
+                m_device->CreateView(m_pixel_constant_buffer, pixel_constant_buffer_view_desc);
+            pixel_constant_buffer_data[i] = m_pixel_textures_views[i]->GetDescriptorId();
         }
-        m_pixel_cbv_buffer->UpdateUploadBuffer(0, pixel_cbv_data.data(),
-                                               sizeof(pixel_cbv_data.front()) * pixel_cbv_data.size());
+        m_pixel_constant_buffer->UpdateUploadBuffer(
+            0, pixel_constant_buffer_data.data(),
+            sizeof(pixel_constant_buffer_data.front()) * pixel_constant_buffer_data.size());
     }
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
@@ -151,21 +151,21 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
     m_vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
 
-    BindKey vertex_cbv_key = m_vertex_shader->GetBindKey("cbv");
+    BindKey vertex_constant_buffer_key = m_vertex_shader->GetBindKey("constant_buffer");
     BindKey pixel_anisotropic_sampler_key = m_pixel_shader->GetBindKey("anisotropic_sampler");
     BindKey pixel_bindless_textures_key;
-    BindKey pixel_cbv_key;
+    BindKey pixel_constant_buffer_key;
     BindKey pixel_base_color_texture_key;
 
     if (kBindless) {
         pixel_bindless_textures_key = m_pixel_shader->GetBindKey("bindless_textures");
-        pixel_cbv_key = m_pixel_shader->GetBindKey("cbv");
-        m_layout = m_device->CreateBindingSetLayout(
-            { vertex_cbv_key, pixel_bindless_textures_key, pixel_anisotropic_sampler_key, pixel_cbv_key });
+        pixel_constant_buffer_key = m_pixel_shader->GetBindKey("constant_buffer");
+        m_layout = m_device->CreateBindingSetLayout({ vertex_constant_buffer_key, pixel_bindless_textures_key,
+                                                      pixel_anisotropic_sampler_key, pixel_constant_buffer_key });
     } else {
         pixel_base_color_texture_key = m_pixel_shader->GetBindKey("base_color_texture");
         m_layout = m_device->CreateBindingSetLayout(
-            { vertex_cbv_key, pixel_base_color_texture_key, pixel_anisotropic_sampler_key });
+            { vertex_constant_buffer_key, pixel_base_color_texture_key, pixel_anisotropic_sampler_key });
     }
 
     m_binding_sets.resize(m_render_model.GetMeshCount());
@@ -173,13 +173,13 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
         m_binding_sets[i] = m_device->CreateBindingSet(m_layout);
         if (kBindless) {
             m_binding_sets[i]->WriteBindings({
-                { vertex_cbv_key, m_vertex_cbv_views[i] },
+                { vertex_constant_buffer_key, m_vertex_constant_buffer_views[i] },
                 { pixel_anisotropic_sampler_key, m_pixel_anisotropic_sampler_view },
-                { pixel_cbv_key, m_pixel_cbv_views[i] },
+                { pixel_constant_buffer_key, m_pixel_constant_buffer_views[i] },
             });
         } else {
             m_binding_sets[i]->WriteBindings({
-                { vertex_cbv_key, m_vertex_cbv_views[i] },
+                { vertex_constant_buffer_key, m_vertex_constant_buffer_views[i] },
                 { pixel_anisotropic_sampler_key, m_pixel_anisotropic_sampler_view },
                 { pixel_base_color_texture_key, m_pixel_textures_views[i] },
             });
@@ -199,24 +199,25 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
     glm::mat4 view = GetViewMatrix();
     glm::mat4 projection = GetProjectionMatrix(app_size.width(), app_size.height());
 
-    std::vector<glm::mat4> vertex_cbv_data(m_render_model.GetMeshCount());
+    std::vector<glm::mat4> vertex_constant_buffer_data(m_render_model.GetMeshCount());
     for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
-        vertex_cbv_data[i] = glm::transpose(projection * view * m_render_model.GetMesh(i).matrix);
+        vertex_constant_buffer_data[i] = glm::transpose(projection * view * m_render_model.GetMesh(i).matrix);
     }
-    m_vertex_cbv_buffer->UpdateUploadBuffer(0, vertex_cbv_data.data(),
-                                            sizeof(vertex_cbv_data.front()) * vertex_cbv_data.size());
+    m_vertex_constant_buffer->UpdateUploadBuffer(
+        0, vertex_constant_buffer_data.data(),
+        sizeof(vertex_constant_buffer_data.front()) * vertex_constant_buffer_data.size());
 
-    m_depth_stencil_texture =
-        m_device->CreateTexture(MemoryType::kDefault, {
-                                                          .type = TextureType::k2D,
-                                                          .format = gli::format::FORMAT_D32_SFLOAT_PACK32,
-                                                          .width = app_size.width(),
-                                                          .height = app_size.height(),
-                                                          .depth_or_array_layers = 1,
-                                                          .mip_levels = 1,
-                                                          .sample_count = 1,
-                                                          .usage = BindFlag::kDepthStencil,
-                                                      });
+    TextureDesc depth_stencil_texture_desc = {
+        .type = TextureType::k2D,
+        .format = gli::format::FORMAT_D32_SFLOAT_PACK32,
+        .width = app_size.width(),
+        .height = app_size.height(),
+        .depth_or_array_layers = 1,
+        .mip_levels = 1,
+        .sample_count = 1,
+        .usage = BindFlag::kDepthStencil,
+    };
+    m_depth_stencil_texture = m_device->CreateTexture(MemoryType::kDefault, depth_stencil_texture_desc);
     ViewDesc depth_stencil_view_desc = {
         .view_type = ViewType::kDepthStencil,
         .dimension = ViewDimension::kTexture2D,

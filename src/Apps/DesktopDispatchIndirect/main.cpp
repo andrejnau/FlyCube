@@ -4,6 +4,12 @@
 
 #include <chrono>
 
+namespace {
+
+constexpr uint32_t kFrameCount = 3;
+
+} // namespace
+
 int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
@@ -15,59 +21,52 @@ int main(int argc, char* argv[])
     app.SetGpuName(adapter->GetName());
     std::shared_ptr<Device> device = adapter->CreateDevice();
     std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
-    static constexpr uint32_t kFrameCount = 3;
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeWindow(), app_size.width(),
                                                                    app_size.height(), kFrameCount, settings.vsync);
     uint64_t fence_value = 0;
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
-    std::array<float, kFrameCount> cbv_data = {};
-    std::array<std::shared_ptr<Resource>, kFrameCount> cbv_buffer = {};
-    std::array<std::shared_ptr<View>, kFrameCount> cbv_view = {};
+    std::array<float, kFrameCount> constant_buffer_data = {};
+    std::array<std::shared_ptr<Resource>, kFrameCount> constant_buffer = {};
+    std::array<std::shared_ptr<View>, kFrameCount> constant_buffer_view = {};
     for (uint32_t i = 0; i < kFrameCount; ++i) {
-        cbv_buffer[i] = device->CreateBuffer(MemoryType::kUpload, {
-                                                                      .size = sizeof(float),
-                                                                      .usage = BindFlag::kConstantBuffer,
-                                                                  });
-        ViewDesc cbv_view_desc = {
+        constant_buffer[i] =
+            device->CreateBuffer(MemoryType::kUpload, { .size = sizeof(float), .usage = BindFlag::kConstantBuffer });
+        ViewDesc constant_buffer_view_desc = {
             .view_type = ViewType::kConstantBuffer,
             .dimension = ViewDimension::kBuffer,
         };
-        cbv_view[i] = device->CreateView(cbv_buffer[i], cbv_view_desc);
+        constant_buffer_view[i] = device->CreateView(constant_buffer[i], constant_buffer_view_desc);
     }
 
-    static constexpr uint32_t kUavWidth = 512;
-    static constexpr uint32_t kUavHeight = 512;
-    std::shared_ptr<Resource> uav_texture =
-        device->CreateTexture(MemoryType::kDefault, {
-                                                        .type = TextureType::k2D,
-                                                        .format = swapchain->GetFormat(),
-                                                        .width = kUavWidth,
-                                                        .height = kUavHeight,
-                                                        .depth_or_array_layers = 1,
-                                                        .mip_levels = 1,
-                                                        .sample_count = 1,
-                                                        .usage = BindFlag::kUnorderedAccess | BindFlag::kCopySource,
-                                                    });
-    ViewDesc uav_view_desc = {
+    TextureDesc result_texture_desc = {
+        .type = TextureType::k2D,
+        .format = swapchain->GetFormat(),
+        .width = 512,
+        .height = 512,
+        .depth_or_array_layers = 1,
+        .mip_levels = 1,
+        .sample_count = 1,
+        .usage = BindFlag::kUnorderedAccess | BindFlag::kCopySource,
+    };
+    std::shared_ptr<Resource> result_texture = device->CreateTexture(MemoryType::kDefault, result_texture_desc);
+    ViewDesc result_texture_view_desc = {
         .view_type = ViewType::kRWTexture,
         .dimension = ViewDimension::kTexture2D,
     };
-    std::shared_ptr<View> uav_view = device->CreateView(uav_texture, uav_view_desc);
+    std::shared_ptr<View> result_texture_view = device->CreateView(result_texture, result_texture_view_desc);
 
     DispatchIndirectCommand argument_data = { 64, 64, 1 };
-    std::shared_ptr<Resource> argument_buffer =
-        device->CreateBuffer(MemoryType::kUpload, {
-                                                      .size = sizeof(argument_data),
-                                                      .usage = BindFlag::kIndirectBuffer,
-                                                  });
+    std::shared_ptr<Resource> argument_buffer = device->CreateBuffer(
+        MemoryType::kUpload, { .size = sizeof(argument_data), .usage = BindFlag::kIndirectBuffer });
     argument_buffer->UpdateUploadBuffer(0, &argument_data, sizeof(argument_data));
 
     std::shared_ptr<Shader> shader = device->CompileShader(
         { ASSETS_PATH "shaders/DispatchIndirect/ComputeShader.hlsl", "main", ShaderType::kCompute, "6_0" });
-    BindKey cbv_key = shader->GetBindKey("cbv");
-    BindKey uav_key = shader->GetBindKey("uav");
-    std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ cbv_key, uav_key });
+    BindKey constant_buffer_key = shader->GetBindKey("constant_buffer");
+    BindKey result_texture_key = shader->GetBindKey("result_texture");
+    std::shared_ptr<BindingSetLayout> layout =
+        device->CreateBindingSetLayout({ constant_buffer_key, result_texture_key });
     ComputePipelineDesc pipeline_desc = {
         device->CreateProgram({ shader }),
         layout,
@@ -80,23 +79,25 @@ int main(int argc, char* argv[])
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
         binding_set[i] = device->CreateBindingSet(layout);
-        binding_set[i]->WriteBindings({ { cbv_key, cbv_view[i] }, { uav_key, uav_view } });
-        command_lists[i] = device->CreateCommandList(CommandListType::kGraphics);
-        auto& command_list = command_lists[i];
+        binding_set[i]->WriteBindings(
+            { { constant_buffer_key, constant_buffer_view[i] }, { result_texture_key, result_texture_view } });
 
+        auto& command_list = command_lists[i];
+        command_list = device->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(pipeline);
         command_list->BindBindingSet(binding_set[i]);
         command_list->DispatchIndirect(argument_buffer, 0);
         TextureCopyRegion region = {
-            .extent = { kUavWidth, kUavHeight, 1 },
-            .dst_offset = { static_cast<int32_t>(app_size.width() / 2 - kUavWidth / 2),
-                            static_cast<int32_t>(app_size.height() / 2 - kUavHeight / 2) },
+            .extent = { result_texture_desc.width, result_texture_desc.height, 1 },
+            .dst_offset = { static_cast<int32_t>(app_size.width() / 2 - result_texture_desc.width / 2),
+                            static_cast<int32_t>(app_size.height() / 2 - result_texture_desc.height / 2) },
         };
-        command_list->ResourceBarrier({ { uav_texture, ResourceState::kUnorderedAccess, ResourceState::kCopySource },
+        command_list->ResourceBarrier({ { result_texture, ResourceState::kUnorderedAccess, ResourceState::kCopySource },
                                         { back_buffer, ResourceState::kPresent, ResourceState::kCopyDest } });
-        command_list->CopyTexture(uav_texture, back_buffer, { region });
-        command_list->ResourceBarrier({ { back_buffer, ResourceState::kCopyDest, ResourceState::kPresent },
-                                        { uav_texture, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
+        command_list->CopyTexture(result_texture, back_buffer, { region });
+        command_list->ResourceBarrier(
+            { { back_buffer, ResourceState::kCopyDest, ResourceState::kPresent },
+              { result_texture, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
         command_list->Close();
     }
 
@@ -106,8 +107,9 @@ int main(int argc, char* argv[])
         fence->Wait(fence_values[frame_index]);
 
         auto now = std::chrono::high_resolution_clock::now();
-        cbv_data[frame_index] = std::chrono::duration<float>(now.time_since_epoch()).count();
-        cbv_buffer[frame_index]->UpdateUploadBuffer(0, &cbv_data[frame_index], sizeof(cbv_data.front()));
+        constant_buffer_data[frame_index] = std::chrono::duration<float>(now.time_since_epoch()).count();
+        constant_buffer[frame_index]->UpdateUploadBuffer(0, &constant_buffer_data[frame_index],
+                                                         sizeof(constant_buffer_data.front()));
 
         command_queue->ExecuteCommandLists({ command_lists[frame_index] });
         command_queue->Signal(fence, fence_values[frame_index] = ++fence_value);

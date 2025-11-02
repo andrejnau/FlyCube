@@ -9,7 +9,7 @@
 #include <vector>
 
 struct RenderMesh {
-    glm::mat4 matrix = glm::mat4(1.0f);
+    glm::mat4 matrix = glm::mat4(1.0);
     size_t index_count = 0;
     gli::format index_format = gli::format::FORMAT_UNDEFINED;
 
@@ -54,7 +54,7 @@ private:
 
     std::shared_ptr<Device> m_device;
     std::shared_ptr<CommandList> m_command_list;
-    std::vector<std::shared_ptr<Resource>> m_cmd_resources;
+    std::vector<std::shared_ptr<Resource>> m_upload_buffers;
     std::shared_ptr<Fence> m_fence;
     uint64_t m_fence_value = 0;
     std::vector<RenderMesh> m_meshes;

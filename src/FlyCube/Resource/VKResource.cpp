@@ -181,8 +181,8 @@ std::shared_ptr<VKResource> VKResource::CreateSampler(VKDevice& device, const Sa
     sampler_info.borderColor = vk::BorderColor::eIntOpaqueBlack;
     sampler_info.unnormalizedCoordinates = VK_FALSE;
     sampler_info.mipmapMode = vk::SamplerMipmapMode::eLinear;
-    sampler_info.mipLodBias = 0.0f;
-    sampler_info.minLod = 0.0f;
+    sampler_info.mipLodBias = 0.0;
+    sampler_info.minLod = 0.0;
     sampler_info.maxLod = std::numeric_limits<float>::max();
 
     /*switch (desc.filter)

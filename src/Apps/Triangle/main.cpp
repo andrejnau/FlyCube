@@ -4,6 +4,12 @@
 #include "Instance/Instance.h"
 #include "Utilities/Asset.h"
 
+namespace {
+
+constexpr uint32_t kFrameCount = 3;
+
+} // namespace
+
 class TriangleRenderer : public AppRenderer {
 public:
     TriangleRenderer(const Settings& settings);
@@ -27,15 +33,13 @@ private:
     std::shared_ptr<Swapchain> m_swapchain;
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
-    static constexpr uint32_t kFrameCount = 3;
     std::array<uint64_t, kFrameCount> m_fence_values = {};
-    std::vector<std::shared_ptr<Framebuffer>> m_framebuffers;
-    std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists;
+    std::array<std::shared_ptr<Framebuffer>, kFrameCount> m_framebuffers = {};
+    std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
     std::shared_ptr<Resource> m_index_buffer;
     std::shared_ptr<Resource> m_vertex_buffer;
     std::shared_ptr<Shader> m_vertex_shader;
     std::shared_ptr<Shader> m_pixel_shader;
-    std::shared_ptr<Program> m_program;
     std::shared_ptr<BindingSetLayout> m_layout;
     std::shared_ptr<RenderPass> m_render_pass;
     std::shared_ptr<Pipeline> m_pipeline;
@@ -61,11 +65,9 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
 
     std::vector<uint32_t> index_data = { 0, 1, 2 };
-    m_index_buffer =
-        m_device->CreateBuffer(MemoryType::kUpload, {
-                                                        .size = sizeof(index_data.front()) * index_data.size(),
-                                                        .usage = BindFlag::kIndexBuffer,
-                                                    });
+    m_index_buffer = m_device->CreateBuffer(
+        MemoryType::kUpload,
+        { .size = sizeof(index_data.front()) * index_data.size(), .usage = BindFlag::kIndexBuffer });
     m_index_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
 
     std::vector<glm::vec3> vertex_data = {
@@ -73,11 +75,9 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         glm::vec3(0.0, 0.5, 0.0),
         glm::vec3(0.5, -0.5, 0.0),
     };
-    m_vertex_buffer =
-        m_device->CreateBuffer(MemoryType::kUpload, {
-                                                        .size = sizeof(vertex_data.front()) * vertex_data.size(),
-                                                        .usage = BindFlag::kVertexBuffer,
-                                                    });
+    m_vertex_buffer = m_device->CreateBuffer(
+        MemoryType::kUpload,
+        { .size = sizeof(vertex_data.front()) * vertex_data.size(), .usage = BindFlag::kVertexBuffer });
     m_vertex_buffer->UpdateUploadBuffer(0, vertex_data.data(), sizeof(vertex_data.front()) * vertex_data.size());
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
@@ -85,7 +85,6 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/Triangle/PixelShaderNoBindings.hlsl", blob_type);
     m_vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
-    m_program = m_device->CreateProgram({ m_vertex_shader, m_pixel_shader });
     m_layout = m_device->CreateBindingSetLayout({});
 
     RenderPassDesc render_pass_desc = {
@@ -94,7 +93,7 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_render_pass = m_device->CreateRenderPass(render_pass_desc);
     ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
     GraphicsPipelineDesc pipeline_desc = {
-        m_program,
+        m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
         m_layout,
         { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
         m_render_pass,
@@ -102,21 +101,22 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
 
     for (uint32_t i = 0; i < kFrameCount; ++i) {
+        std::shared_ptr<Resource> back_buffer = m_swapchain->GetBackBuffer(i);
         ViewDesc back_buffer_view_desc = {
             .view_type = ViewType::kRenderTarget,
             .dimension = ViewDimension::kTexture2D,
         };
-        std::shared_ptr<Resource> back_buffer = m_swapchain->GetBackBuffer(i);
         std::shared_ptr<View> back_buffer_view = m_device->CreateView(back_buffer, back_buffer_view_desc);
+
         FramebufferDesc framebuffer_desc = {
             .render_pass = m_render_pass,
             .width = app_size.width(),
             .height = app_size.height(),
             .colors = { back_buffer_view },
         };
-        std::shared_ptr<Framebuffer> framebuffer =
-            m_framebuffers.emplace_back(m_device->CreateFramebuffer(framebuffer_desc));
-        decltype(auto) command_list = m_command_lists[i];
+        m_framebuffers[i] = m_device->CreateFramebuffer(framebuffer_desc);
+
+        auto& command_list = m_command_lists[i];
         command_list = m_device->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(m_pipeline);
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
@@ -124,7 +124,7 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         command_list->IASetIndexBuffer(m_index_buffer, 0, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, m_vertex_buffer, 0);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
-        command_list->BeginRenderPass(m_render_pass, framebuffer, clear_desc);
+        command_list->BeginRenderPass(m_render_pass, m_framebuffers[i], clear_desc);
         command_list->DrawIndexed(3, 1, 0, 0, 0);
         command_list->EndRenderPass();
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });

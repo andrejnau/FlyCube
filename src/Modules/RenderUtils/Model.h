@@ -6,7 +6,7 @@
 #include <vector>
 
 struct Mesh {
-    glm::mat4 matrix = glm::mat4(1.0f);
+    glm::mat4 matrix = glm::mat4(1.0);
 
     std::vector<uint32_t> indices;
     std::vector<glm::vec3> positions;

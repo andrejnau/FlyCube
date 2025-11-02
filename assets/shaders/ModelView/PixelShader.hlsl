@@ -1,11 +1,10 @@
-struct VsOutput
-{
+struct VsOutput {
     float4 pos      : SV_POSITION;
     float2 texcoord : TEXCOORD;
 };
 
-Texture2D base_color_texture : register(t0, space1);
-SamplerState anisotropic_sampler : register(s1, space0);
+Texture2D base_color_texture : register(t1, space0);
+SamplerState anisotropic_sampler : register(s2, space0);
 
 float4 main(VsOutput input) : SV_TARGET
 {

@@ -284,7 +284,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         add_extension(fragment_shading_rate_features);
     }
 
-    const float queue_priority = 1.0f;
+    const float queue_priority = 1.0;
     std::vector<vk::DeviceQueueCreateInfo> queues_create_info;
     for (const auto& queue_info : m_queues_info) {
         vk::DeviceQueueCreateInfo& queue_create_info = queues_create_info.emplace_back();
