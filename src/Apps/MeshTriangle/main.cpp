@@ -34,10 +34,6 @@ private:
     std::shared_ptr<CommandQueue> m_command_queue;
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
-    std::array<std::shared_ptr<View>, kFrameCount> m_back_buffer_views = {};
-    std::array<std::shared_ptr<Framebuffer>, kFrameCount> m_framebuffers = {};
-    std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
-    std::array<uint64_t, kFrameCount> m_fence_values = {};
     std::shared_ptr<Shader> m_mesh_shader;
     std::shared_ptr<Shader> m_pixel_shader;
     std::shared_ptr<BindingSetLayout> m_layout;
@@ -45,6 +41,10 @@ private:
     std::shared_ptr<Swapchain> m_swapchain;
     std::shared_ptr<RenderPass> m_render_pass;
     std::shared_ptr<Pipeline> m_pipeline;
+    std::array<std::shared_ptr<View>, kFrameCount> m_back_buffer_views = {};
+    std::array<std::shared_ptr<Framebuffer>, kFrameCount> m_framebuffers = {};
+    std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
+    std::array<uint64_t, kFrameCount> m_fence_values = {};
 };
 
 MeshTriangleRenderer::MeshTriangleRenderer(const Settings& settings)

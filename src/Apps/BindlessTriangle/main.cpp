@@ -168,6 +168,7 @@ BindlessTriangleRenderer::~BindlessTriangleRenderer()
 void BindlessTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
 {
     m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
+
     RenderPassDesc render_pass_desc = {
         { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
