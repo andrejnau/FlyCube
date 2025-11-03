@@ -208,11 +208,6 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     };
     m_stencil_read_view = m_device->CreateView(m_depth_stencil_texture, stencil_read_view_desc);
 
-    std::vector<InputLayoutDesc> vextex_input = {
-        { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
-        { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) }
-    };
-
     RenderPassDesc depth_stencil_pass_render_pass_desc = {
         .depth_stencil = { m_depth_stencil_texture->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore,
                            RenderPassLoadOp::kClear, RenderPassStoreOp::kStore },
@@ -226,7 +221,11 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     };
 
     GraphicsPipelineDesc depth_stencil_pass_pipeline_desc = {
-        m_device->CreateProgram({ m_vertex_shader }), m_layout, vextex_input, m_depth_stencil_pass_render_pass,
+        m_device->CreateProgram({ m_vertex_shader }),
+        m_layout,
+        { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
+          { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
+        m_depth_stencil_pass_render_pass,
         depth_stencil_pass_depth_stencil_desc,
     };
     m_depth_stencil_pass_pipeline = m_device->CreateGraphicsPipeline(depth_stencil_pass_pipeline_desc);
@@ -245,7 +244,8 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     GraphicsPipelineDesc pipeline_desc = {
         m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
         m_layout,
-        vextex_input,
+        { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
+          { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
         m_render_pass,
         depth_stencil_desc,
     };

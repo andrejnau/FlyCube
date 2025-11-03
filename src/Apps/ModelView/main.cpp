@@ -223,11 +223,6 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
     };
     m_depth_stencil_view = m_device->CreateView(m_depth_stencil_texture, depth_stencil_view_desc);
 
-    std::vector<InputLayoutDesc> vextex_input = {
-        { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
-        { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) }
-    };
-
     RenderPassDesc render_pass_desc = {
         .colors = { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
         .depth_stencil = { m_depth_stencil_texture->GetFormat(), RenderPassLoadOp::kClear,
@@ -238,7 +233,8 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
     GraphicsPipelineDesc pipeline_desc = {
         m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
         m_layout,
-        vextex_input,
+        { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
+          { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
         m_render_pass,
     };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
