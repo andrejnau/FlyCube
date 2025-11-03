@@ -73,11 +73,11 @@ private:
     std::shared_ptr<RenderPass> m_render_pass;
     std::shared_ptr<Pipeline> m_pipeline;
     std::shared_ptr<BindingSet> m_binding_set;
-    std::array<uint64_t, kFrameCount> m_fence_values = {};
-    std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
     std::array<std::shared_ptr<View>, kFrameCount> m_back_buffer_views = {};
     std::array<std::shared_ptr<Framebuffer>, kFrameCount> m_depth_stencil_pass_framebuffers = {};
     std::array<std::shared_ptr<Framebuffer>, kFrameCount> m_framebuffers = {};
+    std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
+    std::array<uint64_t, kFrameCount> m_fence_values = {};
 };
 
 DepthStencilReadRenderer::DepthStencilReadRenderer(const Settings& settings)
@@ -331,6 +331,7 @@ void DepthStencilReadRenderer::Resize(const AppSize& app_size, WindowHandle wind
     WaitForIdle();
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         m_back_buffer_views[i].reset();
+        m_depth_stencil_pass_framebuffers[i].reset();
         m_framebuffers[i].reset();
     }
     m_swapchain.reset();

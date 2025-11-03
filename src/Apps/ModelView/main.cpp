@@ -62,7 +62,6 @@ private:
     std::shared_ptr<Shader> m_pixel_shader;
     std::shared_ptr<BindingSetLayout> m_layout;
     std::vector<std::shared_ptr<BindingSet>> m_binding_sets;
-    std::array<uint64_t, kFrameCount> m_fence_values = {};
 
     std::shared_ptr<Swapchain> m_swapchain;
     std::shared_ptr<Resource> m_depth_stencil_texture;
@@ -72,6 +71,7 @@ private:
     std::array<std::shared_ptr<View>, kFrameCount> m_back_buffer_views = {};
     std::array<std::shared_ptr<Framebuffer>, kFrameCount> m_framebuffers = {};
     std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
+    std::array<uint64_t, kFrameCount> m_fence_values = {};
 };
 
 ModelViewRenderer::ModelViewRenderer(const Settings& settings)
@@ -82,6 +82,7 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
     m_device = m_adapter->CreateDevice();
     m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
     m_fence = m_device->CreateFence(m_fence_value);
+
     std::unique_ptr<Model> model = LoadModel("assets/ModelView/DamagedHelmet.gltf");
     m_render_model = RenderModel(m_device, m_command_queue, std::move(model));
 
