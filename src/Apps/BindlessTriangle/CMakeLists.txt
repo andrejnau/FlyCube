@@ -2,7 +2,7 @@ list(APPEND sources
    main.cpp
 )
 
-set(shaders_path "${assets_path}/shaders/Bindless")
+set(shaders_path "${assets_path}/shaders/BindlessTriangle")
 
 set(vertex_shaders ${shaders_path}/VertexShader.hlsl)
 set_property(SOURCE ${vertex_shaders} PROPERTY SHADER_TYPE Vertex)
@@ -14,39 +14,39 @@ set_property(SOURCE ${shaders_files} PROPERTY SHADER_ENTRYPOINT main)
 set_property(SOURCE ${shaders_files} PROPERTY SHADER_MODEL 6_0)
 
 include(compile_shaders)
-compile_shaders("${shaders_path}" "assets/Bindless" "${shaders_files}" resources)
+compile_shaders("${shaders_path}" "assets/BindlessTriangle" "${shaders_files}" resources)
 
 if (ANDROID)
-   add_library(DesktopBindless SHARED
+   add_library(BindlessTriangle SHARED
       ${resources}
       ${shaders_files}
       ${sources}
    )
 else()
-   add_executable(DesktopBindless WIN32 MACOSX_BUNDLE
+   add_executable(BindlessTriangle WIN32 MACOSX_BUNDLE
       ${resources}
       ${shaders_files}
       ${sources}
    )
 endif()
 
-target_link_options(DesktopBindless
+target_link_options(BindlessTriangle
     PRIVATE
         $<$<BOOL:${WIN32}>:/ENTRY:mainCRTStartup>
 )
 
-target_link_libraries(DesktopBindless
+target_link_libraries(BindlessTriangle
    AppLoop
    FlyCube
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-   set_target_properties(DesktopBindless PROPERTIES
+   set_target_properties(BindlessTriangle PROPERTIES
       XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
    )
 endif()
 
-set_target_properties(DesktopBindless PROPERTIES
+set_target_properties(BindlessTriangle PROPERTIES
     FOLDER "Apps"
     MACOSX_BUNDLE_INFO_PLIST "${project_root}/cmake/apple/Info.plist"
 )

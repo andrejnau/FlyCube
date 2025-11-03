@@ -120,8 +120,8 @@ BindlessTriangleRenderer::BindlessTriangleRenderer(const Settings& settings)
     m_vertex_constant_buffer_view = m_device->CreateView(m_vertex_constant_buffer, vertex_constant_buffer_view_desc);
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
-    std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/Bindless/VertexShader.hlsl", blob_type);
-    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/Bindless/PixelShader.hlsl", blob_type);
+    std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/BindlessTriangle/VertexShader.hlsl", blob_type);
+    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/BindlessTriangle/PixelShader.hlsl", blob_type);
     m_vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
 
