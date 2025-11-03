@@ -44,17 +44,17 @@ int main(int argc, char* argv[])
     std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(
         MemoryType::kUpload, { .size = sizeof(constant_data), .usage = BindFlag::kConstantBuffer });
     constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));
+    ViewDesc constant_buffer_view_desc = {
+        .view_type = ViewType::kConstantBuffer,
+        .dimension = ViewDimension::kBuffer,
+    };
+    std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, constant_buffer_view_desc);
 
     std::shared_ptr<Shader> vertex_shader =
         device->CompileShader({ ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" });
     std::shared_ptr<Shader> pixel_shader =
         device->CompileShader({ ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_0" });
 
-    ViewDesc constant_buffer_view_desc = {
-        .view_type = ViewType::kConstantBuffer,
-        .dimension = ViewDimension::kBuffer,
-    };
-    std::shared_ptr<View> constant_buffer_view = device->CreateView(constant_buffer, constant_buffer_view_desc);
     BindKey constant_buffer_key = {
         .shader_type = ShaderType::kPixel,
         .view_type = ViewType::kConstantBuffer,
@@ -78,22 +78,23 @@ int main(int argc, char* argv[])
     };
     std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
 
-    std::array<uint64_t, kFrameCount> fence_values = {};
-    std::array<std::shared_ptr<CommandList>, kFrameCount> command_lists = {};
+    std::array<std::shared_ptr<View>, kFrameCount> back_buffer_views = {};
     std::array<std::shared_ptr<Framebuffer>, kFrameCount> framebuffers = {};
+    std::array<std::shared_ptr<CommandList>, kFrameCount> command_lists = {};
+    std::array<uint64_t, kFrameCount> fence_values = {};
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         std::shared_ptr<Resource> back_buffer = swapchain->GetBackBuffer(i);
         ViewDesc back_buffer_view_desc = {
             .view_type = ViewType::kRenderTarget,
             .dimension = ViewDimension::kTexture2D,
         };
-        std::shared_ptr<View> back_buffer_view = device->CreateView(back_buffer, back_buffer_view_desc);
+        back_buffer_views[i] = device->CreateView(back_buffer, back_buffer_view_desc);
 
         FramebufferDesc framebuffer_desc = {
             .render_pass = render_pass,
             .width = app_size.width(),
             .height = app_size.height(),
-            .colors = { back_buffer_view },
+            .colors = { back_buffer_views[i] },
         };
         framebuffers[i] = device->CreateFramebuffer(framebuffer_desc);
 
