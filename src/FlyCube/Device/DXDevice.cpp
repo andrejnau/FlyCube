@@ -421,6 +421,11 @@ bool DXDevice::IsGeometryShaderSupported() const
     return true;
 }
 
+bool DXDevice::IsBindlessSupported() const
+{
+    return true;
+}
+
 uint32_t DXDevice::GetShadingRateImageTileSize() const
 {
     return m_shading_rate_image_tile_size;

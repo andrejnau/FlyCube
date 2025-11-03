@@ -71,6 +71,7 @@ public:
     virtual bool IsMeshShadingSupported() const = 0;
     virtual bool IsDrawIndirectCountSupported() const = 0;
     virtual bool IsGeometryShaderSupported() const = 0;
+    virtual bool IsBindlessSupported() const = 0;
     virtual uint32_t GetShadingRateImageTileSize() const = 0;
     virtual MemoryBudget GetMemoryBudget() const = 0;
     virtual uint32_t GetShaderGroupHandleSize() const = 0;

@@ -59,6 +59,7 @@ public:
     bool IsMeshShadingSupported() const override;
     bool IsDrawIndirectCountSupported() const override;
     bool IsGeometryShaderSupported() const override;
+    bool IsBindlessSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
     MemoryBudget GetMemoryBudget() const override;
     uint32_t GetShaderGroupHandleSize() const override;
@@ -119,6 +120,7 @@ private:
     uint32_t m_shader_record_alignment = 0;
     uint32_t m_shader_table_alignment = 0;
     bool m_geometry_shader_supported = false;
+    bool m_bindless_supported = false;
     bool m_draw_indirect_count_supported = false;
     bool m_is_at_least_vulkan12 = false;
     bool m_has_buffer_device_address = false;

@@ -221,6 +221,11 @@ bool MTDevice::IsGeometryShaderSupported() const
     return false;
 }
 
+bool MTDevice::IsBindlessSupported() const
+{
+    return true;
+}
+
 uint32_t MTDevice::GetShadingRateImageTileSize() const
 {
     NOTREACHED();

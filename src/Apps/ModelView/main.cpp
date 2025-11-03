@@ -25,7 +25,6 @@ glm::mat4 GetProjectionMatrix(uint32_t width, uint32_t height)
 constexpr uint32_t kPositions = 0;
 constexpr uint32_t kTexcoords = 1;
 constexpr uint32_t kFrameCount = 3;
-constexpr bool kBindless = true;
 
 } // namespace
 
@@ -105,7 +104,7 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
         ViewDesc pixel_textures_view_desc = {
             .view_type = ViewType::kTexture,
             .dimension = ViewDimension::kTexture2D,
-            .bindless = kBindless,
+            .bindless = m_device->IsBindlessSupported(),
         };
         m_pixel_textures_views[i] =
             m_device->CreateView(m_render_model.GetMesh(i).textures.base_color, pixel_textures_view_desc);
@@ -122,7 +121,7 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
     m_pixel_anisotropic_sampler_view =
         m_device->CreateView(m_pixel_anisotropic_sampler, pixel_anisotropic_sampler_view_desc);
 
-    if (kBindless) {
+    if (m_device->IsBindlessSupported()) {
         std::vector<uint32_t> pixel_constant_data(m_render_model.GetMeshCount());
         m_pixel_constant_buffer = m_device->CreateBuffer(
             MemoryType::kUpload, { .size = sizeof(pixel_constant_data.front()) * pixel_constant_data.size(),
@@ -144,8 +143,10 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
     std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/ModelView/VertexShader.hlsl", blob_type);
-    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob(
-        kBindless ? "assets/ModelView/PixelShaderBindless.hlsl" : "assets/ModelView/PixelShader.hlsl", blob_type);
+    std::vector<uint8_t> pixel_blob =
+        AssetLoadShaderBlob(m_device->IsBindlessSupported() ? "assets/ModelView/PixelShaderBindless.hlsl"
+                                                            : "assets/ModelView/PixelShader.hlsl",
+                            blob_type);
     m_vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
 
@@ -155,7 +156,7 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
     BindKey pixel_constant_buffer_key;
     BindKey pixel_base_color_texture_key;
 
-    if (kBindless) {
+    if (m_device->IsBindlessSupported()) {
         pixel_bindless_textures_key = m_pixel_shader->GetBindKey("bindless_textures");
         pixel_constant_buffer_key = m_pixel_shader->GetBindKey("constant_buffer");
         m_layout = m_device->CreateBindingSetLayout({ vertex_constant_buffer_key, pixel_bindless_textures_key,
@@ -169,7 +170,7 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
     m_binding_sets.resize(m_render_model.GetMeshCount());
     for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
         m_binding_sets[i] = m_device->CreateBindingSet(m_layout);
-        if (kBindless) {
+        if (m_device->IsBindlessSupported()) {
             m_binding_sets[i]->WriteBindings({
                 { vertex_constant_buffer_key, m_vertex_constant_buffer_views[i] },
                 { pixel_anisotropic_sampler_key, m_pixel_anisotropic_sampler_view },

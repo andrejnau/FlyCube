@@ -318,6 +318,10 @@ VKDevice::VKDevice(VKAdapter& adapter)
             query_device_vulkan12_features.descriptorBindingPartiallyBound;
         device_vulkan12_features.descriptorBindingVariableDescriptorCount =
             query_device_vulkan12_features.descriptorBindingVariableDescriptorCount;
+        m_bindless_supported |= device_vulkan12_features.descriptorIndexing &&
+                                device_vulkan12_features.runtimeDescriptorArray &&
+                                device_vulkan12_features.descriptorBindingPartiallyBound &&
+                                device_vulkan12_features.descriptorBindingVariableDescriptorCount;
         if (enabled_extension_set.contains(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
             device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
             device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
@@ -331,6 +335,9 @@ VKDevice::VKDevice(VKAdapter& adapter)
                 query_descriptor_indexing.descriptorBindingPartiallyBound;
             device_descriptor_indexing.descriptorBindingVariableDescriptorCount =
                 query_descriptor_indexing.descriptorBindingVariableDescriptorCount;
+            m_bindless_supported |= device_descriptor_indexing.runtimeDescriptorArray &&
+                                    device_descriptor_indexing.descriptorBindingPartiallyBound &&
+                                    device_descriptor_indexing.descriptorBindingVariableDescriptorCount;
             add_extension(device_descriptor_indexing);
         }
         if (enabled_extension_set.contains(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
@@ -659,6 +666,11 @@ bool VKDevice::IsDrawIndirectCountSupported() const
 bool VKDevice::IsGeometryShaderSupported() const
 {
     return m_geometry_shader_supported;
+}
+
+bool VKDevice::IsBindlessSupported() const
+{
+    return m_bindless_supported;
 }
 
 uint32_t VKDevice::GetShadingRateImageTileSize() const
