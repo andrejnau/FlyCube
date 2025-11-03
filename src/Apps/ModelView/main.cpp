@@ -123,25 +123,23 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
         m_device->CreateView(m_pixel_anisotropic_sampler, pixel_anisotropic_sampler_view_desc);
 
     if (kBindless) {
-        std::vector<uint32_t> pixel_constant_buffer_data(m_render_model.GetMeshCount());
+        std::vector<uint32_t> pixel_constant_data(m_render_model.GetMeshCount());
         m_pixel_constant_buffer = m_device->CreateBuffer(
-            MemoryType::kUpload,
-            { .size = sizeof(pixel_constant_buffer_data.front()) * pixel_constant_buffer_data.size(),
-              .usage = BindFlag::kConstantBuffer });
+            MemoryType::kUpload, { .size = sizeof(pixel_constant_data.front()) * pixel_constant_data.size(),
+                                   .usage = BindFlag::kConstantBuffer });
         m_pixel_constant_buffer_views.resize(m_render_model.GetMeshCount());
         for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
             ViewDesc pixel_constant_buffer_view_desc = {
                 .view_type = ViewType::kConstantBuffer,
                 .dimension = ViewDimension::kBuffer,
-                .offset = i * sizeof(pixel_constant_buffer_data.front()),
+                .offset = i * sizeof(pixel_constant_data.front()),
             };
             m_pixel_constant_buffer_views[i] =
                 m_device->CreateView(m_pixel_constant_buffer, pixel_constant_buffer_view_desc);
-            pixel_constant_buffer_data[i] = m_pixel_textures_views[i]->GetDescriptorId();
+            pixel_constant_data[i] = m_pixel_textures_views[i]->GetDescriptorId();
         }
-        m_pixel_constant_buffer->UpdateUploadBuffer(
-            0, pixel_constant_buffer_data.data(),
-            sizeof(pixel_constant_buffer_data.front()) * pixel_constant_buffer_data.size());
+        m_pixel_constant_buffer->UpdateUploadBuffer(0, pixel_constant_data.data(),
+                                                    sizeof(pixel_constant_data.front()) * pixel_constant_data.size());
     }
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
@@ -199,13 +197,12 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
     glm::mat4 view = GetViewMatrix();
     glm::mat4 projection = GetProjectionMatrix(app_size.width(), app_size.height());
 
-    std::vector<glm::mat4> vertex_constant_buffer_data(m_render_model.GetMeshCount());
+    std::vector<glm::mat4> vertex_constant_data(m_render_model.GetMeshCount());
     for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
-        vertex_constant_buffer_data[i] = glm::transpose(projection * view * m_render_model.GetMesh(i).matrix);
+        vertex_constant_data[i] = glm::transpose(projection * view * m_render_model.GetMesh(i).matrix);
     }
-    m_vertex_constant_buffer->UpdateUploadBuffer(
-        0, vertex_constant_buffer_data.data(),
-        sizeof(vertex_constant_buffer_data.front()) * vertex_constant_buffer_data.size());
+    m_vertex_constant_buffer->UpdateUploadBuffer(0, vertex_constant_data.data(),
+                                                 sizeof(vertex_constant_data.front()) * vertex_constant_data.size());
 
     TextureDesc depth_stencil_texture_desc = {
         .type = TextureType::k2D,

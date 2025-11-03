@@ -115,15 +115,15 @@ DepthStencilReadRenderer::DepthStencilReadRenderer(const Settings& settings)
             m_device->CreateView(m_depth_stencil_pass_constant_buffer, depth_stencil_pass_constant_buffer_view_desc);
     }
 
-    glm::mat4 vertex_constant_buffer_data = glm::transpose(glm::mat4(1.0));
+    glm::mat4 vertex_constant_data = glm::transpose(glm::mat4(1.0));
     m_vertex_constant_buffer = m_device->CreateBuffer(
-        MemoryType::kUpload, { .size = sizeof(vertex_constant_buffer_data), .usage = BindFlag::kConstantBuffer });
+        MemoryType::kUpload, { .size = sizeof(vertex_constant_data), .usage = BindFlag::kConstantBuffer });
     ViewDesc vertex_constant_buffer_view_desc = {
         .view_type = ViewType::kConstantBuffer,
         .dimension = ViewDimension::kBuffer,
     };
     m_vertex_constant_buffer_view = m_device->CreateView(m_vertex_constant_buffer, vertex_constant_buffer_view_desc);
-    m_vertex_constant_buffer->UpdateUploadBuffer(0, &vertex_constant_buffer_data, sizeof(vertex_constant_buffer_data));
+    m_vertex_constant_buffer->UpdateUploadBuffer(0, &vertex_constant_data, sizeof(vertex_constant_data));
 
     m_pixel_constant_buffer =
         m_device->CreateBuffer(MemoryType::kUpload, { .size = sizeof(glm::uvec2), .usage = BindFlag::kConstantBuffer });
@@ -168,17 +168,16 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     glm::uvec2 depth_stencil_size = glm::uvec2(app_size.width() / 2, app_size.height());
     glm::mat4 projection = GetProjectionMatrix(depth_stencil_size.x, depth_stencil_size.y);
 
-    std::vector<glm::mat4> depth_stencil_pass_constant_buffer_data(m_render_model.GetMeshCount());
+    std::vector<glm::mat4> depth_stencil_pass_constant_data(m_render_model.GetMeshCount());
     for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
-        depth_stencil_pass_constant_buffer_data[i] =
-            glm::transpose(projection * view * m_render_model.GetMesh(i).matrix);
+        depth_stencil_pass_constant_data[i] = glm::transpose(projection * view * m_render_model.GetMesh(i).matrix);
     }
     m_depth_stencil_pass_constant_buffer->UpdateUploadBuffer(
-        0, depth_stencil_pass_constant_buffer_data.data(),
-        sizeof(depth_stencil_pass_constant_buffer_data.front()) * depth_stencil_pass_constant_buffer_data.size());
+        0, depth_stencil_pass_constant_data.data(),
+        sizeof(depth_stencil_pass_constant_data.front()) * depth_stencil_pass_constant_data.size());
 
-    glm::uvec2 pixel_constant_buffer_data = glm::uvec2(app_size.width(), app_size.height());
-    m_pixel_constant_buffer->UpdateUploadBuffer(0, &pixel_constant_buffer_data, sizeof(pixel_constant_buffer_data));
+    glm::uvec2 pixel_constant_data = glm::uvec2(app_size.width(), app_size.height());
+    m_pixel_constant_buffer->UpdateUploadBuffer(0, &pixel_constant_data, sizeof(pixel_constant_data));
 
     TextureDesc depth_stencil_texture_desc = {
         .type = TextureType::k2D,

@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
     uint64_t fence_value = 0;
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
-    std::array<float, kFrameCount> constant_buffer_data = {};
+    std::array<float, kFrameCount> constant_data = {};
     std::array<std::shared_ptr<Resource>, kFrameCount> constant_buffer = {};
     std::array<std::shared_ptr<View>, kFrameCount> constant_buffer_view = {};
     for (uint32_t i = 0; i < kFrameCount; ++i) {
@@ -107,9 +107,8 @@ int main(int argc, char* argv[])
         fence->Wait(fence_values[frame_index]);
 
         auto now = std::chrono::high_resolution_clock::now();
-        constant_buffer_data[frame_index] = std::chrono::duration<float>(now.time_since_epoch()).count();
-        constant_buffer[frame_index]->UpdateUploadBuffer(0, &constant_buffer_data[frame_index],
-                                                         sizeof(constant_buffer_data.front()));
+        constant_data[frame_index] = std::chrono::duration<float>(now.time_since_epoch()).count();
+        constant_buffer[frame_index]->UpdateUploadBuffer(0, &constant_data[frame_index], sizeof(constant_data.front()));
 
         command_queue->ExecuteCommandLists({ command_lists[frame_index] });
         command_queue->Signal(fence, fence_values[frame_index] = ++fence_value);

@@ -57,11 +57,11 @@ vertex_buffer->UpdateUploadBuffer(0,
                                   vertex_data.data(),
                                   sizeof(vertex_data.front()) * vertex_data.size());
 
-glm::vec4 constant_buffer_data = glm::vec4(1.0, 0.0, 0.0, 1.0);
-std::shared_ptr<Resource> constant_buffer = device->CreateBuffer(
-    MemoryType::kUpload,
-    { .size = sizeof(constant_buffer_data), .usage = BindFlag::kConstantBuffer });
-constant_buffer->UpdateUploadBuffer(0, &constant_buffer_data, sizeof(constant_buffer_data));
+glm::vec4 constant_data = glm::vec4(1.0, 0.0, 0.0, 1.0);
+std::shared_ptr<Resource> constant_buffer =
+    device->CreateBuffer(MemoryType::kUpload,
+                         { .size = sizeof(constant_data), .usage = BindFlag::kConstantBuffer });
+constant_buffer->UpdateUploadBuffer(0, &constant_data, sizeof(constant_data));
 
 std::shared_ptr<Shader> vertex_shader = device->CompileShader(
     { ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" });
@@ -89,7 +89,6 @@ RenderPassDesc render_pass_desc = {
     { { swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
 };
 std::shared_ptr<RenderPass> render_pass = device->CreateRenderPass(render_pass_desc);
-ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
 GraphicsPipelineDesc pipeline_desc = {
     device->CreateProgram({ vertex_shader, pixel_shader }),
     layout,
@@ -127,6 +126,7 @@ for (uint32_t i = 0; i < kFrameCount; ++i) {
     command_list->IASetVertexBuffer(0, vertex_buffer, 0);
     command_list->ResourceBarrier(
         { { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
+    ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
     command_list->BeginRenderPass(render_pass, framebuffers[i], clear_desc);
     command_list->DrawIndexed(3, 1, 0, 0, 0);
     command_list->EndRenderPass();
