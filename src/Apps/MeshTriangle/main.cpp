@@ -80,7 +80,6 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
     m_render_pass = m_device->CreateRenderPass(render_pass_desc);
-    ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
     GraphicsPipelineDesc pipeline_desc = {
         m_device->CreateProgram({ m_mesh_shader, m_pixel_shader }),
         m_layout,
@@ -111,6 +110,7 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
+        ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
         command_list->BeginRenderPass(m_render_pass, m_framebuffers[i], clear_desc);
         command_list->DispatchMesh(1, 1, 1);
         command_list->EndRenderPass();

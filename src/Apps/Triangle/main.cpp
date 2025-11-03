@@ -91,7 +91,6 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
     m_render_pass = m_device->CreateRenderPass(render_pass_desc);
-    ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
     GraphicsPipelineDesc pipeline_desc = {
         m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
         m_layout,
@@ -124,6 +123,7 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         command_list->IASetIndexBuffer(m_index_buffer, 0, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, m_vertex_buffer, 0);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
+        ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
         command_list->BeginRenderPass(m_render_pass, m_framebuffers[i], clear_desc);
         command_list->DrawIndexed(3, 1, 0, 0, 0);
         command_list->EndRenderPass();

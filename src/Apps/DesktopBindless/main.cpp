@@ -120,7 +120,6 @@ int main(int argc, char* argv[])
         { { swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
     std::shared_ptr<RenderPass> render_pass = device->CreateRenderPass(render_pass_desc);
-    ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
     GraphicsPipelineDesc pipeline_desc = {
         device->CreateProgram({ vertex_shader, pixel_shader }),
         layout,
@@ -155,6 +154,7 @@ int main(int argc, char* argv[])
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
+        ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
         command_list->BeginRenderPass(render_pass, framebuffers[i], clear_desc);
         command_list->Draw(3, 1, 0, 0);
         command_list->EndRenderPass();
