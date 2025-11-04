@@ -1,4 +1,30 @@
-add_executable(DesktopDispatchIndirect WIN32 MACOSX_BUNDLE main.cpp)
+list(APPEND sources
+   main.cpp
+)
+
+set(shaders_path "${assets_path}/shaders/DispatchIndirect")
+
+set(shaders_files ${shaders_path}/ComputeShader.hlsl)
+set_property(SOURCE ${shaders_files} PROPERTY SHADER_TYPE Compute)
+set_property(SOURCE ${shaders_files} PROPERTY SHADER_ENTRYPOINT main)
+set_property(SOURCE ${shaders_files} PROPERTY SHADER_MODEL 6_0)
+
+include(compile_shaders)
+compile_shaders("${shaders_path}" "assets/DispatchIndirect" "${shaders_files}" resources)
+
+if (ANDROID)
+   add_library(DesktopDispatchIndirect SHARED
+      ${resources}
+      ${shaders_files}
+      ${sources}
+   )
+else()
+   add_executable(DesktopDispatchIndirect WIN32 MACOSX_BUNDLE
+      ${resources}
+      ${shaders_files}
+      ${sources}
+   )
+endif()
 
 target_link_options(DesktopDispatchIndirect
     PRIVATE
@@ -6,10 +32,15 @@ target_link_options(DesktopDispatchIndirect
 )
 
 target_link_libraries(DesktopDispatchIndirect
-    AppBox
-    FlyCube
-    FlyCubeAssets
+   AppLoop
+   FlyCube
 )
+
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+   set_target_properties(DesktopDispatchIndirect PROPERTIES
+      XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
+   )
+endif()
 
 set_target_properties(DesktopDispatchIndirect PROPERTIES
     FOLDER "Apps"
