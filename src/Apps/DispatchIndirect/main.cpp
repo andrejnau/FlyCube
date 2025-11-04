@@ -4,6 +4,8 @@
 #include "Instance/Instance.h"
 #include "Utilities/Asset.h"
 
+#include <chrono>
+
 namespace {
 
 constexpr uint32_t kFrameCount = 3;
