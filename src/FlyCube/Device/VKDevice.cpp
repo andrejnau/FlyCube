@@ -17,6 +17,7 @@
 #include "RenderPass/VKRenderPass.h"
 #include "Shader/ShaderBase.h"
 #include "Swapchain/VKSwapchain.h"
+#include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
 #include "Utilities/VKUtility.h"
 #include "View/VKView.h"
@@ -166,6 +167,9 @@ VKDevice::VKDevice(VKAdapter& adapter)
 {
     m_device_properties = m_physical_device.getProperties();
     auto physical_device_features = m_physical_device.getFeatures();
+    Logging::Println("{}: Vulkan {}.{}.{}", m_device_properties.deviceName.data(),
+                     VK_VERSION_MAJOR(m_device_properties.apiVersion), VK_VERSION_MINOR(m_device_properties.apiVersion),
+                     VK_VERSION_PATCH(m_device_properties.apiVersion));
     auto queue_families = m_physical_device.getQueueFamilyProperties();
     auto has_all_bits = [](auto flags, auto bits) { return (flags & bits) == bits; };
     auto has_any_bits = [](auto flags, auto bits) { return flags & bits; };
