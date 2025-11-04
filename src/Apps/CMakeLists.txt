@@ -1,11 +1,11 @@
 if (NOT CMAKE_CROSSCOMPILING)
-    add_subdirectory(DesktopDispatchIndirect)
     add_subdirectory(DesktopDxrTriangle)
     add_subdirectory(DesktopTriangle)
 endif()
 
 add_subdirectory(BindlessTriangle)
 add_subdirectory(DepthStencilRead)
+add_subdirectory(DispatchIndirect)
 add_subdirectory(MeshTriangle)
 add_subdirectory(ModelView)
 add_subdirectory(Triangle)
