@@ -266,7 +266,10 @@ VKDevice::VKDevice(VKAdapter& adapter)
                 assert(expected_shading_rates.at(size_as_pair) == shading_rate);
                 expected_shading_rates.erase(size_as_pair);
             }
-            assert(expected_shading_rates.empty());
+            for (const auto& shading_rate : expected_shading_rates) {
+                const auto& [width, height] = shading_rate.first;
+                Logging::Println("ShadingRate::k{}x{} is not supported", width, height);
+            }
 
             vk::PhysicalDeviceFragmentShadingRatePropertiesKHR query_shading_rate_image_properties = {};
             vk::PhysicalDeviceProperties2 device_props2 = {};
