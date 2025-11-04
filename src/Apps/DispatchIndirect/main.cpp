@@ -32,7 +32,7 @@ private:
     std::shared_ptr<CommandQueue> m_command_queue;
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
-    std::array<std::shared_ptr<Resource>, kFrameCount> m_constant_buffers = {};
+    std::shared_ptr<Resource> m_constant_buffer;
     std::array<std::shared_ptr<View>, kFrameCount> m_constant_buffer_views = {};
     std::shared_ptr<Resource> m_argument_buffer;
     std::shared_ptr<Shader> m_compute_shader;
@@ -57,14 +57,15 @@ DispatchIndirectRenderer::DispatchIndirectRenderer(const Settings& settings)
     m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
     m_fence = m_device->CreateFence(m_fence_value);
 
+    m_constant_buffer = m_device->CreateBuffer(
+        MemoryType::kUpload, { .size = sizeof(float) * kFrameCount, .usage = BindFlag::kConstantBuffer });
     for (uint32_t i = 0; i < kFrameCount; ++i) {
-        m_constant_buffers[i] =
-            m_device->CreateBuffer(MemoryType::kUpload, { .size = sizeof(float), .usage = BindFlag::kConstantBuffer });
         ViewDesc constant_buffer_view_desc = {
             .view_type = ViewType::kConstantBuffer,
             .dimension = ViewDimension::kBuffer,
+            .offset = i * sizeof(float),
         };
-        m_constant_buffer_views[i] = m_device->CreateView(m_constant_buffers[i], constant_buffer_view_desc);
+        m_constant_buffer_views[i] = m_device->CreateView(m_constant_buffer, constant_buffer_view_desc);
     }
 
     DispatchIndirectCommand argument_data = { 64, 64, 1 };
@@ -160,8 +161,8 @@ void DispatchIndirectRenderer::Render()
 
     auto now = std::chrono::high_resolution_clock::now();
     m_constant_data[frame_index] = std::chrono::duration<float>(now.time_since_epoch()).count();
-    m_constant_buffers[frame_index]->UpdateUploadBuffer(0, &m_constant_data[frame_index],
-                                                        sizeof(m_constant_data.front()));
+    m_constant_buffer->UpdateUploadBuffer(sizeof(m_constant_data[frame_index]) * frame_index,
+                                          &m_constant_data[frame_index], sizeof(m_constant_data[frame_index]));
 
     m_command_queue->ExecuteCommandLists({ m_command_lists[frame_index] });
     m_command_queue->Signal(m_fence, m_fence_values[frame_index] = ++m_fence_value);
