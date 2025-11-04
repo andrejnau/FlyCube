@@ -32,9 +32,8 @@ private:
     std::shared_ptr<CommandQueue> m_command_queue;
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
-    std::shared_ptr<Resource> m_constant_buffer;
+    std::shared_ptr<Resource> m_buffer;
     std::array<std::shared_ptr<View>, kFrameCount> m_constant_buffer_views = {};
-    std::shared_ptr<Resource> m_argument_buffer;
     std::shared_ptr<Shader> m_compute_shader;
     std::shared_ptr<BindingSetLayout> m_layout;
     std::shared_ptr<Pipeline> m_pipeline;
@@ -57,21 +56,20 @@ DispatchIndirectRenderer::DispatchIndirectRenderer(const Settings& settings)
     m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
     m_fence = m_device->CreateFence(m_fence_value);
 
-    m_constant_buffer = m_device->CreateBuffer(
-        MemoryType::kUpload, { .size = sizeof(float) * kFrameCount, .usage = BindFlag::kConstantBuffer });
+    m_buffer = m_device->CreateBuffer(MemoryType::kUpload,
+                                      { .size = sizeof(float) * kFrameCount + sizeof(DispatchIndirectCommand),
+                                        .usage = BindFlag::kConstantBuffer | BindFlag::kIndirectBuffer });
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         ViewDesc constant_buffer_view_desc = {
             .view_type = ViewType::kConstantBuffer,
             .dimension = ViewDimension::kBuffer,
             .offset = i * sizeof(float),
         };
-        m_constant_buffer_views[i] = m_device->CreateView(m_constant_buffer, constant_buffer_view_desc);
+        m_constant_buffer_views[i] = m_device->CreateView(m_buffer, constant_buffer_view_desc);
     }
 
     DispatchIndirectCommand argument_data = { 64, 64, 1 };
-    m_argument_buffer = m_device->CreateBuffer(MemoryType::kUpload,
-                                               { .size = sizeof(argument_data), .usage = BindFlag::kIndirectBuffer });
-    m_argument_buffer->UpdateUploadBuffer(0, &argument_data, sizeof(argument_data));
+    m_buffer->UpdateUploadBuffer(sizeof(float) * kFrameCount, &argument_data, sizeof(argument_data));
 
     ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
     std::vector<uint8_t> compute_blob = AssetLoadShaderBlob("assets/DispatchIndirect/ComputeShader.hlsl", blob_type);
@@ -129,7 +127,7 @@ void DispatchIndirectRenderer::Init(const AppSize& app_size, WindowHandle window
         command_list = m_device->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(m_pipeline);
         command_list->BindBindingSet(m_binding_set[i]);
-        command_list->DispatchIndirect(m_argument_buffer, 0);
+        command_list->DispatchIndirect(m_buffer, sizeof(float) * kFrameCount);
         TextureCopyRegion region = {
             .extent = { result_texture_desc.width, result_texture_desc.height, 1 },
             .dst_offset = { static_cast<int32_t>(app_size.width() / 2 - result_texture_desc.width / 2),
@@ -161,8 +159,8 @@ void DispatchIndirectRenderer::Render()
 
     auto now = std::chrono::high_resolution_clock::now();
     m_constant_data[frame_index] = std::chrono::duration<float>(now.time_since_epoch()).count();
-    m_constant_buffer->UpdateUploadBuffer(sizeof(m_constant_data[frame_index]) * frame_index,
-                                          &m_constant_data[frame_index], sizeof(m_constant_data[frame_index]));
+    m_buffer->UpdateUploadBuffer(sizeof(m_constant_data[frame_index]) * frame_index, &m_constant_data[frame_index],
+                                 sizeof(m_constant_data[frame_index]));
 
     m_command_queue->ExecuteCommandLists({ m_command_lists[frame_index] });
     m_command_queue->Signal(m_fence, m_fence_values[frame_index] = ++m_fence_value);
