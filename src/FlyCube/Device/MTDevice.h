@@ -4,7 +4,6 @@
 
 #include <MVKPixelFormats.h>
 #import <Metal/Metal.h>
-#import <QuartzCore/QuartzCore.h>
 
 class MTCommandQueue;
 class MTInstance;

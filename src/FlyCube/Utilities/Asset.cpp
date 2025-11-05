@@ -8,7 +8,7 @@
 #include <iterator>
 
 #if defined(__APPLE__)
-#import <Foundation/Foundation.h>
+#import <Foundation/NSBundle.h>
 #elif defined(__ANDROID__)
 #include <android/asset_manager.h>
 #endif

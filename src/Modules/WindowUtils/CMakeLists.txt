@@ -9,6 +9,9 @@ add_library(WindowUtils
 
 if (APPLE)
     set_property(SOURCE WindowUtils.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
+    target_link_libraries(WindowUtils
+        "-framework QuartzCore"
+    )
 endif()
 
 target_link_libraries(WindowUtils

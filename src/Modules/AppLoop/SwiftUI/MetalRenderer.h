@@ -1,4 +1,4 @@
-#import <MetalKit/MetalKit.h>
+#import <MetalKit/MTKView.h>
 
 @interface MetalRenderer : NSObject <MTKViewDelegate>
 + (NSString*)getAppTitle;

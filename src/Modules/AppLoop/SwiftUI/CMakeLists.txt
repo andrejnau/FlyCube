@@ -15,7 +15,7 @@ list(APPEND sources
    MetalView.swift
 )
 
-if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS")
+if (IOS_OR_TVOS)
    list(APPEND sources
       AppLoopUI.swift
    )
@@ -41,16 +41,11 @@ target_include_directories(AppLoopSwiftUI
 )
 
 target_link_libraries(AppLoopSwiftUI
-   "-framework Metal"
-   "-framework QuartzCore"
+   "-framework MetalKit"
    AppSettings
 )
 
-if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS")
-   target_link_libraries(AppLoopSwiftUI
-      "-framework UIKit"
-   )
-else()
+if (NOT IOS_OR_TVOS)
    target_link_libraries(AppLoopSwiftUI
       "-framework AppKit"
    )

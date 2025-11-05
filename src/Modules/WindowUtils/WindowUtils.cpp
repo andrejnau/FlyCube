@@ -11,7 +11,7 @@
 #include <GLFW/glfw3native.h>
 
 #if defined(__APPLE__)
-#import <QuartzCore/QuartzCore.h>
+#import <QuartzCore/CAMetalLayer.h>
 #endif
 
 namespace {

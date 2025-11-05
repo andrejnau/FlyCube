@@ -2,7 +2,7 @@
 #include "Swapchain.h"
 
 #import <Metal/Metal.h>
-#import <QuartzCore/QuartzCore.h>
+#import <QuartzCore/CAMetalLayer.h>
 
 #include <memory>
 #include <vector>

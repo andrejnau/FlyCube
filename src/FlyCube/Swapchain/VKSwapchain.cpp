@@ -11,7 +11,7 @@
 #if defined(_WIN32)
 #include <Windows.h>
 #elif defined(__APPLE__)
-#import <QuartzCore/QuartzCore.h>
+#import <QuartzCore/CAMetalLayer.h>
 #elif defined(__ANDROID__)
 #include <android/native_window.h>
 #else

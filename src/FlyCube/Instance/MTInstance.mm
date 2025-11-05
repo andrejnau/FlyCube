@@ -2,8 +2,6 @@
 
 #include "Adapter/MTAdapter.h"
 
-#import <Metal/Metal.h>
-
 MTInstance::MTInstance() = default;
 
 std::vector<std::shared_ptr<Adapter>> MTInstance::EnumerateAdapters()

@@ -3,14 +3,10 @@
 #include <cassert>
 
 #if defined(TARGET_MACOS)
-#import <Cocoa/Cocoa.h>
-#else
-#import <UIKit/UIKit.h>
+#import <AppKit/NSApplication.h>
 #endif
 
-// clang-format off
 #import "SwiftInterfaceHeader.h"
-// clang-format on
 
 // static
 AppLoop& AppLoop::GetInstance()

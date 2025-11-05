@@ -30,7 +30,7 @@
     if (!gpu_name.empty()) {
         title += " " + gpu_name;
     }
-    return [[NSString alloc] initWithUTF8String:title.c_str()];
+    return [NSString stringWithUTF8String:title.c_str()];
 }
 
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size
