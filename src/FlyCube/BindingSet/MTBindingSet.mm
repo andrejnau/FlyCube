@@ -10,12 +10,6 @@
 
 namespace {
 
-uint32_t GetRemappedSlot(BindKey key)
-{
-    assert(UseArgumentBuffers());
-    return key.slot;
-}
-
 void SetBuffer(id<MTL4ArgumentTable> argument_table, id<MTLBuffer> buffer, uint32_t offset, uint32_t index)
 {
     [argument_table setAddress:buffer.gpuAddress + offset atIndex:index];
@@ -63,20 +57,6 @@ void SetView(id<MTL4ArgumentTable> argument_table, const std::shared_ptr<MTView>
     }
 }
 
-void ValidateRemappedSlots(const std::shared_ptr<Pipeline>& state, const std::vector<BindKey>& bind_keys)
-{
-#if !defined(NDEBUG)
-    if (UseArgumentBuffers()) {
-        decltype(auto) program = state->As<MTPipeline>().GetProgram();
-        for (const auto& bind_key : bind_keys) {
-            decltype(auto) shader = program->GetShader(bind_key.shader_type);
-            uint32_t index = GetRemappedSlot(bind_key);
-            assert(index == shader->As<MTShader>().GetIndex(bind_key));
-        }
-    }
-#endif
-}
-
 void ApplyDirectArguments(const std::shared_ptr<Pipeline>& state,
                           const std::map<ShaderType, id<MTL4ArgumentTable>>& argument_tables,
                           const std::vector<BindKey>& bind_keys,
@@ -99,9 +79,6 @@ void ApplyDirectArguments(const std::shared_ptr<Pipeline>& state,
         if (bind_key.count != ~0) {
             continue;
         }
-        if (UseArgumentBuffers()) {
-            assert(bind_key.space >= spirv_cross::kMaxArgumentBuffers);
-        }
         decltype(auto) shader = program->GetShader(bind_key.shader_type);
         uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
         auto buffer = device.GetBindlessArgumentBuffer().GetArgumentBuffer();
@@ -113,26 +90,8 @@ void ApplyDirectArguments(const std::shared_ptr<Pipeline>& state,
 
 MTBindingSet::MTBindingSet(MTDevice& device, const std::shared_ptr<MTBindingSetLayout>& layout)
     : m_device(device)
-    , m_layout(layout)
 {
-    if (!UseArgumentBuffers()) {
-        m_direct_bind_keys = m_layout->GetBindKeys();
-        return;
-    }
-
-    const std::vector<BindKey>& bind_keys = m_layout->GetBindKeys();
-    for (BindKey bind_key : bind_keys) {
-        if (bind_key.space >= spirv_cross::kMaxArgumentBuffers || bind_key.count == ~0) {
-            m_direct_bind_keys.push_back(bind_key);
-            continue;
-        }
-        auto shader_space = std::make_pair(bind_key.shader_type, bind_key.space);
-        m_slots_count[shader_space] = std::max(m_slots_count[shader_space], GetRemappedSlot(bind_key) + bind_key.count);
-    }
-    for (const auto& [shader_space, slots] : m_slots_count) {
-        m_argument_buffers[shader_space] = [m_device.GetDevice() newBufferWithLength:slots * sizeof(uint64_t)
-                                                                             options:MTLResourceStorageModeShared];
-    }
+    m_direct_bind_keys = layout->GetBindKeys();
 }
 
 void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
@@ -151,48 +110,17 @@ void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
         m_resources.push_back(resource);
     }
 
-    if (!UseArgumentBuffers()) {
-        m_direct_bindings = bindings;
-        return;
-    }
-
-    m_direct_bindings.clear();
-
-    for (const auto& binding : bindings) {
-        decltype(auto) bind_key = binding.bind_key;
-        if (bind_key.space >= spirv_cross::kMaxArgumentBuffers) {
-            if (bind_key.count != ~0) {
-                m_direct_bindings.push_back(binding);
-            }
-            continue;
-        }
-        decltype(auto) view = std::static_pointer_cast<MTView>(binding.view);
-        assert(view->GetViewDesc().view_type == bind_key.view_type);
-
-        uint32_t index = GetRemappedSlot(bind_key);
-        uint32_t slots = m_slots_count[{ bind_key.shader_type, bind_key.space }];
-        assert(index < slots);
-        uint64_t* arguments =
-            static_cast<uint64_t*>(m_argument_buffers[{ bind_key.shader_type, bind_key.space }].contents);
-        arguments[index] = view->GetGpuAddress();
-    }
+    m_direct_bindings = bindings;
 }
 
 void MTBindingSet::Apply(const std::map<ShaderType, id<MTL4ArgumentTable>>& argument_tables,
                          const std::shared_ptr<Pipeline>& state)
 {
-    ValidateRemappedSlots(state, m_layout->GetBindKeys());
-    for (const auto& [key, slots] : m_slots_count) {
-        SetBuffer(argument_tables.at(key.first), m_argument_buffers[key], 0, key.second);
-    }
     ApplyDirectArguments(state, argument_tables, m_direct_bind_keys, m_direct_bindings, m_device);
 }
 
 void MTBindingSet::AddResourcesToResidencySet(id<MTLResidencySet> residency_set)
 {
-    for (const auto& [_, resource] : m_argument_buffers) {
-        [residency_set addAllocation:resource];
-    }
     for (const auto& resource : m_resources) {
         [residency_set addAllocation:resource];
     }

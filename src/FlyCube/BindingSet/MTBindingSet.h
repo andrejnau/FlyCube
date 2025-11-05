@@ -19,9 +19,6 @@ public:
 
 private:
     MTDevice& m_device;
-    std::shared_ptr<MTBindingSetLayout> m_layout;
-    std::map<std::pair<ShaderType, uint32_t>, id<MTLBuffer>> m_argument_buffers;
-    std::map<std::pair<ShaderType, uint32_t>, uint32_t> m_slots_count;
     std::vector<id<MTLResource>> m_resources;
     std::vector<BindKey> m_direct_bind_keys;
     std::vector<BindingDesc> m_direct_bindings;
