@@ -29,7 +29,7 @@ public:
     void SetName(const std::string& name) override;
     uint8_t* Map() override;
     void Unmap() override;
-    MemoryRequirements GetMemoryRequirements() const override;
+    MemoryRequirements GetMemoryRequirements() const;
 
     id<MTLTexture> GetTexture() const;
     id<MTLBuffer> GetBuffer() const;

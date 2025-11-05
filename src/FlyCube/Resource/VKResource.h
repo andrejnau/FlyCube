@@ -29,7 +29,7 @@ public:
     void SetName(const std::string& name) override;
     uint8_t* Map() override;
     void Unmap() override;
-    MemoryRequirements GetMemoryRequirements() const override;
+    MemoryRequirements GetMemoryRequirements() const;
 
     const vk::Image& GetImage() const;
     const vk::Buffer& GetBuffer() const;

@@ -32,7 +32,7 @@ public:
     void SetName(const std::string& name) override;
     uint8_t* Map() override;
     void Unmap() override;
-    MemoryRequirements GetMemoryRequirements() const override;
+    MemoryRequirements GetMemoryRequirements() const;
 
     ID3D12Resource* GetResource() const;
     const D3D12_RESOURCE_DESC& GetResourceDesc() const;

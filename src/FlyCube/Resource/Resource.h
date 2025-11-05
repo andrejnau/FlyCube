@@ -39,6 +39,5 @@ public:
                                                    uint32_t num_rows,
                                                    uint32_t num_slices) = 0;
     virtual ResourceState GetInitialState() const = 0;
-    virtual MemoryRequirements GetMemoryRequirements() const = 0;
     virtual bool IsBackBuffer() const = 0;
 };
