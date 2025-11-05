@@ -1,3 +1,7 @@
+if (IOS_OR_TVOS OR ANDROID)
+    return()
+endif()
+
 add_library(WindowUtils
     WindowUtils.cpp
     WindowUtils.h
