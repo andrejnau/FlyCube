@@ -113,7 +113,7 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
     };
 
     for (const auto& bind_key : descs) {
-        if (bind_key.count == std::numeric_limits<uint32_t>::max()) {
+        if (bind_key.count == kBindlessCount) {
             add_bindless_range(bind_key.shader_type, bind_key.view_type, bind_key.slot, bind_key.space);
             continue;
         }

@@ -2,7 +2,6 @@
 
 #include "BindingSetLayout/MTBindingSetLayout.h"
 #include "Device/MTDevice.h"
-#include "HLSLCompiler/MSLConverter.h"
 #include "Pipeline/MTPipeline.h"
 #include "Shader/MTShader.h"
 #include "Utilities/NotReached.h"
@@ -57,71 +56,53 @@ void SetView(id<MTL4ArgumentTable> argument_table, const std::shared_ptr<MTView>
     }
 }
 
-void ApplyDirectArguments(const std::shared_ptr<Pipeline>& state,
-                          const std::map<ShaderType, id<MTL4ArgumentTable>>& argument_tables,
-                          const std::vector<BindKey>& bind_keys,
-                          const std::vector<BindingDesc>& bindings,
-                          MTDevice& device)
-{
-    decltype(auto) program = state->As<MTPipeline>().GetProgram();
-    for (const auto& binding : bindings) {
-        const BindKey& bind_key = binding.bind_key;
-        if (bind_key.count == ~0) {
-            continue;
-        }
-        decltype(auto) mt_view = std::static_pointer_cast<MTView>(binding.view);
-        decltype(auto) shader = program->GetShader(bind_key.shader_type);
-        uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
-        SetView(argument_tables.at(bind_key.shader_type), mt_view, index);
-    }
-
-    for (const auto& bind_key : bind_keys) {
-        if (bind_key.count != ~0) {
-            continue;
-        }
-        decltype(auto) shader = program->GetShader(bind_key.shader_type);
-        uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
-        auto buffer = device.GetBindlessArgumentBuffer().GetArgumentBuffer();
-        SetBuffer(argument_tables.at(bind_key.shader_type), buffer, 0, index);
-    }
-}
-
 } // namespace
 
 MTBindingSet::MTBindingSet(MTDevice& device, const std::shared_ptr<MTBindingSetLayout>& layout)
     : m_device(device)
 {
-    m_direct_bind_keys = layout->GetBindKeys();
+    for (const auto& bind_key : layout->GetBindKeys()) {
+        if (bind_key.count == kBindlessCount) {
+            m_bindless_bind_keys.insert(bind_key);
+        }
+    }
 }
 
 void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
 {
-    m_resources.clear();
-    for (const auto& binding : bindings) {
-        decltype(auto) bind_key = binding.bind_key;
-        if (bind_key.count == ~0) {
-            continue;
-        }
-        decltype(auto) view = std::static_pointer_cast<MTView>(binding.view);
-        id<MTLResource> resource = view->GetNativeResource();
-        if (!resource) {
-            continue;
-        }
-        m_resources.push_back(resource);
+    for (const auto& [bind_key, view] : bindings) {
+        assert(bind_key.count != kBindlessCount);
+        m_direct_bindings.insert_or_assign(bind_key, view);
     }
-
-    m_direct_bindings = bindings;
 }
 
 void MTBindingSet::Apply(const std::map<ShaderType, id<MTL4ArgumentTable>>& argument_tables,
                          const std::shared_ptr<Pipeline>& state)
 {
-    ApplyDirectArguments(state, argument_tables, m_direct_bind_keys, m_direct_bindings, m_device);
+    decltype(auto) program = state->As<MTPipeline>().GetProgram();
+    for (const auto& [bind_key, view] : m_direct_bindings) {
+        decltype(auto) shader = program->GetShader(bind_key.shader_type);
+        uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
+        SetView(argument_tables.at(bind_key.shader_type), std::static_pointer_cast<MTView>(view), index);
+    }
+
+    for (const auto& bind_key : m_bindless_bind_keys) {
+        decltype(auto) shader = program->GetShader(bind_key.shader_type);
+        uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
+        auto buffer = m_device.GetBindlessArgumentBuffer().GetArgumentBuffer();
+        SetBuffer(argument_tables.at(bind_key.shader_type), buffer, 0, index);
+    }
 }
 
 void MTBindingSet::AddResourcesToResidencySet(id<MTLResidencySet> residency_set)
 {
-    for (const auto& resource : m_resources) {
-        [residency_set addAllocation:resource];
+    for (const auto& [_, view] : m_direct_bindings) {
+        if (!view) {
+            continue;
+        }
+        id<MTLResource> resource = view->As<MTView>().GetNativeResource();
+        if (resource) {
+            [residency_set addAllocation:resource];
+        }
     }
 }

@@ -168,7 +168,7 @@ ResourceBindingDesc GetBindingDesc(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc
     desc.space = bind_desc.Space;
     desc.count = bind_desc.BindCount;
     if (desc.count == 0) {
-        desc.count = std::numeric_limits<uint32_t>::max();
+        desc.count = kBindlessCount;
     }
     desc.dimension = GetViewDimension(bind_desc);
     desc.return_type = GetReturnType(desc.type, bind_desc);

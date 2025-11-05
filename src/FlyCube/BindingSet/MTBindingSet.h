@@ -3,6 +3,10 @@
 
 #import <Metal/Metal.h>
 
+#include <map>
+#include <memory>
+#include <set>
+
 class MTDevice;
 class MTBindingSetLayout;
 class Pipeline;
@@ -19,7 +23,6 @@ public:
 
 private:
     MTDevice& m_device;
-    std::vector<id<MTLResource>> m_resources;
-    std::vector<BindKey> m_direct_bind_keys;
-    std::vector<BindingDesc> m_direct_bindings;
+    std::set<BindKey> m_bindless_bind_keys;
+    std::map<BindKey, std::shared_ptr<View>> m_direct_bindings;
 };
