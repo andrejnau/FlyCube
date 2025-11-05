@@ -3,6 +3,10 @@
 #include <format>
 #include <string>
 
+#if defined(__OBJC__)
+#include "Utilities/ObjcFormatter.h"
+#endif
+
 namespace Logging {
 
 void PrintImpl(const std::string& str);
