@@ -27,7 +27,8 @@
             "generator": "Xcode",
             "cacheVariables": {
                 "CMAKE_SYSTEM_NAME": "iOS",
-                "CMAKE_OSX_SYSROOT": "iphoneos"
+                "CMAKE_OSX_SYSROOT": "iphoneos",
+                "CMAKE_XCODE_ATTRIBUTE_SUPPORTED_PLATFORMS": "iphoneos"
             }
         },
         {
@@ -35,7 +36,8 @@
             "generator": "Xcode",
             "cacheVariables": {
                 "CMAKE_SYSTEM_NAME": "iOS",
-                "CMAKE_OSX_SYSROOT": "iphonesimulator"
+                "CMAKE_OSX_SYSROOT": "iphonesimulator",
+                "CMAKE_XCODE_ATTRIBUTE_SUPPORTED_PLATFORMS": "iphonesimulator"
             }
         },
         {
@@ -43,7 +45,8 @@
             "generator": "Xcode",
             "cacheVariables": {
                 "CMAKE_SYSTEM_NAME": "tvOS",
-                "CMAKE_OSX_SYSROOT": "appletvos"
+                "CMAKE_OSX_SYSROOT": "appletvos",
+                "CMAKE_XCODE_ATTRIBUTE_SUPPORTED_PLATFORMS": "appletvos"
             }
         },
         {
@@ -51,7 +54,8 @@
             "generator": "Xcode",
             "cacheVariables": {
                 "CMAKE_SYSTEM_NAME": "tvOS",
-                "CMAKE_OSX_SYSROOT": "appletvsimulator"
+                "CMAKE_OSX_SYSROOT": "appletvsimulator",
+                "CMAKE_XCODE_ATTRIBUTE_SUPPORTED_PLATFORMS": "appletvsimulator"
             }
         }
     ]
