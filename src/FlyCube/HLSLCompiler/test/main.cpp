@@ -1,5 +1,6 @@
 #include "HLSLCompiler/Compiler.h"
 #include "HLSLCompiler/MSLConverter.h"
+#include "Utilities/Logging.h"
 
 #include <catch2/catch_all.hpp>
 
@@ -16,8 +17,8 @@ bool ValidateMSL(const std::string& source)
     NSError* error = nullptr;
     id<MTLLibrary> library =
         [MTLCreateSystemDefaultDevice() newLibraryWithSource:ns_source options:nullptr error:&error];
-    if (library == nullptr) {
-        NSLog(@"Error: failed to create Metal library: %@", error);
+    if (!library) {
+        Logging::Println("Failed to create MTLLibrary: {}", error);
     }
     return !!library;
 }

@@ -16,6 +16,7 @@
 #include "Resource/MTResource.h"
 #include "Shader/MTShader.h"
 #include "Swapchain/MTSwapchain.h"
+#include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
 #include "View/MTView.h"
 
@@ -30,7 +31,7 @@ MTDevice::MTDevice(MTInstance& instance, id<MTLDevice> device)
     NSError* error = nullptr;
     m_compiler = [m_device newCompilerWithDescriptor:[MTL4CompilerDescriptor new] error:&error];
     if (!m_compiler) {
-        NSLog(@"The Metal device can't create a compiler: %@", error);
+        Logging::Println("Failed to create MTL4Compiler: {}", error);
     }
 }
 

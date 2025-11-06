@@ -2,6 +2,7 @@
 
 #include "Device/MTDevice.h"
 #include "Shader/MTShader.h"
+#include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
 
 MTComputePipeline::MTComputePipeline(MTDevice& device, const ComputePipelineDesc& desc)
@@ -33,7 +34,7 @@ MTComputePipeline::MTComputePipeline(MTDevice& device, const ComputePipelineDesc
                                                          compilerTaskOptions:nullptr
                                                                        error:&error];
     if (!m_pipeline) {
-        NSLog(@"Error occurred when creating render pipeline state: %@", error);
+        Logging::Println("Failed to create MTLComputePipelineState: {}", error);
     }
 }
 

@@ -2,6 +2,7 @@
 
 #include "Device/MTDevice.h"
 #include "Shader/MTShader.h"
+#include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
 
 namespace {
@@ -204,7 +205,7 @@ void MTGraphicsPipeline::CreatePipeline()
                                                           compilerTaskOptions:nullptr
                                                                         error:&error];
     if (!m_pipeline) {
-        NSLog(@"Error occurred when creating render pipeline state: %@", error);
+        Logging::Println("Failed to create MTLRenderPipelineState: {}", error);
     }
 
     m_depth_stencil = [m_device.GetDevice()

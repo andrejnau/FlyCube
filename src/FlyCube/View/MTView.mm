@@ -2,6 +2,7 @@
 
 #include "Device/MTDevice.h"
 #include "Resource/MTResource.h"
+#include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
 
 namespace {
@@ -89,8 +90,8 @@ void MTView::CreateTextureView()
                                                          slices:slices];
     }
 
-    if (m_texture_view == nullptr) {
-        NSLog(@"Error: failed to create texture view");
+    if (!m_texture_view) {
+        Logging::Println("Failed to create MTLTexture using newTextureViewWithPixelFormat");
     }
 }
 

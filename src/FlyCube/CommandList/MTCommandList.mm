@@ -6,6 +6,7 @@
 #include "Pipeline/MTComputePipeline.h"
 #include "Pipeline/MTGraphicsPipeline.h"
 #include "Resource/MTResource.h"
+#include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
 #include "View/MTView.h"
 
@@ -72,9 +73,10 @@ id<MTL4ArgumentTable> CreateArgumentTable(MTDevice& device)
     argument_table_descriptor.maxTextureBindCount = 128;
 
     NSError* error = nullptr;
-    auto argument_table = [device.GetDevice() newArgumentTableWithDescriptor:argument_table_descriptor error:&error];
+    id<MTL4ArgumentTable> argument_table = [device.GetDevice() newArgumentTableWithDescriptor:argument_table_descriptor
+                                                                                        error:&error];
     if (!argument_table) {
-        NSLog(@"Error: failed to create MTL4ArgumentTable: %@", error);
+        Logging::Println("Failed to create MTL4ArgumentTable: {}", error);
     }
     return argument_table;
 }
@@ -257,7 +259,7 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
 
     m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
     if (m_render_encoder == nullptr) {
-        NSLog(@"Error: failed to create render pass");
+        Logging::Println("Failed to create MTL4RenderCommandEncoder");
     }
 
     [m_render_encoder setViewport:m_viewport];

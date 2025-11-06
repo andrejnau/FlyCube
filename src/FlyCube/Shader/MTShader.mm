@@ -1,6 +1,7 @@
 #include "Shader/MTShader.h"
 
 #include "Device/MTDevice.h"
+#include "Utilities/Logging.h"
 
 namespace {
 
@@ -53,6 +54,6 @@ void MTShader::CreateLibrary()
     NSError* error = nullptr;
     m_library = [m_device.GetCompiler() newLibraryWithDescriptor:library_descriptor error:&error];
     if (!m_library) {
-        NSLog(@"Error: failed to create Metal library: %@", error);
+        Logging::Println("Failed to create MTLLibrary: {}", error);
     }
 }

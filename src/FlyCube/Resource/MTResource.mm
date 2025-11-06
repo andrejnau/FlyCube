@@ -2,6 +2,7 @@
 
 #include "Device/MTDevice.h"
 #include "Memory/MTMemory.h"
+#include "Utilities/Logging.h"
 
 MTResource::MTResource(PassKey<MTResource> pass_key, MTDevice& device)
     : m_device(device)
@@ -176,13 +177,13 @@ void MTResource::CommitMemory(MemoryType memory_type)
 
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         m_buffer.res = [mt_device newBufferWithLength:m_buffer.size options:options];
-        if (m_buffer.res == nullptr) {
-            NSLog(@"Error: failed to create m_buffer");
+        if (!m_buffer.res) {
+            Logging::Println("Failed to create MTLBuffer");
         }
     } else if (m_resource_type == ResourceType::kTexture) {
         m_texture.res = [mt_device newTextureWithDescriptor:GetTextureDescriptor(m_memory_type)];
-        if (m_texture.res == nullptr) {
-            NSLog(@"Error: failed to create m_texture");
+        if (!m_texture.res) {
+            Logging::Println("Failed to create MTLTexture");
         }
     }
 }
@@ -199,13 +200,13 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
 
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         m_buffer.res = [mt_heap newBufferWithLength:m_buffer.size options:options offset:offset];
-        if (m_buffer.res == nullptr) {
-            NSLog(@"Error: failed to create m_buffer");
+        if (!m_buffer.res) {
+            Logging::Println("Failed to create MTLBuffer from heap {}", mt_heap);
         }
     } else if (m_resource_type == ResourceType::kTexture) {
         m_texture.res = [mt_heap newTextureWithDescriptor:GetTextureDescriptor(m_memory_type) offset:offset];
-        if (m_texture.res == nullptr) {
-            NSLog(@"Error: failed to create m_texture");
+        if (!m_texture.res) {
+            Logging::Println("Failed to create MTLTexture from heap {}", mt_heap);
         }
     }
 }
