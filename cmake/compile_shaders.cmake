@@ -25,7 +25,7 @@ function(compile_shaders base_dir output_subdir shaders output_var)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${output_dir}"
             COMMAND ${CMAKE_COMMAND} -E copy "${spirv}" "${output_dir}/${shader_name}.spirv"
             COMMAND ${CMAKE_COMMAND} -E copy "${dxil}" "${output_dir}/${shader_name}.dxil"
-            DEPENDS ShaderCompilerCLI
+            DEPENDS ShaderCompilerCLI "${full_shader_path}"
             MAIN_DEPENDENCY "${full_shader_path}"
         )
         set_source_files_properties("${spirv}" "${dxil}" PROPERTIES
