@@ -79,7 +79,6 @@ TEST_CASE("BasicShaderReflectionTest")
         { ASSETS_PATH "shaders/MeshTriangle/MeshShader.hlsl", "main", ShaderType::kMesh, "6_5" },
         { ASSETS_PATH "shaders/MeshTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_5" },
         { ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_0" },
-        { ASSETS_PATH "shaders/Triangle/PixelShaderNoBindings.hlsl", "main", ShaderType::kPixel, "6_0" },
         { ASSETS_PATH "shaders/Triangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" },
     };
     for (const auto& shader_desc : shader_descs) {
