@@ -84,7 +84,6 @@ public:
                                                                          RaytracingGeometryFlags flags) const;
 
     uint32_t GetMaxDescriptorSetBindings(vk::DescriptorType type) const;
-    bool IsAtLeastVulkan12() const;
     bool HasBufferDeviceAddress() const;
 
     template <typename Feature>
@@ -122,7 +121,6 @@ private:
     bool m_geometry_shader_supported = false;
     bool m_bindless_supported = false;
     bool m_draw_indirect_count_supported = false;
-    bool m_is_at_least_vulkan12 = false;
     bool m_has_buffer_device_address = false;
     vk::PhysicalDeviceProperties m_device_properties = {};
 };
