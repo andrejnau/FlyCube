@@ -6,7 +6,7 @@
 #include "CommandList/DXCommandList.h"
 #include "CommandQueue/DXCommandQueue.h"
 #include "Fence/DXFence.h"
-#include "Framebuffer/DXFramebuffer.h"
+#include "Framebuffer/FramebufferBase.h"
 #include "Memory/DXMemory.h"
 #include "Pipeline/DXComputePipeline.h"
 #include "Pipeline/DXGraphicsPipeline.h"
@@ -331,7 +331,7 @@ std::shared_ptr<RenderPass> DXDevice::CreateRenderPass(const RenderPassDesc& des
 
 std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const FramebufferDesc& desc)
 {
-    return std::make_shared<DXFramebuffer>(desc);
+    return std::make_shared<FramebufferBase>(desc);
 }
 
 std::shared_ptr<Shader> DXDevice::CreateShader(const std::vector<uint8_t>& blob,

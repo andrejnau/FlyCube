@@ -83,7 +83,6 @@ list(APPEND Fence
 )
 
 list(APPEND Framebuffer
-    $<$<BOOL:${DIRECTX_SUPPORT}>:Framebuffer/DXFramebuffer.h>
     $<$<BOOL:${METAL_SUPPORT}>:Framebuffer/MTFramebuffer.h>
     $<$<BOOL:${VULKAN_SUPPORT}>:Framebuffer/VKFramebuffer.cpp>
     $<$<BOOL:${VULKAN_SUPPORT}>:Framebuffer/VKFramebuffer.h>

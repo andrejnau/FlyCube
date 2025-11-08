@@ -2,7 +2,7 @@
 
 #include "BindingSet/DXBindingSet.h"
 #include "Device/DXDevice.h"
-#include "Framebuffer/DXFramebuffer.h"
+#include "Framebuffer/FramebufferBase.h"
 #include "Pipeline/DXComputePipeline.h"
 #include "Pipeline/DXGraphicsPipeline.h"
 #include "Pipeline/DXRayTracingPipeline.h"
@@ -154,7 +154,7 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
                                     const ClearDesc& clear_desc)
 {
     decltype(auto) dx_render_pass = render_pass->As<DXRenderPass>();
-    decltype(auto) dx_framebuffer = framebuffer->As<DXFramebuffer>();
+    decltype(auto) dx_framebuffer = framebuffer->As<FramebufferBase>();
     auto& rtvs = dx_framebuffer.GetDesc().colors;
     auto& dsv = dx_framebuffer.GetDesc().depth_stencil;
 
