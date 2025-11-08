@@ -243,6 +243,7 @@ endif()
 list(APPEND Utilities
     Utilities/Asset.cpp
     Utilities/Asset.h
+    Utilities/Check.h
     Utilities/Common.cpp
     Utilities/Common.h
     Utilities/DXGIFormatHelper.cpp
@@ -252,6 +253,8 @@ list(APPEND Utilities
     Utilities/FormatHelper.h
     Utilities/Logging.cpp
     Utilities/Logging.h
+    Utilities/NotReached.h
+    Utilities/ObjcFormatter.h
     Utilities/PassKey.h
     Utilities/ScopeGuard.h
     Utilities/SystemUtils.cpp
