@@ -207,9 +207,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         // clang-format on
     };
 
-    bool is_at_least_vulkan12 =
-        std::min(m_device_properties.apiVersion, m_adapter.GetInstance().GetApiVersion()) >= VK_API_VERSION_1_2;
-    if (!is_at_least_vulkan12) {
+    if (m_device_properties.apiVersion < VK_API_VERSION_1_2) {
         requested_extensions.insert(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
         requested_extensions.insert(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
         requested_extensions.insert(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -314,7 +312,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     vk::PhysicalDeviceDescriptorIndexingFeaturesEXT device_descriptor_indexing = {};
     vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR device_buffer_device_address = {};
     vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR device_timeline_semaphore = {};
-    if (is_at_least_vulkan12) {
+    if (m_device_properties.apiVersion >= VK_API_VERSION_1_2) {
         auto query_device_vulkan12_features = GetFeatures2<vk::PhysicalDeviceVulkan12Features>();
         device_vulkan12_features.drawIndirectCount = query_device_vulkan12_features.drawIndirectCount;
         device_vulkan12_features.bufferDeviceAddress = query_device_vulkan12_features.bufferDeviceAddress;
