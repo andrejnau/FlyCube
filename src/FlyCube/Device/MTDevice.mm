@@ -6,7 +6,7 @@
 #include "CommandList/RecordCommandList.h"
 #include "CommandQueue/MTCommandQueue.h"
 #include "Fence/MTFence.h"
-#include "Framebuffer/MTFramebuffer.h"
+#include "Framebuffer/FramebufferBase.h"
 #include "Instance/MTInstance.h"
 #include "Memory/MTMemory.h"
 #include "Pipeline/MTComputePipeline.h"
@@ -147,7 +147,7 @@ std::shared_ptr<RenderPass> MTDevice::CreateRenderPass(const RenderPassDesc& des
 
 std::shared_ptr<Framebuffer> MTDevice::CreateFramebuffer(const FramebufferDesc& desc)
 {
-    return std::make_shared<MTFramebuffer>(desc);
+    return std::make_shared<FramebufferBase>(desc);
 }
 
 std::shared_ptr<Shader> MTDevice::CreateShader(const std::vector<uint8_t>& blob,
