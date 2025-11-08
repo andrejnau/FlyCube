@@ -6,10 +6,7 @@ set(shaders_path "${assets_path}/shaders/Triangle")
 
 set(vertex_shaders ${shaders_path}/VertexShader.hlsl)
 set_property(SOURCE ${vertex_shaders} PROPERTY SHADER_TYPE Vertex)
-set(pixel_shaders
-   ${shaders_path}/PixelShader.hlsl
-   ${shaders_path}/PixelShaderNoBindings.hlsl
-)
+set(pixel_shaders ${shaders_path}/PixelShader.hlsl)
 set_property(SOURCE ${pixel_shaders} PROPERTY SHADER_TYPE Pixel)
 
 set(shaders_files ${vertex_shaders} ${pixel_shaders})
