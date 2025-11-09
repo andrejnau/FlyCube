@@ -9,7 +9,9 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
     , m_extent(desc.width, desc.height)
 {
     vk::FramebufferCreateInfo framebuffer_info = {};
-    framebuffer_info.layers = 1;
+    framebuffer_info.width = m_extent.width;
+    framebuffer_info.height = m_extent.height;
+    framebuffer_info.layers = std::numeric_limits<uint32_t>::max();
 
     std::deque<vk::Format> formats;
     std::vector<vk::FramebufferAttachmentImageInfo> attachment_image_infos = {};
@@ -29,16 +31,18 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
         vk::FramebufferAttachmentImageInfo frame_buffer_attachment_image_info = {};
         frame_buffer_attachment_image_info.flags = vk_resource.GetImageCreateFlags();
         frame_buffer_attachment_image_info.usage = vk_resource.GetImageUsageFlags();
-        frame_buffer_attachment_image_info.width = vk_resource.GetWidth();
-        frame_buffer_attachment_image_info.height = vk_resource.GetHeight();
-        frame_buffer_attachment_image_info.layerCount = vk_resource.GetLayerCount();
+        frame_buffer_attachment_image_info.width = vk_resource.GetWidth() >> vk_view.GetBaseMipLevel();
+        frame_buffer_attachment_image_info.height = vk_resource.GetHeight() >> vk_view.GetBaseMipLevel();
+        frame_buffer_attachment_image_info.layerCount = vk_view.GetLayerCount();
         frame_buffer_attachment_image_info.viewFormatCount = 1;
         frame_buffer_attachment_image_info.pViewFormats = &formats.back();
         attachment_image_infos.push_back(frame_buffer_attachment_image_info);
 
         m_attachments.emplace_back(vk_view.GetImageView());
 
-        framebuffer_info.layers = std::max<uint32_t>(framebuffer_info.layers, vk_resource.GetLayerCount());
+        assert(frame_buffer_attachment_image_info.width >= framebuffer_info.width);
+        assert(frame_buffer_attachment_image_info.height >= framebuffer_info.height);
+        framebuffer_info.layers = std::min(framebuffer_info.layers, frame_buffer_attachment_image_info.layerCount);
     };
     for (auto& rtv : desc.colors) {
         add_view(rtv);
@@ -46,8 +50,10 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
     add_view(desc.depth_stencil);
     add_view(desc.shading_rate_image);
 
-    framebuffer_info.width = m_extent.width;
-    framebuffer_info.height = m_extent.height;
+    if (framebuffer_info.layers == std::numeric_limits<uint32_t>::max()) {
+        framebuffer_info.layers = 1;
+    }
+
     framebuffer_info.renderPass = desc.render_pass->As<VKRenderPass>().GetRenderPass();
     framebuffer_info.flags = vk::FramebufferCreateFlagBits::eImageless;
     framebuffer_info.attachmentCount = attachment_image_infos.size();
