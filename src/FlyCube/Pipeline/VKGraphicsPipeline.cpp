@@ -200,8 +200,31 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = &color_blending;
     pipeline_info.layout = m_pipeline_layout;
-    pipeline_info.renderPass = GetRenderPass();
     pipeline_info.pDynamicState = &pipelineDynamicStateCreateInfo;
+
+    std::vector<vk::Format> color_formats;
+    vk::PipelineRenderingCreateInfo pipeline_rendering_info = {};
+    if (m_device.IsDynamicRenderingSupported()) {
+        color_formats.resize(render_pass_desc.colors.size());
+        for (size_t i = 0; i < color_formats.size(); ++i) {
+            color_formats[i] = static_cast<vk::Format>(render_pass_desc.colors[i].format);
+        }
+        pipeline_rendering_info.colorAttachmentCount = color_formats.size();
+        pipeline_rendering_info.pColorAttachmentFormats = color_formats.data();
+        if (render_pass_desc.depth_stencil.format != gli::format::FORMAT_UNDEFINED &&
+            gli::is_depth(render_pass_desc.depth_stencil.format)) {
+            pipeline_rendering_info.depthAttachmentFormat =
+                static_cast<vk::Format>(render_pass_desc.depth_stencil.format);
+        }
+        if (render_pass_desc.depth_stencil.format != gli::format::FORMAT_UNDEFINED &&
+            gli::is_stencil(render_pass_desc.depth_stencil.format)) {
+            pipeline_rendering_info.stencilAttachmentFormat =
+                static_cast<vk::Format>(render_pass_desc.depth_stencil.format);
+        }
+        pipeline_info.pNext = &pipeline_rendering_info;
+    } else {
+        pipeline_info.renderPass = GetRenderPass();
+    }
 
     m_pipeline = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info).value;
 }
