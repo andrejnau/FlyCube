@@ -88,7 +88,6 @@ GraphicsPipelineDesc pipeline_desc = {
 std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
 
 std::array<std::shared_ptr<View>, kFrameCount> back_buffer_views = {};
-std::array<std::shared_ptr<Framebuffer>, kFrameCount> framebuffers = {};
 std::array<std::shared_ptr<CommandList>, kFrameCount> command_lists = {};
 std::array<uint64_t, kFrameCount> fence_values = {};
 for (uint32_t i = 0; i < kFrameCount; ++i) {
@@ -104,7 +103,6 @@ for (uint32_t i = 0; i < kFrameCount; ++i) {
         .height = app_size.height(),
         .colors = { back_buffer_views[i] },
     };
-    framebuffers[i] = device->CreateFramebuffer(framebuffer_desc);
 
     auto& command_list = command_lists[i];
     command_list = device->CreateCommandList(CommandListType::kGraphics);

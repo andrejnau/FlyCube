@@ -69,7 +69,6 @@ private:
     std::shared_ptr<RenderPass> m_render_pass;
     std::shared_ptr<Pipeline> m_pipeline;
     std::array<std::shared_ptr<View>, kFrameCount> m_back_buffer_views = {};
-    std::array<std::shared_ptr<Framebuffer>, kFrameCount> m_framebuffers = {};
     std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
     std::array<uint64_t, kFrameCount> m_fence_values = {};
 };
@@ -253,7 +252,6 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
             .colors = { m_back_buffer_views[i] },
             .depth_stencil = m_depth_stencil_view,
         };
-        m_framebuffers[i] = m_device->CreateFramebuffer(framebuffer_desc);
 
         auto& command_list = m_command_lists[i];
         command_list = m_device->CreateCommandList(CommandListType::kGraphics);
@@ -282,7 +280,6 @@ void ModelViewRenderer::Resize(const AppSize& app_size, WindowHandle window)
     WaitForIdle();
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         m_back_buffer_views[i].reset();
-        m_framebuffers[i].reset();
     }
     m_swapchain.reset();
     Init(app_size, window);
