@@ -83,8 +83,6 @@ list(APPEND Fence
 )
 
 list(APPEND Framebuffer
-    $<$<BOOL:${VULKAN_SUPPORT}>:Framebuffer/VKFramebuffer.cpp>
-    $<$<BOOL:${VULKAN_SUPPORT}>:Framebuffer/VKFramebuffer.h>
     Framebuffer/Framebuffer.h
     Framebuffer/FramebufferBase.cpp
     Framebuffer/FramebufferBase.h

@@ -3,7 +3,7 @@
 #include "Adapter/VKAdapter.h"
 #include "BindingSet/VKBindingSet.h"
 #include "Device/VKDevice.h"
-#include "Framebuffer/VKFramebuffer.h"
+#include "Framebuffer/FramebufferBase.h"
 #include "Instance/VKInstance.h"
 #include "Pipeline/VKComputePipeline.h"
 #include "Pipeline/VKGraphicsPipeline.h"
@@ -13,6 +13,8 @@
 #include "Utilities/NotReached.h"
 #include "Utilities/VKUtility.h"
 #include "View/VKView.h"
+
+#include <deque>
 
 namespace {
 
@@ -67,6 +69,81 @@ vk::AttachmentStoreOp Convert(RenderPassStoreOp op)
         NOTREACHED();
     }
 }
+
+class VKFramebuffer {
+public:
+    VKFramebuffer(VKDevice& device, const FramebufferDesc& desc, vk::RenderPass render_pass)
+    {
+        vk::FramebufferCreateInfo framebuffer_info = {};
+        framebuffer_info.width = desc.width;
+        framebuffer_info.height = desc.height;
+        framebuffer_info.layers = std::numeric_limits<uint32_t>::max();
+
+        std::deque<vk::Format> formats;
+        std::vector<vk::FramebufferAttachmentImageInfo> attachment_image_infos = {};
+        auto add_view = [&](const std::shared_ptr<View>& view) {
+            if (!view) {
+                return;
+            }
+            decltype(auto) vk_view = view->As<VKView>();
+            decltype(auto) resource = vk_view.GetResource();
+            if (!resource) {
+                return;
+            }
+            decltype(auto) vk_resource = resource->As<VKResource>();
+
+            formats.push_back(static_cast<vk::Format>(vk_resource.GetFormat()));
+
+            vk::FramebufferAttachmentImageInfo frame_buffer_attachment_image_info = {};
+            frame_buffer_attachment_image_info.flags = vk_resource.GetImageCreateFlags();
+            frame_buffer_attachment_image_info.usage = vk_resource.GetImageUsageFlags();
+            frame_buffer_attachment_image_info.width = vk_resource.GetWidth() >> vk_view.GetBaseMipLevel();
+            frame_buffer_attachment_image_info.height = vk_resource.GetHeight() >> vk_view.GetBaseMipLevel();
+            frame_buffer_attachment_image_info.layerCount = vk_view.GetLayerCount();
+            frame_buffer_attachment_image_info.viewFormatCount = 1;
+            frame_buffer_attachment_image_info.pViewFormats = &formats.back();
+            attachment_image_infos.push_back(frame_buffer_attachment_image_info);
+
+            m_attachments.emplace_back(vk_view.GetImageView());
+
+            assert(frame_buffer_attachment_image_info.width >= framebuffer_info.width);
+            assert(frame_buffer_attachment_image_info.height >= framebuffer_info.height);
+            framebuffer_info.layers = std::min(framebuffer_info.layers, frame_buffer_attachment_image_info.layerCount);
+        };
+        for (auto& rtv : desc.colors) {
+            add_view(rtv);
+        }
+        add_view(desc.depth_stencil);
+        add_view(desc.shading_rate_image);
+
+        if (framebuffer_info.layers == std::numeric_limits<uint32_t>::max()) {
+            framebuffer_info.layers = 1;
+        }
+
+        framebuffer_info.renderPass = render_pass;
+        framebuffer_info.flags = vk::FramebufferCreateFlagBits::eImageless;
+        framebuffer_info.attachmentCount = attachment_image_infos.size();
+        vk::FramebufferAttachmentsCreateInfo framebuffer_attachments_info = {};
+        framebuffer_attachments_info.attachmentImageInfoCount = attachment_image_infos.size();
+        framebuffer_attachments_info.pAttachmentImageInfos = attachment_image_infos.data();
+        framebuffer_info.pNext = &framebuffer_attachments_info;
+        m_framebuffer = device.GetDevice().createFramebufferUnique(framebuffer_info);
+    }
+
+    const std::vector<vk::ImageView>& GetAttachments() const
+    {
+        return m_attachments;
+    }
+
+    vk::UniqueFramebuffer TakeFramebuffer()
+    {
+        return std::move(m_framebuffer);
+    }
+
+private:
+    vk::UniqueFramebuffer m_framebuffer;
+    std::vector<vk::ImageView> m_attachments;
+};
 
 } // namespace
 
@@ -208,16 +285,15 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     } else {
         const auto& vk_render_pass = render_pass->As<VKRenderPass>();
         const auto& render_pass_desc = vk_render_pass.GetDesc();
-
-        VKFramebuffer vk_framebuffer(m_device, framebuffer->As<FramebufferBase>().GetDesc(),
-                                     vk_render_pass.GetRenderPass());
+        const auto& framebuffer_desc = framebuffer->As<FramebufferBase>().GetDesc();
+        VKFramebuffer vk_framebuffer(m_device, framebuffer_desc, vk_render_pass.GetRenderPass());
         m_framebuffers.push_back(vk_framebuffer.TakeFramebuffer());
 
         vk::RenderPassBeginInfo render_pass_info = {};
         render_pass_info.renderPass = vk_render_pass.GetRenderPass();
         render_pass_info.framebuffer = m_framebuffers.back().get();
-        render_pass_info.renderArea.extent.width = vk_framebuffer.GetDesc().width;
-        render_pass_info.renderArea.extent.height = vk_framebuffer.GetDesc().height;
+        render_pass_info.renderArea.extent.width = framebuffer_desc.width;
+        render_pass_info.renderArea.extent.height = framebuffer_desc.height;
         std::vector<vk::ClearValue> clear_values;
         for (const auto& color : clear_desc.colors) {
             auto& clear_value = clear_values.emplace_back();
