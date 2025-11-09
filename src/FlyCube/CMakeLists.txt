@@ -182,8 +182,6 @@ list(APPEND QueryHeap
 )
 
 list(APPEND RenderPass
-    $<$<BOOL:${VULKAN_SUPPORT}>:RenderPass/VKRenderPass.cpp>
-    $<$<BOOL:${VULKAN_SUPPORT}>:RenderPass/VKRenderPass.h>
     RenderPass/RenderPass.h
     RenderPass/RenderPassBase.cpp
     RenderPass/RenderPassBase.h

@@ -1,7 +1,7 @@
 #pragma once
 #include "Instance/BaseTypes.h"
 #include "Pipeline/VKPipeline.h"
-#include "RenderPass/VKRenderPass.h"
+#include "RenderPass/RenderPassBase.h"
 #include "ShaderReflection/ShaderReflection.h"
 
 #include <vulkan/vulkan.hpp>

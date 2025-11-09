@@ -4,6 +4,8 @@
 #include "Device/VKDevice.h"
 #include "Utilities/NotReached.h"
 
+namespace {
+
 vk::ShaderStageFlagBits ExecutionModel2Bit(ShaderKind kind)
 {
     switch (kind) {
@@ -35,6 +37,8 @@ vk::ShaderStageFlagBits ExecutionModel2Bit(ShaderKind kind)
         NOTREACHED();
     }
 }
+
+} // namespace
 
 VKPipeline::VKPipeline(VKDevice& device,
                        const std::shared_ptr<Program>& program,

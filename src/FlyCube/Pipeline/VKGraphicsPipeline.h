@@ -1,12 +1,11 @@
 #pragma once
 #include "Instance/BaseTypes.h"
 #include "Pipeline/VKPipeline.h"
-#include "RenderPass/VKRenderPass.h"
-#include "ShaderReflection/ShaderReflection.h"
 
 #include <vulkan/vulkan.hpp>
 
-vk::ShaderStageFlagBits ExecutionModel2Bit(ShaderKind kind);
+vk::AttachmentLoadOp ConvertRenderPassLoadOp(RenderPassLoadOp op);
+vk::AttachmentStoreOp ConvertRenderPassStoreOp(RenderPassStoreOp op);
 
 class VKDevice;
 
@@ -24,4 +23,5 @@ private:
     GraphicsPipelineDesc m_desc;
     std::vector<vk::VertexInputBindingDescription> m_binding_desc;
     std::vector<vk::VertexInputAttributeDescription> m_attribute_desc;
+    vk::UniqueRenderPass m_render_pass;
 };
