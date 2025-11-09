@@ -273,7 +273,6 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         m_back_buffer_views[i] = m_device->CreateView(back_buffer, back_buffer_view_desc);
 
         FramebufferDesc depth_stencil_pass_framebuffer_desc = {
-            .render_pass = m_depth_stencil_pass_render_pass,
             .width = depth_stencil_size.x,
             .height = depth_stencil_size.y,
             .depth_stencil = m_depth_stencil_view,
@@ -281,7 +280,6 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         m_depth_stencil_pass_framebuffers[i] = m_device->CreateFramebuffer(depth_stencil_pass_framebuffer_desc);
 
         FramebufferDesc framebuffer_desc = {
-            .render_pass = m_render_pass,
             .width = app_size.width(),
             .height = app_size.height(),
             .colors = { m_back_buffer_views[i] },

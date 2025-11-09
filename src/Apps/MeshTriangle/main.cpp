@@ -97,7 +97,6 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         m_back_buffer_views[i] = m_device->CreateView(back_buffer, back_buffer_view_desc);
 
         FramebufferDesc framebuffer_desc = {
-            .render_pass = m_render_pass,
             .width = app_size.width(),
             .height = app_size.height(),
             .colors = { m_back_buffer_views[i] },

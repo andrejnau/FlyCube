@@ -318,7 +318,6 @@ struct RenderPassDesc {
 };
 
 struct FramebufferDesc {
-    std::shared_ptr<RenderPass> render_pass;
     uint32_t width;
     uint32_t height;
     std::vector<std::shared_ptr<View>> colors;
@@ -327,7 +326,7 @@ struct FramebufferDesc {
 
     auto MakeTie() const
     {
-        return std::tie(render_pass, width, height, colors, depth_stencil, shading_rate_image);
+        return std::tie(width, height, colors, depth_stencil, shading_rate_image);
     }
 };
 

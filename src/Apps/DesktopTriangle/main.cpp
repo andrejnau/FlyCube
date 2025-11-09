@@ -91,7 +91,6 @@ int main(int argc, char* argv[])
         back_buffer_views[i] = device->CreateView(back_buffer, back_buffer_view_desc);
 
         FramebufferDesc framebuffer_desc = {
-            .render_pass = render_pass,
             .width = app_size.width(),
             .height = app_size.height(),
             .colors = { back_buffer_views[i] },
