@@ -11,7 +11,10 @@ class VKResource : public ResourceBase {
 public:
     VKResource(PassKey<VKResource> pass_key, VKDevice& device);
 
-    static std::shared_ptr<VKResource> WrapSwapchainImage(VKDevice& device, vk::Image image, const TextureDesc& desc);
+    static std::shared_ptr<VKResource> WrapSwapchainImage(VKDevice& device,
+                                                          vk::Image image,
+                                                          const TextureDesc& desc,
+                                                          vk::ImageUsageFlags usage);
     static std::shared_ptr<VKResource> CreateImage(VKDevice& device, const TextureDesc& desc);
     static std::shared_ptr<VKResource> CreateBuffer(VKDevice& device, const BufferDesc& desc);
     static std::shared_ptr<VKResource> CreateSampler(VKDevice& device, const SamplerDesc& desc);
@@ -35,6 +38,8 @@ public:
     const vk::Buffer& GetBuffer() const;
     const vk::Sampler& GetSampler() const;
     const vk::AccelerationStructureKHR& GetAccelerationStructure() const;
+    vk::ImageCreateFlags GetImageCreateFlags() const;
+    vk::ImageUsageFlags GetImageUsageFlags() const;
 
 private:
     VKDevice& m_device;
@@ -47,6 +52,8 @@ private:
     struct Image {
         vk::Image res;
         TextureDesc desc;
+        vk::ImageCreateFlags flags;
+        vk::ImageUsageFlags usage;
     } m_image;
 
     struct Buffer {

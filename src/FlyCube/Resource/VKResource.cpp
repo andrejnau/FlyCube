@@ -28,7 +28,10 @@ VKResource::VKResource(PassKey<VKResource> pass_key, VKDevice& device)
 }
 
 // static
-std::shared_ptr<VKResource> VKResource::WrapSwapchainImage(VKDevice& device, vk::Image image, const TextureDesc& desc)
+std::shared_ptr<VKResource> VKResource::WrapSwapchainImage(VKDevice& device,
+                                                           vk::Image image,
+                                                           const TextureDesc& desc,
+                                                           vk::ImageUsageFlags usage)
 {
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
     self->m_resource_type = ResourceType::kTexture;
@@ -37,6 +40,7 @@ std::shared_ptr<VKResource> VKResource::WrapSwapchainImage(VKDevice& device, vk:
     self->m_image = {
         .res = image,
         .desc = desc,
+        .usage = usage,
     };
     self->SetInitialState(ResourceState::kPresent);
     return self;
@@ -111,6 +115,8 @@ std::shared_ptr<VKResource> VKResource::CreateImage(VKDevice& device, const Text
     self->m_image = {
         .res = self->m_image_owned.get(),
         .desc = desc,
+        .flags = image_info.flags,
+        .usage = image_info.usage,
     };
     self->SetInitialState(ResourceState::kUndefined);
     return self;
@@ -374,4 +380,14 @@ const vk::Sampler& VKResource::GetSampler() const
 const vk::AccelerationStructureKHR& VKResource::GetAccelerationStructure() const
 {
     return m_acceleration_structure.get();
+}
+
+vk::ImageCreateFlags VKResource::GetImageCreateFlags() const
+{
+    return m_image.flags;
+}
+
+vk::ImageUsageFlags VKResource::GetImageUsageFlags() const
+{
+    return m_image.usage;
 }

@@ -212,6 +212,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
         requested_extensions.insert(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
         requested_extensions.insert(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
         requested_extensions.insert(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+        requested_extensions.insert(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+        requested_extensions.insert(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
         requested_extensions.insert(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
         requested_extensions.insert(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
         requested_extensions.insert(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -312,6 +314,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     vk::PhysicalDeviceDescriptorIndexingFeaturesEXT device_descriptor_indexing = {};
     vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR device_buffer_device_address = {};
     vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR device_timeline_semaphore = {};
+    vk::PhysicalDeviceImagelessFramebufferFeaturesKHR device_imageless_framebuffer = {};
     if (m_device_properties.apiVersion >= VK_API_VERSION_1_2) {
         auto query_device_vulkan12_features = GetFeatures2<vk::PhysicalDeviceVulkan12Features>();
         device_vulkan12_features.drawIndirectCount = query_device_vulkan12_features.drawIndirectCount;
@@ -331,6 +334,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
             device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
             device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
         }
+        assert(query_device_vulkan12_features.imagelessFramebuffer);
+        device_vulkan12_features.imagelessFramebuffer = true;
         add_extension(device_vulkan12_features);
     } else {
         if (enabled_extension_set.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
@@ -354,6 +359,12 @@ VKDevice::VKDevice(VKAdapter& adapter)
         device_timeline_semaphore.timelineSemaphore = true;
         add_extension(device_timeline_semaphore);
         assert(enabled_extension_set.contains(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME));
+
+        assert(enabled_extension_set.contains(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME));
+        auto query_imageless_framebuffer = GetFeatures2<vk::PhysicalDeviceImagelessFramebufferFeaturesKHR>();
+        assert(query_imageless_framebuffer.imagelessFramebuffer);
+        device_imageless_framebuffer.imagelessFramebuffer = true;
+        add_extension(device_imageless_framebuffer);
     }
 
     m_geometry_shader_supported = device_features.geometryShader;

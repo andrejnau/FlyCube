@@ -12,8 +12,10 @@ public:
 
     vk::Framebuffer GetFramebuffer() const;
     vk::Extent2D GetExtent() const;
+    const std::vector<vk::ImageView>& GetAttachments() const;
 
 private:
     vk::UniqueFramebuffer m_framebuffer;
     vk::Extent2D m_extent;
+    std::vector<vk::ImageView> m_attachments;
 };

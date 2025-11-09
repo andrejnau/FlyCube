@@ -120,7 +120,8 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
             .sample_count = 1,
             .usage = BindFlag::kRenderTarget | BindFlag::kCopyDest,
         };
-        std::shared_ptr<VKResource> back_buffer = VKResource::WrapSwapchainImage(m_device, m_images[i], texture_desc);
+        std::shared_ptr<VKResource> back_buffer =
+            VKResource::WrapSwapchainImage(m_device, m_images[i], texture_desc, swapchain_info.imageUsage);
         m_command_list->ResourceBarrier({ { back_buffer, ResourceState::kUndefined, ResourceState::kPresent } });
         m_back_buffers.emplace_back(std::move(back_buffer));
     }

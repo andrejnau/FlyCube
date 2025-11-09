@@ -9,8 +9,10 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
     , m_extent(desc.width, desc.height)
 {
     vk::FramebufferCreateInfo framebuffer_info = {};
-    std::vector<vk::ImageView> attachment_views;
     framebuffer_info.layers = 1;
+
+    std::deque<vk::Format> formats;
+    std::vector<vk::FramebufferAttachmentImageInfo> attachment_image_infos = {};
     auto add_view = [&](const std::shared_ptr<View>& view) {
         if (!view) {
             return;
@@ -20,9 +22,22 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
         if (!resource) {
             return;
         }
-        attachment_views.emplace_back(vk_view.GetImageView());
-
         decltype(auto) vk_resource = resource->As<VKResource>();
+
+        formats.push_back(static_cast<vk::Format>(vk_resource.GetFormat()));
+
+        vk::FramebufferAttachmentImageInfo frame_buffer_attachment_image_info = {};
+        frame_buffer_attachment_image_info.flags = vk_resource.GetImageCreateFlags();
+        frame_buffer_attachment_image_info.usage = vk_resource.GetImageUsageFlags();
+        frame_buffer_attachment_image_info.width = vk_resource.GetWidth();
+        frame_buffer_attachment_image_info.height = vk_resource.GetHeight();
+        frame_buffer_attachment_image_info.layerCount = vk_resource.GetLayerCount();
+        frame_buffer_attachment_image_info.viewFormatCount = 1;
+        frame_buffer_attachment_image_info.pViewFormats = &formats.back();
+        attachment_image_infos.push_back(frame_buffer_attachment_image_info);
+
+        m_attachments.emplace_back(vk_view.GetImageView());
+
         framebuffer_info.layers = std::max<uint32_t>(framebuffer_info.layers, vk_resource.GetLayerCount());
     };
     for (auto& rtv : desc.colors) {
@@ -34,8 +49,12 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
     framebuffer_info.width = m_extent.width;
     framebuffer_info.height = m_extent.height;
     framebuffer_info.renderPass = desc.render_pass->As<VKRenderPass>().GetRenderPass();
-    framebuffer_info.attachmentCount = attachment_views.size();
-    framebuffer_info.pAttachments = attachment_views.data();
+    framebuffer_info.flags = vk::FramebufferCreateFlagBits::eImageless;
+    framebuffer_info.attachmentCount = attachment_image_infos.size();
+    vk::FramebufferAttachmentsCreateInfo framebuffer_attachments_info = {};
+    framebuffer_attachments_info.attachmentImageInfoCount = attachment_image_infos.size();
+    framebuffer_attachments_info.pAttachmentImageInfos = attachment_image_infos.data();
+    framebuffer_info.pNext = &framebuffer_attachments_info;
     m_framebuffer = device.GetDevice().createFramebufferUnique(framebuffer_info);
 }
 
@@ -47,4 +66,9 @@ vk::Framebuffer VKFramebuffer::GetFramebuffer() const
 vk::Extent2D VKFramebuffer::GetExtent() const
 {
     return m_extent;
+}
+
+const std::vector<vk::ImageView>& VKFramebuffer::GetAttachments() const
+{
+    return m_attachments;
 }
