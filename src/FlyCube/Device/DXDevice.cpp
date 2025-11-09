@@ -6,7 +6,6 @@
 #include "CommandList/DXCommandList.h"
 #include "CommandQueue/DXCommandQueue.h"
 #include "Fence/DXFence.h"
-#include "Framebuffer/FramebufferBase.h"
 #include "Memory/DXMemory.h"
 #include "Pipeline/DXComputePipeline.h"
 #include "Pipeline/DXGraphicsPipeline.h"

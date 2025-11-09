@@ -6,7 +6,6 @@
 #include "CommandList/RecordCommandList.h"
 #include "CommandQueue/MTCommandQueue.h"
 #include "Fence/MTFence.h"
-#include "Framebuffer/FramebufferBase.h"
 #include "Instance/MTInstance.h"
 #include "Memory/MTMemory.h"
 #include "Pipeline/MTComputePipeline.h"

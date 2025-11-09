@@ -1,6 +1,5 @@
 #pragma once
 #include "BindingSet/BindingSet.h"
-#include "Framebuffer/Framebuffer.h"
 #include "Instance/BaseTypes.h"
 #include "Instance/QueryInterface.h"
 #include "Pipeline/Pipeline.h"

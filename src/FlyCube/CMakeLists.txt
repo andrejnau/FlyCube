@@ -82,12 +82,6 @@ list(APPEND Fence
     Fence/Fence.h
 )
 
-list(APPEND Framebuffer
-    Framebuffer/Framebuffer.h
-    Framebuffer/FramebufferBase.cpp
-    Framebuffer/FramebufferBase.h
-)
-
 list(APPEND GPUDescriptorPool
     $<$<BOOL:${DIRECTX_SUPPORT}>:GPUDescriptorPool/DXGPUDescriptorPool.cpp>
     $<$<BOOL:${DIRECTX_SUPPORT}>:GPUDescriptorPool/DXGPUDescriptorPool.h>
@@ -278,7 +272,6 @@ add_library(FlyCube
     ${CPUDescriptorPool}
     ${Device}
     ${Fence}
-    ${Framebuffer}
     ${GPUDescriptorPool}
     ${HLSLCompiler}
     ${Instance}

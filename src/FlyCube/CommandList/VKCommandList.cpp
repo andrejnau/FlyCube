@@ -3,7 +3,6 @@
 #include "Adapter/VKAdapter.h"
 #include "BindingSet/VKBindingSet.h"
 #include "Device/VKDevice.h"
-#include "Framebuffer/FramebufferBase.h"
 #include "Instance/VKInstance.h"
 #include "Pipeline/VKComputePipeline.h"
 #include "Pipeline/VKGraphicsPipeline.h"

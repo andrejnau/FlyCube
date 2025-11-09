@@ -2,7 +2,6 @@
 
 #include "BindingSet/MTBindingSet.h"
 #include "Device/MTDevice.h"
-#include "Framebuffer/FramebufferBase.h"
 #include "Pipeline/MTComputePipeline.h"
 #include "Pipeline/MTGraphicsPipeline.h"
 #include "Resource/MTResource.h"
