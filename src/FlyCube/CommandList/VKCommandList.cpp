@@ -144,8 +144,8 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
                                     const ClearDesc& clear_desc)
 {
     if (m_device.IsDynamicRenderingSupported()) {
-        decltype(auto) vk_framebuffer = framebuffer->As<VKFramebuffer>();
-        decltype(auto) vk_render_pass = render_pass->As<VKRenderPass>();
+        const auto& render_pass_desc = render_pass->As<VKRenderPass>().GetDesc();
+        const auto& framebuffer_desc = framebuffer->As<FramebufferBase>().GetDesc();
 
         uint32_t layers = std::numeric_limits<uint32_t>::max();
         auto get_image_view = [&](const std::shared_ptr<View>& view) -> vk::ImageView {
@@ -156,9 +156,6 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
             layers = std::min(layers, vk_view.GetLayerCount());
             return vk_view.GetImageView();
         };
-
-        const auto& render_pass_desc = vk_render_pass.GetDesc();
-        const auto& framebuffer_desc = vk_framebuffer.GetDesc();
 
         std::vector<vk::RenderingAttachmentInfo> color_attachments(render_pass_desc.colors.size());
         for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
@@ -200,7 +197,8 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         }
 
         vk::RenderingInfo rendering_info = {};
-        rendering_info.renderArea.extent = vk_framebuffer.GetExtent();
+        rendering_info.renderArea.extent.width = framebuffer_desc.width;
+        rendering_info.renderArea.extent.height = framebuffer_desc.height;
         rendering_info.layerCount = layers;
         rendering_info.colorAttachmentCount = color_attachments.size();
         rendering_info.pColorAttachments = color_attachments.data();
@@ -208,12 +206,18 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         rendering_info.pStencilAttachment = &stencil_attachment;
         m_command_list->beginRendering(&rendering_info);
     } else {
-        decltype(auto) vk_framebuffer = framebuffer->As<VKFramebuffer>();
-        decltype(auto) vk_render_pass = render_pass->As<VKRenderPass>();
+        const auto& vk_render_pass = render_pass->As<VKRenderPass>();
+        const auto& render_pass_desc = vk_render_pass.GetDesc();
+
+        VKFramebuffer vk_framebuffer(m_device, framebuffer->As<FramebufferBase>().GetDesc(),
+                                     vk_render_pass.GetRenderPass());
+        m_framebuffers.push_back(vk_framebuffer.TakeFramebuffer());
+
         vk::RenderPassBeginInfo render_pass_info = {};
         render_pass_info.renderPass = vk_render_pass.GetRenderPass();
-        render_pass_info.framebuffer = vk_framebuffer.GetFramebuffer();
-        render_pass_info.renderArea.extent = vk_framebuffer.GetExtent();
+        render_pass_info.framebuffer = m_framebuffers.back().get();
+        render_pass_info.renderArea.extent.width = vk_framebuffer.GetDesc().width;
+        render_pass_info.renderArea.extent.height = vk_framebuffer.GetDesc().height;
         std::vector<vk::ClearValue> clear_values;
         for (const auto& color : clear_desc.colors) {
             auto& clear_value = clear_values.emplace_back();
@@ -222,8 +226,8 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
             clear_value.color.float32[2] = color.b;
             clear_value.color.float32[3] = color.a;
         }
-        clear_values.resize(vk_render_pass.GetDesc().colors.size());
-        if (vk_render_pass.GetDesc().depth_stencil.format != gli::FORMAT_UNDEFINED) {
+        clear_values.resize(render_pass_desc.colors.size());
+        if (render_pass_desc.depth_stencil.format != gli::FORMAT_UNDEFINED) {
             vk::ClearValue clear_value = {};
             clear_value.depthStencil.depth = clear_desc.depth;
             clear_value.depthStencil.stencil = clear_desc.stencil;

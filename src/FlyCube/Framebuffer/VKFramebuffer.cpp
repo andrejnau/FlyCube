@@ -1,16 +1,16 @@
 #include "Framebuffer/VKFramebuffer.h"
 
 #include "Device/VKDevice.h"
-#include "Pipeline/VKGraphicsPipeline.h"
 #include "View/VKView.h"
 
-VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
+#include <deque>
+
+VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc, vk::RenderPass render_pass)
     : FramebufferBase(desc)
-    , m_extent(desc.width, desc.height)
 {
     vk::FramebufferCreateInfo framebuffer_info = {};
-    framebuffer_info.width = m_extent.width;
-    framebuffer_info.height = m_extent.height;
+    framebuffer_info.width = desc.width;
+    framebuffer_info.height = desc.height;
     framebuffer_info.layers = std::numeric_limits<uint32_t>::max();
 
     std::deque<vk::Format> formats;
@@ -54,7 +54,7 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
         framebuffer_info.layers = 1;
     }
 
-    framebuffer_info.renderPass = desc.render_pass->As<VKRenderPass>().GetRenderPass();
+    framebuffer_info.renderPass = render_pass;
     framebuffer_info.flags = vk::FramebufferCreateFlagBits::eImageless;
     framebuffer_info.attachmentCount = attachment_image_infos.size();
     vk::FramebufferAttachmentsCreateInfo framebuffer_attachments_info = {};
@@ -64,17 +64,12 @@ VKFramebuffer::VKFramebuffer(VKDevice& device, const FramebufferDesc& desc)
     m_framebuffer = device.GetDevice().createFramebufferUnique(framebuffer_info);
 }
 
-vk::Framebuffer VKFramebuffer::GetFramebuffer() const
-{
-    return m_framebuffer.get();
-}
-
-vk::Extent2D VKFramebuffer::GetExtent() const
-{
-    return m_extent;
-}
-
 const std::vector<vk::ImageView>& VKFramebuffer::GetAttachments() const
 {
     return m_attachments;
+}
+
+vk::UniqueFramebuffer VKFramebuffer::TakeFramebuffer()
+{
+    return std::move(m_framebuffer);
 }

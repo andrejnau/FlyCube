@@ -6,7 +6,7 @@
 #include "CommandList/VKCommandList.h"
 #include "CommandQueue/VKCommandQueue.h"
 #include "Fence/VKTimelineSemaphore.h"
-#include "Framebuffer/VKFramebuffer.h"
+#include "Framebuffer/FramebufferBase.h"
 #include "Instance/VKInstance.h"
 #include "Memory/VKMemory.h"
 #include "Pipeline/VKComputePipeline.h"
@@ -576,7 +576,7 @@ std::shared_ptr<RenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& des
 
 std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& desc)
 {
-    return std::make_shared<VKFramebuffer>(*this, desc);
+    return std::make_shared<FramebufferBase>(desc);
 }
 
 std::shared_ptr<Shader> VKDevice::CreateShader(const std::vector<uint8_t>& blob,
