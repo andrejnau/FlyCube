@@ -184,13 +184,11 @@ list(APPEND QueryHeap
 )
 
 list(APPEND RenderPass
-    $<$<BOOL:${DIRECTX_SUPPORT}>:RenderPass/DXRenderPass.cpp>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:RenderPass/DXRenderPass.h>
-    $<$<BOOL:${METAL_SUPPORT}>:RenderPass/MTRenderPass.h>
-    $<$<BOOL:${METAL_SUPPORT}>:RenderPass/MTRenderPass.mm>
     $<$<BOOL:${VULKAN_SUPPORT}>:RenderPass/VKRenderPass.cpp>
     $<$<BOOL:${VULKAN_SUPPORT}>:RenderPass/VKRenderPass.h>
     RenderPass/RenderPass.h
+    RenderPass/RenderPassBase.cpp
+    RenderPass/RenderPassBase.h
 )
 
 list(APPEND Resource

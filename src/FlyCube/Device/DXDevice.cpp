@@ -13,7 +13,7 @@
 #include "Pipeline/DXRayTracingPipeline.h"
 #include "Program/ProgramBase.h"
 #include "QueryHeap/DXRayTracingQueryHeap.h"
-#include "RenderPass/DXRenderPass.h"
+#include "RenderPass/RenderPassBase.h"
 #include "Shader/ShaderBase.h"
 #include "Swapchain/DXSwapchain.h"
 #include "Utilities/DXGIFormatHelper.h"
@@ -326,7 +326,7 @@ std::shared_ptr<BindingSet> DXDevice::CreateBindingSet(const std::shared_ptr<Bin
 
 std::shared_ptr<RenderPass> DXDevice::CreateRenderPass(const RenderPassDesc& desc)
 {
-    return std::make_shared<DXRenderPass>(desc);
+    return std::make_shared<RenderPassBase>(desc);
 }
 
 std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const FramebufferDesc& desc)

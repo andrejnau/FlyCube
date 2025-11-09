@@ -12,7 +12,7 @@
 #include "Pipeline/MTComputePipeline.h"
 #include "Pipeline/MTGraphicsPipeline.h"
 #include "Program/ProgramBase.h"
-#include "RenderPass/MTRenderPass.h"
+#include "RenderPass/RenderPassBase.h"
 #include "Resource/MTResource.h"
 #include "Shader/MTShader.h"
 #include "Swapchain/MTSwapchain.h"
@@ -142,7 +142,7 @@ std::shared_ptr<BindingSet> MTDevice::CreateBindingSet(const std::shared_ptr<Bin
 
 std::shared_ptr<RenderPass> MTDevice::CreateRenderPass(const RenderPassDesc& desc)
 {
-    return std::make_shared<MTRenderPass>(desc);
+    return std::make_shared<RenderPassBase>(desc);
 }
 
 std::shared_ptr<Framebuffer> MTDevice::CreateFramebuffer(const FramebufferDesc& desc)

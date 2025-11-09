@@ -7,7 +7,7 @@
 #include "Pipeline/DXGraphicsPipeline.h"
 #include "Pipeline/DXRayTracingPipeline.h"
 #include "QueryHeap/DXRayTracingQueryHeap.h"
-#include "RenderPass/DXRenderPass.h"
+#include "RenderPass/RenderPassBase.h"
 #include "Resource/DXResource.h"
 #include "Utilities/DXUtility.h"
 #include "Utilities/NotReached.h"
@@ -153,7 +153,7 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
                                     const std::shared_ptr<Framebuffer>& framebuffer,
                                     const ClearDesc& clear_desc)
 {
-    decltype(auto) dx_render_pass = render_pass->As<DXRenderPass>();
+    decltype(auto) dx_render_pass = render_pass->As<RenderPassBase>();
     decltype(auto) dx_framebuffer = framebuffer->As<FramebufferBase>();
     auto& rtvs = dx_framebuffer.GetDesc().colors;
     auto& dsv = dx_framebuffer.GetDesc().depth_stencil;
