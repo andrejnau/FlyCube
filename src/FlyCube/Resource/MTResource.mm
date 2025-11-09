@@ -216,27 +216,40 @@ uint64_t MTResource::GetWidth() const
     if (m_resource_type == ResourceType::kTexture) {
         return m_texture.desc.width;
     }
+    assert(m_resource_type == ResourceType::kBuffer);
     return m_buffer.size;
 }
 
 uint32_t MTResource::GetHeight() const
 {
-    return m_texture.desc.height;
+    if (m_resource_type == ResourceType::kTexture) {
+        return m_texture.desc.height;
+    }
+    return 1;
 }
 
 uint16_t MTResource::GetLayerCount() const
 {
-    return m_texture.desc.depth_or_array_layers;
+    if (m_resource_type == ResourceType::kTexture) {
+        return m_texture.desc.depth_or_array_layers;
+    }
+    return 1;
 }
 
 uint16_t MTResource::GetLevelCount() const
 {
-    return m_texture.desc.mip_levels;
+    if (m_resource_type == ResourceType::kTexture) {
+        return m_texture.desc.mip_levels;
+    }
+    return 1;
 }
 
 uint32_t MTResource::GetSampleCount() const
 {
-    return m_texture.desc.sample_count;
+    if (m_resource_type == ResourceType::kTexture) {
+        return m_texture.desc.sample_count;
+    }
+    return 1;
 }
 
 uint64_t MTResource::GetAccelerationStructureHandle() const

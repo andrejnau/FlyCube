@@ -291,27 +291,40 @@ uint64_t VKResource::GetWidth() const
     if (m_resource_type == ResourceType::kTexture) {
         return m_image.desc.width;
     }
+    assert(m_resource_type == ResourceType::kBuffer);
     return m_buffer.size;
 }
 
 uint32_t VKResource::GetHeight() const
 {
-    return m_image.desc.height;
+    if (m_resource_type == ResourceType::kTexture) {
+        return m_image.desc.height;
+    }
+    return 1;
 }
 
 uint16_t VKResource::GetLayerCount() const
 {
-    return m_image.desc.depth_or_array_layers;
+    if (m_resource_type == ResourceType::kTexture) {
+        return m_image.desc.depth_or_array_layers;
+    }
+    return 1;
 }
 
 uint16_t VKResource::GetLevelCount() const
 {
-    return m_image.desc.mip_levels;
+    if (m_resource_type == ResourceType::kTexture) {
+        return m_image.desc.mip_levels;
+    }
+    return 1;
 }
 
 uint32_t VKResource::GetSampleCount() const
 {
-    return m_image.desc.sample_count;
+    if (m_resource_type == ResourceType::kTexture) {
+        return m_image.desc.sample_count;
+    }
+    return 1;
 }
 
 uint64_t VKResource::GetAccelerationStructureHandle() const
