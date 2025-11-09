@@ -329,11 +329,6 @@ std::shared_ptr<RenderPass> DXDevice::CreateRenderPass(const RenderPassDesc& des
     return std::make_shared<RenderPassBase>(desc);
 }
 
-std::shared_ptr<Framebuffer> DXDevice::CreateFramebuffer(const FramebufferDesc& desc)
-{
-    return std::make_shared<FramebufferBase>(desc);
-}
-
 std::shared_ptr<Shader> DXDevice::CreateShader(const std::vector<uint8_t>& blob,
                                                ShaderBlobType blob_type,
                                                ShaderType shader_type)

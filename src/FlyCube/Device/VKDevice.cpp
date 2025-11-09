@@ -574,11 +574,6 @@ std::shared_ptr<RenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& des
     return std::make_shared<RenderPassBase>(desc);
 }
 
-std::shared_ptr<Framebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& desc)
-{
-    return std::make_shared<FramebufferBase>(desc);
-}
-
 std::shared_ptr<Shader> VKDevice::CreateShader(const std::vector<uint8_t>& blob,
                                                ShaderBlobType blob_type,
                                                ShaderType shader_type)

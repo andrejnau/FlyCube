@@ -54,7 +54,6 @@ public:
     virtual std::shared_ptr<BindingSetLayout> CreateBindingSetLayout(const std::vector<BindKey>& descs) = 0;
     virtual std::shared_ptr<BindingSet> CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout) = 0;
     virtual std::shared_ptr<RenderPass> CreateRenderPass(const RenderPassDesc& desc) = 0;
-    virtual std::shared_ptr<Framebuffer> CreateFramebuffer(const FramebufferDesc& desc) = 0;
     virtual std::shared_ptr<Shader> CreateShader(const std::vector<uint8_t>& blob,
                                                  ShaderBlobType blob_type,
                                                  ShaderType shader_type) = 0;

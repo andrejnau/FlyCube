@@ -145,11 +145,6 @@ std::shared_ptr<RenderPass> MTDevice::CreateRenderPass(const RenderPassDesc& des
     return std::make_shared<RenderPassBase>(desc);
 }
 
-std::shared_ptr<Framebuffer> MTDevice::CreateFramebuffer(const FramebufferDesc& desc)
-{
-    return std::make_shared<FramebufferBase>(desc);
-}
-
 std::shared_ptr<Shader> MTDevice::CreateShader(const std::vector<uint8_t>& blob,
                                                ShaderBlobType blob_type,
                                                ShaderType shader_type)
