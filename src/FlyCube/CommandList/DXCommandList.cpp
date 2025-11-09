@@ -150,13 +150,12 @@ void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
 }
 
 void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass,
-                                    const std::shared_ptr<Framebuffer>& framebuffer,
+                                    const FramebufferDesc& framebuffer_desc,
                                     const ClearDesc& clear_desc)
 {
     decltype(auto) dx_render_pass = render_pass->As<RenderPassBase>();
-    decltype(auto) dx_framebuffer = framebuffer->As<FramebufferBase>();
-    auto& rtvs = dx_framebuffer.GetDesc().colors;
-    auto& dsv = dx_framebuffer.GetDesc().depth_stencil;
+    auto& rtvs = framebuffer_desc.colors;
+    auto& dsv = framebuffer_desc.depth_stencil;
 
     auto get_handle = [](const std::shared_ptr<View>& view) {
         if (!view) {

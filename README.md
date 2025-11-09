@@ -116,7 +116,7 @@ for (uint32_t i = 0; i < kFrameCount; ++i) {
     command_list->IASetVertexBuffer(0, vertex_buffer, 0);
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
     ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
-    command_list->BeginRenderPass(render_pass, framebuffers[i], clear_desc);
+    command_list->BeginRenderPass(render_pass, framebuffer_desc, clear_desc);
     command_list->DrawIndexed(3, 1, 0, 0, 0);
     command_list->EndRenderPass();
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });

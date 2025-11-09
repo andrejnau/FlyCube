@@ -191,12 +191,11 @@ void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
 }
 
 void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass,
-                                    const std::shared_ptr<Framebuffer>& framebuffer,
+                                    const FramebufferDesc& framebuffer_desc,
                                     const ClearDesc& clear_desc)
 {
     if (m_device.IsDynamicRenderingSupported()) {
         const auto& render_pass_desc = render_pass->As<RenderPassBase>().GetDesc();
-        const auto& framebuffer_desc = framebuffer->As<FramebufferBase>().GetDesc();
 
         uint32_t layers = std::numeric_limits<uint32_t>::max();
         auto get_image_view = [&](const std::shared_ptr<View>& view) -> vk::ImageView {
@@ -258,8 +257,6 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         m_command_list->beginRendering(&rendering_info);
     } else {
         const auto& render_pass_desc = render_pass->As<RenderPassBase>().GetDesc();
-        const auto& framebuffer_desc = framebuffer->As<FramebufferBase>().GetDesc();
-
         assert(m_state->GetPipelineType() == PipelineType::kGraphics);
         const auto& vk_graphics_pipeline = m_state->As<VKGraphicsPipeline>();
         VKFramebuffer vk_framebuffer(m_device, framebuffer_desc, vk_graphics_pipeline.GetRenderPass());

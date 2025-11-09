@@ -291,7 +291,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
 
         command_list->BindPipeline(m_depth_stencil_pass_pipeline);
-        command_list->BeginRenderPass(m_depth_stencil_pass_render_pass, m_depth_stencil_pass_framebuffers[i],
+        command_list->BeginRenderPass(m_depth_stencil_pass_render_pass, depth_stencil_pass_framebuffer_desc,
                                       /*clear_desc=*/{});
         command_list->SetViewport(0, 0, depth_stencil_size.x, depth_stencil_size.y);
         command_list->SetScissorRect(0, 0, depth_stencil_size.x, depth_stencil_size.y);
@@ -306,7 +306,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         command_list->EndRenderPass();
 
         command_list->BindPipeline(m_pipeline);
-        command_list->BeginRenderPass(m_render_pass, m_framebuffers[i], /*clear_desc=*/{});
+        command_list->BeginRenderPass(m_render_pass, framebuffer_desc, /*clear_desc=*/{});
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         for (size_t j = 0; j < m_fullscreen_triangle_render_model.GetMeshCount(); ++j) {

@@ -110,7 +110,7 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
-        command_list->BeginRenderPass(m_render_pass, m_framebuffers[i], clear_desc);
+        command_list->BeginRenderPass(m_render_pass, framebuffer_desc, clear_desc);
         command_list->DispatchMesh(1, 1, 1);
         command_list->EndRenderPass();
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });

@@ -18,7 +18,7 @@ public:
     void BindPipeline(const std::shared_ptr<Pipeline>& state) override;
     void BindBindingSet(const std::shared_ptr<BindingSet>& binding_set) override;
     void BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass,
-                         const std::shared_ptr<Framebuffer>& framebuffer,
+                         const FramebufferDesc& framebuffer_desc,
                          const ClearDesc& clear_desc) override;
     void EndRenderPass() override;
     void BeginEvent(const std::string& name) override;

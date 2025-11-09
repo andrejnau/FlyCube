@@ -36,10 +36,10 @@ public:
     }
 
     void BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass,
-                         const std::shared_ptr<Framebuffer>& framebuffer,
+                         const FramebufferDesc& framebuffer_desc,
                          const ClearDesc& clear_desc) override
     {
-        ApplyAndRecord(&T::BeginRenderPass, render_pass, framebuffer, clear_desc);
+        ApplyAndRecord(&T::BeginRenderPass, render_pass, framebuffer_desc, clear_desc);
     }
 
     void EndRenderPass() override
