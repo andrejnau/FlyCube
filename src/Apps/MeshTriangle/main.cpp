@@ -75,7 +75,7 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
 
     RenderPassDesc render_pass_desc = {
-        { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
+        { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
     GraphicsPipelineDesc pipeline_desc = {
         .program = m_device->CreateProgram({ m_mesh_shader, m_pixel_shader }),

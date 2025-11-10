@@ -205,8 +205,8 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     m_stencil_read_view = m_device->CreateView(m_depth_stencil_texture, stencil_read_view_desc);
 
     RenderPassDesc depth_stencil_pass_render_pass_desc = {
-        .depth_stencil = { m_depth_stencil_texture->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore,
-                           RenderPassLoadOp::kClear, RenderPassStoreOp::kStore },
+        .depth_stencil = { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore, RenderPassLoadOp::kClear,
+                           RenderPassStoreOp::kStore },
     };
 
     DepthStencilDesc depth_stencil_pass_depth_stencil_desc = {
@@ -226,7 +226,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     m_depth_stencil_pass_pipeline = m_device->CreateGraphicsPipeline(depth_stencil_pass_pipeline_desc);
 
     RenderPassDesc render_pass_desc = {
-        .colors = { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
+        .colors = { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
 
     DepthStencilDesc depth_stencil_desc = {

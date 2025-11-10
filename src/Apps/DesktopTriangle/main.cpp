@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     binding_set->WriteBindings({ { constant_buffer_key, constant_buffer_view } });
 
     RenderPassDesc render_pass_desc = {
-        { { swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
+        { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
     GraphicsPipelineDesc pipeline_desc = {
         .program = device->CreateProgram({ vertex_shader, pixel_shader }),

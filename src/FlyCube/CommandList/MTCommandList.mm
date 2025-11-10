@@ -196,6 +196,9 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
                                     const FramebufferDesc& framebuffer_desc,
                                     const ClearDesc& clear_desc)
 {
+    assert(m_state && m_state->GetPipelineType() == PipelineType::kGraphics);
+    const GraphicsPipelineDesc& pipeline_desc = m_state->As<MTGraphicsPipeline>().GetDesc();
+
     CloseComputeEncoder();
 
     MTL4RenderPassDescriptor* render_pass_descriptor = [MTL4RenderPassDescriptor new];
@@ -223,9 +226,8 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
 
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
         decltype(auto) color_attachment = render_pass_descriptor.colorAttachments[i];
-        decltype(auto) color_desc = render_pass_desc.colors[i];
-        add_attachment(color_attachment, color_desc.format, color_desc.load_op, color_desc.store_op,
-                       framebuffer_desc.colors[i]);
+        add_attachment(color_attachment, pipeline_desc.color_formats[i], render_pass_desc.colors[i].load_op,
+                       render_pass_desc.colors[i].store_op, framebuffer_desc.colors[i]);
     }
     for (size_t i = 0; i < clear_desc.colors.size(); ++i) {
         decltype(auto) color_attachment = render_pass_descriptor.colorAttachments[i];
@@ -233,27 +235,27 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
                                                         clear_desc.colors[i].b, clear_desc.colors[i].a);
     }
 
-    decltype(auto) depth_stencil_desc = render_pass_desc.depth_stencil;
-    if (depth_stencil_desc.format != gli::format::FORMAT_UNDEFINED) {
-        decltype(auto) depth_attachment = render_pass_descriptor.depthAttachment;
-        if (gli::is_depth(depth_stencil_desc.format)) {
-            add_attachment(depth_attachment, depth_stencil_desc.format, depth_stencil_desc.depth_load_op,
-                           depth_stencil_desc.depth_store_op, framebuffer_desc.depth_stencil);
-        }
-        depth_attachment.clearDepth = clear_desc.depth;
-
-        decltype(auto) stencil_attachment = render_pass_descriptor.stencilAttachment;
-        if (gli::is_stencil(depth_stencil_desc.format)) {
-            add_attachment(stencil_attachment, depth_stencil_desc.format, depth_stencil_desc.stencil_load_op,
-                           depth_stencil_desc.stencil_store_op, framebuffer_desc.depth_stencil);
-        }
-        stencil_attachment.clearStencil = clear_desc.stencil;
+    decltype(auto) depth_attachment = render_pass_descriptor.depthAttachment;
+    if (pipeline_desc.depth_stencil_format != gli::format::FORMAT_UNDEFINED &&
+        gli::is_depth(pipeline_desc.depth_stencil_format)) {
+        add_attachment(depth_attachment, pipeline_desc.depth_stencil_format,
+                       render_pass_desc.depth_stencil.depth_load_op, render_pass_desc.depth_stencil.depth_store_op,
+                       framebuffer_desc.depth_stencil);
     }
+    depth_attachment.clearDepth = clear_desc.depth;
+
+    decltype(auto) stencil_attachment = render_pass_descriptor.stencilAttachment;
+    if (pipeline_desc.depth_stencil_format != gli::format::FORMAT_UNDEFINED &&
+        gli::is_stencil(pipeline_desc.depth_stencil_format)) {
+        add_attachment(stencil_attachment, pipeline_desc.depth_stencil_format,
+                       render_pass_desc.depth_stencil.stencil_load_op, render_pass_desc.depth_stencil.stencil_store_op,
+                       framebuffer_desc.depth_stencil);
+    }
+    stencil_attachment.clearStencil = clear_desc.stencil;
 
     render_pass_descriptor.renderTargetWidth = framebuffer_desc.width;
     render_pass_descriptor.renderTargetHeight = framebuffer_desc.height;
-    decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
-    render_pass_descriptor.defaultRasterSampleCount = mt_state.GetDesc().sample_count;
+    render_pass_descriptor.defaultRasterSampleCount = pipeline_desc.sample_count;
 
     m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
     if (m_render_encoder == nullptr) {

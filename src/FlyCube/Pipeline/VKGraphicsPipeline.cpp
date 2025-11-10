@@ -241,3 +241,8 @@ void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDes
         attribute.format = static_cast<vk::Format>(vertex.format);
     }
 }
+
+const GraphicsPipelineDesc& VKGraphicsPipeline::GetDesc() const
+{
+    return m_desc;
+}

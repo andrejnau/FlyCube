@@ -222,9 +222,8 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_depth_stencil_view = m_device->CreateView(m_depth_stencil_texture, depth_stencil_view_desc);
 
     RenderPassDesc render_pass_desc = {
-        .colors = { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
-        .depth_stencil = { m_depth_stencil_texture->GetFormat(), RenderPassLoadOp::kClear,
-                           RenderPassStoreOp::kDontCare },
+        .colors = { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
+        .depth_stencil = { RenderPassLoadOp::kClear, RenderPassStoreOp::kDontCare },
     };
 
     GraphicsPipelineDesc pipeline_desc = {

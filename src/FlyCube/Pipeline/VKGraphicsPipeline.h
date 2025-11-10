@@ -11,6 +11,8 @@ public:
     VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc);
     PipelineType GetPipelineType() const override;
 
+    const GraphicsPipelineDesc& GetDesc() const;
+
 private:
     void CreateInputLayout(std::vector<vk::VertexInputBindingDescription>& binding_desc,
                            std::vector<vk::VertexInputAttributeDescription>& attribute_desc);
