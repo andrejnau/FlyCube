@@ -254,11 +254,9 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.shaderImageGatherExtended = physical_device_features.shaderImageGatherExtended;
 
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
-    vk::PhysicalDeviceVulkan13Features device_vulkan13_features = {};
     vk::PhysicalDeviceDescriptorIndexingFeaturesEXT device_descriptor_indexing = {};
     vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR device_buffer_device_address = {};
     vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR device_timeline_semaphore = {};
-    vk::PhysicalDeviceDynamicRenderingFeaturesKHR device_dynamic_rendering = {};
     if (m_device_properties.apiVersion >= VK_API_VERSION_1_2) {
         auto query_device_vulkan12_features = GetFeatures2<vk::PhysicalDeviceVulkan12Features>();
         device_vulkan12_features.drawIndirectCount = query_device_vulkan12_features.drawIndirectCount;
@@ -278,8 +276,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
             device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
             device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
         }
-        assert(query_device_vulkan12_features.imagelessFramebuffer);
-        device_vulkan12_features.imagelessFramebuffer = true;
         add_extension(device_vulkan12_features);
     } else {
         if (enabled_extension_set.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
@@ -304,19 +300,19 @@ VKDevice::VKDevice(VKAdapter& adapter)
         add_extension(device_timeline_semaphore);
     }
 
+    vk::PhysicalDeviceVulkan13Features device_vulkan13_features = {};
+    vk::PhysicalDeviceDynamicRenderingFeaturesKHR device_dynamic_rendering = {};
     if (m_device_properties.apiVersion >= VK_API_VERSION_1_3) {
-        auto query_device_vulkan13_features = GetFeatures2<vk::PhysicalDeviceVulkan13Features>();
-        device_vulkan13_features.dynamicRendering = query_device_vulkan13_features.dynamicRendering;
+        assert(GetFeatures2<vk::PhysicalDeviceVulkan13Features>().dynamicRendering);
+        device_vulkan13_features.dynamicRendering = true;
         add_extension(device_vulkan13_features);
     } else {
-        if (enabled_extension_set.contains(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
-            auto query_dynamic_rendering = GetFeatures2<vk::PhysicalDeviceDynamicRenderingFeaturesKHR>();
-            device_dynamic_rendering.dynamicRendering = query_dynamic_rendering.dynamicRendering;
-            add_extension(device_dynamic_rendering);
-        }
+        assert(enabled_extension_set.contains(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME));
+        assert(GetFeatures2<vk::PhysicalDeviceDynamicRenderingFeaturesKHR>().dynamicRendering);
+        device_dynamic_rendering.dynamicRendering = true;
+        add_extension(device_dynamic_rendering);
     }
 
-    assert(device_vulkan13_features.dynamicRendering || device_dynamic_rendering.dynamicRendering);
     m_geometry_shader_supported = device_features.geometryShader;
     m_draw_indirect_count_supported = device_vulkan12_features.drawIndirectCount ||
                                       enabled_extension_set.contains(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
