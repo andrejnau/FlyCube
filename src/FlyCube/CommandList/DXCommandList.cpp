@@ -205,7 +205,7 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     m_command_list4->BeginRenderPass(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), om_dsv_ptr,
                                      D3D12_RENDER_PASS_FLAG_NONE);
 
-    decltype(auto) shading_rate_image_view = framebuffer_desc.GetDesc().shading_rate_image;
+    decltype(auto) shading_rate_image_view = framebuffer_desc.shading_rate_image;
     if (shading_rate_image_view == m_shading_rate_image_view) {
         return;
     }
