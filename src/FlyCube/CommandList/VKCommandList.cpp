@@ -253,6 +253,18 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         rendering_info.pColorAttachments = color_attachments.data();
         rendering_info.pDepthAttachment = &depth_attachment;
         rendering_info.pStencilAttachment = &stencil_attachment;
+
+        vk::RenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate_attachment = {};
+        if (framebuffer_desc.shading_rate_image) {
+            fragment_shading_rate_attachment.imageView = get_image_view(framebuffer_desc.shading_rate_image);
+            fragment_shading_rate_attachment.imageLayout = vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR;
+            fragment_shading_rate_attachment.shadingRateAttachmentTexelSize.width =
+                m_device.GetShadingRateImageTileSize();
+            fragment_shading_rate_attachment.shadingRateAttachmentTexelSize.height =
+                m_device.GetShadingRateImageTileSize();
+            rendering_info.pNext = &fragment_shading_rate_attachment;
+        }
+
         m_command_list->beginRendering(&rendering_info);
     } else {
         const auto& render_pass_desc = render_pass->As<RenderPassBase>().GetDesc();
