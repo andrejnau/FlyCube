@@ -248,10 +248,10 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
         RenderPassDesc render_pass_desc = {
             .colors = { { .load_op = RenderPassLoadOp::kClear,
                           .store_op = RenderPassStoreOp::kStore,
-                          .clear_color = glm::vec4(0.0, 0.2, 0.4, 1.0) } },
-            .depth_stencil = { .depth_load_op = RenderPassLoadOp::kClear,
-                               .depth_store_op = RenderPassStoreOp::kDontCare,
-                               .clear_depth = 1.0 },
+                          .clear_value = glm::vec4(0.0, 0.2, 0.4, 1.0) } },
+            .depth = { .load_op = RenderPassLoadOp::kClear,
+                       .store_op = RenderPassStoreOp::kDontCare,
+                       .clear_value = 1.0 },
         };
         FramebufferDesc framebuffer_desc = {
             .width = app_size.width(),

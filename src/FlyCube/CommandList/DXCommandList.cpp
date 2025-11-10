@@ -168,10 +168,10 @@ void DXCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
         }
         D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { Convert(render_pass_desc.colors[slot].load_op), {} };
         if (render_pass_desc.colors[slot].load_op == RenderPassLoadOp::kClear) {
-            begin.Clear.ClearValue.Color[0] = render_pass_desc.colors[slot].clear_color.r;
-            begin.Clear.ClearValue.Color[1] = render_pass_desc.colors[slot].clear_color.g;
-            begin.Clear.ClearValue.Color[2] = render_pass_desc.colors[slot].clear_color.b;
-            begin.Clear.ClearValue.Color[3] = render_pass_desc.colors[slot].clear_color.a;
+            begin.Clear.ClearValue.Color[0] = render_pass_desc.colors[slot].clear_value.r;
+            begin.Clear.ClearValue.Color[1] = render_pass_desc.colors[slot].clear_value.g;
+            begin.Clear.ClearValue.Color[2] = render_pass_desc.colors[slot].clear_value.b;
+            begin.Clear.ClearValue.Color[3] = render_pass_desc.colors[slot].clear_value.a;
         }
         D3D12_RENDER_PASS_ENDING_ACCESS end = { Convert(render_pass_desc.colors[slot].store_op), {} };
         om_rtv.push_back({ handle, begin, end });
@@ -181,13 +181,12 @@ void DXCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
     D3D12_RENDER_PASS_DEPTH_STENCIL_DESC* om_dsv_ptr = nullptr;
     D3D12_CPU_DESCRIPTOR_HANDLE om_dsv_handle = get_handle(dsv);
     if (om_dsv_handle.ptr) {
-        D3D12_RENDER_PASS_BEGINNING_ACCESS depth_begin = { Convert(render_pass_desc.depth_stencil.depth_load_op), {} };
-        D3D12_RENDER_PASS_ENDING_ACCESS depth_end = { Convert(render_pass_desc.depth_stencil.depth_store_op), {} };
-        D3D12_RENDER_PASS_BEGINNING_ACCESS stencil_begin = { Convert(render_pass_desc.depth_stencil.stencil_load_op),
-                                                             {} };
-        D3D12_RENDER_PASS_ENDING_ACCESS stencil_end = { Convert(render_pass_desc.depth_stencil.stencil_store_op), {} };
-        depth_begin.Clear.ClearValue.DepthStencil.Depth = render_pass_desc.depth_stencil.clear_depth;
-        stencil_begin.Clear.ClearValue.DepthStencil.Stencil = render_pass_desc.depth_stencil.clear_stencil;
+        D3D12_RENDER_PASS_BEGINNING_ACCESS depth_begin = { Convert(render_pass_desc.depth.load_op), {} };
+        D3D12_RENDER_PASS_ENDING_ACCESS depth_end = { Convert(render_pass_desc.depth.store_op), {} };
+        D3D12_RENDER_PASS_BEGINNING_ACCESS stencil_begin = { Convert(render_pass_desc.stencil.load_op), {} };
+        D3D12_RENDER_PASS_ENDING_ACCESS stencil_end = { Convert(render_pass_desc.stencil.store_op), {} };
+        depth_begin.Clear.ClearValue.DepthStencil.Depth = render_pass_desc.depth.clear_value;
+        stencil_begin.Clear.ClearValue.DepthStencil.Stencil = render_pass_desc.stencil.clear_value;
         om_dsv = { om_dsv_handle, depth_begin, stencil_begin, depth_end, stencil_end };
         om_dsv_ptr = &om_dsv;
     }

@@ -157,10 +157,10 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
         color_attachment.loadOp = ConvertRenderPassLoadOp(render_pass_desc.colors[i].load_op);
         color_attachment.storeOp = ConvertRenderPassStoreOp(render_pass_desc.colors[i].store_op);
         if (render_pass_desc.colors[i].load_op == RenderPassLoadOp::kClear) {
-            color_attachment.clearValue.color.float32[0] = render_pass_desc.colors[i].clear_color.r;
-            color_attachment.clearValue.color.float32[1] = render_pass_desc.colors[i].clear_color.g;
-            color_attachment.clearValue.color.float32[2] = render_pass_desc.colors[i].clear_color.b;
-            color_attachment.clearValue.color.float32[3] = render_pass_desc.colors[i].clear_color.a;
+            color_attachment.clearValue.color.float32[0] = render_pass_desc.colors[i].clear_value.r;
+            color_attachment.clearValue.color.float32[1] = render_pass_desc.colors[i].clear_value.g;
+            color_attachment.clearValue.color.float32[2] = render_pass_desc.colors[i].clear_value.b;
+            color_attachment.clearValue.color.float32[3] = render_pass_desc.colors[i].clear_value.a;
         }
     }
 
@@ -169,18 +169,18 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
         depth_attachment.imageView = get_image_view(framebuffer_desc.depth_stencil);
         depth_attachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
     }
-    depth_attachment.loadOp = ConvertRenderPassLoadOp(render_pass_desc.depth_stencil.depth_load_op);
-    depth_attachment.storeOp = ConvertRenderPassStoreOp(render_pass_desc.depth_stencil.depth_store_op);
-    depth_attachment.clearValue.depthStencil.depth = render_pass_desc.depth_stencil.clear_depth;
+    depth_attachment.loadOp = ConvertRenderPassLoadOp(render_pass_desc.depth.load_op);
+    depth_attachment.storeOp = ConvertRenderPassStoreOp(render_pass_desc.depth.store_op);
+    depth_attachment.clearValue.depthStencil.depth = render_pass_desc.depth.clear_value;
 
     vk::RenderingAttachmentInfo stencil_attachment = {};
     if (framebuffer_desc.depth_stencil && gli::is_stencil(framebuffer_desc.depth_stencil->GetResource()->GetFormat())) {
         stencil_attachment.imageView = get_image_view(framebuffer_desc.depth_stencil);
         stencil_attachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
     }
-    stencil_attachment.loadOp = ConvertRenderPassLoadOp(render_pass_desc.depth_stencil.stencil_load_op);
-    stencil_attachment.storeOp = ConvertRenderPassStoreOp(render_pass_desc.depth_stencil.stencil_store_op);
-    stencil_attachment.clearValue.depthStencil.stencil = render_pass_desc.depth_stencil.clear_stencil;
+    stencil_attachment.loadOp = ConvertRenderPassLoadOp(render_pass_desc.stencil.load_op);
+    stencil_attachment.storeOp = ConvertRenderPassStoreOp(render_pass_desc.stencil.store_op);
+    stencil_attachment.clearValue.depthStencil.stencil = render_pass_desc.stencil.clear_value;
 
     vk::RenderingInfo rendering_info = {};
     rendering_info.renderArea.extent.width = framebuffer_desc.width;

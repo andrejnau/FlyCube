@@ -263,12 +263,8 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
 
         command_list->BindPipeline(m_depth_stencil_pass_pipeline);
         RenderPassDesc depth_stencil_pass_render_pass_desc = {
-            .depth_stencil = { .depth_load_op = RenderPassLoadOp::kClear,
-                               .depth_store_op = RenderPassStoreOp::kStore,
-                               .clear_depth = 1.0,
-                               .stencil_load_op = RenderPassLoadOp::kClear,
-                               .stencil_store_op = RenderPassStoreOp::kStore,
-                               .clear_stencil = 0 },
+            .depth = { .load_op = RenderPassLoadOp::kClear, .store_op = RenderPassStoreOp::kStore, .clear_value = 1.0 },
+            .stencil = { .load_op = RenderPassLoadOp::kClear, .store_op = RenderPassStoreOp::kStore, .clear_value = 0 },
         };
         FramebufferDesc depth_stencil_pass_framebuffer_desc = {
             .width = depth_stencil_size.x,

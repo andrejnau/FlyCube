@@ -283,37 +283,45 @@ enum class RenderPassStoreOp {
 struct RenderPassColorDesc {
     RenderPassLoadOp load_op = RenderPassLoadOp::kLoad;
     RenderPassStoreOp store_op = RenderPassStoreOp::kStore;
-    glm::vec4 clear_color = glm::vec4(0.0, 0.0, 0.0, 1.0);
+    glm::vec4 clear_value = glm::vec4(0.0, 0.0, 0.0, 1.0);
 
     auto MakeTie() const
     {
-        return std::tie(load_op, store_op, clear_color);
+        return std::tie(load_op, store_op, clear_value);
     }
 };
 
-struct RenderPassDepthStencilDesc {
-    RenderPassLoadOp depth_load_op = RenderPassLoadOp::kLoad;
-    RenderPassStoreOp depth_store_op = RenderPassStoreOp::kStore;
-    float clear_depth = 1.0;
-
-    RenderPassLoadOp stencil_load_op = RenderPassLoadOp::kLoad;
-    RenderPassStoreOp stencil_store_op = RenderPassStoreOp::kStore;
-    uint8_t clear_stencil = 0;
+struct RenderPassDepthDesc {
+    RenderPassLoadOp load_op = RenderPassLoadOp::kLoad;
+    RenderPassStoreOp store_op = RenderPassStoreOp::kStore;
+    float clear_value = 1.0;
 
     auto MakeTie() const
     {
-        return std::tie(depth_load_op, depth_store_op, clear_depth, stencil_load_op, stencil_store_op, clear_stencil);
+        return std::tie(load_op, store_op, clear_value);
+    }
+};
+
+struct RenderPassStencilDesc {
+    RenderPassLoadOp load_op = RenderPassLoadOp::kLoad;
+    RenderPassStoreOp store_op = RenderPassStoreOp::kStore;
+    uint8_t clear_value = 0;
+
+    auto MakeTie() const
+    {
+        return std::tie(load_op, store_op, clear_value);
     }
 };
 
 struct RenderPassDesc {
     std::vector<RenderPassColorDesc> colors;
-    RenderPassDepthStencilDesc depth_stencil;
+    RenderPassDepthDesc depth;
+    RenderPassStencilDesc stencil;
     uint32_t sample_count = 1;
 
     auto MakeTie() const
     {
-        return std::tie(colors, depth_stencil, sample_count);
+        return std::tie(colors, depth, stencil, sample_count);
     }
 };
 
