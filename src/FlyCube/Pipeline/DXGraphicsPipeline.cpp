@@ -59,8 +59,8 @@ CD3DX12_BLEND_DESC GetBlendDesc(const GraphicsPipelineDesc& desc)
         }
         return static_cast<D3D12_BLEND_OP>(0);
     };
-    for (size_t i = 0; i < m_desc.color_formats.size(); ++i) {
-        if (m_desc.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
+    for (size_t i = 0; i < desc.color_formats.size(); ++i) {
+        if (desc.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
             continue;
         }
         decltype(auto) rt_desc = blend_desc.RenderTarget[i];
