@@ -221,11 +221,6 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
     };
     m_depth_stencil_view = m_device->CreateView(m_depth_stencil_texture, depth_stencil_view_desc);
 
-    RenderPassDesc render_pass_desc = {
-        .colors = { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
-        .depth_stencil = { RenderPassLoadOp::kClear, RenderPassStoreOp::kDontCare },
-    };
-
     GraphicsPipelineDesc pipeline_desc = {
         .program = m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
         .layout = m_layout,
@@ -244,19 +239,22 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
         };
         m_back_buffer_views[i] = m_device->CreateView(back_buffer, back_buffer_view_desc);
 
-        FramebufferDesc framebuffer_desc = {
-            .width = app_size.width(),
-            .height = app_size.height(),
-            .colors = { m_back_buffer_views[i] },
-            .depth_stencil = m_depth_stencil_view,
-        };
-
         auto& command_list = m_command_lists[i];
         command_list = m_device->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(m_pipeline);
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
+        RenderPassDesc render_pass_desc = {
+            .colors = { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
+            .depth_stencil = { RenderPassLoadOp::kClear, RenderPassStoreOp::kDontCare },
+        };
+        FramebufferDesc framebuffer_desc = {
+            .width = app_size.width(),
+            .height = app_size.height(),
+            .colors = { m_back_buffer_views[i] },
+            .depth_stencil = m_depth_stencil_view,
+        };
         ClearDesc clear_desc = { .colors = { { 0.0, 0.2, 0.4, 1.0 } } };
         command_list->BeginRenderPass(render_pass_desc, framebuffer_desc, clear_desc);
         for (size_t j = 0; j < m_render_model.GetMeshCount(); ++j) {

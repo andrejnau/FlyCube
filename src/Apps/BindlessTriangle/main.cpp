@@ -167,9 +167,6 @@ void BindlessTriangleRenderer::Init(const AppSize& app_size, WindowHandle window
 {
     m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
 
-    RenderPassDesc render_pass_desc = {
-        { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
-    };
     GraphicsPipelineDesc pipeline_desc = {
         .program = m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
         .layout = m_layout,
@@ -185,12 +182,6 @@ void BindlessTriangleRenderer::Init(const AppSize& app_size, WindowHandle window
         };
         m_back_buffer_views[i] = m_device->CreateView(back_buffer, back_buffer_view_desc);
 
-        FramebufferDesc framebuffer_desc = {
-            .width = app_size.width(),
-            .height = app_size.height(),
-            .colors = { m_back_buffer_views[i] },
-        };
-
         auto& command_list = m_command_lists[i];
         command_list = m_device->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(m_pipeline);
@@ -198,6 +189,14 @@ void BindlessTriangleRenderer::Init(const AppSize& app_size, WindowHandle window
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
+        RenderPassDesc render_pass_desc = {
+            { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
+        };
+        FramebufferDesc framebuffer_desc = {
+            .width = app_size.width(),
+            .height = app_size.height(),
+            .colors = { m_back_buffer_views[i] },
+        };
         ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
         command_list->BeginRenderPass(render_pass_desc, framebuffer_desc, clear_desc);
         command_list->Draw(3, 1, 0, 0);

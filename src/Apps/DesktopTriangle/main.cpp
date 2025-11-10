@@ -66,9 +66,6 @@ int main(int argc, char* argv[])
     std::shared_ptr<BindingSet> binding_set = device->CreateBindingSet(layout);
     binding_set->WriteBindings({ { constant_buffer_key, constant_buffer_view } });
 
-    RenderPassDesc render_pass_desc = {
-        { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
-    };
     GraphicsPipelineDesc pipeline_desc = {
         .program = device->CreateProgram({ vertex_shader, pixel_shader }),
         .layout = layout,
@@ -88,12 +85,6 @@ int main(int argc, char* argv[])
         };
         back_buffer_views[i] = device->CreateView(back_buffer, back_buffer_view_desc);
 
-        FramebufferDesc framebuffer_desc = {
-            .width = app_size.width(),
-            .height = app_size.height(),
-            .colors = { back_buffer_views[i] },
-        };
-
         auto& command_list = command_lists[i];
         command_list = device->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(pipeline);
@@ -103,6 +94,14 @@ int main(int argc, char* argv[])
         command_list->IASetIndexBuffer(index_buffer, 0, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, vertex_buffer, 0);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
+        RenderPassDesc render_pass_desc = {
+            { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
+        };
+        FramebufferDesc framebuffer_desc = {
+            .width = app_size.width(),
+            .height = app_size.height(),
+            .colors = { back_buffer_views[i] },
+        };
         ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
         command_list->BeginRenderPass(render_pass_desc, framebuffer_desc, clear_desc);
         command_list->DrawIndexed(3, 1, 0, 0, 0);

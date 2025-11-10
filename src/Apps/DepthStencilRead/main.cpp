@@ -204,11 +204,6 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     };
     m_stencil_read_view = m_device->CreateView(m_depth_stencil_texture, stencil_read_view_desc);
 
-    RenderPassDesc depth_stencil_pass_render_pass_desc = {
-        .depth_stencil = { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore, RenderPassLoadOp::kClear,
-                           RenderPassStoreOp::kStore },
-    };
-
     DepthStencilDesc depth_stencil_pass_depth_stencil_desc = {
         .stencil_enable = true,
         .front_face = { .depth_fail_op = StencilOp::kIncr, .pass_op = StencilOp::kIncr },
@@ -224,10 +219,6 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         .depth_stencil_desc = depth_stencil_pass_depth_stencil_desc,
     };
     m_depth_stencil_pass_pipeline = m_device->CreateGraphicsPipeline(depth_stencil_pass_pipeline_desc);
-
-    RenderPassDesc render_pass_desc = {
-        .colors = { { RenderPassLoadOp::kDontCare, RenderPassStoreOp::kStore } },
-    };
 
     DepthStencilDesc depth_stencil_desc = {
         .depth_test_enable = false,
@@ -266,22 +257,20 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         };
         m_back_buffer_views[i] = m_device->CreateView(back_buffer, back_buffer_view_desc);
 
-        FramebufferDesc depth_stencil_pass_framebuffer_desc = {
-            .width = depth_stencil_size.x,
-            .height = depth_stencil_size.y,
-            .depth_stencil = m_depth_stencil_view,
-        };
-        FramebufferDesc framebuffer_desc = {
-            .width = app_size.width(),
-            .height = app_size.height(),
-            .colors = { m_back_buffer_views[i] },
-        };
-
         auto& command_list = m_command_lists[i];
         command_list = m_device->CreateCommandList(CommandListType::kGraphics);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
 
         command_list->BindPipeline(m_depth_stencil_pass_pipeline);
+        RenderPassDesc depth_stencil_pass_render_pass_desc = {
+            .depth_stencil = { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore, RenderPassLoadOp::kClear,
+                               RenderPassStoreOp::kStore },
+        };
+        FramebufferDesc depth_stencil_pass_framebuffer_desc = {
+            .width = depth_stencil_size.x,
+            .height = depth_stencil_size.y,
+            .depth_stencil = m_depth_stencil_view,
+        };
         command_list->BeginRenderPass(depth_stencil_pass_render_pass_desc, depth_stencil_pass_framebuffer_desc,
                                       /*clear_desc=*/{});
         command_list->SetViewport(0, 0, depth_stencil_size.x, depth_stencil_size.y);
@@ -297,6 +286,14 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         command_list->EndRenderPass();
 
         command_list->BindPipeline(m_pipeline);
+        RenderPassDesc render_pass_desc = {
+            .colors = { { RenderPassLoadOp::kDontCare, RenderPassStoreOp::kStore } },
+        };
+        FramebufferDesc framebuffer_desc = {
+            .width = app_size.width(),
+            .height = app_size.height(),
+            .colors = { m_back_buffer_views[i] },
+        };
         command_list->BeginRenderPass(render_pass_desc, framebuffer_desc, /*clear_desc=*/{});
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
