@@ -68,9 +68,7 @@ private:
     std::shared_ptr<View> m_depth_stencil_view;
     std::shared_ptr<View> m_depth_read_view;
     std::shared_ptr<View> m_stencil_read_view;
-    std::shared_ptr<RenderPass> m_depth_stencil_pass_render_pass;
     std::shared_ptr<Pipeline> m_depth_stencil_pass_pipeline;
-    std::shared_ptr<RenderPass> m_render_pass;
     std::shared_ptr<Pipeline> m_pipeline;
     std::shared_ptr<BindingSet> m_binding_set;
     std::array<std::shared_ptr<View>, kFrameCount> m_back_buffer_views = {};
@@ -210,7 +208,6 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         .depth_stencil = { m_depth_stencil_texture->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore,
                            RenderPassLoadOp::kClear, RenderPassStoreOp::kStore },
     };
-    m_depth_stencil_pass_render_pass = m_device->CreateRenderPass(depth_stencil_pass_render_pass_desc);
 
     DepthStencilDesc depth_stencil_pass_depth_stencil_desc = {
         .stencil_enable = true,
@@ -223,7 +220,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         m_layout,
         { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
           { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
-        m_depth_stencil_pass_render_pass,
+        depth_stencil_pass_render_pass_desc,
         depth_stencil_pass_depth_stencil_desc,
     };
     m_depth_stencil_pass_pipeline = m_device->CreateGraphicsPipeline(depth_stencil_pass_pipeline_desc);
@@ -231,7 +228,6 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     RenderPassDesc render_pass_desc = {
         .colors = { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
-    m_render_pass = m_device->CreateRenderPass(render_pass_desc);
 
     DepthStencilDesc depth_stencil_desc = {
         .depth_test_enable = false,
@@ -244,7 +240,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         m_layout,
         { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
           { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
-        m_render_pass,
+        render_pass_desc,
         depth_stencil_desc,
     };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
@@ -286,7 +282,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
 
         command_list->BindPipeline(m_depth_stencil_pass_pipeline);
-        command_list->BeginRenderPass(m_depth_stencil_pass_render_pass, depth_stencil_pass_framebuffer_desc,
+        command_list->BeginRenderPass(depth_stencil_pass_render_pass_desc, depth_stencil_pass_framebuffer_desc,
                                       /*clear_desc=*/{});
         command_list->SetViewport(0, 0, depth_stencil_size.x, depth_stencil_size.y);
         command_list->SetScissorRect(0, 0, depth_stencil_size.x, depth_stencil_size.y);
@@ -301,7 +297,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         command_list->EndRenderPass();
 
         command_list->BindPipeline(m_pipeline);
-        command_list->BeginRenderPass(m_render_pass, framebuffer_desc, /*clear_desc=*/{});
+        command_list->BeginRenderPass(render_pass_desc, framebuffer_desc, /*clear_desc=*/{});
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         for (size_t j = 0; j < m_fullscreen_triangle_render_model.GetMeshCount(); ++j) {

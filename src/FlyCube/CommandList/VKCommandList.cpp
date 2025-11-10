@@ -140,12 +140,10 @@ void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
                                        0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
 }
 
-void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass,
+void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
                                     const FramebufferDesc& framebuffer_desc,
                                     const ClearDesc& clear_desc)
 {
-    const auto& render_pass_desc = render_pass->As<RenderPassBase>().GetDesc();
-
     uint32_t layers = std::numeric_limits<uint32_t>::max();
     auto get_image_view = [&](const std::shared_ptr<View>& view) -> vk::ImageView {
         if (!view) {

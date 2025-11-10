@@ -59,7 +59,7 @@ CD3DX12_BLEND_DESC GetBlendDesc(const GraphicsPipelineDesc& desc)
         }
         return static_cast<D3D12_BLEND_OP>(0);
     };
-    const RenderPassDesc& render_pass_desc = desc.render_pass->GetDesc();
+    const RenderPassDesc& render_pass_desc = desc.render_pass_desc;
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
         if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED) {
             continue;
@@ -158,7 +158,7 @@ CD3DX12_DEPTH_STENCIL_DESC1 GetDepthStencilDesc(const DepthStencilDesc& desc, DX
 
 D3D12_RT_FORMAT_ARRAY GetRTVFormats(const GraphicsPipelineDesc& desc)
 {
-    const RenderPassDesc& render_pass_desc = desc.render_pass->GetDesc();
+    const RenderPassDesc& render_pass_desc = desc.render_pass_desc;
     D3D12_RT_FORMAT_ARRAY rt_formats = {};
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
         if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED) {
@@ -173,7 +173,7 @@ D3D12_RT_FORMAT_ARRAY GetRTVFormats(const GraphicsPipelineDesc& desc)
 
 DXGI_FORMAT GetDSVFormat(const GraphicsPipelineDesc& desc)
 {
-    const RenderPassDesc& render_pass_desc = desc.render_pass->GetDesc();
+    const RenderPassDesc& render_pass_desc = desc.render_pass_desc;
     if (render_pass_desc.depth_stencil.format == gli::format::FORMAT_UNDEFINED) {
         return DXGI_FORMAT_UNKNOWN;
     }

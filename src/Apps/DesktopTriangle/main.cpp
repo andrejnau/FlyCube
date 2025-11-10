@@ -69,12 +69,11 @@ int main(int argc, char* argv[])
     RenderPassDesc render_pass_desc = {
         { { swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
-    std::shared_ptr<RenderPass> render_pass = device->CreateRenderPass(render_pass_desc);
     GraphicsPipelineDesc pipeline_desc = {
         device->CreateProgram({ vertex_shader, pixel_shader }),
         layout,
         { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
-        render_pass,
+        render_pass_desc,
     };
     std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
 
@@ -105,7 +104,7 @@ int main(int argc, char* argv[])
         command_list->IASetVertexBuffer(0, vertex_buffer, 0);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
-        command_list->BeginRenderPass(render_pass, framebuffer_desc, clear_desc);
+        command_list->BeginRenderPass(render_pass_desc, framebuffer_desc, clear_desc);
         command_list->DrawIndexed(3, 1, 0, 0, 0);
         command_list->EndRenderPass();
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });

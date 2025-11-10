@@ -78,7 +78,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
         CreateInputLayout(m_binding_desc, m_attribute_desc);
     }
 
-    const RenderPassDesc& render_pass_desc = m_desc.render_pass->GetDesc();
+    const RenderPassDesc& render_pass_desc = m_desc.render_pass_desc;
 
     vk::PipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.vertexBindingDescriptionCount = m_binding_desc.size();

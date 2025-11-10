@@ -175,12 +175,6 @@ list(APPEND QueryHeap
     QueryHeap/QueryHeap.h
 )
 
-list(APPEND RenderPass
-    RenderPass/RenderPass.h
-    RenderPass/RenderPassBase.cpp
-    RenderPass/RenderPassBase.h
-)
-
 list(APPEND Resource
     $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXResource.cpp>
     $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXResource.h>
@@ -279,7 +273,6 @@ add_library(FlyCube
     ${Pipeline}
     ${Program}
     ${QueryHeap}
-    ${RenderPass}
     ${Resource}
     ${Shader}
     ${ShaderReflection}

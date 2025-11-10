@@ -66,7 +66,6 @@ private:
     std::shared_ptr<Swapchain> m_swapchain;
     std::shared_ptr<Resource> m_depth_stencil_texture;
     std::shared_ptr<View> m_depth_stencil_view;
-    std::shared_ptr<RenderPass> m_render_pass;
     std::shared_ptr<Pipeline> m_pipeline;
     std::array<std::shared_ptr<View>, kFrameCount> m_back_buffer_views = {};
     std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
@@ -227,14 +226,13 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
         .depth_stencil = { m_depth_stencil_texture->GetFormat(), RenderPassLoadOp::kClear,
                            RenderPassStoreOp::kDontCare },
     };
-    m_render_pass = m_device->CreateRenderPass(render_pass_desc);
 
     GraphicsPipelineDesc pipeline_desc = {
         m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
         m_layout,
         { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
           { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
-        m_render_pass,
+        render_pass_desc,
     };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
 
@@ -260,7 +258,7 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         ClearDesc clear_desc = { .colors = { { 0.0, 0.2, 0.4, 1.0 } } };
-        command_list->BeginRenderPass(m_render_pass, framebuffer_desc, clear_desc);
+        command_list->BeginRenderPass(render_pass_desc, framebuffer_desc, clear_desc);
         for (size_t j = 0; j < m_render_model.GetMeshCount(); ++j) {
             const auto& mesh = m_render_model.GetMesh(j);
             command_list->BindBindingSet(m_binding_sets[j]);

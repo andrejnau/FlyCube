@@ -13,7 +13,6 @@
 #include "Pipeline/VKRayTracingPipeline.h"
 #include "Program/ProgramBase.h"
 #include "QueryHeap/VKQueryHeap.h"
-#include "RenderPass/RenderPassBase.h"
 #include "Shader/ShaderBase.h"
 #include "Swapchain/VKSwapchain.h"
 #include "Utilities/Logging.h"
@@ -554,11 +553,6 @@ std::shared_ptr<BindingSetLayout> VKDevice::CreateBindingSetLayout(const std::ve
 std::shared_ptr<BindingSet> VKDevice::CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout)
 {
     return std::make_shared<VKBindingSet>(*this, std::static_pointer_cast<VKBindingSetLayout>(layout));
-}
-
-std::shared_ptr<RenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& desc)
-{
-    return std::make_shared<RenderPassBase>(desc);
 }
 
 std::shared_ptr<Shader> VKDevice::CreateShader(const std::vector<uint8_t>& blob,

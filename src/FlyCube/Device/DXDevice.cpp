@@ -12,7 +12,6 @@
 #include "Pipeline/DXRayTracingPipeline.h"
 #include "Program/ProgramBase.h"
 #include "QueryHeap/DXRayTracingQueryHeap.h"
-#include "RenderPass/RenderPassBase.h"
 #include "Shader/ShaderBase.h"
 #include "Swapchain/DXSwapchain.h"
 #include "Utilities/DXGIFormatHelper.h"
@@ -321,11 +320,6 @@ std::shared_ptr<BindingSetLayout> DXDevice::CreateBindingSetLayout(const std::ve
 std::shared_ptr<BindingSet> DXDevice::CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout)
 {
     return std::make_shared<DXBindingSet>(*this, std::static_pointer_cast<DXBindingSetLayout>(layout));
-}
-
-std::shared_ptr<RenderPass> DXDevice::CreateRenderPass(const RenderPassDesc& desc)
-{
-    return std::make_shared<RenderPassBase>(desc);
 }
 
 std::shared_ptr<Shader> DXDevice::CreateShader(const std::vector<uint8_t>& blob,

@@ -6,7 +6,6 @@
 #include "Pipeline/DXGraphicsPipeline.h"
 #include "Pipeline/DXRayTracingPipeline.h"
 #include "QueryHeap/DXRayTracingQueryHeap.h"
-#include "RenderPass/RenderPassBase.h"
 #include "Resource/DXResource.h"
 #include "Utilities/DXUtility.h"
 #include "Utilities/NotReached.h"
@@ -148,11 +147,10 @@ void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     m_binding_set = binding_set;
 }
 
-void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass,
+void DXCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
                                     const FramebufferDesc& framebuffer_desc,
                                     const ClearDesc& clear_desc)
 {
-    decltype(auto) dx_render_pass = render_pass->As<RenderPassBase>();
     auto& rtvs = framebuffer_desc.colors;
     auto& dsv = framebuffer_desc.depth_stencil;
 
@@ -170,14 +168,14 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         if (!handle.ptr) {
             continue;
         }
-        D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { Convert(dx_render_pass.GetDesc().colors[slot].load_op), {} };
+        D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { Convert(render_pass_desc.colors[slot].load_op), {} };
         if (slot < clear_desc.colors.size()) {
             begin.Clear.ClearValue.Color[0] = clear_desc.colors[slot].r;
             begin.Clear.ClearValue.Color[1] = clear_desc.colors[slot].g;
             begin.Clear.ClearValue.Color[2] = clear_desc.colors[slot].b;
             begin.Clear.ClearValue.Color[3] = clear_desc.colors[slot].a;
         }
-        D3D12_RENDER_PASS_ENDING_ACCESS end = { Convert(dx_render_pass.GetDesc().colors[slot].store_op), {} };
+        D3D12_RENDER_PASS_ENDING_ACCESS end = { Convert(render_pass_desc.colors[slot].store_op), {} };
         om_rtv.push_back({ handle, begin, end });
     }
 
@@ -185,17 +183,11 @@ void DXCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
     D3D12_RENDER_PASS_DEPTH_STENCIL_DESC* om_dsv_ptr = nullptr;
     D3D12_CPU_DESCRIPTOR_HANDLE om_dsv_handle = get_handle(dsv);
     if (om_dsv_handle.ptr) {
-        D3D12_RENDER_PASS_BEGINNING_ACCESS depth_begin = {
-            Convert(dx_render_pass.GetDesc().depth_stencil.depth_load_op), {}
-        };
-        D3D12_RENDER_PASS_ENDING_ACCESS depth_end = { Convert(dx_render_pass.GetDesc().depth_stencil.depth_store_op),
-                                                      {} };
-        D3D12_RENDER_PASS_BEGINNING_ACCESS stencil_begin = {
-            Convert(dx_render_pass.GetDesc().depth_stencil.stencil_load_op), {}
-        };
-        D3D12_RENDER_PASS_ENDING_ACCESS stencil_end = {
-            Convert(dx_render_pass.GetDesc().depth_stencil.stencil_store_op), {}
-        };
+        D3D12_RENDER_PASS_BEGINNING_ACCESS depth_begin = { Convert(render_pass_desc.depth_stencil.depth_load_op), {} };
+        D3D12_RENDER_PASS_ENDING_ACCESS depth_end = { Convert(render_pass_desc.depth_stencil.depth_store_op), {} };
+        D3D12_RENDER_PASS_BEGINNING_ACCESS stencil_begin = { Convert(render_pass_desc.depth_stencil.stencil_load_op),
+                                                             {} };
+        D3D12_RENDER_PASS_ENDING_ACCESS stencil_end = { Convert(render_pass_desc.depth_stencil.stencil_store_op), {} };
         depth_begin.Clear.ClearValue.DepthStencil.Depth = clear_desc.depth;
         stencil_begin.Clear.ClearValue.DepthStencil.Stencil = clear_desc.stencil;
         om_dsv = { om_dsv_handle, depth_begin, stencil_begin, depth_end, stencil_end };

@@ -332,7 +332,7 @@ struct GraphicsPipelineDesc {
     std::shared_ptr<Program> program;
     std::shared_ptr<BindingSetLayout> layout;
     std::vector<InputLayoutDesc> input;
-    std::shared_ptr<RenderPass> render_pass;
+    RenderPassDesc render_pass_desc;
     DepthStencilDesc depth_stencil_desc;
     BlendDesc blend_desc;
     RasterizerDesc rasterizer_desc;
@@ -340,7 +340,7 @@ struct GraphicsPipelineDesc {
 
     auto MakeTie() const
     {
-        return std::tie(program, layout, input, render_pass, depth_stencil_desc, blend_desc, rasterizer_desc,
+        return std::tie(program, layout, input, render_pass_desc, depth_stencil_desc, blend_desc, rasterizer_desc,
                         sample_count);
     }
 };

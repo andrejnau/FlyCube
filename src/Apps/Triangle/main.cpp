@@ -42,7 +42,6 @@ private:
     std::shared_ptr<BindingSet> m_binding_set;
 
     std::shared_ptr<Swapchain> m_swapchain;
-    std::shared_ptr<RenderPass> m_render_pass;
     std::shared_ptr<Pipeline> m_pipeline;
     std::array<std::shared_ptr<View>, kFrameCount> m_back_buffer_views = {};
     std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
@@ -114,12 +113,11 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     RenderPassDesc render_pass_desc = {
         { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
-    m_render_pass = m_device->CreateRenderPass(render_pass_desc);
     GraphicsPipelineDesc pipeline_desc = {
         m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
         m_layout,
         { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) } },
-        m_render_pass,
+        render_pass_desc,
     };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
 
@@ -147,7 +145,7 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         command_list->IASetVertexBuffer(0, m_vertex_buffer, 0);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
-        command_list->BeginRenderPass(m_render_pass, framebuffer_desc, clear_desc);
+        command_list->BeginRenderPass(render_pass_desc, framebuffer_desc, clear_desc);
         command_list->DrawIndexed(3, 1, 0, 0, 0);
         command_list->EndRenderPass();
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });

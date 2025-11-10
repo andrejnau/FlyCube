@@ -192,14 +192,13 @@ void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     m_need_apply_binding_set = true;
 }
 
-void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pass,
+void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
                                     const FramebufferDesc& framebuffer_desc,
                                     const ClearDesc& clear_desc)
 {
     CloseComputeEncoder();
 
     MTL4RenderPassDescriptor* render_pass_descriptor = [MTL4RenderPassDescriptor new];
-    const RenderPassDesc& render_pass_desc = render_pass->GetDesc();
 
     auto add_attachment = [&](auto& attachment, gli::format format, RenderPassLoadOp load_op,
                               RenderPassStoreOp store_op, const std::shared_ptr<View>& view) {

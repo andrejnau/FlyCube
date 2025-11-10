@@ -145,7 +145,7 @@ void MTGraphicsPipeline::CreatePipeline()
         }
     }
 
-    const RenderPassDesc& render_pass_desc = m_desc.render_pass->GetDesc();
+    const RenderPassDesc& render_pass_desc = m_desc.render_pass_desc;
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
         if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED) {
             continue;

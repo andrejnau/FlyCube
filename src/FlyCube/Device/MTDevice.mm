@@ -11,7 +11,6 @@
 #include "Pipeline/MTComputePipeline.h"
 #include "Pipeline/MTGraphicsPipeline.h"
 #include "Program/ProgramBase.h"
-#include "RenderPass/RenderPassBase.h"
 #include "Resource/MTResource.h"
 #include "Shader/MTShader.h"
 #include "Swapchain/MTSwapchain.h"
@@ -137,11 +136,6 @@ std::shared_ptr<BindingSetLayout> MTDevice::CreateBindingSetLayout(const std::ve
 std::shared_ptr<BindingSet> MTDevice::CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout)
 {
     return std::make_shared<MTBindingSet>(*this, std::static_pointer_cast<MTBindingSetLayout>(layout));
-}
-
-std::shared_ptr<RenderPass> MTDevice::CreateRenderPass(const RenderPassDesc& desc)
-{
-    return std::make_shared<RenderPassBase>(desc);
 }
 
 std::shared_ptr<Shader> MTDevice::CreateShader(const std::vector<uint8_t>& blob,
