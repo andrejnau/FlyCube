@@ -79,10 +79,10 @@ RenderPassDesc render_pass_desc = {
     { { swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
 };
 GraphicsPipelineDesc pipeline_desc = {
-    device->CreateProgram({ vertex_shader, pixel_shader }),
-    layout,
-    { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
-    render_pass_desc,
+    .program = device->CreateProgram({ vertex_shader, pixel_shader }),
+    .layout = layout,
+    .input = { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
+    .render_pass_desc = render_pass_desc,
 };
 std::shared_ptr<Pipeline> pipeline = device->CreateGraphicsPipeline(pipeline_desc);
 

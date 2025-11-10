@@ -171,10 +171,9 @@ void BindlessTriangleRenderer::Init(const AppSize& app_size, WindowHandle window
         { { m_swapchain->GetFormat(), RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
     };
     GraphicsPipelineDesc pipeline_desc = {
-        m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
-        m_layout,
-        {},
-        render_pass_desc,
+        .program = m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
+        .layout = m_layout,
+        .render_pass_desc = render_pass_desc,
     };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
 

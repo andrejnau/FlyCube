@@ -82,8 +82,8 @@ DispatchIndirectRenderer::DispatchIndirectRenderer(const Settings& settings)
     m_layout = m_device->CreateBindingSetLayout({ constant_buffer_key, result_texture_key });
 
     ComputePipelineDesc pipeline_desc = {
-        m_device->CreateProgram({ m_compute_shader }),
-        m_layout,
+        .program = m_device->CreateProgram({ m_compute_shader }),
+        .layout = m_layout,
     };
     m_pipeline = m_device->CreateComputePipeline(pipeline_desc);
 }

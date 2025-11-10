@@ -228,11 +228,11 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
     };
 
     GraphicsPipelineDesc pipeline_desc = {
-        m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
-        m_layout,
-        { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
-          { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
-        render_pass_desc,
+        .program = m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
+        .layout = m_layout,
+        .input = { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
+                   { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
+        .render_pass_desc = render_pass_desc,
     };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
 

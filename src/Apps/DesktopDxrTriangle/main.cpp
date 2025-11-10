@@ -202,9 +202,9 @@ int main(int argc, char* argv[])
     groups.push_back({ RayTracingShaderGroupType::kGeneral, library_callable->GetId("callable") });
 
     RayTracingPipelineDesc pipeline_desc = {
-        device->CreateProgram({ library, library_hit, library_callable }),
-        layout,
-        groups,
+        .program = device->CreateProgram({ library, library_hit, library_callable }),
+        .layout = layout,
+        .groups = groups,
     };
     std::shared_ptr<Pipeline> pipeline = device->CreateRayTracingPipeline(pipeline_desc);
 
