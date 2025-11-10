@@ -84,7 +84,6 @@ public:
 
     uint32_t GetMaxDescriptorSetBindings(vk::DescriptorType type) const;
     bool HasBufferDeviceAddress() const;
-    bool IsDynamicRenderingSupported() const;
 
     template <typename Feature>
     Feature GetFeatures2()
@@ -122,6 +121,5 @@ private:
     bool m_bindless_supported = false;
     bool m_draw_indirect_count_supported = false;
     bool m_has_buffer_device_address = false;
-    bool m_dynamic_rendering_supported = false;
     vk::PhysicalDeviceProperties m_device_properties = {};
 };

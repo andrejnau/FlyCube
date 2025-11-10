@@ -68,87 +68,7 @@ vk::StencilOpState Convert(const StencilOpDesc& desc, uint8_t read_mask, uint8_t
     return res;
 }
 
-vk::UniqueRenderPass CreateRenderPass(VKDevice& device, const RenderPassDesc& desc, int sample_count)
-{
-    std::vector<vk::AttachmentDescription2> attachment_descriptions;
-    auto add_attachment = [&](vk::AttachmentReference2& reference, gli::format format, vk::ImageLayout layout,
-                              RenderPassLoadOp load_op, RenderPassStoreOp store_op) {
-        if (format == gli::FORMAT_UNDEFINED) {
-            reference.attachment = VK_ATTACHMENT_UNUSED;
-            return;
-        }
-        vk::AttachmentDescription2& description = attachment_descriptions.emplace_back();
-        description.format = static_cast<vk::Format>(format);
-        description.samples = static_cast<vk::SampleCountFlagBits>(sample_count);
-        description.loadOp = ConvertRenderPassLoadOp(load_op);
-        description.storeOp = ConvertRenderPassStoreOp(store_op);
-        description.initialLayout = layout;
-        description.finalLayout = layout;
-
-        reference.attachment = attachment_descriptions.size() - 1;
-        reference.layout = layout;
-    };
-
-    vk::SubpassDescription2 sub_pass = {};
-    sub_pass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-
-    std::vector<vk::AttachmentReference2> color_attachment_references;
-    for (auto& rtv : desc.colors) {
-        add_attachment(color_attachment_references.emplace_back(), rtv.format, vk::ImageLayout::eColorAttachmentOptimal,
-                       rtv.load_op, rtv.store_op);
-    }
-
-    sub_pass.colorAttachmentCount = color_attachment_references.size();
-    sub_pass.pColorAttachments = color_attachment_references.data();
-
-    vk::AttachmentReference2 depth_attachment_reference = {};
-    if (desc.depth_stencil.format != gli::FORMAT_UNDEFINED) {
-        add_attachment(depth_attachment_reference, desc.depth_stencil.format,
-                       vk::ImageLayout::eDepthStencilAttachmentOptimal, desc.depth_stencil.depth_load_op,
-                       desc.depth_stencil.depth_store_op);
-        if (depth_attachment_reference.attachment != VK_ATTACHMENT_UNUSED) {
-            vk::AttachmentDescription2& description = attachment_descriptions[depth_attachment_reference.attachment];
-            description.stencilLoadOp = ConvertRenderPassLoadOp(desc.depth_stencil.stencil_load_op);
-            description.stencilStoreOp = ConvertRenderPassStoreOp(desc.depth_stencil.stencil_store_op);
-        }
-        sub_pass.pDepthStencilAttachment = &depth_attachment_reference;
-    }
-
-    vk::RenderPassCreateInfo2 render_pass_info = {};
-    render_pass_info.attachmentCount = attachment_descriptions.size();
-    render_pass_info.pAttachments = attachment_descriptions.data();
-    render_pass_info.subpassCount = 1;
-    render_pass_info.pSubpasses = &sub_pass;
-    return device.GetDevice().createRenderPass2Unique(render_pass_info);
-}
-
 } // namespace
-
-vk::AttachmentLoadOp ConvertRenderPassLoadOp(RenderPassLoadOp op)
-{
-    switch (op) {
-    case RenderPassLoadOp::kLoad:
-        return vk::AttachmentLoadOp::eLoad;
-    case RenderPassLoadOp::kClear:
-        return vk::AttachmentLoadOp::eClear;
-    case RenderPassLoadOp::kDontCare:
-        return vk::AttachmentLoadOp::eDontCare;
-    default:
-        NOTREACHED();
-    }
-}
-
-vk::AttachmentStoreOp ConvertRenderPassStoreOp(RenderPassStoreOp op)
-{
-    switch (op) {
-    case RenderPassStoreOp::kStore:
-        return vk::AttachmentStoreOp::eStore;
-    case RenderPassStoreOp::kDontCare:
-        return vk::AttachmentStoreOp::eDontCare;
-    default:
-        NOTREACHED();
-    }
-}
 
 VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
     : VKPipeline(device, desc.program, desc.layout)
@@ -288,28 +208,22 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
 
     std::vector<vk::Format> color_formats;
     vk::PipelineRenderingCreateInfo pipeline_rendering_info = {};
-    if (m_device.IsDynamicRenderingSupported()) {
-        color_formats.resize(render_pass_desc.colors.size());
-        for (size_t i = 0; i < color_formats.size(); ++i) {
-            color_formats[i] = static_cast<vk::Format>(render_pass_desc.colors[i].format);
-        }
-        pipeline_rendering_info.colorAttachmentCount = color_formats.size();
-        pipeline_rendering_info.pColorAttachmentFormats = color_formats.data();
-        if (render_pass_desc.depth_stencil.format != gli::format::FORMAT_UNDEFINED &&
-            gli::is_depth(render_pass_desc.depth_stencil.format)) {
-            pipeline_rendering_info.depthAttachmentFormat =
-                static_cast<vk::Format>(render_pass_desc.depth_stencil.format);
-        }
-        if (render_pass_desc.depth_stencil.format != gli::format::FORMAT_UNDEFINED &&
-            gli::is_stencil(render_pass_desc.depth_stencil.format)) {
-            pipeline_rendering_info.stencilAttachmentFormat =
-                static_cast<vk::Format>(render_pass_desc.depth_stencil.format);
-        }
-        pipeline_info.pNext = &pipeline_rendering_info;
-    } else {
-        m_render_pass = CreateRenderPass(m_device, render_pass_desc, m_desc.sample_count);
-        pipeline_info.renderPass = m_render_pass.get();
+    color_formats.resize(render_pass_desc.colors.size());
+    for (size_t i = 0; i < color_formats.size(); ++i) {
+        color_formats[i] = static_cast<vk::Format>(render_pass_desc.colors[i].format);
     }
+    pipeline_rendering_info.colorAttachmentCount = color_formats.size();
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats.data();
+    if (render_pass_desc.depth_stencil.format != gli::format::FORMAT_UNDEFINED &&
+        gli::is_depth(render_pass_desc.depth_stencil.format)) {
+        pipeline_rendering_info.depthAttachmentFormat = static_cast<vk::Format>(render_pass_desc.depth_stencil.format);
+    }
+    if (render_pass_desc.depth_stencil.format != gli::format::FORMAT_UNDEFINED &&
+        gli::is_stencil(render_pass_desc.depth_stencil.format)) {
+        pipeline_rendering_info.stencilAttachmentFormat =
+            static_cast<vk::Format>(render_pass_desc.depth_stencil.format);
+    }
+    pipeline_info.pNext = &pipeline_rendering_info;
 
     m_pipeline = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info).value;
 }
@@ -317,11 +231,6 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
 PipelineType VKGraphicsPipeline::GetPipelineType() const
 {
     return PipelineType::kGraphics;
-}
-
-vk::RenderPass VKGraphicsPipeline::GetRenderPass() const
-{
-    return m_render_pass.get();
 }
 
 void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDescription>& m_binding_desc,

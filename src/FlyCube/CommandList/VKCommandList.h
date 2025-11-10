@@ -108,5 +108,4 @@ private:
     bool m_closed = false;
     std::shared_ptr<VKPipeline> m_state;
     std::shared_ptr<BindingSet> m_binding_set;
-    std::vector<vk::UniqueFramebuffer> m_framebuffers;
 };
