@@ -95,15 +95,16 @@ int main(int argc, char* argv[])
         command_list->IASetVertexBuffer(0, vertex_buffer, 0);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         RenderPassDesc render_pass_desc = {
-            { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
+            .colors = { { .load_op = RenderPassLoadOp::kClear,
+                          .store_op = RenderPassStoreOp::kStore,
+                          .clear_color = glm::vec4(0.0, 0.2, 0.4, 1.0) } },
         };
         FramebufferDesc framebuffer_desc = {
             .width = app_size.width(),
             .height = app_size.height(),
             .colors = { back_buffer_views[i] },
         };
-        ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
-        command_list->BeginRenderPass(render_pass_desc, framebuffer_desc, clear_desc);
+        command_list->BeginRenderPass(render_pass_desc, framebuffer_desc);
         command_list->DrawIndexed(3, 1, 0, 0, 0);
         command_list->EndRenderPass();
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });

@@ -35,11 +35,9 @@ public:
         ApplyAndRecord(&T::BindBindingSet, binding_set);
     }
 
-    void BeginRenderPass(const RenderPassDesc& render_pass_desc,
-                         const FramebufferDesc& framebuffer_desc,
-                         const ClearDesc& clear_desc) override
+    void BeginRenderPass(const RenderPassDesc& render_pass_desc, const FramebufferDesc& framebuffer_desc) override
     {
-        ApplyAndRecord(&T::BeginRenderPass, render_pass_desc, framebuffer_desc, clear_desc);
+        ApplyAndRecord(&T::BeginRenderPass, render_pass_desc, framebuffer_desc);
     }
 
     void EndRenderPass() override

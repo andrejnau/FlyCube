@@ -246,8 +246,12 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         RenderPassDesc render_pass_desc = {
-            .colors = { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
-            .depth_stencil = { RenderPassLoadOp::kClear, RenderPassStoreOp::kDontCare },
+            .colors = { { .load_op = RenderPassLoadOp::kClear,
+                          .store_op = RenderPassStoreOp::kStore,
+                          .clear_color = glm::vec4(0.0, 0.2, 0.4, 1.0) } },
+            .depth_stencil = { .depth_load_op = RenderPassLoadOp::kClear,
+                               .depth_store_op = RenderPassStoreOp::kDontCare,
+                               .clear_depth = 1.0 },
         };
         FramebufferDesc framebuffer_desc = {
             .width = app_size.width(),
@@ -255,8 +259,7 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
             .colors = { m_back_buffer_views[i] },
             .depth_stencil = m_depth_stencil_view,
         };
-        ClearDesc clear_desc = { .colors = { { 0.0, 0.2, 0.4, 1.0 } } };
-        command_list->BeginRenderPass(render_pass_desc, framebuffer_desc, clear_desc);
+        command_list->BeginRenderPass(render_pass_desc, framebuffer_desc);
         for (size_t j = 0; j < m_render_model.GetMeshCount(); ++j) {
             const auto& mesh = m_render_model.GetMesh(j);
             command_list->BindBindingSet(m_binding_sets[j]);

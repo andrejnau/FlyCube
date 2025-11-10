@@ -12,7 +12,6 @@
 
 class BindingSetLayout;
 class Program;
-class RenderPass;
 class Resource;
 class View;
 
@@ -284,22 +283,26 @@ enum class RenderPassStoreOp {
 struct RenderPassColorDesc {
     RenderPassLoadOp load_op = RenderPassLoadOp::kLoad;
     RenderPassStoreOp store_op = RenderPassStoreOp::kStore;
+    glm::vec4 clear_color = glm::vec4(0.0, 0.0, 0.0, 1.0);
 
     auto MakeTie() const
     {
-        return std::tie(load_op, store_op);
+        return std::tie(load_op, store_op, clear_color);
     }
 };
 
 struct RenderPassDepthStencilDesc {
     RenderPassLoadOp depth_load_op = RenderPassLoadOp::kLoad;
     RenderPassStoreOp depth_store_op = RenderPassStoreOp::kStore;
+    float clear_depth = 1.0;
+
     RenderPassLoadOp stencil_load_op = RenderPassLoadOp::kLoad;
     RenderPassStoreOp stencil_store_op = RenderPassStoreOp::kStore;
+    uint8_t clear_stencil = 0;
 
     auto MakeTie() const
     {
-        return std::tie(depth_load_op, depth_store_op, stencil_load_op, stencil_store_op);
+        return std::tie(depth_load_op, depth_store_op, clear_depth, stencil_load_op, stencil_store_op, clear_stencil);
     }
 };
 
@@ -566,12 +569,6 @@ enum class CommandListType {
     kGraphics,
     kCompute,
     kCopy,
-};
-
-struct ClearDesc {
-    std::vector<glm::vec4> colors;
-    float depth = 1.0;
-    uint8_t stencil = 0;
 };
 
 enum class CopyAccelerationStructureMode {

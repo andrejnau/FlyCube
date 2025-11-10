@@ -96,15 +96,16 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         RenderPassDesc render_pass_desc = {
-            { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
+            .colors = { { .load_op = RenderPassLoadOp::kClear,
+                          .store_op = RenderPassStoreOp::kStore,
+                          .clear_color = glm::vec4(0.0, 0.2, 0.4, 1.0) } },
         };
         FramebufferDesc framebuffer_desc = {
             .width = app_size.width(),
             .height = app_size.height(),
             .colors = { m_back_buffer_views[i] },
         };
-        ClearDesc clear_desc = { { { 0.0, 0.2, 0.4, 1.0 } } };
-        command_list->BeginRenderPass(render_pass_desc, framebuffer_desc, clear_desc);
+        command_list->BeginRenderPass(render_pass_desc, framebuffer_desc);
         command_list->DispatchMesh(1, 1, 1);
         command_list->EndRenderPass();
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });

@@ -192,9 +192,7 @@ void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     m_need_apply_binding_set = true;
 }
 
-void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
-                                    const FramebufferDesc& framebuffer_desc,
-                                    const ClearDesc& clear_desc)
+void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, const FramebufferDesc& framebuffer_desc)
 {
     CloseComputeEncoder();
 
@@ -223,8 +221,9 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
         add_attachment(color_attachment, render_pass_desc.colors[i].load_op, render_pass_desc.colors[i].store_op,
                        framebuffer_desc.colors[i]);
         if (render_pass_desc.colors[i].load_op == RenderPassLoadOp::kClear) {
-            color_attachment.clearColor = MTLClearColorMake(clear_desc.colors[i].r, clear_desc.colors[i].g,
-                                                            clear_desc.colors[i].b, clear_desc.colors[i].a);
+            color_attachment.clearColor =
+                MTLClearColorMake(render_pass_desc.colors[i].clear_color.r, render_pass_desc.colors[i].clear_color.g,
+                                  render_pass_desc.colors[i].clear_color.b, render_pass_desc.colors[i].clear_color.a);
         }
     }
 
@@ -233,14 +232,14 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
         add_attachment(depth_attachment, render_pass_desc.depth_stencil.depth_load_op,
                        render_pass_desc.depth_stencil.depth_store_op, framebuffer_desc.depth_stencil);
     }
-    depth_attachment.clearDepth = clear_desc.depth;
+    depth_attachment.clearDepth = render_pass_desc.depth_stencil.clear_depth;
 
     decltype(auto) stencil_attachment = render_pass_descriptor.stencilAttachment;
     if (framebuffer_desc.depth_stencil && gli::is_stencil(framebuffer_desc.depth_stencil->GetResource()->GetFormat())) {
         add_attachment(stencil_attachment, render_pass_desc.depth_stencil.stencil_load_op,
                        render_pass_desc.depth_stencil.stencil_store_op, framebuffer_desc.depth_stencil);
     }
-    stencil_attachment.clearStencil = clear_desc.stencil;
+    stencil_attachment.clearStencil = render_pass_desc.depth_stencil.clear_stencil;
 
     render_pass_descriptor.renderTargetWidth = framebuffer_desc.width;
     render_pass_descriptor.renderTargetHeight = framebuffer_desc.height;
