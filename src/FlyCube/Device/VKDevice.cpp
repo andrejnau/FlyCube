@@ -232,69 +232,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
         }
     }
 
-    void* device_create_info_next = nullptr;
-    auto add_extension = [&](auto& extension) {
-        extension.pNext = device_create_info_next;
-        device_create_info_next = &extension;
-    };
-
-    vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features = {};
-    if (enabled_extension_set.contains(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
-        auto query_fragment_shading_rate_features = GetFeatures2<vk::PhysicalDeviceFragmentShadingRateFeaturesKHR>();
-        if (query_fragment_shading_rate_features.pipelineFragmentShadingRate) {
-            m_is_variable_rate_shading_supported = true;
-            fragment_shading_rate_features.pipelineFragmentShadingRate = true;
-        }
-
-        if (query_fragment_shading_rate_features.attachmentFragmentShadingRate) {
-            std::map<std::pair<uint32_t, uint32_t>, ShadingRate> expected_shading_rates = {
-                { ConvertShadingRateToPair(ShadingRate::k1x1), ShadingRate::k1x1 },
-                { ConvertShadingRateToPair(ShadingRate::k1x2), ShadingRate::k1x2 },
-                { ConvertShadingRateToPair(ShadingRate::k2x1), ShadingRate::k2x1 },
-                { ConvertShadingRateToPair(ShadingRate::k2x2), ShadingRate::k2x2 },
-                { ConvertShadingRateToPair(ShadingRate::k2x4), ShadingRate::k2x4 },
-                { ConvertShadingRateToPair(ShadingRate::k4x2), ShadingRate::k4x2 },
-                { ConvertShadingRateToPair(ShadingRate::k4x4), ShadingRate::k4x4 },
-            };
-            decltype(auto) fragment_shading_rates = m_physical_device.getFragmentShadingRatesKHR();
-            for (const auto& fragment_shading_rate : fragment_shading_rates) {
-                vk::Extent2D size = fragment_shading_rate.fragmentSize;
-                std::pair<uint32_t, uint32_t> size_as_pair = { size.width, size.height };
-                if (!expected_shading_rates.contains(size_as_pair)) {
-                    continue;
-                }
-                uint8_t shading_rate_bits = ((size.width >> 1) << 2) | (size.height >> 1);
-                assert((1 << ((shading_rate_bits >> 2) & 3)) == size.width);
-                assert((1 << (shading_rate_bits & 3)) == size.height);
-                ShadingRate shading_rate = static_cast<ShadingRate>(shading_rate_bits);
-                assert(expected_shading_rates.at(size_as_pair) == shading_rate);
-                expected_shading_rates.erase(size_as_pair);
-            }
-            for (const auto& shading_rate : expected_shading_rates) {
-                const auto& [width, height] = shading_rate.first;
-                Logging::Println("ShadingRate::k{}x{} is not supported", width, height);
-            }
-
-            vk::PhysicalDeviceFragmentShadingRatePropertiesKHR query_shading_rate_image_properties = {};
-            vk::PhysicalDeviceProperties2 device_props2 = {};
-            device_props2.pNext = &query_shading_rate_image_properties;
-            m_physical_device.getProperties2(&device_props2);
-            assert(query_shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize ==
-                   query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize);
-            assert(query_shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize.width ==
-                   query_shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize.height);
-            assert(query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width ==
-                   query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.height);
-            m_shading_rate_image_tile_size =
-                query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width;
-            assert(m_shading_rate_image_tile_size != 0);
-
-            fragment_shading_rate_features.attachmentFragmentShadingRate = true;
-        }
-
-        add_extension(fragment_shading_rate_features);
-    }
-
     const float queue_priority = 1.0;
     std::vector<vk::DeviceQueueCreateInfo> queues_create_info;
     for (const auto& queue_info : m_queues_info) {
@@ -303,6 +240,12 @@ VKDevice::VKDevice(VKAdapter& adapter)
         queue_create_info.queueCount = 1;
         queue_create_info.pQueuePriorities = &queue_priority;
     }
+
+    void* device_create_info_next = nullptr;
+    auto add_extension = [&](auto& extension) {
+        extension.pNext = device_create_info_next;
+        device_create_info_next = &extension;
+    };
 
     vk::PhysicalDeviceFeatures device_features = {};
     device_features.textureCompressionBC = physical_device_features.textureCompressionBC;
@@ -437,6 +380,63 @@ VKDevice::VKDevice(VKAdapter& adapter)
         rayquery_feature.rayQuery = query_rayquery_feature.rayQuery;
         m_is_ray_query_supported = rayquery_feature.rayQuery;
         add_extension(rayquery_feature);
+    }
+
+    vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features = {};
+    if (enabled_extension_set.contains(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME) && m_dynamic_rendering_supported) {
+        auto query_fragment_shading_rate_features = GetFeatures2<vk::PhysicalDeviceFragmentShadingRateFeaturesKHR>();
+        if (query_fragment_shading_rate_features.pipelineFragmentShadingRate) {
+            m_is_variable_rate_shading_supported = true;
+            fragment_shading_rate_features.pipelineFragmentShadingRate = true;
+        }
+
+        if (query_fragment_shading_rate_features.attachmentFragmentShadingRate) {
+            std::map<std::pair<uint32_t, uint32_t>, ShadingRate> expected_shading_rates = {
+                { ConvertShadingRateToPair(ShadingRate::k1x1), ShadingRate::k1x1 },
+                { ConvertShadingRateToPair(ShadingRate::k1x2), ShadingRate::k1x2 },
+                { ConvertShadingRateToPair(ShadingRate::k2x1), ShadingRate::k2x1 },
+                { ConvertShadingRateToPair(ShadingRate::k2x2), ShadingRate::k2x2 },
+                { ConvertShadingRateToPair(ShadingRate::k2x4), ShadingRate::k2x4 },
+                { ConvertShadingRateToPair(ShadingRate::k4x2), ShadingRate::k4x2 },
+                { ConvertShadingRateToPair(ShadingRate::k4x4), ShadingRate::k4x4 },
+            };
+            decltype(auto) fragment_shading_rates = m_physical_device.getFragmentShadingRatesKHR();
+            for (const auto& fragment_shading_rate : fragment_shading_rates) {
+                vk::Extent2D size = fragment_shading_rate.fragmentSize;
+                std::pair<uint32_t, uint32_t> size_as_pair = { size.width, size.height };
+                if (!expected_shading_rates.contains(size_as_pair)) {
+                    continue;
+                }
+                uint8_t shading_rate_bits = ((size.width >> 1) << 2) | (size.height >> 1);
+                assert((1 << ((shading_rate_bits >> 2) & 3)) == size.width);
+                assert((1 << (shading_rate_bits & 3)) == size.height);
+                ShadingRate shading_rate = static_cast<ShadingRate>(shading_rate_bits);
+                assert(expected_shading_rates.at(size_as_pair) == shading_rate);
+                expected_shading_rates.erase(size_as_pair);
+            }
+            for (const auto& shading_rate : expected_shading_rates) {
+                const auto& [width, height] = shading_rate.first;
+                Logging::Println("ShadingRate::k{}x{} is not supported", width, height);
+            }
+
+            vk::PhysicalDeviceFragmentShadingRatePropertiesKHR query_shading_rate_image_properties = {};
+            vk::PhysicalDeviceProperties2 device_props2 = {};
+            device_props2.pNext = &query_shading_rate_image_properties;
+            m_physical_device.getProperties2(&device_props2);
+            assert(query_shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize ==
+                   query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize);
+            assert(query_shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize.width ==
+                   query_shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize.height);
+            assert(query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width ==
+                   query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.height);
+            m_shading_rate_image_tile_size =
+                query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width;
+            assert(m_shading_rate_image_tile_size != 0);
+
+            fragment_shading_rate_features.attachmentFragmentShadingRate = true;
+        }
+
+        add_extension(fragment_shading_rate_features);
     }
 
     vk::DeviceCreateInfo device_create_info = {};

@@ -114,21 +114,6 @@ vk::UniqueRenderPass CreateRenderPass(VKDevice& device, const RenderPassDesc& de
         sub_pass.pDepthStencilAttachment = &depth_attachment_reference;
     }
 
-    if (desc.shading_rate_format != gli::FORMAT_UNDEFINED) {
-        vk::AttachmentReference2 shading_rate_image_attachment_reference = {};
-        add_attachment(shading_rate_image_attachment_reference, desc.shading_rate_format,
-                       vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR, RenderPassLoadOp::kLoad,
-                       RenderPassStoreOp::kStore);
-
-        vk::FragmentShadingRateAttachmentInfoKHR fragment_shading_rate_attachment_info = {};
-        fragment_shading_rate_attachment_info.pFragmentShadingRateAttachment = &shading_rate_image_attachment_reference;
-        fragment_shading_rate_attachment_info.shadingRateAttachmentTexelSize.width =
-            device.GetShadingRateImageTileSize();
-        fragment_shading_rate_attachment_info.shadingRateAttachmentTexelSize.height =
-            device.GetShadingRateImageTileSize();
-        sub_pass.pNext = &fragment_shading_rate_attachment_info;
-    }
-
     vk::RenderPassCreateInfo2 render_pass_info = {};
     render_pass_info.attachmentCount = attachment_descriptions.size();
     render_pass_info.pAttachments = attachment_descriptions.data();

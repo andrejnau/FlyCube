@@ -308,12 +308,11 @@ struct RenderPassDepthStencilDesc {
 struct RenderPassDesc {
     std::vector<RenderPassColorDesc> colors;
     RenderPassDepthStencilDesc depth_stencil;
-    gli::format shading_rate_format = gli::format::FORMAT_UNDEFINED;
     uint32_t sample_count = 1;
 
     auto MakeTie() const
     {
-        return std::tie(colors, depth_stencil, shading_rate_format, sample_count);
+        return std::tie(colors, depth_stencil, sample_count);
     }
 };
 
