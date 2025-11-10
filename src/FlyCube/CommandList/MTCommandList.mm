@@ -196,16 +196,13 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
                                     const FramebufferDesc& framebuffer_desc,
                                     const ClearDesc& clear_desc)
 {
-    assert(m_state && m_state->GetPipelineType() == PipelineType::kGraphics);
-    const GraphicsPipelineDesc& pipeline_desc = m_state->As<MTGraphicsPipeline>().GetDesc();
-
     CloseComputeEncoder();
 
     MTL4RenderPassDescriptor* render_pass_descriptor = [MTL4RenderPassDescriptor new];
 
-    auto add_attachment = [&](auto& attachment, gli::format format, RenderPassLoadOp load_op,
-                              RenderPassStoreOp store_op, const std::shared_ptr<View>& view) {
-        if (format == gli::format::FORMAT_UNDEFINED || !view) {
+    auto add_attachment = [&](auto& attachment, RenderPassLoadOp load_op, RenderPassStoreOp store_op,
+                              const std::shared_ptr<View>& view) {
+        if (!view) {
             return;
         }
         attachment.loadAction = ConvertLoadAction(load_op);
@@ -223,8 +220,8 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
 
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
         decltype(auto) color_attachment = render_pass_descriptor.colorAttachments[i];
-        add_attachment(color_attachment, pipeline_desc.color_formats[i], render_pass_desc.colors[i].load_op,
-                       render_pass_desc.colors[i].store_op, framebuffer_desc.colors[i]);
+        add_attachment(color_attachment, render_pass_desc.colors[i].load_op, render_pass_desc.colors[i].store_op,
+                       framebuffer_desc.colors[i]);
         if (render_pass_desc.colors[i].load_op == RenderPassLoadOp::kClear) {
             color_attachment.clearColor = MTLClearColorMake(clear_desc.colors[i].r, clear_desc.colors[i].g,
                                                             clear_desc.colors[i].b, clear_desc.colors[i].a);
@@ -232,27 +229,23 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
     }
 
     decltype(auto) depth_attachment = render_pass_descriptor.depthAttachment;
-    if (pipeline_desc.depth_stencil_format != gli::format::FORMAT_UNDEFINED &&
-        gli::is_depth(pipeline_desc.depth_stencil_format)) {
-        add_attachment(depth_attachment, pipeline_desc.depth_stencil_format,
-                       render_pass_desc.depth_stencil.depth_load_op, render_pass_desc.depth_stencil.depth_store_op,
-                       framebuffer_desc.depth_stencil);
+    if (framebuffer_desc.depth_stencil && gli::is_depth(framebuffer_desc.depth_stencil->GetResource()->GetFormat())) {
+        add_attachment(depth_attachment, render_pass_desc.depth_stencil.depth_load_op,
+                       render_pass_desc.depth_stencil.depth_store_op, framebuffer_desc.depth_stencil);
     }
     depth_attachment.clearDepth = clear_desc.depth;
 
     decltype(auto) stencil_attachment = render_pass_descriptor.stencilAttachment;
-    if (pipeline_desc.depth_stencil_format != gli::format::FORMAT_UNDEFINED &&
-        gli::is_stencil(pipeline_desc.depth_stencil_format)) {
-        add_attachment(stencil_attachment, pipeline_desc.depth_stencil_format,
-                       render_pass_desc.depth_stencil.stencil_load_op, render_pass_desc.depth_stencil.stencil_store_op,
-                       framebuffer_desc.depth_stencil);
+    if (framebuffer_desc.depth_stencil && gli::is_stencil(framebuffer_desc.depth_stencil->GetResource()->GetFormat())) {
+        add_attachment(stencil_attachment, render_pass_desc.depth_stencil.stencil_load_op,
+                       render_pass_desc.depth_stencil.stencil_store_op, framebuffer_desc.depth_stencil);
     }
     stencil_attachment.clearStencil = clear_desc.stencil;
 
     render_pass_descriptor.renderTargetWidth = framebuffer_desc.width;
     render_pass_descriptor.renderTargetHeight = framebuffer_desc.height;
     render_pass_descriptor.renderTargetArrayLength = framebuffer_desc.layers;
-    render_pass_descriptor.defaultRasterSampleCount = pipeline_desc.sample_count;
+    render_pass_descriptor.defaultRasterSampleCount = render_pass_desc.sample_count;
 
     m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
     if (m_render_encoder == nullptr) {

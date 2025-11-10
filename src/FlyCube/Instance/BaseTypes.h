@@ -306,10 +306,11 @@ struct RenderPassDepthStencilDesc {
 struct RenderPassDesc {
     std::vector<RenderPassColorDesc> colors;
     RenderPassDepthStencilDesc depth_stencil;
+    uint32_t sample_count = 1;
 
     auto MakeTie() const
     {
-        return std::tie(colors, depth_stencil);
+        return std::tie(colors, depth_stencil, sample_count);
     }
 };
 

@@ -144,9 +144,6 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
                                     const FramebufferDesc& framebuffer_desc,
                                     const ClearDesc& clear_desc)
 {
-    assert(m_state && m_state->GetPipelineType() == PipelineType::kGraphics);
-    const GraphicsPipelineDesc& pipeline_desc = m_state->As<VKGraphicsPipeline>().GetDesc();
-
     auto get_image_view = [&](const std::shared_ptr<View>& view) -> vk::ImageView {
         if (!view) {
             return {};
@@ -170,8 +167,7 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
     }
 
     vk::RenderingAttachmentInfo depth_attachment = {};
-    if (pipeline_desc.depth_stencil_format != gli::format::FORMAT_UNDEFINED &&
-        gli::is_depth(pipeline_desc.depth_stencil_format)) {
+    if (framebuffer_desc.depth_stencil && gli::is_depth(framebuffer_desc.depth_stencil->GetResource()->GetFormat())) {
         depth_attachment.imageView = get_image_view(framebuffer_desc.depth_stencil);
         depth_attachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
     }
@@ -180,8 +176,7 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
     depth_attachment.clearValue.depthStencil.depth = clear_desc.depth;
 
     vk::RenderingAttachmentInfo stencil_attachment = {};
-    if (pipeline_desc.depth_stencil_format != gli::format::FORMAT_UNDEFINED &&
-        gli::is_stencil(pipeline_desc.depth_stencil_format)) {
+    if (framebuffer_desc.depth_stencil && gli::is_stencil(framebuffer_desc.depth_stencil->GetResource()->GetFormat())) {
         stencil_attachment.imageView = get_image_view(framebuffer_desc.depth_stencil);
         stencil_attachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
     }
