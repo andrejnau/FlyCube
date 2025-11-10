@@ -253,7 +253,8 @@ void MTCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
 
     render_pass_descriptor.renderTargetWidth = framebuffer_desc.width;
     render_pass_descriptor.renderTargetHeight = framebuffer_desc.height;
-    render_pass_descriptor.defaultRasterSampleCount = render_pass_desc.sample_count;
+    decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
+    render_pass_descriptor.defaultRasterSampleCount = mt_state.GetDesc().sample_count;
 
     m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
     if (m_render_encoder == nullptr) {

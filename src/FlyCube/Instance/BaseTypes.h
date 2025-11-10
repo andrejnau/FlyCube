@@ -308,11 +308,10 @@ struct RenderPassDepthStencilDesc {
 struct RenderPassDesc {
     std::vector<RenderPassColorDesc> colors;
     RenderPassDepthStencilDesc depth_stencil;
-    uint32_t sample_count = 1;
 
     auto MakeTie() const
     {
-        return std::tie(colors, depth_stencil, sample_count);
+        return std::tie(colors, depth_stencil);
     }
 };
 
@@ -337,10 +336,12 @@ struct GraphicsPipelineDesc {
     DepthStencilDesc depth_stencil_desc;
     BlendDesc blend_desc;
     RasterizerDesc rasterizer_desc;
+    uint32_t sample_count = 1;
 
     auto MakeTie() const
     {
-        return std::tie(program, layout, input, render_pass, depth_stencil_desc, blend_desc, rasterizer_desc);
+        return std::tie(program, layout, input, render_pass, depth_stencil_desc, blend_desc, rasterizer_desc,
+                        sample_count);
     }
 };
 

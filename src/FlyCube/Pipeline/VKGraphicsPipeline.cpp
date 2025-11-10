@@ -68,7 +68,7 @@ vk::StencilOpState Convert(const StencilOpDesc& desc, uint8_t read_mask, uint8_t
     return res;
 }
 
-vk::UniqueRenderPass CreateRenderPass(VKDevice& device, const RenderPassDesc& desc)
+vk::UniqueRenderPass CreateRenderPass(VKDevice& device, const RenderPassDesc& desc, int sample_count)
 {
     std::vector<vk::AttachmentDescription2> attachment_descriptions;
     auto add_attachment = [&](vk::AttachmentReference2& reference, gli::format format, vk::ImageLayout layout,
@@ -79,7 +79,7 @@ vk::UniqueRenderPass CreateRenderPass(VKDevice& device, const RenderPassDesc& de
         }
         vk::AttachmentDescription2& description = attachment_descriptions.emplace_back();
         description.format = static_cast<vk::Format>(format);
-        description.samples = static_cast<vk::SampleCountFlagBits>(desc.sample_count);
+        description.samples = static_cast<vk::SampleCountFlagBits>(sample_count);
         description.loadOp = ConvertRenderPassLoadOp(load_op);
         description.storeOp = ConvertRenderPassStoreOp(store_op);
         description.initialLayout = layout;
@@ -246,7 +246,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     color_blending.pAttachments = color_blend_attachments.data();
 
     vk::PipelineMultisampleStateCreateInfo multisampling = {};
-    multisampling.rasterizationSamples = static_cast<vk::SampleCountFlagBits>(render_pass_desc.sample_count);
+    multisampling.rasterizationSamples = static_cast<vk::SampleCountFlagBits>(m_desc.sample_count);
     multisampling.sampleShadingEnable = multisampling.rasterizationSamples != vk::SampleCountFlagBits::e1;
 
     vk::PipelineDepthStencilStateCreateInfo depth_stencil = {};
@@ -307,7 +307,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
         }
         pipeline_info.pNext = &pipeline_rendering_info;
     } else {
-        m_render_pass = CreateRenderPass(m_device, render_pass_desc);
+        m_render_pass = CreateRenderPass(m_device, render_pass_desc, m_desc.sample_count);
         pipeline_info.renderPass = m_render_pass.get();
     }
 

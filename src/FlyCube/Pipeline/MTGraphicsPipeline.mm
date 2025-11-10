@@ -156,7 +156,7 @@ void MTGraphicsPipeline::CreatePipeline()
     if constexpr (!is_mesh_pipeline) {
         pipeline_descriptor.inputPrimitiveTopology = MTLPrimitiveTopologyClassTriangle;
     }
-    pipeline_descriptor.rasterSampleCount = render_pass_desc.sample_count;
+    pipeline_descriptor.rasterSampleCount = m_desc.sample_count;
 
     decltype(auto) blend_desc = m_desc.blend_desc;
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {

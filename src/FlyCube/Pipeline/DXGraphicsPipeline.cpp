@@ -182,8 +182,7 @@ DXGI_FORMAT GetDSVFormat(const GraphicsPipelineDesc& desc)
 
 DXGI_SAMPLE_DESC GetSampleDesc(const GraphicsPipelineDesc& desc)
 {
-    const RenderPassDesc& render_pass_desc = desc.render_pass->GetDesc();
-    return { render_pass_desc.sample_count, 0 };
+    return { desc.sample_count, 0 };
 }
 
 DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineDesc& desc)
