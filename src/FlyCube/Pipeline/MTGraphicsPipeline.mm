@@ -145,13 +145,11 @@ void MTGraphicsPipeline::CreatePipeline()
         }
     }
 
-    const RenderPassDesc& render_pass_desc = m_desc.render_pass_desc;
-    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
-        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED) {
+    for (size_t i = 0; i < m_desc.color_formats.size(); ++i) {
+        if (m_desc.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
             continue;
         }
-        pipeline_descriptor.colorAttachments[i].pixelFormat =
-            m_device.GetMTLPixelFormat(render_pass_desc.colors[i].format);
+        pipeline_descriptor.colorAttachments[i].pixelFormat = m_device.GetMTLPixelFormat(m_desc.color_formats[i]);
     }
     if constexpr (!is_mesh_pipeline) {
         pipeline_descriptor.inputPrimitiveTopology = MTLPrimitiveTopologyClassTriangle;
@@ -159,8 +157,8 @@ void MTGraphicsPipeline::CreatePipeline()
     pipeline_descriptor.rasterSampleCount = m_desc.sample_count;
 
     decltype(auto) blend_desc = m_desc.blend_desc;
-    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
-        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED) {
+    for (size_t i = 0; i < m_desc.color_formats.size(); ++i) {
+        if (m_desc.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
             continue;
         }
 
@@ -209,8 +207,7 @@ void MTGraphicsPipeline::CreatePipeline()
     }
 
     m_depth_stencil = [m_device.GetDevice()
-        newDepthStencilStateWithDescriptor:GetDepthStencilDesc(m_desc.depth_stencil_desc,
-                                                               render_pass_desc.depth_stencil.format)];
+        newDepthStencilStateWithDescriptor:GetDepthStencilDesc(m_desc.depth_stencil_desc, m_desc.depth_stencil_format)];
 }
 
 MTLVertexDescriptor* MTGraphicsPipeline::GetVertexDescriptor(const std::shared_ptr<Shader>& shader)

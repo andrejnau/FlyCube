@@ -220,7 +220,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         .layout = m_layout,
         .input = { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
                    { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
-        .render_pass_desc = depth_stencil_pass_render_pass_desc,
+        .depth_stencil_format = m_depth_stencil_texture->GetFormat(),
         .depth_stencil_desc = depth_stencil_pass_depth_stencil_desc,
     };
     m_depth_stencil_pass_pipeline = m_device->CreateGraphicsPipeline(depth_stencil_pass_pipeline_desc);
@@ -240,7 +240,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
         .layout = m_layout,
         .input = { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
                    { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
-        .render_pass_desc = render_pass_desc,
+        .color_formats = { m_swapchain->GetFormat() },
         .depth_stencil_desc = depth_stencil_desc,
     };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);

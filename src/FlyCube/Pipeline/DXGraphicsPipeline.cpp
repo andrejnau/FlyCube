@@ -59,9 +59,8 @@ CD3DX12_BLEND_DESC GetBlendDesc(const GraphicsPipelineDesc& desc)
         }
         return static_cast<D3D12_BLEND_OP>(0);
     };
-    const RenderPassDesc& render_pass_desc = desc.render_pass_desc;
-    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
-        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED) {
+    for (size_t i = 0; i < m_desc.color_formats.size(); ++i) {
+        if (m_desc.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
             continue;
         }
         decltype(auto) rt_desc = blend_desc.RenderTarget[i];
@@ -158,26 +157,23 @@ CD3DX12_DEPTH_STENCIL_DESC1 GetDepthStencilDesc(const DepthStencilDesc& desc, DX
 
 D3D12_RT_FORMAT_ARRAY GetRTVFormats(const GraphicsPipelineDesc& desc)
 {
-    const RenderPassDesc& render_pass_desc = desc.render_pass_desc;
     D3D12_RT_FORMAT_ARRAY rt_formats = {};
-    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
-        if (render_pass_desc.colors[i].format == gli::format::FORMAT_UNDEFINED) {
+    for (size_t i = 0; i < desc.color_formats.size(); ++i) {
+        if (desc.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
             continue;
         }
         rt_formats.NumRenderTargets = i + 1;
-        rt_formats.RTFormats[i] =
-            static_cast<DXGI_FORMAT>(gli::dx().translate(render_pass_desc.colors[i].format).DXGIFormat.DDS);
+        rt_formats.RTFormats[i] = static_cast<DXGI_FORMAT>(gli::dx().translate(desc.color_formats[i]).DXGIFormat.DDS);
     }
     return rt_formats;
 }
 
 DXGI_FORMAT GetDSVFormat(const GraphicsPipelineDesc& desc)
 {
-    const RenderPassDesc& render_pass_desc = desc.render_pass_desc;
-    if (render_pass_desc.depth_stencil.format == gli::format::FORMAT_UNDEFINED) {
+    if (desc.depth_stencil_format == gli::format::FORMAT_UNDEFINED) {
         return DXGI_FORMAT_UNKNOWN;
     }
-    return static_cast<DXGI_FORMAT>(gli::dx().translate(render_pass_desc.depth_stencil.format).DXGIFormat.DDS);
+    return static_cast<DXGI_FORMAT>(gli::dx().translate(desc.depth_stencil_format).DXGIFormat.DDS);
 }
 
 DXGI_SAMPLE_DESC GetSampleDesc(const GraphicsPipelineDesc& desc)

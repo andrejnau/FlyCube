@@ -232,7 +232,8 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
         .layout = m_layout,
         .input = { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
                    { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
-        .render_pass_desc = render_pass_desc,
+        .color_formats = { m_swapchain->GetFormat() },
+        .depth_stencil_format = m_depth_stencil_texture->GetFormat(),
     };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
 

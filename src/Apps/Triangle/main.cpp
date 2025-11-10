@@ -117,7 +117,7 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
         .program = m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
         .layout = m_layout,
         .input = { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) } },
-        .render_pass_desc = render_pass_desc,
+        .color_formats = { m_swapchain->GetFormat() },
     };
     m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
 
