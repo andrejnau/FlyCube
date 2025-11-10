@@ -287,7 +287,7 @@ void VKCommandList::BeginRenderPass(const std::shared_ptr<RenderPass>& render_pa
         render_pass_attachment_begin_info.attachmentCount = vk_framebuffer.GetAttachments().size();
         render_pass_attachment_begin_info.pAttachments = vk_framebuffer.GetAttachments().data();
         render_pass_info.pNext = &render_pass_attachment_begin_info;
-        m_command_list->beginRenderPass(render_pass_info, vk::SubpassContents::eInline);
+        m_command_list->beginRenderPass2(render_pass_info, vk::SubpassContents::eInline);
     }
 }
 
