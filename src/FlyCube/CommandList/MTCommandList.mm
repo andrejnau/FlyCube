@@ -228,11 +228,10 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
         decltype(auto) color_attachment = render_pass_descriptor.colorAttachments[i];
         add_attachment(color_attachment, pipeline_desc.color_formats[i], render_pass_desc.colors[i].load_op,
                        render_pass_desc.colors[i].store_op, framebuffer_desc.colors[i]);
-    }
-    for (size_t i = 0; i < clear_desc.colors.size(); ++i) {
-        decltype(auto) color_attachment = render_pass_descriptor.colorAttachments[i];
-        color_attachment.clearColor = MTLClearColorMake(clear_desc.colors[i].r, clear_desc.colors[i].g,
-                                                        clear_desc.colors[i].b, clear_desc.colors[i].a);
+        if (render_pass_desc.colors[i].load_op == RenderPassLoadOp::kClear) {
+            color_attachment.clearColor = MTLClearColorMake(clear_desc.colors[i].r, clear_desc.colors[i].g,
+                                                            clear_desc.colors[i].b, clear_desc.colors[i].a);
+        }
     }
 
     decltype(auto) depth_attachment = render_pass_descriptor.depthAttachment;

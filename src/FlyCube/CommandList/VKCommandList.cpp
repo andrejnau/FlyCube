@@ -163,7 +163,7 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
         color_attachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
         color_attachment.loadOp = ConvertRenderPassLoadOp(render_pass_desc.colors[i].load_op);
         color_attachment.storeOp = ConvertRenderPassStoreOp(render_pass_desc.colors[i].store_op);
-        if (i < clear_desc.colors.size()) {
+        if (render_pass_desc.colors[i].load_op == RenderPassLoadOp::kClear) {
             color_attachment.clearValue.color.float32[0] = clear_desc.colors[i].r;
             color_attachment.clearValue.color.float32[1] = clear_desc.colors[i].g;
             color_attachment.clearValue.color.float32[2] = clear_desc.colors[i].b;

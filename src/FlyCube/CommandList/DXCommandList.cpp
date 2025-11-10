@@ -169,7 +169,7 @@ void DXCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
             continue;
         }
         D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { Convert(render_pass_desc.colors[slot].load_op), {} };
-        if (slot < clear_desc.colors.size()) {
+        if (render_pass_desc.colors[slot].load_op == RenderPassLoadOp::kClear) {
             begin.Clear.ClearValue.Color[0] = clear_desc.colors[slot].r;
             begin.Clear.ClearValue.Color[1] = clear_desc.colors[slot].g;
             begin.Clear.ClearValue.Color[2] = clear_desc.colors[slot].b;

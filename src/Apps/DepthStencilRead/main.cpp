@@ -226,7 +226,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     m_depth_stencil_pass_pipeline = m_device->CreateGraphicsPipeline(depth_stencil_pass_pipeline_desc);
 
     RenderPassDesc render_pass_desc = {
-        .colors = { { RenderPassLoadOp::kClear, RenderPassStoreOp::kStore } },
+        .colors = { { RenderPassLoadOp::kDontCare, RenderPassStoreOp::kStore } },
     };
 
     DepthStencilDesc depth_stencil_desc = {
