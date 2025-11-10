@@ -316,6 +316,7 @@ struct RenderPassDesc {
 struct FramebufferDesc {
     uint32_t width;
     uint32_t height;
+    uint32_t layers = 1;
     std::vector<std::shared_ptr<View>> colors;
     std::shared_ptr<View> depth_stencil;
     std::shared_ptr<View> shading_rate_image;

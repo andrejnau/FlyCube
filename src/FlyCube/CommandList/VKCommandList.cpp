@@ -146,14 +146,12 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
 {
     assert(m_state && m_state->GetPipelineType() == PipelineType::kGraphics);
     const GraphicsPipelineDesc& pipeline_desc = m_state->As<VKGraphicsPipeline>().GetDesc();
-    uint32_t layers = std::numeric_limits<uint32_t>::max();
+
     auto get_image_view = [&](const std::shared_ptr<View>& view) -> vk::ImageView {
         if (!view) {
             return {};
         }
-        decltype(auto) vk_view = view->As<VKView>();
-        layers = std::min(layers, vk_view.GetLayerCount());
-        return vk_view.GetImageView();
+        return view->As<VKView>().GetImageView();
     };
 
     std::vector<vk::RenderingAttachmentInfo> color_attachments(render_pass_desc.colors.size());
@@ -191,14 +189,10 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
     stencil_attachment.storeOp = ConvertRenderPassStoreOp(render_pass_desc.depth_stencil.stencil_store_op);
     stencil_attachment.clearValue.depthStencil.stencil = clear_desc.stencil;
 
-    if (layers == std::numeric_limits<uint32_t>::max()) {
-        layers = 1;
-    }
-
     vk::RenderingInfo rendering_info = {};
     rendering_info.renderArea.extent.width = framebuffer_desc.width;
     rendering_info.renderArea.extent.height = framebuffer_desc.height;
-    rendering_info.layerCount = layers;
+    rendering_info.layerCount = framebuffer_desc.layers;
     rendering_info.colorAttachmentCount = color_attachments.size();
     rendering_info.pColorAttachments = color_attachments.data();
     rendering_info.pDepthAttachment = &depth_attachment;

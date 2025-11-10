@@ -216,9 +216,6 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
         attachment.slice = mt_view.GetBaseArrayLayer();
         attachment.texture = mt_view.GetTexture();
 
-        render_pass_descriptor.renderTargetArrayLength =
-            std::max<uint32_t>(render_pass_descriptor.renderTargetArrayLength, view->GetLayerCount());
-
         if (attachment.texture) {
             AddAllocation(attachment.texture);
         }
@@ -254,6 +251,7 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc,
 
     render_pass_descriptor.renderTargetWidth = framebuffer_desc.width;
     render_pass_descriptor.renderTargetHeight = framebuffer_desc.height;
+    render_pass_descriptor.renderTargetArrayLength = framebuffer_desc.layers;
     render_pass_descriptor.defaultRasterSampleCount = pipeline_desc.sample_count;
 
     m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
