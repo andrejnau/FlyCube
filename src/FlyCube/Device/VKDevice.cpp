@@ -205,16 +205,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
         // clang-format on
     };
 
-    if (m_device_properties.apiVersion < VK_API_VERSION_1_2) {
-        requested_extensions.insert(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-        requested_extensions.insert(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-        requested_extensions.insert(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
-        requested_extensions.insert(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-        requested_extensions.insert(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
-        requested_extensions.insert(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
-        requested_extensions.insert(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-    }
-
     if (m_device_properties.apiVersion < VK_API_VERSION_1_3) {
         requested_extensions.insert(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     }
@@ -254,51 +244,26 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.shaderImageGatherExtended = physical_device_features.shaderImageGatherExtended;
 
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
-    vk::PhysicalDeviceDescriptorIndexingFeaturesEXT device_descriptor_indexing = {};
-    vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR device_buffer_device_address = {};
-    vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR device_timeline_semaphore = {};
-    if (m_device_properties.apiVersion >= VK_API_VERSION_1_2) {
-        auto query_device_vulkan12_features = GetFeatures2<vk::PhysicalDeviceVulkan12Features>();
-        device_vulkan12_features.drawIndirectCount = query_device_vulkan12_features.drawIndirectCount;
-        device_vulkan12_features.bufferDeviceAddress = query_device_vulkan12_features.bufferDeviceAddress;
-        device_vulkan12_features.timelineSemaphore = true;
-        device_vulkan12_features.descriptorIndexing = query_device_vulkan12_features.descriptorIndexing;
-        device_vulkan12_features.runtimeDescriptorArray = query_device_vulkan12_features.runtimeDescriptorArray;
-        device_vulkan12_features.descriptorBindingPartiallyBound =
-            query_device_vulkan12_features.descriptorBindingPartiallyBound;
-        device_vulkan12_features.descriptorBindingVariableDescriptorCount =
-            query_device_vulkan12_features.descriptorBindingVariableDescriptorCount;
-        m_bindless_supported |= device_vulkan12_features.descriptorIndexing &&
-                                device_vulkan12_features.runtimeDescriptorArray &&
-                                device_vulkan12_features.descriptorBindingPartiallyBound &&
-                                device_vulkan12_features.descriptorBindingVariableDescriptorCount;
-        if (enabled_extension_set.contains(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
-            device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
-            device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
-        }
-        add_extension(device_vulkan12_features);
-    } else {
-        if (enabled_extension_set.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
-            auto query_descriptor_indexing = GetFeatures2<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>();
-            device_descriptor_indexing.runtimeDescriptorArray = query_descriptor_indexing.runtimeDescriptorArray;
-            device_descriptor_indexing.descriptorBindingPartiallyBound =
-                query_descriptor_indexing.descriptorBindingPartiallyBound;
-            device_descriptor_indexing.descriptorBindingVariableDescriptorCount =
-                query_descriptor_indexing.descriptorBindingVariableDescriptorCount;
-            m_bindless_supported |= device_descriptor_indexing.runtimeDescriptorArray &&
-                                    device_descriptor_indexing.descriptorBindingPartiallyBound &&
-                                    device_descriptor_indexing.descriptorBindingVariableDescriptorCount;
-            add_extension(device_descriptor_indexing);
-        }
-        if (enabled_extension_set.contains(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
-            auto query_device_buffer_device_address = GetFeatures2<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>();
-            device_buffer_device_address.bufferDeviceAddress = query_device_buffer_device_address.bufferDeviceAddress;
-            add_extension(device_buffer_device_address);
-        }
-        assert(enabled_extension_set.contains(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
-        device_timeline_semaphore.timelineSemaphore = true;
-        add_extension(device_timeline_semaphore);
+    auto query_device_vulkan12_features = GetFeatures2<vk::PhysicalDeviceVulkan12Features>();
+    device_vulkan12_features.drawIndirectCount = query_device_vulkan12_features.drawIndirectCount;
+    device_vulkan12_features.bufferDeviceAddress = query_device_vulkan12_features.bufferDeviceAddress;
+    assert(query_device_vulkan12_features.timelineSemaphore);
+    device_vulkan12_features.timelineSemaphore = true;
+    device_vulkan12_features.descriptorIndexing = query_device_vulkan12_features.descriptorIndexing;
+    device_vulkan12_features.runtimeDescriptorArray = query_device_vulkan12_features.runtimeDescriptorArray;
+    device_vulkan12_features.descriptorBindingPartiallyBound =
+        query_device_vulkan12_features.descriptorBindingPartiallyBound;
+    device_vulkan12_features.descriptorBindingVariableDescriptorCount =
+        query_device_vulkan12_features.descriptorBindingVariableDescriptorCount;
+    m_bindless_supported |= device_vulkan12_features.descriptorIndexing &&
+                            device_vulkan12_features.runtimeDescriptorArray &&
+                            device_vulkan12_features.descriptorBindingPartiallyBound &&
+                            device_vulkan12_features.descriptorBindingVariableDescriptorCount;
+    if (enabled_extension_set.contains(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
+        device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
+        device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
     }
+    add_extension(device_vulkan12_features);
 
     vk::PhysicalDeviceVulkan13Features device_vulkan13_features = {};
     vk::PhysicalDeviceDynamicRenderingFeaturesKHR device_dynamic_rendering = {};
@@ -314,10 +279,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
     }
 
     m_geometry_shader_supported = device_features.geometryShader;
-    m_draw_indirect_count_supported = device_vulkan12_features.drawIndirectCount ||
-                                      enabled_extension_set.contains(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    m_has_buffer_device_address =
-        device_vulkan12_features.bufferDeviceAddress || device_buffer_device_address.bufferDeviceAddress;
+    m_draw_indirect_count_supported = device_vulkan12_features.drawIndirectCount;
+    m_has_buffer_device_address = device_vulkan12_features.bufferDeviceAddress;
 
     vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_feature = {};
     if (enabled_extension_set.contains(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {

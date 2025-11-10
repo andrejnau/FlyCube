@@ -112,7 +112,7 @@ VKInstance::VKInstance()
 
     vk::ApplicationInfo app_info = {};
     app_info.apiVersion = vk::enumerateInstanceVersion();
-    CHECK(app_info.apiVersion >= VK_API_VERSION_1_1);
+    CHECK(app_info.apiVersion >= VK_API_VERSION_1_2);
 
     vk::InstanceCreateInfo instance_info;
     if (enabled_extension_set.contains(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
@@ -153,7 +153,7 @@ std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
     auto physical_devices = m_instance->enumeratePhysicalDevices();
     for (const auto& physical_device : physical_devices) {
         vk::PhysicalDeviceProperties properties = physical_device.getProperties();
-        if (properties.apiVersion < VK_API_VERSION_1_1) {
+        if (properties.apiVersion < VK_API_VERSION_1_2) {
             continue;
         }
         if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
