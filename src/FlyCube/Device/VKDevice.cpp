@@ -195,7 +195,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
         // clang-format off
         VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
         VK_EXT_MESH_SHADER_EXTENSION_NAME,
-        VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
@@ -259,10 +258,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
                             device_vulkan12_features.runtimeDescriptorArray &&
                             device_vulkan12_features.descriptorBindingPartiallyBound &&
                             device_vulkan12_features.descriptorBindingVariableDescriptorCount;
-    if (enabled_extension_set.contains(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
-        device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
-        device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
-    }
+    device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
+    device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
     add_extension(device_vulkan12_features);
 
     vk::PhysicalDeviceVulkan13Features device_vulkan13_features = {};
