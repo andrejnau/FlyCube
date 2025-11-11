@@ -8,7 +8,6 @@ set(appleclang_compile_options
 )
 set(msvc_compile_options
     /MP
-    /wd4838
 )
 add_compile_options(
     "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang>:${appleclang_compile_options}>"

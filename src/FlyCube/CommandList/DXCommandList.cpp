@@ -409,7 +409,10 @@ void DXCommandList::SetViewport(float x, float y, float width, float height)
 
 void DXCommandList::SetScissorRect(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom)
 {
-    D3D12_RECT rect = { left, top, right, bottom };
+    D3D12_RECT rect = { .left = static_cast<int32_t>(left),
+                        .top = static_cast<int32_t>(top),
+                        .right = static_cast<int32_t>(right),
+                        .bottom = static_cast<int32_t>(bottom) };
     m_command_list->RSSetScissorRects(1, &rect);
 }
 
