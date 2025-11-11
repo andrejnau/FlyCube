@@ -295,7 +295,6 @@ target_link_libraries(FlyCube
     gli
     glm
     nowide
-    spirv-cross-core
     spirv-cross-hlsl
     spirv-cross-msl
 )
