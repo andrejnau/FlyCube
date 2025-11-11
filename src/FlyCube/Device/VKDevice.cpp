@@ -167,6 +167,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     Logging::Println("{}: Vulkan {}.{}.{}", m_device_properties.deviceName.data(),
                      VK_VERSION_MAJOR(m_device_properties.apiVersion), VK_VERSION_MINOR(m_device_properties.apiVersion),
                      VK_VERSION_PATCH(m_device_properties.apiVersion));
+
     auto queue_families = m_physical_device.getQueueFamilyProperties();
     auto has_all_bits = [](auto flags, auto bits) { return (flags & bits) == bits; };
     auto has_any_bits = [](auto flags, auto bits) { return flags & bits; };
@@ -651,10 +652,7 @@ uint32_t VKDevice::GetShadingRateImageTileSize() const
 
 MemoryBudget VKDevice::GetMemoryBudget() const
 {
-    vk::PhysicalDeviceMemoryBudgetPropertiesEXT memory_budget = {};
-    vk::PhysicalDeviceMemoryProperties2 mem_properties = {};
-    mem_properties.pNext = &memory_budget;
-    m_physical_device.getMemoryProperties2(&mem_properties);
+    auto memory_budget = GetMemoryProperties2<vk::PhysicalDeviceMemoryBudgetPropertiesEXT>();
     MemoryBudget res = {};
     for (size_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         res.budget += memory_budget.heapBudget[i];
@@ -762,11 +760,9 @@ vk::ImageAspectFlags VKDevice::GetAspectFlags(vk::Format format) const
 
 uint32_t VKDevice::FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties)
 {
-    vk::PhysicalDeviceMemoryProperties memProperties;
-    m_physical_device.getMemoryProperties(&memProperties);
-
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
-        if ((type_filter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+    vk::PhysicalDeviceMemoryProperties mem_properties = m_physical_device.getMemoryProperties();
+    for (uint32_t i = 0; i < mem_properties.memoryTypeCount; ++i) {
+        if ((type_filter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
         }
     }

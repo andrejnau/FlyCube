@@ -85,16 +85,24 @@ public:
     bool HasBufferDeviceAddress() const;
 
     template <typename Features>
-    Features GetFeatures2()
+    Features GetFeatures2() const
     {
         auto [_, features] = m_physical_device.getFeatures2<vk::PhysicalDeviceFeatures2, Features>();
         return features;
     }
 
     template <typename Properties>
-    Properties GetProperties2()
+    Properties GetProperties2() const
     {
         auto [_, properties] = m_physical_device.getProperties2<vk::PhysicalDeviceProperties2, Properties>();
+        return properties;
+    }
+
+    template <typename Properties>
+    Properties GetMemoryProperties2() const
+    {
+        auto [_, properties] =
+            m_physical_device.getMemoryProperties2<vk::PhysicalDeviceMemoryProperties2, Properties>();
         return properties;
     }
 
