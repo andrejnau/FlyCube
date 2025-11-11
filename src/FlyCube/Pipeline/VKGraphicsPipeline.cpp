@@ -187,9 +187,9 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
         dynamic_state_enables.emplace_back(vk::DynamicState::eFragmentShadingRateKHR);
     }
 
-    vk::PipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
-    pipelineDynamicStateCreateInfo.pDynamicStates = dynamic_state_enables.data();
-    pipelineDynamicStateCreateInfo.dynamicStateCount = dynamic_state_enables.size();
+    vk::PipelineDynamicStateCreateInfo pipeline_dynamic_state_info = {};
+    pipeline_dynamic_state_info.pDynamicStates = dynamic_state_enables.data();
+    pipeline_dynamic_state_info.dynamicStateCount = dynamic_state_enables.size();
 
     vk::GraphicsPipelineCreateInfo pipeline_info = {};
     pipeline_info.stageCount = m_shader_stage_create_info.size();
@@ -202,7 +202,11 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = &color_blending;
     pipeline_info.layout = m_pipeline_layout;
-    pipeline_info.pDynamicState = &pipelineDynamicStateCreateInfo;
+    pipeline_info.pDynamicState = &pipeline_dynamic_state_info;
+
+    if (m_device.GetShadingRateImageTileSize() > 0) {
+        pipeline_info.flags |= vk::PipelineCreateFlagBits::eRenderingFragmentShadingRateAttachmentKHR;
+    }
 
     vk::PipelineRenderingCreateInfo pipeline_rendering_info = {};
     std::vector<vk::Format> color_formats(m_desc.color_formats.size());
