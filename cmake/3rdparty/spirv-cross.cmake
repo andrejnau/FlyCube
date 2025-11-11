@@ -7,9 +7,12 @@ option(SPIRV_CROSS_ENABLE_UTIL "Enable util module support." OFF)
 option(SPIRV_CROSS_SKIP_INSTALL "Skips installation targets." ON)
 
 add_subdirectory(${project_root}/3rdparty/SPIRV-Cross EXCLUDE_FROM_ALL)
+set(msvc_compile_options
+    /wd5051
+)
 target_compile_options(spirv-cross-msl
     PRIVATE
-        $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/wd5051>
+        "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:${msvc_compile_options}>"
 )
 
 set_target_properties(spirv-cross-core PROPERTIES FOLDER "3rdparty/spirv-cross")
