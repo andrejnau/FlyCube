@@ -15,6 +15,28 @@ class Program;
 class Resource;
 class View;
 
+struct Offset2D {
+    int32_t x;
+    int32_t y;
+};
+
+struct Extent2D {
+    uint32_t width;
+    uint32_t height;
+};
+
+struct Offset3D {
+    int32_t x;
+    int32_t y;
+    int32_t z;
+};
+
+struct Extent3D {
+    uint32_t width;
+    uint32_t height;
+    uint32_t depth;
+};
+
 namespace enum_class {
 enum ResourceState : uint32_t {
     kUnknown = 0,
@@ -486,35 +508,23 @@ struct RaytracingGeometryDesc {
 
 enum class MemoryType { kDefault, kUpload, kReadback };
 
-struct TextureOffset {
-    int32_t x;
-    int32_t y;
-    int32_t z;
-};
-
-struct TextureExtent3D {
-    uint32_t width;
-    uint32_t height;
-    uint32_t depth;
-};
-
 struct BufferToTextureCopyRegion {
     uint64_t buffer_offset;
     uint32_t buffer_row_pitch;
     uint32_t texture_mip_level;
     uint32_t texture_array_layer;
-    TextureOffset texture_offset;
-    TextureExtent3D texture_extent;
+    Offset3D texture_offset;
+    Extent3D texture_extent;
 };
 
 struct TextureCopyRegion {
-    TextureExtent3D extent;
+    Extent3D extent;
     uint32_t src_mip_level;
     uint32_t src_array_layer;
-    TextureOffset src_offset;
+    Offset3D src_offset;
     uint32_t dst_mip_level;
     uint32_t dst_array_layer;
-    TextureOffset dst_offset;
+    Offset3D dst_offset;
 };
 
 struct BufferCopyRegion {
