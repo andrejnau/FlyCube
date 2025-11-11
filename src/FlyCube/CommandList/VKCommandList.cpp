@@ -140,7 +140,7 @@ void VKCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
                                        0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
 }
 
-void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, const FramebufferDesc& framebuffer_desc)
+void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
 {
     auto get_image_view = [&](const std::shared_ptr<View>& view) -> vk::ImageView {
         if (!view) {
@@ -152,7 +152,7 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
     std::vector<vk::RenderingAttachmentInfo> color_attachments(render_pass_desc.colors.size());
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
         vk::RenderingAttachmentInfo& color_attachment = color_attachments[i];
-        color_attachment.imageView = get_image_view(framebuffer_desc.colors[i]);
+        color_attachment.imageView = get_image_view(render_pass_desc.colors[i].view);
         color_attachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
         color_attachment.loadOp = ConvertRenderPassLoadOp(render_pass_desc.colors[i].load_op);
         color_attachment.storeOp = ConvertRenderPassStoreOp(render_pass_desc.colors[i].store_op);
@@ -165,8 +165,9 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
     }
 
     vk::RenderingAttachmentInfo depth_attachment = {};
-    if (framebuffer_desc.depth_stencil && gli::is_depth(framebuffer_desc.depth_stencil->GetResource()->GetFormat())) {
-        depth_attachment.imageView = get_image_view(framebuffer_desc.depth_stencil);
+    if (render_pass_desc.depth_stencil_view &&
+        gli::is_depth(render_pass_desc.depth_stencil_view->GetResource()->GetFormat())) {
+        depth_attachment.imageView = get_image_view(render_pass_desc.depth_stencil_view);
         depth_attachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
     }
     depth_attachment.loadOp = ConvertRenderPassLoadOp(render_pass_desc.depth.load_op);
@@ -174,8 +175,9 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
     depth_attachment.clearValue.depthStencil.depth = render_pass_desc.depth.clear_value;
 
     vk::RenderingAttachmentInfo stencil_attachment = {};
-    if (framebuffer_desc.depth_stencil && gli::is_stencil(framebuffer_desc.depth_stencil->GetResource()->GetFormat())) {
-        stencil_attachment.imageView = get_image_view(framebuffer_desc.depth_stencil);
+    if (render_pass_desc.depth_stencil_view &&
+        gli::is_stencil(render_pass_desc.depth_stencil_view->GetResource()->GetFormat())) {
+        stencil_attachment.imageView = get_image_view(render_pass_desc.depth_stencil_view);
         stencil_attachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
     }
     stencil_attachment.loadOp = ConvertRenderPassLoadOp(render_pass_desc.stencil.load_op);
@@ -183,17 +185,17 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
     stencil_attachment.clearValue.depthStencil.stencil = render_pass_desc.stencil.clear_value;
 
     vk::RenderingInfo rendering_info = {};
-    rendering_info.renderArea.extent.width = framebuffer_desc.width;
-    rendering_info.renderArea.extent.height = framebuffer_desc.height;
-    rendering_info.layerCount = framebuffer_desc.layers;
+    rendering_info.renderArea = { render_pass_desc.render_area.x, render_pass_desc.render_area.y,
+                                  render_pass_desc.render_area.width, render_pass_desc.render_area.height };
+    rendering_info.layerCount = render_pass_desc.layers;
     rendering_info.colorAttachmentCount = color_attachments.size();
     rendering_info.pColorAttachments = color_attachments.data();
     rendering_info.pDepthAttachment = &depth_attachment;
     rendering_info.pStencilAttachment = &stencil_attachment;
 
     vk::RenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate_attachment = {};
-    if (framebuffer_desc.shading_rate_image) {
-        fragment_shading_rate_attachment.imageView = get_image_view(framebuffer_desc.shading_rate_image);
+    if (render_pass_desc.shading_rate_image_view) {
+        fragment_shading_rate_attachment.imageView = get_image_view(render_pass_desc.shading_rate_image_view);
         fragment_shading_rate_attachment.imageLayout = vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR;
         fragment_shading_rate_attachment.shadingRateAttachmentTexelSize.width = m_device.GetShadingRateImageTileSize();
         fragment_shading_rate_attachment.shadingRateAttachmentTexelSize.height = m_device.GetShadingRateImageTileSize();

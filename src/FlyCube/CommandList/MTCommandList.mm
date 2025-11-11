@@ -192,11 +192,9 @@ void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     m_need_apply_binding_set = true;
 }
 
-void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, const FramebufferDesc& framebuffer_desc)
+void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
 {
     CloseComputeEncoder();
-
-    MTL4RenderPassDescriptor* render_pass_descriptor = [MTL4RenderPassDescriptor new];
 
     auto add_attachment = [&](auto& attachment, RenderPassLoadOp load_op, RenderPassStoreOp store_op,
                               const std::shared_ptr<View>& view) {
@@ -216,10 +214,12 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
         }
     };
 
+    MTL4RenderPassDescriptor* render_pass_descriptor = [MTL4RenderPassDescriptor new];
+
     for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
         decltype(auto) color_attachment = render_pass_descriptor.colorAttachments[i];
         add_attachment(color_attachment, render_pass_desc.colors[i].load_op, render_pass_desc.colors[i].store_op,
-                       framebuffer_desc.colors[i]);
+                       render_pass_desc.colors[i].view);
         if (render_pass_desc.colors[i].load_op == RenderPassLoadOp::kClear) {
             color_attachment.clearColor =
                 MTLClearColorMake(render_pass_desc.colors[i].clear_value.r, render_pass_desc.colors[i].clear_value.g,
@@ -228,22 +228,24 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
     }
 
     decltype(auto) depth_attachment = render_pass_descriptor.depthAttachment;
-    if (framebuffer_desc.depth_stencil && gli::is_depth(framebuffer_desc.depth_stencil->GetResource()->GetFormat())) {
+    if (render_pass_desc.depth_stencil_view &&
+        gli::is_depth(render_pass_desc.depth_stencil_view->GetResource()->GetFormat())) {
         add_attachment(depth_attachment, render_pass_desc.depth.load_op, render_pass_desc.depth.store_op,
-                       framebuffer_desc.depth_stencil);
+                       render_pass_desc.depth_stencil_view);
     }
     depth_attachment.clearDepth = render_pass_desc.depth.clear_value;
 
     decltype(auto) stencil_attachment = render_pass_descriptor.stencilAttachment;
-    if (framebuffer_desc.depth_stencil && gli::is_stencil(framebuffer_desc.depth_stencil->GetResource()->GetFormat())) {
+    if (render_pass_desc.depth_stencil_view &&
+        gli::is_stencil(render_pass_desc.depth_stencil_view->GetResource()->GetFormat())) {
         add_attachment(stencil_attachment, render_pass_desc.stencil.load_op, render_pass_desc.stencil.store_op,
-                       framebuffer_desc.depth_stencil);
+                       render_pass_desc.depth_stencil_view);
     }
     stencil_attachment.clearStencil = render_pass_desc.stencil.clear_value;
 
-    render_pass_descriptor.renderTargetWidth = framebuffer_desc.width;
-    render_pass_descriptor.renderTargetHeight = framebuffer_desc.height;
-    render_pass_descriptor.renderTargetArrayLength = framebuffer_desc.layers;
+    render_pass_descriptor.renderTargetWidth = render_pass_desc.render_area.x + render_pass_desc.render_area.width;
+    render_pass_descriptor.renderTargetHeight = render_pass_desc.render_area.y + render_pass_desc.render_area.height;
+    render_pass_descriptor.renderTargetArrayLength = render_pass_desc.layers;
     render_pass_descriptor.defaultRasterSampleCount = render_pass_desc.sample_count;
 
     m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];

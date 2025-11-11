@@ -37,6 +37,13 @@ struct Extent3D {
     uint32_t depth;
 };
 
+struct Rect2D {
+    int32_t x;
+    int32_t y;
+    uint32_t width;
+    uint32_t height;
+};
+
 namespace enum_class {
 enum ResourceState : uint32_t {
     kUnknown = 0,
@@ -303,13 +310,14 @@ enum class RenderPassStoreOp {
 };
 
 struct RenderPassColorDesc {
+    std::shared_ptr<View> view;
     RenderPassLoadOp load_op = RenderPassLoadOp::kLoad;
     RenderPassStoreOp store_op = RenderPassStoreOp::kStore;
     glm::vec4 clear_value = glm::vec4(0.0, 0.0, 0.0, 1.0);
 
     auto MakeTie() const
     {
-        return std::tie(load_op, store_op, clear_value);
+        return std::tie(view, load_op, store_op, clear_value);
     }
 };
 
@@ -336,28 +344,19 @@ struct RenderPassStencilDesc {
 };
 
 struct RenderPassDesc {
+    Rect2D render_area;
+    uint32_t layers = 1;
+    uint32_t sample_count = 1;
     std::vector<RenderPassColorDesc> colors;
     RenderPassDepthDesc depth;
     RenderPassStencilDesc stencil;
-    uint32_t sample_count = 1;
+    std::shared_ptr<View> depth_stencil_view;
+    std::shared_ptr<View> shading_rate_image_view;
 
     auto MakeTie() const
     {
-        return std::tie(colors, depth, stencil, sample_count);
-    }
-};
-
-struct FramebufferDesc {
-    uint32_t width;
-    uint32_t height;
-    uint32_t layers = 1;
-    std::vector<std::shared_ptr<View>> colors;
-    std::shared_ptr<View> depth_stencil;
-    std::shared_ptr<View> shading_rate_image;
-
-    auto MakeTie() const
-    {
-        return std::tie(width, height, colors, depth_stencil, shading_rate_image);
+        return std::tie(render_area, layers, sample_count, colors, depth, stencil, depth_stencil_view,
+                        shading_rate_image_view);
     }
 };
 

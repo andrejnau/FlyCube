@@ -147,11 +147,8 @@ void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_se
     m_binding_set = binding_set;
 }
 
-void DXCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, const FramebufferDesc& framebuffer_desc)
+void DXCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
 {
-    auto& rtvs = framebuffer_desc.colors;
-    auto& dsv = framebuffer_desc.depth_stencil;
-
     auto get_handle = [](const std::shared_ptr<View>& view) {
         if (!view) {
             return D3D12_CPU_DESCRIPTOR_HANDLE{};
@@ -161,25 +158,25 @@ void DXCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
     };
 
     std::vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC> om_rtv;
-    for (uint32_t slot = 0; slot < rtvs.size(); ++slot) {
-        auto handle = get_handle(rtvs[slot]);
+    for (size_t i = 0; i < render_pass_desc.colors.size(); ++i) {
+        auto handle = get_handle(render_pass_desc.colors[i].view);
         if (!handle.ptr) {
             continue;
         }
-        D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { Convert(render_pass_desc.colors[slot].load_op), {} };
-        if (render_pass_desc.colors[slot].load_op == RenderPassLoadOp::kClear) {
-            begin.Clear.ClearValue.Color[0] = render_pass_desc.colors[slot].clear_value.r;
-            begin.Clear.ClearValue.Color[1] = render_pass_desc.colors[slot].clear_value.g;
-            begin.Clear.ClearValue.Color[2] = render_pass_desc.colors[slot].clear_value.b;
-            begin.Clear.ClearValue.Color[3] = render_pass_desc.colors[slot].clear_value.a;
+        D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { Convert(render_pass_desc.colors[i].load_op), {} };
+        if (render_pass_desc.colors[i].load_op == RenderPassLoadOp::kClear) {
+            begin.Clear.ClearValue.Color[0] = render_pass_desc.colors[i].clear_value.r;
+            begin.Clear.ClearValue.Color[1] = render_pass_desc.colors[i].clear_value.g;
+            begin.Clear.ClearValue.Color[2] = render_pass_desc.colors[i].clear_value.b;
+            begin.Clear.ClearValue.Color[3] = render_pass_desc.colors[i].clear_value.a;
         }
-        D3D12_RENDER_PASS_ENDING_ACCESS end = { Convert(render_pass_desc.colors[slot].store_op), {} };
+        D3D12_RENDER_PASS_ENDING_ACCESS end = { Convert(render_pass_desc.colors[i].store_op), {} };
         om_rtv.push_back({ handle, begin, end });
     }
 
     D3D12_RENDER_PASS_DEPTH_STENCIL_DESC om_dsv = {};
     D3D12_RENDER_PASS_DEPTH_STENCIL_DESC* om_dsv_ptr = nullptr;
-    D3D12_CPU_DESCRIPTOR_HANDLE om_dsv_handle = get_handle(dsv);
+    D3D12_CPU_DESCRIPTOR_HANDLE om_dsv_handle = get_handle(render_pass_desc.depth_stencil_view);
     if (om_dsv_handle.ptr) {
         D3D12_RENDER_PASS_BEGINNING_ACCESS depth_begin = { Convert(render_pass_desc.depth.load_op), {} };
         D3D12_RENDER_PASS_ENDING_ACCESS depth_end = { Convert(render_pass_desc.depth.store_op), {} };
@@ -194,18 +191,18 @@ void DXCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc, cons
     m_command_list4->BeginRenderPass(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), om_dsv_ptr,
                                      D3D12_RENDER_PASS_FLAG_NONE);
 
-    decltype(auto) shading_rate_image_view = framebuffer_desc.shading_rate_image;
-    if (shading_rate_image_view == m_shading_rate_image_view) {
+    if (m_shading_rate_image_view == render_pass_desc.shading_rate_image_view) {
         return;
     }
 
-    if (shading_rate_image_view) {
-        decltype(auto) dx_shading_rate_image = shading_rate_image_view->GetResource()->As<DXResource>();
+    if (render_pass_desc.shading_rate_image_view) {
+        decltype(auto) dx_shading_rate_image =
+            render_pass_desc.shading_rate_image_view->GetResource()->As<DXResource>();
         m_command_list5->RSSetShadingRateImage(dx_shading_rate_image.GetResource());
     } else {
         m_command_list5->RSSetShadingRateImage(nullptr);
     }
-    m_shading_rate_image_view = shading_rate_image_view;
+    m_shading_rate_image_view = render_pass_desc.shading_rate_image_view;
 }
 
 void DXCommandList::EndRenderPass()

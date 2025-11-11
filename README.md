@@ -104,16 +104,13 @@ for (uint32_t i = 0; i < kFrameCount; ++i) {
     command_list->IASetVertexBuffer(0, vertex_buffer, 0);
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
     RenderPassDesc render_pass_desc = {
-        .colors = { { .load_op = RenderPassLoadOp::kClear,
+        .render_area = { 0, 0, app_size.width(), app_size.height() },
+        .colors = { { .view = back_buffer_views[i],
+                      .load_op = RenderPassLoadOp::kClear,
                       .store_op = RenderPassStoreOp::kStore,
                       .clear_value = glm::vec4(0.0, 0.2, 0.4, 1.0) } },
     };
-    FramebufferDesc framebuffer_desc = {
-        .width = app_size.width(),
-        .height = app_size.height(),
-        .colors = { back_buffer_views[i] },
-    };
-    command_list->BeginRenderPass(render_pass_desc, framebuffer_desc);
+    command_list->BeginRenderPass(render_pass_desc);
     command_list->DrawIndexed(3, 1, 0, 0, 0);
     command_list->EndRenderPass();
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });

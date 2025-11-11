@@ -263,15 +263,12 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
 
         command_list->BindPipeline(m_depth_stencil_pass_pipeline);
         RenderPassDesc depth_stencil_pass_render_pass_desc = {
+            .render_area = { 0, 0, depth_stencil_size.x, depth_stencil_size.y },
             .depth = { .load_op = RenderPassLoadOp::kClear, .store_op = RenderPassStoreOp::kStore, .clear_value = 1.0 },
             .stencil = { .load_op = RenderPassLoadOp::kClear, .store_op = RenderPassStoreOp::kStore, .clear_value = 0 },
+            .depth_stencil_view = m_depth_stencil_view,
         };
-        FramebufferDesc depth_stencil_pass_framebuffer_desc = {
-            .width = depth_stencil_size.x,
-            .height = depth_stencil_size.y,
-            .depth_stencil = m_depth_stencil_view,
-        };
-        command_list->BeginRenderPass(depth_stencil_pass_render_pass_desc, depth_stencil_pass_framebuffer_desc);
+        command_list->BeginRenderPass(depth_stencil_pass_render_pass_desc);
         command_list->SetViewport(0, 0, depth_stencil_size.x, depth_stencil_size.y);
         command_list->SetScissorRect(0, 0, depth_stencil_size.x, depth_stencil_size.y);
         for (size_t j = 0; j < m_render_model.GetMeshCount(); ++j) {
@@ -286,14 +283,12 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
 
         command_list->BindPipeline(m_pipeline);
         RenderPassDesc render_pass_desc = {
-            .colors = { { .load_op = RenderPassLoadOp::kDontCare, .store_op = RenderPassStoreOp::kStore } },
+            .render_area = { 0, 0, app_size.width(), app_size.height() },
+            .colors = { { .view = m_back_buffer_views[i],
+                          .load_op = RenderPassLoadOp::kDontCare,
+                          .store_op = RenderPassStoreOp::kStore } },
         };
-        FramebufferDesc framebuffer_desc = {
-            .width = app_size.width(),
-            .height = app_size.height(),
-            .colors = { m_back_buffer_views[i] },
-        };
-        command_list->BeginRenderPass(render_pass_desc, framebuffer_desc);
+        command_list->BeginRenderPass(render_pass_desc);
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         for (size_t j = 0; j < m_fullscreen_triangle_render_model.GetMeshCount(); ++j) {

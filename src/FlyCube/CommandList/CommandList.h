@@ -19,7 +19,7 @@ public:
     virtual void Close() = 0;
     virtual void BindPipeline(const std::shared_ptr<Pipeline>& state) = 0;
     virtual void BindBindingSet(const std::shared_ptr<BindingSet>& binding_set) = 0;
-    virtual void BeginRenderPass(const RenderPassDesc& render_pass_desc, const FramebufferDesc& framebuffer_desc) = 0;
+    virtual void BeginRenderPass(const RenderPassDesc& render_pass_desc) = 0;
     virtual void EndRenderPass() = 0;
     virtual void BeginEvent(const std::string& name) = 0;
     virtual void EndEvent() = 0;
