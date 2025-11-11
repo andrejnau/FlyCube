@@ -84,11 +84,18 @@ public:
     uint32_t GetMaxDescriptorSetBindings(vk::DescriptorType type) const;
     bool HasBufferDeviceAddress() const;
 
-    template <typename Feature>
-    Feature GetFeatures2()
+    template <typename Features>
+    Features GetFeatures2()
     {
-        auto [_, feature] = m_physical_device.getFeatures2<vk::PhysicalDeviceFeatures2, Feature>();
-        return feature;
+        auto [_, features] = m_physical_device.getFeatures2<vk::PhysicalDeviceFeatures2, Features>();
+        return features;
+    }
+
+    template <typename Properties>
+    Properties GetProperties2()
+    {
+        auto [_, properties] = m_physical_device.getProperties2<vk::PhysicalDeviceProperties2, Properties>();
+        return properties;
     }
 
 private:

@@ -164,7 +164,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
     , m_gpu_descriptor_pool(*this)
 {
     m_device_properties = m_physical_device.getProperties();
-    auto physical_device_features = m_physical_device.getFeatures();
     Logging::Println("{}: Vulkan {}.{}.{}", m_device_properties.deviceName.data(),
                      VK_VERSION_MAJOR(m_device_properties.apiVersion), VK_VERSION_MINOR(m_device_properties.apiVersion),
                      VK_VERSION_PATCH(m_device_properties.apiVersion));
@@ -233,19 +232,22 @@ VKDevice::VKDevice(VKAdapter& adapter)
     };
 
     vk::PhysicalDeviceFeatures device_features = {};
-    device_features.textureCompressionBC = physical_device_features.textureCompressionBC;
-    device_features.vertexPipelineStoresAndAtomics = physical_device_features.vertexPipelineStoresAndAtomics;
-    device_features.samplerAnisotropy = physical_device_features.samplerAnisotropy;
-    device_features.fragmentStoresAndAtomics = physical_device_features.fragmentStoresAndAtomics;
-    device_features.sampleRateShading = physical_device_features.sampleRateShading;
-    device_features.geometryShader = physical_device_features.geometryShader;
-    device_features.imageCubeArray = physical_device_features.imageCubeArray;
-    device_features.shaderImageGatherExtended = physical_device_features.shaderImageGatherExtended;
+    vk::PhysicalDeviceFeatures query_device_features = m_physical_device.getFeatures();
+    device_features.fragmentStoresAndAtomics = query_device_features.fragmentStoresAndAtomics;
+    device_features.geometryShader = query_device_features.geometryShader;
+    device_features.imageCubeArray = query_device_features.imageCubeArray;
+    device_features.samplerAnisotropy = query_device_features.samplerAnisotropy;
+    device_features.sampleRateShading = query_device_features.sampleRateShading;
+    device_features.shaderImageGatherExtended = query_device_features.shaderImageGatherExtended;
+    device_features.textureCompressionBC = query_device_features.textureCompressionBC;
+    device_features.vertexPipelineStoresAndAtomics = query_device_features.vertexPipelineStoresAndAtomics;
+
+    m_geometry_shader_supported = device_features.geometryShader;
 
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
     auto query_device_vulkan12_features = GetFeatures2<vk::PhysicalDeviceVulkan12Features>();
-    device_vulkan12_features.drawIndirectCount = query_device_vulkan12_features.drawIndirectCount;
     device_vulkan12_features.bufferDeviceAddress = query_device_vulkan12_features.bufferDeviceAddress;
+    device_vulkan12_features.drawIndirectCount = query_device_vulkan12_features.drawIndirectCount;
     assert(query_device_vulkan12_features.timelineSemaphore);
     device_vulkan12_features.timelineSemaphore = true;
     device_vulkan12_features.descriptorIndexing = query_device_vulkan12_features.descriptorIndexing;
@@ -254,16 +256,19 @@ VKDevice::VKDevice(VKAdapter& adapter)
         query_device_vulkan12_features.descriptorBindingPartiallyBound;
     device_vulkan12_features.descriptorBindingVariableDescriptorCount =
         query_device_vulkan12_features.descriptorBindingVariableDescriptorCount;
+    device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
+    device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
+
+    m_has_buffer_device_address = device_vulkan12_features.bufferDeviceAddress;
+    m_draw_indirect_count_supported = device_vulkan12_features.drawIndirectCount;
     m_bindless_supported |= device_vulkan12_features.descriptorIndexing &&
                             device_vulkan12_features.runtimeDescriptorArray &&
                             device_vulkan12_features.descriptorBindingPartiallyBound &&
                             device_vulkan12_features.descriptorBindingVariableDescriptorCount;
-    device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
-    device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
     add_extension(device_vulkan12_features);
 
     vk::PhysicalDeviceVulkan13Features device_vulkan13_features = {};
-    vk::PhysicalDeviceDynamicRenderingFeaturesKHR device_dynamic_rendering = {};
+    vk::PhysicalDeviceDynamicRenderingFeaturesKHR device_dynamic_rendering_features = {};
     if (m_device_properties.apiVersion >= VK_API_VERSION_1_3) {
         assert(GetFeatures2<vk::PhysicalDeviceVulkan13Features>().dynamicRendering);
         device_vulkan13_features.dynamicRendering = true;
@@ -271,69 +276,72 @@ VKDevice::VKDevice(VKAdapter& adapter)
     } else {
         assert(enabled_extension_set.contains(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME));
         assert(GetFeatures2<vk::PhysicalDeviceDynamicRenderingFeaturesKHR>().dynamicRendering);
-        device_dynamic_rendering.dynamicRendering = true;
-        add_extension(device_dynamic_rendering);
+        device_dynamic_rendering_features.dynamicRendering = true;
+        add_extension(device_dynamic_rendering_features);
     }
 
-    m_geometry_shader_supported = device_features.geometryShader;
-    m_draw_indirect_count_supported = device_vulkan12_features.drawIndirectCount;
-    m_has_buffer_device_address = device_vulkan12_features.bufferDeviceAddress;
-
-    vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_feature = {};
+    vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = {};
     if (enabled_extension_set.contains(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
-        auto query_mesh_shader_feature = GetFeatures2<vk::PhysicalDeviceMeshShaderFeaturesEXT>();
-        mesh_shader_feature.taskShader = query_mesh_shader_feature.taskShader;
-        mesh_shader_feature.meshShader = query_mesh_shader_feature.meshShader;
-        m_is_mesh_shading_supported = mesh_shader_feature.taskShader && mesh_shader_feature.meshShader;
-        add_extension(mesh_shader_feature);
+        auto query_mesh_shader_features = GetFeatures2<vk::PhysicalDeviceMeshShaderFeaturesEXT>();
+        mesh_shader_features.taskShader = query_mesh_shader_features.taskShader;
+        mesh_shader_features.meshShader = query_mesh_shader_features.meshShader;
+        mesh_shader_features.multiviewMeshShader = query_mesh_shader_features.multiviewMeshShader;
+        mesh_shader_features.primitiveFragmentShadingRateMeshShader =
+            query_mesh_shader_features.primitiveFragmentShadingRateMeshShader;
+        mesh_shader_features.meshShaderQueries = query_mesh_shader_features.meshShaderQueries;
+
+        m_is_mesh_shading_supported = mesh_shader_features.taskShader && mesh_shader_features.meshShader;
+        add_extension(mesh_shader_features);
     }
 
-    vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_feature = {};
+    vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features = {};
     if (enabled_extension_set.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
-        auto query_acceleration_structure_feature = GetFeatures2<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>();
-        acceleration_structure_feature.accelerationStructure =
-            query_acceleration_structure_feature.accelerationStructure;
-        add_extension(acceleration_structure_feature);
+        auto query_acceleration_structure_features = GetFeatures2<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>();
+        acceleration_structure_features.accelerationStructure =
+            query_acceleration_structure_features.accelerationStructure;
+        add_extension(acceleration_structure_features);
     }
 
-    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_pipeline_feature = {};
+    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_pipeline_features = {};
     if (enabled_extension_set.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
-        acceleration_structure_feature.accelerationStructure) {
-        vk::PhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = {};
-        vk::PhysicalDeviceProperties2 device_props2 = {};
-        device_props2.pNext = &ray_tracing_properties;
-        m_physical_device.getProperties2(&device_props2);
-        m_shader_group_handle_size = ray_tracing_properties.shaderGroupHandleSize;
-        m_shader_record_alignment = ray_tracing_properties.shaderGroupHandleSize;
-        m_shader_table_alignment = ray_tracing_properties.shaderGroupBaseAlignment;
+        acceleration_structure_features.accelerationStructure) {
+        auto ray_tracing_pipeline_properties = GetProperties2<vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
+        m_shader_group_handle_size = ray_tracing_pipeline_properties.shaderGroupHandleSize;
+        m_shader_record_alignment = ray_tracing_pipeline_properties.shaderGroupHandleSize;
+        m_shader_table_alignment = ray_tracing_pipeline_properties.shaderGroupBaseAlignment;
 
-        auto query_raytracing_pipeline_feature = GetFeatures2<vk::PhysicalDeviceRayTracingPipelineFeaturesKHR>();
-        raytracing_pipeline_feature.rayTracingPipeline = query_raytracing_pipeline_feature.rayTracingPipeline;
-        raytracing_pipeline_feature.rayTraversalPrimitiveCulling =
-            query_raytracing_pipeline_feature.rayTraversalPrimitiveCulling;
-        m_is_dxr_supported =
-            raytracing_pipeline_feature.rayTracingPipeline && raytracing_pipeline_feature.rayTraversalPrimitiveCulling;
-        add_extension(raytracing_pipeline_feature);
+        auto query_raytracing_pipeline_features = GetFeatures2<vk::PhysicalDeviceRayTracingPipelineFeaturesKHR>();
+        raytracing_pipeline_features.rayTracingPipeline = query_raytracing_pipeline_features.rayTracingPipeline;
+        raytracing_pipeline_features.rayTraversalPrimitiveCulling =
+            query_raytracing_pipeline_features.rayTraversalPrimitiveCulling;
+
+        m_is_dxr_supported = raytracing_pipeline_features.rayTracingPipeline &&
+                             raytracing_pipeline_features.rayTraversalPrimitiveCulling;
+        add_extension(raytracing_pipeline_features);
     }
 
-    vk::PhysicalDeviceRayQueryFeaturesKHR rayquery_feature = {};
+    vk::PhysicalDeviceRayQueryFeaturesKHR rayquery_features = {};
     if (enabled_extension_set.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
-        acceleration_structure_feature.accelerationStructure) {
-        auto query_rayquery_feature = GetFeatures2<vk::PhysicalDeviceRayQueryFeaturesKHR>();
-        rayquery_feature.rayQuery = query_rayquery_feature.rayQuery;
-        m_is_ray_query_supported = rayquery_feature.rayQuery;
-        add_extension(rayquery_feature);
+        acceleration_structure_features.accelerationStructure) {
+        auto query_rayquery_features = GetFeatures2<vk::PhysicalDeviceRayQueryFeaturesKHR>();
+        rayquery_features.rayQuery = query_rayquery_features.rayQuery;
+
+        m_is_ray_query_supported = rayquery_features.rayQuery;
+        add_extension(rayquery_features);
     }
 
     vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features = {};
     if (enabled_extension_set.contains(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
         auto query_fragment_shading_rate_features = GetFeatures2<vk::PhysicalDeviceFragmentShadingRateFeaturesKHR>();
-        if (query_fragment_shading_rate_features.pipelineFragmentShadingRate) {
-            m_is_variable_rate_shading_supported = true;
-            fragment_shading_rate_features.pipelineFragmentShadingRate = true;
-        }
+        fragment_shading_rate_features.pipelineFragmentShadingRate =
+            query_fragment_shading_rate_features.pipelineFragmentShadingRate;
+        fragment_shading_rate_features.primitiveFragmentShadingRate =
+            query_fragment_shading_rate_features.primitiveFragmentShadingRate;
+        fragment_shading_rate_features.attachmentFragmentShadingRate =
+            query_fragment_shading_rate_features.attachmentFragmentShadingRate;
 
-        if (query_fragment_shading_rate_features.attachmentFragmentShadingRate) {
+        auto shading_rate_image_properties = GetProperties2<vk::PhysicalDeviceFragmentShadingRatePropertiesKHR>();
+        if (fragment_shading_rate_features.attachmentFragmentShadingRate) {
             std::map<std::pair<uint32_t, uint32_t>, ShadingRate> expected_shading_rates = {
                 { ConvertShadingRateToPair(ShadingRate::k1x1), ShadingRate::k1x1 },
                 { ConvertShadingRateToPair(ShadingRate::k1x2), ShadingRate::k1x2 },
@@ -343,7 +351,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
                 { ConvertShadingRateToPair(ShadingRate::k4x2), ShadingRate::k4x2 },
                 { ConvertShadingRateToPair(ShadingRate::k4x4), ShadingRate::k4x4 },
             };
-            decltype(auto) fragment_shading_rates = m_physical_device.getFragmentShadingRatesKHR();
+            auto fragment_shading_rates = m_physical_device.getFragmentShadingRatesKHR();
             for (const auto& fragment_shading_rate : fragment_shading_rates) {
                 vk::Extent2D size = fragment_shading_rate.fragmentSize;
                 std::pair<uint32_t, uint32_t> size_as_pair = { size.width, size.height };
@@ -362,23 +370,17 @@ VKDevice::VKDevice(VKAdapter& adapter)
                 Logging::Println("ShadingRate::k{}x{} is not supported", width, height);
             }
 
-            vk::PhysicalDeviceFragmentShadingRatePropertiesKHR query_shading_rate_image_properties = {};
-            vk::PhysicalDeviceProperties2 device_props2 = {};
-            device_props2.pNext = &query_shading_rate_image_properties;
-            m_physical_device.getProperties2(&device_props2);
-            assert(query_shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize ==
-                   query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize);
-            assert(query_shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize.width ==
-                   query_shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize.height);
-            assert(query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width ==
-                   query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.height);
-            m_shading_rate_image_tile_size =
-                query_shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width;
-            assert(m_shading_rate_image_tile_size != 0);
-
-            fragment_shading_rate_features.attachmentFragmentShadingRate = true;
+            assert(shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize ==
+                   shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize);
+            assert(shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize.width ==
+                   shading_rate_image_properties.minFragmentShadingRateAttachmentTexelSize.height);
+            assert(shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width ==
+                   shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.height);
+            assert(shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width != 0);
         }
 
+        m_is_variable_rate_shading_supported = fragment_shading_rate_features.pipelineFragmentShadingRate;
+        m_shading_rate_image_tile_size = shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width;
         add_extension(fragment_shading_rate_features);
     }
 
@@ -396,7 +398,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device.get());
 #endif
 
-    for (auto& queue_info : m_queues_info) {
+    for (const auto& queue_info : m_queues_info) {
         vk::CommandPoolCreateInfo cmd_pool_create_info = {};
         cmd_pool_create_info.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
         cmd_pool_create_info.queueFamilyIndex = queue_info.second.queue_family_index;
