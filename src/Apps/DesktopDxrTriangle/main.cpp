@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
     groups.push_back({ RayTracingShaderGroupType::kGeneral, library_callable->GetId("callable") });
 
     RayTracingPipelineDesc pipeline_desc = {
-        .program = device->CreateProgram({ library, library_hit, library_callable }),
+        .shaders = { library, library_hit, library_callable },
         .layout = layout,
         .groups = groups,
     };

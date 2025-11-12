@@ -2,13 +2,12 @@
 
 #include "Device/VKDevice.h"
 #include "Pipeline/VKGraphicsPipeline.h"
-#include "Program/ProgramBase.h"
 #include "Shader/Shader.h"
 
 #include <map>
 
 VKComputePipeline::VKComputePipeline(VKDevice& device, const ComputePipelineDesc& desc)
-    : VKPipeline(device, desc.program, desc.layout)
+    : VKPipeline(device, { desc.shader }, desc.layout)
     , m_desc(desc)
 {
     vk::ComputePipelineCreateInfo pipeline_info = {};

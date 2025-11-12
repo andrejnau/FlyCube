@@ -3,7 +3,6 @@
 #include "BindingSetLayout/DXBindingSetLayout.h"
 #include "Device/DXDevice.h"
 #include "Pipeline/DXStateBuilder.h"
-#include "Program/ProgramBase.h"
 #include "Utilities/NotReached.h"
 #include "View/DXView.h"
 
@@ -187,35 +186,32 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
 {
     DXStateBuilder graphics_state_builder;
 
-    decltype(auto) dx_program = m_desc.program->As<ProgramBase>();
     decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
     m_root_signature = dx_layout.GetRootSignature();
-    for (const auto& shader : dx_program.GetShaders()) {
-        D3D12_SHADER_BYTECODE ShaderBytecode = {};
+    for (const auto& shader : m_desc.shaders) {
         decltype(auto) blob = shader->GetBlob();
-        ShaderBytecode.pShaderBytecode = blob.data();
-        ShaderBytecode.BytecodeLength = blob.size();
+        D3D12_SHADER_BYTECODE shader_bytecode = { blob.data(), blob.size() };
 
         switch (shader->GetType()) {
         case ShaderType::kVertex: {
-            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_VS>(ShaderBytecode);
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_VS>(shader_bytecode);
             ParseInputLayout(shader);
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT>(GetInputLayoutDesc());
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT>(GetDSVFormat(desc));
             break;
         }
         case ShaderType::kGeometry:
-            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_GS>(ShaderBytecode);
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_GS>(shader_bytecode);
             break;
         case ShaderType::kAmplification:
-            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_AS>(ShaderBytecode);
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_AS>(shader_bytecode);
             break;
         case ShaderType::kMesh:
-            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_MS>(ShaderBytecode);
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_MS>(shader_bytecode);
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT>(GetDSVFormat(desc));
             break;
         case ShaderType::kPixel:
-            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_PS>(ShaderBytecode);
+            graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_PS>(shader_bytecode);
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS>(GetRTVFormats(desc));
             break;
         }

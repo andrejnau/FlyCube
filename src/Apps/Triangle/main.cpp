@@ -111,7 +111,7 @@ void TriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
 
     GraphicsPipelineDesc pipeline_desc = {
-        .program = m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
+        .shaders = { m_vertex_shader, m_pixel_shader },
         .layout = m_layout,
         .input = { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) } },
         .color_formats = { m_swapchain->GetFormat() },

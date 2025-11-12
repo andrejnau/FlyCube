@@ -5,29 +5,23 @@
 #include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
 
+#include <cassert>
+
 MTComputePipeline::MTComputePipeline(MTDevice& device, const ComputePipelineDesc& desc)
     : m_device(device)
     , m_desc(desc)
 {
     decltype(auto) mt_device = device.GetDevice();
     MTL4ComputePipelineDescriptor* pipeline_descriptor = [MTL4ComputePipelineDescriptor new];
-    decltype(auto) shaders = desc.program->GetShaders();
-    for (const auto& shader : shaders) {
-        decltype(auto) mt_shader = shader->As<MTShader>();
-        decltype(auto) reflection = shader->GetReflection();
-        for (const auto& entry_point : reflection->GetEntryPoints()) {
-            MTL4LibraryFunctionDescriptor* function_descriptor = mt_shader.CreateFunctionDescriptor(entry_point.name);
-            switch (shader->GetType()) {
-            case ShaderType::kCompute:
-                pipeline_descriptor.computeFunctionDescriptor = function_descriptor;
-                break;
-            default:
-                NOTREACHED();
-            }
-        }
-        decltype(auto) numthreads = reflection->GetShaderFeatureInfo().numthreads;
-        m_numthreads = { numthreads[0], numthreads[1], numthreads[2] };
-    }
+
+    decltype(auto) mt_shader = m_desc.shader->As<MTShader>();
+    assert(mt_shader.GetType() == ShaderType::kCompute);
+    decltype(auto) reflection = mt_shader.GetReflection();
+    auto entry_point = reflection->GetEntryPoints().at(0);
+    MTL4LibraryFunctionDescriptor* function_descriptor = mt_shader.CreateFunctionDescriptor(entry_point.name);
+    pipeline_descriptor.computeFunctionDescriptor = function_descriptor;
+    decltype(auto) numthreads = reflection->GetShaderFeatureInfo().numthreads;
+    m_numthreads = { numthreads[0], numthreads[1], numthreads[2] };
 
     NSError* error = nullptr;
     m_pipeline = [device.GetCompiler() newComputePipelineStateWithDescriptor:pipeline_descriptor
@@ -49,9 +43,12 @@ std::vector<uint8_t> MTComputePipeline::GetRayTracingShaderGroupHandles(uint32_t
     NOTREACHED();
 }
 
-std::shared_ptr<Program> MTComputePipeline::GetProgram() const
+std::shared_ptr<Shader> MTComputePipeline::GetShader(ShaderType type) const
 {
-    return m_desc.program;
+    if (type == ShaderType::kCompute) {
+        return m_desc.shader;
+    }
+    return nullptr;
 }
 
 id<MTLComputePipelineState> MTComputePipeline::GetPipeline()

@@ -1,6 +1,5 @@
 #pragma once
 #include "Pipeline/Pipeline.h"
-#include "Program/Program.h"
 
 #include <vulkan/vulkan.hpp>
 
@@ -11,7 +10,7 @@ class VKDevice;
 class VKPipeline : public Pipeline {
 public:
     VKPipeline(VKDevice& device,
-               const std::shared_ptr<Program>& program,
+               const std::vector<std::shared_ptr<Shader>>& shaders,
                const std::shared_ptr<BindingSetLayout>& layout);
     vk::PipelineLayout GetPipelineLayout() const;
     vk::Pipeline GetPipeline() const;

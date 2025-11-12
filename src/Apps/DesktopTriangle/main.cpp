@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     binding_set->WriteBindings({ { constant_buffer_key, constant_buffer_view } });
 
     GraphicsPipelineDesc pipeline_desc = {
-        .program = device->CreateProgram({ vertex_shader, pixel_shader }),
+        .shaders = { vertex_shader, pixel_shader },
         .layout = layout,
         .input = { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(vertex_data.front()) } },
         .color_formats = { swapchain->GetFormat() },

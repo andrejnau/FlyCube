@@ -3,7 +3,6 @@
 #include "BindingSetLayout/DXBindingSetLayout.h"
 #include "Device/DXDevice.h"
 #include "GPUDescriptorPool/DXGPUDescriptorPoolRange.h"
-#include "Program/ProgramBase.h"
 #include "View/DXView.h"
 
 DXBindingSet::DXBindingSet(DXDevice& device, const std::shared_ptr<DXBindingSetLayout>& layout)

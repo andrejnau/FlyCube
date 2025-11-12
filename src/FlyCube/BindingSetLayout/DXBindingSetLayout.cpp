@@ -2,7 +2,6 @@
 
 #include "Device/DXDevice.h"
 #include "GPUDescriptorPool/DXGPUDescriptorPoolRange.h"
-#include "Program/ProgramBase.h"
 #include "Utilities/NotReached.h"
 
 #include <directx/d3dx12.h>

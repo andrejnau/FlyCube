@@ -41,14 +41,13 @@ vk::ShaderStageFlagBits ExecutionModel2Bit(ShaderKind kind)
 } // namespace
 
 VKPipeline::VKPipeline(VKDevice& device,
-                       const std::shared_ptr<Program>& program,
+                       const std::vector<std::shared_ptr<Shader>>& shaders,
                        const std::shared_ptr<BindingSetLayout>& layout)
     : m_device(device)
 {
     decltype(auto) vk_layout = layout->As<VKBindingSetLayout>();
     m_pipeline_layout = vk_layout.GetPipelineLayout();
 
-    decltype(auto) shaders = program->GetShaders();
     for (const auto& shader : shaders) {
         decltype(auto) blob = shader->GetBlob();
         vk::ShaderModuleCreateInfo shader_module_info = {};

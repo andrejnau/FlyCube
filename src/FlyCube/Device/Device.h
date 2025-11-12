@@ -7,7 +7,6 @@
 #include "Instance/QueryInterface.h"
 #include "Memory/Memory.h"
 #include "Pipeline/Pipeline.h"
-#include "Program/Program.h"
 #include "QueryHeap/QueryHeap.h"
 #include "Shader/Shader.h"
 #include "Swapchain/Swapchain.h"
@@ -55,7 +54,6 @@ public:
                                                  ShaderBlobType blob_type,
                                                  ShaderType shader_type) = 0;
     virtual std::shared_ptr<Shader> CompileShader(const ShaderDesc& desc) = 0;
-    virtual std::shared_ptr<Program> CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders) = 0;
     virtual std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
     virtual std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) = 0;
     virtual std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) = 0;

@@ -96,7 +96,11 @@ MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineD
     : m_device(device)
     , m_desc(desc)
 {
-    if (m_desc.program->HasShader(ShaderType::kAmplification) || m_desc.program->HasShader(ShaderType::kMesh)) {
+    for (const auto& shader : desc.shaders) {
+        m_shader_by_type[shader->GetType()] = shader;
+    }
+
+    if (m_shader_by_type.contains(ShaderType::kAmplification) || m_shader_by_type.contains(ShaderType::kMesh)) {
         CreatePipeline</*is_mesh_pipeline=*/true>();
     } else {
         CreatePipeline</*is_mesh_pipeline=*/false>();
@@ -109,8 +113,7 @@ void MTGraphicsPipeline::CreatePipeline()
     using RenderPipelineDescriptorType =
         std::conditional_t<is_mesh_pipeline, MTL4MeshRenderPipelineDescriptor, MTL4RenderPipelineDescriptor>;
     RenderPipelineDescriptorType* pipeline_descriptor = [RenderPipelineDescriptorType new];
-    decltype(auto) shaders = m_desc.program->GetShaders();
-    for (const auto& shader : shaders) {
+    for (const auto& shader : m_desc.shaders) {
         decltype(auto) mt_shader = shader->As<MTShader>();
         decltype(auto) reflection = shader->GetReflection();
         for (const auto& entry_point : reflection->GetEntryPoints()) {
@@ -215,8 +218,7 @@ MTLVertexDescriptor* MTGraphicsPipeline::GetVertexDescriptor(const std::shared_p
     MTLVertexDescriptor* vertex_descriptor = [MTLVertexDescriptor new];
     for (size_t i = 0; i < m_desc.input.size(); ++i) {
         decltype(auto) vertex = m_desc.input[i];
-        uint32_t location =
-            m_desc.program->GetShader(ShaderType::kVertex)->GetInputLayoutLocation(vertex.semantic_name);
+        uint32_t location = shader->GetInputLayoutLocation(vertex.semantic_name);
         decltype(auto) attribute = vertex_descriptor.attributes[location];
         attribute.offset = 0;
         attribute.bufferIndex = m_device.GetMaxPerStageBufferCount() - vertex.slot - 1;
@@ -239,9 +241,9 @@ std::vector<uint8_t> MTGraphicsPipeline::GetRayTracingShaderGroupHandles(uint32_
     NOTREACHED();
 }
 
-std::shared_ptr<Program> MTGraphicsPipeline::GetProgram() const
+std::shared_ptr<Shader> MTGraphicsPipeline::GetShader(ShaderType type) const
 {
-    return m_desc.program;
+    return m_shader_by_type.at(type);
 }
 
 id<MTLRenderPipelineState> MTGraphicsPipeline::GetPipeline()

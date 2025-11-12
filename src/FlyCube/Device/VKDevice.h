@@ -45,7 +45,6 @@ public:
                                          ShaderBlobType blob_type,
                                          ShaderType shader_type) override;
     std::shared_ptr<Shader> CompileShader(const ShaderDesc& desc) override;
-    std::shared_ptr<Program> CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders) override;
     std::shared_ptr<Pipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateComputePipeline(const ComputePipelineDesc& desc) override;
     std::shared_ptr<Pipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) override;

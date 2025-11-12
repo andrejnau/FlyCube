@@ -211,7 +211,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     };
 
     GraphicsPipelineDesc depth_stencil_pass_pipeline_desc = {
-        .program = m_device->CreateProgram({ m_vertex_shader }),
+        .shaders = { m_vertex_shader },
         .layout = m_layout,
         .input = { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
                    { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
@@ -227,7 +227,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, WindowHandle window
     };
 
     GraphicsPipelineDesc pipeline_desc = {
-        .program = m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
+        .shaders = { m_vertex_shader, m_pixel_shader },
         .layout = m_layout,
         .input = { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
                    { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },

@@ -11,7 +11,6 @@
 #include "Pipeline/VKComputePipeline.h"
 #include "Pipeline/VKGraphicsPipeline.h"
 #include "Pipeline/VKRayTracingPipeline.h"
-#include "Program/ProgramBase.h"
 #include "QueryHeap/VKQueryHeap.h"
 #include "Shader/ShaderBase.h"
 #include "Swapchain/VKSwapchain.h"
@@ -524,11 +523,6 @@ std::shared_ptr<Shader> VKDevice::CreateShader(const std::vector<uint8_t>& blob,
 std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)
 {
     return std::make_shared<ShaderBase>(desc, ShaderBlobType::kSPIRV);
-}
-
-std::shared_ptr<Program> VKDevice::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
-{
-    return std::make_shared<ProgramBase>(shaders);
 }
 
 std::shared_ptr<Pipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)

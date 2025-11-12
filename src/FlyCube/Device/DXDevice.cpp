@@ -10,7 +10,6 @@
 #include "Pipeline/DXComputePipeline.h"
 #include "Pipeline/DXGraphicsPipeline.h"
 #include "Pipeline/DXRayTracingPipeline.h"
-#include "Program/ProgramBase.h"
 #include "QueryHeap/DXRayTracingQueryHeap.h"
 #include "Shader/ShaderBase.h"
 #include "Swapchain/DXSwapchain.h"
@@ -332,11 +331,6 @@ std::shared_ptr<Shader> DXDevice::CreateShader(const std::vector<uint8_t>& blob,
 std::shared_ptr<Shader> DXDevice::CompileShader(const ShaderDesc& desc)
 {
     return std::make_shared<ShaderBase>(desc, ShaderBlobType::kDXIL);
-}
-
-std::shared_ptr<Program> DXDevice::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
-{
-    return std::make_shared<ProgramBase>(shaders);
 }
 
 std::shared_ptr<Pipeline> DXDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)

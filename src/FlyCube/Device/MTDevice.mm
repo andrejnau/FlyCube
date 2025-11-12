@@ -10,7 +10,6 @@
 #include "Memory/MTMemory.h"
 #include "Pipeline/MTComputePipeline.h"
 #include "Pipeline/MTGraphicsPipeline.h"
-#include "Program/ProgramBase.h"
 #include "Resource/MTResource.h"
 #include "Shader/MTShader.h"
 #include "Swapchain/MTSwapchain.h"
@@ -148,11 +147,6 @@ std::shared_ptr<Shader> MTDevice::CreateShader(const std::vector<uint8_t>& blob,
 std::shared_ptr<Shader> MTDevice::CompileShader(const ShaderDesc& desc)
 {
     return std::make_shared<MTShader>(*this, desc, ShaderBlobType::kSPIRV);
-}
-
-std::shared_ptr<Program> MTDevice::CreateProgram(const std::vector<std::shared_ptr<Shader>>& shaders)
-{
-    return std::make_shared<ProgramBase>(shaders);
 }
 
 std::shared_ptr<Pipeline> MTDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)

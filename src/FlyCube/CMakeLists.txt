@@ -161,12 +161,6 @@ list(APPEND Pipeline
     Pipeline/Pipeline.h
 )
 
-list(APPEND Program
-    Program/Program.h
-    Program/ProgramBase.cpp
-    Program/ProgramBase.h
-)
-
 list(APPEND QueryHeap
     $<$<BOOL:${DIRECTX_SUPPORT}>:QueryHeap/DXRayTracingQueryHeap.cpp>
     $<$<BOOL:${DIRECTX_SUPPORT}>:QueryHeap/DXRayTracingQueryHeap.h>
@@ -271,7 +265,6 @@ add_library(FlyCube
     ${Instance}
     ${Memory}
     ${Pipeline}
-    ${Program}
     ${QueryHeap}
     ${Resource}
     ${Shader}

@@ -14,8 +14,7 @@ public:
     const GraphicsPipelineDesc& GetDesc() const;
 
 private:
-    void CreateInputLayout(std::vector<vk::VertexInputBindingDescription>& binding_desc,
-                           std::vector<vk::VertexInputAttributeDescription>& attribute_desc);
+    void CreateInputLayout(const std::shared_ptr<Shader>& shader);
 
     GraphicsPipelineDesc m_desc;
     std::vector<vk::VertexInputBindingDescription> m_binding_desc;

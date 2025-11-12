@@ -4,13 +4,12 @@
 #include "BindingSetLayout/VKBindingSetLayout.h"
 #include "Device/VKDevice.h"
 #include "Pipeline/VKGraphicsPipeline.h"
-#include "Program/ProgramBase.h"
 #include "Shader/Shader.h"
 
 #include <map>
 
 VKRayTracingPipeline::VKRayTracingPipeline(VKDevice& device, const RayTracingPipelineDesc& desc)
-    : VKPipeline(device, desc.program, desc.layout)
+    : VKPipeline(device, desc.shaders, desc.layout)
     , m_desc(desc)
 {
     std::vector<vk::RayTracingShaderGroupCreateInfoKHR> groups(m_desc.groups.size());

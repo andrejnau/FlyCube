@@ -1,6 +1,5 @@
 #pragma once
 #include "BindingSetLayout/BindingSetLayout.h"
-#include "Program/ProgramBase.h"
 
 #include <directx/d3d12.h>
 #include <wrl.h>

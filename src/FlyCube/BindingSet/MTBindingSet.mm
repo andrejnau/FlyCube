@@ -79,15 +79,14 @@ void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
 void MTBindingSet::Apply(const std::map<ShaderType, id<MTL4ArgumentTable>>& argument_tables,
                          const std::shared_ptr<Pipeline>& state)
 {
-    decltype(auto) program = state->As<MTPipeline>().GetProgram();
     for (const auto& [bind_key, view] : m_direct_bindings) {
-        decltype(auto) shader = program->GetShader(bind_key.shader_type);
+        decltype(auto) shader = state->As<MTPipeline>().GetShader(bind_key.shader_type);
         uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
         SetView(argument_tables.at(bind_key.shader_type), std::static_pointer_cast<MTView>(view), index);
     }
 
     for (const auto& bind_key : m_bindless_bind_keys) {
-        decltype(auto) shader = program->GetShader(bind_key.shader_type);
+        decltype(auto) shader = state->As<MTPipeline>().GetShader(bind_key.shader_type);
         uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
         auto buffer = m_device.GetBindlessArgumentBuffer().GetArgumentBuffer();
         SetBuffer(argument_tables.at(bind_key.shader_type), buffer, 0, index);

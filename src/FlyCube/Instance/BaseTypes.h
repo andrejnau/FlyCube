@@ -11,8 +11,8 @@
 #include <vector>
 
 class BindingSetLayout;
-class Program;
 class Resource;
+class Shader;
 class View;
 
 struct Offset2D {
@@ -361,7 +361,7 @@ struct RenderPassDesc {
 };
 
 struct GraphicsPipelineDesc {
-    std::shared_ptr<Program> program;
+    std::vector<std::shared_ptr<Shader>> shaders;
     std::shared_ptr<BindingSetLayout> layout;
     std::vector<InputLayoutDesc> input;
     std::vector<gli::format> color_formats;
@@ -373,18 +373,18 @@ struct GraphicsPipelineDesc {
 
     auto MakeTie() const
     {
-        return std::tie(program, layout, input, color_formats, depth_stencil_format, depth_stencil_desc, blend_desc,
+        return std::tie(shaders, layout, input, color_formats, depth_stencil_format, depth_stencil_desc, blend_desc,
                         rasterizer_desc, sample_count);
     }
 };
 
 struct ComputePipelineDesc {
-    std::shared_ptr<Program> program;
+    std::shared_ptr<Shader> shader;
     std::shared_ptr<BindingSetLayout> layout;
 
     auto MakeTie() const
     {
-        return std::tie(program, layout);
+        return std::tie(shader, layout);
     }
 };
 
@@ -408,13 +408,13 @@ struct RayTracingShaderGroup {
 };
 
 struct RayTracingPipelineDesc {
-    std::shared_ptr<Program> program;
+    std::vector<std::shared_ptr<Shader>> shaders;
     std::shared_ptr<BindingSetLayout> layout;
     std::vector<RayTracingShaderGroup> groups;
 
     auto MakeTie() const
     {
-        return std::tie(program, layout, groups);
+        return std::tie(shaders, layout, groups);
     }
 };
 

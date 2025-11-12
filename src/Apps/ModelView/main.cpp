@@ -222,7 +222,7 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_depth_stencil_view = m_device->CreateView(m_depth_stencil_texture, depth_stencil_view_desc);
 
     GraphicsPipelineDesc pipeline_desc = {
-        .program = m_device->CreateProgram({ m_vertex_shader, m_pixel_shader }),
+        .shaders = { m_vertex_shader, m_pixel_shader },
         .layout = m_layout,
         .input = { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
                    { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },

@@ -1,7 +1,6 @@
 #include "Pipeline/VKGraphicsPipeline.h"
 
 #include "Device/VKDevice.h"
-#include "Program/ProgramBase.h"
 #include "Utilities/NotReached.h"
 
 #include <map>
@@ -71,11 +70,13 @@ vk::StencilOpState Convert(const StencilOpDesc& desc, uint8_t read_mask, uint8_t
 } // namespace
 
 VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
-    : VKPipeline(device, desc.program, desc.layout)
+    : VKPipeline(device, desc.shaders, desc.layout)
     , m_desc(desc)
 {
-    if (desc.program->HasShader(ShaderType::kVertex)) {
-        CreateInputLayout(m_binding_desc, m_attribute_desc);
+    for (const auto& shader : desc.shaders) {
+        if (shader->GetType() == ShaderType::kVertex) {
+            CreateInputLayout(shader);
+        }
     }
 
     vk::PipelineVertexInputStateCreateInfo vertex_input_info = {};
@@ -231,14 +232,12 @@ PipelineType VKGraphicsPipeline::GetPipelineType() const
     return PipelineType::kGraphics;
 }
 
-void VKGraphicsPipeline::CreateInputLayout(std::vector<vk::VertexInputBindingDescription>& m_binding_desc,
-                                           std::vector<vk::VertexInputAttributeDescription>& m_attribute_desc)
+void VKGraphicsPipeline::CreateInputLayout(const std::shared_ptr<Shader>& shader)
 {
     for (auto& vertex : m_desc.input) {
         decltype(auto) binding = m_binding_desc.emplace_back();
         decltype(auto) attribute = m_attribute_desc.emplace_back();
-        attribute.location =
-            m_desc.program->GetShader(ShaderType::kVertex)->GetInputLayoutLocation(vertex.semantic_name);
+        attribute.location = shader->GetInputLayoutLocation(vertex.semantic_name);
         attribute.binding = binding.binding = vertex.slot;
         binding.inputRate = vk::VertexInputRate::eVertex;
         binding.stride = vertex.stride;

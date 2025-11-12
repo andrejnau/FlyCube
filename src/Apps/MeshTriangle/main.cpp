@@ -75,7 +75,7 @@ void MeshTriangleRenderer::Init(const AppSize& app_size, WindowHandle window)
     m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
 
     GraphicsPipelineDesc pipeline_desc = {
-        .program = m_device->CreateProgram({ m_mesh_shader, m_pixel_shader }),
+        .shaders = { m_mesh_shader, m_pixel_shader },
         .layout = m_layout,
         .color_formats = { m_swapchain->GetFormat() },
     };

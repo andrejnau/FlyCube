@@ -3,7 +3,6 @@
 #include "BindingSetLayout/DXBindingSetLayout.h"
 #include "Device/DXDevice.h"
 #include "HLSLCompiler/DXCLoader.h"
-#include "Program/ProgramBase.h"
 #include "Shader/Shader.h"
 #include "Utilities/DXGIFormatHelper.h"
 #include "Utilities/SystemUtils.h"
@@ -21,18 +20,21 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
     : m_device(device)
     , m_desc(desc)
 {
-    decltype(auto) shaders = m_desc.program->GetShaders();
     decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
     m_root_signature = dx_layout.GetRootSignature();
 
     CD3DX12_STATE_OBJECT_DESC subobjects(D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE);
 
-    decltype(auto) entry_points = m_desc.program->GetEntryPoints();
-    for (const auto& shader : shaders) {
+    std::vector<EntryPoint> entry_points;
+    for (const auto& shader : m_desc.shaders) {
+        decltype(auto) reflection = shader->GetReflection();
+        decltype(auto) shader_entry_points = reflection->GetEntryPoints();
+        entry_points.insert(entry_points.end(), shader_entry_points.begin(), shader_entry_points.end());
+
         decltype(auto) library = subobjects.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
         decltype(auto) blob = shader->GetBlob();
-        D3D12_SHADER_BYTECODE byte = { blob.data(), blob.size() };
-        library->SetDXILLibrary(&byte);
+        D3D12_SHADER_BYTECODE shader_bytecode = { blob.data(), blob.size() };
+        library->SetDXILLibrary(&shader_bytecode);
         for (const auto& entry_point : shader->GetReflection()->GetEntryPoints()) {
             uint64_t shader_id = shader->GetId(entry_point.name);
             std::wstring shader_name = nowide::widen(entry_point.name);
