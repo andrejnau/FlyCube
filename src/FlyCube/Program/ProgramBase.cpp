@@ -9,10 +9,6 @@ ProgramBase::ProgramBase(const std::vector<std::shared_ptr<Shader>>& shaders)
         m_shaders_by_type[shader->GetType()] = shader;
         decltype(auto) bindings = shader->GetBindings();
         m_bindings.insert(m_bindings.begin(), bindings.begin(), bindings.end());
-
-        decltype(auto) reflection = shader->GetReflection();
-        decltype(auto) shader_entry_points = reflection->GetEntryPoints();
-        m_entry_points.insert(m_entry_points.end(), shader_entry_points.begin(), shader_entry_points.end());
     }
 }
 
@@ -38,9 +34,4 @@ const std::vector<std::shared_ptr<Shader>>& ProgramBase::GetShaders() const
 const std::vector<BindKey>& ProgramBase::GetBindings() const
 {
     return m_bindings;
-}
-
-const std::vector<EntryPoint>& ProgramBase::GetEntryPoints() const
-{
-    return m_entry_points;
 }

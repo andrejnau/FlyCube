@@ -13,5 +13,4 @@ public:
     virtual std::shared_ptr<Shader> GetShader(ShaderType type) const = 0;
     virtual const std::vector<std::shared_ptr<Shader>>& GetShaders() const = 0;
     virtual const std::vector<BindKey>& GetBindings() const = 0;
-    virtual const std::vector<EntryPoint>& GetEntryPoints() const = 0;
 };
