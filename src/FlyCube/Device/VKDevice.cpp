@@ -6,6 +6,7 @@
 #include "CommandList/VKCommandList.h"
 #include "CommandQueue/VKCommandQueue.h"
 #include "Fence/VKTimelineSemaphore.h"
+#include "HLSLCompiler/Compiler.h"
 #include "Instance/VKInstance.h"
 #include "Memory/VKMemory.h"
 #include "Pipeline/VKComputePipeline.h"
@@ -522,7 +523,7 @@ std::shared_ptr<Shader> VKDevice::CreateShader(const std::vector<uint8_t>& blob,
 
 std::shared_ptr<Shader> VKDevice::CompileShader(const ShaderDesc& desc)
 {
-    return std::make_shared<ShaderBase>(desc, ShaderBlobType::kSPIRV);
+    return std::make_shared<ShaderBase>(Compile(desc, ShaderBlobType::kSPIRV), ShaderBlobType::kSPIRV, desc.type);
 }
 
 std::shared_ptr<Pipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)

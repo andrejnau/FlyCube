@@ -35,7 +35,7 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
         decltype(auto) blob = shader->GetBlob();
         D3D12_SHADER_BYTECODE shader_bytecode = { blob.data(), blob.size() };
         library->SetDXILLibrary(&shader_bytecode);
-        for (const auto& entry_point : shader->GetReflection()->GetEntryPoints()) {
+        for (const auto& entry_point : shader_entry_points) {
             uint64_t shader_id = shader->GetId(entry_point.name);
             std::wstring shader_name = nowide::widen(entry_point.name);
             if (m_shader_names.contains(shader_name)) {

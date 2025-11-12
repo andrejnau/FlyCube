@@ -4,11 +4,11 @@
 #include "ShaderReflection/ShaderReflection.h"
 
 #include <map>
+#include <vector>
 
 class ShaderBase : public Shader {
 public:
-    ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type, bool is_msl = false);
-    ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type, bool is_msl = false);
+    ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type);
     ShaderType GetType() const override;
     const std::vector<uint8_t>& GetBlob() const override;
     uint64_t GetId(const std::string& entry_point) const override;
@@ -32,6 +32,4 @@ protected:
     std::vector<InputLayoutDesc> m_input_layout_descs;
     std::map<std::string, uint32_t> m_locations;
     std::shared_ptr<ShaderReflection> m_reflection;
-    std::map<BindKey, uint32_t> m_slot_remapping;
-    std::string m_msl_source;
 };

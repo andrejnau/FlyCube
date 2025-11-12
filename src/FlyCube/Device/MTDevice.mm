@@ -6,6 +6,7 @@
 #include "CommandList/RecordCommandList.h"
 #include "CommandQueue/MTCommandQueue.h"
 #include "Fence/MTFence.h"
+#include "HLSLCompiler/Compiler.h"
 #include "Instance/MTInstance.h"
 #include "Memory/MTMemory.h"
 #include "Pipeline/MTComputePipeline.h"
@@ -146,7 +147,7 @@ std::shared_ptr<Shader> MTDevice::CreateShader(const std::vector<uint8_t>& blob,
 
 std::shared_ptr<Shader> MTDevice::CompileShader(const ShaderDesc& desc)
 {
-    return std::make_shared<MTShader>(*this, desc, ShaderBlobType::kSPIRV);
+    return std::make_shared<MTShader>(*this, Compile(desc, ShaderBlobType::kSPIRV), ShaderBlobType::kSPIRV, desc.type);
 }
 
 std::shared_ptr<Pipeline> MTDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)

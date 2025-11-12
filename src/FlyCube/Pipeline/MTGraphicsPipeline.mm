@@ -114,37 +114,33 @@ void MTGraphicsPipeline::CreatePipeline()
         std::conditional_t<is_mesh_pipeline, MTL4MeshRenderPipelineDescriptor, MTL4RenderPipelineDescriptor>;
     RenderPipelineDescriptorType* pipeline_descriptor = [RenderPipelineDescriptorType new];
     for (const auto& shader : m_desc.shaders) {
-        decltype(auto) mt_shader = shader->As<MTShader>();
-        decltype(auto) reflection = shader->GetReflection();
-        for (const auto& entry_point : reflection->GetEntryPoints()) {
-            MTL4LibraryFunctionDescriptor* function_descriptor = mt_shader.CreateFunctionDescriptor(entry_point.name);
-            switch (shader->GetType()) {
-            case ShaderType::kVertex:
-                if constexpr (!is_mesh_pipeline) {
-                    pipeline_descriptor.vertexFunctionDescriptor = function_descriptor;
-                    pipeline_descriptor.vertexDescriptor = GetVertexDescriptor(shader);
-                }
-                break;
-            case ShaderType::kPixel:
-                pipeline_descriptor.fragmentFunctionDescriptor = function_descriptor;
-                break;
-            case ShaderType::kAmplification:
-                if constexpr (is_mesh_pipeline) {
-                    pipeline_descriptor.objectFunctionDescriptor = function_descriptor;
-                    decltype(auto) numthreads = reflection->GetShaderFeatureInfo().numthreads;
-                    m_amplification_numthreads = { numthreads[0], numthreads[1], numthreads[2] };
-                }
-                break;
-            case ShaderType::kMesh:
-                if constexpr (is_mesh_pipeline) {
-                    pipeline_descriptor.meshFunctionDescriptor = function_descriptor;
-                    decltype(auto) numthreads = reflection->GetShaderFeatureInfo().numthreads;
-                    m_mesh_numthreads = { numthreads[0], numthreads[1], numthreads[2] };
-                }
-                break;
-            default:
-                NOTREACHED();
+        MTL4LibraryFunctionDescriptor* function_descriptor = shader->As<MTShader>().GetFunctionDescriptor();
+        switch (shader->GetType()) {
+        case ShaderType::kVertex:
+            if constexpr (!is_mesh_pipeline) {
+                pipeline_descriptor.vertexFunctionDescriptor = function_descriptor;
+                pipeline_descriptor.vertexDescriptor = GetVertexDescriptor(shader);
             }
+            break;
+        case ShaderType::kPixel:
+            pipeline_descriptor.fragmentFunctionDescriptor = function_descriptor;
+            break;
+        case ShaderType::kAmplification:
+            if constexpr (is_mesh_pipeline) {
+                pipeline_descriptor.objectFunctionDescriptor = function_descriptor;
+                decltype(auto) numthreads = shader->GetReflection()->GetShaderFeatureInfo().numthreads;
+                m_amplification_numthreads = { numthreads[0], numthreads[1], numthreads[2] };
+            }
+            break;
+        case ShaderType::kMesh:
+            if constexpr (is_mesh_pipeline) {
+                pipeline_descriptor.meshFunctionDescriptor = function_descriptor;
+                decltype(auto) numthreads = shader->GetReflection()->GetShaderFeatureInfo().numthreads;
+                m_mesh_numthreads = { numthreads[0], numthreads[1], numthreads[2] };
+            }
+            break;
+        default:
+            NOTREACHED();
         }
     }
 
@@ -243,7 +239,10 @@ std::vector<uint8_t> MTGraphicsPipeline::GetRayTracingShaderGroupHandles(uint32_
 
 std::shared_ptr<Shader> MTGraphicsPipeline::GetShader(ShaderType type) const
 {
-    return m_shader_by_type.at(type);
+    if (auto it = m_shader_by_type.find(type); it != m_shader_by_type.end()) {
+        return it->second;
+    }
+    return nullptr;
 }
 
 id<MTLRenderPipelineState> MTGraphicsPipeline::GetPipeline()

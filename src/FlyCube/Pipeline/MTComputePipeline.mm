@@ -8,18 +8,13 @@
 #include <cassert>
 
 MTComputePipeline::MTComputePipeline(MTDevice& device, const ComputePipelineDesc& desc)
-    : m_device(device)
-    , m_desc(desc)
+    : m_desc(desc)
 {
-    decltype(auto) mt_device = device.GetDevice();
     MTL4ComputePipelineDescriptor* pipeline_descriptor = [MTL4ComputePipelineDescriptor new];
+    assert(m_desc.shader->GetType() == ShaderType::kCompute);
+    pipeline_descriptor.computeFunctionDescriptor = m_desc.shader->As<MTShader>().GetFunctionDescriptor();
 
-    decltype(auto) mt_shader = m_desc.shader->As<MTShader>();
-    assert(mt_shader.GetType() == ShaderType::kCompute);
-    decltype(auto) reflection = mt_shader.GetReflection();
-    auto entry_point = reflection->GetEntryPoints().at(0);
-    MTL4LibraryFunctionDescriptor* function_descriptor = mt_shader.CreateFunctionDescriptor(entry_point.name);
-    pipeline_descriptor.computeFunctionDescriptor = function_descriptor;
+    decltype(auto) reflection = m_desc.shader->GetReflection();
     decltype(auto) numthreads = reflection->GetShaderFeatureInfo().numthreads;
     m_numthreads = { numthreads[0], numthreads[1], numthreads[2] };
 

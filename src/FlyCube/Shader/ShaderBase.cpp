@@ -1,8 +1,5 @@
 #include "Shader/ShaderBase.h"
 
-#include "HLSLCompiler/Compiler.h"
-#include "HLSLCompiler/MSLConverter.h"
-
 namespace {
 
 uint64_t GenId()
@@ -13,25 +10,16 @@ uint64_t GenId()
 
 } // namespace
 
-ShaderBase::ShaderBase(const ShaderDesc& desc, ShaderBlobType blob_type, bool is_msl)
-    : ShaderBase(Compile(desc, blob_type), blob_type, desc.type, is_msl)
-{
-}
-
-ShaderBase::ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type, bool is_msl)
+ShaderBase::ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
     : m_blob(blob)
     , m_blob_type(blob_type)
     , m_shader_type(shader_type)
 {
-    if (is_msl) {
-        m_msl_source = GetMSLShader(shader_type, m_blob, m_slot_remapping);
-    }
     m_reflection = CreateShaderReflection(blob_type, m_blob.data(), m_blob.size());
     m_bindings = m_reflection->GetBindings();
     for (uint32_t i = 0; i < m_bindings.size(); ++i) {
         BindKey bind_key = { m_shader_type, m_bindings[i].type, m_bindings[i].slot, m_bindings[i].space,
                              m_bindings[i].count };
-        assert(!is_msl || m_slot_remapping.contains(bind_key));
         m_bind_keys[m_bindings[i].name] = bind_key;
         m_mapping[bind_key] = i;
         m_binding_keys.emplace_back(bind_key);

@@ -6,6 +6,7 @@
 #include "CommandList/DXCommandList.h"
 #include "CommandQueue/DXCommandQueue.h"
 #include "Fence/DXFence.h"
+#include "HLSLCompiler/Compiler.h"
 #include "Memory/DXMemory.h"
 #include "Pipeline/DXComputePipeline.h"
 #include "Pipeline/DXGraphicsPipeline.h"
@@ -330,7 +331,7 @@ std::shared_ptr<Shader> DXDevice::CreateShader(const std::vector<uint8_t>& blob,
 
 std::shared_ptr<Shader> DXDevice::CompileShader(const ShaderDesc& desc)
 {
-    return std::make_shared<ShaderBase>(desc, ShaderBlobType::kDXIL);
+    return std::make_shared<ShaderBase>(Compile(desc, ShaderBlobType::kDXIL), ShaderBlobType::kDXIL, desc.type);
 }
 
 std::shared_ptr<Pipeline> DXDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)

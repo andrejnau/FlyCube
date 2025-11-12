@@ -20,9 +20,9 @@ DXComputePipeline::DXComputePipeline(DXDevice& device, const ComputePipelineDesc
     decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
     m_root_signature = dx_layout.GetRootSignature();
 
-    assert(m_desc.shader->GetType() == ShaderType::kCompute);
     decltype(auto) blob = m_desc.shader->GetBlob();
     D3D12_SHADER_BYTECODE shader_bytecode = { blob.data(), blob.size() };
+    assert(m_desc.shader->GetType() == ShaderType::kCompute);
     compute_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_CS>(shader_bytecode);
     compute_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE>(m_root_signature.Get());
 
