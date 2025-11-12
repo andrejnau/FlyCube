@@ -129,7 +129,6 @@ VKInstance::VKInstance()
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance.get());
 #endif
 
-    m_api_version = app_info.apiVersion;
     m_debug_utils_supported = enabled_extension_set.contains(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     if (IsValidationEnabled() && m_debug_utils_supported) {
@@ -172,11 +171,6 @@ std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
 vk::Instance& VKInstance::GetInstance()
 {
     return m_instance.get();
-}
-
-uint32_t VKInstance::GetApiVersion() const
-{
-    return m_api_version;
 }
 
 bool VKInstance::IsDebugUtilsSupported() const

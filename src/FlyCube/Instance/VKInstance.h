@@ -9,7 +9,6 @@ public:
     std::vector<std::shared_ptr<Adapter>> EnumerateAdapters() override;
     vk::Instance& GetInstance();
 
-    uint32_t GetApiVersion() const;
     bool IsDebugUtilsSupported() const;
 
 private:
@@ -18,6 +17,5 @@ private:
 #endif
     vk::UniqueInstance m_instance;
     vk::UniqueDebugUtilsMessengerEXT m_debug_utils_messenger;
-    uint32_t m_api_version = 0;
     bool m_debug_utils_supported = false;
 };
