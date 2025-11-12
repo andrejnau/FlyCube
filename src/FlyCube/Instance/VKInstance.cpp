@@ -112,7 +112,7 @@ VKInstance::VKInstance()
 
     vk::ApplicationInfo app_info = {};
     app_info.apiVersion = vk::enumerateInstanceVersion();
-    CHECK(app_info.apiVersion >= VK_API_VERSION_1_2);
+    CHECK(app_info.apiVersion >= VK_API_VERSION_1_1);
 
     vk::InstanceCreateInfo instance_info;
     if (enabled_extension_set.contains(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
