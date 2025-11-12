@@ -7,8 +7,6 @@ ProgramBase::ProgramBase(const std::vector<std::shared_ptr<Shader>>& shaders)
 {
     for (const auto& shader : m_shaders) {
         m_shaders_by_type[shader->GetType()] = shader;
-        decltype(auto) bindings = shader->GetBindings();
-        m_bindings.insert(m_bindings.begin(), bindings.begin(), bindings.end());
     }
 }
 
@@ -29,9 +27,4 @@ std::shared_ptr<Shader> ProgramBase::GetShader(ShaderType type) const
 const std::vector<std::shared_ptr<Shader>>& ProgramBase::GetShaders() const
 {
     return m_shaders;
-}
-
-const std::vector<BindKey>& ProgramBase::GetBindings() const
-{
-    return m_bindings;
 }
