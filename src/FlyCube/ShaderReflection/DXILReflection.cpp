@@ -47,6 +47,29 @@ ShaderKind ConvertShaderKind(hlsl::DXIL::ShaderKind kind)
     }
 }
 
+class ReflectionPartImpl : public ReflectionPart {
+public:
+    ReflectionPartImpl(CComPtr<IDxcContainerReflection> reflection, uint32_t idx)
+        : m_reflection(reflection)
+        , m_idx(idx)
+    {
+    }
+
+    bool GetShaderReflection(void** ppvObject) const override
+    {
+        return SUCCEEDED(m_reflection->GetPartReflection(m_idx, __uuidof(ID3D12ShaderReflection), ppvObject));
+    }
+
+    bool GetLibraryReflection(void** ppvObject) const override
+    {
+        return SUCCEEDED(m_reflection->GetPartReflection(m_idx, __uuidof(ID3D12LibraryReflection), ppvObject));
+    }
+
+private:
+    CComPtr<IDxcContainerReflection> m_reflection;
+    uint32_t m_idx;
+};
+
 } // namespace
 
 DXILReflection::DXILReflection(const void* data, size_t size)
@@ -69,14 +92,8 @@ DXILReflection::DXILReflection(const void* data, size_t size)
         if (kind == hlsl::DxilFourCC::DFCC_RuntimeData) {
             ParseRuntimeData(reflection, i);
         } else if (kind == hlsl::DxilFourCC::DFCC_DXIL) {
-            ID3D12ShaderReflection* shader_reflection = nullptr;
-            ID3D12LibraryReflection* library_reflection = nullptr;
-            if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&shader_reflection)))) {
-                ParseShaderReflection(shader_reflection);
-            } else if (SUCCEEDED(reflection->GetPartReflection(i, IID_PPV_ARGS(&library_reflection)))) {
-                m_is_library = true;
-                ParseLibraryReflection(library_reflection);
-            }
+            ReflectionPartImpl part(reflection, i);
+            ParseReflectionPart(part);
         } else if (kind == hlsl::DxilFourCC::DFCC_ShaderDebugInfoDXIL) {
             CHECK_HRESULT(reflection->GetPartContent(i, &pdb));
         } else if (kind == hlsl::DxilFourCC::DFCC_FeatureInfo) {

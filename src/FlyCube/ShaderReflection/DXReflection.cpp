@@ -344,39 +344,41 @@ std::vector<OutputParameterDesc> ParseOutputParameters(const D3D12_SHADER_DESC& 
 
 } // namespace
 
-void DXReflection::ParseShaderReflection(ID3D12ShaderReflection* shader_reflection)
+void DXReflection::ParseReflectionPart(const ReflectionPart& reflection_part)
 {
-    D3D12_SHADER_DESC desc = {};
-    CHECK_HRESULT(shader_reflection->GetDesc(&desc));
-    m_entry_points.push_back({ "", GetVersionShaderType(desc.Version) });
-    m_bindings = ParseReflection(desc, shader_reflection);
-    m_layouts = ParseLayout(desc, shader_reflection);
-    assert(m_bindings.size() == m_layouts.size());
-    m_input_parameters = ParseInputParameters(desc, shader_reflection);
-    m_output_parameters = ParseOutputParameters(desc, shader_reflection);
-}
-
-void DXReflection::ParseLibraryReflection(ID3D12LibraryReflection* library_reflection)
-{
-    D3D12_LIBRARY_DESC library_desc = {};
-    CHECK_HRESULT(library_reflection->GetDesc(&library_desc));
-    std::map<std::string, size_t> exist;
-    for (uint32_t i = 0; i < library_desc.FunctionCount; ++i) {
-        ID3D12FunctionReflection* function_reflection = library_reflection->GetFunctionByIndex(i);
-        D3D12_FUNCTION_DESC function_desc = {};
-        CHECK_HRESULT(function_reflection->GetDesc(&function_desc));
-        auto function_bindings = ParseReflection(function_desc, function_reflection);
-        auto function_layouts = ParseLayout(function_desc, function_reflection);
-        assert(function_bindings.size() == function_layouts.size());
-        for (size_t i = 0; i < function_bindings.size(); ++i) {
-            auto it = exist.find(function_bindings[i].name);
-            if (it == exist.end()) {
-                exist[function_bindings[i].name] = m_bindings.size();
-                m_bindings.emplace_back(function_bindings[i]);
-                m_layouts.emplace_back(function_layouts[i]);
-            } else {
-                assert(function_bindings[i] == m_bindings[it->second]);
-                assert(function_layouts[i] == m_layouts[it->second]);
+    ComPtr<ID3D12ShaderReflection> shader_reflection;
+    ComPtr<ID3D12LibraryReflection> library_reflection;
+    if (reflection_part.GetShaderReflection(static_cast<void**>(&shader_reflection))) {
+        D3D12_SHADER_DESC desc = {};
+        CHECK_HRESULT(shader_reflection->GetDesc(&desc));
+        m_entry_points.push_back({ "", GetVersionShaderType(desc.Version) });
+        m_bindings = ParseReflection(desc, shader_reflection.Get());
+        m_layouts = ParseLayout(desc, shader_reflection.Get());
+        assert(m_bindings.size() == m_layouts.size());
+        m_input_parameters = ParseInputParameters(desc, shader_reflection.Get());
+        m_output_parameters = ParseOutputParameters(desc, shader_reflection.Get());
+    } else if (reflection_part.GetLibraryReflection(static_cast<void**>(&library_reflection))) {
+        m_is_library = true;
+        D3D12_LIBRARY_DESC library_desc = {};
+        CHECK_HRESULT(library_reflection->GetDesc(&library_desc));
+        std::map<std::string, size_t> exist;
+        for (uint32_t i = 0; i < library_desc.FunctionCount; ++i) {
+            ID3D12FunctionReflection* function_reflection = library_reflection->GetFunctionByIndex(i);
+            D3D12_FUNCTION_DESC function_desc = {};
+            CHECK_HRESULT(function_reflection->GetDesc(&function_desc));
+            auto function_bindings = ParseReflection(function_desc, function_reflection);
+            auto function_layouts = ParseLayout(function_desc, function_reflection);
+            assert(function_bindings.size() == function_layouts.size());
+            for (size_t i = 0; i < function_bindings.size(); ++i) {
+                auto it = exist.find(function_bindings[i].name);
+                if (it == exist.end()) {
+                    exist[function_bindings[i].name] = m_bindings.size();
+                    m_bindings.emplace_back(function_bindings[i]);
+                    m_layouts.emplace_back(function_layouts[i]);
+                } else {
+                    assert(function_bindings[i] == m_bindings[it->second]);
+                    assert(function_layouts[i] == m_layouts[it->second]);
+                }
             }
         }
     }

@@ -1,16 +1,19 @@
 #pragma once
 #include "ShaderReflection/ShaderReflection.h"
 
-class ID3D12LibraryReflection;
-class ID3D12ShaderReflection;
+class ReflectionPart {
+public:
+    virtual ~ReflectionPart() = default;
+    virtual bool GetShaderReflection(void** ppvObject) const = 0;
+    virtual bool GetLibraryReflection(void** ppvObject) const = 0;
+};
 
 class DXReflection : public ShaderReflection {
 protected:
-    void ParseShaderReflection(ID3D12ShaderReflection* shader_reflection);
-    void ParseLibraryReflection(ID3D12LibraryReflection* library_reflection);
-
     virtual ShaderKind GetVersionShaderType(uint64_t version) = 0;
+    void ParseReflectionPart(const ReflectionPart& reflection_part);
 
+    bool m_is_library = false;
     std::vector<EntryPoint> m_entry_points;
     std::vector<ResourceBindingDesc> m_bindings;
     std::vector<VariableLayout> m_layouts;
