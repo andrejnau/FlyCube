@@ -5,7 +5,6 @@
 #include "Utilities/SystemUtils.h"
 
 #include <directx/d3d12.h>
-#include <dxgi1_6.h>
 
 DXFence::DXFence(DXDevice& device, uint64_t initial_value)
     : m_device(device)

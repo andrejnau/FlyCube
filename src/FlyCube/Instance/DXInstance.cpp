@@ -5,7 +5,6 @@
 #include "Utilities/SystemUtils.h"
 
 #include <directx/d3d12.h>
-#include <dxgi1_6.h>
 
 #include <filesystem>
 

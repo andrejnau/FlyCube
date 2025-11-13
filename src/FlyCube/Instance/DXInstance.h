@@ -1,7 +1,7 @@
 #pragma once
 #include "Instance.h"
 
-#include <dxgi1_4.h>
+#include <dxgi1_6.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
 

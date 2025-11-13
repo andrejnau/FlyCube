@@ -2,7 +2,6 @@
 #include "Fence/Fence.h"
 
 #include <directx/d3d12.h>
-#include <dxgi.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
