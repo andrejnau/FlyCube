@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <vector>
+
 using namespace Microsoft::WRL;
 
 class DXCommandQueue;

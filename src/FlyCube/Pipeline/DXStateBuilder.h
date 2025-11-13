@@ -1,4 +1,10 @@
 #pragma once
+#if defined(_WIN32)
+#include <wrl.h>
+#else
+#include <wsl/wrladapter.h>
+#endif
+
 #include <directx/d3d12.h>
 
 #include <vector>

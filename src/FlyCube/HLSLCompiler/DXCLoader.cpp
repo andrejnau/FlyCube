@@ -31,7 +31,8 @@ HRESULT Test(dxc::DxcDllSupport& dll_support, ShaderBlobType target)
     IFR(compiler->Compile(source, L"main.hlsl", L"", L"lib_6_3", args.data(), args.size(), nullptr, 0, nullptr,
                           &result));
 
-#if defined(_WIN32) // Ignore missing DXIL signing library on other platforms
+#if defined(_WIN32)
+    // Ignore missing DXIL signing library on other platforms
     CComPtr<IDxcBlobEncoding> errors;
     result->GetErrorBuffer(&errors);
     if (errors && errors->GetBufferSize() > 0) {

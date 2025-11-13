@@ -4,7 +4,6 @@
 #include "Utilities/NotReached.h"
 
 // clang-format off
-#include <wsl/winadapter.h>
 #include <wsl/wrladapter.h>
 // clang-format on
 

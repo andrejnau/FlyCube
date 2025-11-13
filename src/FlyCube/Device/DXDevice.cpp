@@ -1,6 +1,5 @@
 #include "Device/DXDevice.h"
 
-#include "Adapter/DXAdapter.h"
 #include "BindingSet/DXBindingSet.h"
 #include "BindingSetLayout/DXBindingSetLayout.h"
 #include "CommandList/DXCommandList.h"
@@ -13,21 +12,33 @@
 #include "Pipeline/DXRayTracingPipeline.h"
 #include "QueryHeap/DXRayTracingQueryHeap.h"
 #include "Shader/ShaderBase.h"
-#include "Swapchain/DXSwapchain.h"
 #include "Utilities/DXGIFormatHelper.h"
 #include "Utilities/DXUtility.h"
 #include "Utilities/NotReached.h"
 #include "View/DXView.h"
 
 #include <directx/d3dx12.h>
-#include <dxgi1_6.h>
 #include <gli/dx.hpp>
+
+#if defined(_WIN32)
+#include "Adapter/DXAdapter.h"
+#include "Swapchain/DXSwapchain.h"
+#endif
 
 namespace {
 
 const GUID kRenderdocUuid = { 0xa7aa6116, 0x9c8d, 0x4bba, { 0x90, 0x83, 0xb4, 0xd8, 0x16, 0xb7, 0x1b, 0x78 } };
 const GUID kPixUuid = { 0x9f251514, 0x9d4d, 0x4902, { 0x9d, 0x60, 0x18, 0x98, 0x8a, 0xb7, 0xd4, 0xb5 } };
 const GUID kGpaUuid = { 0xccffef16, 0x7b69, 0x468f, { 0xbc, 0xe3, 0xcd, 0x95, 0x33, 0x69, 0xa3, 0x9a } };
+
+bool IsValidationEnabled()
+{
+#if defined(_WIN32)
+    return IsDebuggerPresent();
+#else
+    return true;
+#endif
+}
 
 } // namespace
 
@@ -94,6 +105,8 @@ D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const RaytracingGeomet
     case RaytracingGeometryFlags::kNoDuplicateAnyHitInvocation:
         geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
         break;
+    default:
+        break;
     }
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
@@ -140,7 +153,9 @@ DXDevice::DXDevice(DXAdapter& adapter)
     , m_cpu_descriptor_pool(*this)
     , m_gpu_descriptor_pool(*this)
 {
+#if defined(_WIN32)
     CHECK_HRESULT(D3D12CreateDevice(m_adapter.GetAdapter().Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&m_device)));
+#endif
     m_device.As(&m_device5);
 
     ComPtr<IUnknown> renderdoc;
@@ -148,10 +163,12 @@ DXDevice::DXDevice(DXAdapter& adapter)
         m_is_under_graphics_debugger |= !!renderdoc;
     }
 
+#if defined(_WIN32)
     ComPtr<IUnknown> pix;
     if (SUCCEEDED(DXGIGetDebugInterface1(0, kPixUuid, &pix))) {
         m_is_under_graphics_debugger |= !!pix;
     }
+#endif
 
     ComPtr<IUnknown> gpa;
     if (SUCCEEDED(m_device->QueryInterface(kGpaUuid, &gpa))) {
@@ -185,7 +202,7 @@ DXDevice::DXDevice(DXAdapter& adapter)
     m_command_queues[CommandListType::kCompute] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCompute);
     m_command_queues[CommandListType::kCopy] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCopy);
 
-    if (IsDebuggerPresent()) {
+    if (IsValidationEnabled()) {
         ComPtr<ID3D12InfoQueue> info_queue;
         if (SUCCEEDED(m_device.As(&info_queue))) {
             info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
@@ -238,8 +255,12 @@ std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(WindowHandle window,
                                                      uint32_t frame_count,
                                                      bool vsync)
 {
+#if defined(_WIN32)
     return std::make_shared<DXSwapchain>(*m_command_queues.at(CommandListType::kGraphics), window, width, height,
                                          frame_count, vsync);
+#else
+    return nullptr;
+#endif
 }
 
 std::shared_ptr<CommandList> DXDevice::CreateCommandList(CommandListType type)
@@ -416,6 +437,7 @@ uint32_t DXDevice::GetShadingRateImageTileSize() const
 
 MemoryBudget DXDevice::GetMemoryBudget() const
 {
+#if defined(_WIN32)
     ComPtr<IDXGIAdapter3> adapter3;
     m_adapter.GetAdapter().As(&adapter3);
     DXGI_QUERY_VIDEO_MEMORY_INFO local_memory_info = {};
@@ -424,6 +446,9 @@ MemoryBudget DXDevice::GetMemoryBudget() const
     adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL, &non_local_memory_info);
     return { local_memory_info.Budget + non_local_memory_info.Budget,
              local_memory_info.CurrentUsage + non_local_memory_info.CurrentUsage };
+#else
+    return {};
+#endif
 }
 
 uint32_t DXDevice::GetShaderGroupHandleSize() const

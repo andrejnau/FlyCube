@@ -214,6 +214,8 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_PS>(shader_bytecode);
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS>(GetRTVFormats(desc));
             break;
+        default:
+            break;
         }
     }
 

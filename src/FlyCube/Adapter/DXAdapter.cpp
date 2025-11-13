@@ -4,7 +4,6 @@
 #include "Utilities/DXUtility.h"
 #include "Utilities/SystemUtils.h"
 
-#include <directx/d3d12.h>
 #include <nowide/convert.hpp>
 
 DXAdapter::DXAdapter(DXInstance& instance, const ComPtr<IDXGIAdapter1>& adapter)

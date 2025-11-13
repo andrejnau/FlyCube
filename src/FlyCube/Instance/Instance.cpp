@@ -2,7 +2,7 @@
 
 #include "Utilities/NotReached.h"
 
-#if defined(DIRECTX_SUPPORT)
+#if defined(DIRECTX_SUPPORT) && defined(_WIN32)
 #include "Instance/DXInstance.h"
 #endif
 #if defined(VULKAN_SUPPORT)
@@ -15,7 +15,7 @@
 std::shared_ptr<Instance> CreateInstance(ApiType type)
 {
     switch (type) {
-#if defined(DIRECTX_SUPPORT)
+#if defined(DIRECTX_SUPPORT) && defined(_WIN32)
     case ApiType::kDX12:
         return std::make_shared<DXInstance>();
 #endif

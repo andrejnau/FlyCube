@@ -2,12 +2,18 @@
 #include "Instance/BaseTypes.h"
 #include "Utilities/DXUtility.h"
 
-#include <directx/d3d12.h>
+#if defined(_WIN32)
 #include <wrl.h>
+#else
+#include <wsl/wrladapter.h>
+#endif
+
+#include <directx/d3d12.h>
 
 #include <algorithm>
 #include <map>
 #include <memory>
+
 using namespace Microsoft::WRL;
 
 class DXDevice;

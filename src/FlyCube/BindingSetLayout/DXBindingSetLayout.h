@@ -1,8 +1,14 @@
 #pragma once
 #include "BindingSetLayout/BindingSetLayout.h"
 
-#include <directx/d3d12.h>
+#if defined(_WIN32)
 #include <wrl.h>
+#else
+#include <wsl/wrladapter.h>
+#endif
+
+#include <directx/d3d12.h>
+
 using namespace Microsoft::WRL;
 
 class DXDevice;

@@ -12,11 +12,13 @@
 #include "Utilities/SystemUtils.h"
 #include "View/DXView.h"
 
-#include <directx/d3d12.h>
 #include <directx/d3dx12.h>
 #include <gli/dx.hpp>
 #include <nowide/convert.hpp>
+
+#if defined(_WIN32)
 #include <pix.h>
+#endif
 
 namespace {
 
@@ -211,18 +213,20 @@ void DXCommandList::EndRenderPass()
 
 void DXCommandList::BeginEvent(const std::string& name)
 {
-    if (!m_device.IsUnderGraphicsDebugger()) {
-        return;
+#if defined(_WIN32)
+    if (m_device.IsUnderGraphicsDebugger()) {
+        PIXBeginEvent(m_command_list.Get(), 0, nowide::widen(name).c_str());
     }
-    PIXBeginEvent(m_command_list.Get(), 0, nowide::widen(name).c_str());
+#endif
 }
 
 void DXCommandList::EndEvent()
 {
-    if (!m_device.IsUnderGraphicsDebugger()) {
-        return;
+#if defined(_WIN32)
+    if (m_device.IsUnderGraphicsDebugger()) {
+        PIXEndEvent(m_command_list.Get());
     }
-    PIXEndEvent(m_command_list.Get());
+#endif
 }
 
 void DXCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)

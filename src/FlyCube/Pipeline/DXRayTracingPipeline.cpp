@@ -8,6 +8,12 @@
 #include "Utilities/SystemUtils.h"
 #include "View/DXView.h"
 
+#if defined(_WIN32)
+#include <wrl.h>
+#else
+#include <wsl/wrladapter.h>
+#endif
+
 #include <directx/d3d12.h>
 #include <directx/d3d12shader.h>
 #include <directx/d3dx12.h>

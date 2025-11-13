@@ -4,7 +4,6 @@
 #include "Utilities/DXUtility.h"
 #include "Utilities/SystemUtils.h"
 
-#include <directx/d3d12.h>
 #include <directx/d3dx12.h>
 
 DXRayTracingQueryHeap::DXRayTracingQueryHeap(DXDevice& device, QueryHeapType type, uint32_t count)

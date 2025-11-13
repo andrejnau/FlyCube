@@ -1,6 +1,6 @@
 list(APPEND Adapter
-    $<$<BOOL:${DIRECTX_SUPPORT}>:Adapter/DXAdapter.cpp>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:Adapter/DXAdapter.h>
+    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:Adapter/DXAdapter.cpp>
+    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:Adapter/DXAdapter.h>
     $<$<BOOL:${METAL_SUPPORT}>:Adapter/MTAdapter.h>
     $<$<BOOL:${METAL_SUPPORT}>:Adapter/MTAdapter.mm>
     $<$<BOOL:${VULKAN_SUPPORT}>:Adapter/VKAdapter.cpp>
@@ -111,8 +111,8 @@ list(APPEND HLSLCompiler
 )
 
 list(APPEND Instance
-    $<$<BOOL:${DIRECTX_SUPPORT}>:Instance/DXInstance.cpp>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:Instance/DXInstance.h>
+    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:Instance/DXInstance.cpp>
+    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:Instance/DXInstance.h>
     $<$<BOOL:${METAL_SUPPORT}>:Instance/MTInstance.h>
     $<$<BOOL:${METAL_SUPPORT}>:Instance/MTInstance.mm>
     $<$<BOOL:${STATIC_MOLTEN_VK}>:Instance/MoltenVKStubs.cpp>
@@ -142,8 +142,8 @@ list(APPEND Pipeline
     $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXGraphicsPipeline.h>
     $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXPipeline.cpp>
     $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXPipeline.h>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXRayTracingPipeline.cpp>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXRayTracingPipeline.h>
+    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:Pipeline/DXRayTracingPipeline.cpp>
+    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:Pipeline/DXRayTracingPipeline.h>
     $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXStateBuilder.h>
     $<$<BOOL:${METAL_SUPPORT}>:Pipeline/MTComputePipeline.h>
     $<$<BOOL:${METAL_SUPPORT}>:Pipeline/MTComputePipeline.mm>
@@ -201,8 +201,8 @@ list(APPEND ShaderReflection
 )
 
 list(APPEND Swapchain
-    $<$<BOOL:${DIRECTX_SUPPORT}>:Swapchain/DXSwapchain.cpp>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:Swapchain/DXSwapchain.h>
+    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:Swapchain/DXSwapchain.cpp>
+    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:Swapchain/DXSwapchain.h>
     $<$<BOOL:${METAL_SUPPORT}>:Swapchain/MTSwapchain.h>
     $<$<BOOL:${METAL_SUPPORT}>:Swapchain/MTSwapchain.mm>
     $<$<BOOL:${VULKAN_SUPPORT}>:Swapchain/VKSwapchain.cpp>
@@ -277,9 +277,9 @@ add_library(FlyCube
 target_link_libraries(FlyCube
     $<$<BOOL:${APPLE}>:-framework\ Foundation>
     $<$<BOOL:${APPLE}>:-framework\ QuartzCore>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:d3d12>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:dxgi>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:dxguid>
+    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:d3d12>
+    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:dxgi>
+    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:dxguid>
     $<$<BOOL:${METAL_SUPPORT}>:-framework\ Metal>
     $<$<BOOL:${METAL_SUPPORT}>:MVKPixelFormats>
     $<$<BOOL:${VULKAN_SUPPORT}>:vulkan>

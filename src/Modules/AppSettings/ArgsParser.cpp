@@ -8,7 +8,7 @@ namespace {
 std::vector<ApiType> GetSupportedApis()
 {
     std::vector<ApiType> res;
-#if defined(DIRECTX_SUPPORT)
+#if defined(DIRECTX_SUPPORT) && defined(_WIN32)
     res.emplace_back(ApiType::kDX12);
 #endif
 #if defined(METAL_SUPPORT)

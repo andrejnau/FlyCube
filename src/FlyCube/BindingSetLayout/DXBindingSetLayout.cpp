@@ -30,6 +30,8 @@ D3D12_SHADER_VISIBILITY GetVisibility(ShaderType shader_type)
     case ShaderType::kMesh:
         visibility = D3D12_SHADER_VISIBILITY_MESH;
         break;
+    default:
+        break;
     }
     return visibility;
 }
@@ -108,6 +110,8 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
         case ShaderType::kLibrary:
             m_descriptor_tables[root_param_index].is_compute = true;
             break;
+        default:
+            break;
         }
     };
 
@@ -145,6 +149,8 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
         case ShaderType::kCompute:
         case ShaderType::kLibrary:
             m_descriptor_tables[root_param_index].is_compute = true;
+            break;
+        default:
             break;
         }
     }
