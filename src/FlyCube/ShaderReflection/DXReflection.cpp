@@ -3,9 +3,11 @@
 #include "Utilities/DXUtility.h"
 #include "Utilities/NotReached.h"
 
-// clang-format off
+#if defined(_WIN32)
+#include <wrl.h>
+#else
 #include <wsl/wrladapter.h>
-// clang-format on
+#endif
 
 #include <directx/d3d12shader.h>
 
