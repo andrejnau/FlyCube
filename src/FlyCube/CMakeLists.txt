@@ -142,8 +142,8 @@ list(APPEND Pipeline
     $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXGraphicsPipeline.h>
     $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXPipeline.cpp>
     $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXPipeline.h>
-    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:Pipeline/DXRayTracingPipeline.cpp>
-    $<$<AND:$<BOOL:${DIRECTX_SUPPORT}>,$<PLATFORM_ID:Windows>>:Pipeline/DXRayTracingPipeline.h>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXRayTracingPipeline.cpp>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXRayTracingPipeline.h>
     $<$<BOOL:${DIRECTX_SUPPORT}>:Pipeline/DXStateBuilder.h>
     $<$<BOOL:${METAL_SUPPORT}>:Pipeline/MTComputePipeline.h>
     $<$<BOOL:${METAL_SUPPORT}>:Pipeline/MTComputePipeline.mm>

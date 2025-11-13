@@ -2,24 +2,12 @@
 
 #include "BindingSetLayout/DXBindingSetLayout.h"
 #include "Device/DXDevice.h"
-#include "HLSLCompiler/DXCLoader.h"
 #include "Shader/Shader.h"
 #include "Utilities/DXGIFormatHelper.h"
 #include "Utilities/SystemUtils.h"
 #include "View/DXView.h"
 
-#if defined(_WIN32)
-#include <wrl.h>
-#else
-#include <wsl/wrladapter.h>
-#endif
-
-#include <directx/d3d12.h>
-#include <directx/d3d12shader.h>
 #include <directx/d3dx12.h>
-#include <dxc/DXIL/DxilConstants.h>
-#include <dxc/DxilContainer/DxilContainer.h>
-#include <dxc/DxilContainer/DxilRuntimeReflection.h>
 #include <nowide/convert.hpp>
 
 DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPipelineDesc& desc)
@@ -79,6 +67,8 @@ DXRayTracingPipeline::DXRayTracingPipeline(DXDevice& device, const RayTracingPip
             if (m_desc.groups[i].intersection) {
                 hit_group->SetIntersectionShaderImport(m_shader_ids.at(m_desc.groups[i].intersection).c_str());
             }
+            break;
+        default:
             break;
         }
         m_group_names[i] = name;
