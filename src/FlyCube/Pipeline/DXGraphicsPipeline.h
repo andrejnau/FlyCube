@@ -10,7 +10,7 @@
 
 #include <directx/d3d12.h>
 
-using namespace Microsoft::WRL;
+using Microsoft::WRL::ComPtr;
 
 class DXDevice;
 class Shader;

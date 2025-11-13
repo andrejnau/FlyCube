@@ -16,7 +16,7 @@
 #include <map>
 #include <memory>
 
-using namespace Microsoft::WRL;
+using Microsoft::WRL::ComPtr;
 
 class DXDevice;
 

@@ -4,7 +4,7 @@
 #include <dxgi1_6.h>
 #include <wrl.h>
 
-using namespace Microsoft::WRL;
+using Microsoft::WRL::ComPtr;
 
 class DXInstance;
 
