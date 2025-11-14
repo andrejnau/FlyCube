@@ -29,5 +29,5 @@ protected:
     bool m_is_back_buffer = false;
 
 private:
-    ResourceState m_initial_state = ResourceState::kUnknown;
+    ResourceState m_initial_state = ResourceState::kCommon;
 };

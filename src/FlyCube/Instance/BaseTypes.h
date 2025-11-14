@@ -46,7 +46,6 @@ struct Rect2D {
 
 namespace enum_class {
 enum ResourceState : uint32_t {
-    kUnknown = 0,
     kCommon = 1 << 0,
     kVertexAndConstantBuffer = 1 << 1,
     kIndexBuffer = 1 << 2,
