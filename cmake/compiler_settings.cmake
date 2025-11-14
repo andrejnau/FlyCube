@@ -14,7 +14,7 @@ add_compile_options(
     "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:${msvc_compile_options}>"
 )
 
-set(msvc_compile_definitions
+set(windows_compile_definitions
     _UNICODE
     NOMINMAX
     UNICODE
@@ -29,7 +29,7 @@ set(tvos_compile_definitions
     TARGET_TVOS=1
 )
 add_compile_definitions(
-    "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:${msvc_compile_definitions}>"
+    "$<$<PLATFORM_ID:Windows>:${windows_compile_definitions}>"
     "$<$<PLATFORM_ID:Darwin>:${darwin_compile_definitions}>"
     "$<$<PLATFORM_ID:iOS>:${ios_compile_definitions}>"
     "$<$<PLATFORM_ID:tvOS>:${tvos_compile_definitions}>"
