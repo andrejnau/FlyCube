@@ -1,14 +1,14 @@
 #include "AppBox/AppBox.h"
 
+#include "AppBox/WindowUtils.h"
 #include "Utilities/NotReached.h"
-#include "WindowUtils/WindowUtils.h"
-
-#include <cmath>
-#include <format>
 
 #if defined(__APPLE__)
 #include "AppBox/AutoreleasePool.h"
 #endif
+
+#include <cmath>
+#include <format>
 
 namespace {
 
