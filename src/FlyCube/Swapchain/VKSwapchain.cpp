@@ -16,6 +16,8 @@
 #include <android/native_window.h>
 #elif defined(VK_USE_PLATFORM_XCB_KHR)
 #include <X11/Xlib-xcb.h>
+#elif defined(VK_USE_PLATFORM_XLIB_KHR)
+#include <X11/Xlib.h>
 #endif
 
 VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
@@ -48,6 +50,11 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
     xcb_surface_info.connection = XGetXCBConnection(XOpenDisplay(nullptr));
     xcb_surface_info.window = reinterpret_cast<ptrdiff_t>(window);
     m_surface = vk_instance.createXcbSurfaceKHRUnique(xcb_surface_info);
+#elif defined(VK_USE_PLATFORM_XLIB_KHR)
+    vk::XlibSurfaceCreateInfoKHR xlib_surface_info = {};
+    xlib_surface_info.dpy = XOpenDisplay(nullptr);
+    xlib_surface_info.window = reinterpret_cast<ptrdiff_t>(window);
+    m_surface = vk_instance.createXlibSurfaceKHRUnique(xlib_surface_info);
 #endif
 
     vk::ColorSpaceKHR color_space = {};
