@@ -80,4 +80,9 @@ else()
         INTERFACE
             VK_USE_PLATFORM_XCB_KHR
     )
+    target_link_libraries(vulkan
+        INTERFACE
+            X11
+            X11-xcb
+    )
 endif()

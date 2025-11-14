@@ -292,10 +292,6 @@ target_link_libraries(FlyCube
     spirv-cross-msl
 )
 
-if (NOT WIN32 AND NOT APPLE AND NOT ANDROID)
-    target_link_libraries(FlyCube X11 X11-xcb)
-endif()
-
 target_include_directories(FlyCube
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}"
