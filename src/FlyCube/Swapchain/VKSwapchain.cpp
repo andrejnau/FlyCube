@@ -8,13 +8,13 @@
 #include "Resource/VKResource.h"
 #include "Utilities/VKUtility.h"
 
-#if defined(_WIN32)
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 #include <Windows.h>
-#elif defined(__APPLE__)
+#elif defined(VK_USE_PLATFORM_METAL_EXT)
 #import <QuartzCore/CAMetalLayer.h>
-#elif defined(__ANDROID__)
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/native_window.h>
-#else
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
 #include <X11/Xlib-xcb.h>
 #endif
 
@@ -30,20 +30,20 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
     auto vk_instance = m_device.GetAdapter().GetInstance().GetInstance();
     auto vk_physical_device = m_device.GetAdapter().GetPhysicalDevice();
 
-#if defined(_WIN32)
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     vk::Win32SurfaceCreateInfoKHR win32_surface_info = {};
     win32_surface_info.hinstance = GetModuleHandle(nullptr);
     win32_surface_info.hwnd = reinterpret_cast<HWND>(window);
     m_surface = vk_instance.createWin32SurfaceKHRUnique(win32_surface_info);
-#elif defined(__APPLE__)
+#elif defined(VK_USE_PLATFORM_METAL_EXT)
     vk::MetalSurfaceCreateInfoEXT metal_surface_info = {};
     metal_surface_info.pLayer = (__bridge CAMetalLayer*)window;
     m_surface = vk_instance.createMetalSurfaceEXTUnique(metal_surface_info);
-#elif defined(__ANDROID__)
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
     vk::AndroidSurfaceCreateInfoKHR android_surface_info = {};
     android_surface_info.window = reinterpret_cast<ANativeWindow*>(window);
     m_surface = vk_instance.createAndroidSurfaceKHRUnique(android_surface_info);
-#else
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
     vk::XcbSurfaceCreateInfoKHR xcb_surface_info = {};
     xcb_surface_info.connection = XGetXCBConnection(XOpenDisplay(nullptr));
     xcb_surface_info.window = reinterpret_cast<ptrdiff_t>(window);
