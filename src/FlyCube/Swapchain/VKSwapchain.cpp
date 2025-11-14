@@ -122,7 +122,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
         };
         std::shared_ptr<VKResource> back_buffer =
             VKResource::WrapSwapchainImage(m_device, m_images[i], texture_desc, swapchain_info.imageUsage);
-        m_command_list->ResourceBarrier({ { back_buffer, ResourceState::kUndefined, ResourceState::kPresent } });
+        m_command_list->ResourceBarrier({ { back_buffer, ResourceState::kCommon, ResourceState::kPresent } });
         m_back_buffers.emplace_back(std::move(back_buffer));
     }
     m_command_list->Close();

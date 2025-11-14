@@ -118,7 +118,7 @@ std::shared_ptr<VKResource> VKResource::CreateImage(VKDevice& device, const Text
         .flags = image_info.flags,
         .usage = image_info.usage,
     };
-    self->SetInitialState(ResourceState::kUndefined);
+    self->SetInitialState(ResourceState::kCommon);
     return self;
 }
 

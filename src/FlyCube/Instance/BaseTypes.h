@@ -66,7 +66,6 @@ enum ResourceState : uint32_t {
                    ResourceState::kNonPixelShaderResource | ResourceState::kPixelShaderResource |
                    ResourceState::kIndirectArgument | ResourceState::kCopySource,
     kAllShaderResource = kNonPixelShaderResource | kPixelShaderResource,
-    kUndefined = 1 << 15,
 };
 }
 

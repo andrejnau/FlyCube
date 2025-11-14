@@ -49,7 +49,7 @@ std::pair<uint32_t, uint32_t> ConvertShadingRateToPair(ShadingRate shading_rate)
 vk::ImageLayout ConvertState(ResourceState state)
 {
     static std::pair<ResourceState, vk::ImageLayout> mapping[] = {
-        { ResourceState::kCommon, vk::ImageLayout::eGeneral },
+        { ResourceState::kCommon, vk::ImageLayout::eUndefined },
         { ResourceState::kRenderTarget, vk::ImageLayout::eColorAttachmentOptimal },
         { ResourceState::kUnorderedAccess, vk::ImageLayout::eGeneral },
         { ResourceState::kDepthStencilWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal },
@@ -60,7 +60,6 @@ vk::ImageLayout ConvertState(ResourceState state)
         { ResourceState::kCopySource, vk::ImageLayout::eTransferSrcOptimal },
         { ResourceState::kShadingRateSource, vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR },
         { ResourceState::kPresent, vk::ImageLayout::ePresentSrcKHR },
-        { ResourceState::kUndefined, vk::ImageLayout::eUndefined },
     };
     for (const auto& m : mapping) {
         if (state & m.first) {
