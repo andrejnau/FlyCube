@@ -61,6 +61,7 @@ D3D12_RESOURCE_STATES ConvertState(ResourceState state)
         { ResourceState::kShadingRateSource, D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE },
         { ResourceState::kPresent, D3D12_RESOURCE_STATE_PRESENT },
         { ResourceState::kGenericRead, D3D12_RESOURCE_STATE_GENERIC_READ },
+        { ResourceState::kAllShaderResource, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE },
     };
 
     D3D12_RESOURCE_STATES res = {};

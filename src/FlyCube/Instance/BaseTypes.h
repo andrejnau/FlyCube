@@ -62,9 +62,10 @@ enum ResourceState : uint32_t {
     kRaytracingAccelerationStructure = 1 << 12,
     kShadingRateSource = 1 << 13,
     kPresent = 1 << 14,
-    kGenericRead = ResourceState::kVertexAndConstantBuffer | ResourceState::kIndexBuffer | ResourceState::kCopySource |
+    kGenericRead = ResourceState::kVertexAndConstantBuffer | ResourceState::kIndexBuffer |
                    ResourceState::kNonPixelShaderResource | ResourceState::kPixelShaderResource |
-                   ResourceState::kIndirectArgument,
+                   ResourceState::kIndirectArgument | ResourceState::kCopySource,
+    kAllShaderResource = kNonPixelShaderResource | kPixelShaderResource,
     kUndefined = 1 << 15,
 };
 }
