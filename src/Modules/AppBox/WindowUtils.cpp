@@ -10,7 +10,6 @@
 #else
 #define GLFW_EXPOSE_NATIVE_X11
 #define GLFW_EXPOSE_NATIVE_WAYLAND
-#include <X11/Xlib-xcb.h>
 #endif
 
 #include <GLFW/glfw3native.h>
@@ -66,7 +65,7 @@ NativeSurface GetNativeSurface(GLFWwindow* window)
 #if defined(_WIN32)
     return Win32Surface{
         .hinstance = GetModuleHandle(nullptr),
-        .hwnd = (void*)glfwGetWin32Window(window),
+        .hwnd = glfwGetWin32Window(window),
     };
 #elif defined(__APPLE__)
     NSWindow* ns_window = glfwGetCocoaWindow(window);
@@ -76,14 +75,14 @@ NativeSurface GetNativeSurface(GLFWwindow* window)
 #else
     switch (glfwGetPlatform()) {
     case GLFW_PLATFORM_X11:
-        return XcbSurface{
-            .connection = XGetXCBConnection(glfwGetX11Display()),
-            .window = (void*)glfwGetX11Window(window),
+        return XlibSurface{
+            .dpy = glfwGetX11Display(),
+            .window = reinterpret_cast<void*>(glfwGetX11Window(window)),
         };
     case GLFW_PLATFORM_WAYLAND:
         return WaylandSurface{
             .display = glfwGetWaylandDisplay(),
-            .surface = (void*)glfwGetWaylandWindow(window),
+            .surface = glfwGetWaylandWindow(window),
         };
     default:
         NOTREACHED();
