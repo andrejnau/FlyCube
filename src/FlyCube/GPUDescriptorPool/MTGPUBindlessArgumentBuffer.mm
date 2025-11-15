@@ -23,7 +23,6 @@ void MTGPUBindlessArgumentBuffer::ResizeHeap(uint32_t req_size)
     m_size = req_size;
     m_buffer = buffer;
     m_allocations.resize(m_size);
-    [m_residency_set addAllocation:m_buffer];
 }
 
 MTGPUArgumentBufferRange MTGPUBindlessArgumentBuffer::Allocate(uint32_t count)

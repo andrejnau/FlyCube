@@ -92,10 +92,15 @@ void MTBindingSet::Apply(const std::map<ShaderType, id<MTL4ArgumentTable>>& argu
         }
     }
 
+    if (m_bindless_bind_keys.empty()) {
+        return;
+    }
+
+    id<MTLBuffer> buffer = m_device.GetBindlessArgumentBuffer().GetArgumentBuffer();
     for (const auto& bind_key : m_bindless_bind_keys) {
         decltype(auto) shader = state->As<MTPipeline>().GetShader(bind_key.shader_type);
         uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
-        auto buffer = m_device.GetBindlessArgumentBuffer().GetArgumentBuffer();
         SetBuffer(argument_tables.at(bind_key.shader_type), buffer, 0, index);
     }
+    [residency_set addAllocation:buffer];
 }
