@@ -9,25 +9,6 @@
 #include "Utilities/NotReached.h"
 #include "Utilities/VKUtility.h"
 
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-#include <Windows.h>
-#endif
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-#import <QuartzCore/CAMetalLayer.h>
-#endif
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
-#include <android/native_window.h>
-#endif
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-#include <xcb/xcb.h>
-#endif
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-#include <X11/Xlib.h>
-#endif
-#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-#include <wayland-client.h>
-#endif
-
 #include <variant>
 
 namespace {
@@ -63,7 +44,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
 #if defined(VK_USE_PLATFORM_METAL_EXT)
                    [&](const MetalSurface& metal_surface) {
                        vk::MetalSurfaceCreateInfoEXT metal_surface_info = {};
-                       metal_surface_info.pLayer = (__bridge CAMetalLayer*)metal_surface.ca_metal_layer;
+                       metal_surface_info.pLayer = metal_surface.ca_metal_layer;
                        m_surface = vk_instance.createMetalSurfaceEXTUnique(metal_surface_info);
                    },
 #endif

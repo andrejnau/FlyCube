@@ -210,10 +210,6 @@ list(APPEND Swapchain
     Swapchain/Swapchain.h
 )
 
-if (APPLE AND VULKAN_SUPPORT)
-    set_property(SOURCE Swapchain/VKSwapchain.cpp PROPERTY COMPILE_FLAGS "-xobjective-c++")
-endif()
-
 list(APPEND Utilities
     Utilities/Asset.cpp
     Utilities/Asset.h
