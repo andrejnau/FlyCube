@@ -100,7 +100,7 @@ DXILReflection::DXILReflection(const void* data, size_t size)
             CComPtr<IDxcBlob> part;
             CHECK_HRESULT(reflection->GetPartContent(i, &part));
             assert(part->GetBufferSize() == sizeof(DxilShaderFeatureInfo));
-            auto feature_info = reinterpret_cast<DxilShaderFeatureInfo const*>(part->GetBufferPointer());
+            auto feature_info = static_cast<DxilShaderFeatureInfo const*>(part->GetBufferPointer());
             if (feature_info->FeatureFlags & hlsl::DXIL::ShaderFeatureInfo_ResourceDescriptorHeapIndexing) {
                 m_shader_feature_info.resource_descriptor_heap_indexing = true;
             }

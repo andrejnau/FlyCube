@@ -28,7 +28,7 @@ void HandleCmd(android_app* app, int32_t cmd)
         return;
     }
 
-    auto* state = reinterpret_cast<RendererState*>(app->userData);
+    auto* state = static_cast<RendererState*>(app->userData);
     switch (cmd) {
     case APP_CMD_INIT_WINDOW: {
         AndroidSurface surface = {
