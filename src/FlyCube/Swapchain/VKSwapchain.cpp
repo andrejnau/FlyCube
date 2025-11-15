@@ -59,8 +59,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
                    [&](const XcbSurface& xcb_surface) {
                        vk::XcbSurfaceCreateInfoKHR xcb_surface_info = {};
                        xcb_surface_info.connection = static_cast<xcb_connection_t*>(xcb_surface.connection);
-                       xcb_surface_info.window =
-                           static_cast<xcb_window_t>(reinterpret_cast<uintptr_t>(xcb_surface.window));
+                       xcb_surface_info.window = static_cast<xcb_window_t>(xcb_surface.window);
                        m_surface = vk_instance.createXcbSurfaceKHRUnique(xcb_surface_info);
                    },
 #endif
@@ -68,7 +67,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
                    [&](const XlibSurface& xlib_surface) {
                        vk::XlibSurfaceCreateInfoKHR xlib_surface_info = {};
                        xlib_surface_info.dpy = static_cast<Display*>(xlib_surface.dpy);
-                       xlib_surface_info.window = reinterpret_cast<Window>(xlib_surface.window);
+                       xlib_surface_info.window = static_cast<Window>(xlib_surface.window);
                        m_surface = vk_instance.createXlibSurfaceKHRUnique(xlib_surface_info);
                    },
 #endif

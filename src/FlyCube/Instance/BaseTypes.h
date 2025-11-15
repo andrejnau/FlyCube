@@ -685,12 +685,12 @@ struct AndroidSurface {
 
 struct XcbSurface {
     void* connection;
-    void* window;
+    uintptr_t window;
 };
 
 struct XlibSurface {
     void* dpy;
-    void* window;
+    uintptr_t window;
 };
 
 struct WaylandSurface {

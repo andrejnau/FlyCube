@@ -77,7 +77,7 @@ NativeSurface GetNativeSurface(GLFWwindow* window)
     case GLFW_PLATFORM_X11:
         return XlibSurface{
             .dpy = glfwGetX11Display(),
-            .window = reinterpret_cast<void*>(glfwGetX11Window(window)),
+            .window = glfwGetX11Window(window),
         };
     case GLFW_PLATFORM_WAYLAND:
         return WaylandSurface{
