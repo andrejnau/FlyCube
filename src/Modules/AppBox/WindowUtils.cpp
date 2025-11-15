@@ -1,5 +1,7 @@
 #include "AppBox/WindowUtils.h"
 
+#include "Utilities/NotReached.h"
+
 #if defined(_WIN32)
 #define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__APPLE__)
@@ -7,6 +9,7 @@
 #import <QuartzCore/CAMetalLayer.h>
 #else
 #define GLFW_EXPOSE_NATIVE_X11
+#define GLFW_EXPOSE_NATIVE_WAYLAND
 #include <X11/Xlib-xcb.h>
 #endif
 
@@ -71,10 +74,20 @@ NativeSurface GetNativeSurface(GLFWwindow* window)
         .ca_metal_layer = (__bridge void*)ns_window.contentView.layer,
     };
 #else
-    return XcbSurface{
-        .connection = XGetXCBConnection(glfwGetX11Display()),
-        .window = (void*)glfwGetX11Window(window),
-    };
+    switch (glfwGetPlatform()) {
+    case GLFW_PLATFORM_X11:
+        return XcbSurface{
+            .connection = XGetXCBConnection(glfwGetX11Display()),
+            .window = (void*)glfwGetX11Window(window),
+        };
+    case GLFW_PLATFORM_WAYLAND:
+        return WaylandSurface{
+            .display = glfwGetWaylandDisplay(),
+            .surface = (void*)glfwGetWaylandWindow(window),
+        };
+    default:
+        NOTREACHED();
+    }
 #endif
 }
 

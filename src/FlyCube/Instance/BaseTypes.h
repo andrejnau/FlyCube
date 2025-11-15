@@ -693,4 +693,9 @@ struct XlibSurface {
     void* window;
 };
 
-using NativeSurface = std::variant<Win32Surface, MetalSurface, AndroidSurface, XcbSurface, XlibSurface>;
+struct WaylandSurface {
+    void* display;
+    void* surface;
+};
+
+using NativeSurface = std::variant<Win32Surface, MetalSurface, AndroidSurface, XcbSurface, XlibSurface, WaylandSurface>;

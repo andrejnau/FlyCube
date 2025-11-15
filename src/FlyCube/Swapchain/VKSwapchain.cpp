@@ -24,6 +24,9 @@
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
 #include <X11/Xlib.h>
 #endif
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+#include <wayland-client.h>
+#endif
 
 #include <variant>
 
@@ -85,6 +88,14 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
                        xlib_surface_info.dpy = reinterpret_cast<Display*>(xlib_surface.dpy);
                        xlib_surface_info.window = reinterpret_cast<Window>(xlib_surface.window);
                        m_surface = vk_instance.createXlibSurfaceKHRUnique(xlib_surface_info);
+                   },
+#endif
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+                   [&](const WaylandSurface& wayland_surface) {
+                       vk::WaylandSurfaceCreateInfoKHR wayland_surface_info = {};
+                       wayland_surface_info.display = reinterpret_cast<wl_display*>(wayland_surface.display);
+                       wayland_surface_info.surface = reinterpret_cast<wl_surface*>(wayland_surface.surface);
+                       m_surface = vk_instance.createWaylandSurfaceKHRUnique(wayland_surface_info);
                    },
 #endif
                    [](const auto& surface) { NOTREACHED(); } },

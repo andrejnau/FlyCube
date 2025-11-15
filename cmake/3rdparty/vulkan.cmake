@@ -80,6 +80,7 @@ else()
         INTERFACE
             VK_USE_PLATFORM_XCB_KHR
             VK_USE_PLATFORM_XLIB_KHR
+            VK_USE_PLATFORM_WAYLAND_KHR
     )
     target_link_libraries(vulkan
         INTERFACE

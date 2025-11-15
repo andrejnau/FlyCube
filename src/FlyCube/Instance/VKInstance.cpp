@@ -105,6 +105,9 @@ VKInstance::VKInstance()
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
         VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
 #endif
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+        VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
+#endif
         // clang-format on
     };
 
