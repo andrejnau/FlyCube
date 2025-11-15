@@ -36,8 +36,8 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
                    [&](const Win32Surface& win32_surface) {
                        vk::Win32SurfaceCreateInfoKHR win32_surface_info = {};
-                       win32_surface_info.hinstance = reinterpret_cast<HINSTANCE>(win32_surface.hinstance);
-                       win32_surface_info.hwnd = reinterpret_cast<HWND>(win32_surface.hwnd);
+                       win32_surface_info.hinstance = static_cast<HINSTANCE>(win32_surface.hinstance);
+                       win32_surface_info.hwnd = static_cast<HWND>(win32_surface.hwnd);
                        m_surface = vk_instance.createWin32SurfaceKHRUnique(win32_surface_info);
                    },
 #endif
@@ -51,22 +51,23 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
                    [&](const AndroidSurface& android_surface) {
                        vk::AndroidSurfaceCreateInfoKHR android_surface_info = {};
-                       android_surface_info.window = reinterpret_cast<ANativeWindow*>(android_surface.window);
+                       android_surface_info.window = static_cast<ANativeWindow*>(android_surface.window);
                        m_surface = vk_instance.createAndroidSurfaceKHRUnique(android_surface_info);
                    },
 #endif
 #if defined(VK_USE_PLATFORM_XCB_KHR)
                    [&](const XcbSurface& xcb_surface) {
                        vk::XcbSurfaceCreateInfoKHR xcb_surface_info = {};
-                       xcb_surface_info.connection = reinterpret_cast<xcb_connection_t*>(xcb_surface.connection);
-                       xcb_surface_info.window = reinterpret_cast<uintptr_t>(xcb_surface.window);
+                       xcb_surface_info.connection = static_cast<xcb_connection_t*>(xcb_surface.connection);
+                       xcb_surface_info.window =
+                           static_cast<xcb_window_t>(reinterpret_cast<uintptr_t>(xcb_surface.window));
                        m_surface = vk_instance.createXcbSurfaceKHRUnique(xcb_surface_info);
                    },
 #endif
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
                    [&](const XlibSurface& xlib_surface) {
                        vk::XlibSurfaceCreateInfoKHR xlib_surface_info = {};
-                       xlib_surface_info.dpy = reinterpret_cast<Display*>(xlib_surface.dpy);
+                       xlib_surface_info.dpy = static_cast<Display*>(xlib_surface.dpy);
                        xlib_surface_info.window = reinterpret_cast<Window>(xlib_surface.window);
                        m_surface = vk_instance.createXlibSurfaceKHRUnique(xlib_surface_info);
                    },
@@ -74,8 +75,8 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
                    [&](const WaylandSurface& wayland_surface) {
                        vk::WaylandSurfaceCreateInfoKHR wayland_surface_info = {};
-                       wayland_surface_info.display = reinterpret_cast<wl_display*>(wayland_surface.display);
-                       wayland_surface_info.surface = reinterpret_cast<wl_surface*>(wayland_surface.surface);
+                       wayland_surface_info.display = static_cast<wl_display*>(wayland_surface.display);
+                       wayland_surface_info.surface = static_cast<wl_surface*>(wayland_surface.surface);
                        m_surface = vk_instance.createWaylandSurfaceKHRUnique(wayland_surface_info);
                    },
 #endif

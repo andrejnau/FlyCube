@@ -32,9 +32,9 @@ DXSwapchain::DXSwapchain(DXCommandQueue& command_queue,
     const auto& win32_surface = std::get<Win32Surface>(surface);
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
     CHECK_HRESULT(instance.GetFactory()->CreateSwapChainForHwnd(command_queue.GetQueue().Get(),
-                                                                reinterpret_cast<HWND>(win32_surface.hwnd),
-                                                                &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
-    CHECK_HRESULT(instance.GetFactory()->MakeWindowAssociation(reinterpret_cast<HWND>(win32_surface.hwnd),
+                                                                static_cast<HWND>(win32_surface.hwnd), &swap_chain_desc,
+                                                                nullptr, nullptr, &tmp_swap_chain));
+    CHECK_HRESULT(instance.GetFactory()->MakeWindowAssociation(static_cast<HWND>(win32_surface.hwnd),
                                                                DXGI_MWA_NO_WINDOW_CHANGES));
     tmp_swap_chain.As(&m_swap_chain);
 
