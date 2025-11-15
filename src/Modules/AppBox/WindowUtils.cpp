@@ -4,15 +4,13 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__APPLE__)
 #define GLFW_EXPOSE_NATIVE_COCOA
+#import <QuartzCore/CAMetalLayer.h>
 #else
 #define GLFW_EXPOSE_NATIVE_X11
+#include <X11/Xlib-xcb.h>
 #endif
 
 #include <GLFW/glfw3native.h>
-
-#if defined(__APPLE__)
-#import <QuartzCore/CAMetalLayer.h>
-#endif
 
 namespace {
 
@@ -39,6 +37,12 @@ GLFWwindow* CreateWindowWithDefaultSize(const std::string_view& title)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow* window = glfwCreateWindow(window_size.width(), window_size.height(), title.data(), nullptr, nullptr);
 
+#if defined(__APPLE__)
+    NSWindow* ns_window = glfwGetCocoaWindow(window);
+    ns_window.contentView.layer = [CAMetalLayer layer];
+    ns_window.contentView.wantsLayer = YES;
+#endif
+
     int xpos = (screen_size.width() - window_size.width()) / 2;
     int ypos = (screen_size.height() - window_size.height()) / 2;
     glfwSetWindowPos(window, xpos, ypos);
@@ -54,19 +58,23 @@ AppSize GetSurfaceSize(GLFWwindow* window)
     return AppSize(width, height);
 }
 
-void* GetNativeWindow(GLFWwindow* window)
+NativeSurface GetNativeSurface(GLFWwindow* window)
 {
 #if defined(_WIN32)
-    return (void*)glfwGetWin32Window(window);
+    return Win32Surface{
+        .hinstance = GetModuleHandle(nullptr),
+        .hwnd = (void*)glfwGetWin32Window(window),
+    };
 #elif defined(__APPLE__)
     NSWindow* ns_window = glfwGetCocoaWindow(window);
-    if (!ns_window.contentView.layer) {
-        ns_window.contentView.layer = [CAMetalLayer layer];
-        ns_window.contentView.wantsLayer = YES;
-    }
-    return (__bridge void*)ns_window.contentView.layer;
+    return MetalSurface{
+        .ca_metal_layer = (__bridge void*)ns_window.contentView.layer,
+    };
 #else
-    return (void*)glfwGetX11Window(window);
+    return XcbSurface{
+        .connection = XGetXCBConnection(glfwGetX11Display()),
+        .window = (void*)glfwGetX11Window(window),
+    };
 #endif
 }
 

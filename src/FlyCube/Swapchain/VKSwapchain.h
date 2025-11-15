@@ -15,7 +15,7 @@ class Fence;
 class VKSwapchain : public Swapchain {
 public:
     VKSwapchain(VKCommandQueue& command_queue,
-                WindowHandle window,
+                const NativeSurface& surface,
                 uint32_t width,
                 uint32_t height,
                 uint32_t frame_count,

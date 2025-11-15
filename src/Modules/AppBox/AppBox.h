@@ -3,6 +3,7 @@
 #include "AppBox/WindowEvents.h"
 #include "AppLoop/AppSize.h"
 #include "AppSettings/Settings.h"
+#include "Instance/BaseTypes.h"
 
 #include <GLFW/glfw3.h>
 
@@ -26,7 +27,7 @@ public:
 
     AppSize GetAppSize() const;
     GLFWwindow* GetWindow() const;
-    void* GetNativeWindow() const;
+    NativeSurface GetNativeSurface() const;
     void SetGpuName(const std::string& gpu_name);
     void SubscribeEvents(InputEvents* input_listener, WindowEvents* window_listener);
     const CursorMode& GetCursorMode() const;

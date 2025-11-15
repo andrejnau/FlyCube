@@ -20,7 +20,7 @@ public:
     std::shared_ptr<Memory> AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits) override;
     std::shared_ptr<CommandQueue> GetCommandQueue(CommandListType type) override;
     uint32_t GetTextureDataPitchAlignment() const override;
-    std::shared_ptr<Swapchain> CreateSwapchain(WindowHandle window,
+    std::shared_ptr<Swapchain> CreateSwapchain(const NativeSurface& surface,
                                                uint32_t width,
                                                uint32_t height,
                                                uint32_t frame_count,

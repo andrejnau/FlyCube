@@ -33,8 +33,8 @@ public:
     ModelViewRenderer(const Settings& settings);
     ~ModelViewRenderer() override;
 
-    void Init(const AppSize& app_size, WindowHandle window) override;
-    void Resize(const AppSize& app_size, WindowHandle window) override;
+    void Init(const AppSize& app_size, const NativeSurface& surface) override;
+    void Resize(const AppSize& app_size, const NativeSurface& surface) override;
     void Render() override;
     std::string_view GetTitle() const override;
     const std::string& GetGpuName() const override;
@@ -190,9 +190,10 @@ ModelViewRenderer::~ModelViewRenderer()
     WaitForIdle();
 }
 
-void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
+void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surface)
 {
-    m_swapchain = m_device->CreateSwapchain(window, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
+    m_swapchain =
+        m_device->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
 
     glm::mat4 view = GetViewMatrix();
     glm::mat4 projection = GetProjectionMatrix(app_size.width(), app_size.height());
@@ -271,14 +272,14 @@ void ModelViewRenderer::Init(const AppSize& app_size, WindowHandle window)
     }
 }
 
-void ModelViewRenderer::Resize(const AppSize& app_size, WindowHandle window)
+void ModelViewRenderer::Resize(const AppSize& app_size, const NativeSurface& surface)
 {
     WaitForIdle();
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         m_back_buffer_views[i].reset();
     }
     m_swapchain.reset();
-    Init(app_size, window);
+    Init(app_size, surface);
 }
 
 void ModelViewRenderer::Render()

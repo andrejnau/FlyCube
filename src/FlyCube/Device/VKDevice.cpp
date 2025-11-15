@@ -423,13 +423,13 @@ uint32_t VKDevice::GetTextureDataPitchAlignment() const
     return 1;
 }
 
-std::shared_ptr<Swapchain> VKDevice::CreateSwapchain(WindowHandle window,
+std::shared_ptr<Swapchain> VKDevice::CreateSwapchain(const NativeSurface& surface,
                                                      uint32_t width,
                                                      uint32_t height,
                                                      uint32_t frame_count,
                                                      bool vsync)
 {
-    return std::make_shared<VKSwapchain>(*m_command_queues.at(CommandListType::kGraphics), window, width, height,
+    return std::make_shared<VKSwapchain>(*m_command_queues.at(CommandListType::kGraphics), surface, width, height,
                                          frame_count, vsync);
 }
 

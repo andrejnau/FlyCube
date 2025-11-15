@@ -10,7 +10,7 @@
 #include <gli/dx.hpp>
 
 DXSwapchain::DXSwapchain(DXCommandQueue& command_queue,
-                         WindowHandle window,
+                         const NativeSurface& surface,
                          uint32_t width,
                          uint32_t height,
                          uint32_t frame_count,
@@ -29,12 +29,13 @@ DXSwapchain::DXSwapchain(DXCommandQueue& command_queue,
     swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swap_chain_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
+    const auto& win32_surface = std::get<Win32Surface>(surface);
     ComPtr<IDXGISwapChain1> tmp_swap_chain;
     CHECK_HRESULT(instance.GetFactory()->CreateSwapChainForHwnd(command_queue.GetQueue().Get(),
-                                                                reinterpret_cast<HWND>(window), &swap_chain_desc,
-                                                                nullptr, nullptr, &tmp_swap_chain));
-    CHECK_HRESULT(
-        instance.GetFactory()->MakeWindowAssociation(reinterpret_cast<HWND>(window), DXGI_MWA_NO_WINDOW_CHANGES));
+                                                                reinterpret_cast<HWND>(win32_surface.hwnd),
+                                                                &swap_chain_desc, nullptr, nullptr, &tmp_swap_chain));
+    CHECK_HRESULT(instance.GetFactory()->MakeWindowAssociation(reinterpret_cast<HWND>(win32_surface.hwnd),
+                                                               DXGI_MWA_NO_WINDOW_CHANGES));
     tmp_swap_chain.As(&m_swap_chain);
 
     for (size_t i = 0; i < frame_count; ++i) {

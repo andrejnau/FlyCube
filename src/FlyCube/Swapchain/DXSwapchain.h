@@ -16,7 +16,7 @@ class DXCommandQueue;
 class DXSwapchain : public Swapchain {
 public:
     DXSwapchain(DXCommandQueue& command_queue,
-                WindowHandle window,
+                const NativeSurface& surface,
                 uint32_t width,
                 uint32_t height,
                 uint32_t frame_count,

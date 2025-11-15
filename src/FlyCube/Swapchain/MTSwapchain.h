@@ -12,7 +12,7 @@ class MTDevice;
 class MTSwapchain : public Swapchain {
 public:
     MTSwapchain(MTDevice& device,
-                WindowHandle window,
+                const NativeSurface& surface,
                 uint32_t width,
                 uint32_t height,
                 uint32_t frame_count,

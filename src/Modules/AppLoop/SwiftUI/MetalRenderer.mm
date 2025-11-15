@@ -36,11 +36,14 @@
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size
 {
     AppSize app_size(size.width, size.height);
+    MetalSurface surface = {
+        .ca_metal_layer = (__bridge void*)view.layer,
+    };
     if (!app_renderer) {
         app_renderer = &AppLoop::GetRenderer();
-        app_renderer->Init(app_size, (__bridge void*)view.layer);
+        app_renderer->Init(app_size, surface);
     } else {
-        app_renderer->Resize(app_size, (__bridge void*)view.layer);
+        app_renderer->Resize(app_size, surface);
     }
 }
 

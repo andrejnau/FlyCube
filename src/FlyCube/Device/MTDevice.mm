@@ -48,13 +48,13 @@ uint32_t MTDevice::GetTextureDataPitchAlignment() const
     return 1;
 }
 
-std::shared_ptr<Swapchain> MTDevice::CreateSwapchain(WindowHandle window,
+std::shared_ptr<Swapchain> MTDevice::CreateSwapchain(const NativeSurface& surface,
                                                      uint32_t width,
                                                      uint32_t height,
                                                      uint32_t frame_count,
                                                      bool vsync)
 {
-    return std::make_shared<MTSwapchain>(*this, window, width, height, frame_count, vsync);
+    return std::make_shared<MTSwapchain>(*this, surface, width, height, frame_count, vsync);
 }
 
 std::shared_ptr<CommandList> MTDevice::CreateCommandList(CommandListType type)

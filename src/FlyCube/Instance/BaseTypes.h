@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <variant>
 #include <vector>
 
 class BindingSetLayout;
@@ -668,3 +669,28 @@ struct AccelerationStructureDesc {
     uint64_t buffer_offset;
     uint64_t size;
 };
+
+struct Win32Surface {
+    void* hinstance;
+    void* hwnd;
+};
+
+struct MetalSurface {
+    void* ca_metal_layer;
+};
+
+struct AndroidSurface {
+    void* window;
+};
+
+struct XcbSurface {
+    void* connection;
+    void* window;
+};
+
+struct XlibSurface {
+    void* dpy;
+    void* window;
+};
+
+using NativeSurface = std::variant<Win32Surface, MetalSurface, AndroidSurface, XcbSurface, XlibSurface>;

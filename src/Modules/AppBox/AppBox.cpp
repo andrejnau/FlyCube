@@ -142,9 +142,9 @@ GLFWwindow* AppBox::GetWindow() const
     return m_window;
 }
 
-void* AppBox::GetNativeWindow() const
+NativeSurface AppBox::GetNativeSurface() const
 {
-    return WindowUtils::GetNativeWindow(m_window);
+    return WindowUtils::GetNativeSurface(m_window);
 }
 
 void AppBox::SwitchFullScreenMode()

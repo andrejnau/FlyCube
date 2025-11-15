@@ -79,10 +79,10 @@ else()
     target_compile_definitions(vulkan
         INTERFACE
             VK_USE_PLATFORM_XCB_KHR
+            VK_USE_PLATFORM_XLIB_KHR
     )
     target_link_libraries(vulkan
         INTERFACE
-            X11
             X11-xcb
     )
 endif()

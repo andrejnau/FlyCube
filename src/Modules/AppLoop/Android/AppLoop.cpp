@@ -31,7 +31,10 @@ void HandleCmd(android_app* app, int32_t cmd)
     auto* state = reinterpret_cast<RendererState*>(app->userData);
     switch (cmd) {
     case APP_CMD_INIT_WINDOW: {
-        state->renderer->Init(GetSurfaceSize(app->window), app->window);
+        AndroidSurface surface = {
+            .window = app->window,
+        };
+        state->renderer->Init(GetSurfaceSize(app->window), surface);
         state->initialized = true;
         break;
     }

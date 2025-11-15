@@ -250,14 +250,14 @@ uint32_t DXDevice::GetTextureDataPitchAlignment() const
     return D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
 }
 
-std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(WindowHandle window,
+std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(const NativeSurface& surface,
                                                      uint32_t width,
                                                      uint32_t height,
                                                      uint32_t frame_count,
                                                      bool vsync)
 {
 #if defined(_WIN32)
-    return std::make_shared<DXSwapchain>(*m_command_queues.at(CommandListType::kGraphics), window, width, height,
+    return std::make_shared<DXSwapchain>(*m_command_queues.at(CommandListType::kGraphics), surface, width, height,
                                          frame_count, vsync);
 #else
     return nullptr;

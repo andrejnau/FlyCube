@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
     app.SetGpuName(adapter->GetName());
     std::shared_ptr<Device> device = adapter->CreateDevice();
     std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
-    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeWindow(), app_size.width(),
+    std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeSurface(), app_size.width(),
                                                                    app_size.height(), kFrameCount, settings.vsync);
     uint64_t fence_value = 0;
     std::shared_ptr<Fence> fence = device->CreateFence(fence_value);

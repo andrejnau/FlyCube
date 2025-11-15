@@ -5,8 +5,6 @@
 
 #include <gli/format.hpp>
 
-using WindowHandle = void*;
-
 class Swapchain : public QueryInterface {
 public:
     virtual ~Swapchain() = default;

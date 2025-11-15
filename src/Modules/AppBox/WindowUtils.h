@@ -1,5 +1,6 @@
 #pragma once
 #include "AppLoop/AppSize.h"
+#include "Instance/BaseTypes.h"
 
 #include <GLFW/glfw3.h>
 
@@ -9,6 +10,6 @@ namespace WindowUtils {
 
 GLFWwindow* CreateWindowWithDefaultSize(const std::string_view& title);
 AppSize GetSurfaceSize(GLFWwindow* window);
-void* GetNativeWindow(GLFWwindow* window);
+NativeSurface GetNativeSurface(GLFWwindow* window);
 
 } // namespace WindowUtils

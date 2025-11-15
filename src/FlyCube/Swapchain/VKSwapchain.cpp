@@ -6,22 +6,38 @@
 #include "Fence/VKTimelineSemaphore.h"
 #include "Instance/VKInstance.h"
 #include "Resource/VKResource.h"
+#include "Utilities/NotReached.h"
 #include "Utilities/VKUtility.h"
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 #include <Windows.h>
-#elif defined(VK_USE_PLATFORM_METAL_EXT)
+#endif
+#if defined(VK_USE_PLATFORM_METAL_EXT)
 #import <QuartzCore/CAMetalLayer.h>
-#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+#endif
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/native_window.h>
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
-#include <X11/Xlib-xcb.h>
-#elif defined(VK_USE_PLATFORM_XLIB_KHR)
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+#include <xcb/xcb.h>
+#endif
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
 #include <X11/Xlib.h>
 #endif
 
+#include <variant>
+
+namespace {
+
+template <class... Ts>
+struct overloaded : Ts... {
+    using Ts::operator()...;
+};
+
+} // namespace
+
 VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
-                         WindowHandle window,
+                         const NativeSurface& surface,
                          uint32_t width,
                          uint32_t height,
                          uint32_t frame_count,
@@ -32,30 +48,47 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
     auto vk_instance = m_device.GetAdapter().GetInstance().GetInstance();
     auto vk_physical_device = m_device.GetAdapter().GetPhysicalDevice();
 
+    std::visit(overloaded{
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    vk::Win32SurfaceCreateInfoKHR win32_surface_info = {};
-    win32_surface_info.hinstance = GetModuleHandle(nullptr);
-    win32_surface_info.hwnd = reinterpret_cast<HWND>(window);
-    m_surface = vk_instance.createWin32SurfaceKHRUnique(win32_surface_info);
-#elif defined(VK_USE_PLATFORM_METAL_EXT)
-    vk::MetalSurfaceCreateInfoEXT metal_surface_info = {};
-    metal_surface_info.pLayer = (__bridge CAMetalLayer*)window;
-    m_surface = vk_instance.createMetalSurfaceEXTUnique(metal_surface_info);
-#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
-    vk::AndroidSurfaceCreateInfoKHR android_surface_info = {};
-    android_surface_info.window = reinterpret_cast<ANativeWindow*>(window);
-    m_surface = vk_instance.createAndroidSurfaceKHRUnique(android_surface_info);
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
-    vk::XcbSurfaceCreateInfoKHR xcb_surface_info = {};
-    xcb_surface_info.connection = XGetXCBConnection(XOpenDisplay(nullptr));
-    xcb_surface_info.window = reinterpret_cast<ptrdiff_t>(window);
-    m_surface = vk_instance.createXcbSurfaceKHRUnique(xcb_surface_info);
-#elif defined(VK_USE_PLATFORM_XLIB_KHR)
-    vk::XlibSurfaceCreateInfoKHR xlib_surface_info = {};
-    xlib_surface_info.dpy = XOpenDisplay(nullptr);
-    xlib_surface_info.window = reinterpret_cast<ptrdiff_t>(window);
-    m_surface = vk_instance.createXlibSurfaceKHRUnique(xlib_surface_info);
+                   [&](const Win32Surface& win32_surface) {
+                       vk::Win32SurfaceCreateInfoKHR win32_surface_info = {};
+                       win32_surface_info.hinstance = reinterpret_cast<HINSTANCE>(win32_surface.hinstance);
+                       win32_surface_info.hwnd = reinterpret_cast<HWND>(win32_surface.hwnd);
+                       m_surface = vk_instance.createWin32SurfaceKHRUnique(win32_surface_info);
+                   },
 #endif
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+                   [&](const MetalSurface& metal_surface) {
+                       vk::MetalSurfaceCreateInfoEXT metal_surface_info = {};
+                       metal_surface_info.pLayer = (__bridge CAMetalLayer*)metal_surface.ca_metal_layer;
+                       m_surface = vk_instance.createMetalSurfaceEXTUnique(metal_surface_info);
+                   },
+#endif
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+                   [&](const AndroidSurface& android_surface) {
+                       vk::AndroidSurfaceCreateInfoKHR android_surface_info = {};
+                       android_surface_info.window = reinterpret_cast<ANativeWindow*>(android_surface.window);
+                       m_surface = vk_instance.createAndroidSurfaceKHRUnique(android_surface_info);
+                   },
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+                   [&](const XcbSurface& xcb_surface) {
+                       vk::XcbSurfaceCreateInfoKHR xcb_surface_info = {};
+                       xcb_surface_info.connection = reinterpret_cast<xcb_connection_t*>(xcb_surface.connection);
+                       xcb_surface_info.window = reinterpret_cast<uintptr_t>(xcb_surface.window);
+                       m_surface = vk_instance.createXcbSurfaceKHRUnique(xcb_surface_info);
+                   },
+#endif
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+                   [&](const XlibSurface& xlib_surface) {
+                       vk::XlibSurfaceCreateInfoKHR xlib_surface_info = {};
+                       xlib_surface_info.dpy = reinterpret_cast<Display*>(xlib_surface.dpy);
+                       xlib_surface_info.window = reinterpret_cast<Window>(xlib_surface.window);
+                       m_surface = vk_instance.createXlibSurfaceKHRUnique(xlib_surface_info);
+                   },
+#endif
+                   [](const auto& surface) { NOTREACHED(); } },
+               surface);
 
     vk::ColorSpaceKHR color_space = {};
     auto surface_formats = vk_physical_device.getSurfaceFormatsKHR(m_surface.get());

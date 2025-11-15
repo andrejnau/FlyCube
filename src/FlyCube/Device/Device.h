@@ -29,7 +29,7 @@ public:
                                                    uint32_t memory_type_bits) = 0;
     virtual std::shared_ptr<CommandQueue> GetCommandQueue(CommandListType type) = 0;
     virtual uint32_t GetTextureDataPitchAlignment() const = 0;
-    virtual std::shared_ptr<Swapchain> CreateSwapchain(WindowHandle window,
+    virtual std::shared_ptr<Swapchain> CreateSwapchain(const NativeSurface& surface,
                                                        uint32_t width,
                                                        uint32_t height,
                                                        uint32_t frame_count,

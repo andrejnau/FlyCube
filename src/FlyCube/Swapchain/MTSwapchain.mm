@@ -6,7 +6,7 @@
 #include "Resource/MTResource.h"
 
 MTSwapchain::MTSwapchain(MTDevice& device,
-                         WindowHandle window,
+                         const NativeSurface& surface,
                          uint32_t width,
                          uint32_t height,
                          uint32_t frame_count,
@@ -16,8 +16,9 @@ MTSwapchain::MTSwapchain(MTDevice& device,
     , m_frame_count(frame_count)
     , m_width(width)
     , m_height(height)
-    , m_layer((__bridge CAMetalLayer*)window)
 {
+    const auto& metal_surface = std::get<MetalSurface>(surface);
+    m_layer = (__bridge CAMetalLayer*)metal_surface.ca_metal_layer;
     m_layer.drawableSize = CGSizeMake(width, height);
     m_layer.device = device.GetDevice();
     m_layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
