@@ -43,7 +43,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt update
-        sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libx11-xcb-dev
+        sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libx11-xcb-dev libwayland-dev libxkbcommon-dev
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
