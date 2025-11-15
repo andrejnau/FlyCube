@@ -186,9 +186,6 @@ void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
     m_binding_set = std::static_pointer_cast<MTBindingSet>(binding_set);
-    if (m_binding_set) {
-        m_binding_set->AddResourcesToResidencySet(m_residency_set);
-    }
     m_need_apply_binding_set = true;
 }
 
@@ -671,7 +668,7 @@ id<MTL4CommandBuffer> MTCommandList::GetCommandBuffer()
 void MTCommandList::ApplyComputeState()
 {
     if (m_need_apply_binding_set && m_binding_set) {
-        m_binding_set->Apply(m_argument_tables, m_state);
+        m_binding_set->Apply(m_argument_tables, m_state, m_residency_set);
         m_need_apply_binding_set = false;
     }
 
@@ -685,7 +682,7 @@ void MTCommandList::ApplyComputeState()
 void MTCommandList::ApplyGraphicsState()
 {
     if (m_need_apply_binding_set && m_binding_set) {
-        m_binding_set->Apply(m_argument_tables, m_state);
+        m_binding_set->Apply(m_argument_tables, m_state, m_residency_set);
         m_need_apply_binding_set = false;
     }
 

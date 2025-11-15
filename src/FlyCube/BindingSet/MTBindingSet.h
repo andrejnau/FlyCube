@@ -18,8 +18,8 @@ public:
     void WriteBindings(const std::vector<BindingDesc>& bindings) override;
 
     void Apply(const std::map<ShaderType, id<MTL4ArgumentTable>>& argument_tables,
-               const std::shared_ptr<Pipeline>& state);
-    void AddResourcesToResidencySet(id<MTLResidencySet> residency_set);
+               const std::shared_ptr<Pipeline>& state,
+               id<MTLResidencySet> residency_set);
 
 private:
     MTDevice& m_device;
