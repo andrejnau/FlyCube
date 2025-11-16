@@ -13,6 +13,7 @@ option(AGILITY_SDK_REQUIRED "Use Agility SDK" OFF)
 cmake_dependent_option(METAL_SUPPORT "Metal support" ON "APPLE" OFF)
 option(BUILD_SAMPLES "Build samples" ON)
 cmake_dependent_option(BUILD_TESTING "Build unit tests" ON "NOT IOS_OR_TVOS AND NOT ANDROID" OFF)
+option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 
 set(project_root "${CMAKE_CURRENT_SOURCE_DIR}")
 set(assets_path "${project_root}/assets/")
