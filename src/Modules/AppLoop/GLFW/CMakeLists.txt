@@ -1,4 +1,4 @@
-add_library(AppLoopGLFW
+add_library(AppLoopGLFW STATIC
     AppLoop.cpp
 )
 

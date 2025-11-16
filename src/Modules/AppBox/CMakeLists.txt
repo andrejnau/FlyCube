@@ -2,7 +2,7 @@ if (IOS_OR_TVOS)
     return()
 endif()
 
-add_library(AppBox
+add_library(AppBox STATIC
     $<$<BOOL:${APPLE}>:AutoreleasePool.h>
     $<$<BOOL:${APPLE}>:AutoreleasePool.mm>
     AppBox.cpp

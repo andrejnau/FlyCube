@@ -1,13 +1,8 @@
-list(APPEND headers
+add_library(AppSettings STATIC
+    ArgsParser.cpp
     ArgsParser.h
     Settings.h
 )
-
-list(APPEND sources
-    ArgsParser.cpp
-)
-
-add_library(AppSettings ${headers} ${sources})
 
 target_include_directories(AppSettings
     PUBLIC

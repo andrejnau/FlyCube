@@ -1,15 +1,10 @@
-list(APPEND headers
+add_library(RenderUtils STATIC
     Model.h
+    ModelLoader.cpp
     ModelLoader.h
+    RenderModel.cpp
     RenderModel.h
 )
-
-list(APPEND sources
-    ModelLoader.cpp
-    RenderModel.cpp
-)
-
-add_library(RenderUtils ${headers} ${sources})
 
 target_include_directories(RenderUtils
     PUBLIC

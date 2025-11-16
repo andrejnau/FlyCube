@@ -1,4 +1,4 @@
-add_library(AppLoopAndroid
+add_library(AppLoopAndroid STATIC
     AppLoop.cpp
 )
 

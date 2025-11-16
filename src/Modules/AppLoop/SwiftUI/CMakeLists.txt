@@ -25,7 +25,7 @@ else()
    )
 endif()
 
-add_library(AppLoopSwiftUI
+add_library(AppLoopSwiftUI STATIC
    ${headers}
    ${sources}
 )
