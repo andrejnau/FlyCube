@@ -1,12 +1,12 @@
 #include "AppBox/AppBox.h"
 #include "AppSettings/ArgsParser.h"
 #include "Instance/Instance.h"
+#include "Utilities/Check.h"
 #include "Utilities/Common.h"
 
 #include <glm/gtx/transform.hpp>
 
 #include <cstring>
-#include <stdexcept>
 
 namespace {
 
@@ -24,9 +24,7 @@ int main(int argc, char* argv[])
     std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[settings.required_gpu_index]);
     app.SetGpuName(adapter->GetName());
     std::shared_ptr<Device> device = adapter->CreateDevice();
-    if (!device->IsDxrSupported()) {
-        throw std::runtime_error("Ray Tracing is not supported");
-    }
+    CHECK(device->IsDxrSupported(), "Ray Tracing is not supported");
     std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
     std::shared_ptr<CommandQueue> upload_command_queue = device->GetCommandQueue(CommandListType::kGraphics);
     std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(app.GetNativeSurface(), app_size.width(),

@@ -3,8 +3,7 @@
 #include "AppSettings/ArgsParser.h"
 #include "Instance/Instance.h"
 #include "Utilities/Asset.h"
-
-#include <stdexcept>
+#include "Utilities/Check.h"
 
 namespace {
 
@@ -60,9 +59,7 @@ BindlessTriangleRenderer::BindlessTriangleRenderer(const Settings& settings)
     m_instance = CreateInstance(m_settings.api_type);
     m_adapter = std::move(m_instance->EnumerateAdapters()[m_settings.required_gpu_index]);
     m_device = m_adapter->CreateDevice();
-    if (!m_device->IsBindlessSupported()) {
-        throw std::runtime_error("Bindless is not supported");
-    }
+    CHECK(m_device->IsBindlessSupported(), "Bindless is not supported");
     m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
     m_fence = m_device->CreateFence(m_fence_value);
 
