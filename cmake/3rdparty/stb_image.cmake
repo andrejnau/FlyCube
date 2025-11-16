@@ -1,4 +1,4 @@
-add_library(stb_image
+add_library(stb_image STATIC
     "${project_root}/3rdparty/stb_image/stb_image.c"
     "${project_root}/3rdparty/stb_image/stb_image.h"
 )
