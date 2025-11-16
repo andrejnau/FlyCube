@@ -14,7 +14,6 @@ target_include_directories(RenderUtils
 target_link_libraries(RenderUtils
     assimp
     FlyCube
-    FlyCubeAssets
     glm
     stb_image
 )
