@@ -196,11 +196,15 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
     };
     m_tlas_view = m_device->CreateView(m_tlas, tlas_view_desc);
 
-    m_library = m_device->CompileShader({ "shaders/RayTracingTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
-    m_library_hit =
-        m_device->CompileShader({ "shaders/RayTracingTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" });
-    m_library_callable =
-        m_device->CompileShader({ "shaders/RayTracingTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" });
+    ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
+    std::vector<uint8_t> library_blob = AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracing.hlsl", blob_type);
+    m_library = m_device->CreateShader(library_blob, blob_type, ShaderType::kLibrary);
+    std::vector<uint8_t> library_hit_blob =
+        AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracingHit.hlsl", blob_type);
+    m_library_hit = m_device->CreateShader(library_hit_blob, blob_type, ShaderType::kLibrary);
+    std::vector<uint8_t> library_callable_blob =
+        AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracingCallable.hlsl", blob_type);
+    m_library_callable = m_device->CreateShader(library_callable_blob, blob_type, ShaderType::kLibrary);
     BindKey geometry_key = m_library->GetBindKey("geometry");
     BindKey result_texture_key = m_library->GetBindKey("result_texture");
     m_layout = m_device->CreateBindingSetLayout({ geometry_key, result_texture_key });
