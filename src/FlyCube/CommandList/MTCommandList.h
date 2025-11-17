@@ -96,9 +96,9 @@ public:
     id<MTL4CommandBuffer> GetCommandBuffer();
 
 private:
-    MTL4BufferRange PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
-                                      uint64_t instance_offset,
-                                      uint32_t instance_count);
+    id<MTLBuffer> PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
+                                    uint64_t instance_offset,
+                                    uint32_t instance_count);
     void ApplyComputeState();
     void ApplyGraphicsState();
     void AddGraphicsBarriers();
@@ -122,6 +122,7 @@ private:
     std::shared_ptr<MTBindingSet> m_binding_set;
     std::map<ShaderType, id<MTL4ArgumentTable>> m_argument_tables;
     id<MTLResidencySet> m_residency_set = nullptr;
+    std::vector<id<MTLBuffer>> m_patch_buffers;
     bool m_need_apply_state = false;
     bool m_need_apply_binding_set = false;
     MTLStages m_render_barrier_after_stages = 0;

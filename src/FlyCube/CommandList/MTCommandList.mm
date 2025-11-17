@@ -167,6 +167,7 @@ void MTCommandList::Close()
     m_argument_tables = {};
     [m_residency_set commit];
     m_residency_set = nullptr;
+    m_patch_buffers.clear();
     m_need_apply_state = false;
     m_need_apply_binding_set = false;
     m_render_barrier_after_stages = 0;
@@ -491,9 +492,9 @@ void MTCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
 }
 
 // TODO: patch on GPU
-MTL4BufferRange MTCommandList::PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
-                                                 uint64_t instance_offset,
-                                                 uint32_t instance_count)
+id<MTLBuffer> MTCommandList::PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
+                                               uint64_t instance_offset,
+                                               uint32_t instance_count)
 {
     MTLResourceOptions buffer_options = MTLStorageModeShared << MTLResourceStorageModeShift;
     NSUInteger buffer_size = instance_count * sizeof(MTLIndirectAccelerationStructureInstanceDescriptor);
@@ -513,8 +514,7 @@ MTL4BufferRange MTCommandList::PatchInstanceData(const std::shared_ptr<Resource>
         patched_instance.mask = instance.instance_mask;
         patched_instance.accelerationStructureID = { instance.acceleration_structure_handle };
     }
-
-    return MTL4BufferRangeMake(buffer.gpuAddress, buffer.length);
+    return buffer;
 }
 
 void MTCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
@@ -529,9 +529,11 @@ void MTCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
     MTL4InstanceAccelerationStructureDescriptor* acceleration_structure_desc =
         [MTL4InstanceAccelerationStructureDescriptor new];
     acceleration_structure_desc.instanceCount = instance_count;
+    id<MTLBuffer> patched_instance_data = PatchInstanceData(instance_data, instance_offset, instance_count);
     acceleration_structure_desc.instanceDescriptorBuffer =
-        PatchInstanceData(instance_data, instance_offset, instance_count);
+        MTL4BufferRangeMake(patched_instance_data.gpuAddress, patched_instance_data.length);
     acceleration_structure_desc.instanceDescriptorType = MTLAccelerationStructureInstanceDescriptorTypeIndirect;
+    m_patch_buffers.push_back(patched_instance_data);
 
     decltype(auto) mt_dst = dst->As<MTResource>();
     decltype(auto) mt_scratch = scratch->As<MTResource>();
