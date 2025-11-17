@@ -509,7 +509,7 @@ id<MTLBuffer> MTCommandList::PatchInstanceData(const std::shared_ptr<Resource>& 
         MTLIndirectAccelerationStructureInstanceDescriptor& patched_instance =
             reinterpret_cast<MTLIndirectAccelerationStructureInstanceDescriptor*>(patched_instance_ptr)[i];
 
-        auto matrix = glm::mat4x3(instance.transform);
+        glm::mat4x3 matrix = glm::transpose(instance.transform);
         memcpy(&patched_instance.transformationMatrix, &matrix, sizeof(patched_instance.transformationMatrix));
         patched_instance.mask = instance.instance_mask;
         patched_instance.accelerationStructureID = { instance.acceleration_structure_handle };
