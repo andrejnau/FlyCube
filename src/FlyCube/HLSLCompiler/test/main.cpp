@@ -66,9 +66,9 @@ TEST_CASE("HLSLCompilerTest")
     std::vector<ShaderDesc> shader_descs = {
         { ASSETS_PATH "shaders/BindlessTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_0" },
         { ASSETS_PATH "shaders/BindlessTriangle/VertexShader.hlsl", "main", ShaderType::kVertex, "6_0" },
-        { ASSETS_PATH "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" },
-        { ASSETS_PATH "shaders/DxrTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" },
-        { ASSETS_PATH "shaders/DxrTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" },
+        { ASSETS_PATH "shaders/RayTracingTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" },
+        { ASSETS_PATH "shaders/RayTracingTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" },
+        { ASSETS_PATH "shaders/RayTracingTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" },
         { ASSETS_PATH "shaders/MeshTriangle/MeshShader.hlsl", "main", ShaderType::kMesh, "6_5" },
         { ASSETS_PATH "shaders/MeshTriangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_5" },
         { ASSETS_PATH "shaders/Triangle/PixelShader.hlsl", "main", ShaderType::kPixel, "6_0" },

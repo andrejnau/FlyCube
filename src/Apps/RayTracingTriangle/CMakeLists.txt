@@ -2,7 +2,7 @@ list(APPEND sources
    main.cpp
 )
 
-set(shaders_path "${assets_path}/shaders/DxrTriangle")
+set(shaders_path "${assets_path}/shaders/RayTracingTriangle")
 
 set(shaders_files
     ${shaders_path}/RayTracing.hlsl
@@ -14,39 +14,39 @@ set_property(SOURCE ${shaders_files} PROPERTY SHADER_ENTRYPOINT main)
 set_property(SOURCE ${shaders_files} PROPERTY SHADER_MODEL 6_3)
 
 include(compile_shaders)
-compile_shaders("${shaders_path}" "assets/DesktopDxrTriangle" "${shaders_files}" resources)
+compile_shaders("${shaders_path}" "assets/RayTracingTriangle" "${shaders_files}" resources)
 
 if (ANDROID)
-   add_library(DesktopDxrTriangle SHARED
+   add_library(RayTracingTriangle SHARED
       ${resources}
       ${shaders_files}
       ${sources}
    )
 else()
-   add_executable(DesktopDxrTriangle WIN32 MACOSX_BUNDLE
+   add_executable(RayTracingTriangle WIN32 MACOSX_BUNDLE
       ${resources}
       ${shaders_files}
       ${sources}
    )
 endif()
 
-target_link_options(DesktopDxrTriangle
+target_link_options(RayTracingTriangle
     PRIVATE
         $<$<BOOL:${WIN32}>:/ENTRY:mainCRTStartup>
 )
 
-target_link_libraries(DesktopDxrTriangle
+target_link_libraries(RayTracingTriangle
    AppLoop
    FlyCube
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-   set_target_properties(DesktopDxrTriangle PROPERTIES
+   set_target_properties(RayTracingTriangle PROPERTIES
       XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
    )
 endif()
 
-set_target_properties(DesktopDxrTriangle PROPERTIES
+set_target_properties(RayTracingTriangle PROPERTIES
     FOLDER "Apps"
     MACOSX_BUNDLE_INFO_PLIST "${project_root}/cmake/apple/Info.plist"
 )

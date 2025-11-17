@@ -196,11 +196,11 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
     };
     m_tlas_view = m_device->CreateView(m_tlas, tlas_view_desc);
 
-    m_library = m_device->CompileShader({ "shaders/DxrTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
+    m_library = m_device->CompileShader({ "shaders/RayTracingTriangle/RayTracing.hlsl", "", ShaderType::kLibrary, "6_3" });
     m_library_hit =
-        m_device->CompileShader({ "shaders/DxrTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" });
+        m_device->CompileShader({ "shaders/RayTracingTriangle/RayTracingHit.hlsl", "", ShaderType::kLibrary, "6_3" });
     m_library_callable =
-        m_device->CompileShader({ "shaders/DxrTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" });
+        m_device->CompileShader({ "shaders/RayTracingTriangle/RayTracingCallable.hlsl", "", ShaderType::kLibrary, "6_3" });
     BindKey geometry_key = m_library->GetBindKey("geometry");
     BindKey result_texture_key = m_library->GetBindKey("result_texture");
     m_layout = m_device->CreateBindingSetLayout({ geometry_key, result_texture_key });
