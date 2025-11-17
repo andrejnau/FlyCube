@@ -235,13 +235,13 @@ uint32_t MTDevice::GetShaderTableAlignment() const
     NOTREACHED();
 }
 
-MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(
+MTL4AccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(
     const RaytracingGeometryBufferDesc& vertex,
     const RaytracingGeometryBufferDesc& index,
     RaytracingGeometryFlags flags)
 {
-    MTLAccelerationStructureTriangleGeometryDescriptor* geometry_desc =
-        [MTLAccelerationStructureTriangleGeometryDescriptor descriptor];
+    MTL4AccelerationStructureTriangleGeometryDescriptor* geometry_desc =
+        [MTL4AccelerationStructureTriangleGeometryDescriptor new];
 
     auto vertex_res = std::static_pointer_cast<MTResource>(vertex.res);
     auto index_res = std::static_pointer_cast<MTResource>(index.res);
@@ -258,15 +258,13 @@ MTLAccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(
     }
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
-    geometry_desc.vertexBuffer = vertex_res->GetBuffer();
-    geometry_desc.vertexBufferOffset = vertex.offset * vertex_stride;
+    geometry_desc.vertexBuffer = vertex_res->GetBuffer().gpuAddress + vertex.offset * vertex_stride;
     geometry_desc.vertexStride = vertex_stride;
     geometry_desc.triangleCount = vertex.count / 3;
 
     if (index_res) {
         auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
-        geometry_desc.indexBuffer = index_res->GetBuffer();
-        geometry_desc.indexBufferOffset = index.offset * index_stride;
+        geometry_desc.indexBuffer = index_res->GetBuffer().gpuAddress + index.offset * index_stride;
         geometry_desc.triangleCount = index.count / 3;
     }
 
@@ -278,13 +276,13 @@ RaytracingASPrebuildInfo MTDevice::GetBLASPrebuildInfo(const std::vector<Raytrac
 {
     NSMutableArray* geometry_descs = [NSMutableArray array];
     for (const auto& desc : descs) {
-        MTLAccelerationStructureTriangleGeometryDescriptor* geometry_desc =
+        MTL4AccelerationStructureTriangleGeometryDescriptor* geometry_desc =
             FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags);
         [geometry_descs addObject:geometry_desc];
     }
 
-    MTLPrimitiveAccelerationStructureDescriptor* acceleration_structure_desc =
-        [MTLPrimitiveAccelerationStructureDescriptor descriptor];
+    MTL4PrimitiveAccelerationStructureDescriptor* acceleration_structure_desc =
+        [MTL4PrimitiveAccelerationStructureDescriptor new];
     acceleration_structure_desc.geometryDescriptors = geometry_descs;
 
     MTLAccelerationStructureSizes sizes =

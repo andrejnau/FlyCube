@@ -467,7 +467,7 @@ void MTCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
 {
     NSMutableArray* geometry_descs = [NSMutableArray array];
     for (const auto& desc : descs) {
-        MTLAccelerationStructureTriangleGeometryDescriptor* geometry_desc =
+        MTL4AccelerationStructureTriangleGeometryDescriptor* geometry_desc =
             FillRaytracingGeometryDesc(desc.vertex, desc.index, desc.flags);
         [geometry_descs addObject:geometry_desc];
     }
