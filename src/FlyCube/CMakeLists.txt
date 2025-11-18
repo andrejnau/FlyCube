@@ -164,6 +164,8 @@ list(APPEND Pipeline
 list(APPEND QueryHeap
     $<$<BOOL:${DIRECTX_SUPPORT}>:QueryHeap/DXRayTracingQueryHeap.cpp>
     $<$<BOOL:${DIRECTX_SUPPORT}>:QueryHeap/DXRayTracingQueryHeap.h>
+    $<$<BOOL:${METAL_SUPPORT}>:QueryHeap/MTQueryHeap.h>
+    $<$<BOOL:${METAL_SUPPORT}>:QueryHeap/MTQueryHeap.mm>
     $<$<BOOL:${VULKAN_SUPPORT}>:QueryHeap/VKQueryHeap.cpp>
     $<$<BOOL:${VULKAN_SUPPORT}>:QueryHeap/VKQueryHeap.h>
     QueryHeap/QueryHeap.h

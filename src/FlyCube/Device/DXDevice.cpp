@@ -381,7 +381,7 @@ std::shared_ptr<QueryHeap> DXDevice::CreateQueryHeap(QueryHeapType type, uint32_
     if (type == QueryHeapType::kAccelerationStructureCompactedSize) {
         return std::make_shared<DXRayTracingQueryHeap>(*this, type, count);
     }
-    return {};
+    return nullptr;
 }
 
 RaytracingASPrebuildInfo DXDevice::GetAccelerationStructurePrebuildInfo(

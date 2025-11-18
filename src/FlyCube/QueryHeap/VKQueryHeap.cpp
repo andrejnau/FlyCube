@@ -5,7 +5,6 @@
 VKQueryHeap::VKQueryHeap(VKDevice& device, QueryHeapType type, uint32_t count)
     : m_device(device)
 {
-    assert(type == QueryHeapType::kAccelerationStructureCompactedSize);
     m_query_type = vk::QueryType::eAccelerationStructureCompactedSizeKHR;
     vk::QueryPoolCreateInfo desc = {};
     desc.queryCount = count;

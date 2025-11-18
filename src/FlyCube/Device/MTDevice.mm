@@ -11,6 +11,7 @@
 #include "Memory/MTMemory.h"
 #include "Pipeline/MTComputePipeline.h"
 #include "Pipeline/MTGraphicsPipeline.h"
+#include "QueryHeap/MTQueryHeap.h"
 #include "Resource/MTResource.h"
 #include "Shader/MTShader.h"
 #include "Swapchain/MTSwapchain.h"
@@ -172,7 +173,10 @@ std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(const Accelerati
 
 std::shared_ptr<QueryHeap> MTDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)
 {
-    NOTREACHED();
+    if (type == QueryHeapType::kAccelerationStructureCompactedSize) {
+        return std::make_shared<MTQueryHeap>(*this, type, count);
+    }
+    return nullptr;
 }
 
 bool MTDevice::IsDxrSupported() const

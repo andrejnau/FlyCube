@@ -601,7 +601,10 @@ std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const Accelerati
 
 std::shared_ptr<QueryHeap> VKDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)
 {
-    return std::make_shared<VKQueryHeap>(*this, type, count);
+    if (type == QueryHeapType::kAccelerationStructureCompactedSize) {
+        return std::make_shared<VKQueryHeap>(*this, type, count);
+    }
+    return nullptr;
 }
 
 bool VKDevice::IsDxrSupported() const

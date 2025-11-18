@@ -4,6 +4,7 @@
 #include "Device/MTDevice.h"
 #include "Pipeline/MTComputePipeline.h"
 #include "Pipeline/MTGraphicsPipeline.h"
+#include "QueryHeap/MTQueryHeap.h"
 #include "Resource/MTResource.h"
 #include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
@@ -647,7 +648,20 @@ void MTCommandList::WriteAccelerationStructuresProperties(
     const std::shared_ptr<QueryHeap>& query_heap,
     uint32_t first_query)
 {
-    NOTREACHED();
+    OpenComputeEncoder();
+    AddComputeBarriers();
+    id<MTLBuffer> mt_query_buffer = query_heap->As<MTQueryHeap>().GetBuffer();
+    AddAllocation(mt_query_buffer);
+    for (size_t i = 0; i < acceleration_structures.size(); ++i) {
+        id<MTLAccelerationStructure> mt_acceleration_structure =
+            acceleration_structures[i]->As<MTResource>().GetAccelerationStructure();
+        AddAllocation(mt_acceleration_structure);
+        [m_compute_encoder
+            writeCompactedAccelerationStructureSize:mt_acceleration_structure
+                                           toBuffer:MTL4BufferRangeMake(mt_query_buffer.gpuAddress +
+                                                                            (first_query + i) * sizeof(uint64_t),
+                                                                        sizeof(uint64_t))];
+    }
 }
 
 void MTCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_heap,
@@ -656,7 +670,23 @@ void MTCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
                                      const std::shared_ptr<Resource>& dst_buffer,
                                      uint64_t dst_offset)
 {
-    NOTREACHED();
+    if (m_compute_encoder) {
+        [m_compute_encoder barrierAfterEncoderStages:MTLStageAccelerationStructure
+                                 beforeEncoderStages:MTLStageBlit
+                                   visibilityOptions:MTL4VisibilityOptionNone];
+    } else {
+        OpenComputeEncoder();
+    }
+    AddComputeBarriers();
+    id<MTLBuffer> mt_query_buffer = query_heap->As<MTQueryHeap>().GetBuffer();
+    id<MTLBuffer> mt_dst_buffer = dst_buffer->As<MTResource>().GetBuffer();
+    AddAllocation(mt_query_buffer);
+    AddAllocation(mt_dst_buffer);
+    [m_compute_encoder copyFromBuffer:mt_query_buffer
+                         sourceOffset:first_query * sizeof(uint64_t)
+                             toBuffer:mt_dst_buffer
+                    destinationOffset:dst_offset
+                                 size:sizeof(uint64_t) * query_count];
 }
 
 void MTCommandList::SetName(const std::string& name)
