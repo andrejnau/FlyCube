@@ -556,7 +556,24 @@ void MTCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
                                               const std::shared_ptr<Resource>& dst,
                                               CopyAccelerationStructureMode mode)
 {
-    NOTREACHED();
+    OpenComputeEncoder();
+    AddComputeBarriers();
+    id<MTLAccelerationStructure> mt_src_acceleration_structure = src->As<MTResource>().GetAccelerationStructure();
+    id<MTLAccelerationStructure> mt_dst_acceleration_structure = dst->As<MTResource>().GetAccelerationStructure();
+    AddAllocation(mt_src_acceleration_structure);
+    AddAllocation(mt_dst_acceleration_structure);
+    switch (mode) {
+    case CopyAccelerationStructureMode::kClone:
+        [m_compute_encoder copyAccelerationStructure:mt_src_acceleration_structure
+                             toAccelerationStructure:mt_dst_acceleration_structure];
+        break;
+    case CopyAccelerationStructureMode::kCompact:
+        [m_compute_encoder copyAndCompactAccelerationStructure:mt_src_acceleration_structure
+                                       toAccelerationStructure:mt_dst_acceleration_structure];
+        break;
+    default:
+        NOTREACHED();
+    }
 }
 
 void MTCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
