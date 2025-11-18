@@ -497,7 +497,11 @@ enum class RaytracingInstanceFlags : uint32_t {
     kForceNonOpaque = 0x8
 };
 
-enum class RaytracingGeometryFlags { kNone, kOpaque, kNoDuplicateAnyHitInvocation };
+enum class RaytracingGeometryFlags {
+    kNone = 0x0,
+    kOpaque = 0x1,
+    kNoDuplicateAnyHitInvocation = 0x2,
+};
 
 struct RaytracingGeometryDesc {
     RaytracingGeometryBufferDesc vertex;

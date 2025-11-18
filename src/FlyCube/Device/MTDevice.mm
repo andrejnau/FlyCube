@@ -249,13 +249,12 @@ MTL4AccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(
     MTL4AccelerationStructureTriangleGeometryDescriptor* geometry_desc =
         [MTL4AccelerationStructureTriangleGeometryDescriptor new];
 
+    geometry_desc.opaque =
+        static_cast<std::underlying_type_t<RaytracingGeometryFlags>>(flags) &
+        static_cast<std::underlying_type_t<RaytracingGeometryFlags>>(RaytracingGeometryFlags::kOpaque);
+
     auto vertex_res = std::static_pointer_cast<MTResource>(vertex.res);
     auto index_res = std::static_pointer_cast<MTResource>(index.res);
-
-    if (static_cast<std::underlying_type_t<RaytracingGeometryFlags>>(flags) &
-        static_cast<std::underlying_type_t<RaytracingGeometryFlags>>(RaytracingGeometryFlags::kOpaque)) {
-        geometry_desc.opaque = true;
-    }
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
     geometry_desc.vertexBuffer = vertex_res->GetBuffer().gpuAddress + vertex.offset * vertex_stride;

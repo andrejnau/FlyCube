@@ -17,13 +17,15 @@
 #include "Utilities/NotReached.h"
 #include "View/DXView.h"
 
-#include <directx/d3dx12.h>
-#include <gli/dx.hpp>
-
 #if defined(_WIN32)
 #include "Adapter/DXAdapter.h"
 #include "Swapchain/DXSwapchain.h"
 #endif
+
+#include <directx/d3dx12.h>
+#include <gli/dx.hpp>
+
+#include <type_traits>
 
 namespace {
 
@@ -94,21 +96,12 @@ D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const RaytracingGeomet
                                                           RaytracingGeometryFlags flags)
 {
     D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
+    geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+    geometry_desc.Flags = static_cast<D3D12_RAYTRACING_GEOMETRY_FLAGS>(
+        static_cast<std::underlying_type_t<RaytracingGeometryFlags>>(flags));
 
     auto vertex_res = std::static_pointer_cast<DXResource>(vertex.res);
     auto index_res = std::static_pointer_cast<DXResource>(index.res);
-
-    geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-    switch (flags) {
-    case RaytracingGeometryFlags::kOpaque:
-        geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-        break;
-    case RaytracingGeometryFlags::kNoDuplicateAnyHitInvocation:
-        geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
-        break;
-    default:
-        break;
-    }
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
     geometry_desc.Triangles.VertexBuffer.StartAddress =

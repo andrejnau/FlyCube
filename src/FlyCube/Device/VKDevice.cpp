@@ -22,6 +22,7 @@
 
 #include <set>
 #include <string_view>
+#include <type_traits>
 
 namespace {
 
@@ -547,16 +548,8 @@ vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(
 {
     vk::AccelerationStructureGeometryKHR geometry_desc = {};
     geometry_desc.geometryType = vk::GeometryTypeKHR::eTriangles;
-    switch (flags) {
-    case RaytracingGeometryFlags::kOpaque:
-        geometry_desc.flags = vk::GeometryFlagBitsKHR::eOpaque;
-        break;
-    case RaytracingGeometryFlags::kNoDuplicateAnyHitInvocation:
-        geometry_desc.flags = vk::GeometryFlagBitsKHR::eNoDuplicateAnyHitInvocation;
-        break;
-    default:
-        break;
-    }
+    geometry_desc.flags =
+        static_cast<vk::GeometryFlagsKHR>(static_cast<std::underlying_type_t<RaytracingGeometryFlags>>(flags));
 
     auto vk_vertex_res = std::static_pointer_cast<VKResource>(vertex.res);
     auto vk_index_res = std::static_pointer_cast<VKResource>(index.res);
