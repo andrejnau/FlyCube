@@ -19,6 +19,8 @@
 #include "Utilities/NotReached.h"
 #include "View/MTView.h"
 
+#include <type_traits>
+
 MTDevice::MTDevice(MTInstance& instance, id<MTLDevice> device)
     : m_instance(instance)
     , m_device(device)
@@ -250,15 +252,9 @@ MTL4AccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(
     auto vertex_res = std::static_pointer_cast<MTResource>(vertex.res);
     auto index_res = std::static_pointer_cast<MTResource>(index.res);
 
-    switch (flags) {
-    case RaytracingGeometryFlags::kOpaque:
+    if (static_cast<std::underlying_type_t<RaytracingGeometryFlags>>(flags) &
+        static_cast<std::underlying_type_t<RaytracingGeometryFlags>>(RaytracingGeometryFlags::kOpaque)) {
         geometry_desc.opaque = true;
-        break;
-    case RaytracingGeometryFlags::kNoDuplicateAnyHitInvocation:
-        geometry_desc.allowDuplicateIntersectionFunctionInvocation = false;
-        break;
-    default:
-        break;
     }
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
