@@ -1,6 +1,7 @@
 #include "RenderUtils/RenderModel.h"
 
 #include "Utilities/Asset.h"
+#include "Utilities/Common.h"
 #include "Utilities/FormatHelper.h"
 #include "Utilities/NotReached.h"
 
@@ -69,9 +70,10 @@ std::shared_ptr<Resource> RenderModel::CreateBuffer(uint32_t bind_flag, const st
         return nullptr;
     }
 
-    std::shared_ptr<Resource> buffer = m_device->CreateBuffer(
-        MemoryType::kDefault, { .size = sizeof(data.front()) * data.size(), .usage = bind_flag | BindFlag::kCopyDest });
-    UpdateSubresource(buffer, /*subresource=*/0, data.data(), 0, 0);
+    uint64_t num_bytes = sizeof(data.front()) * data.size();
+    std::shared_ptr<Resource> buffer =
+        m_device->CreateBuffer(MemoryType::kDefault, { .size = num_bytes, .usage = bind_flag | BindFlag::kCopyDest });
+    UpdateBuffer(buffer, /*buffer_offset=*/0, data.data(), num_bytes);
     return buffer;
 }
 
@@ -99,11 +101,13 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
         texture = m_device->CreateTexture(MemoryType::kDefault, texture_desc);
 
         for (size_t level = 0; level < gli_texture.levels(); ++level) {
+            auto extent = gli_texture.extent(level);
             size_t row_bytes = 0;
             size_t num_bytes = 0;
-            GetFormatInfo(gli_texture.extent(level).x, gli_texture.extent(level).y, gli_texture.format(), num_bytes,
-                          row_bytes);
-            UpdateSubresource(texture, level, gli_texture.data(0, 0, level), row_bytes, num_bytes);
+            size_t num_rows = 0;
+            GetFormatInfo(extent.x, extent.y, gli_texture.format(), num_bytes, row_bytes, num_rows);
+            UpdateTexture(texture, level, 0, extent.x, extent.y, gli_texture.data(0, 0, level), row_bytes, num_bytes,
+                          num_rows);
         }
     } else {
         int width = 0;
@@ -125,59 +129,55 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
 
         size_t row_bytes = 0;
         size_t num_bytes = 0;
-        GetFormatInfo(width, height, gli::FORMAT_RGBA8_UNORM_PACK8, num_bytes, row_bytes);
-        UpdateSubresource(texture, 0, data, row_bytes, num_bytes);
+        size_t num_rows = 0;
+        GetFormatInfo(width, height, gli::FORMAT_RGBA8_UNORM_PACK8, num_bytes, row_bytes, num_rows);
+        UpdateTexture(texture, 0, 0, width, height, data, row_bytes, num_bytes, num_rows);
 
         stbi_image_free(data);
     }
     return texture;
 }
 
-void RenderModel::UpdateSubresource(const std::shared_ptr<Resource>& resource,
-                                    uint32_t subresource,
-                                    const void* data,
-                                    uint32_t row_pitch,
-                                    uint32_t slice_pitch)
+void RenderModel::UpdateBuffer(const std::shared_ptr<Resource>& buffer,
+                               uint64_t buffer_offset,
+                               const void* data,
+                               uint64_t num_bytes)
 {
-    switch (resource->GetResourceType()) {
-    case ResourceType::kBuffer: {
-        size_t buffer_size = resource->GetWidth();
-        std::shared_ptr<Resource> upload_buffer =
-            m_device->CreateBuffer(MemoryType::kUpload, { .size = buffer_size, .usage = BindFlag::kCopySource });
-        upload_buffer->UpdateUploadBuffer(0, data, buffer_size);
+    std::shared_ptr<Resource> upload_buffer =
+        m_device->CreateBuffer(MemoryType::kUpload, { .size = num_bytes, .usage = BindFlag::kCopySource });
+    upload_buffer->UpdateUploadBuffer(0, data, num_bytes);
+    BufferCopyRegion copy_region = {
+        .src_offset = 0,
+        .dst_offset = buffer_offset,
+        .num_bytes = num_bytes,
+    };
+    m_command_list->CopyBuffer(upload_buffer, buffer, { copy_region });
+    m_upload_buffers.push_back(upload_buffer);
+}
 
-        BufferCopyRegion copy_region = {
-            .num_bytes = buffer_size,
-        };
-        m_command_list->CopyBuffer(upload_buffer, resource, { copy_region });
-        m_upload_buffers.push_back(upload_buffer);
-        break;
-    }
-    case ResourceType::kTexture: {
-        BufferToTextureCopyRegion copy_region = {
-            .texture_mip_level = subresource % resource->GetLevelCount(),
-            .texture_array_layer = subresource / resource->GetLevelCount(),
-            .texture_extent = { .width = std::max<uint32_t>(1, resource->GetWidth() >> copy_region.texture_mip_level),
-                                .height = std::max<uint32_t>(1, resource->GetHeight() >> copy_region.texture_mip_level),
-                                .depth = 1 },
-        };
-
-        size_t num_bytes = 0;
-        size_t row_bytes = 0;
-        size_t num_rows = 0;
-        GetFormatInfo(copy_region.texture_extent.width, copy_region.texture_extent.height, resource->GetFormat(),
-                      num_bytes, row_bytes, num_rows, m_device->GetTextureDataPitchAlignment());
-        copy_region.buffer_row_pitch = row_bytes;
-
-        std::shared_ptr<Resource> upload_buffer =
-            m_device->CreateBuffer(MemoryType::kUpload, { .size = num_bytes, .usage = BindFlag::kCopySource });
-        upload_buffer->UpdateUploadBufferWithTextureData(0, row_bytes, num_bytes, data, row_pitch, slice_pitch,
-                                                         row_bytes, num_rows, copy_region.texture_extent.depth);
-        m_command_list->CopyBufferToTexture(upload_buffer, resource, { copy_region });
-        m_upload_buffers.push_back(upload_buffer);
-        break;
-    }
-    default:
-        NOTREACHED();
-    }
+void RenderModel::UpdateTexture(const std::shared_ptr<Resource>& texture,
+                                uint32_t mip_level,
+                                uint32_t array_layer,
+                                uint32_t width,
+                                uint32_t height,
+                                const void* data,
+                                uint64_t row_pitch,
+                                uint64_t slice_pitch,
+                                uint32_t num_rows)
+{
+    uint64_t aligned_row_pitch = Align(row_pitch, m_device->GetTextureDataPitchAlignment());
+    uint64_t buffer_size = aligned_row_pitch * num_rows;
+    std::shared_ptr<Resource> upload_buffer =
+        m_device->CreateBuffer(MemoryType::kUpload, { .size = buffer_size, .usage = BindFlag::kCopySource });
+    BufferToTextureCopyRegion copy_region = {
+        .buffer_offset = 0,
+        .buffer_row_pitch = static_cast<uint32_t>(aligned_row_pitch),
+        .texture_mip_level = mip_level,
+        .texture_array_layer = array_layer,
+        .texture_extent = { .width = width, .height = height, .depth = 1 },
+    };
+    upload_buffer->UpdateUploadBufferWithTextureData(copy_region.buffer_offset, copy_region.buffer_row_pitch,
+                                                     buffer_size, data, row_pitch, slice_pitch, row_pitch, num_rows, 1);
+    m_command_list->CopyBufferToTexture(upload_buffer, texture, { copy_region });
+    m_upload_buffers.push_back(upload_buffer);
 }

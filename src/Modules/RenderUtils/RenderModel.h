@@ -46,11 +46,19 @@ private:
     template <typename T>
     std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, const std::vector<T>& data);
     std::shared_ptr<Resource> CreateTextureFromFile(const std::string& path);
-    void UpdateSubresource(const std::shared_ptr<Resource>& resource,
-                           uint32_t subresource,
-                           const void* data,
-                           uint32_t row_pitch,
-                           uint32_t slice_pitch);
+    void UpdateBuffer(const std::shared_ptr<Resource>& buffer,
+                      uint64_t buffer_offset,
+                      const void* data,
+                      uint64_t num_bytes);
+    void UpdateTexture(const std::shared_ptr<Resource>& texture,
+                       uint32_t mip_level,
+                       uint32_t array_layer,
+                       uint32_t width,
+                       uint32_t height,
+                       const void* data,
+                       uint64_t row_pitch,
+                       uint64_t slice_pitch,
+                       uint32_t num_rows);
 
     std::shared_ptr<Device> m_device;
     std::shared_ptr<CommandList> m_command_list;

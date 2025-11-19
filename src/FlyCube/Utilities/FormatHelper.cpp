@@ -22,6 +22,17 @@ void GetFormatInfo(size_t width,
     num_bytes = row_bytes * num_rows;
 }
 
+void GetFormatInfo(size_t width,
+                   size_t height,
+                   gli::format format,
+                   size_t& num_bytes,
+                   size_t& row_bytes,
+                   size_t& num_rows)
+{
+    uint32_t alignment = 1;
+    return GetFormatInfo(width, height, format, num_bytes, row_bytes, num_rows, alignment);
+}
+
 void GetFormatInfo(size_t width, size_t height, gli::format format, size_t& num_bytes, size_t& row_bytes)
 {
     size_t num_rows = 0;
