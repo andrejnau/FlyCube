@@ -97,9 +97,8 @@ std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(MTDevice& de
     decltype(auto) buffer = desc.buffer->As<MTResource>().m_buffer;
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->m_resource_type = ResourceType::kAccelerationStructure;
-    self->m_acceleration_structure = [buffer.acceleration_structure_heap
-        newAccelerationStructureWithSize:desc.size
-                                  offset:buffer.acceleration_structure_heap_offset + desc.buffer_offset];
+    self->m_acceleration_structure.size = desc.size;
+    self->CommitMemory(MemoryType::kDefault);
     return self;
 }
 
@@ -170,11 +169,6 @@ void MTResource::CommitMemory(MemoryType memory_type)
     m_memory_type = memory_type;
     decltype(auto) mt_device = m_device.GetDevice();
     if (m_resource_type == ResourceType::kBuffer) {
-        if (m_buffer.bind_flag & BindFlag::kAccelerationStructure) {
-            BindMemory(std::make_shared<MTMemory>(m_device, m_buffer.size, memory_type), 0);
-            return;
-        }
-
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         m_buffer.res = [mt_device newBufferWithLength:m_buffer.size options:options];
         if (!m_buffer.res) {
@@ -185,6 +179,11 @@ void MTResource::CommitMemory(MemoryType memory_type)
         if (!m_texture.res) {
             Logging::Println("Failed to create MTLTexture");
         }
+    } else if (m_resource_type == ResourceType::kAccelerationStructure) {
+        m_acceleration_structure.res = [mt_device newAccelerationStructureWithSize:m_acceleration_structure.size];
+        if (!m_acceleration_structure.res) {
+            Logging::Println("Failed to create MTLAccelerationStructure");
+        }
     }
 }
 
@@ -193,11 +192,6 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
     m_memory_type = memory->GetMemoryType();
     id<MTLHeap> mt_heap = memory->As<MTMemory>().GetHeap();
     if (m_resource_type == ResourceType::kBuffer) {
-        if (m_buffer.bind_flag & BindFlag::kAccelerationStructure) {
-            m_buffer.acceleration_structure_heap = mt_heap;
-            m_buffer.acceleration_structure_heap_offset = offset;
-        }
-
         MTLResourceOptions options = ConvertStorageMode(m_memory_type) << MTLResourceStorageModeShift;
         m_buffer.res = [mt_heap newBufferWithLength:m_buffer.size options:options offset:offset];
         if (!m_buffer.res) {
@@ -207,6 +201,12 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
         m_texture.res = [mt_heap newTextureWithDescriptor:GetTextureDescriptor(m_memory_type) offset:offset];
         if (!m_texture.res) {
             Logging::Println("Failed to create MTLTexture from heap {}", mt_heap);
+        }
+    } else if (m_resource_type == ResourceType::kAccelerationStructure) {
+        m_acceleration_structure.res = [mt_heap newAccelerationStructureWithSize:m_acceleration_structure.size
+                                                                          offset:offset];
+        if (!m_acceleration_structure.res) {
+            Logging::Println("Failed to create MTLAccelerationStructure from heap {}", mt_heap);
         }
     }
 }
@@ -254,7 +254,7 @@ uint32_t MTResource::GetSampleCount() const
 
 uint64_t MTResource::GetAccelerationStructureHandle() const
 {
-    return m_acceleration_structure.gpuResourceID._impl;
+    return GetAccelerationStructure().gpuResourceID._impl;
 }
 
 void MTResource::SetName(const std::string& name) {}
@@ -303,5 +303,5 @@ id<MTLSamplerState> MTResource::GetSampler() const
 id<MTLAccelerationStructure> MTResource::GetAccelerationStructure() const
 {
     assert(m_resource_type == ResourceType::kAccelerationStructure);
-    return m_acceleration_structure;
+    return m_acceleration_structure.res;
 }

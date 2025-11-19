@@ -50,13 +50,14 @@ private:
         id<MTLBuffer> res = nullptr;
         uint32_t bind_flag = 0;
         uint64_t size = 0;
-        id<MTLHeap> acceleration_structure_heap = nullptr;
-        uint64_t acceleration_structure_heap_offset = 0;
     } m_buffer;
 
     struct Sampler {
         id<MTLSamplerState> res = nullptr;
     } m_sampler;
 
-    id<MTLAccelerationStructure> m_acceleration_structure = nullptr;
+    struct AccelerationStructure {
+        id<MTLAccelerationStructure> res = nullptr;
+        uint64_t size = 0;
+    } m_acceleration_structure;
 };
