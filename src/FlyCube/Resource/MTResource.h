@@ -58,6 +58,5 @@ private:
 
     struct AccelerationStructure {
         id<MTLAccelerationStructure> res = nullptr;
-        uint64_t size = 0;
     } m_acceleration_structure;
 };

@@ -94,11 +94,16 @@ std::shared_ptr<MTResource> MTResource::CreateSampler(MTDevice& device, const Sa
 std::shared_ptr<MTResource> MTResource::CreateAccelerationStructure(MTDevice& device,
                                                                     const AccelerationStructureDesc& desc)
 {
-    decltype(auto) buffer = desc.buffer->As<MTResource>().m_buffer;
+    id<MTLAccelerationStructure> acceleration_structure =
+        [device.GetDevice() newAccelerationStructureWithSize:desc.size];
+    if (!acceleration_structure) {
+        Logging::Println("Failed to create MTLAccelerationStructure");
+        return nullptr;
+    }
+
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->m_resource_type = ResourceType::kAccelerationStructure;
-    self->m_acceleration_structure.size = desc.size;
-    self->CommitMemory(MemoryType::kDefault);
+    self->m_acceleration_structure.res = acceleration_structure;
     return self;
 }
 
@@ -179,11 +184,6 @@ void MTResource::CommitMemory(MemoryType memory_type)
         if (!m_texture.res) {
             Logging::Println("Failed to create MTLTexture");
         }
-    } else if (m_resource_type == ResourceType::kAccelerationStructure) {
-        m_acceleration_structure.res = [mt_device newAccelerationStructureWithSize:m_acceleration_structure.size];
-        if (!m_acceleration_structure.res) {
-            Logging::Println("Failed to create MTLAccelerationStructure");
-        }
     }
 }
 
@@ -201,12 +201,6 @@ void MTResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offs
         m_texture.res = [mt_heap newTextureWithDescriptor:GetTextureDescriptor(m_memory_type) offset:offset];
         if (!m_texture.res) {
             Logging::Println("Failed to create MTLTexture from heap {}", mt_heap);
-        }
-    } else if (m_resource_type == ResourceType::kAccelerationStructure) {
-        m_acceleration_structure.res = [mt_heap newAccelerationStructureWithSize:m_acceleration_structure.size
-                                                                          offset:offset];
-        if (!m_acceleration_structure.res) {
-            Logging::Println("Failed to create MTLAccelerationStructure from heap {}", mt_heap);
         }
     }
 }
