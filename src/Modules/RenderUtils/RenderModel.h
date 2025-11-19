@@ -50,7 +50,7 @@ private:
                            uint32_t subresource,
                            const void* data,
                            uint32_t row_pitch,
-                           uint32_t depth_pitch);
+                           uint32_t slice_pitch);
 
     std::shared_ptr<Device> m_device;
     std::shared_ptr<CommandList> m_command_list;

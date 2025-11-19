@@ -137,7 +137,7 @@ void RenderModel::UpdateSubresource(const std::shared_ptr<Resource>& resource,
                                     uint32_t subresource,
                                     const void* data,
                                     uint32_t row_pitch,
-                                    uint32_t depth_pitch)
+                                    uint32_t slice_pitch)
 {
     switch (resource->GetResourceType()) {
     case ResourceType::kBuffer: {
@@ -171,8 +171,8 @@ void RenderModel::UpdateSubresource(const std::shared_ptr<Resource>& resource,
 
         std::shared_ptr<Resource> upload_buffer =
             m_device->CreateBuffer(MemoryType::kUpload, { .size = num_bytes, .usage = BindFlag::kCopySource });
-        upload_buffer->UpdateUploadBufferWithTextureData(0, row_bytes, num_bytes, data, row_pitch, depth_pitch,
-                                                         num_rows, copy_region.texture_extent.depth);
+        upload_buffer->UpdateUploadBufferWithTextureData(0, row_bytes, num_bytes, data, row_pitch, slice_pitch,
+                                                         row_bytes, num_rows, copy_region.texture_extent.depth);
         m_command_list->CopyBufferToTexture(upload_buffer, resource, { copy_region });
         m_upload_buffers.push_back(upload_buffer);
         break;

@@ -31,11 +31,12 @@ public:
     virtual void Unmap() = 0;
     virtual void UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes) = 0;
     virtual void UpdateUploadBufferWithTextureData(uint64_t buffer_offset,
-                                                   uint32_t buffer_row_pitch,
-                                                   uint32_t buffer_depth_pitch,
+                                                   uint64_t buffer_row_pitch,
+                                                   uint64_t buffer_slice_pitch,
                                                    const void* src_data,
-                                                   uint32_t src_row_pitch,
-                                                   uint32_t src_depth_pitch,
+                                                   uint64_t src_row_pitch,
+                                                   uint64_t src_slice_pitch,
+                                                   uint64_t row_size_in_bytes,
                                                    uint32_t num_rows,
                                                    uint32_t num_slices) = 0;
     virtual ResourceState GetInitialState() const = 0;
