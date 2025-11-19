@@ -39,6 +39,7 @@ private:
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
     std::shared_ptr<Resource> m_acceleration_structures_memory;
+    std::shared_ptr<Resource> m_blas_compacted_memory;
     std::shared_ptr<Resource> m_tlas;
     std::shared_ptr<View> m_tlas_view;
     std::shared_ptr<Shader> m_library;
@@ -107,14 +108,22 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
         RaytracingGeometryFlags::kOpaque,
     };
 
-    const uint32_t blas_count = 2;
+    static constexpr uint32_t kInstanceCount = 2;
     RaytracingASPrebuildInfo blas_prebuild_info =
         m_device->GetBLASPrebuildInfo({ raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
     RaytracingASPrebuildInfo tlas_prebuild_info =
-        m_device->GetTLASPrebuildInfo(blas_count, BuildAccelerationStructureFlags::kNone);
-    uint64_t acceleration_structures_size =
-        Align(blas_prebuild_info.acceleration_structure_size, kAccelerationStructureAlignment) +
-        tlas_prebuild_info.acceleration_structure_size;
+        m_device->GetTLASPrebuildInfo(kInstanceCount, BuildAccelerationStructureFlags::kNone);
+
+    uint64_t acceleration_structures_size = 0;
+    auto add_acceleration_structure = [&](uint64_t size) {
+        acceleration_structures_size = Align(acceleration_structures_size, kAccelerationStructureAlignment);
+        uint64_t offset = acceleration_structures_size;
+        acceleration_structures_size += size;
+        return offset;
+    };
+    uint64_t blas_offset = add_acceleration_structure(blas_prebuild_info.acceleration_structure_size);
+    uint64_t tlas_offset = add_acceleration_structure(tlas_prebuild_info.acceleration_structure_size);
+
     m_acceleration_structures_memory = m_device->CreateBuffer(
         MemoryType::kDefault, { .size = acceleration_structures_size, .usage = BindFlag::kAccelerationStructure });
     m_acceleration_structures_memory->SetName("acceleration_structures_memory");
@@ -122,7 +131,7 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
     std::shared_ptr<Resource> blas = m_device->CreateAccelerationStructure({
         .type = AccelerationStructureType::kBottomLevel,
         .buffer = m_acceleration_structures_memory,
-        .buffer_offset = 0,
+        .buffer_offset = blas_offset,
         .size = blas_prebuild_info.acceleration_structure_size,
     });
 
@@ -153,27 +162,40 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
     uint64_t blas_compacted_size = *reinterpret_cast<uint64_t*>(blas_compacted_size_buffer->Map());
     blas_compacted_size_buffer->Unmap();
 
+    m_blas_compacted_memory = m_device->CreateBuffer(
+        MemoryType::kDefault, { .size = blas_compacted_size, .usage = BindFlag::kAccelerationStructure });
+    m_blas_compacted_memory->SetName("blas_compacted_memory");
+
+    std::shared_ptr<Resource> blas_compacted = m_device->CreateAccelerationStructure({
+        .type = AccelerationStructureType::kBottomLevel,
+        .buffer = m_blas_compacted_memory,
+        .buffer_offset = 0,
+        .size = blas_compacted_size,
+    });
+
     upload_command_list->Reset();
-    upload_command_list->CopyAccelerationStructure(blas, blas, CopyAccelerationStructureMode::kCompact);
+    upload_command_list->CopyAccelerationStructure(blas, blas_compacted, CopyAccelerationStructureMode::kCompact);
 
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4x4>> geometry = {
         { blas, glm::transpose(glm::translate(glm::vec3(-0.5, 0.0, 0.0))) },
-        { blas, glm::transpose(glm::translate(glm::vec3(0.5, 0.0, 0.0))) },
+        { blas_compacted, glm::transpose(glm::translate(glm::vec3(0.5, 0.0, 0.0))) },
     };
-    assert(geometry.size() == blas_count);
+    assert(geometry.size() == kInstanceCount);
     std::vector<RaytracingGeometryInstance> instances;
-    for (const auto& mesh : geometry) {
+    for (size_t i = 0; i < geometry.size(); ++i) {
+        const auto& [resource, transform] = geometry[i];
         RaytracingGeometryInstance& instance = instances.emplace_back();
-        memcpy(&instance.transform, &mesh.second, sizeof(instance.transform));
+        instance.transform = glm::mat3x4(transform);
+        instance.instance_id = i;
         instance.instance_offset = static_cast<uint32_t>(instances.size() - 1);
         instance.instance_mask = 0xff;
-        instance.acceleration_structure_handle = mesh.first->GetAccelerationStructureHandle();
+        instance.acceleration_structure_handle = resource->GetAccelerationStructureHandle();
     }
 
     m_tlas = m_device->CreateAccelerationStructure({
         .type = AccelerationStructureType::kTopLevel,
         .buffer = m_acceleration_structures_memory,
-        .buffer_offset = Align(blas_compacted_size, kAccelerationStructureAlignment),
+        .buffer_offset = tlas_offset,
         .size = tlas_prebuild_info.acceleration_structure_size,
     });
 
