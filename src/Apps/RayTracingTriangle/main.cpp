@@ -39,7 +39,9 @@ private:
     uint64_t m_fence_value = 0;
     std::shared_ptr<Fence> m_fence;
     std::shared_ptr<Resource> m_acceleration_structures_memory;
+    std::shared_ptr<Resource> m_blas;
     std::shared_ptr<Resource> m_blas_compacted_memory;
+    std::shared_ptr<Resource> m_blas_compacted;
     std::shared_ptr<Resource> m_tlas;
     std::shared_ptr<View> m_tlas_view;
     std::shared_ptr<Shader> m_library;
@@ -128,7 +130,7 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
         MemoryType::kDefault, { .size = acceleration_structures_size, .usage = BindFlag::kAccelerationStructure });
     m_acceleration_structures_memory->SetName("acceleration_structures_memory");
 
-    std::shared_ptr<Resource> blas = m_device->CreateAccelerationStructure({
+    m_blas = m_device->CreateAccelerationStructure({
         .type = AccelerationStructureType::kBottomLevel,
         .buffer = m_acceleration_structures_memory,
         .buffer_offset = blas_offset,
@@ -148,10 +150,10 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
     std::shared_ptr<QueryHeap> query_heap =
         m_device->CreateQueryHeap(QueryHeapType::kAccelerationStructureCompactedSize, 1);
 
-    upload_command_list->BuildBottomLevelAS({}, blas, scratch, 0, { raytracing_geometry_desc },
+    upload_command_list->BuildBottomLevelAS({}, m_blas, scratch, 0, { raytracing_geometry_desc },
                                             BuildAccelerationStructureFlags::kAllowCompaction);
-    upload_command_list->UAVResourceBarrier(blas);
-    upload_command_list->WriteAccelerationStructuresProperties({ blas }, query_heap, 0);
+    upload_command_list->UAVResourceBarrier(m_blas);
+    upload_command_list->WriteAccelerationStructuresProperties({ m_blas }, query_heap, 0);
     upload_command_list->ResolveQueryData(query_heap, 0, 1, blas_compacted_size_buffer, 0);
     upload_command_list->Close();
 
@@ -166,7 +168,7 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
         MemoryType::kDefault, { .size = blas_compacted_size, .usage = BindFlag::kAccelerationStructure });
     m_blas_compacted_memory->SetName("blas_compacted_memory");
 
-    std::shared_ptr<Resource> blas_compacted = m_device->CreateAccelerationStructure({
+    m_blas_compacted = m_device->CreateAccelerationStructure({
         .type = AccelerationStructureType::kBottomLevel,
         .buffer = m_blas_compacted_memory,
         .buffer_offset = 0,
@@ -174,11 +176,11 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
     });
 
     upload_command_list->Reset();
-    upload_command_list->CopyAccelerationStructure(blas, blas_compacted, CopyAccelerationStructureMode::kCompact);
+    upload_command_list->CopyAccelerationStructure(m_blas, m_blas_compacted, CopyAccelerationStructureMode::kCompact);
 
     std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4x4>> geometry = {
-        { blas, glm::transpose(glm::translate(glm::vec3(-0.5, 0.0, 0.0))) },
-        { blas_compacted, glm::transpose(glm::translate(glm::vec3(0.5, 0.0, 0.0))) },
+        { m_blas, glm::transpose(glm::translate(glm::vec3(-0.5, 0.0, 0.0))) },
+        { m_blas_compacted, glm::transpose(glm::translate(glm::vec3(0.5, 0.0, 0.0))) },
     };
     assert(geometry.size() == kInstanceCount);
     std::vector<RaytracingGeometryInstance> instances;
