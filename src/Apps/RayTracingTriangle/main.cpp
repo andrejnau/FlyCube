@@ -40,7 +40,6 @@ private:
     std::shared_ptr<Fence> m_fence;
     std::shared_ptr<Resource> m_acceleration_structures_memory;
     std::shared_ptr<Resource> m_blas;
-    std::shared_ptr<Resource> m_blas_compacted_memory;
     std::shared_ptr<Resource> m_blas_compacted;
     std::shared_ptr<Resource> m_tlas;
     std::shared_ptr<View> m_tlas_view;
@@ -124,6 +123,7 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
         return offset;
     };
     uint64_t blas_offset = add_acceleration_structure(blas_prebuild_info.acceleration_structure_size);
+    uint64_t blas_compacted_offset = add_acceleration_structure(blas_prebuild_info.acceleration_structure_size);
     uint64_t tlas_offset = add_acceleration_structure(tlas_prebuild_info.acceleration_structure_size);
 
     m_acceleration_structures_memory = m_device->CreateBuffer(
@@ -164,14 +164,10 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
     uint64_t blas_compacted_size = *reinterpret_cast<uint64_t*>(blas_compacted_size_buffer->Map());
     blas_compacted_size_buffer->Unmap();
 
-    m_blas_compacted_memory = m_device->CreateBuffer(
-        MemoryType::kDefault, { .size = blas_compacted_size, .usage = BindFlag::kAccelerationStructure });
-    m_blas_compacted_memory->SetName("blas_compacted_memory");
-
     m_blas_compacted = m_device->CreateAccelerationStructure({
         .type = AccelerationStructureType::kBottomLevel,
-        .buffer = m_blas_compacted_memory,
-        .buffer_offset = 0,
+        .buffer = m_acceleration_structures_memory,
+        .buffer_offset = blas_compacted_offset,
         .size = blas_compacted_size,
     });
 
