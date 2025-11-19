@@ -29,6 +29,7 @@ public:
     const Settings& GetSettings() const override;
 
 private:
+    void InitAccelerationStructures();
     void WaitForIdle();
 
     Settings m_settings;
@@ -68,13 +69,66 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
     m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
     m_fence = m_device->CreateFence(m_fence_value);
 
-    std::shared_ptr<CommandQueue> upload_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
+    InitAccelerationStructures();
 
+    ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
+    std::vector<uint8_t> library_blob = AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracing.hlsl", blob_type);
+    m_library = m_device->CreateShader(library_blob, blob_type, ShaderType::kLibrary);
+    std::vector<uint8_t> library_hit_blob =
+        AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracingHit.hlsl", blob_type);
+    m_library_hit = m_device->CreateShader(library_hit_blob, blob_type, ShaderType::kLibrary);
+    std::vector<uint8_t> library_callable_blob =
+        AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracingCallable.hlsl", blob_type);
+    m_library_callable = m_device->CreateShader(library_callable_blob, blob_type, ShaderType::kLibrary);
+    BindKey geometry_key = m_library->GetBindKey("geometry");
+    BindKey result_texture_key = m_library->GetBindKey("result_texture");
+    m_layout = m_device->CreateBindingSetLayout({ geometry_key, result_texture_key });
+
+    std::vector<RayTracingShaderGroup> groups = {
+        { RayTracingShaderGroupType::kGeneral, m_library->GetId("ray_gen") },
+        { RayTracingShaderGroupType::kGeneral, m_library->GetId("miss") },
+        { RayTracingShaderGroupType::kTrianglesHitGroup, 0, m_library_hit->GetId("closest_red") },
+        { RayTracingShaderGroupType::kTrianglesHitGroup, 0, m_library_hit->GetId("closest_green") },
+        { RayTracingShaderGroupType::kGeneral, m_library_callable->GetId("callable") },
+    };
+
+    RayTracingPipelineDesc pipeline_desc = {
+        .shaders = { m_library, m_library_hit, m_library_callable },
+        .layout = m_layout,
+        .groups = groups,
+    };
+    m_pipeline = m_device->CreateRayTracingPipeline(pipeline_desc);
+
+    m_shader_table = m_device->CreateBuffer(
+        MemoryType::kUpload,
+        { .size = m_device->GetShaderTableAlignment() * groups.size(), .usage = BindFlag::kShaderTable });
+    m_shader_table->SetName("shader_table");
+
+    std::vector<uint8_t> shader_handles = m_pipeline->GetRayTracingShaderGroupHandles(0, groups.size());
+    for (size_t i = 0; i < groups.size(); ++i) {
+        m_shader_table->UpdateUploadBuffer(i * m_device->GetShaderTableAlignment(),
+                                           shader_handles.data() + i * m_device->GetShaderGroupHandleSize(),
+                                           m_device->GetShaderGroupHandleSize());
+    }
+
+    m_shader_tables = { .raygen = { m_shader_table, 0 * m_device->GetShaderTableAlignment(),
+                                    m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() },
+                        .miss = { m_shader_table, 1 * m_device->GetShaderTableAlignment(),
+                                  m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() },
+                        .hit = { m_shader_table, 2 * m_device->GetShaderTableAlignment(),
+                                 2 * m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() },
+                        .callable = { m_shader_table, 4 * m_device->GetShaderTableAlignment(),
+                                      m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() } };
+}
+
+void RayTracingTriangleRenderer::InitAccelerationStructures()
+{
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer =
         m_device->CreateBuffer(MemoryType::kDefault, { .size = sizeof(index_data.front()) * index_data.size(),
                                                        .usage = BindFlag::kIndexBuffer | BindFlag::kCopyDest });
     index_buffer->SetName("index_buffer");
+
     std::vector<glm::vec3> vertex_data = {
         glm::vec3(-0.5, -0.5, 0.0),
         glm::vec3(0.0, 0.5, 0.0),
@@ -92,16 +146,6 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
     upload_buffer->UpdateUploadBuffer(0, index_data.data(), sizeof(index_data.front()) * index_data.size());
     upload_buffer->UpdateUploadBuffer(index_buffer->GetWidth(), vertex_data.data(),
                                       sizeof(vertex_data.front()) * vertex_data.size());
-
-    std::shared_ptr<CommandList> upload_command_list = m_device->CreateCommandList(CommandListType::kGraphics);
-    upload_command_list->CopyBuffer(upload_buffer, index_buffer, { { 0, 0, index_buffer->GetWidth() } });
-    upload_command_list->CopyBuffer(upload_buffer, vertex_buffer,
-                                    { { index_buffer->GetWidth(), 0, vertex_buffer->GetWidth() } });
-
-    upload_command_list->ResourceBarrier(
-        { { index_buffer, ResourceState::kCopyDest, ResourceState::kNonPixelShaderResource } });
-    upload_command_list->ResourceBarrier(
-        { { vertex_buffer, ResourceState::kCopyDest, ResourceState::kNonPixelShaderResource } });
 
     RaytracingGeometryDesc raytracing_geometry_desc = {
         { vertex_buffer, gli::format::FORMAT_RGB32_SFLOAT_PACK32, 3 },
@@ -143,13 +187,21 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
           .usage = BindFlag::kRayTracing });
     scratch->SetName("scratch");
 
+    std::shared_ptr<QueryHeap> query_heap =
+        m_device->CreateQueryHeap(QueryHeapType::kAccelerationStructureCompactedSize, 1);
+
     std::shared_ptr<Resource> blas_compacted_size_buffer =
         m_device->CreateBuffer(MemoryType::kReadback, { .size = sizeof(uint64_t), .usage = BindFlag::kCopyDest });
     blas_compacted_size_buffer->SetName("blas_compacted_size_buffer");
 
-    std::shared_ptr<QueryHeap> query_heap =
-        m_device->CreateQueryHeap(QueryHeapType::kAccelerationStructureCompactedSize, 1);
-
+    std::shared_ptr<CommandList> upload_command_list = m_device->CreateCommandList(CommandListType::kGraphics);
+    upload_command_list->CopyBuffer(upload_buffer, index_buffer, { { 0, 0, index_buffer->GetWidth() } });
+    upload_command_list->CopyBuffer(upload_buffer, vertex_buffer,
+                                    { { index_buffer->GetWidth(), 0, vertex_buffer->GetWidth() } });
+    upload_command_list->ResourceBarrier(
+        { { index_buffer, ResourceState::kCopyDest, ResourceState::kNonPixelShaderResource } });
+    upload_command_list->ResourceBarrier(
+        { { vertex_buffer, ResourceState::kCopyDest, ResourceState::kNonPixelShaderResource } });
     upload_command_list->BuildBottomLevelAS({}, m_blas, scratch, 0, { raytracing_geometry_desc },
                                             BuildAccelerationStructureFlags::kAllowCompaction);
     upload_command_list->UAVResourceBarrier(m_blas);
@@ -157,11 +209,12 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
     upload_command_list->ResolveQueryData(query_heap, 0, 1, blas_compacted_size_buffer, 0);
     upload_command_list->Close();
 
-    upload_command_queue->ExecuteCommandLists({ upload_command_list });
-    upload_command_queue->Signal(m_fence, ++m_fence_value);
+    m_command_queue->ExecuteCommandLists({ upload_command_list });
+    m_command_queue->Signal(m_fence, ++m_fence_value);
     m_fence->Wait(m_fence_value);
 
     uint64_t blas_compacted_size = *reinterpret_cast<uint64_t*>(blas_compacted_size_buffer->Map());
+    assert(blas_compacted_size != 0);
     blas_compacted_size_buffer->Unmap();
 
     m_blas_compacted = m_device->CreateAccelerationStructure({
@@ -171,24 +224,26 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
         .size = blas_compacted_size,
     });
 
-    upload_command_list->Reset();
-    upload_command_list->CopyAccelerationStructure(m_blas, m_blas_compacted, CopyAccelerationStructureMode::kCompact);
-
-    std::vector<std::pair<std::shared_ptr<Resource>, glm::mat4x4>> geometry = {
+    auto geometry = std::to_array<std::pair<std::shared_ptr<Resource>, glm::mat4x4>>({
         { m_blas, glm::transpose(glm::translate(glm::vec3(-0.5, 0.0, 0.0))) },
         { m_blas_compacted, glm::transpose(glm::translate(glm::vec3(0.5, 0.0, 0.0))) },
-    };
-    assert(geometry.size() == kInstanceCount);
-    std::vector<RaytracingGeometryInstance> instances;
+    });
+    static_assert(geometry.size() == kInstanceCount);
+    std::array<RaytracingGeometryInstance, kInstanceCount> instances = {};
     for (size_t i = 0; i < geometry.size(); ++i) {
         const auto& [resource, transform] = geometry[i];
-        RaytracingGeometryInstance& instance = instances.emplace_back();
+        RaytracingGeometryInstance& instance = instances[i];
         instance.transform = glm::mat3x4(transform);
         instance.instance_id = i;
-        instance.instance_offset = static_cast<uint32_t>(instances.size() - 1);
+        instance.instance_offset = i;
         instance.instance_mask = 0xff;
         instance.acceleration_structure_handle = resource->GetAccelerationStructureHandle();
     }
+
+    std::shared_ptr<Resource> instance_data = m_device->CreateBuffer(
+        MemoryType::kUpload, { .size = instances.size() * sizeof(instances.back()), .usage = BindFlag::kRayTracing });
+    instance_data->SetName("instance_data");
+    instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
 
     m_tlas = m_device->CreateAccelerationStructure({
         .type = AccelerationStructureType::kTopLevel,
@@ -196,73 +251,20 @@ RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
         .buffer_offset = tlas_offset,
         .size = tlas_prebuild_info.acceleration_structure_size,
     });
-
-    std::shared_ptr<Resource> instance_data = m_device->CreateBuffer(
-        MemoryType::kUpload, { .size = instances.size() * sizeof(instances.back()), .usage = BindFlag::kRayTracing });
-    instance_data->SetName("instance_data");
-    instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
-    upload_command_list->BuildTopLevelAS({}, m_tlas, scratch, 0, instance_data, 0, instances.size(),
-                                         BuildAccelerationStructureFlags::kNone);
-    upload_command_list->UAVResourceBarrier(m_tlas);
-
-    upload_command_list->Close();
-
-    upload_command_queue->ExecuteCommandLists({ upload_command_list });
-    upload_command_queue->Signal(m_fence, ++m_fence_value);
-    m_command_queue->Wait(m_fence, m_fence_value);
-
     ViewDesc tlas_view_desc = {
         .view_type = ViewType::kAccelerationStructure,
     };
     m_tlas_view = m_device->CreateView(m_tlas, tlas_view_desc);
 
-    ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
-    std::vector<uint8_t> library_blob = AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracing.hlsl", blob_type);
-    m_library = m_device->CreateShader(library_blob, blob_type, ShaderType::kLibrary);
-    std::vector<uint8_t> library_hit_blob =
-        AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracingHit.hlsl", blob_type);
-    m_library_hit = m_device->CreateShader(library_hit_blob, blob_type, ShaderType::kLibrary);
-    std::vector<uint8_t> library_callable_blob =
-        AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracingCallable.hlsl", blob_type);
-    m_library_callable = m_device->CreateShader(library_callable_blob, blob_type, ShaderType::kLibrary);
-    BindKey geometry_key = m_library->GetBindKey("geometry");
-    BindKey result_texture_key = m_library->GetBindKey("result_texture");
-    m_layout = m_device->CreateBindingSetLayout({ geometry_key, result_texture_key });
+    upload_command_list->Reset();
+    upload_command_list->CopyAccelerationStructure(m_blas, m_blas_compacted, CopyAccelerationStructureMode::kCompact);
+    upload_command_list->BuildTopLevelAS({}, m_tlas, scratch, 0, instance_data, 0, instances.size(),
+                                         BuildAccelerationStructureFlags::kNone);
+    upload_command_list->Close();
 
-    std::vector<RayTracingShaderGroup> groups;
-    groups.push_back({ RayTracingShaderGroupType::kGeneral, m_library->GetId("ray_gen") });
-    groups.push_back({ RayTracingShaderGroupType::kGeneral, m_library->GetId("miss") });
-    groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, m_library_hit->GetId("closest_red") });
-    groups.push_back({ RayTracingShaderGroupType::kTrianglesHitGroup, 0, m_library_hit->GetId("closest_green") });
-    groups.push_back({ RayTracingShaderGroupType::kGeneral, m_library_callable->GetId("callable") });
-
-    RayTracingPipelineDesc pipeline_desc = {
-        .shaders = { m_library, m_library_hit, m_library_callable },
-        .layout = m_layout,
-        .groups = groups,
-    };
-    m_pipeline = m_device->CreateRayTracingPipeline(pipeline_desc);
-
-    m_shader_table = m_device->CreateBuffer(
-        MemoryType::kUpload,
-        { .size = m_device->GetShaderTableAlignment() * groups.size(), .usage = BindFlag::kShaderTable });
-    m_shader_table->SetName("shader_table");
-
-    std::vector<uint8_t> shader_handles = m_pipeline->GetRayTracingShaderGroupHandles(0, groups.size());
-    for (size_t i = 0; i < groups.size(); ++i) {
-        m_shader_table->UpdateUploadBuffer(i * m_device->GetShaderTableAlignment(),
-                                           shader_handles.data() + i * m_device->GetShaderGroupHandleSize(),
-                                           m_device->GetShaderGroupHandleSize());
-    }
-
-    m_shader_tables = { .raygen = { m_shader_table, 0 * m_device->GetShaderTableAlignment(),
-                                    m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() },
-                        .miss = { m_shader_table, 1 * m_device->GetShaderTableAlignment(),
-                                  m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() },
-                        .hit = { m_shader_table, 2 * m_device->GetShaderTableAlignment(),
-                                 2 * m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() },
-                        .callable = { m_shader_table, 4 * m_device->GetShaderTableAlignment(),
-                                      m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() } };
+    m_command_queue->ExecuteCommandLists({ upload_command_list });
+    m_command_queue->Signal(m_fence, ++m_fence_value);
+    m_fence->Wait(m_fence_value);
 }
 
 RayTracingTriangleRenderer::~RayTracingTriangleRenderer()
