@@ -5,7 +5,8 @@ struct MeshOutput {
 
 [outputtopology("triangle")]
 [numthreads(1, 1, 1)]
-void main(out indices uint3 triangles[1], out vertices MeshOutput vertices[3]) {
+void main(out indices uint3 triangles[1], out vertices MeshOutput vertices[3])
+{
     SetMeshOutputCounts(3, 1);
 
     triangles[0] = uint3(0, 1, 2);

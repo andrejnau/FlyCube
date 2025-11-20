@@ -11,12 +11,14 @@ ConstantBuffer<ConstantLayout> constant_buffer : register(b1, space0);
 Texture2D<float> depth_buffer : register(t2, space0);
 Texture2D<uint2> stencil_buffer : register(t3, space0);
 
-float GetDepth(float2 texcoord) {
+float GetDepth(float2 texcoord)
+{
     float depth = depth_buffer.Load(int3(texcoord * constant_buffer.screen_size, 0));
     return pow(depth, 8.0);
 }
 
-float GetStencil(float2 texcoord) {
+float GetStencil(float2 texcoord)
+{
     const uint kMaxStencilValue = 15;
     uint2 stencil = stencil_buffer.Load(int3(texcoord * constant_buffer.screen_size, 0));
     return stencil.g / float(kMaxStencilValue);
