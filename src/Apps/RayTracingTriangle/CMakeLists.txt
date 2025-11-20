@@ -4,14 +4,21 @@ list(APPEND sources
 
 set(shaders_path "${assets_path}/shaders/RayTracingTriangle")
 
-set(shaders_files
+set(library_shaders
     ${shaders_path}/RayTracing.hlsl
     ${shaders_path}/RayTracingCallable.hlsl
     ${shaders_path}/RayTracingHit.hlsl
 )
-set_property(SOURCE ${shaders_files} PROPERTY SHADER_TYPE Library)
+set_property(SOURCE ${library_shaders} PROPERTY SHADER_TYPE Library)
+
+set(compute_shaders
+    ${shaders_path}/RayQuery.hlsl
+)
+set_property(SOURCE ${compute_shaders} PROPERTY SHADER_TYPE Compute)
+
+set(shaders_files ${library_shaders} ${compute_shaders})
 set_property(SOURCE ${shaders_files} PROPERTY SHADER_ENTRYPOINT main)
-set_property(SOURCE ${shaders_files} PROPERTY SHADER_MODEL 6_3)
+set_property(SOURCE ${shaders_files} PROPERTY SHADER_MODEL 6_5)
 
 include(compile_shaders)
 compile_shaders("${shaders_path}" "assets/RayTracingTriangle" "${shaders_files}" resources)
