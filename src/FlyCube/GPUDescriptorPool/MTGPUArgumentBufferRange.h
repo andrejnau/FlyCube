@@ -14,8 +14,8 @@ public:
     void AddAllocation(uint32_t offset, id<MTLAllocation> allocation);
 
 private:
-    std::reference_wrapper<MTGPUBindlessArgumentBuffer> m_argument_buffer;
-    uint32_t m_offset;
-    uint32_t m_size;
-    std::unique_ptr<MTGPUArgumentBufferRange, std::function<void(MTGPUArgumentBufferRange*)>> m_callback;
+    std::reference_wrapper<MTGPUBindlessArgumentBuffer> argument_buffer_;
+    uint32_t offset_;
+    uint32_t size_;
+    std::unique_ptr<MTGPUArgumentBufferRange, std::function<void(MTGPUArgumentBufferRange*)>> callback_;
 };

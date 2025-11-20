@@ -22,16 +22,16 @@
 #include <type_traits>
 
 MTDevice::MTDevice(MTInstance& instance, id<MTLDevice> device)
-    : m_instance(instance)
-    , m_device(device)
-    , m_mvk_pixel_formats(this)
-    , m_bindless_argument_buffer(*this)
+    : instance_(instance)
+    , device_(device)
+    , mvk_pixel_formats_(this)
+    , bindless_argument_buffer_(*this)
 {
-    m_command_queue = std::make_shared<MTCommandQueue>(*this);
+    command_queue_ = std::make_shared<MTCommandQueue>(*this);
 
     NSError* error = nullptr;
-    m_compiler = [m_device newCompilerWithDescriptor:[MTL4CompilerDescriptor new] error:&error];
-    if (!m_compiler) {
+    compiler_ = [device_ newCompilerWithDescriptor:[MTL4CompilerDescriptor new] error:&error];
+    if (!compiler_) {
         Logging::Println("Failed to create MTL4Compiler: {}", error);
     }
 }
@@ -43,7 +43,7 @@ std::shared_ptr<Memory> MTDevice::AllocateMemory(uint64_t size, MemoryType memor
 
 std::shared_ptr<CommandQueue> MTDevice::GetCommandQueue(CommandListType type)
 {
-    return m_command_queue;
+    return command_queue_;
 }
 
 uint32_t MTDevice::GetTextureDataPitchAlignment() const
@@ -285,7 +285,7 @@ RaytracingASPrebuildInfo MTDevice::GetBLASPrebuildInfo(const std::vector<Raytrac
     acceleration_structure_desc.geometryDescriptors = geometry_descs;
 
     MTLAccelerationStructureSizes sizes =
-        [m_device accelerationStructureSizesWithDescriptor:acceleration_structure_desc];
+        [device_ accelerationStructureSizesWithDescriptor:acceleration_structure_desc];
 
     RaytracingASPrebuildInfo prebuild_info = {};
     prebuild_info.acceleration_structure_size = sizes.accelerationStructureSize;
@@ -302,7 +302,7 @@ RaytracingASPrebuildInfo MTDevice::GetTLASPrebuildInfo(uint32_t instance_count,
     acceleration_structure_desc.instanceCount = instance_count;
 
     MTLAccelerationStructureSizes sizes =
-        [m_device accelerationStructureSizesWithDescriptor:acceleration_structure_desc];
+        [device_ accelerationStructureSizesWithDescriptor:acceleration_structure_desc];
 
     RaytracingASPrebuildInfo prebuild_info = {};
     prebuild_info.acceleration_structure_size = sizes.accelerationStructureSize;
@@ -318,22 +318,22 @@ ShaderBlobType MTDevice::GetSupportedShaderBlobType() const
 
 id<MTLDevice> MTDevice::GetDevice() const
 {
-    return m_device;
+    return device_;
 }
 
 MTLPixelFormat MTDevice::GetMTLPixelFormat(gli::format format)
 {
-    return m_mvk_pixel_formats.getMTLPixelFormat(static_cast<VkFormat>(format));
+    return mvk_pixel_formats_.getMTLPixelFormat(static_cast<VkFormat>(format));
 }
 
 MTLVertexFormat MTDevice::GetMTLVertexFormat(gli::format format)
 {
-    return m_mvk_pixel_formats.getMTLVertexFormat(static_cast<VkFormat>(format));
+    return mvk_pixel_formats_.getMTLVertexFormat(static_cast<VkFormat>(format));
 }
 
 id<MTL4CommandQueue> MTDevice::GetMTCommandQueue() const
 {
-    return m_command_queue->GetCommandQueue();
+    return command_queue_->GetCommandQueue();
 }
 
 uint32_t MTDevice::GetMaxPerStageBufferCount() const
@@ -343,24 +343,24 @@ uint32_t MTDevice::GetMaxPerStageBufferCount() const
 
 const MTInstance& MTDevice::GetInstance()
 {
-    return m_instance;
+    return instance_;
 }
 
 MTGPUBindlessArgumentBuffer& MTDevice::GetBindlessArgumentBuffer()
 {
-    return m_bindless_argument_buffer;
+    return bindless_argument_buffer_;
 }
 
 id<MTLResidencySet> MTDevice::CreateResidencySet() const
 {
     NSError* error = nullptr;
     MTLResidencySetDescriptor* residencySetDescriptor = [MTLResidencySetDescriptor new];
-    return [m_device newResidencySetWithDescriptor:residencySetDescriptor error:&error];
+    return [device_ newResidencySetWithDescriptor:residencySetDescriptor error:&error];
 }
 
 id<MTL4Compiler> MTDevice::GetCompiler()
 {
-    return m_compiler;
+    return compiler_;
 }
 
 MVKVulkanAPIObject* MTDevice::getVulkanAPIObject()
@@ -370,10 +370,10 @@ MVKVulkanAPIObject* MTDevice::getVulkanAPIObject()
 
 id<MTLDevice> MTDevice::getMTLDevice()
 {
-    return m_device;
+    return device_;
 }
 
 const MVKPhysicalDeviceMetalFeatures* MTDevice::getMetalFeatures()
 {
-    return &m_features;
+    return &features_;
 }

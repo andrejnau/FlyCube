@@ -44,21 +44,21 @@ private:
     static void OnScroll(GLFWwindow* window, double xoffset, double yoffset);
     static void OnInputChar(GLFWwindow* window, uint32_t ch);
 
-    Settings m_setting;
-    std::string m_title;
-    InputEvents* m_input_listener = nullptr;
-    WindowEvents* m_window_listener = nullptr;
-    GLFWwindow* m_window = nullptr;
-    AppSize m_size;
-    bool m_exit_request = false;
-    uint32_t m_frame_number = 0;
-    double m_last_time = 0;
-    std::array<int, 4> m_window_box = {};
-    std::map<int, bool> m_keys;
-    CursorMode m_cursor_mode = CursorMode::kNormal;
-    std::string m_gpu_name;
-    std::string m_fps;
+    Settings setting_;
+    std::string title_;
+    InputEvents* input_listener_ = nullptr;
+    WindowEvents* window_listener_ = nullptr;
+    GLFWwindow* window_ = nullptr;
+    AppSize size_;
+    bool exit_request_ = false;
+    uint32_t frame_number_ = 0;
+    double last_time_ = 0;
+    std::array<int, 4> window_box_ = {};
+    std::map<int, bool> keys_;
+    CursorMode cursor_mode_ = CursorMode::kNormal;
+    std::string gpu_name_;
+    std::string fps_;
 #if defined(__APPLE__)
-    std::shared_ptr<class AutoreleasePool> m_autorelease_pool;
+    std::shared_ptr<class AutoreleasePool> autorelease_pool_;
 #endif
 };

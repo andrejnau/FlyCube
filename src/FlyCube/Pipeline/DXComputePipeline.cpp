@@ -12,24 +12,24 @@
 #include <cassert>
 
 DXComputePipeline::DXComputePipeline(DXDevice& device, const ComputePipelineDesc& desc)
-    : m_device(device)
-    , m_desc(desc)
+    : device_(device)
+    , desc_(desc)
 {
     DXStateBuilder compute_state_builder;
 
-    decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
-    m_root_signature = dx_layout.GetRootSignature();
+    decltype(auto) dx_layout = desc_.layout->As<DXBindingSetLayout>();
+    root_signature_ = dx_layout.GetRootSignature();
 
-    decltype(auto) blob = m_desc.shader->GetBlob();
+    decltype(auto) blob = desc_.shader->GetBlob();
     D3D12_SHADER_BYTECODE shader_bytecode = { blob.data(), blob.size() };
-    assert(m_desc.shader->GetType() == ShaderType::kCompute);
+    assert(desc_.shader->GetType() == ShaderType::kCompute);
     compute_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_CS>(shader_bytecode);
-    compute_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE>(m_root_signature.Get());
+    compute_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE>(root_signature_.Get());
 
     ComPtr<ID3D12Device2> device2;
-    m_device.GetDevice().As(&device2);
+    device_.GetDevice().As(&device2);
     auto pipeline_desc = compute_state_builder.GetDesc();
-    CHECK_HRESULT(device2->CreatePipelineState(&pipeline_desc, IID_PPV_ARGS(&m_pipeline_state)));
+    CHECK_HRESULT(device2->CreatePipelineState(&pipeline_desc, IID_PPV_ARGS(&pipeline_state_)));
 }
 
 PipelineType DXComputePipeline::GetPipelineType() const
@@ -39,15 +39,15 @@ PipelineType DXComputePipeline::GetPipelineType() const
 
 const ComputePipelineDesc& DXComputePipeline::GetDesc() const
 {
-    return m_desc;
+    return desc_;
 }
 
 const ComPtr<ID3D12PipelineState>& DXComputePipeline::GetPipeline() const
 {
-    return m_pipeline_state;
+    return pipeline_state_;
 }
 
 const ComPtr<ID3D12RootSignature>& DXComputePipeline::GetRootSignature() const
 {
-    return m_root_signature;
+    return root_signature_;
 }

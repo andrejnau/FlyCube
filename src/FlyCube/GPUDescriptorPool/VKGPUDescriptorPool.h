@@ -20,5 +20,5 @@ public:
 private:
     vk::UniqueDescriptorPool CreateDescriptorPool(const std::map<vk::DescriptorType, size_t>& count);
 
-    VKDevice& m_device;
+    VKDevice& device_;
 };

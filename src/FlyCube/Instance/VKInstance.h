@@ -13,9 +13,9 @@ public:
 
 private:
 #if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
-    vk::detail::DynamicLoader m_dl;
+    vk::detail::DynamicLoader dl_;
 #endif
-    vk::UniqueInstance m_instance;
-    vk::UniqueDebugUtilsMessengerEXT m_debug_utils_messenger;
-    bool m_debug_utils_supported = false;
+    vk::UniqueInstance instance_;
+    vk::UniqueDebugUtilsMessengerEXT debug_utils_messenger_;
+    bool debug_utils_supported_ = false;
 };

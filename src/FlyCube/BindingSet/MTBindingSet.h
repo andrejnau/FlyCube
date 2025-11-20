@@ -22,7 +22,7 @@ public:
                id<MTLResidencySet> residency_set);
 
 private:
-    MTDevice& m_device;
-    std::set<BindKey> m_bindless_bind_keys;
-    std::map<BindKey, std::shared_ptr<View>> m_direct_bindings;
+    MTDevice& device_;
+    std::set<BindKey> bindless_bind_keys_;
+    std::map<BindKey, std::shared_ptr<View>> direct_bindings_;
 };

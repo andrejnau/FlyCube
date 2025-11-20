@@ -21,11 +21,11 @@ public:
     const ShaderFeatureInfo& GetShaderFeatureInfo() const override;
 
 private:
-    std::vector<uint32_t> m_blob;
-    std::vector<EntryPoint> m_entry_points;
-    std::vector<ResourceBindingDesc> m_bindings;
-    std::vector<VariableLayout> m_layouts;
-    std::vector<InputParameterDesc> m_input_parameters;
-    std::vector<OutputParameterDesc> m_output_parameters;
-    ShaderFeatureInfo m_shader_feature_info = {};
+    std::vector<uint32_t> blob_;
+    std::vector<EntryPoint> entry_points_;
+    std::vector<ResourceBindingDesc> bindings_;
+    std::vector<VariableLayout> layouts_;
+    std::vector<InputParameterDesc> input_parameters_;
+    std::vector<OutputParameterDesc> output_parameters_;
+    ShaderFeatureInfo shader_feature_info_ = {};
 };

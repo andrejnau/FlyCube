@@ -23,7 +23,7 @@ public:
     ComPtr<ID3D12Fence> GetFence();
 
 private:
-    DXDevice& m_device;
-    ComPtr<ID3D12Fence> m_fence;
-    HANDLE m_fence_event = nullptr;
+    DXDevice& device_;
+    ComPtr<ID3D12Fence> fence_;
+    HANDLE fence_event_ = nullptr;
 };

@@ -39,24 +39,24 @@ public:
 private:
     MTLTextureDescriptor* GetTextureDescriptor(MemoryType memory_type) const;
 
-    MTDevice& m_device;
+    MTDevice& device_;
 
     struct Texture {
         id<MTLTexture> res = nullptr;
         TextureDesc desc = {};
-    } m_texture;
+    } texture_;
 
     struct Buffer {
         id<MTLBuffer> res = nullptr;
         uint32_t bind_flag = 0;
         uint64_t size = 0;
-    } m_buffer;
+    } buffer_;
 
     struct Sampler {
         id<MTLSamplerState> res = nullptr;
-    } m_sampler;
+    } sampler_;
 
     struct AccelerationStructure {
         id<MTLAccelerationStructure> res = nullptr;
-    } m_acceleration_structure;
+    } acceleration_structure_;
 };

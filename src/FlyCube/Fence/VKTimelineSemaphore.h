@@ -15,6 +15,6 @@ public:
     const vk::Semaphore& GetFence() const;
 
 private:
-    VKDevice& m_device;
-    vk::UniqueSemaphore m_timeline_semaphore;
+    VKDevice& device_;
+    vk::UniqueSemaphore timeline_semaphore_;
 };

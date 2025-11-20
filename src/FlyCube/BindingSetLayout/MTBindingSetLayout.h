@@ -10,6 +10,6 @@ public:
     const std::vector<BindKey>& GetBindKeys() const;
 
 private:
-    MTDevice& m_device;
-    std::vector<BindKey> m_descs;
+    MTDevice& device_;
+    std::vector<BindKey> descs_;
 };

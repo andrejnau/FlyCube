@@ -4,18 +4,18 @@
 #include "Instance/MTInstance.h"
 
 MTAdapter::MTAdapter(MTInstance& instance, id<MTLDevice> device)
-    : m_instance(instance)
-    , m_device(device)
-    , m_name([[device name] UTF8String])
+    : instance_(instance)
+    , device_(device)
+    , name_([[device name] UTF8String])
 {
 }
 
 const std::string& MTAdapter::GetName() const
 {
-    return m_name;
+    return name_;
 }
 
 std::shared_ptr<Device> MTAdapter::CreateDevice()
 {
-    return std::make_shared<MTDevice>(m_instance, m_device);
+    return std::make_shared<MTDevice>(instance_, device_);
 }

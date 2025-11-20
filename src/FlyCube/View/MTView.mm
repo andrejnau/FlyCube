@@ -36,15 +36,15 @@ MTLTextureType ConvertTextureType(ViewDimension dimension)
 } // namespace
 
 MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, const ViewDesc& view_desc)
-    : m_device(device)
-    , m_resource(resource)
-    , m_view_desc(view_desc)
+    : device_(device)
+    , resource_(resource)
+    , view_desc_(view_desc)
 {
-    if (!m_resource) {
+    if (!resource_) {
         return;
     }
 
-    switch (m_view_desc.view_type) {
+    switch (view_desc_.view_type) {
     case ViewType::kTexture:
     case ViewType::kRWTexture:
         CreateTextureView();
@@ -53,24 +53,24 @@ MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, co
         break;
     }
 
-    if (m_view_desc.bindless) {
-        decltype(auto) argument_buffer = m_device.GetBindlessArgumentBuffer();
-        m_range = std::make_shared<MTGPUArgumentBufferRange>(argument_buffer.Allocate(1));
-        uint64_t* arguments = static_cast<uint64_t*>(m_range->GetArgumentBuffer().contents);
-        arguments[m_range->GetOffset()] = GetGpuAddress();
-        m_range->AddAllocation(m_range->GetOffset(), GetNativeResource());
+    if (view_desc_.bindless) {
+        decltype(auto) argument_buffer = device_.GetBindlessArgumentBuffer();
+        range_ = std::make_shared<MTGPUArgumentBufferRange>(argument_buffer.Allocate(1));
+        uint64_t* arguments = static_cast<uint64_t*>(range_->GetArgumentBuffer().contents);
+        arguments[range_->GetOffset()] = GetGpuAddress();
+        range_->AddAllocation(range_->GetOffset(), GetNativeResource());
     }
 }
 
 void MTView::CreateTextureView()
 {
-    decltype(auto) texture = m_resource->GetTexture();
-    MTLPixelFormat format = m_device.GetMTLPixelFormat(m_resource->GetFormat());
-    MTLTextureType texture_type = ConvertTextureType(m_view_desc.dimension);
+    decltype(auto) texture = resource_->GetTexture();
+    MTLPixelFormat format = device_.GetMTLPixelFormat(resource_->GetFormat());
+    MTLTextureType texture_type = ConvertTextureType(view_desc_.dimension);
     NSRange levels = { GetBaseMipLevel(), GetLevelCount() };
     NSRange slices = { GetBaseArrayLayer(), GetLayerCount() };
 
-    if (m_view_desc.plane_slice == 1) {
+    if (view_desc_.plane_slice == 1) {
         if (format == MTLPixelFormatDepth32Float_Stencil8) {
             format = MTLPixelFormatX32_Stencil8;
         }
@@ -78,68 +78,68 @@ void MTView::CreateTextureView()
         MTLTextureSwizzleChannels swizzle = MTLTextureSwizzleChannelsDefault;
         swizzle.green = MTLTextureSwizzleRed;
 
-        m_texture_view = [texture newTextureViewWithPixelFormat:format
-                                                    textureType:texture_type
-                                                         levels:levels
-                                                         slices:slices
-                                                        swizzle:swizzle];
+        texture_view_ = [texture newTextureViewWithPixelFormat:format
+                                                   textureType:texture_type
+                                                        levels:levels
+                                                        slices:slices
+                                                       swizzle:swizzle];
     } else {
-        m_texture_view = [texture newTextureViewWithPixelFormat:format
-                                                    textureType:texture_type
-                                                         levels:levels
-                                                         slices:slices];
+        texture_view_ = [texture newTextureViewWithPixelFormat:format
+                                                   textureType:texture_type
+                                                        levels:levels
+                                                        slices:slices];
     }
 
-    if (!m_texture_view) {
+    if (!texture_view_) {
         Logging::Println("Failed to create MTLTexture using newTextureViewWithPixelFormat");
     }
 }
 
 std::shared_ptr<Resource> MTView::GetResource()
 {
-    return m_resource;
+    return resource_;
 }
 
 uint32_t MTView::GetDescriptorId() const
 {
-    if (m_range) {
-        return m_range->GetOffset();
+    if (range_) {
+        return range_->GetOffset();
     }
     NOTREACHED();
 }
 
 uint32_t MTView::GetBaseMipLevel() const
 {
-    return m_view_desc.base_mip_level;
+    return view_desc_.base_mip_level;
 }
 
 uint32_t MTView::GetLevelCount() const
 {
-    return std::min<uint32_t>(m_view_desc.level_count, m_resource->GetLevelCount() - m_view_desc.base_mip_level);
+    return std::min<uint32_t>(view_desc_.level_count, resource_->GetLevelCount() - view_desc_.base_mip_level);
 }
 
 uint32_t MTView::GetBaseArrayLayer() const
 {
-    return m_view_desc.base_array_layer;
+    return view_desc_.base_array_layer;
 }
 
 uint32_t MTView::GetLayerCount() const
 {
-    return std::min<uint32_t>(m_view_desc.layer_count, m_resource->GetLayerCount() - m_view_desc.base_array_layer);
+    return std::min<uint32_t>(view_desc_.layer_count, resource_->GetLayerCount() - view_desc_.base_array_layer);
 }
 
 const ViewDesc& MTView::GetViewDesc() const
 {
-    return m_view_desc;
+    return view_desc_;
 }
 
 id<MTLResource> MTView::GetNativeResource() const
 {
-    if (!m_resource) {
+    if (!resource_) {
         return {};
     }
 
-    switch (m_view_desc.view_type) {
+    switch (view_desc_.view_type) {
     case ViewType::kConstantBuffer:
     case ViewType::kBuffer:
     case ViewType::kRWBuffer:
@@ -162,11 +162,11 @@ id<MTLResource> MTView::GetNativeResource() const
 
 uint64_t MTView::GetGpuAddress() const
 {
-    if (!m_resource) {
+    if (!resource_) {
         return 0;
     }
 
-    switch (m_view_desc.view_type) {
+    switch (view_desc_.view_type) {
     case ViewType::kConstantBuffer:
     case ViewType::kBuffer:
     case ViewType::kRWBuffer:
@@ -191,34 +191,34 @@ uint64_t MTView::GetGpuAddress() const
 
 id<MTLBuffer> MTView::GetBuffer() const
 {
-    if (m_resource) {
-        return m_resource->GetBuffer();
+    if (resource_) {
+        return resource_->GetBuffer();
     }
     return {};
 }
 
 id<MTLSamplerState> MTView::GetSampler() const
 {
-    if (m_resource) {
-        return m_resource->GetSampler();
+    if (resource_) {
+        return resource_->GetSampler();
     }
     return {};
 }
 
 id<MTLTexture> MTView::GetTexture() const
 {
-    if (m_texture_view) {
-        return m_texture_view;
-    } else if (m_resource) {
-        return m_resource->GetTexture();
+    if (texture_view_) {
+        return texture_view_;
+    } else if (resource_) {
+        return resource_->GetTexture();
     }
     return {};
 }
 
 id<MTLAccelerationStructure> MTView::GetAccelerationStructure() const
 {
-    if (m_resource) {
-        return m_resource->GetAccelerationStructure();
+    if (resource_) {
+        return resource_->GetAccelerationStructure();
     }
     return {};
 }

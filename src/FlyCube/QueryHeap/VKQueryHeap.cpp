@@ -3,13 +3,13 @@
 #include "Device/VKDevice.h"
 
 VKQueryHeap::VKQueryHeap(VKDevice& device, QueryHeapType type, uint32_t count)
-    : m_device(device)
+    : device_(device)
 {
-    m_query_type = vk::QueryType::eAccelerationStructureCompactedSizeKHR;
+    query_type_ = vk::QueryType::eAccelerationStructureCompactedSizeKHR;
     vk::QueryPoolCreateInfo desc = {};
     desc.queryCount = count;
-    desc.queryType = m_query_type;
-    m_query_pool = m_device.GetDevice().createQueryPoolUnique(desc);
+    desc.queryType = query_type_;
+    query_pool_ = device_.GetDevice().createQueryPoolUnique(desc);
 }
 
 QueryHeapType VKQueryHeap::GetType() const
@@ -19,10 +19,10 @@ QueryHeapType VKQueryHeap::GetType() const
 
 vk::QueryType VKQueryHeap::GetQueryType() const
 {
-    return m_query_type;
+    return query_type_;
 }
 
 vk::QueryPool VKQueryHeap::GetQueryPool() const
 {
-    return m_query_pool.get();
+    return query_pool_.get();
 }

@@ -28,9 +28,9 @@ public:
 private:
     DXCPUDescriptorPoolTyped& SelectHeap(ViewType view_type);
 
-    DXDevice& m_device;
-    DXCPUDescriptorPoolTyped m_resource;
-    DXCPUDescriptorPoolTyped m_sampler;
-    DXCPUDescriptorPoolTyped m_rtv;
-    DXCPUDescriptorPoolTyped m_dsv;
+    DXDevice& device_;
+    DXCPUDescriptorPoolTyped resource_;
+    DXCPUDescriptorPoolTyped sampler_;
+    DXCPUDescriptorPoolTyped rtv_;
+    DXCPUDescriptorPoolTyped dsv_;
 };

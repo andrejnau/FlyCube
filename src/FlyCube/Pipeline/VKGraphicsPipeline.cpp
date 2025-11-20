@@ -71,7 +71,7 @@ vk::StencilOpState Convert(const StencilOpDesc& desc, uint8_t read_mask, uint8_t
 
 VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
     : VKPipeline(device, desc.shaders, desc.layout)
-    , m_desc(desc)
+    , desc_(desc)
 {
     for (const auto& shader : desc.shaders) {
         if (shader->GetType() == ShaderType::kVertex) {
@@ -80,10 +80,10 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     }
 
     vk::PipelineVertexInputStateCreateInfo vertex_input_info = {};
-    vertex_input_info.vertexBindingDescriptionCount = m_binding_desc.size();
-    vertex_input_info.pVertexBindingDescriptions = m_binding_desc.data();
-    vertex_input_info.vertexAttributeDescriptionCount = m_attribute_desc.size();
-    vertex_input_info.pVertexAttributeDescriptions = m_attribute_desc.data();
+    vertex_input_info.vertexBindingDescriptionCount = binding_desc_.size();
+    vertex_input_info.pVertexBindingDescriptions = binding_desc_.data();
+    vertex_input_info.vertexAttributeDescriptionCount = attribute_desc_.size();
+    vertex_input_info.pVertexAttributeDescriptions = attribute_desc_.data();
 
     vk::PipelineInputAssemblyStateCreateInfo input_assembly = {};
     input_assembly.topology = vk::PrimitiveTopology::eTriangleList;
@@ -97,9 +97,9 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.lineWidth = 1.0;
     rasterizer.frontFace = vk::FrontFace::eClockwise;
-    rasterizer.depthBiasEnable = m_desc.rasterizer_desc.depth_bias != 0;
-    rasterizer.depthBiasConstantFactor = m_desc.rasterizer_desc.depth_bias;
-    switch (m_desc.rasterizer_desc.fill_mode) {
+    rasterizer.depthBiasEnable = desc_.rasterizer_desc.depth_bias != 0;
+    rasterizer.depthBiasConstantFactor = desc_.rasterizer_desc.depth_bias;
+    switch (desc_.rasterizer_desc.fill_mode) {
     case FillMode::kWireframe:
         rasterizer.polygonMode = vk::PolygonMode::eLine;
         break;
@@ -107,7 +107,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
         rasterizer.polygonMode = vk::PolygonMode::eFill;
         break;
     }
-    switch (m_desc.rasterizer_desc.cull_mode) {
+    switch (desc_.rasterizer_desc.cull_mode) {
     case CullMode::kNone:
         rasterizer.cullMode = vk::CullModeFlagBits::eNone;
         break;
@@ -122,7 +122,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     vk::PipelineColorBlendAttachmentState color_blend_attachment = {};
     color_blend_attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
                                             vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-    color_blend_attachment.blendEnable = m_desc.blend_desc.blend_enable;
+    color_blend_attachment.blendEnable = desc_.blend_desc.blend_enable;
 
     if (color_blend_attachment.blendEnable) {
         auto convert = [](Blend type) {
@@ -147,15 +147,15 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
             }
         };
 
-        color_blend_attachment.srcColorBlendFactor = convert(m_desc.blend_desc.blend_src);
-        color_blend_attachment.dstColorBlendFactor = convert(m_desc.blend_desc.blend_dest);
-        color_blend_attachment.colorBlendOp = convert_op(m_desc.blend_desc.blend_op);
-        color_blend_attachment.srcAlphaBlendFactor = convert(m_desc.blend_desc.blend_src_alpha);
-        color_blend_attachment.dstAlphaBlendFactor = convert(m_desc.blend_desc.blend_dest_apha);
-        color_blend_attachment.alphaBlendOp = convert_op(m_desc.blend_desc.blend_op_alpha);
+        color_blend_attachment.srcColorBlendFactor = convert(desc_.blend_desc.blend_src);
+        color_blend_attachment.dstColorBlendFactor = convert(desc_.blend_desc.blend_dest);
+        color_blend_attachment.colorBlendOp = convert_op(desc_.blend_desc.blend_op);
+        color_blend_attachment.srcAlphaBlendFactor = convert(desc_.blend_desc.blend_src_alpha);
+        color_blend_attachment.dstAlphaBlendFactor = convert(desc_.blend_desc.blend_dest_apha);
+        color_blend_attachment.alphaBlendOp = convert_op(desc_.blend_desc.blend_op_alpha);
     }
 
-    std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments(m_desc.color_formats.size(),
+    std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments(desc_.color_formats.size(),
                                                                                color_blend_attachment);
 
     vk::PipelineColorBlendStateCreateInfo color_blending = {};
@@ -165,26 +165,26 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     color_blending.pAttachments = color_blend_attachments.data();
 
     vk::PipelineMultisampleStateCreateInfo multisampling = {};
-    multisampling.rasterizationSamples = static_cast<vk::SampleCountFlagBits>(m_desc.sample_count);
+    multisampling.rasterizationSamples = static_cast<vk::SampleCountFlagBits>(desc_.sample_count);
     multisampling.sampleShadingEnable = multisampling.rasterizationSamples != vk::SampleCountFlagBits::e1;
 
     vk::PipelineDepthStencilStateCreateInfo depth_stencil = {};
-    depth_stencil.depthTestEnable = m_desc.depth_stencil_desc.depth_test_enable;
-    depth_stencil.depthWriteEnable = m_desc.depth_stencil_desc.depth_write_enable;
-    depth_stencil.depthCompareOp = Convert(m_desc.depth_stencil_desc.depth_func);
-    depth_stencil.depthBoundsTestEnable = m_desc.depth_stencil_desc.depth_bounds_test_enable;
-    depth_stencil.stencilTestEnable = m_desc.depth_stencil_desc.stencil_enable;
-    depth_stencil.back = Convert(m_desc.depth_stencil_desc.back_face, m_desc.depth_stencil_desc.stencil_read_mask,
-                                 m_desc.depth_stencil_desc.stencil_write_mask);
-    depth_stencil.front = Convert(m_desc.depth_stencil_desc.front_face, m_desc.depth_stencil_desc.stencil_read_mask,
-                                  m_desc.depth_stencil_desc.stencil_write_mask);
+    depth_stencil.depthTestEnable = desc_.depth_stencil_desc.depth_test_enable;
+    depth_stencil.depthWriteEnable = desc_.depth_stencil_desc.depth_write_enable;
+    depth_stencil.depthCompareOp = Convert(desc_.depth_stencil_desc.depth_func);
+    depth_stencil.depthBoundsTestEnable = desc_.depth_stencil_desc.depth_bounds_test_enable;
+    depth_stencil.stencilTestEnable = desc_.depth_stencil_desc.stencil_enable;
+    depth_stencil.back = Convert(desc_.depth_stencil_desc.back_face, desc_.depth_stencil_desc.stencil_read_mask,
+                                 desc_.depth_stencil_desc.stencil_write_mask);
+    depth_stencil.front = Convert(desc_.depth_stencil_desc.front_face, desc_.depth_stencil_desc.stencil_read_mask,
+                                  desc_.depth_stencil_desc.stencil_write_mask);
 
     std::vector<vk::DynamicState> dynamic_state_enables = {
         vk::DynamicState::eViewport,
         vk::DynamicState::eScissor,
     };
 
-    if (m_device.IsVariableRateShadingSupported()) {
+    if (device_.IsVariableRateShadingSupported()) {
         dynamic_state_enables.emplace_back(vk::DynamicState::eFragmentShadingRateKHR);
     }
 
@@ -193,8 +193,8 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     pipeline_dynamic_state_info.dynamicStateCount = dynamic_state_enables.size();
 
     vk::GraphicsPipelineCreateInfo pipeline_info = {};
-    pipeline_info.stageCount = m_shader_stage_create_info.size();
-    pipeline_info.pStages = m_shader_stage_create_info.data();
+    pipeline_info.stageCount = shader_stage_create_info_.size();
+    pipeline_info.pStages = shader_stage_create_info_.data();
     pipeline_info.pVertexInputState = &vertex_input_info;
     pipeline_info.pInputAssemblyState = &input_assembly;
     pipeline_info.pViewportState = &viewport_state;
@@ -202,29 +202,29 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     pipeline_info.pMultisampleState = &multisampling;
     pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = &color_blending;
-    pipeline_info.layout = m_pipeline_layout;
+    pipeline_info.layout = pipeline_layout_;
     pipeline_info.pDynamicState = &pipeline_dynamic_state_info;
 
-    if (m_device.GetShadingRateImageTileSize() > 0) {
+    if (device_.GetShadingRateImageTileSize() > 0) {
         pipeline_info.flags |= vk::PipelineCreateFlagBits::eRenderingFragmentShadingRateAttachmentKHR;
     }
 
     vk::PipelineRenderingCreateInfo pipeline_rendering_info = {};
-    std::vector<vk::Format> color_formats(m_desc.color_formats.size());
+    std::vector<vk::Format> color_formats(desc_.color_formats.size());
     for (size_t i = 0; i < color_formats.size(); ++i) {
-        color_formats[i] = static_cast<vk::Format>(m_desc.color_formats[i]);
+        color_formats[i] = static_cast<vk::Format>(desc_.color_formats[i]);
     }
     pipeline_rendering_info.colorAttachmentCount = color_formats.size();
     pipeline_rendering_info.pColorAttachmentFormats = color_formats.data();
-    if (m_desc.depth_stencil_format != gli::format::FORMAT_UNDEFINED && gli::is_depth(m_desc.depth_stencil_format)) {
-        pipeline_rendering_info.depthAttachmentFormat = static_cast<vk::Format>(m_desc.depth_stencil_format);
+    if (desc_.depth_stencil_format != gli::format::FORMAT_UNDEFINED && gli::is_depth(desc_.depth_stencil_format)) {
+        pipeline_rendering_info.depthAttachmentFormat = static_cast<vk::Format>(desc_.depth_stencil_format);
     }
-    if (m_desc.depth_stencil_format != gli::format::FORMAT_UNDEFINED && gli::is_stencil(m_desc.depth_stencil_format)) {
-        pipeline_rendering_info.stencilAttachmentFormat = static_cast<vk::Format>(m_desc.depth_stencil_format);
+    if (desc_.depth_stencil_format != gli::format::FORMAT_UNDEFINED && gli::is_stencil(desc_.depth_stencil_format)) {
+        pipeline_rendering_info.stencilAttachmentFormat = static_cast<vk::Format>(desc_.depth_stencil_format);
     }
     pipeline_info.pNext = &pipeline_rendering_info;
 
-    m_pipeline = m_device.GetDevice().createGraphicsPipelineUnique({}, pipeline_info).value;
+    pipeline_ = device_.GetDevice().createGraphicsPipelineUnique({}, pipeline_info).value;
 }
 
 PipelineType VKGraphicsPipeline::GetPipelineType() const
@@ -234,9 +234,9 @@ PipelineType VKGraphicsPipeline::GetPipelineType() const
 
 void VKGraphicsPipeline::CreateInputLayout(const std::shared_ptr<Shader>& shader)
 {
-    for (auto& vertex : m_desc.input) {
-        decltype(auto) binding = m_binding_desc.emplace_back();
-        decltype(auto) attribute = m_attribute_desc.emplace_back();
+    for (auto& vertex : desc_.input) {
+        decltype(auto) binding = binding_desc_.emplace_back();
+        decltype(auto) attribute = attribute_desc_.emplace_back();
         attribute.location = shader->GetInputLayoutLocation(vertex.semantic_name);
         attribute.binding = binding.binding = vertex.slot;
         binding.inputRate = vk::VertexInputRate::eVertex;
@@ -247,5 +247,5 @@ void VKGraphicsPipeline::CreateInputLayout(const std::shared_ptr<Shader>& shader
 
 const GraphicsPipelineDesc& VKGraphicsPipeline::GetDesc() const
 {
-    return m_desc;
+    return desc_;
 }

@@ -7,22 +7,22 @@
 #include "Instance/MTInstance.h"
 
 MTCommandQueue::MTCommandQueue(MTDevice& device)
-    : m_device(device)
+    : device_(device)
 {
-    m_command_queue = [device.GetDevice() newMTL4CommandQueue];
-    [m_command_queue addResidencySet:m_device.GetBindlessArgumentBuffer().GetResidencySet()];
+    command_queue_ = [device.GetDevice() newMTL4CommandQueue];
+    [command_queue_ addResidencySet:device_.GetBindlessArgumentBuffer().GetResidencySet()];
 }
 
 void MTCommandQueue::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
 {
     decltype(auto) mt_fence = fence->As<MTFence>();
-    [m_command_queue waitForEvent:mt_fence.GetSharedEvent() value:value];
+    [command_queue_ waitForEvent:mt_fence.GetSharedEvent() value:value];
 }
 
 void MTCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
 {
     decltype(auto) mt_fence = fence->As<MTFence>();
-    [m_command_queue signalEvent:mt_fence.GetSharedEvent() value:value];
+    [command_queue_ signalEvent:mt_fence.GetSharedEvent() value:value];
 }
 
 void MTCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
@@ -36,11 +36,11 @@ void MTCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<Comma
         command_buffers.push_back(record_command_list.OnSubmit()->GetCommandBuffer());
     }
 
-    [m_device.GetBindlessArgumentBuffer().GetResidencySet() commit];
-    [m_command_queue commit:command_buffers.data() count:command_buffers.size()];
+    [device_.GetBindlessArgumentBuffer().GetResidencySet() commit];
+    [command_queue_ commit:command_buffers.data() count:command_buffers.size()];
 }
 
 id<MTL4CommandQueue> MTCommandQueue::GetCommandQueue()
 {
-    return m_command_queue;
+    return command_queue_;
 }

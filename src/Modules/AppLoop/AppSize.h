@@ -6,22 +6,22 @@ struct AppSize {
     constexpr AppSize() = default;
 
     constexpr AppSize(uint32_t width, uint32_t height)
-        : m_width(width)
-        , m_height(height)
+        : width_(width)
+        , height_(height)
     {
     }
 
     constexpr uint32_t width() const
     {
-        return m_width;
+        return width_;
     }
 
     constexpr uint32_t height() const
     {
-        return m_height;
+        return height_;
     }
 
 private:
-    uint32_t m_width = 0;
-    uint32_t m_height = 0;
+    uint32_t width_ = 0;
+    uint32_t height_ = 0;
 };

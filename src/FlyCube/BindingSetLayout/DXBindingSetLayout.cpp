@@ -74,7 +74,7 @@ D3D12_DESCRIPTOR_HEAP_TYPE GetHeapType(ViewType view_type)
 }
 
 DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindKey>& descs)
-    : m_device(device)
+    : device_(device)
 {
     std::vector<D3D12_ROOT_PARAMETER> root_parameters;
     using RootKey = std::pair<D3D12_DESCRIPTOR_HEAP_TYPE, ShaderType>;
@@ -102,13 +102,13 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
         descriptor_table_range.BaseShaderRegister = base_slot;
         descriptor_table_range.RegisterSpace = space;
         size_t root_param_index = add_root_table(shader_type, 1, &descriptor_table_range);
-        m_descriptor_tables[root_param_index].heap_type = GetHeapType(view_type);
-        m_descriptor_tables[root_param_index].heap_offset = 0;
-        m_descriptor_tables[root_param_index].bindless = true;
+        descriptor_tables_[root_param_index].heap_type = GetHeapType(view_type);
+        descriptor_tables_[root_param_index].heap_offset = 0;
+        descriptor_tables_[root_param_index].bindless = true;
         switch (shader_type) {
         case ShaderType::kCompute:
         case ShaderType::kLibrary:
-            m_descriptor_tables[root_param_index].is_compute = true;
+            descriptor_tables_[root_param_index].is_compute = true;
             break;
         default:
             break;
@@ -122,13 +122,13 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
         }
 
         D3D12_DESCRIPTOR_HEAP_TYPE heap_type = GetHeapType(bind_key.view_type);
-        decltype(auto) layout = m_layout[bind_key];
+        decltype(auto) layout = layout_[bind_key];
         layout.heap_type = heap_type;
-        layout.heap_offset = m_heap_descs[heap_type];
+        layout.heap_offset = heap_descs_[heap_type];
 
         RootKey key = { heap_type, bind_key.shader_type };
         if (!descriptor_table_offset.contains(key)) {
-            descriptor_table_offset[key] = m_heap_descs[heap_type];
+            descriptor_table_offset[key] = heap_descs_[heap_type];
         }
 
         decltype(auto) range = descriptor_table_ranges[key].emplace_back();
@@ -138,17 +138,17 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
         range.RegisterSpace = bind_key.space;
         range.OffsetInDescriptorsFromTableStart = layout.heap_offset - descriptor_table_offset[key];
 
-        m_heap_descs[heap_type] += bind_key.count;
+        heap_descs_[heap_type] += bind_key.count;
     }
 
     for (const auto& ranges : descriptor_table_ranges) {
         size_t root_param_index = add_root_table(ranges.first.second, ranges.second.size(), ranges.second.data());
-        m_descriptor_tables[root_param_index].heap_type = ranges.first.first;
-        m_descriptor_tables[root_param_index].heap_offset = descriptor_table_offset[ranges.first];
+        descriptor_tables_[root_param_index].heap_type = ranges.first.first;
+        descriptor_tables_[root_param_index].heap_offset = descriptor_table_offset[ranges.first];
         switch (ranges.first.second) {
         case ShaderType::kCompute:
         case ShaderType::kLibrary:
-            m_descriptor_tables[root_param_index].is_compute = true;
+            descriptor_tables_[root_param_index].is_compute = true;
             break;
         default:
             break;
@@ -168,25 +168,25 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
     CHECK_HRESULT(
         D3D12SerializeRootSignature(&root_signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error_blob));
     CHECK_HRESULT(device.GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
-                                                          IID_PPV_ARGS(&m_root_signature)));
+                                                          IID_PPV_ARGS(&root_signature_)));
 }
 
 const std::map<D3D12_DESCRIPTOR_HEAP_TYPE, size_t>& DXBindingSetLayout::GetHeapDescs() const
 {
-    return m_heap_descs;
+    return heap_descs_;
 }
 
 const std::map<BindKey, BindingLayout>& DXBindingSetLayout::GetLayout() const
 {
-    return m_layout;
+    return layout_;
 }
 
 const std::map<uint32_t, DescriptorTableDesc>& DXBindingSetLayout::GetDescriptorTables() const
 {
-    return m_descriptor_tables;
+    return descriptor_tables_;
 }
 
 const ComPtr<ID3D12RootSignature>& DXBindingSetLayout::GetRootSignature() const
 {
-    return m_root_signature;
+    return root_signature_;
 }

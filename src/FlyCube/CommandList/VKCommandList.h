@@ -101,9 +101,9 @@ private:
                                     const std::shared_ptr<Resource>& scratch,
                                     uint64_t scratch_offset);
 
-    VKDevice& m_device;
-    vk::UniqueCommandBuffer m_command_list;
-    bool m_closed = false;
-    std::shared_ptr<VKPipeline> m_state;
-    std::shared_ptr<BindingSet> m_binding_set;
+    VKDevice& device_;
+    vk::UniqueCommandBuffer command_list_;
+    bool closed_ = false;
+    std::shared_ptr<VKPipeline> state_;
+    std::shared_ptr<BindingSet> binding_set_;
 };

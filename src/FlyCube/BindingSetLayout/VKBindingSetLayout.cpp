@@ -73,7 +73,7 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device, const std::vector<BindK
         if (bind_key.count == kBindlessCount) {
             binding.descriptorCount = device.GetMaxDescriptorSetBindings(binding.descriptorType);
             binding_flag = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
-            m_bindless_type.emplace(bind_key.space, binding.descriptorType);
+            bindless_type_.emplace(bind_key.space, binding.descriptorType);
             binding.stageFlags = vk::ShaderStageFlagBits::eAll;
         } else {
             binding_flag = vk::DescriptorBindingFlagBits::ePartiallyBound;
@@ -91,22 +91,22 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device, const std::vector<BindK
         layout_info.pNext = &layout_flags_info;
 
         size_t set_num = set_desc.first;
-        if (m_descriptor_set_layouts.size() <= set_num) {
-            m_descriptor_set_layouts.resize(set_num + 1);
-            m_descriptor_count_by_set.resize(set_num + 1);
+        if (descriptor_set_layouts_.size() <= set_num) {
+            descriptor_set_layouts_.resize(set_num + 1);
+            descriptor_count_by_set_.resize(set_num + 1);
         }
 
-        decltype(auto) descriptor_set_layout = m_descriptor_set_layouts[set_num];
+        decltype(auto) descriptor_set_layout = descriptor_set_layouts_[set_num];
         descriptor_set_layout = device.GetDevice().createDescriptorSetLayoutUnique(layout_info);
 
-        decltype(auto) descriptor_count = m_descriptor_count_by_set[set_num];
+        decltype(auto) descriptor_count = descriptor_count_by_set_[set_num];
         for (const auto& binding : set_desc.second) {
             descriptor_count[binding.descriptorType] += binding.descriptorCount;
         }
     }
 
     std::vector<vk::DescriptorSetLayout> descriptor_set_layouts;
-    for (auto& descriptor_set_layout : m_descriptor_set_layouts) {
+    for (auto& descriptor_set_layout : descriptor_set_layouts_) {
         if (!descriptor_set_layout) {
             vk::DescriptorSetLayoutCreateInfo layout_info = {};
             descriptor_set_layout = device.GetDevice().createDescriptorSetLayoutUnique(layout_info);
@@ -119,25 +119,25 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device, const std::vector<BindK
     pipeline_layout_info.setLayoutCount = descriptor_set_layouts.size();
     pipeline_layout_info.pSetLayouts = descriptor_set_layouts.data();
 
-    m_pipeline_layout = device.GetDevice().createPipelineLayoutUnique(pipeline_layout_info);
+    pipeline_layout_ = device.GetDevice().createPipelineLayoutUnique(pipeline_layout_info);
 }
 
 const std::map<uint32_t, vk::DescriptorType>& VKBindingSetLayout::GetBindlessType() const
 {
-    return m_bindless_type;
+    return bindless_type_;
 }
 
 const std::vector<vk::UniqueDescriptorSetLayout>& VKBindingSetLayout::GetDescriptorSetLayouts() const
 {
-    return m_descriptor_set_layouts;
+    return descriptor_set_layouts_;
 }
 
 const std::vector<std::map<vk::DescriptorType, size_t>>& VKBindingSetLayout::GetDescriptorCountBySet() const
 {
-    return m_descriptor_count_by_set;
+    return descriptor_count_by_set_;
 }
 
 vk::PipelineLayout VKBindingSetLayout::GetPipelineLayout() const
 {
-    return m_pipeline_layout.get();
+    return pipeline_layout_.get();
 }

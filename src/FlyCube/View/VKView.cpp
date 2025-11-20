@@ -34,9 +34,9 @@ vk::ImageViewType GetImageViewType(ViewDimension dimension)
 } // namespace
 
 VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, const ViewDesc& view_desc)
-    : m_device(device)
-    , m_resource(resource)
-    , m_view_desc(view_desc)
+    : device_(device)
+    , resource_(resource)
+    , view_desc_(view_desc)
 {
     if (resource) {
         CreateView();
@@ -45,42 +45,42 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
     if (view_desc.bindless) {
         vk::DescriptorType type = GetDescriptorType(view_desc.view_type);
         decltype(auto) pool = device.GetGPUBindlessDescriptorPool(type);
-        m_range = std::make_shared<VKGPUDescriptorPoolRange>(pool.Allocate(1));
+        range_ = std::make_shared<VKGPUDescriptorPoolRange>(pool.Allocate(1));
 
-        m_descriptor.dstSet = m_range->GetDescriptorSet();
-        m_descriptor.dstArrayElement = m_range->GetOffset();
-        m_descriptor.descriptorType = type;
-        m_descriptor.dstBinding = 0;
-        m_descriptor.descriptorCount = 1;
-        m_device.GetDevice().updateDescriptorSets(1, &m_descriptor, 0, nullptr);
+        descriptor_.dstSet = range_->GetDescriptorSet();
+        descriptor_.dstArrayElement = range_->GetOffset();
+        descriptor_.descriptorType = type;
+        descriptor_.dstBinding = 0;
+        descriptor_.descriptorCount = 1;
+        device_.GetDevice().updateDescriptorSets(1, &descriptor_, 0, nullptr);
     }
 }
 
 void VKView::CreateView()
 {
-    switch (m_view_desc.view_type) {
+    switch (view_desc_.view_type) {
     case ViewType::kSampler:
-        m_descriptor_image.sampler = m_resource->GetSampler();
-        m_descriptor.pImageInfo = &m_descriptor_image;
+        descriptor_image_.sampler = resource_->GetSampler();
+        descriptor_.pImageInfo = &descriptor_image_;
         break;
     case ViewType::kTexture: {
         CreateImageView();
-        m_descriptor_image.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        m_descriptor_image.imageView = m_image_view.get();
-        m_descriptor.pImageInfo = &m_descriptor_image;
+        descriptor_image_.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        descriptor_image_.imageView = image_view_.get();
+        descriptor_.pImageInfo = &descriptor_image_;
         break;
     }
     case ViewType::kRWTexture: {
         CreateImageView();
-        m_descriptor_image.imageLayout = vk::ImageLayout::eGeneral;
-        m_descriptor_image.imageView = m_image_view.get();
-        m_descriptor.pImageInfo = &m_descriptor_image;
+        descriptor_image_.imageLayout = vk::ImageLayout::eGeneral;
+        descriptor_image_.imageView = image_view_.get();
+        descriptor_.pImageInfo = &descriptor_image_;
         break;
     }
     case ViewType::kAccelerationStructure: {
-        m_descriptor_acceleration_structure.accelerationStructureCount = 1;
-        m_descriptor_acceleration_structure.pAccelerationStructures = &m_resource->GetAccelerationStructure();
-        m_descriptor.pNext = &m_descriptor_acceleration_structure;
+        descriptor_acceleration_structure_.accelerationStructureCount = 1;
+        descriptor_acceleration_structure_.pAccelerationStructures = &resource_->GetAccelerationStructure();
+        descriptor_.pNext = &descriptor_acceleration_structure_;
         break;
     }
     case ViewType::kShadingRateSource:
@@ -92,15 +92,15 @@ void VKView::CreateView()
     case ViewType::kConstantBuffer:
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer:
-        m_descriptor_buffer.buffer = m_resource->GetBuffer();
-        m_descriptor_buffer.offset = m_view_desc.offset;
-        m_descriptor_buffer.range = m_view_desc.buffer_size;
-        m_descriptor.pBufferInfo = &m_descriptor_buffer;
+        descriptor_buffer_.buffer = resource_->GetBuffer();
+        descriptor_buffer_.offset = view_desc_.offset;
+        descriptor_buffer_.range = view_desc_.buffer_size;
+        descriptor_.pBufferInfo = &descriptor_buffer_;
         break;
     case ViewType::kBuffer:
     case ViewType::kRWBuffer:
         CreateBufferView();
-        m_descriptor.pTexelBufferView = &m_buffer_view.get();
+        descriptor_.pTexelBufferView = &buffer_view_.get();
         break;
     default:
         NOTREACHED();
@@ -110,18 +110,18 @@ void VKView::CreateView()
 void VKView::CreateImageView()
 {
     vk::ImageViewCreateInfo image_view_desc = {};
-    image_view_desc.image = m_resource->GetImage();
-    image_view_desc.format = static_cast<vk::Format>(m_resource->GetFormat());
-    image_view_desc.viewType = GetImageViewType(m_view_desc.dimension);
+    image_view_desc.image = resource_->GetImage();
+    image_view_desc.format = static_cast<vk::Format>(resource_->GetFormat());
+    image_view_desc.viewType = GetImageViewType(view_desc_.dimension);
     image_view_desc.subresourceRange.baseMipLevel = GetBaseMipLevel();
     image_view_desc.subresourceRange.levelCount = GetLevelCount();
     image_view_desc.subresourceRange.baseArrayLayer = GetBaseArrayLayer();
     image_view_desc.subresourceRange.layerCount = GetLayerCount();
-    image_view_desc.subresourceRange.aspectMask = m_device.GetAspectFlags(image_view_desc.format);
+    image_view_desc.subresourceRange.aspectMask = device_.GetAspectFlags(image_view_desc.format);
 
     if (image_view_desc.subresourceRange.aspectMask &
         (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil)) {
-        if (m_view_desc.plane_slice == 0) {
+        if (view_desc_.plane_slice == 0) {
             image_view_desc.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
         } else {
             image_view_desc.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eStencil;
@@ -129,58 +129,58 @@ void VKView::CreateImageView()
         }
     }
 
-    m_image_view = m_device.GetDevice().createImageViewUnique(image_view_desc);
+    image_view_ = device_.GetDevice().createImageViewUnique(image_view_desc);
 }
 
 void VKView::CreateBufferView()
 {
     vk::BufferViewCreateInfo buffer_view_desc = {};
-    buffer_view_desc.buffer = m_resource->GetBuffer();
-    buffer_view_desc.format = static_cast<vk::Format>(m_view_desc.buffer_format);
-    buffer_view_desc.offset = m_view_desc.offset;
-    buffer_view_desc.range = m_view_desc.buffer_size;
-    m_buffer_view = m_device.GetDevice().createBufferViewUnique(buffer_view_desc);
+    buffer_view_desc.buffer = resource_->GetBuffer();
+    buffer_view_desc.format = static_cast<vk::Format>(view_desc_.buffer_format);
+    buffer_view_desc.offset = view_desc_.offset;
+    buffer_view_desc.range = view_desc_.buffer_size;
+    buffer_view_ = device_.GetDevice().createBufferViewUnique(buffer_view_desc);
 }
 
 std::shared_ptr<Resource> VKView::GetResource()
 {
-    return m_resource;
+    return resource_;
 }
 
 uint32_t VKView::GetDescriptorId() const
 {
-    if (m_range) {
-        return m_range->GetOffset();
+    if (range_) {
+        return range_->GetOffset();
     }
     return -1;
 }
 
 uint32_t VKView::GetBaseMipLevel() const
 {
-    return m_view_desc.base_mip_level;
+    return view_desc_.base_mip_level;
 }
 
 uint32_t VKView::GetLevelCount() const
 {
-    return std::min<uint32_t>(m_view_desc.level_count, m_resource->GetLevelCount() - m_view_desc.base_mip_level);
+    return std::min<uint32_t>(view_desc_.level_count, resource_->GetLevelCount() - view_desc_.base_mip_level);
 }
 
 uint32_t VKView::GetBaseArrayLayer() const
 {
-    return m_view_desc.base_array_layer;
+    return view_desc_.base_array_layer;
 }
 
 uint32_t VKView::GetLayerCount() const
 {
-    return std::min<uint32_t>(m_view_desc.layer_count, m_resource->GetLayerCount() - m_view_desc.base_array_layer);
+    return std::min<uint32_t>(view_desc_.layer_count, resource_->GetLayerCount() - view_desc_.base_array_layer);
 }
 
 vk::ImageView VKView::GetImageView() const
 {
-    return m_image_view.get();
+    return image_view_.get();
 }
 
 vk::WriteDescriptorSet VKView::GetDescriptor() const
 {
-    return m_descriptor;
+    return descriptor_;
 }

@@ -117,7 +117,7 @@ MTLStages ResourceStateToMTLStages(ResourceState state)
 } // namespace
 
 MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
-    : m_device(device)
+    : device_(device)
 {
     Reset();
 }
@@ -125,70 +125,70 @@ MTCommandList::MTCommandList(MTDevice& device, CommandListType type)
 void MTCommandList::Reset()
 {
     Close();
-    m_closed = false;
+    closed_ = false;
 
-    m_command_buffer = [m_device.GetDevice() newCommandBuffer];
-    if (!m_allocator) {
-        m_allocator = [m_device.GetDevice() newCommandAllocator];
+    command_buffer_ = [device_.GetDevice() newCommandBuffer];
+    if (!allocator_) {
+        allocator_ = [device_.GetDevice() newCommandAllocator];
     } else {
-        [m_allocator reset];
+        [allocator_ reset];
     }
-    [m_command_buffer beginCommandBufferWithAllocator:m_allocator];
+    [command_buffer_ beginCommandBufferWithAllocator:allocator_];
 
     CreateArgumentTables();
-    m_residency_set = m_device.CreateResidencySet();
-    [m_command_buffer useResidencySet:m_residency_set];
+    residency_set_ = device_.CreateResidencySet();
+    [command_buffer_ useResidencySet:residency_set_];
 
     static constexpr MTLStages kRenderStages = MTLStageVertex | MTLStageObject | MTLStageMesh | MTLStageFragment;
     static constexpr MTLStages kComputeStages = MTLStageDispatch | MTLStageBlit | MTLStageAccelerationStructure;
 
-    m_render_barrier_after_stages = MTLStageAll;
-    m_render_barrier_before_stages = kRenderStages;
-    m_compute_barrier_after_stages = MTLStageAll;
-    m_compute_barrier_before_stages = kComputeStages;
+    render_barrier_after_stages_ = MTLStageAll;
+    render_barrier_before_stages_ = kRenderStages;
+    compute_barrier_after_stages_ = MTLStageAll;
+    compute_barrier_before_stages_ = kComputeStages;
 }
 
 void MTCommandList::Close()
 {
-    if (m_closed) {
+    if (closed_) {
         return;
     }
 
     CloseComputeEncoder();
 
-    [m_command_buffer endCommandBuffer];
-    m_render_encoder = nullptr;
-    m_index_buffer = nullptr;
-    m_index_buffer_offset = 0;
-    m_index_format = gli::FORMAT_UNDEFINED;
-    m_viewport = {};
-    m_scissor = {};
-    m_state.reset();
-    m_binding_set.reset();
-    m_argument_tables = {};
-    [m_residency_set commit];
-    m_residency_set = nullptr;
-    m_patch_buffers.clear();
-    m_need_apply_state = false;
-    m_need_apply_binding_set = false;
-    m_render_barrier_after_stages = 0;
-    m_render_barrier_before_stages = 0;
-    m_compute_barrier_after_stages = 0;
-    m_compute_barrier_before_stages = 0;
-    m_closed = true;
+    [command_buffer_ endCommandBuffer];
+    render_encoder_ = nullptr;
+    index_buffer_ = nullptr;
+    index_buffer_offset_ = 0;
+    index_format_ = gli::FORMAT_UNDEFINED;
+    viewport_ = {};
+    scissor_ = {};
+    state_.reset();
+    binding_set_.reset();
+    argument_tables_ = {};
+    [residency_set_ commit];
+    residency_set_ = nullptr;
+    patch_buffers_.clear();
+    need_apply_state_ = false;
+    need_apply_binding_set_ = false;
+    render_barrier_after_stages_ = 0;
+    render_barrier_before_stages_ = 0;
+    compute_barrier_after_stages_ = 0;
+    compute_barrier_before_stages_ = 0;
+    closed_ = true;
 }
 
 void MTCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
-    m_state = state;
-    m_need_apply_state = true;
-    m_need_apply_binding_set = true;
+    state_ = state;
+    need_apply_state_ = true;
+    need_apply_binding_set_ = true;
 }
 
 void MTCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
-    m_binding_set = std::static_pointer_cast<MTBindingSet>(binding_set);
-    m_need_apply_binding_set = true;
+    binding_set_ = std::static_pointer_cast<MTBindingSet>(binding_set);
+    need_apply_binding_set_ = true;
 }
 
 void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
@@ -247,25 +247,25 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
     render_pass_descriptor.renderTargetArrayLength = render_pass_desc.layers;
     render_pass_descriptor.defaultRasterSampleCount = render_pass_desc.sample_count;
 
-    m_render_encoder = [m_command_buffer renderCommandEncoderWithDescriptor:render_pass_descriptor];
-    if (m_render_encoder == nullptr) {
+    render_encoder_ = [command_buffer_ renderCommandEncoderWithDescriptor:render_pass_descriptor];
+    if (render_encoder_ == nullptr) {
         Logging::Println("Failed to create MTL4RenderCommandEncoder");
     }
 
-    [m_render_encoder setViewport:m_viewport];
-    [m_render_encoder setScissorRect:m_scissor];
-    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kVertex) atStages:MTLRenderStageVertex];
-    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kPixel) atStages:MTLRenderStageFragment];
-    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kAmplification) atStages:MTLRenderStageObject];
-    [m_render_encoder setArgumentTable:m_argument_tables.at(ShaderType::kMesh) atStages:MTLRenderStageMesh];
+    [render_encoder_ setViewport:viewport_];
+    [render_encoder_ setScissorRect:scissor_];
+    [render_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kVertex) atStages:MTLRenderStageVertex];
+    [render_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kPixel) atStages:MTLRenderStageFragment];
+    [render_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kAmplification) atStages:MTLRenderStageObject];
+    [render_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kMesh) atStages:MTLRenderStageMesh];
 
-    m_need_apply_state = true;
+    need_apply_state_ = true;
 }
 
 void MTCommandList::EndRenderPass()
 {
-    [m_render_encoder endEncoding];
-    m_render_encoder = nullptr;
+    [render_encoder_ endEncoding];
+    render_encoder_ = nullptr;
 }
 
 void MTCommandList::BeginEvent(const std::string& name) {}
@@ -275,11 +275,11 @@ void MTCommandList::EndEvent() {}
 void MTCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
     ApplyGraphicsState();
-    [m_render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
-                         vertexStart:first_vertex
-                         vertexCount:vertex_count
-                       instanceCount:instance_count
-                        baseInstance:first_instance];
+    [render_encoder_ drawPrimitives:MTLPrimitiveTypeTriangle
+                        vertexStart:first_vertex
+                        vertexCount:vertex_count
+                      instanceCount:instance_count
+                       baseInstance:first_instance];
 }
 
 void MTCommandList::DrawIndexed(uint32_t index_count,
@@ -289,17 +289,16 @@ void MTCommandList::DrawIndexed(uint32_t index_count,
                                 uint32_t first_instance)
 {
     ApplyGraphicsState();
-    MTLIndexType index_format = ConvertIndexType(m_index_format);
+    MTLIndexType index_format = ConvertIndexType(index_format_);
     const uint32_t index_stride = index_format == MTLIndexTypeUInt32 ? 4 : 2;
-    [m_render_encoder
-        drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                   indexCount:index_count
-                    indexType:index_format
-                  indexBuffer:m_index_buffer.gpuAddress + m_index_buffer_offset + index_stride * first_index
-            indexBufferLength:m_index_buffer.length - m_index_buffer_offset - index_stride * first_index
-                instanceCount:instance_count
-                   baseVertex:vertex_offset
-                 baseInstance:first_instance];
+    [render_encoder_ drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                indexCount:index_count
+                                 indexType:index_format
+                               indexBuffer:index_buffer_.gpuAddress + index_buffer_offset_ + index_stride * first_index
+                         indexBufferLength:index_buffer_.length - index_buffer_offset_ - index_stride * first_index
+                             instanceCount:instance_count
+                                baseVertex:vertex_offset
+                              baseInstance:first_instance];
 }
 
 void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
@@ -307,8 +306,8 @@ void MTCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffe
     ApplyGraphicsState();
     decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().GetBuffer();
     AddAllocation(mt_argument_buffer);
-    [m_render_encoder drawPrimitives:MTLPrimitiveTypeTriangle
-                      indirectBuffer:mt_argument_buffer.gpuAddress + argument_buffer_offset];
+    [render_encoder_ drawPrimitives:MTLPrimitiveTypeTriangle
+                     indirectBuffer:mt_argument_buffer.gpuAddress + argument_buffer_offset];
 }
 
 void MTCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argument_buffer,
@@ -317,12 +316,12 @@ void MTCommandList::DrawIndexedIndirect(const std::shared_ptr<Resource>& argumen
     ApplyGraphicsState();
     decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().GetBuffer();
     AddAllocation(mt_argument_buffer);
-    MTLIndexType index_format = ConvertIndexType(m_index_format);
-    [m_render_encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                  indexType:index_format
-                                indexBuffer:m_index_buffer.gpuAddress + m_index_buffer_offset
-                          indexBufferLength:m_index_buffer.length - m_index_buffer_offset
-                             indirectBuffer:mt_argument_buffer.gpuAddress + argument_buffer_offset];
+    MTLIndexType index_format = ConvertIndexType(index_format_);
+    [render_encoder_ drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                 indexType:index_format
+                               indexBuffer:index_buffer_.gpuAddress + index_buffer_offset_
+                         indexBufferLength:index_buffer_.length - index_buffer_offset_
+                            indirectBuffer:mt_argument_buffer.gpuAddress + argument_buffer_offset];
 }
 
 void MTCommandList::DrawIndirectCount(const std::shared_ptr<Resource>& argument_buffer,
@@ -349,26 +348,26 @@ void MTCommandList::Dispatch(uint32_t thread_group_count_x,
                              uint32_t thread_group_count_y,
                              uint32_t thread_group_count_z)
 {
-    decltype(auto) mt_state = m_state->As<MTComputePipeline>();
+    decltype(auto) mt_state = state_->As<MTComputePipeline>();
     MTLSize threadgroups_per_grid = { thread_group_count_x, thread_group_count_y, thread_group_count_z };
 
     OpenComputeEncoder();
     ApplyComputeState();
     AddComputeBarriers();
-    [m_compute_encoder dispatchThreadgroups:threadgroups_per_grid threadsPerThreadgroup:mt_state.GetNumthreads()];
+    [compute_encoder_ dispatchThreadgroups:threadgroups_per_grid threadsPerThreadgroup:mt_state.GetNumthreads()];
 }
 
 void MTCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
 {
     decltype(auto) mt_argument_buffer = argument_buffer->As<MTResource>().GetBuffer();
-    decltype(auto) mt_state = m_state->As<MTComputePipeline>();
+    decltype(auto) mt_state = state_->As<MTComputePipeline>();
     AddAllocation(mt_argument_buffer);
 
     OpenComputeEncoder();
     ApplyComputeState();
     AddComputeBarriers();
-    [m_compute_encoder dispatchThreadgroupsWithIndirectBuffer:mt_argument_buffer.gpuAddress + argument_buffer_offset
-                                        threadsPerThreadgroup:mt_state.GetNumthreads()];
+    [compute_encoder_ dispatchThreadgroupsWithIndirectBuffer:mt_argument_buffer.gpuAddress + argument_buffer_offset
+                                       threadsPerThreadgroup:mt_state.GetNumthreads()];
 }
 
 void MTCommandList::DispatchMesh(uint32_t thread_group_count_x,
@@ -376,10 +375,10 @@ void MTCommandList::DispatchMesh(uint32_t thread_group_count_x,
                                  uint32_t thread_group_count_z)
 {
     ApplyGraphicsState();
-    decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
-    [m_render_encoder drawMeshThreadgroups:MTLSizeMake(thread_group_count_x, thread_group_count_y, thread_group_count_z)
-               threadsPerObjectThreadgroup:mt_state.GetAmplificationNumthreads()
-                 threadsPerMeshThreadgroup:mt_state.GetMeshNumthreads()];
+    decltype(auto) mt_state = state_->As<MTGraphicsPipeline>();
+    [render_encoder_ drawMeshThreadgroups:MTLSizeMake(thread_group_count_x, thread_group_count_y, thread_group_count_z)
+              threadsPerObjectThreadgroup:mt_state.GetAmplificationNumthreads()
+                threadsPerMeshThreadgroup:mt_state.GetMeshNumthreads()];
 }
 
 void MTCommandList::DispatchRays(const RayTracingShaderTables& shader_tables,
@@ -393,66 +392,66 @@ void MTCommandList::DispatchRays(const RayTracingShaderTables& shader_tables,
 void MTCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
 {
     for (const auto& barrier : barriers) {
-        m_render_barrier_after_stages |= ResourceStateToMTLStages(barrier.state_after);
-        m_render_barrier_before_stages |= ResourceStateToMTLStages(barrier.state_before);
-        m_compute_barrier_after_stages |= ResourceStateToMTLStages(barrier.state_after);
-        m_compute_barrier_before_stages |= ResourceStateToMTLStages(barrier.state_before);
+        render_barrier_after_stages_ |= ResourceStateToMTLStages(barrier.state_after);
+        render_barrier_before_stages_ |= ResourceStateToMTLStages(barrier.state_before);
+        compute_barrier_after_stages_ |= ResourceStateToMTLStages(barrier.state_after);
+        compute_barrier_before_stages_ |= ResourceStateToMTLStages(barrier.state_before);
     }
 }
 
 void MTCommandList::UAVResourceBarrier(const std::shared_ptr<Resource>& /*resource*/)
 {
-    m_render_barrier_after_stages |= MTLStageVertex | MTLStageObject | MTLStageMesh | MTLStageFragment;
-    m_render_barrier_before_stages |= MTLStageVertex | MTLStageObject | MTLStageMesh | MTLStageFragment;
-    m_compute_barrier_after_stages |= MTLStageDispatch;
-    m_compute_barrier_before_stages |= MTLStageDispatch;
+    render_barrier_after_stages_ |= MTLStageVertex | MTLStageObject | MTLStageMesh | MTLStageFragment;
+    render_barrier_before_stages_ |= MTLStageVertex | MTLStageObject | MTLStageMesh | MTLStageFragment;
+    compute_barrier_after_stages_ |= MTLStageDispatch;
+    compute_barrier_before_stages_ |= MTLStageDispatch;
 }
 
 void MTCommandList::SetViewport(float x, float y, float width, float height)
 {
-    m_viewport.originX = x;
-    m_viewport.originY = y;
-    m_viewport.width = width;
-    m_viewport.height = height;
-    m_viewport.znear = 0.0;
-    m_viewport.zfar = 1.0;
+    viewport_.originX = x;
+    viewport_.originY = y;
+    viewport_.width = width;
+    viewport_.height = height;
+    viewport_.znear = 0.0;
+    viewport_.zfar = 1.0;
 
-    if (!m_render_encoder) {
+    if (!render_encoder_) {
         return;
     }
 
-    [m_render_encoder setViewport:m_viewport];
+    [render_encoder_ setViewport:viewport_];
 }
 
 void MTCommandList::SetScissorRect(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom)
 {
-    m_scissor.x = left;
-    m_scissor.y = top;
-    m_scissor.width = right - left;
-    m_scissor.height = bottom - top;
+    scissor_.x = left;
+    scissor_.y = top;
+    scissor_.width = right - left;
+    scissor_.height = bottom - top;
 
-    if (!m_render_encoder) {
+    if (!render_encoder_) {
         return;
     }
 
-    [m_render_encoder setScissorRect:m_scissor];
+    [render_encoder_ setScissorRect:scissor_];
 }
 
 void MTCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format)
 {
     decltype(auto) index_buffer = resource->As<MTResource>().GetBuffer();
     AddAllocation(index_buffer);
-    m_index_buffer = index_buffer;
-    m_index_buffer_offset = offset;
-    m_index_format = format;
+    index_buffer_ = index_buffer;
+    index_buffer_offset_ = offset;
+    index_format_ = format;
 }
 
 void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset)
 {
     decltype(auto) vertex = resource->As<MTResource>().GetBuffer();
     AddAllocation(vertex);
-    uint32_t index = m_device.GetMaxPerStageBufferCount() - slot - 1;
-    [m_argument_tables.at(ShaderType::kVertex) setAddress:vertex.gpuAddress + offset atIndex:index];
+    uint32_t index = device_.GetMaxPerStageBufferCount() - slot - 1;
+    [argument_tables_.at(ShaderType::kVertex) setAddress:vertex.gpuAddress + offset atIndex:index];
 }
 
 void MTCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
@@ -485,11 +484,10 @@ void MTCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
 
     OpenComputeEncoder();
     AddComputeBarriers();
-    [m_compute_encoder
-        buildAccelerationStructure:mt_dst.GetAccelerationStructure()
-                        descriptor:acceleration_structure_desc
-                     scratchBuffer:MTL4BufferRangeMake(mt_scratch.GetBuffer().gpuAddress + scratch_offset,
-                                                       mt_scratch.GetBuffer().length - scratch_offset)];
+    [compute_encoder_ buildAccelerationStructure:mt_dst.GetAccelerationStructure()
+                                      descriptor:acceleration_structure_desc
+                                   scratchBuffer:MTL4BufferRangeMake(mt_scratch.GetBuffer().gpuAddress + scratch_offset,
+                                                                     mt_scratch.GetBuffer().length - scratch_offset)];
 }
 
 // TODO: patch on GPU
@@ -499,7 +497,7 @@ id<MTLBuffer> MTCommandList::PatchInstanceData(const std::shared_ptr<Resource>& 
 {
     MTLResourceOptions buffer_options = MTLStorageModeShared << MTLResourceStorageModeShift;
     NSUInteger buffer_size = instance_count * sizeof(MTLIndirectAccelerationStructureInstanceDescriptor);
-    id<MTLBuffer> buffer = [m_device.GetDevice() newBufferWithLength:buffer_size options:buffer_options];
+    id<MTLBuffer> buffer = [device_.GetDevice() newBufferWithLength:buffer_size options:buffer_options];
     AddAllocation(buffer);
 
     uint8_t* instance_ptr =
@@ -536,7 +534,7 @@ void MTCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
     acceleration_structure_desc.instanceDescriptorBuffer =
         MTL4BufferRangeMake(patched_instance_data.gpuAddress, patched_instance_data.length);
     acceleration_structure_desc.instanceDescriptorType = MTLAccelerationStructureInstanceDescriptorTypeIndirect;
-    m_patch_buffers.push_back(patched_instance_data);
+    patch_buffers_.push_back(patched_instance_data);
 
     decltype(auto) mt_dst = dst->As<MTResource>();
     decltype(auto) mt_scratch = scratch->As<MTResource>();
@@ -545,11 +543,10 @@ void MTCommandList::BuildTopLevelAS(const std::shared_ptr<Resource>& src,
 
     OpenComputeEncoder();
     AddComputeBarriers();
-    [m_compute_encoder
-        buildAccelerationStructure:mt_dst.GetAccelerationStructure()
-                        descriptor:acceleration_structure_desc
-                     scratchBuffer:MTL4BufferRangeMake(mt_scratch.GetBuffer().gpuAddress + scratch_offset,
-                                                       mt_scratch.GetBuffer().length - scratch_offset)];
+    [compute_encoder_ buildAccelerationStructure:mt_dst.GetAccelerationStructure()
+                                      descriptor:acceleration_structure_desc
+                                   scratchBuffer:MTL4BufferRangeMake(mt_scratch.GetBuffer().gpuAddress + scratch_offset,
+                                                                     mt_scratch.GetBuffer().length - scratch_offset)];
 }
 
 void MTCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& src,
@@ -564,12 +561,12 @@ void MTCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
     AddAllocation(mt_dst_acceleration_structure);
     switch (mode) {
     case CopyAccelerationStructureMode::kClone:
-        [m_compute_encoder copyAccelerationStructure:mt_src_acceleration_structure
-                             toAccelerationStructure:mt_dst_acceleration_structure];
+        [compute_encoder_ copyAccelerationStructure:mt_src_acceleration_structure
+                            toAccelerationStructure:mt_dst_acceleration_structure];
         break;
     case CopyAccelerationStructureMode::kCompact:
-        [m_compute_encoder copyAndCompactAccelerationStructure:mt_src_acceleration_structure
-                                       toAccelerationStructure:mt_dst_acceleration_structure];
+        [compute_encoder_ copyAndCompactAccelerationStructure:mt_src_acceleration_structure
+                                      toAccelerationStructure:mt_dst_acceleration_structure];
         break;
     default:
         NOTREACHED();
@@ -587,11 +584,11 @@ void MTCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
     AddAllocation(mt_dst_buffer.GetBuffer());
     AddComputeBarriers();
     for (const auto& region : regions) {
-        [m_compute_encoder copyFromBuffer:mt_src_buffer.GetBuffer()
-                             sourceOffset:region.src_offset
-                                 toBuffer:mt_dst_buffer.GetBuffer()
-                        destinationOffset:region.dst_offset
-                                     size:region.num_bytes];
+        [compute_encoder_ copyFromBuffer:mt_src_buffer.GetBuffer()
+                            sourceOffset:region.src_offset
+                                toBuffer:mt_dst_buffer.GetBuffer()
+                       destinationOffset:region.dst_offset
+                                    size:region.num_bytes];
     }
 }
 
@@ -618,16 +615,16 @@ void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
         }
         MTLSize region_size = { region.texture_extent.width, region.texture_extent.height,
                                 region.texture_extent.depth };
-        [m_compute_encoder copyFromBuffer:mt_src_buffer.GetBuffer()
-                             sourceOffset:region.buffer_offset
-                        sourceBytesPerRow:region.buffer_row_pitch
-                      sourceBytesPerImage:bytes_per_image
-                               sourceSize:region_size
-                                toTexture:mt_dst_texture.GetTexture()
-                         destinationSlice:region.texture_array_layer
-                         destinationLevel:region.texture_mip_level
-                        destinationOrigin:{ (uint32_t)region.texture_offset.x, (uint32_t)region.texture_offset.y,
-                                            (uint32_t)region.texture_offset.z }];
+        [compute_encoder_ copyFromBuffer:mt_src_buffer.GetBuffer()
+                            sourceOffset:region.buffer_offset
+                       sourceBytesPerRow:region.buffer_row_pitch
+                     sourceBytesPerImage:bytes_per_image
+                              sourceSize:region_size
+                               toTexture:mt_dst_texture.GetTexture()
+                        destinationSlice:region.texture_array_layer
+                        destinationLevel:region.texture_mip_level
+                       destinationOrigin:{ (uint32_t)region.texture_offset.x, (uint32_t)region.texture_offset.y,
+                                           (uint32_t)region.texture_offset.z }];
     }
 }
 
@@ -648,15 +645,15 @@ void MTCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture,
                                  (uint32_t)region.src_offset.z };
         MTLOrigin dst_origin = { (uint32_t)region.dst_offset.x, (uint32_t)region.dst_offset.y,
                                  (uint32_t)region.dst_offset.z };
-        [m_compute_encoder copyFromTexture:mt_src_texture.GetTexture()
-                               sourceSlice:region.src_array_layer
-                               sourceLevel:region.src_mip_level
-                              sourceOrigin:src_origin
-                                sourceSize:region_size
-                                 toTexture:mt_dst_texture.GetTexture()
-                          destinationSlice:region.dst_array_layer
-                          destinationLevel:region.dst_mip_level
-                         destinationOrigin:dst_origin];
+        [compute_encoder_ copyFromTexture:mt_src_texture.GetTexture()
+                              sourceSlice:region.src_array_layer
+                              sourceLevel:region.src_mip_level
+                             sourceOrigin:src_origin
+                               sourceSize:region_size
+                                toTexture:mt_dst_texture.GetTexture()
+                         destinationSlice:region.dst_array_layer
+                         destinationLevel:region.dst_mip_level
+                        destinationOrigin:dst_origin];
     }
 }
 
@@ -673,7 +670,7 @@ void MTCommandList::WriteAccelerationStructuresProperties(
         id<MTLAccelerationStructure> mt_acceleration_structure =
             acceleration_structures[i]->As<MTResource>().GetAccelerationStructure();
         AddAllocation(mt_acceleration_structure);
-        [m_compute_encoder
+        [compute_encoder_
             writeCompactedAccelerationStructureSize:mt_acceleration_structure
                                            toBuffer:MTL4BufferRangeMake(mt_query_buffer.gpuAddress +
                                                                             (first_query + i) * sizeof(uint64_t),
@@ -687,10 +684,10 @@ void MTCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
                                      const std::shared_ptr<Resource>& dst_buffer,
                                      uint64_t dst_offset)
 {
-    if (m_compute_encoder) {
-        [m_compute_encoder barrierAfterEncoderStages:MTLStageAccelerationStructure
-                                 beforeEncoderStages:MTLStageBlit
-                                   visibilityOptions:MTL4VisibilityOptionNone];
+    if (compute_encoder_) {
+        [compute_encoder_ barrierAfterEncoderStages:MTLStageAccelerationStructure
+                                beforeEncoderStages:MTLStageBlit
+                                  visibilityOptions:MTL4VisibilityOptionNone];
     } else {
         OpenComputeEncoder();
     }
@@ -699,53 +696,53 @@ void MTCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
     id<MTLBuffer> mt_dst_buffer = dst_buffer->As<MTResource>().GetBuffer();
     AddAllocation(mt_query_buffer);
     AddAllocation(mt_dst_buffer);
-    [m_compute_encoder copyFromBuffer:mt_query_buffer
-                         sourceOffset:first_query * sizeof(uint64_t)
-                             toBuffer:mt_dst_buffer
-                    destinationOffset:dst_offset
-                                 size:sizeof(uint64_t) * query_count];
+    [compute_encoder_ copyFromBuffer:mt_query_buffer
+                        sourceOffset:first_query * sizeof(uint64_t)
+                            toBuffer:mt_dst_buffer
+                   destinationOffset:dst_offset
+                                size:sizeof(uint64_t) * query_count];
 }
 
 void MTCommandList::SetName(const std::string& name)
 {
-    m_command_buffer.label = [NSString stringWithUTF8String:name.c_str()];
+    command_buffer_.label = [NSString stringWithUTF8String:name.c_str()];
 }
 
 id<MTL4CommandBuffer> MTCommandList::GetCommandBuffer()
 {
-    return m_command_buffer;
+    return command_buffer_;
 }
 
 void MTCommandList::ApplyComputeState()
 {
-    if (m_need_apply_binding_set && m_binding_set) {
-        m_binding_set->Apply(m_argument_tables, m_state, m_residency_set);
-        m_need_apply_binding_set = false;
+    if (need_apply_binding_set_ && binding_set_) {
+        binding_set_->Apply(argument_tables_, state_, residency_set_);
+        need_apply_binding_set_ = false;
     }
 
-    if (m_need_apply_state) {
-        assert(m_state->GetPipelineType() == PipelineType::kCompute);
-        decltype(auto) mt_state = m_state->As<MTComputePipeline>();
-        [m_compute_encoder setComputePipelineState:mt_state.GetPipeline()];
+    if (need_apply_state_) {
+        assert(state_->GetPipelineType() == PipelineType::kCompute);
+        decltype(auto) mt_state = state_->As<MTComputePipeline>();
+        [compute_encoder_ setComputePipelineState:mt_state.GetPipeline()];
     }
 }
 
 void MTCommandList::ApplyGraphicsState()
 {
-    if (m_need_apply_binding_set && m_binding_set) {
-        m_binding_set->Apply(m_argument_tables, m_state, m_residency_set);
-        m_need_apply_binding_set = false;
+    if (need_apply_binding_set_ && binding_set_) {
+        binding_set_->Apply(argument_tables_, state_, residency_set_);
+        need_apply_binding_set_ = false;
     }
 
-    if (m_need_apply_state) {
-        assert(m_state->GetPipelineType() == PipelineType::kGraphics);
-        decltype(auto) mt_state = m_state->As<MTGraphicsPipeline>();
+    if (need_apply_state_) {
+        assert(state_->GetPipelineType() == PipelineType::kGraphics);
+        decltype(auto) mt_state = state_->As<MTGraphicsPipeline>();
         decltype(auto) rasterizer_desc = mt_state.GetDesc().rasterizer_desc;
-        [m_render_encoder setRenderPipelineState:mt_state.GetPipeline()];
-        [m_render_encoder setDepthStencilState:mt_state.GetDepthStencil()];
-        [m_render_encoder setDepthBias:rasterizer_desc.depth_bias slopeScale:0 clamp:0];
-        [m_render_encoder setCullMode:ConvertCullMode(rasterizer_desc.cull_mode)];
-        m_need_apply_state = false;
+        [render_encoder_ setRenderPipelineState:mt_state.GetPipeline()];
+        [render_encoder_ setDepthStencilState:mt_state.GetDepthStencil()];
+        [render_encoder_ setDepthBias:rasterizer_desc.depth_bias slopeScale:0 clamp:0];
+        [render_encoder_ setCullMode:ConvertCullMode(rasterizer_desc.cull_mode)];
+        need_apply_state_ = false;
     }
 
     AddGraphicsBarriers();
@@ -753,58 +750,58 @@ void MTCommandList::ApplyGraphicsState()
 
 void MTCommandList::AddGraphicsBarriers()
 {
-    if (m_render_barrier_after_stages && m_render_barrier_before_stages) {
-        [m_render_encoder barrierAfterQueueStages:m_render_barrier_after_stages
-                                     beforeStages:m_render_barrier_before_stages
-                                visibilityOptions:MTL4VisibilityOptionNone];
-        m_render_barrier_after_stages = 0;
-        m_render_barrier_before_stages = 0;
+    if (render_barrier_after_stages_ && render_barrier_before_stages_) {
+        [render_encoder_ barrierAfterQueueStages:render_barrier_after_stages_
+                                    beforeStages:render_barrier_before_stages_
+                               visibilityOptions:MTL4VisibilityOptionNone];
+        render_barrier_after_stages_ = 0;
+        render_barrier_before_stages_ = 0;
     }
 }
 
 void MTCommandList::AddComputeBarriers()
 {
-    if (m_compute_barrier_after_stages && m_compute_barrier_before_stages) {
-        [m_compute_encoder barrierAfterQueueStages:m_compute_barrier_after_stages
-                                      beforeStages:m_compute_barrier_before_stages
-                                 visibilityOptions:MTL4VisibilityOptionNone];
-        m_compute_barrier_after_stages = 0;
-        m_compute_barrier_before_stages = 0;
+    if (compute_barrier_after_stages_ && compute_barrier_before_stages_) {
+        [compute_encoder_ barrierAfterQueueStages:compute_barrier_after_stages_
+                                     beforeStages:compute_barrier_before_stages_
+                                visibilityOptions:MTL4VisibilityOptionNone];
+        compute_barrier_after_stages_ = 0;
+        compute_barrier_before_stages_ = 0;
     }
 }
 
 void MTCommandList::CreateArgumentTables()
 {
-    m_argument_tables[ShaderType::kVertex] = CreateArgumentTable(m_device);
-    m_argument_tables[ShaderType::kPixel] = CreateArgumentTable(m_device);
-    m_argument_tables[ShaderType::kAmplification] = CreateArgumentTable(m_device);
-    m_argument_tables[ShaderType::kMesh] = CreateArgumentTable(m_device);
-    m_argument_tables[ShaderType::kCompute] = CreateArgumentTable(m_device);
+    argument_tables_[ShaderType::kVertex] = CreateArgumentTable(device_);
+    argument_tables_[ShaderType::kPixel] = CreateArgumentTable(device_);
+    argument_tables_[ShaderType::kAmplification] = CreateArgumentTable(device_);
+    argument_tables_[ShaderType::kMesh] = CreateArgumentTable(device_);
+    argument_tables_[ShaderType::kCompute] = CreateArgumentTable(device_);
 }
 
 void MTCommandList::AddAllocation(id<MTLAllocation> allocation)
 {
-    [m_residency_set addAllocation:allocation];
+    [residency_set_ addAllocation:allocation];
 }
 
 void MTCommandList::OpenComputeEncoder()
 {
-    if (m_compute_encoder) {
+    if (compute_encoder_) {
         return;
     }
 
-    assert(!m_render_encoder);
-    m_compute_encoder = [m_command_buffer computeCommandEncoder];
-    [m_compute_encoder setArgumentTable:m_argument_tables.at(ShaderType::kCompute)];
-    m_need_apply_state = true;
+    assert(!render_encoder_);
+    compute_encoder_ = [command_buffer_ computeCommandEncoder];
+    [compute_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kCompute)];
+    need_apply_state_ = true;
 }
 
 void MTCommandList::CloseComputeEncoder()
 {
-    if (!m_compute_encoder) {
+    if (!compute_encoder_) {
         return;
     }
 
-    [m_compute_encoder endEncoding];
-    m_compute_encoder = nullptr;
+    [compute_encoder_ endEncoding];
+    compute_encoder_ = nullptr;
 }

@@ -26,40 +26,40 @@ public:
 private:
     void WaitForIdle();
 
-    Settings m_settings;
-    std::shared_ptr<Instance> m_instance;
-    std::shared_ptr<Adapter> m_adapter;
-    std::shared_ptr<Device> m_device;
-    std::shared_ptr<CommandQueue> m_command_queue;
-    uint64_t m_fence_value = 0;
-    std::shared_ptr<Fence> m_fence;
-    std::shared_ptr<Shader> m_mesh_shader;
-    std::shared_ptr<Shader> m_pixel_shader;
-    std::shared_ptr<BindingSetLayout> m_layout;
+    Settings settings_;
+    std::shared_ptr<Instance> instance_;
+    std::shared_ptr<Adapter> adapter_;
+    std::shared_ptr<Device> device_;
+    std::shared_ptr<CommandQueue> command_queue_;
+    uint64_t fence_value_ = 0;
+    std::shared_ptr<Fence> fence_;
+    std::shared_ptr<Shader> mesh_shader_;
+    std::shared_ptr<Shader> pixel_shader_;
+    std::shared_ptr<BindingSetLayout> layout_;
 
-    std::shared_ptr<Swapchain> m_swapchain;
-    std::shared_ptr<Pipeline> m_pipeline;
-    std::array<std::shared_ptr<View>, kFrameCount> m_back_buffer_views = {};
-    std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
-    std::array<uint64_t, kFrameCount> m_fence_values = {};
+    std::shared_ptr<Swapchain> swapchain_;
+    std::shared_ptr<Pipeline> pipeline_;
+    std::array<std::shared_ptr<View>, kFrameCount> back_buffer_views_ = {};
+    std::array<std::shared_ptr<CommandList>, kFrameCount> command_lists_ = {};
+    std::array<uint64_t, kFrameCount> fence_values_ = {};
 };
 
 MeshTriangleRenderer::MeshTriangleRenderer(const Settings& settings)
-    : m_settings(settings)
+    : settings_(settings)
 {
-    m_instance = CreateInstance(m_settings.api_type);
-    m_adapter = std::move(m_instance->EnumerateAdapters()[m_settings.required_gpu_index]);
-    m_device = m_adapter->CreateDevice();
-    CHECK(m_device->IsMeshShadingSupported(), "Mesh Shading is not supported");
-    m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
-    m_fence = m_device->CreateFence(m_fence_value);
+    instance_ = CreateInstance(settings_.api_type);
+    adapter_ = std::move(instance_->EnumerateAdapters()[settings_.required_gpu_index]);
+    device_ = adapter_->CreateDevice();
+    CHECK(device_->IsMeshShadingSupported(), "Mesh Shading is not supported");
+    command_queue_ = device_->GetCommandQueue(CommandListType::kGraphics);
+    fence_ = device_->CreateFence(fence_value_);
 
-    ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
+    ShaderBlobType blob_type = device_->GetSupportedShaderBlobType();
     std::vector<uint8_t> mesh_blob = AssetLoadShaderBlob("assets/MeshTriangle/MeshShader.hlsl", blob_type);
     std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob("assets/MeshTriangle/PixelShader.hlsl", blob_type);
-    m_mesh_shader = m_device->CreateShader(mesh_blob, blob_type, ShaderType::kMesh);
-    m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
-    m_layout = m_device->CreateBindingSetLayout({});
+    mesh_shader_ = device_->CreateShader(mesh_blob, blob_type, ShaderType::kMesh);
+    pixel_shader_ = device_->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
+    layout_ = device_->CreateBindingSetLayout({});
 }
 
 MeshTriangleRenderer::~MeshTriangleRenderer()
@@ -69,33 +69,32 @@ MeshTriangleRenderer::~MeshTriangleRenderer()
 
 void MeshTriangleRenderer::Init(const AppSize& app_size, const NativeSurface& surface)
 {
-    m_swapchain =
-        m_device->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
+    swapchain_ = device_->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, settings_.vsync);
 
     GraphicsPipelineDesc pipeline_desc = {
-        .shaders = { m_mesh_shader, m_pixel_shader },
-        .layout = m_layout,
-        .color_formats = { m_swapchain->GetFormat() },
+        .shaders = { mesh_shader_, pixel_shader_ },
+        .layout = layout_,
+        .color_formats = { swapchain_->GetFormat() },
     };
-    m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
+    pipeline_ = device_->CreateGraphicsPipeline(pipeline_desc);
 
     for (uint32_t i = 0; i < kFrameCount; ++i) {
-        std::shared_ptr<Resource> back_buffer = m_swapchain->GetBackBuffer(i);
+        std::shared_ptr<Resource> back_buffer = swapchain_->GetBackBuffer(i);
         ViewDesc back_buffer_view_desc = {
             .view_type = ViewType::kRenderTarget,
             .dimension = ViewDimension::kTexture2D,
         };
-        m_back_buffer_views[i] = m_device->CreateView(back_buffer, back_buffer_view_desc);
+        back_buffer_views_[i] = device_->CreateView(back_buffer, back_buffer_view_desc);
 
-        auto& command_list = m_command_lists[i];
-        command_list = m_device->CreateCommandList(CommandListType::kGraphics);
-        command_list->BindPipeline(m_pipeline);
+        auto& command_list = command_lists_[i];
+        command_list = device_->CreateCommandList(CommandListType::kGraphics);
+        command_list->BindPipeline(pipeline_);
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         RenderPassDesc render_pass_desc = {
             .render_area = { 0, 0, app_size.width(), app_size.height() },
-            .colors = { { .view = m_back_buffer_views[i],
+            .colors = { { .view = back_buffer_views_[i],
                           .load_op = RenderPassLoadOp::kClear,
                           .store_op = RenderPassStoreOp::kStore,
                           .clear_value = glm::vec4(0.0, 0.2, 0.4, 1.0) } },
@@ -112,20 +111,20 @@ void MeshTriangleRenderer::Resize(const AppSize& app_size, const NativeSurface& 
 {
     WaitForIdle();
     for (uint32_t i = 0; i < kFrameCount; ++i) {
-        m_back_buffer_views[i].reset();
+        back_buffer_views_[i].reset();
     }
-    m_swapchain.reset();
+    swapchain_.reset();
     Init(app_size, surface);
 }
 
 void MeshTriangleRenderer::Render()
 {
-    uint32_t frame_index = m_swapchain->NextImage(m_fence, ++m_fence_value);
-    m_command_queue->Wait(m_fence, m_fence_value);
-    m_fence->Wait(m_fence_values[frame_index]);
-    m_command_queue->ExecuteCommandLists({ m_command_lists[frame_index] });
-    m_command_queue->Signal(m_fence, m_fence_values[frame_index] = ++m_fence_value);
-    m_swapchain->Present(m_fence, m_fence_values[frame_index]);
+    uint32_t frame_index = swapchain_->NextImage(fence_, ++fence_value_);
+    command_queue_->Wait(fence_, fence_value_);
+    fence_->Wait(fence_values_[frame_index]);
+    command_queue_->ExecuteCommandLists({ command_lists_[frame_index] });
+    command_queue_->Signal(fence_, fence_values_[frame_index] = ++fence_value_);
+    swapchain_->Present(fence_, fence_values_[frame_index]);
 }
 
 std::string_view MeshTriangleRenderer::GetTitle() const
@@ -135,18 +134,18 @@ std::string_view MeshTriangleRenderer::GetTitle() const
 
 const std::string& MeshTriangleRenderer::GetGpuName() const
 {
-    return m_adapter->GetName();
+    return adapter_->GetName();
 }
 
 const Settings& MeshTriangleRenderer::GetSettings() const
 {
-    return m_settings;
+    return settings_;
 }
 
 void MeshTriangleRenderer::WaitForIdle()
 {
-    m_command_queue->Signal(m_fence, ++m_fence_value);
-    m_fence->Wait(m_fence_value);
+    command_queue_->Signal(fence_, ++fence_value_);
+    fence_->Wait(fence_value_);
 }
 
 int main(int argc, char* argv[])

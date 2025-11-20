@@ -7,13 +7,13 @@
 #include <directx/d3dx12.h>
 
 DXRayTracingQueryHeap::DXRayTracingQueryHeap(DXDevice& device, QueryHeapType type, uint32_t count)
-    : m_device(device)
+    : device_(device)
 {
     auto desc = CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(uint64_t));
     desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     auto heap_properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    m_device.GetDevice()->CreateCommittedResource(&heap_properties, D3D12_HEAP_FLAG_NONE, &desc,
-                                                  D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&m_resource));
+    device_.GetDevice()->CreateCommittedResource(&heap_properties, D3D12_HEAP_FLAG_NONE, &desc,
+                                                 D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&resource_));
 }
 
 QueryHeapType DXRayTracingQueryHeap::GetType() const
@@ -23,5 +23,5 @@ QueryHeapType DXRayTracingQueryHeap::GetType() const
 
 ID3D12Resource* DXRayTracingQueryHeap::GetResource() const
 {
-    return m_resource.Get();
+    return resource_.Get();
 }

@@ -27,18 +27,18 @@ public:
     void Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value) override;
 
 private:
-    VKCommandQueue& m_command_queue;
-    VKDevice& m_device;
-    vk::UniqueSurfaceKHR m_surface;
-    vk::Format m_swapchain_color_format = vk::Format::eUndefined;
-    vk::UniqueSwapchainKHR m_swapchain;
-    std::vector<std::shared_ptr<Resource>> m_back_buffers;
-    uint32_t m_frame_index = 0;
-    std::shared_ptr<CommandList> m_command_list;
-    uint64_t m_fence_value = 0;
-    std::shared_ptr<Fence> m_swapchain_fence;
-    uint32_t m_image_available_fence_index = 0;
-    std::vector<uint64_t> m_image_available_fence_values;
-    std::vector<vk::UniqueSemaphore> m_image_available_semaphores;
-    std::vector<vk::UniqueSemaphore> m_rendering_finished_semaphores;
+    VKCommandQueue& command_queue_;
+    VKDevice& device_;
+    vk::UniqueSurfaceKHR surface_;
+    vk::Format swapchain_color_format_ = vk::Format::eUndefined;
+    vk::UniqueSwapchainKHR swapchain_;
+    std::vector<std::shared_ptr<Resource>> back_buffers_;
+    uint32_t frame_index_ = 0;
+    std::shared_ptr<CommandList> command_list_;
+    uint64_t fence_value_ = 0;
+    std::shared_ptr<Fence> swapchain_fence_;
+    uint32_t image_available_fence_index_ = 0;
+    std::vector<uint64_t> image_available_fence_values_;
+    std::vector<vk::UniqueSemaphore> image_available_semaphores_;
+    std::vector<vk::UniqueSemaphore> rendering_finished_semaphores_;
 };

@@ -46,29 +46,29 @@ glm::vec3 ToVec3(const aiVector3D& vector)
 class ModelLoader {
 public:
     ModelLoader(const std::string& path, Model& model)
-        : m_path(path)
+        : path_(path)
     {
-        m_importer.SetIOHandler(new MyIOSystem());
-        m_scene =
-            m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
-                                          aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_OptimizeMeshes);
-        assert(m_scene);
-        assert(m_scene->mRootNode);
-        assert(m_scene->mFlags != AI_SCENE_FLAGS_INCOMPLETE);
+        importer_.SetIOHandler(new MyIOSystem());
+        scene_ =
+            importer_.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
+                                         aiProcess_FlipUVs | aiProcess_FlipWindingOrder | aiProcess_OptimizeMeshes);
+        assert(scene_);
+        assert(scene_->mRootNode);
+        assert(scene_->mFlags != AI_SCENE_FLAGS_INCOMPLETE);
         ProcessScene(model);
     }
 
 private:
     void ProcessScene(Model& model)
     {
-        ProcessNode(m_scene->mRootNode, glm::mat4(1.0), model);
+        ProcessNode(scene_->mRootNode, glm::mat4(1.0), model);
     }
 
     void ProcessNode(aiNode* node, glm::mat4 transform, Model& model)
     {
         transform = glm::transpose(glm::make_mat4(&node->mTransformation.a1)) * transform;
         for (uint32_t i = 0; i < node->mNumMeshes; ++i) {
-            aiMesh* mesh = m_scene->mMeshes[node->mMeshes[i]];
+            aiMesh* mesh = scene_->mMeshes[node->mMeshes[i]];
             ProcessMesh(mesh, transform, model);
         }
         for (uint32_t i = 0; i < node->mNumChildren; ++i) {
@@ -107,15 +107,15 @@ private:
             }
         }
 
-        if (mesh->mMaterialIndex < m_scene->mNumMaterials) {
-            aiMaterial* material = m_scene->mMaterials[mesh->mMaterialIndex];
-            if (m_path.ends_with(".gltf")) {
+        if (mesh->mMaterialIndex < scene_->mNumMaterials) {
+            aiMaterial* material = scene_->mMaterials[mesh->mMaterialIndex];
+            if (path_.ends_with(".gltf")) {
                 cur_mesh.textures.base_color = GetTexturePath(material, aiTextureType_BASE_COLOR);
                 cur_mesh.textures.normal = GetTexturePath(material, aiTextureType_NORMALS);
                 cur_mesh.textures.metallic_roughness = GetTexturePath(material, aiTextureType_GLTF_METALLIC_ROUGHNESS);
                 cur_mesh.textures.ambient_occlusion = GetTexturePath(material, aiTextureType_LIGHTMAP);
                 cur_mesh.textures.emissive = GetTexturePath(material, aiTextureType_EMISSIVE);
-            } else if (m_path.ends_with(".obj")) {
+            } else if (path_.ends_with(".obj")) {
                 // base_color: map_Kd
                 cur_mesh.textures.base_color = GetTexturePath(material, aiTextureType_DIFFUSE);
                 // normal: norm
@@ -145,13 +145,13 @@ private:
 
     std::string GetDirectory() const
     {
-        return m_path.substr(0, m_path.find_last_of("/"));
+        return path_.substr(0, path_.find_last_of("/"));
     }
 
 private:
-    std::string m_path;
-    Assimp::Importer m_importer;
-    const aiScene* m_scene = nullptr;
+    std::string path_;
+    Assimp::Importer importer_;
+    const aiScene* scene_ = nullptr;
 };
 
 } // namespace

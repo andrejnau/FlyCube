@@ -3,23 +3,23 @@
 #include "Device/VKDevice.h"
 
 VKGPUBindlessDescriptorPoolTyped::VKGPUBindlessDescriptorPoolTyped(VKDevice& device, vk::DescriptorType type)
-    : m_device(device)
-    , m_type(type)
+    : device_(device)
+    , type_(type)
 {
 }
 
 void VKGPUBindlessDescriptorPoolTyped::ResizeHeap(uint32_t req_size)
 {
-    req_size = std::min(req_size, m_device.GetMaxDescriptorSetBindings(m_type));
+    req_size = std::min(req_size, device_.GetMaxDescriptorSetBindings(type_));
 
-    if (m_size >= req_size) {
+    if (size_ >= req_size) {
         return;
     }
 
     Descriptor descriptor;
 
     vk::DescriptorPoolSize pool_size = {};
-    pool_size.type = m_type;
+    pool_size.type = type_;
     pool_size.descriptorCount = req_size;
 
     vk::DescriptorPoolCreateInfo pool_info = {};
@@ -28,12 +28,12 @@ void VKGPUBindlessDescriptorPoolTyped::ResizeHeap(uint32_t req_size)
     pool_info.maxSets = 1;
     pool_info.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 
-    descriptor.pool = m_device.GetDevice().createDescriptorPoolUnique(pool_info);
+    descriptor.pool = device_.GetDevice().createDescriptorPoolUnique(pool_info);
 
     vk::DescriptorSetLayoutBinding binding = {};
     binding.binding = 0;
-    binding.descriptorType = m_type;
-    binding.descriptorCount = m_device.GetMaxDescriptorSetBindings(binding.descriptorType);
+    binding.descriptorType = type_;
+    binding.descriptorCount = device_.GetMaxDescriptorSetBindings(binding.descriptorType);
     binding.stageFlags = vk::ShaderStageFlagBits::eAll;
 
     vk::DescriptorBindingFlags binding_flag = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
@@ -47,7 +47,7 @@ void VKGPUBindlessDescriptorPoolTyped::ResizeHeap(uint32_t req_size)
     layout_info.pBindings = &binding;
     layout_info.pNext = &layout_flags_info;
 
-    descriptor.set_layout = m_device.GetDevice().createDescriptorSetLayoutUnique(layout_info);
+    descriptor.set_layout = device_.GetDevice().createDescriptorSetLayoutUnique(layout_info);
 
     vk::DescriptorSetVariableDescriptorCountAllocateInfo variable_descriptor_count_info = {};
     variable_descriptor_count_info.descriptorSetCount = 1;
@@ -59,44 +59,44 @@ void VKGPUBindlessDescriptorPoolTyped::ResizeHeap(uint32_t req_size)
     alloc_info.pSetLayouts = &descriptor.set_layout.get();
     alloc_info.pNext = &variable_descriptor_count_info;
 
-    descriptor.set = std::move(m_device.GetDevice().allocateDescriptorSetsUnique(alloc_info).front());
+    descriptor.set = std::move(device_.GetDevice().allocateDescriptorSetsUnique(alloc_info).front());
 
-    if (m_size) {
+    if (size_) {
         vk::CopyDescriptorSet copy_descriptors;
-        copy_descriptors.srcSet = m_descriptor.set.get();
+        copy_descriptors.srcSet = descriptor_.set.get();
         copy_descriptors.dstSet = descriptor.set.get();
-        copy_descriptors.descriptorCount = m_size;
-        m_device.GetDevice().updateDescriptorSets(0, nullptr, 1, &copy_descriptors);
+        copy_descriptors.descriptorCount = size_;
+        device_.GetDevice().updateDescriptorSets(0, nullptr, 1, &copy_descriptors);
     }
 
-    m_size = req_size;
+    size_ = req_size;
 
-    m_descriptor.set.release();
-    m_descriptor = std::move(descriptor);
+    descriptor_.set.release();
+    descriptor_ = std::move(descriptor);
 }
 
 VKGPUDescriptorPoolRange VKGPUBindlessDescriptorPoolTyped::Allocate(uint32_t count)
 {
-    auto it = m_empty_ranges.lower_bound(count);
-    if (it != m_empty_ranges.end()) {
+    auto it = empty_ranges_.lower_bound(count);
+    if (it != empty_ranges_.end()) {
         size_t offset = it->second;
         size_t size = it->first;
-        m_empty_ranges.erase(it);
+        empty_ranges_.erase(it);
         return VKGPUDescriptorPoolRange(*this, offset, size);
     }
-    if (m_offset + count > m_size) {
-        ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
+    if (offset_ + count > size_) {
+        ResizeHeap(std::max(offset_ + count, 2 * (size_ + 1)));
     }
-    m_offset += count;
-    return VKGPUDescriptorPoolRange(*this, m_offset - count, count);
+    offset_ += count;
+    return VKGPUDescriptorPoolRange(*this, offset_ - count, count);
 }
 
 void VKGPUBindlessDescriptorPoolTyped::OnRangeDestroy(uint32_t offset, uint32_t size)
 {
-    m_empty_ranges.emplace(size, offset);
+    empty_ranges_.emplace(size, offset);
 }
 
 vk::DescriptorSet VKGPUBindlessDescriptorPoolTyped::GetDescriptorSet() const
 {
-    return m_descriptor.set.get();
+    return descriptor_.set.get();
 }

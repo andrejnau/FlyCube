@@ -6,17 +6,17 @@ ResourceBase::ResourceBase() = default;
 
 ResourceType ResourceBase::GetResourceType() const
 {
-    return m_resource_type;
+    return resource_type_;
 }
 
 gli::format ResourceBase::GetFormat() const
 {
-    return m_format;
+    return format_;
 }
 
 MemoryType ResourceBase::GetMemoryType() const
 {
-    return m_memory_type;
+    return memory_type_;
 }
 
 void ResourceBase::UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes)
@@ -49,15 +49,15 @@ void ResourceBase::UpdateUploadBufferWithTextureData(uint64_t buffer_offset,
 
 ResourceState ResourceBase::GetInitialState() const
 {
-    return m_initial_state;
+    return initial_state_;
 }
 
 bool ResourceBase::IsBackBuffer() const
 {
-    return m_is_back_buffer;
+    return is_back_buffer_;
 }
 
 void ResourceBase::SetInitialState(ResourceState state)
 {
-    m_initial_state = state;
+    initial_state_ = state;
 }

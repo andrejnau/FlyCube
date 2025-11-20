@@ -5,35 +5,35 @@
 #include "Utilities/SystemUtils.h"
 
 DXFence::DXFence(DXDevice& device, uint64_t initial_value)
-    : m_device(device)
+    : device_(device)
 {
-    CHECK_HRESULT(device.GetDevice()->CreateFence(initial_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
+    CHECK_HRESULT(device.GetDevice()->CreateFence(initial_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence_)));
 #if defined(_WIN32)
-    m_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    fence_event_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 #endif
 }
 
 uint64_t DXFence::GetCompletedValue()
 {
-    return m_fence->GetCompletedValue();
+    return fence_->GetCompletedValue();
 }
 
 void DXFence::Wait(uint64_t value)
 {
     if (GetCompletedValue() < value) {
-        CHECK_HRESULT(m_fence->SetEventOnCompletion(value, m_fence_event));
+        CHECK_HRESULT(fence_->SetEventOnCompletion(value, fence_event_));
 #if defined(_WIN32)
-        WaitForSingleObjectEx(m_fence_event, INFINITE, FALSE);
+        WaitForSingleObjectEx(fence_event_, INFINITE, FALSE);
 #endif
     }
 }
 
 void DXFence::Signal(uint64_t value)
 {
-    m_fence->Signal(value);
+    fence_->Signal(value);
 }
 
 ComPtr<ID3D12Fence> DXFence::GetFence()
 {
-    return m_fence;
+    return fence_;
 }

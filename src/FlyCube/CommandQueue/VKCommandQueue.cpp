@@ -5,10 +5,10 @@
 #include "Fence/VKTimelineSemaphore.h"
 
 VKCommandQueue::VKCommandQueue(VKDevice& device, CommandListType type, uint32_t queue_family_index)
-    : m_device(device)
-    , m_queue_family_index(queue_family_index)
+    : device_(device)
+    , queue_family_index_(queue_family_index)
 {
-    m_queue = m_device.GetDevice().getQueue(m_queue_family_index, 0);
+    queue_ = device_.GetDevice().getQueue(queue_family_index_, 0);
 }
 
 void VKCommandQueue::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
@@ -24,7 +24,7 @@ void VKCommandQueue::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
     signal_submit_info.pWaitSemaphores = &vk_fence.GetFence();
     vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
     signal_submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
-    std::ignore = m_queue.submit(1, &signal_submit_info, {});
+    std::ignore = queue_.submit(1, &signal_submit_info, {});
 }
 
 void VKCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
@@ -38,7 +38,7 @@ void VKCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
     signal_submit_info.pNext = &timeline_info;
     signal_submit_info.signalSemaphoreCount = 1;
     signal_submit_info.pSignalSemaphores = &vk_fence.GetFence();
-    std::ignore = m_queue.submit(1, &signal_submit_info, {});
+    std::ignore = queue_.submit(1, &signal_submit_info, {});
 }
 
 void VKCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
@@ -59,20 +59,20 @@ void VKCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<Comma
     vk::PipelineStageFlags wait_dst_stage_mask = vk::PipelineStageFlagBits::eAllCommands;
     submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
 
-    std::ignore = m_queue.submit(1, &submit_info, {});
+    std::ignore = queue_.submit(1, &submit_info, {});
 }
 
 VKDevice& VKCommandQueue::GetDevice()
 {
-    return m_device;
+    return device_;
 }
 
 uint32_t VKCommandQueue::GetQueueFamilyIndex()
 {
-    return m_queue_family_index;
+    return queue_family_index_;
 }
 
 vk::Queue VKCommandQueue::GetQueue()
 {
-    return m_queue;
+    return queue_;
 }

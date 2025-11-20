@@ -23,7 +23,7 @@ vk::AccelerationStructureTypeKHR Convert(AccelerationStructureType type)
 } // namespace
 
 VKResource::VKResource(PassKey<VKResource> pass_key, VKDevice& device)
-    : m_device(device)
+    : device_(device)
 {
 }
 
@@ -34,10 +34,10 @@ std::shared_ptr<VKResource> VKResource::WrapSwapchainImage(VKDevice& device,
                                                            vk::ImageUsageFlags usage)
 {
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
-    self->m_resource_type = ResourceType::kTexture;
-    self->m_format = desc.format;
-    self->m_is_back_buffer = true;
-    self->m_image = {
+    self->resource_type_ = ResourceType::kTexture;
+    self->format_ = desc.format;
+    self->is_back_buffer_ = true;
+    self->image_ = {
         .res = image,
         .desc = desc,
         .usage = usage,
@@ -109,11 +109,11 @@ std::shared_ptr<VKResource> VKResource::CreateImage(VKDevice& device, const Text
     }
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
-    self->m_resource_type = ResourceType::kTexture;
-    self->m_format = desc.format;
-    self->m_image_owned = device.GetDevice().createImageUnique(image_info);
-    self->m_image = {
-        .res = self->m_image_owned.get(),
+    self->resource_type_ = ResourceType::kTexture;
+    self->format_ = desc.format;
+    self->image_owned_ = device.GetDevice().createImageUnique(image_info);
+    self->image_ = {
+        .res = self->image_owned_.get(),
         .desc = desc,
         .flags = image_info.flags,
         .usage = image_info.usage,
@@ -167,8 +167,8 @@ std::shared_ptr<VKResource> VKResource::CreateBuffer(VKDevice& device, const Buf
     }
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
-    self->m_resource_type = ResourceType::kBuffer;
-    self->m_buffer = {
+    self->resource_type_ = ResourceType::kBuffer;
+    self->buffer_ = {
         .res = device.GetDevice().createBufferUnique(buffer_info),
         .size = desc.size,
     };
@@ -233,8 +233,8 @@ std::shared_ptr<VKResource> VKResource::CreateSampler(VKDevice& device, const Sa
     }
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
-    self->m_resource_type = ResourceType::kSampler;
-    self->m_sampler = {
+    self->resource_type_ = ResourceType::kSampler;
+    self->sampler_ = {
         .res = device.GetDevice().createSamplerUnique(sampler_info),
     };
     return self;
@@ -251,8 +251,8 @@ std::shared_ptr<VKResource> VKResource::CreateAccelerationStructure(VKDevice& de
     acceleration_structure_create_info.type = Convert(desc.type);
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);
-    self->m_resource_type = ResourceType::kAccelerationStructure;
-    self->m_acceleration_structure =
+    self->resource_type_ = ResourceType::kAccelerationStructure;
+    self->acceleration_structure_ =
         device.GetDevice().createAccelerationStructureKHRUnique(acceleration_structure_create_info);
     return self;
 }
@@ -262,114 +262,113 @@ void VKResource::CommitMemory(MemoryType memory_type)
     MemoryRequirements mem_requirements = GetMemoryRequirements();
     vk::MemoryDedicatedAllocateInfoKHR dedicated_allocate_info = {};
     vk::MemoryDedicatedAllocateInfoKHR* p_dedicated_allocate_info = nullptr;
-    if (m_resource_type == ResourceType::kBuffer) {
+    if (resource_type_ == ResourceType::kBuffer) {
         dedicated_allocate_info.buffer = GetBuffer();
         p_dedicated_allocate_info = &dedicated_allocate_info;
-    } else if (m_resource_type == ResourceType::kTexture) {
+    } else if (resource_type_ == ResourceType::kTexture) {
         dedicated_allocate_info.image = GetImage();
         p_dedicated_allocate_info = &dedicated_allocate_info;
     }
-    m_commited_memory = std::make_shared<VKMemory>(m_device, mem_requirements.size, memory_type,
-                                                   mem_requirements.memory_type_bits, p_dedicated_allocate_info);
-    BindMemory(m_commited_memory, 0);
+    commited_memory_ = std::make_shared<VKMemory>(device_, mem_requirements.size, memory_type,
+                                                  mem_requirements.memory_type_bits, p_dedicated_allocate_info);
+    BindMemory(commited_memory_, 0);
 }
 
 void VKResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset)
 {
-    m_memory_type = memory->GetMemoryType();
-    m_vk_memory = memory->As<VKMemory>().GetMemory();
+    memory_type_ = memory->GetMemoryType();
+    vk_memory_ = memory->As<VKMemory>().GetMemory();
 
-    if (m_resource_type == ResourceType::kBuffer) {
-        m_device.GetDevice().bindBufferMemory(GetBuffer(), m_vk_memory, offset);
-    } else if (m_resource_type == ResourceType::kTexture) {
-        m_device.GetDevice().bindImageMemory(GetImage(), m_vk_memory, offset);
+    if (resource_type_ == ResourceType::kBuffer) {
+        device_.GetDevice().bindBufferMemory(GetBuffer(), vk_memory_, offset);
+    } else if (resource_type_ == ResourceType::kTexture) {
+        device_.GetDevice().bindImageMemory(GetImage(), vk_memory_, offset);
     }
 }
 
 uint64_t VKResource::GetWidth() const
 {
-    if (m_resource_type == ResourceType::kTexture) {
-        return m_image.desc.width;
+    if (resource_type_ == ResourceType::kTexture) {
+        return image_.desc.width;
     }
-    assert(m_resource_type == ResourceType::kBuffer);
-    return m_buffer.size;
+    assert(resource_type_ == ResourceType::kBuffer);
+    return buffer_.size;
 }
 
 uint32_t VKResource::GetHeight() const
 {
-    if (m_resource_type == ResourceType::kTexture) {
-        return m_image.desc.height;
+    if (resource_type_ == ResourceType::kTexture) {
+        return image_.desc.height;
     }
     return 1;
 }
 
 uint16_t VKResource::GetLayerCount() const
 {
-    if (m_resource_type == ResourceType::kTexture) {
-        return m_image.desc.depth_or_array_layers;
+    if (resource_type_ == ResourceType::kTexture) {
+        return image_.desc.depth_or_array_layers;
     }
     return 1;
 }
 
 uint16_t VKResource::GetLevelCount() const
 {
-    if (m_resource_type == ResourceType::kTexture) {
-        return m_image.desc.mip_levels;
+    if (resource_type_ == ResourceType::kTexture) {
+        return image_.desc.mip_levels;
     }
     return 1;
 }
 
 uint32_t VKResource::GetSampleCount() const
 {
-    if (m_resource_type == ResourceType::kTexture) {
-        return m_image.desc.sample_count;
+    if (resource_type_ == ResourceType::kTexture) {
+        return image_.desc.sample_count;
     }
     return 1;
 }
 
 uint64_t VKResource::GetAccelerationStructureHandle() const
 {
-    return m_device.GetDevice().getAccelerationStructureAddressKHR({ GetAccelerationStructure() });
+    return device_.GetDevice().getAccelerationStructureAddressKHR({ GetAccelerationStructure() });
 }
 
 void VKResource::SetName(const std::string& name)
 {
     vk::DebugUtilsObjectNameInfoEXT info = {};
     info.pObjectName = name.c_str();
-    if (m_resource_type == ResourceType::kBuffer) {
+    if (resource_type_ == ResourceType::kBuffer) {
         info.objectType = GetBuffer().objectType;
         info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkBuffer>(GetBuffer()));
-    } else if (m_resource_type == ResourceType::kTexture) {
+    } else if (resource_type_ == ResourceType::kTexture) {
         info.objectType = GetImage().objectType;
         info.objectHandle = reinterpret_cast<uint64_t>(static_cast<VkImage>(GetImage()));
     }
-    m_device.GetDevice().setDebugUtilsObjectNameEXT(info);
+    device_.GetDevice().setDebugUtilsObjectNameEXT(info);
 }
 
 uint8_t* VKResource::Map()
 {
     uint8_t* dst_data = nullptr;
-    std::ignore =
-        m_device.GetDevice().mapMemory(m_vk_memory, 0, VK_WHOLE_SIZE, {}, reinterpret_cast<void**>(&dst_data));
+    std::ignore = device_.GetDevice().mapMemory(vk_memory_, 0, VK_WHOLE_SIZE, {}, reinterpret_cast<void**>(&dst_data));
     return dst_data;
 }
 
 void VKResource::Unmap()
 {
-    m_device.GetDevice().unmapMemory(m_vk_memory);
+    device_.GetDevice().unmapMemory(vk_memory_);
 }
 
 MemoryRequirements VKResource::GetMemoryRequirements() const
 {
     vk::MemoryRequirements2 mem_requirements = {};
-    if (m_resource_type == ResourceType::kBuffer) {
+    if (resource_type_ == ResourceType::kBuffer) {
         vk::BufferMemoryRequirementsInfo2KHR buffer_mem_req = {};
         buffer_mem_req.buffer = GetBuffer();
-        m_device.GetDevice().getBufferMemoryRequirements2(&buffer_mem_req, &mem_requirements);
-    } else if (m_resource_type == ResourceType::kTexture) {
+        device_.GetDevice().getBufferMemoryRequirements2(&buffer_mem_req, &mem_requirements);
+    } else if (resource_type_ == ResourceType::kTexture) {
         vk::ImageMemoryRequirementsInfo2KHR image_mem_req = {};
         image_mem_req.image = GetImage();
-        m_device.GetDevice().getImageMemoryRequirements2(&image_mem_req, &mem_requirements);
+        device_.GetDevice().getImageMemoryRequirements2(&image_mem_req, &mem_requirements);
     }
     return { mem_requirements.memoryRequirements.size, mem_requirements.memoryRequirements.alignment,
              mem_requirements.memoryRequirements.memoryTypeBits };
@@ -377,30 +376,30 @@ MemoryRequirements VKResource::GetMemoryRequirements() const
 
 const vk::Image& VKResource::GetImage() const
 {
-    return m_image.res;
+    return image_.res;
 }
 
 const vk::Buffer& VKResource::GetBuffer() const
 {
-    return m_buffer.res.get();
+    return buffer_.res.get();
 }
 
 const vk::Sampler& VKResource::GetSampler() const
 {
-    return m_sampler.res.get();
+    return sampler_.res.get();
 }
 
 const vk::AccelerationStructureKHR& VKResource::GetAccelerationStructure() const
 {
-    return m_acceleration_structure.get();
+    return acceleration_structure_.get();
 }
 
 vk::ImageCreateFlags VKResource::GetImageCreateFlags() const
 {
-    return m_image.flags;
+    return image_.flags;
 }
 
 vk::ImageUsageFlags VKResource::GetImageUsageFlags() const
 {
-    return m_image.usage;
+    return image_.usage;
 }

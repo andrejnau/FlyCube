@@ -47,16 +47,16 @@ public:
 private:
     D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(D3D12_CPU_DESCRIPTOR_HANDLE handle, size_t offset = 0) const;
 
-    std::reference_wrapper<DXGPUDescriptorPoolTyped> m_pool;
-    std::reference_wrapper<DXDevice> m_device;
-    std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> m_heap;
-    std::reference_wrapper<D3D12_CPU_DESCRIPTOR_HANDLE> m_cpu_handle;
-    std::reference_wrapper<D3D12_GPU_DESCRIPTOR_HANDLE> m_gpu_handle;
-    std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> m_heap_readable;
-    std::reference_wrapper<D3D12_CPU_DESCRIPTOR_HANDLE> m_cpu_handle_readable;
-    size_t m_offset;
-    size_t m_size;
-    uint32_t m_increment_size;
-    D3D12_DESCRIPTOR_HEAP_TYPE m_type;
-    std::unique_ptr<DXGPUDescriptorPoolRange, std::function<void(DXGPUDescriptorPoolRange*)>> m_callback;
+    std::reference_wrapper<DXGPUDescriptorPoolTyped> pool_;
+    std::reference_wrapper<DXDevice> device_;
+    std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> heap_;
+    std::reference_wrapper<D3D12_CPU_DESCRIPTOR_HANDLE> cpu_handle_;
+    std::reference_wrapper<D3D12_GPU_DESCRIPTOR_HANDLE> gpu_handle_;
+    std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> heap_readable_;
+    std::reference_wrapper<D3D12_CPU_DESCRIPTOR_HANDLE> cpu_handle_readable_;
+    size_t offset_;
+    size_t size_;
+    uint32_t increment_size_;
+    D3D12_DESCRIPTOR_HEAP_TYPE type_;
+    std::unique_ptr<DXGPUDescriptorPoolRange, std::function<void(DXGPUDescriptorPoolRange*)>> callback_;
 };

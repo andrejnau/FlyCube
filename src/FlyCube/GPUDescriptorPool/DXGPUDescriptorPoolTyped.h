@@ -29,14 +29,14 @@ public:
     ComPtr<ID3D12DescriptorHeap> GetHeap();
 
 private:
-    DXDevice& m_device;
-    D3D12_DESCRIPTOR_HEAP_TYPE m_type;
-    size_t m_offset;
-    size_t m_size;
-    ComPtr<ID3D12DescriptorHeap> m_heap;
-    D3D12_CPU_DESCRIPTOR_HANDLE m_cpu_handle;
-    D3D12_GPU_DESCRIPTOR_HANDLE m_gpu_handle;
-    ComPtr<ID3D12DescriptorHeap> m_heap_readable;
-    D3D12_CPU_DESCRIPTOR_HANDLE m_cpu_handle_readable;
-    std::multimap<size_t, size_t> m_empty_ranges;
+    DXDevice& device_;
+    D3D12_DESCRIPTOR_HEAP_TYPE type_;
+    size_t offset_;
+    size_t size_;
+    ComPtr<ID3D12DescriptorHeap> heap_;
+    D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle_;
+    D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle_;
+    ComPtr<ID3D12DescriptorHeap> heap_readable_;
+    D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle_readable_;
+    std::multimap<size_t, size_t> empty_ranges_;
 };

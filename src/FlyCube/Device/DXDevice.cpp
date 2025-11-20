@@ -143,62 +143,62 @@ D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStr
 }
 
 DXDevice::DXDevice(DXAdapter& adapter)
-    : m_adapter(adapter)
-    , m_cpu_descriptor_pool(*this)
-    , m_gpu_descriptor_pool(*this)
+    : adapter_(adapter)
+    , cpu_descriptor_pool_(*this)
+    , gpu_descriptor_pool_(*this)
 {
 #if defined(_WIN32)
-    CHECK_HRESULT(D3D12CreateDevice(m_adapter.GetAdapter().Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&m_device)));
+    CHECK_HRESULT(D3D12CreateDevice(adapter_.GetAdapter().Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&device_)));
 #endif
-    m_device.As(&m_device5);
+    device_.As(&device5_);
 
     ComPtr<IUnknown> renderdoc;
-    if (SUCCEEDED(m_device->QueryInterface(kRenderdocUuid, &renderdoc))) {
-        m_is_under_graphics_debugger |= !!renderdoc;
+    if (SUCCEEDED(device_->QueryInterface(kRenderdocUuid, &renderdoc))) {
+        is_under_graphics_debugger_ |= !!renderdoc;
     }
 
 #if defined(_WIN32)
     ComPtr<IUnknown> pix;
     if (SUCCEEDED(DXGIGetDebugInterface1(0, kPixUuid, &pix))) {
-        m_is_under_graphics_debugger |= !!pix;
+        is_under_graphics_debugger_ |= !!pix;
     }
 #endif
 
     ComPtr<IUnknown> gpa;
-    if (SUCCEEDED(m_device->QueryInterface(kGpaUuid, &gpa))) {
-        m_is_under_graphics_debugger |= !!gpa;
+    if (SUCCEEDED(device_->QueryInterface(kGpaUuid, &gpa))) {
+        is_under_graphics_debugger_ |= !!gpa;
     }
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature_support5 = {};
     if (SUCCEEDED(
-            m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support5, sizeof(feature_support5)))) {
-        m_is_dxr_supported = feature_support5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
-        m_is_ray_query_supported = feature_support5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_1;
+            device_->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &feature_support5, sizeof(feature_support5)))) {
+        is_dxr_supported_ = feature_support5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
+        is_ray_query_supported_ = feature_support5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_1;
         assert(feature_support5.RenderPassesTier >= D3D12_RENDER_PASS_TIER_0);
     }
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS6 feature_support6 = {};
     if (SUCCEEDED(
-            m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS6, &feature_support6, sizeof(feature_support6)))) {
-        m_is_variable_rate_shading_supported =
+            device_->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS6, &feature_support6, sizeof(feature_support6)))) {
+        is_variable_rate_shading_supported_ =
             feature_support6.VariableShadingRateTier >= D3D12_VARIABLE_SHADING_RATE_TIER_2;
-        m_shading_rate_image_tile_size = feature_support6.ShadingRateImageTileSize;
+        shading_rate_image_tile_size_ = feature_support6.ShadingRateImageTileSize;
     }
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS7 feature_support7 = {};
     if (SUCCEEDED(
-            m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &feature_support7, sizeof(feature_support7)))) {
-        m_is_create_not_zeroed_available = true;
-        m_is_mesh_shading_supported = feature_support7.MeshShaderTier >= D3D12_MESH_SHADER_TIER_1;
+            device_->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &feature_support7, sizeof(feature_support7)))) {
+        is_create_not_zeroed_available_ = true;
+        is_mesh_shading_supported_ = feature_support7.MeshShaderTier >= D3D12_MESH_SHADER_TIER_1;
     }
 
-    m_command_queues[CommandListType::kGraphics] = std::make_shared<DXCommandQueue>(*this, CommandListType::kGraphics);
-    m_command_queues[CommandListType::kCompute] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCompute);
-    m_command_queues[CommandListType::kCopy] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCopy);
+    command_queues_[CommandListType::kGraphics] = std::make_shared<DXCommandQueue>(*this, CommandListType::kGraphics);
+    command_queues_[CommandListType::kCompute] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCompute);
+    command_queues_[CommandListType::kCopy] = std::make_shared<DXCommandQueue>(*this, CommandListType::kCopy);
 
     if (IsValidationEnabled()) {
         ComPtr<ID3D12InfoQueue> info_queue;
-        if (SUCCEEDED(m_device.As(&info_queue))) {
+        if (SUCCEEDED(device_.As(&info_queue))) {
             info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
             // info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
 
@@ -220,7 +220,7 @@ DXDevice::DXDevice(DXAdapter& adapter)
 
 #if 0
         ComPtr<ID3D12DebugDevice2> debug_device;
-        m_device.As(&debug_device);
+        device_.As(&debug_device);
         D3D12_DEBUG_FEATURE debug_feature = D3D12_DEBUG_FEATURE_CONSERVATIVE_RESOURCE_STATE_TRACKING;
         debug_device->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS, &debug_feature,
                                         sizeof(debug_feature));
@@ -235,7 +235,7 @@ std::shared_ptr<Memory> DXDevice::AllocateMemory(uint64_t size, MemoryType memor
 
 std::shared_ptr<CommandQueue> DXDevice::GetCommandQueue(CommandListType type)
 {
-    return m_command_queues.at(type);
+    return command_queues_.at(type);
 }
 
 uint32_t DXDevice::GetTextureDataPitchAlignment() const
@@ -250,7 +250,7 @@ std::shared_ptr<Swapchain> DXDevice::CreateSwapchain(const NativeSurface& surfac
                                                      bool vsync)
 {
 #if defined(_WIN32)
-    return std::make_shared<DXSwapchain>(*m_command_queues.at(CommandListType::kGraphics), surface, width, height,
+    return std::make_shared<DXSwapchain>(*command_queues_.at(CommandListType::kGraphics), surface, width, height,
                                          frame_count, vsync);
 #else
     return nullptr;
@@ -381,7 +381,7 @@ RaytracingASPrebuildInfo DXDevice::GetAccelerationStructurePrebuildInfo(
     const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs) const
 {
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
-    m_device5->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
+    device5_->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
     RaytracingASPrebuildInfo prebuild_info = {};
     prebuild_info.acceleration_structure_size = info.ResultDataMaxSizeInBytes;
     prebuild_info.build_scratch_data_size = info.ScratchDataSizeInBytes;
@@ -391,22 +391,22 @@ RaytracingASPrebuildInfo DXDevice::GetAccelerationStructurePrebuildInfo(
 
 bool DXDevice::IsDxrSupported() const
 {
-    return m_is_dxr_supported;
+    return is_dxr_supported_;
 }
 
 bool DXDevice::IsRayQuerySupported() const
 {
-    return m_is_ray_query_supported;
+    return is_ray_query_supported_;
 }
 
 bool DXDevice::IsVariableRateShadingSupported() const
 {
-    return m_is_variable_rate_shading_supported;
+    return is_variable_rate_shading_supported_;
 }
 
 bool DXDevice::IsMeshShadingSupported() const
 {
-    return m_is_mesh_shading_supported;
+    return is_mesh_shading_supported_;
 }
 
 bool DXDevice::IsDrawIndirectCountSupported() const
@@ -426,14 +426,14 @@ bool DXDevice::IsBindlessSupported() const
 
 uint32_t DXDevice::GetShadingRateImageTileSize() const
 {
-    return m_shading_rate_image_tile_size;
+    return shading_rate_image_tile_size_;
 }
 
 MemoryBudget DXDevice::GetMemoryBudget() const
 {
 #if defined(_WIN32)
     ComPtr<IDXGIAdapter3> adapter3;
-    m_adapter.GetAdapter().As(&adapter3);
+    adapter_.GetAdapter().As(&adapter3);
     DXGI_QUERY_VIDEO_MEMORY_INFO local_memory_info = {};
     adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &local_memory_info);
     DXGI_QUERY_VIDEO_MEMORY_INFO non_local_memory_info = {};
@@ -494,38 +494,38 @@ ShaderBlobType DXDevice::GetSupportedShaderBlobType() const
 
 DXAdapter& DXDevice::GetAdapter()
 {
-    return m_adapter;
+    return adapter_;
 }
 
 ComPtr<ID3D12Device> DXDevice::GetDevice()
 {
-    return m_device;
+    return device_;
 }
 
 DXCPUDescriptorPool& DXDevice::GetCPUDescriptorPool()
 {
-    return m_cpu_descriptor_pool;
+    return cpu_descriptor_pool_;
 }
 
 DXGPUDescriptorPool& DXDevice::GetGPUDescriptorPool()
 {
-    return m_gpu_descriptor_pool;
+    return gpu_descriptor_pool_;
 }
 
 bool DXDevice::IsUnderGraphicsDebugger() const
 {
-    return m_is_under_graphics_debugger;
+    return is_under_graphics_debugger_;
 }
 
 bool DXDevice::IsCreateNotZeroedAvailable() const
 {
-    return m_is_create_not_zeroed_available;
+    return is_create_not_zeroed_available_;
 }
 
 ID3D12CommandSignature* DXDevice::GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TYPE type, uint32_t stride)
 {
-    auto it = m_command_signature_cache.find({ type, stride });
-    if (it != m_command_signature_cache.end()) {
+    auto it = command_signature_cache_.find({ type, stride });
+    if (it != command_signature_cache_.end()) {
         return it->second.Get();
     }
 
@@ -536,9 +536,9 @@ ID3D12CommandSignature* DXDevice::GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TY
     desc.pArgumentDescs = &arg;
     desc.ByteStride = stride;
     ComPtr<ID3D12CommandSignature> command_signature;
-    CHECK_HRESULT(m_device->CreateCommandSignature(&desc, nullptr, IID_PPV_ARGS(&command_signature)));
+    CHECK_HRESULT(device_->CreateCommandSignature(&desc, nullptr, IID_PPV_ARGS(&command_signature)));
 
-    m_command_signature_cache.emplace(std::piecewise_construct, std::forward_as_tuple(type, stride),
-                                      std::forward_as_tuple(command_signature));
+    command_signature_cache_.emplace(std::piecewise_construct, std::forward_as_tuple(type, stride),
+                                     std::forward_as_tuple(command_signature));
     return command_signature.Get();
 }

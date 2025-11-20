@@ -13,10 +13,10 @@ protected:
     virtual ShaderKind GetVersionShaderType(uint64_t version) = 0;
     void ParseReflectionPart(const ReflectionPart& reflection_part);
 
-    bool m_is_library = false;
-    std::vector<EntryPoint> m_entry_points;
-    std::vector<ResourceBindingDesc> m_bindings;
-    std::vector<VariableLayout> m_layouts;
-    std::vector<InputParameterDesc> m_input_parameters;
-    std::vector<OutputParameterDesc> m_output_parameters;
+    bool is_library_ = false;
+    std::vector<EntryPoint> entry_points_;
+    std::vector<ResourceBindingDesc> bindings_;
+    std::vector<VariableLayout> layouts_;
+    std::vector<InputParameterDesc> input_parameters_;
+    std::vector<OutputParameterDesc> output_parameters_;
 };

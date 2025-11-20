@@ -14,7 +14,7 @@ public:
     vk::PhysicalDevice& GetPhysicalDevice();
 
 private:
-    VKInstance& m_instance;
-    vk::PhysicalDevice m_physical_device;
-    std::string m_name;
+    VKInstance& instance_;
+    vk::PhysicalDevice physical_device_;
+    std::string name_;
 };

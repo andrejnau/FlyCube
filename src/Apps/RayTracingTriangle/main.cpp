@@ -32,101 +32,101 @@ private:
     void InitAccelerationStructures();
     void WaitForIdle();
 
-    Settings m_settings;
-    std::shared_ptr<Instance> m_instance;
-    std::shared_ptr<Adapter> m_adapter;
-    std::shared_ptr<Device> m_device;
-    std::shared_ptr<CommandQueue> m_command_queue;
-    uint64_t m_fence_value = 0;
-    std::shared_ptr<Fence> m_fence;
-    std::shared_ptr<Resource> m_acceleration_structures_memory;
-    std::shared_ptr<Resource> m_blas;
-    std::shared_ptr<Resource> m_blas_compacted;
-    std::shared_ptr<Resource> m_tlas;
-    std::shared_ptr<View> m_tlas_view;
-    std::shared_ptr<Shader> m_library;
-    std::shared_ptr<Shader> m_library_hit;
-    std::shared_ptr<Shader> m_library_callable;
-    std::shared_ptr<BindingSetLayout> m_layout;
-    std::shared_ptr<Pipeline> m_pipeline;
-    std::shared_ptr<Resource> m_shader_table;
-    RayTracingShaderTables m_shader_tables;
+    Settings settings_;
+    std::shared_ptr<Instance> instance_;
+    std::shared_ptr<Adapter> adapter_;
+    std::shared_ptr<Device> device_;
+    std::shared_ptr<CommandQueue> command_queue_;
+    uint64_t fence_value_ = 0;
+    std::shared_ptr<Fence> fence_;
+    std::shared_ptr<Resource> acceleration_structures_memory_;
+    std::shared_ptr<Resource> blas_;
+    std::shared_ptr<Resource> blas_compacted_;
+    std::shared_ptr<Resource> tlas_;
+    std::shared_ptr<View> tlas_view_;
+    std::shared_ptr<Shader> library_;
+    std::shared_ptr<Shader> library_hit_;
+    std::shared_ptr<Shader> library_callable_;
+    std::shared_ptr<BindingSetLayout> layout_;
+    std::shared_ptr<Pipeline> pipeline_;
+    std::shared_ptr<Resource> shader_table_;
+    RayTracingShaderTables shader_tables_;
 
-    std::shared_ptr<Swapchain> m_swapchain;
-    std::shared_ptr<Resource> m_result_texture;
-    std::shared_ptr<View> m_result_texture_view;
-    std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
-    std::array<uint64_t, kFrameCount> m_fence_values = {};
+    std::shared_ptr<Swapchain> swapchain_;
+    std::shared_ptr<Resource> result_texture_;
+    std::shared_ptr<View> result_texture_view_;
+    std::array<std::shared_ptr<CommandList>, kFrameCount> command_lists_ = {};
+    std::array<uint64_t, kFrameCount> fence_values_ = {};
 };
 
 RayTracingTriangleRenderer::RayTracingTriangleRenderer(const Settings& settings)
-    : m_settings(settings)
+    : settings_(settings)
 {
-    m_instance = CreateInstance(m_settings.api_type);
-    m_adapter = std::move(m_instance->EnumerateAdapters()[m_settings.required_gpu_index]);
-    m_device = m_adapter->CreateDevice();
-    CHECK(m_device->IsDxrSupported(), "Ray Tracing is not supported");
-    m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
-    m_fence = m_device->CreateFence(m_fence_value);
+    instance_ = CreateInstance(settings_.api_type);
+    adapter_ = std::move(instance_->EnumerateAdapters()[settings_.required_gpu_index]);
+    device_ = adapter_->CreateDevice();
+    CHECK(device_->IsDxrSupported(), "Ray Tracing is not supported");
+    command_queue_ = device_->GetCommandQueue(CommandListType::kGraphics);
+    fence_ = device_->CreateFence(fence_value_);
 
     InitAccelerationStructures();
 
-    ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
+    ShaderBlobType blob_type = device_->GetSupportedShaderBlobType();
     std::vector<uint8_t> library_blob = AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracing.hlsl", blob_type);
-    m_library = m_device->CreateShader(library_blob, blob_type, ShaderType::kLibrary);
+    library_ = device_->CreateShader(library_blob, blob_type, ShaderType::kLibrary);
     std::vector<uint8_t> library_hit_blob =
         AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracingHit.hlsl", blob_type);
-    m_library_hit = m_device->CreateShader(library_hit_blob, blob_type, ShaderType::kLibrary);
+    library_hit_ = device_->CreateShader(library_hit_blob, blob_type, ShaderType::kLibrary);
     std::vector<uint8_t> library_callable_blob =
         AssetLoadShaderBlob("assets/RayTracingTriangle/RayTracingCallable.hlsl", blob_type);
-    m_library_callable = m_device->CreateShader(library_callable_blob, blob_type, ShaderType::kLibrary);
-    BindKey geometry_key = m_library->GetBindKey("geometry");
-    BindKey result_texture_key = m_library->GetBindKey("result_texture");
-    m_layout = m_device->CreateBindingSetLayout({ geometry_key, result_texture_key });
+    library_callable_ = device_->CreateShader(library_callable_blob, blob_type, ShaderType::kLibrary);
+    BindKey geometry_key = library_->GetBindKey("geometry");
+    BindKey result_texture_key = library_->GetBindKey("result_texture");
+    layout_ = device_->CreateBindingSetLayout({ geometry_key, result_texture_key });
 
     std::vector<RayTracingShaderGroup> groups = {
-        { RayTracingShaderGroupType::kGeneral, m_library->GetId("ray_gen") },
-        { RayTracingShaderGroupType::kGeneral, m_library->GetId("miss") },
-        { RayTracingShaderGroupType::kTrianglesHitGroup, 0, m_library_hit->GetId("closest_red") },
-        { RayTracingShaderGroupType::kTrianglesHitGroup, 0, m_library_hit->GetId("closest_green") },
-        { RayTracingShaderGroupType::kGeneral, m_library_callable->GetId("callable") },
+        { RayTracingShaderGroupType::kGeneral, library_->GetId("ray_gen") },
+        { RayTracingShaderGroupType::kGeneral, library_->GetId("miss") },
+        { RayTracingShaderGroupType::kTrianglesHitGroup, 0, library_hit_->GetId("closest_red") },
+        { RayTracingShaderGroupType::kTrianglesHitGroup, 0, library_hit_->GetId("closest_green") },
+        { RayTracingShaderGroupType::kGeneral, library_callable_->GetId("callable") },
     };
 
     RayTracingPipelineDesc pipeline_desc = {
-        .shaders = { m_library, m_library_hit, m_library_callable },
-        .layout = m_layout,
+        .shaders = { library_, library_hit_, library_callable_ },
+        .layout = layout_,
         .groups = groups,
     };
-    m_pipeline = m_device->CreateRayTracingPipeline(pipeline_desc);
+    pipeline_ = device_->CreateRayTracingPipeline(pipeline_desc);
 
-    m_shader_table = m_device->CreateBuffer(
+    shader_table_ = device_->CreateBuffer(
         MemoryType::kUpload,
-        { .size = m_device->GetShaderTableAlignment() * groups.size(), .usage = BindFlag::kShaderTable });
-    m_shader_table->SetName("shader_table");
+        { .size = device_->GetShaderTableAlignment() * groups.size(), .usage = BindFlag::kShaderTable });
+    shader_table_->SetName("shader_table");
 
-    std::vector<uint8_t> shader_handles = m_pipeline->GetRayTracingShaderGroupHandles(0, groups.size());
+    std::vector<uint8_t> shader_handles = pipeline_->GetRayTracingShaderGroupHandles(0, groups.size());
     for (size_t i = 0; i < groups.size(); ++i) {
-        m_shader_table->UpdateUploadBuffer(i * m_device->GetShaderTableAlignment(),
-                                           shader_handles.data() + i * m_device->GetShaderGroupHandleSize(),
-                                           m_device->GetShaderGroupHandleSize());
+        shader_table_->UpdateUploadBuffer(i * device_->GetShaderTableAlignment(),
+                                          shader_handles.data() + i * device_->GetShaderGroupHandleSize(),
+                                          device_->GetShaderGroupHandleSize());
     }
 
-    m_shader_tables = { .raygen = { m_shader_table, 0 * m_device->GetShaderTableAlignment(),
-                                    m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() },
-                        .miss = { m_shader_table, 1 * m_device->GetShaderTableAlignment(),
-                                  m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() },
-                        .hit = { m_shader_table, 2 * m_device->GetShaderTableAlignment(),
-                                 2 * m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() },
-                        .callable = { m_shader_table, 4 * m_device->GetShaderTableAlignment(),
-                                      m_device->GetShaderTableAlignment(), m_device->GetShaderTableAlignment() } };
+    shader_tables_ = { .raygen = { shader_table_, 0 * device_->GetShaderTableAlignment(),
+                                   device_->GetShaderTableAlignment(), device_->GetShaderTableAlignment() },
+                       .miss = { shader_table_, 1 * device_->GetShaderTableAlignment(),
+                                 device_->GetShaderTableAlignment(), device_->GetShaderTableAlignment() },
+                       .hit = { shader_table_, 2 * device_->GetShaderTableAlignment(),
+                                2 * device_->GetShaderTableAlignment(), device_->GetShaderTableAlignment() },
+                       .callable = { shader_table_, 4 * device_->GetShaderTableAlignment(),
+                                     device_->GetShaderTableAlignment(), device_->GetShaderTableAlignment() } };
 }
 
 void RayTracingTriangleRenderer::InitAccelerationStructures()
 {
     std::vector<uint32_t> index_data = { 0, 1, 2 };
     std::shared_ptr<Resource> index_buffer =
-        m_device->CreateBuffer(MemoryType::kDefault, { .size = sizeof(index_data.front()) * index_data.size(),
-                                                       .usage = BindFlag::kIndexBuffer | BindFlag::kCopyDest });
+        device_->CreateBuffer(MemoryType::kDefault, { .size = sizeof(index_data.front()) * index_data.size(),
+                                                      .usage = BindFlag::kIndexBuffer | BindFlag::kCopyDest });
     index_buffer->SetName("index_buffer");
 
     std::vector<glm::vec3> vertex_data = {
@@ -135,11 +135,11 @@ void RayTracingTriangleRenderer::InitAccelerationStructures()
         glm::vec3(0.5, -0.5, 0.0),
     };
     std::shared_ptr<Resource> vertex_buffer =
-        m_device->CreateBuffer(MemoryType::kDefault, { .size = sizeof(vertex_data.front()) * vertex_data.size(),
-                                                       .usage = BindFlag::kVertexBuffer | BindFlag::kCopyDest });
+        device_->CreateBuffer(MemoryType::kDefault, { .size = sizeof(vertex_data.front()) * vertex_data.size(),
+                                                      .usage = BindFlag::kVertexBuffer | BindFlag::kCopyDest });
     vertex_buffer->SetName("vertex_buffer");
 
-    std::shared_ptr<Resource> upload_buffer = m_device->CreateBuffer(
+    std::shared_ptr<Resource> upload_buffer = device_->CreateBuffer(
         MemoryType::kUpload,
         { .size = index_buffer->GetWidth() + vertex_buffer->GetWidth(), .usage = BindFlag::kCopySource });
     upload_buffer->SetName("upload_buffer");
@@ -155,9 +155,9 @@ void RayTracingTriangleRenderer::InitAccelerationStructures()
 
     static constexpr uint32_t kInstanceCount = 2;
     RaytracingASPrebuildInfo blas_prebuild_info =
-        m_device->GetBLASPrebuildInfo({ raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
+        device_->GetBLASPrebuildInfo({ raytracing_geometry_desc }, BuildAccelerationStructureFlags::kAllowCompaction);
     RaytracingASPrebuildInfo tlas_prebuild_info =
-        m_device->GetTLASPrebuildInfo(kInstanceCount, BuildAccelerationStructureFlags::kNone);
+        device_->GetTLASPrebuildInfo(kInstanceCount, BuildAccelerationStructureFlags::kNone);
 
     uint64_t acceleration_structures_size = 0;
     auto add_acceleration_structure = [&](uint64_t size) {
@@ -170,31 +170,31 @@ void RayTracingTriangleRenderer::InitAccelerationStructures()
     uint64_t blas_compacted_offset = add_acceleration_structure(blas_prebuild_info.acceleration_structure_size);
     uint64_t tlas_offset = add_acceleration_structure(tlas_prebuild_info.acceleration_structure_size);
 
-    m_acceleration_structures_memory = m_device->CreateBuffer(
+    acceleration_structures_memory_ = device_->CreateBuffer(
         MemoryType::kDefault, { .size = acceleration_structures_size, .usage = BindFlag::kAccelerationStructure });
-    m_acceleration_structures_memory->SetName("acceleration_structures_memory");
+    acceleration_structures_memory_->SetName("acceleration_structures_memory");
 
-    m_blas = m_device->CreateAccelerationStructure({
+    blas_ = device_->CreateAccelerationStructure({
         .type = AccelerationStructureType::kBottomLevel,
-        .buffer = m_acceleration_structures_memory,
+        .buffer = acceleration_structures_memory_,
         .buffer_offset = blas_offset,
         .size = blas_prebuild_info.acceleration_structure_size,
     });
 
-    std::shared_ptr<Resource> scratch = m_device->CreateBuffer(
+    std::shared_ptr<Resource> scratch = device_->CreateBuffer(
         MemoryType::kDefault,
         { .size = std::max(blas_prebuild_info.build_scratch_data_size, tlas_prebuild_info.build_scratch_data_size),
           .usage = BindFlag::kRayTracing });
     scratch->SetName("scratch");
 
     std::shared_ptr<QueryHeap> query_heap =
-        m_device->CreateQueryHeap(QueryHeapType::kAccelerationStructureCompactedSize, 1);
+        device_->CreateQueryHeap(QueryHeapType::kAccelerationStructureCompactedSize, 1);
 
     std::shared_ptr<Resource> blas_compacted_size_buffer =
-        m_device->CreateBuffer(MemoryType::kReadback, { .size = sizeof(uint64_t), .usage = BindFlag::kCopyDest });
+        device_->CreateBuffer(MemoryType::kReadback, { .size = sizeof(uint64_t), .usage = BindFlag::kCopyDest });
     blas_compacted_size_buffer->SetName("blas_compacted_size_buffer");
 
-    std::shared_ptr<CommandList> upload_command_list = m_device->CreateCommandList(CommandListType::kGraphics);
+    std::shared_ptr<CommandList> upload_command_list = device_->CreateCommandList(CommandListType::kGraphics);
     upload_command_list->CopyBuffer(upload_buffer, index_buffer, { { 0, 0, index_buffer->GetWidth() } });
     upload_command_list->CopyBuffer(upload_buffer, vertex_buffer,
                                     { { index_buffer->GetWidth(), 0, vertex_buffer->GetWidth() } });
@@ -202,31 +202,31 @@ void RayTracingTriangleRenderer::InitAccelerationStructures()
         { { index_buffer, ResourceState::kCopyDest, ResourceState::kNonPixelShaderResource } });
     upload_command_list->ResourceBarrier(
         { { vertex_buffer, ResourceState::kCopyDest, ResourceState::kNonPixelShaderResource } });
-    upload_command_list->BuildBottomLevelAS({}, m_blas, scratch, 0, { raytracing_geometry_desc },
+    upload_command_list->BuildBottomLevelAS({}, blas_, scratch, 0, { raytracing_geometry_desc },
                                             BuildAccelerationStructureFlags::kAllowCompaction);
-    upload_command_list->UAVResourceBarrier(m_blas);
-    upload_command_list->WriteAccelerationStructuresProperties({ m_blas }, query_heap, 0);
+    upload_command_list->UAVResourceBarrier(blas_);
+    upload_command_list->WriteAccelerationStructuresProperties({ blas_ }, query_heap, 0);
     upload_command_list->ResolveQueryData(query_heap, 0, 1, blas_compacted_size_buffer, 0);
     upload_command_list->Close();
 
-    m_command_queue->ExecuteCommandLists({ upload_command_list });
-    m_command_queue->Signal(m_fence, ++m_fence_value);
-    m_fence->Wait(m_fence_value);
+    command_queue_->ExecuteCommandLists({ upload_command_list });
+    command_queue_->Signal(fence_, ++fence_value_);
+    fence_->Wait(fence_value_);
 
     uint64_t blas_compacted_size = *reinterpret_cast<uint64_t*>(blas_compacted_size_buffer->Map());
     assert(blas_compacted_size != 0);
     blas_compacted_size_buffer->Unmap();
 
-    m_blas_compacted = m_device->CreateAccelerationStructure({
+    blas_compacted_ = device_->CreateAccelerationStructure({
         .type = AccelerationStructureType::kBottomLevel,
-        .buffer = m_acceleration_structures_memory,
+        .buffer = acceleration_structures_memory_,
         .buffer_offset = blas_compacted_offset,
         .size = blas_compacted_size,
     });
 
     auto geometry = std::to_array<std::pair<std::shared_ptr<Resource>, glm::mat4x4>>({
-        { m_blas, glm::transpose(glm::translate(glm::vec3(-0.5, 0.0, 0.0))) },
-        { m_blas_compacted, glm::transpose(glm::translate(glm::vec3(0.5, 0.0, 0.0))) },
+        { blas_, glm::transpose(glm::translate(glm::vec3(-0.5, 0.0, 0.0))) },
+        { blas_compacted_, glm::transpose(glm::translate(glm::vec3(0.5, 0.0, 0.0))) },
     });
     static_assert(geometry.size() == kInstanceCount);
     std::array<RaytracingGeometryInstance, kInstanceCount> instances = {};
@@ -240,31 +240,31 @@ void RayTracingTriangleRenderer::InitAccelerationStructures()
         instance.acceleration_structure_handle = resource->GetAccelerationStructureHandle();
     }
 
-    std::shared_ptr<Resource> instance_data = m_device->CreateBuffer(
+    std::shared_ptr<Resource> instance_data = device_->CreateBuffer(
         MemoryType::kUpload, { .size = instances.size() * sizeof(instances.back()), .usage = BindFlag::kRayTracing });
     instance_data->SetName("instance_data");
     instance_data->UpdateUploadBuffer(0, instances.data(), instances.size() * sizeof(instances.back()));
 
-    m_tlas = m_device->CreateAccelerationStructure({
+    tlas_ = device_->CreateAccelerationStructure({
         .type = AccelerationStructureType::kTopLevel,
-        .buffer = m_acceleration_structures_memory,
+        .buffer = acceleration_structures_memory_,
         .buffer_offset = tlas_offset,
         .size = tlas_prebuild_info.acceleration_structure_size,
     });
     ViewDesc tlas_view_desc = {
         .view_type = ViewType::kAccelerationStructure,
     };
-    m_tlas_view = m_device->CreateView(m_tlas, tlas_view_desc);
+    tlas_view_ = device_->CreateView(tlas_, tlas_view_desc);
 
     upload_command_list->Reset();
-    upload_command_list->CopyAccelerationStructure(m_blas, m_blas_compacted, CopyAccelerationStructureMode::kCompact);
-    upload_command_list->BuildTopLevelAS({}, m_tlas, scratch, 0, instance_data, 0, instances.size(),
+    upload_command_list->CopyAccelerationStructure(blas_, blas_compacted_, CopyAccelerationStructureMode::kCompact);
+    upload_command_list->BuildTopLevelAS({}, tlas_, scratch, 0, instance_data, 0, instances.size(),
                                          BuildAccelerationStructureFlags::kNone);
     upload_command_list->Close();
 
-    m_command_queue->ExecuteCommandLists({ upload_command_list });
-    m_command_queue->Signal(m_fence, ++m_fence_value);
-    m_fence->Wait(m_fence_value);
+    command_queue_->ExecuteCommandLists({ upload_command_list });
+    command_queue_->Signal(fence_, ++fence_value_);
+    fence_->Wait(fence_value_);
 }
 
 RayTracingTriangleRenderer::~RayTracingTriangleRenderer()
@@ -274,12 +274,11 @@ RayTracingTriangleRenderer::~RayTracingTriangleRenderer()
 
 void RayTracingTriangleRenderer::Init(const AppSize& app_size, const NativeSurface& surface)
 {
-    m_swapchain =
-        m_device->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
+    swapchain_ = device_->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, settings_.vsync);
 
     TextureDesc result_texture_desc = {
         .type = TextureType::k2D,
-        .format = m_swapchain->GetFormat(),
+        .format = swapchain_->GetFormat(),
         .width = app_size.width(),
         .height = app_size.height(),
         .depth_or_array_layers = 1,
@@ -287,36 +286,36 @@ void RayTracingTriangleRenderer::Init(const AppSize& app_size, const NativeSurfa
         .sample_count = 1,
         .usage = BindFlag::kUnorderedAccess | BindFlag::kCopySource,
     };
-    m_result_texture = m_device->CreateTexture(MemoryType::kDefault, result_texture_desc);
-    m_result_texture->SetName("result_texture");
+    result_texture_ = device_->CreateTexture(MemoryType::kDefault, result_texture_desc);
+    result_texture_->SetName("result_texture");
 
     ViewDesc result_texture_view_desc = {
         .view_type = ViewType::kRWTexture,
         .dimension = ViewDimension::kTexture2D,
     };
-    m_result_texture_view = m_device->CreateView(m_result_texture, result_texture_view_desc);
+    result_texture_view_ = device_->CreateView(result_texture_, result_texture_view_desc);
 
-    BindKey geometry_key = m_library->GetBindKey("geometry");
-    BindKey result_texture_key = m_library->GetBindKey("result_texture");
-    std::shared_ptr<BindingSet> m_binding_set = m_device->CreateBindingSet(m_layout);
-    m_binding_set->WriteBindings({
-        { geometry_key, m_tlas_view },
-        { result_texture_key, m_result_texture_view },
+    BindKey geometry_key = library_->GetBindKey("geometry");
+    BindKey result_texture_key = library_->GetBindKey("result_texture");
+    std::shared_ptr<BindingSet> binding_set_ = device_->CreateBindingSet(layout_);
+    binding_set_->WriteBindings({
+        { geometry_key, tlas_view_ },
+        { result_texture_key, result_texture_view_ },
     });
 
     for (uint32_t i = 0; i < kFrameCount; ++i) {
-        std::shared_ptr<Resource> back_buffer = m_swapchain->GetBackBuffer(i);
-        auto& command_list = m_command_lists[i];
-        command_list = m_device->CreateCommandList(CommandListType::kGraphics);
-        command_list->BindPipeline(m_pipeline);
-        command_list->BindBindingSet(m_binding_set);
-        command_list->DispatchRays(m_shader_tables, app_size.width(), app_size.height(), 1);
+        std::shared_ptr<Resource> back_buffer = swapchain_->GetBackBuffer(i);
+        auto& command_list = command_lists_[i];
+        command_list = device_->CreateCommandList(CommandListType::kGraphics);
+        command_list->BindPipeline(pipeline_);
+        command_list->BindBindingSet(binding_set_);
+        command_list->DispatchRays(shader_tables_, app_size.width(), app_size.height(), 1);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kCopyDest } });
         command_list->ResourceBarrier(
-            { { m_result_texture, ResourceState::kUnorderedAccess, ResourceState::kCopySource } });
-        command_list->CopyTexture(m_result_texture, back_buffer, { { app_size.width(), app_size.height(), 1 } });
+            { { result_texture_, ResourceState::kUnorderedAccess, ResourceState::kCopySource } });
+        command_list->CopyTexture(result_texture_, back_buffer, { { app_size.width(), app_size.height(), 1 } });
         command_list->ResourceBarrier(
-            { { m_result_texture, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
+            { { result_texture_, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kCopyDest, ResourceState::kPresent } });
         command_list->Close();
     }
@@ -325,18 +324,18 @@ void RayTracingTriangleRenderer::Init(const AppSize& app_size, const NativeSurfa
 void RayTracingTriangleRenderer::Resize(const AppSize& app_size, const NativeSurface& surface)
 {
     WaitForIdle();
-    m_swapchain.reset();
+    swapchain_.reset();
     Init(app_size, surface);
 }
 
 void RayTracingTriangleRenderer::Render()
 {
-    uint32_t frame_index = m_swapchain->NextImage(m_fence, ++m_fence_value);
-    m_command_queue->Wait(m_fence, m_fence_value);
-    m_fence->Wait(m_fence_values[frame_index]);
-    m_command_queue->ExecuteCommandLists({ m_command_lists[frame_index] });
-    m_command_queue->Signal(m_fence, m_fence_values[frame_index] = ++m_fence_value);
-    m_swapchain->Present(m_fence, m_fence_values[frame_index]);
+    uint32_t frame_index = swapchain_->NextImage(fence_, ++fence_value_);
+    command_queue_->Wait(fence_, fence_value_);
+    fence_->Wait(fence_values_[frame_index]);
+    command_queue_->ExecuteCommandLists({ command_lists_[frame_index] });
+    command_queue_->Signal(fence_, fence_values_[frame_index] = ++fence_value_);
+    swapchain_->Present(fence_, fence_values_[frame_index]);
 }
 
 std::string_view RayTracingTriangleRenderer::GetTitle() const
@@ -346,18 +345,18 @@ std::string_view RayTracingTriangleRenderer::GetTitle() const
 
 const std::string& RayTracingTriangleRenderer::GetGpuName() const
 {
-    return m_adapter->GetName();
+    return adapter_->GetName();
 }
 
 const Settings& RayTracingTriangleRenderer::GetSettings() const
 {
-    return m_settings;
+    return settings_;
 }
 
 void RayTracingTriangleRenderer::WaitForIdle()
 {
-    m_command_queue->Signal(m_fence, ++m_fence_value);
-    m_fence->Wait(m_fence_value);
+    command_queue_->Signal(fence_, ++fence_value_);
+    fence_->Wait(fence_value_);
 }
 
 int main(int argc, char* argv[])

@@ -12,5 +12,5 @@ public:
     PipelineType GetPipelineType() const override;
 
 private:
-    ComputePipelineDesc m_desc;
+    ComputePipelineDesc desc_;
 };

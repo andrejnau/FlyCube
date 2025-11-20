@@ -8,13 +8,13 @@
 
 VKComputePipeline::VKComputePipeline(VKDevice& device, const ComputePipelineDesc& desc)
     : VKPipeline(device, { desc.shader }, desc.layout)
-    , m_desc(desc)
+    , desc_(desc)
 {
     vk::ComputePipelineCreateInfo pipeline_info = {};
-    assert(m_shader_stage_create_info.size() == 1);
-    pipeline_info.stage = m_shader_stage_create_info.front();
-    pipeline_info.layout = m_pipeline_layout;
-    m_pipeline = m_device.GetDevice().createComputePipelineUnique({}, pipeline_info).value;
+    assert(shader_stage_create_info_.size() == 1);
+    pipeline_info.stage = shader_stage_create_info_.front();
+    pipeline_info.layout = pipeline_layout_;
+    pipeline_ = device_.GetDevice().createComputePipelineUnique({}, pipeline_info).value;
 }
 
 PipelineType VKComputePipeline::GetPipelineType() const

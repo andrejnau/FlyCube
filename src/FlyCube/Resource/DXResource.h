@@ -46,10 +46,10 @@ public:
     D3D12_GPU_VIRTUAL_ADDRESS GetAccelerationStructureAddress() const;
 
 private:
-    DXDevice& m_device;
+    DXDevice& device_;
 
-    ComPtr<ID3D12Resource> m_resource;
-    D3D12_RESOURCE_DESC m_resource_desc = {};
-    D3D12_SAMPLER_DESC m_sampler_desc = {};
-    D3D12_GPU_VIRTUAL_ADDRESS m_acceleration_structure_address = {};
+    ComPtr<ID3D12Resource> resource_;
+    D3D12_RESOURCE_DESC resource_desc_ = {};
+    D3D12_SAMPLER_DESC sampler_desc_ = {};
+    D3D12_GPU_VIRTUAL_ADDRESS acceleration_structure_address_ = {};
 };

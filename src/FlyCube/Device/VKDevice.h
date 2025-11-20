@@ -86,22 +86,21 @@ public:
     template <typename Features>
     Features GetFeatures2() const
     {
-        auto [_, features] = m_physical_device.getFeatures2<vk::PhysicalDeviceFeatures2, Features>();
+        auto [_, features] = physical_device_.getFeatures2<vk::PhysicalDeviceFeatures2, Features>();
         return features;
     }
 
     template <typename Properties>
     Properties GetProperties2() const
     {
-        auto [_, properties] = m_physical_device.getProperties2<vk::PhysicalDeviceProperties2, Properties>();
+        auto [_, properties] = physical_device_.getProperties2<vk::PhysicalDeviceProperties2, Properties>();
         return properties;
     }
 
     template <typename Properties>
     Properties GetMemoryProperties2() const
     {
-        auto [_, properties] =
-            m_physical_device.getMemoryProperties2<vk::PhysicalDeviceMemoryProperties2, Properties>();
+        auto [_, properties] = physical_device_.getMemoryProperties2<vk::PhysicalDeviceMemoryProperties2, Properties>();
         return properties;
     }
 
@@ -110,29 +109,29 @@ private:
         const vk::AccelerationStructureBuildGeometryInfoKHR& acceleration_structure_info,
         const std::vector<uint32_t>& max_primitive_counts) const;
 
-    VKAdapter& m_adapter;
-    const vk::PhysicalDevice& m_physical_device;
-    vk::UniqueDevice m_device;
+    VKAdapter& adapter_;
+    const vk::PhysicalDevice& physical_device_;
+    vk::UniqueDevice device_;
     struct QueueInfo {
         uint32_t queue_family_index;
         uint32_t queue_count;
     };
-    std::map<CommandListType, QueueInfo> m_queues_info;
-    std::map<CommandListType, vk::UniqueCommandPool> m_cmd_pools;
-    std::map<CommandListType, std::shared_ptr<VKCommandQueue>> m_command_queues;
-    std::map<vk::DescriptorType, VKGPUBindlessDescriptorPoolTyped> m_gpu_bindless_descriptor_pool;
-    VKGPUDescriptorPool m_gpu_descriptor_pool;
-    bool m_is_variable_rate_shading_supported = false;
-    uint32_t m_shading_rate_image_tile_size = 0;
-    bool m_is_dxr_supported = false;
-    bool m_is_ray_query_supported = false;
-    bool m_is_mesh_shading_supported = false;
-    uint32_t m_shader_group_handle_size = 0;
-    uint32_t m_shader_record_alignment = 0;
-    uint32_t m_shader_table_alignment = 0;
-    bool m_geometry_shader_supported = false;
-    bool m_bindless_supported = false;
-    bool m_draw_indirect_count_supported = false;
-    bool m_has_buffer_device_address = false;
-    vk::PhysicalDeviceProperties m_device_properties = {};
+    std::map<CommandListType, QueueInfo> queues_info_;
+    std::map<CommandListType, vk::UniqueCommandPool> cmd_pools_;
+    std::map<CommandListType, std::shared_ptr<VKCommandQueue>> command_queues_;
+    std::map<vk::DescriptorType, VKGPUBindlessDescriptorPoolTyped> gpu_bindless_descriptor_pool_;
+    VKGPUDescriptorPool gpu_descriptor_pool_;
+    bool is_variable_rate_shading_supported_ = false;
+    uint32_t shading_rate_image_tile_size_ = 0;
+    bool is_dxr_supported_ = false;
+    bool is_ray_query_supported_ = false;
+    bool is_mesh_shading_supported_ = false;
+    uint32_t shader_group_handle_size_ = 0;
+    uint32_t shader_record_alignment_ = 0;
+    uint32_t shader_table_alignment_ = 0;
+    bool geometry_shader_supported_ = false;
+    bool bindless_supported_ = false;
+    bool draw_indirect_count_supported_ = false;
+    bool has_buffer_device_address_ = false;
+    vk::PhysicalDeviceProperties device_properties_ = {};
 };

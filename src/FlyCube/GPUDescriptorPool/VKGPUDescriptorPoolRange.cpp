@@ -5,21 +5,20 @@
 VKGPUDescriptorPoolRange::VKGPUDescriptorPoolRange(VKGPUBindlessDescriptorPoolTyped& pool,
                                                    uint32_t offset,
                                                    uint32_t size)
-    : m_pool(pool)
-    , m_offset(offset)
-    , m_size(size)
-    , m_callback(this, [m_offset = m_offset, m_size = m_size, m_pool = m_pool](auto) {
-        m_pool.get().OnRangeDestroy(m_offset, m_size);
-    })
+    : pool_(pool)
+    , offset_(offset)
+    , size_(size)
+    , callback_(this,
+                [offset_ = offset_, size_ = size_, pool_ = pool_](auto) { pool_.get().OnRangeDestroy(offset_, size_); })
 {
 }
 
 vk::DescriptorSet VKGPUDescriptorPoolRange::GetDescriptorSet() const
 {
-    return m_pool.get().GetDescriptorSet();
+    return pool_.get().GetDescriptorSet();
 }
 
 uint32_t VKGPUDescriptorPoolRange::GetOffset() const
 {
-    return m_offset;
+    return offset_;
 }

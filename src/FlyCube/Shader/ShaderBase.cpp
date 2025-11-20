@@ -11,82 +11,82 @@ uint64_t GenId()
 } // namespace
 
 ShaderBase::ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_type, ShaderType shader_type)
-    : m_blob(blob)
-    , m_blob_type(blob_type)
-    , m_shader_type(shader_type)
+    : blob_(blob)
+    , blob_type_(blob_type)
+    , shader_type_(shader_type)
 {
-    m_reflection = CreateShaderReflection(blob_type, m_blob.data(), m_blob.size());
-    m_bindings = m_reflection->GetBindings();
-    for (uint32_t i = 0; i < m_bindings.size(); ++i) {
-        BindKey bind_key = { m_shader_type, m_bindings[i].type, m_bindings[i].slot, m_bindings[i].space,
-                             m_bindings[i].count };
-        m_bind_keys[m_bindings[i].name] = bind_key;
-        m_mapping[bind_key] = i;
-        m_binding_keys.emplace_back(bind_key);
+    reflection_ = CreateShaderReflection(blob_type, blob_.data(), blob_.size());
+    bindings_ = reflection_->GetBindings();
+    for (uint32_t i = 0; i < bindings_.size(); ++i) {
+        BindKey bind_key = { shader_type_, bindings_[i].type, bindings_[i].slot, bindings_[i].space,
+                             bindings_[i].count };
+        bind_keys_[bindings_[i].name] = bind_key;
+        mapping_[bind_key] = i;
+        binding_keys_.emplace_back(bind_key);
     }
 
-    decltype(auto) input_parameters = m_reflection->GetInputParameters();
+    decltype(auto) input_parameters = reflection_->GetInputParameters();
     for (uint32_t i = 0; i < input_parameters.size(); ++i) {
-        decltype(auto) layout = m_input_layout_descs.emplace_back();
+        decltype(auto) layout = input_layout_descs_.emplace_back();
         layout.slot = i;
         layout.semantic_name = input_parameters[i].semantic_name;
         layout.format = input_parameters[i].format;
         layout.stride = gli::detail::bits_per_pixel(layout.format) / 8;
-        m_locations[input_parameters[i].semantic_name] = input_parameters[i].location;
+        locations_[input_parameters[i].semantic_name] = input_parameters[i].location;
     }
 
-    for (const auto& entry_point : m_reflection->GetEntryPoints()) {
-        m_ids.emplace(entry_point.name, GenId());
+    for (const auto& entry_point : reflection_->GetEntryPoints()) {
+        ids_.emplace(entry_point.name, GenId());
     }
 }
 
 ShaderType ShaderBase::GetType() const
 {
-    return m_shader_type;
+    return shader_type_;
 }
 
 const std::vector<uint8_t>& ShaderBase::GetBlob() const
 {
-    return m_blob;
+    return blob_;
 }
 
 uint64_t ShaderBase::GetId(const std::string& entry_point) const
 {
-    return m_ids.at(entry_point);
+    return ids_.at(entry_point);
 }
 
 const BindKey& ShaderBase::GetBindKey(const std::string& name) const
 {
-    return m_bind_keys.at(name);
+    return bind_keys_.at(name);
 }
 
 const std::vector<ResourceBindingDesc>& ShaderBase::GetResourceBindings() const
 {
-    return m_bindings;
+    return bindings_;
 }
 
 const ResourceBindingDesc& ShaderBase::GetResourceBinding(const BindKey& bind_key) const
 {
-    size_t index = m_mapping.at(bind_key);
-    return m_bindings.at(index);
+    size_t index = mapping_.at(bind_key);
+    return bindings_.at(index);
 }
 
 const std::vector<InputLayoutDesc>& ShaderBase::GetInputLayouts() const
 {
-    return m_input_layout_descs;
+    return input_layout_descs_;
 }
 
 uint32_t ShaderBase::GetInputLayoutLocation(const std::string& semantic_name) const
 {
-    return m_locations.at(semantic_name);
+    return locations_.at(semantic_name);
 }
 
 const std::vector<BindKey>& ShaderBase::GetBindings() const
 {
-    return m_binding_keys;
+    return binding_keys_;
 }
 
 const std::shared_ptr<ShaderReflection>& ShaderBase::GetReflection() const
 {
-    return m_reflection;
+    return reflection_;
 }

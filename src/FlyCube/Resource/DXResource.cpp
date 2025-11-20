@@ -33,7 +33,7 @@ std::optional<D3D12_CLEAR_VALUE> GetClearValue(const D3D12_RESOURCE_DESC& desc)
 }
 
 DXResource::DXResource(PassKey<DXResource> pass_key, DXDevice& device)
-    : m_device(device)
+    : device_(device)
 {
 }
 
@@ -43,11 +43,11 @@ std::shared_ptr<DXResource> DXResource::WrapSwapchainBackBuffer(DXDevice& device
                                                                 gli::format format)
 {
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
-    self->m_resource_type = ResourceType::kTexture;
-    self->m_format = format;
-    self->m_resource = back_buffer;
-    self->m_resource_desc = back_buffer->GetDesc();
-    self->m_is_back_buffer = true;
+    self->resource_type_ = ResourceType::kTexture;
+    self->format_ = format;
+    self->resource_ = back_buffer;
+    self->resource_desc_ = back_buffer->GetDesc();
+    self->is_back_buffer_ = true;
     self->SetInitialState(ResourceState::kPresent);
     return self;
 }
@@ -97,9 +97,9 @@ std::shared_ptr<DXResource> DXResource::CreateTexture(DXDevice& device, const Te
     }
 
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
-    self->m_resource_type = ResourceType::kTexture;
-    self->m_format = desc.format;
-    self->m_resource_desc = resource_desc;
+    self->resource_type_ = ResourceType::kTexture;
+    self->format_ = desc.format;
+    self->resource_desc_ = resource_desc;
     self->SetInitialState(ResourceState::kCommon);
     return self;
 }
@@ -134,8 +134,8 @@ std::shared_ptr<DXResource> DXResource::CreateBuffer(DXDevice& device, const Buf
     }
 
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
-    self->m_resource_type = ResourceType::kBuffer;
-    self->m_resource_desc = resource_desc;
+    self->resource_type_ = ResourceType::kBuffer;
+    self->resource_desc_ = resource_desc;
     self->SetInitialState(state);
     return self;
 }
@@ -186,8 +186,8 @@ std::shared_ptr<DXResource> DXResource::CreateSampler(DXDevice& device, const Sa
     sampler_desc.MaxAnisotropy = 1;
 
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
-    self->m_resource_type = ResourceType::kSampler;
-    self->m_sampler_desc = sampler_desc;
+    self->resource_type_ = ResourceType::kSampler;
+    self->sampler_desc_ = sampler_desc;
     return self;
 }
 
@@ -196,92 +196,91 @@ std::shared_ptr<DXResource> DXResource::CreateAccelerationStructure(DXDevice& de
                                                                     const AccelerationStructureDesc& desc)
 {
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
-    self->m_resource_type = ResourceType::kAccelerationStructure;
-    self->m_acceleration_structure_address =
-        desc.buffer->As<DXResource>().m_resource->GetGPUVirtualAddress() + desc.buffer_offset;
+    self->resource_type_ = ResourceType::kAccelerationStructure;
+    self->acceleration_structure_address_ =
+        desc.buffer->As<DXResource>().resource_->GetGPUVirtualAddress() + desc.buffer_offset;
     return self;
 }
 
 void DXResource::CommitMemory(MemoryType memory_type)
 {
-    m_memory_type = memory_type;
-    auto clear_value = GetClearValue(m_resource_desc);
+    memory_type_ = memory_type;
+    auto clear_value = GetClearValue(resource_desc_);
     D3D12_CLEAR_VALUE* p_clear_value = nullptr;
     if (clear_value.has_value()) {
         p_clear_value = &clear_value.value();
     }
 
     // TODO
-    if (m_memory_type == MemoryType::kUpload) {
+    if (memory_type_ == MemoryType::kUpload) {
         SetInitialState(ResourceState::kGenericRead);
-    } else if (m_memory_type == MemoryType::kReadback) {
+    } else if (memory_type_ == MemoryType::kReadback) {
         SetInitialState(ResourceState::kCopyDest);
     }
 
     D3D12_HEAP_FLAGS flags = D3D12_HEAP_FLAG_NONE;
-    if (m_device.IsCreateNotZeroedAvailable()) {
+    if (device_.IsCreateNotZeroedAvailable()) {
         flags |= D3D12_HEAP_FLAG_CREATE_NOT_ZEROED;
     }
-    auto heap_properties = CD3DX12_HEAP_PROPERTIES(GetHeapType(m_memory_type));
-    m_device.GetDevice()->CreateCommittedResource(&heap_properties, flags, &m_resource_desc,
-                                                  ConvertState(GetInitialState()), p_clear_value,
-                                                  IID_PPV_ARGS(&m_resource));
+    auto heap_properties = CD3DX12_HEAP_PROPERTIES(GetHeapType(memory_type_));
+    device_.GetDevice()->CreateCommittedResource(&heap_properties, flags, &resource_desc_,
+                                                 ConvertState(GetInitialState()), p_clear_value,
+                                                 IID_PPV_ARGS(&resource_));
 }
 
 void DXResource::BindMemory(const std::shared_ptr<Memory>& memory, uint64_t offset)
 {
-    m_memory_type = memory->GetMemoryType();
-    auto clear_value = GetClearValue(m_resource_desc);
+    memory_type_ = memory->GetMemoryType();
+    auto clear_value = GetClearValue(resource_desc_);
     D3D12_CLEAR_VALUE* p_clear_value = nullptr;
     if (clear_value.has_value()) {
         p_clear_value = &clear_value.value();
     }
 
     // TODO
-    if (m_memory_type == MemoryType::kUpload) {
+    if (memory_type_ == MemoryType::kUpload) {
         SetInitialState(ResourceState::kGenericRead);
     }
 
     decltype(auto) dx_memory = memory->As<DXMemory>();
-    m_device.GetDevice()->CreatePlacedResource(dx_memory.GetHeap().Get(), offset, &m_resource_desc,
-                                               ConvertState(GetInitialState()), p_clear_value,
-                                               IID_PPV_ARGS(&m_resource));
+    device_.GetDevice()->CreatePlacedResource(dx_memory.GetHeap().Get(), offset, &resource_desc_,
+                                              ConvertState(GetInitialState()), p_clear_value, IID_PPV_ARGS(&resource_));
 }
 
 uint64_t DXResource::GetWidth() const
 {
-    return m_resource_desc.Width;
+    return resource_desc_.Width;
 }
 
 uint32_t DXResource::GetHeight() const
 {
-    return m_resource_desc.Height;
+    return resource_desc_.Height;
 }
 
 uint16_t DXResource::GetLayerCount() const
 {
-    return m_resource_desc.DepthOrArraySize;
+    return resource_desc_.DepthOrArraySize;
 }
 
 uint16_t DXResource::GetLevelCount() const
 {
-    return m_resource_desc.MipLevels;
+    return resource_desc_.MipLevels;
 }
 
 uint32_t DXResource::GetSampleCount() const
 {
-    return m_resource_desc.SampleDesc.Count;
+    return resource_desc_.SampleDesc.Count;
 }
 
 uint64_t DXResource::GetAccelerationStructureHandle() const
 {
-    return m_acceleration_structure_address;
+    return acceleration_structure_address_;
 }
 
 void DXResource::SetName(const std::string& name)
 {
-    if (m_resource) {
-        m_resource->SetName(nowide::widen(name).c_str());
+    if (resource_) {
+        resource_->SetName(nowide::widen(name).c_str());
     }
 }
 
@@ -289,39 +288,39 @@ uint8_t* DXResource::Map()
 {
     CD3DX12_RANGE range(0, 0);
     uint8_t* dst_data = nullptr;
-    CHECK_HRESULT(m_resource->Map(0, &range, reinterpret_cast<void**>(&dst_data)));
+    CHECK_HRESULT(resource_->Map(0, &range, reinterpret_cast<void**>(&dst_data)));
     return dst_data;
 }
 
 void DXResource::Unmap()
 {
     CD3DX12_RANGE range(0, 0);
-    m_resource->Unmap(0, &range);
+    resource_->Unmap(0, &range);
 }
 
 MemoryRequirements DXResource::GetMemoryRequirements() const
 {
     D3D12_RESOURCE_ALLOCATION_INFO allocation_info =
-        m_device.GetDevice()->GetResourceAllocationInfo(0, 1, &m_resource_desc);
+        device_.GetDevice()->GetResourceAllocationInfo(0, 1, &resource_desc_);
     return { allocation_info.SizeInBytes, allocation_info.Alignment, 0 };
 }
 
 ID3D12Resource* DXResource::GetResource() const
 {
-    return m_resource.Get();
+    return resource_.Get();
 }
 
 const D3D12_RESOURCE_DESC& DXResource::GetResourceDesc() const
 {
-    return m_resource_desc;
+    return resource_desc_;
 }
 
 const D3D12_SAMPLER_DESC& DXResource::GetSamplerDesc() const
 {
-    return m_sampler_desc;
+    return sampler_desc_;
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS DXResource::GetAccelerationStructureAddress() const
 {
-    return m_acceleration_structure_address;
+    return acceleration_structure_address_;
 }

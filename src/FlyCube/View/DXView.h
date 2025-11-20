@@ -29,9 +29,9 @@ private:
     void CreateCBV();
     void CreateSampler();
 
-    DXDevice& m_device;
-    std::shared_ptr<DXResource> m_resource;
-    ViewDesc m_view_desc;
-    std::shared_ptr<DXCPUDescriptorHandle> m_handle;
-    std::shared_ptr<DXGPUDescriptorPoolRange> m_range;
+    DXDevice& device_;
+    std::shared_ptr<DXResource> resource_;
+    ViewDesc view_desc_;
+    std::shared_ptr<DXCPUDescriptorHandle> handle_;
+    std::shared_ptr<DXGPUDescriptorPoolRange> range_;
 };

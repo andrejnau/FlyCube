@@ -11,22 +11,22 @@ MTSwapchain::MTSwapchain(MTDevice& device,
                          uint32_t height,
                          uint32_t frame_count,
                          bool vsync)
-    : m_device(device)
-    , m_frame_index(frame_count - 1)
-    , m_frame_count(frame_count)
-    , m_width(width)
-    , m_height(height)
+    : device_(device)
+    , frame_index_(frame_count - 1)
+    , frame_count_(frame_count)
+    , width_(width)
+    , height_(height)
 {
     const auto& metal_surface = std::get<MetalSurface>(surface);
-    m_layer = (__bridge CAMetalLayer*)metal_surface.ca_metal_layer;
-    m_layer.drawableSize = CGSizeMake(width, height);
-    m_layer.device = device.GetDevice();
-    m_layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
-    m_layer.maximumDrawableCount = frame_count;
+    layer_ = (__bridge CAMetalLayer*)metal_surface.ca_metal_layer;
+    layer_.drawableSize = CGSizeMake(width, height);
+    layer_.device = device.GetDevice();
+    layer_.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    layer_.maximumDrawableCount = frame_count;
 #if TARGET_OS_OSX
-    m_layer.displaySyncEnabled = vsync;
+    layer_.displaySyncEnabled = vsync;
 #endif
-    m_layer.framebufferOnly = NO;
+    layer_.framebufferOnly = NO;
 
     for (size_t i = 0; i < frame_count; ++i) {
         TextureDesc texture_desc = {
@@ -39,9 +39,9 @@ MTSwapchain::MTSwapchain(MTDevice& device,
             .sample_count = 1,
             .usage = BindFlag::kRenderTarget | BindFlag::kUnorderedAccess,
         };
-        std::shared_ptr<MTResource> back_buffer = MTResource::CreateSwapchainTexture(m_device, texture_desc);
+        std::shared_ptr<MTResource> back_buffer = MTResource::CreateSwapchainTexture(device_, texture_desc);
         back_buffer->CommitMemory(MemoryType::kDefault);
-        m_back_buffers.emplace_back(std::move(back_buffer));
+        back_buffers_.emplace_back(std::move(back_buffer));
     }
 }
 
@@ -52,30 +52,30 @@ gli::format MTSwapchain::GetFormat() const
 
 std::shared_ptr<Resource> MTSwapchain::GetBackBuffer(uint32_t buffer)
 {
-    return m_back_buffers[buffer];
+    return back_buffers_[buffer];
 }
 
 uint32_t MTSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
 {
     decltype(auto) mt_fence = fence->As<MTFence>();
-    auto queue = m_device.GetMTCommandQueue();
+    auto queue = device_.GetMTCommandQueue();
     [queue signalEvent:mt_fence.GetSharedEvent() value:signal_value];
-    return m_frame_index = (m_frame_index + 1) % m_frame_count;
+    return frame_index_ = (frame_index_ + 1) % frame_count_;
 }
 
 void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
     decltype(auto) mt_fence = fence->As<MTFence>();
-    auto back_buffer = m_back_buffers[m_frame_index];
+    auto back_buffer = back_buffers_[frame_index_];
     auto resource = back_buffer->As<MTResource>();
-    auto queue = m_device.GetMTCommandQueue();
-    id<CAMetalDrawable> drawable = [m_layer nextDrawable];
+    auto queue = device_.GetMTCommandQueue();
+    id<CAMetalDrawable> drawable = [layer_ nextDrawable];
 
-    auto command_buffer = [m_device.GetDevice() newCommandBuffer];
-    auto allocator = [m_device.GetDevice() newCommandAllocator];
+    auto command_buffer = [device_.GetDevice() newCommandBuffer];
+    auto allocator = [device_.GetDevice() newCommandAllocator];
     [command_buffer beginCommandBufferWithAllocator:allocator];
 
-    auto residency_set = m_device.CreateResidencySet();
+    auto residency_set = device_.CreateResidencySet();
     [residency_set addAllocation:resource.GetTexture()];
     [residency_set addAllocation:drawable.texture];
     [residency_set commit];
@@ -86,7 +86,7 @@ void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
                          sourceSlice:0
                          sourceLevel:0
                         sourceOrigin:{ 0, 0, 0 }
-                          sourceSize:{ m_width, m_height, 1 }
+                          sourceSize:{ width_, height_, 1 }
                            toTexture:drawable.texture
                     destinationSlice:0
                     destinationLevel:0

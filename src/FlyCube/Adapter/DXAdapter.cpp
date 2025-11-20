@@ -7,17 +7,17 @@
 #include <nowide/convert.hpp>
 
 DXAdapter::DXAdapter(DXInstance& instance, const ComPtr<IDXGIAdapter1>& adapter)
-    : m_instance(instance)
-    , m_adapter(adapter)
+    : instance_(instance)
+    , adapter_(adapter)
 {
     DXGI_ADAPTER_DESC desc = {};
     adapter->GetDesc(&desc);
-    m_name = nowide::narrow(desc.Description);
+    name_ = nowide::narrow(desc.Description);
 }
 
 const std::string& DXAdapter::GetName() const
 {
-    return m_name;
+    return name_;
 }
 
 std::shared_ptr<Device> DXAdapter::CreateDevice()
@@ -27,10 +27,10 @@ std::shared_ptr<Device> DXAdapter::CreateDevice()
 
 DXInstance& DXAdapter::GetInstance()
 {
-    return m_instance;
+    return instance_;
 }
 
 ComPtr<IDXGIAdapter1> DXAdapter::GetAdapter()
 {
-    return m_adapter;
+    return adapter_;
 }

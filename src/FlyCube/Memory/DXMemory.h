@@ -21,6 +21,6 @@ public:
     ComPtr<ID3D12Heap> GetHeap() const;
 
 private:
-    MemoryType m_memory_type;
-    ComPtr<ID3D12Heap> m_heap;
+    MemoryType memory_type_;
+    ComPtr<ID3D12Heap> heap_;
 };

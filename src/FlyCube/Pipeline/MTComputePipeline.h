@@ -21,7 +21,7 @@ public:
 private:
     MTLVertexDescriptor* GetVertexDescriptor(const std::shared_ptr<Shader>& shader);
 
-    ComputePipelineDesc m_desc;
-    id<MTLComputePipelineState> m_pipeline = nullptr;
-    MTLSize m_numthreads = {};
+    ComputePipelineDesc desc_;
+    id<MTLComputePipelineState> pipeline_ = nullptr;
+    MTLSize numthreads_ = {};
 };

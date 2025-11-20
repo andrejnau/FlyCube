@@ -3,30 +3,30 @@
 #include "Device/MTDevice.h"
 
 MTFence::MTFence(MTDevice& device, uint64_t initial_value)
-    : m_device(device)
+    : device_(device)
 {
-    m_shared_event = [m_device.GetDevice() newSharedEvent];
-    m_shared_event.signaledValue = initial_value;
+    shared_event_ = [device_.GetDevice() newSharedEvent];
+    shared_event_.signaledValue = initial_value;
 }
 
 uint64_t MTFence::GetCompletedValue()
 {
-    return m_shared_event.signaledValue;
+    return shared_event_.signaledValue;
 }
 
 void MTFence::Wait(uint64_t value)
 {
     while (GetCompletedValue() < value) {
-        [m_shared_event waitUntilSignaledValue:value timeoutMS:10];
+        [shared_event_ waitUntilSignaledValue:value timeoutMS:10];
     }
 }
 
 void MTFence::Signal(uint64_t value)
 {
-    m_shared_event.signaledValue = value;
+    shared_event_.signaledValue = value;
 }
 
 id<MTLSharedEvent> MTFence::GetSharedEvent()
 {
-    return m_shared_event;
+    return shared_event_;
 }

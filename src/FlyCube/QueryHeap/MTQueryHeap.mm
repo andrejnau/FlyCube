@@ -4,7 +4,7 @@
 
 MTQueryHeap::MTQueryHeap(MTDevice& device, QueryHeapType type, uint32_t count)
 {
-    m_buffer = [device.GetDevice() newBufferWithLength:count * sizeof(uint64_t) options:MTLResourceStorageModePrivate];
+    buffer_ = [device.GetDevice() newBufferWithLength:count * sizeof(uint64_t) options:MTLResourceStorageModePrivate];
 }
 
 QueryHeapType MTQueryHeap::GetType() const
@@ -14,5 +14,5 @@ QueryHeapType MTQueryHeap::GetType() const
 
 id<MTLBuffer> MTQueryHeap::GetBuffer() const
 {
-    return m_buffer;
+    return buffer_;
 }

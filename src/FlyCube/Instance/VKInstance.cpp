@@ -68,7 +68,7 @@ VKInstance::VKInstance()
 {
 #if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
     PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr =
-        m_dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+        dl_.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 #endif
 
@@ -134,15 +134,15 @@ VKInstance::VKInstance()
     instance_info.ppEnabledLayerNames = enabled_layers.data();
     instance_info.enabledExtensionCount = enabled_extensions.size();
     instance_info.ppEnabledExtensionNames = enabled_extensions.data();
-    m_instance = vk::createInstanceUnique(instance_info);
+    instance_ = vk::createInstanceUnique(instance_info);
 
 #if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance.get());
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(instance_.get());
 #endif
 
-    m_debug_utils_supported = enabled_extension_set.contains(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    debug_utils_supported_ = enabled_extension_set.contains(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
-    if (IsValidationEnabled() && m_debug_utils_supported) {
+    if (IsValidationEnabled() && debug_utils_supported_) {
         vk::DebugUtilsMessengerCreateInfoEXT debug_utils_messenger_info = {};
         debug_utils_messenger_info.messageSeverity =
             vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
@@ -152,7 +152,7 @@ VKInstance::VKInstance()
                                                  vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding;
         debug_utils_messenger_info.pfnUserCallback = &DebugUtilsMessengerCallback;
         debug_utils_messenger_info.pUserData = this;
-        m_debug_utils_messenger = m_instance->createDebugUtilsMessengerEXTUnique(debug_utils_messenger_info);
+        debug_utils_messenger_ = instance_->createDebugUtilsMessengerEXTUnique(debug_utils_messenger_info);
     }
 }
 
@@ -160,7 +160,7 @@ std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
 {
     std::vector<std::shared_ptr<Adapter>> adapters;
     std::vector<std::shared_ptr<Adapter>> sortware_adapters;
-    auto physical_devices = m_instance->enumeratePhysicalDevices();
+    auto physical_devices = instance_->enumeratePhysicalDevices();
     for (const auto& physical_device : physical_devices) {
         vk::PhysicalDeviceProperties properties = physical_device.getProperties();
         if (properties.apiVersion < VK_API_VERSION_1_2) {
@@ -181,10 +181,10 @@ std::vector<std::shared_ptr<Adapter>> VKInstance::EnumerateAdapters()
 
 vk::Instance& VKInstance::GetInstance()
 {
-    return m_instance.get();
+    return instance_.get();
 }
 
 bool VKInstance::IsDebugUtilsSupported() const
 {
-    return m_debug_utils_supported;
+    return debug_utils_supported_;
 }

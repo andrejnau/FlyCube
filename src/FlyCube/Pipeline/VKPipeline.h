@@ -17,11 +17,11 @@ public:
     std::vector<uint8_t> GetRayTracingShaderGroupHandles(uint32_t first_group, uint32_t group_count) const override;
 
 protected:
-    VKDevice& m_device;
+    VKDevice& device_;
     std::deque<std::string> entry_point_names;
-    std::vector<vk::PipelineShaderStageCreateInfo> m_shader_stage_create_info;
-    std::vector<vk::UniqueShaderModule> m_shader_modules;
-    vk::UniquePipeline m_pipeline;
-    vk::PipelineLayout m_pipeline_layout;
-    std::map<uint64_t, uint32_t> m_shader_ids;
+    std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_create_info_;
+    std::vector<vk::UniqueShaderModule> shader_modules_;
+    vk::UniquePipeline pipeline_;
+    vk::PipelineLayout pipeline_layout_;
+    std::map<uint64_t, uint32_t> shader_ids_;
 };

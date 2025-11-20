@@ -22,6 +22,6 @@ public:
     ID3D12Resource* GetResource() const;
 
 private:
-    DXDevice& m_device;
-    ComPtr<ID3D12Resource> m_resource;
+    DXDevice& device_;
+    ComPtr<ID3D12Resource> resource_;
 };

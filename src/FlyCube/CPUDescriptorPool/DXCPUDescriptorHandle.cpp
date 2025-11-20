@@ -11,17 +11,17 @@ DXCPUDescriptorHandle::DXCPUDescriptorHandle(DXDevice& device,
                                              size_t size,
                                              uint32_t increment_size,
                                              D3D12_DESCRIPTOR_HEAP_TYPE type)
-    : m_device(device)
-    , m_heap(heap)
-    , m_cpu_handle(cpu_handle)
-    , m_offset(offset)
-    , m_size(size)
-    , m_increment_size(increment_size)
-    , m_type(type)
+    : device_(device)
+    , heap_(heap)
+    , cpu_handle_(cpu_handle)
+    , offset_(offset)
+    , size_(size)
+    , increment_size_(increment_size)
+    , type_(type)
 {
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DXCPUDescriptorHandle::GetCpuHandle(size_t offset) const
 {
-    return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cpu_handle, static_cast<INT>(m_offset + offset), m_increment_size);
+    return CD3DX12_CPU_DESCRIPTOR_HANDLE(cpu_handle_, static_cast<INT>(offset_ + offset), increment_size_);
 }

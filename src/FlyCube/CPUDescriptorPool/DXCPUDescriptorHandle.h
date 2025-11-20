@@ -30,11 +30,11 @@ public:
     D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(size_t offset = 0) const;
 
 private:
-    std::reference_wrapper<DXDevice> m_device;
-    std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> m_heap;
-    std::reference_wrapper<D3D12_CPU_DESCRIPTOR_HANDLE> m_cpu_handle;
-    size_t m_offset;
-    size_t m_size;
-    uint32_t m_increment_size;
-    D3D12_DESCRIPTOR_HEAP_TYPE m_type;
+    std::reference_wrapper<DXDevice> device_;
+    std::reference_wrapper<ComPtr<ID3D12DescriptorHeap>> heap_;
+    std::reference_wrapper<D3D12_CPU_DESCRIPTOR_HANDLE> cpu_handle_;
+    size_t offset_;
+    size_t size_;
+    uint32_t increment_size_;
+    D3D12_DESCRIPTOR_HEAP_TYPE type_;
 };

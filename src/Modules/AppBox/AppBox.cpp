@@ -29,7 +29,7 @@ int ConvertCursorMode(CursorMode mode)
 } // namespace
 
 AppBox::AppBox(const std::string_view& title, const Settings& setting)
-    : m_setting(setting)
+    : setting_(setting)
 {
     std::string api_str;
     switch (setting.api_type) {
@@ -43,121 +43,121 @@ AppBox::AppBox(const std::string_view& title, const Settings& setting)
         api_str = "[Metal]";
         break;
     }
-    m_title = api_str + " ";
-    m_title += title;
+    title_ = api_str + " ";
+    title_ += title;
 
     glfwInit();
 
-    m_window = WindowUtils::CreateWindowWithDefaultSize(m_title);
-    m_size = WindowUtils::GetSurfaceSize(m_window);
-    glfwSetWindowUserPointer(m_window, this);
-    glfwSetWindowSizeCallback(m_window, AppBox::OnSizeChanged);
-    glfwSetKeyCallback(m_window, AppBox::OnKey);
-    glfwSetCursorPosCallback(m_window, AppBox::OnMouse);
-    glfwSetMouseButtonCallback(m_window, AppBox::OnMouseButton);
-    glfwSetScrollCallback(m_window, AppBox::OnScroll);
-    glfwSetCharCallback(m_window, AppBox::OnInputChar);
-    glfwSetInputMode(m_window, GLFW_CURSOR, ConvertCursorMode(m_cursor_mode));
+    window_ = WindowUtils::CreateWindowWithDefaultSize(title_);
+    size_ = WindowUtils::GetSurfaceSize(window_);
+    glfwSetWindowUserPointer(window_, this);
+    glfwSetWindowSizeCallback(window_, AppBox::OnSizeChanged);
+    glfwSetKeyCallback(window_, AppBox::OnKey);
+    glfwSetCursorPosCallback(window_, AppBox::OnMouse);
+    glfwSetMouseButtonCallback(window_, AppBox::OnMouseButton);
+    glfwSetScrollCallback(window_, AppBox::OnScroll);
+    glfwSetCharCallback(window_, AppBox::OnInputChar);
+    glfwSetInputMode(window_, GLFW_CURSOR, ConvertCursorMode(cursor_mode_));
 
 #if defined(__APPLE__)
-    m_autorelease_pool = CreateAutoreleasePool();
+    autorelease_pool_ = CreateAutoreleasePool();
 #endif
 }
 
 AppBox::~AppBox()
 {
-    if (m_window) {
-        glfwDestroyWindow(m_window);
+    if (window_) {
+        glfwDestroyWindow(window_);
     }
     glfwTerminate();
 }
 
 void AppBox::SetGpuName(const std::string& gpu_name)
 {
-    m_gpu_name = gpu_name;
+    gpu_name_ = gpu_name;
 }
 
 void AppBox::UpdateFps()
 {
-    ++m_frame_number;
+    ++frame_number_;
     double current_time = glfwGetTime();
-    double delta = current_time - m_last_time;
+    double delta = current_time - last_time_;
     if (delta > 1.0) {
-        if (m_last_time > 0.0) {
-            m_fps = std::format("({} FPS)", static_cast<int64_t>(std::round(m_frame_number / delta)));
+        if (last_time_ > 0.0) {
+            fps_ = std::format("({} FPS)", static_cast<int64_t>(std::round(frame_number_ / delta)));
         }
-        m_frame_number = 0;
-        m_last_time = current_time;
+        frame_number_ = 0;
+        last_time_ = current_time;
     }
 }
 
 void AppBox::UpdateTitle()
 {
-    std::string title = m_title;
-    if (!m_gpu_name.empty()) {
-        title += " " + m_gpu_name;
+    std::string title = title_;
+    if (!gpu_name_.empty()) {
+        title += " " + gpu_name_;
     }
     UpdateFps();
-    if (!m_fps.empty()) {
-        title += " " + m_fps;
+    if (!fps_.empty()) {
+        title += " " + fps_;
     }
 
-    glfwSetWindowTitle(m_window, title.c_str());
+    glfwSetWindowTitle(window_, title.c_str());
 }
 
 void AppBox::SubscribeEvents(InputEvents* input_listener, WindowEvents* window_listener)
 {
-    m_input_listener = input_listener;
-    m_window_listener = window_listener;
+    input_listener_ = input_listener;
+    window_listener_ = window_listener;
 }
 
 const CursorMode& AppBox::GetCursorMode() const
 {
-    return m_cursor_mode;
+    return cursor_mode_;
 }
 
 void AppBox::SetCursorMode(CursorMode cursor_mode)
 {
-    m_cursor_mode = cursor_mode;
-    glfwSetInputMode(m_window, GLFW_CURSOR, ConvertCursorMode(m_cursor_mode));
+    cursor_mode_ = cursor_mode;
+    glfwSetInputMode(window_, GLFW_CURSOR, ConvertCursorMode(cursor_mode_));
 }
 
 bool AppBox::PollEvents()
 {
 #if defined(__APPLE__)
-    m_autorelease_pool->Reset();
+    autorelease_pool_->Reset();
 #endif
     UpdateTitle();
     glfwPollEvents();
-    return glfwWindowShouldClose(m_window) || m_exit_request;
+    return glfwWindowShouldClose(window_) || exit_request_;
 }
 
 AppSize AppBox::GetAppSize() const
 {
-    return m_size;
+    return size_;
 }
 
 GLFWwindow* AppBox::GetWindow() const
 {
-    return m_window;
+    return window_;
 }
 
 NativeSurface AppBox::GetNativeSurface() const
 {
-    return WindowUtils::GetNativeSurface(m_window);
+    return WindowUtils::GetNativeSurface(window_);
 }
 
 void AppBox::SwitchFullScreenMode()
 {
 #if !defined(__APPLE__)
-    if (glfwGetWindowMonitor(m_window)) {
-        glfwSetWindowMonitor(m_window, nullptr, m_window_box[0], m_window_box[1], m_window_box[2], m_window_box[3], 0);
+    if (glfwGetWindowMonitor(window_)) {
+        glfwSetWindowMonitor(window_, nullptr, window_box_[0], window_box_[1], window_box_[2], window_box_[3], 0);
     } else {
-        glfwGetWindowPos(m_window, &m_window_box[0], &m_window_box[1]);
-        glfwGetWindowSize(m_window, &m_window_box[2], &m_window_box[3]);
+        glfwGetWindowPos(window_, &window_box_[0], &window_box_[1]);
+        glfwGetWindowSize(window_, &window_box_[2], &window_box_[3]);
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-        glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
     }
 #endif
 }
@@ -169,9 +169,9 @@ void AppBox::OnSizeChanged(GLFWwindow* window, int width, int height)
         return;
     }
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
-    self->m_size = WindowUtils::GetSurfaceSize(window);
-    if (self->m_window_listener) {
-        self->m_window_listener->OnResize(self->m_size.width(), self->m_size.height());
+    self->size_ = WindowUtils::GetSurfaceSize(window);
+    if (self->window_listener_) {
+        self->window_listener_->OnResize(self->size_.width(), self->size_.height());
     }
 }
 
@@ -179,18 +179,18 @@ void AppBox::OnSizeChanged(GLFWwindow* window, int width, int height)
 void AppBox::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
-    self->m_keys[key] = action;
+    self->keys_[key] = action;
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        self->m_exit_request = true;
+        self->exit_request_ = true;
     }
 
-    if (self->m_keys[GLFW_KEY_RIGHT_ALT] == GLFW_PRESS && self->m_keys[GLFW_KEY_ENTER] == GLFW_PRESS) {
+    if (self->keys_[GLFW_KEY_RIGHT_ALT] == GLFW_PRESS && self->keys_[GLFW_KEY_ENTER] == GLFW_PRESS) {
         self->SwitchFullScreenMode();
     }
 
-    if (self->m_input_listener) {
-        self->m_input_listener->OnKey(key, action);
+    if (self->input_listener_) {
+        self->input_listener_->OnKey(key, action);
     }
 }
 
@@ -198,38 +198,38 @@ void AppBox::OnKey(GLFWwindow* window, int key, int scancode, int action, int mo
 void AppBox::OnMouse(GLFWwindow* window, double xpos, double ypos)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
-    if (!self->m_input_listener) {
+    if (!self->input_listener_) {
         return;
     }
-    self->m_input_listener->OnMouse(xpos, ypos);
+    self->input_listener_->OnMouse(xpos, ypos);
 }
 
 // static
 void AppBox::OnMouseButton(GLFWwindow* window, int button, int action, int mods)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
-    if (!self->m_input_listener) {
+    if (!self->input_listener_) {
         return;
     }
-    self->m_input_listener->OnMouseButton(button, action);
+    self->input_listener_->OnMouseButton(button, action);
 }
 
 // static
 void AppBox::OnScroll(GLFWwindow* window, double xoffset, double yoffset)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
-    if (!self->m_input_listener) {
+    if (!self->input_listener_) {
         return;
     }
-    self->m_input_listener->OnScroll(xoffset, yoffset);
+    self->input_listener_->OnScroll(xoffset, yoffset);
 }
 
 // static
 void AppBox::OnInputChar(GLFWwindow* window, uint32_t ch)
 {
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
-    if (!self->m_input_listener) {
+    if (!self->input_listener_) {
         return;
     }
-    self->m_input_listener->OnInputChar(ch);
+    self->input_listener_->OnInputChar(ch);
 }

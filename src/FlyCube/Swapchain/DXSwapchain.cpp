@@ -15,8 +15,8 @@ DXSwapchain::DXSwapchain(DXCommandQueue& command_queue,
                          uint32_t height,
                          uint32_t frame_count,
                          bool vsync)
-    : m_command_queue(command_queue)
-    , m_vsync(vsync)
+    : command_queue_(command_queue)
+    , vsync_(vsync)
 {
     DXInstance& instance = command_queue.GetDevice().GetAdapter().GetInstance();
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
@@ -36,14 +36,14 @@ DXSwapchain::DXSwapchain(DXCommandQueue& command_queue,
                                                                 nullptr, nullptr, &tmp_swap_chain));
     CHECK_HRESULT(instance.GetFactory()->MakeWindowAssociation(static_cast<HWND>(win32_surface.hwnd),
                                                                DXGI_MWA_NO_WINDOW_CHANGES));
-    tmp_swap_chain.As(&m_swap_chain);
+    tmp_swap_chain.As(&swap_chain_);
 
     for (size_t i = 0; i < frame_count; ++i) {
         ComPtr<ID3D12Resource> back_buffer;
-        CHECK_HRESULT(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
+        CHECK_HRESULT(swap_chain_->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
         std::shared_ptr<DXResource> res =
             DXResource::WrapSwapchainBackBuffer(command_queue.GetDevice(), back_buffer, GetFormat());
-        m_back_buffers.emplace_back(std::move(res));
+        back_buffers_.emplace_back(std::move(res));
     }
 }
 
@@ -54,22 +54,22 @@ gli::format DXSwapchain::GetFormat() const
 
 std::shared_ptr<Resource> DXSwapchain::GetBackBuffer(uint32_t buffer)
 {
-    return m_back_buffers[buffer];
+    return back_buffers_[buffer];
 }
 
 uint32_t DXSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
 {
-    uint32_t frame_index = m_swap_chain->GetCurrentBackBufferIndex();
-    m_command_queue.Signal(fence, signal_value);
+    uint32_t frame_index = swap_chain_->GetCurrentBackBufferIndex();
+    command_queue_.Signal(fence, signal_value);
     return frame_index;
 }
 
 void DXSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
-    m_command_queue.Wait(fence, wait_value);
-    if (m_vsync) {
-        CHECK_HRESULT(m_swap_chain->Present(1, 0));
+    command_queue_.Wait(fence, wait_value);
+    if (vsync_) {
+        CHECK_HRESULT(swap_chain_->Present(1, 0));
     } else {
-        CHECK_HRESULT(m_swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
+        CHECK_HRESULT(swap_chain_->Present(0, DXGI_PRESENT_ALLOW_TEARING));
     }
 }

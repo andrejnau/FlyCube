@@ -60,10 +60,10 @@ private:
                        uint64_t slice_pitch,
                        uint32_t num_rows);
 
-    std::shared_ptr<Device> m_device;
-    std::shared_ptr<CommandList> m_command_list;
-    std::vector<std::shared_ptr<Resource>> m_upload_buffers;
-    std::shared_ptr<Fence> m_fence;
-    uint64_t m_fence_value = 0;
-    std::vector<RenderMesh> m_meshes;
+    std::shared_ptr<Device> device_;
+    std::shared_ptr<CommandList> command_list_;
+    std::vector<std::shared_ptr<Resource>> upload_buffers_;
+    std::shared_ptr<Fence> fence_;
+    uint64_t fence_value_ = 0;
+    std::vector<RenderMesh> meshes_;
 };

@@ -13,8 +13,8 @@ public:
     uint32_t GetOffset() const;
 
 private:
-    std::reference_wrapper<VKGPUBindlessDescriptorPoolTyped> m_pool;
-    uint32_t m_offset;
-    uint32_t m_size;
-    std::unique_ptr<VKGPUDescriptorPoolRange, std::function<void(VKGPUDescriptorPoolRange*)>> m_callback;
+    std::reference_wrapper<VKGPUBindlessDescriptorPoolTyped> pool_;
+    uint32_t offset_;
+    uint32_t size_;
+    std::unique_ptr<VKGPUDescriptorPoolRange, std::function<void(VKGPUDescriptorPoolRange*)>> callback_;
 };

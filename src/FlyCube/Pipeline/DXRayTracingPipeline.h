@@ -29,12 +29,12 @@ public:
 private:
     std::wstring GenerateUniqueName(std::wstring name);
 
-    DXDevice& m_device;
-    RayTracingPipelineDesc m_desc;
-    ComPtr<ID3D12RootSignature> m_root_signature;
-    ComPtr<ID3D12StateObject> m_pipeline_state;
-    std::map<uint64_t, std::wstring> m_shader_ids;
-    std::set<std::wstring> m_shader_names;
-    std::map<uint64_t, std::wstring> m_group_names;
-    ComPtr<ID3D12StateObjectProperties> m_state_ojbect_props;
+    DXDevice& device_;
+    RayTracingPipelineDesc desc_;
+    ComPtr<ID3D12RootSignature> root_signature_;
+    ComPtr<ID3D12StateObject> pipeline_state_;
+    std::map<uint64_t, std::wstring> shader_ids_;
+    std::set<std::wstring> shader_names_;
+    std::map<uint64_t, std::wstring> group_names_;
+    ComPtr<ID3D12StateObjectProperties> state_ojbect_props_;
 };

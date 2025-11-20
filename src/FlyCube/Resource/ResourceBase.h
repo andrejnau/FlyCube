@@ -24,11 +24,11 @@ public:
     void SetInitialState(ResourceState state);
 
 protected:
-    ResourceType m_resource_type = ResourceType::kUnknown;
-    gli::format m_format = gli::FORMAT_UNDEFINED;
-    MemoryType m_memory_type = MemoryType::kDefault;
-    bool m_is_back_buffer = false;
+    ResourceType resource_type_ = ResourceType::kUnknown;
+    gli::format format_ = gli::FORMAT_UNDEFINED;
+    MemoryType memory_type_ = MemoryType::kDefault;
+    bool is_back_buffer_ = false;
 
 private:
-    ResourceState m_initial_state = ResourceState::kCommon;
+    ResourceState initial_state_ = ResourceState::kCommon;
 };

@@ -27,7 +27,7 @@ public:
     ComPtr<ID3D12DescriptorHeap> GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE descriptor_type);
 
 private:
-    DXDevice& m_device;
-    DXGPUDescriptorPoolTyped m_shader_resource;
-    DXGPUDescriptorPoolTyped m_shader_sampler;
+    DXDevice& device_;
+    DXGPUDescriptorPoolTyped shader_resource_;
+    DXGPUDescriptorPoolTyped shader_sampler_;
 };

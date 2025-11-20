@@ -20,12 +20,12 @@ public:
 private:
     void ResizeHeap(uint32_t req_size);
 
-    MTDevice& m_device;
-    uint32_t m_size = 0;
-    uint32_t m_offset = 0;
-    std::multimap<uint32_t, uint32_t> m_empty_ranges;
-    id<MTLBuffer> m_buffer = nullptr;
-    id<MTLResidencySet> m_residency_set = nullptr;
-    std::vector<id<MTLAllocation>> m_allocations;
-    std::map<id<MTLAllocation>, size_t> m_allocations_cnt;
+    MTDevice& device_;
+    uint32_t size_ = 0;
+    uint32_t offset_ = 0;
+    std::multimap<uint32_t, uint32_t> empty_ranges_;
+    id<MTLBuffer> buffer_ = nullptr;
+    id<MTLResidencySet> residency_set_ = nullptr;
+    std::vector<id<MTLAllocation>> allocations_;
+    std::map<id<MTLAllocation>, size_t> allocations_cnt_;
 };

@@ -27,9 +27,9 @@ public:
 private:
     void CreateTextureView();
 
-    MTDevice& m_device;
-    std::shared_ptr<MTResource> m_resource;
-    ViewDesc m_view_desc;
-    id<MTLTexture> m_texture_view = nullptr;
-    std::shared_ptr<MTGPUArgumentBufferRange> m_range;
+    MTDevice& device_;
+    std::shared_ptr<MTResource> resource_;
+    ViewDesc view_desc_;
+    id<MTLTexture> texture_view_ = nullptr;
+    std::shared_ptr<MTGPUArgumentBufferRange> range_;
 };

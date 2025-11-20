@@ -89,19 +89,19 @@ private:
     RaytracingASPrebuildInfo GetAccelerationStructurePrebuildInfo(
         const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs) const;
 
-    DXAdapter& m_adapter;
-    ComPtr<ID3D12Device> m_device;
-    ComPtr<ID3D12Device5> m_device5;
-    std::map<CommandListType, std::shared_ptr<DXCommandQueue>> m_command_queues;
-    DXCPUDescriptorPool m_cpu_descriptor_pool;
-    DXGPUDescriptorPool m_gpu_descriptor_pool;
-    bool m_is_dxr_supported = false;
-    bool m_is_ray_query_supported = false;
-    bool m_is_variable_rate_shading_supported = false;
-    bool m_is_mesh_shading_supported = false;
-    uint32_t m_shading_rate_image_tile_size = 0;
-    bool m_is_under_graphics_debugger = false;
-    bool m_is_create_not_zeroed_available = false;
+    DXAdapter& adapter_;
+    ComPtr<ID3D12Device> device_;
+    ComPtr<ID3D12Device5> device5_;
+    std::map<CommandListType, std::shared_ptr<DXCommandQueue>> command_queues_;
+    DXCPUDescriptorPool cpu_descriptor_pool_;
+    DXGPUDescriptorPool gpu_descriptor_pool_;
+    bool is_dxr_supported_ = false;
+    bool is_ray_query_supported_ = false;
+    bool is_variable_rate_shading_supported_ = false;
+    bool is_mesh_shading_supported_ = false;
+    uint32_t shading_rate_image_tile_size_ = 0;
+    bool is_under_graphics_debugger_ = false;
+    bool is_create_not_zeroed_available_ = false;
     std::map<std::pair<D3D12_INDIRECT_ARGUMENT_TYPE, uint32_t>, ComPtr<ID3D12CommandSignature>>
-        m_command_signature_cache;
+        command_signature_cache_;
 };

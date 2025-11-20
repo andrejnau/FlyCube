@@ -24,6 +24,6 @@ public:
     ComPtr<ID3D12CommandQueue> GetQueue();
 
 private:
-    DXDevice& m_device;
-    ComPtr<ID3D12CommandQueue> m_command_queue;
+    DXDevice& device_;
+    ComPtr<ID3D12CommandQueue> command_queue_;
 };

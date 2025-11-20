@@ -21,5 +21,5 @@ private:
     AppRenderer& GetRendererImpl();
     int RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv[]);
 
-    std::unique_ptr<AppRenderer> m_renderer;
+    std::unique_ptr<AppRenderer> renderer_;
 };

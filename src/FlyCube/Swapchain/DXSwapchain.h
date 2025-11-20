@@ -27,8 +27,8 @@ public:
     void Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value) override;
 
 private:
-    DXCommandQueue& m_command_queue;
-    bool m_vsync;
-    ComPtr<IDXGISwapChain3> m_swap_chain;
-    std::vector<std::shared_ptr<Resource>> m_back_buffers;
+    DXCommandQueue& command_queue_;
+    bool vsync_;
+    ComPtr<IDXGISwapChain3> swap_chain_;
+    std::vector<std::shared_ptr<Resource>> back_buffers_;
 };

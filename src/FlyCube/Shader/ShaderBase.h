@@ -21,15 +21,15 @@ public:
     const std::shared_ptr<ShaderReflection>& GetReflection() const override;
 
 protected:
-    std::vector<uint8_t> m_blob;
-    ShaderBlobType m_blob_type;
-    ShaderType m_shader_type;
-    std::map<std::string, uint64_t> m_ids;
-    std::vector<ResourceBindingDesc> m_bindings;
-    std::vector<BindKey> m_binding_keys;
-    std::map<BindKey, size_t> m_mapping;
-    std::map<std::string, BindKey> m_bind_keys;
-    std::vector<InputLayoutDesc> m_input_layout_descs;
-    std::map<std::string, uint32_t> m_locations;
-    std::shared_ptr<ShaderReflection> m_reflection;
+    std::vector<uint8_t> blob_;
+    ShaderBlobType blob_type_;
+    ShaderType shader_type_;
+    std::map<std::string, uint64_t> ids_;
+    std::vector<ResourceBindingDesc> bindings_;
+    std::vector<BindKey> binding_keys_;
+    std::map<BindKey, size_t> mapping_;
+    std::map<std::string, BindKey> bind_keys_;
+    std::vector<InputLayoutDesc> input_layout_descs_;
+    std::map<std::string, uint32_t> locations_;
+    std::shared_ptr<ShaderReflection> reflection_;
 };

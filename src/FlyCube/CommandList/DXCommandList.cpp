@@ -60,7 +60,7 @@ D3D12_RENDER_PASS_ENDING_ACCESS_TYPE Convert(RenderPassStoreOp op)
 } // namespace
 
 DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
-    : m_device(device)
+    : device_(device)
 {
     D3D12_COMMAND_LIST_TYPE dx_type;
     switch (type) {
@@ -76,52 +76,52 @@ DXCommandList::DXCommandList(DXDevice& device, CommandListType type)
     default:
         NOTREACHED();
     }
-    CHECK_HRESULT(device.GetDevice()->CreateCommandAllocator(dx_type, IID_PPV_ARGS(&m_command_allocator)));
-    CHECK_HRESULT(device.GetDevice()->CreateCommandList(0, dx_type, m_command_allocator.Get(), nullptr,
-                                                        IID_PPV_ARGS(&m_command_list)));
+    CHECK_HRESULT(device.GetDevice()->CreateCommandAllocator(dx_type, IID_PPV_ARGS(&command_allocator_)));
+    CHECK_HRESULT(device.GetDevice()->CreateCommandList(0, dx_type, command_allocator_.Get(), nullptr,
+                                                        IID_PPV_ARGS(&command_list_)));
 
-    m_command_list.As(&m_command_list4);
-    m_command_list.As(&m_command_list5);
-    m_command_list.As(&m_command_list6);
+    command_list_.As(&command_list4_);
+    command_list_.As(&command_list5_);
+    command_list_.As(&command_list6_);
 }
 
 void DXCommandList::Reset()
 {
     Close();
-    CHECK_HRESULT(m_command_allocator->Reset());
-    CHECK_HRESULT(m_command_list->Reset(m_command_allocator.Get(), nullptr));
-    m_closed = false;
-    m_heaps.clear();
-    m_state.reset();
-    m_binding_set.reset();
-    m_lazy_vertex.clear();
-    m_shading_rate_image_view.reset();
+    CHECK_HRESULT(command_allocator_->Reset());
+    CHECK_HRESULT(command_list_->Reset(command_allocator_.Get(), nullptr));
+    closed_ = false;
+    heaps_.clear();
+    state_.reset();
+    binding_set_.reset();
+    lazy_vertex_.clear();
+    shading_rate_image_view_.reset();
 }
 
 void DXCommandList::Close()
 {
-    if (!m_closed) {
-        m_command_list->Close();
-        m_closed = true;
+    if (!closed_) {
+        command_list_->Close();
+        closed_ = true;
     }
 }
 
 void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
 {
-    if (state == m_state) {
+    if (state == state_) {
         return;
     }
-    m_state = std::static_pointer_cast<DXPipeline>(state);
-    m_command_list->SetComputeRootSignature(m_state->GetRootSignature().Get());
-    auto type = m_state->GetPipelineType();
+    state_ = std::static_pointer_cast<DXPipeline>(state);
+    command_list_->SetComputeRootSignature(state_->GetRootSignature().Get());
+    auto type = state_->GetPipelineType();
     if (type == PipelineType::kGraphics) {
         decltype(auto) dx_state = state->As<DXGraphicsPipeline>();
-        m_command_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        m_command_list->SetGraphicsRootSignature(dx_state.GetRootSignature().Get());
-        m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
+        command_list_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        command_list_->SetGraphicsRootSignature(dx_state.GetRootSignature().Get());
+        command_list_->SetPipelineState(dx_state.GetPipeline().Get());
         for (const auto& [slot, stride] : dx_state.GetStrideMap()) {
-            auto it = m_lazy_vertex.find(slot);
-            if (it != m_lazy_vertex.end()) {
+            auto it = lazy_vertex_.find(slot);
+            if (it != lazy_vertex_.end()) {
                 const auto& [resource, offset] = it->second;
                 IASetVertexBufferImpl(slot, resource, offset, stride);
             } else {
@@ -130,22 +130,22 @@ void DXCommandList::BindPipeline(const std::shared_ptr<Pipeline>& state)
         }
     } else if (type == PipelineType::kCompute) {
         decltype(auto) dx_state = state->As<DXComputePipeline>();
-        m_command_list->SetPipelineState(dx_state.GetPipeline().Get());
+        command_list_->SetPipelineState(dx_state.GetPipeline().Get());
     } else if (type == PipelineType::kRayTracing) {
         decltype(auto) dx_state = state->As<DXRayTracingPipeline>();
-        m_command_list4->SetPipelineState1(dx_state.GetPipeline().Get());
+        command_list4_->SetPipelineState1(dx_state.GetPipeline().Get());
     }
 }
 
 void DXCommandList::BindBindingSet(const std::shared_ptr<BindingSet>& binding_set)
 {
-    if (binding_set == m_binding_set) {
+    if (binding_set == binding_set_) {
         return;
     }
     decltype(auto) dx_binding_set = binding_set->As<DXBindingSet>();
-    decltype(auto) new_heaps = dx_binding_set.Apply(m_command_list);
-    m_heaps.insert(m_heaps.end(), new_heaps.begin(), new_heaps.end());
-    m_binding_set = binding_set;
+    decltype(auto) new_heaps = dx_binding_set.Apply(command_list_);
+    heaps_.insert(heaps_.end(), new_heaps.begin(), new_heaps.end());
+    binding_set_ = binding_set;
 }
 
 void DXCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
@@ -189,33 +189,33 @@ void DXCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
         om_dsv_ptr = &om_dsv;
     }
 
-    m_command_list4->BeginRenderPass(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), om_dsv_ptr,
-                                     D3D12_RENDER_PASS_FLAG_NONE);
+    command_list4_->BeginRenderPass(static_cast<uint32_t>(om_rtv.size()), om_rtv.data(), om_dsv_ptr,
+                                    D3D12_RENDER_PASS_FLAG_NONE);
 
-    if (m_shading_rate_image_view == render_pass_desc.shading_rate_image_view) {
+    if (shading_rate_image_view_ == render_pass_desc.shading_rate_image_view) {
         return;
     }
 
     if (render_pass_desc.shading_rate_image_view) {
         decltype(auto) dx_shading_rate_image =
             render_pass_desc.shading_rate_image_view->GetResource()->As<DXResource>();
-        m_command_list5->RSSetShadingRateImage(dx_shading_rate_image.GetResource());
+        command_list5_->RSSetShadingRateImage(dx_shading_rate_image.GetResource());
     } else {
-        m_command_list5->RSSetShadingRateImage(nullptr);
+        command_list5_->RSSetShadingRateImage(nullptr);
     }
-    m_shading_rate_image_view = render_pass_desc.shading_rate_image_view;
+    shading_rate_image_view_ = render_pass_desc.shading_rate_image_view;
 }
 
 void DXCommandList::EndRenderPass()
 {
-    m_command_list4->EndRenderPass();
+    command_list4_->EndRenderPass();
 }
 
 void DXCommandList::BeginEvent(const std::string& name)
 {
 #if defined(_WIN32)
-    if (m_device.IsUnderGraphicsDebugger()) {
-        PIXBeginEvent(m_command_list.Get(), 0, nowide::widen(name).c_str());
+    if (device_.IsUnderGraphicsDebugger()) {
+        PIXBeginEvent(command_list_.Get(), 0, nowide::widen(name).c_str());
     }
 #endif
 }
@@ -223,15 +223,15 @@ void DXCommandList::BeginEvent(const std::string& name)
 void DXCommandList::EndEvent()
 {
 #if defined(_WIN32)
-    if (m_device.IsUnderGraphicsDebugger()) {
-        PIXEndEvent(m_command_list.Get());
+    if (device_.IsUnderGraphicsDebugger()) {
+        PIXEndEvent(command_list_.Get());
     }
 #endif
 }
 
 void DXCommandList::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
-    m_command_list->DrawInstanced(vertex_count, instance_count, first_vertex, first_instance);
+    command_list_->DrawInstanced(vertex_count, instance_count, first_vertex, first_instance);
 }
 
 void DXCommandList::DrawIndexed(uint32_t index_count,
@@ -240,7 +240,7 @@ void DXCommandList::DrawIndexed(uint32_t index_count,
                                 int32_t vertex_offset,
                                 uint32_t first_instance)
 {
-    m_command_list->DrawIndexedInstanced(index_count, instance_count, first_index, vertex_offset, first_instance);
+    command_list_->DrawIndexedInstanced(index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
 void DXCommandList::ExecuteIndirect(D3D12_INDIRECT_ARGUMENT_TYPE type,
@@ -258,9 +258,9 @@ void DXCommandList::ExecuteIndirect(D3D12_INDIRECT_ARGUMENT_TYPE type,
     } else {
         assert(count_buffer_offset == 0);
     }
-    m_command_list->ExecuteIndirect(m_device.GetCommandSignature(type, stride), max_draw_count,
-                                    dx_argument_buffer.GetResource(), argument_buffer_offset, dx_count_buffer,
-                                    count_buffer_offset);
+    command_list_->ExecuteIndirect(device_.GetCommandSignature(type, stride), max_draw_count,
+                                   dx_argument_buffer.GetResource(), argument_buffer_offset, dx_count_buffer,
+                                   count_buffer_offset);
 }
 
 void DXCommandList::DrawIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
@@ -300,7 +300,7 @@ void DXCommandList::Dispatch(uint32_t thread_group_count_x,
                              uint32_t thread_group_count_y,
                              uint32_t thread_group_count_z)
 {
-    m_command_list->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+    command_list_->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
 void DXCommandList::DispatchIndirect(const std::shared_ptr<Resource>& argument_buffer, uint64_t argument_buffer_offset)
@@ -313,7 +313,7 @@ void DXCommandList::DispatchMesh(uint32_t thread_group_count_x,
                                  uint32_t thread_group_count_y,
                                  uint32_t thread_group_count_z)
 {
-    m_command_list6->DispatchMesh(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+    command_list6_->DispatchMesh(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
 void DXCommandList::DispatchRays(const RayTracingShaderTables& shader_tables,
@@ -342,7 +342,7 @@ void DXCommandList::DispatchRays(const RayTracingShaderTables& shader_tables,
     dispatch_rays_desc.Height = height;
     dispatch_rays_desc.Depth = depth;
 
-    m_command_list4->DispatchRays(&dispatch_rays_desc);
+    command_list4_->DispatchRays(&dispatch_rays_desc);
 }
 
 void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers)
@@ -383,7 +383,7 @@ void DXCommandList::ResourceBarrier(const std::vector<ResourceBarrierDesc>& barr
         }
     }
     if (!dx_barriers.empty()) {
-        m_command_list->ResourceBarrier(dx_barriers.size(), dx_barriers.data());
+        command_list_->ResourceBarrier(dx_barriers.size(), dx_barriers.data());
     }
 }
 
@@ -395,7 +395,7 @@ void DXCommandList::UAVResourceBarrier(const std::shared_ptr<Resource>& resource
         decltype(auto) dx_resource = resource->As<DXResource>();
         uav_barrier.UAV.pResource = dx_resource.GetResource();
     }
-    m_command_list4->ResourceBarrier(1, &uav_barrier);
+    command_list4_->ResourceBarrier(1, &uav_barrier);
 }
 
 void DXCommandList::SetViewport(float x, float y, float width, float height)
@@ -407,7 +407,7 @@ void DXCommandList::SetViewport(float x, float y, float width, float height)
     viewport.Height = height;
     viewport.MinDepth = 0.0;
     viewport.MaxDepth = 1.0;
-    m_command_list->RSSetViewports(1, &viewport);
+    command_list_->RSSetViewports(1, &viewport);
 }
 
 void DXCommandList::SetScissorRect(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom)
@@ -416,7 +416,7 @@ void DXCommandList::SetScissorRect(uint32_t left, uint32_t top, uint32_t right, 
                         .top = static_cast<int32_t>(top),
                         .right = static_cast<int32_t>(right),
                         .bottom = static_cast<int32_t>(bottom) };
-    m_command_list->RSSetScissorRects(1, &rect);
+    command_list_->RSSetScissorRects(1, &rect);
 }
 
 void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format)
@@ -428,13 +428,13 @@ void DXCommandList::IASetIndexBuffer(const std::shared_ptr<Resource>& resource, 
         .SizeInBytes = static_cast<uint32_t>(dx_resource.GetResourceDesc().Width - offset),
         .Format = dx_format,
     };
-    m_command_list->IASetIndexBuffer(&index_buffer_view);
+    command_list_->IASetIndexBuffer(&index_buffer_view);
 }
 
 void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset)
 {
-    if (m_state && m_state->GetPipelineType() == PipelineType::kGraphics) {
-        decltype(auto) dx_state = m_state->As<DXGraphicsPipeline>();
+    if (state_ && state_->GetPipelineType() == PipelineType::kGraphics) {
+        decltype(auto) dx_state = state_->As<DXGraphicsPipeline>();
         auto& strides = dx_state.GetStrideMap();
         auto it = strides.find(slot);
         if (it != strides.end()) {
@@ -443,7 +443,7 @@ void DXCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
             IASetVertexBufferImpl(slot, nullptr, 0, 0);
         }
     }
-    m_lazy_vertex[slot] = { resource, offset };
+    lazy_vertex_[slot] = { resource, offset };
 }
 
 void DXCommandList::IASetVertexBufferImpl(uint32_t slot,
@@ -453,7 +453,7 @@ void DXCommandList::IASetVertexBufferImpl(uint32_t slot,
 {
     if (!resource) {
         D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view = {};
-        m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
+        command_list_->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
         return;
     }
 
@@ -463,13 +463,13 @@ void DXCommandList::IASetVertexBufferImpl(uint32_t slot,
         .SizeInBytes = static_cast<uint32_t>(dx_resource.GetResourceDesc().Width - offset),
         .StrideInBytes = stride,
     };
-    m_command_list->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
+    command_list_->IASetVertexBuffers(slot, 1, &vertex_buffer_view);
 }
 
 void DXCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
 {
-    m_command_list5->RSSetShadingRate(static_cast<D3D12_SHADING_RATE>(shading_rate),
-                                      reinterpret_cast<const D3D12_SHADING_RATE_COMBINER*>(combiners.data()));
+    command_list5_->RSSetShadingRate(static_cast<D3D12_SHADING_RATE>(shading_rate),
+                                     reinterpret_cast<const D3D12_SHADING_RATE_COMBINER*>(combiners.data()));
 }
 
 void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs,
@@ -491,7 +491,7 @@ void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATI
     acceleration_structure_desc.DestAccelerationStructureData = dx_dst.GetAccelerationStructureAddress();
     acceleration_structure_desc.ScratchAccelerationStructureData =
         dx_scratch.GetResource()->GetGPUVirtualAddress() + scratch_offset;
-    m_command_list4->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
+    command_list4_->BuildRaytracingAccelerationStructure(&acceleration_structure_desc, 0, nullptr);
 }
 
 void DXCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
@@ -550,8 +550,8 @@ void DXCommandList::CopyAccelerationStructure(const std::shared_ptr<Resource>& s
     default:
         NOTREACHED();
     }
-    m_command_list4->CopyRaytracingAccelerationStructure(dx_dst.GetAccelerationStructureAddress(),
-                                                         dx_src.GetAccelerationStructureAddress(), dx_mode);
+    command_list4_->CopyRaytracingAccelerationStructure(dx_dst.GetAccelerationStructureAddress(),
+                                                        dx_src.GetAccelerationStructureAddress(), dx_mode);
 }
 
 void DXCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
@@ -561,8 +561,8 @@ void DXCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
     decltype(auto) dx_src_buffer = src_buffer->As<DXResource>();
     decltype(auto) dx_dst_buffer = dst_buffer->As<DXResource>();
     for (const auto& region : regions) {
-        m_command_list->CopyBufferRegion(dx_dst_buffer.GetResource(), region.dst_offset, dx_src_buffer.GetResource(),
-                                         region.src_offset, region.num_bytes);
+        command_list_->CopyBufferRegion(dx_dst_buffer.GetResource(), region.dst_offset, dx_src_buffer.GetResource(),
+                                        region.src_offset, region.num_bytes);
     }
 }
 
@@ -596,8 +596,8 @@ void DXCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
         src.PlacedFootprint.Footprint.RowPitch = region.buffer_row_pitch;
         src.PlacedFootprint.Footprint.Format = dx_format;
 
-        m_command_list->CopyTextureRegion(&dst, region.texture_offset.x, region.texture_offset.y,
-                                          region.texture_offset.z, &src, nullptr);
+        command_list_->CopyTextureRegion(&dst, region.texture_offset.x, region.texture_offset.y,
+                                         region.texture_offset.z, &src, nullptr);
     }
 }
 
@@ -626,8 +626,8 @@ void DXCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture,
         src_box.bottom = region.src_offset.y + region.extent.height;
         src_box.back = region.src_offset.z + region.extent.depth;
 
-        m_command_list->CopyTextureRegion(&dst, region.dst_offset.x, region.dst_offset.y, region.dst_offset.z, &src,
-                                          &src_box);
+        command_list_->CopyTextureRegion(&dst, region.dst_offset.x, region.dst_offset.y, region.dst_offset.z, &src,
+                                         &src_box);
     }
 }
 
@@ -647,8 +647,8 @@ void DXCommandList::WriteAccelerationStructuresProperties(
         dx_acceleration_structures.emplace_back(
             acceleration_structure->As<DXResource>().GetAccelerationStructureAddress());
     }
-    m_command_list4->EmitRaytracingAccelerationStructurePostbuildInfo(&desc, dx_acceleration_structures.size(),
-                                                                      dx_acceleration_structures.data());
+    command_list4_->EmitRaytracingAccelerationStructurePostbuildInfo(&desc, dx_acceleration_structures.size(),
+                                                                     dx_acceleration_structures.data());
 }
 
 void DXCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_heap,
@@ -662,20 +662,20 @@ void DXCommandList::ResolveQueryData(const std::shared_ptr<QueryHeap>& query_hea
     decltype(auto) dx_dst_buffer = dst_buffer->As<DXResource>();
     auto common_to_copy_barrier = CD3DX12_RESOURCE_BARRIER::Transition(
         dx_query_heap.GetResource(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE, 0);
-    m_command_list->ResourceBarrier(1, &common_to_copy_barrier);
-    m_command_list->CopyBufferRegion(dx_dst_buffer.GetResource(), dst_offset, dx_query_heap.GetResource(),
-                                     first_query * sizeof(uint64_t), query_count * sizeof(uint64_t));
+    command_list_->ResourceBarrier(1, &common_to_copy_barrier);
+    command_list_->CopyBufferRegion(dx_dst_buffer.GetResource(), dst_offset, dx_query_heap.GetResource(),
+                                    first_query * sizeof(uint64_t), query_count * sizeof(uint64_t));
     auto copy_to_common_barrier = CD3DX12_RESOURCE_BARRIER::Transition(
         dx_query_heap.GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON, 0);
-    m_command_list->ResourceBarrier(1, &copy_to_common_barrier);
+    command_list_->ResourceBarrier(1, &copy_to_common_barrier);
 }
 
 ComPtr<ID3D12GraphicsCommandList> DXCommandList::GetCommandList()
 {
-    return m_command_list;
+    return command_list_;
 }
 
 void DXCommandList::SetName(const std::string& name)
 {
-    m_command_list->SetName(nowide::widen(name).c_str());
+    command_list_->SetName(nowide::widen(name).c_str());
 }

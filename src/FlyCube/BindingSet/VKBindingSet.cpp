@@ -5,20 +5,19 @@
 #include "View/VKView.h"
 
 VKBindingSet::VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetLayout>& layout)
-    : m_device(device)
-    , m_layout(layout)
+    : device_(device)
+    , layout_(layout)
 {
-    decltype(auto) bindless_type = m_layout->GetBindlessType();
-    decltype(auto) descriptor_set_layouts = m_layout->GetDescriptorSetLayouts();
-    decltype(auto) descriptor_count_by_set = m_layout->GetDescriptorCountBySet();
+    decltype(auto) bindless_type = layout_->GetBindlessType();
+    decltype(auto) descriptor_set_layouts = layout_->GetDescriptorSetLayouts();
+    decltype(auto) descriptor_count_by_set = layout_->GetDescriptorCountBySet();
     for (size_t i = 0; i < descriptor_set_layouts.size(); ++i) {
         if (bindless_type.contains(i)) {
-            m_descriptor_sets.emplace_back(
-                m_device.GetGPUBindlessDescriptorPool(bindless_type.at(i)).GetDescriptorSet());
+            descriptor_sets_.emplace_back(device_.GetGPUBindlessDescriptorPool(bindless_type.at(i)).GetDescriptorSet());
         } else {
-            m_descriptors.emplace_back(m_device.GetGPUDescriptorPool().AllocateDescriptorSet(
+            descriptors_.emplace_back(device_.GetGPUDescriptorPool().AllocateDescriptorSet(
                 descriptor_set_layouts[i].get(), descriptor_count_by_set[i]));
-            m_descriptor_sets.emplace_back(m_descriptors.back().set.get());
+            descriptor_sets_.emplace_back(descriptors_.back().set.get());
         }
     }
 }
@@ -30,7 +29,7 @@ void VKBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
         decltype(auto) vk_view = binding.view->As<VKView>();
         vk::WriteDescriptorSet descriptor = vk_view.GetDescriptor();
         descriptor.descriptorType = GetDescriptorType(binding.bind_key.view_type);
-        descriptor.dstSet = m_descriptor_sets[binding.bind_key.space];
+        descriptor.dstSet = descriptor_sets_[binding.bind_key.space];
         descriptor.dstBinding = binding.bind_key.slot;
         descriptor.dstArrayElement = 0;
         descriptor.descriptorCount = 1;
@@ -40,11 +39,11 @@ void VKBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
     }
 
     if (!descriptors.empty()) {
-        m_device.GetDevice().updateDescriptorSets(descriptors.size(), descriptors.data(), 0, nullptr);
+        device_.GetDevice().updateDescriptorSets(descriptors.size(), descriptors.data(), 0, nullptr);
     }
 }
 
 const std::vector<vk::DescriptorSet>& VKBindingSet::GetDescriptorSets() const
 {
-    return m_descriptor_sets;
+    return descriptor_sets_;
 }

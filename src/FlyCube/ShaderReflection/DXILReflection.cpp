@@ -50,24 +50,24 @@ ShaderKind ConvertShaderKind(hlsl::DXIL::ShaderKind kind)
 class ReflectionPartImpl : public ReflectionPart {
 public:
     ReflectionPartImpl(CComPtr<IDxcContainerReflection> reflection, uint32_t idx)
-        : m_reflection(reflection)
-        , m_idx(idx)
+        : reflection_(reflection)
+        , idx_(idx)
     {
     }
 
     bool GetShaderReflection(void** ppvObject) const override
     {
-        return SUCCEEDED(m_reflection->GetPartReflection(m_idx, __uuidof(ID3D12ShaderReflection), ppvObject));
+        return SUCCEEDED(reflection_->GetPartReflection(idx_, __uuidof(ID3D12ShaderReflection), ppvObject));
     }
 
     bool GetLibraryReflection(void** ppvObject) const override
     {
-        return SUCCEEDED(m_reflection->GetPartReflection(m_idx, __uuidof(ID3D12LibraryReflection), ppvObject));
+        return SUCCEEDED(reflection_->GetPartReflection(idx_, __uuidof(ID3D12LibraryReflection), ppvObject));
     }
 
 private:
-    CComPtr<IDxcContainerReflection> m_reflection;
-    uint32_t m_idx;
+    CComPtr<IDxcContainerReflection> reflection_;
+    uint32_t idx_;
 };
 
 } // namespace
@@ -102,47 +102,47 @@ DXILReflection::DXILReflection(const void* data, size_t size)
             assert(part->GetBufferSize() == sizeof(DxilShaderFeatureInfo));
             auto feature_info = static_cast<DxilShaderFeatureInfo const*>(part->GetBufferPointer());
             if (feature_info->FeatureFlags & hlsl::DXIL::ShaderFeatureInfo_ResourceDescriptorHeapIndexing) {
-                m_shader_feature_info.resource_descriptor_heap_indexing = true;
+                shader_feature_info_.resource_descriptor_heap_indexing = true;
             }
             if (feature_info->FeatureFlags & hlsl::DXIL::ShaderFeatureInfo_SamplerDescriptorHeapIndexing) {
-                m_shader_feature_info.sampler_descriptor_heap_indexing = true;
+                shader_feature_info_.sampler_descriptor_heap_indexing = true;
             }
         }
     }
 
-    if (pdb && !m_is_library) {
+    if (pdb && !is_library_) {
         ParseDebugInfo(dxc_support, pdb);
     }
 }
 
 const std::vector<EntryPoint>& DXILReflection::GetEntryPoints() const
 {
-    return m_entry_points;
+    return entry_points_;
 }
 
 const std::vector<ResourceBindingDesc>& DXILReflection::GetBindings() const
 {
-    return m_bindings;
+    return bindings_;
 }
 
 const std::vector<VariableLayout>& DXILReflection::GetVariableLayouts() const
 {
-    return m_layouts;
+    return layouts_;
 }
 
 const std::vector<InputParameterDesc>& DXILReflection::GetInputParameters() const
 {
-    return m_input_parameters;
+    return input_parameters_;
 }
 
 const std::vector<OutputParameterDesc>& DXILReflection::GetOutputParameters() const
 {
-    return m_output_parameters;
+    return output_parameters_;
 }
 
 const ShaderFeatureInfo& DXILReflection::GetShaderFeatureInfo() const
 {
-    return m_shader_feature_info;
+    return shader_feature_info_;
 }
 
 void DXILReflection::ParseRuntimeData(CComPtr<IDxcContainerReflection> reflection, uint32_t idx)
@@ -155,8 +155,8 @@ void DXILReflection::ParseRuntimeData(CComPtr<IDxcContainerReflection> reflectio
     for (uint32_t i = 0; i < func_table_reader.Count(); ++i) {
         decltype(auto) func_reader = func_table_reader[i];
         auto kind = func_reader.getShaderKind();
-        m_entry_points.push_back({ func_reader.getUnmangledName(), ConvertShaderKind(kind),
-                                   func_reader.getPayloadSizeInBytes(), func_reader.getAttributeSizeInBytes() });
+        entry_points_.push_back({ func_reader.getUnmangledName(), ConvertShaderKind(kind),
+                                  func_reader.getPayloadSizeInBytes(), func_reader.getAttributeSizeInBytes() });
     }
 }
 
@@ -167,8 +167,8 @@ void DXILReflection::ParseDebugInfo(dxc::DxcDllSupport& dxc_support, CComPtr<IDx
     CHECK_HRESULT(pdb_utils->Load(pdb));
     CComPtr<IDxcBlobWide> entry_point;
     CHECK_HRESULT(pdb_utils->GetEntryPoint(&entry_point));
-    assert(m_entry_points.size() == 1);
-    m_entry_points.front().name = nowide::narrow(entry_point->GetStringPointer());
+    assert(entry_points_.size() == 1);
+    entry_points_.front().name = nowide::narrow(entry_point->GetStringPointer());
 }
 
 ShaderKind DXILReflection::GetVersionShaderType(uint64_t version)

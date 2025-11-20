@@ -17,13 +17,13 @@ AppLoop& AppLoop::GetInstance()
 
 AppRenderer& AppLoop::GetRendererImpl()
 {
-    assert(m_renderer);
-    return *m_renderer;
+    assert(renderer_);
+    return *renderer_;
 }
 
 int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv[])
 {
-    m_renderer = std::move(renderer);
+    renderer_ = std::move(renderer);
     @autoreleasepool {
         swift_main();
         return 0;

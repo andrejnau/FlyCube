@@ -16,6 +16,6 @@ public:
     id<MTLHeap> GetHeap() const;
 
 private:
-    MemoryType m_memory_type;
-    id<MTLHeap> m_heap = nullptr;
+    MemoryType memory_type_;
+    id<MTLHeap> heap_ = nullptr;
 };

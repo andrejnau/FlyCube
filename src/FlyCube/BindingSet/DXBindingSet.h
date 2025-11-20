@@ -24,7 +24,7 @@ public:
     std::vector<ComPtr<ID3D12DescriptorHeap>> Apply(const ComPtr<ID3D12GraphicsCommandList>& command_list);
 
 private:
-    DXDevice& m_device;
-    std::shared_ptr<DXBindingSetLayout> m_layout;
-    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<DXGPUDescriptorPoolRange>> m_descriptor_ranges;
+    DXDevice& device_;
+    std::shared_ptr<DXBindingSetLayout> layout_;
+    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<DXGPUDescriptorPoolRange>> descriptor_ranges_;
 };

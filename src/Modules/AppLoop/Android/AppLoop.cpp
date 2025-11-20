@@ -97,8 +97,8 @@ AppLoop& AppLoop::GetInstance()
 
 AppRenderer& AppLoop::GetRendererImpl()
 {
-    assert(m_renderer);
-    return *m_renderer;
+    assert(renderer_);
+    return *renderer_;
 }
 
 int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv[])

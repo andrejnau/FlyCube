@@ -12,7 +12,7 @@ public:
     std::shared_ptr<Device> CreateDevice() override;
 
 private:
-    MTInstance& m_instance;
-    const id<MTLDevice> m_device;
-    std::string m_name;
+    MTInstance& instance_;
+    const id<MTLDevice> device_;
+    std::string name_;
 };

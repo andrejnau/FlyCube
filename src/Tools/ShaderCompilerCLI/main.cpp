@@ -62,33 +62,33 @@ public:
             assert(arg_index < argc);
             return argv[arg_index];
         };
-        m_shader_name = get_next_arg();
-        m_desc.shader_path = get_next_arg();
-        m_desc.entrypoint = get_next_arg();
-        m_desc.type = GetShaderType(get_next_arg());
-        m_desc.model = get_next_arg();
-        m_output_dir = get_next_arg();
+        shader_name_ = get_next_arg();
+        desc_.shader_path = get_next_arg();
+        desc_.entrypoint = get_next_arg();
+        desc_.type = GetShaderType(get_next_arg());
+        desc_.model = get_next_arg();
+        output_dir_ = get_next_arg();
     }
 
     const std::string& GetShaderName() const
     {
-        return m_shader_name;
+        return shader_name_;
     }
 
     const ShaderDesc& GetShaderDesc() const
     {
-        return m_desc;
+        return desc_;
     }
 
     const std::string& GetOutputDir() const
     {
-        return m_output_dir;
+        return output_dir_;
     }
 
 private:
-    std::string m_shader_name;
-    ShaderDesc m_desc;
-    std::string m_output_dir;
+    std::string shader_name_;
+    ShaderDesc desc_;
+    std::string output_dir_;
 };
 
 int main(int argc, char* argv[])

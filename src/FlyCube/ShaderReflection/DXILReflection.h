@@ -18,5 +18,5 @@ private:
 
     ShaderKind GetVersionShaderType(uint64_t version) override;
 
-    ShaderFeatureInfo m_shader_feature_info = {};
+    ShaderFeatureInfo shader_feature_info_ = {};
 };

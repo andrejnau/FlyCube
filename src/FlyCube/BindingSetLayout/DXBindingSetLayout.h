@@ -35,9 +35,9 @@ public:
     const ComPtr<ID3D12RootSignature>& GetRootSignature() const;
 
 private:
-    DXDevice& m_device;
-    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, size_t> m_heap_descs;
-    std::map<BindKey, BindingLayout> m_layout;
-    std::map<uint32_t, DescriptorTableDesc> m_descriptor_tables;
-    ComPtr<ID3D12RootSignature> m_root_signature;
+    DXDevice& device_;
+    std::map<D3D12_DESCRIPTOR_HEAP_TYPE, size_t> heap_descs_;
+    std::map<BindKey, BindingLayout> layout_;
+    std::map<uint32_t, DescriptorTableDesc> descriptor_tables_;
+    ComPtr<ID3D12RootSignature> root_signature_;
 };

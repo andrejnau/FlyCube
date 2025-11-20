@@ -26,11 +26,11 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
                          uint32_t height,
                          uint32_t frame_count,
                          bool vsync)
-    : m_command_queue(command_queue)
-    , m_device(command_queue.GetDevice())
+    : command_queue_(command_queue)
+    , device_(command_queue.GetDevice())
 {
-    const auto& vk_instance = m_device.GetAdapter().GetInstance().GetInstance();
-    const auto& vk_physical_device = m_device.GetAdapter().GetPhysicalDevice();
+    const auto& vk_instance = device_.GetAdapter().GetInstance().GetInstance();
+    const auto& vk_physical_device = device_.GetAdapter().GetPhysicalDevice();
 
     std::visit(overloaded{
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -38,21 +38,21 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
                        vk::Win32SurfaceCreateInfoKHR win32_surface_info = {};
                        win32_surface_info.hinstance = static_cast<HINSTANCE>(native_surface.hinstance);
                        win32_surface_info.hwnd = static_cast<HWND>(native_surface.hwnd);
-                       m_surface = vk_instance.createWin32SurfaceKHRUnique(win32_surface_info);
+                       surface_ = vk_instance.createWin32SurfaceKHRUnique(win32_surface_info);
                    },
 #endif
 #if defined(VK_USE_PLATFORM_METAL_EXT)
                    [&](const MetalSurface& native_surface) {
                        vk::MetalSurfaceCreateInfoEXT metal_surface_info = {};
                        metal_surface_info.pLayer = native_surface.ca_metal_layer;
-                       m_surface = vk_instance.createMetalSurfaceEXTUnique(metal_surface_info);
+                       surface_ = vk_instance.createMetalSurfaceEXTUnique(metal_surface_info);
                    },
 #endif
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
                    [&](const AndroidSurface& native_surface) {
                        vk::AndroidSurfaceCreateInfoKHR android_surface_info = {};
                        android_surface_info.window = static_cast<ANativeWindow*>(native_surface.window);
-                       m_surface = vk_instance.createAndroidSurfaceKHRUnique(android_surface_info);
+                       surface_ = vk_instance.createAndroidSurfaceKHRUnique(android_surface_info);
                    },
 #endif
 #if defined(VK_USE_PLATFORM_XCB_KHR)
@@ -60,7 +60,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
                        vk::XcbSurfaceCreateInfoKHR xcb_surface_info = {};
                        xcb_surface_info.connection = static_cast<xcb_connection_t*>(native_surface.connection);
                        xcb_surface_info.window = static_cast<xcb_window_t>(native_surface.window);
-                       m_surface = vk_instance.createXcbSurfaceKHRUnique(xcb_surface_info);
+                       surface_ = vk_instance.createXcbSurfaceKHRUnique(xcb_surface_info);
                    },
 #endif
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
@@ -68,7 +68,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
                        vk::XlibSurfaceCreateInfoKHR xlib_surface_info = {};
                        xlib_surface_info.dpy = static_cast<Display*>(native_surface.dpy);
                        xlib_surface_info.window = static_cast<Window>(native_surface.window);
-                       m_surface = vk_instance.createXlibSurfaceKHRUnique(xlib_surface_info);
+                       surface_ = vk_instance.createXlibSurfaceKHRUnique(xlib_surface_info);
                    },
 #endif
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
@@ -76,37 +76,37 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
                        vk::WaylandSurfaceCreateInfoKHR wayland_surface_info = {};
                        wayland_surface_info.display = static_cast<wl_display*>(native_surface.display);
                        wayland_surface_info.surface = static_cast<wl_surface*>(native_surface.surface);
-                       m_surface = vk_instance.createWaylandSurfaceKHRUnique(wayland_surface_info);
+                       surface_ = vk_instance.createWaylandSurfaceKHRUnique(wayland_surface_info);
                    },
 #endif
                    [](const auto& native_surface) { NOTREACHED(); } },
                surface);
 
     vk::ColorSpaceKHR swapchain_color_space = {};
-    auto surface_formats = vk_physical_device.getSurfaceFormatsKHR(m_surface.get());
+    auto surface_formats = vk_physical_device.getSurfaceFormatsKHR(surface_.get());
     for (const auto& [format, color_space] : surface_formats) {
         if (!gli::is_srgb(static_cast<gli::format>(format))) {
-            m_swapchain_color_format = format;
+            swapchain_color_format_ = format;
             swapchain_color_space = color_space;
             break;
         }
     }
-    assert(m_swapchain_color_format != vk::Format::eUndefined);
+    assert(swapchain_color_format_ != vk::Format::eUndefined);
 
     vk::SurfaceCapabilitiesKHR surface_capabilities = {};
-    CHECK_VK_RESULT(vk_physical_device.getSurfaceCapabilitiesKHR(m_surface.get(), &surface_capabilities));
+    CHECK_VK_RESULT(vk_physical_device.getSurfaceCapabilitiesKHR(surface_.get(), &surface_capabilities));
 
     vk::Bool32 is_supported_surface = VK_FALSE;
-    std::ignore = vk_physical_device.getSurfaceSupportKHR(command_queue.GetQueueFamilyIndex(), m_surface.get(),
+    std::ignore = vk_physical_device.getSurfaceSupportKHR(command_queue.GetQueueFamilyIndex(), surface_.get(),
                                                           &is_supported_surface);
     assert(is_supported_surface);
 
-    auto modes = vk_physical_device.getSurfacePresentModesKHR(m_surface.get());
+    auto modes = vk_physical_device.getSurfacePresentModesKHR(surface_.get());
 
     vk::SwapchainCreateInfoKHR swapchain_info = {};
-    swapchain_info.surface = m_surface.get();
+    swapchain_info.surface = surface_.get();
     swapchain_info.minImageCount = frame_count;
-    swapchain_info.imageFormat = m_swapchain_color_format;
+    swapchain_info.imageFormat = swapchain_color_format_;
     swapchain_info.imageColorSpace = swapchain_color_space;
     swapchain_info.imageExtent = vk::Extent2D(width, height);
     swapchain_info.imageArrayLayers = 1;
@@ -132,11 +132,11 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
         }
     }
     swapchain_info.clipped = true;
-    m_swapchain = m_device.GetDevice().createSwapchainKHRUnique(swapchain_info);
+    swapchain_ = device_.GetDevice().createSwapchainKHRUnique(swapchain_info);
 
-    std::vector<vk::Image> m_images = m_device.GetDevice().getSwapchainImagesKHR(m_swapchain.get());
+    std::vector<vk::Image> images_ = device_.GetDevice().getSwapchainImagesKHR(swapchain_.get());
 
-    m_command_list = m_device.CreateCommandList(CommandListType::kGraphics);
+    command_list_ = device_.CreateCommandList(CommandListType::kGraphics);
     for (uint32_t i = 0; i < frame_count; ++i) {
         TextureDesc texture_desc = {
             .type = TextureType::k2D,
@@ -149,54 +149,53 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
             .usage = BindFlag::kRenderTarget | BindFlag::kCopyDest,
         };
         std::shared_ptr<VKResource> back_buffer =
-            VKResource::WrapSwapchainImage(m_device, m_images[i], texture_desc, swapchain_info.imageUsage);
-        m_command_list->ResourceBarrier({ { back_buffer, ResourceState::kCommon, ResourceState::kPresent } });
-        m_back_buffers.emplace_back(std::move(back_buffer));
+            VKResource::WrapSwapchainImage(device_, images_[i], texture_desc, swapchain_info.imageUsage);
+        command_list_->ResourceBarrier({ { back_buffer, ResourceState::kCommon, ResourceState::kPresent } });
+        back_buffers_.emplace_back(std::move(back_buffer));
     }
-    m_command_list->Close();
+    command_list_->Close();
 
-    m_swapchain_fence = m_device.CreateFence(m_fence_value);
-    command_queue.ExecuteCommandLists({ m_command_list });
-    command_queue.Signal(m_swapchain_fence, ++m_fence_value);
+    swapchain_fence_ = device_.CreateFence(fence_value_);
+    command_queue.ExecuteCommandLists({ command_list_ });
+    command_queue.Signal(swapchain_fence_, ++fence_value_);
 
-    m_image_available_fence_values.resize(frame_count);
+    image_available_fence_values_.resize(frame_count);
     for (uint32_t i = 0; i < frame_count; ++i) {
-        m_image_available_semaphores.emplace_back(m_device.GetDevice().createSemaphoreUnique({}));
-        m_rendering_finished_semaphores.emplace_back(m_device.GetDevice().createSemaphoreUnique({}));
+        image_available_semaphores_.emplace_back(device_.GetDevice().createSemaphoreUnique({}));
+        rendering_finished_semaphores_.emplace_back(device_.GetDevice().createSemaphoreUnique({}));
     }
 }
 
 VKSwapchain::~VKSwapchain()
 {
-    m_swapchain_fence->Wait(m_fence_value);
+    swapchain_fence_->Wait(fence_value_);
 }
 
 gli::format VKSwapchain::GetFormat() const
 {
-    return static_cast<gli::format>(m_swapchain_color_format);
+    return static_cast<gli::format>(swapchain_color_format_);
 }
 
 std::shared_ptr<Resource> VKSwapchain::GetBackBuffer(uint32_t buffer)
 {
-    return m_back_buffers[buffer];
+    return back_buffers_[buffer];
 }
 
 uint32_t VKSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t signal_value)
 {
-    m_swapchain_fence->Wait(m_image_available_fence_values[m_image_available_fence_index]);
-    std::ignore = m_device.GetDevice().acquireNextImageKHR(
-        m_swapchain.get(), UINT64_MAX, m_image_available_semaphores[m_image_available_fence_index].get(), nullptr,
-        &m_frame_index);
+    swapchain_fence_->Wait(image_available_fence_values_[image_available_fence_index_]);
+    std::ignore = device_.GetDevice().acquireNextImageKHR(
+        swapchain_.get(), UINT64_MAX, image_available_semaphores_[image_available_fence_index_].get(), nullptr,
+        &frame_index_);
 
-    decltype(auto) vk_swapchain_fence = m_swapchain_fence->As<VKTimelineSemaphore>();
+    decltype(auto) vk_swapchain_fence = swapchain_fence_->As<VKTimelineSemaphore>();
     decltype(auto) vk_fence = fence->As<VKTimelineSemaphore>();
 
     uint64_t wait_semaphore_values[] = { 0 };
-    vk::Semaphore wait_semaphores[] = { m_image_available_semaphores[m_image_available_fence_index].get() };
+    vk::Semaphore wait_semaphores[] = { image_available_semaphores_[image_available_fence_index_].get() };
 
-    m_image_available_fence_values[m_image_available_fence_index] = ++m_fence_value;
-    uint64_t signal_semaphore_values[] = { signal_value,
-                                           m_image_available_fence_values[m_image_available_fence_index] };
+    image_available_fence_values_[image_available_fence_index_] = ++fence_value_;
+    uint64_t signal_semaphore_values[] = { signal_value, image_available_fence_values_[image_available_fence_index_] };
     vk::Semaphore signal_semaphores[] = { vk_fence.GetFence(), vk_swapchain_fence.GetFence() };
 
     vk::TimelineSemaphoreSubmitInfo timeline_info = {};
@@ -212,10 +211,10 @@ uint32_t VKSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t si
     signal_submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
     signal_submit_info.signalSemaphoreCount = std::size(signal_semaphores);
     signal_submit_info.pSignalSemaphores = signal_semaphores;
-    std::ignore = m_command_queue.GetQueue().submit(1, &signal_submit_info, {});
+    std::ignore = command_queue_.GetQueue().submit(1, &signal_submit_info, {});
 
-    m_image_available_fence_index = (m_image_available_fence_index + 1) % m_image_available_fence_values.size();
-    return m_frame_index;
+    image_available_fence_index_ = (image_available_fence_index_ + 1) % image_available_fence_values_.size();
+    return frame_index_;
 }
 
 void VKSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
@@ -225,7 +224,7 @@ void VKSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
     uint64_t wait_semaphore_values[] = { wait_value };
     vk::Semaphore wait_semaphores[] = { vk_fence.GetFence() };
     uint64_t signal_semaphore_values[] = { 0 };
-    vk::Semaphore signal_semaphores[] = { m_rendering_finished_semaphores[m_frame_index].get() };
+    vk::Semaphore signal_semaphores[] = { rendering_finished_semaphores_[frame_index_].get() };
 
     vk::TimelineSemaphoreSubmitInfo timeline_info = {};
     timeline_info.waitSemaphoreValueCount = std::size(wait_semaphore_values);
@@ -240,13 +239,13 @@ void VKSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_val
     signal_submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
     signal_submit_info.signalSemaphoreCount = std::size(signal_semaphores);
     signal_submit_info.pSignalSemaphores = signal_semaphores;
-    std::ignore = m_command_queue.GetQueue().submit(1, &signal_submit_info, {});
+    std::ignore = command_queue_.GetQueue().submit(1, &signal_submit_info, {});
 
     vk::PresentInfoKHR present_info = {};
     present_info.swapchainCount = 1;
-    present_info.pSwapchains = &m_swapchain.get();
-    present_info.pImageIndices = &m_frame_index;
+    present_info.pSwapchains = &swapchain_.get();
+    present_info.pImageIndices = &frame_index_;
     present_info.waitSemaphoreCount = std::size(signal_semaphores);
     present_info.pWaitSemaphores = signal_semaphores;
-    std::ignore = m_command_queue.GetQueue().presentKHR(present_info);
+    std::ignore = command_queue_.GetQueue().presentKHR(present_info);
 }

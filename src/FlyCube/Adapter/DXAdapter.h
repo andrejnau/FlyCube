@@ -17,7 +17,7 @@ public:
     ComPtr<IDXGIAdapter1> GetAdapter();
 
 private:
-    DXInstance& m_instance;
-    ComPtr<IDXGIAdapter1> m_adapter;
-    std::string m_name;
+    DXInstance& instance_;
+    ComPtr<IDXGIAdapter1> adapter_;
+    std::string name_;
 };

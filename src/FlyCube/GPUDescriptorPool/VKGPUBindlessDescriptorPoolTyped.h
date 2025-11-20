@@ -18,14 +18,14 @@ public:
 private:
     void ResizeHeap(uint32_t req_size);
 
-    VKDevice& m_device;
-    vk::DescriptorType m_type;
-    uint32_t m_size = 0;
-    uint32_t m_offset = 0;
+    VKDevice& device_;
+    vk::DescriptorType type_;
+    uint32_t size_ = 0;
+    uint32_t offset_ = 0;
     struct Descriptor {
         vk::UniqueDescriptorPool pool;
         vk::UniqueDescriptorSetLayout set_layout;
         vk::UniqueDescriptorSet set;
-    } m_descriptor;
-    std::multimap<uint32_t, uint32_t> m_empty_ranges;
+    } descriptor_;
+    std::multimap<uint32_t, uint32_t> empty_ranges_;
 };

@@ -8,7 +8,7 @@
 #include "Utilities/NotReached.h"
 
 DXCommandQueue::DXCommandQueue(DXDevice& device, CommandListType type)
-    : m_device(device)
+    : device_(device)
 {
     D3D12_COMMAND_LIST_TYPE dx_type;
     switch (type) {
@@ -27,19 +27,19 @@ DXCommandQueue::DXCommandQueue(DXDevice& device, CommandListType type)
     D3D12_COMMAND_QUEUE_DESC queue_desc = {};
     queue_desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_HIGH;
     queue_desc.Type = dx_type;
-    CHECK_HRESULT(m_device.GetDevice()->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&m_command_queue)));
+    CHECK_HRESULT(device_.GetDevice()->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&command_queue_)));
 }
 
 void DXCommandQueue::Wait(const std::shared_ptr<Fence>& fence, uint64_t value)
 {
     decltype(auto) dx_fence = fence->As<DXFence>();
-    CHECK_HRESULT(m_command_queue->Wait(dx_fence.GetFence().Get(), value));
+    CHECK_HRESULT(command_queue_->Wait(dx_fence.GetFence().Get(), value));
 }
 
 void DXCommandQueue::Signal(const std::shared_ptr<Fence>& fence, uint64_t value)
 {
     decltype(auto) dx_fence = fence->As<DXFence>();
-    CHECK_HRESULT(m_command_queue->Signal(dx_fence.GetFence().Get(), value));
+    CHECK_HRESULT(command_queue_->Signal(dx_fence.GetFence().Get(), value));
 }
 
 void DXCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<CommandList>>& command_lists)
@@ -53,16 +53,16 @@ void DXCommandQueue::ExecuteCommandLists(const std::vector<std::shared_ptr<Comma
         dx_command_lists.emplace_back(dx_command_list.GetCommandList().Get());
     }
     if (!dx_command_lists.empty()) {
-        m_command_queue->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
+        command_queue_->ExecuteCommandLists(dx_command_lists.size(), dx_command_lists.data());
     }
 }
 
 DXDevice& DXCommandQueue::GetDevice()
 {
-    return m_device;
+    return device_;
 }
 
 ComPtr<ID3D12CommandQueue> DXCommandQueue::GetQueue()
 {
-    return m_command_queue;
+    return command_queue_;
 }

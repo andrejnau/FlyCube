@@ -8,21 +8,21 @@
 #include <cassert>
 
 MTComputePipeline::MTComputePipeline(MTDevice& device, const ComputePipelineDesc& desc)
-    : m_desc(desc)
+    : desc_(desc)
 {
     MTL4ComputePipelineDescriptor* pipeline_descriptor = [MTL4ComputePipelineDescriptor new];
-    assert(m_desc.shader->GetType() == ShaderType::kCompute);
-    pipeline_descriptor.computeFunctionDescriptor = m_desc.shader->As<MTShader>().GetFunctionDescriptor();
+    assert(desc_.shader->GetType() == ShaderType::kCompute);
+    pipeline_descriptor.computeFunctionDescriptor = desc_.shader->As<MTShader>().GetFunctionDescriptor();
 
-    decltype(auto) reflection = m_desc.shader->GetReflection();
+    decltype(auto) reflection = desc_.shader->GetReflection();
     decltype(auto) numthreads = reflection->GetShaderFeatureInfo().numthreads;
-    m_numthreads = { numthreads[0], numthreads[1], numthreads[2] };
+    numthreads_ = { numthreads[0], numthreads[1], numthreads[2] };
 
     NSError* error = nullptr;
-    m_pipeline = [device.GetCompiler() newComputePipelineStateWithDescriptor:pipeline_descriptor
-                                                         compilerTaskOptions:nullptr
-                                                                       error:&error];
-    if (!m_pipeline) {
+    pipeline_ = [device.GetCompiler() newComputePipelineStateWithDescriptor:pipeline_descriptor
+                                                        compilerTaskOptions:nullptr
+                                                                      error:&error];
+    if (!pipeline_) {
         Logging::Println("Failed to create MTLComputePipelineState: {}", error);
     }
 }
@@ -41,22 +41,22 @@ std::vector<uint8_t> MTComputePipeline::GetRayTracingShaderGroupHandles(uint32_t
 std::shared_ptr<Shader> MTComputePipeline::GetShader(ShaderType type) const
 {
     if (type == ShaderType::kCompute) {
-        return m_desc.shader;
+        return desc_.shader;
     }
     return nullptr;
 }
 
 id<MTLComputePipelineState> MTComputePipeline::GetPipeline()
 {
-    return m_pipeline;
+    return pipeline_;
 }
 
 const ComputePipelineDesc& MTComputePipeline::GetDesc() const
 {
-    return m_desc;
+    return desc_;
 }
 
 const MTLSize& MTComputePipeline::GetNumthreads() const
 {
-    return m_numthreads;
+    return numthreads_;
 }

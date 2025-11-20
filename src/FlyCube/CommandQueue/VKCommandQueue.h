@@ -17,7 +17,7 @@ public:
     vk::Queue GetQueue();
 
 private:
-    VKDevice& m_device;
-    uint32_t m_queue_family_index;
-    vk::Queue m_queue;
+    VKDevice& device_;
+    uint32_t queue_family_index_;
+    vk::Queue queue_;
 };

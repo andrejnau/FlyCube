@@ -17,6 +17,6 @@ public:
     vk::DeviceMemory GetMemory() const;
 
 private:
-    MemoryType m_memory_type;
-    vk::UniqueDeviceMemory m_memory;
+    MemoryType memory_type_;
+    vk::UniqueDeviceMemory memory_;
 };

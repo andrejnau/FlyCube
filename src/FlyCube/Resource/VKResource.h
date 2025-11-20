@@ -42,28 +42,28 @@ public:
     vk::ImageUsageFlags GetImageUsageFlags() const;
 
 private:
-    VKDevice& m_device;
+    VKDevice& device_;
 
-    std::shared_ptr<VKMemory> m_commited_memory;
-    vk::DeviceMemory m_vk_memory;
+    std::shared_ptr<VKMemory> commited_memory_;
+    vk::DeviceMemory vk_memory_;
 
-    vk::UniqueImage m_image_owned;
+    vk::UniqueImage image_owned_;
 
     struct Image {
         vk::Image res;
         TextureDesc desc;
         vk::ImageCreateFlags flags;
         vk::ImageUsageFlags usage;
-    } m_image;
+    } image_;
 
     struct Buffer {
         vk::UniqueBuffer res;
         uint64_t size = 0;
-    } m_buffer;
+    } buffer_;
 
     struct Sampler {
         vk::UniqueSampler res;
-    } m_sampler;
+    } sampler_;
 
-    vk::UniqueAccelerationStructureKHR m_acceleration_structure = {};
+    vk::UniqueAccelerationStructureKHR acceleration_structure_ = {};
 };

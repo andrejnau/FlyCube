@@ -351,14 +351,14 @@ void DXReflection::ParseReflectionPart(const ReflectionPart& reflection_part)
     if (reflection_part.GetShaderReflection(static_cast<void**>(&shader_reflection))) {
         D3D12_SHADER_DESC desc = {};
         CHECK_HRESULT(shader_reflection->GetDesc(&desc));
-        m_entry_points.push_back({ "", GetVersionShaderType(desc.Version) });
-        m_bindings = ParseReflection(desc, shader_reflection.Get());
-        m_layouts = ParseLayout(desc, shader_reflection.Get());
-        assert(m_bindings.size() == m_layouts.size());
-        m_input_parameters = ParseInputParameters(desc, shader_reflection.Get());
-        m_output_parameters = ParseOutputParameters(desc, shader_reflection.Get());
+        entry_points_.push_back({ "", GetVersionShaderType(desc.Version) });
+        bindings_ = ParseReflection(desc, shader_reflection.Get());
+        layouts_ = ParseLayout(desc, shader_reflection.Get());
+        assert(bindings_.size() == layouts_.size());
+        input_parameters_ = ParseInputParameters(desc, shader_reflection.Get());
+        output_parameters_ = ParseOutputParameters(desc, shader_reflection.Get());
     } else if (reflection_part.GetLibraryReflection(static_cast<void**>(&library_reflection))) {
-        m_is_library = true;
+        is_library_ = true;
         D3D12_LIBRARY_DESC library_desc = {};
         CHECK_HRESULT(library_reflection->GetDesc(&library_desc));
         std::map<std::string, size_t> exist;
@@ -372,12 +372,12 @@ void DXReflection::ParseReflectionPart(const ReflectionPart& reflection_part)
             for (size_t i = 0; i < function_bindings.size(); ++i) {
                 auto it = exist.find(function_bindings[i].name);
                 if (it == exist.end()) {
-                    exist[function_bindings[i].name] = m_bindings.size();
-                    m_bindings.emplace_back(function_bindings[i]);
-                    m_layouts.emplace_back(function_layouts[i]);
+                    exist[function_bindings[i].name] = bindings_.size();
+                    bindings_.emplace_back(function_bindings[i]);
+                    layouts_.emplace_back(function_layouts[i]);
                 } else {
-                    assert(function_bindings[i] == m_bindings[it->second]);
-                    assert(function_layouts[i] == m_layouts[it->second]);
+                    assert(function_bindings[i] == bindings_[it->second]);
+                    assert(function_layouts[i] == layouts_[it->second]);
                 }
             }
         }

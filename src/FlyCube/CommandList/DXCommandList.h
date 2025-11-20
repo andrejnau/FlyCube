@@ -120,16 +120,16 @@ private:
                                     const std::shared_ptr<Resource>& scratch,
                                     uint64_t scratch_offset);
 
-    DXDevice& m_device;
-    ComPtr<ID3D12CommandAllocator> m_command_allocator;
-    ComPtr<ID3D12GraphicsCommandList> m_command_list;
-    ComPtr<ID3D12GraphicsCommandList4> m_command_list4;
-    ComPtr<ID3D12GraphicsCommandList5> m_command_list5;
-    ComPtr<ID3D12GraphicsCommandList6> m_command_list6;
-    bool m_closed = false;
-    std::vector<ComPtr<ID3D12DescriptorHeap>> m_heaps;
-    std::shared_ptr<DXPipeline> m_state;
-    std::shared_ptr<BindingSet> m_binding_set;
-    std::map<uint32_t, std::pair<std::shared_ptr<Resource>, uint64_t>> m_lazy_vertex;
-    std::shared_ptr<View> m_shading_rate_image_view;
+    DXDevice& device_;
+    ComPtr<ID3D12CommandAllocator> command_allocator_;
+    ComPtr<ID3D12GraphicsCommandList> command_list_;
+    ComPtr<ID3D12GraphicsCommandList4> command_list4_;
+    ComPtr<ID3D12GraphicsCommandList5> command_list5_;
+    ComPtr<ID3D12GraphicsCommandList6> command_list6_;
+    bool closed_ = false;
+    std::vector<ComPtr<ID3D12DescriptorHeap>> heaps_;
+    std::shared_ptr<DXPipeline> state_;
+    std::shared_ptr<BindingSet> binding_set_;
+    std::map<uint32_t, std::pair<std::shared_ptr<Resource>, uint64_t>> lazy_vertex_;
+    std::shared_ptr<View> shading_rate_image_view_;
 };

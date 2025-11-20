@@ -3,63 +3,63 @@
 #include "Device/MTDevice.h"
 
 MTGPUBindlessArgumentBuffer::MTGPUBindlessArgumentBuffer(MTDevice& device)
-    : m_device(device)
-    , m_residency_set(device.CreateResidencySet())
+    : device_(device)
+    , residency_set_(device.CreateResidencySet())
 {
 }
 
 void MTGPUBindlessArgumentBuffer::ResizeHeap(uint32_t req_size)
 {
-    if (m_size >= req_size) {
+    if (size_ >= req_size) {
         return;
     }
 
-    id<MTLBuffer> buffer = [m_device.GetDevice() newBufferWithLength:req_size * sizeof(uint64_t)
-                                                             options:MTLResourceStorageModeShared];
-    if (m_size && m_buffer) {
-        memcpy(buffer.contents, m_buffer.contents, m_size * sizeof(uint64_t));
+    id<MTLBuffer> buffer = [device_.GetDevice() newBufferWithLength:req_size * sizeof(uint64_t)
+                                                            options:MTLResourceStorageModeShared];
+    if (size_ && buffer_) {
+        memcpy(buffer.contents, buffer_.contents, size_ * sizeof(uint64_t));
     }
 
-    m_size = req_size;
-    m_buffer = buffer;
-    m_allocations.resize(m_size);
+    size_ = req_size;
+    buffer_ = buffer;
+    allocations_.resize(size_);
 }
 
 MTGPUArgumentBufferRange MTGPUBindlessArgumentBuffer::Allocate(uint32_t count)
 {
-    auto it = m_empty_ranges.lower_bound(count);
-    if (it != m_empty_ranges.end()) {
+    auto it = empty_ranges_.lower_bound(count);
+    if (it != empty_ranges_.end()) {
         size_t offset = it->second;
         size_t size = it->first;
-        m_empty_ranges.erase(it);
+        empty_ranges_.erase(it);
         return MTGPUArgumentBufferRange(*this, offset, size);
     }
-    if (m_offset + count > m_size) {
-        ResizeHeap(std::max(m_offset + count, 2 * (m_size + 1)));
+    if (offset_ + count > size_) {
+        ResizeHeap(std::max(offset_ + count, 2 * (size_ + 1)));
     }
-    m_offset += count;
-    return MTGPUArgumentBufferRange(*this, m_offset - count, count);
+    offset_ += count;
+    return MTGPUArgumentBufferRange(*this, offset_ - count, count);
 }
 
 void MTGPUBindlessArgumentBuffer::OnRangeDestroy(uint32_t offset, uint32_t size)
 {
-    m_empty_ranges.emplace(size, offset);
+    empty_ranges_.emplace(size, offset);
     for (uint32_t i = offset; i < offset + size; ++i) {
-        if (!m_allocations[i]) {
+        if (!allocations_[i]) {
             continue;
         }
 
-        if (--m_allocations_cnt.at(m_allocations[i]) == 0) {
-            [m_residency_set removeAllocation:m_allocations[i]];
-            m_allocations_cnt.erase(m_allocations[i]);
+        if (--allocations_cnt_.at(allocations_[i]) == 0) {
+            [residency_set_ removeAllocation:allocations_[i]];
+            allocations_cnt_.erase(allocations_[i]);
         }
-        m_allocations[i] = {};
+        allocations_[i] = {};
     }
 }
 
 id<MTLBuffer> MTGPUBindlessArgumentBuffer::GetArgumentBuffer() const
 {
-    return m_buffer;
+    return buffer_;
 }
 
 void MTGPUBindlessArgumentBuffer::AddAllocation(uint32_t offset, id<MTLAllocation> allocation)
@@ -68,13 +68,13 @@ void MTGPUBindlessArgumentBuffer::AddAllocation(uint32_t offset, id<MTLAllocatio
         return;
     }
 
-    if (++m_allocations_cnt[allocation] == 1) {
-        [m_residency_set addAllocation:allocation];
+    if (++allocations_cnt_[allocation] == 1) {
+        [residency_set_ addAllocation:allocation];
     }
-    m_allocations[offset] = allocation;
+    allocations_[offset] = allocation;
 }
 
 id<MTLResidencySet> MTGPUBindlessArgumentBuffer::GetResidencySet() const
 {
-    return m_residency_set;
+    return residency_set_;
 }

@@ -16,7 +16,7 @@ public:
 private:
     void CreateInputLayout(const std::shared_ptr<Shader>& shader);
 
-    GraphicsPipelineDesc m_desc;
-    std::vector<vk::VertexInputBindingDescription> m_binding_desc;
-    std::vector<vk::VertexInputAttributeDescription> m_attribute_desc;
+    GraphicsPipelineDesc desc_;
+    std::vector<vk::VertexInputBindingDescription> binding_desc_;
+    std::vector<vk::VertexInputAttributeDescription> attribute_desc_;
 };

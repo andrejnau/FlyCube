@@ -29,11 +29,11 @@ private:
     void ParseInputLayout(const std::shared_ptr<Shader>& shader);
     D3D12_INPUT_LAYOUT_DESC GetInputLayoutDesc();
 
-    DXDevice& m_device;
-    GraphicsPipelineDesc m_desc;
-    std::vector<D3D12_INPUT_ELEMENT_DESC> m_input_layout_desc;
-    std::map<size_t, std::string> m_input_layout_desc_names;
-    std::map<size_t, uint32_t> m_input_layout_stride;
-    ComPtr<ID3D12RootSignature> m_root_signature;
-    ComPtr<ID3D12PipelineState> m_pipeline_state;
+    DXDevice& device_;
+    GraphicsPipelineDesc desc_;
+    std::vector<D3D12_INPUT_ELEMENT_DESC> input_layout_desc_;
+    std::map<size_t, std::string> input_layout_desc_names_;
+    std::map<size_t, uint32_t> input_layout_stride_;
+    ComPtr<ID3D12RootSignature> root_signature_;
+    ComPtr<ID3D12PipelineState> pipeline_state_;
 };

@@ -8,7 +8,7 @@ MTShader::MTShader(MTDevice& device, const std::vector<uint8_t>& blob, ShaderBlo
     : ShaderBase(blob, blob_type, shader_type)
 {
     std::string entry_point;
-    std::string msl_source = GetMSLShader(shader_type, m_blob, m_slot_remapping, entry_point);
+    std::string msl_source = GetMSLShader(shader_type, blob_, slot_remapping_, entry_point);
 
     MTL4LibraryDescriptor* library_descriptor = [MTL4LibraryDescriptor new];
     library_descriptor.source = [NSString stringWithUTF8String:msl_source.c_str()];
@@ -18,17 +18,17 @@ MTShader::MTShader(MTDevice& device, const std::vector<uint8_t>& blob, ShaderBlo
         Logging::Println("Failed to create MTLLibrary: {}", error);
     }
 
-    m_function_descriptor = [MTL4LibraryFunctionDescriptor new];
-    m_function_descriptor.library = library;
-    m_function_descriptor.name = [NSString stringWithUTF8String:entry_point.c_str()];
+    function_descriptor_ = [MTL4LibraryFunctionDescriptor new];
+    function_descriptor_.library = library;
+    function_descriptor_.name = [NSString stringWithUTF8String:entry_point.c_str()];
 }
 
 uint32_t MTShader::GetIndex(BindKey bind_key) const
 {
-    return m_slot_remapping.at(bind_key);
+    return slot_remapping_.at(bind_key);
 }
 
 MTL4LibraryFunctionDescriptor* MTShader::GetFunctionDescriptor()
 {
-    return m_function_descriptor;
+    return function_descriptor_;
 }

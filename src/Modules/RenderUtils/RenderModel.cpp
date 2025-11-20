@@ -17,50 +17,50 @@ RenderModel::RenderModel(const std::shared_ptr<Device>& device,
 RenderModel::RenderModel(const std::shared_ptr<Device>& device,
                          const std::shared_ptr<CommandQueue>& command_queue,
                          Model* model)
-    : m_device(device)
+    : device_(device)
 {
-    m_command_list = m_device->CreateCommandList(CommandListType::kGraphics);
-    m_fence = m_device->CreateFence(m_fence_value);
+    command_list_ = device_->CreateCommandList(CommandListType::kGraphics);
+    fence_ = device_->CreateFence(fence_value_);
 
-    m_meshes.resize(model->meshes.size());
+    meshes_.resize(model->meshes.size());
     for (int i = 0; i < model->meshes.size(); ++i) {
-        m_meshes[i].matrix = model->meshes[i].matrix;
+        meshes_[i].matrix = model->meshes[i].matrix;
 
-        m_meshes[i].positions = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].positions);
-        m_meshes[i].normals = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].normals);
-        m_meshes[i].tangents = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].tangents);
-        m_meshes[i].texcoords = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].texcoords);
+        meshes_[i].positions = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].positions);
+        meshes_[i].normals = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].normals);
+        meshes_[i].tangents = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].tangents);
+        meshes_[i].texcoords = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].texcoords);
 
-        m_meshes[i].index_count = model->meshes[i].indices.size();
-        m_meshes[i].index_format = gli::format::FORMAT_R32_UINT_PACK32;
-        m_meshes[i].indices = CreateBuffer(BindFlag::kIndexBuffer, model->meshes[i].indices);
+        meshes_[i].index_count = model->meshes[i].indices.size();
+        meshes_[i].index_format = gli::format::FORMAT_R32_UINT_PACK32;
+        meshes_[i].indices = CreateBuffer(BindFlag::kIndexBuffer, model->meshes[i].indices);
 
-        m_meshes[i].textures.base_color = CreateTextureFromFile(model->meshes[i].textures.base_color);
-        m_meshes[i].textures.normal = CreateTextureFromFile(model->meshes[i].textures.normal);
-        m_meshes[i].textures.metallic_roughness = CreateTextureFromFile(model->meshes[i].textures.metallic_roughness);
-        m_meshes[i].textures.ambient_occlusion = CreateTextureFromFile(model->meshes[i].textures.ambient_occlusion);
-        m_meshes[i].textures.emissive = CreateTextureFromFile(model->meshes[i].textures.emissive);
+        meshes_[i].textures.base_color = CreateTextureFromFile(model->meshes[i].textures.base_color);
+        meshes_[i].textures.normal = CreateTextureFromFile(model->meshes[i].textures.normal);
+        meshes_[i].textures.metallic_roughness = CreateTextureFromFile(model->meshes[i].textures.metallic_roughness);
+        meshes_[i].textures.ambient_occlusion = CreateTextureFromFile(model->meshes[i].textures.ambient_occlusion);
+        meshes_[i].textures.emissive = CreateTextureFromFile(model->meshes[i].textures.emissive);
     }
 
-    m_command_list->Close();
-    command_queue->ExecuteCommandLists({ m_command_list });
-    command_queue->Signal(m_fence, ++m_fence_value);
-    command_queue->Wait(m_fence, m_fence_value);
+    command_list_->Close();
+    command_queue->ExecuteCommandLists({ command_list_ });
+    command_queue->Signal(fence_, ++fence_value_);
+    command_queue->Wait(fence_, fence_value_);
 }
 
 RenderModel::~RenderModel()
 {
-    m_fence->Wait(m_fence_value);
+    fence_->Wait(fence_value_);
 }
 
 size_t RenderModel::GetMeshCount() const
 {
-    return m_meshes.size();
+    return meshes_.size();
 }
 
 const RenderMesh& RenderModel::GetMesh(size_t index) const
 {
-    return m_meshes.at(index);
+    return meshes_.at(index);
 }
 
 template <typename T>
@@ -72,7 +72,7 @@ std::shared_ptr<Resource> RenderModel::CreateBuffer(uint32_t bind_flag, const st
 
     uint64_t num_bytes = sizeof(data.front()) * data.size();
     std::shared_ptr<Resource> buffer =
-        m_device->CreateBuffer(MemoryType::kDefault, { .size = num_bytes, .usage = bind_flag | BindFlag::kCopyDest });
+        device_->CreateBuffer(MemoryType::kDefault, { .size = num_bytes, .usage = bind_flag | BindFlag::kCopyDest });
     UpdateBuffer(buffer, /*buffer_offset=*/0, data.data(), num_bytes);
     return buffer;
 }
@@ -98,7 +98,7 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
             .sample_count = 1,
             .usage = BindFlag::kShaderResource | BindFlag::kCopyDest,
         };
-        texture = m_device->CreateTexture(MemoryType::kDefault, texture_desc);
+        texture = device_->CreateTexture(MemoryType::kDefault, texture_desc);
 
         for (size_t level = 0; level < gli_texture.levels(); ++level) {
             auto extent = gli_texture.extent(level);
@@ -125,7 +125,7 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
             .sample_count = 1,
             .usage = BindFlag::kShaderResource | BindFlag::kCopyDest,
         };
-        texture = m_device->CreateTexture(MemoryType::kDefault, texture_desc);
+        texture = device_->CreateTexture(MemoryType::kDefault, texture_desc);
 
         size_t row_bytes = 0;
         size_t num_bytes = 0;
@@ -144,15 +144,15 @@ void RenderModel::UpdateBuffer(const std::shared_ptr<Resource>& buffer,
                                uint64_t num_bytes)
 {
     std::shared_ptr<Resource> upload_buffer =
-        m_device->CreateBuffer(MemoryType::kUpload, { .size = num_bytes, .usage = BindFlag::kCopySource });
+        device_->CreateBuffer(MemoryType::kUpload, { .size = num_bytes, .usage = BindFlag::kCopySource });
     upload_buffer->UpdateUploadBuffer(0, data, num_bytes);
     BufferCopyRegion copy_region = {
         .src_offset = 0,
         .dst_offset = buffer_offset,
         .num_bytes = num_bytes,
     };
-    m_command_list->CopyBuffer(upload_buffer, buffer, { copy_region });
-    m_upload_buffers.push_back(upload_buffer);
+    command_list_->CopyBuffer(upload_buffer, buffer, { copy_region });
+    upload_buffers_.push_back(upload_buffer);
 }
 
 void RenderModel::UpdateTexture(const std::shared_ptr<Resource>& texture,
@@ -165,10 +165,10 @@ void RenderModel::UpdateTexture(const std::shared_ptr<Resource>& texture,
                                 uint64_t slice_pitch,
                                 uint32_t num_rows)
 {
-    uint64_t aligned_row_pitch = Align(row_pitch, m_device->GetTextureDataPitchAlignment());
+    uint64_t aligned_row_pitch = Align(row_pitch, device_->GetTextureDataPitchAlignment());
     uint64_t buffer_size = aligned_row_pitch * num_rows;
     std::shared_ptr<Resource> upload_buffer =
-        m_device->CreateBuffer(MemoryType::kUpload, { .size = buffer_size, .usage = BindFlag::kCopySource });
+        device_->CreateBuffer(MemoryType::kUpload, { .size = buffer_size, .usage = BindFlag::kCopySource });
     BufferToTextureCopyRegion copy_region = {
         .buffer_offset = 0,
         .buffer_row_pitch = static_cast<uint32_t>(aligned_row_pitch),
@@ -178,6 +178,6 @@ void RenderModel::UpdateTexture(const std::shared_ptr<Resource>& texture,
     };
     upload_buffer->UpdateUploadBufferWithTextureData(copy_region.buffer_offset, copy_region.buffer_row_pitch,
                                                      buffer_size, data, row_pitch, slice_pitch, row_pitch, num_rows, 1);
-    m_command_list->CopyBufferToTexture(upload_buffer, texture, { copy_region });
-    m_upload_buffers.push_back(upload_buffer);
+    command_list_->CopyBufferToTexture(upload_buffer, texture, { copy_region });
+    upload_buffers_.push_back(upload_buffer);
 }

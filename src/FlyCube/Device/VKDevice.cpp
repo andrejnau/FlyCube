@@ -159,16 +159,16 @@ std::array<vk::FragmentShadingRateCombinerOpKHR, 2> ConvertShadingRateCombiners(
 }
 
 VKDevice::VKDevice(VKAdapter& adapter)
-    : m_adapter(adapter)
-    , m_physical_device(adapter.GetPhysicalDevice())
-    , m_gpu_descriptor_pool(*this)
+    : adapter_(adapter)
+    , physical_device_(adapter.GetPhysicalDevice())
+    , gpu_descriptor_pool_(*this)
 {
-    m_device_properties = m_physical_device.getProperties();
-    Logging::Println("{}: Vulkan {}.{}.{}", m_device_properties.deviceName.data(),
-                     VK_VERSION_MAJOR(m_device_properties.apiVersion), VK_VERSION_MINOR(m_device_properties.apiVersion),
-                     VK_VERSION_PATCH(m_device_properties.apiVersion));
+    device_properties_ = physical_device_.getProperties();
+    Logging::Println("{}: Vulkan {}.{}.{}", device_properties_.deviceName.data(),
+                     VK_VERSION_MAJOR(device_properties_.apiVersion), VK_VERSION_MINOR(device_properties_.apiVersion),
+                     VK_VERSION_PATCH(device_properties_.apiVersion));
 
-    auto queue_families = m_physical_device.getQueueFamilyProperties();
+    auto queue_families = physical_device_.getQueueFamilyProperties();
     auto has_all_bits = [](auto flags, auto bits) { return (flags & bits) == bits; };
     auto has_any_bits = [](auto flags, auto bits) { return flags & bits; };
     for (size_t i = 0; i < queue_families.size(); ++i) {
@@ -176,21 +176,21 @@ VKDevice::VKDevice(VKAdapter& adapter)
         if (queue.queueCount > 0 &&
             has_all_bits(queue.queueFlags,
                          vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer)) {
-            m_queues_info[CommandListType::kGraphics].queue_family_index = i;
-            m_queues_info[CommandListType::kGraphics].queue_count = queue.queueCount;
+            queues_info_[CommandListType::kGraphics].queue_family_index = i;
+            queues_info_[CommandListType::kGraphics].queue_count = queue.queueCount;
         } else if (queue.queueCount > 0 &&
                    has_all_bits(queue.queueFlags, vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer) &&
                    !has_any_bits(queue.queueFlags, vk::QueueFlagBits::eGraphics)) {
-            m_queues_info[CommandListType::kCompute].queue_family_index = i;
-            m_queues_info[CommandListType::kCompute].queue_count = queue.queueCount;
+            queues_info_[CommandListType::kCompute].queue_family_index = i;
+            queues_info_[CommandListType::kCompute].queue_count = queue.queueCount;
         } else if (queue.queueCount > 0 && has_all_bits(queue.queueFlags, vk::QueueFlagBits::eTransfer) &&
                    !has_any_bits(queue.queueFlags, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute)) {
-            m_queues_info[CommandListType::kCopy].queue_family_index = i;
-            m_queues_info[CommandListType::kCopy].queue_count = queue.queueCount;
+            queues_info_[CommandListType::kCopy].queue_family_index = i;
+            queues_info_[CommandListType::kCopy].queue_count = queue.queueCount;
         }
     }
 
-    auto extensions = m_physical_device.enumerateDeviceExtensionProperties();
+    auto extensions = physical_device_.enumerateDeviceExtensionProperties();
     std::set<std::string_view> requested_extensions = {
         // clang-format off
         VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
@@ -204,7 +204,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         // clang-format on
     };
 
-    if (m_device_properties.apiVersion < VK_API_VERSION_1_3) {
+    if (device_properties_.apiVersion < VK_API_VERSION_1_3) {
         requested_extensions.insert(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     }
 
@@ -219,7 +219,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
     const float queue_priority = 1.0;
     std::vector<vk::DeviceQueueCreateInfo> queues_create_info;
-    for (const auto& queue_info : m_queues_info) {
+    for (const auto& queue_info : queues_info_) {
         vk::DeviceQueueCreateInfo& queue_create_info = queues_create_info.emplace_back();
         queue_create_info.queueFamilyIndex = queue_info.second.queue_family_index;
         queue_create_info.queueCount = 1;
@@ -233,7 +233,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     };
 
     vk::PhysicalDeviceFeatures device_features = {};
-    vk::PhysicalDeviceFeatures query_device_features = m_physical_device.getFeatures();
+    vk::PhysicalDeviceFeatures query_device_features = physical_device_.getFeatures();
     device_features.fragmentStoresAndAtomics = query_device_features.fragmentStoresAndAtomics;
     device_features.geometryShader = query_device_features.geometryShader;
     device_features.imageCubeArray = query_device_features.imageCubeArray;
@@ -243,7 +243,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_features.textureCompressionBC = query_device_features.textureCompressionBC;
     device_features.vertexPipelineStoresAndAtomics = query_device_features.vertexPipelineStoresAndAtomics;
 
-    m_geometry_shader_supported = device_features.geometryShader;
+    geometry_shader_supported_ = device_features.geometryShader;
 
     vk::PhysicalDeviceVulkan12Features device_vulkan12_features = {};
     auto query_device_vulkan12_features = GetFeatures2<vk::PhysicalDeviceVulkan12Features>();
@@ -260,17 +260,17 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
     device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
 
-    m_has_buffer_device_address = device_vulkan12_features.bufferDeviceAddress;
-    m_draw_indirect_count_supported = device_vulkan12_features.drawIndirectCount;
-    m_bindless_supported |= device_vulkan12_features.descriptorIndexing &&
-                            device_vulkan12_features.runtimeDescriptorArray &&
-                            device_vulkan12_features.descriptorBindingPartiallyBound &&
-                            device_vulkan12_features.descriptorBindingVariableDescriptorCount;
+    has_buffer_device_address_ = device_vulkan12_features.bufferDeviceAddress;
+    draw_indirect_count_supported_ = device_vulkan12_features.drawIndirectCount;
+    bindless_supported_ |= device_vulkan12_features.descriptorIndexing &&
+                           device_vulkan12_features.runtimeDescriptorArray &&
+                           device_vulkan12_features.descriptorBindingPartiallyBound &&
+                           device_vulkan12_features.descriptorBindingVariableDescriptorCount;
     add_extension(device_vulkan12_features);
 
     vk::PhysicalDeviceVulkan13Features device_vulkan13_features = {};
     vk::PhysicalDeviceDynamicRenderingFeaturesKHR device_dynamic_rendering_features = {};
-    if (m_device_properties.apiVersion >= VK_API_VERSION_1_3) {
+    if (device_properties_.apiVersion >= VK_API_VERSION_1_3) {
         assert(GetFeatures2<vk::PhysicalDeviceVulkan13Features>().dynamicRendering);
         device_vulkan13_features.dynamicRendering = true;
         add_extension(device_vulkan13_features);
@@ -291,7 +291,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
             query_mesh_shader_features.primitiveFragmentShadingRateMeshShader;
         mesh_shader_features.meshShaderQueries = query_mesh_shader_features.meshShaderQueries;
 
-        m_is_mesh_shading_supported = mesh_shader_features.taskShader && mesh_shader_features.meshShader;
+        is_mesh_shading_supported_ = mesh_shader_features.taskShader && mesh_shader_features.meshShader;
         add_extension(mesh_shader_features);
     }
 
@@ -307,17 +307,17 @@ VKDevice::VKDevice(VKAdapter& adapter)
     if (enabled_extension_set.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
         acceleration_structure_features.accelerationStructure) {
         auto ray_tracing_pipeline_properties = GetProperties2<vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
-        m_shader_group_handle_size = ray_tracing_pipeline_properties.shaderGroupHandleSize;
-        m_shader_record_alignment = ray_tracing_pipeline_properties.shaderGroupHandleSize;
-        m_shader_table_alignment = ray_tracing_pipeline_properties.shaderGroupBaseAlignment;
+        shader_group_handle_size_ = ray_tracing_pipeline_properties.shaderGroupHandleSize;
+        shader_record_alignment_ = ray_tracing_pipeline_properties.shaderGroupHandleSize;
+        shader_table_alignment_ = ray_tracing_pipeline_properties.shaderGroupBaseAlignment;
 
         auto query_raytracing_pipeline_features = GetFeatures2<vk::PhysicalDeviceRayTracingPipelineFeaturesKHR>();
         raytracing_pipeline_features.rayTracingPipeline = query_raytracing_pipeline_features.rayTracingPipeline;
         raytracing_pipeline_features.rayTraversalPrimitiveCulling =
             query_raytracing_pipeline_features.rayTraversalPrimitiveCulling;
 
-        m_is_dxr_supported = raytracing_pipeline_features.rayTracingPipeline &&
-                             raytracing_pipeline_features.rayTraversalPrimitiveCulling;
+        is_dxr_supported_ = raytracing_pipeline_features.rayTracingPipeline &&
+                            raytracing_pipeline_features.rayTraversalPrimitiveCulling;
         add_extension(raytracing_pipeline_features);
     }
 
@@ -327,7 +327,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
         auto query_rayquery_features = GetFeatures2<vk::PhysicalDeviceRayQueryFeaturesKHR>();
         rayquery_features.rayQuery = query_rayquery_features.rayQuery;
 
-        m_is_ray_query_supported = rayquery_features.rayQuery;
+        is_ray_query_supported_ = rayquery_features.rayQuery;
         add_extension(rayquery_features);
     }
 
@@ -352,7 +352,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
                 { ConvertShadingRateToPair(ShadingRate::k4x2), ShadingRate::k4x2 },
                 { ConvertShadingRateToPair(ShadingRate::k4x4), ShadingRate::k4x4 },
             };
-            auto fragment_shading_rates = m_physical_device.getFragmentShadingRatesKHR();
+            auto fragment_shading_rates = physical_device_.getFragmentShadingRatesKHR();
             for (const auto& fragment_shading_rate : fragment_shading_rates) {
                 vk::Extent2D size = fragment_shading_rate.fragmentSize;
                 std::pair<uint32_t, uint32_t> size_as_pair = { size.width, size.height };
@@ -380,8 +380,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
             assert(shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width != 0);
         }
 
-        m_is_variable_rate_shading_supported = fragment_shading_rate_features.pipelineFragmentShadingRate;
-        m_shading_rate_image_tile_size = shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width;
+        is_variable_rate_shading_supported_ = fragment_shading_rate_features.pipelineFragmentShadingRate;
+        shading_rate_image_tile_size_ = shading_rate_image_properties.maxFragmentShadingRateAttachmentTexelSize.width;
         add_extension(fragment_shading_rate_features);
     }
 
@@ -393,18 +393,18 @@ VKDevice::VKDevice(VKAdapter& adapter)
     device_create_info.enabledExtensionCount = enabled_extensions.size();
     device_create_info.ppEnabledExtensionNames = enabled_extensions.data();
 
-    m_device = m_physical_device.createDeviceUnique(device_create_info);
+    device_ = physical_device_.createDeviceUnique(device_create_info);
 
 #if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device.get());
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(device_.get());
 #endif
 
-    for (const auto& queue_info : m_queues_info) {
+    for (const auto& queue_info : queues_info_) {
         vk::CommandPoolCreateInfo cmd_pool_create_info = {};
         cmd_pool_create_info.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
         cmd_pool_create_info.queueFamilyIndex = queue_info.second.queue_family_index;
-        m_cmd_pools.emplace(queue_info.first, m_device->createCommandPoolUnique(cmd_pool_create_info));
-        m_command_queues[queue_info.first] =
+        cmd_pools_.emplace(queue_info.first, device_->createCommandPoolUnique(cmd_pool_create_info));
+        command_queues_[queue_info.first] =
             std::make_shared<VKCommandQueue>(*this, queue_info.first, queue_info.second.queue_family_index);
     }
 }
@@ -416,7 +416,7 @@ std::shared_ptr<Memory> VKDevice::AllocateMemory(uint64_t size, MemoryType memor
 
 std::shared_ptr<CommandQueue> VKDevice::GetCommandQueue(CommandListType type)
 {
-    return m_command_queues.at(GetAvailableCommandListType(type));
+    return command_queues_.at(GetAvailableCommandListType(type));
 }
 
 uint32_t VKDevice::GetTextureDataPitchAlignment() const
@@ -430,7 +430,7 @@ std::shared_ptr<Swapchain> VKDevice::CreateSwapchain(const NativeSurface& surfac
                                                      uint32_t frame_count,
                                                      bool vsync)
 {
-    return std::make_shared<VKSwapchain>(*m_command_queues.at(CommandListType::kGraphics), surface, width, height,
+    return std::make_shared<VKSwapchain>(*command_queues_.at(CommandListType::kGraphics), surface, width, height,
                                          frame_count, vsync);
 }
 
@@ -556,14 +556,14 @@ vk::AccelerationStructureGeometryKHR VKDevice::FillRaytracingGeometryTriangles(
 
     auto vertex_stride = gli::detail::bits_per_pixel(vertex.format) / 8;
     geometry_desc.geometry.triangles.vertexData =
-        m_device->getBufferAddress({ vk_vertex_res->GetBuffer() }) + vertex.offset * vertex_stride;
+        device_->getBufferAddress({ vk_vertex_res->GetBuffer() }) + vertex.offset * vertex_stride;
     geometry_desc.geometry.triangles.vertexStride = vertex_stride;
     geometry_desc.geometry.triangles.vertexFormat = static_cast<vk::Format>(vertex.format);
     geometry_desc.geometry.triangles.maxVertex = vertex.count;
     if (vk_index_res) {
         auto index_stride = gli::detail::bits_per_pixel(index.format) / 8;
         geometry_desc.geometry.triangles.indexData =
-            m_device->getBufferAddress({ vk_index_res->GetBuffer() }) + index.offset * index_stride;
+            device_->getBufferAddress({ vk_index_res->GetBuffer() }) + index.offset * index_stride;
         geometry_desc.geometry.triangles.indexType = GetVkIndexType(index.format);
     } else {
         geometry_desc.geometry.triangles.indexType = vk::IndexType::eNoneKHR;
@@ -577,9 +577,9 @@ RaytracingASPrebuildInfo VKDevice::GetAccelerationStructurePrebuildInfo(
     const std::vector<uint32_t>& max_primitive_counts) const
 {
     vk::AccelerationStructureBuildSizesInfoKHR size_info = {};
-    m_device->getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice,
-                                                    &acceleration_structure_info, max_primitive_counts.data(),
-                                                    &size_info);
+    device_->getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice,
+                                                   &acceleration_structure_info, max_primitive_counts.data(),
+                                                   &size_info);
     RaytracingASPrebuildInfo prebuild_info = {};
     prebuild_info.acceleration_structure_size = size_info.accelerationStructureSize;
     prebuild_info.build_scratch_data_size = size_info.buildScratchSize;
@@ -602,42 +602,42 @@ std::shared_ptr<QueryHeap> VKDevice::CreateQueryHeap(QueryHeapType type, uint32_
 
 bool VKDevice::IsDxrSupported() const
 {
-    return m_is_dxr_supported;
+    return is_dxr_supported_;
 }
 
 bool VKDevice::IsRayQuerySupported() const
 {
-    return m_is_ray_query_supported;
+    return is_ray_query_supported_;
 }
 
 bool VKDevice::IsVariableRateShadingSupported() const
 {
-    return m_is_variable_rate_shading_supported;
+    return is_variable_rate_shading_supported_;
 }
 
 bool VKDevice::IsMeshShadingSupported() const
 {
-    return m_is_mesh_shading_supported;
+    return is_mesh_shading_supported_;
 }
 
 bool VKDevice::IsDrawIndirectCountSupported() const
 {
-    return m_draw_indirect_count_supported;
+    return draw_indirect_count_supported_;
 }
 
 bool VKDevice::IsGeometryShaderSupported() const
 {
-    return m_geometry_shader_supported;
+    return geometry_shader_supported_;
 }
 
 bool VKDevice::IsBindlessSupported() const
 {
-    return m_bindless_supported;
+    return bindless_supported_;
 }
 
 uint32_t VKDevice::GetShadingRateImageTileSize() const
 {
-    return m_shading_rate_image_tile_size;
+    return shading_rate_image_tile_size_;
 }
 
 MemoryBudget VKDevice::GetMemoryBudget() const
@@ -653,17 +653,17 @@ MemoryBudget VKDevice::GetMemoryBudget() const
 
 uint32_t VKDevice::GetShaderGroupHandleSize() const
 {
-    return m_shader_group_handle_size;
+    return shader_group_handle_size_;
 }
 
 uint32_t VKDevice::GetShaderRecordAlignment() const
 {
-    return m_shader_record_alignment;
+    return shader_record_alignment_;
 }
 
 uint32_t VKDevice::GetShaderTableAlignment() const
 {
-    return m_shader_table_alignment;
+    return shader_table_alignment_;
 }
 
 RaytracingASPrebuildInfo VKDevice::GetBLASPrebuildInfo(const std::vector<RaytracingGeometryDesc>& descs,
@@ -709,17 +709,17 @@ ShaderBlobType VKDevice::GetSupportedShaderBlobType() const
 
 VKAdapter& VKDevice::GetAdapter()
 {
-    return m_adapter;
+    return adapter_;
 }
 
 vk::Device VKDevice::GetDevice()
 {
-    return m_device.get();
+    return device_.get();
 }
 
 CommandListType VKDevice::GetAvailableCommandListType(CommandListType type)
 {
-    if (m_queues_info.contains(type)) {
+    if (queues_info_.contains(type)) {
         return type;
     }
     return CommandListType::kGraphics;
@@ -727,7 +727,7 @@ CommandListType VKDevice::GetAvailableCommandListType(CommandListType type)
 
 vk::CommandPool VKDevice::GetCmdPool(CommandListType type)
 {
-    return m_cmd_pools.at(GetAvailableCommandListType(type)).get();
+    return cmd_pools_.at(GetAvailableCommandListType(type)).get();
 }
 
 vk::ImageAspectFlags VKDevice::GetAspectFlags(vk::Format format) const
@@ -750,7 +750,7 @@ vk::ImageAspectFlags VKDevice::GetAspectFlags(vk::Format format) const
 
 uint32_t VKDevice::FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties)
 {
-    vk::PhysicalDeviceMemoryProperties mem_properties = m_physical_device.getMemoryProperties();
+    vk::PhysicalDeviceMemoryProperties mem_properties = physical_device_.getMemoryProperties();
     for (uint32_t i = 0; i < mem_properties.memoryTypeCount; ++i) {
         if ((type_filter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
@@ -761,9 +761,9 @@ uint32_t VKDevice::FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags 
 
 VKGPUBindlessDescriptorPoolTyped& VKDevice::GetGPUBindlessDescriptorPool(vk::DescriptorType type)
 {
-    auto it = m_gpu_bindless_descriptor_pool.find(type);
-    if (it == m_gpu_bindless_descriptor_pool.end()) {
-        it = m_gpu_bindless_descriptor_pool
+    auto it = gpu_bindless_descriptor_pool_.find(type);
+    if (it == gpu_bindless_descriptor_pool_.end()) {
+        it = gpu_bindless_descriptor_pool_
                  .emplace(std::piecewise_construct, std::forward_as_tuple(type), std::forward_as_tuple(*this, type))
                  .first;
     }
@@ -772,27 +772,27 @@ VKGPUBindlessDescriptorPoolTyped& VKDevice::GetGPUBindlessDescriptorPool(vk::Des
 
 VKGPUDescriptorPool& VKDevice::GetGPUDescriptorPool()
 {
-    return m_gpu_descriptor_pool;
+    return gpu_descriptor_pool_;
 }
 
 uint32_t VKDevice::GetMaxDescriptorSetBindings(vk::DescriptorType type) const
 {
     switch (type) {
     case vk::DescriptorType::eSampler:
-        return m_device_properties.limits.maxPerStageDescriptorSamplers;
+        return device_properties_.limits.maxPerStageDescriptorSamplers;
     case vk::DescriptorType::eCombinedImageSampler:
     case vk::DescriptorType::eSampledImage:
     case vk::DescriptorType::eUniformTexelBuffer:
-        return m_device_properties.limits.maxPerStageDescriptorSampledImages;
+        return device_properties_.limits.maxPerStageDescriptorSampledImages;
     case vk::DescriptorType::eUniformBuffer:
     case vk::DescriptorType::eUniformBufferDynamic:
-        return m_device_properties.limits.maxPerStageDescriptorUniformBuffers;
+        return device_properties_.limits.maxPerStageDescriptorUniformBuffers;
     case vk::DescriptorType::eStorageBuffer:
     case vk::DescriptorType::eStorageBufferDynamic:
-        return m_device_properties.limits.maxPerStageDescriptorStorageBuffers;
+        return device_properties_.limits.maxPerStageDescriptorStorageBuffers;
     case vk::DescriptorType::eStorageImage:
     case vk::DescriptorType::eStorageTexelBuffer:
-        return m_device_properties.limits.maxPerStageDescriptorStorageImages;
+        return device_properties_.limits.maxPerStageDescriptorStorageImages;
     default:
         NOTREACHED();
     }
@@ -800,5 +800,5 @@ uint32_t VKDevice::GetMaxDescriptorSetBindings(vk::DescriptorType type) const
 
 bool VKDevice::HasBufferDeviceAddress() const
 {
-    return m_has_buffer_device_address;
+    return has_buffer_device_address_;
 }

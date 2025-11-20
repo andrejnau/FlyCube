@@ -25,12 +25,12 @@ private:
     void CreatePipeline();
     MTLVertexDescriptor* GetVertexDescriptor(const std::shared_ptr<Shader>& shader);
 
-    MTDevice& m_device;
-    GraphicsPipelineDesc m_desc;
-    std::map<ShaderType, std::shared_ptr<Shader>> m_shader_by_type;
-    id<MTLRenderPipelineState> m_pipeline = nullptr;
-    id<MTLDepthStencilState> m_depth_stencil = nullptr;
+    MTDevice& device_;
+    GraphicsPipelineDesc desc_;
+    std::map<ShaderType, std::shared_ptr<Shader>> shader_by_type_;
+    id<MTLRenderPipelineState> pipeline_ = nullptr;
+    id<MTLDepthStencilState> depth_stencil_ = nullptr;
 
-    MTLSize m_amplification_numthreads = {};
-    MTLSize m_mesh_numthreads = {};
+    MTLSize amplification_numthreads_ = {};
+    MTLSize mesh_numthreads_ = {};
 };

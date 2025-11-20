@@ -9,22 +9,22 @@ public:
 
     ScopeGuard(const HandlerType& fn)
     {
-        m_deque.push_front(fn);
+        deque_.push_front(fn);
     }
 
     ~ScopeGuard()
     {
-        for (auto& handler : m_deque) {
+        for (auto& handler : deque_) {
             handler();
         }
     }
 
     ScopeGuard& operator+=(const HandlerType& fn)
     {
-        m_deque.push_front(fn);
+        deque_.push_front(fn);
         return *this;
     }
 
 private:
-    std::deque<HandlerType> m_deque;
+    std::deque<HandlerType> deque_;
 };

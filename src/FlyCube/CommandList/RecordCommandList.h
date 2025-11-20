@@ -9,15 +9,15 @@ template <typename T>
 class RecordCommandList : public CommandList {
 public:
     RecordCommandList(std::unique_ptr<T> command_list)
-        : m_command_list(std::move(command_list))
+        : command_list_(std::move(command_list))
     {
     }
 
     void Reset() override
     {
-        m_command_list->Reset();
-        m_recorded_cmds = {};
-        m_executed = false;
+        command_list_->Reset();
+        recorded_cmds_ = {};
+        executed_ = false;
     }
 
     void Close() override
@@ -235,25 +235,25 @@ public:
 
     T* OnSubmit()
     {
-        if (m_executed) {
-            m_command_list->Reset();
-            for (const auto& cmd : m_recorded_cmds) {
-                cmd(m_command_list.get());
+        if (executed_) {
+            command_list_->Reset();
+            for (const auto& cmd : recorded_cmds_) {
+                cmd(command_list_.get());
             }
         }
-        m_executed = true;
-        return m_command_list.get();
+        executed_ = true;
+        return command_list_.get();
     }
 
 private:
     template <typename Fn, typename... Args>
     void ApplyAndRecord(Fn&& fn, Args&&... args)
     {
-        (m_command_list.get()->*fn)(std::forward<Args>(args)...);
-        m_recorded_cmds.push_back([=](T* command_list) { (command_list->*fn)(args...); });
+        (command_list_.get()->*fn)(std::forward<Args>(args)...);
+        recorded_cmds_.push_back([=](T* command_list) { (command_list->*fn)(args...); });
     }
 
-    std::unique_ptr<T> m_command_list;
-    std::deque<std::function<void(T*)>> m_recorded_cmds;
-    bool m_executed = false;
+    std::unique_ptr<T> command_list_;
+    std::deque<std::function<void(T*)>> recorded_cmds_;
+    bool executed_ = false;
 };

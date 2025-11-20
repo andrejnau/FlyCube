@@ -12,19 +12,19 @@ public:
     void Reset() override
     {
         Drain();
-        m_autorelease_pool = [NSAutoreleasePool new];
+        autorelease_pool_ = [NSAutoreleasePool new];
     }
 
 private:
     void Drain()
     {
-        if (m_autorelease_pool) {
-            [m_autorelease_pool drain];
-            m_autorelease_pool = nullptr;
+        if (autorelease_pool_) {
+            [autorelease_pool_ drain];
+            autorelease_pool_ = nullptr;
         }
     }
 
-    NSAutoreleasePool* m_autorelease_pool = nullptr;
+    NSAutoreleasePool* autorelease_pool_ = nullptr;
 };
 
 std::shared_ptr<AutoreleasePool> CreateAutoreleasePool()

@@ -5,26 +5,26 @@
 MTGPUArgumentBufferRange::MTGPUArgumentBufferRange(MTGPUBindlessArgumentBuffer& argument_buffer,
                                                    uint32_t offset,
                                                    uint32_t size)
-    : m_argument_buffer(argument_buffer)
-    , m_offset(offset)
-    , m_size(size)
-    , m_callback(this, [m_offset = m_offset, m_size = m_size, m_argument_buffer = m_argument_buffer](auto) {
-        m_argument_buffer.get().OnRangeDestroy(m_offset, m_size);
+    : argument_buffer_(argument_buffer)
+    , offset_(offset)
+    , size_(size)
+    , callback_(this, [offset_ = offset_, size_ = size_, argument_buffer_ = argument_buffer_](auto) {
+        argument_buffer_.get().OnRangeDestroy(offset_, size_);
     })
 {
 }
 
 id<MTLBuffer> MTGPUArgumentBufferRange::GetArgumentBuffer() const
 {
-    return m_argument_buffer.get().GetArgumentBuffer();
+    return argument_buffer_.get().GetArgumentBuffer();
 }
 
 uint32_t MTGPUArgumentBufferRange::GetOffset() const
 {
-    return m_offset;
+    return offset_;
 }
 
 void MTGPUArgumentBufferRange::AddAllocation(uint32_t offset, id<MTLAllocation> allocation)
 {
-    m_argument_buffer.get().AddAllocation(offset, allocation);
+    argument_buffer_.get().AddAllocation(offset, allocation);
 }

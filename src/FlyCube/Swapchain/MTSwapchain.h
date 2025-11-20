@@ -23,11 +23,11 @@ public:
     void Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value) override;
 
 private:
-    MTDevice& m_device;
-    std::vector<std::shared_ptr<Resource>> m_back_buffers;
-    uint32_t m_frame_index = 0;
-    uint32_t m_frame_count = 0;
-    uint32_t m_width = 0;
-    uint32_t m_height = 0;
-    CAMetalLayer* m_layer = nullptr;
+    MTDevice& device_;
+    std::vector<std::shared_ptr<Resource>> back_buffers_;
+    uint32_t frame_index_ = 0;
+    uint32_t frame_count_ = 0;
+    uint32_t width_ = 0;
+    uint32_t height_ = 0;
+    CAMetalLayer* layer_ = nullptr;
 };

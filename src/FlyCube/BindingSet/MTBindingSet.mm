@@ -59,11 +59,11 @@ void SetView(id<MTL4ArgumentTable> argument_table, const std::shared_ptr<MTView>
 } // namespace
 
 MTBindingSet::MTBindingSet(MTDevice& device, const std::shared_ptr<MTBindingSetLayout>& layout)
-    : m_device(device)
+    : device_(device)
 {
     for (const auto& bind_key : layout->GetBindKeys()) {
         if (bind_key.count == kBindlessCount) {
-            m_bindless_bind_keys.insert(bind_key);
+            bindless_bind_keys_.insert(bind_key);
         }
     }
 }
@@ -72,7 +72,7 @@ void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
 {
     for (const auto& [bind_key, view] : bindings) {
         assert(bind_key.count != kBindlessCount);
-        m_direct_bindings.insert_or_assign(bind_key, view);
+        direct_bindings_.insert_or_assign(bind_key, view);
     }
 }
 
@@ -80,7 +80,7 @@ void MTBindingSet::Apply(const std::map<ShaderType, id<MTL4ArgumentTable>>& argu
                          const std::shared_ptr<Pipeline>& state,
                          id<MTLResidencySet> residency_set)
 {
-    for (const auto& [bind_key, view] : m_direct_bindings) {
+    for (const auto& [bind_key, view] : direct_bindings_) {
         decltype(auto) shader = state->As<MTPipeline>().GetShader(bind_key.shader_type);
         uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
         SetView(argument_tables.at(bind_key.shader_type), std::static_pointer_cast<MTView>(view), index);
@@ -92,12 +92,12 @@ void MTBindingSet::Apply(const std::map<ShaderType, id<MTL4ArgumentTable>>& argu
         }
     }
 
-    if (m_bindless_bind_keys.empty()) {
+    if (bindless_bind_keys_.empty()) {
         return;
     }
 
-    id<MTLBuffer> buffer = m_device.GetBindlessArgumentBuffer().GetArgumentBuffer();
-    for (const auto& bind_key : m_bindless_bind_keys) {
+    id<MTLBuffer> buffer = device_.GetBindlessArgumentBuffer().GetArgumentBuffer();
+    for (const auto& bind_key : bindless_bind_keys_) {
         decltype(auto) shader = state->As<MTPipeline>().GetShader(bind_key.shader_type);
         uint32_t index = shader->As<MTShader>().GetIndex(bind_key);
         SetBuffer(argument_tables.at(bind_key.shader_type), buffer, 0, index);

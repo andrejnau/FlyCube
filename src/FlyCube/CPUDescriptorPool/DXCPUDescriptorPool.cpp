@@ -6,11 +6,11 @@
 #include <directx/d3dx12.h>
 
 DXCPUDescriptorPool::DXCPUDescriptorPool(DXDevice& device)
-    : m_device(device)
-    , m_resource(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
-    , m_sampler(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)
-    , m_rtv(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
-    , m_dsv(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
+    : device_(device)
+    , resource_(device_, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+    , sampler_(device_, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)
+    , rtv_(device_, D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
+    , dsv_(device_, D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
 {
 }
 
@@ -31,13 +31,13 @@ DXCPUDescriptorPoolTyped& DXCPUDescriptorPool::SelectHeap(ViewType view_type)
     case ViewType::kRWBuffer:
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer:
-        return m_resource;
+        return resource_;
     case ViewType::kSampler:
-        return m_sampler;
+        return sampler_;
     case ViewType::kRenderTarget:
-        return m_rtv;
+        return rtv_;
     case ViewType::kDepthStencil:
-        return m_dsv;
+        return dsv_;
     default:
         NOTREACHED();
     }

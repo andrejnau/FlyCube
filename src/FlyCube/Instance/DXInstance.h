@@ -13,5 +13,5 @@ public:
     ComPtr<IDXGIFactory4> GetFactory();
 
 private:
-    ComPtr<IDXGIFactory4> m_dxgi_factory;
+    ComPtr<IDXGIFactory4> dxgi_factory_;
 };

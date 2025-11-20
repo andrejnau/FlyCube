@@ -15,6 +15,6 @@ public:
     id<MTL4CommandQueue> GetCommandQueue();
 
 private:
-    MTDevice& m_device;
-    id<MTL4CommandQueue> m_command_queue = nullptr;
+    MTDevice& device_;
+    id<MTL4CommandQueue> command_queue_ = nullptr;
 };

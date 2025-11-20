@@ -66,7 +66,7 @@ DXInstance::DXInstance()
         flags = DXGI_CREATE_FACTORY_DEBUG;
     }
 
-    CHECK_HRESULT(CreateDXGIFactory2(flags, IID_PPV_ARGS(&m_dxgi_factory)));
+    CHECK_HRESULT(CreateDXGIFactory2(flags, IID_PPV_ARGS(&dxgi_factory_)));
 }
 
 std::vector<std::shared_ptr<Adapter>> DXInstance::EnumerateAdapters()
@@ -74,14 +74,14 @@ std::vector<std::shared_ptr<Adapter>> DXInstance::EnumerateAdapters()
     std::vector<std::shared_ptr<Adapter>> adapters;
 
     ComPtr<IDXGIFactory6> dxgi_factory6;
-    m_dxgi_factory.As(&dxgi_factory6);
+    dxgi_factory_.As(&dxgi_factory6);
 
     auto NextAdapted = [&](uint32_t adapter_index, ComPtr<IDXGIAdapter1>& adapter) {
         if (dxgi_factory6) {
             return dxgi_factory6->EnumAdapterByGpuPreference(adapter_index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
                                                              IID_PPV_ARGS(&adapter));
         } else {
-            return m_dxgi_factory->EnumAdapters1(adapter_index, &adapter);
+            return dxgi_factory_->EnumAdapters1(adapter_index, &adapter);
         }
     };
 
@@ -101,5 +101,5 @@ std::vector<std::shared_ptr<Adapter>> DXInstance::EnumerateAdapters()
 
 ComPtr<IDXGIFactory4> DXInstance::GetFactory()
 {
-    return m_dxgi_factory;
+    return dxgi_factory_;
 }

@@ -3,15 +3,15 @@
 #include "Device/VKDevice.h"
 
 VKAdapter::VKAdapter(VKInstance& instance, const vk::PhysicalDevice& physical_device)
-    : m_instance(instance)
-    , m_physical_device(physical_device)
-    , m_name(physical_device.getProperties().deviceName.data())
+    : instance_(instance)
+    , physical_device_(physical_device)
+    , name_(physical_device.getProperties().deviceName.data())
 {
 }
 
 const std::string& VKAdapter::GetName() const
 {
-    return m_name;
+    return name_;
 }
 
 std::shared_ptr<Device> VKAdapter::CreateDevice()
@@ -21,10 +21,10 @@ std::shared_ptr<Device> VKAdapter::CreateDevice()
 
 VKInstance& VKAdapter::GetInstance()
 {
-    return m_instance;
+    return instance_;
 }
 
 vk::PhysicalDevice& VKAdapter::GetPhysicalDevice()
 {
-    return m_physical_device;
+    return physical_device_;
 }

@@ -15,10 +15,10 @@ public:
     vk::PipelineLayout GetPipelineLayout() const;
 
 private:
-    std::map<uint32_t, vk::DescriptorType> m_bindless_type;
-    std::vector<vk::UniqueDescriptorSetLayout> m_descriptor_set_layouts;
-    std::vector<std::map<vk::DescriptorType, size_t>> m_descriptor_count_by_set;
-    vk::UniquePipelineLayout m_pipeline_layout;
+    std::map<uint32_t, vk::DescriptorType> bindless_type_;
+    std::vector<vk::UniqueDescriptorSetLayout> descriptor_set_layouts_;
+    std::vector<std::map<vk::DescriptorType, size_t>> descriptor_count_by_set_;
+    vk::UniquePipelineLayout pipeline_layout_;
 };
 
 vk::DescriptorType GetDescriptorType(ViewType view_type);

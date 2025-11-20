@@ -26,10 +26,10 @@ public:
     void ResizeHeap(size_t req_size);
 
 private:
-    DXDevice& m_device;
-    D3D12_DESCRIPTOR_HEAP_TYPE m_type;
-    size_t m_offset;
-    size_t m_size;
-    ComPtr<ID3D12DescriptorHeap> m_heap;
-    D3D12_CPU_DESCRIPTOR_HANDLE m_cpu_handle;
+    DXDevice& device_;
+    D3D12_DESCRIPTOR_HEAP_TYPE type_;
+    size_t offset_;
+    size_t size_;
+    ComPtr<ID3D12DescriptorHeap> heap_;
+    D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle_;
 };

@@ -14,5 +14,5 @@ public:
     std::vector<uint8_t> GetRayTracingShaderGroupHandles(uint32_t first_group, uint32_t group_count) const override;
 
 private:
-    RayTracingPipelineDesc m_desc;
+    RayTracingPipelineDesc desc_;
 };

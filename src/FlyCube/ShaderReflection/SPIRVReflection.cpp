@@ -357,48 +357,48 @@ BindKey GetBindKey(ShaderType shader_type, const spirv_cross::Compiler& compiler
 }
 
 SPIRVReflection::SPIRVReflection(const void* data, size_t size)
-    : m_blob((const uint32_t*)data, (const uint32_t*)data + size / sizeof(uint32_t))
+    : blob_((const uint32_t*)data, (const uint32_t*)data + size / sizeof(uint32_t))
 {
-    spirv_cross::CompilerHLSL compiler(m_blob);
+    spirv_cross::CompilerHLSL compiler(blob_);
     auto entry_points = compiler.get_entry_points_and_stages();
     for (const auto& entry_point : entry_points) {
-        m_entry_points.push_back({ entry_point.name.c_str(), ConvertShaderKind(entry_point.execution_model) });
+        entry_points_.push_back({ entry_point.name.c_str(), ConvertShaderKind(entry_point.execution_model) });
     }
-    ParseBindings(compiler, m_bindings, m_layouts);
-    m_input_parameters = ParseInputParameters(compiler);
-    m_output_parameters = ParseOutputParameters(compiler);
+    ParseBindings(compiler, bindings_, layouts_);
+    input_parameters_ = ParseInputParameters(compiler);
+    output_parameters_ = ParseOutputParameters(compiler);
 
-    for (uint32_t i = 0; i < m_shader_feature_info.numthreads.size(); ++i) {
-        m_shader_feature_info.numthreads[i] = compiler.get_execution_mode_argument(spv::ExecutionModeLocalSize, i);
+    for (uint32_t i = 0; i < shader_feature_info_.numthreads.size(); ++i) {
+        shader_feature_info_.numthreads[i] = compiler.get_execution_mode_argument(spv::ExecutionModeLocalSize, i);
     }
 }
 
 const std::vector<EntryPoint>& SPIRVReflection::GetEntryPoints() const
 {
-    return m_entry_points;
+    return entry_points_;
 }
 
 const std::vector<ResourceBindingDesc>& SPIRVReflection::GetBindings() const
 {
-    return m_bindings;
+    return bindings_;
 }
 
 const std::vector<VariableLayout>& SPIRVReflection::GetVariableLayouts() const
 {
-    return m_layouts;
+    return layouts_;
 }
 
 const std::vector<InputParameterDesc>& SPIRVReflection::GetInputParameters() const
 {
-    return m_input_parameters;
+    return input_parameters_;
 }
 
 const std::vector<OutputParameterDesc>& SPIRVReflection::GetOutputParameters() const
 {
-    return m_output_parameters;
+    return output_parameters_;
 }
 
 const ShaderFeatureInfo& SPIRVReflection::GetShaderFeatureInfo() const
 {
-    return m_shader_feature_info;
+    return shader_feature_info_;
 }

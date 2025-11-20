@@ -14,5 +14,5 @@ public:
     id<MTLBuffer> GetBuffer() const;
 
 private:
-    id<MTLBuffer> m_buffer = nullptr;
+    id<MTLBuffer> buffer_ = nullptr;
 };

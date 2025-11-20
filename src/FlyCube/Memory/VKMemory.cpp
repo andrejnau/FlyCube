@@ -7,7 +7,7 @@ VKMemory::VKMemory(VKDevice& device,
                    MemoryType memory_type,
                    uint32_t memory_type_bits,
                    const vk::MemoryDedicatedAllocateInfoKHR* dedicated_allocate_info)
-    : m_memory_type(memory_type)
+    : memory_type_(memory_type)
 {
     vk::MemoryAllocateFlagsInfo alloc_flag_info = {};
     alloc_flag_info.pNext = dedicated_allocate_info;
@@ -28,15 +28,15 @@ VKMemory::VKMemory(VKDevice& device,
     alloc_info.pNext = &alloc_flag_info;
     alloc_info.allocationSize = size;
     alloc_info.memoryTypeIndex = device.FindMemoryType(memory_type_bits, properties);
-    m_memory = device.GetDevice().allocateMemoryUnique(alloc_info);
+    memory_ = device.GetDevice().allocateMemoryUnique(alloc_info);
 }
 
 MemoryType VKMemory::GetMemoryType() const
 {
-    return m_memory_type;
+    return memory_type_;
 }
 
 vk::DeviceMemory VKMemory::GetMemory() const
 {
-    return m_memory.get();
+    return memory_.get();
 }

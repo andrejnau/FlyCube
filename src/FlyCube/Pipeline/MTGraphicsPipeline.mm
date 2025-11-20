@@ -93,14 +93,14 @@ MTLDepthStencilDescriptor* GetDepthStencilDesc(const DepthStencilDesc& desc, gli
 } // namespace
 
 MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineDesc& desc)
-    : m_device(device)
-    , m_desc(desc)
+    : device_(device)
+    , desc_(desc)
 {
     for (const auto& shader : desc.shaders) {
-        m_shader_by_type[shader->GetType()] = shader;
+        shader_by_type_[shader->GetType()] = shader;
     }
 
-    if (m_shader_by_type.contains(ShaderType::kAmplification) || m_shader_by_type.contains(ShaderType::kMesh)) {
+    if (shader_by_type_.contains(ShaderType::kAmplification) || shader_by_type_.contains(ShaderType::kMesh)) {
         CreatePipeline</*is_mesh_pipeline=*/true>();
     } else {
         CreatePipeline</*is_mesh_pipeline=*/false>();
@@ -113,7 +113,7 @@ void MTGraphicsPipeline::CreatePipeline()
     using RenderPipelineDescriptorType =
         std::conditional_t<is_mesh_pipeline, MTL4MeshRenderPipelineDescriptor, MTL4RenderPipelineDescriptor>;
     RenderPipelineDescriptorType* pipeline_descriptor = [RenderPipelineDescriptorType new];
-    for (const auto& shader : m_desc.shaders) {
+    for (const auto& shader : desc_.shaders) {
         MTL4LibraryFunctionDescriptor* function_descriptor = shader->As<MTShader>().GetFunctionDescriptor();
         switch (shader->GetType()) {
         case ShaderType::kVertex:
@@ -129,14 +129,14 @@ void MTGraphicsPipeline::CreatePipeline()
             if constexpr (is_mesh_pipeline) {
                 pipeline_descriptor.objectFunctionDescriptor = function_descriptor;
                 decltype(auto) numthreads = shader->GetReflection()->GetShaderFeatureInfo().numthreads;
-                m_amplification_numthreads = { numthreads[0], numthreads[1], numthreads[2] };
+                amplification_numthreads_ = { numthreads[0], numthreads[1], numthreads[2] };
             }
             break;
         case ShaderType::kMesh:
             if constexpr (is_mesh_pipeline) {
                 pipeline_descriptor.meshFunctionDescriptor = function_descriptor;
                 decltype(auto) numthreads = shader->GetReflection()->GetShaderFeatureInfo().numthreads;
-                m_mesh_numthreads = { numthreads[0], numthreads[1], numthreads[2] };
+                mesh_numthreads_ = { numthreads[0], numthreads[1], numthreads[2] };
             }
             break;
         default:
@@ -144,20 +144,20 @@ void MTGraphicsPipeline::CreatePipeline()
         }
     }
 
-    for (size_t i = 0; i < m_desc.color_formats.size(); ++i) {
-        if (m_desc.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
+    for (size_t i = 0; i < desc_.color_formats.size(); ++i) {
+        if (desc_.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
             continue;
         }
-        pipeline_descriptor.colorAttachments[i].pixelFormat = m_device.GetMTLPixelFormat(m_desc.color_formats[i]);
+        pipeline_descriptor.colorAttachments[i].pixelFormat = device_.GetMTLPixelFormat(desc_.color_formats[i]);
     }
     if constexpr (!is_mesh_pipeline) {
         pipeline_descriptor.inputPrimitiveTopology = MTLPrimitiveTopologyClassTriangle;
     }
-    pipeline_descriptor.rasterSampleCount = m_desc.sample_count;
+    pipeline_descriptor.rasterSampleCount = desc_.sample_count;
 
-    decltype(auto) blend_desc = m_desc.blend_desc;
-    for (size_t i = 0; i < m_desc.color_formats.size(); ++i) {
-        if (m_desc.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
+    decltype(auto) blend_desc = desc_.blend_desc;
+    for (size_t i = 0; i < desc_.color_formats.size(); ++i) {
+        if (desc_.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
             continue;
         }
 
@@ -189,36 +189,36 @@ void MTGraphicsPipeline::CreatePipeline()
             }
         };
 
-        attachment.sourceRGBBlendFactor = convert(m_desc.blend_desc.blend_src);
-        attachment.destinationRGBBlendFactor = convert(m_desc.blend_desc.blend_dest);
-        attachment.rgbBlendOperation = convert_op(m_desc.blend_desc.blend_op);
-        attachment.sourceAlphaBlendFactor = convert(m_desc.blend_desc.blend_src_alpha);
-        attachment.destinationAlphaBlendFactor = convert(m_desc.blend_desc.blend_dest_apha);
-        attachment.alphaBlendOperation = convert_op(m_desc.blend_desc.blend_op_alpha);
+        attachment.sourceRGBBlendFactor = convert(desc_.blend_desc.blend_src);
+        attachment.destinationRGBBlendFactor = convert(desc_.blend_desc.blend_dest);
+        attachment.rgbBlendOperation = convert_op(desc_.blend_desc.blend_op);
+        attachment.sourceAlphaBlendFactor = convert(desc_.blend_desc.blend_src_alpha);
+        attachment.destinationAlphaBlendFactor = convert(desc_.blend_desc.blend_dest_apha);
+        attachment.alphaBlendOperation = convert_op(desc_.blend_desc.blend_op_alpha);
     }
 
     NSError* error = nullptr;
-    m_pipeline = [m_device.GetCompiler() newRenderPipelineStateWithDescriptor:pipeline_descriptor
-                                                          compilerTaskOptions:nullptr
-                                                                        error:&error];
-    if (!m_pipeline) {
+    pipeline_ = [device_.GetCompiler() newRenderPipelineStateWithDescriptor:pipeline_descriptor
+                                                        compilerTaskOptions:nullptr
+                                                                      error:&error];
+    if (!pipeline_) {
         Logging::Println("Failed to create MTLRenderPipelineState: {}", error);
     }
 
-    m_depth_stencil = [m_device.GetDevice()
-        newDepthStencilStateWithDescriptor:GetDepthStencilDesc(m_desc.depth_stencil_desc, m_desc.depth_stencil_format)];
+    depth_stencil_ = [device_.GetDevice()
+        newDepthStencilStateWithDescriptor:GetDepthStencilDesc(desc_.depth_stencil_desc, desc_.depth_stencil_format)];
 }
 
 MTLVertexDescriptor* MTGraphicsPipeline::GetVertexDescriptor(const std::shared_ptr<Shader>& shader)
 {
     MTLVertexDescriptor* vertex_descriptor = [MTLVertexDescriptor new];
-    for (size_t i = 0; i < m_desc.input.size(); ++i) {
-        decltype(auto) vertex = m_desc.input[i];
+    for (size_t i = 0; i < desc_.input.size(); ++i) {
+        decltype(auto) vertex = desc_.input[i];
         uint32_t location = shader->GetInputLayoutLocation(vertex.semantic_name);
         decltype(auto) attribute = vertex_descriptor.attributes[location];
         attribute.offset = 0;
-        attribute.bufferIndex = m_device.GetMaxPerStageBufferCount() - vertex.slot - 1;
-        attribute.format = m_device.GetMTLVertexFormat(vertex.format);
+        attribute.bufferIndex = device_.GetMaxPerStageBufferCount() - vertex.slot - 1;
+        attribute.format = device_.GetMTLVertexFormat(vertex.format);
         decltype(auto) layout = vertex_descriptor.layouts[attribute.bufferIndex];
         layout.stride = vertex.stride;
         layout.stepFunction = MTLVertexStepFunctionPerVertex;
@@ -239,7 +239,7 @@ std::vector<uint8_t> MTGraphicsPipeline::GetRayTracingShaderGroupHandles(uint32_
 
 std::shared_ptr<Shader> MTGraphicsPipeline::GetShader(ShaderType type) const
 {
-    if (auto it = m_shader_by_type.find(type); it != m_shader_by_type.end()) {
+    if (auto it = shader_by_type_.find(type); it != shader_by_type_.end()) {
         return it->second;
     }
     return nullptr;
@@ -247,25 +247,25 @@ std::shared_ptr<Shader> MTGraphicsPipeline::GetShader(ShaderType type) const
 
 id<MTLRenderPipelineState> MTGraphicsPipeline::GetPipeline()
 {
-    return m_pipeline;
+    return pipeline_;
 }
 
 id<MTLDepthStencilState> MTGraphicsPipeline::GetDepthStencil()
 {
-    return m_depth_stencil;
+    return depth_stencil_;
 }
 
 const GraphicsPipelineDesc& MTGraphicsPipeline::GetDesc() const
 {
-    return m_desc;
+    return desc_;
 }
 
 const MTLSize& MTGraphicsPipeline::GetAmplificationNumthreads() const
 {
-    return m_amplification_numthreads;
+    return amplification_numthreads_;
 }
 
 const MTLSize& MTGraphicsPipeline::GetMeshNumthreads() const
 {
-    return m_mesh_numthreads;
+    return mesh_numthreads_;
 }

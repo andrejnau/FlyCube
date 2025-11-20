@@ -17,7 +17,7 @@ MTLStorageMode ConvertStorageMode(MemoryType memory_type)
 }
 
 MTMemory::MTMemory(MTDevice& device, uint64_t size, MemoryType memory_type)
-    : m_memory_type(memory_type)
+    : memory_type_(memory_type)
 {
     MTLHeapDescriptor* heap_descriptor = [MTLHeapDescriptor new];
     heap_descriptor.size = size;
@@ -25,15 +25,15 @@ MTMemory::MTMemory(MTDevice& device, uint64_t size, MemoryType memory_type)
     heap_descriptor.cpuCacheMode = MTLCPUCacheModeDefaultCache;
     heap_descriptor.hazardTrackingMode = MTLHazardTrackingModeTracked;
     heap_descriptor.type = MTLHeapTypePlacement;
-    m_heap = [device.GetDevice() newHeapWithDescriptor:heap_descriptor];
+    heap_ = [device.GetDevice() newHeapWithDescriptor:heap_descriptor];
 }
 
 MemoryType MTMemory::GetMemoryType() const
 {
-    return m_memory_type;
+    return memory_type_;
 }
 
 id<MTLHeap> MTMemory::GetHeap() const
 {
-    return m_heap;
+    return heap_;
 }

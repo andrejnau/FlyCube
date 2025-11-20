@@ -6,9 +6,9 @@
 #include <directx/d3dx12.h>
 
 DXGPUDescriptorPool::DXGPUDescriptorPool(DXDevice& device)
-    : m_device(device)
-    , m_shader_resource(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
-    , m_shader_sampler(device, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)
+    : device_(device)
+    , shader_resource_(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+    , shader_sampler_(device, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)
 {
 }
 
@@ -16,9 +16,9 @@ DXGPUDescriptorPoolRange DXGPUDescriptorPool::Allocate(D3D12_DESCRIPTOR_HEAP_TYP
 {
     switch (descriptor_type) {
     case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
-        return m_shader_resource.Allocate(count);
+        return shader_resource_.Allocate(count);
     case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
-        return m_shader_sampler.Allocate(count);
+        return shader_sampler_.Allocate(count);
     default:
         NOTREACHED();
     }
@@ -28,9 +28,9 @@ ComPtr<ID3D12DescriptorHeap> DXGPUDescriptorPool::GetHeap(D3D12_DESCRIPTOR_HEAP_
 {
     switch (descriptor_type) {
     case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
-        return m_shader_resource.GetHeap();
+        return shader_resource_.GetHeap();
     case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
-        return m_shader_sampler.GetHeap();
+        return shader_sampler_.GetHeap();
     default:
         NOTREACHED();
     }

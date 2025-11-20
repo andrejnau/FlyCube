@@ -80,17 +80,17 @@ private:
     id<MTLDevice> getMTLDevice() override;
     const MVKPhysicalDeviceMetalFeatures* getMetalFeatures() override;
 
-    const MVKPhysicalDeviceMetalFeatures m_features = {
+    const MVKPhysicalDeviceMetalFeatures features_ = {
         .stencilViews = false,
         .renderLinearTextures = false,
         .clearColorFloatRounding = MVK_FLOAT_ROUNDING_NEAREST,
     };
-    const MTInstance& m_instance;
-    const id<MTLDevice> m_device;
-    MVKPixelFormats m_mvk_pixel_formats;
-    std::shared_ptr<MTCommandQueue> m_command_queue;
-    MTGPUBindlessArgumentBuffer m_bindless_argument_buffer;
-    id<MTL4Compiler> m_compiler = nullptr;
+    const MTInstance& instance_;
+    const id<MTLDevice> device_;
+    MVKPixelFormats mvk_pixel_formats_;
+    std::shared_ptr<MTCommandQueue> command_queue_;
+    MTGPUBindlessArgumentBuffer bindless_argument_buffer_;
+    id<MTL4Compiler> compiler_ = nullptr;
 };
 
 MTL4AccelerationStructureTriangleGeometryDescriptor* FillRaytracingGeometryDesc(

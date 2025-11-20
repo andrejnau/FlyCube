@@ -43,73 +43,73 @@ public:
 private:
     void WaitForIdle();
 
-    Settings m_settings;
-    std::shared_ptr<Instance> m_instance;
-    std::shared_ptr<Adapter> m_adapter;
-    std::shared_ptr<Device> m_device;
-    std::shared_ptr<CommandQueue> m_command_queue;
-    uint64_t m_fence_value = 0;
-    std::shared_ptr<Fence> m_fence;
-    RenderModel m_render_model;
-    std::shared_ptr<Resource> m_vertex_constant_buffer;
-    std::vector<std::shared_ptr<View>> m_vertex_constant_buffer_views;
-    std::vector<std::shared_ptr<View>> m_pixel_textures_views;
-    std::shared_ptr<Resource> m_pixel_anisotropic_sampler;
-    std::shared_ptr<View> m_pixel_anisotropic_sampler_view;
-    std::shared_ptr<Resource> m_pixel_constant_buffer;
-    std::vector<std::shared_ptr<View>> m_pixel_constant_buffer_views;
-    std::shared_ptr<Shader> m_vertex_shader;
-    std::shared_ptr<Shader> m_pixel_shader;
-    std::shared_ptr<BindingSetLayout> m_layout;
-    std::vector<std::shared_ptr<BindingSet>> m_binding_sets;
+    Settings settings_;
+    std::shared_ptr<Instance> instance_;
+    std::shared_ptr<Adapter> adapter_;
+    std::shared_ptr<Device> device_;
+    std::shared_ptr<CommandQueue> command_queue_;
+    uint64_t fence_value_ = 0;
+    std::shared_ptr<Fence> fence_;
+    RenderModel render_model_;
+    std::shared_ptr<Resource> vertex_constant_buffer_;
+    std::vector<std::shared_ptr<View>> vertex_constant_buffer_views_;
+    std::vector<std::shared_ptr<View>> pixel_textures_views_;
+    std::shared_ptr<Resource> pixel_anisotropic_sampler_;
+    std::shared_ptr<View> pixel_anisotropic_sampler_view_;
+    std::shared_ptr<Resource> pixel_constant_buffer_;
+    std::vector<std::shared_ptr<View>> pixel_constant_buffer_views_;
+    std::shared_ptr<Shader> vertex_shader_;
+    std::shared_ptr<Shader> pixel_shader_;
+    std::shared_ptr<BindingSetLayout> layout_;
+    std::vector<std::shared_ptr<BindingSet>> binding_sets_;
 
-    std::shared_ptr<Swapchain> m_swapchain;
-    std::shared_ptr<Resource> m_depth_stencil_texture;
-    std::shared_ptr<View> m_depth_stencil_view;
-    std::shared_ptr<Pipeline> m_pipeline;
-    std::array<std::shared_ptr<View>, kFrameCount> m_back_buffer_views = {};
-    std::array<std::shared_ptr<CommandList>, kFrameCount> m_command_lists = {};
-    std::array<uint64_t, kFrameCount> m_fence_values = {};
+    std::shared_ptr<Swapchain> swapchain_;
+    std::shared_ptr<Resource> depth_stencil_texture_;
+    std::shared_ptr<View> depth_stencil_view_;
+    std::shared_ptr<Pipeline> pipeline_;
+    std::array<std::shared_ptr<View>, kFrameCount> back_buffer_views_ = {};
+    std::array<std::shared_ptr<CommandList>, kFrameCount> command_lists_ = {};
+    std::array<uint64_t, kFrameCount> fence_values_ = {};
 };
 
 ModelViewRenderer::ModelViewRenderer(const Settings& settings)
-    : m_settings(settings)
+    : settings_(settings)
 {
-    m_instance = CreateInstance(m_settings.api_type);
-    m_adapter = std::move(m_instance->EnumerateAdapters()[m_settings.required_gpu_index]);
-    m_device = m_adapter->CreateDevice();
-    m_command_queue = m_device->GetCommandQueue(CommandListType::kGraphics);
-    m_fence = m_device->CreateFence(m_fence_value);
+    instance_ = CreateInstance(settings_.api_type);
+    adapter_ = std::move(instance_->EnumerateAdapters()[settings_.required_gpu_index]);
+    device_ = adapter_->CreateDevice();
+    command_queue_ = device_->GetCommandQueue(CommandListType::kGraphics);
+    fence_ = device_->CreateFence(fence_value_);
 
     std::unique_ptr<Model> model = LoadModel("assets/ModelView/DamagedHelmet.gltf");
-    m_render_model = RenderModel(m_device, m_command_queue, std::move(model));
+    render_model_ = RenderModel(device_, command_queue_, std::move(model));
 
-    m_vertex_constant_buffer = m_device->CreateBuffer(
+    vertex_constant_buffer_ = device_->CreateBuffer(
         MemoryType::kUpload,
-        { .size = sizeof(glm::mat4) * m_render_model.GetMeshCount(), .usage = BindFlag::kConstantBuffer });
-    m_vertex_constant_buffer_views.resize(m_render_model.GetMeshCount());
-    for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
+        { .size = sizeof(glm::mat4) * render_model_.GetMeshCount(), .usage = BindFlag::kConstantBuffer });
+    vertex_constant_buffer_views_.resize(render_model_.GetMeshCount());
+    for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
         ViewDesc vertex_constant_buffer_view_desc = {
             .view_type = ViewType::kConstantBuffer,
             .dimension = ViewDimension::kBuffer,
             .offset = i * sizeof(glm::mat4),
         };
-        m_vertex_constant_buffer_views[i] =
-            m_device->CreateView(m_vertex_constant_buffer, vertex_constant_buffer_view_desc);
+        vertex_constant_buffer_views_[i] =
+            device_->CreateView(vertex_constant_buffer_, vertex_constant_buffer_view_desc);
     }
 
-    m_pixel_textures_views.resize(m_render_model.GetMeshCount());
-    for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
+    pixel_textures_views_.resize(render_model_.GetMeshCount());
+    for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
         ViewDesc pixel_textures_view_desc = {
             .view_type = ViewType::kTexture,
             .dimension = ViewDimension::kTexture2D,
-            .bindless = m_device->IsBindlessSupported(),
+            .bindless = device_->IsBindlessSupported(),
         };
-        m_pixel_textures_views[i] =
-            m_device->CreateView(m_render_model.GetMesh(i).textures.base_color, pixel_textures_view_desc);
+        pixel_textures_views_[i] =
+            device_->CreateView(render_model_.GetMesh(i).textures.base_color, pixel_textures_view_desc);
     }
 
-    m_pixel_anisotropic_sampler = m_device->CreateSampler({
+    pixel_anisotropic_sampler_ = device_->CreateSampler({
         SamplerFilter::kAnisotropic,
         SamplerTextureAddressMode::kWrap,
         SamplerComparisonFunc::kNever,
@@ -117,69 +117,69 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
     ViewDesc pixel_anisotropic_sampler_view_desc = {
         .view_type = ViewType::kSampler,
     };
-    m_pixel_anisotropic_sampler_view =
-        m_device->CreateView(m_pixel_anisotropic_sampler, pixel_anisotropic_sampler_view_desc);
+    pixel_anisotropic_sampler_view_ =
+        device_->CreateView(pixel_anisotropic_sampler_, pixel_anisotropic_sampler_view_desc);
 
-    if (m_device->IsBindlessSupported()) {
-        std::vector<uint32_t> pixel_constant_data(m_render_model.GetMeshCount());
-        m_pixel_constant_buffer = m_device->CreateBuffer(
+    if (device_->IsBindlessSupported()) {
+        std::vector<uint32_t> pixel_constant_data(render_model_.GetMeshCount());
+        pixel_constant_buffer_ = device_->CreateBuffer(
             MemoryType::kUpload, { .size = sizeof(pixel_constant_data.front()) * pixel_constant_data.size(),
                                    .usage = BindFlag::kConstantBuffer });
-        m_pixel_constant_buffer_views.resize(m_render_model.GetMeshCount());
-        for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
+        pixel_constant_buffer_views_.resize(render_model_.GetMeshCount());
+        for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
             ViewDesc pixel_constant_buffer_view_desc = {
                 .view_type = ViewType::kConstantBuffer,
                 .dimension = ViewDimension::kBuffer,
                 .offset = i * sizeof(pixel_constant_data.front()),
             };
-            m_pixel_constant_buffer_views[i] =
-                m_device->CreateView(m_pixel_constant_buffer, pixel_constant_buffer_view_desc);
-            pixel_constant_data[i] = m_pixel_textures_views[i]->GetDescriptorId();
+            pixel_constant_buffer_views_[i] =
+                device_->CreateView(pixel_constant_buffer_, pixel_constant_buffer_view_desc);
+            pixel_constant_data[i] = pixel_textures_views_[i]->GetDescriptorId();
         }
-        m_pixel_constant_buffer->UpdateUploadBuffer(0, pixel_constant_data.data(),
-                                                    sizeof(pixel_constant_data.front()) * pixel_constant_data.size());
+        pixel_constant_buffer_->UpdateUploadBuffer(0, pixel_constant_data.data(),
+                                                   sizeof(pixel_constant_data.front()) * pixel_constant_data.size());
     }
 
-    ShaderBlobType blob_type = m_device->GetSupportedShaderBlobType();
+    ShaderBlobType blob_type = device_->GetSupportedShaderBlobType();
     std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/ModelView/VertexShader.hlsl", blob_type);
     std::vector<uint8_t> pixel_blob =
-        AssetLoadShaderBlob(m_device->IsBindlessSupported() ? "assets/ModelView/PixelShaderBindless.hlsl"
-                                                            : "assets/ModelView/PixelShader.hlsl",
+        AssetLoadShaderBlob(device_->IsBindlessSupported() ? "assets/ModelView/PixelShaderBindless.hlsl"
+                                                           : "assets/ModelView/PixelShader.hlsl",
                             blob_type);
-    m_vertex_shader = m_device->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
-    m_pixel_shader = m_device->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
+    vertex_shader_ = device_->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
+    pixel_shader_ = device_->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
 
-    BindKey vertex_constant_buffer_key = m_vertex_shader->GetBindKey("constant_buffer");
-    BindKey pixel_anisotropic_sampler_key = m_pixel_shader->GetBindKey("anisotropic_sampler");
+    BindKey vertex_constant_buffer_key = vertex_shader_->GetBindKey("constant_buffer");
+    BindKey pixel_anisotropic_sampler_key = pixel_shader_->GetBindKey("anisotropic_sampler");
     BindKey pixel_bindless_textures_key;
     BindKey pixel_constant_buffer_key;
     BindKey pixel_base_color_texture_key;
 
-    if (m_device->IsBindlessSupported()) {
-        pixel_bindless_textures_key = m_pixel_shader->GetBindKey("bindless_textures");
-        pixel_constant_buffer_key = m_pixel_shader->GetBindKey("constant_buffer");
-        m_layout = m_device->CreateBindingSetLayout({ vertex_constant_buffer_key, pixel_bindless_textures_key,
-                                                      pixel_anisotropic_sampler_key, pixel_constant_buffer_key });
+    if (device_->IsBindlessSupported()) {
+        pixel_bindless_textures_key = pixel_shader_->GetBindKey("bindless_textures");
+        pixel_constant_buffer_key = pixel_shader_->GetBindKey("constant_buffer");
+        layout_ = device_->CreateBindingSetLayout({ vertex_constant_buffer_key, pixel_bindless_textures_key,
+                                                    pixel_anisotropic_sampler_key, pixel_constant_buffer_key });
     } else {
-        pixel_base_color_texture_key = m_pixel_shader->GetBindKey("base_color_texture");
-        m_layout = m_device->CreateBindingSetLayout(
+        pixel_base_color_texture_key = pixel_shader_->GetBindKey("base_color_texture");
+        layout_ = device_->CreateBindingSetLayout(
             { vertex_constant_buffer_key, pixel_base_color_texture_key, pixel_anisotropic_sampler_key });
     }
 
-    m_binding_sets.resize(m_render_model.GetMeshCount());
-    for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
-        m_binding_sets[i] = m_device->CreateBindingSet(m_layout);
-        if (m_device->IsBindlessSupported()) {
-            m_binding_sets[i]->WriteBindings({
-                { vertex_constant_buffer_key, m_vertex_constant_buffer_views[i] },
-                { pixel_anisotropic_sampler_key, m_pixel_anisotropic_sampler_view },
-                { pixel_constant_buffer_key, m_pixel_constant_buffer_views[i] },
+    binding_sets_.resize(render_model_.GetMeshCount());
+    for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
+        binding_sets_[i] = device_->CreateBindingSet(layout_);
+        if (device_->IsBindlessSupported()) {
+            binding_sets_[i]->WriteBindings({
+                { vertex_constant_buffer_key, vertex_constant_buffer_views_[i] },
+                { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
+                { pixel_constant_buffer_key, pixel_constant_buffer_views_[i] },
             });
         } else {
-            m_binding_sets[i]->WriteBindings({
-                { vertex_constant_buffer_key, m_vertex_constant_buffer_views[i] },
-                { pixel_anisotropic_sampler_key, m_pixel_anisotropic_sampler_view },
-                { pixel_base_color_texture_key, m_pixel_textures_views[i] },
+            binding_sets_[i]->WriteBindings({
+                { vertex_constant_buffer_key, vertex_constant_buffer_views_[i] },
+                { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
+                { pixel_base_color_texture_key, pixel_textures_views_[i] },
             });
         }
     }
@@ -192,18 +192,17 @@ ModelViewRenderer::~ModelViewRenderer()
 
 void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surface)
 {
-    m_swapchain =
-        m_device->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, m_settings.vsync);
+    swapchain_ = device_->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, settings_.vsync);
 
     glm::mat4 view = GetViewMatrix();
     glm::mat4 projection = GetProjectionMatrix(app_size.width(), app_size.height());
 
-    std::vector<glm::mat4> vertex_constant_data(m_render_model.GetMeshCount());
-    for (size_t i = 0; i < m_render_model.GetMeshCount(); ++i) {
-        vertex_constant_data[i] = glm::transpose(projection * view * m_render_model.GetMesh(i).matrix);
+    std::vector<glm::mat4> vertex_constant_data(render_model_.GetMeshCount());
+    for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
+        vertex_constant_data[i] = glm::transpose(projection * view * render_model_.GetMesh(i).matrix);
     }
-    m_vertex_constant_buffer->UpdateUploadBuffer(0, vertex_constant_data.data(),
-                                                 sizeof(vertex_constant_data.front()) * vertex_constant_data.size());
+    vertex_constant_buffer_->UpdateUploadBuffer(0, vertex_constant_data.data(),
+                                                sizeof(vertex_constant_data.front()) * vertex_constant_data.size());
 
     TextureDesc depth_stencil_texture_desc = {
         .type = TextureType::k2D,
@@ -215,52 +214,52 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
         .sample_count = 1,
         .usage = BindFlag::kDepthStencil,
     };
-    m_depth_stencil_texture = m_device->CreateTexture(MemoryType::kDefault, depth_stencil_texture_desc);
+    depth_stencil_texture_ = device_->CreateTexture(MemoryType::kDefault, depth_stencil_texture_desc);
     ViewDesc depth_stencil_view_desc = {
         .view_type = ViewType::kDepthStencil,
         .dimension = ViewDimension::kTexture2D,
     };
-    m_depth_stencil_view = m_device->CreateView(m_depth_stencil_texture, depth_stencil_view_desc);
+    depth_stencil_view_ = device_->CreateView(depth_stencil_texture_, depth_stencil_view_desc);
 
     GraphicsPipelineDesc pipeline_desc = {
-        .shaders = { m_vertex_shader, m_pixel_shader },
-        .layout = m_layout,
+        .shaders = { vertex_shader_, pixel_shader_ },
+        .layout = layout_,
         .input = { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
                    { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
-        .color_formats = { m_swapchain->GetFormat() },
-        .depth_stencil_format = m_depth_stencil_texture->GetFormat(),
+        .color_formats = { swapchain_->GetFormat() },
+        .depth_stencil_format = depth_stencil_texture_->GetFormat(),
     };
-    m_pipeline = m_device->CreateGraphicsPipeline(pipeline_desc);
+    pipeline_ = device_->CreateGraphicsPipeline(pipeline_desc);
 
     for (uint32_t i = 0; i < kFrameCount; ++i) {
-        std::shared_ptr<Resource> back_buffer = m_swapchain->GetBackBuffer(i);
+        std::shared_ptr<Resource> back_buffer = swapchain_->GetBackBuffer(i);
         ViewDesc back_buffer_view_desc = {
             .view_type = ViewType::kRenderTarget,
             .dimension = ViewDimension::kTexture2D,
         };
-        m_back_buffer_views[i] = m_device->CreateView(back_buffer, back_buffer_view_desc);
+        back_buffer_views_[i] = device_->CreateView(back_buffer, back_buffer_view_desc);
 
-        auto& command_list = m_command_lists[i];
-        command_list = m_device->CreateCommandList(CommandListType::kGraphics);
-        command_list->BindPipeline(m_pipeline);
+        auto& command_list = command_lists_[i];
+        command_list = device_->CreateCommandList(CommandListType::kGraphics);
+        command_list->BindPipeline(pipeline_);
         command_list->SetViewport(0, 0, app_size.width(), app_size.height());
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         RenderPassDesc render_pass_desc = {
             .render_area = { 0, 0, app_size.width(), app_size.height() },
-            .colors = { { .view = m_back_buffer_views[i],
+            .colors = { { .view = back_buffer_views_[i],
                           .load_op = RenderPassLoadOp::kClear,
                           .store_op = RenderPassStoreOp::kStore,
                           .clear_value = glm::vec4(0.0, 0.2, 0.4, 1.0) } },
             .depth = { .load_op = RenderPassLoadOp::kClear,
                        .store_op = RenderPassStoreOp::kDontCare,
                        .clear_value = 1.0 },
-            .depth_stencil_view = m_depth_stencil_view,
+            .depth_stencil_view = depth_stencil_view_,
         };
         command_list->BeginRenderPass(render_pass_desc);
-        for (size_t j = 0; j < m_render_model.GetMeshCount(); ++j) {
-            const auto& mesh = m_render_model.GetMesh(j);
-            command_list->BindBindingSet(m_binding_sets[j]);
+        for (size_t j = 0; j < render_model_.GetMeshCount(); ++j) {
+            const auto& mesh = render_model_.GetMesh(j);
+            command_list->BindBindingSet(binding_sets_[j]);
             command_list->IASetIndexBuffer(mesh.indices, 0, mesh.index_format);
             command_list->IASetVertexBuffer(kPositions, mesh.positions, 0);
             command_list->IASetVertexBuffer(kTexcoords, mesh.texcoords, 0);
@@ -276,20 +275,20 @@ void ModelViewRenderer::Resize(const AppSize& app_size, const NativeSurface& sur
 {
     WaitForIdle();
     for (uint32_t i = 0; i < kFrameCount; ++i) {
-        m_back_buffer_views[i].reset();
+        back_buffer_views_[i].reset();
     }
-    m_swapchain.reset();
+    swapchain_.reset();
     Init(app_size, surface);
 }
 
 void ModelViewRenderer::Render()
 {
-    uint32_t frame_index = m_swapchain->NextImage(m_fence, ++m_fence_value);
-    m_command_queue->Wait(m_fence, m_fence_value);
-    m_fence->Wait(m_fence_values[frame_index]);
-    m_command_queue->ExecuteCommandLists({ m_command_lists[frame_index] });
-    m_command_queue->Signal(m_fence, m_fence_values[frame_index] = ++m_fence_value);
-    m_swapchain->Present(m_fence, m_fence_values[frame_index]);
+    uint32_t frame_index = swapchain_->NextImage(fence_, ++fence_value_);
+    command_queue_->Wait(fence_, fence_value_);
+    fence_->Wait(fence_values_[frame_index]);
+    command_queue_->ExecuteCommandLists({ command_lists_[frame_index] });
+    command_queue_->Signal(fence_, fence_values_[frame_index] = ++fence_value_);
+    swapchain_->Present(fence_, fence_values_[frame_index]);
 }
 
 std::string_view ModelViewRenderer::GetTitle() const
@@ -299,18 +298,18 @@ std::string_view ModelViewRenderer::GetTitle() const
 
 const std::string& ModelViewRenderer::GetGpuName() const
 {
-    return m_adapter->GetName();
+    return adapter_->GetName();
 }
 
 const Settings& ModelViewRenderer::GetSettings() const
 {
-    return m_settings;
+    return settings_;
 }
 
 void ModelViewRenderer::WaitForIdle()
 {
-    m_command_queue->Signal(m_fence, ++m_fence_value);
-    m_fence->Wait(m_fence_value);
+    command_queue_->Signal(fence_, ++fence_value_);
+    fence_->Wait(fence_value_);
 }
 
 int main(int argc, char* argv[])

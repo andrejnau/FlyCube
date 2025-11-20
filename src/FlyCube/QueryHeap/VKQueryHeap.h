@@ -15,7 +15,7 @@ public:
     vk::QueryPool GetQueryPool() const;
 
 private:
-    VKDevice& m_device;
-    vk::UniqueQueryPool m_query_pool;
-    vk::QueryType m_query_type;
+    VKDevice& device_;
+    vk::UniqueQueryPool query_pool_;
+    vk::QueryType query_type_;
 };

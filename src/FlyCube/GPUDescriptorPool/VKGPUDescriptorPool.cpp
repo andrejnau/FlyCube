@@ -3,7 +3,7 @@
 #include "Device/VKDevice.h"
 
 VKGPUDescriptorPool::VKGPUDescriptorPool(VKDevice& device)
-    : m_device(device)
+    : device_(device)
 {
 }
 
@@ -31,7 +31,7 @@ vk::UniqueDescriptorPool VKGPUDescriptorPool::CreateDescriptorPool(const std::ma
     pool_info.maxSets = 1;
     pool_info.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 
-    return m_device.GetDevice().createDescriptorPoolUnique(pool_info);
+    return device_.GetDevice().createDescriptorPoolUnique(pool_info);
 }
 
 DescriptorSetPool VKGPUDescriptorPool::AllocateDescriptorSet(const vk::DescriptorSetLayout& set_layout,
@@ -44,7 +44,7 @@ DescriptorSetPool VKGPUDescriptorPool::AllocateDescriptorSet(const vk::Descripto
     alloc_info.descriptorPool = res.pool.get();
     alloc_info.descriptorSetCount = 1;
     alloc_info.pSetLayouts = &set_layout;
-    auto descriptor_sets = m_device.GetDevice().allocateDescriptorSetsUnique(alloc_info);
+    auto descriptor_sets = device_.GetDevice().allocateDescriptorSetsUnique(alloc_info);
     res.set = std::move(descriptor_sets.front());
 
     return res;

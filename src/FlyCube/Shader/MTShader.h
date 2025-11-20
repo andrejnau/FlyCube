@@ -17,6 +17,6 @@ public:
     MTL4LibraryFunctionDescriptor* GetFunctionDescriptor();
 
 private:
-    MTL4LibraryFunctionDescriptor* m_function_descriptor = nullptr;
-    std::map<BindKey, uint32_t> m_slot_remapping;
+    MTL4LibraryFunctionDescriptor* function_descriptor_ = nullptr;
+    std::map<BindKey, uint32_t> slot_remapping_;
 };

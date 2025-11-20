@@ -40,8 +40,8 @@ std::string GetShaderTarget(ShaderType type, const std::string& model)
 class IncludeHandler : public IDxcIncludeHandler {
 public:
     IncludeHandler(CComPtr<IDxcLibrary> library, const std::wstring& base_path)
-        : m_library(library)
-        , m_base_path(base_path)
+        : library_(library)
+        , base_path_(base_path)
     {
     }
 
@@ -61,9 +61,9 @@ public:
     HRESULT STDMETHODCALLTYPE LoadSource(_In_ LPCWSTR pFilename,
                                          _COM_Outptr_result_maybenull_ IDxcBlob** ppIncludeSource) override
     {
-        std::wstring path = m_base_path + pFilename;
+        std::wstring path = base_path_ + pFilename;
         CComPtr<IDxcBlobEncoding> source;
-        HRESULT hr = m_library->CreateBlobFromFile(path.c_str(), nullptr, &source);
+        HRESULT hr = library_->CreateBlobFromFile(path.c_str(), nullptr, &source);
         if (SUCCEEDED(hr) && ppIncludeSource) {
             *ppIncludeSource = source.Detach();
         }
@@ -71,8 +71,8 @@ public:
     }
 
 private:
-    CComPtr<IDxcLibrary> m_library;
-    const std::wstring& m_base_path;
+    CComPtr<IDxcLibrary> library_;
+    const std::wstring& base_path_;
 };
 
 std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)

@@ -181,14 +181,14 @@ DXGI_SAMPLE_DESC GetSampleDesc(const GraphicsPipelineDesc& desc)
 }
 
 DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineDesc& desc)
-    : m_device(device)
-    , m_desc(desc)
+    : device_(device)
+    , desc_(desc)
 {
     DXStateBuilder graphics_state_builder;
 
-    decltype(auto) dx_layout = m_desc.layout->As<DXBindingSetLayout>();
-    m_root_signature = dx_layout.GetRootSignature();
-    for (const auto& shader : m_desc.shaders) {
+    decltype(auto) dx_layout = desc_.layout->As<DXBindingSetLayout>();
+    root_signature_ = dx_layout.GetRootSignature();
+    for (const auto& shader : desc_.shaders) {
         decltype(auto) blob = shader->GetBlob();
         D3D12_SHADER_BYTECODE shader_bytecode = { blob.data(), blob.size() };
 
@@ -224,17 +224,17 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC>(GetSampleDesc(desc));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER>(GetRasterizerDesc(desc));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC>(GetBlendDesc(desc));
-    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE>(m_root_signature.Get());
+    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE>(root_signature_.Get());
 
     ComPtr<ID3D12Device2> device2;
-    m_device.GetDevice().As(&device2);
+    device_.GetDevice().As(&device2);
     auto pipeline_desc = graphics_state_builder.GetDesc();
-    CHECK_HRESULT(device2->CreatePipelineState(&pipeline_desc, IID_PPV_ARGS(&m_pipeline_state)));
+    CHECK_HRESULT(device2->CreatePipelineState(&pipeline_desc, IID_PPV_ARGS(&pipeline_state_)));
 }
 
 void DXGraphicsPipeline::ParseInputLayout(const std::shared_ptr<Shader>& shader)
 {
-    for (auto& vertex : m_desc.input) {
+    for (auto& vertex : desc_.input) {
         D3D12_INPUT_ELEMENT_DESC layout = {};
         std::string semantic_name = vertex.semantic_name;
         uint32_t semantic_slot = 0;
@@ -244,23 +244,23 @@ void DXGraphicsPipeline::ParseInputLayout(const std::shared_ptr<Shader>& shader)
             semantic_name.pop_back();
             pow *= 10;
         }
-        m_input_layout_stride[vertex.slot] = vertex.stride;
-        m_input_layout_desc_names[vertex.slot] = semantic_name;
-        layout.SemanticName = m_input_layout_desc_names[vertex.slot].c_str();
+        input_layout_stride_[vertex.slot] = vertex.stride;
+        input_layout_desc_names_[vertex.slot] = semantic_name;
+        layout.SemanticName = input_layout_desc_names_[vertex.slot].c_str();
         layout.SemanticIndex = semantic_slot;
         layout.InputSlot = vertex.slot;
         layout.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
         layout.InstanceDataStepRate = 0;
         layout.Format = static_cast<DXGI_FORMAT>(gli::dx().translate(vertex.format).DXGIFormat.DDS);
-        m_input_layout_desc.push_back(layout);
+        input_layout_desc_.push_back(layout);
     }
 }
 
 D3D12_INPUT_LAYOUT_DESC DXGraphicsPipeline::GetInputLayoutDesc()
 {
     D3D12_INPUT_LAYOUT_DESC input_layout_desc = {};
-    input_layout_desc.NumElements = static_cast<uint32_t>(m_input_layout_desc.size());
-    input_layout_desc.pInputElementDescs = m_input_layout_desc.data();
+    input_layout_desc.NumElements = static_cast<uint32_t>(input_layout_desc_.size());
+    input_layout_desc.pInputElementDescs = input_layout_desc_.data();
     return input_layout_desc;
 }
 
@@ -271,20 +271,20 @@ PipelineType DXGraphicsPipeline::GetPipelineType() const
 
 const GraphicsPipelineDesc& DXGraphicsPipeline::GetDesc() const
 {
-    return m_desc;
+    return desc_;
 }
 
 const ComPtr<ID3D12PipelineState>& DXGraphicsPipeline::GetPipeline() const
 {
-    return m_pipeline_state;
+    return pipeline_state_;
 }
 
 const ComPtr<ID3D12RootSignature>& DXGraphicsPipeline::GetRootSignature() const
 {
-    return m_root_signature;
+    return root_signature_;
 }
 
 const std::map<size_t, uint32_t>& DXGraphicsPipeline::GetStrideMap() const
 {
-    return m_input_layout_stride;
+    return input_layout_stride_;
 }
