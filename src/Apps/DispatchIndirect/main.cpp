@@ -15,7 +15,7 @@ constexpr uint32_t kNumThreads = 8;
 
 class DispatchIndirectRenderer : public AppRenderer {
 public:
-    DispatchIndirectRenderer(const Settings& settings);
+    explicit DispatchIndirectRenderer(const Settings& settings);
     ~DispatchIndirectRenderer() override;
 
     void Init(const AppSize& app_size, const NativeSurface& surface) override;

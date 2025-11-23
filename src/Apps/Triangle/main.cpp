@@ -12,7 +12,7 @@ constexpr uint32_t kFrameCount = 3;
 
 class TriangleRenderer : public AppRenderer {
 public:
-    TriangleRenderer(const Settings& settings);
+    explicit TriangleRenderer(const Settings& settings);
     ~TriangleRenderer() override;
 
     void Init(const AppSize& app_size, const NativeSurface& surface) override;

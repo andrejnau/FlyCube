@@ -30,7 +30,7 @@ constexpr uint32_t kFrameCount = 3;
 
 class ModelViewRenderer : public AppRenderer {
 public:
-    ModelViewRenderer(const Settings& settings);
+    explicit ModelViewRenderer(const Settings& settings);
     ~ModelViewRenderer() override;
 
     void Init(const AppSize& app_size, const NativeSurface& surface) override;

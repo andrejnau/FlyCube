@@ -13,7 +13,7 @@ constexpr uint32_t kFrameCount = 3;
 
 class BindlessTriangleRenderer : public AppRenderer {
 public:
-    BindlessTriangleRenderer(const Settings& settings);
+    explicit BindlessTriangleRenderer(const Settings& settings);
     ~BindlessTriangleRenderer() override;
 
     void Init(const AppSize& app_size, const NativeSurface& surface) override;

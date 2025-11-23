@@ -37,7 +37,7 @@ constexpr bool AllowRayQuery()
 
 class RayTracingTriangleRenderer : public AppRenderer {
 public:
-    RayTracingTriangleRenderer(const Settings& settings);
+    explicit RayTracingTriangleRenderer(const Settings& settings);
     ~RayTracingTriangleRenderer() override;
 
     void Init(const AppSize& app_size, const NativeSurface& surface) override;

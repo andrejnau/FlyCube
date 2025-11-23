@@ -13,7 +13,7 @@ constexpr uint32_t kFrameCount = 3;
 
 class MeshTriangleRenderer : public AppRenderer {
 public:
-    MeshTriangleRenderer(const Settings& settings);
+    explicit MeshTriangleRenderer(const Settings& settings);
     ~MeshTriangleRenderer() override;
 
     void Init(const AppSize& app_size, const NativeSurface& surface) override;

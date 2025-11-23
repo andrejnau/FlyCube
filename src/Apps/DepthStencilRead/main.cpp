@@ -30,7 +30,7 @@ constexpr uint32_t kFrameCount = 3;
 
 class DepthStencilReadRenderer : public AppRenderer {
 public:
-    DepthStencilReadRenderer(const Settings& settings);
+    explicit DepthStencilReadRenderer(const Settings& settings);
     ~DepthStencilReadRenderer() override;
 
     void Init(const AppSize& app_size, const NativeSurface& surface) override;
