@@ -185,7 +185,8 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
     stencil_attachment.clearValue.depthStencil.stencil = render_pass_desc.stencil.clear_value;
 
     vk::RenderingInfo rendering_info = {};
-    rendering_info.renderArea = { render_pass_desc.render_area.x, render_pass_desc.render_area.y,
+    rendering_info.renderArea = { static_cast<int32_t>(render_pass_desc.render_area.x),
+                                  static_cast<int32_t>(render_pass_desc.render_area.y),
                                   render_pass_desc.render_area.width, render_pass_desc.render_area.height };
     rendering_info.layerCount = render_pass_desc.layers;
     rendering_info.colorAttachmentCount = color_attachments.size();
