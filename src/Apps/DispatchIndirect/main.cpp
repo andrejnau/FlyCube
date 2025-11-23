@@ -134,8 +134,8 @@ void DispatchIndirectRenderer::Init(const AppSize& app_size, const NativeSurface
         command_list->DispatchIndirect(buffer_, sizeof(float) * kFrameCount);
         TextureCopyRegion region = {
             .extent = { result_texture_desc.width, result_texture_desc.height, 1 },
-            .dst_offset = { static_cast<int32_t>(app_size.width() - result_texture_desc.width) / 2,
-                            static_cast<int32_t>(app_size.height() - result_texture_desc.height) / 2 },
+            .dst_offset = { (app_size.width() - result_texture_desc.width) / 2,
+                            (app_size.height() - result_texture_desc.height) / 2 },
         };
         command_list->ResourceBarrier(
             { { result_texture_, ResourceState::kUnorderedAccess, ResourceState::kCopySource },

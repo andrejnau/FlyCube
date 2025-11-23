@@ -17,8 +17,8 @@ class Shader;
 class View;
 
 struct Offset2D {
-    int32_t x;
-    int32_t y;
+    uint32_t x;
+    uint32_t y;
 };
 
 struct Extent2D {
@@ -27,9 +27,9 @@ struct Extent2D {
 };
 
 struct Offset3D {
-    int32_t x;
-    int32_t y;
-    int32_t z;
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
 };
 
 struct Extent3D {

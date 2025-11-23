@@ -623,8 +623,7 @@ void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
                                toTexture:mt_dst_texture.GetTexture()
                         destinationSlice:region.texture_array_layer
                         destinationLevel:region.texture_mip_level
-                       destinationOrigin:{ (uint32_t)region.texture_offset.x, (uint32_t)region.texture_offset.y,
-                                           (uint32_t)region.texture_offset.z }];
+                       destinationOrigin:{ region.texture_offset.x, region.texture_offset.y, region.texture_offset.z }];
     }
 }
 
@@ -641,10 +640,8 @@ void MTCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture,
     AddComputeBarriers();
     for (const auto& region : regions) {
         MTLSize region_size = { region.extent.width, region.extent.height, region.extent.depth };
-        MTLOrigin src_origin = { (uint32_t)region.src_offset.x, (uint32_t)region.src_offset.y,
-                                 (uint32_t)region.src_offset.z };
-        MTLOrigin dst_origin = { (uint32_t)region.dst_offset.x, (uint32_t)region.dst_offset.y,
-                                 (uint32_t)region.dst_offset.z };
+        MTLOrigin src_origin = { region.src_offset.x, region.src_offset.y, region.src_offset.z };
+        MTLOrigin dst_origin = { region.dst_offset.x, region.dst_offset.y, region.dst_offset.z };
         [compute_encoder_ copyFromTexture:mt_src_texture.GetTexture()
                               sourceSlice:region.src_array_layer
                               sourceLevel:region.src_mip_level
