@@ -26,14 +26,14 @@ RenderModel::RenderModel(const std::shared_ptr<Device>& device,
     for (int i = 0; i < model->meshes.size(); ++i) {
         meshes_[i].matrix = model->meshes[i].matrix;
 
-        meshes_[i].positions = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].positions);
-        meshes_[i].normals = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].normals);
-        meshes_[i].tangents = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].tangents);
-        meshes_[i].texcoords = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].texcoords);
+        meshes_[i].positions.buffer = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].positions);
+        meshes_[i].normals.buffer = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].normals);
+        meshes_[i].tangents.buffer = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].tangents);
+        meshes_[i].texcoords.buffer = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].texcoords);
 
         meshes_[i].index_count = model->meshes[i].indices.size();
         meshes_[i].index_format = gli::format::FORMAT_R32_UINT_PACK32;
-        meshes_[i].indices = CreateBuffer(BindFlag::kIndexBuffer, model->meshes[i].indices);
+        meshes_[i].indices.buffer = CreateBuffer(BindFlag::kIndexBuffer, model->meshes[i].indices);
 
         meshes_[i].textures.base_color = CreateTextureFromFile(model->meshes[i].textures.base_color);
         meshes_[i].textures.normal = CreateTextureFromFile(model->meshes[i].textures.normal);

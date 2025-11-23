@@ -260,9 +260,9 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
         for (size_t j = 0; j < render_model_.GetMeshCount(); ++j) {
             const auto& mesh = render_model_.GetMesh(j);
             command_list->BindBindingSet(binding_sets_[j]);
-            command_list->IASetIndexBuffer(mesh.indices, 0, mesh.index_format);
-            command_list->IASetVertexBuffer(kPositions, mesh.positions, 0);
-            command_list->IASetVertexBuffer(kTexcoords, mesh.texcoords, 0);
+            command_list->IASetIndexBuffer(mesh.indices.buffer, mesh.indices.offset, mesh.index_format);
+            command_list->IASetVertexBuffer(kPositions, mesh.positions.buffer, mesh.positions.offset);
+            command_list->IASetVertexBuffer(kTexcoords, mesh.texcoords.buffer, mesh.texcoords.offset);
             command_list->DrawIndexed(mesh.index_count, 1, 0, 0, 0);
         }
         command_list->EndRenderPass();

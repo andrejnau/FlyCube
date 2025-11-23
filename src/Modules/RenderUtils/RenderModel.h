@@ -13,11 +13,16 @@ struct RenderMesh {
     size_t index_count = 0;
     gli::format index_format = gli::format::FORMAT_UNDEFINED;
 
-    std::shared_ptr<Resource> indices;
-    std::shared_ptr<Resource> positions;
-    std::shared_ptr<Resource> normals;
-    std::shared_ptr<Resource> tangents;
-    std::shared_ptr<Resource> texcoords;
+    struct Buffer {
+        std::shared_ptr<Resource> buffer;
+        uint64_t offset = 0;
+    };
+
+    Buffer indices;
+    Buffer positions;
+    Buffer normals;
+    Buffer tangents;
+    Buffer texcoords;
 
     struct {
         std::shared_ptr<Resource> base_color;
