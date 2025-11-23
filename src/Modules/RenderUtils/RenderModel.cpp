@@ -45,7 +45,6 @@ RenderModel::RenderModel(const std::shared_ptr<Device>& device,
     command_list_->Close();
     command_queue->ExecuteCommandLists({ command_list_ });
     command_queue->Signal(fence_, ++fence_value_);
-    command_queue->Wait(fence_, fence_value_);
 }
 
 RenderModel::~RenderModel()
