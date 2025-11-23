@@ -3,9 +3,18 @@
 #include "Utilities/Asset.h"
 #include "Utilities/Common.h"
 #include "Utilities/FormatHelper.h"
-#include "Utilities/NotReached.h"
 
 #include <stb_image.h>
+
+namespace {
+
+template <typename T>
+size_t GetNumBytes(const std::vector<T>& data)
+{
+    return sizeof(data.front()) * data.size();
+}
+
+} // namespace
 
 RenderModel::RenderModel(const std::shared_ptr<Device>& device,
                          const std::shared_ptr<CommandQueue>& command_queue,
@@ -23,18 +32,52 @@ RenderModel::RenderModel(const std::shared_ptr<Device>& device,
     fence_ = device_->CreateFence(fence_value_);
 
     meshes_.resize(model->meshes.size());
-    for (int i = 0; i < model->meshes.size(); ++i) {
+
+    uint64_t buffer_size = 0;
+    for (const auto& mesh : model->meshes) {
+        buffer_size += GetNumBytes(mesh.indices);
+        buffer_size += GetNumBytes(mesh.positions);
+        buffer_size += GetNumBytes(mesh.normals);
+        buffer_size += GetNumBytes(mesh.tangents);
+        buffer_size += GetNumBytes(mesh.texcoords);
+    }
+    std::shared_ptr<Resource> upload_buffer =
+        CreateUploadBuffer({ .size = buffer_size, .usage = BindFlag::kCopySource });
+    std::shared_ptr<Resource> buffer = device_->CreateBuffer(
+        MemoryType::kDefault,
+        { .size = buffer_size, .usage = BindFlag::kCopyDest | BindFlag::kIndexBuffer | BindFlag::kVertexBuffer });
+
+    size_t buffer_offset = 0;
+    auto get_buffer = [&](const auto& data) -> RenderMesh::Buffer {
+        if (data.empty()) {
+            return {};
+        }
+        size_t num_bytes = GetNumBytes(data);
+        upload_buffer->UpdateUploadBuffer(buffer_offset, data.data(), num_bytes);
+        buffer_offset += num_bytes;
+        return { buffer, buffer_offset - num_bytes };
+    };
+
+    for (size_t i = 0; i < model->meshes.size(); ++i) {
         meshes_[i].matrix = model->meshes[i].matrix;
-
-        meshes_[i].positions.buffer = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].positions);
-        meshes_[i].normals.buffer = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].normals);
-        meshes_[i].tangents.buffer = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].tangents);
-        meshes_[i].texcoords.buffer = CreateBuffer(BindFlag::kVertexBuffer, model->meshes[i].texcoords);
-
         meshes_[i].index_count = model->meshes[i].indices.size();
         meshes_[i].index_format = gli::format::FORMAT_R32_UINT_PACK32;
-        meshes_[i].indices.buffer = CreateBuffer(BindFlag::kIndexBuffer, model->meshes[i].indices);
 
+        meshes_[i].indices = get_buffer(model->meshes[i].indices);
+        meshes_[i].positions = get_buffer(model->meshes[i].positions);
+        meshes_[i].normals = get_buffer(model->meshes[i].normals);
+        meshes_[i].tangents = get_buffer(model->meshes[i].tangents);
+        meshes_[i].texcoords = get_buffer(model->meshes[i].texcoords);
+    }
+
+    BufferCopyRegion copy_region = {
+        .src_offset = 0,
+        .dst_offset = 0,
+        .num_bytes = buffer_size,
+    };
+    command_list_->CopyBuffer(upload_buffer, buffer, { copy_region });
+
+    for (size_t i = 0; i < model->meshes.size(); ++i) {
         meshes_[i].textures.base_color = CreateTextureFromFile(model->meshes[i].textures.base_color);
         meshes_[i].textures.normal = CreateTextureFromFile(model->meshes[i].textures.normal);
         meshes_[i].textures.metallic_roughness = CreateTextureFromFile(model->meshes[i].textures.metallic_roughness);
@@ -62,18 +105,11 @@ const RenderMesh& RenderModel::GetMesh(size_t index) const
     return meshes_.at(index);
 }
 
-template <typename T>
-std::shared_ptr<Resource> RenderModel::CreateBuffer(uint32_t bind_flag, const std::vector<T>& data)
+std::shared_ptr<Resource> RenderModel::CreateUploadBuffer(const BufferDesc& desc)
 {
-    if (data.empty()) {
-        return nullptr;
-    }
-
-    uint64_t num_bytes = sizeof(data.front()) * data.size();
-    std::shared_ptr<Resource> buffer =
-        device_->CreateBuffer(MemoryType::kDefault, { .size = num_bytes, .usage = bind_flag | BindFlag::kCopyDest });
-    UpdateBuffer(buffer, /*buffer_offset=*/0, data.data(), num_bytes);
-    return buffer;
+    std::shared_ptr<Resource> upload_buffer = device_->CreateBuffer(MemoryType::kUpload, desc);
+    upload_buffers_.push_back(upload_buffer);
+    return upload_buffer;
 }
 
 std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& path)
@@ -137,23 +173,6 @@ std::shared_ptr<Resource> RenderModel::CreateTextureFromFile(const std::string& 
     return texture;
 }
 
-void RenderModel::UpdateBuffer(const std::shared_ptr<Resource>& buffer,
-                               uint64_t buffer_offset,
-                               const void* data,
-                               uint64_t num_bytes)
-{
-    std::shared_ptr<Resource> upload_buffer =
-        device_->CreateBuffer(MemoryType::kUpload, { .size = num_bytes, .usage = BindFlag::kCopySource });
-    upload_buffer->UpdateUploadBuffer(0, data, num_bytes);
-    BufferCopyRegion copy_region = {
-        .src_offset = 0,
-        .dst_offset = buffer_offset,
-        .num_bytes = num_bytes,
-    };
-    command_list_->CopyBuffer(upload_buffer, buffer, { copy_region });
-    upload_buffers_.push_back(upload_buffer);
-}
-
 void RenderModel::UpdateTexture(const std::shared_ptr<Resource>& texture,
                                 uint32_t mip_level,
                                 uint32_t array_layer,
@@ -167,7 +186,7 @@ void RenderModel::UpdateTexture(const std::shared_ptr<Resource>& texture,
     uint64_t aligned_row_pitch = Align(row_pitch, device_->GetTextureDataPitchAlignment());
     uint64_t buffer_size = aligned_row_pitch * num_rows;
     std::shared_ptr<Resource> upload_buffer =
-        device_->CreateBuffer(MemoryType::kUpload, { .size = buffer_size, .usage = BindFlag::kCopySource });
+        CreateUploadBuffer({ .size = buffer_size, .usage = BindFlag::kCopySource });
     BufferToTextureCopyRegion copy_region = {
         .buffer_offset = 0,
         .buffer_row_pitch = static_cast<uint32_t>(aligned_row_pitch),
@@ -178,5 +197,4 @@ void RenderModel::UpdateTexture(const std::shared_ptr<Resource>& texture,
     upload_buffer->UpdateUploadBufferWithTextureData(copy_region.buffer_offset, copy_region.buffer_row_pitch,
                                                      buffer_size, data, row_pitch, slice_pitch, row_pitch, num_rows, 1);
     command_list_->CopyBufferToTexture(upload_buffer, texture, { copy_region });
-    upload_buffers_.push_back(upload_buffer);
 }

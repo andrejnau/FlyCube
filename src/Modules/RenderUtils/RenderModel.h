@@ -48,13 +48,8 @@ public:
     const RenderMesh& GetMesh(size_t index) const;
 
 private:
-    template <typename T>
-    std::shared_ptr<Resource> CreateBuffer(uint32_t bind_flag, const std::vector<T>& data);
+    std::shared_ptr<Resource> CreateUploadBuffer(const BufferDesc& desc);
     std::shared_ptr<Resource> CreateTextureFromFile(const std::string& path);
-    void UpdateBuffer(const std::shared_ptr<Resource>& buffer,
-                      uint64_t buffer_offset,
-                      const void* data,
-                      uint64_t num_bytes);
     void UpdateTexture(const std::shared_ptr<Resource>& texture,
                        uint32_t mip_level,
                        uint32_t array_layer,
