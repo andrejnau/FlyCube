@@ -52,7 +52,7 @@ public:
                       uint32_t depth) override;
     void ResourceBarrier(const std::vector<ResourceBarrierDesc>& barriers) override;
     void UAVResourceBarrier(const std::shared_ptr<Resource>& resource) override;
-    void SetViewport(float x, float y, float width, float height) override;
+    void SetViewport(float x, float y, float width, float height, float min_depth, float max_depth) override;
     void SetScissorRect(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom) override;
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format) override;
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset) override;

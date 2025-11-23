@@ -407,14 +407,14 @@ void MTCommandList::UAVResourceBarrier(const std::shared_ptr<Resource>& /*resour
     compute_barrier_before_stages_ |= MTLStageDispatch;
 }
 
-void MTCommandList::SetViewport(float x, float y, float width, float height)
+void MTCommandList::SetViewport(float x, float y, float width, float height, float min_depth, float max_depth)
 {
     viewport_.originX = x;
     viewport_.originY = y;
     viewport_.width = width;
     viewport_.height = height;
-    viewport_.znear = 0.0;
-    viewport_.zfar = 1.0;
+    viewport_.znear = min_depth;
+    viewport_.zfar = max_depth;
 
     if (!render_encoder_) {
         return;

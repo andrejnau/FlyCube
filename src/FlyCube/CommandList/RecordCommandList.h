@@ -136,9 +136,9 @@ public:
         ApplyAndRecord(&T::UAVResourceBarrier, resource);
     }
 
-    void SetViewport(float x, float y, float width, float height) override
+    void SetViewport(float x, float y, float width, float height, float min_depth, float max_depth) override
     {
-        ApplyAndRecord(&T::SetViewport, x, y, width, height);
+        ApplyAndRecord(&T::SetViewport, x, y, width, height, min_depth, max_depth);
     }
 
     void SetScissorRect(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom) override

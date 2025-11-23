@@ -182,7 +182,7 @@ void BindlessTriangleRenderer::Init(const AppSize& app_size, const NativeSurface
         command_list = device_->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(pipeline_);
         command_list->BindBindingSet(binding_set_);
-        command_list->SetViewport(0, 0, app_size.width(), app_size.height());
+        command_list->SetViewport(0, 0, app_size.width(), app_size.height(), 0.0, 1.0);
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         RenderPassDesc render_pass_desc = {

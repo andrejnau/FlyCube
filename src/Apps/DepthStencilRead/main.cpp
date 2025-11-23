@@ -269,7 +269,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, const NativeSurface
             .depth_stencil_view = depth_stencil_view_,
         };
         command_list->BeginRenderPass(depth_stencil_pass_render_pass_desc);
-        command_list->SetViewport(0, 0, depth_stencil_size.x, depth_stencil_size.y);
+        command_list->SetViewport(0, 0, depth_stencil_size.x, depth_stencil_size.y, 0.0, 1.0);
         command_list->SetScissorRect(0, 0, depth_stencil_size.x, depth_stencil_size.y);
         for (size_t j = 0; j < render_model_.GetMeshCount(); ++j) {
             const auto& mesh = render_model_.GetMesh(j);
@@ -289,7 +289,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, const NativeSurface
                           .store_op = RenderPassStoreOp::kStore } },
         };
         command_list->BeginRenderPass(render_pass_desc);
-        command_list->SetViewport(0, 0, app_size.width(), app_size.height());
+        command_list->SetViewport(0, 0, app_size.width(), app_size.height(), 0.0, 1.0);
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         for (size_t j = 0; j < fullscreen_triangle_render_model_.GetMeshCount(); ++j) {
             const auto& mesh = fullscreen_triangle_render_model_.GetMesh(j);

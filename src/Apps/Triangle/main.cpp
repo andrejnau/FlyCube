@@ -129,7 +129,7 @@ void TriangleRenderer::Init(const AppSize& app_size, const NativeSurface& surfac
         command_list = device_->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(pipeline_);
         command_list->BindBindingSet(binding_set_);
-        command_list->SetViewport(0, 0, app_size.width(), app_size.height());
+        command_list->SetViewport(0, 0, app_size.width(), app_size.height(), 0.0, 1.0);
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
         command_list->IASetIndexBuffer(index_buffer_, 0, gli::format::FORMAT_R32_UINT_PACK32);
         command_list->IASetVertexBuffer(0, vertex_buffer_, 0);
