@@ -98,8 +98,8 @@ void DispatchIndirectRenderer::Init(const AppSize& app_size, const NativeSurface
     TextureDesc result_texture_desc = {
         .type = TextureType::k2D,
         .format = swapchain_->GetFormat(),
-        .width = 512,
-        .height = 512,
+        .width = std::min(512u, app_size.width()),
+        .height = std::min(512u, app_size.height()),
         .depth_or_array_layers = 1,
         .mip_levels = 1,
         .sample_count = 1,
@@ -134,8 +134,8 @@ void DispatchIndirectRenderer::Init(const AppSize& app_size, const NativeSurface
         command_list->DispatchIndirect(buffer_, sizeof(float) * kFrameCount);
         TextureCopyRegion region = {
             .extent = { result_texture_desc.width, result_texture_desc.height, 1 },
-            .dst_offset = { static_cast<int32_t>(app_size.width() / 2 - result_texture_desc.width / 2),
-                            static_cast<int32_t>(app_size.height() / 2 - result_texture_desc.height / 2) },
+            .dst_offset = { static_cast<int32_t>(app_size.width() - result_texture_desc.width) / 2,
+                            static_cast<int32_t>(app_size.height() - result_texture_desc.height) / 2 },
         };
         command_list->ResourceBarrier(
             { { result_texture_, ResourceState::kUnorderedAccess, ResourceState::kCopySource },
