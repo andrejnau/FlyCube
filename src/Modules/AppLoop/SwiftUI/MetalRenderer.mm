@@ -45,6 +45,7 @@
     } else {
         app_renderer->Resize(app_size, surface);
     }
+    app_renderer->Render();
 }
 
 - (void)drawInMTKView:(nonnull MTKView*)view

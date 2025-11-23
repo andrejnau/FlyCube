@@ -16,6 +16,7 @@ public:
     void OnResize(int width, int height) override
     {
         AppLoop::GetRenderer().Resize(AppSize(width, height), surface_);
+        AppLoop::GetRenderer().Render();
     }
 
 private:
