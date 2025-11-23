@@ -9,6 +9,7 @@
 namespace {
 
 constexpr uint32_t kFrameCount = 3;
+constexpr uint32_t kNumThreads = 8;
 
 } // namespace
 
@@ -70,9 +71,6 @@ DispatchIndirectRenderer::DispatchIndirectRenderer(const Settings& settings)
         constant_buffer_views_[i] = device_->CreateView(buffer_, constant_buffer_view_desc);
     }
 
-    DispatchIndirectCommand argument_data = { 64, 64, 1 };
-    buffer_->UpdateUploadBuffer(sizeof(float) * kFrameCount, &argument_data, sizeof(argument_data));
-
     ShaderBlobType blob_type = device_->GetSupportedShaderBlobType();
     std::vector<uint8_t> compute_blob = AssetLoadShaderBlob("assets/DispatchIndirect/ComputeShader.hlsl", blob_type);
     compute_shader_ = device_->CreateShader(compute_blob, blob_type, ShaderType::kCompute);
@@ -113,6 +111,10 @@ void DispatchIndirectRenderer::Init(const AppSize& app_size, const NativeSurface
         .dimension = ViewDimension::kTexture2D,
     };
     result_texture_view_ = device_->CreateView(result_texture_, result_texture_view_desc);
+
+    DispatchIndirectCommand argument_data = { (result_texture_desc.width + kNumThreads - 1) / kNumThreads,
+                                              (result_texture_desc.height + kNumThreads - 1) / kNumThreads, 1 };
+    buffer_->UpdateUploadBuffer(sizeof(float) * kFrameCount, &argument_data, sizeof(argument_data));
 
     BindKey constant_buffer_key = compute_shader_->GetBindKey("constant_buffer");
     BindKey result_texture_key = compute_shader_->GetBindKey("result_texture");
