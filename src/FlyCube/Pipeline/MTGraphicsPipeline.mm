@@ -2,6 +2,7 @@
 
 #include "Device/MTDevice.h"
 #include "Shader/MTShader.h"
+#include "Utilities/Check.h"
 #include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
 
@@ -212,16 +213,25 @@ void MTGraphicsPipeline::CreatePipeline()
 MTLVertexDescriptor* MTGraphicsPipeline::GetVertexDescriptor(const std::shared_ptr<Shader>& shader)
 {
     MTLVertexDescriptor* vertex_descriptor = [MTLVertexDescriptor new];
-    for (size_t i = 0; i < desc_.input.size(); ++i) {
-        decltype(auto) vertex = desc_.input[i];
-        uint32_t location = shader->GetInputLayoutLocation(vertex.semantic_name);
-        decltype(auto) attribute = vertex_descriptor.attributes[location];
-        attribute.offset = 0;
-        attribute.bufferIndex = device_.GetMaxPerStageBufferCount() - vertex.slot - 1;
-        attribute.format = device_.GetMTLVertexFormat(vertex.format);
-        decltype(auto) layout = vertex_descriptor.layouts[attribute.bufferIndex];
+    std::map<size_t, uint32_t> input_layout_stride;
+    for (const auto& vertex : desc_.input) {
+        if (!input_layout_stride.contains(vertex.slot)) {
+            input_layout_stride[vertex.slot] = vertex.stride;
+        } else {
+            CHECK(input_layout_stride[vertex.slot] == vertex.stride);
+        }
+
+        const uint32_t buffer_index = device_.GetMaxPerStageBufferCount() - vertex.slot - 1;
+        MTLVertexBufferLayoutDescriptor* layout = vertex_descriptor.layouts[buffer_index];
         layout.stride = vertex.stride;
         layout.stepFunction = MTLVertexStepFunctionPerVertex;
+        layout.stepRate = 1;
+
+        const uint32_t location = shader->GetInputLayoutLocation(vertex.semantic_name);
+        MTLVertexAttributeDescriptor* attribute = vertex_descriptor.attributes[location];
+        attribute.offset = vertex.offset;
+        attribute.bufferIndex = buffer_index;
+        attribute.format = device_.GetMTLVertexFormat(vertex.format);
     }
     return vertex_descriptor;
 }

@@ -51,7 +51,7 @@ private:
     uint64_t fence_value_ = 0;
     std::shared_ptr<Fence> fence_;
     RenderModel render_model_;
-    RenderModel fullscreen_triangle_render_model_;
+    std::shared_ptr<Resource> fullscreen_triangle_vertex_buffer_;
     std::shared_ptr<Resource> depth_stencil_pass_constant_buffer_;
     std::vector<std::shared_ptr<View>> depth_stencil_pass_constant_buffer_views_;
     std::shared_ptr<Resource> vertex_constant_buffer_;
@@ -88,14 +88,20 @@ DepthStencilReadRenderer::DepthStencilReadRenderer(const Settings& settings)
     std::unique_ptr<Model> model = LoadModel("assets/DepthStencilRead/DamagedHelmet.gltf");
     render_model_ = RenderModel(device_, command_queue_, std::move(model));
 
-    Model fullscreen_triangle_model = {
-        .meshes = { {
-            .indices = { 0, 1, 2 },
-            .positions = { glm::vec3(-1.0, 1.0, 0.0), glm::vec3(3.0, 1.0, 0.0), glm::vec3(-1.0, -3.0, 0.0) },
-            .texcoords = { glm::vec2(0.0, 0.0), glm::vec2(2.0, 0.0), glm::vec2(0.0, 2.0) },
-        } },
+    struct VertexLayout {
+        glm::vec3 position;
+        glm::vec2 texcoord;
     };
-    fullscreen_triangle_render_model_ = RenderModel(device_, command_queue_, &fullscreen_triangle_model);
+    auto vertex_data = std::to_array<VertexLayout>({
+        { glm::vec3(-1.0, 1.0, 0.0), glm::vec2(0.0, 0.0) },
+        { glm::vec3(3.0, 1.0, 0.0), glm::vec2(2.0, 0.0) },
+        { glm::vec3(-1.0, -3.0, 0.0), glm::vec2(0.0, 2.0) },
+    });
+    fullscreen_triangle_vertex_buffer_ = device_->CreateBuffer(
+        MemoryType::kUpload,
+        { .size = sizeof(vertex_data.front()) * vertex_data.size(), .usage = BindFlag::kVertexBuffer });
+    fullscreen_triangle_vertex_buffer_->UpdateUploadBuffer(0, vertex_data.data(),
+                                                           sizeof(vertex_data.front()) * vertex_data.size());
 
     depth_stencil_pass_constant_buffer_ = device_->CreateBuffer(
         MemoryType::kUpload,
@@ -229,8 +235,9 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, const NativeSurface
     GraphicsPipelineDesc pipeline_desc = {
         .shaders = { vertex_shader_, pixel_shader_ },
         .layout = layout_,
-        .input = { { kPositions, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) },
-                   { kTexcoords, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec2) } },
+        .input = { { 0, "POSITION", gli::FORMAT_RGB32_SFLOAT_PACK32, sizeof(glm::vec3) + sizeof(glm::vec2), 0 },
+                   { 0, "TEXCOORD", gli::FORMAT_RG32_SFLOAT_PACK32, sizeof(glm::vec3) + sizeof(glm::vec2),
+                     sizeof(glm::vec3) } },
         .color_formats = { swapchain_->GetFormat() },
         .depth_stencil_desc = depth_stencil_desc,
     };
@@ -291,14 +298,9 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, const NativeSurface
         command_list->BeginRenderPass(render_pass_desc);
         command_list->SetViewport(0, 0, app_size.width(), app_size.height(), 0.0, 1.0);
         command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
-        for (size_t j = 0; j < fullscreen_triangle_render_model_.GetMeshCount(); ++j) {
-            const auto& mesh = fullscreen_triangle_render_model_.GetMesh(j);
-            command_list->BindBindingSet(binding_set_);
-            command_list->IASetIndexBuffer(mesh.indices.buffer, mesh.indices.offset, mesh.index_format);
-            command_list->IASetVertexBuffer(kPositions, mesh.positions.buffer, mesh.positions.offset);
-            command_list->IASetVertexBuffer(kTexcoords, mesh.texcoords.buffer, mesh.texcoords.offset);
-            command_list->DrawIndexed(mesh.index_count, 1, 0, 0, 0);
-        }
+        command_list->BindBindingSet(binding_set_);
+        command_list->IASetVertexBuffer(0, fullscreen_triangle_vertex_buffer_, 0);
+        command_list->Draw(3, 1, 0, 0);
         command_list->EndRenderPass();
 
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });

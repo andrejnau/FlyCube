@@ -3,6 +3,7 @@
 #include "BindingSetLayout/DXBindingSetLayout.h"
 #include "Device/DXDevice.h"
 #include "Pipeline/DXStateBuilder.h"
+#include "Utilities/Check.h"
 #include "Utilities/NotReached.h"
 #include "View/DXView.h"
 
@@ -10,6 +11,8 @@
 #include <gli/gli.hpp>
 
 #include <cctype>
+
+namespace {
 
 CD3DX12_RASTERIZER_DESC GetRasterizerDesc(const GraphicsPipelineDesc& desc)
 {
@@ -180,6 +183,20 @@ DXGI_SAMPLE_DESC GetSampleDesc(const GraphicsPipelineDesc& desc)
     return { desc.sample_count, 0 };
 }
 
+std::pair<std::string, uint32_t> SplitSemanticName(std::string semantic_name)
+{
+    uint32_t semantic_index = 0;
+    uint32_t pow = 1;
+    while (!semantic_name.empty() && std::isdigit(semantic_name.back())) {
+        semantic_index = (semantic_name.back() - '0') * pow + semantic_index;
+        semantic_name.pop_back();
+        pow *= 10;
+    }
+    return { semantic_name, semantic_index };
+}
+
+} // namespace
+
 DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineDesc& desc)
     : device_(device)
     , desc_(desc)
@@ -188,6 +205,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
 
     decltype(auto) dx_layout = desc_.layout->As<DXBindingSetLayout>();
     root_signature_ = dx_layout.GetRootSignature();
+    std::deque<std::string> semantic_names;
     for (const auto& shader : desc_.shaders) {
         decltype(auto) blob = shader->GetBlob();
         D3D12_SHADER_BYTECODE shader_bytecode = { blob.data(), blob.size() };
@@ -195,7 +213,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
         switch (shader->GetType()) {
         case ShaderType::kVertex: {
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_VS>(shader_bytecode);
-            ParseInputLayout(shader);
+            ParseInputLayout(semantic_names);
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT>(GetInputLayoutDesc());
             graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT>(GetDSVFormat(desc));
             break;
@@ -232,26 +250,27 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     CHECK_HRESULT(device2->CreatePipelineState(&pipeline_desc, IID_PPV_ARGS(&pipeline_state_)));
 }
 
-void DXGraphicsPipeline::ParseInputLayout(const std::shared_ptr<Shader>& shader)
+void DXGraphicsPipeline::ParseInputLayout(std::deque<std::string>& semantic_names)
 {
-    for (auto& vertex : desc_.input) {
-        D3D12_INPUT_ELEMENT_DESC layout = {};
-        std::string semantic_name = vertex.semantic_name;
-        uint32_t semantic_slot = 0;
-        uint32_t pow = 1;
-        while (!semantic_name.empty() && std::isdigit(semantic_name.back())) {
-            semantic_slot = (semantic_name.back() - '0') * pow + semantic_slot;
-            semantic_name.pop_back();
-            pow *= 10;
+    for (const auto& vertex : desc_.input) {
+        if (!input_layout_stride_.contains(vertex.slot)) {
+            input_layout_stride_[vertex.slot] = vertex.stride;
+        } else {
+            CHECK(input_layout_stride_[vertex.slot] == vertex.stride);
         }
-        input_layout_stride_[vertex.slot] = vertex.stride;
-        input_layout_desc_names_[vertex.slot] = semantic_name;
-        layout.SemanticName = input_layout_desc_names_[vertex.slot].c_str();
-        layout.SemanticIndex = semantic_slot;
-        layout.InputSlot = vertex.slot;
-        layout.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-        layout.InstanceDataStepRate = 0;
-        layout.Format = static_cast<DXGI_FORMAT>(gli::dx().translate(vertex.format).DXGIFormat.DDS);
+
+        auto [semantic_name, semantic_index] = SplitSemanticName(vertex.semantic_name);
+        semantic_names.emplace_back(semantic_name);
+
+        D3D12_INPUT_ELEMENT_DESC layout = {
+            .SemanticName = semantic_names.back().c_str(),
+            .SemanticIndex = semantic_index,
+            .Format = static_cast<DXGI_FORMAT>(gli::dx().translate(vertex.format).DXGIFormat.DDS),
+            .InputSlot = vertex.slot,
+            .AlignedByteOffset = vertex.offset,
+            .InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+            .InstanceDataStepRate = 0,
+        };
         input_layout_desc_.push_back(layout);
     }
 }

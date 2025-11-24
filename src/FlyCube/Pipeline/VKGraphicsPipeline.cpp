@@ -1,9 +1,8 @@
 #include "Pipeline/VKGraphicsPipeline.h"
 
 #include "Device/VKDevice.h"
+#include "Utilities/Check.h"
 #include "Utilities/NotReached.h"
-
-#include <map>
 
 namespace {
 
@@ -234,14 +233,23 @@ PipelineType VKGraphicsPipeline::GetPipelineType() const
 
 void VKGraphicsPipeline::CreateInputLayout(const std::shared_ptr<Shader>& shader)
 {
-    for (auto& vertex : desc_.input) {
-        decltype(auto) binding = binding_desc_.emplace_back();
-        decltype(auto) attribute = attribute_desc_.emplace_back();
+    std::map<size_t, uint32_t> input_layout_stride;
+    for (const auto& vertex : desc_.input) {
+        if (!input_layout_stride.contains(vertex.slot)) {
+            vk::VertexInputBindingDescription& binding = binding_desc_.emplace_back();
+            binding.binding = vertex.slot;
+            binding.stride = vertex.stride;
+            binding.inputRate = vk::VertexInputRate::eVertex;
+            input_layout_stride[vertex.slot] = vertex.stride;
+        } else {
+            CHECK(input_layout_stride[vertex.slot] == vertex.stride);
+        }
+
+        vk::VertexInputAttributeDescription& attribute = attribute_desc_.emplace_back();
         attribute.location = shader->GetInputLayoutLocation(vertex.semantic_name);
-        attribute.binding = binding.binding = vertex.slot;
-        binding.inputRate = vk::VertexInputRate::eVertex;
-        binding.stride = vertex.stride;
+        attribute.binding = vertex.slot;
         attribute.format = static_cast<vk::Format>(vertex.format);
+        attribute.offset = vertex.offset;
     }
 }
 

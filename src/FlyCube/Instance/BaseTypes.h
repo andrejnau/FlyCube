@@ -291,10 +291,11 @@ struct InputLayoutDesc {
     std::string semantic_name;
     gli::format format = gli::format::FORMAT_UNDEFINED;
     uint32_t stride = 0;
+    uint32_t offset = 0;
 
     auto MakeTie() const
     {
-        return std::tie(slot, semantic_name, format, stride);
+        return std::tie(slot, semantic_name, format, stride, offset);
     }
 };
 
