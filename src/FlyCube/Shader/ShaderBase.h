@@ -15,7 +15,6 @@ public:
     const BindKey& GetBindKey(const std::string& name) const override;
     const std::vector<ResourceBindingDesc>& GetResourceBindings() const override;
     const ResourceBindingDesc& GetResourceBinding(const BindKey& bind_key) const override;
-    const std::vector<InputLayoutDesc>& GetInputLayouts() const override;
     uint32_t GetInputLayoutLocation(const std::string& semantic_name) const override;
     const std::vector<BindKey>& GetBindings() const override;
     const std::shared_ptr<ShaderReflection>& GetReflection() const override;
@@ -29,7 +28,6 @@ protected:
     std::vector<BindKey> binding_keys_;
     std::map<BindKey, size_t> mapping_;
     std::map<std::string, BindKey> bind_keys_;
-    std::vector<InputLayoutDesc> input_layout_descs_;
     std::map<std::string, uint32_t> locations_;
     std::shared_ptr<ShaderReflection> reflection_;
 };

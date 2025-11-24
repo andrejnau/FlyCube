@@ -26,13 +26,8 @@ ShaderBase::ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_typ
     }
 
     decltype(auto) input_parameters = reflection_->GetInputParameters();
-    for (uint32_t i = 0; i < input_parameters.size(); ++i) {
-        decltype(auto) layout = input_layout_descs_.emplace_back();
-        layout.slot = i;
-        layout.semantic_name = input_parameters[i].semantic_name;
-        layout.format = input_parameters[i].format;
-        layout.stride = gli::detail::bits_per_pixel(layout.format) / 8;
-        locations_[input_parameters[i].semantic_name] = input_parameters[i].location;
+    for (const auto& input_parameter : input_parameters) {
+        locations_[input_parameter.semantic_name] = input_parameter.location;
     }
 
     for (const auto& entry_point : reflection_->GetEntryPoints()) {
@@ -69,11 +64,6 @@ const ResourceBindingDesc& ShaderBase::GetResourceBinding(const BindKey& bind_ke
 {
     size_t index = mapping_.at(bind_key);
     return bindings_.at(index);
-}
-
-const std::vector<InputLayoutDesc>& ShaderBase::GetInputLayouts() const
-{
-    return input_layout_descs_;
 }
 
 uint32_t ShaderBase::GetInputLayoutLocation(const std::string& semantic_name) const
