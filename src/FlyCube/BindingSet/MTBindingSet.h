@@ -1,5 +1,5 @@
 #pragma once
-#include "BindingSet/BindingSet.h"
+#include "BindingSet/BindingSetBase.h"
 
 #import <Metal/Metal.h>
 
@@ -11,7 +11,7 @@ class MTDevice;
 class MTBindingSetLayout;
 class Pipeline;
 
-class MTBindingSet : public BindingSet {
+class MTBindingSet : public BindingSetBase {
 public:
     MTBindingSet(MTDevice& device, const std::shared_ptr<MTBindingSetLayout>& layout);
 

@@ -68,6 +68,7 @@ void VKBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bin
         }
     } else {
         for (const auto& [bind_key, view] : fallback_constants_buffer_views_) {
+            assert(bind_key.count == 1);
             add_descriptor({ bind_key, view });
         }
         UpdateConstantsFallbackBuffer(constants);
