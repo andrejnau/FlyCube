@@ -3,6 +3,8 @@
 #include "Utilities/Common.h"
 #include "Utilities/NotReached.h"
 
+#include <string>
+
 namespace {
 
 ShaderKind ConvertShaderKind(spv::ExecutionModel execution_model)
@@ -37,6 +39,21 @@ ShaderKind ConvertShaderKind(spv::ExecutionModel execution_model)
     }
 }
 
+std::string FixSemanticName(std::string semantic_name)
+{
+    uint32_t semantic_index = 0;
+    uint32_t pow = 1;
+    while (!semantic_name.empty() && std::isdigit(semantic_name.back())) {
+        semantic_index = (semantic_name.back() - '0') * pow + semantic_index;
+        semantic_name.pop_back();
+        pow *= 10;
+    }
+    if (semantic_index > 0) {
+        semantic_name += std::to_string(semantic_index);
+    }
+    return semantic_name;
+}
+
 std::vector<InputParameterDesc> ParseInputParameters(const spirv_cross::Compiler& compiler)
 {
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
@@ -44,10 +61,8 @@ std::vector<InputParameterDesc> ParseInputParameters(const spirv_cross::Compiler
     for (const auto& resource : resources.stage_inputs) {
         decltype(auto) input = input_parameters.emplace_back();
         input.location = compiler.get_decoration(resource.id, spv::DecorationLocation);
-        input.semantic_name = compiler.get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE);
-        if (!input.semantic_name.empty() && input.semantic_name.back() == '0') {
-            input.semantic_name.pop_back();
-        }
+        input.semantic_name =
+            FixSemanticName(compiler.get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE));
         decltype(auto) type = compiler.get_type(resource.base_type_id);
         if (type.basetype == spirv_cross::SPIRType::Float) {
             if (type.vecsize == 1) {
