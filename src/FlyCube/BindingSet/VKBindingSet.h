@@ -4,6 +4,10 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <map>
+#include <memory>
+#include <vector>
+
 class VKDevice;
 class VKBindingSetLayout;
 
@@ -22,4 +26,7 @@ private:
     std::vector<DescriptorSetPool> descriptors_;
     std::vector<vk::DescriptorSet> descriptor_sets_;
     std::shared_ptr<VKBindingSetLayout> layout_;
+    std::shared_ptr<Resource> constants_fallback_buffer_;
+    std::map<BindKey, uint64_t> constants_fallback_buffer_offsets_;
+    std::map<BindKey, std::shared_ptr<View>> constants_fallback_buffer_views_;
 };

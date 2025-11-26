@@ -20,6 +20,29 @@ VKBindingSet::VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetL
             descriptor_sets_.emplace_back(descriptors_.back().set.get());
         }
     }
+
+    if (!device_.IsInlineUniformBlockSupported()) {
+        uint64_t num_bytes = 0;
+        decltype(auto) constants = layout_->GetConstants();
+        for (const auto& [bind_key, size] : constants) {
+            num_bytes += size;
+        }
+
+        constants_fallback_buffer_ =
+            device_.CreateBuffer(MemoryType::kUpload, { .size = num_bytes, .usage = BindFlag::kConstantBuffer });
+
+        num_bytes = 0;
+        for (const auto& [bind_key, size] : constants) {
+            constants_fallback_buffer_offsets_[bind_key] = num_bytes;
+            ViewDesc view_desc = {
+                .view_type = ViewType::kConstantBuffer,
+                .dimension = ViewDimension::kBuffer,
+                .offset = num_bytes,
+            };
+            constants_fallback_buffer_views_[bind_key] = device_.CreateView(constants_fallback_buffer_, view_desc);
+            num_bytes += size;
+        }
+    }
 }
 
 void VKBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
@@ -31,7 +54,7 @@ void VKBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bin
                                              const std::vector<BindingConstantsData>& constants)
 {
     std::vector<vk::WriteDescriptorSet> descriptors;
-    for (const auto& binding : bindings) {
+    auto add_descriptor = [&](const BindingDesc& binding) {
         decltype(auto) vk_view = binding.view->As<VKView>();
         vk::WriteDescriptorSet descriptor = vk_view.GetDescriptor();
         descriptor.descriptorType = GetDescriptorType(binding.bind_key.view_type);
@@ -42,20 +65,34 @@ void VKBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bin
         if (descriptor.pImageInfo || descriptor.pBufferInfo || descriptor.pTexelBufferView || descriptor.pNext) {
             descriptors.emplace_back(descriptor);
         }
+    };
+
+    for (const auto& binding : bindings) {
+        add_descriptor(binding);
     }
 
-    for (const auto& [bind_key, data] : constants) {
-        vk::WriteDescriptorSetInlineUniformBlock write_descriptor_set_inline_uniform_block = {};
-        write_descriptor_set_inline_uniform_block.dataSize = data.size();
-        write_descriptor_set_inline_uniform_block.pData = data.data();
+    if (device_.IsInlineUniformBlockSupported()) {
+        for (const auto& [bind_key, data] : constants) {
+            vk::WriteDescriptorSetInlineUniformBlock write_descriptor_set_inline_uniform_block = {};
+            write_descriptor_set_inline_uniform_block.dataSize = data.size();
+            write_descriptor_set_inline_uniform_block.pData = data.data();
 
-        vk::WriteDescriptorSet descriptor = {};
-        descriptor.descriptorType = vk::DescriptorType::eInlineUniformBlock;
-        descriptor.dstSet = descriptor_sets_[bind_key.space];
-        descriptor.dstBinding = bind_key.slot;
-        descriptor.descriptorCount = data.size();
-        descriptor.pNext = &write_descriptor_set_inline_uniform_block;
-        descriptors.emplace_back(descriptor);
+            vk::WriteDescriptorSet descriptor = {};
+            descriptor.descriptorType = vk::DescriptorType::eInlineUniformBlock;
+            descriptor.dstSet = descriptor_sets_[bind_key.space];
+            descriptor.dstBinding = bind_key.slot;
+            descriptor.descriptorCount = data.size();
+            descriptor.pNext = &write_descriptor_set_inline_uniform_block;
+            descriptors.emplace_back(descriptor);
+        }
+    } else {
+        for (const auto& [bind_key, view] : constants_fallback_buffer_views_) {
+            add_descriptor({ bind_key, view });
+        }
+        for (const auto& [bind_key, data] : constants) {
+            constants_fallback_buffer_->UpdateUploadBuffer(constants_fallback_buffer_offsets_.at(bind_key), data.data(),
+                                                           data.size());
+        }
     }
 
     if (!descriptors.empty()) {
