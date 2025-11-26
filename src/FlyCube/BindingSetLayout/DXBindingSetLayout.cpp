@@ -77,6 +77,7 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
                                        const std::vector<BindKey>& bind_keys,
                                        const std::vector<BindingConstants>& constants)
     : device_(device)
+    , constants_(constants)
 {
     std::vector<D3D12_ROOT_PARAMETER> root_parameters;
     using RootKey = std::pair<D3D12_DESCRIPTOR_HEAP_TYPE, ShaderType>;
@@ -191,4 +192,9 @@ const std::map<uint32_t, DescriptorTableDesc>& DXBindingSetLayout::GetDescriptor
 const ComPtr<ID3D12RootSignature>& DXBindingSetLayout::GetRootSignature() const
 {
     return root_signature_;
+}
+
+const std::vector<BindingConstants>& DXBindingSetLayout::GetConstants() const
+{
+    return constants_;
 }

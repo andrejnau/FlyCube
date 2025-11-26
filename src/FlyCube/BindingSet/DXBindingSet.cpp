@@ -15,24 +15,34 @@ DXBindingSet::DXBindingSet(DXDevice& device, const std::shared_ptr<DXBindingSetL
         descriptor_ranges_.emplace(std::piecewise_construct, std::forward_as_tuple(desc.first),
                                    std::forward_as_tuple(heap_range));
     }
+
+    CreateConstantsFallbackBuffer(device_, layout->GetConstants());
 }
 
 void DXBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
 {
-    for (const auto& binding : bindings) {
-        if (!binding.view) {
-            continue;
-        }
-        decltype(auto) binding_layout = layout_->GetLayout().at(binding.bind_key);
-        std::shared_ptr<DXGPUDescriptorPoolRange> heap_range = descriptor_ranges_.at(binding_layout.heap_type);
-        decltype(auto) src_cpu_handle = binding.view->As<DXView>().GetHandle();
-        heap_range->CopyCpuHandle(binding_layout.heap_offset, src_cpu_handle);
-    }
+    WriteBindingsAndConstants(bindings, {});
 }
 
 void DXBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bindings,
                                              const std::vector<BindingConstantsData>& constants)
 {
+    auto write_descriptor = [&](const BindingDesc& binding) {
+        decltype(auto) binding_layout = layout_->GetLayout().at(binding.bind_key);
+        std::shared_ptr<DXGPUDescriptorPoolRange> heap_range = descriptor_ranges_.at(binding_layout.heap_type);
+        decltype(auto) src_cpu_handle = binding.view->As<DXView>().GetHandle();
+        heap_range->CopyCpuHandle(binding_layout.heap_offset, src_cpu_handle);
+    };
+
+    for (const auto& binding : bindings) {
+        write_descriptor(binding);
+    }
+
+    for (const auto& [bind_key, view] : fallback_constants_buffer_views_) {
+        assert(bind_key.count == 1);
+        write_descriptor({ bind_key, view });
+    }
+    UpdateConstantsFallbackBuffer(constants);
 }
 
 void SetRootDescriptorTable(const ComPtr<ID3D12GraphicsCommandList>& command_list,
