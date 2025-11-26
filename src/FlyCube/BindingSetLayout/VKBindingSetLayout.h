@@ -7,7 +7,9 @@ class VKDevice;
 
 class VKBindingSetLayout : public BindingSetLayout {
 public:
-    VKBindingSetLayout(VKDevice& device, const std::vector<BindKey>& bind_keys);
+    VKBindingSetLayout(VKDevice& device,
+                       const std::vector<BindKey>& bind_keys,
+                       const std::vector<BindingConstants>& constants);
 
     const std::map<uint32_t, vk::DescriptorType>& GetBindlessType() const;
     const std::vector<vk::UniqueDescriptorSetLayout>& GetDescriptorSetLayouts() const;
