@@ -131,9 +131,9 @@ std::shared_ptr<View> MTDevice::CreateView(const std::shared_ptr<Resource>& reso
     return std::make_shared<MTView>(*this, std::static_pointer_cast<MTResource>(resource), view_desc);
 }
 
-std::shared_ptr<BindingSetLayout> MTDevice::CreateBindingSetLayout(const std::vector<BindKey>& descs)
+std::shared_ptr<BindingSetLayout> MTDevice::CreateBindingSetLayout(const std::vector<BindKey>& bind_keys)
 {
-    return std::make_shared<MTBindingSetLayout>(*this, descs);
+    return std::make_shared<MTBindingSetLayout>(*this, bind_keys);
 }
 
 std::shared_ptr<BindingSet> MTDevice::CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout)

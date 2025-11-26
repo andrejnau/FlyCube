@@ -73,7 +73,7 @@ D3D12_DESCRIPTOR_HEAP_TYPE GetHeapType(ViewType view_type)
     }
 }
 
-DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindKey>& descs)
+DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindKey>& bind_keys)
     : device_(device)
 {
     std::vector<D3D12_ROOT_PARAMETER> root_parameters;
@@ -115,7 +115,7 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const std::vector<BindK
         }
     };
 
-    for (const auto& bind_key : descs) {
+    for (const auto& bind_key : bind_keys) {
         if (bind_key.count == kBindlessCount) {
             add_bindless_range(bind_key.shader_type, bind_key.view_type, bind_key.slot, bind_key.space);
             continue;

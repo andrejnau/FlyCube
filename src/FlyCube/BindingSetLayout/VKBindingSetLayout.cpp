@@ -53,13 +53,13 @@ vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
     }
 }
 
-VKBindingSetLayout::VKBindingSetLayout(VKDevice& device, const std::vector<BindKey>& descs)
+VKBindingSetLayout::VKBindingSetLayout(VKDevice& device, const std::vector<BindKey>& bind_keys)
 {
     std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> bindings_by_set;
     std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>> bindings_flags_by_set;
     std::map<uint32_t, std::set<uint32_t>> used_bindings_by_set;
 
-    for (const auto& bind_key : descs) {
+    for (const auto& bind_key : bind_keys) {
         assert(!used_bindings_by_set[bind_key.space].contains(bind_key.slot));
         used_bindings_by_set[bind_key.space].insert(bind_key.slot);
 
