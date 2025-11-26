@@ -277,6 +277,8 @@ VKDevice::VKDevice(VKAdapter& adapter)
         assert(query_device_vulkan13_features.dynamicRendering);
         device_vulkan13_features.dynamicRendering = true;
         device_vulkan13_features.inlineUniformBlock = query_device_vulkan13_features.inlineUniformBlock;
+
+        inline_uniform_block_supported_ = device_vulkan13_features.inlineUniformBlock;
         add_extension(device_vulkan13_features);
     } else {
         assert(enabled_extension_set.contains(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME));

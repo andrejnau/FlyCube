@@ -10,19 +10,25 @@ VKBindingSet::VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetL
 {
     decltype(auto) bindless_type = layout_->GetBindlessType();
     decltype(auto) descriptor_set_layouts = layout_->GetDescriptorSetLayouts();
-    decltype(auto) descriptor_count_by_set = layout_->GetDescriptorCountBySet();
+    decltype(auto) allocate_descriptor_set_descs = layout_->GetAllocateDescriptorSetDescs();
     for (size_t i = 0; i < descriptor_set_layouts.size(); ++i) {
         if (bindless_type.contains(i)) {
             descriptor_sets_.emplace_back(device_.GetGPUBindlessDescriptorPool(bindless_type.at(i)).GetDescriptorSet());
         } else {
             descriptors_.emplace_back(device_.GetGPUDescriptorPool().AllocateDescriptorSet(
-                descriptor_set_layouts[i].get(), descriptor_count_by_set[i]));
+                descriptor_set_layouts[i].get(), allocate_descriptor_set_descs[i]));
             descriptor_sets_.emplace_back(descriptors_.back().set.get());
         }
     }
 }
 
 void VKBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
+{
+    WriteBindingsAndConstants(bindings, {});
+}
+
+void VKBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bindings,
+                                             const std::vector<BindingConstantsData>& constants)
 {
     std::vector<vk::WriteDescriptorSet> descriptors;
     for (const auto& binding : bindings) {
@@ -36,6 +42,20 @@ void VKBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
         if (descriptor.pImageInfo || descriptor.pBufferInfo || descriptor.pTexelBufferView || descriptor.pNext) {
             descriptors.emplace_back(descriptor);
         }
+    }
+
+    for (const auto& [bind_key, data] : constants) {
+        vk::WriteDescriptorSetInlineUniformBlock write_descriptor_set_inline_uniform_block = {};
+        write_descriptor_set_inline_uniform_block.dataSize = data.size();
+        write_descriptor_set_inline_uniform_block.pData = data.data();
+
+        vk::WriteDescriptorSet descriptor = {};
+        descriptor.descriptorType = vk::DescriptorType::eInlineUniformBlock;
+        descriptor.dstSet = descriptor_sets_[bind_key.space];
+        descriptor.dstBinding = bind_key.slot;
+        descriptor.descriptorCount = data.size();
+        descriptor.pNext = &write_descriptor_set_inline_uniform_block;
+        descriptors.emplace_back(descriptor);
     }
 
     if (!descriptors.empty()) {
