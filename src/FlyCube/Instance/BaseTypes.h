@@ -706,3 +706,8 @@ struct WaylandSurface {
 };
 
 using NativeSurface = std::variant<Win32Surface, MetalSurface, AndroidSurface, XcbSurface, XlibSurface, WaylandSurface>;
+
+struct BindingConstants {
+    BindKey key;
+    uint32_t size = 0;
+};
