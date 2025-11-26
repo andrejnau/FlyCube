@@ -65,13 +65,13 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device,
         assert(!used_bindings_by_set[bind_key.space].contains(bind_key.slot));
         used_bindings_by_set[bind_key.space].insert(bind_key.slot);
 
-        decltype(auto) binding = bindings_by_set[bind_key.space].emplace_back();
+        auto& binding = bindings_by_set[bind_key.space].emplace_back();
         binding.binding = bind_key.slot;
         binding.descriptorType = GetDescriptorType(bind_key.view_type);
         binding.descriptorCount = bind_key.count;
         binding.stageFlags = ShaderType2Bit(bind_key.shader_type);
 
-        decltype(auto) binding_flag = bindings_flags_by_set[bind_key.space].emplace_back();
+        auto& binding_flag = bindings_flags_by_set[bind_key.space].emplace_back();
         if (bind_key.count == kBindlessCount) {
             binding.descriptorCount = device.GetMaxDescriptorSetBindings(binding.descriptorType);
             binding_flag = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
@@ -82,28 +82,46 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device,
         }
     }
 
-    for (const auto& set_desc : bindings_by_set) {
+    if (device.IsInlineUniformBlockSupported()) {
+        for (const auto& [bind_key, size] : constants) {
+            assert(bind_key.count == 1);
+            assert(!used_bindings_by_set[bind_key.space].contains(bind_key.slot));
+            used_bindings_by_set[bind_key.space].insert(bind_key.slot);
+
+            auto& binding = bindings_by_set[bind_key.space].emplace_back();
+            binding.binding = bind_key.slot;
+            binding.descriptorType = vk::DescriptorType::eInlineUniformBlock;
+            binding.descriptorCount = size;
+            binding.stageFlags = ShaderType2Bit(bind_key.shader_type);
+
+            bindings_flags_by_set[bind_key.space].emplace_back();
+        }
+    }
+
+    for (const auto& [set, bindings] : bindings_by_set) {
         vk::DescriptorSetLayoutCreateInfo layout_info = {};
-        layout_info.bindingCount = set_desc.second.size();
-        layout_info.pBindings = set_desc.second.data();
+        layout_info.bindingCount = bindings.size();
+        layout_info.pBindings = bindings.data();
 
         vk::DescriptorSetLayoutBindingFlagsCreateInfo layout_flags_info = {};
-        layout_flags_info.bindingCount = bindings_flags_by_set[set_desc.first].size();
-        layout_flags_info.pBindingFlags = bindings_flags_by_set[set_desc.first].data();
+        layout_flags_info.bindingCount = bindings_flags_by_set[set].size();
+        layout_flags_info.pBindingFlags = bindings_flags_by_set[set].data();
         layout_info.pNext = &layout_flags_info;
 
-        size_t set_num = set_desc.first;
-        if (descriptor_set_layouts_.size() <= set_num) {
-            descriptor_set_layouts_.resize(set_num + 1);
-            descriptor_count_by_set_.resize(set_num + 1);
+        if (descriptor_set_layouts_.size() <= set) {
+            descriptor_set_layouts_.resize(set + 1);
+            allocate_descriptor_set_descs_.resize(set + 1);
         }
 
-        decltype(auto) descriptor_set_layout = descriptor_set_layouts_[set_num];
+        auto& descriptor_set_layout = descriptor_set_layouts_[set];
         descriptor_set_layout = device.GetDevice().createDescriptorSetLayoutUnique(layout_info);
 
-        decltype(auto) descriptor_count = descriptor_count_by_set_[set_num];
-        for (const auto& binding : set_desc.second) {
-            descriptor_count[binding.descriptorType] += binding.descriptorCount;
+        auto& allocate_descriptor_set_desc = allocate_descriptor_set_descs_[set];
+        for (const auto& binding : bindings) {
+            allocate_descriptor_set_desc.count[binding.descriptorType] += binding.descriptorCount;
+            if (binding.descriptorType == vk::DescriptorType::eInlineUniformBlock) {
+                ++allocate_descriptor_set_desc.inline_uniform_block_bindings;
+            }
         }
     }
 
@@ -134,9 +152,9 @@ const std::vector<vk::UniqueDescriptorSetLayout>& VKBindingSetLayout::GetDescrip
     return descriptor_set_layouts_;
 }
 
-const std::vector<std::map<vk::DescriptorType, size_t>>& VKBindingSetLayout::GetDescriptorCountBySet() const
+const std::vector<AllocateDescriptorSetDesc>& VKBindingSetLayout::GetAllocateDescriptorSetDescs() const
 {
-    return descriptor_count_by_set_;
+    return allocate_descriptor_set_descs_;
 }
 
 vk::PipelineLayout VKBindingSetLayout::GetPipelineLayout() const

@@ -20,6 +20,8 @@ public:
     DXBindingSet(DXDevice& device, const std::shared_ptr<DXBindingSetLayout>& layout);
 
     void WriteBindings(const std::vector<BindingDesc>& bindings) override;
+    void WriteBindingsAndConstants(const std::vector<BindingDesc>& bindings,
+                                   const std::vector<BindingConstantsData>& constants) override;
 
     std::vector<ComPtr<ID3D12DescriptorHeap>> Apply(const ComPtr<ID3D12GraphicsCommandList>& command_list);
 

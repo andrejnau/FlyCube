@@ -76,6 +76,11 @@ void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
     }
 }
 
+void MTBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bindings,
+                                             const std::vector<BindingConstantsData>& constants)
+{
+}
+
 void MTBindingSet::Apply(const std::map<ShaderType, id<MTL4ArgumentTable>>& argument_tables,
                          const std::shared_ptr<Pipeline>& state,
                          id<MTLResidencySet> residency_set)

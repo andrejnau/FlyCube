@@ -1,8 +1,7 @@
 #pragma once
-#include <vulkan/vulkan.hpp>
+#include "BindingSetLayout/VKBindingSetLayout.h"
 
-#include <algorithm>
-#include <map>
+#include <vulkan/vulkan.hpp>
 
 class VKDevice;
 
@@ -13,12 +12,12 @@ struct DescriptorSetPool {
 
 class VKGPUDescriptorPool {
 public:
-    VKGPUDescriptorPool(VKDevice& device);
+    explicit VKGPUDescriptorPool(VKDevice& device);
     DescriptorSetPool AllocateDescriptorSet(const vk::DescriptorSetLayout& set_layout,
-                                            const std::map<vk::DescriptorType, size_t>& count);
+                                            const AllocateDescriptorSetDesc& desc);
 
 private:
-    vk::UniqueDescriptorPool CreateDescriptorPool(const std::map<vk::DescriptorType, size_t>& count);
+    vk::UniqueDescriptorPool CreateDescriptorPool(const AllocateDescriptorSetDesc& desc);
 
     VKDevice& device_;
 };

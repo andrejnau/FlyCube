@@ -30,6 +30,11 @@ void DXBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
     }
 }
 
+void DXBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bindings,
+                                             const std::vector<BindingConstantsData>& constants)
+{
+}
+
 void SetRootDescriptorTable(const ComPtr<ID3D12GraphicsCommandList>& command_list,
                             uint32_t root_parameter,
                             bool is_compute,

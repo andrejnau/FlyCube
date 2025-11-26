@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <span>
 #include <string>
 #include <tuple>
 #include <variant>
@@ -708,6 +709,11 @@ struct WaylandSurface {
 using NativeSurface = std::variant<Win32Surface, MetalSurface, AndroidSurface, XcbSurface, XlibSurface, WaylandSurface>;
 
 struct BindingConstants {
-    BindKey key;
+    BindKey bind_key;
     uint32_t size = 0;
+};
+
+struct BindingConstantsData {
+    BindKey bind_key;
+    std::span<uint8_t> data;
 };

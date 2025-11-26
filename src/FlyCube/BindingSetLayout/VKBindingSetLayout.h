@@ -5,6 +5,11 @@
 
 class VKDevice;
 
+struct AllocateDescriptorSetDesc {
+    std::map<vk::DescriptorType, size_t> count;
+    size_t inline_uniform_block_bindings = 0;
+};
+
 class VKBindingSetLayout : public BindingSetLayout {
 public:
     VKBindingSetLayout(VKDevice& device,
@@ -13,13 +18,13 @@ public:
 
     const std::map<uint32_t, vk::DescriptorType>& GetBindlessType() const;
     const std::vector<vk::UniqueDescriptorSetLayout>& GetDescriptorSetLayouts() const;
-    const std::vector<std::map<vk::DescriptorType, size_t>>& GetDescriptorCountBySet() const;
+    const std::vector<AllocateDescriptorSetDesc>& GetAllocateDescriptorSetDescs() const;
     vk::PipelineLayout GetPipelineLayout() const;
 
 private:
     std::map<uint32_t, vk::DescriptorType> bindless_type_;
     std::vector<vk::UniqueDescriptorSetLayout> descriptor_set_layouts_;
-    std::vector<std::map<vk::DescriptorType, size_t>> descriptor_count_by_set_;
+    std::vector<AllocateDescriptorSetDesc> allocate_descriptor_set_descs_;
     vk::UniquePipelineLayout pipeline_layout_;
 };
 

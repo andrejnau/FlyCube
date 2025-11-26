@@ -7,18 +7,18 @@ VKGPUDescriptorPool::VKGPUDescriptorPool(VKDevice& device)
 {
 }
 
-vk::UniqueDescriptorPool VKGPUDescriptorPool::CreateDescriptorPool(const std::map<vk::DescriptorType, size_t>& count)
+vk::UniqueDescriptorPool VKGPUDescriptorPool::CreateDescriptorPool(const AllocateDescriptorSetDesc& desc)
 {
     std::vector<vk::DescriptorPoolSize> pool_sizes;
-    for (auto& x : count) {
+    for (const auto& [type, count] : desc.count) {
         pool_sizes.emplace_back();
         vk::DescriptorPoolSize& pool_size = pool_sizes.back();
-        pool_size.type = x.first;
-        pool_size.descriptorCount = x.second;
+        pool_size.type = type;
+        pool_size.descriptorCount = count;
     }
 
     // TODO: fix me
-    if (count.empty()) {
+    if (pool_sizes.empty()) {
         pool_sizes.emplace_back();
         vk::DescriptorPoolSize& pool_size = pool_sizes.back();
         pool_size.type = vk::DescriptorType::eSampler;
@@ -31,14 +31,20 @@ vk::UniqueDescriptorPool VKGPUDescriptorPool::CreateDescriptorPool(const std::ma
     pool_info.maxSets = 1;
     pool_info.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 
+    vk::DescriptorPoolInlineUniformBlockCreateInfo descriptor_pool_inline_uniform_block_info = {};
+    descriptor_pool_inline_uniform_block_info.maxInlineUniformBlockBindings = desc.inline_uniform_block_bindings;
+    if (descriptor_pool_inline_uniform_block_info.maxInlineUniformBlockBindings > 0) {
+        pool_info.pNext = &descriptor_pool_inline_uniform_block_info;
+    }
+
     return device_.GetDevice().createDescriptorPoolUnique(pool_info);
 }
 
 DescriptorSetPool VKGPUDescriptorPool::AllocateDescriptorSet(const vk::DescriptorSetLayout& set_layout,
-                                                             const std::map<vk::DescriptorType, size_t>& count)
+                                                             const AllocateDescriptorSetDesc& desc)
 {
     DescriptorSetPool res = {};
-    res.pool = CreateDescriptorPool(count);
+    res.pool = CreateDescriptorPool(desc);
 
     vk::DescriptorSetAllocateInfo alloc_info = {};
     alloc_info.descriptorPool = res.pool.get();

@@ -51,8 +51,6 @@ private:
     uint64_t fence_value_ = 0;
     std::shared_ptr<Fence> fence_;
     RenderModel render_model_;
-    std::shared_ptr<Resource> vertex_constant_buffer_;
-    std::vector<std::shared_ptr<View>> vertex_constant_buffer_views_;
     std::vector<std::shared_ptr<View>> pixel_textures_views_;
     std::shared_ptr<Resource> pixel_anisotropic_sampler_;
     std::shared_ptr<View> pixel_anisotropic_sampler_view_;
@@ -60,10 +58,10 @@ private:
     std::vector<std::shared_ptr<View>> pixel_constant_buffer_views_;
     std::shared_ptr<Shader> vertex_shader_;
     std::shared_ptr<Shader> pixel_shader_;
-    std::shared_ptr<BindingSetLayout> layout_;
-    std::vector<std::shared_ptr<BindingSet>> binding_sets_;
 
     std::shared_ptr<Swapchain> swapchain_;
+    std::shared_ptr<BindingSetLayout> layout_;
+    std::vector<std::shared_ptr<BindingSet>> binding_sets_;
     std::shared_ptr<Resource> depth_stencil_texture_;
     std::shared_ptr<View> depth_stencil_view_;
     std::shared_ptr<Pipeline> pipeline_;
@@ -83,20 +81,6 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
 
     std::unique_ptr<Model> model = LoadModel("assets/ModelView/DamagedHelmet.gltf");
     render_model_ = RenderModel(device_, command_queue_, std::move(model));
-
-    vertex_constant_buffer_ = device_->CreateBuffer(
-        MemoryType::kUpload,
-        { .size = sizeof(glm::mat4) * render_model_.GetMeshCount(), .usage = BindFlag::kConstantBuffer });
-    vertex_constant_buffer_views_.resize(render_model_.GetMeshCount());
-    for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
-        ViewDesc vertex_constant_buffer_view_desc = {
-            .view_type = ViewType::kConstantBuffer,
-            .dimension = ViewDimension::kBuffer,
-            .offset = i * sizeof(glm::mat4),
-        };
-        vertex_constant_buffer_views_[i] =
-            device_->CreateView(vertex_constant_buffer_, vertex_constant_buffer_view_desc);
-    }
 
     pixel_textures_views_.resize(render_model_.GetMeshCount());
     for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
@@ -148,41 +132,6 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
                             blob_type);
     vertex_shader_ = device_->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     pixel_shader_ = device_->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
-
-    BindKey vertex_constant_buffer_key = vertex_shader_->GetBindKey("constant_buffer");
-    BindKey pixel_anisotropic_sampler_key = pixel_shader_->GetBindKey("anisotropic_sampler");
-    BindKey pixel_bindless_textures_key;
-    BindKey pixel_constant_buffer_key;
-    BindKey pixel_base_color_texture_key;
-
-    if (device_->IsBindlessSupported()) {
-        pixel_bindless_textures_key = pixel_shader_->GetBindKey("bindless_textures");
-        pixel_constant_buffer_key = pixel_shader_->GetBindKey("constant_buffer");
-        layout_ = device_->CreateBindingSetLayout({ vertex_constant_buffer_key, pixel_bindless_textures_key,
-                                                    pixel_anisotropic_sampler_key, pixel_constant_buffer_key });
-    } else {
-        pixel_base_color_texture_key = pixel_shader_->GetBindKey("base_color_texture");
-        layout_ = device_->CreateBindingSetLayout(
-            { vertex_constant_buffer_key, pixel_base_color_texture_key, pixel_anisotropic_sampler_key });
-    }
-
-    binding_sets_.resize(render_model_.GetMeshCount());
-    for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
-        binding_sets_[i] = device_->CreateBindingSet(layout_);
-        if (device_->IsBindlessSupported()) {
-            binding_sets_[i]->WriteBindings({
-                { vertex_constant_buffer_key, vertex_constant_buffer_views_[i] },
-                { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
-                { pixel_constant_buffer_key, pixel_constant_buffer_views_[i] },
-            });
-        } else {
-            binding_sets_[i]->WriteBindings({
-                { vertex_constant_buffer_key, vertex_constant_buffer_views_[i] },
-                { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
-                { pixel_base_color_texture_key, pixel_textures_views_[i] },
-            });
-        }
-    }
 }
 
 ModelViewRenderer::~ModelViewRenderer()
@@ -194,15 +143,45 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
 {
     swapchain_ = device_->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, settings_.vsync);
 
+    BindKey vertex_constant_buffer_key = vertex_shader_->GetBindKey("constant_buffer");
+    BindKey pixel_anisotropic_sampler_key = pixel_shader_->GetBindKey("anisotropic_sampler");
+    BindKey pixel_bindless_textures_key;
+    BindKey pixel_constant_buffer_key;
+    BindKey pixel_base_color_texture_key;
+
+    if (device_->IsBindlessSupported()) {
+        pixel_bindless_textures_key = pixel_shader_->GetBindKey("bindless_textures");
+        pixel_constant_buffer_key = pixel_shader_->GetBindKey("constant_buffer");
+        layout_ = device_->CreateBindingSetLayout(
+            { pixel_bindless_textures_key, pixel_anisotropic_sampler_key, pixel_constant_buffer_key },
+            { { vertex_constant_buffer_key, sizeof(glm::mat4) } });
+    } else {
+        pixel_base_color_texture_key = pixel_shader_->GetBindKey("base_color_texture");
+        layout_ = device_->CreateBindingSetLayout({ pixel_base_color_texture_key, pixel_anisotropic_sampler_key },
+                                                  { { vertex_constant_buffer_key, sizeof(glm::mat4) } });
+    }
+
     glm::mat4 view = GetViewMatrix();
     glm::mat4 projection = GetProjectionMatrix(app_size.width(), app_size.height());
 
-    std::vector<glm::mat4> vertex_constant_data(render_model_.GetMeshCount());
+    binding_sets_.resize(render_model_.GetMeshCount());
     for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
-        vertex_constant_data[i] = glm::transpose(projection * view * render_model_.GetMesh(i).matrix);
+        binding_sets_[i] = device_->CreateBindingSet(layout_);
+
+        glm::mat4 mvp = glm::transpose(projection * view * render_model_.GetMesh(i).matrix);
+        std::span<uint8_t> data(reinterpret_cast<uint8_t*>(&mvp), sizeof(mvp));
+        if (device_->IsBindlessSupported()) {
+            binding_sets_[i]->WriteBindingsAndConstants(
+                { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
+                  { pixel_constant_buffer_key, pixel_constant_buffer_views_[i] } },
+                { { vertex_constant_buffer_key, data } });
+        } else {
+            binding_sets_[i]->WriteBindingsAndConstants(
+                { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
+                  { pixel_base_color_texture_key, pixel_textures_views_[i] } },
+                { { vertex_constant_buffer_key, data } });
+        }
     }
-    vertex_constant_buffer_->UpdateUploadBuffer(0, vertex_constant_data.data(),
-                                                sizeof(vertex_constant_data.front()) * vertex_constant_data.size());
 
     TextureDesc depth_stencil_texture_desc = {
         .type = TextureType::k2D,
