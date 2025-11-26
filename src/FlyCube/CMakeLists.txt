@@ -20,6 +20,8 @@ list(APPEND BindingSet
     $<$<BOOL:${VULKAN_SUPPORT}>:BindingSet/VKBindingSet.cpp>
     $<$<BOOL:${VULKAN_SUPPORT}>:BindingSet/VKBindingSet.h>
     BindingSet/BindingSet.h
+    BindingSet/BindingSetBase.cpp
+    BindingSet/BindingSetBase.h
 )
 
 list(APPEND BindingSetLayout
