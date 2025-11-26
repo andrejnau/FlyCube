@@ -35,6 +35,7 @@ public:
     const std::map<BindKey, BindingLayout>& GetLayout() const;
     const std::map<uint32_t, DescriptorTableDesc>& GetDescriptorTables() const;
     const ComPtr<ID3D12RootSignature>& GetRootSignature() const;
+    const std::vector<BindingConstants>& GetConstants() const;
 
 private:
     DXDevice& device_;
@@ -42,4 +43,5 @@ private:
     std::map<BindKey, BindingLayout> layout_;
     std::map<uint32_t, DescriptorTableDesc> descriptor_tables_;
     ComPtr<ID3D12RootSignature> root_signature_;
+    std::vector<BindingConstants> constants_;
 };

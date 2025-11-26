@@ -1,5 +1,5 @@
 #pragma once
-#include "BindingSet/BindingSet.h"
+#include "BindingSet/BindingSetBase.h"
 
 #if defined(_WIN32)
 #include <wrl.h>
@@ -15,7 +15,7 @@ class DXDevice;
 class DXBindingSetLayout;
 class DXGPUDescriptorPoolRange;
 
-class DXBindingSet : public BindingSet {
+class DXBindingSet : public BindingSetBase {
 public:
     DXBindingSet(DXDevice& device, const std::shared_ptr<DXBindingSetLayout>& layout);
 
