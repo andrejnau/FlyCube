@@ -2,13 +2,13 @@
 
 #include "Device/MTDevice.h"
 
-MTBindingSetLayout::MTBindingSetLayout(MTDevice& device, const std::vector<BindKey>& descs)
+MTBindingSetLayout::MTBindingSetLayout(MTDevice& device, const std::vector<BindKey>& bind_keys)
     : device_(device)
-    , descs_(descs)
+    , bind_keys_(bind_keys)
 {
 }
 
 const std::vector<BindKey>& MTBindingSetLayout::GetBindKeys() const
 {
-    return descs_;
+    return bind_keys_;
 }

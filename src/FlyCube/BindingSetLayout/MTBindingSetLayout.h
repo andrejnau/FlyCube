@@ -5,11 +5,11 @@ class MTDevice;
 
 class MTBindingSetLayout : public BindingSetLayout {
 public:
-    MTBindingSetLayout(MTDevice& device, const std::vector<BindKey>& descs);
+    MTBindingSetLayout(MTDevice& device, const std::vector<BindKey>& bind_keys);
 
     const std::vector<BindKey>& GetBindKeys() const;
 
 private:
     MTDevice& device_;
-    std::vector<BindKey> descs_;
+    std::vector<BindKey> bind_keys_;
 };
