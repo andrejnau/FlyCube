@@ -56,6 +56,7 @@ vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
 VKBindingSetLayout::VKBindingSetLayout(VKDevice& device,
                                        const std::vector<BindKey>& bind_keys,
                                        const std::vector<BindingConstants>& constants)
+    : constants_(constants)
 {
     std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> bindings_by_set;
     std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>> bindings_flags_by_set;
@@ -82,20 +83,23 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device,
         }
     }
 
-    if (device.IsInlineUniformBlockSupported()) {
-        for (const auto& [bind_key, size] : constants) {
-            assert(bind_key.count == 1);
-            assert(!used_bindings_by_set[bind_key.space].contains(bind_key.slot));
-            used_bindings_by_set[bind_key.space].insert(bind_key.slot);
+    for (const auto& [bind_key, size] : constants) {
+        assert(bind_key.count == 1);
+        assert(!used_bindings_by_set[bind_key.space].contains(bind_key.slot));
+        used_bindings_by_set[bind_key.space].insert(bind_key.slot);
 
-            auto& binding = bindings_by_set[bind_key.space].emplace_back();
-            binding.binding = bind_key.slot;
+        auto& binding = bindings_by_set[bind_key.space].emplace_back();
+        binding.binding = bind_key.slot;
+        if (device.IsInlineUniformBlockSupported()) {
             binding.descriptorType = vk::DescriptorType::eInlineUniformBlock;
             binding.descriptorCount = size;
-            binding.stageFlags = ShaderType2Bit(bind_key.shader_type);
-
-            bindings_flags_by_set[bind_key.space].emplace_back();
+        } else {
+            binding.descriptorType = GetDescriptorType(bind_key.view_type);
+            binding.descriptorCount = 1;
         }
+        binding.stageFlags = ShaderType2Bit(bind_key.shader_type);
+
+        bindings_flags_by_set[bind_key.space].emplace_back();
     }
 
     for (const auto& [set, bindings] : bindings_by_set) {
@@ -155,6 +159,11 @@ const std::vector<vk::UniqueDescriptorSetLayout>& VKBindingSetLayout::GetDescrip
 const std::vector<AllocateDescriptorSetDesc>& VKBindingSetLayout::GetAllocateDescriptorSetDescs() const
 {
     return allocate_descriptor_set_descs_;
+}
+
+const std::vector<BindingConstants>& VKBindingSetLayout::GetConstants() const
+{
+    return constants_;
 }
 
 vk::PipelineLayout VKBindingSetLayout::GetPipelineLayout() const
