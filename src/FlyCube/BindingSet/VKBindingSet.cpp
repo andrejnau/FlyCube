@@ -22,26 +22,7 @@ VKBindingSet::VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetL
     }
 
     if (!device_.IsInlineUniformBlockSupported()) {
-        uint64_t num_bytes = 0;
-        decltype(auto) constants = layout_->GetConstants();
-        for (const auto& [bind_key, size] : constants) {
-            num_bytes += size;
-        }
-
-        constants_fallback_buffer_ =
-            device_.CreateBuffer(MemoryType::kUpload, { .size = num_bytes, .usage = BindFlag::kConstantBuffer });
-
-        num_bytes = 0;
-        for (const auto& [bind_key, size] : constants) {
-            constants_fallback_buffer_offsets_[bind_key] = num_bytes;
-            ViewDesc view_desc = {
-                .view_type = ViewType::kConstantBuffer,
-                .dimension = ViewDimension::kBuffer,
-                .offset = num_bytes,
-            };
-            constants_fallback_buffer_views_[bind_key] = device_.CreateView(constants_fallback_buffer_, view_desc);
-            num_bytes += size;
-        }
+        CreateConstantsFallbackBuffer(device_, layout_->GetConstants());
     }
 }
 
@@ -86,13 +67,10 @@ void VKBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bin
             descriptors.emplace_back(descriptor);
         }
     } else {
-        for (const auto& [bind_key, view] : constants_fallback_buffer_views_) {
+        for (const auto& [bind_key, view] : fallback_constants_buffer_views_) {
             add_descriptor({ bind_key, view });
         }
-        for (const auto& [bind_key, data] : constants) {
-            constants_fallback_buffer_->UpdateUploadBuffer(constants_fallback_buffer_offsets_.at(bind_key), data.data(),
-                                                           data.size());
-        }
+        UpdateConstantsFallbackBuffer(constants);
     }
 
     if (!descriptors.empty()) {
