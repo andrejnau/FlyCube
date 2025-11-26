@@ -205,6 +205,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
     };
 
     if (device_properties_.apiVersion < VK_API_VERSION_1_3) {
+        requested_extensions.insert(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
         requested_extensions.insert(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     }
 
@@ -269,16 +270,27 @@ VKDevice::VKDevice(VKAdapter& adapter)
     add_extension(device_vulkan12_features);
 
     vk::PhysicalDeviceVulkan13Features device_vulkan13_features = {};
-    vk::PhysicalDeviceDynamicRenderingFeaturesKHR device_dynamic_rendering_features = {};
+    vk::PhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = {};
+    vk::PhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block_features = {};
     if (device_properties_.apiVersion >= VK_API_VERSION_1_3) {
-        assert(GetFeatures2<vk::PhysicalDeviceVulkan13Features>().dynamicRendering);
+        auto query_device_vulkan13_features = GetFeatures2<vk::PhysicalDeviceVulkan13Features>();
+        assert(query_device_vulkan13_features.dynamicRendering);
         device_vulkan13_features.dynamicRendering = true;
+        device_vulkan13_features.inlineUniformBlock = query_device_vulkan13_features.inlineUniformBlock;
         add_extension(device_vulkan13_features);
     } else {
         assert(enabled_extension_set.contains(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME));
         assert(GetFeatures2<vk::PhysicalDeviceDynamicRenderingFeaturesKHR>().dynamicRendering);
-        device_dynamic_rendering_features.dynamicRendering = true;
-        add_extension(device_dynamic_rendering_features);
+        dynamic_rendering_features.dynamicRendering = true;
+        add_extension(dynamic_rendering_features);
+
+        auto query_inline_uniform_block_features = GetFeatures2<vk::PhysicalDeviceInlineUniformBlockFeaturesEXT>();
+        if (enabled_extension_set.contains(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)) {
+            inline_uniform_block_features.inlineUniformBlock = query_inline_uniform_block_features.inlineUniformBlock;
+
+            inline_uniform_block_supported_ = inline_uniform_block_features.inlineUniformBlock;
+            add_extension(inline_uniform_block_features);
+        }
     }
 
     vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = {};
@@ -801,4 +813,9 @@ uint32_t VKDevice::GetMaxDescriptorSetBindings(vk::DescriptorType type) const
 bool VKDevice::HasBufferDeviceAddress() const
 {
     return has_buffer_device_address_;
+}
+
+bool VKDevice::IsInlineUniformBlockSupported() const
+{
+    return inline_uniform_block_supported_;
 }

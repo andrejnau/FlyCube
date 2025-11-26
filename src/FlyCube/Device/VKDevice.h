@@ -82,6 +82,7 @@ public:
 
     uint32_t GetMaxDescriptorSetBindings(vk::DescriptorType type) const;
     bool HasBufferDeviceAddress() const;
+    bool IsInlineUniformBlockSupported() const;
 
     template <typename Features>
     Features GetFeatures2() const
@@ -133,5 +134,6 @@ private:
     bool bindless_supported_ = false;
     bool draw_indirect_count_supported_ = false;
     bool has_buffer_device_address_ = false;
+    bool inline_uniform_block_supported_ = false;
     vk::PhysicalDeviceProperties device_properties_ = {};
 };
