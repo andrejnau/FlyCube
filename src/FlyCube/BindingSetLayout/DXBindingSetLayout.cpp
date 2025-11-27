@@ -118,12 +118,7 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
         }
     };
 
-    for (const auto& bind_key : bind_keys) {
-        if (bind_key.count == kBindlessCount) {
-            add_bindless_range(bind_key.shader_type, bind_key.view_type, bind_key.slot, bind_key.space);
-            continue;
-        }
-
+    auto handle_bind_key = [&](const BindKey& bind_key) {
         D3D12_DESCRIPTOR_HEAP_TYPE heap_type = GetHeapType(bind_key.view_type);
         decltype(auto) layout = layout_[bind_key];
         layout.heap_type = heap_type;
@@ -142,6 +137,20 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
         range.OffsetInDescriptorsFromTableStart = layout.heap_offset - descriptor_table_offset[key];
 
         heap_descs_[heap_type] += bind_key.count;
+    };
+
+    for (const auto& bind_key : bind_keys) {
+        if (bind_key.count == kBindlessCount) {
+            add_bindless_range(bind_key.shader_type, bind_key.view_type, bind_key.slot, bind_key.space);
+            continue;
+        }
+
+        handle_bind_key(bind_key);
+    }
+
+    for (const auto& [bind_key, _] : constants) {
+        assert(bind_key.count == 1);
+        handle_bind_key(bind_key);
     }
 
     for (const auto& ranges : descriptor_table_ranges) {
