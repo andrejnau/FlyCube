@@ -68,6 +68,9 @@ MTBindingSet::MTBindingSet(MTDevice& device, const std::shared_ptr<MTBindingSetL
     }
 
     CreateConstantsFallbackBuffer(device_, layout->GetConstants());
+    for (const auto& [bind_key, view] : fallback_constants_buffer_views_) {
+        direct_bindings_.insert_or_assign(bind_key, view);
+    }
 }
 
 void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
@@ -82,12 +85,10 @@ void MTBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bin
         assert(bind_key.count != kBindlessCount);
         direct_bindings_.insert_or_assign(bind_key, view);
     }
-
-    for (const auto& [bind_key, view] : fallback_constants_buffer_views_) {
-        assert(bind_key.count == 1);
-        direct_bindings_.insert_or_assign(bind_key, view);
+    for (const auto& [bind_key, data] : constants) {
+        fallback_constants_buffer_->UpdateUploadBuffer(fallback_constants_buffer_offsets_.at(bind_key), data.data(),
+                                                       data.size());
     }
-    UpdateConstantsFallbackBuffer(constants);
 }
 
 void MTBindingSet::Apply(const std::map<ShaderType, id<MTL4ArgumentTable>>& argument_tables,

@@ -24,11 +24,3 @@ void BindingSetBase::CreateConstantsFallbackBuffer(Device& device, const std::ve
         num_bytes += size;
     }
 }
-
-void BindingSetBase::UpdateConstantsFallbackBuffer(const std::vector<BindingConstantsData>& constants)
-{
-    for (const auto& [bind_key, data] : constants) {
-        fallback_constants_buffer_->UpdateUploadBuffer(fallback_constants_buffer_offsets_.at(bind_key), data.data(),
-                                                       data.size());
-    }
-}

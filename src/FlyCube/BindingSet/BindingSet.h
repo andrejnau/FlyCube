@@ -2,7 +2,6 @@
 #include "Instance/BaseTypes.h"
 #include "Instance/QueryInterface.h"
 
-#include <memory>
 #include <vector>
 
 class BindingSet : public QueryInterface {

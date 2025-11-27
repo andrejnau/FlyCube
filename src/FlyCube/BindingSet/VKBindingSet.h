@@ -21,6 +21,8 @@ public:
     const std::vector<vk::DescriptorSet>& GetDescriptorSets() const;
 
 private:
+    void WriteDescriptor(std::vector<vk::WriteDescriptorSet>& descriptors, const BindingDesc& binding);
+
     VKDevice& device_;
     std::vector<DescriptorSetPool> descriptors_;
     std::vector<vk::DescriptorSet> descriptor_sets_;
