@@ -715,5 +715,5 @@ struct BindingConstants {
 
 struct BindingConstantsData {
     BindKey bind_key;
-    std::span<uint8_t> data;
+    std::span<const uint8_t> data;
 };
