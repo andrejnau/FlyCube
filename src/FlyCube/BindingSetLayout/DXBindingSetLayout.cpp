@@ -8,6 +8,8 @@
 
 #include <deque>
 
+namespace {
+
 D3D12_SHADER_VISIBILITY GetVisibility(ShaderType shader_type)
 {
     D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -73,14 +75,33 @@ D3D12_DESCRIPTOR_HEAP_TYPE GetHeapType(ViewType view_type)
     }
 }
 
+using RootKey = std::pair<D3D12_DESCRIPTOR_HEAP_TYPE, ShaderType>;
+
+RootKey GetRootKey(const BindKey& bind_key)
+{
+    D3D12_DESCRIPTOR_HEAP_TYPE heap_type = GetHeapType(bind_key.view_type);
+    return { heap_type, bind_key.shader_type };
+}
+
+bool IsCompute(ShaderType shader_type)
+{
+    switch (shader_type) {
+    case ShaderType::kCompute:
+    case ShaderType::kLibrary:
+        return true;
+    default:
+        return false;
+    }
+}
+
+} // namespace
+
 DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
                                        const std::vector<BindKey>& bind_keys,
                                        const std::vector<BindingConstants>& constants)
     : device_(device)
-    , constants_(constants)
 {
     std::vector<D3D12_ROOT_PARAMETER> root_parameters;
-    using RootKey = std::pair<D3D12_DESCRIPTOR_HEAP_TYPE, ShaderType>;
     std::map<RootKey, std::vector<D3D12_DESCRIPTOR_RANGE>> descriptor_table_ranges;
     std::map<RootKey, size_t> descriptor_table_offset;
     std::deque<D3D12_DESCRIPTOR_RANGE> bindless_ranges;
@@ -91,7 +112,7 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
         descriptor_table.pDescriptorRanges = ranges;
 
         size_t root_param_index = root_parameters.size();
-        decltype(auto) root_parameter = root_parameters.emplace_back();
+        D3D12_ROOT_PARAMETER& root_parameter = root_parameters.emplace_back();
         root_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         root_parameter.DescriptorTable = descriptor_table;
         root_parameter.ShaderVisibility = GetVisibility(shader_type);
@@ -108,33 +129,26 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
         descriptor_tables_[root_param_index].heap_type = GetHeapType(view_type);
         descriptor_tables_[root_param_index].heap_offset = 0;
         descriptor_tables_[root_param_index].bindless = true;
-        switch (shader_type) {
-        case ShaderType::kCompute:
-        case ShaderType::kLibrary:
-            descriptor_tables_[root_param_index].is_compute = true;
-            break;
-        default:
-            break;
-        }
+        descriptor_tables_[root_param_index].is_compute = IsCompute(shader_type);
     };
 
     auto handle_bind_key = [&](const BindKey& bind_key) {
-        D3D12_DESCRIPTOR_HEAP_TYPE heap_type = GetHeapType(bind_key.view_type);
+        RootKey root_key = GetRootKey(bind_key);
+        D3D12_DESCRIPTOR_HEAP_TYPE heap_type = root_key.first;
+        if (!descriptor_table_offset.contains(root_key)) {
+            descriptor_table_offset[root_key] = heap_descs_[heap_type];
+        }
+
         decltype(auto) layout = layout_[bind_key];
         layout.heap_type = heap_type;
         layout.heap_offset = heap_descs_[heap_type];
 
-        RootKey key = { heap_type, bind_key.shader_type };
-        if (!descriptor_table_offset.contains(key)) {
-            descriptor_table_offset[key] = heap_descs_[heap_type];
-        }
-
-        decltype(auto) range = descriptor_table_ranges[key].emplace_back();
+        decltype(auto) range = descriptor_table_ranges[root_key].emplace_back();
         range.RangeType = GetRangeType(bind_key.view_type);
         range.NumDescriptors = bind_key.count;
         range.BaseShaderRegister = bind_key.slot;
         range.RegisterSpace = bind_key.space;
-        range.OffsetInDescriptorsFromTableStart = layout.heap_offset - descriptor_table_offset[key];
+        range.OffsetInDescriptorsFromTableStart = layout.heap_offset - descriptor_table_offset[root_key];
 
         heap_descs_[heap_type] += bind_key.count;
     };
@@ -148,23 +162,55 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
         handle_bind_key(bind_key);
     }
 
+    auto add_root_constant = [&](const BindKey& bind_key, uint32_t num_constants) {
+        size_t root_param_index = root_parameters.size();
+        D3D12_ROOT_PARAMETER& root_parameter = root_parameters.emplace_back();
+        root_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        root_parameter.Constants.ShaderRegister = bind_key.slot;
+        root_parameter.Constants.RegisterSpace = bind_key.space;
+        root_parameter.Constants.Num32BitValues = num_constants;
+        root_parameter.ShaderVisibility = GetVisibility(bind_key.shader_type);
+        return root_param_index;
+    };
+
+    size_t root_cost = descriptor_table_ranges.size();
+    std::map<RootKey, size_t> extra_descriptor_table_ranges;
     for (const auto& [bind_key, _] : constants) {
         assert(bind_key.count == 1);
-        handle_bind_key(bind_key);
+        RootKey root_key = GetRootKey(bind_key);
+        if (!descriptor_table_ranges.contains(root_key)) {
+            ++extra_descriptor_table_ranges[root_key];
+        }
     }
+
+    for (const auto& [bind_key, size] : constants) {
+        RootKey root_key = GetRootKey(bind_key);
+        if (!descriptor_table_ranges.contains(root_key)) {
+            if (--extra_descriptor_table_ranges[root_key] == 0) {
+                extra_descriptor_table_ranges.erase(root_key);
+            }
+        }
+
+        uint32_t num_constants = (size + 3) / 4;
+        if (root_cost + num_constants + extra_descriptor_table_ranges.size() <= D3D12_MAX_ROOT_COST) {
+            uint32_t root_param_index = add_root_constant(bind_key, num_constants);
+            root_cost += num_constants;
+            constants_layout_[bind_key] = { root_param_index, num_constants, IsCompute(bind_key.shader_type) };
+        } else {
+            if (!descriptor_table_ranges.contains(root_key)) {
+                ++root_cost;
+            }
+            handle_bind_key(bind_key);
+            fallback_constants_.push_back({ bind_key, size });
+        }
+    }
+    assert(root_cost <= D3D12_MAX_ROOT_COST);
 
     for (const auto& ranges : descriptor_table_ranges) {
         size_t root_param_index = add_root_table(ranges.first.second, ranges.second.size(), ranges.second.data());
         descriptor_tables_[root_param_index].heap_type = ranges.first.first;
         descriptor_tables_[root_param_index].heap_offset = descriptor_table_offset[ranges.first];
-        switch (ranges.first.second) {
-        case ShaderType::kCompute:
-        case ShaderType::kLibrary:
-            descriptor_tables_[root_param_index].is_compute = true;
-            break;
-        default:
-            break;
-        }
+        descriptor_tables_[root_param_index].is_compute = IsCompute(ranges.first.second);
     }
 
     D3D12_ROOT_SIGNATURE_FLAGS root_signature_flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
@@ -188,7 +234,7 @@ const std::map<D3D12_DESCRIPTOR_HEAP_TYPE, size_t>& DXBindingSetLayout::GetHeapD
     return heap_descs_;
 }
 
-const std::map<BindKey, BindingLayout>& DXBindingSetLayout::GetLayout() const
+const std::map<BindKey, BindingLayoutDesc>& DXBindingSetLayout::GetLayout() const
 {
     return layout_;
 }
@@ -203,7 +249,12 @@ const ComPtr<ID3D12RootSignature>& DXBindingSetLayout::GetRootSignature() const
     return root_signature_;
 }
 
-const std::vector<BindingConstants>& DXBindingSetLayout::GetConstants() const
+const std::map<BindKey, ConstantsLayoutDesc>& DXBindingSetLayout::GetConstantsLayout() const
 {
-    return constants_;
+    return constants_layout_;
+}
+
+const std::vector<BindingConstants>& DXBindingSetLayout::GetFallbackConstants() const
+{
+    return fallback_constants_;
 }

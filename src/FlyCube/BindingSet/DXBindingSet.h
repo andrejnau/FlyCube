@@ -26,7 +26,11 @@ public:
     std::vector<ComPtr<ID3D12DescriptorHeap>> Apply(const ComPtr<ID3D12GraphicsCommandList>& command_list);
 
 private:
+    void WriteDescriptor(const BindingDesc& binding);
+
     DXDevice& device_;
     std::shared_ptr<DXBindingSetLayout> layout_;
     std::map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<DXGPUDescriptorPoolRange>> descriptor_ranges_;
+    std::vector<uint32_t> constants_data_;
+    std::map<BindKey, uint64_t> constants_data_offsets_;
 };

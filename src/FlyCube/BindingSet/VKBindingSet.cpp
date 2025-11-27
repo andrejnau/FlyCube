@@ -23,6 +23,15 @@ VKBindingSet::VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetL
 
     if (!device_.IsInlineUniformBlockSupported()) {
         CreateConstantsFallbackBuffer(device_, layout_->GetConstants());
+
+        std::vector<vk::WriteDescriptorSet> descriptors;
+        for (const auto& [bind_key, view] : fallback_constants_buffer_views_) {
+            assert(bind_key.count == 1);
+            WriteDescriptor(descriptors, { bind_key, view });
+        }
+        if (!descriptors.empty()) {
+            device_.GetDevice().updateDescriptorSets(descriptors.size(), descriptors.data(), 0, nullptr);
+        }
     }
 }
 
@@ -35,21 +44,8 @@ void VKBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bin
                                              const std::vector<BindingConstantsData>& constants)
 {
     std::vector<vk::WriteDescriptorSet> descriptors;
-    auto add_descriptor = [&](const BindingDesc& binding) {
-        decltype(auto) vk_view = binding.view->As<VKView>();
-        vk::WriteDescriptorSet descriptor = vk_view.GetDescriptor();
-        descriptor.descriptorType = GetDescriptorType(binding.bind_key.view_type);
-        descriptor.dstSet = descriptor_sets_[binding.bind_key.space];
-        descriptor.dstBinding = binding.bind_key.slot;
-        descriptor.dstArrayElement = 0;
-        descriptor.descriptorCount = 1;
-        if (descriptor.pImageInfo || descriptor.pBufferInfo || descriptor.pTexelBufferView || descriptor.pNext) {
-            descriptors.emplace_back(descriptor);
-        }
-    };
-
     for (const auto& binding : bindings) {
-        add_descriptor(binding);
+        WriteDescriptor(descriptors, binding);
     }
 
     if (device_.IsInlineUniformBlockSupported()) {
@@ -67,11 +63,10 @@ void VKBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bin
             descriptors.emplace_back(descriptor);
         }
     } else {
-        for (const auto& [bind_key, view] : fallback_constants_buffer_views_) {
-            assert(bind_key.count == 1);
-            add_descriptor({ bind_key, view });
+        for (const auto& [bind_key, data] : constants) {
+            fallback_constants_buffer_->UpdateUploadBuffer(fallback_constants_buffer_offsets_.at(bind_key), data.data(),
+                                                           data.size());
         }
-        UpdateConstantsFallbackBuffer(constants);
     }
 
     if (!descriptors.empty()) {
@@ -82,4 +77,18 @@ void VKBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bin
 const std::vector<vk::DescriptorSet>& VKBindingSet::GetDescriptorSets() const
 {
     return descriptor_sets_;
+}
+
+void VKBindingSet::WriteDescriptor(std::vector<vk::WriteDescriptorSet>& descriptors, const BindingDesc& binding)
+{
+    decltype(auto) vk_view = binding.view->As<VKView>();
+    vk::WriteDescriptorSet descriptor = vk_view.GetDescriptor();
+    descriptor.descriptorType = GetDescriptorType(binding.bind_key.view_type);
+    descriptor.dstSet = descriptor_sets_[binding.bind_key.space];
+    descriptor.dstBinding = binding.bind_key.slot;
+    descriptor.dstArrayElement = 0;
+    descriptor.descriptorCount = 1;
+    if (descriptor.pImageInfo || descriptor.pBufferInfo || descriptor.pTexelBufferView || descriptor.pNext) {
+        descriptors.emplace_back(descriptor);
+    }
 }
