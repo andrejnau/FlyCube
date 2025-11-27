@@ -710,7 +710,7 @@ using NativeSurface = std::variant<Win32Surface, MetalSurface, AndroidSurface, X
 
 struct BindingConstants {
     BindKey bind_key;
-    uint32_t size = 0;
+    uint64_t size = 0;
 };
 
 struct BindingConstantsData {

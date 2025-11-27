@@ -191,11 +191,12 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
             }
         }
 
-        uint32_t num_constants = (size + 3) / 4;
+        uint64_t num_constants = (size + 3) / 4;
         if (root_cost + num_constants + extra_descriptor_table_ranges.size() <= D3D12_MAX_ROOT_COST) {
             uint32_t root_param_index = add_root_constant(bind_key, num_constants);
             root_cost += num_constants;
-            constants_layout_[bind_key] = { root_param_index, num_constants, IsCompute(bind_key.shader_type) };
+            constants_layout_[bind_key] = { root_param_index, static_cast<uint32_t>(num_constants),
+                                            IsCompute(bind_key.shader_type) };
         } else {
             if (!descriptor_table_ranges.contains(root_key)) {
                 ++root_cost;
