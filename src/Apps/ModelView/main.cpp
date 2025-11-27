@@ -130,14 +130,15 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
     if (device_->IsBindlessSupported()) {
         pixel_bindless_textures_key = pixel_shader_->GetBindKey("bindless_textures");
         pixel_constant_buffer_key = pixel_shader_->GetBindKey("constant_buffer");
-        layout_ = device_->CreateBindingSetLayout(
+        layout_ = device_->CreateBindingSetLayoutWithConstants(
             { pixel_bindless_textures_key, pixel_anisotropic_sampler_key },
             { { vertex_constant_buffer_key, sizeof(glm::mat4) },
               { pixel_constant_buffer_key, sizeof(uint32_t) * render_model_.GetMeshCount() } });
     } else {
         pixel_base_color_texture_key = pixel_shader_->GetBindKey("base_color_texture");
-        layout_ = device_->CreateBindingSetLayout({ pixel_base_color_texture_key, pixel_anisotropic_sampler_key },
-                                                  { { vertex_constant_buffer_key, sizeof(glm::mat4) } });
+        layout_ = device_->CreateBindingSetLayoutWithConstants(
+            { pixel_base_color_texture_key, pixel_anisotropic_sampler_key },
+            { { vertex_constant_buffer_key, sizeof(glm::mat4) } });
     }
 
     glm::mat4 view = GetViewMatrix();
