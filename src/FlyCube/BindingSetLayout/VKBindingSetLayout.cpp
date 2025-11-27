@@ -56,7 +56,6 @@ vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
 VKBindingSetLayout::VKBindingSetLayout(VKDevice& device,
                                        const std::vector<BindKey>& bind_keys,
                                        const std::vector<BindingConstants>& constants)
-    : constants_(constants)
 {
     std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> bindings_by_set;
     std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>> bindings_flags_by_set;
@@ -83,6 +82,10 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device,
         }
     }
 
+    uint32_t inline_uniform_total_size = 0;
+    std::map<ShaderType, uint32_t> inline_uniform_per_stage_blocks;
+    uint32_t inline_uniform_blocks = 0;
+    InlineUniformBlockProperties inline_uniform_block_properties = device.GetInlineUniformBlockProperties();
     for (const auto& [bind_key, size] : constants) {
         assert(bind_key.count == 1);
         assert(!used_bindings_by_set[bind_key.space].contains(bind_key.slot));
@@ -90,10 +93,22 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device,
 
         auto& binding = bindings_by_set[bind_key.space].emplace_back();
         binding.binding = bind_key.slot;
-        if (device.IsInlineUniformBlockSupported()) {
+
+        const bool within_inline_uniform_block_limits =
+            inline_uniform_total_size + size <= inline_uniform_block_properties.max_total_size &&
+            size <= inline_uniform_block_properties.max_block_size &&
+            inline_uniform_per_stage_blocks[bind_key.shader_type] + 1 <=
+                inline_uniform_block_properties.max_per_stage_blocks &&
+            inline_uniform_blocks + 1 < inline_uniform_block_properties.max_blocks;
+        if (device.IsInlineUniformBlockSupported() && within_inline_uniform_block_limits) {
             binding.descriptorType = vk::DescriptorType::eInlineUniformBlock;
             binding.descriptorCount = size;
+            inline_uniform_total_size += size;
+            ++inline_uniform_per_stage_blocks[bind_key.shader_type];
+            ++inline_uniform_blocks;
+            inline_uniform_blocks_.insert(bind_key);
         } else {
+            fallback_constants_.emplace_back(bind_key, size);
             binding.descriptorType = GetDescriptorType(bind_key.view_type);
             binding.descriptorCount = 1;
         }
@@ -161,9 +176,14 @@ const std::vector<AllocateDescriptorSetDesc>& VKBindingSetLayout::GetAllocateDes
     return allocate_descriptor_set_descs_;
 }
 
-const std::vector<BindingConstants>& VKBindingSetLayout::GetConstants() const
+const std::set<BindKey>& VKBindingSetLayout::GetInlineUniformBlocks() const
 {
-    return constants_;
+    return inline_uniform_blocks_;
+}
+
+const std::vector<BindingConstants>& VKBindingSetLayout::GetFallbackConstants() const
+{
+    return fallback_constants_;
 }
 
 vk::PipelineLayout VKBindingSetLayout::GetPipelineLayout() const

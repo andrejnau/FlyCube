@@ -4,6 +4,8 @@
 #include "Device/VKDevice.h"
 #include "View/VKView.h"
 
+#include <deque>
+
 VKBindingSet::VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetLayout>& layout)
     : device_(device)
     , layout_(layout)
@@ -21,17 +23,14 @@ VKBindingSet::VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetL
         }
     }
 
-    if (!device_.IsInlineUniformBlockSupported()) {
-        CreateConstantsFallbackBuffer(device_, layout_->GetConstants());
-
-        std::vector<vk::WriteDescriptorSet> descriptors;
-        for (const auto& [bind_key, view] : fallback_constants_buffer_views_) {
-            assert(bind_key.count == 1);
-            WriteDescriptor(descriptors, { bind_key, view });
-        }
-        if (!descriptors.empty()) {
-            device_.GetDevice().updateDescriptorSets(descriptors.size(), descriptors.data(), 0, nullptr);
-        }
+    CreateConstantsFallbackBuffer(device_, layout_->GetFallbackConstants());
+    std::vector<vk::WriteDescriptorSet> descriptors;
+    for (const auto& [bind_key, view] : fallback_constants_buffer_views_) {
+        assert(bind_key.count == 1);
+        WriteDescriptor(descriptors, { bind_key, view });
+    }
+    if (!descriptors.empty()) {
+        device_.GetDevice().updateDescriptorSets(descriptors.size(), descriptors.data(), 0, nullptr);
     }
 }
 
@@ -48,9 +47,10 @@ void VKBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bin
         WriteDescriptor(descriptors, binding);
     }
 
-    if (device_.IsInlineUniformBlockSupported()) {
-        for (const auto& [bind_key, data] : constants) {
-            vk::WriteDescriptorSetInlineUniformBlock write_descriptor_set_inline_uniform_block = {};
+    std::deque<vk::WriteDescriptorSetInlineUniformBlock> write_descriptor_set_inline_uniform_blocks;
+    for (const auto& [bind_key, data] : constants) {
+        if (layout_->GetInlineUniformBlocks().contains(bind_key)) {
+            auto& write_descriptor_set_inline_uniform_block = write_descriptor_set_inline_uniform_blocks.emplace_back();
             write_descriptor_set_inline_uniform_block.dataSize = data.size();
             write_descriptor_set_inline_uniform_block.pData = data.data();
 
@@ -61,9 +61,7 @@ void VKBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bin
             descriptor.descriptorCount = data.size();
             descriptor.pNext = &write_descriptor_set_inline_uniform_block;
             descriptors.emplace_back(descriptor);
-        }
-    } else {
-        for (const auto& [bind_key, data] : constants) {
+        } else {
             fallback_constants_buffer_->UpdateUploadBuffer(fallback_constants_buffer_offsets_.at(bind_key), data.data(),
                                                            data.size());
         }
