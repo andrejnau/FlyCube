@@ -8,6 +8,13 @@
 class VKAdapter;
 class VKCommandQueue;
 
+struct InlineUniformBlockProperties {
+    uint32_t max_total_size;
+    uint32_t max_block_size;
+    uint32_t max_per_stage_blocks;
+    uint32_t max_blocks;
+};
+
 vk::ImageLayout ConvertState(ResourceState state);
 vk::BuildAccelerationStructureFlagsKHR Convert(BuildAccelerationStructureFlags flags);
 vk::Extent2D ConvertShadingRate(ShadingRate shading_rate);
@@ -16,7 +23,7 @@ std::array<vk::FragmentShadingRateCombinerOpKHR, 2> ConvertShadingRateCombiners(
 
 class VKDevice : public Device {
 public:
-    VKDevice(VKAdapter& adapter);
+    explicit VKDevice(VKAdapter& adapter);
     std::shared_ptr<Memory> AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits) override;
     std::shared_ptr<CommandQueue> GetCommandQueue(CommandListType type) override;
     uint32_t GetTextureDataPitchAlignment() const override;
@@ -85,6 +92,7 @@ public:
     uint32_t GetMaxDescriptorSetBindings(vk::DescriptorType type) const;
     bool HasBufferDeviceAddress() const;
     bool IsInlineUniformBlockSupported() const;
+    const InlineUniformBlockProperties& GetInlineUniformBlockProperties() const;
 
     template <typename Features>
     Features GetFeatures2() const
@@ -137,5 +145,6 @@ private:
     bool draw_indirect_count_supported_ = false;
     bool has_buffer_device_address_ = false;
     bool inline_uniform_block_supported_ = false;
+    InlineUniformBlockProperties inline_uniform_block_properties_;
     vk::PhysicalDeviceProperties device_properties_ = {};
 };

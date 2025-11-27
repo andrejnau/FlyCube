@@ -280,6 +280,17 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
         inline_uniform_block_supported_ = device_vulkan13_features.inlineUniformBlock;
         add_extension(device_vulkan13_features);
+
+        if (inline_uniform_block_supported_) {
+            auto device_vulkan13_properties = GetProperties2<vk::PhysicalDeviceVulkan13Properties>();
+            inline_uniform_block_properties_.max_total_size = device_vulkan13_properties.maxInlineUniformTotalSize;
+            inline_uniform_block_properties_.max_block_size = device_vulkan13_properties.maxInlineUniformBlockSize;
+            inline_uniform_block_properties_.max_per_stage_blocks =
+                device_vulkan13_properties.maxPerStageDescriptorInlineUniformBlocks;
+            inline_uniform_block_properties_.max_blocks =
+                device_vulkan13_properties.maxDescriptorSetInlineUniformBlocks;
+        }
+
     } else {
         assert(enabled_extension_set.contains(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME));
         assert(GetFeatures2<vk::PhysicalDeviceDynamicRenderingFeaturesKHR>().dynamicRendering);
@@ -292,6 +303,16 @@ VKDevice::VKDevice(VKAdapter& adapter)
 
             inline_uniform_block_supported_ = inline_uniform_block_features.inlineUniformBlock;
             add_extension(inline_uniform_block_features);
+        }
+
+        if (inline_uniform_block_supported_) {
+            auto inline_uniform_block_properties = GetProperties2<vk::PhysicalDeviceInlineUniformBlockProperties>();
+            inline_uniform_block_properties_.max_total_size = std::numeric_limits<uint32_t>::max();
+            inline_uniform_block_properties_.max_block_size = inline_uniform_block_properties.maxInlineUniformBlockSize;
+            inline_uniform_block_properties_.max_per_stage_blocks =
+                inline_uniform_block_properties.maxPerStageDescriptorInlineUniformBlocks;
+            inline_uniform_block_properties_.max_blocks =
+                inline_uniform_block_properties.maxDescriptorSetInlineUniformBlocks;
         }
     }
 
@@ -826,4 +847,9 @@ bool VKDevice::HasBufferDeviceAddress() const
 bool VKDevice::IsInlineUniformBlockSupported() const
 {
     return inline_uniform_block_supported_;
+}
+
+const InlineUniformBlockProperties& VKDevice::GetInlineUniformBlockProperties() const
+{
+    return inline_uniform_block_properties_;
 }
