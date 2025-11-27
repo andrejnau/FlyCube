@@ -290,7 +290,6 @@ VKDevice::VKDevice(VKAdapter& adapter)
             inline_uniform_block_properties_.max_blocks =
                 device_vulkan13_properties.maxDescriptorSetInlineUniformBlocks;
         }
-
     } else {
         assert(enabled_extension_set.contains(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME));
         assert(GetFeatures2<vk::PhysicalDeviceDynamicRenderingFeaturesKHR>().dynamicRendering);

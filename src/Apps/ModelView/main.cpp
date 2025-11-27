@@ -54,8 +54,6 @@ private:
     std::vector<std::shared_ptr<View>> pixel_textures_views_;
     std::shared_ptr<Resource> pixel_anisotropic_sampler_;
     std::shared_ptr<View> pixel_anisotropic_sampler_view_;
-    std::shared_ptr<Resource> pixel_constant_buffer_;
-    std::vector<std::shared_ptr<View>> pixel_constant_buffer_views_;
     std::shared_ptr<Shader> vertex_shader_;
     std::shared_ptr<Shader> pixel_shader_;
 
@@ -104,26 +102,6 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
     pixel_anisotropic_sampler_view_ =
         device_->CreateView(pixel_anisotropic_sampler_, pixel_anisotropic_sampler_view_desc);
 
-    if (device_->IsBindlessSupported()) {
-        std::vector<uint32_t> pixel_constant_data(render_model_.GetMeshCount());
-        pixel_constant_buffer_ = device_->CreateBuffer(
-            MemoryType::kUpload, { .size = sizeof(pixel_constant_data.front()) * pixel_constant_data.size(),
-                                   .usage = BindFlag::kConstantBuffer });
-        pixel_constant_buffer_views_.resize(render_model_.GetMeshCount());
-        for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
-            ViewDesc pixel_constant_buffer_view_desc = {
-                .view_type = ViewType::kConstantBuffer,
-                .dimension = ViewDimension::kBuffer,
-                .offset = i * sizeof(pixel_constant_data.front()),
-            };
-            pixel_constant_buffer_views_[i] =
-                device_->CreateView(pixel_constant_buffer_, pixel_constant_buffer_view_desc);
-            pixel_constant_data[i] = pixel_textures_views_[i]->GetDescriptorId();
-        }
-        pixel_constant_buffer_->UpdateUploadBuffer(0, pixel_constant_data.data(),
-                                                   sizeof(pixel_constant_data.front()) * pixel_constant_data.size());
-    }
-
     ShaderBlobType blob_type = device_->GetSupportedShaderBlobType();
     std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/ModelView/VertexShader.hlsl", blob_type);
     std::vector<uint8_t> pixel_blob =
@@ -153,8 +131,9 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
         pixel_bindless_textures_key = pixel_shader_->GetBindKey("bindless_textures");
         pixel_constant_buffer_key = pixel_shader_->GetBindKey("constant_buffer");
         layout_ = device_->CreateBindingSetLayout(
-            { pixel_bindless_textures_key, pixel_anisotropic_sampler_key, pixel_constant_buffer_key },
-            { { vertex_constant_buffer_key, sizeof(glm::mat4) } });
+            { pixel_bindless_textures_key, pixel_anisotropic_sampler_key },
+            { { vertex_constant_buffer_key, sizeof(glm::mat4) },
+              { pixel_constant_buffer_key, sizeof(uint32_t) * render_model_.GetMeshCount() } });
     } else {
         pixel_base_color_texture_key = pixel_shader_->GetBindKey("base_color_texture");
         layout_ = device_->CreateBindingSetLayout({ pixel_base_color_texture_key, pixel_anisotropic_sampler_key },
@@ -169,17 +148,24 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
         binding_sets_[i] = device_->CreateBindingSet(layout_);
 
         glm::mat4 mvp = glm::transpose(projection * view * render_model_.GetMesh(i).matrix);
-        std::span<uint8_t> data(reinterpret_cast<uint8_t*>(&mvp), sizeof(mvp));
+        std::span<const uint8_t> mvp_span(reinterpret_cast<uint8_t*>(&mvp), sizeof(mvp));
         if (device_->IsBindlessSupported()) {
+            std::vector<uint32_t> pixel_constant_data(render_model_.GetMeshCount());
+            for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
+                pixel_constant_data[i] = pixel_textures_views_[i]->GetDescriptorId();
+            }
+            std::span<const uint8_t> pixel_constant_data_span(
+                reinterpret_cast<uint8_t*>(pixel_constant_data.data()),
+                sizeof(pixel_constant_data.front()) * pixel_constant_data.size());
+
             binding_sets_[i]->WriteBindingsAndConstants(
-                { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
-                  { pixel_constant_buffer_key, pixel_constant_buffer_views_[i] } },
-                { { vertex_constant_buffer_key, data } });
+                { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ } },
+                { { vertex_constant_buffer_key, mvp_span }, { pixel_constant_buffer_key, pixel_constant_data_span } });
         } else {
             binding_sets_[i]->WriteBindingsAndConstants(
                 { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
                   { pixel_base_color_texture_key, pixel_textures_views_[i] } },
-                { { vertex_constant_buffer_key, data } });
+                { { vertex_constant_buffer_key, mvp_span } });
         }
     }
 
