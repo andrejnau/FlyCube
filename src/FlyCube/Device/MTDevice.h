@@ -66,6 +66,7 @@ public:
     RaytracingASPrebuildInfo GetTLASPrebuildInfo(uint32_t instance_count,
                                                  BuildAccelerationStructureFlags flags) const override;
     ShaderBlobType GetSupportedShaderBlobType() const override;
+    uint64_t GetConstantBufferOffsetAlignment() const override;
 
     id<MTLDevice> GetDevice() const;
     MTLPixelFormat GetMTLPixelFormat(gli::format format);

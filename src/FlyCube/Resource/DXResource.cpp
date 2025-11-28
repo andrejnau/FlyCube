@@ -2,8 +2,8 @@
 
 #include "Device/DXDevice.h"
 #include "Memory/DXMemory.h"
+#include "Utilities/Common.h"
 #include "Utilities/DXGIFormatHelper.h"
-#include "Utilities/SystemUtils.h"
 
 #include <directx/d3dx12.h>
 #include <gli/dx.hpp>
@@ -113,7 +113,7 @@ std::shared_ptr<DXResource> DXResource::CreateBuffer(DXDevice& device, const Buf
     }
 
     if (desc.usage & BindFlag::kConstantBuffer) {
-        buffer_size = (buffer_size + 255) & ~255;
+        buffer_size = Align(buffer_size, device.GetConstantBufferOffsetAlignment());
     }
 
     D3D12_RESOURCE_DESC resource_desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);

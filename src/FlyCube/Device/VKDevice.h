@@ -77,6 +77,7 @@ public:
     RaytracingASPrebuildInfo GetTLASPrebuildInfo(uint32_t instance_count,
                                                  BuildAccelerationStructureFlags flags) const override;
     ShaderBlobType GetSupportedShaderBlobType() const override;
+    uint64_t GetConstantBufferOffsetAlignment() const override;
 
     VKAdapter& GetAdapter();
     vk::Device GetDevice();

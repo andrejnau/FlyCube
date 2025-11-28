@@ -323,6 +323,11 @@ ShaderBlobType MTDevice::GetSupportedShaderBlobType() const
     return ShaderBlobType::kSPIRV;
 }
 
+uint64_t MTDevice::GetConstantBufferOffsetAlignment() const
+{
+    return 16;
+}
+
 id<MTLDevice> MTDevice::GetDevice() const
 {
     return device_;
