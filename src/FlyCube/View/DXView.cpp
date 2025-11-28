@@ -1,6 +1,8 @@
 #include "View/DXView.h"
 
 #include "Device/DXDevice.h"
+#include "Utilities/Check.h"
+#include "Utilities/Common.h"
 #include "Utilities/DXGIFormatHelper.h"
 #include "Utilities/NotReached.h"
 
@@ -350,10 +352,13 @@ void DXView::CreateDSV()
 
 void DXView::CreateCBV()
 {
+    CHECK(view_desc_.offset < resource_->GetResourceDesc().Width);
+    CHECK(view_desc_.offset % device_.GetConstantBufferOffsetAlignment() == 0);
     D3D12_CONSTANT_BUFFER_VIEW_DESC cvb_desc = {};
     cvb_desc.BufferLocation = resource_->GetResource()->GetGPUVirtualAddress() + view_desc_.offset;
-    cvb_desc.SizeInBytes = std::min(resource_->GetResourceDesc().Width, view_desc_.buffer_size);
-    assert(cvb_desc.SizeInBytes % 256 == 0);
+    cvb_desc.SizeInBytes = std::min(resource_->GetResourceDesc().Width - view_desc_.offset, view_desc_.buffer_size);
+    cvb_desc.SizeInBytes = Align(cvb_desc.SizeInBytes, device_.GetConstantBufferOffsetAlignment());
+    DCHECK(view_desc_.offset + cvb_desc.SizeInBytes <= resource_->GetResourceDesc().Width);
     device_.GetDevice()->CreateConstantBufferView(&cvb_desc, handle_->GetCpuHandle());
 }
 

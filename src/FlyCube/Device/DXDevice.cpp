@@ -499,6 +499,11 @@ ShaderBlobType DXDevice::GetSupportedShaderBlobType() const
     return ShaderBlobType::kDXIL;
 }
 
+uint64_t DXDevice::GetConstantBufferOffsetAlignment() const
+{
+    return D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
+}
+
 DXAdapter& DXDevice::GetAdapter()
 {
     return adapter_;

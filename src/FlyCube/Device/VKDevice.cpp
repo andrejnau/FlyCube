@@ -7,7 +7,6 @@
 #include "CommandQueue/VKCommandQueue.h"
 #include "Fence/VKTimelineSemaphore.h"
 #include "HLSLCompiler/Compiler.h"
-#include "Instance/VKInstance.h"
 #include "Memory/VKMemory.h"
 #include "Pipeline/VKComputePipeline.h"
 #include "Pipeline/VKGraphicsPipeline.h"
@@ -17,7 +16,6 @@
 #include "Swapchain/VKSwapchain.h"
 #include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
-#include "Utilities/VKUtility.h"
 #include "View/VKView.h"
 
 #include <set>
@@ -746,6 +744,11 @@ RaytracingASPrebuildInfo VKDevice::GetTLASPrebuildInfo(uint32_t instance_count,
 ShaderBlobType VKDevice::GetSupportedShaderBlobType() const
 {
     return ShaderBlobType::kSPIRV;
+}
+
+uint64_t VKDevice::GetConstantBufferOffsetAlignment() const
+{
+    return device_properties_.limits.minUniformBufferOffsetAlignment;
 }
 
 VKAdapter& VKDevice::GetAdapter()

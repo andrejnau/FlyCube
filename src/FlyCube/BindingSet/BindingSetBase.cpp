@@ -1,11 +1,14 @@
 #include "BindingSet/BindingSetBase.h"
 
 #include "Device/Device.h"
+#include "Utilities/Common.h"
 
 void BindingSetBase::CreateConstantsFallbackBuffer(Device& device, const std::vector<BindingConstants>& constants)
 {
+    uint64_t alignment = device.GetConstantBufferOffsetAlignment();
     uint64_t num_bytes = 0;
     for (const auto& [bind_key, size] : constants) {
+        num_bytes = Align(num_bytes, alignment);
         num_bytes += size;
     }
 
@@ -14,11 +17,13 @@ void BindingSetBase::CreateConstantsFallbackBuffer(Device& device, const std::ve
 
     num_bytes = 0;
     for (const auto& [bind_key, size] : constants) {
+        num_bytes = Align(num_bytes, alignment);
         fallback_constants_buffer_offsets_[bind_key] = num_bytes;
         ViewDesc view_desc = {
             .view_type = ViewType::kConstantBuffer,
             .dimension = ViewDimension::kBuffer,
             .offset = num_bytes,
+            .buffer_size = size,
         };
         fallback_constants_buffer_views_[bind_key] = device.CreateView(fallback_constants_buffer_, view_desc);
         num_bytes += size;

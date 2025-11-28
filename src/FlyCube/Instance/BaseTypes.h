@@ -4,6 +4,7 @@
 #include <gli/format.hpp>
 
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <memory>
 #include <span>
@@ -252,13 +253,13 @@ struct ViewDesc {
     ViewType view_type = ViewType::kUnknown;
     ViewDimension dimension = ViewDimension::kUnknown;
     uint32_t base_mip_level = 0;
-    uint32_t level_count = static_cast<uint32_t>(-1);
+    uint32_t level_count = std::numeric_limits<uint32_t>::max();
     uint32_t base_array_layer = 0;
-    uint32_t layer_count = static_cast<uint32_t>(-1);
+    uint32_t layer_count = std::numeric_limits<uint32_t>::max();
     uint32_t plane_slice = 0;
     uint64_t offset = 0;
     uint32_t structure_stride = 0;
-    uint64_t buffer_size = static_cast<uint64_t>(-1);
+    uint64_t buffer_size = std::numeric_limits<uint64_t>::max();
     gli::format buffer_format = gli::format::FORMAT_UNDEFINED;
     bool bindless = false;
 
