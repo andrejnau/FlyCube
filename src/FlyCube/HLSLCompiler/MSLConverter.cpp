@@ -1,7 +1,7 @@
 #include "HLSLCompiler/MSLConverter.h"
 
-#include "HLSLCompiler/Compiler.h"
 #include "ShaderReflection/SPIRVReflection.h"
+#include "Utilities/Check.h"
 
 #include <spirv_msl.hpp>
 
@@ -26,7 +26,7 @@ std::map<BindKey, uint32_t> ParseBindings(ShaderType shader_type, const spirv_cr
     enumerate_resources(resources.separate_samplers);
     enumerate_resources(resources.atomic_counters);
     enumerate_resources(resources.acceleration_structures);
-    enumerate_resources(resources.push_constant_buffers);
+    CHECK(resources.push_constant_buffers.empty());
     return mapping;
 }
 

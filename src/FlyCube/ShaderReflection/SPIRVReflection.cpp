@@ -1,5 +1,6 @@
 #include "ShaderReflection/SPIRVReflection.h"
 
+#include "Utilities/Check.h"
 #include "Utilities/Common.h"
 #include "Utilities/NotReached.h"
 
@@ -348,7 +349,7 @@ void ParseBindings(const spirv_cross::CompilerHLSL& compiler,
     enumerate_resources(resources.separate_samplers);
     enumerate_resources(resources.atomic_counters);
     enumerate_resources(resources.acceleration_structures);
-    enumerate_resources(resources.push_constant_buffers);
+    CHECK(resources.push_constant_buffers.empty());
 }
 
 } // namespace
