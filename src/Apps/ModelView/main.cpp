@@ -149,19 +149,17 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
         binding_sets_[i] = device_->CreateBindingSet(layout_);
 
         glm::mat4 mvp = glm::transpose(projection * view * render_model_.GetMesh(i).matrix);
-        std::span<const uint8_t> mvp_span(reinterpret_cast<uint8_t*>(&mvp), sizeof(mvp));
+        auto mvp_span = std::as_bytes(std::span{ &mvp, 1 });
         if (device_->IsBindlessSupported()) {
             std::vector<uint32_t> pixel_constant_data(render_model_.GetMeshCount());
             for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
                 pixel_constant_data[i] = pixel_textures_views_[i]->GetDescriptorId();
             }
-            std::span<const uint8_t> pixel_constant_data_span(
-                reinterpret_cast<uint8_t*>(pixel_constant_data.data()),
-                sizeof(pixel_constant_data.front()) * pixel_constant_data.size());
 
             binding_sets_[i]->WriteBindingsAndConstants(
                 { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ } },
-                { { vertex_constant_buffer_key, mvp_span }, { pixel_constant_buffer_key, pixel_constant_data_span } });
+                { { vertex_constant_buffer_key, mvp_span },
+                  { pixel_constant_buffer_key, std::as_bytes(std::span{ pixel_constant_data }) } });
         } else {
             binding_sets_[i]->WriteBindingsAndConstants(
                 { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
