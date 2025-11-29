@@ -310,7 +310,7 @@ void RayTracingTriangleRenderer::InitBindingSetLayout()
     const auto& shader = use_ray_tracing_ ? library_ : compute_shader_;
     BindKey geometry_key = shader->GetBindKey("geometry");
     BindKey result_texture_key = shader->GetBindKey("result_texture");
-    layout_ = device_->CreateBindingSetLayout({ geometry_key, result_texture_key });
+    layout_ = device_->CreateBindingSetLayout({ .bind_keys = { geometry_key, result_texture_key } });
 }
 
 void RayTracingTriangleRenderer::InitBindingSet()

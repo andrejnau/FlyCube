@@ -16,9 +16,7 @@ struct AllocateDescriptorSetDesc {
 
 class VKBindingSetLayout : public BindingSetLayout {
 public:
-    VKBindingSetLayout(VKDevice& device,
-                       const std::vector<BindKey>& bind_keys,
-                       const std::vector<BindingConstants>& constants);
+    VKBindingSetLayout(VKDevice& device, const BindingSetLayoutDesc& desc);
 
     const std::map<uint32_t, vk::DescriptorType>& GetBindlessType() const;
     const std::vector<vk::UniqueDescriptorSetLayout>& GetDescriptorSetLayouts() const;

@@ -96,9 +96,7 @@ bool IsCompute(ShaderType shader_type)
 
 } // namespace
 
-DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
-                                       const std::vector<BindKey>& bind_keys,
-                                       const std::vector<BindingConstants>& constants)
+DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const BindingSetLayoutDesc& desc)
     : device_(device)
 {
     std::vector<D3D12_ROOT_PARAMETER> root_parameters;
@@ -153,7 +151,7 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
         heap_descs_[heap_type] += bind_key.count;
     };
 
-    for (const auto& bind_key : bind_keys) {
+    for (const auto& bind_key : desc.bind_keys) {
         if (bind_key.count == kBindlessCount) {
             add_bindless_range(bind_key.shader_type, bind_key.view_type, bind_key.slot, bind_key.space);
             continue;
@@ -175,7 +173,7 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
 
     size_t root_cost = descriptor_table_ranges.size();
     std::map<RootKey, size_t> extra_descriptor_table_ranges;
-    for (const auto& [bind_key, _] : constants) {
+    for (const auto& [bind_key, _] : desc.constants) {
         assert(bind_key.count == 1);
         RootKey root_key = GetRootKey(bind_key);
         if (!descriptor_table_ranges.contains(root_key)) {
@@ -183,7 +181,7 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device,
         }
     }
 
-    for (const auto& [bind_key, size] : constants) {
+    for (const auto& [bind_key, size] : desc.constants) {
         RootKey root_key = GetRootKey(bind_key);
         if (!descriptor_table_ranges.contains(root_key)) {
             if (--extra_descriptor_table_ranges[root_key] == 0) {

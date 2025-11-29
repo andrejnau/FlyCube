@@ -53,15 +53,13 @@ vk::ShaderStageFlagBits ShaderType2Bit(ShaderType type)
     }
 }
 
-VKBindingSetLayout::VKBindingSetLayout(VKDevice& device,
-                                       const std::vector<BindKey>& bind_keys,
-                                       const std::vector<BindingConstants>& constants)
+VKBindingSetLayout::VKBindingSetLayout(VKDevice& device, const BindingSetLayoutDesc& desc)
 {
     std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> bindings_by_set;
     std::map<uint32_t, std::vector<vk::DescriptorBindingFlags>> bindings_flags_by_set;
     std::map<uint32_t, std::set<uint32_t>> used_bindings_by_set;
 
-    for (const auto& bind_key : bind_keys) {
+    for (const auto& bind_key : desc.bind_keys) {
         assert(!used_bindings_by_set[bind_key.space].contains(bind_key.slot));
         used_bindings_by_set[bind_key.space].insert(bind_key.slot);
 
@@ -86,7 +84,7 @@ VKBindingSetLayout::VKBindingSetLayout(VKDevice& device,
     std::map<ShaderType, uint32_t> inline_uniform_per_stage_blocks;
     uint32_t inline_uniform_blocks = 0;
     InlineUniformBlockProperties inline_uniform_block_properties = device.GetInlineUniformBlockProperties();
-    for (const auto& [bind_key, size] : constants) {
+    for (const auto& [bind_key, size] : desc.constants) {
         assert(bind_key.count == 1);
         assert(!used_bindings_by_set[bind_key.space].contains(bind_key.slot));
         used_bindings_by_set[bind_key.space].insert(bind_key.slot);

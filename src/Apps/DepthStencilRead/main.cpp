@@ -145,8 +145,8 @@ DepthStencilReadRenderer::DepthStencilReadRenderer(const Settings& settings)
     BindKey pixel_constant_buffer_key = pixel_shader_->GetBindKey("constant_buffer");
     BindKey pixel_depth_buffer_key = pixel_shader_->GetBindKey("depth_buffer");
     BindKey pixel_stencil_buffer_key = pixel_shader_->GetBindKey("stencil_buffer");
-    layout_ = device_->CreateBindingSetLayout(
-        { vertex_constant_buffer_key, pixel_constant_buffer_key, pixel_depth_buffer_key, pixel_stencil_buffer_key });
+    layout_ = device_->CreateBindingSetLayout({ .bind_keys = { vertex_constant_buffer_key, pixel_constant_buffer_key,
+                                                               pixel_depth_buffer_key, pixel_stencil_buffer_key } });
 
     depth_stencil_pass_binding_sets_.resize(render_model_.GetMeshCount());
     for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {

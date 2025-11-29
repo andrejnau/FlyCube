@@ -33,9 +33,7 @@ struct DescriptorTableDesc {
 
 class DXBindingSetLayout : public BindingSetLayout {
 public:
-    DXBindingSetLayout(DXDevice& device,
-                       const std::vector<BindKey>& bind_keys,
-                       const std::vector<BindingConstants>& constants);
+    DXBindingSetLayout(DXDevice& device, const BindingSetLayoutDesc& desc);
 
     const std::map<D3D12_DESCRIPTOR_HEAP_TYPE, size_t>& GetHeapDescs() const;
     const std::map<BindKey, BindingLayoutDesc>& GetLayout() const;

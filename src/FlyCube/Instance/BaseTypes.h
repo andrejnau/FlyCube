@@ -714,6 +714,11 @@ struct BindingConstants {
     uint64_t size = 0;
 };
 
+struct BindingSetLayoutDesc {
+    std::vector<BindKey> bind_keys;
+    std::vector<BindingConstants> constants;
+};
+
 struct BindingConstantsData {
     BindKey bind_key;
     std::span<const std::byte> data;

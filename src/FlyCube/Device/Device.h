@@ -48,10 +48,7 @@ public:
     virtual std::shared_ptr<Resource> CreateBuffer(MemoryType memory_type, const BufferDesc& desc) = 0;
     virtual std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) = 0;
     virtual std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) = 0;
-    virtual std::shared_ptr<BindingSetLayout> CreateBindingSetLayout(const std::vector<BindKey>& bind_keys) = 0;
-    virtual std::shared_ptr<BindingSetLayout> CreateBindingSetLayoutWithConstants(
-        const std::vector<BindKey>& bind_keys,
-        const std::vector<BindingConstants>& constants) = 0;
+    virtual std::shared_ptr<BindingSetLayout> CreateBindingSetLayout(const BindingSetLayoutDesc& desc) = 0;
     virtual std::shared_ptr<BindingSet> CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout) = 0;
     virtual std::shared_ptr<Shader> CreateShader(const std::vector<uint8_t>& blob,
                                                  ShaderBlobType blob_type,

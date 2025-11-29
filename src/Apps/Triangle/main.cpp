@@ -95,7 +95,7 @@ TriangleRenderer::TriangleRenderer(const Settings& settings)
         .space = 0,
         .count = 1,
     };
-    layout_ = device_->CreateBindingSetLayout({ constant_buffer_key });
+    layout_ = device_->CreateBindingSetLayout({ .bind_keys = { constant_buffer_key } });
     binding_set_ = device_->CreateBindingSet(layout_);
     binding_set_->WriteBindings({ .bindings = { { constant_buffer_key, constant_buffer_view_ } } });
 }
