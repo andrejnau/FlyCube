@@ -2,12 +2,10 @@
 
 #include "Device/MTDevice.h"
 
-MTBindingSetLayout::MTBindingSetLayout(MTDevice& device,
-                                       const std::vector<BindKey>& bind_keys,
-                                       const std::vector<BindingConstants>& constants)
+MTBindingSetLayout::MTBindingSetLayout(MTDevice& device, const BindingSetLayoutDesc& desc)
     : device_(device)
-    , bind_keys_(bind_keys)
-    , constants_(constants)
+    , bind_keys_(desc.bind_keys)
+    , constants_(desc.constants)
 {
 }
 

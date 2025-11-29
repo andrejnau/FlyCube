@@ -5,9 +5,7 @@ class MTDevice;
 
 class MTBindingSetLayout : public BindingSetLayout {
 public:
-    MTBindingSetLayout(MTDevice& device,
-                       const std::vector<BindKey>& bind_keys,
-                       const std::vector<BindingConstants>& constants);
+    MTBindingSetLayout(MTDevice& device, const BindingSetLayoutDesc& desc);
 
     const std::vector<BindKey>& GetBindKeys() const;
     const std::vector<BindingConstants>& GetConstants() const;

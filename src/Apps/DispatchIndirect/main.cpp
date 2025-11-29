@@ -77,7 +77,7 @@ DispatchIndirectRenderer::DispatchIndirectRenderer(const Settings& settings)
 
     BindKey constant_buffer_key = compute_shader_->GetBindKey("constant_buffer");
     BindKey result_texture_key = compute_shader_->GetBindKey("result_texture");
-    layout_ = device_->CreateBindingSetLayout({ constant_buffer_key, result_texture_key });
+    layout_ = device_->CreateBindingSetLayout({ .bind_keys = { constant_buffer_key, result_texture_key } });
 
     ComputePipelineDesc pipeline_desc = {
         .shader = compute_shader_,

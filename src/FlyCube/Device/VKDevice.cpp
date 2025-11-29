@@ -536,16 +536,9 @@ std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& reso
     return std::make_shared<VKView>(*this, std::static_pointer_cast<VKResource>(resource), view_desc);
 }
 
-std::shared_ptr<BindingSetLayout> VKDevice::CreateBindingSetLayout(const std::vector<BindKey>& bind_keys)
+std::shared_ptr<BindingSetLayout> VKDevice::CreateBindingSetLayout(const BindingSetLayoutDesc& desc)
 {
-    return CreateBindingSetLayoutWithConstants(bind_keys, {});
-}
-
-std::shared_ptr<BindingSetLayout> VKDevice::CreateBindingSetLayoutWithConstants(
-    const std::vector<BindKey>& bind_keys,
-    const std::vector<BindingConstants>& constants)
-{
-    return std::make_shared<VKBindingSetLayout>(*this, bind_keys, constants);
+    return std::make_shared<VKBindingSetLayout>(*this, desc);
 }
 
 std::shared_ptr<BindingSet> VKDevice::CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout)

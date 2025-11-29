@@ -327,16 +327,9 @@ std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& reso
     return std::make_shared<DXView>(*this, std::static_pointer_cast<DXResource>(resource), view_desc);
 }
 
-std::shared_ptr<BindingSetLayout> DXDevice::CreateBindingSetLayout(const std::vector<BindKey>& bind_keys)
+std::shared_ptr<BindingSetLayout> DXDevice::CreateBindingSetLayout(const BindingSetLayoutDesc& desc)
 {
-    return CreateBindingSetLayoutWithConstants(bind_keys, {});
-}
-
-std::shared_ptr<BindingSetLayout> DXDevice::CreateBindingSetLayoutWithConstants(
-    const std::vector<BindKey>& bind_keys,
-    const std::vector<BindingConstants>& constants)
-{
-    return std::make_shared<DXBindingSetLayout>(*this, bind_keys, constants);
+    return std::make_shared<DXBindingSetLayout>(*this, desc);
 }
 
 std::shared_ptr<BindingSet> DXDevice::CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout)
