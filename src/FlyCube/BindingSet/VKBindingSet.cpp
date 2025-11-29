@@ -34,21 +34,15 @@ VKBindingSet::VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetL
     }
 }
 
-void VKBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
-{
-    WriteBindingsAndConstants(bindings, {});
-}
-
-void VKBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bindings,
-                                             const std::vector<BindingConstantsData>& constants)
+void VKBindingSet::WriteBindings(const WriteBindingsDesc& desc)
 {
     std::vector<vk::WriteDescriptorSet> descriptors;
-    for (const auto& binding : bindings) {
+    for (const auto& binding : desc.bindings) {
         WriteDescriptor(descriptors, binding);
     }
 
     std::deque<vk::WriteDescriptorSetInlineUniformBlock> write_descriptor_set_inline_uniform_blocks;
-    for (const auto& [bind_key, data] : constants) {
+    for (const auto& [bind_key, data] : desc.constants) {
         if (layout_->GetInlineUniformBlocks().contains(bind_key)) {
             auto& write_descriptor_set_inline_uniform_block = write_descriptor_set_inline_uniform_blocks.emplace_back();
             write_descriptor_set_inline_uniform_block.dataSize = data.size();

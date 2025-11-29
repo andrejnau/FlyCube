@@ -319,10 +319,8 @@ void RayTracingTriangleRenderer::InitBindingSet()
     BindKey geometry_key = shader->GetBindKey("geometry");
     BindKey result_texture_key = shader->GetBindKey("result_texture");
     binding_set_ = device_->CreateBindingSet(layout_);
-    binding_set_->WriteBindings({
-        { geometry_key, tlas_view_ },
-        { result_texture_key, result_texture_view_ },
-    });
+    binding_set_->WriteBindings(
+        { .bindings = { { geometry_key, tlas_view_ }, { result_texture_key, result_texture_view_ } } });
 }
 
 RayTracingTriangleRenderer::~RayTracingTriangleRenderer()

@@ -56,19 +56,13 @@ DXBindingSet::DXBindingSet(DXDevice& device, const std::shared_ptr<DXBindingSetL
     }
 }
 
-void DXBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
+void DXBindingSet::WriteBindings(const WriteBindingsDesc& desc)
 {
-    WriteBindingsAndConstants(bindings, {});
-}
-
-void DXBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bindings,
-                                             const std::vector<BindingConstantsData>& constants)
-{
-    for (const auto& binding : bindings) {
+    for (const auto& binding : desc.bindings) {
         WriteDescriptor(binding);
     }
 
-    for (const auto& [bind_key, data] : constants) {
+    for (const auto& [bind_key, data] : desc.constants) {
         if (layout_->GetConstantsLayout().contains(bind_key)) {
             size_t offset = constants_data_offsets_.at(bind_key);
             memcpy(&constants_data_[offset], data.data(), data.size());

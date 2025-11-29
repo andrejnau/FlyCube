@@ -151,9 +151,8 @@ DepthStencilReadRenderer::DepthStencilReadRenderer(const Settings& settings)
     depth_stencil_pass_binding_sets_.resize(render_model_.GetMeshCount());
     for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
         depth_stencil_pass_binding_sets_[i] = device_->CreateBindingSet(layout_);
-        depth_stencil_pass_binding_sets_[i]->WriteBindings({
-            { vertex_constant_buffer_key, depth_stencil_pass_constant_buffer_views_[i] },
-        });
+        depth_stencil_pass_binding_sets_[i]->WriteBindings(
+            { .bindings = { { vertex_constant_buffer_key, depth_stencil_pass_constant_buffer_views_[i] } } });
     }
 }
 
@@ -249,12 +248,10 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, const NativeSurface
     BindKey pixel_stencil_buffer_key = pixel_shader_->GetBindKey("stencil_buffer");
 
     binding_set_ = device_->CreateBindingSet(layout_);
-    binding_set_->WriteBindings({
-        { vertex_constant_buffer_key, vertex_constant_buffer_view_ },
-        { pixel_constant_buffer_key, pixel_constant_buffer_view_ },
-        { pixel_depth_buffer_key, depth_read_view_ },
-        { pixel_stencil_buffer_key, stencil_read_view_ },
-    });
+    binding_set_->WriteBindings({ .bindings = { { vertex_constant_buffer_key, vertex_constant_buffer_view_ },
+                                                { pixel_constant_buffer_key, pixel_constant_buffer_view_ },
+                                                { pixel_depth_buffer_key, depth_read_view_ },
+                                                { pixel_stencil_buffer_key, stencil_read_view_ } } });
 
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         std::shared_ptr<Resource> back_buffer = swapchain_->GetBackBuffer(i);

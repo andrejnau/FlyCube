@@ -155,16 +155,15 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
             for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
                 pixel_constant_data[i] = pixel_textures_views_[i]->GetDescriptorId();
             }
-
-            binding_sets_[i]->WriteBindingsAndConstants(
-                { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ } },
-                { { vertex_constant_buffer_key, mvp_span },
-                  { pixel_constant_buffer_key, std::as_bytes(std::span{ pixel_constant_data }) } });
+            binding_sets_[i]->WriteBindings(
+                { .bindings = { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ } },
+                  .constants = { { vertex_constant_buffer_key, mvp_span },
+                                 { pixel_constant_buffer_key, std::as_bytes(std::span{ pixel_constant_data }) } } });
         } else {
-            binding_sets_[i]->WriteBindingsAndConstants(
-                { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
-                  { pixel_base_color_texture_key, pixel_textures_views_[i] } },
-                { { vertex_constant_buffer_key, mvp_span } });
+            binding_sets_[i]->WriteBindings(
+                { .bindings = { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
+                                { pixel_base_color_texture_key, pixel_textures_views_[i] } },
+                  .constants = { { vertex_constant_buffer_key, mvp_span } } });
         }
     }
 

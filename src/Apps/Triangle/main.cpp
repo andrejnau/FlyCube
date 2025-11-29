@@ -97,7 +97,7 @@ TriangleRenderer::TriangleRenderer(const Settings& settings)
     };
     layout_ = device_->CreateBindingSetLayout({ constant_buffer_key });
     binding_set_ = device_->CreateBindingSet(layout_);
-    binding_set_->WriteBindings({ { constant_buffer_key, constant_buffer_view_ } });
+    binding_set_->WriteBindings({ .bindings = { { constant_buffer_key, constant_buffer_view_ } } });
 }
 
 TriangleRenderer::~TriangleRenderer()
