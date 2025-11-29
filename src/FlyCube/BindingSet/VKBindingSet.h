@@ -14,9 +14,7 @@ class VKBindingSet : public BindingSetBase {
 public:
     VKBindingSet(VKDevice& device, const std::shared_ptr<VKBindingSetLayout>& layout);
 
-    void WriteBindings(const std::vector<BindingDesc>& bindings) override;
-    void WriteBindingsAndConstants(const std::vector<BindingDesc>& bindings,
-                                   const std::vector<BindingConstantsData>& constants) override;
+    void WriteBindings(const WriteBindingsDesc& desc) override;
 
     const std::vector<vk::DescriptorSet>& GetDescriptorSets() const;
 

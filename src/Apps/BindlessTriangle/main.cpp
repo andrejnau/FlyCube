@@ -150,8 +150,8 @@ BindlessTriangleRenderer::BindlessTriangleRenderer(const Settings& settings)
     layout_ = device_->CreateBindingSetLayout({ vertex_constant_buffer_key, vertex_structured_buffers_uint_key,
                                                 vertex_structured_buffers_float3_key, pixel_constant_buffer_key });
     binding_set_ = device_->CreateBindingSet(layout_);
-    binding_set_->WriteBindings({ { vertex_constant_buffer_key, vertex_constant_buffer_view_ },
-                                  { pixel_constant_buffer_key, pixel_constant_buffer_view_ } });
+    binding_set_->WriteBindings({ .bindings = { { vertex_constant_buffer_key, vertex_constant_buffer_view_ },
+                                                { pixel_constant_buffer_key, pixel_constant_buffer_view_ } } });
 }
 
 BindlessTriangleRenderer::~BindlessTriangleRenderer()

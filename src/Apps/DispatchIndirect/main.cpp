@@ -120,8 +120,8 @@ void DispatchIndirectRenderer::Init(const AppSize& app_size, const NativeSurface
     BindKey result_texture_key = compute_shader_->GetBindKey("result_texture");
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         binding_set_[i] = device_->CreateBindingSet(layout_);
-        binding_set_[i]->WriteBindings(
-            { { constant_buffer_key, constant_buffer_views_[i] }, { result_texture_key, result_texture_view_ } });
+        binding_set_[i]->WriteBindings({ .bindings = { { constant_buffer_key, constant_buffer_views_[i] },
+                                                       { result_texture_key, result_texture_view_ } } });
     }
 
     for (uint32_t i = 0; i < kFrameCount; ++i) {

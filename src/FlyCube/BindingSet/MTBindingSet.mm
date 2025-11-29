@@ -73,19 +73,13 @@ MTBindingSet::MTBindingSet(MTDevice& device, const std::shared_ptr<MTBindingSetL
     }
 }
 
-void MTBindingSet::WriteBindings(const std::vector<BindingDesc>& bindings)
+void MTBindingSet::WriteBindings(const WriteBindingsDesc& desc)
 {
-    WriteBindingsAndConstants(bindings, {});
-}
-
-void MTBindingSet::WriteBindingsAndConstants(const std::vector<BindingDesc>& bindings,
-                                             const std::vector<BindingConstantsData>& constants)
-{
-    for (const auto& [bind_key, view] : bindings) {
+    for (const auto& [bind_key, view] : desc.bindings) {
         assert(bind_key.count != kBindlessCount);
         direct_bindings_.insert_or_assign(bind_key, view);
     }
-    for (const auto& [bind_key, data] : constants) {
+    for (const auto& [bind_key, data] : desc.constants) {
         fallback_constants_buffer_->UpdateUploadBuffer(fallback_constants_buffer_offsets_.at(bind_key), data.data(),
                                                        data.size());
     }

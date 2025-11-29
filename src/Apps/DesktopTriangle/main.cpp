@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
     };
     std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ constant_buffer_key });
     std::shared_ptr<BindingSet> binding_set = device->CreateBindingSet(layout);
-    binding_set->WriteBindings({ { constant_buffer_key, constant_buffer_view } });
+    binding_set->WriteBindings({ .bindings = { { constant_buffer_key, constant_buffer_view } } });
 
     GraphicsPipelineDesc pipeline_desc = {
         .shaders = { vertex_shader, pixel_shader },

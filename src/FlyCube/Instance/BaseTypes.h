@@ -718,3 +718,8 @@ struct BindingConstantsData {
     BindKey bind_key;
     std::span<const std::byte> data;
 };
+
+struct WriteBindingsDesc {
+    std::vector<BindingDesc> bindings;
+    std::vector<BindingConstantsData> constants;
+};
