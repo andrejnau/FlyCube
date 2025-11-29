@@ -29,7 +29,7 @@ std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[setti
 std::shared_ptr<Device> device = adapter->CreateDevice();
 std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
 std::shared_ptr<Swapchain> swapchain =
-    device->CreateSwapchain(app.GetNativeWindow(), app_size.width(), app_size.height(), kFrameCount, settings.vsync);
+    device->CreateSwapchain(app.GetNativeSurface(), app_size.width(), app_size.height(), kFrameCount, settings.vsync);
 uint64_t fence_value = 0;
 std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
@@ -71,9 +71,9 @@ BindKey constant_buffer_key = {
     .space = 0,
     .count = 1,
 };
-std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ constant_buffer_key });
+std::shared_ptr<BindingSetLayout> layout = device->CreateBindingSetLayout({ .bind_keys = { constant_buffer_key } });
 std::shared_ptr<BindingSet> binding_set = device->CreateBindingSet(layout);
-binding_set->WriteBindings({ { constant_buffer_key, constant_buffer_view } });
+binding_set->WriteBindings({ .bindings = { { constant_buffer_key, constant_buffer_view } } });
 
 GraphicsPipelineDesc pipeline_desc = {
     .shaders = { vertex_shader, pixel_shader },
