@@ -100,6 +100,7 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const BindingSetLayoutD
     : device_(device)
 {
     std::vector<D3D12_ROOT_PARAMETER> root_parameters;
+    std::vector<D3D12_ROOT_PARAMETER> root_constants;
     std::map<RootKey, std::vector<D3D12_DESCRIPTOR_RANGE>> descriptor_table_ranges;
     std::map<RootKey, size_t> descriptor_table_offset;
     std::deque<D3D12_DESCRIPTOR_RANGE> bindless_ranges;
@@ -161,8 +162,8 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const BindingSetLayoutD
     }
 
     auto add_root_constant = [&](const BindKey& bind_key, uint32_t num_constants) {
-        size_t root_param_index = root_parameters.size();
-        D3D12_ROOT_PARAMETER& root_parameter = root_parameters.emplace_back();
+        size_t root_param_index = root_constants.size();
+        D3D12_ROOT_PARAMETER& root_parameter = root_constants.emplace_back();
         root_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
         root_parameter.Constants.ShaderRegister = bind_key.slot;
         root_parameter.Constants.RegisterSpace = bind_key.space;
@@ -210,6 +211,13 @@ DXBindingSetLayout::DXBindingSetLayout(DXDevice& device, const BindingSetLayoutD
         descriptor_tables_[root_param_index].heap_type = ranges.first.first;
         descriptor_tables_[root_param_index].heap_offset = descriptor_table_offset[ranges.first];
         descriptor_tables_[root_param_index].is_compute = IsCompute(ranges.first.second);
+    }
+
+    for (auto& [bind_key, desc] : constants_layout_) {
+        desc.root_param_index += root_parameters.size();
+    }
+    for (const auto& root_constant : root_constants) {
+        root_parameters.push_back(root_constant);
     }
 
     D3D12_ROOT_SIGNATURE_FLAGS root_signature_flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
