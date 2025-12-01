@@ -3,6 +3,7 @@
 #include "AppSettings/ArgsParser.h"
 #include "Instance/Instance.h"
 #include "Utilities/Asset.h"
+#include "Utilities/Common.h"
 
 #include <chrono>
 
@@ -35,6 +36,7 @@ private:
     std::shared_ptr<CommandQueue> command_queue_;
     uint64_t fence_value_ = 0;
     std::shared_ptr<Fence> fence_;
+    uint64_t constant_buffer_stride_ = 0;
     std::shared_ptr<Resource> buffer_;
     std::array<std::shared_ptr<View>, kFrameCount> constant_buffer_views_ = {};
     std::shared_ptr<Shader> compute_shader_;
@@ -47,7 +49,6 @@ private:
     std::array<std::shared_ptr<BindingSet>, kFrameCount> binding_set_ = {};
     std::array<std::shared_ptr<CommandList>, kFrameCount> command_lists_ = {};
     std::array<uint64_t, kFrameCount> fence_values_ = {};
-    std::array<float, kFrameCount> constant_data_ = {};
 };
 
 DispatchIndirectRenderer::DispatchIndirectRenderer(const Settings& settings)
@@ -59,14 +60,15 @@ DispatchIndirectRenderer::DispatchIndirectRenderer(const Settings& settings)
     command_queue_ = device_->GetCommandQueue(CommandListType::kGraphics);
     fence_ = device_->CreateFence(fence_value_);
 
+    constant_buffer_stride_ = Align(sizeof(float), device_->GetConstantBufferOffsetAlignment());
     buffer_ = device_->CreateBuffer(MemoryType::kUpload,
-                                    { .size = sizeof(float) * kFrameCount + sizeof(DispatchIndirectCommand),
+                                    { .size = constant_buffer_stride_ * kFrameCount + sizeof(DispatchIndirectCommand),
                                       .usage = BindFlag::kConstantBuffer | BindFlag::kIndirectBuffer });
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         ViewDesc constant_buffer_view_desc = {
             .view_type = ViewType::kConstantBuffer,
             .dimension = ViewDimension::kBuffer,
-            .offset = i * sizeof(float),
+            .offset = i * constant_buffer_stride_,
         };
         constant_buffer_views_[i] = device_->CreateView(buffer_, constant_buffer_view_desc);
     }
@@ -114,7 +116,7 @@ void DispatchIndirectRenderer::Init(const AppSize& app_size, const NativeSurface
 
     DispatchIndirectCommand argument_data = { (result_texture_desc.width + kNumThreads - 1) / kNumThreads,
                                               (result_texture_desc.height + kNumThreads - 1) / kNumThreads, 1 };
-    buffer_->UpdateUploadBuffer(sizeof(float) * kFrameCount, &argument_data, sizeof(argument_data));
+    buffer_->UpdateUploadBuffer(constant_buffer_stride_ * kFrameCount, &argument_data, sizeof(argument_data));
 
     BindKey constant_buffer_key = compute_shader_->GetBindKey("constant_buffer");
     BindKey result_texture_key = compute_shader_->GetBindKey("result_texture");
@@ -131,7 +133,7 @@ void DispatchIndirectRenderer::Init(const AppSize& app_size, const NativeSurface
         command_list = device_->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(pipeline_);
         command_list->BindBindingSet(binding_set_[i]);
-        command_list->DispatchIndirect(buffer_, sizeof(float) * kFrameCount);
+        command_list->DispatchIndirect(buffer_, constant_buffer_stride_ * kFrameCount);
         TextureCopyRegion region = {
             .extent = { result_texture_desc.width, result_texture_desc.height, 1 },
             .dst_offset = { (app_size.width() - result_texture_desc.width) / 2,
@@ -162,9 +164,8 @@ void DispatchIndirectRenderer::Render()
     fence_->Wait(fence_values_[frame_index]);
 
     auto now = std::chrono::high_resolution_clock::now();
-    constant_data_[frame_index] = std::chrono::duration<float>(now.time_since_epoch()).count();
-    buffer_->UpdateUploadBuffer(sizeof(constant_data_[frame_index]) * frame_index, &constant_data_[frame_index],
-                                sizeof(constant_data_[frame_index]));
+    float constant_data = std::chrono::duration<float>(now.time_since_epoch()).count();
+    buffer_->UpdateUploadBuffer(constant_buffer_stride_ * frame_index, &constant_data, sizeof(constant_data));
 
     command_queue_->ExecuteCommandLists({ command_lists_[frame_index] });
     command_queue_->Signal(fence_, fence_values_[frame_index] = ++fence_value_);
