@@ -17,14 +17,6 @@ vk::UniqueDescriptorPool VKGPUDescriptorPool::CreateDescriptorPool(const Allocat
         pool_size.descriptorCount = count;
     }
 
-    // TODO: fix me
-    if (pool_sizes.empty()) {
-        pool_sizes.emplace_back();
-        vk::DescriptorPoolSize& pool_size = pool_sizes.back();
-        pool_size.type = vk::DescriptorType::eSampler;
-        pool_size.descriptorCount = 1;
-    }
-
     vk::DescriptorPoolCreateInfo pool_info = {};
     pool_info.poolSizeCount = pool_sizes.size();
     pool_info.pPoolSizes = pool_sizes.data();
