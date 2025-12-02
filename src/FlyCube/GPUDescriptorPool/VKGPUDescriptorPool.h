@@ -7,7 +7,7 @@ class VKDevice;
 
 struct DescriptorSetPool {
     vk::UniqueDescriptorPool pool;
-    vk::UniqueDescriptorSet set;
+    vk::DescriptorSet set;
 };
 
 class VKGPUDescriptorPool {

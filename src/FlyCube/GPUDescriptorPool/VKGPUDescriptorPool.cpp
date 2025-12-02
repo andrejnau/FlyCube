@@ -21,7 +21,6 @@ vk::UniqueDescriptorPool VKGPUDescriptorPool::CreateDescriptorPool(const Allocat
     pool_info.poolSizeCount = pool_sizes.size();
     pool_info.pPoolSizes = pool_sizes.data();
     pool_info.maxSets = 1;
-    pool_info.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 
     vk::DescriptorPoolInlineUniformBlockCreateInfo descriptor_pool_inline_uniform_block_info = {};
     descriptor_pool_inline_uniform_block_info.maxInlineUniformBlockBindings = desc.inline_uniform_block_bindings;
@@ -42,7 +41,7 @@ DescriptorSetPool VKGPUDescriptorPool::AllocateDescriptorSet(const vk::Descripto
     alloc_info.descriptorPool = res.pool.get();
     alloc_info.descriptorSetCount = 1;
     alloc_info.pSetLayouts = &set_layout;
-    auto descriptor_sets = device_.GetDevice().allocateDescriptorSetsUnique(alloc_info);
+    auto descriptor_sets = device_.GetDevice().allocateDescriptorSets(alloc_info);
     res.set = std::move(descriptor_sets.front());
 
     return res;
