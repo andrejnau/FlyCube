@@ -13,7 +13,6 @@ public:
     const std::vector<uint8_t>& GetBlob() const override;
     uint64_t GetId(const std::string& entry_point) const override;
     const BindKey& GetBindKey(const std::string& name) const override;
-    const std::vector<ResourceBindingDesc>& GetResourceBindings() const override;
     const ResourceBindingDesc& GetResourceBinding(const BindKey& bind_key) const override;
     uint32_t GetInputLayoutLocation(const std::string& semantic_name) const override;
     const std::vector<BindKey>& GetBindings() const override;

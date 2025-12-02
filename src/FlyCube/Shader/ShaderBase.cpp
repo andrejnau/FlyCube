@@ -55,11 +55,6 @@ const BindKey& ShaderBase::GetBindKey(const std::string& name) const
     return bind_keys_.at(name);
 }
 
-const std::vector<ResourceBindingDesc>& ShaderBase::GetResourceBindings() const
-{
-    return bindings_;
-}
-
 const ResourceBindingDesc& ShaderBase::GetResourceBinding(const BindKey& bind_key) const
 {
     size_t index = mapping_.at(bind_key);
