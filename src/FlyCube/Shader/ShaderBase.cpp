@@ -16,17 +16,19 @@ ShaderBase::ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_typ
     , shader_type_(shader_type)
 {
     reflection_ = CreateShaderReflection(blob_type, blob_.data(), blob_.size());
-    bindings_ = reflection_->GetBindings();
-    for (uint32_t i = 0; i < bindings_.size(); ++i) {
-        BindKey bind_key = { shader_type_, bindings_[i].type, bindings_[i].slot, bindings_[i].space,
-                             bindings_[i].count };
-        bind_keys_[bindings_[i].name] = bind_key;
-        mapping_[bind_key] = i;
+    for (const auto& binding : reflection_->GetBindings()) {
+        BindKey bind_key = {
+            .shader_type = shader_type_,
+            .view_type = binding.type,
+            .slot = binding.slot,
+            .space = binding.space,
+            .count = binding.count,
+        };
+        bind_keys_[binding.name] = bind_key;
         binding_keys_.emplace_back(bind_key);
     }
 
-    decltype(auto) input_parameters = reflection_->GetInputParameters();
-    for (const auto& input_parameter : input_parameters) {
+    for (const auto& input_parameter : reflection_->GetInputParameters()) {
         locations_[input_parameter.semantic_name] = input_parameter.location;
     }
 
@@ -53,12 +55,6 @@ uint64_t ShaderBase::GetId(const std::string& entry_point) const
 const BindKey& ShaderBase::GetBindKey(const std::string& name) const
 {
     return bind_keys_.at(name);
-}
-
-const ResourceBindingDesc& ShaderBase::GetResourceBinding(const BindKey& bind_key) const
-{
-    size_t index = mapping_.at(bind_key);
-    return bindings_.at(index);
 }
 
 uint32_t ShaderBase::GetInputLayoutLocation(const std::string& semantic_name) const
