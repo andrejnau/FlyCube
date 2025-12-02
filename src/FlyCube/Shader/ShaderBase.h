@@ -14,7 +14,6 @@ public:
     uint64_t GetId(const std::string& entry_point) const override;
     const BindKey& GetBindKey(const std::string& name) const override;
     uint32_t GetInputLayoutLocation(const std::string& semantic_name) const override;
-    const std::vector<BindKey>& GetBindings() const override;
     const std::shared_ptr<ShaderReflection>& GetReflection() const override;
 
 protected:
@@ -22,7 +21,6 @@ protected:
     ShaderBlobType blob_type_;
     ShaderType shader_type_;
     std::map<std::string, uint64_t> ids_;
-    std::vector<BindKey> binding_keys_;
     std::map<std::string, BindKey> bind_keys_;
     std::map<std::string, uint32_t> locations_;
     std::shared_ptr<ShaderReflection> reflection_;

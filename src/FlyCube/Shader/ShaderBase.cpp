@@ -25,7 +25,6 @@ ShaderBase::ShaderBase(const std::vector<uint8_t>& blob, ShaderBlobType blob_typ
             .count = binding.count,
         };
         bind_keys_[binding.name] = bind_key;
-        binding_keys_.emplace_back(bind_key);
     }
 
     for (const auto& input_parameter : reflection_->GetInputParameters()) {
@@ -60,11 +59,6 @@ const BindKey& ShaderBase::GetBindKey(const std::string& name) const
 uint32_t ShaderBase::GetInputLayoutLocation(const std::string& semantic_name) const
 {
     return locations_.at(semantic_name);
-}
-
-const std::vector<BindKey>& ShaderBase::GetBindings() const
-{
-    return binding_keys_;
 }
 
 const std::shared_ptr<ShaderReflection>& ShaderBase::GetReflection() const
