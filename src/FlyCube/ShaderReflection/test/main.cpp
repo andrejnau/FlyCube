@@ -16,7 +16,22 @@ std::shared_ptr<ShaderReflection> CompileAndCreateShaderReflection(const ShaderD
     return reflection;
 }
 
+inline auto MakePartialTie(const EntryPoint& self)
+{
+    return std::tie(self.name, self.kind);
+}
+
 } // namespace
+
+inline bool operator==(const EntryPoint& lhs, const EntryPoint& rhs)
+{
+    return MakePartialTie(lhs) == MakePartialTie(rhs);
+}
+
+inline bool operator<(const EntryPoint& lhs, const EntryPoint& rhs)
+{
+    return MakePartialTie(lhs) < MakePartialTie(rhs);
+}
 
 TEST_CASE("RayTracingTriangle/RayTracing.hlsl")
 {

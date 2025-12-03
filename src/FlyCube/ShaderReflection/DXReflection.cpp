@@ -342,7 +342,38 @@ std::vector<OutputParameterDesc> ParseOutputParameters(const D3D12_SHADER_DESC& 
     return output_parameters;
 }
 
+inline auto MakeTie(const ResourceBindingDesc& self)
+{
+    return std::tie(self.name, self.type, self.slot, self.space, self.count, self.dimension, self.return_type,
+                    self.structure_stride);
+}
+
+inline auto MakeTie(const VariableLayout& self)
+{
+    return std::tie(self.name, self.type, self.offset, self.size, self.rows, self.columns, self.elements, self.members);
+}
+
 } // namespace
+
+inline bool operator==(const ResourceBindingDesc& lhs, const ResourceBindingDesc& rhs)
+{
+    return MakeTie(lhs) == MakeTie(rhs);
+}
+
+inline bool operator<(const ResourceBindingDesc& lhs, const ResourceBindingDesc& rhs)
+{
+    return MakeTie(lhs) < MakeTie(rhs);
+}
+
+inline bool operator==(const VariableLayout& lhs, const VariableLayout& rhs)
+{
+    return MakeTie(lhs) == MakeTie(rhs);
+}
+
+inline bool operator<(const VariableLayout& lhs, const VariableLayout& rhs)
+{
+    return MakeTie(lhs) < MakeTie(rhs);
+}
 
 void DXReflection::ParseReflectionPart(const ReflectionPart& reflection_part)
 {
@@ -366,8 +397,8 @@ void DXReflection::ParseReflectionPart(const ReflectionPart& reflection_part)
             ID3D12FunctionReflection* function_reflection = library_reflection->GetFunctionByIndex(i);
             D3D12_FUNCTION_DESC function_desc = {};
             CHECK_HRESULT(function_reflection->GetDesc(&function_desc));
-            auto function_bindings = ParseReflection(function_desc, function_reflection);
-            auto function_layouts = ParseLayout(function_desc, function_reflection);
+            std::vector<ResourceBindingDesc> function_bindings = ParseReflection(function_desc, function_reflection);
+            std::vector<VariableLayout> function_layouts = ParseLayout(function_desc, function_reflection);
             assert(function_bindings.size() == function_layouts.size());
             for (size_t i = 0; i < function_bindings.size(); ++i) {
                 auto it = exist.find(function_bindings[i].name);
