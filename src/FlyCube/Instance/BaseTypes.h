@@ -173,11 +173,6 @@ struct RasterizerDesc {
     int32_t depth_bias = 0;
 };
 
-inline auto MakeTie(const RasterizerDesc& self)
-{
-    return std::tie(self.fill_mode, self.cull_mode, self.depth_bias);
-}
-
 enum class Blend {
     kZero,
     kSrcAlpha,
@@ -198,12 +193,6 @@ struct BlendDesc {
     BlendOp blend_op_alpha;
 };
 
-inline auto MakeTie(const BlendDesc& self)
-{
-    return std::tie(self.blend_enable, self.blend_src, self.blend_dest, self.blend_op, self.blend_src_alpha,
-                    self.blend_dest_apha, self.blend_op_alpha);
-}
-
 enum class ComparisonFunc { kNever, kLess, kEqual, kLessEqual, kGreater, kNotEqual, kGreaterEqual, kAlways };
 
 enum class StencilOp { kKeep, kZero, kReplace, kIncrSat, kDecrSat, kInvert, kIncr, kDecr };
@@ -214,11 +203,6 @@ struct StencilOpDesc {
     StencilOp pass_op = StencilOp::kKeep;
     ComparisonFunc func = ComparisonFunc::kAlways;
 };
-
-inline auto MakeTie(const StencilOpDesc& self)
-{
-    return std::tie(self.fail_op, self.depth_fail_op, self.pass_op, self.func);
-}
 
 struct DepthStencilDesc {
     bool depth_test_enable = true;
@@ -231,13 +215,6 @@ struct DepthStencilDesc {
     StencilOpDesc front_face = {};
     StencilOpDesc back_face = {};
 };
-
-inline auto MakeTie(const DepthStencilDesc& self)
-{
-    return std::tie(self.depth_test_enable, self.depth_func, self.depth_write_enable, self.depth_bounds_test_enable,
-                    self.stencil_enable, self.stencil_read_mask, self.stencil_write_mask, self.front_face,
-                    self.back_face);
-}
 
 enum class ShaderType {
     kUnknown,
@@ -290,11 +267,6 @@ struct InputLayoutDesc {
     uint32_t stride = 0;
     uint32_t offset = 0;
 };
-
-inline auto MakeTie(const InputLayoutDesc& self)
-{
-    return std::tie(self.slot, self.semantic_name, self.format, self.stride, self.offset);
-}
 
 enum class RenderPassLoadOp {
     kLoad,
@@ -349,21 +321,10 @@ struct GraphicsPipelineDesc {
     uint32_t sample_count = 1;
 };
 
-inline auto MakeTie(const GraphicsPipelineDesc& self)
-{
-    return std::tie(self.shaders, self.layout, self.input, self.color_formats, self.depth_stencil_format,
-                    self.depth_stencil_desc, self.blend_desc, self.rasterizer_desc, self.sample_count);
-}
-
 struct ComputePipelineDesc {
     std::shared_ptr<Shader> shader;
     std::shared_ptr<BindingSetLayout> layout;
 };
-
-inline auto MakeTie(const ComputePipelineDesc& self)
-{
-    return std::tie(self.shader, self.layout);
-}
 
 enum class RayTracingShaderGroupType {
     kGeneral,
@@ -379,21 +340,11 @@ struct RayTracingShaderGroup {
     uint64_t intersection = 0;
 };
 
-inline auto MakeTie(const RayTracingShaderGroup& self)
-{
-    return std::tie(self.type, self.general, self.closest_hit, self.any_hit, self.intersection);
-}
-
 struct RayTracingPipelineDesc {
     std::vector<std::shared_ptr<Shader>> shaders;
     std::shared_ptr<BindingSetLayout> layout;
     std::vector<RayTracingShaderGroup> groups;
 };
-
-inline auto MakeTie(const RayTracingPipelineDesc& self)
-{
-    return std::tie(self.shaders, self.layout, self.groups);
-}
 
 struct RayTracingShaderTable {
     std::shared_ptr<Resource> resource;
@@ -424,15 +375,15 @@ inline auto MakeTie(const BindKey& self)
     return std::tie(self.shader_type, self.view_type, self.slot, self.space, self.count);
 }
 
+inline bool operator<(const BindKey& l, const BindKey& r)
+{
+    return MakeTie(l) < MakeTie(r);
+}
+
 struct BindingDesc {
     BindKey bind_key;
     std::shared_ptr<View> view;
 };
-
-inline auto MakeTie(const BindingDesc& self)
-{
-    return std::tie(self.bind_key, self.view);
-}
 
 enum class ReturnType {
     kUnknown,
@@ -616,13 +567,6 @@ constexpr uint64_t kAccelerationStructureAlignment = 256;
 enum class QueryHeapType {
     kAccelerationStructureCompactedSize,
 };
-
-template <typename T>
-auto operator<(const T& l, const T& r)
-    -> std::enable_if_t<std::is_same_v<decltype(MakeTie(l) < MakeTie(r)), bool>, bool>
-{
-    return MakeTie(l) < MakeTie(r);
-}
 
 struct TextureDesc {
     TextureType type;
