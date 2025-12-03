@@ -368,17 +368,9 @@ struct BindKey {
     uint32_t slot = 0;
     uint32_t space = 0;
     uint32_t count = 1;
+
+    auto operator<=>(const BindKey&) const = default;
 };
-
-inline auto MakeTie(const BindKey& self)
-{
-    return std::tie(self.shader_type, self.view_type, self.slot, self.space, self.count);
-}
-
-inline bool operator<(const BindKey& l, const BindKey& r)
-{
-    return MakeTie(l) < MakeTie(r);
-}
 
 struct BindingDesc {
     BindKey bind_key;
