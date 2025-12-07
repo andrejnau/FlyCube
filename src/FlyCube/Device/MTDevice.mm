@@ -21,6 +21,30 @@
 
 #include <type_traits>
 
+MTLCompareFunction ConvertToCompareFunction(ComparisonFunc func)
+{
+    switch (func) {
+    case ComparisonFunc::kNever:
+        return MTLCompareFunctionNever;
+    case ComparisonFunc::kLess:
+        return MTLCompareFunctionLess;
+    case ComparisonFunc::kEqual:
+        return MTLCompareFunctionEqual;
+    case ComparisonFunc::kLessEqual:
+        return MTLCompareFunctionLessEqual;
+    case ComparisonFunc::kGreater:
+        return MTLCompareFunctionGreater;
+    case ComparisonFunc::kNotEqual:
+        return MTLCompareFunctionNotEqual;
+    case ComparisonFunc::kGreaterEqual:
+        return MTLCompareFunctionGreaterEqual;
+    case ComparisonFunc::kAlways:
+        return MTLCompareFunctionAlways;
+    default:
+        NOTREACHED();
+    }
+}
+
 MTDevice::MTDevice(MTInstance& instance, id<MTLDevice> device)
     : instance_(instance)
     , device_(device)
@@ -212,6 +236,11 @@ bool MTDevice::IsGeometryShaderSupported() const
 }
 
 bool MTDevice::IsBindlessSupported() const
+{
+    return true;
+}
+
+bool MTDevice::IsSamplerFilterMinmaxSupported() const
 {
     return true;
 }

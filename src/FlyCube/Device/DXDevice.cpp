@@ -12,7 +12,6 @@
 #include "Pipeline/DXRayTracingPipeline.h"
 #include "QueryHeap/DXRayTracingQueryHeap.h"
 #include "Shader/ShaderBase.h"
-#include "Utilities/DXGIFormatHelper.h"
 #include "Utilities/DXUtility.h"
 #include "Utilities/NotReached.h"
 #include "View/DXView.h"
@@ -142,6 +141,30 @@ D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStr
     return dx_flags;
 }
 
+D3D12_COMPARISON_FUNC ConvertToComparisonFunc(ComparisonFunc func)
+{
+    switch (func) {
+    case ComparisonFunc::kNever:
+        return D3D12_COMPARISON_FUNC_NEVER;
+    case ComparisonFunc::kLess:
+        return D3D12_COMPARISON_FUNC_LESS;
+    case ComparisonFunc::kEqual:
+        return D3D12_COMPARISON_FUNC_EQUAL;
+    case ComparisonFunc::kLessEqual:
+        return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    case ComparisonFunc::kGreater:
+        return D3D12_COMPARISON_FUNC_GREATER;
+    case ComparisonFunc::kNotEqual:
+        return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+    case ComparisonFunc::kGreaterEqual:
+        return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+    case ComparisonFunc::kAlways:
+        return D3D12_COMPARISON_FUNC_ALWAYS;
+    default:
+        NOTREACHED();
+    }
+}
+
 DXDevice::DXDevice(DXAdapter& adapter)
     : adapter_(adapter)
     , cpu_descriptor_pool_(*this)
@@ -190,6 +213,12 @@ DXDevice::DXDevice(DXAdapter& adapter)
             device_->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &feature_support7, sizeof(feature_support7)))) {
         is_create_not_zeroed_available_ = true;
         is_mesh_shading_supported_ = feature_support7.MeshShaderTier >= D3D12_MESH_SHADER_TIER_1;
+    }
+
+    D3D12_FEATURE_DATA_D3D12_OPTIONS19 feature_support19 = {};
+    if (SUCCEEDED(device_->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS19, &feature_support19,
+                                               sizeof(feature_support19)))) {
+        is_aniso_filter_with_point_mip_supported_ = feature_support19.AnisoFilterWithPointMipSupported;
     }
 
     command_queues_[CommandListType::kGraphics] = std::make_shared<DXCommandQueue>(*this, CommandListType::kGraphics);
@@ -424,6 +453,11 @@ bool DXDevice::IsBindlessSupported() const
     return true;
 }
 
+bool DXDevice::IsSamplerFilterMinmaxSupported() const
+{
+    return true;
+}
+
 uint32_t DXDevice::GetShadingRateImageTileSize() const
 {
     return shading_rate_image_tile_size_;
@@ -525,6 +559,11 @@ bool DXDevice::IsUnderGraphicsDebugger() const
 bool DXDevice::IsCreateNotZeroedAvailable() const
 {
     return is_create_not_zeroed_available_;
+}
+
+bool DXDevice::IsAnisoFilterWithPointMipSupported() const
+{
+    return is_aniso_filter_with_point_mip_supported_;
 }
 
 ID3D12CommandSignature* DXDevice::GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TYPE type, uint32_t stride)

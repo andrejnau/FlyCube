@@ -8,6 +8,11 @@
 
 namespace {
 
+constexpr uint32_t kPositions = 0;
+constexpr uint32_t kTexcoords = 1;
+constexpr uint32_t kFrameCount = 3;
+constexpr bool kAllowBindless = true;
+
 glm::mat4 GetViewMatrix()
 {
     glm::vec3 eye = glm::vec3(0.0, 0.0, 3.5);
@@ -21,10 +26,6 @@ glm::mat4 GetProjectionMatrix(uint32_t width, uint32_t height)
     return glm::perspective(glm::radians(45.0f), static_cast<float>(width) / height,
                             /*zNear=*/0.1f, /*zFar=*/128.0f);
 }
-
-constexpr uint32_t kPositions = 0;
-constexpr uint32_t kTexcoords = 1;
-constexpr uint32_t kFrameCount = 3;
 
 } // namespace
 
@@ -52,8 +53,8 @@ private:
     std::shared_ptr<Fence> fence_;
     RenderModel render_model_;
     std::vector<std::shared_ptr<View>> pixel_textures_views_;
-    std::shared_ptr<Resource> pixel_anisotropic_sampler_;
-    std::shared_ptr<View> pixel_anisotropic_sampler_view_;
+    std::shared_ptr<Resource> pixel_sampler_;
+    std::shared_ptr<View> pixel_sampler_view_;
     std::shared_ptr<Shader> vertex_shader_;
     std::shared_ptr<Shader> pixel_shader_;
 
@@ -85,29 +86,29 @@ ModelViewRenderer::ModelViewRenderer(const Settings& settings)
         ViewDesc pixel_textures_view_desc = {
             .view_type = ViewType::kTexture,
             .dimension = ViewDimension::kTexture2D,
-            .bindless = device_->IsBindlessSupported(),
+            .bindless = kAllowBindless && device_->IsBindlessSupported(),
         };
         pixel_textures_views_[i] =
             device_->CreateView(render_model_.GetMesh(i).textures.base_color, pixel_textures_view_desc);
     }
 
-    pixel_anisotropic_sampler_ = device_->CreateSampler({
-        SamplerFilter::kAnisotropic,
-        SamplerTextureAddressMode::kWrap,
-        SamplerComparisonFunc::kNever,
+    pixel_sampler_ = device_->CreateSampler({
+        .min_filter = SamplerFilter::kLinear,
+        .mag_filter = SamplerFilter::kLinear,
+        .mip_filter = SamplerFilter::kNearest,
     });
-    ViewDesc pixel_anisotropic_sampler_view_desc = {
+    ViewDesc pixel_sampler_view_desc = {
         .view_type = ViewType::kSampler,
+        .bindless = kAllowBindless && device_->IsBindlessSupported(),
     };
-    pixel_anisotropic_sampler_view_ =
-        device_->CreateView(pixel_anisotropic_sampler_, pixel_anisotropic_sampler_view_desc);
+    pixel_sampler_view_ = device_->CreateView(pixel_sampler_, pixel_sampler_view_desc);
 
     ShaderBlobType blob_type = device_->GetSupportedShaderBlobType();
     std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/ModelView/VertexShader.hlsl", blob_type);
-    std::vector<uint8_t> pixel_blob =
-        AssetLoadShaderBlob(device_->IsBindlessSupported() ? "assets/ModelView/PixelShaderBindless.hlsl"
-                                                           : "assets/ModelView/PixelShader.hlsl",
-                            blob_type);
+    std::vector<uint8_t> pixel_blob = AssetLoadShaderBlob(kAllowBindless && device_->IsBindlessSupported()
+                                                              ? "assets/ModelView/PixelShaderBindless.hlsl"
+                                                              : "assets/ModelView/PixelShader.hlsl",
+                                                          blob_type);
     vertex_shader_ = device_->CreateShader(vertex_blob, blob_type, ShaderType::kVertex);
     pixel_shader_ = device_->CreateShader(pixel_blob, blob_type, ShaderType::kPixel);
 }
@@ -121,49 +122,46 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
 {
     swapchain_ = device_->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, settings_.vsync);
 
-    BindKey vertex_constant_buffer_key = vertex_shader_->GetBindKey("constant_buffer");
-    BindKey pixel_anisotropic_sampler_key = pixel_shader_->GetBindKey("anisotropic_sampler");
-    BindKey pixel_bindless_textures_key;
-    BindKey pixel_constant_buffer_key;
-    BindKey pixel_base_color_texture_key;
-
-    if (device_->IsBindlessSupported()) {
-        pixel_bindless_textures_key = pixel_shader_->GetBindKey("bindless_textures");
-        pixel_constant_buffer_key = pixel_shader_->GetBindKey("constant_buffer");
-        layout_ = device_->CreateBindingSetLayout(
-            { .bind_keys = { pixel_bindless_textures_key, pixel_anisotropic_sampler_key },
-              .constants = { { vertex_constant_buffer_key, sizeof(glm::mat4) },
-                             { pixel_constant_buffer_key, sizeof(uint32_t) * render_model_.GetMeshCount() } } });
-    } else {
-        pixel_base_color_texture_key = pixel_shader_->GetBindKey("base_color_texture");
-        layout_ = device_->CreateBindingSetLayout(
-            { .bind_keys = { pixel_base_color_texture_key, pixel_anisotropic_sampler_key },
-              .constants = { { vertex_constant_buffer_key, sizeof(glm::mat4) } } });
-    }
-
     glm::mat4 view = GetViewMatrix();
     glm::mat4 projection = GetProjectionMatrix(app_size.width(), app_size.height());
 
+    BindKey vertex_constant_buffer_key = vertex_shader_->GetBindKey("constant_buffer");
     binding_sets_.resize(render_model_.GetMeshCount());
-    for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
-        binding_sets_[i] = device_->CreateBindingSet(layout_);
+    if (kAllowBindless && device_->IsBindlessSupported()) {
+        BindKey pixel_bindless_textures_key = pixel_shader_->GetBindKey("bindless_textures");
+        BindKey pixel_bindless_samplers_key = pixel_shader_->GetBindKey("bindless_samplers");
+        BindKey pixel_constant_buffer_key = pixel_shader_->GetBindKey("constant_buffer");
+        using ConstantLayout = std::pair<uint32_t, uint32_t>;
+        layout_ = device_->CreateBindingSetLayout(
+            { .bind_keys = { pixel_bindless_textures_key, pixel_bindless_samplers_key },
+              .constants = { { vertex_constant_buffer_key, sizeof(glm::mat4) },
+                             { pixel_constant_buffer_key, sizeof(ConstantLayout) * render_model_.GetMeshCount() } } });
 
-        glm::mat4 mvp = glm::transpose(projection * view * render_model_.GetMesh(i).matrix);
-        auto mvp_span = std::as_bytes(std::span{ &mvp, 1 });
-        if (device_->IsBindlessSupported()) {
-            std::vector<uint32_t> pixel_constant_data(render_model_.GetMeshCount());
-            for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
-                pixel_constant_data[i] = pixel_textures_views_[i]->GetDescriptorId();
-            }
+        for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
+            glm::mat4 mvp = glm::transpose(projection * view * render_model_.GetMesh(i).matrix);
+            ConstantLayout pixel_constant_data = { pixel_textures_views_[i]->GetDescriptorId(),
+                                                   pixel_sampler_view_->GetDescriptorId() };
+            binding_sets_[i] = device_->CreateBindingSet(layout_);
             binding_sets_[i]->WriteBindings(
-                { .bindings = { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ } },
-                  .constants = { { vertex_constant_buffer_key, mvp_span },
-                                 { pixel_constant_buffer_key, std::as_bytes(std::span{ pixel_constant_data }) } } });
-        } else {
+                { .constants = {
+                      { vertex_constant_buffer_key, std::as_bytes(std::span{ &mvp, 1 }) },
+                      { pixel_constant_buffer_key, std::as_bytes(std::span{ &pixel_constant_data, 1 }) } } });
+        }
+    } else {
+        BindKey pixel_base_color_texture_key = pixel_shader_->GetBindKey("base_color_texture");
+        BindKey min_mag_linear_mip_nearest_sampler_key =
+            pixel_shader_->GetBindKey("min_mag_linear_mip_nearest_sampler");
+        layout_ = device_->CreateBindingSetLayout(
+            { .bind_keys = { pixel_base_color_texture_key, min_mag_linear_mip_nearest_sampler_key },
+              .constants = { { vertex_constant_buffer_key, sizeof(glm::mat4) } } });
+
+        for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
+            glm::mat4 mvp = glm::transpose(projection * view * render_model_.GetMesh(i).matrix);
+            binding_sets_[i] = device_->CreateBindingSet(layout_);
             binding_sets_[i]->WriteBindings(
-                { .bindings = { { pixel_anisotropic_sampler_key, pixel_anisotropic_sampler_view_ },
-                                { pixel_base_color_texture_key, pixel_textures_views_[i] } },
-                  .constants = { { vertex_constant_buffer_key, mvp_span } } });
+                { .bindings = { { pixel_base_color_texture_key, pixel_textures_views_[i] },
+                                { min_mag_linear_mip_nearest_sampler_key, pixel_sampler_view_ } },
+                  .constants = { { vertex_constant_buffer_key, std::as_bytes(std::span{ &mvp, 1 }) } } });
         }
     }
 

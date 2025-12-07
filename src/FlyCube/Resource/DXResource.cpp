@@ -4,12 +4,17 @@
 #include "Memory/DXMemory.h"
 #include "Utilities/Common.h"
 #include "Utilities/DXGIFormatHelper.h"
+#include "Utilities/NotReached.h"
 
 #include <directx/d3dx12.h>
 #include <gli/dx.hpp>
 #include <nowide/convert.hpp>
 
+#include <algorithm>
 #include <optional>
+#include <span>
+
+namespace {
 
 std::optional<D3D12_CLEAR_VALUE> GetClearValue(const D3D12_RESOURCE_DESC& desc)
 {
@@ -31,6 +36,102 @@ std::optional<D3D12_CLEAR_VALUE> GetClearValue(const D3D12_RESOURCE_DESC& desc)
     }
     return {};
 }
+
+D3D12_FILTER_TYPE ConvertToFilterType(SamplerFilter filter)
+{
+    switch (filter) {
+    case SamplerFilter::kNearest:
+        return D3D12_FILTER_TYPE_POINT;
+    case SamplerFilter::kLinear:
+        return D3D12_FILTER_TYPE_LINEAR;
+    default:
+        NOTREACHED();
+    }
+}
+
+D3D12_FILTER_REDUCTION_TYPE ConvertToFilterReductionType(SamplerReductionMode reduction_mode, bool compare_enable)
+{
+    switch (reduction_mode) {
+    case SamplerReductionMode::kWeightedAverage:
+        return compare_enable ? D3D12_FILTER_REDUCTION_TYPE_COMPARISON : D3D12_FILTER_REDUCTION_TYPE_STANDARD;
+    case SamplerReductionMode::kMinimum:
+        return D3D12_FILTER_REDUCTION_TYPE_MINIMUM;
+    case SamplerReductionMode::kMaximum:
+        return D3D12_FILTER_REDUCTION_TYPE_MAXIMUM;
+    default:
+        NOTREACHED();
+    }
+}
+
+D3D12_FILTER ConvertToFilter(const SamplerDesc& desc, bool is_aniso_filter_with_point_mip_supported)
+{
+    D3D12_FILTER_TYPE min_filter_type = ConvertToFilterType(desc.min_filter);
+    D3D12_FILTER_TYPE mag_filter_type = ConvertToFilterType(desc.mag_filter);
+    D3D12_FILTER_TYPE mip_filter_type = ConvertToFilterType(desc.mip_filter);
+    D3D12_FILTER_REDUCTION_TYPE reduction_type = ConvertToFilterReductionType(desc.reduction_mode, desc.compare_enable);
+    if (desc.anisotropy_enable) {
+        if (min_filter_type == D3D12_FILTER_TYPE_POINT) {
+            Logging::Println("SamplerFilter::kNearest min_filter is not supported, fallback to SamplerFilter::kLinear");
+            min_filter_type = D3D12_FILTER_TYPE_LINEAR;
+        }
+        if (mag_filter_type == D3D12_FILTER_TYPE_POINT) {
+            Logging::Println("SamplerFilter::kNearest mag_filter is not supported, fallback to SamplerFilter::kLinear");
+            mag_filter_type = D3D12_FILTER_TYPE_LINEAR;
+        }
+        if (mip_filter_type == D3D12_FILTER_TYPE_POINT && !is_aniso_filter_with_point_mip_supported) {
+            Logging::Println("SamplerFilter::kNearest mip_filter is not supported, fallback to SamplerFilter::kLinear");
+            mip_filter_type = D3D12_FILTER_TYPE_LINEAR;
+        }
+    }
+    D3D12_FILTER filter = D3D12_ENCODE_BASIC_FILTER(min_filter_type, mag_filter_type, mip_filter_type, reduction_type);
+    if (desc.anisotropy_enable) {
+        filter = static_cast<D3D12_FILTER>(filter | D3D12_ANISOTROPIC_FILTERING_BIT);
+    }
+    return filter;
+}
+
+D3D12_TEXTURE_ADDRESS_MODE ConvertToTextureAddressMode(SamplerAddressMode mode)
+{
+    switch (mode) {
+    case SamplerAddressMode::kRepeat:
+        return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    case SamplerAddressMode::kMirrorRepeat:
+        return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+    case SamplerAddressMode::kClampToEdge:
+        return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    case SamplerAddressMode::kMirrorClampToEdge:
+        return D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
+    case SamplerAddressMode::kClampToBorder:
+        return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    default:
+        NOTREACHED();
+    }
+}
+
+void InitBorderColor(std::span<float, 4> dst, SamplerBorderColor border_color)
+{
+    switch (border_color) {
+    case SamplerBorderColor::kTransparentBlack: {
+        static constexpr std::array<float, 4> kTransparentBlackValue = { 0.0, 0.0, 0.0, 0.0 };
+        std::ranges::copy(kTransparentBlackValue, dst.begin());
+        break;
+    }
+    case SamplerBorderColor::kOpaqueBlack: {
+        static constexpr std::array<float, 4> kOpaqueBlackValue = { 0.0, 0.0, 0.0, 1.0 };
+        std::ranges::copy(kOpaqueBlackValue, dst.begin());
+        break;
+    }
+    case SamplerBorderColor::kOpaqueWhite: {
+        static constexpr std::array<float, 4> kOpaqueWhiteValue = { 1.0, 1.0, 1.0, 1.0 };
+        std::ranges::copy(kOpaqueWhiteValue, dst.begin());
+        break;
+    }
+    default:
+        NOTREACHED();
+    }
+}
+
+} // namespace
 
 DXResource::DXResource(PassKey<DXResource> pass_key, DXDevice& device)
     : device_(device)
@@ -144,46 +245,16 @@ std::shared_ptr<DXResource> DXResource::CreateBuffer(DXDevice& device, const Buf
 std::shared_ptr<DXResource> DXResource::CreateSampler(DXDevice& device, const SamplerDesc& desc)
 {
     D3D12_SAMPLER_DESC sampler_desc = {};
-    switch (desc.filter) {
-    case SamplerFilter::kAnisotropic:
-        sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
-        break;
-    case SamplerFilter::kMinMagMipLinear:
-        sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-        break;
-    case SamplerFilter::kComparisonMinMagMipLinear:
-        sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-        break;
-    }
-
-    switch (desc.mode) {
-    case SamplerTextureAddressMode::kWrap:
-        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        break;
-    case SamplerTextureAddressMode::kClamp:
-        sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        break;
-    }
-
-    switch (desc.func) {
-    case SamplerComparisonFunc::kNever:
-        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-        break;
-    case SamplerComparisonFunc::kAlways:
-        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-        break;
-    case SamplerComparisonFunc::kLess:
-        sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS;
-        break;
-    }
-
-    sampler_desc.MinLOD = 0;
-    sampler_desc.MaxLOD = std::numeric_limits<float>::max();
-    sampler_desc.MaxAnisotropy = 1;
+    sampler_desc.Filter = ConvertToFilter(desc, device.IsAnisoFilterWithPointMipSupported());
+    sampler_desc.AddressU = ConvertToTextureAddressMode(desc.address_mode_u);
+    sampler_desc.AddressV = ConvertToTextureAddressMode(desc.address_mode_v);
+    sampler_desc.AddressW = ConvertToTextureAddressMode(desc.address_mode_w);
+    sampler_desc.MipLODBias = desc.mip_lod_bias;
+    sampler_desc.MaxAnisotropy = desc.max_anisotropy;
+    sampler_desc.ComparisonFunc = ConvertToComparisonFunc(desc.compare_func);
+    InitBorderColor(sampler_desc.BorderColor, desc.border_color);
+    sampler_desc.MinLOD = desc.min_lod;
+    sampler_desc.MaxLOD = desc.max_lod;
 
     std::shared_ptr<DXResource> self = std::make_shared<DXResource>(PassKey<DXResource>(), device);
     self->resource_type_ = ResourceType::kSampler;

@@ -21,6 +21,8 @@ vk::Extent2D ConvertShadingRate(ShadingRate shading_rate);
 std::array<vk::FragmentShadingRateCombinerOpKHR, 2> ConvertShadingRateCombiners(
     const std::array<ShadingRateCombiner, 2>& combiners);
 
+vk::CompareOp ConvertToCompareOp(ComparisonFunc func);
+
 class VKDevice : public Device {
 public:
     explicit VKDevice(VKAdapter& adapter);
@@ -64,6 +66,7 @@ public:
     bool IsDrawIndirectCountSupported() const override;
     bool IsGeometryShaderSupported() const override;
     bool IsBindlessSupported() const override;
+    bool IsSamplerFilterMinmaxSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
     MemoryBudget GetMemoryBudget() const override;
     uint32_t GetShaderGroupHandleSize() const override;
@@ -141,6 +144,7 @@ private:
     uint32_t shader_table_alignment_ = 0;
     bool geometry_shader_supported_ = false;
     bool bindless_supported_ = false;
+    bool sampler_filter_minmax_supported_ = false;
     bool draw_indirect_count_supported_ = false;
     bool has_buffer_device_address_ = false;
     bool inline_uniform_block_supported_ = false;

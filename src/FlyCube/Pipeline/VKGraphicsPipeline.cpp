@@ -6,30 +6,6 @@
 
 namespace {
 
-vk::CompareOp Convert(ComparisonFunc func)
-{
-    switch (func) {
-    case ComparisonFunc::kNever:
-        return vk::CompareOp::eNever;
-    case ComparisonFunc::kLess:
-        return vk::CompareOp::eLess;
-    case ComparisonFunc::kEqual:
-        return vk::CompareOp::eEqual;
-    case ComparisonFunc::kLessEqual:
-        return vk::CompareOp::eLessOrEqual;
-    case ComparisonFunc::kGreater:
-        return vk::CompareOp::eGreater;
-    case ComparisonFunc::kNotEqual:
-        return vk::CompareOp::eNotEqual;
-    case ComparisonFunc::kGreaterEqual:
-        return vk::CompareOp::eGreaterOrEqual;
-    case ComparisonFunc::kAlways:
-        return vk::CompareOp::eAlways;
-    default:
-        NOTREACHED();
-    }
-}
-
 vk::StencilOp Convert(StencilOp op)
 {
     switch (op) {
@@ -60,7 +36,7 @@ vk::StencilOpState Convert(const StencilOpDesc& desc, uint8_t read_mask, uint8_t
     res.failOp = Convert(desc.fail_op);
     res.passOp = Convert(desc.pass_op);
     res.depthFailOp = Convert(desc.depth_fail_op);
-    res.compareOp = Convert(desc.func);
+    res.compareOp = ConvertToCompareOp(desc.func);
     res.compareMask = read_mask;
     res.writeMask = write_mask;
     return res;
@@ -170,7 +146,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     vk::PipelineDepthStencilStateCreateInfo depth_stencil = {};
     depth_stencil.depthTestEnable = desc_.depth_stencil_desc.depth_test_enable;
     depth_stencil.depthWriteEnable = desc_.depth_stencil_desc.depth_write_enable;
-    depth_stencil.depthCompareOp = Convert(desc_.depth_stencil_desc.depth_func);
+    depth_stencil.depthCompareOp = ConvertToCompareOp(desc_.depth_stencil_desc.depth_func);
     depth_stencil.depthBoundsTestEnable = desc_.depth_stencil_desc.depth_bounds_test_enable;
     depth_stencil.stencilTestEnable = desc_.depth_stencil_desc.stencil_enable;
     depth_stencil.back = Convert(desc_.depth_stencil_desc.back_face, desc_.depth_stencil_desc.stencil_read_mask,

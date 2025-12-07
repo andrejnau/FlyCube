@@ -156,6 +156,30 @@ std::array<vk::FragmentShadingRateCombinerOpKHR, 2> ConvertShadingRateCombiners(
     return vk_combiners;
 }
 
+vk::CompareOp ConvertToCompareOp(ComparisonFunc func)
+{
+    switch (func) {
+    case ComparisonFunc::kNever:
+        return vk::CompareOp::eNever;
+    case ComparisonFunc::kLess:
+        return vk::CompareOp::eLess;
+    case ComparisonFunc::kEqual:
+        return vk::CompareOp::eEqual;
+    case ComparisonFunc::kLessEqual:
+        return vk::CompareOp::eLessOrEqual;
+    case ComparisonFunc::kGreater:
+        return vk::CompareOp::eGreater;
+    case ComparisonFunc::kNotEqual:
+        return vk::CompareOp::eNotEqual;
+    case ComparisonFunc::kGreaterEqual:
+        return vk::CompareOp::eGreaterOrEqual;
+    case ComparisonFunc::kAlways:
+        return vk::CompareOp::eAlways;
+    default:
+        NOTREACHED();
+    }
+}
+
 VKDevice::VKDevice(VKAdapter& adapter)
     : adapter_(adapter)
     , physical_device_(adapter.GetPhysicalDevice())
@@ -258,6 +282,9 @@ VKDevice::VKDevice(VKAdapter& adapter)
         query_device_vulkan12_features.descriptorBindingVariableDescriptorCount;
     device_vulkan12_features.shaderOutputLayer = query_device_vulkan12_features.shaderOutputLayer;
     device_vulkan12_features.shaderOutputViewportIndex = query_device_vulkan12_features.shaderOutputViewportIndex;
+    assert(query_device_vulkan12_features.samplerMirrorClampToEdge);
+    device_vulkan12_features.samplerMirrorClampToEdge = true;
+    device_vulkan12_features.samplerFilterMinmax = query_device_vulkan12_features.samplerFilterMinmax;
 
     has_buffer_device_address_ = device_vulkan12_features.bufferDeviceAddress;
     draw_indirect_count_supported_ = device_vulkan12_features.drawIndirectCount;
@@ -265,6 +292,7 @@ VKDevice::VKDevice(VKAdapter& adapter)
                            device_vulkan12_features.runtimeDescriptorArray &&
                            device_vulkan12_features.descriptorBindingPartiallyBound &&
                            device_vulkan12_features.descriptorBindingVariableDescriptorCount;
+    sampler_filter_minmax_supported_ = device_vulkan12_features.samplerFilterMinmax;
     add_extension(device_vulkan12_features);
 
     vk::PhysicalDeviceVulkan13Features device_vulkan13_features = {};
@@ -665,6 +693,11 @@ bool VKDevice::IsGeometryShaderSupported() const
 bool VKDevice::IsBindlessSupported() const
 {
     return bindless_supported_;
+}
+
+bool VKDevice::IsSamplerFilterMinmaxSupported() const
+{
+    return sampler_filter_minmax_supported_;
 }
 
 uint32_t VKDevice::GetShadingRateImageTileSize() const

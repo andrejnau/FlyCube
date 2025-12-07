@@ -3,7 +3,6 @@
 #include "Device/VKDevice.h"
 #include "Memory/VKMemory.h"
 #include "Utilities/NotReached.h"
-#include "Utilities/VKUtility.h"
 #include "View/VKView.h"
 
 namespace {
@@ -15,6 +14,76 @@ vk::AccelerationStructureTypeKHR Convert(AccelerationStructureType type)
         return vk::AccelerationStructureTypeKHR::eTopLevel;
     case AccelerationStructureType::kBottomLevel:
         return vk::AccelerationStructureTypeKHR::eBottomLevel;
+    default:
+        NOTREACHED();
+    }
+}
+
+vk::Filter ConvertToFilter(SamplerFilter filter)
+{
+    switch (filter) {
+    case SamplerFilter::kNearest:
+        return vk::Filter::eNearest;
+    case SamplerFilter::kLinear:
+        return vk::Filter::eLinear;
+    default:
+        NOTREACHED();
+    }
+}
+
+vk::SamplerMipmapMode ConvertToSamplerMipmapMode(SamplerFilter filter)
+{
+    switch (filter) {
+    case SamplerFilter::kNearest:
+        return vk::SamplerMipmapMode::eNearest;
+    case SamplerFilter::kLinear:
+        return vk::SamplerMipmapMode::eLinear;
+    default:
+        NOTREACHED();
+    }
+}
+
+vk::SamplerAddressMode ConvertToSamplerAddressMode(SamplerAddressMode mode)
+{
+    switch (mode) {
+    case SamplerAddressMode::kRepeat:
+        return vk::SamplerAddressMode::eRepeat;
+    case SamplerAddressMode::kMirrorRepeat:
+        return vk::SamplerAddressMode::eMirroredRepeat;
+    case SamplerAddressMode::kClampToEdge:
+        return vk::SamplerAddressMode::eClampToEdge;
+    case SamplerAddressMode::kMirrorClampToEdge:
+        return vk::SamplerAddressMode::eMirrorClampToEdge;
+    case SamplerAddressMode::kClampToBorder:
+        return vk::SamplerAddressMode::eClampToBorder;
+    default:
+        NOTREACHED();
+    }
+}
+
+vk::BorderColor ConvertToBorderColor(SamplerBorderColor border_color)
+{
+    switch (border_color) {
+    case SamplerBorderColor::kTransparentBlack:
+        return vk::BorderColor::eFloatTransparentBlack;
+    case SamplerBorderColor::kOpaqueBlack:
+        return vk::BorderColor::eFloatOpaqueBlack;
+    case SamplerBorderColor::kOpaqueWhite:
+        return vk::BorderColor::eFloatOpaqueWhite;
+    default:
+        NOTREACHED();
+    }
+}
+
+vk::SamplerReductionMode ConvertToSamplerReductionMode(SamplerReductionMode reduction_mode)
+{
+    switch (reduction_mode) {
+    case SamplerReductionMode::kWeightedAverage:
+        return vk::SamplerReductionMode::eWeightedAverage;
+    case SamplerReductionMode::kMinimum:
+        return vk::SamplerReductionMode::eMin;
+    case SamplerReductionMode::kMaximum:
+        return vk::SamplerReductionMode::eMax;
     default:
         NOTREACHED();
     }
@@ -180,56 +249,25 @@ std::shared_ptr<VKResource> VKResource::CreateBuffer(VKDevice& device, const Buf
 std::shared_ptr<VKResource> VKResource::CreateSampler(VKDevice& device, const SamplerDesc& desc)
 {
     vk::SamplerCreateInfo sampler_info = {};
-    sampler_info.magFilter = vk::Filter::eLinear;
-    sampler_info.minFilter = vk::Filter::eLinear;
-    sampler_info.anisotropyEnable = true;
-    sampler_info.maxAnisotropy = 16;
-    sampler_info.borderColor = vk::BorderColor::eIntOpaqueBlack;
-    sampler_info.unnormalizedCoordinates = VK_FALSE;
-    sampler_info.mipmapMode = vk::SamplerMipmapMode::eLinear;
-    sampler_info.mipLodBias = 0.0;
-    sampler_info.minLod = 0.0;
-    sampler_info.maxLod = std::numeric_limits<float>::max();
+    sampler_info.magFilter = ConvertToFilter(desc.mag_filter);
+    sampler_info.minFilter = ConvertToFilter(desc.min_filter);
+    sampler_info.mipmapMode = ConvertToSamplerMipmapMode(desc.mip_filter);
+    sampler_info.addressModeU = ConvertToSamplerAddressMode(desc.address_mode_u);
+    sampler_info.addressModeV = ConvertToSamplerAddressMode(desc.address_mode_v);
+    sampler_info.addressModeW = ConvertToSamplerAddressMode(desc.address_mode_w);
+    sampler_info.mipLodBias = desc.mip_lod_bias;
+    sampler_info.anisotropyEnable = desc.anisotropy_enable;
+    sampler_info.maxAnisotropy = desc.max_anisotropy;
+    sampler_info.compareEnable = desc.compare_enable;
+    sampler_info.compareOp = ConvertToCompareOp(desc.compare_func);
+    sampler_info.minLod = desc.min_lod;
+    sampler_info.maxLod = desc.max_lod;
+    sampler_info.borderColor = ConvertToBorderColor(desc.border_color);
 
-    /*switch (desc.filter)
-    {
-    case SamplerFilter::kAnisotropic:
-        sampler_desc.Filter = D3D12_FILTER_ANISOTROPIC;
-        break;
-    case SamplerFilter::kMinMagMipLinear:
-        sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-        break;
-    case SamplerFilter::kComparisonMinMagMipLinear:
-        sampler_desc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-        break;
-    }*/
-
-    switch (desc.mode) {
-    case SamplerTextureAddressMode::kWrap:
-        sampler_info.addressModeU = vk::SamplerAddressMode::eRepeat;
-        sampler_info.addressModeV = vk::SamplerAddressMode::eRepeat;
-        sampler_info.addressModeW = vk::SamplerAddressMode::eRepeat;
-        break;
-    case SamplerTextureAddressMode::kClamp:
-        sampler_info.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-        sampler_info.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-        sampler_info.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-        break;
-    }
-
-    switch (desc.func) {
-    case SamplerComparisonFunc::kNever:
-        sampler_info.compareEnable = false;
-        sampler_info.compareOp = vk::CompareOp::eNever;
-        break;
-    case SamplerComparisonFunc::kAlways:
-        sampler_info.compareEnable = true;
-        sampler_info.compareOp = vk::CompareOp::eAlways;
-        break;
-    case SamplerComparisonFunc::kLess:
-        sampler_info.compareEnable = true;
-        sampler_info.compareOp = vk::CompareOp::eLess;
-        break;
+    vk::SamplerReductionModeCreateInfo sampler_reduction_mode_info = {};
+    sampler_reduction_mode_info.reductionMode = ConvertToSamplerReductionMode(desc.reduction_mode);
+    if (sampler_reduction_mode_info.reductionMode != vk::SamplerReductionMode::eWeightedAverage) {
+        sampler_info.pNext = &sampler_reduction_mode_info;
     }
 
     std::shared_ptr<VKResource> self = std::make_shared<VKResource>(PassKey<VKResource>(), device);

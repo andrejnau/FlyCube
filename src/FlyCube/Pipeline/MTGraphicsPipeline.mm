@@ -8,30 +8,6 @@
 
 namespace {
 
-MTLCompareFunction ConvertCompareFunction(ComparisonFunc func)
-{
-    switch (func) {
-    case ComparisonFunc::kNever:
-        return MTLCompareFunctionNever;
-    case ComparisonFunc::kLess:
-        return MTLCompareFunctionLess;
-    case ComparisonFunc::kEqual:
-        return MTLCompareFunctionEqual;
-    case ComparisonFunc::kLessEqual:
-        return MTLCompareFunctionLessEqual;
-    case ComparisonFunc::kGreater:
-        return MTLCompareFunctionGreater;
-    case ComparisonFunc::kNotEqual:
-        return MTLCompareFunctionNotEqual;
-    case ComparisonFunc::kGreaterEqual:
-        return MTLCompareFunctionGreaterEqual;
-    case ComparisonFunc::kAlways:
-        return MTLCompareFunctionAlways;
-    default:
-        NOTREACHED();
-    }
-}
-
 MTLStencilOperation ConvertStencilOperation(StencilOp op)
 {
     switch (op) {
@@ -63,7 +39,7 @@ MTLStencilDescriptor* GetStencilDesc(bool stencil_enable,
 {
     MTLStencilDescriptor* stencil_descriptor = [MTLStencilDescriptor new];
     if (stencil_enable) {
-        stencil_descriptor.stencilCompareFunction = ConvertCompareFunction(desc.func);
+        stencil_descriptor.stencilCompareFunction = ConvertToCompareFunction(desc.func);
     }
     stencil_descriptor.stencilFailureOperation = ConvertStencilOperation(desc.fail_op);
     stencil_descriptor.depthFailureOperation = ConvertStencilOperation(desc.depth_fail_op);
@@ -78,7 +54,7 @@ MTLDepthStencilDescriptor* GetDepthStencilDesc(const DepthStencilDesc& desc, gli
     MTLDepthStencilDescriptor* depth_stencil_descriptor = [MTLDepthStencilDescriptor new];
     if (desc.depth_test_enable && depth_stencil_format != gli::format::FORMAT_UNDEFINED &&
         gli::is_depth(depth_stencil_format)) {
-        depth_stencil_descriptor.depthCompareFunction = ConvertCompareFunction(desc.depth_func);
+        depth_stencil_descriptor.depthCompareFunction = ConvertToCompareFunction(desc.depth_func);
     }
     depth_stencil_descriptor.depthWriteEnabled = desc.depth_write_enable;
 

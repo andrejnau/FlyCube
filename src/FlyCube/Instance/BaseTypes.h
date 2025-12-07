@@ -88,23 +88,6 @@ enum class ViewDimension {
     kTextureCubeArray,
 };
 
-enum class SamplerFilter {
-    kAnisotropic,
-    kMinMagMipLinear,
-    kComparisonMinMagMipLinear,
-};
-
-enum class SamplerTextureAddressMode {
-    kWrap,
-    kClamp,
-};
-
-enum class SamplerComparisonFunc {
-    kNever,
-    kAlways,
-    kLess,
-};
-
 enum class ViewType {
     kUnknown,
     kConstantBuffer,
@@ -193,9 +176,27 @@ struct BlendDesc {
     BlendOp blend_op_alpha;
 };
 
-enum class ComparisonFunc { kNever, kLess, kEqual, kLessEqual, kGreater, kNotEqual, kGreaterEqual, kAlways };
+enum class ComparisonFunc {
+    kNever,
+    kLess,
+    kEqual,
+    kLessEqual,
+    kGreater,
+    kNotEqual,
+    kGreaterEqual,
+    kAlways,
+};
 
-enum class StencilOp { kKeep, kZero, kReplace, kIncrSat, kDecrSat, kInvert, kIncr, kDecr };
+enum class StencilOp {
+    kKeep,
+    kZero,
+    kReplace,
+    kIncrSat,
+    kDecrSat,
+    kInvert,
+    kIncr,
+    kDecr,
+};
 
 struct StencilOpDesc {
     StencilOp fail_op = StencilOp::kKeep;
@@ -576,10 +577,47 @@ struct BufferDesc {
     uint32_t usage;
 };
 
+enum class SamplerFilter {
+    kNearest,
+    kLinear,
+};
+
+enum class SamplerAddressMode {
+    kRepeat,
+    kMirrorRepeat,
+    kClampToEdge,
+    kMirrorClampToEdge,
+    kClampToBorder,
+};
+
+enum class SamplerBorderColor {
+    kTransparentBlack,
+    kOpaqueBlack,
+    kOpaqueWhite,
+};
+
+enum class SamplerReductionMode {
+    kWeightedAverage,
+    kMinimum,
+    kMaximum,
+};
+
 struct SamplerDesc {
-    SamplerFilter filter;
-    SamplerTextureAddressMode mode;
-    SamplerComparisonFunc func;
+    SamplerFilter min_filter = SamplerFilter::kLinear;
+    SamplerFilter mag_filter = SamplerFilter::kLinear;
+    SamplerFilter mip_filter = SamplerFilter::kLinear;
+    SamplerAddressMode address_mode_u = SamplerAddressMode::kRepeat;
+    SamplerAddressMode address_mode_v = SamplerAddressMode::kRepeat;
+    SamplerAddressMode address_mode_w = SamplerAddressMode::kRepeat;
+    float mip_lod_bias = 0.0;
+    bool anisotropy_enable = false;
+    uint32_t max_anisotropy = 1;
+    bool compare_enable = false;
+    ComparisonFunc compare_func = ComparisonFunc::kLessEqual;
+    float min_lod = 0;
+    float max_lod = std::numeric_limits<float>::max();
+    SamplerBorderColor border_color = SamplerBorderColor::kOpaqueBlack;
+    SamplerReductionMode reduction_mode = SamplerReductionMode::kWeightedAverage;
 };
 
 struct AccelerationStructureDesc {

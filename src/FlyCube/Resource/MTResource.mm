@@ -3,6 +3,81 @@
 #include "Device/MTDevice.h"
 #include "Memory/MTMemory.h"
 #include "Utilities/Logging.h"
+#include "Utilities/NotReached.h"
+
+namespace {
+
+MTLSamplerMinMagFilter ConvertToSamplerMinMagFilter(SamplerFilter filter)
+{
+    switch (filter) {
+    case SamplerFilter::kNearest:
+        return MTLSamplerMinMagFilterNearest;
+    case SamplerFilter::kLinear:
+        return MTLSamplerMinMagFilterLinear;
+    default:
+        NOTREACHED();
+    }
+}
+
+MTLSamplerMipFilter ConvertToSamplerMipFilter(SamplerFilter filter)
+{
+    switch (filter) {
+    case SamplerFilter::kNearest:
+        return MTLSamplerMipFilterNearest;
+    case SamplerFilter::kLinear:
+        return MTLSamplerMipFilterLinear;
+    default:
+        NOTREACHED();
+    }
+}
+
+MTLSamplerAddressMode ConvertToSamplerAddressMode(SamplerAddressMode mode)
+{
+    switch (mode) {
+    case SamplerAddressMode::kRepeat:
+        return MTLSamplerAddressModeRepeat;
+    case SamplerAddressMode::kMirrorRepeat:
+        return MTLSamplerAddressModeMirrorRepeat;
+    case SamplerAddressMode::kClampToEdge:
+        return MTLSamplerAddressModeClampToEdge;
+    case SamplerAddressMode::kMirrorClampToEdge:
+        return MTLSamplerAddressModeMirrorClampToEdge;
+    case SamplerAddressMode::kClampToBorder:
+        return MTLSamplerAddressModeClampToBorderColor;
+    default:
+        NOTREACHED();
+    }
+}
+
+MTLSamplerBorderColor ConvertToSamplerBorderColor(SamplerBorderColor border_color)
+{
+    switch (border_color) {
+    case SamplerBorderColor::kTransparentBlack:
+        return MTLSamplerBorderColorTransparentBlack;
+    case SamplerBorderColor::kOpaqueBlack:
+        return MTLSamplerBorderColorOpaqueBlack;
+    case SamplerBorderColor::kOpaqueWhite:
+        return MTLSamplerBorderColorOpaqueWhite;
+    default:
+        NOTREACHED();
+    }
+}
+
+MTLSamplerReductionMode ConvertToSamplerReductionMode(SamplerReductionMode reduction_mode)
+{
+    switch (reduction_mode) {
+    case SamplerReductionMode::kWeightedAverage:
+        return MTLSamplerReductionModeWeightedAverage;
+    case SamplerReductionMode::kMinimum:
+        return MTLSamplerReductionModeMinimum;
+    case SamplerReductionMode::kMaximum:
+        return MTLSamplerReductionModeMaximum;
+    default:
+        NOTREACHED();
+    }
+}
+
+} // namespace
 
 MTResource::MTResource(PassKey<MTResource> pass_key, MTDevice& device)
     : device_(device)
@@ -48,39 +123,24 @@ std::shared_ptr<MTResource> MTResource::CreateBuffer(MTDevice& device, const Buf
 std::shared_ptr<MTResource> MTResource::CreateSampler(MTDevice& device, const SamplerDesc& desc)
 {
     MTLSamplerDescriptor* sampler_descriptor = [MTLSamplerDescriptor new];
+    sampler_descriptor.minFilter = ConvertToSamplerMinMagFilter(desc.min_filter);
+    sampler_descriptor.magFilter = ConvertToSamplerMinMagFilter(desc.mag_filter);
+    sampler_descriptor.mipFilter = ConvertToSamplerMipFilter(desc.mip_filter);
+    if (desc.anisotropy_enable) {
+        sampler_descriptor.maxAnisotropy = desc.max_anisotropy;
+    }
+    sampler_descriptor.sAddressMode = ConvertToSamplerAddressMode(desc.address_mode_u);
+    sampler_descriptor.tAddressMode = ConvertToSamplerAddressMode(desc.address_mode_v);
+    sampler_descriptor.rAddressMode = ConvertToSamplerAddressMode(desc.address_mode_w);
+    sampler_descriptor.borderColor = ConvertToSamplerBorderColor(desc.border_color);
+    sampler_descriptor.reductionMode = ConvertToSamplerReductionMode(desc.reduction_mode);
+    sampler_descriptor.lodMinClamp = desc.min_lod;
+    sampler_descriptor.lodMaxClamp = desc.max_lod;
+    sampler_descriptor.lodBias = desc.mip_lod_bias;
+    if (desc.compare_enable) {
+        sampler_descriptor.compareFunction = ConvertToCompareFunction(desc.compare_func);
+    }
     sampler_descriptor.supportArgumentBuffers = YES;
-    sampler_descriptor.minFilter = MTLSamplerMinMagFilterLinear;
-    sampler_descriptor.magFilter = MTLSamplerMinMagFilterLinear;
-    sampler_descriptor.mipFilter = MTLSamplerMipFilterLinear;
-    sampler_descriptor.maxAnisotropy = 16;
-    sampler_descriptor.borderColor = MTLSamplerBorderColorOpaqueBlack;
-    sampler_descriptor.lodMinClamp = 0;
-    sampler_descriptor.lodMaxClamp = std::numeric_limits<float>::max();
-
-    switch (desc.mode) {
-    case SamplerTextureAddressMode::kWrap:
-        sampler_descriptor.sAddressMode = MTLSamplerAddressModeRepeat;
-        sampler_descriptor.tAddressMode = MTLSamplerAddressModeRepeat;
-        sampler_descriptor.rAddressMode = MTLSamplerAddressModeRepeat;
-        break;
-    case SamplerTextureAddressMode::kClamp:
-        sampler_descriptor.sAddressMode = MTLSamplerAddressModeClampToEdge;
-        sampler_descriptor.tAddressMode = MTLSamplerAddressModeClampToEdge;
-        sampler_descriptor.rAddressMode = MTLSamplerAddressModeClampToEdge;
-        break;
-    }
-
-    switch (desc.func) {
-    case SamplerComparisonFunc::kNever:
-        sampler_descriptor.compareFunction = MTLCompareFunctionNever;
-        break;
-    case SamplerComparisonFunc::kAlways:
-        sampler_descriptor.compareFunction = MTLCompareFunctionAlways;
-        break;
-    case SamplerComparisonFunc::kLess:
-        sampler_descriptor.compareFunction = MTLCompareFunctionLess;
-        break;
-    }
 
     std::shared_ptr<MTResource> self = std::make_shared<MTResource>(PassKey<MTResource>(), device);
     self->resource_type_ = ResourceType::kSampler;

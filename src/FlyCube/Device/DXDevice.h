@@ -23,9 +23,11 @@ D3D12_RAYTRACING_GEOMETRY_DESC FillRaytracingGeometryDesc(const RaytracingGeomet
                                                           RaytracingGeometryFlags flags);
 D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Convert(BuildAccelerationStructureFlags flags);
 
+D3D12_COMPARISON_FUNC ConvertToComparisonFunc(ComparisonFunc func);
+
 class DXDevice : public Device {
 public:
-    DXDevice(DXAdapter& adapter);
+    explicit DXDevice(DXAdapter& adapter);
     std::shared_ptr<Memory> AllocateMemory(uint64_t size, MemoryType memory_type, uint32_t memory_type_bits) override;
     std::shared_ptr<CommandQueue> GetCommandQueue(CommandListType type) override;
     uint32_t GetTextureDataPitchAlignment() const override;
@@ -66,6 +68,7 @@ public:
     bool IsDrawIndirectCountSupported() const override;
     bool IsGeometryShaderSupported() const override;
     bool IsBindlessSupported() const override;
+    bool IsSamplerFilterMinmaxSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
     MemoryBudget GetMemoryBudget() const override;
     uint32_t GetShaderGroupHandleSize() const override;
@@ -84,6 +87,7 @@ public:
     DXGPUDescriptorPool& GetGPUDescriptorPool();
     bool IsUnderGraphicsDebugger() const;
     bool IsCreateNotZeroedAvailable() const;
+    bool IsAnisoFilterWithPointMipSupported() const;
     ID3D12CommandSignature* GetCommandSignature(D3D12_INDIRECT_ARGUMENT_TYPE type, uint32_t stride);
 
 private:
@@ -103,6 +107,7 @@ private:
     uint32_t shading_rate_image_tile_size_ = 0;
     bool is_under_graphics_debugger_ = false;
     bool is_create_not_zeroed_available_ = false;
+    bool is_aniso_filter_with_point_mip_supported_ = false;
     std::map<std::pair<D3D12_INDIRECT_ARGUMENT_TYPE, uint32_t>, ComPtr<ID3D12CommandSignature>>
         command_signature_cache_;
 };

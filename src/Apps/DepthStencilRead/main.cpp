@@ -8,6 +8,10 @@
 
 namespace {
 
+constexpr uint32_t kPositions = 0;
+constexpr uint32_t kTexcoords = 1;
+constexpr uint32_t kFrameCount = 3;
+
 glm::mat4 GetViewMatrix()
 {
     glm::vec3 eye = glm::vec3(0.0, 0.0, 3.5);
@@ -21,10 +25,6 @@ glm::mat4 GetProjectionMatrix(uint32_t width, uint32_t height)
     return glm::perspective(glm::radians(45.0f), static_cast<float>(width) / height,
                             /*zNear=*/0.1f, /*zFar=*/128.0f);
 }
-
-constexpr uint32_t kPositions = 0;
-constexpr uint32_t kTexcoords = 1;
-constexpr uint32_t kFrameCount = 3;
 
 } // namespace
 

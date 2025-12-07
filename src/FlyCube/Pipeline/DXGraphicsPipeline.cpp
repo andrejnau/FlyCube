@@ -78,30 +78,6 @@ CD3DX12_BLEND_DESC GetBlendDesc(const GraphicsPipelineDesc& desc)
     return blend_desc;
 }
 
-D3D12_COMPARISON_FUNC Convert(ComparisonFunc func)
-{
-    switch (func) {
-    case ComparisonFunc::kNever:
-        return D3D12_COMPARISON_FUNC_NEVER;
-    case ComparisonFunc::kLess:
-        return D3D12_COMPARISON_FUNC_LESS;
-    case ComparisonFunc::kEqual:
-        return D3D12_COMPARISON_FUNC_EQUAL;
-    case ComparisonFunc::kLessEqual:
-        return D3D12_COMPARISON_FUNC_LESS_EQUAL;
-    case ComparisonFunc::kGreater:
-        return D3D12_COMPARISON_FUNC_GREATER;
-    case ComparisonFunc::kNotEqual:
-        return D3D12_COMPARISON_FUNC_NOT_EQUAL;
-    case ComparisonFunc::kGreaterEqual:
-        return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-    case ComparisonFunc::kAlways:
-        return D3D12_COMPARISON_FUNC_ALWAYS;
-    default:
-        NOTREACHED();
-    }
-}
-
 D3D12_STENCIL_OP Convert(StencilOp op)
 {
     switch (op) {
@@ -132,7 +108,7 @@ D3D12_DEPTH_STENCILOP_DESC Convert(const StencilOpDesc& desc)
     res.StencilFailOp = Convert(desc.fail_op);
     res.StencilPassOp = Convert(desc.pass_op);
     res.StencilDepthFailOp = Convert(desc.depth_fail_op);
-    res.StencilFunc = Convert(desc.func);
+    res.StencilFunc = ConvertToComparisonFunc(desc.func);
     return res;
 }
 
@@ -143,7 +119,7 @@ CD3DX12_DEPTH_STENCIL_DESC1 GetDepthStencilDesc(const DepthStencilDesc& desc, DX
     depth_stencil_desc.DepthWriteMask =
         desc.depth_write_enable ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
     depth_stencil_desc.DepthBoundsTestEnable = desc.depth_bounds_test_enable;
-    depth_stencil_desc.DepthFunc = Convert(desc.depth_func);
+    depth_stencil_desc.DepthFunc = ConvertToComparisonFunc(desc.depth_func);
     depth_stencil_desc.StencilEnable = desc.stencil_enable;
     depth_stencil_desc.StencilReadMask = desc.stencil_read_mask;
     depth_stencil_desc.StencilWriteMask = desc.stencil_write_mask;

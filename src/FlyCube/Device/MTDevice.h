@@ -8,6 +8,8 @@
 class MTCommandQueue;
 class MTInstance;
 
+MTLCompareFunction ConvertToCompareFunction(ComparisonFunc func);
+
 class MTDevice : public Device, private MVKPhysicalDevice {
 public:
     MTDevice(MTInstance& instance, id<MTLDevice> device);
@@ -53,6 +55,7 @@ public:
     bool IsDrawIndirectCountSupported() const override;
     bool IsGeometryShaderSupported() const override;
     bool IsBindlessSupported() const override;
+    bool IsSamplerFilterMinmaxSupported() const override;
     uint32_t GetShadingRateImageTileSize() const override;
     MemoryBudget GetMemoryBudget() const override;
     uint32_t GetShaderGroupHandleSize() const override;
