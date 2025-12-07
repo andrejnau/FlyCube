@@ -184,6 +184,8 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
                                  desc_.depth_stencil_desc.stencil_write_mask);
     depth_stencil.front = Convert(desc_.depth_stencil_desc.front_face, desc_.depth_stencil_desc.stencil_read_mask,
                                   desc_.depth_stencil_desc.stencil_write_mask);
+    depth_stencil.minDepthBounds = 0.0;
+    depth_stencil.maxDepthBounds = 1.0;
 
     std::vector<vk::DynamicState> dynamic_state_enables = {
         vk::DynamicState::eViewport,
@@ -191,7 +193,10 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     };
 
     if (device_.IsVariableRateShadingSupported()) {
-        dynamic_state_enables.emplace_back(vk::DynamicState::eFragmentShadingRateKHR);
+        dynamic_state_enables.push_back(vk::DynamicState::eFragmentShadingRateKHR);
+    }
+    if (depth_stencil.depthBoundsTestEnable) {
+        dynamic_state_enables.push_back(vk::DynamicState::eDepthBounds);
     }
 
     vk::PipelineDynamicStateCreateInfo pipeline_dynamic_state_info = {};

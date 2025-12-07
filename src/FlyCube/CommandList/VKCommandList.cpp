@@ -513,6 +513,11 @@ void VKCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<
     command_list_->setFragmentShadingRateKHR(&fragment_size, vk_combiners.data());
 }
 
+void VKCommandList::SetDepthBounds(float min_depth_bounds, float max_depth_bounds)
+{
+    command_list_->setDepthBounds(min_depth_bounds, max_depth_bounds);
+}
+
 void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                                        const std::shared_ptr<Resource>& dst,
                                        const std::shared_ptr<Resource>& scratch,

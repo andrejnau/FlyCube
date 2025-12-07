@@ -57,6 +57,7 @@ public:
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format) override;
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset) override;
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) override;
+    void SetDepthBounds(float min_depth_bounds, float max_depth_bounds) override;
     void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                             const std::shared_ptr<Resource>& dst,
                             const std::shared_ptr<Resource>& scratch,
@@ -118,6 +119,8 @@ private:
     gli::format index_format_ = gli::FORMAT_UNDEFINED;
     MTLViewport viewport_ = {};
     MTLScissorRect scissor_ = {};
+    float min_depth_bounds_ = 0.0;
+    float max_depth_bounds_ = 1.0;
     std::shared_ptr<Pipeline> state_;
     std::shared_ptr<MTBindingSet> binding_set_;
     std::map<ShaderType, id<MTL4ArgumentTable>> argument_tables_;

@@ -187,6 +187,8 @@ void MTCommandList::Close()
     index_format_ = gli::FORMAT_UNDEFINED;
     viewport_ = {};
     scissor_ = {};
+    min_depth_bounds_ = 0.0;
+    max_depth_bounds_ = 1.0;
     state_.reset();
     binding_set_.reset();
     argument_tables_ = {};
@@ -278,6 +280,9 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
 
     [render_encoder_ setViewport:viewport_];
     [render_encoder_ setScissorRect:scissor_];
+    if (min_depth_bounds_ != 0.0 || max_depth_bounds_ != 1.0) {
+        [render_encoder_ setDepthTestMinBound:min_depth_bounds_ maxBound:max_depth_bounds_];
+    }
     [render_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kVertex) atStages:MTLRenderStageVertex];
     [render_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kPixel) atStages:MTLRenderStageFragment];
     [render_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kAmplification) atStages:MTLRenderStageObject];
@@ -481,6 +486,20 @@ void MTCommandList::IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resou
 void MTCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners)
 {
     NOTREACHED();
+}
+
+void MTCommandList::SetDepthBounds(float min_depth_bounds, float max_depth_bounds)
+{
+    min_depth_bounds_ = min_depth_bounds;
+    max_depth_bounds_ = max_depth_bounds;
+
+    if (!render_encoder_) {
+        return;
+    }
+
+    if (min_depth_bounds_ != 0.0 || max_depth_bounds_ != 1.0) {
+        [render_encoder_ setDepthTestMinBound:min_depth_bounds_ maxBound:max_depth_bounds_];
+    }
 }
 
 void MTCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,

@@ -131,18 +131,13 @@ CD3DX12_DEPTH_STENCIL_DESC1 GetDepthStencilDesc(const DepthStencilDesc& desc, DX
     depth_stencil_desc.DepthEnable = desc.depth_test_enable;
     depth_stencil_desc.DepthWriteMask =
         desc.depth_write_enable ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
-    depth_stencil_desc.DepthBoundsTestEnable = desc.depth_bounds_test_enable;
     depth_stencil_desc.DepthFunc = ConvertToComparisonFunc(desc.depth_func);
     depth_stencil_desc.StencilEnable = desc.stencil_enable;
     depth_stencil_desc.StencilReadMask = desc.stencil_read_mask;
     depth_stencil_desc.StencilWriteMask = desc.stencil_write_mask;
     depth_stencil_desc.FrontFace = Convert(desc.front_face);
     depth_stencil_desc.BackFace = Convert(desc.back_face);
-
-    if (dsv_format == DXGI_FORMAT_UNKNOWN) {
-        depth_stencil_desc.DepthEnable = false;
-    }
-
+    depth_stencil_desc.DepthBoundsTestEnable = desc.depth_bounds_test_enable;
     return depth_stencil_desc;
 }
 

@@ -63,6 +63,7 @@ public:
     void IASetIndexBuffer(const std::shared_ptr<Resource>& resource, uint64_t offset, gli::format format) override;
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset) override;
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) override;
+    void SetDepthBounds(float min_depth_bounds, float max_depth_bounds) override;
     void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                             const std::shared_ptr<Resource>& dst,
                             const std::shared_ptr<Resource>& scratch,

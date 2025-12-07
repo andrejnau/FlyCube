@@ -472,6 +472,11 @@ void DXCommandList::RSSetShadingRate(ShadingRate shading_rate, const std::array<
                                      reinterpret_cast<const D3D12_SHADING_RATE_COMBINER*>(combiners.data()));
 }
 
+void DXCommandList::SetDepthBounds(float min_depth_bounds, float max_depth_bounds)
+{
+    command_list4_->OMSetDepthBounds(min_depth_bounds, max_depth_bounds);
+}
+
 void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs,
                                                const std::shared_ptr<Resource>& src,
                                                const std::shared_ptr<Resource>& dst,

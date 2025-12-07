@@ -219,8 +219,8 @@ struct StencilOpDesc {
 
 struct DepthStencilDesc {
     bool depth_test_enable = true;
-    ComparisonFunc depth_func = ComparisonFunc::kLess;
     bool depth_write_enable = true;
+    ComparisonFunc depth_func = ComparisonFunc::kLess;
     bool depth_bounds_test_enable = false;
     bool stencil_enable = false;
     uint8_t stencil_read_mask = 0xff;

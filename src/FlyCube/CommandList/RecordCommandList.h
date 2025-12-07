@@ -161,6 +161,11 @@ public:
         ApplyAndRecord(&T::RSSetShadingRate, shading_rate, combiners);
     }
 
+    void SetDepthBounds(float min_depth_bounds, float max_depth_bounds) override
+    {
+        ApplyAndRecord(&T::SetDepthBounds, min_depth_bounds, max_depth_bounds);
+    }
+
     void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                             const std::shared_ptr<Resource>& dst,
                             const std::shared_ptr<Resource>& scratch,
