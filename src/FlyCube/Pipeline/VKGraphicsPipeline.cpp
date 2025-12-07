@@ -32,14 +32,15 @@ vk::StencilOp Convert(StencilOp op)
 
 vk::StencilOpState Convert(const StencilOpDesc& desc, uint8_t read_mask, uint8_t write_mask)
 {
-    vk::StencilOpState res = {};
-    res.failOp = Convert(desc.fail_op);
-    res.passOp = Convert(desc.pass_op);
-    res.depthFailOp = Convert(desc.depth_fail_op);
-    res.compareOp = ConvertToCompareOp(desc.func);
-    res.compareMask = read_mask;
-    res.writeMask = write_mask;
-    return res;
+    vk::StencilOpState stencil_op_state = {};
+    stencil_op_state.failOp = Convert(desc.fail_op);
+    stencil_op_state.passOp = Convert(desc.pass_op);
+    stencil_op_state.depthFailOp = Convert(desc.depth_fail_op);
+    stencil_op_state.compareOp = ConvertToCompareOp(desc.func);
+    stencil_op_state.compareMask = read_mask;
+    stencil_op_state.writeMask = write_mask;
+    stencil_op_state.reference = 0;
+    return stencil_op_state;
 }
 
 vk::PolygonMode ConvertFillMode(FillMode fill_mode)

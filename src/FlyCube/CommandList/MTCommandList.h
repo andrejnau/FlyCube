@@ -58,6 +58,7 @@ public:
     void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset) override;
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) override;
     void SetDepthBounds(float min_depth_bounds, float max_depth_bounds) override;
+    void SetStencilReference(uint32_t stencil_reference) override;
     void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                             const std::shared_ptr<Resource>& dst,
                             const std::shared_ptr<Resource>& scratch,
@@ -121,6 +122,7 @@ private:
     MTLScissorRect scissor_ = {};
     float min_depth_bounds_ = 0.0;
     float max_depth_bounds_ = 1.0;
+    uint32_t stencil_reference_ = 0;
     std::shared_ptr<Pipeline> state_;
     std::shared_ptr<MTBindingSet> binding_set_;
     std::map<ShaderType, id<MTL4ArgumentTable>> argument_tables_;

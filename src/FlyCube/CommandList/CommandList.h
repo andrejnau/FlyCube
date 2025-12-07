@@ -67,6 +67,7 @@ public:
     virtual void IASetVertexBuffer(uint32_t slot, const std::shared_ptr<Resource>& resource, uint64_t offset) = 0;
     virtual void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) = 0;
     virtual void SetDepthBounds(float min_depth_bounds, float max_depth_bounds) = 0;
+    virtual void SetStencilReference(uint32_t stencil_reference) = 0;
     virtual void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                                     const std::shared_ptr<Resource>& dst,
                                     const std::shared_ptr<Resource>& scratch,

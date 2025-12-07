@@ -166,6 +166,11 @@ public:
         ApplyAndRecord(&T::SetDepthBounds, min_depth_bounds, max_depth_bounds);
     }
 
+    void SetStencilReference(uint32_t stencil_reference) override
+    {
+        ApplyAndRecord(&T::SetStencilReference, stencil_reference);
+    }
+
     void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                             const std::shared_ptr<Resource>& dst,
                             const std::shared_ptr<Resource>& scratch,

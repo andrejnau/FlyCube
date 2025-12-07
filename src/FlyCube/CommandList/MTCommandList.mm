@@ -189,6 +189,7 @@ void MTCommandList::Close()
     scissor_ = {};
     min_depth_bounds_ = 0.0;
     max_depth_bounds_ = 1.0;
+    stencil_reference_ = 0;
     state_.reset();
     binding_set_.reset();
     argument_tables_ = {};
@@ -282,6 +283,9 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
     [render_encoder_ setScissorRect:scissor_];
     if (min_depth_bounds_ != 0.0 || max_depth_bounds_ != 1.0) {
         [render_encoder_ setDepthTestMinBound:min_depth_bounds_ maxBound:max_depth_bounds_];
+    }
+    if (stencil_reference_) {
+        [render_encoder_ setStencilReferenceValue:stencil_reference_];
     }
     [render_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kVertex) atStages:MTLRenderStageVertex];
     [render_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kPixel) atStages:MTLRenderStageFragment];
@@ -500,6 +504,17 @@ void MTCommandList::SetDepthBounds(float min_depth_bounds, float max_depth_bound
     if (min_depth_bounds_ != 0.0 || max_depth_bounds_ != 1.0) {
         [render_encoder_ setDepthTestMinBound:min_depth_bounds_ maxBound:max_depth_bounds_];
     }
+}
+
+void MTCommandList::SetStencilReference(uint32_t stencil_reference)
+{
+    stencil_reference_ = stencil_reference;
+
+    if (!render_encoder_) {
+        return;
+    }
+
+    [render_encoder_ setStencilReferenceValue:stencil_reference_];
 }
 
 void MTCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,

@@ -477,6 +477,11 @@ void DXCommandList::SetDepthBounds(float min_depth_bounds, float max_depth_bound
     command_list4_->OMSetDepthBounds(min_depth_bounds, max_depth_bounds);
 }
 
+void DXCommandList::SetStencilReference(uint32_t stencil_reference)
+{
+    command_list_->OMSetStencilRef(stencil_reference);
+}
+
 void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs,
                                                const std::shared_ptr<Resource>& src,
                                                const std::shared_ptr<Resource>& dst,

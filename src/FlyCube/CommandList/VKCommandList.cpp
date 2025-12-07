@@ -518,6 +518,11 @@ void VKCommandList::SetDepthBounds(float min_depth_bounds, float max_depth_bound
     command_list_->setDepthBounds(min_depth_bounds, max_depth_bounds);
 }
 
+void VKCommandList::SetStencilReference(uint32_t stencil_reference)
+{
+    command_list_->setStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, stencil_reference);
+}
+
 void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                                        const std::shared_ptr<Resource>& dst,
                                        const std::shared_ptr<Resource>& scratch,
