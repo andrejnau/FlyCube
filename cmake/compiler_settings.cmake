@@ -5,6 +5,7 @@ set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 set(appleclang_compile_options
     -Wno-shorten-64-to-32
+    -Wreorder-init-list
 )
 set(msvc_compile_options
     /MP
