@@ -142,7 +142,10 @@ enum {
 };
 }
 
-enum class FillMode { kWireframe, kSolid };
+enum class FillMode {
+    kSolid,
+    kWireframe,
+};
 
 enum class CullMode {
     kNone,
@@ -150,10 +153,19 @@ enum class CullMode {
     kBack,
 };
 
+enum class FrontFace {
+    kClockwise,
+    kCounterClockwise,
+};
+
 struct RasterizerDesc {
     FillMode fill_mode = FillMode::kSolid;
     CullMode cull_mode = CullMode::kNone;
+    FrontFace front_face = FrontFace::kClockwise;
     int32_t depth_bias = 0;
+    float depth_bias_clamp = 0.0;
+    float slope_scaled_depth_bias = 0.0;
+    bool depth_clip_enable = true;
 };
 
 enum class Blend {

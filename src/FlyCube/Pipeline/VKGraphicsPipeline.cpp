@@ -42,6 +42,61 @@ vk::StencilOpState Convert(const StencilOpDesc& desc, uint8_t read_mask, uint8_t
     return res;
 }
 
+vk::PolygonMode ConvertFillMode(FillMode fill_mode)
+{
+    switch (fill_mode) {
+    case FillMode::kSolid:
+        return vk::PolygonMode::eFill;
+    case FillMode::kWireframe:
+        return vk::PolygonMode::eLine;
+        break;
+    default:
+        NOTREACHED();
+    }
+}
+
+vk::CullModeFlags ConvertCullMode(CullMode cull_mode)
+{
+    switch (cull_mode) {
+    case CullMode::kNone:
+        return vk::CullModeFlagBits::eNone;
+    case CullMode::kFront:
+        return vk::CullModeFlagBits::eFront;
+    case CullMode::kBack:
+        return vk::CullModeFlagBits::eBack;
+    default:
+        NOTREACHED();
+    }
+}
+
+vk::FrontFace ConvertFrontFace(FrontFace front_face)
+{
+    switch (front_face) {
+    case FrontFace::kClockwise:
+        return vk::FrontFace::eClockwise;
+    case FrontFace::kCounterClockwise:
+        return vk::FrontFace::eCounterClockwise;
+    default:
+        NOTREACHED();
+    }
+}
+
+vk::PipelineRasterizationStateCreateInfo ConvertRasterizerDesc(const RasterizerDesc& desc)
+{
+    vk::PipelineRasterizationStateCreateInfo pipeline_rasterization_state_info = {};
+    pipeline_rasterization_state_info.depthClampEnable = !desc.depth_clip_enable;
+    pipeline_rasterization_state_info.rasterizerDiscardEnable = false;
+    pipeline_rasterization_state_info.polygonMode = ConvertFillMode(desc.fill_mode);
+    pipeline_rasterization_state_info.cullMode = ConvertCullMode(desc.cull_mode);
+    pipeline_rasterization_state_info.frontFace = ConvertFrontFace(desc.front_face);
+    pipeline_rasterization_state_info.depthBiasEnable = desc.depth_bias != 0 || desc.slope_scaled_depth_bias != 0.0;
+    pipeline_rasterization_state_info.depthBiasConstantFactor = desc.depth_bias;
+    pipeline_rasterization_state_info.depthBiasClamp = desc.depth_bias_clamp;
+    pipeline_rasterization_state_info.depthBiasSlopeFactor = desc.slope_scaled_depth_bias;
+    pipeline_rasterization_state_info.lineWidth = 1.0;
+    return pipeline_rasterization_state_info;
+}
+
 } // namespace
 
 VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
@@ -68,31 +123,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     viewport_state.viewportCount = 1;
     viewport_state.scissorCount = 1;
 
-    vk::PipelineRasterizationStateCreateInfo rasterizer = {};
-    rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.lineWidth = 1.0;
-    rasterizer.frontFace = vk::FrontFace::eClockwise;
-    rasterizer.depthBiasEnable = desc_.rasterizer_desc.depth_bias != 0;
-    rasterizer.depthBiasConstantFactor = desc_.rasterizer_desc.depth_bias;
-    switch (desc_.rasterizer_desc.fill_mode) {
-    case FillMode::kWireframe:
-        rasterizer.polygonMode = vk::PolygonMode::eLine;
-        break;
-    case FillMode::kSolid:
-        rasterizer.polygonMode = vk::PolygonMode::eFill;
-        break;
-    }
-    switch (desc_.rasterizer_desc.cull_mode) {
-    case CullMode::kNone:
-        rasterizer.cullMode = vk::CullModeFlagBits::eNone;
-        break;
-    case CullMode::kFront:
-        rasterizer.cullMode = vk::CullModeFlagBits::eFront;
-        break;
-    case CullMode::kBack:
-        rasterizer.cullMode = vk::CullModeFlagBits::eBack;
-        break;
-    }
+    vk::PipelineRasterizationStateCreateInfo rasterizer = ConvertRasterizerDesc(desc.rasterizer_desc);
 
     vk::PipelineColorBlendAttachmentState color_blend_attachment = {};
     color_blend_attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |

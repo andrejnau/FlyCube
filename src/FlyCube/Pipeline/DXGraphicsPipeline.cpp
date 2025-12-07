@@ -14,29 +14,42 @@
 
 namespace {
 
-CD3DX12_RASTERIZER_DESC GetRasterizerDesc(const GraphicsPipelineDesc& desc)
+D3D12_FILL_MODE ConvertFillMode(FillMode fill_mode)
+{
+    switch (fill_mode) {
+    case FillMode::kSolid:
+        return D3D12_FILL_MODE_SOLID;
+    case FillMode::kWireframe:
+        return D3D12_FILL_MODE_WIREFRAME;
+    default:
+        NOTREACHED();
+    }
+}
+
+D3D12_CULL_MODE ConvertCullMode(CullMode cull_mode)
+{
+    switch (cull_mode) {
+    case CullMode::kNone:
+        return D3D12_CULL_MODE_NONE;
+    case CullMode::kFront:
+        return D3D12_CULL_MODE_FRONT;
+    case CullMode::kBack:
+        return D3D12_CULL_MODE_BACK;
+    default:
+        NOTREACHED();
+    }
+}
+
+CD3DX12_RASTERIZER_DESC GetRasterizerDesc(const RasterizerDesc& desc)
 {
     CD3DX12_RASTERIZER_DESC rasterizer_desc(D3D12_DEFAULT);
-    switch (desc.rasterizer_desc.fill_mode) {
-    case FillMode::kWireframe:
-        rasterizer_desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
-        break;
-    case FillMode::kSolid:
-        rasterizer_desc.FillMode = D3D12_FILL_MODE_SOLID;
-        break;
-    }
-    switch (desc.rasterizer_desc.cull_mode) {
-    case CullMode::kNone:
-        rasterizer_desc.CullMode = D3D12_CULL_MODE_NONE;
-        break;
-    case CullMode::kFront:
-        rasterizer_desc.CullMode = D3D12_CULL_MODE_FRONT;
-        break;
-    case CullMode::kBack:
-        rasterizer_desc.CullMode = D3D12_CULL_MODE_BACK;
-        break;
-    }
-    rasterizer_desc.DepthBias = desc.rasterizer_desc.depth_bias;
+    rasterizer_desc.FillMode = ConvertFillMode(desc.fill_mode);
+    rasterizer_desc.CullMode = ConvertCullMode(desc.cull_mode);
+    rasterizer_desc.FrontCounterClockwise = desc.front_face == FrontFace::kCounterClockwise;
+    rasterizer_desc.DepthBias = desc.depth_bias;
+    rasterizer_desc.DepthBiasClamp = desc.depth_bias_clamp;
+    rasterizer_desc.SlopeScaledDepthBias = desc.slope_scaled_depth_bias;
+    rasterizer_desc.DepthClipEnable = desc.depth_bias_clamp;
     return rasterizer_desc;
 }
 
@@ -216,7 +229,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL1>(
         GetDepthStencilDesc(desc.depth_stencil_desc, GetDSVFormat(desc)));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC>(GetSampleDesc(desc));
-    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER>(GetRasterizerDesc(desc));
+    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER>(GetRasterizerDesc(desc.rasterizer_desc));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC>(GetBlendDesc(desc));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE>(root_signature_.Get());
 

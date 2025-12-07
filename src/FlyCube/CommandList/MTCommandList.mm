@@ -50,6 +50,18 @@ MTLStoreAction ConvertStoreAction(RenderPassStoreOp op)
     }
 }
 
+MTLTriangleFillMode ConvertFillMode(FillMode fill_mode)
+{
+    switch (fill_mode) {
+    case FillMode::kSolid:
+        return MTLTriangleFillModeFill;
+    case FillMode::kWireframe:
+        return MTLTriangleFillModeLines;
+    default:
+        NOTREACHED();
+    }
+}
+
 MTLCullMode ConvertCullMode(CullMode cull_mode)
 {
     switch (cull_mode) {
@@ -59,6 +71,18 @@ MTLCullMode ConvertCullMode(CullMode cull_mode)
         return MTLCullModeFront;
     case CullMode::kBack:
         return MTLCullModeBack;
+    default:
+        NOTREACHED();
+    }
+}
+
+MTLWinding ConvertFrontFace(FrontFace front_face)
+{
+    switch (front_face) {
+    case FrontFace::kClockwise:
+        return MTLWindingClockwise;
+    case FrontFace::kCounterClockwise:
+        return MTLWindingCounterClockwise;
     default:
         NOTREACHED();
     }
@@ -736,9 +760,15 @@ void MTCommandList::ApplyGraphicsState()
         decltype(auto) mt_state = state_->As<MTGraphicsPipeline>();
         decltype(auto) rasterizer_desc = mt_state.GetDesc().rasterizer_desc;
         [render_encoder_ setRenderPipelineState:mt_state.GetPipeline()];
-        [render_encoder_ setDepthStencilState:mt_state.GetDepthStencil()];
-        [render_encoder_ setDepthBias:rasterizer_desc.depth_bias slopeScale:0 clamp:0];
+        [render_encoder_ setTriangleFillMode:ConvertFillMode(rasterizer_desc.fill_mode)];
         [render_encoder_ setCullMode:ConvertCullMode(rasterizer_desc.cull_mode)];
+        [render_encoder_ setFrontFacingWinding:ConvertFrontFace(rasterizer_desc.front_face)];
+        [render_encoder_ setDepthBias:rasterizer_desc.depth_bias
+                           slopeScale:rasterizer_desc.slope_scaled_depth_bias
+                                clamp:rasterizer_desc.depth_bias_clamp];
+        [render_encoder_
+            setDepthClipMode:rasterizer_desc.depth_clip_enable ? MTLDepthClipModeClip : MTLDepthClipModeClamp];
+        [render_encoder_ setDepthStencilState:mt_state.GetDepthStencil()];
         need_apply_state_ = false;
     }
 
