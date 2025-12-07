@@ -523,6 +523,12 @@ void VKCommandList::SetStencilReference(uint32_t stencil_reference)
     command_list_->setStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, stencil_reference);
 }
 
+void VKCommandList::SetBlendConstants(float red, float green, float blue, float alpha)
+{
+    const std::array<float, 4> blend_constants = { red, green, blue, alpha };
+    command_list_->setBlendConstants(blend_constants.data());
+}
+
 void VKCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                                        const std::shared_ptr<Resource>& dst,
                                        const std::shared_ptr<Resource>& scratch,

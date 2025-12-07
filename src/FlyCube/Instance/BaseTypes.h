@@ -9,7 +9,6 @@
 #include <memory>
 #include <span>
 #include <string>
-#include <tuple>
 #include <variant>
 #include <vector>
 
@@ -168,24 +167,58 @@ struct RasterizerDesc {
     bool depth_clip_enable = true;
 };
 
-enum class Blend {
+enum class BlendFactor {
     kZero,
+    kOne,
+    kSrcColor,
+    kOneMinusSrcColor,
+    kDstColor,
+    kOneMinusDstColor,
     kSrcAlpha,
-    kInvSrcAlpha,
+    kOneMinusSrcAlpha,
+    kDstAlpha,
+    kOneMinusDstAlpha,
+    kConstantColor,
+    kOneMinusConstantColor,
+    kConstantAlpha,
+    kOneMinusConstantAlpha,
+    kSrcAlphaSaturate,
+    kSrc1Color,
+    kOneMinusSrc1Color,
+    kSrc1Alpha,
+    kOneMinusSrc1Alpha,
 };
 
 enum class BlendOp {
     kAdd,
+    kSubtract,
+    kReverseSubtract,
+    kMin,
+    kMax,
 };
+
+namespace EnumClassColorComponentFlagBits {
+enum ColorComponentFlagBits : uint32_t {
+    kNone = 0x0,
+    kRed = 0x1,
+    kGreen = 0x2,
+    kBlue = 0x4,
+    kAlpha = 0x8,
+    kAll = 0xf,
+};
+}
+using ColorComponentFlagBits = EnumClassColorComponentFlagBits::ColorComponentFlagBits;
+using ColorComponentFlags = uint32_t;
 
 struct BlendDesc {
     bool blend_enable = false;
-    Blend blend_src;
-    Blend blend_dest;
-    BlendOp blend_op;
-    Blend blend_src_alpha;
-    Blend blend_dest_apha;
-    BlendOp blend_op_alpha;
+    BlendFactor src_color_blend_factor = BlendFactor::kOne;
+    BlendFactor dst_color_blend_factor = BlendFactor::kZero;
+    BlendOp color_blend_op = BlendOp::kAdd;
+    BlendFactor src_alpha_blend_factor = BlendFactor::kOne;
+    BlendFactor dst_alpha_blend_factor = BlendFactor::kZero;
+    BlendOp alpha_blend_op = BlendOp::kAdd;
+    ColorComponentFlags color_write_mask = ColorComponentFlagBits::kAll;
 };
 
 enum class ComparisonFunc {

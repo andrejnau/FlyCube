@@ -482,6 +482,12 @@ void DXCommandList::SetStencilReference(uint32_t stencil_reference)
     command_list_->OMSetStencilRef(stencil_reference);
 }
 
+void DXCommandList::SetBlendConstants(float red, float green, float blue, float alpha)
+{
+    const std::array<float, 4> blend_constants = { red, green, blue, alpha };
+    command_list_->OMSetBlendFactor(blend_constants.data());
+}
+
 void DXCommandList::BuildAccelerationStructure(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& inputs,
                                                const std::shared_ptr<Resource>& src,
                                                const std::shared_ptr<Resource>& dst,

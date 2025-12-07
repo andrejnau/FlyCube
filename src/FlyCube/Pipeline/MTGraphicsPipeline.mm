@@ -67,6 +67,70 @@ MTLDepthStencilDescriptor* GetDepthStencilDesc(const DepthStencilDesc& desc, gli
     return depth_stencil_descriptor;
 }
 
+MTLBlendOperation ConvertBlendOp(BlendOp op)
+{
+    switch (op) {
+    case BlendOp::kAdd:
+        return MTLBlendOperationAdd;
+    case BlendOp::kSubtract:
+        return MTLBlendOperationSubtract;
+    case BlendOp::kReverseSubtract:
+        return MTLBlendOperationReverseSubtract;
+    case BlendOp::kMin:
+        return MTLBlendOperationMin;
+    case BlendOp::kMax:
+        return MTLBlendOperationMax;
+    default:
+        NOTREACHED();
+    }
+}
+
+MTLBlendFactor ConvertBlendOp(BlendFactor factor)
+{
+    switch (factor) {
+    case BlendFactor::kZero:
+        return MTLBlendFactorZero;
+    case BlendFactor::kOne:
+        return MTLBlendFactorOne;
+    case BlendFactor::kSrcColor:
+        return MTLBlendFactorSourceColor;
+    case BlendFactor::kOneMinusSrcColor:
+        return MTLBlendFactorOneMinusSourceColor;
+    case BlendFactor::kDstColor:
+        return MTLBlendFactorDestinationColor;
+    case BlendFactor::kOneMinusDstColor:
+        return MTLBlendFactorOneMinusDestinationColor;
+    case BlendFactor::kSrcAlpha:
+        return MTLBlendFactorSourceAlpha;
+    case BlendFactor::kOneMinusSrcAlpha:
+        return MTLBlendFactorOneMinusSourceAlpha;
+    case BlendFactor::kDstAlpha:
+        return MTLBlendFactorDestinationAlpha;
+    case BlendFactor::kOneMinusDstAlpha:
+        return MTLBlendFactorOneMinusDestinationAlpha;
+    case BlendFactor::kConstantColor:
+        return MTLBlendFactorBlendColor;
+    case BlendFactor::kOneMinusConstantColor:
+        return MTLBlendFactorOneMinusBlendColor;
+    case BlendFactor::kConstantAlpha:
+        return MTLBlendFactorBlendAlpha;
+    case BlendFactor::kOneMinusConstantAlpha:
+        return MTLBlendFactorOneMinusBlendAlpha;
+    case BlendFactor::kSrcAlphaSaturate:
+        return MTLBlendFactorSourceAlphaSaturated;
+    case BlendFactor::kSrc1Color:
+        return MTLBlendFactorSource1Color;
+    case BlendFactor::kOneMinusSrc1Color:
+        return MTLBlendFactorOneMinusSource1Color;
+    case BlendFactor::kSrc1Alpha:
+        return MTLBlendFactorSource1Alpha;
+    case BlendFactor::kOneMinusSrc1Alpha:
+        return MTLBlendFactorOneMinusSource1Alpha;
+    default:
+        NOTREACHED();
+    }
+}
+
 } // namespace
 
 MTGraphicsPipeline::MTGraphicsPipeline(MTDevice& device, const GraphicsPipelineDesc& desc)
@@ -134,44 +198,27 @@ void MTGraphicsPipeline::CreatePipeline()
 
     decltype(auto) blend_desc = desc_.blend_desc;
     for (size_t i = 0; i < desc_.color_formats.size(); ++i) {
-        if (desc_.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
-            continue;
-        }
-
         decltype(auto) attachment = pipeline_descriptor.colorAttachments[i];
         attachment.blendingState = blend_desc.blend_enable ? MTL4BlendStateEnabled : MTL4BlendStateDisabled;
-        if (!blend_desc.blend_enable) {
-            continue;
+        attachment.sourceRGBBlendFactor = ConvertBlendOp(desc_.blend_desc.src_color_blend_factor);
+        attachment.destinationRGBBlendFactor = ConvertBlendOp(desc_.blend_desc.dst_color_blend_factor);
+        attachment.rgbBlendOperation = ConvertBlendOp(desc_.blend_desc.color_blend_op);
+        attachment.sourceAlphaBlendFactor = ConvertBlendOp(desc_.blend_desc.src_alpha_blend_factor);
+        attachment.destinationAlphaBlendFactor = ConvertBlendOp(desc_.blend_desc.dst_alpha_blend_factor);
+        attachment.alphaBlendOperation = ConvertBlendOp(desc_.blend_desc.alpha_blend_op);
+        attachment.writeMask = MTLColorWriteMaskNone;
+        if (desc_.blend_desc.color_write_mask & ColorComponentFlagBits::kRed) {
+            attachment.writeMask |= MTLColorWriteMaskRed;
         }
-
-        auto convert = [](Blend type) {
-            switch (type) {
-            case Blend::kZero:
-                return MTLBlendFactorZero;
-            case Blend::kSrcAlpha:
-                return MTLBlendFactorSourceAlpha;
-            case Blend::kInvSrcAlpha:
-                return MTLBlendFactorOneMinusSourceAlpha;
-            default:
-                NOTREACHED();
-            }
-        };
-
-        auto convert_op = [](BlendOp type) {
-            switch (type) {
-            case BlendOp::kAdd:
-                return MTLBlendOperationAdd;
-            default:
-                NOTREACHED();
-            }
-        };
-
-        attachment.sourceRGBBlendFactor = convert(desc_.blend_desc.blend_src);
-        attachment.destinationRGBBlendFactor = convert(desc_.blend_desc.blend_dest);
-        attachment.rgbBlendOperation = convert_op(desc_.blend_desc.blend_op);
-        attachment.sourceAlphaBlendFactor = convert(desc_.blend_desc.blend_src_alpha);
-        attachment.destinationAlphaBlendFactor = convert(desc_.blend_desc.blend_dest_apha);
-        attachment.alphaBlendOperation = convert_op(desc_.blend_desc.blend_op_alpha);
+        if (desc_.blend_desc.color_write_mask & ColorComponentFlagBits::kGreen) {
+            attachment.writeMask |= MTLColorWriteMaskGreen;
+        }
+        if (desc_.blend_desc.color_write_mask & ColorComponentFlagBits::kBlue) {
+            attachment.writeMask |= MTLColorWriteMaskBlue;
+        }
+        if (desc_.blend_desc.color_write_mask & ColorComponentFlagBits::kAlpha) {
+            attachment.writeMask |= MTLColorWriteMaskAlpha;
+        }
     }
 
     NSError* error = nullptr;

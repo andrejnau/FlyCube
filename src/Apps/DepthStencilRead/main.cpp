@@ -227,8 +227,8 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, const NativeSurface
 
     DepthStencilDesc depth_stencil_desc = {
         .depth_test_enable = false,
-        .depth_func = ComparisonFunc::kAlways,
         .depth_write_enable = false,
+        .depth_func = ComparisonFunc::kAlways,
     };
 
     GraphicsPipelineDesc pipeline_desc = {

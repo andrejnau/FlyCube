@@ -53,40 +53,94 @@ CD3DX12_RASTERIZER_DESC GetRasterizerDesc(const RasterizerDesc& desc)
     return rasterizer_desc;
 }
 
-CD3DX12_BLEND_DESC GetBlendDesc(const GraphicsPipelineDesc& desc)
+D3D12_BLEND_OP ConvertBlendOp(BlendOp op)
+{
+    switch (op) {
+    case BlendOp::kAdd:
+        return D3D12_BLEND_OP_ADD;
+    case BlendOp::kSubtract:
+        return D3D12_BLEND_OP_SUBTRACT;
+    case BlendOp::kReverseSubtract:
+        return D3D12_BLEND_OP_REV_SUBTRACT;
+    case BlendOp::kMin:
+        return D3D12_BLEND_OP_MIN;
+    case BlendOp::kMax:
+        return D3D12_BLEND_OP_MAX;
+    default:
+        NOTREACHED();
+    }
+}
+
+D3D12_BLEND ConvertBlendOp(BlendFactor factor)
+{
+    switch (factor) {
+    case BlendFactor::kZero:
+        return D3D12_BLEND_ZERO;
+    case BlendFactor::kOne:
+        return D3D12_BLEND_ONE;
+    case BlendFactor::kSrcColor:
+        return D3D12_BLEND_SRC_COLOR;
+    case BlendFactor::kOneMinusSrcColor:
+        return D3D12_BLEND_INV_SRC_COLOR;
+    case BlendFactor::kDstColor:
+        return D3D12_BLEND_DEST_COLOR;
+    case BlendFactor::kOneMinusDstColor:
+        return D3D12_BLEND_INV_DEST_COLOR;
+    case BlendFactor::kSrcAlpha:
+        return D3D12_BLEND_SRC_ALPHA;
+    case BlendFactor::kOneMinusSrcAlpha:
+        return D3D12_BLEND_INV_SRC_ALPHA;
+    case BlendFactor::kDstAlpha:
+        return D3D12_BLEND_DEST_ALPHA;
+    case BlendFactor::kOneMinusDstAlpha:
+        return D3D12_BLEND_INV_DEST_ALPHA;
+    case BlendFactor::kConstantColor:
+        return D3D12_BLEND_BLEND_FACTOR;
+    case BlendFactor::kOneMinusConstantColor:
+        return D3D12_BLEND_INV_BLEND_FACTOR;
+    case BlendFactor::kConstantAlpha:
+        return D3D12_BLEND_ALPHA_FACTOR;
+    case BlendFactor::kOneMinusConstantAlpha:
+        return D3D12_BLEND_INV_ALPHA_FACTOR;
+    case BlendFactor::kSrcAlphaSaturate:
+        return D3D12_BLEND_SRC_ALPHA_SAT;
+    case BlendFactor::kSrc1Color:
+        return D3D12_BLEND_SRC1_COLOR;
+    case BlendFactor::kOneMinusSrc1Color:
+        return D3D12_BLEND_INV_SRC1_COLOR;
+    case BlendFactor::kSrc1Alpha:
+        return D3D12_BLEND_SRC1_ALPHA;
+    case BlendFactor::kOneMinusSrc1Alpha:
+        return D3D12_BLEND_INV_SRC1_ALPHA;
+    default:
+        NOTREACHED();
+    }
+}
+
+CD3DX12_BLEND_DESC GetBlendDesc(const BlendDesc& desc)
 {
     CD3DX12_BLEND_DESC blend_desc(D3D12_DEFAULT);
-    auto convert = [](Blend type) {
-        switch (type) {
-        case Blend::kZero:
-            return D3D12_BLEND_ZERO;
-        case Blend::kSrcAlpha:
-            return D3D12_BLEND_SRC_ALPHA;
-        case Blend::kInvSrcAlpha:
-            return D3D12_BLEND_INV_SRC_ALPHA;
-        }
-        return static_cast<D3D12_BLEND>(0);
-    };
-    auto convert_op = [](BlendOp type) {
-        switch (type) {
-        case BlendOp::kAdd:
-            return D3D12_BLEND_OP_ADD;
-        }
-        return static_cast<D3D12_BLEND_OP>(0);
-    };
-    for (size_t i = 0; i < desc.color_formats.size(); ++i) {
-        if (desc.color_formats[i] == gli::format::FORMAT_UNDEFINED) {
-            continue;
-        }
-        decltype(auto) rt_desc = blend_desc.RenderTarget[i];
-        rt_desc.BlendEnable = desc.blend_desc.blend_enable;
-        rt_desc.BlendOp = convert_op(desc.blend_desc.blend_op);
-        rt_desc.SrcBlend = convert(desc.blend_desc.blend_src);
-        rt_desc.DestBlend = convert(desc.blend_desc.blend_dest);
-        rt_desc.BlendOpAlpha = convert_op(desc.blend_desc.blend_op_alpha);
-        rt_desc.SrcBlendAlpha = convert(desc.blend_desc.blend_src_alpha);
-        rt_desc.DestBlendAlpha = convert(desc.blend_desc.blend_dest_apha);
-        rt_desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+    blend_desc.IndependentBlendEnable = false;
+    auto& render_target_blend_desc = blend_desc.RenderTarget[0];
+    render_target_blend_desc.BlendEnable = desc.blend_enable;
+    render_target_blend_desc.BlendOp = ConvertBlendOp(desc.color_blend_op);
+    render_target_blend_desc.SrcBlend = ConvertBlendOp(desc.src_color_blend_factor);
+    render_target_blend_desc.DestBlend = ConvertBlendOp(desc.dst_color_blend_factor);
+    render_target_blend_desc.BlendOpAlpha = ConvertBlendOp(desc.alpha_blend_op);
+    render_target_blend_desc.SrcBlendAlpha = ConvertBlendOp(desc.src_alpha_blend_factor);
+    render_target_blend_desc.DestBlendAlpha = ConvertBlendOp(desc.dst_alpha_blend_factor);
+    render_target_blend_desc.RenderTargetWriteMask = {};
+    if (desc.color_write_mask & ColorComponentFlagBits::kRed) {
+        render_target_blend_desc.RenderTargetWriteMask |= D3D12_COLOR_WRITE_ENABLE_RED;
+    }
+    if (desc.color_write_mask & ColorComponentFlagBits::kGreen) {
+        render_target_blend_desc.RenderTargetWriteMask |= D3D12_COLOR_WRITE_ENABLE_GREEN;
+    }
+    if (desc.color_write_mask & ColorComponentFlagBits::kBlue) {
+        render_target_blend_desc.RenderTargetWriteMask |= D3D12_COLOR_WRITE_ENABLE_BLUE;
+    }
+    if (desc.color_write_mask & ColorComponentFlagBits::kAlpha) {
+        render_target_blend_desc.RenderTargetWriteMask |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
     }
     return blend_desc;
 }
@@ -225,7 +279,7 @@ DXGraphicsPipeline::DXGraphicsPipeline(DXDevice& device, const GraphicsPipelineD
         GetDepthStencilDesc(desc.depth_stencil_desc, GetDSVFormat(desc)));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC>(GetSampleDesc(desc));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER>(GetRasterizerDesc(desc.rasterizer_desc));
-    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC>(GetBlendDesc(desc));
+    graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC>(GetBlendDesc(desc.blend_desc));
     graphics_state_builder.AddState<CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE>(root_signature_.Get());
 
     ComPtr<ID3D12Device2> device2;

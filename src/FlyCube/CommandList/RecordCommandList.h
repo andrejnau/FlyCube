@@ -171,6 +171,11 @@ public:
         ApplyAndRecord(&T::SetStencilReference, stencil_reference);
     }
 
+    void SetBlendConstants(float red, float green, float blue, float alpha) override
+    {
+        ApplyAndRecord(&T::SetBlendConstants, red, green, blue, alpha);
+    }
+
     void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                             const std::shared_ptr<Resource>& dst,
                             const std::shared_ptr<Resource>& scratch,

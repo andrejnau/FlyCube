@@ -65,6 +65,7 @@ public:
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) override;
     void SetDepthBounds(float min_depth_bounds, float max_depth_bounds) override;
     void SetStencilReference(uint32_t stencil_reference) override;
+    void SetBlendConstants(float red, float green, float blue, float alpha) override;
     void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                             const std::shared_ptr<Resource>& dst,
                             const std::shared_ptr<Resource>& scratch,

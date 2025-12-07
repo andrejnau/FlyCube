@@ -190,6 +190,7 @@ void MTCommandList::Close()
     min_depth_bounds_ = 0.0;
     max_depth_bounds_ = 1.0;
     stencil_reference_ = 0;
+    blend_constants_ = std::nullopt;
     state_.reset();
     binding_set_.reset();
     argument_tables_ = {};
@@ -286,6 +287,12 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
     }
     if (stencil_reference_) {
         [render_encoder_ setStencilReferenceValue:stencil_reference_];
+    }
+    if (blend_constants_) {
+        [render_encoder_ setBlendColorRed:blend_constants_.value()[0]
+                                    green:blend_constants_.value()[1]
+                                     blue:blend_constants_.value()[2]
+                                    alpha:blend_constants_.value()[3]];
     }
     [render_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kVertex) atStages:MTLRenderStageVertex];
     [render_encoder_ setArgumentTable:argument_tables_.at(ShaderType::kPixel) atStages:MTLRenderStageFragment];
@@ -515,6 +522,20 @@ void MTCommandList::SetStencilReference(uint32_t stencil_reference)
     }
 
     [render_encoder_ setStencilReferenceValue:stencil_reference_];
+}
+
+void MTCommandList::SetBlendConstants(float red, float green, float blue, float alpha)
+{
+    blend_constants_ = { red, green, blue, alpha };
+
+    if (!render_encoder_) {
+        return;
+    }
+
+    [render_encoder_ setBlendColorRed:blend_constants_.value()[0]
+                                green:blend_constants_.value()[1]
+                                 blue:blend_constants_.value()[2]
+                                alpha:blend_constants_.value()[3]];
 }
 
 void MTCommandList::BuildBottomLevelAS(const std::shared_ptr<Resource>& src,

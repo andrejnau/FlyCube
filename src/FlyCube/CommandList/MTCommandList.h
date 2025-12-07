@@ -4,6 +4,7 @@
 #import <Metal/Metal.h>
 
 #include <map>
+#include <optional>
 
 class MTDevice;
 class MTGraphicsPipeline;
@@ -59,6 +60,7 @@ public:
     void RSSetShadingRate(ShadingRate shading_rate, const std::array<ShadingRateCombiner, 2>& combiners) override;
     void SetDepthBounds(float min_depth_bounds, float max_depth_bounds) override;
     void SetStencilReference(uint32_t stencil_reference) override;
+    void SetBlendConstants(float red, float green, float blue, float alpha) override;
     void BuildBottomLevelAS(const std::shared_ptr<Resource>& src,
                             const std::shared_ptr<Resource>& dst,
                             const std::shared_ptr<Resource>& scratch,
@@ -123,6 +125,7 @@ private:
     float min_depth_bounds_ = 0.0;
     float max_depth_bounds_ = 1.0;
     uint32_t stencil_reference_ = 0;
+    std::optional<std::array<float, 4>> blend_constants_;
     std::shared_ptr<Pipeline> state_;
     std::shared_ptr<MTBindingSet> binding_set_;
     std::map<ShaderType, id<MTL4ArgumentTable>> argument_tables_;

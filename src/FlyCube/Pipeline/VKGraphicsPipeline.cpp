@@ -98,6 +98,70 @@ vk::PipelineRasterizationStateCreateInfo ConvertRasterizerDesc(const RasterizerD
     return pipeline_rasterization_state_info;
 }
 
+vk::BlendOp ConvertBlendOp(BlendOp op)
+{
+    switch (op) {
+    case BlendOp::kAdd:
+        return vk::BlendOp::eAdd;
+    case BlendOp::kSubtract:
+        return vk::BlendOp::eSubtract;
+    case BlendOp::kReverseSubtract:
+        return vk::BlendOp::eReverseSubtract;
+    case BlendOp::kMin:
+        return vk::BlendOp::eMin;
+    case BlendOp::kMax:
+        return vk::BlendOp::eMax;
+    default:
+        NOTREACHED();
+    }
+}
+
+vk::BlendFactor ConvertBlendOp(BlendFactor factor)
+{
+    switch (factor) {
+    case BlendFactor::kZero:
+        return vk::BlendFactor::eZero;
+    case BlendFactor::kOne:
+        return vk::BlendFactor::eOne;
+    case BlendFactor::kSrcColor:
+        return vk::BlendFactor::eSrcColor;
+    case BlendFactor::kOneMinusSrcColor:
+        return vk::BlendFactor::eOneMinusSrcColor;
+    case BlendFactor::kDstColor:
+        return vk::BlendFactor::eDstColor;
+    case BlendFactor::kOneMinusDstColor:
+        return vk::BlendFactor::eOneMinusDstColor;
+    case BlendFactor::kSrcAlpha:
+        return vk::BlendFactor::eSrcAlpha;
+    case BlendFactor::kOneMinusSrcAlpha:
+        return vk::BlendFactor::eOneMinusSrcAlpha;
+    case BlendFactor::kDstAlpha:
+        return vk::BlendFactor::eDstAlpha;
+    case BlendFactor::kOneMinusDstAlpha:
+        return vk::BlendFactor::eOneMinusDstAlpha;
+    case BlendFactor::kConstantColor:
+        return vk::BlendFactor::eConstantColor;
+    case BlendFactor::kOneMinusConstantColor:
+        return vk::BlendFactor::eOneMinusConstantColor;
+    case BlendFactor::kConstantAlpha:
+        return vk::BlendFactor::eConstantAlpha;
+    case BlendFactor::kOneMinusConstantAlpha:
+        return vk::BlendFactor::eOneMinusConstantAlpha;
+    case BlendFactor::kSrcAlphaSaturate:
+        return vk::BlendFactor::eSrcAlphaSaturate;
+    case BlendFactor::kSrc1Color:
+        return vk::BlendFactor::eSrc1Color;
+    case BlendFactor::kOneMinusSrc1Color:
+        return vk::BlendFactor::eOneMinusSrc1Color;
+    case BlendFactor::kSrc1Alpha:
+        return vk::BlendFactor::eSrc1Alpha;
+    case BlendFactor::kOneMinusSrc1Alpha:
+        return vk::BlendFactor::eOneMinusSrc1Alpha;
+    default:
+        NOTREACHED();
+    }
+}
+
 } // namespace
 
 VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineDesc& desc)
@@ -127,39 +191,25 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     vk::PipelineRasterizationStateCreateInfo rasterizer = ConvertRasterizerDesc(desc.rasterizer_desc);
 
     vk::PipelineColorBlendAttachmentState color_blend_attachment = {};
-    color_blend_attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                                            vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     color_blend_attachment.blendEnable = desc_.blend_desc.blend_enable;
-
-    if (color_blend_attachment.blendEnable) {
-        auto convert = [](Blend type) {
-            switch (type) {
-            case Blend::kZero:
-                return vk::BlendFactor::eZero;
-            case Blend::kSrcAlpha:
-                return vk::BlendFactor::eSrcAlpha;
-            case Blend::kInvSrcAlpha:
-                return vk::BlendFactor::eOneMinusSrcAlpha;
-            default:
-                NOTREACHED();
-            }
-        };
-
-        auto convert_op = [](BlendOp type) {
-            switch (type) {
-            case BlendOp::kAdd:
-                return vk::BlendOp::eAdd;
-            default:
-                NOTREACHED();
-            }
-        };
-
-        color_blend_attachment.srcColorBlendFactor = convert(desc_.blend_desc.blend_src);
-        color_blend_attachment.dstColorBlendFactor = convert(desc_.blend_desc.blend_dest);
-        color_blend_attachment.colorBlendOp = convert_op(desc_.blend_desc.blend_op);
-        color_blend_attachment.srcAlphaBlendFactor = convert(desc_.blend_desc.blend_src_alpha);
-        color_blend_attachment.dstAlphaBlendFactor = convert(desc_.blend_desc.blend_dest_apha);
-        color_blend_attachment.alphaBlendOp = convert_op(desc_.blend_desc.blend_op_alpha);
+    color_blend_attachment.srcColorBlendFactor = ConvertBlendOp(desc_.blend_desc.src_color_blend_factor);
+    color_blend_attachment.dstColorBlendFactor = ConvertBlendOp(desc_.blend_desc.dst_color_blend_factor);
+    color_blend_attachment.colorBlendOp = ConvertBlendOp(desc_.blend_desc.color_blend_op);
+    color_blend_attachment.srcAlphaBlendFactor = ConvertBlendOp(desc_.blend_desc.src_alpha_blend_factor);
+    color_blend_attachment.dstAlphaBlendFactor = ConvertBlendOp(desc_.blend_desc.dst_alpha_blend_factor);
+    color_blend_attachment.alphaBlendOp = ConvertBlendOp(desc_.blend_desc.alpha_blend_op);
+    color_blend_attachment.colorWriteMask = {};
+    if (desc_.blend_desc.color_write_mask & ColorComponentFlagBits::kRed) {
+        color_blend_attachment.colorWriteMask |= vk::ColorComponentFlagBits::eR;
+    }
+    if (desc_.blend_desc.color_write_mask & ColorComponentFlagBits::kGreen) {
+        color_blend_attachment.colorWriteMask |= vk::ColorComponentFlagBits::eG;
+    }
+    if (desc_.blend_desc.color_write_mask & ColorComponentFlagBits::kBlue) {
+        color_blend_attachment.colorWriteMask |= vk::ColorComponentFlagBits::eB;
+    }
+    if (desc_.blend_desc.color_write_mask & ColorComponentFlagBits::kAlpha) {
+        color_blend_attachment.colorWriteMask |= vk::ColorComponentFlagBits::eA;
     }
 
     std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments(desc_.color_formats.size(),
@@ -167,9 +217,9 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
 
     vk::PipelineColorBlendStateCreateInfo color_blending = {};
     color_blending.logicOpEnable = VK_FALSE;
-    color_blending.logicOp = vk::LogicOp::eAnd;
     color_blending.attachmentCount = color_blend_attachments.size();
     color_blending.pAttachments = color_blend_attachments.data();
+    color_blending.blendConstants.fill(0.0);
 
     vk::PipelineMultisampleStateCreateInfo multisampling = {};
     multisampling.rasterizationSamples = static_cast<vk::SampleCountFlagBits>(desc_.sample_count);
@@ -189,8 +239,9 @@ VKGraphicsPipeline::VKGraphicsPipeline(VKDevice& device, const GraphicsPipelineD
     depth_stencil.maxDepthBounds = 1.0;
 
     std::vector<vk::DynamicState> dynamic_state_enables = {
-        vk::DynamicState::eViewport,
+        vk::DynamicState::eBlendConstants,
         vk::DynamicState::eScissor,
+        vk::DynamicState::eViewport,
     };
 
     if (device_.IsVariableRateShadingSupported()) {
