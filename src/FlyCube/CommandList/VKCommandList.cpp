@@ -717,7 +717,7 @@ void VKCommandList::CopyBufferTextureImpl(bool buffer_src,
         command_list_->copyBufferToImage(vk_buffer.GetBuffer(), vk_texture.GetImage(),
                                          vk::ImageLayout::eTransferDstOptimal, vk_regions);
     } else {
-        command_list_->copyImageToBuffer(vk_texture.GetImage(), vk::ImageLayout::eTransferDstOptimal,
+        command_list_->copyImageToBuffer(vk_texture.GetImage(), vk::ImageLayout::eTransferSrcOptimal,
                                          vk_buffer.GetBuffer(), vk_regions);
     }
 }
