@@ -261,16 +261,16 @@ void RayTracingTriangleRenderer::InitAccelerationStructures()
         .size = blas_compacted_size,
     });
 
-    auto geometry = std::to_array<std::pair<std::shared_ptr<Resource>, glm::mat4x4>>({
-        { blas_, glm::transpose(glm::translate(glm::vec3(-0.5, 0.0, 0.0))) },
-        { blas_compacted_, glm::transpose(glm::translate(glm::vec3(0.5, 0.0, 0.0))) },
+    auto geometry = std::to_array<std::pair<std::shared_ptr<Resource>, glm::mat3x4>>({
+        { blas_, glm::mat3x4(glm::transpose(glm::translate(glm::vec3(-0.5, 0.0, 0.0)))) },
+        { blas_compacted_, glm::mat3x4(glm::transpose(glm::translate(glm::vec3(0.5, 0.0, 0.0)))) },
     });
     static_assert(geometry.size() == kInstanceCount);
     std::array<RaytracingGeometryInstance, kInstanceCount> instances = {};
     for (size_t i = 0; i < geometry.size(); ++i) {
         const auto& [resource, transform] = geometry[i];
         RaytracingGeometryInstance& instance = instances[i];
-        instance.transform = glm::mat3x4(transform);
+        memcpy(&instance.transform, &transform, sizeof(instance.transform));
         instance.instance_id = i;
         instance.instance_mask = 0xff;
         instance.instance_offset = i;

@@ -504,7 +504,7 @@ struct BufferCopyRegion {
 };
 
 struct RaytracingGeometryInstance {
-    glm::mat3x4 transform;
+    float transform[3][4];
     uint32_t instance_id : 24;
     uint32_t instance_mask : 8;
     uint32_t instance_offset : 24;
