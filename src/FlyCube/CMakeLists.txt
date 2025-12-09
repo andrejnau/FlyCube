@@ -174,12 +174,36 @@ list(APPEND QueryHeap
 )
 
 list(APPEND Resource
+    $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXAccelerationStructure.cpp>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXAccelerationStructure.h>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXBuffer.cpp>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXBuffer.h>
     $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXResource.cpp>
     $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXResource.h>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXSampler.cpp>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXSampler.h>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXTexture.cpp>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:Resource/DXTexture.h>
+    $<$<BOOL:${METAL_SUPPORT}>:Resource/MTAccelerationStructure.h>
+    $<$<BOOL:${METAL_SUPPORT}>:Resource/MTAccelerationStructure.mm>
+    $<$<BOOL:${METAL_SUPPORT}>:Resource/MTBuffer.h>
+    $<$<BOOL:${METAL_SUPPORT}>:Resource/MTBuffer.mm>
     $<$<BOOL:${METAL_SUPPORT}>:Resource/MTResource.h>
     $<$<BOOL:${METAL_SUPPORT}>:Resource/MTResource.mm>
+    $<$<BOOL:${METAL_SUPPORT}>:Resource/MTSampler.h>
+    $<$<BOOL:${METAL_SUPPORT}>:Resource/MTSampler.mm>
+    $<$<BOOL:${METAL_SUPPORT}>:Resource/MTTexture.h>
+    $<$<BOOL:${METAL_SUPPORT}>:Resource/MTTexture.mm>
+    $<$<BOOL:${VULKAN_SUPPORT}>:Resource/VKAccelerationStructure.cpp>
+    $<$<BOOL:${VULKAN_SUPPORT}>:Resource/VKAccelerationStructure.h>
+    $<$<BOOL:${VULKAN_SUPPORT}>:Resource/VKBuffer.cpp>
+    $<$<BOOL:${VULKAN_SUPPORT}>:Resource/VKBuffer.h>
     $<$<BOOL:${VULKAN_SUPPORT}>:Resource/VKResource.cpp>
     $<$<BOOL:${VULKAN_SUPPORT}>:Resource/VKResource.h>
+    $<$<BOOL:${VULKAN_SUPPORT}>:Resource/VKSampler.cpp>
+    $<$<BOOL:${VULKAN_SUPPORT}>:Resource/VKSampler.h>
+    $<$<BOOL:${VULKAN_SUPPORT}>:Resource/VKTexture.cpp>
+    $<$<BOOL:${VULKAN_SUPPORT}>:Resource/VKTexture.h>
     Resource/Resource.h
     Resource/ResourceBase.cpp
     Resource/ResourceBase.h

@@ -11,6 +11,10 @@
 #include "Pipeline/DXGraphicsPipeline.h"
 #include "Pipeline/DXRayTracingPipeline.h"
 #include "QueryHeap/DXRayTracingQueryHeap.h"
+#include "Resource/DXAccelerationStructure.h"
+#include "Resource/DXBuffer.h"
+#include "Resource/DXSampler.h"
+#include "Resource/DXTexture.h"
 #include "Shader/ShaderBase.h"
 #include "Utilities/DXUtility.h"
 #include "Utilities/NotReached.h"
@@ -298,19 +302,19 @@ std::shared_ptr<Fence> DXDevice::CreateFence(uint64_t initial_value)
 
 MemoryRequirements DXDevice::GetTextureMemoryRequirements(const TextureDesc& desc)
 {
-    return DXResource::CreateTexture(*this, desc)->GetMemoryRequirements();
+    return DXTexture::CreateTexture(*this, desc)->GetMemoryRequirements();
 }
 
 MemoryRequirements DXDevice::GetMemoryBufferRequirements(const BufferDesc& desc)
 {
-    return DXResource::CreateBuffer(*this, desc)->GetMemoryRequirements();
+    return DXBuffer::CreateBuffer(*this, desc)->GetMemoryRequirements();
 }
 
 std::shared_ptr<Resource> DXDevice::CreatePlacedTexture(const std::shared_ptr<Memory>& memory,
                                                         uint64_t offset,
                                                         const TextureDesc& desc)
 {
-    auto texture = DXResource::CreateTexture(*this, desc);
+    auto texture = DXTexture::CreateTexture(*this, desc);
     if (texture) {
         texture->BindMemory(memory, offset);
     }
@@ -321,7 +325,7 @@ std::shared_ptr<Resource> DXDevice::CreatePlacedBuffer(const std::shared_ptr<Mem
                                                        uint64_t offset,
                                                        const BufferDesc& desc)
 {
-    auto buffer = DXResource::CreateBuffer(*this, desc);
+    auto buffer = DXBuffer::CreateBuffer(*this, desc);
     if (buffer) {
         buffer->BindMemory(memory, offset);
     }
@@ -330,7 +334,7 @@ std::shared_ptr<Resource> DXDevice::CreatePlacedBuffer(const std::shared_ptr<Mem
 
 std::shared_ptr<Resource> DXDevice::CreateTexture(MemoryType memory_type, const TextureDesc& desc)
 {
-    auto texture = DXResource::CreateTexture(*this, desc);
+    auto texture = DXTexture::CreateTexture(*this, desc);
     if (texture) {
         texture->CommitMemory(memory_type);
     }
@@ -339,7 +343,7 @@ std::shared_ptr<Resource> DXDevice::CreateTexture(MemoryType memory_type, const 
 
 std::shared_ptr<Resource> DXDevice::CreateBuffer(MemoryType memory_type, const BufferDesc& desc)
 {
-    auto buffer = DXResource::CreateBuffer(*this, desc);
+    auto buffer = DXBuffer::CreateBuffer(*this, desc);
     if (buffer) {
         buffer->CommitMemory(memory_type);
     }
@@ -348,7 +352,7 @@ std::shared_ptr<Resource> DXDevice::CreateBuffer(MemoryType memory_type, const B
 
 std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
 {
-    return DXResource::CreateSampler(*this, desc);
+    return DXSampler::CreateSampler(*this, desc);
 }
 
 std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
@@ -395,7 +399,7 @@ std::shared_ptr<Pipeline> DXDevice::CreateRayTracingPipeline(const RayTracingPip
 
 std::shared_ptr<Resource> DXDevice::CreateAccelerationStructure(const AccelerationStructureDesc& desc)
 {
-    return DXResource::CreateAccelerationStructure(*this, desc);
+    return DXAccelerationStructure::CreateAccelerationStructure(*this, desc);
 }
 
 std::shared_ptr<QueryHeap> DXDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)

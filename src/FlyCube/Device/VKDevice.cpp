@@ -12,6 +12,10 @@
 #include "Pipeline/VKGraphicsPipeline.h"
 #include "Pipeline/VKRayTracingPipeline.h"
 #include "QueryHeap/VKQueryHeap.h"
+#include "Resource/VKAccelerationStructure.h"
+#include "Resource/VKBuffer.h"
+#include "Resource/VKSampler.h"
+#include "Resource/VKTexture.h"
 #include "Shader/ShaderBase.h"
 #include "Swapchain/VKSwapchain.h"
 #include "Utilities/Logging.h"
@@ -506,19 +510,19 @@ std::shared_ptr<Fence> VKDevice::CreateFence(uint64_t initial_value)
 
 MemoryRequirements VKDevice::GetTextureMemoryRequirements(const TextureDesc& desc)
 {
-    return VKResource::CreateImage(*this, desc)->GetMemoryRequirements();
+    return VKTexture::CreateImage(*this, desc)->GetMemoryRequirements();
 }
 
 MemoryRequirements VKDevice::GetMemoryBufferRequirements(const BufferDesc& desc)
 {
-    return VKResource::CreateBuffer(*this, desc)->GetMemoryRequirements();
+    return VKBuffer::CreateBuffer(*this, desc)->GetMemoryRequirements();
 }
 
 std::shared_ptr<Resource> VKDevice::CreatePlacedTexture(const std::shared_ptr<Memory>& memory,
                                                         uint64_t offset,
                                                         const TextureDesc& desc)
 {
-    auto texture = VKResource::CreateImage(*this, desc);
+    auto texture = VKTexture::CreateImage(*this, desc);
     if (texture) {
         texture->BindMemory(memory, offset);
     }
@@ -529,7 +533,7 @@ std::shared_ptr<Resource> VKDevice::CreatePlacedBuffer(const std::shared_ptr<Mem
                                                        uint64_t offset,
                                                        const BufferDesc& desc)
 {
-    auto buffer = VKResource::CreateBuffer(*this, desc);
+    auto buffer = VKBuffer::CreateBuffer(*this, desc);
     if (buffer) {
         buffer->BindMemory(memory, offset);
     }
@@ -538,7 +542,7 @@ std::shared_ptr<Resource> VKDevice::CreatePlacedBuffer(const std::shared_ptr<Mem
 
 std::shared_ptr<Resource> VKDevice::CreateTexture(MemoryType memory_type, const TextureDesc& desc)
 {
-    auto texture = VKResource::CreateImage(*this, desc);
+    auto texture = VKTexture::CreateImage(*this, desc);
     if (texture) {
         texture->CommitMemory(memory_type);
     }
@@ -547,7 +551,7 @@ std::shared_ptr<Resource> VKDevice::CreateTexture(MemoryType memory_type, const 
 
 std::shared_ptr<Resource> VKDevice::CreateBuffer(MemoryType memory_type, const BufferDesc& desc)
 {
-    auto buffer = VKResource::CreateBuffer(*this, desc);
+    auto buffer = VKBuffer::CreateBuffer(*this, desc);
     if (buffer) {
         buffer->CommitMemory(memory_type);
     }
@@ -556,7 +560,7 @@ std::shared_ptr<Resource> VKDevice::CreateBuffer(MemoryType memory_type, const B
 
 std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
 {
-    return VKResource::CreateSampler(*this, desc);
+    return VKSampler::CreateSampler(*this, desc);
 }
 
 std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
@@ -649,7 +653,7 @@ RaytracingASPrebuildInfo VKDevice::GetAccelerationStructurePrebuildInfo(
 
 std::shared_ptr<Resource> VKDevice::CreateAccelerationStructure(const AccelerationStructureDesc& desc)
 {
-    return VKResource::CreateAccelerationStructure(*this, desc);
+    return VKAccelerationStructure::CreateAccelerationStructure(*this, desc);
 }
 
 std::shared_ptr<QueryHeap> VKDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)

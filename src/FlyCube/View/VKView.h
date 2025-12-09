@@ -29,8 +29,9 @@ private:
     vk::UniqueImageView image_view_;
     vk::UniqueBufferView buffer_view_;
     std::shared_ptr<VKGPUDescriptorPoolRange> range_;
-    vk::DescriptorImageInfo descriptor_image_ = {};
-    vk::DescriptorBufferInfo descriptor_buffer_ = {};
-    vk::WriteDescriptorSetAccelerationStructureKHR descriptor_acceleration_structure_ = {};
-    vk::WriteDescriptorSet descriptor_ = {};
+    vk::DescriptorImageInfo descriptor_image_;
+    vk::DescriptorBufferInfo descriptor_buffer_;
+    vk::AccelerationStructureKHR acceleration_structure_;
+    vk::WriteDescriptorSetAccelerationStructureKHR descriptor_acceleration_structure_;
+    vk::WriteDescriptorSet descriptor_;
 };

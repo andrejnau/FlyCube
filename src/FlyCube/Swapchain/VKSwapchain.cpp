@@ -5,7 +5,7 @@
 #include "Device/VKDevice.h"
 #include "Fence/VKTimelineSemaphore.h"
 #include "Instance/VKInstance.h"
-#include "Resource/VKResource.h"
+#include "Resource/VKTexture.h"
 #include "Utilities/NotReached.h"
 #include "Utilities/VKUtility.h"
 
@@ -148,8 +148,7 @@ VKSwapchain::VKSwapchain(VKCommandQueue& command_queue,
             .sample_count = 1,
             .usage = BindFlag::kRenderTarget | BindFlag::kCopyDest,
         };
-        std::shared_ptr<VKResource> back_buffer =
-            VKResource::WrapSwapchainImage(device_, images_[i], texture_desc, swapchain_info.imageUsage);
+        std::shared_ptr<VKTexture> back_buffer = VKTexture::WrapSwapchainImage(device_, images_[i], texture_desc);
         command_list_->ResourceBarrier({ { back_buffer, ResourceState::kCommon, ResourceState::kPresent } });
         back_buffers_.emplace_back(std::move(back_buffer));
     }

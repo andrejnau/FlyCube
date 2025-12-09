@@ -12,7 +12,10 @@
 #include "Pipeline/MTComputePipeline.h"
 #include "Pipeline/MTGraphicsPipeline.h"
 #include "QueryHeap/MTQueryHeap.h"
-#include "Resource/MTResource.h"
+#include "Resource/MTAccelerationStructure.h"
+#include "Resource/MTBuffer.h"
+#include "Resource/MTSampler.h"
+#include "Resource/MTTexture.h"
 #include "Shader/MTShader.h"
 #include "Swapchain/MTSwapchain.h"
 #include "Utilities/Logging.h"
@@ -97,19 +100,19 @@ std::shared_ptr<Fence> MTDevice::CreateFence(uint64_t initial_value)
 
 MemoryRequirements MTDevice::GetTextureMemoryRequirements(const TextureDesc& desc)
 {
-    return MTResource::CreateTexture(*this, desc)->GetMemoryRequirements();
+    return MTTexture::CreateTexture(*this, desc)->GetMemoryRequirements();
 }
 
 MemoryRequirements MTDevice::GetMemoryBufferRequirements(const BufferDesc& desc)
 {
-    return MTResource::CreateBuffer(*this, desc)->GetMemoryRequirements();
+    return MTBuffer::CreateBuffer(*this, desc)->GetMemoryRequirements();
 }
 
 std::shared_ptr<Resource> MTDevice::CreatePlacedTexture(const std::shared_ptr<Memory>& memory,
                                                         uint64_t offset,
                                                         const TextureDesc& desc)
 {
-    auto texture = MTResource::CreateTexture(*this, desc);
+    auto texture = MTTexture::CreateTexture(*this, desc);
     if (texture) {
         texture->BindMemory(memory, offset);
     }
@@ -120,7 +123,7 @@ std::shared_ptr<Resource> MTDevice::CreatePlacedBuffer(const std::shared_ptr<Mem
                                                        uint64_t offset,
                                                        const BufferDesc& desc)
 {
-    auto buffer = MTResource::CreateBuffer(*this, desc);
+    auto buffer = MTBuffer::CreateBuffer(*this, desc);
     if (buffer) {
         buffer->BindMemory(memory, offset);
     }
@@ -129,7 +132,7 @@ std::shared_ptr<Resource> MTDevice::CreatePlacedBuffer(const std::shared_ptr<Mem
 
 std::shared_ptr<Resource> MTDevice::CreateTexture(MemoryType memory_type, const TextureDesc& desc)
 {
-    auto texture = MTResource::CreateTexture(*this, desc);
+    auto texture = MTTexture::CreateTexture(*this, desc);
     if (texture) {
         texture->CommitMemory(memory_type);
     }
@@ -138,7 +141,7 @@ std::shared_ptr<Resource> MTDevice::CreateTexture(MemoryType memory_type, const 
 
 std::shared_ptr<Resource> MTDevice::CreateBuffer(MemoryType memory_type, const BufferDesc& desc)
 {
-    auto buffer = MTResource::CreateBuffer(*this, desc);
+    auto buffer = MTBuffer::CreateBuffer(*this, desc);
     if (buffer) {
         buffer->CommitMemory(memory_type);
     }
@@ -147,7 +150,7 @@ std::shared_ptr<Resource> MTDevice::CreateBuffer(MemoryType memory_type, const B
 
 std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
 {
-    return MTResource::CreateSampler(*this, desc);
+    return MTSampler::CreateSampler(*this, desc);
 }
 
 std::shared_ptr<View> MTDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
@@ -194,7 +197,7 @@ std::shared_ptr<Pipeline> MTDevice::CreateRayTracingPipeline(const RayTracingPip
 
 std::shared_ptr<Resource> MTDevice::CreateAccelerationStructure(const AccelerationStructureDesc& desc)
 {
-    return MTResource::CreateAccelerationStructure(*this, desc);
+    return MTAccelerationStructure::CreateAccelerationStructure(*this, desc);
 }
 
 std::shared_ptr<QueryHeap> MTDevice::CreateQueryHeap(QueryHeapType type, uint32_t count)

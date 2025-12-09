@@ -6,7 +6,7 @@ VKMemory::VKMemory(VKDevice& device,
                    uint64_t size,
                    MemoryType memory_type,
                    uint32_t memory_type_bits,
-                   const vk::MemoryDedicatedAllocateInfoKHR* dedicated_allocate_info)
+                   const vk::MemoryDedicatedAllocateInfo* dedicated_allocate_info)
     : memory_type_(memory_type)
 {
     vk::MemoryAllocateFlagsInfo alloc_flag_info = {};

@@ -3,7 +3,7 @@
 #include "Device/MTDevice.h"
 #include "Fence/MTFence.h"
 #include "Instance/MTInstance.h"
-#include "Resource/MTResource.h"
+#include "Resource/MTTexture.h"
 
 MTSwapchain::MTSwapchain(MTDevice& device,
                          const NativeSurface& surface,
@@ -39,7 +39,7 @@ MTSwapchain::MTSwapchain(MTDevice& device,
             .sample_count = 1,
             .usage = BindFlag::kRenderTarget | BindFlag::kUnorderedAccess,
         };
-        std::shared_ptr<MTResource> back_buffer = MTResource::CreateSwapchainTexture(device_, texture_desc);
+        std::shared_ptr<MTTexture> back_buffer = MTTexture::CreateSwapchainTexture(device_, texture_desc);
         back_buffer->CommitMemory(MemoryType::kDefault);
         back_buffers_.emplace_back(std::move(back_buffer));
     }
@@ -66,8 +66,7 @@ uint32_t MTSwapchain::NextImage(const std::shared_ptr<Fence>& fence, uint64_t si
 void MTSwapchain::Present(const std::shared_ptr<Fence>& fence, uint64_t wait_value)
 {
     decltype(auto) mt_fence = fence->As<MTFence>();
-    auto back_buffer = back_buffers_[frame_index_];
-    auto resource = back_buffer->As<MTResource>();
+    decltype(auto) resource = back_buffers_[frame_index_]->As<MTResource>();
     auto queue = device_.GetMTCommandQueue();
     id<CAMetalDrawable> drawable = [layer_ nextDrawable];
 

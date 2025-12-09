@@ -5,10 +5,20 @@ class ResourceBase : public Resource {
 public:
     ResourceBase();
 
-    ResourceType GetResourceType() const override final;
-    gli::format GetFormat() const override final;
-    MemoryType GetMemoryType() const override final;
-    void UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes) override final;
+    ResourceType GetResourceType() const final;
+    gli::format GetFormat() const final;
+    MemoryType GetMemoryType() const final;
+
+    uint64_t GetWidth() const override;
+    uint32_t GetHeight() const override;
+    uint16_t GetLayerCount() const override;
+    uint16_t GetLevelCount() const override;
+    uint32_t GetSampleCount() const override;
+    uint64_t GetAccelerationStructureHandle() const override;
+    uint8_t* Map() override;
+    void Unmap() override;
+
+    void UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes) final;
     void UpdateUploadBufferWithTextureData(uint64_t buffer_offset,
                                            uint64_t buffer_row_pitch,
                                            uint64_t buffer_slice_pitch,
@@ -17,9 +27,9 @@ public:
                                            uint64_t src_slice_pitch,
                                            uint64_t row_size_in_bytes,
                                            uint32_t num_rows,
-                                           uint32_t num_slices) override final;
-    ResourceState GetInitialState() const override final;
-    bool IsBackBuffer() const override final;
+                                           uint32_t num_slices) final;
+    ResourceState GetInitialState() const final;
+    bool IsBackBuffer() const final;
 
     void SetInitialState(ResourceState state);
 

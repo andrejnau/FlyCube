@@ -1,5 +1,7 @@
 #include "Resource/ResourceBase.h"
 
+#include "Utilities/NotReached.h"
+
 #include <cstring>
 
 ResourceBase::ResourceBase() = default;
@@ -17,6 +19,43 @@ gli::format ResourceBase::GetFormat() const
 MemoryType ResourceBase::GetMemoryType() const
 {
     return memory_type_;
+}
+
+uint64_t ResourceBase::GetWidth() const
+{
+    return 1;
+}
+
+uint32_t ResourceBase::GetHeight() const
+{
+    return 1;
+}
+uint16_t ResourceBase::GetLayerCount() const
+{
+    return 1;
+}
+uint16_t ResourceBase::GetLevelCount() const
+{
+    return 1;
+}
+uint32_t ResourceBase::GetSampleCount() const
+{
+    return 1;
+}
+
+uint64_t ResourceBase::GetAccelerationStructureHandle() const
+{
+    return 0;
+}
+
+uint8_t* ResourceBase::Map()
+{
+    NOTREACHED();
+}
+
+void ResourceBase::Unmap()
+{
+    NOTREACHED();
 }
 
 void ResourceBase::UpdateUploadBuffer(uint64_t buffer_offset, const void* data, uint64_t num_bytes)

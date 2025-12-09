@@ -78,8 +78,9 @@ void VKView::CreateView()
         break;
     }
     case ViewType::kAccelerationStructure: {
+        acceleration_structure_ = resource_->GetAccelerationStructure();
         descriptor_acceleration_structure_.accelerationStructureCount = 1;
-        descriptor_acceleration_structure_.pAccelerationStructures = &resource_->GetAccelerationStructure();
+        descriptor_acceleration_structure_.pAccelerationStructures = &acceleration_structure_;
         descriptor_.pNext = &descriptor_acceleration_structure_;
         break;
     }

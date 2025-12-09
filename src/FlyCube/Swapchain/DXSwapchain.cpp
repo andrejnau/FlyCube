@@ -4,7 +4,7 @@
 #include "CommandQueue/DXCommandQueue.h"
 #include "Device/DXDevice.h"
 #include "Instance/DXInstance.h"
-#include "Resource/DXResource.h"
+#include "Resource/DXTexture.h"
 #include "Utilities/DXUtility.h"
 
 #include <gli/dx.hpp>
@@ -41,8 +41,8 @@ DXSwapchain::DXSwapchain(DXCommandQueue& command_queue,
     for (size_t i = 0; i < frame_count; ++i) {
         ComPtr<ID3D12Resource> back_buffer;
         CHECK_HRESULT(swap_chain_->GetBuffer(i, IID_PPV_ARGS(&back_buffer)));
-        std::shared_ptr<DXResource> res =
-            DXResource::WrapSwapchainBackBuffer(command_queue.GetDevice(), back_buffer, GetFormat());
+        std::shared_ptr<DXTexture> res =
+            DXTexture::WrapSwapchainBackBuffer(command_queue.GetDevice(), back_buffer, GetFormat());
         back_buffers_.emplace_back(std::move(res));
     }
 }
