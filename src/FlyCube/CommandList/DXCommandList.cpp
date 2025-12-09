@@ -584,36 +584,60 @@ void DXCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
 
 void DXCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer,
                                         const std::shared_ptr<Resource>& dst_texture,
-                                        const std::vector<BufferToTextureCopyRegion>& regions)
+                                        const std::vector<BufferTextureCopyRegion>& regions)
 {
-    decltype(auto) dx_src_buffer = src_buffer->As<DXResource>();
-    decltype(auto) dx_dst_texture = dst_texture->As<DXResource>();
-    auto format = dst_texture->GetFormat();
+    CopyBufferTextureImpl(/*buffer_src=*/true, src_buffer, dst_texture, regions);
+}
+
+void DXCommandList::CopyTextureToBuffer(const std::shared_ptr<Resource>& src_texture,
+                                        const std::shared_ptr<Resource>& dst_buffer,
+                                        const std::vector<BufferTextureCopyRegion>& regions)
+{
+    CopyBufferTextureImpl(/*buffer_src=*/false, dst_buffer, src_texture, regions);
+}
+
+void DXCommandList::CopyBufferTextureImpl(bool buffer_src,
+                                          const std::shared_ptr<Resource>& buffer,
+                                          const std::shared_ptr<Resource>& texture,
+                                          const std::vector<BufferTextureCopyRegion>& regions)
+{
+    decltype(auto) dx_buffer = buffer->As<DXResource>();
+    decltype(auto) dx_texture = texture->As<DXResource>();
+    auto format = texture->GetFormat();
     DXGI_FORMAT dx_format = static_cast<DXGI_FORMAT>(gli::dx().translate(format).DXGIFormat.DDS);
     for (const auto& region : regions) {
-        D3D12_TEXTURE_COPY_LOCATION dst = {};
-        dst.pResource = dx_dst_texture.GetResource();
-        dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-        dst.SubresourceIndex = region.texture_array_layer * dx_dst_texture.GetLevelCount() + region.texture_mip_level;
+        D3D12_TEXTURE_COPY_LOCATION texture_location = {};
+        texture_location.pResource = dx_texture.GetResource();
+        texture_location.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+        texture_location.SubresourceIndex =
+            region.texture_array_layer * dx_texture.GetLevelCount() + region.texture_mip_level;
 
-        D3D12_TEXTURE_COPY_LOCATION src = {};
-        src.pResource = dx_src_buffer.GetResource();
-        src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-        src.PlacedFootprint.Offset = region.buffer_offset;
-        src.PlacedFootprint.Footprint.Width = region.texture_extent.width;
-        src.PlacedFootprint.Footprint.Height = region.texture_extent.height;
-        src.PlacedFootprint.Footprint.Depth = region.texture_extent.depth;
+        D3D12_TEXTURE_COPY_LOCATION buffer_location = {};
+        buffer_location.pResource = dx_buffer.GetResource();
+        buffer_location.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+        buffer_location.PlacedFootprint.Offset = region.buffer_offset;
+        buffer_location.PlacedFootprint.Footprint.Width = region.texture_extent.width;
+        buffer_location.PlacedFootprint.Footprint.Height = region.texture_extent.height;
+        buffer_location.PlacedFootprint.Footprint.Depth = region.texture_extent.depth;
         if (gli::is_compressed(format)) {
             auto extent = gli::block_extent(format);
-            src.PlacedFootprint.Footprint.Width = std::max<uint32_t>(extent.x, src.PlacedFootprint.Footprint.Width);
-            src.PlacedFootprint.Footprint.Height = std::max<uint32_t>(extent.y, src.PlacedFootprint.Footprint.Height);
-            src.PlacedFootprint.Footprint.Depth = std::max<uint32_t>(extent.z, src.PlacedFootprint.Footprint.Depth);
+            buffer_location.PlacedFootprint.Footprint.Width =
+                std::max<uint32_t>(extent.x, buffer_location.PlacedFootprint.Footprint.Width);
+            buffer_location.PlacedFootprint.Footprint.Height =
+                std::max<uint32_t>(extent.y, buffer_location.PlacedFootprint.Footprint.Height);
+            buffer_location.PlacedFootprint.Footprint.Depth =
+                std::max<uint32_t>(extent.z, buffer_location.PlacedFootprint.Footprint.Depth);
         }
-        src.PlacedFootprint.Footprint.RowPitch = region.buffer_row_pitch;
-        src.PlacedFootprint.Footprint.Format = dx_format;
+        buffer_location.PlacedFootprint.Footprint.RowPitch = region.buffer_row_pitch;
+        buffer_location.PlacedFootprint.Footprint.Format = dx_format;
 
-        command_list_->CopyTextureRegion(&dst, region.texture_offset.x, region.texture_offset.y,
-                                         region.texture_offset.z, &src, nullptr);
+        if (buffer_src) {
+            command_list_->CopyTextureRegion(&texture_location, region.texture_offset.x, region.texture_offset.y,
+                                             region.texture_offset.z, &buffer_location, nullptr);
+        } else {
+            command_list_->CopyTextureRegion(&buffer_location, region.texture_offset.x, region.texture_offset.y,
+                                             region.texture_offset.z, &texture_location, nullptr);
+        }
     }
 }
 

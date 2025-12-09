@@ -477,7 +477,7 @@ struct RaytracingGeometryDesc {
 
 enum class MemoryType { kDefault, kUpload, kReadback };
 
-struct BufferToTextureCopyRegion {
+struct BufferTextureCopyRegion {
     uint64_t buffer_offset;
     uint32_t buffer_row_pitch;
     uint32_t texture_mip_level;

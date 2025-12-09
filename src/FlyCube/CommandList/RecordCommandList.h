@@ -215,9 +215,16 @@ public:
 
     void CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer,
                              const std::shared_ptr<Resource>& dst_texture,
-                             const std::vector<BufferToTextureCopyRegion>& regions) override
+                             const std::vector<BufferTextureCopyRegion>& regions) override
     {
         ApplyAndRecord(&T::CopyBufferToTexture, src_buffer, dst_texture, regions);
+    }
+
+    void CopyTextureToBuffer(const std::shared_ptr<Resource>& src_texture,
+                             const std::shared_ptr<Resource>& dst_buffer,
+                             const std::vector<BufferTextureCopyRegion>& regions) override
+    {
+        ApplyAndRecord(&T::CopyTextureToBuffer, src_texture, dst_buffer, regions);
     }
 
     void CopyTexture(const std::shared_ptr<Resource>& src_texture,

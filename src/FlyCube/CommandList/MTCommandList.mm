@@ -673,14 +673,29 @@ void MTCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
 
 void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer,
                                         const std::shared_ptr<Resource>& dst_texture,
-                                        const std::vector<BufferToTextureCopyRegion>& regions)
+                                        const std::vector<BufferTextureCopyRegion>& regions)
+{
+    CopyBufferTextureImpl(/*buffer_src=*/true, src_buffer, dst_texture, regions);
+}
+
+void MTCommandList::CopyTextureToBuffer(const std::shared_ptr<Resource>& src_texture,
+                                        const std::shared_ptr<Resource>& dst_buffer,
+                                        const std::vector<BufferTextureCopyRegion>& regions)
+{
+    CopyBufferTextureImpl(/*buffer_src=*/false, dst_buffer, src_texture, regions);
+}
+
+void MTCommandList::CopyBufferTextureImpl(bool buffer_src,
+                                          const std::shared_ptr<Resource>& buffer,
+                                          const std::shared_ptr<Resource>& texture,
+                                          const std::vector<BufferTextureCopyRegion>& regions)
 {
     OpenComputeEncoder();
-    decltype(auto) mt_src_buffer = src_buffer->As<MTResource>();
-    decltype(auto) mt_dst_texture = dst_texture->As<MTResource>();
-    AddAllocation(mt_src_buffer.GetBuffer());
-    AddAllocation(mt_dst_texture.GetTexture());
-    auto format = dst_texture->GetFormat();
+    decltype(auto) mt_buffer = buffer->As<MTResource>();
+    decltype(auto) mt_texture = texture->As<MTResource>();
+    AddAllocation(mt_buffer.GetBuffer());
+    AddAllocation(mt_texture.GetTexture());
+    auto format = texture->GetFormat();
     AddComputeBarriers();
     for (const auto& region : regions) {
         uint32_t bytes_per_image = 0;
@@ -692,17 +707,30 @@ void MTCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
         } else {
             bytes_per_image = region.buffer_row_pitch * region.texture_extent.height;
         }
+        MTLOrigin region_origin = { region.texture_offset.x, region.texture_offset.y, region.texture_offset.z };
         MTLSize region_size = { region.texture_extent.width, region.texture_extent.height,
                                 region.texture_extent.depth };
-        [compute_encoder_ copyFromBuffer:mt_src_buffer.GetBuffer()
-                            sourceOffset:region.buffer_offset
-                       sourceBytesPerRow:region.buffer_row_pitch
-                     sourceBytesPerImage:bytes_per_image
-                              sourceSize:region_size
-                               toTexture:mt_dst_texture.GetTexture()
-                        destinationSlice:region.texture_array_layer
-                        destinationLevel:region.texture_mip_level
-                       destinationOrigin:{ region.texture_offset.x, region.texture_offset.y, region.texture_offset.z }];
+        if (buffer_src) {
+            [compute_encoder_ copyFromBuffer:mt_buffer.GetBuffer()
+                                sourceOffset:region.buffer_offset
+                           sourceBytesPerRow:region.buffer_row_pitch
+                         sourceBytesPerImage:bytes_per_image
+                                  sourceSize:region_size
+                                   toTexture:mt_texture.GetTexture()
+                            destinationSlice:region.texture_array_layer
+                            destinationLevel:region.texture_mip_level
+                           destinationOrigin:region_origin];
+        } else {
+            [compute_encoder_ copyFromTexture:mt_texture.GetTexture()
+                                  sourceSlice:region.texture_array_layer
+                                  sourceLevel:region.texture_mip_level
+                                 sourceOrigin:region_origin
+                                   sourceSize:region_size
+                                     toBuffer:mt_buffer.GetBuffer()
+                            destinationOffset:region.buffer_offset
+                       destinationBytesPerRow:region.buffer_row_pitch
+                     destinationBytesPerImage:bytes_per_image];
+        }
     }
 }
 
@@ -718,9 +746,9 @@ void MTCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture,
     auto format = dst_texture->GetFormat();
     AddComputeBarriers();
     for (const auto& region : regions) {
-        MTLSize region_size = { region.extent.width, region.extent.height, region.extent.depth };
         MTLOrigin src_origin = { region.src_offset.x, region.src_offset.y, region.src_offset.z };
         MTLOrigin dst_origin = { region.dst_offset.x, region.dst_offset.y, region.dst_offset.z };
+        MTLSize region_size = { region.extent.width, region.extent.height, region.extent.depth };
         [compute_encoder_ copyFromTexture:mt_src_texture.GetTexture()
                               sourceSlice:region.src_array_layer
                               sourceLevel:region.src_mip_level

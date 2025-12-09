@@ -668,12 +668,27 @@ void VKCommandList::CopyBuffer(const std::shared_ptr<Resource>& src_buffer,
 
 void VKCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer,
                                         const std::shared_ptr<Resource>& dst_texture,
-                                        const std::vector<BufferToTextureCopyRegion>& regions)
+                                        const std::vector<BufferTextureCopyRegion>& regions)
 {
-    decltype(auto) vk_src_buffer = src_buffer->As<VKResource>();
-    decltype(auto) vk_dst_texture = dst_texture->As<VKResource>();
+    CopyBufferTextureImpl(/*buffer_src=*/true, src_buffer, dst_texture, regions);
+}
+
+void VKCommandList::CopyTextureToBuffer(const std::shared_ptr<Resource>& src_texture,
+                                        const std::shared_ptr<Resource>& dst_buffer,
+                                        const std::vector<BufferTextureCopyRegion>& regions)
+{
+    CopyBufferTextureImpl(/*buffer_src=*/false, dst_buffer, src_texture, regions);
+}
+
+void VKCommandList::CopyBufferTextureImpl(bool buffer_src,
+                                          const std::shared_ptr<Resource>& buffer,
+                                          const std::shared_ptr<Resource>& texture,
+                                          const std::vector<BufferTextureCopyRegion>& regions)
+{
+    decltype(auto) vk_buffer = buffer->As<VKResource>();
+    decltype(auto) vk_texture = texture->As<VKResource>();
     std::vector<vk::BufferImageCopy> vk_regions;
-    auto format = dst_texture->GetFormat();
+    auto format = texture->GetFormat();
     for (const auto& region : regions) {
         auto& vk_region = vk_regions.emplace_back();
         vk_region.bufferOffset = region.buffer_offset;
@@ -698,8 +713,13 @@ void VKCommandList::CopyBufferToTexture(const std::shared_ptr<Resource>& src_buf
         vk_region.imageExtent.height = region.texture_extent.height;
         vk_region.imageExtent.depth = region.texture_extent.depth;
     }
-    command_list_->copyBufferToImage(vk_src_buffer.GetBuffer(), vk_dst_texture.GetImage(),
-                                     vk::ImageLayout::eTransferDstOptimal, vk_regions);
+    if (buffer_src) {
+        command_list_->copyBufferToImage(vk_buffer.GetBuffer(), vk_texture.GetImage(),
+                                         vk::ImageLayout::eTransferDstOptimal, vk_regions);
+    } else {
+        command_list_->copyImageToBuffer(vk_texture.GetImage(), vk::ImageLayout::eTransferDstOptimal,
+                                         vk_buffer.GetBuffer(), vk_regions);
+    }
 }
 
 void VKCommandList::CopyTexture(const std::shared_ptr<Resource>& src_texture,

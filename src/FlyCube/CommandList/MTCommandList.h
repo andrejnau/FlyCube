@@ -83,7 +83,10 @@ public:
                     const std::vector<BufferCopyRegion>& regions) override;
     void CopyBufferToTexture(const std::shared_ptr<Resource>& src_buffer,
                              const std::shared_ptr<Resource>& dst_texture,
-                             const std::vector<BufferToTextureCopyRegion>& regions) override;
+                             const std::vector<BufferTextureCopyRegion>& regions) override;
+    void CopyTextureToBuffer(const std::shared_ptr<Resource>& src_texture,
+                             const std::shared_ptr<Resource>& dst_buffer,
+                             const std::vector<BufferTextureCopyRegion>& regions) override;
     void CopyTexture(const std::shared_ptr<Resource>& src_texture,
                      const std::shared_ptr<Resource>& dst_texture,
                      const std::vector<TextureCopyRegion>& regions) override;
@@ -100,6 +103,10 @@ public:
     id<MTL4CommandBuffer> GetCommandBuffer();
 
 private:
+    void CopyBufferTextureImpl(bool buffer_src,
+                               const std::shared_ptr<Resource>& buffer,
+                               const std::shared_ptr<Resource>& texture,
+                               const std::vector<BufferTextureCopyRegion>& regions);
     id<MTLBuffer> PatchInstanceData(const std::shared_ptr<Resource>& instance_data,
                                     uint64_t instance_offset,
                                     uint32_t instance_count);

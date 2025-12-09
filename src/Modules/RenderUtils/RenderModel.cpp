@@ -187,7 +187,7 @@ void RenderModel::UpdateTexture(const std::shared_ptr<Resource>& texture,
     uint64_t buffer_size = aligned_row_pitch * num_rows;
     std::shared_ptr<Resource> upload_buffer =
         CreateUploadBuffer({ .size = buffer_size, .usage = BindFlag::kCopySource });
-    BufferToTextureCopyRegion copy_region = {
+    BufferTextureCopyRegion copy_region = {
         .buffer_offset = 0,
         .buffer_row_pitch = static_cast<uint32_t>(aligned_row_pitch),
         .texture_mip_level = mip_level,
