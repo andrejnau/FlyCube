@@ -249,8 +249,8 @@ void MTCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
                        render_pass_desc.colors[i].view);
         if (render_pass_desc.colors[i].load_op == RenderPassLoadOp::kClear) {
             color_attachment.clearColor =
-                MTLClearColorMake(render_pass_desc.colors[i].clear_value.r, render_pass_desc.colors[i].clear_value.g,
-                                  render_pass_desc.colors[i].clear_value.b, render_pass_desc.colors[i].clear_value.a);
+                MTLClearColorMake(render_pass_desc.colors[i].clear_value[0], render_pass_desc.colors[i].clear_value[1],
+                                  render_pass_desc.colors[i].clear_value[2], render_pass_desc.colors[i].clear_value[3]);
         }
     }
 

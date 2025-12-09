@@ -3,6 +3,7 @@
 
 #include <gli/format.hpp>
 
+#include <array>
 #include <cstdint>
 #include <limits>
 #include <map>
@@ -329,7 +330,7 @@ struct RenderPassColorDesc {
     std::shared_ptr<View> view;
     RenderPassLoadOp load_op = RenderPassLoadOp::kLoad;
     RenderPassStoreOp store_op = RenderPassStoreOp::kStore;
-    glm::vec4 clear_value = glm::vec4(0.0, 0.0, 0.0, 1.0);
+    std::array<float, 4> clear_value = { 0.0, 0.0, 0.0, 1.0 };
 };
 
 struct RenderPassDepthDesc {

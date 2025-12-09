@@ -166,10 +166,10 @@ void DXCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
         }
         D3D12_RENDER_PASS_BEGINNING_ACCESS begin = { Convert(render_pass_desc.colors[i].load_op), {} };
         if (render_pass_desc.colors[i].load_op == RenderPassLoadOp::kClear) {
-            begin.Clear.ClearValue.Color[0] = render_pass_desc.colors[i].clear_value.r;
-            begin.Clear.ClearValue.Color[1] = render_pass_desc.colors[i].clear_value.g;
-            begin.Clear.ClearValue.Color[2] = render_pass_desc.colors[i].clear_value.b;
-            begin.Clear.ClearValue.Color[3] = render_pass_desc.colors[i].clear_value.a;
+            begin.Clear.ClearValue.Color[0] = render_pass_desc.colors[i].clear_value[0];
+            begin.Clear.ClearValue.Color[1] = render_pass_desc.colors[i].clear_value[1];
+            begin.Clear.ClearValue.Color[2] = render_pass_desc.colors[i].clear_value[2];
+            begin.Clear.ClearValue.Color[3] = render_pass_desc.colors[i].clear_value[3];
         }
         D3D12_RENDER_PASS_ENDING_ACCESS end = { Convert(render_pass_desc.colors[i].store_op), {} };
         om_rtv.push_back({ handle, begin, end });

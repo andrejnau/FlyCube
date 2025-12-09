@@ -191,7 +191,7 @@ void BindlessTriangleRenderer::Init(const AppSize& app_size, const NativeSurface
             .colors = { { .view = back_buffer_views_[i],
                           .load_op = RenderPassLoadOp::kClear,
                           .store_op = RenderPassStoreOp::kStore,
-                          .clear_value = glm::vec4(0.0, 0.2, 0.4, 1.0) } },
+                          .clear_value = { 0.0, 0.2, 0.4, 1.0 } } },
         };
         command_list->BeginRenderPass(render_pass_desc);
         command_list->Draw(3, 1, 0, 0);

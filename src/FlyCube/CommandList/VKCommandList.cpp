@@ -157,10 +157,10 @@ void VKCommandList::BeginRenderPass(const RenderPassDesc& render_pass_desc)
         color_attachment.loadOp = ConvertRenderPassLoadOp(render_pass_desc.colors[i].load_op);
         color_attachment.storeOp = ConvertRenderPassStoreOp(render_pass_desc.colors[i].store_op);
         if (render_pass_desc.colors[i].load_op == RenderPassLoadOp::kClear) {
-            color_attachment.clearValue.color.float32[0] = render_pass_desc.colors[i].clear_value.r;
-            color_attachment.clearValue.color.float32[1] = render_pass_desc.colors[i].clear_value.g;
-            color_attachment.clearValue.color.float32[2] = render_pass_desc.colors[i].clear_value.b;
-            color_attachment.clearValue.color.float32[3] = render_pass_desc.colors[i].clear_value.a;
+            color_attachment.clearValue.color.float32[0] = render_pass_desc.colors[i].clear_value[0];
+            color_attachment.clearValue.color.float32[1] = render_pass_desc.colors[i].clear_value[1];
+            color_attachment.clearValue.color.float32[2] = render_pass_desc.colors[i].clear_value[2];
+            color_attachment.clearValue.color.float32[3] = render_pass_desc.colors[i].clear_value[3];
         }
     }
 
