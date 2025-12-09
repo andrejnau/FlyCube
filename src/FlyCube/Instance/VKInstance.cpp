@@ -2,6 +2,7 @@
 
 #include "Adapter/VKAdapter.h"
 #include "Utilities/Check.h"
+#include "Utilities/Common.h"
 #include "Utilities/Logging.h"
 
 #include <set>
@@ -51,15 +52,6 @@ DebugUtilsMessengerCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeve
 
     Logging::Println("[VK_EXT_debug_utils] {}", message);
     return vk::False;
-}
-
-bool IsValidationEnabled()
-{
-#if defined(_WIN32)
-    return IsDebuggerPresent();
-#else
-    return true;
-#endif
 }
 
 } // namespace

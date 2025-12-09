@@ -1,6 +1,7 @@
 #include "Instance/DXInstance.h"
 
 #include "Adapter/DXAdapter.h"
+#include "Utilities/Common.h"
 #include "Utilities/DXUtility.h"
 #include "Utilities/SystemUtils.h"
 
@@ -52,7 +53,7 @@ static bool g_agility_sdk_enabled = EnableAgilitySdkIfExist(D3D12SDKVersion, D3D
 DXInstance::DXInstance()
 {
     uint32_t flags = 0;
-    if (IsDebuggerPresent()) {
+    if (IsValidationEnabled()) {
         ComPtr<ID3D12Debug> debug_controller;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)))) {
             debug_controller->EnableDebugLayer();
