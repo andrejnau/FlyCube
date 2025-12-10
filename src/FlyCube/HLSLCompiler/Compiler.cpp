@@ -100,6 +100,7 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
     std::deque<std::wstring> dynamic_arguments;
     arguments.push_back(L"/Zi");
     arguments.push_back(L"/Qembed_debug");
+    arguments.push_back(L"-Werror");
     uint32_t space = 0;
     if (blob_type == ShaderBlobType::kSPIRV) {
         arguments.emplace_back(L"-spirv");

@@ -46,6 +46,9 @@ void CompileShader(const std::string& shader_name,
 {
     std::string path = output_path + "/" + shader_name + GetShaderExtension(shader_type);
     std::vector<uint8_t> blob = Compile(desc, shader_type);
+    if (blob.empty()) {
+        exit(~0);
+    }
     std::fstream file(path, std::ios::out | std::ios::binary);
     file.write(reinterpret_cast<char*>(blob.data()), blob.size());
 }
