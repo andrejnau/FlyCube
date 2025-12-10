@@ -140,6 +140,7 @@ std::vector<uint8_t> Compile(const ShaderDesc& shader, ShaderBlobType blob_type)
         CComPtr<IDxcBlobEncoding> errors;
         result->GetErrorBuffer(&errors);
         if (errors && errors->GetBufferSize() > 0) {
+            Logging::Println("{}", shader.shader_path);
             Logging::Println("{}", static_cast<char*>(errors->GetBufferPointer()));
         }
     }
