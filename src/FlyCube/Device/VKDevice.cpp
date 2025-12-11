@@ -20,6 +20,7 @@
 #include "Swapchain/VKSwapchain.h"
 #include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
+#include "View/VKBindlessTypedViewPool.h"
 #include "View/VKView.h"
 
 #include <set>
@@ -566,6 +567,11 @@ std::shared_ptr<Resource> VKDevice::CreateSampler(const SamplerDesc& desc)
 std::shared_ptr<View> VKDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
     return std::make_shared<VKView>(*this, std::static_pointer_cast<VKResource>(resource), view_desc);
+}
+
+std::shared_ptr<BindlessTypedViewPool> VKDevice::CreateBindlessTypedViewPool(ViewType view_type, uint32_t view_count)
+{
+    return std::make_shared<VKBindlessTypedViewPool>(*this, view_type, view_count);
 }
 
 std::shared_ptr<BindingSetLayout> VKDevice::CreateBindingSetLayout(const BindingSetLayoutDesc& desc)

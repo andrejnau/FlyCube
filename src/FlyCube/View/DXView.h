@@ -1,11 +1,11 @@
 #pragma once
 #include "CPUDescriptorPool/DXCPUDescriptorHandle.h"
-#include "GPUDescriptorPool/DXGPUDescriptorPoolRange.h"
 #include "Resource/DXResource.h"
 #include "View/View.h"
 
 class DXDevice;
 class DXResource;
+class DXBindlessTypedViewPool;
 
 class DXView : public View {
 public:
@@ -33,5 +33,5 @@ private:
     std::shared_ptr<DXResource> resource_;
     ViewDesc view_desc_;
     std::shared_ptr<DXCPUDescriptorHandle> handle_;
-    std::shared_ptr<DXGPUDescriptorPoolRange> range_;
+    std::shared_ptr<DXBindlessTypedViewPool> bindless_view_pool_;
 };

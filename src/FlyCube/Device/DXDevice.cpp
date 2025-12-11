@@ -19,6 +19,7 @@
 #include "Utilities/Common.h"
 #include "Utilities/DXUtility.h"
 #include "Utilities/NotReached.h"
+#include "View/DXBindlessTypedViewPool.h"
 #include "View/DXView.h"
 
 #if defined(_WIN32)
@@ -350,6 +351,11 @@ std::shared_ptr<Resource> DXDevice::CreateSampler(const SamplerDesc& desc)
 std::shared_ptr<View> DXDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
     return std::make_shared<DXView>(*this, std::static_pointer_cast<DXResource>(resource), view_desc);
+}
+
+std::shared_ptr<BindlessTypedViewPool> DXDevice::CreateBindlessTypedViewPool(ViewType view_type, uint32_t view_count)
+{
+    return std::make_shared<DXBindlessTypedViewPool>(*this, view_type, view_count);
 }
 
 std::shared_ptr<BindingSetLayout> DXDevice::CreateBindingSetLayout(const BindingSetLayoutDesc& desc)

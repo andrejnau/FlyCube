@@ -265,12 +265,19 @@ if (APPLE)
 endif()
 
 list(APPEND View
+    $<$<BOOL:${DIRECTX_SUPPORT}>:View/DXBindlessTypedViewPool.cpp>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:View/DXBindlessTypedViewPool.h>
     $<$<BOOL:${DIRECTX_SUPPORT}>:View/DXView.cpp>
     $<$<BOOL:${DIRECTX_SUPPORT}>:View/DXView.h>
+    $<$<BOOL:${METAL_SUPPORT}>:View/MTBindlessTypedViewPool.h>
+    $<$<BOOL:${METAL_SUPPORT}>:View/MTBindlessTypedViewPool.mm>
     $<$<BOOL:${METAL_SUPPORT}>:View/MTView.h>
     $<$<BOOL:${METAL_SUPPORT}>:View/MTView.mm>
+    $<$<BOOL:${VULKAN_SUPPORT}>:View/VKBindlessTypedViewPool.cpp>
+    $<$<BOOL:${VULKAN_SUPPORT}>:View/VKBindlessTypedViewPool.h>
     $<$<BOOL:${VULKAN_SUPPORT}>:View/VKView.cpp>
     $<$<BOOL:${VULKAN_SUPPORT}>:View/VKView.h>
+    View/BindlessTypedViewPool.h
     View/View.h
 )
 

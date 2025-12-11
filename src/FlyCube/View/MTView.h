@@ -2,9 +2,9 @@
 #include "Resource/MTResource.h"
 #include "View/View.h"
 
+class MTBindlessTypedViewPool;
 class MTDevice;
 class MTResource;
-class MTGPUArgumentBufferRange;
 
 class MTView : public View {
 public:
@@ -31,5 +31,5 @@ private:
     std::shared_ptr<MTResource> resource_;
     ViewDesc view_desc_;
     id<MTLTexture> texture_view_ = nullptr;
-    std::shared_ptr<MTGPUArgumentBufferRange> range_;
+    std::shared_ptr<MTBindlessTypedViewPool> bindless_view_pool_;
 };

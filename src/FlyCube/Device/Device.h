@@ -10,6 +10,7 @@
 #include "QueryHeap/QueryHeap.h"
 #include "Shader/Shader.h"
 #include "Swapchain/Swapchain.h"
+#include "View/BindlessTypedViewPool.h"
 
 #include <gli/format.hpp>
 
@@ -48,6 +49,8 @@ public:
     virtual std::shared_ptr<Resource> CreateBuffer(MemoryType memory_type, const BufferDesc& desc) = 0;
     virtual std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) = 0;
     virtual std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) = 0;
+    virtual std::shared_ptr<BindlessTypedViewPool> CreateBindlessTypedViewPool(ViewType view_type,
+                                                                               uint32_t view_count) = 0;
     virtual std::shared_ptr<BindingSetLayout> CreateBindingSetLayout(const BindingSetLayoutDesc& desc) = 0;
     virtual std::shared_ptr<BindingSet> CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout) = 0;
     virtual std::shared_ptr<Shader> CreateShader(const std::vector<uint8_t>& blob,

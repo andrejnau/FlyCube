@@ -20,6 +20,7 @@
 #include "Swapchain/MTSwapchain.h"
 #include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
+#include "View/MTBindlessTypedViewPool.h"
 #include "View/MTView.h"
 
 #include <type_traits>
@@ -156,6 +157,11 @@ std::shared_ptr<Resource> MTDevice::CreateSampler(const SamplerDesc& desc)
 std::shared_ptr<View> MTDevice::CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc)
 {
     return std::make_shared<MTView>(*this, std::static_pointer_cast<MTResource>(resource), view_desc);
+}
+
+std::shared_ptr<BindlessTypedViewPool> MTDevice::CreateBindlessTypedViewPool(ViewType view_type, uint32_t view_count)
+{
+    return std::make_shared<MTBindlessTypedViewPool>(*this, view_type, view_count);
 }
 
 std::shared_ptr<BindingSetLayout> MTDevice::CreateBindingSetLayout(const BindingSetLayoutDesc& desc)

@@ -8,6 +8,7 @@
 namespace {
 
 constexpr uint32_t kFrameCount = 3;
+constexpr bool kUseBindlessTypedViewPool = true;
 
 } // namespace
 
@@ -37,10 +38,11 @@ private:
     std::shared_ptr<View> index_buffer_view_;
     std::shared_ptr<Resource> vertex_buffer_;
     std::shared_ptr<View> vertex_buffer_view_;
-    std::shared_ptr<Resource> pixel_constant_buffer_;
-    std::shared_ptr<View> pixel_constant_buffer_view_;
+    std::shared_ptr<BindlessTypedViewPool> bindless_view_pool_;
     std::shared_ptr<Resource> vertex_constant_buffer_;
     std::shared_ptr<View> vertex_constant_buffer_view_;
+    std::shared_ptr<Resource> pixel_constant_buffer_;
+    std::shared_ptr<View> pixel_constant_buffer_view_;
     std::shared_ptr<Shader> vertex_shader_;
     std::shared_ptr<Shader> pixel_shader_;
     std::shared_ptr<BindingSetLayout> layout_;
@@ -71,7 +73,7 @@ BindlessTriangleRenderer::BindlessTriangleRenderer(const Settings& settings)
         .view_type = ViewType::kStructuredBuffer,
         .dimension = ViewDimension::kBuffer,
         .structure_stride = sizeof(index_data.front()),
-        .bindless = true,
+        .bindless = !kUseBindlessTypedViewPool,
     };
     index_buffer_view_ = device_->CreateView(index_buffer_, index_buffer_view_desc);
 
@@ -88,9 +90,28 @@ BindlessTriangleRenderer::BindlessTriangleRenderer(const Settings& settings)
         .view_type = ViewType::kStructuredBuffer,
         .dimension = ViewDimension::kBuffer,
         .structure_stride = sizeof(vertex_data.front()),
-        .bindless = true,
+        .bindless = !kUseBindlessTypedViewPool,
     };
     vertex_buffer_view_ = device_->CreateView(vertex_buffer_, vertex_buffer_view_desc);
+
+    std::pair<uint32_t, uint32_t> vertex_constant_data = {};
+    if (kUseBindlessTypedViewPool) {
+        bindless_view_pool_ = device_->CreateBindlessTypedViewPool(ViewType::kStructuredBuffer, 2);
+        bindless_view_pool_->WriteView(0, index_buffer_view_);
+        bindless_view_pool_->WriteView(1, vertex_buffer_view_);
+        vertex_constant_data = { bindless_view_pool_->GetBaseDescriptorId() + 0,
+                                 bindless_view_pool_->GetBaseDescriptorId() + 1 };
+    } else {
+        vertex_constant_data = { index_buffer_view_->GetDescriptorId(), vertex_buffer_view_->GetDescriptorId() };
+    }
+    vertex_constant_buffer_ = device_->CreateBuffer(
+        MemoryType::kUpload, { .size = sizeof(vertex_constant_data), .usage = BindFlag::kConstantBuffer });
+    vertex_constant_buffer_->UpdateUploadBuffer(0, &vertex_constant_data, sizeof(vertex_constant_data));
+    ViewDesc vertex_constant_buffer_view_desc = {
+        .view_type = ViewType::kConstantBuffer,
+        .dimension = ViewDimension::kBuffer,
+    };
+    vertex_constant_buffer_view_ = device_->CreateView(vertex_constant_buffer_, vertex_constant_buffer_view_desc);
 
     glm::vec4 pixel_constant_data = glm::vec4(1.0, 0.0, 0.0, 1.0);
     pixel_constant_buffer_ = device_->CreateBuffer(
@@ -101,17 +122,6 @@ BindlessTriangleRenderer::BindlessTriangleRenderer(const Settings& settings)
         .dimension = ViewDimension::kBuffer,
     };
     pixel_constant_buffer_view_ = device_->CreateView(pixel_constant_buffer_, pixel_constant_buffer_view_desc);
-
-    std::pair<uint32_t, uint32_t> vertex_constant_data = { index_buffer_view_->GetDescriptorId(),
-                                                           vertex_buffer_view_->GetDescriptorId() };
-    vertex_constant_buffer_ = device_->CreateBuffer(
-        MemoryType::kUpload, { .size = sizeof(pixel_constant_data), .usage = BindFlag::kConstantBuffer });
-    vertex_constant_buffer_->UpdateUploadBuffer(0, &vertex_constant_data, sizeof(vertex_constant_data));
-    ViewDesc vertex_constant_buffer_view_desc = {
-        .view_type = ViewType::kConstantBuffer,
-        .dimension = ViewDimension::kBuffer,
-    };
-    vertex_constant_buffer_view_ = device_->CreateView(vertex_constant_buffer_, vertex_constant_buffer_view_desc);
 
     ShaderBlobType blob_type = device_->GetSupportedShaderBlobType();
     std::vector<uint8_t> vertex_blob = AssetLoadShaderBlob("assets/BindlessTriangle/VertexShader.hlsl", blob_type);

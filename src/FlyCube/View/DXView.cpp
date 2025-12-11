@@ -5,6 +5,7 @@
 #include "Utilities/Common.h"
 #include "Utilities/DXGIFormatHelper.h"
 #include "Utilities/NotReached.h"
+#include "View/DXBindlessTypedViewPool.h"
 
 #include <directx/d3d12.h>
 #include <gli/gli.hpp>
@@ -27,17 +28,8 @@ DXView::DXView(DXDevice& device, const std::shared_ptr<DXResource>& resource, co
     }
 
     if (view_desc_.bindless) {
-        assert(view_desc_.view_type != ViewType::kUnknown);
-        assert(view_desc_.view_type != ViewType::kRenderTarget);
-        assert(view_desc_.view_type != ViewType::kDepthStencil);
-        if (view_desc_.view_type == ViewType::kSampler) {
-            range_ = std::make_shared<DXGPUDescriptorPoolRange>(
-                device_.GetGPUDescriptorPool().Allocate(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 1));
-        } else {
-            range_ = std::make_shared<DXGPUDescriptorPoolRange>(
-                device_.GetGPUDescriptorPool().Allocate(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1));
-        }
-        range_->CopyCpuHandle(0, handle_->GetCpuHandle());
+        bindless_view_pool_ = std::make_shared<DXBindlessTypedViewPool>(device_, view_desc_.view_type, 1);
+        bindless_view_pool_->WriteViewImpl(0, *this);
     }
 }
 
@@ -374,10 +366,10 @@ std::shared_ptr<Resource> DXView::GetResource()
 
 uint32_t DXView::GetDescriptorId() const
 {
-    if (range_) {
-        return range_->GetOffset();
+    if (bindless_view_pool_) {
+        return bindless_view_pool_->GetBaseDescriptorId();
     }
-    return -1;
+    NOTREACHED();
 }
 
 uint32_t DXView::GetBaseMipLevel() const

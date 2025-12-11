@@ -4,6 +4,7 @@
 #include "Device/VKDevice.h"
 #include "Resource/VKResource.h"
 #include "Utilities/NotReached.h"
+#include "View/VKBindlessTypedViewPool.h"
 
 namespace {
 
@@ -42,17 +43,9 @@ VKView::VKView(VKDevice& device, const std::shared_ptr<VKResource>& resource, co
         CreateView();
     }
 
-    if (view_desc.bindless) {
-        vk::DescriptorType type = GetDescriptorType(view_desc.view_type);
-        decltype(auto) pool = device.GetGPUBindlessDescriptorPool(type);
-        range_ = std::make_shared<VKGPUDescriptorPoolRange>(pool.Allocate(1));
-
-        descriptor_.dstSet = range_->GetDescriptorSet();
-        descriptor_.dstArrayElement = range_->GetOffset();
-        descriptor_.descriptorType = type;
-        descriptor_.dstBinding = 0;
-        descriptor_.descriptorCount = 1;
-        device_.GetDevice().updateDescriptorSets(1, &descriptor_, 0, nullptr);
+    if (view_desc_.bindless) {
+        bindless_view_pool_ = std::make_shared<VKBindlessTypedViewPool>(device_, view_desc_.view_type, 1);
+        bindless_view_pool_->WriteViewImpl(0, *this);
     }
 }
 
@@ -150,10 +143,10 @@ std::shared_ptr<Resource> VKView::GetResource()
 
 uint32_t VKView::GetDescriptorId() const
 {
-    if (range_) {
-        return range_->GetOffset();
+    if (bindless_view_pool_) {
+        return bindless_view_pool_->GetBaseDescriptorId();
     }
-    return -1;
+    NOTREACHED();
 }
 
 uint32_t VKView::GetBaseMipLevel() const

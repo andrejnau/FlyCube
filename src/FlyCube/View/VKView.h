@@ -1,8 +1,8 @@
 #pragma once
-#include "GPUDescriptorPool/VKGPUDescriptorPoolRange.h"
 #include "Resource/VKResource.h"
 #include "View/View.h"
 
+class VKBindlessTypedViewPool;
 class VKDevice;
 
 class VKView : public View {
@@ -28,10 +28,10 @@ private:
     ViewDesc view_desc_;
     vk::UniqueImageView image_view_;
     vk::UniqueBufferView buffer_view_;
-    std::shared_ptr<VKGPUDescriptorPoolRange> range_;
     vk::DescriptorImageInfo descriptor_image_;
     vk::DescriptorBufferInfo descriptor_buffer_;
     vk::AccelerationStructureKHR acceleration_structure_;
     vk::WriteDescriptorSetAccelerationStructureKHR descriptor_acceleration_structure_;
     vk::WriteDescriptorSet descriptor_;
+    std::shared_ptr<VKBindlessTypedViewPool> bindless_view_pool_;
 };

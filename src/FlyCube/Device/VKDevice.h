@@ -48,6 +48,8 @@ public:
     std::shared_ptr<Resource> CreateBuffer(MemoryType memory_type, const BufferDesc& desc) override;
     std::shared_ptr<Resource> CreateSampler(const SamplerDesc& desc) override;
     std::shared_ptr<View> CreateView(const std::shared_ptr<Resource>& resource, const ViewDesc& view_desc) override;
+    std::shared_ptr<BindlessTypedViewPool> CreateBindlessTypedViewPool(ViewType view_type,
+                                                                       uint32_t view_count) override;
     std::shared_ptr<BindingSetLayout> CreateBindingSetLayout(const BindingSetLayoutDesc& desc) override;
     std::shared_ptr<BindingSet> CreateBindingSet(const std::shared_ptr<BindingSetLayout>& layout) override;
     std::shared_ptr<Shader> CreateShader(const std::vector<uint8_t>& blob,

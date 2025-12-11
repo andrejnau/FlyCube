@@ -4,6 +4,7 @@
 #include "Resource/MTResource.h"
 #include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
+#include "View/MTBindlessTypedViewPool.h"
 
 namespace {
 
@@ -54,11 +55,8 @@ MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, co
     }
 
     if (view_desc_.bindless) {
-        decltype(auto) argument_buffer = device_.GetBindlessArgumentBuffer();
-        range_ = std::make_shared<MTGPUArgumentBufferRange>(argument_buffer.Allocate(1));
-        uint64_t* arguments = static_cast<uint64_t*>(range_->GetArgumentBuffer().contents);
-        arguments[range_->GetOffset()] = GetGpuAddress();
-        range_->AddAllocation(range_->GetOffset(), GetNativeResource());
+        bindless_view_pool_ = std::make_shared<MTBindlessTypedViewPool>(device_, view_desc_.view_type, 1);
+        bindless_view_pool_->WriteViewImpl(0, *this);
     }
 }
 
@@ -102,8 +100,8 @@ std::shared_ptr<Resource> MTView::GetResource()
 
 uint32_t MTView::GetDescriptorId() const
 {
-    if (range_) {
-        return range_->GetOffset();
+    if (bindless_view_pool_) {
+        return bindless_view_pool_->GetBaseDescriptorId();
     }
     NOTREACHED();
 }
