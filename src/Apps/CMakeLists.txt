@@ -3,6 +3,7 @@ if (NOT CMAKE_CROSSCOMPILING)
 endif()
 
 add_subdirectory(BindlessTriangle)
+add_subdirectory(BufferViewTest)
 add_subdirectory(DepthStencilRead)
 add_subdirectory(DispatchIndirect)
 add_subdirectory(MeshTriangle)
