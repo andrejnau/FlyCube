@@ -155,9 +155,10 @@ void DXView::CreateSRV()
             srv_desc.Buffer.StructureByteStride = view_desc_.structure_stride;
             stride = srv_desc.Buffer.StructureByteStride;
         }
-        uint64_t size = std::min(resource_->GetResourceDesc().Width, view_desc_.buffer_size);
+        uint64_t size = std::min(resource_->GetResourceDesc().Width - view_desc_.offset, view_desc_.buffer_size);
+        DCHECK(view_desc_.offset % stride == 0);
         srv_desc.Buffer.FirstElement = view_desc_.offset / stride;
-        srv_desc.Buffer.NumElements = (size - view_desc_.offset) / (stride);
+        srv_desc.Buffer.NumElements = size / stride;
         break;
     }
     default: {

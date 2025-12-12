@@ -85,12 +85,14 @@ void VKView::CreateView()
     }
     case ViewType::kConstantBuffer:
     case ViewType::kStructuredBuffer:
-    case ViewType::kRWStructuredBuffer:
+    case ViewType::kRWStructuredBuffer: {
+        uint64_t size = std::min(resource_->GetWidth() - view_desc_.offset, view_desc_.buffer_size);
         descriptor_buffer_.buffer = resource_->GetBuffer();
         descriptor_buffer_.offset = view_desc_.offset;
-        descriptor_buffer_.range = view_desc_.buffer_size;
+        descriptor_buffer_.range = size;
         descriptor_.pBufferInfo = &descriptor_buffer_;
         break;
+    }
     case ViewType::kBuffer:
     case ViewType::kRWBuffer:
         CreateBufferView();
@@ -128,11 +130,12 @@ void VKView::CreateImageView()
 
 void VKView::CreateBufferView()
 {
+    uint64_t size = std::min(resource_->GetWidth() - view_desc_.offset, view_desc_.buffer_size);
     vk::BufferViewCreateInfo buffer_view_desc = {};
     buffer_view_desc.buffer = resource_->GetBuffer();
     buffer_view_desc.format = static_cast<vk::Format>(view_desc_.buffer_format);
     buffer_view_desc.offset = view_desc_.offset;
-    buffer_view_desc.range = view_desc_.buffer_size;
+    buffer_view_desc.range = size;
     buffer_view_ = device_.GetDevice().createBufferViewUnique(buffer_view_desc);
 }
 

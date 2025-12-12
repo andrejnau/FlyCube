@@ -35,8 +35,6 @@ void SetView(id<MTL4ArgumentTable> argument_table, const std::shared_ptr<MTView>
 {
     switch (view->GetViewDesc().view_type) {
     case ViewType::kConstantBuffer:
-    case ViewType::kBuffer:
-    case ViewType::kRWBuffer:
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer:
         SetBuffer(argument_table, view->GetBuffer(), view->GetViewDesc().offset, index);
@@ -46,6 +44,8 @@ void SetView(id<MTL4ArgumentTable> argument_table, const std::shared_ptr<MTView>
         break;
     case ViewType::kTexture:
     case ViewType::kRWTexture:
+    case ViewType::kBuffer:
+    case ViewType::kRWBuffer:
         SetTexture(argument_table, view->GetTexture(), index);
         break;
     case ViewType::kAccelerationStructure:

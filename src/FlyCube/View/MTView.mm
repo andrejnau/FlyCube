@@ -1,7 +1,9 @@
 #include "View/MTView.h"
 
 #include "Device/MTDevice.h"
+#include "Memory/MTMemory.h"
 #include "Resource/MTResource.h"
+#include "Utilities/Common.h"
 #include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
 #include "View/MTBindlessTypedViewPool.h"
@@ -52,6 +54,24 @@ MTView::MTView(MTDevice& device, const std::shared_ptr<MTResource>& resource, co
         break;
     default:
         break;
+    }
+
+    if (view_desc_.view_type == ViewType::kBuffer || view_desc_.view_type == ViewType::kRWBuffer) {
+        id<MTLBuffer> buffer = resource_->GetBuffer();
+        MTLPixelFormat format = device_.GetMTLPixelFormat(view_desc_.buffer_format);
+        uint32_t bits_per_pixel = gli::detail::bits_per_pixel(view_desc_.buffer_format) / 8;
+        uint64_t size = std::min(resource_->GetWidth() - view_desc_.offset, view_desc_.buffer_size);
+        uint64_t width = size / bits_per_pixel;
+        MTLResourceOptions options = ConvertStorageMode(resource_->GetMemoryType()) << MTLResourceStorageModeShift;
+        MTLTextureDescriptor* texture_descriptor =
+            [MTLTextureDescriptor textureBufferDescriptorWithPixelFormat:format
+                                                                   width:width
+                                                         resourceOptions:options
+                                                                   usage:MTLTextureUsageShaderRead];
+        uint32_t alignment = [device_.GetDevice() minimumTextureBufferAlignmentForPixelFormat:format];
+        texture_view_ = [buffer newTextureWithDescriptor:texture_descriptor
+                                                  offset:view_desc_.offset
+                                             bytesPerRow:Align(bits_per_pixel * width, alignment)];
     }
 
     if (view_desc_.bindless) {
