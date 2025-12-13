@@ -62,7 +62,10 @@ private:
     std::shared_ptr<BindingSetLayout> layout_;
     std::vector<std::shared_ptr<BindingSet>> depth_stencil_pass_binding_sets_;
 
+    uint32_t width_ = 0;
+    uint32_t height_ = 0;
     std::shared_ptr<Swapchain> swapchain_;
+    glm::uvec2 depth_stencil_size_;
     std::shared_ptr<Resource> depth_stencil_texture_;
     std::shared_ptr<View> depth_stencil_view_;
     std::shared_ptr<View> depth_read_view_;
@@ -162,11 +165,13 @@ DepthStencilReadRenderer::~DepthStencilReadRenderer()
 
 void DepthStencilReadRenderer::Init(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
+    width_ = width;
+    height_ = height;
     swapchain_ = device_->CreateSwapchain(surface, width, height, kFrameCount, settings_.vsync);
 
     glm::mat4 view = GetViewMatrix();
-    glm::uvec2 depth_stencil_size = glm::uvec2(width / 2, height);
-    glm::mat4 projection = GetProjectionMatrix(depth_stencil_size.x, depth_stencil_size.y);
+    depth_stencil_size_ = glm::uvec2(width / 2, height);
+    glm::mat4 projection = GetProjectionMatrix(depth_stencil_size_.x, depth_stencil_size_.y);
 
     std::vector<glm::mat4> depth_stencil_pass_constant_data(render_model_.GetMeshCount());
     for (size_t i = 0; i < render_model_.GetMeshCount(); ++i) {
@@ -182,8 +187,8 @@ void DepthStencilReadRenderer::Init(const NativeSurface& surface, uint32_t width
     TextureDesc depth_stencil_texture_desc = {
         .type = TextureType::k2D,
         .format = gli::format::FORMAT_D32_SFLOAT_S8_UINT_PACK64,
-        .width = depth_stencil_size.x,
-        .height = depth_stencil_size.y,
+        .width = depth_stencil_size_.x,
+        .height = depth_stencil_size_.y,
         .depth_or_array_layers = 1,
         .mip_levels = 1,
         .sample_count = 1,
@@ -259,48 +264,7 @@ void DepthStencilReadRenderer::Init(const NativeSurface& surface, uint32_t width
             .dimension = ViewDimension::kTexture2D,
         };
         back_buffer_views_[i] = device_->CreateView(back_buffer, back_buffer_view_desc);
-
-        auto& command_list = command_lists_[i];
-        command_list = device_->CreateCommandList(CommandListType::kGraphics);
-        command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
-
-        command_list->BindPipeline(depth_stencil_pass_pipeline_);
-        RenderPassDesc depth_stencil_pass_render_pass_desc = {
-            .render_area = { 0, 0, depth_stencil_size.x, depth_stencil_size.y },
-            .depth = { .load_op = RenderPassLoadOp::kClear, .store_op = RenderPassStoreOp::kStore, .clear_value = 1.0 },
-            .stencil = { .load_op = RenderPassLoadOp::kClear, .store_op = RenderPassStoreOp::kStore, .clear_value = 0 },
-            .depth_stencil_view = depth_stencil_view_,
-        };
-        command_list->BeginRenderPass(depth_stencil_pass_render_pass_desc);
-        command_list->SetViewport(0, 0, depth_stencil_size.x, depth_stencil_size.y, 0.0, 1.0);
-        command_list->SetScissorRect(0, 0, depth_stencil_size.x, depth_stencil_size.y);
-        for (size_t j = 0; j < render_model_.GetMeshCount(); ++j) {
-            const auto& mesh = render_model_.GetMesh(j);
-            command_list->BindBindingSet(depth_stencil_pass_binding_sets_[j]);
-            command_list->IASetIndexBuffer(mesh.indices.buffer, mesh.indices.offset, mesh.index_format);
-            command_list->IASetVertexBuffer(kPositions, mesh.positions.buffer, mesh.positions.offset);
-            command_list->IASetVertexBuffer(kTexcoords, mesh.texcoords.buffer, mesh.texcoords.offset);
-            command_list->DrawIndexed(mesh.index_count, 1, 0, 0, 0);
-        }
-        command_list->EndRenderPass();
-
-        command_list->BindPipeline(pipeline_);
-        RenderPassDesc render_pass_desc = {
-            .render_area = { 0, 0, width, height },
-            .colors = { { .view = back_buffer_views_[i],
-                          .load_op = RenderPassLoadOp::kDontCare,
-                          .store_op = RenderPassStoreOp::kStore } },
-        };
-        command_list->BeginRenderPass(render_pass_desc);
-        command_list->SetViewport(0, 0, width, height, 0.0, 1.0);
-        command_list->SetScissorRect(0, 0, width, height);
-        command_list->BindBindingSet(binding_set_);
-        command_list->IASetVertexBuffer(0, fullscreen_triangle_vertex_buffer_, 0);
-        command_list->Draw(3, 1, 0, 0);
-        command_list->EndRenderPass();
-
-        command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });
-        command_list->Close();
+        command_lists_[i] = device_->CreateCommandList(CommandListType::kGraphics);
     }
 }
 
@@ -319,7 +283,51 @@ void DepthStencilReadRenderer::Render()
     uint32_t frame_index = swapchain_->NextImage(fence_, ++fence_value_);
     command_queue_->Wait(fence_, fence_value_);
     fence_->Wait(fence_values_[frame_index]);
-    command_queue_->ExecuteCommandLists({ command_lists_[frame_index] });
+    std::shared_ptr<Resource> back_buffer = swapchain_->GetBackBuffer(frame_index);
+
+    auto& command_list = command_lists_[frame_index];
+    command_list->Reset();
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
+
+    command_list->BindPipeline(depth_stencil_pass_pipeline_);
+    RenderPassDesc depth_stencil_pass_render_pass_desc = {
+        .render_area = { 0, 0, depth_stencil_size_.x, depth_stencil_size_.y },
+        .depth = { .load_op = RenderPassLoadOp::kClear, .store_op = RenderPassStoreOp::kStore, .clear_value = 1.0 },
+        .stencil = { .load_op = RenderPassLoadOp::kClear, .store_op = RenderPassStoreOp::kStore, .clear_value = 0 },
+        .depth_stencil_view = depth_stencil_view_,
+    };
+    command_list->BeginRenderPass(depth_stencil_pass_render_pass_desc);
+    command_list->SetViewport(0, 0, depth_stencil_size_.x, depth_stencil_size_.y, 0.0, 1.0);
+    command_list->SetScissorRect(0, 0, depth_stencil_size_.x, depth_stencil_size_.y);
+    for (size_t j = 0; j < render_model_.GetMeshCount(); ++j) {
+        const auto& mesh = render_model_.GetMesh(j);
+        command_list->BindBindingSet(depth_stencil_pass_binding_sets_[j]);
+        command_list->IASetIndexBuffer(mesh.indices.buffer, mesh.indices.offset, mesh.index_format);
+        command_list->IASetVertexBuffer(kPositions, mesh.positions.buffer, mesh.positions.offset);
+        command_list->IASetVertexBuffer(kTexcoords, mesh.texcoords.buffer, mesh.texcoords.offset);
+        command_list->DrawIndexed(mesh.index_count, 1, 0, 0, 0);
+    }
+    command_list->EndRenderPass();
+
+    command_list->BindPipeline(pipeline_);
+    RenderPassDesc render_pass_desc = {
+        .render_area = { 0, 0, width_, height_ },
+        .colors = { { .view = back_buffer_views_[frame_index],
+                      .load_op = RenderPassLoadOp::kDontCare,
+                      .store_op = RenderPassStoreOp::kStore } },
+    };
+    command_list->BeginRenderPass(render_pass_desc);
+    command_list->SetViewport(0, 0, width_, height_, 0.0, 1.0);
+    command_list->SetScissorRect(0, 0, width_, height_);
+    command_list->BindBindingSet(binding_set_);
+    command_list->IASetVertexBuffer(0, fullscreen_triangle_vertex_buffer_, 0);
+    command_list->Draw(3, 1, 0, 0);
+    command_list->EndRenderPass();
+
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kRenderTarget, ResourceState::kPresent } });
+    command_list->Close();
+
+    command_queue_->ExecuteCommandLists({ command_list });
     command_queue_->Signal(fence_, fence_values_[frame_index] = ++fence_value_);
     swapchain_->Present(fence_, fence_values_[frame_index]);
 }

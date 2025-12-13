@@ -74,6 +74,8 @@ private:
     std::shared_ptr<Resource> shader_table_;
     RayTracingShaderTables shader_tables_;
 
+    uint32_t width_ = 0;
+    uint32_t height_ = 0;
     std::shared_ptr<Swapchain> swapchain_;
     std::shared_ptr<Resource> result_texture_;
     std::shared_ptr<View> result_texture_view_;
@@ -329,6 +331,8 @@ RayTracingTriangleRenderer::~RayTracingTriangleRenderer()
 
 void RayTracingTriangleRenderer::Init(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
+    width_ = width;
+    height_ = height;
     swapchain_ = device_->CreateSwapchain(surface, width, height, kFrameCount, settings_.vsync);
 
     TextureDesc result_texture_desc = {
@@ -353,25 +357,7 @@ void RayTracingTriangleRenderer::Init(const NativeSurface& surface, uint32_t wid
     InitBindingSet();
 
     for (uint32_t i = 0; i < kFrameCount; ++i) {
-        std::shared_ptr<Resource> back_buffer = swapchain_->GetBackBuffer(i);
-        auto& command_list = command_lists_[i];
-        command_list = device_->CreateCommandList(CommandListType::kGraphics);
-        command_list->BindPipeline(pipeline_);
-        command_list->BindBindingSet(binding_set_);
-        if (use_ray_tracing_) {
-            command_list->DispatchRays(shader_tables_, width, height, 1);
-        } else {
-            command_list->Dispatch((width + kNumRayQueryThreads - 1) / kNumRayQueryThreads,
-                                   (height + kNumRayQueryThreads - 1) / kNumRayQueryThreads, 1);
-        }
-        command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kCopyDest } });
-        command_list->ResourceBarrier(
-            { { result_texture_, ResourceState::kUnorderedAccess, ResourceState::kCopySource } });
-        command_list->CopyTexture(result_texture_, back_buffer, { { width, height, 1 } });
-        command_list->ResourceBarrier(
-            { { result_texture_, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
-        command_list->ResourceBarrier({ { back_buffer, ResourceState::kCopyDest, ResourceState::kPresent } });
-        command_list->Close();
+        command_lists_[i] = device_->CreateCommandList(CommandListType::kGraphics);
     }
 }
 
@@ -387,7 +373,26 @@ void RayTracingTriangleRenderer::Render()
     uint32_t frame_index = swapchain_->NextImage(fence_, ++fence_value_);
     command_queue_->Wait(fence_, fence_value_);
     fence_->Wait(fence_values_[frame_index]);
-    command_queue_->ExecuteCommandLists({ command_lists_[frame_index] });
+    std::shared_ptr<Resource> back_buffer = swapchain_->GetBackBuffer(frame_index);
+
+    auto& command_list = command_lists_[frame_index];
+    command_list->Reset();
+    command_list->BindPipeline(pipeline_);
+    command_list->BindBindingSet(binding_set_);
+    if (use_ray_tracing_) {
+        command_list->DispatchRays(shader_tables_, width_, height_, 1);
+    } else {
+        command_list->Dispatch((width_ + kNumRayQueryThreads - 1) / kNumRayQueryThreads,
+                               (height_ + kNumRayQueryThreads - 1) / kNumRayQueryThreads, 1);
+    }
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kCopyDest } });
+    command_list->ResourceBarrier({ { result_texture_, ResourceState::kUnorderedAccess, ResourceState::kCopySource } });
+    command_list->CopyTexture(result_texture_, back_buffer, { { width_, height_, 1 } });
+    command_list->ResourceBarrier({ { result_texture_, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kCopyDest, ResourceState::kPresent } });
+    command_list->Close();
+
+    command_queue_->ExecuteCommandLists({ command_list });
     command_queue_->Signal(fence_, fence_values_[frame_index] = ++fence_value_);
     swapchain_->Present(fence_, fence_values_[frame_index]);
 }

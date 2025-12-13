@@ -42,7 +42,10 @@ private:
     std::shared_ptr<BindingSetLayout> layout_;
     std::shared_ptr<Pipeline> pipeline_;
 
+    uint32_t width_ = 0;
+    uint32_t height_ = 0;
     std::shared_ptr<Swapchain> swapchain_;
+    glm::uvec2 result_texture_size_;
     std::shared_ptr<Resource> result_texture_;
     std::shared_ptr<View> result_texture_view_;
     std::array<std::shared_ptr<BindingSet>, kFrameCount> binding_set_ = {};
@@ -94,13 +97,16 @@ DispatchIndirectRenderer::~DispatchIndirectRenderer()
 
 void DispatchIndirectRenderer::Init(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
+    width_ = width;
+    height_ = height;
     swapchain_ = device_->CreateSwapchain(surface, width, height, kFrameCount, settings_.vsync);
 
+    result_texture_size_ = glm::uvec2(std::min(512u, width), std::min(512u, height));
     TextureDesc result_texture_desc = {
         .type = TextureType::k2D,
         .format = swapchain_->GetFormat(),
-        .width = std::min(512u, width),
-        .height = std::min(512u, height),
+        .width = result_texture_size_.x,
+        .height = result_texture_size_.y,
         .depth_or_array_layers = 1,
         .mip_levels = 1,
         .sample_count = 1,
@@ -113,8 +119,8 @@ void DispatchIndirectRenderer::Init(const NativeSurface& surface, uint32_t width
     };
     result_texture_view_ = device_->CreateView(result_texture_, result_texture_view_desc);
 
-    DispatchIndirectCommand argument_data = { (result_texture_desc.width + kNumThreads - 1) / kNumThreads,
-                                              (result_texture_desc.height + kNumThreads - 1) / kNumThreads, 1 };
+    DispatchIndirectCommand argument_data = { (result_texture_size_.x + kNumThreads - 1) / kNumThreads,
+                                              (result_texture_size_.y + kNumThreads - 1) / kNumThreads, 1 };
     buffer_->UpdateUploadBuffer(constant_buffer_stride_ * kFrameCount, &argument_data, sizeof(argument_data));
 
     BindKey constant_buffer_key = compute_shader_->GetBindKey("constant_buffer");
@@ -123,28 +129,7 @@ void DispatchIndirectRenderer::Init(const NativeSurface& surface, uint32_t width
         binding_set_[i] = device_->CreateBindingSet(layout_);
         binding_set_[i]->WriteBindings({ .bindings = { { constant_buffer_key, constant_buffer_views_[i] },
                                                        { result_texture_key, result_texture_view_ } } });
-    }
-
-    for (uint32_t i = 0; i < kFrameCount; ++i) {
-        std::shared_ptr<Resource> back_buffer = swapchain_->GetBackBuffer(i);
-
-        auto& command_list = command_lists_[i];
-        command_list = device_->CreateCommandList(CommandListType::kGraphics);
-        command_list->BindPipeline(pipeline_);
-        command_list->BindBindingSet(binding_set_[i]);
-        command_list->DispatchIndirect(buffer_, constant_buffer_stride_ * kFrameCount);
-        TextureCopyRegion region = {
-            .extent = { result_texture_desc.width, result_texture_desc.height, 1 },
-            .dst_offset = { (width - result_texture_desc.width) / 2, (height - result_texture_desc.height) / 2 },
-        };
-        command_list->ResourceBarrier(
-            { { result_texture_, ResourceState::kUnorderedAccess, ResourceState::kCopySource },
-              { back_buffer, ResourceState::kPresent, ResourceState::kCopyDest } });
-        command_list->CopyTexture(result_texture_, back_buffer, { region });
-        command_list->ResourceBarrier(
-            { { back_buffer, ResourceState::kCopyDest, ResourceState::kPresent },
-              { result_texture_, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
-        command_list->Close();
+        command_lists_[i] = device_->CreateCommandList(CommandListType::kGraphics);
     }
 }
 
@@ -160,12 +145,29 @@ void DispatchIndirectRenderer::Render()
     uint32_t frame_index = swapchain_->NextImage(fence_, ++fence_value_);
     command_queue_->Wait(fence_, fence_value_);
     fence_->Wait(fence_values_[frame_index]);
+    std::shared_ptr<Resource> back_buffer = swapchain_->GetBackBuffer(frame_index);
+
+    auto& command_list = command_lists_[frame_index];
+    command_list->Reset();
+    command_list->BindPipeline(pipeline_);
+    command_list->BindBindingSet(binding_set_[frame_index]);
+    command_list->DispatchIndirect(buffer_, constant_buffer_stride_ * kFrameCount);
+    TextureCopyRegion region = {
+        .extent = { result_texture_size_.x, result_texture_size_.y, 1 },
+        .dst_offset = { (width_ - result_texture_size_.x) / 2, (height_ - result_texture_size_.y) / 2 },
+    };
+    command_list->ResourceBarrier({ { result_texture_, ResourceState::kUnorderedAccess, ResourceState::kCopySource },
+                                    { back_buffer, ResourceState::kPresent, ResourceState::kCopyDest } });
+    command_list->CopyTexture(result_texture_, back_buffer, { region });
+    command_list->ResourceBarrier({ { back_buffer, ResourceState::kCopyDest, ResourceState::kPresent },
+                                    { result_texture_, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
+    command_list->Close();
 
     auto now = std::chrono::high_resolution_clock::now();
     float constant_data = std::chrono::duration<float>(now.time_since_epoch()).count();
     buffer_->UpdateUploadBuffer(constant_buffer_stride_ * frame_index, &constant_data, sizeof(constant_data));
 
-    command_queue_->ExecuteCommandLists({ command_lists_[frame_index] });
+    command_queue_->ExecuteCommandLists({ command_list });
     command_queue_->Signal(fence_, fence_values_[frame_index] = ++fence_value_);
     swapchain_->Present(fence_, fence_values_[frame_index]);
 }
