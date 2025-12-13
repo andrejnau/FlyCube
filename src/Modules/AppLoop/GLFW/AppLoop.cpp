@@ -8,14 +8,14 @@ namespace {
 
 class ResizeHandler : public WindowEvents {
 public:
-    ResizeHandler(const NativeSurface& surface)
+    explicit ResizeHandler(const NativeSurface& surface)
         : surface_(surface)
     {
     }
 
-    void OnResize(int width, int height) override
+    void OnResize(uint32_t width, uint32_t height) override
     {
-        AppLoop::GetRenderer().Resize(AppSize(width, height), surface_);
+        AppLoop::GetRenderer().Resize(surface_, width, height);
         AppLoop::GetRenderer().Render();
     }
 
@@ -44,7 +44,8 @@ int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv
     AppBox app(renderer_->GetTitle(), renderer_->GetSettings());
     app.SetGpuName(renderer_->GetGpuName());
     NativeSurface surface = app.GetNativeSurface();
-    renderer_->Init(app.GetAppSize(), surface);
+    auto [width, height] = app.GetAppSize();
+    renderer_->Init(surface, width, height);
     ResizeHandler resize_handler(surface);
     app.SubscribeEvents(nullptr, &resize_handler);
     while (!app.PollEvents()) {

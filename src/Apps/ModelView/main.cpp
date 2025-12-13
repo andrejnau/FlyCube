@@ -33,8 +33,8 @@ public:
     explicit ModelViewRenderer(const Settings& settings);
     ~ModelViewRenderer() override;
 
-    void Init(const AppSize& app_size, const NativeSurface& surface) override;
-    void Resize(const AppSize& app_size, const NativeSurface& surface) override;
+    void Init(const NativeSurface& surface, uint32_t width, uint32_t height) override;
+    void Resize(const NativeSurface& surface, uint32_t width, uint32_t height) override;
     void Render() override;
     std::string_view GetTitle() const override;
     const std::string& GetGpuName() const override;
@@ -117,12 +117,12 @@ ModelViewRenderer::~ModelViewRenderer()
     WaitForIdle();
 }
 
-void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surface)
+void ModelViewRenderer::Init(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
-    swapchain_ = device_->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, settings_.vsync);
+    swapchain_ = device_->CreateSwapchain(surface, width, height, kFrameCount, settings_.vsync);
 
     glm::mat4 view = GetViewMatrix();
-    glm::mat4 projection = GetProjectionMatrix(app_size.width(), app_size.height());
+    glm::mat4 projection = GetProjectionMatrix(width, height);
 
     BindKey vertex_constant_buffer_key = vertex_shader_->GetBindKey("constant_buffer");
     binding_sets_.resize(render_model_.GetMeshCount());
@@ -167,8 +167,8 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
     TextureDesc depth_stencil_texture_desc = {
         .type = TextureType::k2D,
         .format = gli::format::FORMAT_D32_SFLOAT_PACK32,
-        .width = app_size.width(),
-        .height = app_size.height(),
+        .width = width,
+        .height = height,
         .depth_or_array_layers = 1,
         .mip_levels = 1,
         .sample_count = 1,
@@ -202,11 +202,11 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
         auto& command_list = command_lists_[i];
         command_list = device_->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(pipeline_);
-        command_list->SetViewport(0, 0, app_size.width(), app_size.height(), 0.0, 1.0);
-        command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
+        command_list->SetViewport(0, 0, width, height, 0.0, 1.0);
+        command_list->SetScissorRect(0, 0, width, height);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         RenderPassDesc render_pass_desc = {
-            .render_area = { 0, 0, app_size.width(), app_size.height() },
+            .render_area = { 0, 0, width, height },
             .colors = { { .view = back_buffer_views_[i],
                           .load_op = RenderPassLoadOp::kClear,
                           .store_op = RenderPassStoreOp::kStore,
@@ -231,14 +231,14 @@ void ModelViewRenderer::Init(const AppSize& app_size, const NativeSurface& surfa
     }
 }
 
-void ModelViewRenderer::Resize(const AppSize& app_size, const NativeSurface& surface)
+void ModelViewRenderer::Resize(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
     WaitForIdle();
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         back_buffer_views_[i].reset();
     }
     swapchain_.reset();
-    Init(app_size, surface);
+    Init(surface, width, height);
 }
 
 void ModelViewRenderer::Render()

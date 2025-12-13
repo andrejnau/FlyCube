@@ -18,8 +18,8 @@ public:
     explicit DispatchIndirectRenderer(const Settings& settings);
     ~DispatchIndirectRenderer() override;
 
-    void Init(const AppSize& app_size, const NativeSurface& surface) override;
-    void Resize(const AppSize& app_size, const NativeSurface& surface) override;
+    void Init(const NativeSurface& surface, uint32_t width, uint32_t height) override;
+    void Resize(const NativeSurface& surface, uint32_t width, uint32_t height) override;
     void Render() override;
     std::string_view GetTitle() const override;
     const std::string& GetGpuName() const override;
@@ -92,15 +92,15 @@ DispatchIndirectRenderer::~DispatchIndirectRenderer()
     WaitForIdle();
 }
 
-void DispatchIndirectRenderer::Init(const AppSize& app_size, const NativeSurface& surface)
+void DispatchIndirectRenderer::Init(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
-    swapchain_ = device_->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, settings_.vsync);
+    swapchain_ = device_->CreateSwapchain(surface, width, height, kFrameCount, settings_.vsync);
 
     TextureDesc result_texture_desc = {
         .type = TextureType::k2D,
         .format = swapchain_->GetFormat(),
-        .width = std::min(512u, app_size.width()),
-        .height = std::min(512u, app_size.height()),
+        .width = std::min(512u, width),
+        .height = std::min(512u, height),
         .depth_or_array_layers = 1,
         .mip_levels = 1,
         .sample_count = 1,
@@ -135,8 +135,7 @@ void DispatchIndirectRenderer::Init(const AppSize& app_size, const NativeSurface
         command_list->DispatchIndirect(buffer_, constant_buffer_stride_ * kFrameCount);
         TextureCopyRegion region = {
             .extent = { result_texture_desc.width, result_texture_desc.height, 1 },
-            .dst_offset = { (app_size.width() - result_texture_desc.width) / 2,
-                            (app_size.height() - result_texture_desc.height) / 2 },
+            .dst_offset = { (width - result_texture_desc.width) / 2, (height - result_texture_desc.height) / 2 },
         };
         command_list->ResourceBarrier(
             { { result_texture_, ResourceState::kUnorderedAccess, ResourceState::kCopySource },
@@ -149,11 +148,11 @@ void DispatchIndirectRenderer::Init(const AppSize& app_size, const NativeSurface
     }
 }
 
-void DispatchIndirectRenderer::Resize(const AppSize& app_size, const NativeSurface& surface)
+void DispatchIndirectRenderer::Resize(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
     WaitForIdle();
     swapchain_.reset();
-    Init(app_size, surface);
+    Init(surface, width, height);
 }
 
 void DispatchIndirectRenderer::Render()

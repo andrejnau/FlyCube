@@ -24,7 +24,7 @@ AppSize GetScreenSize()
 
 AppSize GetDefaultWindowsSize(const AppSize& screen_size)
 {
-    return AppSize(screen_size.width() / 1.5, screen_size.height() / 1.5);
+    return AppSize(screen_size.width / 1.5, screen_size.height / 1.5);
 }
 
 } // namespace
@@ -37,7 +37,7 @@ GLFWwindow* CreateWindowWithDefaultSize(const std::string_view& title)
     AppSize window_size = GetDefaultWindowsSize(screen_size);
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(window_size.width(), window_size.height(), title.data(), nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(window_size.width, window_size.height, title.data(), nullptr, nullptr);
 
 #if defined(__APPLE__)
     NSWindow* ns_window = glfwGetCocoaWindow(window);
@@ -45,8 +45,8 @@ GLFWwindow* CreateWindowWithDefaultSize(const std::string_view& title)
     ns_window.contentView.wantsLayer = YES;
 #endif
 
-    int xpos = (screen_size.width() - window_size.width()) / 2;
-    int ypos = (screen_size.height() - window_size.height()) / 2;
+    int xpos = (screen_size.width - window_size.width) / 2;
+    int ypos = (screen_size.height - window_size.height) / 2;
     glfwSetWindowPos(window, xpos, ypos);
 
     return window;

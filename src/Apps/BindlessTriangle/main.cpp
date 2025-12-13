@@ -16,8 +16,8 @@ public:
     explicit BindlessTriangleRenderer(const Settings& settings);
     ~BindlessTriangleRenderer() override;
 
-    void Init(const AppSize& app_size, const NativeSurface& surface) override;
-    void Resize(const AppSize& app_size, const NativeSurface& surface) override;
+    void Init(const NativeSurface& surface, uint32_t width, uint32_t height) override;
+    void Resize(const NativeSurface& surface, uint32_t width, uint32_t height) override;
     void Render() override;
     std::string_view GetTitle() const override;
     const std::string& GetGpuName() const override;
@@ -169,9 +169,9 @@ BindlessTriangleRenderer::~BindlessTriangleRenderer()
     WaitForIdle();
 }
 
-void BindlessTriangleRenderer::Init(const AppSize& app_size, const NativeSurface& surface)
+void BindlessTriangleRenderer::Init(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
-    swapchain_ = device_->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, settings_.vsync);
+    swapchain_ = device_->CreateSwapchain(surface, width, height, kFrameCount, settings_.vsync);
 
     GraphicsPipelineDesc pipeline_desc = {
         .shaders = { vertex_shader_, pixel_shader_ },
@@ -192,11 +192,11 @@ void BindlessTriangleRenderer::Init(const AppSize& app_size, const NativeSurface
         command_list = device_->CreateCommandList(CommandListType::kGraphics);
         command_list->BindPipeline(pipeline_);
         command_list->BindBindingSet(binding_set_);
-        command_list->SetViewport(0, 0, app_size.width(), app_size.height(), 0.0, 1.0);
-        command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
+        command_list->SetViewport(0, 0, width, height, 0.0, 1.0);
+        command_list->SetScissorRect(0, 0, width, height);
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
         RenderPassDesc render_pass_desc = {
-            .render_area = { 0, 0, app_size.width(), app_size.height() },
+            .render_area = { 0, 0, width, height },
             .colors = { { .view = back_buffer_views_[i],
                           .load_op = RenderPassLoadOp::kClear,
                           .store_op = RenderPassStoreOp::kStore,
@@ -210,14 +210,14 @@ void BindlessTriangleRenderer::Init(const AppSize& app_size, const NativeSurface
     }
 }
 
-void BindlessTriangleRenderer::Resize(const AppSize& app_size, const NativeSurface& surface)
+void BindlessTriangleRenderer::Resize(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
     WaitForIdle();
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         back_buffer_views_[i].reset();
     }
     swapchain_.reset();
-    Init(app_size, surface);
+    Init(surface, width, height);
 }
 
 void BindlessTriangleRenderer::Render()

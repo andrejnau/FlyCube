@@ -39,8 +39,8 @@ public:
     explicit RayTracingTriangleRenderer(const Settings& settings);
     ~RayTracingTriangleRenderer() override;
 
-    void Init(const AppSize& app_size, const NativeSurface& surface) override;
-    void Resize(const AppSize& app_size, const NativeSurface& surface) override;
+    void Init(const NativeSurface& surface, uint32_t width, uint32_t height) override;
+    void Resize(const NativeSurface& surface, uint32_t width, uint32_t height) override;
     void Render() override;
     std::string_view GetTitle() const override;
     const std::string& GetGpuName() const override;
@@ -327,15 +327,15 @@ RayTracingTriangleRenderer::~RayTracingTriangleRenderer()
     WaitForIdle();
 }
 
-void RayTracingTriangleRenderer::Init(const AppSize& app_size, const NativeSurface& surface)
+void RayTracingTriangleRenderer::Init(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
-    swapchain_ = device_->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, settings_.vsync);
+    swapchain_ = device_->CreateSwapchain(surface, width, height, kFrameCount, settings_.vsync);
 
     TextureDesc result_texture_desc = {
         .type = TextureType::k2D,
         .format = swapchain_->GetFormat(),
-        .width = app_size.width(),
-        .height = app_size.height(),
+        .width = width,
+        .height = height,
         .depth_or_array_layers = 1,
         .mip_levels = 1,
         .sample_count = 1,
@@ -359,15 +359,15 @@ void RayTracingTriangleRenderer::Init(const AppSize& app_size, const NativeSurfa
         command_list->BindPipeline(pipeline_);
         command_list->BindBindingSet(binding_set_);
         if (use_ray_tracing_) {
-            command_list->DispatchRays(shader_tables_, app_size.width(), app_size.height(), 1);
+            command_list->DispatchRays(shader_tables_, width, height, 1);
         } else {
-            command_list->Dispatch((app_size.width() + kNumRayQueryThreads - 1) / kNumRayQueryThreads,
-                                   (app_size.height() + kNumRayQueryThreads - 1) / kNumRayQueryThreads, 1);
+            command_list->Dispatch((width + kNumRayQueryThreads - 1) / kNumRayQueryThreads,
+                                   (height + kNumRayQueryThreads - 1) / kNumRayQueryThreads, 1);
         }
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kCopyDest } });
         command_list->ResourceBarrier(
             { { result_texture_, ResourceState::kUnorderedAccess, ResourceState::kCopySource } });
-        command_list->CopyTexture(result_texture_, back_buffer, { { app_size.width(), app_size.height(), 1 } });
+        command_list->CopyTexture(result_texture_, back_buffer, { { width, height, 1 } });
         command_list->ResourceBarrier(
             { { result_texture_, ResourceState::kCopySource, ResourceState::kUnorderedAccess } });
         command_list->ResourceBarrier({ { back_buffer, ResourceState::kCopyDest, ResourceState::kPresent } });
@@ -375,11 +375,11 @@ void RayTracingTriangleRenderer::Init(const AppSize& app_size, const NativeSurfa
     }
 }
 
-void RayTracingTriangleRenderer::Resize(const AppSize& app_size, const NativeSurface& surface)
+void RayTracingTriangleRenderer::Resize(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
     WaitForIdle();
     swapchain_.reset();
-    Init(app_size, surface);
+    Init(surface, width, height);
 }
 
 void RayTracingTriangleRenderer::Render()

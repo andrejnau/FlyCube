@@ -32,8 +32,8 @@ public:
     explicit DepthStencilReadRenderer(const Settings& settings);
     ~DepthStencilReadRenderer() override;
 
-    void Init(const AppSize& app_size, const NativeSurface& surface) override;
-    void Resize(const AppSize& app_size, const NativeSurface& surface) override;
+    void Init(const NativeSurface& surface, uint32_t width, uint32_t height) override;
+    void Resize(const NativeSurface& surface, uint32_t width, uint32_t height) override;
     void Render() override;
     std::string_view GetTitle() const override;
     const std::string& GetGpuName() const override;
@@ -160,12 +160,12 @@ DepthStencilReadRenderer::~DepthStencilReadRenderer()
     WaitForIdle();
 }
 
-void DepthStencilReadRenderer::Init(const AppSize& app_size, const NativeSurface& surface)
+void DepthStencilReadRenderer::Init(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
-    swapchain_ = device_->CreateSwapchain(surface, app_size.width(), app_size.height(), kFrameCount, settings_.vsync);
+    swapchain_ = device_->CreateSwapchain(surface, width, height, kFrameCount, settings_.vsync);
 
     glm::mat4 view = GetViewMatrix();
-    glm::uvec2 depth_stencil_size = glm::uvec2(app_size.width() / 2, app_size.height());
+    glm::uvec2 depth_stencil_size = glm::uvec2(width / 2, height);
     glm::mat4 projection = GetProjectionMatrix(depth_stencil_size.x, depth_stencil_size.y);
 
     std::vector<glm::mat4> depth_stencil_pass_constant_data(render_model_.GetMeshCount());
@@ -176,7 +176,7 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, const NativeSurface
         0, depth_stencil_pass_constant_data.data(),
         sizeof(depth_stencil_pass_constant_data.front()) * depth_stencil_pass_constant_data.size());
 
-    glm::uvec2 pixel_constant_data = glm::uvec2(app_size.width(), app_size.height());
+    glm::uvec2 pixel_constant_data = glm::uvec2(width, height);
     pixel_constant_buffer_->UpdateUploadBuffer(0, &pixel_constant_data, sizeof(pixel_constant_data));
 
     TextureDesc depth_stencil_texture_desc = {
@@ -286,14 +286,14 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, const NativeSurface
 
         command_list->BindPipeline(pipeline_);
         RenderPassDesc render_pass_desc = {
-            .render_area = { 0, 0, app_size.width(), app_size.height() },
+            .render_area = { 0, 0, width, height },
             .colors = { { .view = back_buffer_views_[i],
                           .load_op = RenderPassLoadOp::kDontCare,
                           .store_op = RenderPassStoreOp::kStore } },
         };
         command_list->BeginRenderPass(render_pass_desc);
-        command_list->SetViewport(0, 0, app_size.width(), app_size.height(), 0.0, 1.0);
-        command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
+        command_list->SetViewport(0, 0, width, height, 0.0, 1.0);
+        command_list->SetScissorRect(0, 0, width, height);
         command_list->BindBindingSet(binding_set_);
         command_list->IASetVertexBuffer(0, fullscreen_triangle_vertex_buffer_, 0);
         command_list->Draw(3, 1, 0, 0);
@@ -304,14 +304,14 @@ void DepthStencilReadRenderer::Init(const AppSize& app_size, const NativeSurface
     }
 }
 
-void DepthStencilReadRenderer::Resize(const AppSize& app_size, const NativeSurface& surface)
+void DepthStencilReadRenderer::Resize(const NativeSurface& surface, uint32_t width, uint32_t height)
 {
     WaitForIdle();
     for (uint32_t i = 0; i < kFrameCount; ++i) {
         back_buffer_views_[i].reset();
     }
     swapchain_.reset();
-    Init(app_size, surface);
+    Init(surface, width, height);
 }
 
 void DepthStencilReadRenderer::Render()

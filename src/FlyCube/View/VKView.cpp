@@ -1,10 +1,10 @@
 #include "View/VKView.h"
 
 #include "BindingSetLayout/VKBindingSetLayout.h"
+#include "BindlessTypedViewPool/VKBindlessTypedViewPool.h"
 #include "Device/VKDevice.h"
 #include "Resource/VKResource.h"
 #include "Utilities/NotReached.h"
-#include "BindlessTypedViewPool/VKBindlessTypedViewPool.h"
 
 namespace {
 

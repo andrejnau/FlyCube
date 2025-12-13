@@ -28,8 +28,7 @@ std::shared_ptr<Instance> instance = CreateInstance(settings.api_type);
 std::shared_ptr<Adapter> adapter = std::move(instance->EnumerateAdapters()[settings.required_gpu_index]);
 std::shared_ptr<Device> device = adapter->CreateDevice();
 std::shared_ptr<CommandQueue> command_queue = device->GetCommandQueue(CommandListType::kGraphics);
-std::shared_ptr<Swapchain> swapchain =
-    device->CreateSwapchain(app.GetNativeSurface(), app_size.width(), app_size.height(), kFrameCount, settings.vsync);
+std::shared_ptr<Swapchain> swapchain = device->CreateSwapchain(surface, width, height, kFrameCount, settings.vsync);
 uint64_t fence_value = 0;
 std::shared_ptr<Fence> fence = device->CreateFence(fence_value);
 
@@ -98,13 +97,13 @@ for (uint32_t i = 0; i < kFrameCount; ++i) {
     command_list = device->CreateCommandList(CommandListType::kGraphics);
     command_list->BindPipeline(pipeline);
     command_list->BindBindingSet(binding_set);
-    command_list->SetViewport(0, 0, app_size.width(), app_size.height(), 0.0, 1.0);
-    command_list->SetScissorRect(0, 0, app_size.width(), app_size.height());
+    command_list->SetViewport(0, 0, width, height, 0.0, 1.0);
+    command_list->SetScissorRect(0, 0, width, height);
     command_list->IASetIndexBuffer(index_buffer, 0, gli::format::FORMAT_R32_UINT_PACK32);
     command_list->IASetVertexBuffer(0, vertex_buffer, 0);
     command_list->ResourceBarrier({ { back_buffer, ResourceState::kPresent, ResourceState::kRenderTarget } });
     RenderPassDesc render_pass_desc = {
-        .render_area = { 0, 0, app_size.width(), app_size.height() },
+        .render_area = { 0, 0, width, height },
         .colors = { { .view = back_buffer_views[i],
                       .load_op = RenderPassLoadOp::kClear,
                       .store_op = RenderPassStoreOp::kStore,

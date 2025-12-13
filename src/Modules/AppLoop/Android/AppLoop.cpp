@@ -15,13 +15,6 @@ struct RendererState {
     bool initialized = false;
 };
 
-AppSize GetSurfaceSize(ANativeWindow* window)
-{
-    int32_t width = ANativeWindow_getWidth(window);
-    int32_t height = ANativeWindow_getHeight(window);
-    return AppSize(width, height);
-}
-
 void HandleCmd(android_app* app, int32_t cmd)
 {
     if (!app->userData) {
@@ -34,7 +27,9 @@ void HandleCmd(android_app* app, int32_t cmd)
         AndroidSurface surface = {
             .window = app->window,
         };
-        state->renderer->Init(GetSurfaceSize(app->window), surface);
+        int32_t width = ANativeWindow_getWidth(app->window);
+        int32_t height = ANativeWindow_getHeight(app->window);
+        state->renderer->Init(surface, width, height);
         state->initialized = true;
         break;
     }

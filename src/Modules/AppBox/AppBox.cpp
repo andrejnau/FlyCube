@@ -171,7 +171,7 @@ void AppBox::OnSizeChanged(GLFWwindow* window, int width, int height)
     AppBox* self = static_cast<AppBox*>(glfwGetWindowUserPointer(window));
     self->size_ = WindowUtils::GetSurfaceSize(window);
     if (self->window_listener_) {
-        self->window_listener_->OnResize(self->size_.width(), self->size_.height());
+        self->window_listener_->OnResize(self->size_.width, self->size_.height);
     }
 }
 
