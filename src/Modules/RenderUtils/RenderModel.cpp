@@ -196,5 +196,6 @@ void RenderModel::UpdateTexture(const std::shared_ptr<Resource>& texture,
     };
     upload_buffer->UpdateUploadBufferWithTextureData(copy_region.buffer_offset, copy_region.buffer_row_pitch,
                                                      buffer_size, data, row_pitch, slice_pitch, row_pitch, num_rows, 1);
+    command_list_->ResourceBarrier({ { texture, ResourceState::kCommon, ResourceState::kCopyDest } });
     command_list_->CopyBufferToTexture(upload_buffer, texture, { copy_region });
 }
