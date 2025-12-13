@@ -31,6 +31,8 @@ DXCPUDescriptorPoolTyped& DXCPUDescriptorPool::SelectHeap(ViewType view_type)
     case ViewType::kRWBuffer:
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer:
+    case ViewType::kByteAddressBuffer:
+    case ViewType::kRWByteAddressBuffer:
         return resource_;
     case ViewType::kSampler:
         return sampler_;

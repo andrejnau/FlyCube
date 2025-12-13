@@ -4,7 +4,7 @@ struct VsOutput {
 };
 
 static const uint kIndexCount = 64;
-static const uint kRows = 4;
+static const uint kRows = 6;
 static const uint kColumns = 4;
 static const float4 kPass = float4(0.0, 1.0, 0.0, 1.0);
 static const float4 kFail = float4(1.0, 0.0, 0.0, 1.0);
@@ -180,6 +180,28 @@ float4 RunRWStructuredBufferTest4() {
     return kPass;
 }
 
+ByteAddressBuffer byte_address_buffer;
+
+float4 RunByteAddressBufferTest() {
+    for (uint u = 0; u < kIndexCount; ++u) {
+        if (byte_address_buffer.Load(u * 4) != MakeU32(u)) {
+            return kFail;
+        }
+    }
+    return kPass;
+}
+
+RWByteAddressBuffer rwbyte_address_buffer;
+
+float4 RunRWByteAddressBufferTest() {
+    for (uint u = 0; u < kIndexCount; ++u) {
+        if (rwbyte_address_buffer.Load(u * 4) != MakeU32(u)) {
+            return kFail;
+        }
+    }
+    return kPass;
+}
+
 float4 RunTest(uint index) {
     switch (index) {
     case 0:
@@ -214,6 +236,16 @@ float4 RunTest(uint index) {
         return RunRWStructuredBufferTest3();
     case 15:
         return RunRWStructuredBufferTest4();
+    case 16:
+    case 17:
+    case 18:
+    case 19:
+        return RunByteAddressBufferTest();
+    case 20:
+    case 21:
+    case 22:
+    case 23:
+        return RunRWByteAddressBufferTest();
     default:
         return kIgnore;
     }

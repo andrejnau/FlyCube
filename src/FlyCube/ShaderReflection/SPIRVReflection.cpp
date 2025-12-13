@@ -156,11 +156,18 @@ ViewType GetViewType(const spirv_cross::Compiler& compiler, const spirv_cross::S
         if (type.storage == spv::StorageClassStorageBuffer) {
             spirv_cross::Bitset flags = compiler.get_buffer_block_flags(resource_id);
             bool is_readonly = flags.get(spv::DecorationNonWritable);
-            if (is_readonly) {
-                return ViewType::kStructuredBuffer;
+            bool is_byte_address_buffer = false;
+            if (compiler.has_decoration(resource_id, spv::DecorationUserTypeGOOGLE)) {
+                decltype(auto) user_type = compiler.get_decoration_string(resource_id, spv::DecorationUserTypeGOOGLE);
+                is_byte_address_buffer = user_type.find("byteaddressbuffer") != std::string::npos;
             } else {
-                return ViewType::kRWStructuredBuffer;
+                is_byte_address_buffer =
+                    compiler.get_name(type.parent_type).find("ByteAddressBuffer") != std::string::npos;
             }
+            if (is_byte_address_buffer) {
+                return is_readonly ? ViewType::kByteAddressBuffer : ViewType::kRWByteAddressBuffer;
+            }
+            return is_readonly ? ViewType::kStructuredBuffer : ViewType::kRWStructuredBuffer;
         } else if (type.storage == spv::StorageClassPushConstant || type.storage == spv::StorageClassUniform) {
             return ViewType::kConstantBuffer;
         }

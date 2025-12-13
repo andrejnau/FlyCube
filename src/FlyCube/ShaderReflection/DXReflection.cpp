@@ -62,6 +62,10 @@ ViewType GetViewType(const D3D12_SHADER_INPUT_BIND_DESC& bind_desc)
             return ViewType::kRWTexture;
         }
     }
+    case D3D_SIT_BYTEADDRESS:
+        return ViewType::kByteAddressBuffer;
+    case D3D_SIT_UAV_RWBYTEADDRESS:
+        return ViewType::kRWByteAddressBuffer;
     default:
         NOTREACHED();
     }

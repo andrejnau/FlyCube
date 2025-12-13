@@ -163,6 +163,8 @@ id<MTLResource> MTView::GetNativeResource() const
     case ViewType::kRWBuffer:
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer:
+    case ViewType::kByteAddressBuffer:
+    case ViewType::kRWByteAddressBuffer:
         return GetBuffer();
     case ViewType::kSampler:
         return {};
@@ -189,7 +191,9 @@ uint64_t MTView::GetGpuAddress() const
     case ViewType::kBuffer:
     case ViewType::kRWBuffer:
     case ViewType::kStructuredBuffer:
-    case ViewType::kRWStructuredBuffer: {
+    case ViewType::kRWStructuredBuffer:
+    case ViewType::kByteAddressBuffer:
+    case ViewType::kRWByteAddressBuffer: {
         return [GetBuffer() gpuAddress] + GetViewDesc().offset;
     }
     case ViewType::kSampler: {

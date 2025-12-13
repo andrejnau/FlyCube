@@ -44,6 +44,7 @@ void DXView::CreateView()
     case ViewType::kTexture:
     case ViewType::kBuffer:
     case ViewType::kStructuredBuffer:
+    case ViewType::kByteAddressBuffer:
         CreateSRV();
         break;
     case ViewType::kAccelerationStructure:
@@ -52,6 +53,7 @@ void DXView::CreateView()
     case ViewType::kRWTexture:
     case ViewType::kRWBuffer:
     case ViewType::kRWStructuredBuffer:
+    case ViewType::kRWByteAddressBuffer:
         CreateUAV();
         break;
     case ViewType::kConstantBuffer:
@@ -150,10 +152,14 @@ void DXView::CreateSRV()
         if (view_desc_.view_type == ViewType::kBuffer) {
             srv_desc.Format = static_cast<DXGI_FORMAT>(gli::dx().translate(view_desc_.buffer_format).DXGIFormat.DDS);
             stride = gli::detail::bits_per_pixel(view_desc_.buffer_format) / 8;
-        } else {
-            assert(view_desc_.view_type == ViewType::kStructuredBuffer);
+        } else if (view_desc_.view_type == ViewType::kStructuredBuffer) {
             srv_desc.Buffer.StructureByteStride = view_desc_.structure_stride;
             stride = srv_desc.Buffer.StructureByteStride;
+        } else {
+            assert(view_desc_.view_type == ViewType::kByteAddressBuffer);
+            srv_desc.Format = DXGI_FORMAT_R32_TYPELESS;
+            srv_desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+            stride = 4;
         }
         uint64_t size = std::min(resource_->GetResourceDesc().Width - view_desc_.offset, view_desc_.buffer_size);
         DCHECK(view_desc_.offset % stride == 0);
@@ -221,14 +227,19 @@ void DXView::CreateUAV()
         if (view_desc_.view_type == ViewType::kRWBuffer) {
             uav_desc.Format = static_cast<DXGI_FORMAT>(gli::dx().translate(view_desc_.buffer_format).DXGIFormat.DDS);
             stride = gli::detail::bits_per_pixel(view_desc_.buffer_format) / 8;
-        } else {
-            assert(view_desc_.view_type == ViewType::kRWStructuredBuffer);
+        } else if (view_desc_.view_type == ViewType::kRWStructuredBuffer) {
             uav_desc.Buffer.StructureByteStride = view_desc_.structure_stride;
             stride = uav_desc.Buffer.StructureByteStride;
+        } else {
+            assert(view_desc_.view_type == ViewType::kRWByteAddressBuffer);
+            uav_desc.Format = DXGI_FORMAT_R32_TYPELESS;
+            uav_desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
+            stride = 4;
         }
-        uint64_t size = std::min(resource_->GetResourceDesc().Width, view_desc_.buffer_size);
+        uint64_t size = std::min(resource_->GetResourceDesc().Width - view_desc_.offset, view_desc_.buffer_size);
+        DCHECK(view_desc_.offset % stride == 0);
         uav_desc.Buffer.FirstElement = view_desc_.offset / stride;
-        uav_desc.Buffer.NumElements = (size - view_desc_.offset) / (stride);
+        uav_desc.Buffer.NumElements = size / stride;
         break;
     }
     default: {

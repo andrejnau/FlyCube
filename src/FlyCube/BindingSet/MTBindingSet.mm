@@ -37,6 +37,8 @@ void SetView(id<MTL4ArgumentTable> argument_table, const std::shared_ptr<MTView>
     case ViewType::kConstantBuffer:
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer:
+    case ViewType::kByteAddressBuffer:
+    case ViewType::kRWByteAddressBuffer:
         SetBuffer(argument_table, view->GetBuffer(), view->GetViewDesc().offset, index);
         break;
     case ViewType::kSampler:

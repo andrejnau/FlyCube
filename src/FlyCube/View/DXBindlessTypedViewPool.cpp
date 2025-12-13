@@ -16,6 +16,8 @@ DXBindlessTypedViewPool::DXBindlessTypedViewPool(DXDevice& device, ViewType view
     case ViewType::kRWBuffer:
     case ViewType::kStructuredBuffer:
     case ViewType::kRWStructuredBuffer:
+    case ViewType::kByteAddressBuffer:
+    case ViewType::kRWByteAddressBuffer:
     case ViewType::kAccelerationStructure: {
         range_ = std::make_shared<DXGPUDescriptorPoolRange>(
             device.GetGPUDescriptorPool().Allocate(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, view_count));

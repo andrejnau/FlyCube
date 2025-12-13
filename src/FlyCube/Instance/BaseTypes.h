@@ -98,6 +98,8 @@ enum class ViewType {
     kRWBuffer,
     kStructuredBuffer,
     kRWStructuredBuffer,
+    kByteAddressBuffer,
+    kRWByteAddressBuffer,
     kAccelerationStructure,
     kShadingRateSource,
     kRenderTarget,

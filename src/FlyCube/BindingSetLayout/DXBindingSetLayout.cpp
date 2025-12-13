@@ -45,11 +45,13 @@ D3D12_DESCRIPTOR_RANGE_TYPE GetRangeType(ViewType view_type)
     case ViewType::kTexture:
     case ViewType::kBuffer:
     case ViewType::kStructuredBuffer:
+    case ViewType::kByteAddressBuffer:
     case ViewType::kAccelerationStructure:
         return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
     case ViewType::kRWTexture:
     case ViewType::kRWBuffer:
     case ViewType::kRWStructuredBuffer:
+    case ViewType::kRWByteAddressBuffer:
         return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
     case ViewType::kConstantBuffer:
         return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;

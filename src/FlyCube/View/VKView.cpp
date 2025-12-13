@@ -85,7 +85,9 @@ void VKView::CreateView()
     }
     case ViewType::kConstantBuffer:
     case ViewType::kStructuredBuffer:
-    case ViewType::kRWStructuredBuffer: {
+    case ViewType::kRWStructuredBuffer:
+    case ViewType::kByteAddressBuffer:
+    case ViewType::kRWByteAddressBuffer: {
         uint64_t size = std::min(resource_->GetWidth() - view_desc_.offset, view_desc_.buffer_size);
         descriptor_buffer_.buffer = resource_->GetBuffer();
         descriptor_buffer_.offset = view_desc_.offset;

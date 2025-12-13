@@ -24,6 +24,10 @@ vk::DescriptorType GetDescriptorType(ViewType view_type)
         return vk::DescriptorType::eStorageBuffer;
     case ViewType::kRWStructuredBuffer:
         return vk::DescriptorType::eStorageBuffer;
+    case ViewType::kByteAddressBuffer:
+        return vk::DescriptorType::eStorageBuffer;
+    case ViewType::kRWByteAddressBuffer:
+        return vk::DescriptorType::eStorageBuffer;
     case ViewType::kAccelerationStructure:
         return vk::DescriptorType::eAccelerationStructureKHR;
     default:

@@ -3,6 +3,7 @@
 #include "AppSettings/ArgsParser.h"
 #include "Instance/Instance.h"
 #include "Utilities/Asset.h"
+#include "Utilities/Check.h"
 #include "Utilities/NotReached.h"
 
 #include <array>
@@ -33,6 +34,10 @@ std::string GetBufferPrefix(ViewType view_type)
         return "structured_buffer";
     case ViewType::kRWStructuredBuffer:
         return "rwstructured_buffer";
+    case ViewType::kByteAddressBuffer:
+        return "byte_address_buffer";
+    case ViewType::kRWByteAddressBuffer:
+        return "rwbyte_address_buffer";
     default:
         NOTREACHED();
     }
@@ -40,6 +45,9 @@ std::string GetBufferPrefix(ViewType view_type)
 
 bool IsSupported(ViewType view_type, gli::format format)
 {
+    if (view_type == ViewType::kByteAddressBuffer || view_type == ViewType::kRWByteAddressBuffer) {
+        return format == gli::format::FORMAT_R32_UINT_PACK32;
+    }
     if (format == gli::format::FORMAT_RGB32_UINT_PACK32) {
         return view_type != ViewType::kBuffer && view_type != ViewType::kRWBuffer;
     }
@@ -110,6 +118,8 @@ BufferViewTestRenderer::BufferViewTestRenderer(const Settings& settings)
         ViewType::kRWBuffer,
         ViewType::kStructuredBuffer,
         ViewType::kRWStructuredBuffer,
+        ViewType::kByteAddressBuffer,
+        ViewType::kRWByteAddressBuffer,
     });
     const auto formats = std::to_array({
         gli::format::FORMAT_R32_UINT_PACK32,
@@ -131,7 +141,8 @@ BufferViewTestRenderer::BufferViewTestRenderer(const Settings& settings)
             if (buffer_desc.size % structure_stride != 0) {
                 buffer_desc.size += structure_stride - (buffer_desc.size % structure_stride);
             }
-            if (view_type == ViewType::kBuffer || view_type == ViewType::kStructuredBuffer) {
+            if (view_type == ViewType::kBuffer || view_type == ViewType::kStructuredBuffer ||
+                view_type == ViewType::kByteAddressBuffer) {
                 buffer_desc.usage = BindFlag::kShaderResource;
             } else {
                 buffer_desc.usage = BindFlag::kCopySource;
@@ -144,7 +155,8 @@ BufferViewTestRenderer::BufferViewTestRenderer(const Settings& settings)
             }
             buffer->Unmap();
 
-            if (view_type == ViewType::kRWBuffer || view_type == ViewType::kRWStructuredBuffer) {
+            if (view_type == ViewType::kRWBuffer || view_type == ViewType::kRWStructuredBuffer ||
+                view_type == ViewType::kRWByteAddressBuffer) {
                 upload_buffers_.push_back(std::move(buffer));
                 buffer_desc.usage = BindFlag::kUnorderedAccess | BindFlag::kCopyDest;
                 buffer = device_->CreateBuffer(MemoryType::kDefault, buffer_desc);
@@ -168,9 +180,12 @@ BufferViewTestRenderer::BufferViewTestRenderer(const Settings& settings)
             }
             std::shared_ptr<View> buffer_view = device_->CreateView(buffer, buffer_view_desc);
 
-            std::string bind_key_name = GetBufferPrefix(view_type) + "_uint";
-            bind_key_name += std::to_string(structure_stride / 4);
+            std::string bind_key_name = GetBufferPrefix(view_type);
+            if (view_type != ViewType::kByteAddressBuffer && view_type != ViewType::kRWByteAddressBuffer) {
+                bind_key_name += "_uint" + std::to_string(structure_stride / 4);
+            }
             BindKey bind_key = pixel_shader_->GetBindKey(bind_key_name);
+            DCHECK(bind_key.view_type == view_type);
             binding_set_layout_desc.bind_keys.push_back(bind_key);
             write_bindings_desc.bindings.emplace_back(bind_key, buffer_view);
 
