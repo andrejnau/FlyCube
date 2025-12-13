@@ -19,7 +19,7 @@ public:
     void Render() override;
     std::string_view GetTitle() const override;
     const std::string& GetGpuName() const override;
-    const Settings& GetSettings() const override;
+    ApiType GetApiType() const override;
 
 private:
     void WaitForIdle();
@@ -178,9 +178,9 @@ const std::string& TriangleRenderer::GetGpuName() const
     return adapter_->GetName();
 }
 
-const Settings& TriangleRenderer::GetSettings() const
+ApiType TriangleRenderer::GetApiType() const
 {
-    return settings_;
+    return settings_.api_type;
 }
 
 void TriangleRenderer::WaitForIdle()

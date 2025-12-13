@@ -23,7 +23,7 @@ public:
     void Render() override;
     std::string_view GetTitle() const override;
     const std::string& GetGpuName() const override;
-    const Settings& GetSettings() const override;
+    ApiType GetApiType() const override;
 
 private:
     void WaitForIdle();
@@ -180,9 +180,9 @@ const std::string& DispatchIndirectRenderer::GetGpuName() const
     return adapter_->GetName();
 }
 
-const Settings& DispatchIndirectRenderer::GetSettings() const
+ApiType DispatchIndirectRenderer::GetApiType() const
 {
-    return settings_;
+    return settings_.api_type;
 }
 
 void DispatchIndirectRenderer::WaitForIdle()

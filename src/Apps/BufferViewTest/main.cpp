@@ -65,7 +65,7 @@ public:
     void Render() override;
     std::string_view GetTitle() const override;
     const std::string& GetGpuName() const override;
-    const Settings& GetSettings() const override;
+    ApiType GetApiType() const override;
 
 private:
     void WaitForIdle();
@@ -277,9 +277,9 @@ const std::string& BufferViewTestRenderer::GetGpuName() const
     return adapter_->GetName();
 }
 
-const Settings& BufferViewTestRenderer::GetSettings() const
+ApiType BufferViewTestRenderer::GetApiType() const
 {
-    return settings_;
+    return settings_.api_type;
 }
 
 void BufferViewTestRenderer::WaitForIdle()

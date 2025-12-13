@@ -42,7 +42,7 @@ AppRenderer& AppLoop::GetRendererImpl()
 int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv[])
 {
     renderer_ = std::move(renderer);
-    AppBox app(renderer_->GetTitle(), renderer_->GetSettings().api_type);
+    AppBox app(renderer_->GetTitle(), renderer_->GetApiType());
     app.SetGpuName(renderer_->GetGpuName());
     NativeSurface surface = app.GetNativeSurface();
     auto [width, height] = app.GetAppSize();

@@ -38,7 +38,7 @@ public:
     void Render() override;
     std::string_view GetTitle() const override;
     const std::string& GetGpuName() const override;
-    const Settings& GetSettings() const override;
+    ApiType GetApiType() const override;
 
 private:
     void WaitForIdle();
@@ -261,9 +261,9 @@ const std::string& ModelViewRenderer::GetGpuName() const
     return adapter_->GetName();
 }
 
-const Settings& ModelViewRenderer::GetSettings() const
+ApiType ModelViewRenderer::GetApiType() const
 {
-    return settings_;
+    return settings_.api_type;
 }
 
 void ModelViewRenderer::WaitForIdle()
