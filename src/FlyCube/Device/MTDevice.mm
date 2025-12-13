@@ -2,6 +2,7 @@
 
 #include "BindingSet/MTBindingSet.h"
 #include "BindingSetLayout/MTBindingSetLayout.h"
+#include "BindlessTypedViewPool/MTBindlessTypedViewPool.h"
 #include "CommandList/MTCommandList.h"
 #include "CommandList/RecordCommandList.h"
 #include "CommandQueue/MTCommandQueue.h"
@@ -20,7 +21,6 @@
 #include "Swapchain/MTSwapchain.h"
 #include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
-#include "View/MTBindlessTypedViewPool.h"
 #include "View/MTView.h"
 
 #include <type_traits>

@@ -2,6 +2,7 @@
 
 #include "BindingSet/DXBindingSet.h"
 #include "BindingSetLayout/DXBindingSetLayout.h"
+#include "BindlessTypedViewPool/DXBindlessTypedViewPool.h"
 #include "CommandList/DXCommandList.h"
 #include "CommandQueue/DXCommandQueue.h"
 #include "Fence/DXFence.h"
@@ -19,7 +20,6 @@
 #include "Utilities/Common.h"
 #include "Utilities/DXUtility.h"
 #include "Utilities/NotReached.h"
-#include "View/DXBindlessTypedViewPool.h"
 #include "View/DXView.h"
 
 #if defined(_WIN32)

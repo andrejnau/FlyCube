@@ -1,11 +1,11 @@
 #include "View/DXView.h"
 
+#include "BindlessTypedViewPool/DXBindlessTypedViewPool.h"
 #include "Device/DXDevice.h"
 #include "Utilities/Check.h"
 #include "Utilities/Common.h"
 #include "Utilities/DXGIFormatHelper.h"
 #include "Utilities/NotReached.h"
-#include "View/DXBindlessTypedViewPool.h"
 
 #include <directx/d3d12.h>
 #include <gli/gli.hpp>

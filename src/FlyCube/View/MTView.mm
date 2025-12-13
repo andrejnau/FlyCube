@@ -1,12 +1,12 @@
 #include "View/MTView.h"
 
+#include "BindlessTypedViewPool/MTBindlessTypedViewPool.h"
 #include "Device/MTDevice.h"
 #include "Memory/MTMemory.h"
 #include "Resource/MTResource.h"
 #include "Utilities/Common.h"
 #include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
-#include "View/MTBindlessTypedViewPool.h"
 
 namespace {
 

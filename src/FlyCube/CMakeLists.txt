@@ -34,13 +34,14 @@ list(APPEND BindingSetLayout
     BindingSetLayout/BindingSetLayout.h
 )
 
-list(APPEND CPUDescriptorPool
-    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorHandle.cpp>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorHandle.h>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorPool.cpp>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorPool.h>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorPoolTyped.cpp>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorPoolTyped.h>
+list(APPEND BindlessTypedViewPool
+    $<$<BOOL:${DIRECTX_SUPPORT}>:BindlessTypedViewPool/DXBindlessTypedViewPool.cpp>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:BindlessTypedViewPool/DXBindlessTypedViewPool.h>
+    $<$<BOOL:${METAL_SUPPORT}>:BindlessTypedViewPool/MTBindlessTypedViewPool.h>
+    $<$<BOOL:${METAL_SUPPORT}>:BindlessTypedViewPool/MTBindlessTypedViewPool.mm>
+    $<$<BOOL:${VULKAN_SUPPORT}>:BindlessTypedViewPool/VKBindlessTypedViewPool.cpp>
+    $<$<BOOL:${VULKAN_SUPPORT}>:BindlessTypedViewPool/VKBindlessTypedViewPool.h>
+    BindlessTypedViewPool/BindlessTypedViewPool.h
 )
 
 list(APPEND CommandList
@@ -62,6 +63,15 @@ list(APPEND CommandQueue
     $<$<BOOL:${VULKAN_SUPPORT}>:CommandQueue/VKCommandQueue.cpp>
     $<$<BOOL:${VULKAN_SUPPORT}>:CommandQueue/VKCommandQueue.h>
     CommandQueue/CommandQueue.h
+)
+
+list(APPEND CPUDescriptorPool
+    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorHandle.cpp>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorHandle.h>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorPool.cpp>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorPool.h>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorPoolTyped.cpp>
+    $<$<BOOL:${DIRECTX_SUPPORT}>:CPUDescriptorPool/DXCPUDescriptorPoolTyped.h>
 )
 
 list(APPEND Device
@@ -265,19 +275,12 @@ if (APPLE)
 endif()
 
 list(APPEND View
-    $<$<BOOL:${DIRECTX_SUPPORT}>:View/DXBindlessTypedViewPool.cpp>
-    $<$<BOOL:${DIRECTX_SUPPORT}>:View/DXBindlessTypedViewPool.h>
     $<$<BOOL:${DIRECTX_SUPPORT}>:View/DXView.cpp>
     $<$<BOOL:${DIRECTX_SUPPORT}>:View/DXView.h>
-    $<$<BOOL:${METAL_SUPPORT}>:View/MTBindlessTypedViewPool.h>
-    $<$<BOOL:${METAL_SUPPORT}>:View/MTBindlessTypedViewPool.mm>
     $<$<BOOL:${METAL_SUPPORT}>:View/MTView.h>
     $<$<BOOL:${METAL_SUPPORT}>:View/MTView.mm>
-    $<$<BOOL:${VULKAN_SUPPORT}>:View/VKBindlessTypedViewPool.cpp>
-    $<$<BOOL:${VULKAN_SUPPORT}>:View/VKBindlessTypedViewPool.h>
     $<$<BOOL:${VULKAN_SUPPORT}>:View/VKView.cpp>
     $<$<BOOL:${VULKAN_SUPPORT}>:View/VKView.h>
-    View/BindlessTypedViewPool.h
     View/View.h
 )
 
@@ -286,6 +289,7 @@ add_library(FlyCube
     ${ApiType}
     ${BindingSet}
     ${BindingSetLayout}
+    ${BindlessTypedViewPool}
     ${CommandList}
     ${CommandQueue}
     ${CPUDescriptorPool}

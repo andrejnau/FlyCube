@@ -3,6 +3,7 @@
 #include "Adapter/VKAdapter.h"
 #include "BindingSet/VKBindingSet.h"
 #include "BindingSetLayout/VKBindingSetLayout.h"
+#include "BindlessTypedViewPool/VKBindlessTypedViewPool.h"
 #include "CommandList/VKCommandList.h"
 #include "CommandQueue/VKCommandQueue.h"
 #include "Fence/VKTimelineSemaphore.h"
@@ -20,7 +21,6 @@
 #include "Swapchain/VKSwapchain.h"
 #include "Utilities/Logging.h"
 #include "Utilities/NotReached.h"
-#include "View/VKBindlessTypedViewPool.h"
 #include "View/VKView.h"
 
 #include <set>

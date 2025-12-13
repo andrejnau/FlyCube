@@ -1,5 +1,6 @@
 #pragma once
 #include "BindingSetLayout/BindingSetLayout.h"
+#include "BindlessTypedViewPool/BindlessTypedViewPool.h"
 #include "CommandList/CommandList.h"
 #include "CommandQueue/CommandQueue.h"
 #include "Fence/Fence.h"
@@ -10,7 +11,6 @@
 #include "QueryHeap/QueryHeap.h"
 #include "Shader/Shader.h"
 #include "Swapchain/Swapchain.h"
-#include "View/BindlessTypedViewPool.h"
 
 #include <gli/format.hpp>
 

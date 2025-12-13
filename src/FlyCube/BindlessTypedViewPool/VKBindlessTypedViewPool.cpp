@@ -1,4 +1,4 @@
-#include "View/VKBindlessTypedViewPool.h"
+#include "BindlessTypedViewPool/VKBindlessTypedViewPool.h"
 
 #include "Device/VKDevice.h"
 #include "GPUDescriptorPool/VKGPUDescriptorPoolRange.h"

@@ -1,4 +1,4 @@
-#include "View/DXBindlessTypedViewPool.h"
+#include "BindlessTypedViewPool/DXBindlessTypedViewPool.h"
 
 #include "Device/DXDevice.h"
 #include "Utilities/Check.h"

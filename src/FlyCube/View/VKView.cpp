@@ -4,7 +4,7 @@
 #include "Device/VKDevice.h"
 #include "Resource/VKResource.h"
 #include "Utilities/NotReached.h"
-#include "View/VKBindlessTypedViewPool.h"
+#include "BindlessTypedViewPool/VKBindlessTypedViewPool.h"
 
 namespace {
 

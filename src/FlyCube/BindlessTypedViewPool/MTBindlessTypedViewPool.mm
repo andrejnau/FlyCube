@@ -1,4 +1,4 @@
-#include "View/MTBindlessTypedViewPool.h"
+#include "BindlessTypedViewPool/MTBindlessTypedViewPool.h"
 
 #include "Device/MTDevice.h"
 #include "Utilities/Check.h"
