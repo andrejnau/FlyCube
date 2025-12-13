@@ -1,8 +1,8 @@
 #pragma once
+#include "ApiType/ApiType.h"
 #include "AppBox/InputEvents.h"
 #include "AppBox/WindowEvents.h"
 #include "AppLoop/AppSize.h"
-#include "AppSettings/Settings.h"
 #include "Instance/BaseTypes.h"
 
 #include <GLFW/glfw3.h>
@@ -21,7 +21,7 @@ enum class CursorMode {
 
 class AppBox {
 public:
-    AppBox(const std::string_view& title, const Settings& setting);
+    AppBox(std::string_view title, ApiType api_type);
     ~AppBox();
     bool PollEvents();
 
@@ -44,7 +44,6 @@ private:
     static void OnScroll(GLFWwindow* window, double xoffset, double yoffset);
     static void OnInputChar(GLFWwindow* window, uint32_t ch);
 
-    Settings setting_;
     std::string title_;
     InputEvents* input_listener_ = nullptr;
     WindowEvents* window_listener_ = nullptr;

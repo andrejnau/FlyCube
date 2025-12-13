@@ -1,6 +1,7 @@
 #include "AppLoop/AppLoop.h"
 
 #include "AppBox/AppBox.h"
+#include "AppSettings/Settings.h"
 
 #include <cassert>
 
@@ -41,7 +42,7 @@ AppRenderer& AppLoop::GetRendererImpl()
 int AppLoop::RunImpl(std::unique_ptr<AppRenderer> renderer, int argc, char* argv[])
 {
     renderer_ = std::move(renderer);
-    AppBox app(renderer_->GetTitle(), renderer_->GetSettings());
+    AppBox app(renderer_->GetTitle(), renderer_->GetSettings().api_type);
     app.SetGpuName(renderer_->GetGpuName());
     NativeSurface surface = app.GetNativeSurface();
     auto [width, height] = app.GetAppSize();

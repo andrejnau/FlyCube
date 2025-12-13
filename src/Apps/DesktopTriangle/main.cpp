@@ -11,7 +11,7 @@ constexpr uint32_t kFrameCount = 3;
 int main(int argc, char* argv[])
 {
     Settings settings = ParseArgs(argc, argv);
-    AppBox app("DesktopTriangle", settings);
+    AppBox app("DesktopTriangle", settings.api_type);
     NativeSurface surface = app.GetNativeSurface();
     auto [width, height] = app.GetAppSize();
 

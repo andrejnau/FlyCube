@@ -26,26 +26,26 @@ int ConvertCursorMode(CursorMode mode)
     }
 }
 
-} // namespace
-
-AppBox::AppBox(const std::string_view& title, const Settings& setting)
-    : setting_(setting)
+std::string_view ApiTypeToString(ApiType api_type)
 {
-    std::string api_str;
-    switch (setting.api_type) {
+    switch (api_type) {
     case ApiType::kDX12:
-        api_str = "[DX12]";
-        break;
+        return "DX12";
     case ApiType::kVulkan:
-        api_str = "[Vulkan]";
+        return "Vulkan";
         break;
     case ApiType::kMetal:
-        api_str = "[Metal]";
-        break;
+        return "Metal";
+    default:
+        NOTREACHED();
     }
-    title_ = api_str + " ";
-    title_ += title;
+}
 
+} // namespace
+
+AppBox::AppBox(std::string_view title, ApiType api_type)
+    : title_(std::format("[{}] {}", ApiTypeToString(api_type), title))
+{
     glfwInit();
 
     window_ = WindowUtils::CreateWindowWithDefaultSize(title_);
