@@ -151,6 +151,7 @@ void DispatchIndirectRenderer::Render()
     command_list->Reset();
     command_list->BindPipeline(pipeline_);
     command_list->BindBindingSet(binding_set_[frame_index]);
+    command_list->ResourceBarrier({ { result_texture_, ResourceState::kCommon, ResourceState::kUnorderedAccess } });
     command_list->DispatchIndirect(buffer_, constant_buffer_stride_ * kFrameCount);
     TextureCopyRegion region = {
         .extent = { result_texture_size_.x, result_texture_size_.y, 1 },
