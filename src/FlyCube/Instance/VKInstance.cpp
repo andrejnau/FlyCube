@@ -80,6 +80,7 @@ VKInstance::VKInstance()
     std::set<std::string_view> requested_extensions = {
         // clang-format off
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+        VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME,
         VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
         VK_KHR_SURFACE_EXTENSION_NAME,
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -140,8 +141,10 @@ VKInstance::VKInstance()
             vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
         debug_utils_messenger_info.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
                                                  vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-                                                 vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-                                                 vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding;
+                                                 vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
+        if (enabled_extension_set.contains(VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME)) {
+            debug_utils_messenger_info.messageType |= vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding;
+        }
         debug_utils_messenger_info.pfnUserCallback = &DebugUtilsMessengerCallback;
         debug_utils_messenger_info.pUserData = this;
         debug_utils_messenger_ = instance_->createDebugUtilsMessengerEXTUnique(debug_utils_messenger_info);
