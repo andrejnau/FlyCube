@@ -1,5 +1,5 @@
 list(APPEND sources
-   main.cpp
+    main.cpp
 )
 
 set(shaders_path "${assets_path}/shaders/Triangle")
@@ -17,17 +17,17 @@ include(compile_shaders)
 compile_shaders("${shaders_path}" "assets/Triangle" "${shaders_files}" resources)
 
 if (ANDROID)
-   add_library(Triangle SHARED
-      ${resources}
-      ${shaders_files}
-      ${sources}
-   )
+    add_library(Triangle SHARED
+        ${resources}
+        ${shaders_files}
+        ${sources}
+    )
 else()
-   add_executable(Triangle WIN32 MACOSX_BUNDLE
-      ${resources}
-      ${shaders_files}
-      ${sources}
-   )
+    add_executable(Triangle WIN32 MACOSX_BUNDLE
+        ${resources}
+        ${shaders_files}
+        ${sources}
+    )
 endif()
 
 target_link_options(Triangle
@@ -36,14 +36,14 @@ target_link_options(Triangle
 )
 
 target_link_libraries(Triangle
-   AppLoop
-   FlyCube
+    AppLoop
+    FlyCube
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-   set_target_properties(Triangle PROPERTIES
-      XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
-   )
+    set_target_properties(Triangle PROPERTIES
+        XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
+    )
 endif()
 
 set_target_properties(Triangle PROPERTIES

@@ -1,5 +1,5 @@
 list(APPEND sources
-   main.cpp
+    main.cpp
 )
 
 set(shaders_path "${assets_path}/shaders/DepthStencilRead")
@@ -25,17 +25,17 @@ include(copy_assets)
 copy_assets("${damaged_helmet_base_dir}" "assets/DepthStencilRead" "${damaged_helmet}" resources)
 
 if (ANDROID)
-   add_library(DepthStencilRead SHARED
-      ${resources}
-      ${shaders_files}
-      ${sources}
-   )
+    add_library(DepthStencilRead SHARED
+        ${resources}
+        ${shaders_files}
+        ${sources}
+    )
 else()
-   add_executable(DepthStencilRead WIN32 MACOSX_BUNDLE
-      ${resources}
-      ${shaders_files}
-      ${sources}
-   )
+    add_executable(DepthStencilRead WIN32 MACOSX_BUNDLE
+        ${resources}
+        ${shaders_files}
+        ${sources}
+    )
 endif()
 
 target_link_options(DepthStencilRead
@@ -50,9 +50,9 @@ target_link_libraries(DepthStencilRead
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-   set_target_properties(DepthStencilRead PROPERTIES
-      XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
-   )
+    set_target_properties(DepthStencilRead PROPERTIES
+        XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
+    )
 endif()
 
 set_target_properties(DepthStencilRead PROPERTIES

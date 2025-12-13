@@ -1,5 +1,5 @@
 list(APPEND sources
-   main.cpp
+    main.cpp
 )
 
 set(shaders_path "${assets_path}/shaders/BindlessTriangle")
@@ -17,17 +17,17 @@ include(compile_shaders)
 compile_shaders("${shaders_path}" "assets/BindlessTriangle" "${shaders_files}" resources)
 
 if (ANDROID)
-   add_library(BindlessTriangle SHARED
-      ${resources}
-      ${shaders_files}
-      ${sources}
-   )
+    add_library(BindlessTriangle SHARED
+        ${resources}
+        ${shaders_files}
+        ${sources}
+    )
 else()
-   add_executable(BindlessTriangle WIN32 MACOSX_BUNDLE
-      ${resources}
-      ${shaders_files}
-      ${sources}
-   )
+    add_executable(BindlessTriangle WIN32 MACOSX_BUNDLE
+        ${resources}
+        ${shaders_files}
+        ${sources}
+    )
 endif()
 
 target_link_options(BindlessTriangle
@@ -36,14 +36,14 @@ target_link_options(BindlessTriangle
 )
 
 target_link_libraries(BindlessTriangle
-   AppLoop
-   FlyCube
+    AppLoop
+    FlyCube
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-   set_target_properties(BindlessTriangle PROPERTIES
-      XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
-   )
+    set_target_properties(BindlessTriangle PROPERTIES
+        XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
+    )
 endif()
 
 set_target_properties(BindlessTriangle PROPERTIES

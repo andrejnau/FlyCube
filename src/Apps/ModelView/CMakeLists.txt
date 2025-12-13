@@ -1,5 +1,5 @@
 list(APPEND sources
-   main.cpp
+    main.cpp
 )
 
 set(shaders_path "${assets_path}/shaders/ModelView")
@@ -7,8 +7,8 @@ set(shaders_path "${assets_path}/shaders/ModelView")
 set(vertex_shaders ${shaders_path}/VertexShader.hlsl)
 set_property(SOURCE ${vertex_shaders} PROPERTY SHADER_TYPE Vertex)
 set(pixel_shaders
-   ${shaders_path}/PixelShader.hlsl
-   ${shaders_path}/PixelShaderBindless.hlsl
+    ${shaders_path}/PixelShader.hlsl
+    ${shaders_path}/PixelShaderBindless.hlsl
 )
 set_property(SOURCE ${pixel_shaders} PROPERTY SHADER_TYPE Pixel)
 
@@ -29,17 +29,17 @@ include(copy_assets)
 copy_assets("${damaged_helmet_base_dir}" "assets/ModelView" "${damaged_helmet}" resources)
 
 if (ANDROID)
-   add_library(ModelView SHARED
-      ${resources}
-      ${shaders_files}
-      ${sources}
-   )
+    add_library(ModelView SHARED
+        ${resources}
+        ${shaders_files}
+        ${sources}
+    )
 else()
-   add_executable(ModelView WIN32 MACOSX_BUNDLE
-      ${resources}
-      ${shaders_files}
-      ${sources}
-   )
+    add_executable(ModelView WIN32 MACOSX_BUNDLE
+        ${resources}
+        ${shaders_files}
+        ${sources}
+    )
 endif()
 
 target_link_options(ModelView
@@ -54,9 +54,9 @@ target_link_libraries(ModelView
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-   set_target_properties(ModelView PROPERTIES
-      XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
-   )
+    set_target_properties(ModelView PROPERTIES
+        XCODE_EXPLICIT_FILE_TYPE "wrapper.application"
+    )
 endif()
 
 set_target_properties(ModelView PROPERTIES
