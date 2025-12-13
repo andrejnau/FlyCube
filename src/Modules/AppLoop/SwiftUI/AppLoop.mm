@@ -1,12 +1,8 @@
 #include "AppLoop/AppLoop.h"
 
-#include <cassert>
-
-#if defined(TARGET_MACOS)
-#import <AppKit/NSApplication.h>
-#endif
-
 #import "SwiftInterfaceHeader.h"
+
+#include <cassert>
 
 // static
 AppLoop& AppLoop::GetInstance()

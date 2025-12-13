@@ -1,6 +1,6 @@
 add_library(AppLoop INTERFACE)
 
-if (CMAKE_GENERATOR MATCHES "Xcode")
+if (IOS_OR_TVOS)
     add_subdirectory(SwiftUI)
     target_link_libraries(AppLoop
         INTERFACE
