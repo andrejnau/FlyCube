@@ -1,5 +1,6 @@
 #include "AppSettings/ArgsParser.h"
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,9 @@ Settings ParseArgs(int argc, char* argv[])
         } else if (arg == "--no_vsync") {
             settings.vsync = false;
         } else if (arg == "--gpu") {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("--gpu requires a GPU index");
+            }
             settings.required_gpu_index = std::stoul(argv[++i]);
         }
     }
