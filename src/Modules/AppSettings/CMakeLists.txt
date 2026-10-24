@@ -12,3 +12,10 @@ target_include_directories(AppSettings
 target_link_libraries(AppSettings FlyCube)
 
 set_target_properties(AppSettings PROPERTIES FOLDER "Modules")
+
+if (BUILD_TESTING)
+    add_executable(AppSettingsTest test/ArgsParserTest.cpp)
+    target_link_libraries(AppSettingsTest PRIVATE Catch2WithMain AppSettings)
+    set_target_properties(AppSettingsTest PROPERTIES FOLDER "Tests")
+    add_test(NAME AppSettingsTest COMMAND AppSettingsTest)
+endif()
